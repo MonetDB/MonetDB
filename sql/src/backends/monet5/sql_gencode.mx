@@ -105,11 +105,10 @@ static str sql_cacheRef;
 void initSQLreferences(){
 	optimizerInit();
 	exportValueRef = putName("exportValue",11);
-	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);
 	exportOperationRef= putName("exportOperation",15);
 	sql_cacheRef= putName("sql_cache",9);
-	if( algebraRef==NULL || resultSetRef==NULL || exportValueRef==NULL ||
+	if( algebraRef==NULL || exportValueRef==NULL ||
 		exportResultRef==NULL || exportOperationRef==NULL || 
 		sql_cacheRef== NULL)
 			GDKfatal("error initSQLreferences");

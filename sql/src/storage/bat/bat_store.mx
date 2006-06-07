@@ -336,7 +336,7 @@ append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 }
 
 static size_t
-void_append_inserted(BAT *b, BAT *i )
+append_inserted(BAT *b, BAT *i )
 {
 	size_t nr = 0;
 	BUN r;
@@ -347,6 +347,20 @@ void_append_inserted(BAT *b, BAT *i )
 	}
 	return nr;
 }
+
+static size_t
+copy_inserted(BAT *b, BAT *i )
+{
+	size_t nr = 0;
+	BUN r;
+
+	for (r = i->batInserted; r < BUNlast(i); r = BUNnext(i, r)) {
+		BUNins(b, BUNhead(i,r), BUNtail(i,r), TRUE);
+		nr++;
+	}
+	return nr;
+}
+
 
 static size_t
 void_delete_bat(BAT *b, BAT *d, int delta)
@@ -3442,6 +3456,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	int ok = SQL_OK;
 	sql_trans *ttr = tr->parent;
 	node *n, *m;
+	lng deleted = 0;
+	BAT *db = NULL;
 
 	/* cannot update views and temporaries tables */
 	if (!ft->table || isTempTable(ft))
@@ -3460,82 +3476,85 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	n = ft->columns.set->h;
 	m = tt->columns.set->h;
 
-	if (ok == SQL_OK && n && m) {
-		lng deleted = 0;
-		BAT *db = temp_descriptor(ft->dbid);
+	if (ok != SQL_OK || !n || !m) 
+		return SQL_ERR;
 
-		if (ft->base.rtime)
-			tt->base.rtime = tr->stime;
-		tt->base.wtime = tr->stime;
-		ft->base.rtime = ft->base.wtime = 0;
+	deleted = 0;
+	db = temp_descriptor(ft->dbid);
 
-		if (ft->cleared) {
-			BAT *odb = temp_descriptor(tt->dbid);
+	if (ft->base.rtime)
+		tt->base.rtime = tr->stime;
+	tt->base.wtime = tr->stime;
+	ft->base.rtime = ft->base.wtime = 0;
 
-			bat_clear(odb);
-			bat_destroy(odb);
-			if (ttr == gtrans)
-				ok = log_bat_clear(logger, tt->dname);
-		}
+	if (ft->cleared) {
+		BAT *odb = temp_descriptor(tt->dbid);
 
-		deleted = BATcount(db);
-		tt->cnt = 0;
-		if (BUNlast(db) > db->batInserted || ft->cleared) {
-			BAT *odb = temp_descriptor(tt->dbid);
+		bat_clear(odb);
+		bat_destroy(odb);
+		if (ttr == gtrans)
+			ok = log_bat_clear(logger, tt->dname);
+	}
 
-			void_append_inserted(odb, db);
+	deleted = BATcount(db);
+	tt->cnt = 0;
+	if (BUNlast(db) > db->batInserted || ft->cleared) {
+		BAT *odb = temp_descriptor(tt->dbid);
 
-			if (bs_debug) {
-				fprintf(stderr, 
+		append_inserted(odb, db);
+
+		if (bs_debug) {
+			fprintf(stderr, 
 				"%s " SZFMT "\n", tt->dname, BATcount(odb));
-				BATprint(odb);
-			}
-
-			if (ttr == gtrans)
-				ok = log_bat(logger, odb, tt->dname);
-			bat_destroy(odb);
-			BATcommit(db);
+			BATprint(odb);
 		}
-		bat_destroy(db);
 
-		/* TODO when there are concurrent transactions running,
-		   (transactions > 1) we should keep inserts, into  
-		   the central.insert bat
-		   During the next commit which doesn't have concurrent
-		   transactions, we should first append the old inserted
-		   values.	  
-		*/ 
-		do {
-			sql_column *cc = n->data;
-			sql_column *oc = m->data;
-			BAT *ups, *ins, *cur;
+		if (ttr == gtrans)
+			ok = log_bat(logger, odb, tt->dname);
+		bat_destroy(odb);
+		BATcommit(db);
+	}
+	bat_destroy(db);
 
-			/* for cleared tables the bid is reset */
-			if (cc->bat.bid == 0) {
-				cc -> bat.bid = oc -> bat.bid;
-				temp_dup(cc->bat.bid);
-			}
-			if (!cc->base.wtime) {
-				n = n->next;
-				m = m->next;
-				continue;
-			}
+	do {
+		sql_column *cc = n->data;
+		sql_column *oc = m->data;
+		BAT *ups, *ins, *cur;
 
-			cur = temp_descriptor(oc->bat.bid);
-			if (ft->cleared && ttr == gtrans) {
-				bat_clear(cur);
-				ok = log_bat_clear(logger, oc->bat.name);
-				if (ok == SQL_OK) 
-					ok = log_bat_clear(logger, oc->bat.uname);
-			}
+		/* for cleared tables the bid is reset */
+		if (cc->bat.bid == 0) {
+			cc -> bat.bid = oc -> bat.bid;
+			temp_dup(cc->bat.bid);
+		}
+		if (!cc->base.wtime) {
+			n = n->next;
+			m = m->next;
+			continue;
+		}
 
-			ins = temp_descriptor(cc->bat.ibid);
+		cur = temp_descriptor(oc->bat.bid);
+		if (ft->cleared && ttr == gtrans) {
+			bat_clear(cur);
+			ok = log_bat_clear(logger, oc->bat.name);
+			if (ok == SQL_OK) 
+				ok = log_bat_clear(logger, oc->bat.uname);
+		}
+
+		ins = temp_descriptor(cc->bat.ibid);
+		/* any inserts */
+		if (BUNlast(ins) > BUNfirst(ins)) {
 			if (BUNlast(ins) > ins->batInserted) {
-				if (bs_debug)
-					fprintf(stderr, "append inserts %d to %d (%s)\n", (int)ins->batCacheid, (int)cur->batCacheid, (ttr==gtrans)?"G":"S");
-				if (BATcount(cur) == 0 && spares == 0 &&
-					transactions == 1 && 
-					BATcount(ins) > 100) {
+				if (transactions > 1) { 
+					BAT *ci = temp_descriptor(oc->bat.ibid);
+					append_inserted(ci, ins);
+					bat_destroy(ci);
+				}
+				if (ok == SQL_OK && ttr == gtrans)
+					ok = log_bat(logger, ins, oc->bat.name);
+			}
+			if (transactions == 1) { /* flush all */
+				BAT *pi = temp_descriptor(oc->bat.ibid);
+				if (!BATcount(cur)) {
 					/* swap cur and ins */
 					BAT *swpbat = ins;
 					bat swp = cc->bat.ibid;
@@ -3551,64 +3570,92 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					BATappend(cur,ins,TRUE);
 					bat_clear(ins);
 				}
+				bat_clear(pi);
 				BATseqbase(ins,BATcount(cur));
-				BATcommit(ins);
-				if (ok == SQL_OK && ttr == gtrans)
-					ok = log_bat(logger, cur, oc->bat.name);
+				BATseqbase(pi,BATcount(cur));
+				bat_destroy(pi);
 			}
-			bat_destroy(ins);
+			BATcommit(ins);
+		}
+		bat_destroy(ins);
 
-			ups = temp_descriptor(cc->bat.ubid);
+		ups = temp_descriptor(cc->bat.ubid);
+		/* any updates */
+		if (BUNlast(ups) > BUNfirst(ups)) {
 			if (BUNlast(ups) > ups->batInserted) {
-				void_replace_bat(cur, ups, TRUE);
+				if (transactions > 1) { 
+					BAT *cu = temp_descriptor(oc->bat.ubid);
+					copy_inserted(cu, ups);
+					bat_destroy(cu);
+				}
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, ups, oc->bat.uname);
-				bat_clear(ups);
-				BATcommit(ups);
 			}
-			bat_destroy(ups);
-
-			if (!tt->cnt)
-				tt->cnt = BATcount(cur)-deleted;
-			bat_destroy(cur);
-
-			if (cc->base.rtime)
-				oc->base.rtime = tr->stime;
-			oc->base.wtime = tr->stime;
-			cc->base.rtime = cc->base.wtime = 0;
-
-			n = n->next;
-			m = m->next;
-		} while (ok == SQL_OK && n && m);
-		if (tt->idxs.set) {
-			for (n = tt->idxs.set->h, m = tt->idxs.set->h; ok == SQL_OK && n && m; n = n->next, m = m->next) {
-				sql_idx *ci = n->data;
-				sql_idx *oi = m->data;
-				BAT *ups, *ins, *cur;
-
-				if (!oi->bat.bid)
-					continue;
-	
-				/* for cleared tables the bid is reset */
-				if (ci->bat.bid == 0) {
-					ci -> bat.bid = oi -> bat.bid;
-					temp_dup(ci->bat.bid);
+			if (transactions == 1) { /* flush all */
+				void_replace_bat(cur, ups, TRUE);
+				/* cleanup the old deltas */
+				if (BUNfirst(ups) != ups->batInserted) { 
+					BAT *cu = temp_descriptor(oc->bat.ubid);
+					bat_clear(cu);
+					BATcommit(cu);
+					bat_destroy(cu);
 				}
-				cur = temp_descriptor(oi->bat.bid);
-				if (ft->cleared && ttr == gtrans) {
+				bat_clear(ups);
+			}
+			BATcommit(ups);
+		}
+		bat_destroy(ups);
 
-					bat_clear(cur);
-					ok = log_bat_clear(logger, oi->bat.name);
-					if (ok == SQL_OK) 
-						ok = log_bat_clear(logger, oi->bat.uname);
-				}
+		if (!tt->cnt)
+			tt->cnt = BATcount(cur)-deleted;
+		bat_destroy(cur);
 
-				ins = temp_descriptor(ci->bat.ibid);
+		if (cc->base.rtime)
+			oc->base.rtime = tr->stime;
+		oc->base.wtime = tr->stime;
+		cc->base.rtime = cc->base.wtime = 0;
 
+		n = n->next;
+		m = m->next;
+	} while (ok == SQL_OK && n && m);
+	if (tt->idxs.set) {
+		for (n = tt->idxs.set->h, m = tt->idxs.set->h; ok == SQL_OK && n && m; n = n->next, m = m->next) {
+			sql_idx *ci = n->data;
+			sql_idx *oi = m->data;
+			BAT *ups, *ins, *cur;
+
+			if (!oi->bat.bid)
+				continue;
+
+			/* for cleared tables the bid is reset */
+			if (ci->bat.bid == 0) {
+				ci -> bat.bid = oi -> bat.bid;
+				temp_dup(ci->bat.bid);
+			}
+			cur = temp_descriptor(oi->bat.bid);
+			if (ft->cleared && ttr == gtrans) {
+
+				bat_clear(cur);
+				ok = log_bat_clear(logger, oi->bat.name);
+				if (ok == SQL_OK) 
+					ok = log_bat_clear(logger, oi->bat.uname);
+			}
+
+			ins = temp_descriptor(ci->bat.ibid);
+			/* any inserts */
+			if (BUNlast(ins) > BUNfirst(ins)) {
 				if (BUNlast(ins) > ins->batInserted) {
-					if (BATcount(cur) == 0 && spares == 0 &&
-						transactions == 1 &&
-						BATcount(ins) > 100) {
+					if (transactions > 1) {
+						BAT *ci = temp_descriptor(oi->bat.ibid);
+						append_inserted(ci, ins);
+						bat_destroy(ci);
+					}
+					if (ok == SQL_OK && ttr == gtrans)
+						ok = log_bat(logger, ins, oi->bat.name);
+				}
+				if (transactions == 1) {
+					BAT *pi = temp_descriptor(oi->bat.ibid);
+					if (!BATcount(cur)) {
 						/* swap cur and ins */
 						BAT *swpbat = ins;
 						bat swp = ci->bat.ibid;
@@ -3624,32 +3671,50 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						BATappend(cur,ins,TRUE);
 						bat_clear(ins);
 					}
+					bat_clear(pi);
 					BATseqbase(ins,BATcount(cur));
-					BATcommit(ins);
-					if (ok == SQL_OK && ttr == gtrans)
-						ok = log_bat(logger, cur, oi->bat.name);
-				} 
-				bat_destroy(ins);
-				ups = temp_descriptor(ci->bat.ubid);
+					BATseqbase(pi,BATcount(cur));
+					bat_destroy(pi);
+				}
+				BATcommit(ins);
+			} 
+			bat_destroy(ins);
+			ups = temp_descriptor(ci->bat.ubid);
+			/* any updates */
+			if (BUNlast(ups) > BUNfirst(ups)) {
 				if (BUNlast(ups) > ups->batInserted) {
-					void_replace_bat(cur, ups, TRUE);
+					if (transactions > 1) { 
+						BAT *cu = temp_descriptor(oi->bat.ubid);
+						copy_inserted(cu, ups);
+						bat_destroy(cu);
+					}
 					if (ok == SQL_OK && ttr == gtrans)
 						ok = log_bat(logger, ups, oi->bat.uname);
-					bat_clear(ups);
-					BATcommit(ups);
 				}
-				bat_destroy(ups);
-				bat_destroy(cur);
-
-				if (ci->base.rtime)
-					oi->base.rtime = tr->stime;
-				oi->base.wtime = tr->stime;
-				ci->base.rtime = ci->base.wtime = 0;
+				if (transactions == 1) { /* flush all */
+					void_replace_bat(cur, ups, TRUE);
+					/* cleanup the old deltas */
+					if (BUNfirst(ups) != ups->batInserted) {
+						BAT *cu = temp_descriptor(oi->bat.ubid);
+						bat_clear(cu);
+						BATcommit(cu);
+						bat_destroy(cu);
+					}
+					bat_clear(ups);
+				}
+				BATcommit(ups);
 			}
+			bat_destroy(ups);
+			bat_destroy(cur);
+
+			if (ci->base.rtime)
+				oi->base.rtime = tr->stime;
+			oi->base.wtime = tr->stime;
+			ci->base.rtime = ci->base.wtime = 0;
 		}
-		ft->cleared = 0;
-		ft->base.rtime = ft->base.wtime = 0;
 	}
+	ft->cleared = 0;
+	ft->base.rtime = ft->base.wtime = 0;
 	return ok;
 }
 
@@ -3800,17 +3865,27 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
 	/* did we make changes or is the global changed after we started */
 	if (fi->base.wtime || tr->stime < pfi->base.wtime) {
-		BAT *ins = temp_descriptor(fi->bat.ibid);
-		BAT *upd = temp_descriptor(fi->bat.ubid);
+		BAT *ins, *pi;
+		BAT *upd, *pu;
 
+ 		ins = temp_descriptor(fi->bat.ibid);
+ 		pi = temp_descriptor(pfi->bat.ibid);
 		bat_clear(ins);
-		bat_clear(upd);
-
+		if (BATcount(pi)) 
+			BATappend(ins, pi, TRUE);		
+		BATseqbase(ins,pi->hseqbase);
 		BATcommit(ins);
-		BATcommit(upd);
-
 		bat_destroy(ins);
+		bat_destroy(pi);
+
+		upd = temp_descriptor(fi->bat.ubid);
+ 		pu = temp_descriptor(pfi->bat.ubid);
+		bat_clear(upd);
+		if (BATcount(pu)) 
+			BATins(upd, pu, FALSE);		
+		BATcommit(upd);
 		bat_destroy(upd);
+		bat_destroy(pu);
 		fi->base.wtime = fi->base.rtime = 0;
 	}
 	return SQL_OK;
@@ -3821,16 +3896,27 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we make changes or is the global changed after we started */
 	if (fc->base.wtime || tr->stime < pfc->base.wtime) {
-		BAT *ins = temp_descriptor(fc->bat.ibid);
-		BAT *upd = temp_descriptor(fc->bat.ubid);
+		BAT *ins, *pi;
+		BAT *upd, *pu;
 
+ 		ins = temp_descriptor(fc->bat.ibid);
+ 		pi = temp_descriptor(pfc->bat.ibid);
 		bat_clear(ins);
-		bat_clear(upd);
-
+		if (BATcount(pi)) 
+			BATappend(ins, pi, TRUE);		
+		BATseqbase(ins,pi->hseqbase);
 		BATcommit(ins);
-		BATcommit(upd);
 		bat_destroy(ins);
+		bat_destroy(pi);
+
+		upd = temp_descriptor(fc->bat.ubid);
+ 		pu = temp_descriptor(pfc->bat.ubid);
+		bat_clear(upd);
+		if (BATcount(pu)) 
+			BATins(upd, pu, FALSE);		
+		BATcommit(upd);
 		bat_destroy(upd);
+		bat_destroy(pu);
 		fc->base.wtime = fc->base.rtime = 0;
 	}
 	return SQL_OK;
