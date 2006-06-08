@@ -15,7 +15,7 @@ License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel 
+BuildRequires: MonetDB-devel libxml2-devel
 %endif
 
 %define comp_cc @CC@
