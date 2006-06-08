@@ -2392,9 +2392,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"cast(" + MonetDriver.getSQLTypeMap("\"sqlname\"") + " " +
 				"AS smallint) AS \"DATA_TYPE\", " +
 				"\"digits\" AS \"PRECISION\", " +
-				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\'' AS char) " +
+				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\\'' AS char) " +
 					"ELSE cast(NULL AS char) END) AS \"LITERAL_PREFIX\", " +
-				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\'' AS char) " +
+				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\\'' AS char) " +
 					"ELSE cast(NULL AS char) END) AS \"LITERAL_SUFFIX\", " +
 				"cast(NULL AS varchar(1)) AS \"CREATE_PARAMS\", " +
 				"cast(CASE WHEN \"systemname\" = 'oid' THEN " + DatabaseMetaData.typeNoNulls + " " +
