@@ -1,4 +1,4 @@
 for $doc in doc("symm.xml")/documents/document
-  return (insert-first($doc, element published {text{$doc/@published}}),
-	  insert-first($doc, text{"&#10;"}),
-	  unset-attr($doc, "published"))
+  return (do insert element published {text{$doc/@published}} as first into $doc,
+	  do insert text{"&#10;"} as first into $doc,
+	  do delete $doc/@published)

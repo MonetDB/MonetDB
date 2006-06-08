@@ -3704,6 +3704,7 @@ translateCast (opt_t *f,
             translateCast2DBL (f, rcode, rc, input_type);
             break;
         case ty_untypedAtomic:
+        case ty_qname:
             rcode = (code)?U_A:NORMAL;
             translateCast2STR (f, rcode, rc, input_type);
             break;
@@ -7651,253 +7652,41 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "iter := merge.fetch(3);\n");
         return NORMAL;
     }        
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"insert-first")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_fn,"insert-last")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_fn,"insert-before")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")) == 0)
+    else if (PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsFirst")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsLast")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"insertBefore")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"insertAfter")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"replaceValue")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_upd,"rename")) == 0)
     {
         char *func = PFqname_loc(fnQname);
-        char *update_cmd;
+        char *update_cmd, *arg = "node";
 
-        milprintf(f, "# fn:%s (node, node) as stmt\n", func);
+        if (strcmp(func, "insertIntoAsLast") == 0)
+            update_cmd = "UPDATE_INSERT_LAST";
+        else if (strcmp(func, "insertIntoAsFirst") == 0)
+            update_cmd = "UPDATE_INSERT_FIRST";
+        else if (strcmp(func, "insertBefore") == 0)
+            update_cmd = "UPDATE_INSERT_BEFORE";
+        else if (strcmp(func, "insertAfter") == 0)
+            update_cmd = "UPDATE_INSERT_AFTER";
+        else if (strcmp(func, "replaceValue") == 0) {
+            update_cmd = "UPDATE_REPLACE";
+            arg = "str";
+        } else if (strcmp(func, "rename") == 0) {
+            update_cmd = "UPDATE_RENAME";
+            arg = "str";
+        }
+
+        milprintf(f, "# upd:%s (node, %s) as stmt\n", func, arg);
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        if (strcmp(func, "insert-last") == 0 || strcmp(func, "insert-before") == 0)
-            update_cmd = "UPDATE_INSERT_REV";
-        else
-            update_cmd = "UPDATE_INSERT";
         milprintf(f,
-                  "var docitem := item%03u;\n"
-                  "var dockind := kind%03u;\n"
-                  "var doccont := dockind.get_container();\n"
-                  "var doclevel := mposjoin(docitem, doccont, ws.fetch(PRE_LEVEL));\n"
-                  "var size := mposjoin(docitem, doccont, ws.fetch(PRE_SIZE));\n"
-                  "if (mposjoin(docitem, doccont, ws.fetch(PRE_LEVEL)).uselect(chr(nil)).count() > 0) {\n"
-                  "  ERROR(\"item must not refer to hole\");\n"
-                  "}\n",
-                  counter, counter);
-        if (strcmp(func, "insert-first") == 0)
-            milprintf(f, "doclevel := [chr]([+](doclevel, 1));\n");
-        else if (strcmp(func, "insert-last") == 0)
-            milprintf(f, "doclevel := [chr]([+](doclevel, 1));\n"
-                         "docitem := [oid]([+]([lng](docitem), size));\n");
-        else if (strcmp(func, "insert-before") == 0)
-            milprintf(f, "docitem := [oid]([-]([lng](docitem), 1));\n");
-        else                    /* insert-after */
-            milprintf(f, "docitem := [oid]([+]([lng](docitem), size));\n");
-        milprintf(f,
-                  "int_values := int_values.append([lng](doclevel));\n"
-                  "doclevel := [lng](doclevel).leftjoin(int_values.reverse());\n"
                   "int_values := int_values.append(%s);\n"
-                  "var insitemID := int_values.reverse().find(%s);\n"
-                  "var item1 := constant2bat(insitemID);\n"
-                  "var item2 := constant2bat(docitem);\n"
-                  "var item3 := doclevel;\n"
-                  "var item4 := constant2bat(item);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(dockind);\n"
-                  "var kind3 := constant2bat(INT);\n"
-                  "var kind4 := constant2bat(kind);\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  update_cmd, update_cmd);
-        deleteResult (f, counter);
-        return NORMAL;
-    }        
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")) == 0)
-    {
-        milprintf(f, "# fn:set-attr (node, str, [str, str,] str) as stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
-        if (fun->arity == 3) {
-            counter += 2;
-            milprintf(f,
-                      "var prefix := \"\";\n"
-                      "var uri := \"\";\n");
-        } else {
-            counter++;
-            saveResult (f, counter);
-            translate2MIL (f, NORMAL, cur_level, counter, RRRL(args));
-            counter++;
-            saveResult (f, counter);
-            translate2MIL (f, NORMAL, cur_level, counter, RRRRL(args));
-            milprintf(f,
-                      "var prefix := item%03u;\n"
-                      "if (type(prefix) = bat) {\n"
-                      "  prefix := prefix.leftjoin(str_values);\n"
-                      "} else {\n"
-                      "  prefix := str_values.find(prefix);\n"
-                      "}\n"
-                      "var uri := item%03u;\n"
-                      "if (type(uri) = bat) {\n"
-                      "  uri := uri.leftjoin(str_values);\n"
-                      "} else {\n"
-                      "  uri := str_values.find(uri);\n"
-                      "}\n",
-                      counter - 1, counter);
-        }
-        milprintf(f,
-                  "var loc := item%03u;\n"
-                  "if (type(loc) = bat) {\n"
-                  "  loc := loc.leftjoin(str_values);\n"
-                  "} else {\n"
-                  "  loc := str_values.find(loc);\n"
-                  "}\n"
-                  "# qn := prefix + \"\\001\" + uri + \"\\001\" + loc;\n"
-                  "var qn := prefix.strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\").strconcat(loc);\n"
-                  "str_values := str_values.append(qn);\n"
-                  "qn := constant2bat(qn).leftjoin(str_values.reverse());\n"
-                  "int_values := int_values.append(UPDATE_SETATTR);\n"
-                  "var setattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
-                  "var item1 := constant2bat(setattrID);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := qn;\n"
-                  "var item4 := constant2bat(item);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(STR);\n"
-                  "var kind4 := constant2bat(kind);\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  counter - 2, counter - 3, counter - 3);
-        if (fun->arity == 5) {
-            deleteResult (f, counter);
-            deleteResult (f, counter - 1);
-        }
-        deleteResult (f, counter - 2);
-        deleteResult (f, counter - 3);
-        return NORMAL;
-    }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")) == 0)
-    {
-        milprintf(f, "# fn:unset-attr (node, str [, str, str]) as stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        if (fun->arity == 2) {
-            counter += 2;
-            milprintf(f,
-                      "var loc := item;\n"
-                      "if (type(loc) = bat) {\n"
-                      "  loc := loc.leftjoin(str_values);\n"
-                      "} else {\n"
-                      "  loc := str_values.find(loc);\n"
-                      "}\n"
-                      "var prefix := \"\";\n"
-                      "var uri := \"\";\n");
-        } else {
-            counter++;
-            saveResult (f, counter);
-            translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
-            counter++;
-            saveResult (f, counter);
-            translate2MIL (f, NORMAL, cur_level, counter, RRRL(args));
-            milprintf(f,
-                      "var loc := item%03u;\n"
-                      "if (type(loc) = bat) {\n"
-                      "  loc := loc.leftjoin(str_values);\n"
-                      "} else {\n"
-                      "  loc := str_values.find(loc);\n"
-                      "}\n"
-                      "var prefix := item%03u;\n"
-                      "if (type(prefix) = bat) {\n"
-                      "  prefix := prefix.leftjoin(str_values);\n"
-                      "} else {\n"
-                      "  prefix := str_values.find(prefix);\n"
-                      "}\n"
-                      "var uri := item;\n"
-                      "if (type(uri) = bat) {\n"
-                      "  uri := uri.leftjoin(str_values);\n"
-                      "} else {\n"
-                      "  uri := str_values.find(uri);\n"
-                      "}\n",
-                      counter - 1, counter);
-        }
-        milprintf(f,
-                  "# qn := prefix + \"\\001\" + uri + \"\\001\" + loc;\n"
-                  "var qn := prefix.strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\").strconcat(loc);\n"
-                  "str_values := str_values.append(qn);\n"
-                  "qn := constant2bat(qn).leftjoin(str_values.reverse());\n"
-                  "int_values := int_values.append(UPDATE_SETATTR);\n"
-                  "var unsetattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
-                  "var item1 := constant2bat(unsetattrID);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := qn;\n"
-                  "var item4 := constant2bat(nil);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(STR);\n"
-                  "var kind4 := constant2bat(int(nil));\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n", counter - 2, counter - 2);
-        if (fun->arity == 4) {
-            deleteResult (f, counter);
-            deleteResult (f, counter - 1);
-        }
-        deleteResult (f, counter - 2);
-        return NORMAL;
-    }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")) == 0)
-    {
-        milprintf(f, "# fn:set-text (node, str) as stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f,
-                  "int_values := int_values.append(UPDATE_SETTEXT);\n"
-                  "var settextID := int_values.reverse().find(UPDATE_SETTEXT);\n"
-                  "var item1 := constant2bat(settextID);\n"
+                  "var cmdID := int_values.reverse().find(%s);\n"
+                  "var item1 := constant2bat(cmdID);\n"
                   "var item2 := constant2bat(item%03u);\n"
                   "var item3 := constant2bat(item);\n"
                   "var item4 := constant2bat(nil);\n"
@@ -7906,11 +7695,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "var kind3 := constant2bat(kind);\n"
                   "var kind4 := constant2bat(int(nil));\n"
                   "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik%03u.mirror(),\n"
                   "                           item1, item2,\n"
                   "                           kind1, kind2,\n"
                   "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik%03u.mirror(),\n"
                   "                           item3, item4,\n"
                   "                           kind3, kind4,\n"
                   "                           iter, iter);\n"
@@ -7921,88 +7710,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
                   "iter := merge.fetch(3);\n",
-                  counter, counter);
+                  update_cmd, update_cmd, counter, counter, counter, counter);
         deleteResult (f, counter);
-        return NORMAL;
-    }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")) == 0)
-    {
-        milprintf(f, "# fn:set-comment (node, str) as stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f,
-                  "int_values := int_values.append(UPDATE_SETCOMMENT);\n"
-                  "var setcommentID := int_values.reverse().find(UPDATE_SETCOMMENT);\n"
-                  "var item1 := constant2bat(setcommentID);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := constant2bat(item);\n"
-                  "var item4 := constant2bat(nil);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(kind);\n"
-                  "var kind4 := constant2bat(int(nil));\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  counter, counter);
-        deleteResult (f, counter);
-        return NORMAL;
-    }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")) == 0)
-    {
-        milprintf(f, "# fn:set-pi (node, str, str) as stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
-        milprintf(f,
-                  "int_values := int_values.append(UPDATE_SETPI);\n"
-                  "var setpiID := int_values.reverse().find(UPDATE_SETPI);\n"
-                  "var item1 := constant2bat(setpiID);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := constant2bat(item%03u);\n"
-                  "var item4 := constant2bat(item);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(kind%03u);\n"
-                  "var kind4 := constant2bat(kind);\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  counter - 1, counter, counter - 1, counter);
-        deleteResult (f, counter);
-        deleteResult (f, counter - 1);
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
@@ -11102,7 +10811,7 @@ static const char* _PFstopMIL(bool is_update) {
            "  time_exec := time_print - time_exec;\n"
            "  \n");
     if (is_update)
-        strcat(buf, "  play_update_tape(ws, item, kind);\n");
+        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
     else
         strcat(buf,
                "  if (genType.search(\"none\") = -1)\n"

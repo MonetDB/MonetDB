@@ -1,1 +1,1 @@
-set-attr(exactly-one(doc("document.xml")/document), "attr", "value")
+do insert attribute attr {"value"} into exactly-one(doc("document.xml")/document)

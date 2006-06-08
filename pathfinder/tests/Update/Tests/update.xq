@@ -1,77 +1,103 @@
+let $testdoc := doc("testdoc.xml") return (
 (:
-test set-attr with the following tests:
--- non-existing attr non-existing qn non-existing value
--- non-existing attr existing qn non-existing value
--- non-existing attr non-existing qn existing value
--- non-existing attr existing qn existing value
--- existing attr non-existing value
--- existing attr existing value
-test unset-attr with the following tests:
--- existing attr
--- non-existing attr
--- just inserted attr
+test insert attribute with the following tests:
+-- non-existing qn non-existing value
+-- existing qn non-existing value
+-- non-existing qn existing value
+-- existing qn existing value
+test rename attribute with the following tests:
+-- non-existing qn
+-- existing qn
+test replace attribute value with the following tests:
+-- non-existing value
+-- existing value
+test delete attribute
+
+In passing, also test that rename preserves identity.
 :)
-for $elem in doc("testdoc.xml")/document/element
-	return (set-attr($elem, "author", "Sjoerd Mullender"),
-		set-attr($elem, "title", "test element"),
-		set-attr($elem, "attr", text{$elem/@attribute}),
-		set-attr($elem, "attribute", "attribute value"),
-		set-attr($elem, "copyright", text{$elem/../@copyright}),
-		unset-attr($elem, "dummy"),
-		unset-attr($elem, "non-existent"),
-		set-attr($elem, "to-be-removed", "nonsense"),
-		unset-attr($elem, "to-be-removed"))
+for $elem in $testdoc/document/element
+	return (do insert attribute author {"Sjoerd Mullender"} into exactly-one($elem),
+		do insert attribute title {"test element"} into exactly-one($elem),
+		do insert attribute attr {text{$elem/@attribute}} into exactly-one($elem),
+		do insert attribute copyright {text{$elem/../@copyright}} into exactly-one($elem),
+
+		do rename exactly-one($elem/@attribute) with "Attribute",
+
+		do rename exactly-one($elem/@dummy) with "foo",
+		do replace value of exactly-one($elem/@xyzzy) with "hgulp",
+		do replace value of exactly-one($elem/@dummy) with "bar")
 ,
-(: test set-comment with the following tests:
+do delete ($testdoc/@title, $testdoc/@copyright, $testdoc/@foo)
+,
+(: test changing comment value with the following test:
 -- new text
 :)
-for $elem in doc("testdoc.xml")//comment()
-	return set-comment($elem, concat(text{$elem}, "foo "))
+for $elem in $testdoc//comment()
+	return do replace value of exactly-one($elem) with concat(text{$elem}, "foo ")
 ,
-(: test set-text with the following tests:
+(: test changing CDATA content with the following tests:
 -- new text
 :)
-for $elem in doc("testdoc.xml")/document/element/text()
-	return set-text($elem, concat("element ", text{$elem}))
+for $elem in $testdoc/document/element/text()
+	return do replace value of exactly-one($elem) with concat("element ", text{$elem})
 ,
-(: test set-pi with the following tests:
+(: test chaning processing instructions with the following tests:
 -- existing instruction, new target
 -- new instruction, existing target
--- new instruction, new target
+-- new instruction, new target - XXX can't be done since there is no PI construction
+-- rename instruction and replace target
 :)
-(set-pi(exactly-one(doc("testdoc.xml")//processing-instruction(pi0000)), "pi0000", "foo"),
- set-pi(exactly-one(doc("testdoc.xml")//processing-instruction(pi1000)), "bar", "value 1000"),
- set-pi(exactly-one(doc("testdoc.xml")//processing-instruction(pi2000)), "target", "instruction"))
+(do replace value of exactly-one($testdoc//processing-instruction(pi0000)) with "foo",
+ do rename exactly-one($testdoc//processing-instruction(pi1000)) with "bar",
+ do replace exactly-one($testdoc//processing-instruction(pi2000)) with (: <?target instruction?> :) exactly-one($testdoc//processing-instruction(pi4000)),
+ do rename exactly-one($testdoc//processing-instruction(pi5000)) with "xyzzy",
+ do replace value of exactly-one($testdoc//processing-instruction(pi5000)) with "plugh")
 ,
 (: test delete with the following tests:
--- delering text
+-- deleting text
 -- deleting element
 -- deleting comment
 -- deleting processing instruction
 :)
-(delete(exactly-one(doc("testdoc.xml")/document/text()[1])),
- delete(exactly-one(doc("testdoc.xml")/document/element[10])),
- delete(exactly-one(doc("testdoc.xml")/document/comment()[3])),
- delete(exactly-one(doc("testdoc.xml")//processing-instruction("pi4000"))))
+do delete ($testdoc/document/text()[1],
+	   $testdoc/document/element[10],
+	   $testdoc/document/comment()[3],
+	   $testdoc//processing-instruction("pi4000"))
 ,
 (: test insert with the following tests:
--- test multiple insert-first
--- test multiple insert-last
--- test multiple insert-before
--- test multiple insert-after
+-- test multiple insert as first
+-- test multiple insert as last
+-- test multiple insert before
+-- test multiple insert after
 :)
-for $elem in doc("testdoc.xml")/document/element[@attribute = 10]
-  return (insert-first($elem, <a/>),
-	  insert-first($elem, <b/>))
+for $node in $testdoc/document/element[@attribute = 10]
+  return typeswitch ($node)
+         case $elem as element()
+       return (do insert <a/> as first into $elem,
+                   do insert <b/> as first into $elem)
+         default return error ("we expect a single element as input")
 ,
-for $elem in doc("testdoc.xml")/document/element[@attribute = 20]
-  return (insert-last($elem, <a/>),
-	  insert-last($elem, <b/>))
+for $node in $testdoc/document/element[@attribute = 20]
+  return typeswitch ($node)
+         case $elem as element()
+       return (do insert <a/> as last into $elem,
+                   do insert <b/> as last into $elem)
+         default return error ("we expect a single element as input")
+(:
+for $elem in $testdoc/document/element[@attribute = 10]
+  return (do insert <a/> as first into exactly-one($elem),
+	  do insert <b/> as first into exactly-one($elem))
 ,
-for $elem in doc("testdoc.xml")/document/element[@attribute = 30]
-  return (insert-before($elem, <a/>),
-	  insert-before($elem, <b/>))
+for $elem in $testdoc/document/element[@attribute = 20]
+  return (do insert <a/> as last into exactly-one($elem),
+	  do insert <b/> as last into exactly-one($elem))
+:)
 ,
-for $elem in doc("testdoc.xml")/document/element[@attribute = 40]
-  return (insert-after($elem, <a/>),
-	  insert-after($elem, <b/>))
+for $elem in $testdoc/document/element[@attribute = 30]
+  return (do insert <a/> before exactly-one($elem),
+	  do insert <b/> before exactly-one($elem))
+,
+for $elem in $testdoc/document/element[@attribute = 40]
+  return (do insert <a/> after exactly-one($elem),
+	  do insert <b/> after exactly-one($elem))
+)
