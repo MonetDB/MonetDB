@@ -300,7 +300,7 @@ reconnect(backend *sql, MalBlkPtr mb, stmt *s, int loc)
 	InstrPtr q = NULL;
 	char *dbalias = NULL;
 
-	if (sql->nr_locations > s->location && sql->locations[loc]) {
+	if (sql->nr_locations > loc && sql->locations[loc]) {
 		dbalias = sql->locations[loc];
 	} else {
 		int port;
