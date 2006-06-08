@@ -486,29 +486,32 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
 /* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
  * correct the batsize will always shrink!
  */
-static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
-    BAT* b = shredCtx->dstBAT[idx].bat;
+static int setBATcapacity(shredBAT* sb, int n, int final) {
+    BAT* b = sb->bat;
 
     void* top;
 
     int bottomTop = n;
-    if (n >= (1<<18)) { /* use mmap if we have more than 256K tuples in the pre table */
+    if (final) {
+      /* if this is the final resize of the BAT */
+      if (n >= (1<<18)) { /* use mmap if we have more than 256K tuples in the pre table */
         BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+      }
     }
-    shredCtx->dstBAT[idx].cnt = n;
+    sb->cnt = n;
     /* switch( shredCtx->dstBAT[idx].def->tailType ) { */
     switch( b->ttype ) {
         case TYPE_int :
-            top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
+            top = &sb->cast.natCAST[bottomTop];
             break;
         case TYPE_chr: {
-                           b->batBuns->free = n; 
-                           BATsetcount(b, n);
-                           b->tsorted = 0;
-                           return 1;
-                       }
+              b->batBuns->free = n; 
+              BATsetcount(b, n);
+              b->tsorted = 0;
+              return 1;
+            }
         case TYPE_oid:
-            top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
+            top = &sb->cast.oidCAST[bottomTop];
             break;
         case TYPE_void:
             GDKerror("shredder.mx:setBATcapacity: unexpected void tailType\n");
@@ -571,13 +574,13 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         return NULL;
     }
     if (
-            (setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre)  < 0) ||
-            (setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre)  < 0) ||
-            (setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre)  < 0) ||
-            (setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre)  < 0) ||
-            (setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr) < 0) ||
-            (setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr) < 0) ||
-            (setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr) < 0)
+        (setBATcapacity(&shredCtx->dstBAT[PRE_SIZE], shredCtx->nnode_pre, TRUE)  < 0) ||
+        (setBATcapacity(&shredCtx->dstBAT[PRE_LEVEL],shredCtx->nnode_pre, TRUE)  < 0) ||
+        (setBATcapacity(&shredCtx->dstBAT[PRE_PROP], shredCtx->nnode_pre, TRUE)  < 0) ||
+        (setBATcapacity(&shredCtx->dstBAT[PRE_KIND], shredCtx->nnode_pre, TRUE)  < 0) ||
+        (setBATcapacity(&shredCtx->dstBAT[ATTR_OWN], shredCtx->nnode_attr,TRUE) < 0) ||
+        (setBATcapacity(&shredCtx->dstBAT[ATTR_QN],  shredCtx->nnode_attr,TRUE) < 0) ||
+        (setBATcapacity(&shredCtx->dstBAT[ATTR_PROP],shredCtx->nnode_attr,TRUE) < 0)
        )
         return NULL;
 
@@ -587,8 +590,8 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 	 * size.
 	 */
     	if (
-            (setBATcapacity(shredCtx,PRE_NID, shredCtx->nnode_pre)  < 0) ||
-            (setBATcapacity(shredCtx,NID_RID, PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree))  < 0) )
+            (setBATcapacity(&shredCtx->dstBAT[PRE_NID], shredCtx->nnode_pre, TRUE)  < 0) ||
+            (setBATcapacity(&shredCtx->dstBAT[NID_RID], PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree), TRUE)  < 0) )
 	   return NULL;
 #endif
     } else {
@@ -883,7 +886,12 @@ static int incrBATsize(shredBAT* sb, nat i) {
      * code. It does however fix the examples provided with the
      * bugs.
      */
-    sb->bat->batBuns->free = sb->size * sizeof(oid); 
+    if ( 1 ) {
+      if ( setBATcapacity(sb,sb->size,FALSE) < 0 ) 
+          return -1;
+    } else {
+      sb->bat->batBuns->free = sb->size * sizeof(oid); 
+    }
     /* end-of-hack */
     sb->size= newsize;
     if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
