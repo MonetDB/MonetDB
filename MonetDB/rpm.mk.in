@@ -38,13 +38,13 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
 	php='--without-php';
-	( if [ "@HAVE_PEAR_FALSE@" = "#" ] ; then php=''; fi )
+	if [ "@HAVE_PEAR_FALSE@" = "#" ] ; then php=''; fi 
 	perl='--without-perl';
-	( if [ "@HAVE_PERL_SWIG_FALSE@" = "#" ] ; then perl=''; fi )
+	if [ "@HAVE_PERL_SWIG_FALSE@" = "#" ] ; then perl=''; fi 
 	python='--without-python';
-	( if [ "@HAVE_PYTHON_SWIG_FALSE@" = "#" ] ; then python=''; fi )
+	if [ "@HAVE_PYTHON_SWIG_FALSE@" = "#" ] ; then python=''; fi 
 	java='--without-java';
-	( if [ "@HAVE_JAVA_FALSE@" = "#" ] ; then java=''; fi )
+	if [ "@HAVE_JAVA_FALSE@" = "#" ] ; then java=''; fi 
 
 	$(RPMBUILD) ${php} ${perl} ${python} ${java} --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
