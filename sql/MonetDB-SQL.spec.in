@@ -20,8 +20,8 @@ BuildRequires: MonetDB-devel
 %endif
 
 %{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
+%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %define comp_cc @CC@
-
 %define builddoc 0
 
 # groups of related archs
@@ -44,9 +44,12 @@ Group: System
 # Requires: java
 %endif
 
+%if %{?_with_python:1}%{!?_with_python:0}
 %package python
 Summary: MonetDB SQL python interface
 Group: System
+BuildRequires: python swig
+%endif
 
 %package server
 Summary: MonetDB SQL server modules
@@ -77,11 +80,13 @@ Requires: MonetDB-client
 Add the MonetDB SQL java description here
 %endif
 
+%if %{?_with_python:1}%{!?_with_python:0}
 %description python
 Add the MonetDB SQL python description here
 Requires: %{name}-odbc
 Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
+%endif
 
 %description server
 Add the MonetDB SQL server module description here
@@ -113,7 +118,8 @@ rm -rf $RPM_BUILD_ROOT
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
 	--with-monet=%{prefix} \
-	 %{?_with_java} %{?_without_java} \
+	%{?_with_python} %{?_without_python} \
+	%{?_with_java} %{?_without_java} \
 
 make
 
@@ -143,9 +149,11 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/share/sql/Tests/Test_*.class
 %endif
 
+%if %{?_with_python:1}%{!?_with_python:0}
 %files python
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{python_libdir}/*
+%endif
 
 %files server
 %defattr(-,monetdb,monetdb) 

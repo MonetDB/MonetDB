@@ -37,9 +37,11 @@ rpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
+	python='--without-python';
+	if [ "@HAVE_PYTHON_SWIG_FALSE@" = "#" ] ; then python=''; fi 
 	java=''
 	( if [ "@HAVE_JAVA_TRUE@" = "#" ] ; then java='--without-java'; fi )
 
-	$(RPMBUILD) ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) ${python} ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
 	rm -rf $(rpmtopdir)/BUILD
