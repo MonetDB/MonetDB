@@ -47,7 +47,7 @@ pattern eval(dbalias:str, cmd:str):str
 address SQLstatement
 comment "Execute a single sql statement";
 
-command eval(cmd:str):str 
+command eval(cmd:str, ac:int):str 
 address SQLstatement
 comment "Execute a single sql statement";
 

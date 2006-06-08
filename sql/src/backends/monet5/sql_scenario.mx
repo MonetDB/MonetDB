@@ -392,7 +392,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 str
-SQLstatementIntern(str *ret, str *expr, int execute)
+SQLstatementIntern(str *ret, str *expr, int execute, int auto_commit)
 {
 	int err = 0;
 	mvc o, *m;
@@ -451,7 +451,7 @@ SQLstatementIntern(str *ret, str *expr, int execute)
 	m->params = NULL;
 	m->argc = 0;
 	m->sym = NULL;
-	m->session->auto_commit = 0;
+	m->session->auto_commit = auto_commit;
 
 @-
 System has been prepared to parse it and generate code
@@ -536,14 +536,14 @@ endofcompile:
 }
 
 str
-SQLstatement(str *ret, str *expr)
+SQLstatement(str *ret, str *expr, int *ac)
 {
-	return SQLstatementIntern(ret,expr, TRUE);
+	return SQLstatementIntern(ret,expr, TRUE, *ac);
 }
 
 str
 SQLcompile(str *ret, str *expr){
-	return SQLstatementIntern(ret,expr, FALSE);
+	return SQLstatementIntern(ret,expr, FALSE, 0);
 }
 
 static int

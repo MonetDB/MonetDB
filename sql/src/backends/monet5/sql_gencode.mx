@@ -352,6 +352,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q,0)= newTmpVariable(mb, TYPE_str);
 			q = pushStr(mb, q, _strdup(dbalias));
 			q = pushStr(mb, q, _strdup(s->op1.sval));
+			q = pushInt(mb, q, 1);
 			if(s->op2.stval) {
 				s = s->op2.stval;	
 				q = newAssignment(mb);
@@ -370,6 +371,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt1(mb, sqlRef, "eval");
 			s->nr = getDestVar(q);
 			q = pushArgument(mb, q, o1);
+			q = pushInt(mb, q, 0);
 		} break;
 		case st_var:{
 			q = newAssignment(mb);
