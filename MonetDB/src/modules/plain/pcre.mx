@@ -632,7 +632,7 @@ sql2pcre(str *r, str pat, str esc_str)
 	int len = strlen(pat);
 	int escaped = 0;
 	int hasWildcard = 0;
-	char *ppat = GDKmalloc(MAX(3,len*2)+1);
+	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
 	int esc = esc_str[0]; /* should change to utf8_convert() */
 	int specials = 0;
 
