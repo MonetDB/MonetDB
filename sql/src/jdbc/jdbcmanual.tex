@@ -218,7 +218,7 @@ Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 // request a Connection to a MonetDB/XQuery server running on
 // 'localhost' using the explicit xquery language
 Connection con = DriverManager.getConnection(
-    "jdbc:monetdb://localhost:45789/database?language=xquery",
+    "jdbc:monetdb://localhost/database?language=xquery",
     "monetdb",
     "monetdb"
 );
@@ -230,11 +230,9 @@ while (rs.next()) {
 }
 rs.close();
 \end{verbatim}
-In the above example, two things are different then for a normal SQL
-connection: 1) the port number to connect to is given explicitly, and 2)
-the language to use is specified.  Normally, the MonetDB/XQuery server
-runs on port \texttt{45789}.  If this is not the case, the JDBC
-connection URL has to reflect this.  The MonetDB JDBC driver supports
+In the above example, there is one thing different then for a normal SQL
+connection: the language to use is specified in the connection URL.
+The MonetDB JDBC driver supports
 additional settings and/or hints through arguments in the connection
 URL.  For a list of supported options, use the
 \texttt{java.sql.Driver}'s capabilities to report about this.  The

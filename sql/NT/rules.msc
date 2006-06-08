@@ -58,7 +58,6 @@ NATIVE_WIN32 = 1
 LIBC_INCS = $(PTHREAD_INCS)
 SOCKET_LIBS = wsock32.lib
 
-CXX=$(CC)
 MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
 MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
 CP=copy
@@ -98,12 +97,6 @@ MONET4=yes
 
 .mx.c:
 	$(MX) $(MXFLAGS) -x c $<
-
-{$(SRCDIR)}.mx.cxx:
-	$(MX) $(MXFLAGS) -x C $<
-
-.mx.cxx:
-	$(MX) $(MXFLAGS) -x C $<
 
 {$(SRCDIR)}.mx.m:
 	$(MX) $(MXFLAGS) -x m $<
@@ -168,15 +161,5 @@ MONET4=yes
 .c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-{$(SRCDIR)}.cxx.obj:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
-
-.cxx.obj:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
-
-# needed for yacc/lex output generated under unix 
-.cc.cxx:
-	rename $< $@
-
-.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc
+.SUFFIXES: .m .mx .proto_h .mil .glue_c
 .PRECIOUS: .m 
