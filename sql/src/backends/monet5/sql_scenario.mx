@@ -515,6 +515,8 @@ We don;t search the cache for a previous incarnation.
 			if (oldstop == 2) /* put main.end back */
 				pushEndInstruction(c->curprg->def); 
 			freeVariables(c->curprg->def, c->glb, oldvtop);
+
+			SQLautocommit(c, m);
 		}
 	}
 #ifdef _SQL_COMPILE
