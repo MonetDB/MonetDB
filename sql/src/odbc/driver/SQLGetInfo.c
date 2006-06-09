@@ -467,11 +467,14 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_OUTER_JOINS:
 		sValue = "Y";
 		break;
-	case SQL_SCHEMA_TERM:
 	case SQL_PROCEDURE_TERM:
+		sValue = "procedure";
+		break;
+	case SQL_SCHEMA_TERM:
+		sValue = "schema";
+		break;
 	case SQL_TABLE_TERM:
-		/* no Terms supported */
-		sValue = "";
+		sValue = "table";
 		break;
 	case SQL_SCROLL_CONCURRENCY:
 		nValue = SQL_SCCO_READ_ONLY;
