@@ -732,8 +732,11 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 				bn->hloc = bm->tloc = b->hloc;
 				bn->tloc = bm->hloc = b->tloc;
 			}
+			/* first/inserted must point equally far into the heap as in the source */
+			bn->batFirst = Bunbase(bn) + (b->batFirst - Bunbase(b));
+			bn->batInserted = Bunbase(bn) + (b->batInserted - Bunbase(b));
 
-			/* if we have copy-on-rite heaps, bn is a logical view on b to ensure the heaps stay stable */
+			/* if we have copy-on-write heaps, bn is a logical view on b to ensure the heaps stay stable */
 			if (remap || hremap || tremap) {
 				bn->batLview = TRUE;
 				BBPshare(bn->batParentid = ABS(b->batCacheid));
