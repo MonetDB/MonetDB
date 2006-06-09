@@ -159,16 +159,19 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	return ret;
 #endif
 } 
-void showErrors(){
-	Client cntxt= MCgetClient();
+
+void showErrors() {
+	Client cntxt = MCgetClient();
 	int i;
-	if( cntxt->errbuf==0 ) return;
-	if( *cntxt->errbuf){
-	    i= strlen(cntxt->errbuf);
-	    stream_printf(cntxt->fdout,"%s",cntxt->errbuf);
-	    if( cntxt->errbuf[i-1]!='\n') 
-	        stream_printf(cntxt->fdout,"\n");
-	    *cntxt->errbuf=0;
+	if (cntxt->errbuf == '\0')
+		return;
+
+	if (*cntxt->errbuf) {
+		i = strlen(cntxt->errbuf);
+		stream_printf(cntxt->fdout, "%s", cntxt->errbuf);
+		if (cntxt->errbuf[i - 1] != '\n')
+			stream_printf(cntxt->fdout, "\n");
+		*cntxt->errbuf = '\0';
 	}
 }
 
