@@ -1989,9 +1989,11 @@ buffer_get_buf(buffer *b)
 {
 	char *r = b->buf;
 
+	if (b->pos == b->len && (b->buf = realloc(b->buf, b->len+1)) == NULL) 
+		return NULL;
 	r[b->pos] = '\0';
-	b->buf = malloc(BUFSIZ);
-	b->len = b->buf ? BUFSIZ : 0;
+	b->buf = malloc(b->len);
+	b->len = b->buf ? b->len : 0;
 	b->pos = 0;
 	return r;
 }
