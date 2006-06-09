@@ -1497,7 +1497,7 @@ shred_start_element(void *xmlCtx,
         }
         int attrType;
 
-        if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)*atts)) ) {
+        if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)a_tag)) ) {
             if ( !handleID_IDREF(shredCtx,(char*)e_loc,node.pre,(char*)a_tag,(char*)a_val,attrType) ) {
                 BAILOUT(xmlCtx);
             }
