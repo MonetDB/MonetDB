@@ -261,7 +261,9 @@ gdk_export size_t _MT_pagesize;
 #include <pthread.h>
 #ifndef WIN32
 /* Linux gprof messes up on multithreaded programs */
+#ifdef PROFILE
 #define pthread_create gprof_pthread_create
+#endif
 #endif
 #endif
 

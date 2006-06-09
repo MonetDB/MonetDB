@@ -1662,7 +1662,7 @@ gdk_export void GDKqsort_rev(void *a, void *base, size_t n, int width, int tpe, 
 #define BAThkey(b)	(b->hkey != FALSE || BAThdense(b))
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
-#define BATsetcount(b,cnt)	((b)->batCount = cnt, (b)->batDirtydesc = TRUE)
+#define BATsetcount(b,cnt)	((b)->batCount = (cnt),(b)->batDirtydesc = TRUE)
 @
 @}
 

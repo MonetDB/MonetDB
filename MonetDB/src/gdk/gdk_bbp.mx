@@ -2081,7 +2081,7 @@ BBPquickdesc(bat bid, int delaccess)
 
 @+ Small BAT Cache
 @T
-PETER: rewote the batcache to make it stable with views and actually faster
+PETER: rewrote the batcache to make it stable with views and actually faster
        than allocating new bats (I guess that was the purpose of it)
 
 this is tuned to minimizing the needed actions to get a BAT, in particular
@@ -2417,8 +2417,8 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 
         	BATsetcount(b,0);
 
-		if (b->hheap) memset(b->hheap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
-		if (b->theap) memset(b->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
+		if (b->hheap) memset(b->hheap->base, 0, b->hheap->free = GDK_STRHASHTABLE*sizeof(var_t));
+		if (b->theap) memset(b->theap->base, 0, b->theap->free = GDK_STRHASHTABLE*sizeof(var_t));
 		return b;
 	}
 	return NULL;

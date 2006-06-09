@@ -202,7 +202,8 @@ VIEWcreate_(BAT *b, int slice_view)
 
 	BATcheck(b, "VIEWcreate_: bat required");
 	bn = recycled = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (recycled == NULL)
+
+	if (!recycled)
 		bn = BATcreatedesc(b->htype, b->ttype, FALSE);
 
 	parent = VIEWparent(b);
@@ -222,6 +223,7 @@ a void. Take care to zero the accelerator data, though.
 	bn->dims = b->dims;
 	*bn->H = *b->H;
 	*bn->T = *b->T;
+	assert(bn->U->buns.base == NULL);
 	*bn->U = *b->U;
 	bn->H->props = bn->T->props = NULL;
 	BATinit_idents(bn);

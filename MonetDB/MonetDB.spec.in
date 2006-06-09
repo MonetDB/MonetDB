@@ -24,9 +24,8 @@ BuildRequires: python
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
 %{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
-
-%define builddoc 0
 %define comp_cc @CC@
+%define builddoc 0
 
 # groups of related archs
 %define all_x86 i386 i586 i686

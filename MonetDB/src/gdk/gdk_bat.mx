@@ -218,13 +218,13 @@ BATnewstorage(int ht, int tt, size_t cap)
 	BAT *bn = BBPrecycle(ht,tt,cap);
 	if (bn) return bn;
 	
-	bn = BATcreatedesc(ht, tt, TRUE);
+	bn = BATcreatedesc(ht, tt, (ht||tt));
 	if (bn == NULL) return NULL;
 
 	BATsetdims(bn);
 
 	/* alloc the main heaps */
-	if (HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
+	if ((ht||tt) && HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
 		return NULL;
 	}
 	if (ATOMheap(ht, bn->hheap, cap) < 0) {
@@ -346,6 +346,7 @@ BATextend(BAT *b, size_t newcap)
 	size_t heap_size;
 	int ret;
 
+	assert(b->htype || b->ttype);
 	BATcheck(b, "BATextend");
 @- 
 The main issue is to properly predict the new BAT size.
@@ -889,17 +890,22 @@ This code assumes that new elements are appended to the BUN list.
 				bm->@2seqbase = *(oid*) @1;
 			} else if (*(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
 		 		b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
+				countonly=0;
 				if (b == NULL)
 					return b;
 			}
 		} else { 
 		 	b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
+			countonly=0;
+			if (b == NULL)
+				return b;
 		}
 	}
 @c
 BAT *
 BUNins(BAT *b, ptr h, ptr t, bit force)
 {
+	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	BUN p;
 	BAT *bm;
 
@@ -1024,7 +1030,12 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 				b->tkey = bm->hkey |= TRUE;
 			}
 		}
-		bunfastins(b, h, t);
+		if (!countonly) {
+			bunfastins(b, h, t);
+		} else {
+ 			b->batBuns->free += 1;
+			BATsetcount(b, b->batCount+1);
+		}
 
 		/* first adapt the hashes; then the user-defined accelerators.
 		 * REASON: some accelerator updates (qsignature) use the hashes! 
@@ -1074,6 +1085,7 @@ BUNappend(BAT *b, ptr t, bit force)
 	BAT *bm;
 	ptr h = NULL;
 	oid id = 0;
+	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	BATcheck(b, "BUNappend");
 	bm = BBP_cache(-b->batCacheid);
@@ -1140,6 +1152,7 @@ BUNappend(BAT *b, ptr t, bit force)
 				int i = BATcount(b);
 
 				b = BATmaterializet(b, BATcount(b)+1);
+				countonly=0;
 				b->T->nodense = i;
 				b->tdense = FALSE;
 				if (b->tsorted & 1) {
@@ -1175,13 +1188,20 @@ BUNappend(BAT *b, ptr t, bit force)
 			b->tkey = bm->hkey |= b->tdense = TRUE;
 			b->tseqbase = bm->hseqbase = *(oid *) t;
 		} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-			if (*(oid*)t == oid_nil)
+			if (*(oid*)t == oid_nil) {
 				BATmaterializet(b, BATcount(b)+1);
-			else 
+				countonly=0;
+			} else {
 				b->tseqbase = bm->hseqbase = *(oid*)t;  
+			}
 		}
 	}
-	bunfastins(b, h, t);
+	if (!countonly) {
+		bunfastins(b, h, t);
+	} else {
+ 		b->batBuns->free += 1;
+		BATsetcount(b, b->batCount+1);
+	}
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes! 
