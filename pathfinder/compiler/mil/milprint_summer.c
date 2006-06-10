@@ -7660,7 +7660,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
              PFqname_eq(fnQname, PFqname (PFns_upd,"rename")) == 0)
     {
         char *func = PFqname_loc(fnQname);
-        char *update_cmd, *arg = "node";
+        char *update_cmd = NULL, *arg = "node";
 
         if (strcmp(func, "insertIntoAsLast") == 0)
             update_cmd = "UPDATE_INSERT_LAST";
