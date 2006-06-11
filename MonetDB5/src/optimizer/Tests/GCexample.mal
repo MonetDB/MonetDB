@@ -1,9 +1,0 @@
-    t1 := bat.new(:void,:int);
-    t2 := array.grid(132000,8,1,0);
-    t3 := array.grid(1,100,10560,0);
-    t4 := array.grid(1,100,10560,0,8);
-    t5 := batcalc.+(t2,t4);
-    t6 := batcalc.oid(t5);
-    t7 := algebra.join(t6,t1);
-	optimizer.garbageCollector();
-	mdb.list();
