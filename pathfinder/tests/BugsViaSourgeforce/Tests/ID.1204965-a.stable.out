@@ -21,11 +21,6 @@ Over..
 # 22:54:46 >  Mtimeout -timeout 120 ./ID.1204965-a.XQUERY ID.1204965-a 
 # 22:54:46 >  
 
-
-# 17:40:20 >  
-# 17:40:20 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=51707 -lxquery -sxml /net/corona.ins.cwi.nl/export/scratch0/manegold/tmp/_Current_PREFIX__GNU_64_d_--enable-debug_/mTests/tests/BugsViaSourgeforce/ID.1204965-a.xquery
-# 17:40:20 >  
-
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 <authlist><author><name>Abiteboul</name><books><title>Data on the Web</title></books></author><author><name>Buneman</name><books><title>Data on the Web</title></books></author><author><name>Stevens</name><books><title>Advanced Programming

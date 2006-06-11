@@ -21,9 +21,8 @@ var frag := bat(void,oid).seqbase(0@0).append(1@0).append(2@0).append(2@0).appen
 iter.access(BAT_READ);
 item.access(BAT_READ);
 frag.access(BAT_READ);
-item := mposjoin(item, frag, ws.fetch(NID_RID));
                                                                                                                                                              
-proc print_scj (bat[void,bat] scj) : void { print(scj.fetch(0), mposjoin(scj.fetch(1), scj.fetch(2), ws.fetch(PRE_NID)), scj.fetch(2)); }
+proc print_scj (bat[void,bat] scj) : void { print(scj.fetch(0), scj.fetch(1), scj.fetch(2)); }
 
 loop_lifted_descendant_step(iter,item,frag,ws).print_scj();
 #---------------------------------------------------------#

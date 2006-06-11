@@ -54,17 +54,6 @@ typedef struct PFfun_t PFfun_t;
 /* typedef struct PFfun_t PFfun_t; */
 
 /**
- * Data structure to hold signature information.
- * (builtin functions).
- */
-struct PFfun_sig_t {
-    PFty_t   *par_ty; /**< builtin: array of formal parameter types */
-    PFty_t    ret_ty; /**< builtin: return type */
-};
-
-typedef struct PFfun_sig_t PFfun_sig_t;
-
-/**
  * Data structure to hold information about XQuery functions.
  * Functions can be either predefined (builtin, XQuery F&O) functions or
  * user-defined.
@@ -79,9 +68,8 @@ struct PFfun_t {
     PFqname_t      qname;      /**< function name */
     unsigned int   arity;      /**< number of arguments */
     bool           builtin;    /**< is this a builtin (XQuery F&O) function? */
-    unsigned int sig_count;    /**< number of signatures, >1 for dynamically
-                                    overloaded functions. */
-    PFfun_sig_t   *sigs;       /**< signatures */
+    PFty_t        *par_ty;     /**< builtin: array of formal parameter types */
+    PFty_t         ret_ty;     /**< builtin: return type */
     struct PFla_pair_t (*alg) (const struct PFla_op_t *, bool, struct PFla_pair_t *);
     PFvar_t      **params;     /**< list of parameter variables */
     PFcnode_t     *core;
@@ -95,7 +83,7 @@ struct PFfun_t {
 extern PFenv_t *PFfun_env;
 
 /** allocate a new struct to describe a (built-in or user) function */
-PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, unsigned int, PFfun_sig_t *,
+PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, PFty_t *, PFty_t *,
                     struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                                bool,
                                                struct PFla_pair_t *),

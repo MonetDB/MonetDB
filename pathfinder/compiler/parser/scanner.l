@@ -127,17 +127,11 @@ extern char *pfinput;
 /* If the BURKOWSKI flag was set, the steps should be recognized
    Otherwise, they (select-narrow::, select-wide::, reject-narrow::, and
    reject-wide::,  should return an error */
-
-/* somehow the runtime-flag should be available here to 
-   determine whether StandOff-steps are allowed, or whether
-   the language is restricted to pure XQuery */
-/* #ifdef BURKOWSKI */
+#ifdef BURKOWSKI
 #define burk_yield(t) yield(t);
-/*
 #else
 #define burk_yield(t) yield(invalid_character);
-#endif 
-*/
+#endif
 
 /* lexical state stack */
 static PFarray_t *lexical_stack = NULL;
@@ -272,11 +266,6 @@ static char *extract_ncname (const char *s, unsigned int index);
 /*  17 PROCESSING_INSTRUCTION_CONTENT  */
 /*  18 CDATA_SECTION                   */
 /*  19 END_TAG                         */
-/*  20 PRESERVE_MODE                   */
-/*  21 INHERIT_MODE                    */
-/*  22 PRAGMA_TARGET                   */
-/*  23 PRAGMA_CONTENT                  */
-/*  24 NEXT_PRAGMA                     */
 
 %x DEFAULT
 %x OPERATOR
@@ -297,11 +286,6 @@ static char *extract_ncname (const char *s, unsigned int index);
 %x PROCESSING_INSTRUCTION_CONTENT
 %x CDATA_SECTION
 %x END_TAG
-%x PRESERVE_MODE
-%x INHERIT_MODE
-%x PRAGMA_TARGET
-%x PRAGMA_CONTENT
-%x NEXT_PRAGMA
 
 /*
  * XQuery 1.0 syntactic constructs
@@ -363,11 +347,7 @@ PredefinedEntityRef              "&"("lt"|"gt"|"amp"|"quot"|"apos")";"
 /* XQuery WD [141] or http://www.w3.org/TR/REC-xml/#NT-CharRef */
 CharRef                          ("&#"[0-9]+";")|("&#x"[0-9a-fA-F]+";")
 
-/* We have a minor problem here.
-   A colon at the end of the comment (e.g., `(: foo ::)') leads to
-   a parse error in Pathfinder.  */
-ExprComment                      "(:"([^(:]|"("[^:]|":"[^)])*":)"
-PragmaContent                    ([^#)]|"#"[^)]|[^#]")")*
+ExprComment                      "(:"[^:]([^(:]|"("[^:]|":"[^)])*":)"
 
 /* whitespace/comments in compound keywords */
 _                                ({S}|{ExprComment})+
@@ -386,10 +366,8 @@ _                                ({S}|{ExprComment})+
 "declare"{_}"namespace"            { gotoState (NAMESPACEDECL);
                                      yield (declare_namespace); }
 
-"declare"{_}"boundary-space"{_}"preserve" {
-                                     yield (declare_boundary_space_preserve); }
-"declare"{_}"boundary-space"{_}"strip"   {
-                                     yield (declare_boundary_space_strip); }
+"declare"{_}"xmlspace"{_}"preserve" { yield (declare_xmlspace_preserve); }
+"declare"{_}"xmlspace"{_}"strip"   { yield (declare_xmlspace_strip); }
 
 "declare"{_}"default"{_}"element"  { gotoState (NAMESPACEKEYWORD);
                                      yield (declare_default_element); }
@@ -398,8 +376,8 @@ _                                ({S}|{ExprComment})+
 "declare"{_}"ordering"{_}"ordered" { yield (declare_ordering_ordered); }
 "declare"{_}"ordering"{_}"unordered" { yield (declare_ordering_unordered); }
 "declare"{_}"default"{_}"order"    { yield (declare_default_order); }
-"declare"{_}"copy-namespaces"      { gotoState (PRESERVE_MODE);
-                                     yield (declare_copy_namespaces); }
+"declare"{_}"inherit-namespaces"{_}"yes" { yield (declare_inherit_namespaces_yes); }
+"declare"{_}"inherit-namespaces"{_}"no" { yield (declare_inherit_namespaces_no); }
 "empty"{_}"greatest"               { yield (empty_greatest); }
 "empty"{_}"least"                  { yield (empty_least); }
 "declare"{_}"default"{_}"collation" { yield (declare_default_collation); }
@@ -408,23 +386,19 @@ _                                ({S}|{ExprComment})+
                                      yield (import_schema); }
 "import"{_}"module"                { gotoState (NAMESPACEKEYWORD);
                                      yield (import_module); }
-"import"{_}"rpc-module"            { gotoState (NAMESPACEKEYWORD);
-                                     yield (import_rpc_module); }
 "at"{_}{StringLiteral}             { pflval.str = extract_string (yytext);
-                                     yield (at_URILiteral);
+                                     yield (at_StringLiteral);
                                    }
 "declare"{_}"variable"{_}"$"       { gotoState (VARNAME);
                                      yield (declare_variable_dollar); }
 "declare"{_}"construction"{_}"preserve" { yield (declare_construction_preserve); }
 "declare"{_}"construction"{_}"strip" { yield (declare_construction_strip); }
-"declare"{_}"function"             { yield (declare_function); }
-"declare"{_}"updating"{_}"function" { yield (declare_updating_function); }
-"declare"{_}"option"               { yield (declare_option); }
-"declare"{_}"revalidation"{_}"strict" { yield (declare_revalidation_strict); }
-"declare"{_}"revalidation"{_}"lax"    { yield (declare_revalidation_lax); }
-"declare"{_}"revalidation"{_}"skip"   { yield (declare_revalidation_skip); }
+"declare function"                 { yield (declare_function); }
 "$"                                { gotoState (VARNAME); yield (dollar); }
 ")"                                { gotoState (OPERATOR); yield (rparen); }
+")"{_}?"as"{_}                     { /* trailing whitspace in pattern prevents
+                                        illegal parsing of `...) ascending' in
+                                        order by clauses here. (bug #1359816) */                                     gotoState (ITEMTYPE); yield (rparen_as); }
 "{"                                { yield (lbrace); }
 "}"                                { popState (); yield (rbrace); }
 ","                                { yield (comma); }
@@ -501,8 +475,8 @@ _                                ({S}|{ExprComment})+
                                      yield (schema_element_lparen); }
 "node"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
                                      yield (node_lrparens); }
-"empty-sequence"{_}?"("{_}?")"     { gotoState (OPERATOR);
-                                     yield (empty_sequence); }
+"empty"{_}?"("{_}?")"              { gotoState (OPERATOR);
+                                     yield (empty_lrparens); }
 "item"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
                                      yield (item_lrparens); }
 "("                                { yield (lparen); }
@@ -548,16 +522,6 @@ _                                ({S}|{ExprComment})+
                                      gotoState (CDATA_SECTION);
                                      yield (cdata_start); }
 
-"(#"                               { gotoState (PRAGMA_TARGET);
-                                     yield (paren_hash); }
-
-"do"{_}"delete"                    { yield (do_delete); }
-"do"{_}"insert"                    { yield (do_insert); }
-"do"{_}"rename"                    { yield (do_rename); }
-"do"{_}"replace"                   { yield (do_replace); }
-"do"{_}"replace"{_}"value"{_}"of"  { yield (do_replace_value_of); }
-"transform"{_}"copy"{_}"$"         { yield (transform_copy_dollar); }
-
 {QName}{_}?"("/[^:]                { pflval.qname = extract_qname (yytext, 0);
                                      yield (QName_LParen);
                                    }
@@ -593,6 +557,10 @@ _                                ({S}|{ExprComment})+
                                      yield (encoding_StringLiteral);
                                    }
 
+")"{_}?"as"{_}                     { /* trailing whitspace in pattern prevents
+                                        illegal parsing of `...) ascending' in
+                                        order by clauses here. (bug #1359816) */
+                                     gotoState (ITEMTYPE); yield (rparen_as); }
 "as"                               { gotoState (ITEMTYPE); yield (as); }
 ":="                               { gotoState (DEFAULT); yield (colon_equals);}
 "external"                         { gotoState (DEFAULT); yield (external_); }
@@ -668,14 +636,6 @@ _                                ({S}|{ExprComment})+
 "["                                { gotoState (DEFAULT); yield (lbracket); }
 "]"                                { yield (rbracket); }
 "?"                                { yield (question_mark); }
-"as"{_}"first"{_}"into"            { gotoState (DEFAULT);
-                                     yield (as_first_into);}
-"as"{_}"last"{_}"into"             { gotoState (DEFAULT); yield (as_last_into);}
-"into"                             { gotoState (DEFAULT); yield (into);}
-"after"                            { gotoState (DEFAULT); yield (after);}
-"before"                           { gotoState (DEFAULT); yield (before);}
-"with"                             { gotoState (DEFAULT); yield (with);}
-"modify"                           { gotoState (DEFAULT); yield (modify);}
 {_}                                ;
 .                                  { yield (invalid_character); }
 }
@@ -759,12 +719,10 @@ _                                ({S}|{ExprComment})+
                                      yield (schema_element_lparen); }
 "node"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
                                      yield (node_lrparens); }
-"empty-sequence"{_}?"("{_}?")"     { gotoState (OPERATOR);
-                                     yield (empty_sequence); }
+"empty"{_}?"("{_}?")"              { gotoState (OPERATOR);
+                                     yield (empty_lrparens); }
 "item"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
                                      yield (item_lrparens); }
-")"                                { gotoState (OCCURRENCEINDICATOR);
-                                     yield (rparen); }
 {_}                                ;
 .                                  { yield (invalid_character); }
 }
@@ -827,7 +785,7 @@ _                                ({S}|{ExprComment})+
 
 <QUOT_ATTRIBUTE_CONTENT>{
 "\""                               { gotoState (START_TAG); yield (quot_); }
-"\"\""                             { yield (EscapeQuot); }
+"\"\""                             { yield (escape_quot); }
 "{{"                               { yield (lbrace_lbrace); }
 "}}"                               { yield (rbrace_rbrace); }
 "{"                                { pushState (QUOT_ATTRIBUTE_CONTENT);
@@ -848,7 +806,7 @@ _                                ({S}|{ExprComment})+
 <APOS_ATTRIBUTE_CONTENT>{
 "'"                                { gotoState (START_TAG);
                                      yield (apos); }
-"''"                               { yield (EscapeApos); }
+"\"\""                             { yield (escape_apos); }
 "{{"                               { yield (lbrace_lbrace); }
 "}}"                               { yield (rbrace_rbrace); }
 "{"                                { pushState (APOS_ATTRIBUTE_CONTENT);
@@ -941,52 +899,6 @@ _                                ({S}|{ExprComment})+
 .                                  { yield (invalid_character); }
 }
 
-<PRESERVE_MODE>{
-"preserve"                         { yield (copy_ns_preserve); }
-"no-preserve"                      { yield (copy_ns_nopreserve); }
-","                                { gotoState (INHERIT_MODE);
-                                     yield (comma); }
-{_}                                ;
-.                                  { yield (invalid_character); }
-}
-
-<INHERIT_MODE>{
-"inherit"                          { yield (copy_ns_inherit); }
-"no-inherit"                       { yield (copy_ns_noinherit); }
-";"                                { gotoState (DEFAULT);
-                                     yield (semicolon); }
-{_}                                ;
-.                                  { yield (invalid_character); }
-}
-
-<PRAGMA_TARGET>{
-{S}                                { yield (S); }
-{QName}                            { gotoState (PRAGMA_CONTENT);
-                                     pflval.qname
-                                         = PFstr_qname (PFstrndup (yytext,
-                                                                   yyleng));
-                                     yield (QName);
-                                   }
-.                                  { yield (invalid_character); }
-}
-
-<PRAGMA_CONTENT>{
-{PragmaContent}                    { pflval.str = PFstrndup (yytext, yyleng);
-                                     yield (PragmaContents); }
-"#)"                               { gotoState (NEXT_PRAGMA);
-                                     yield (hash_paren); }
-.                                  { yield (invalid_character); }
-}
-
-<NEXT_PRAGMA>{
-"(#"                               { gotoState (PRAGMA_TARGET);
-                                     yield (paren_hash); }
-"{"                                { pushState (OPERATOR);
-                                     gotoState (DEFAULT);
-                                     yield (lbrace); }
-{_}                                ;
-.                                  { yield (invalid_character); }
-}
 %%
 
 static char

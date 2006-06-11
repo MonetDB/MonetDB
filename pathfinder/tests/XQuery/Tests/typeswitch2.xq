@@ -5,7 +5,7 @@ return typeswitch (if ($b mod 2 = 0)
                          then (1,2,3) 
                          else ())
                    else $a)
-                  case empty-sequence () return 23
+                  case empty () return 23
                   default return $a
 
 , 100, 

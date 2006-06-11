@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Optimize relational algebra expression tree.
+ * Rewrite/optimize algebra expression tree.
  *
  * Copyright Notice:
  * -----------------
@@ -31,22 +31,7 @@
 
 #include "logical.h"
 
-PFla_op_t * PFalgopt (PFla_op_t *root, bool timing);
-
-/**
- * Infer property for a DAG rooted in root
- * (The implementation is located in the
- *  corresponding opt/opt_*.[brg|c] file)
- */
-PFla_op_t * PFalgopt_complex (PFla_op_t *root);
-PFla_op_t * PFalgopt_const (PFla_op_t *root, bool no_attach);
-PFla_op_t * PFalgopt_dom (PFla_op_t *root);
-PFla_op_t * PFalgopt_general (PFla_op_t *root);
-PFla_op_t * PFalgopt_icol (PFla_op_t *root);
-PFla_op_t * PFalgopt_join_pd (PFla_op_t *root);
-PFla_op_t * PFalgopt_key (PFla_op_t *root);
-PFla_op_t * PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries);
-PFla_op_t * PFalgopt_reqval (PFla_op_t *root);
+PFla_op_t * PFalgopt (PFla_op_t *root);
 
 #endif  /* ALGOPT_H */
 

@@ -1,3 +1,3 @@
 (: q2 'SELECT * FROM Assets WHERE TrackNr=1 LIMIT 100' :)
-import module namespace music = "http://www.cwi.nl/~boncz/music/mod/" at "$TSTTRGDIR/music.mil";
+import module namespace music = "$TSTTRGDIR" at "$TSTTRGDIR/music.mil";
 music:AssetByTrackNr("music.xml", 1, 100) 

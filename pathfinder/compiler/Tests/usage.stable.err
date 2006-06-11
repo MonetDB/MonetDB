@@ -1,17 +1,17 @@
 stderr of test 'usage` in directory 'compiler` itself:
 
 
-# 15:05:54 >  
-# 15:05:54 >  Mtimeout -timeout 120 ./usage usage 
-# 15:05:54 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./usage usage 
+# 16:36:12 >  
 
 
-# 15:05:54 >  
-# 15:05:54 >  Mtimeout -timeout 60 pf -h
-# 15:05:54 >  
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
+# 16:36:12 >  
 
 
-# 15:05:54 >  
-# 15:05:54 >  Done.
-# 15:05:54 >  
+# 15:32:19 >  
+# 15:32:19 >  Done.
+# 15:32:19 >  
 

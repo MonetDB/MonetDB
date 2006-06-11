@@ -26,7 +26,7 @@ dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("pathfinder", 0.11.3, [no-define])
+AM_INIT_AUTOMAKE("pathfinder", 0.10.3, [no-define])
 AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
 CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
@@ -39,7 +39,7 @@ fi
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
-req_monetdb_ver='4.11.3'
+req_monetdb_ver='4.10.3'
 AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
@@ -281,34 +281,18 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
-# have_pftijah=no
-# AM_CONDITIONAL(HAVE_PFTIJAH, test "x$have_pftijah" == xyes)
-
-dnl Check for TIJAH support
-dnl --enable-pftijah
-AC_ARG_ENABLE(pftijah,
-        AC_HELP_STRING([--enable-pftijah],
-                [enable support for TIJAH [default=no]]),
-        enable_pftijah=$enableval,
-        enable_pftijah=no)
-case $enable_pftijah in
-yes)  AC_DEFINE(HAVE_PFTIJAH, 1, [Define if you want TIJAH])
+dnl Check for Burkowski Axis Steps support
+dnl --enable-burk
+AC_ARG_ENABLE(burk,
+	AC_HELP_STRING([--enable-burk],
+		[enable support for Burkowski Axis Steps [default=no]]),
+	enable_burk=$enableval,
+	enable_burk=no)
+case $enable_burk in
+yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
+      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
 ;;
 esac
-AM_CONDITIONAL(HAVE_PFTIJAH, test "x$enable_pftijah" == xyes)
-
-#dnl Check for Burkowski Axis Steps support
-#dnl --enable-burk
-#AC_ARG_ENABLE(burk,
-#	AC_HELP_STRING([--enable-burk],
-#		[enable support for Burkowski Axis Steps [default=no]]),
-#	enable_burk=$enableval,
-#	enable_burk=no)
-#case $enable_burk in
-#yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
-#      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
-#;;
-#esac
 
 
 dnl The Burg code requires strdup(). We test here if strdup() is

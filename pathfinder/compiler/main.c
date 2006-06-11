@@ -455,19 +455,12 @@ static struct option long_options[] = {
     { "optimize",                  optional_argument, NULL, 'O' },
     { "print-human-readable",         no_argument,    NULL, 'P' },
     { "timing",                       no_argument,    NULL, 'T' },
-    { "print-XML",                    no_argument,    NULL, 'X' },
     { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
-/* Wouter: enable-standoff  (with the short-option b (Burkowski ;)
-   sorrt for the confusion, but I'm afraid all other letters
-   have been picked by now... */
-    { "enable-standoff",              no_argument,    NULL, 'b' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
     { "debug",                     optional_argument, NULL, 'd' },
-    { "dead-code-elimination",     required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
     { "help",                         no_argument,    NULL, 'h' },
     { "print-logical-algebra",        no_argument,    NULL, 'l' },
-    { "optimize-algebra",          required_argument, NULL, 'o' },
     { "print-physical-algebra",       no_argument,    NULL, 'p' },
     { "quiet",                        no_argument,    NULL, 'q' },
     { "stop-after",                required_argument, NULL, 's' },
@@ -535,11 +528,12 @@ static char *phases[] = {
     [12]  = "after type inference and checking",
     [13]  = "after XQuery Core optimization",
     [14]  = "after the Core tree has been translated to the logical algebra",
-    [15]  = "after the logical algebra tree has been rewritten/optimized",
-    [16]  = "after the CSE on the logical algebra tree",
-    [17]  = "after compiling logical into the physical algebra",
-    [18]  = "after compiling the physical algebra into MIL code",
-    [19]  = "after the MIL program has been serialized"
+    [15]  = "after the logical algebra has been annotated with properties",
+    [16]  = "after the logical algebra tree has been rewritten/optimized",
+    [17]  = "after the CSE on the logical algebra tree",
+    [18]  = "after compiling logical into the physical algebra",
+    [19]  = "after compiling the physical algebra into MIL code",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /**
@@ -598,10 +592,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTXacd::e:f:hlo:pqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTacd::f:hlpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTXacd::e:f:hlo:pqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTacd::f:hlpqrs:t");
 #endif
 
         if (c == -1)
@@ -625,7 +619,7 @@ main (int argc, char *argv[])
             case 'H':
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
-                printf ("(c) Database Group, Technische Universitaet Muenchen\n");
+                printf ("(c) University of Konstanz, DBIS group\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print short help message\n",
@@ -650,9 +644,6 @@ main (int argc, char *argv[])
                         long_option (opt_buf, ", --%s", 'P'));
                 printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
                         long_option (opt_buf, ", --%s", 'D'));
-                printf ("  -X%s: print internal tree structure in XML notation\n"
-                        "        (only works for logical algebra tree)\n",
-                        long_option (opt_buf, ", --%s", 'X'));
                 printf ("  -T%s: print elapsed times for compiler phases\n",
                         long_option (opt_buf, ", --%s", 'T'));
                 printf ("  -O[0-3]%s: select optimization level (default=1)\n",
@@ -673,8 +664,7 @@ main (int argc, char *argv[])
                         long_option (opt_buf, ", --%s", 'l'));
                 printf ("  -p%s: print physical algebra tree\n",
                         long_option (opt_buf, ", --%s", 'p'));
-                printf ("  -f format%s: print optional information in algebra "
-                                            "dot output:\n",
+                printf ("  -f format%s: print optional information in algebra dot output:\n",
                         long_option (opt_buf, ", --%s=format", 'f'));
 
                 printf ("         C  print cost value (physical algebra)\n");
@@ -686,48 +676,6 @@ main (int argc, char *argv[])
                 printf ("         +  print all available properties (logical/"
                                      "physical algebra)\n");
 
-                printf ("  -o options%s: optimize algebra according to "
-                                            "options:\n",
-                        long_option (opt_buf, ", --%s=options", 'o'));
-
-                printf ("         O  apply optimization based on constant "
-                                            "property\n");
-                printf ("         I  apply optimization based on icols "
-                                            "property\n");
-                printf ("         K  apply optimization based on key "
-                                            "property\n");
-                printf ("         D  apply optimization based on domain "
-                                            "property\n");
-                printf ("         C  apply optimization using multiple "
-                                            "properties (complex)\n");
-                printf ("            - icols based optimization will be "
-                                            "applied afterwards.\n");
-                printf ("         G  apply general optimization (without "
-                                            "properties)\n");
-                printf ("         V  apply optimization based on required "
-                                            "values property\n");
-                printf ("         [  map column names to unique column "
-                                            "names\n");
-                printf ("         J  push down equi-joins (requires unique "
-                                            "column names)\n");
-                printf ("         ]  map column names back (from unique "
-                                            "names to original names)\n");
-                printf ("         M  apply optimization based on multi-value "
-                                            "dependencies\n");
-                printf ("         P  infer all properties\n");
-                printf ("            (used for debug output and physical "
-                                            "algebra\n");
-                printf ("         _  does nothing (used for structuring "
-                                            "the options)\n");
-                printf ("         (default is: "
-                                  "'-o OIKDCG_VOIG_[J]_MOIGC_KDCGP')\n");
-
-                printf ("  -e[0|1]%s: dead code elimination:\n"
-                        "         0 disable dead code elimination\n"
-                        "         1 enable dead code elimination (default)\n",
-                        long_option (opt_buf, ", --%s=[0|1]", 'e'));
-                printf ("  -b%s: enable StandOff axis steps\n",
-                        long_option (opt_buf, ", --%s", 'b'));
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
@@ -748,16 +696,8 @@ main (int argc, char *argv[])
                 status->timing = true;
                 break;
 
-            case 'X':
-                status->print_xml = true;
-                break;
-
             case 'a':
                 status->print_parse_tree = true;
-                break;
-
-            case 'b':
-                status->standoff_axis_steps = true;
                 break;
 
             case 'c':
@@ -766,10 +706,6 @@ main (int argc, char *argv[])
 
             case 'd':
                 status->debug = optarg ? atoi(optarg) : 1;
-                break;
-
-            case 'e':
-                status->dead_code_el = optarg ? atoi(optarg) == 1: true;
                 break;
 
             case 'f':
@@ -788,7 +724,7 @@ main (int argc, char *argv[])
             case 'h':
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
-                printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
+                printf ("(c) University of Konstanz, DBIS group\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print this help message\n",
@@ -809,13 +745,6 @@ main (int argc, char *argv[])
 
             case 'l':
                 status->print_la_tree = true;
-                break;
-
-            case 'o':
-                status->opt_alg = PFstrdup (optarg);
-                PFinfo (OOPS_NOTICE, 
-                        "optimization options: `%s'", 
-                        status->opt_alg);
                 break;
 
             case 'q':

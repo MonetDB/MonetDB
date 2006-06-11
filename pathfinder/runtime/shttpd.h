@@ -52,18 +52,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/* 
- * we now allow to create and poll multiple sockets concurrently. 
- * this structure keeps all per-socket global information.
- */  
-typedef struct {
-    int sock;
-    unsigned int    nrequests;      /* Requests made */
-    unsigned int    kb_in, kb_out;      /* IN/OUT traffic counters */
-    struct conn *connections;       /* List of connections */
-} shttpd_socket;
-
-
 /*
  * In order to generate pages dynamically for certain URLs, application
  * must register callback function, which will be called when user
@@ -102,7 +90,7 @@ typedef int (*shttpd_callback_t)(struct shttpd_callback_arg *);
  *      should be used once, usually before program termination.
  * shttpd_setopt	
  *      set option by option name.
- * shttpdglobal _open_port
+ * shttpd_open_port
  *      return opened socket to specified local port. This
  *      socket should be then passed to shttpd_poll().
  *      Multiple listened sockets may be opened.
@@ -159,12 +147,12 @@ extern void shttpd_fini(void);
 extern void shttpd_setopt(const char *variable, const char *value);
 extern void shttpd_addmimetype(const char *ext, const char *mime);
 extern void shttpd_register_mountpoint(const char *uri, const char *system_path);
-extern shttpd_socket shttpd_open_port(int port);
+extern int shttpd_open_port(int port);
 extern void shttpd_register_url(const char *url, 
                                 shttpd_callback_t callback, void *callback_data);
 extern void shttpd_protect_url(const char *url, const char *file);
-extern void shttpd_merge_fds(shttpd_socket *ctx, fd_set *rset, fd_set *wset,int *maxfd);
-extern void shttpd_poll(shttpd_socket *ctx, unsigned milliseconds);
+extern void shttpd_merge_fds(fd_set *rset, fd_set *wset,int *maxfd);
+extern void shttpd_poll(int sock, unsigned milliseconds);
 extern const char *shttpd_get_var(struct conn *, const char *varname);
 extern int shttpd_template(struct conn *, const char *headers, const char *file, ...);
 extern char *shttpd_get_msg(struct shttpd_callback_arg *arg);

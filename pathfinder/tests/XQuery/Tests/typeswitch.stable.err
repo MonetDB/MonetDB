@@ -59,9 +59,6 @@ stderr of test 'typeswitch` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-type error: binding sequence in a for clause has static type `empty'
-# halted in typecheck.brg (reduce), line 457
-
 # 23:35:33 >  
 # 23:35:33 >  Done.
 # 23:35:33 >  

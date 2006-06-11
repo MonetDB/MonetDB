@@ -207,12 +207,11 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         oid fst_ctx = *(oid*)BUNtail(ctx_bat, BUNfirst(ctx_bat));
         oid lst_ctx = 0;
         BUN dst = 0, p = 0;
+        int bs_res = 0;
         size_t max_size = 0;
-        int bs_res = 0, sze = 0;
-
+        
         BUNfndVOID(p, pre_size, &fst_ctx);
-        sze = *(int*)BUNtloc(pre_size, p);
-        max_size = res_size = (size_t)((sze&GDK_int_max) + (int)self);
+        max_size = res_size = (size_t)(*(int*)BUNtloc(pre_size, p) + (int)self);
         if ( cand_bat ) {
             if ( BATcount(cand_bat) < res_size ) {
                 res_size = BATcount(cand_bat);
@@ -573,9 +572,8 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         if (BATtdense(cand_bat)) {
             oid fst_pre = MAX(pre, cand_bat->tseqbase);
             oid lst_pre = MIN(@1 , cand_bat->tseqbase + BATcount(cand_bat) - 1);
-            for (; pre <= @1 && pre <  fst_pre; pre += (size[pre]&GDK_int_max) + 1) {
-            };
-            for (;              pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+            for (; pre <= @1 && pre <  fst_pre; pre += size[pre] + 1) {};
+            for (;              pre <= lst_pre; pre += size[pre] + 1) {
                 @:inner_loop_child_body@
             }
         } else {
@@ -583,8 +581,8 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
                 BUN fst_pre = cand_cur;
                 oid lst_pre = MIN(@1, *(oid*)cand_lst);
 
-                for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += (size[pre]&GDK_int_max) + 1) {};
-                for (;              pre <=        lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+                for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
+                for (;              pre <=        lst_pre; pre += size[pre] + 1) {
                     /* poor man's binary search / exploiting forward scan */
                     while (fst_pre+4096 <= cand_lst && *(oid*) (fst_pre+4096) < pre)
                         fst_pre += 4096;
@@ -602,9 +600,9 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
                 cand_cur = fst_pre;
             }
         }
-        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {};
+        for (; pre <= @1; pre += size[pre] + 1) {};
     } else {
-        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+        for (; pre <= @1; pre += size[pre] + 1) {
             @:inner_loop_child_body@
         }
     }

@@ -80,7 +80,7 @@ print("res_scj");  [print](res_scj);
         var content_size := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));
         var content_prop := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));
         var content_kind := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));
-        var content_frag := mposjoin(res_item, res_frag, ws.fetch(PRE_CONT));
+        var content_frag := mposjoin(res_item, res_frag, ws.fetch(PRE_FRAG));
         var content_level := mposjoin(res_item, res_frag, ws.fetch(PRE_LEVEL));
         # change the level of the subtree copies
         content_level := content_level.[+](chr(1));
@@ -193,21 +193,26 @@ print("res_scj");  [print](res_scj);
     ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);
     ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);
     ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);
-    ws.fetch(PRE_CONT).fetch(WS).insert(root_frag);
+    ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);
     ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);
-    ws.fetch(PRE_NID).fetch(WS).append(root_kind.mirror());
-    ws.fetch(NID_RID).fetch(WS).append(root_kind.mirror());
 
     # update indexes
     {
-      var pre_nid := ws.fetch(PRE_NID).fetch(WS);
       var knd := ELEMENT;
       while ( knd <= DOCUMENT ) {
-        var knd_nid := root_kind.ord_uselect(knd).reverse().chk_order();
-        ws.fetch(KND_NID.find(knd)).fetch(WS).append(knd_nid);
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-          var knd_prop := knd_nid.leftfetchjoin(root_prop).chk_order();
-          ws.fetch(KND_PROP.find(knd)).fetch(WS).append(knd_prop);
+        var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();
+        ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);
+        if (knd = ELEMENT) {
+          var prop_root := kind_root.reverse().mirror()
+                                    .leftfetchjoin(root_prop)
+                                    .reverse().chk_order();
+          ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);
+        }
+        if (knd = PI) {
+          var prop_root := kind_root.reverse().mirror()
+                                    .leftfetchjoin(root_prop)
+                                    .reverse().chk_order();
+          ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);
         }
         knd :+= chr(1);
       }
@@ -230,10 +235,10 @@ print("res_scj");  [print](res_scj);
     # working set, that a following (preceding) step can check
     # the fragment boundaries
     {
-        var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));
+        var seqb := oid(count(ws.fetch(WS_FRAG)));
         var new_pre_values := roots.tmark(seqb);
         seqb := nil;
-        ws.fetch(WS_FRAG).fetch(WS).insert(new_pre_values);
+        ws.fetch(WS_FRAG).insert(new_pre_values);
         new_pre_values := nil;
     }
 
@@ -268,14 +273,14 @@ print("res_scj");  [print](res_scj);
         # get fragment where values are stored (not where attribute is stored)
         var attrNew_frag := mposjoin(attrNew_attrOld,
                                      attrNew_pre_frag,
-                                     ws.fetch(ATTR_CONT));
+                                     ws.fetch(ATTR_FRAG));
         attrNew_attrOld := nil;
         attrNew_pre_frag := nil;
 
         ws.fetch(ATTR_QN).fetch(WS).insert(attrNew_qn);
         ws.fetch(ATTR_PROP).fetch(WS).insert(attrNew_prop);
         ws.fetch(ATTR_OWN).fetch(WS).insert(attrNew_preNew);
-        ws.fetch(ATTR_CONT).fetch(WS).insert(attrNew_frag);
+        ws.fetch(ATTR_FRAG).fetch(WS).insert(attrNew_frag);
         attrNew_qn := nil;
         attrNew_prop := nil;
         attrNew_preNew := nil;
@@ -287,7 +292,7 @@ print("res_scj");  [print](res_scj);
         
         # use iter, qn and frag to find unique combinations
         var attr_qn := mposjoin(attr, afrag, ws.fetch(ATTR_QN));
-        var attr_frag := mposjoin(attr, afrag, ws.fetch(ATTR_CONT));
+        var attr_frag := mposjoin(attr, afrag, ws.fetch(ATTR_FRAG));
         var sorting := aiter.tsort();
         sorting := sorting.CTrefine(mposjoin(attr_qn,
                                              attr_frag,
@@ -320,7 +325,7 @@ print("res_scj");  [print](res_scj);
         ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);
         ws.fetch(ATTR_PROP).fetch(WS).insert(attr_prop);
         ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);
-        ws.fetch(ATTR_CONT).fetch(WS).insert(attr_frag);
+        ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);
         attr_qn := nil;
         attr_prop := nil;
         attr_own := nil;
@@ -328,9 +333,9 @@ print("res_scj");  [print](res_scj);
     }
 
     # create result as a BAT of BATs
-    var res := new (void, BAT).append (ws)
-                              .append (roots)
-                              .append (roots.project(WS))
+    var res := new (void, BAT).insert (nil, ws)
+                              .insert (nil, roots)
+                              .insert (nil, roots.project(WS))
                               .seqbase (0@0);
     roots := nil;
 
@@ -690,13 +695,13 @@ a0006 := mvaljoin (a0020, a0018, ws.fetch (ATTR_OWN));
 a0022 := a0006.reverse ().mark (0@0).reverse ();
 a0023 := a0006.mark (0@0).reverse ().leftjoin (a0018);
 a0021 := a0006.mark (0@0).reverse ().leftjoin (a0016);
-a0006 := mposjoin (mposjoin (a0022, a0023, ws.fetch (ATTR_QN)), mposjoin (a0022, a0023, ws.fetch (ATTR_CONT)), ws.fetch (QN_LOC));
+a0006 := mposjoin (mposjoin (a0022, a0023, ws.fetch (ATTR_QN)), mposjoin (a0022, a0023, ws.fetch (ATTR_FRAG)), ws.fetch (QN_LOC));
 a0006 := a0006.ord_uselect ("income");
 a0006 := a0006.mark (0@0).reverse ();
 a0022 := a0006.leftjoin (a0022);
 a0023 := a0006.leftjoin (a0023);
 a0021 := a0006.leftjoin (a0021);
-a0006 := mposjoin (mposjoin (a0022, a0023, ws.fetch (ATTR_QN)), mposjoin (a0022, a0023, ws.fetch (ATTR_CONT)), ws.fetch (QN_URI));
+a0006 := mposjoin (mposjoin (a0022, a0023, ws.fetch (ATTR_QN)), mposjoin (a0022, a0023, ws.fetch (ATTR_FRAG)), ws.fetch (QN_URI));
 a0006 := a0006.ord_uselect ("");
 a0006 := a0006.mark (0@0).reverse ();
 a0022 := a0006.leftjoin (a0022);
@@ -761,7 +766,7 @@ a0016 := unused;
 ;
 ;
 ;
-a0016 := mposjoin (mposjoin (a0018, a0020, ws.fetch (ATTR_PROP)), mposjoin (a0018, a0020, ws.fetch (ATTR_CONT)), ws.fetch (PROP_VAL));
+a0016 := mposjoin (mposjoin (a0018, a0020, ws.fetch (ATTR_PROP)), mposjoin (a0018, a0020, ws.fetch (ATTR_FRAG)), ws.fetch (PROP_VAL));
 ;
 ;
 ;
@@ -2301,13 +2306,13 @@ a0009 := mvaljoin (a0075, a0077, ws.fetch (ATTR_OWN));
 a0079 := a0009.reverse ().mark (0@0).reverse ();
 a0080 := a0009.mark (0@0).reverse ().leftjoin (a0077);
 a0078 := a0009.mark (0@0).reverse ().leftjoin (a0025);
-a0009 := mposjoin (mposjoin (a0079, a0080, ws.fetch (ATTR_QN)), mposjoin (a0079, a0080, ws.fetch (ATTR_CONT)), ws.fetch (QN_LOC));
+a0009 := mposjoin (mposjoin (a0079, a0080, ws.fetch (ATTR_QN)), mposjoin (a0079, a0080, ws.fetch (ATTR_FRAG)), ws.fetch (QN_LOC));
 a0009 := a0009.ord_uselect ("income");
 a0009 := a0009.mark (0@0).reverse ();
 a0079 := a0009.leftjoin (a0079);
 a0080 := a0009.leftjoin (a0080);
 a0078 := a0009.leftjoin (a0078);
-a0009 := mposjoin (mposjoin (a0079, a0080, ws.fetch (ATTR_QN)), mposjoin (a0079, a0080, ws.fetch (ATTR_CONT)), ws.fetch (QN_URI));
+a0009 := mposjoin (mposjoin (a0079, a0080, ws.fetch (ATTR_QN)), mposjoin (a0079, a0080, ws.fetch (ATTR_FRAG)), ws.fetch (QN_URI));
 a0009 := a0009.ord_uselect ("");
 a0009 := a0009.mark (0@0).reverse ();
 a0079 := a0009.leftjoin (a0079);
@@ -2358,13 +2363,13 @@ a0025 := mvaljoin (a0013, a0014, ws.fetch (ATTR_OWN));
 a0078 := a0025.reverse ().mark (0@0).reverse ();
 a0079 := a0025.mark (0@0).reverse ().leftjoin (a0014);
 a0077 := a0025.mark (0@0).reverse ().leftjoin (a0012);
-a0025 := mposjoin (mposjoin (a0078, a0079, ws.fetch (ATTR_QN)), mposjoin (a0078, a0079, ws.fetch (ATTR_CONT)), ws.fetch (QN_LOC));
+a0025 := mposjoin (mposjoin (a0078, a0079, ws.fetch (ATTR_QN)), mposjoin (a0078, a0079, ws.fetch (ATTR_FRAG)), ws.fetch (QN_LOC));
 a0025 := a0025.ord_uselect ("income");
 a0025 := a0025.mark (0@0).reverse ();
 a0078 := a0025.leftjoin (a0078);
 a0079 := a0025.leftjoin (a0079);
 a0077 := a0025.leftjoin (a0077);
-a0025 := mposjoin (mposjoin (a0078, a0079, ws.fetch (ATTR_QN)), mposjoin (a0078, a0079, ws.fetch (ATTR_CONT)), ws.fetch (QN_URI));
+a0025 := mposjoin (mposjoin (a0078, a0079, ws.fetch (ATTR_QN)), mposjoin (a0078, a0079, ws.fetch (ATTR_FRAG)), ws.fetch (QN_URI));
 a0025 := a0025.ord_uselect ("");
 a0025 := a0025.mark (0@0).reverse ();
 a0078 := a0025.leftjoin (a0078);

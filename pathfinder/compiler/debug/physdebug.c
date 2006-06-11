@@ -39,6 +39,7 @@
 /* #include "pfstrings.h" */
 #include "prettyp.h"
 #include "oops.h"
+
 #include "properties.h"
 
 /** Node names to print out for all the Algebra tree nodes. */
@@ -46,53 +47,46 @@ static char *a_id[]  = {
       [pa_serialize]       = "SERIALIZE"
     , [pa_lit_tbl]         = "TBL"
     , [pa_empty_tbl]       = "EMPTY_TBL"
-    , [pa_attach]          = "@"
-      /* note: dot does not like the sequence "×\nfoo", so we put spaces
-       * around the cross symbol.
-       */
-    , [pa_cross]           = " × "              /* \"#00FFFF\" */
-    , [pa_leftjoin]        = "LEFTJOIN"         /* \"#00FF00\" */
-    , [pa_eqjoin]          = "EQJOIN"           /* \"#00FF00\" */
+    , [pa_attach]          = " @ "
+    , [pa_cross]           = " × "
+    , [pa_leftjoin]        = "LeftJoin"
+    , [pa_eqjoin]          = "EqJoin"
     , [pa_project]         = "¶ "
     , [pa_select]          = "SEL"
-    , [pa_append_union]    = "APPEND_UNION"
-    , [pa_merge_union]     = "MERGE_UNION"
+    , [pa_append_union]    = "append_union"
+    , [pa_merge_union]     = "merge_union"
     , [pa_intersect]       = "n"
-    , [pa_difference]      = "DIFF"             /* \"#FFA500\" */
-    , [pa_sort_distinct]   = "SORT_DISTINCT"
-    , [pa_std_sort]        = "SORT"
+    , [pa_difference]      = "DIFF"
+    , [pa_sort_distinct]   = "sort_distinct"
+    , [pa_std_sort]        = "sort"
     , [pa_refine_sort]     = "refine_sort"
-    , [pa_num_add]         = "num-add"
-    , [pa_num_add_atom]    = "num-add (atom)"
-    , [pa_num_sub]         = "num-sub"
-    , [pa_num_sub_atom]    = "num-sub (atom)"
-    , [pa_num_mult]        = "num-mult"
-    , [pa_num_mult_atom]   = "num-mult (atom)"
-    , [pa_num_div]         = "num-div"
-    , [pa_num_div_atom]    = "num-div (atom)"
-    , [pa_num_mod]         = "num-mod"
-    , [pa_num_mod_atom]    = "num-mod (atom)"
-    , [pa_eq]              = "="
-    , [pa_eq_atom]         = "= (atom)"
-    , [pa_gt]              = ">"
-    , [pa_gt_atom]         = "> (atom)"
-    , [pa_num_neg]         = "-"
-    , [pa_bool_and]        = "AND"
-    , [pa_bool_or]         = "OR"
-    , [pa_bool_not]        = "NOT"
-    , [pa_bool_and_atom]   = "AND (atom)"
-    , [pa_bool_or_atom]    = "OR (atom)"
-    , [pa_avg]             = "AVG"
-    , [pa_min]             = "MAX"
-    , [pa_max]             = "MIN"
-    , [pa_sum]             = "SUM"
-    , [pa_hash_count]      = "HASH_COUNT"
-    , [pa_merge_rownum]    = "MROW#"             /* \"#FF0000\" */
-    , [pa_hash_rownum]     = "HROW#"             /* \"#FF0000\" */
-    , [pa_number]          = "NUMBER"            /* \"#FF0000\" */
+    , [pa_num_add]         = "NumAdd"
+    , [pa_num_add_atom]    = "NumAddAtom"
+    , [pa_num_sub]         = "NumSub"
+    , [pa_num_sub_atom]    = "NumSubAtom"
+    , [pa_num_mult]        = "NumMult"
+    , [pa_num_mult_atom]   = "NumMultAtom"
+    , [pa_num_div]         = "NumDiv"
+    , [pa_num_div_atom]    = "NumDivAtom"
+    , [pa_num_mod]         = "NumMod"
+    , [pa_num_mod_atom]    = "NumModAtom"
+    , [pa_eq]              = "Eq"
+    , [pa_eq_atom]         = "EqAtom"
+    , [pa_gt]              = "Gt"
+    , [pa_gt_atom]         = "GtAtom"
+    , [pa_num_neg]         = "NumNeg"
+    , [pa_bool_not]        = "BoolNeg"
+    , [pa_bool_and]        = "And"
+    , [pa_bool_or]         = "Or"
+    , [pa_bool_and_atom]   = "AndAtom"
+    , [pa_bool_or_atom]    = "OrAtom"
+    , [pa_hash_count]      = "HashCount"
+    , [pa_merge_rownum]    = "MROW#"
+    , [pa_hash_rownum]     = "HROW#"
+    , [pa_number]          = "NUMBER"
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
-    , [pa_cast]            = "CAST"
+    , [pa_cast]            = "Cast"
     , [pa_llscj_anc]       = "//| ancestor"
     , [pa_llscj_anc_self]  = "//| anc-self"
     , [pa_llscj_attr]      = "//| attr"
@@ -105,7 +99,7 @@ static char *a_id[]  = {
     , [pa_llscj_prec]      = "//| preceding"
     , [pa_llscj_prec_sibl] = "//| prec-sibl"
     , [pa_doc_tbl]         = "DOC"
-    , [pa_doc_access]      = "access"
+    , [pa_doc_access]      = "doc_access"
     , [pa_element]         = "ELEM"             /* lawn \"#00FF00\" */
     , [pa_element_tag]     = "ELEM_TAG"         /* lawn \"#00FF00\" */
     , [pa_attribute]       = "ATTR"             /* lawn \"#00FF00\" */
@@ -113,11 +107,11 @@ static char *a_id[]  = {
     , [pa_docnode]         = "DOC"              /* lawn \"#00FF00\" */
     , [pa_comment]         = "COMMENT"          /* lawn \"#00FF00\" */
     , [pa_processi]        = "PI"               /* lawn \"#00FF00\" */
-    , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
-    , [pa_roots]           = "ROOTS"
-    , [pa_fragment]        = "FRAGs"
-    , [pa_frag_union]      = "FRAG_UNION"
-    , [pa_empty_frag]      = "EMPTY_FRAG"
+    , [pa_merge_adjacent]  = "pf:merge-adjacent-text-nodes"
+    , [pa_roots]           = "roots"
+    , [pa_fragment]        = "fragment"
+    , [pa_frag_union]      = "frag_union"
+    , [pa_empty_frag]      = "empty_frag"
     , [pa_cond_err]        = "!ERROR"
     , [pa_concat]          = "fn:concat"
     , [pa_contains]        = "fn:contains"
@@ -128,7 +122,6 @@ static char *a_id[]  = {
 static char *atomtype[] = {
       [aat_int]   = "int"
     , [aat_str]   = "str"
-    , [aat_uA]    = "aU"
     , [aat_node]  = "node"
     , [aat_anode] = "attr"
     , [aat_pnode] = "pnode"
@@ -163,47 +156,43 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
           [pa_serialize]       = "\"#C0C0C0\""
         , [pa_lit_tbl]         = "\"#C0C0C0\""
         , [pa_empty_tbl]       = "\"#C0C0C0\""
-        , [pa_attach]          = "\"#EEEEEE\""
-        , [pa_cross]           = "\"#990000\""
-        , [pa_leftjoin]        = "\"#00FF00\""
-        , [pa_eqjoin]          = "\"#00FF00\""
-        , [pa_project]         = "\"#EEEEEE\""
-        , [pa_select]          = "\"#00DDDD\""
-        , [pa_append_union]    = "\"#909090\""
-        , [pa_merge_union]     = "\"#909090\""
-        , [pa_intersect]       = "\"#909090\""
-        , [pa_difference]      = "\"#FFA500\""
-        , [pa_sort_distinct]   = "\"#FFA500\""
+        , [pa_attach]          = "\"#C0C0C0\""
+        , [pa_cross]           = "blue"
+        , [pa_leftjoin]        = "blue"
+        , [pa_eqjoin]          = "blue"
+        , [pa_project]         = "\"#DDDDDD\""
+        , [pa_select]          = "\"#C0C0C0\""
+        , [pa_append_union]    = "\"#C0C0C0\""
+        , [pa_merge_union]     = "\"#C0C0C0\""
+        , [pa_intersect]       = "\"#C0C0C0\""
+        , [pa_difference]      = "\"#C0C0C0\""
+        , [pa_sort_distinct]   = "\"#C0C0C0\""
         , [pa_std_sort]        = "red"
         , [pa_refine_sort]     = "red"
-        , [pa_num_add]         = "\"#C0C0C0\""
-        , [pa_num_add_atom]    = "\"#C0C0C0\""
-        , [pa_num_sub]         = "\"#C0C0C0\""
-        , [pa_num_sub_atom]    = "\"#C0C0C0\""
-        , [pa_num_mult]        = "\"#C0C0C0\""
-        , [pa_num_mult_atom]   = "\"#C0C0C0\""
-        , [pa_num_div]         = "\"#C0C0C0\""
-        , [pa_num_div_atom]    = "\"#C0C0C0\""
-        , [pa_num_mod]         = "\"#C0C0C0\""
-        , [pa_num_mod_atom]    = "\"#C0C0C0\""
-        , [pa_eq]              = "\"#00DDDD\""
-        , [pa_eq_atom]         = "\"#00DDDD\""
-        , [pa_gt]              = "\"#00DDDD\""
-        , [pa_gt_atom]         = "\"#00DDDD\""
-        , [pa_num_neg]         = "\"#C0C0C0\""
-        , [pa_bool_not]        = "\"#C0C0C0\""
-        , [pa_bool_and]        = "\"#C0C0C0\""
-        , [pa_bool_or]         = "\"#C0C0C0\""
-        , [pa_bool_and_atom]   = "\"#C0C0C0\""
-        , [pa_bool_or_atom]    = "\"#C0C0C0\""
-        , [pa_avg]             = "\"#A0A0A0\""
-        , [pa_max]             = "\"#A0A0A0\""
-        , [pa_min]             = "\"#A0A0A0\""
-        , [pa_sum]             = "\"#A0A0A0\""
-        , [pa_hash_count]      = "\"#A0A0A0\""
-        , [pa_hash_rownum]     = "\"#FF0000\""
-        , [pa_merge_rownum]    = "\"#FF0000\""
-        , [pa_number]          = "\"#FF9999\""
+        , [pa_num_add]         = "\"#E0E000\""
+        , [pa_num_add_atom]    = "\"#FFFF00\""
+        , [pa_num_sub]         = "\"#E0E000\""
+        , [pa_num_sub_atom]    = "\"#FFFF00\""
+        , [pa_num_mult]        = "\"#E0E000\""
+        , [pa_num_mult_atom]   = "\"#FFFF00\""
+        , [pa_num_div]         = "\"#E0E000\""
+        , [pa_num_div_atom]    = "\"#FFFF00\""
+        , [pa_num_mod]         = "\"#E0E000\""
+        , [pa_num_mod_atom]    = "\"#FFFF00\""
+        , [pa_eq]              = "\"#E0E000\""
+        , [pa_eq_atom]         = "\"#FFFF00\""
+        , [pa_gt]              = "\"#E0E000\""
+        , [pa_gt_atom]         = "\"#FFFF00\""
+        , [pa_num_neg]         = "\"#E0E000\""
+        , [pa_bool_not]        = "\"#E0E000\""
+        , [pa_bool_and]        = "\"#E0E000\""
+        , [pa_bool_or]         = "\"#E0E000\""
+        , [pa_bool_and_atom]   = "\"#FFFF00\""
+        , [pa_bool_or_atom]    = "\"#FFFF00\""
+        , [pa_hash_count]      = "\"#C0C0C0\""
+        , [pa_hash_rownum]     = "\"#C0C0C0\""
+        , [pa_merge_rownum]    = "\"#C0C0C0\""
+        , [pa_number]          = "\"#C0C0C0\""
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
         , [pa_cast]            = "\"#C0C0C0\""
@@ -219,7 +208,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_llscj_prec]      = "\"#1E90FF\""
         , [pa_llscj_prec_sibl] = "\"#1E90FF\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
-        , [pa_doc_access]      = "\"#CCCCFF\""
+        , [pa_doc_access]      = "\"#C0C0C0\""
         , [pa_element]         = "\"#00FC59\""
         , [pa_element_tag]     = "\"#00FC59\""
         , [pa_attribute]       = "\"#00FC59\""
@@ -232,9 +221,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_fragment]        = "\"#E0E0E0\""
         , [pa_frag_union]      = "\"#E0E0E0\""
         , [pa_empty_frag]      = "\"#E0E0E0\""
-        , [pa_cond_err]        = "\"#C0C0C0\""
-        , [pa_concat]          = "\"#C0C0C0\""
-        , [pa_contains]        = "\"#C0C0C0\""
+        , [pa_cond_err]        = "brown"
+        , [pa_concat]          = "\"#E0E000\""
+        , [pa_contains]        = "\"#E0E000\""
         , [pa_string_join]     = "\"#C0C0C0\""
     };
 
@@ -249,14 +238,14 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
     {
         case pa_lit_tbl:
             /* list the attributes of this table */
-            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
+            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s", 
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (dot, ">");
 
             /* print out tuples in table, if table is not empty */
             for (unsigned int d = 0; d < n->sem.lit_tbl.count; d++) {
@@ -273,25 +262,25 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_empty_tbl:
             /* list the attributes of this table */
-            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
+            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s", 
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (dot, ">");
             break;
 
         case pa_attach:
-            PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
+            PFarray_printf (dot, "%s: <%s,%s>", a_id[n->kind],
                             PFatt_str (n->sem.attach.attname),
                             literal (n->sem.attach.value));
             break;
 
         case pa_leftjoin:
         case pa_eqjoin:
-            PFarray_printf (dot, "%s: (%s= %s)", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s=%s)", a_id[n->kind],
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
             break;
@@ -323,18 +312,18 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
             break;
 
         case pa_merge_union:
-            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s: %s", a_id[n->kind],
                             PFord_str (n->sem.merge_union.ord));
             break;
 
         case pa_sort_distinct:
-            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s: %s", a_id[n->kind],
                             PFord_str (n->sem.sort_distinct.ord));
             break;
 
         case pa_std_sort:
         case pa_refine_sort:
-            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s: %s", a_id[n->kind],
                             PFord_str (n->sem.sortby.required));
             break;
 
@@ -349,7 +338,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_bool_or:
         case pa_concat:
         case pa_contains:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
+            PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
                             PFatt_str (n->sem.binary.att2));
@@ -364,7 +353,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_gt_atom:
         case pa_bool_and_atom:
         case pa_bool_or_atom:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
+            PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
                             PFatt_str (n->sem.bin_atom.res),
                             PFatt_str (n->sem.bin_atom.att1),
                             literal (n->sem.bin_atom.att2));
@@ -372,44 +361,29 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_num_neg:
         case pa_bool_not:
-            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
+            PFarray_printf (dot, "%s\\n%s:%s", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
             break;
 
         case pa_hash_count:
-            if (n->sem.count.part == att_NULL)
-                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
-                                PFatt_str (n->sem.count.res));
-            else
-                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
+            if (n->sem.count.part != att_NULL)
+                PFarray_printf (dot, "%s\\n%s:_/%s", a_id[n->kind],
                                 PFatt_str (n->sem.count.res),
                                 PFatt_str (n->sem.count.part));
-            break;
-
-        case pa_avg:
-        case pa_max:
-        case pa_min:
-        case pa_sum:
-            if (n->sem.aggr.part == att_NULL)
-                PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
-                                PFatt_str (n->sem.aggr.res),
-                                PFatt_str (n->sem.aggr.att));
             else
-                PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
-                                PFatt_str (n->sem.aggr.res),
-                                PFatt_str (n->sem.aggr.att),
-                                PFatt_str (n->sem.aggr.part));
+                PFarray_printf (dot, "%s\\n%s", a_id[n->kind],
+                                PFatt_str (n->sem.count.res));
             break;
 
         case pa_hash_rownum:
         case pa_merge_rownum:
             if (n->sem.count.part != att_NULL)
-                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s\\n%s:_/%s", a_id[n->kind],
                                 PFatt_str (n->sem.rownum.attname),
                                 PFatt_str (n->sem.rownum.part));
             else
-                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s\\n%s", a_id[n->kind],
                                 PFatt_str (n->sem.rownum.attname));
             break;
 
@@ -425,12 +399,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_type:
             if (atomtype[n->sem.type.ty])
-                PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
                                 PFatt_str (n->sem.type.res),
                                 PFatt_str (n->sem.type.att),
                                 atomtype[n->sem.type.ty]);
             else
-                PFarray_printf (dot, "%s (%s:<%s>), type: %i", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:%s,%i)", a_id[n->kind],
                                 PFatt_str (n->sem.type.res),
                                 PFatt_str (n->sem.type.att),
                                 n->sem.type.ty);
@@ -438,38 +412,22 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_type_assert:
             if (atomtype[n->sem.type_a.ty])
-                PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s,%s)", a_id[n->kind],
                                 PFatt_str (n->sem.type_a.att),
                                 atomtype[n->sem.type_a.ty]);
             else
-                PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s,%i)", a_id[n->kind],
                                 PFatt_str (n->sem.type_a.att),
                                 n->sem.type_a.ty);
                 
             break;
 
         case pa_cast:
-            PFarray_printf (dot, "%s (%s%s%s%s), type: %s", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s%s%s,%s)", a_id[n->kind],
                             n->sem.cast.res?PFatt_str(n->sem.cast.res):"",
-                            n->sem.cast.res?":<":"",
+                            n->sem.cast.res?":":"",
                             PFatt_str (n->sem.cast.att),
-                            n->sem.cast.res?">":"",
                             atomtype[n->sem.cast.ty]);
-            break;
-
-        case pa_llscj_anc:
-        case pa_llscj_anc_self:
-        case pa_llscj_attr:
-        case pa_llscj_child:
-        case pa_llscj_desc:
-        case pa_llscj_desc_self:
-        case pa_llscj_foll:
-        case pa_llscj_foll_sibl:
-        case pa_llscj_parent:
-        case pa_llscj_prec:
-        case pa_llscj_prec_sibl:
-            PFarray_printf (dot, "%s", a_id[n->kind]);
-            PFarray_printf (dot, "::%s", PFty_str (n->sem.scjoin.ty));
             break;
 
         case pa_doc_access:
@@ -493,20 +451,20 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                         "unknown document access in dot output");
             }
 
-            PFarray_printf (dot, " (%s:<%s>)",
+            PFarray_printf (dot, "\\%s (%s)",
                             PFatt_str (n->sem.doc_access.res),
                             PFatt_str (n->sem.doc_access.att));
             break;
 
         case pa_attribute:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
                             PFatt_str (n->sem.attr.res),
                             PFatt_str (n->sem.attr.qn),
                             PFatt_str (n->sem.attr.val));
             break;
 
         case pa_textnode:
-            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:%s)", a_id[n->kind],
                             PFatt_str (n->sem.textnode.res),
                             PFatt_str (n->sem.textnode.item));
             break;
@@ -522,6 +480,17 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_append_union:
         case pa_intersect:
         case pa_difference:
+        case pa_llscj_anc:
+        case pa_llscj_anc_self:
+        case pa_llscj_attr:
+        case pa_llscj_child:
+        case pa_llscj_desc:
+        case pa_llscj_desc_self:
+        case pa_llscj_foll:
+        case pa_llscj_foll_sibl:
+        case pa_llscj_parent:
+        case pa_llscj_prec:
+        case pa_llscj_prec_sibl:
         case pa_doc_tbl:
         case pa_element:
         case pa_element_tag:
@@ -546,64 +515,33 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         while (*fmt) { 
             if (*fmt == '+')
             {
-                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
-                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
+                if (n->prop)
+                {
+                    PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
 
-                /* list costs if requested */
-                PFarray_printf (dot, "\\ncost: %lu", n->cost);
+                    /* list costs if requested */
+                    PFarray_printf (dot, "\\ncost: %lu", n->cost);
 
-                /* if present print cardinality */
-                if (PFprop_card (n->prop))
-                    PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
-
-                /* list attributes marked const */
-                for (unsigned int i = 0;
-                        i < PFprop_const_count (n->prop); i++)
-                    PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                    PFatt_str (
-                                        PFprop_const_at (n->prop, i)));
-
-                /* list icols attributes */
-                for (unsigned int i = 0; i < icols.count; i++)
-                    PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                    PFatt_str (icols.atts[i]));
-
-                /* list keys attributes */
-                for (unsigned int i = 0; i < keys.count; i++)
-                    PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
-                                    PFatt_str (keys.atts[i]));
-
-                /* list required value columns and their values */
-                for (unsigned int pre = 0, i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_reqval (n->prop, att))
+                    /* list attributes marked const */
+                    for (unsigned int i = 0;
+                            i < PFprop_const_count (n->prop); i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                        PFatt_str (
+                                            PFprop_const_at (n->prop, i)));
+                    /* list icols attributes */
+                    for (unsigned int i = 0; i < icols.count; i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                        PFatt_str (icols.atts[i]));
+                    /* list orderings if requested */
+                    PFarray_printf (dot, "\\norderings:");
+                    for (unsigned int i = 0;
+                            i < PFarray_last (n->orderings); i++)
                         PFarray_printf (
-                            dot, 
-                            pre++ ? ", %s=%s " : "\\nreq. val: %s=%s ",
-                            PFatt_str (att),
-                            PFprop_reqval_val (n->prop, att)?"true":"false");
+                                dot, "\\n%s",
+                                PFord_str (
+                                    *(PFord_ordering_t *)
+                                            PFarray_at (n->orderings,i)));
                 }
-
-                /* list attributes and their corresponding domains */
-                for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (PFprop_dom (n->prop, n->schema.items[i].name)) {
-                        PFarray_printf (dot, i ? ", %s " : "\\ndom: %s ",
-                                        PFatt_str (n->schema.items[i].name));
-                        PFprop_write_domain (
-                            dot, 
-                            PFprop_dom (n->prop, n->schema.items[i].name));
-                    }
-
-                /* list orderings if requested */
-                PFarray_printf (dot, "\\norderings:");
-                for (unsigned int i = 0;
-                        i < PFarray_last (n->orderings); i++)
-                    PFarray_printf (
-                            dot, "\\n%s",
-                            PFord_str (
-                                *(PFord_ordering_t *)
-                                        PFarray_at (n->orderings,i)));
-
                 all = true;
             }
             fmt++;
@@ -620,23 +558,25 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
                 /* list attributes marked const if requested */
                 case 'c':
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
+                    if (n->prop)
+                        for (unsigned int i = 0;
+                                i < PFprop_const_count (n->prop); i++)
+                            PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                            PFatt_str (
+                                                PFprop_const_at (n->prop, i)));
                     break;
 
                 /* list icols attributes if requested */
                 case 'i':
-                {
-                    PFalg_attlist_t icols =
-                                    PFprop_icols_to_attlist (n->prop);
-                    for (unsigned int i = 0;
-                            i < icols.count; i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                        PFatt_str (icols.atts[i]));
-                } break;
+                    if (n->prop) {
+                        PFalg_attlist_t icols =
+                                        PFprop_icols_to_attlist (n->prop);
+                        for (unsigned int i = 0;
+                                i < icols.count; i++)
+                            PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                            PFatt_str (icols.atts[i]));
+                    }
+                    break;
 
                 /* list orderings if requested */
                 case 'o':
@@ -698,7 +638,6 @@ literal (PFalg_atom_t a)
             break;
             
         case aat_str:
-        case aat_uA:
             PFarray_printf (s, "\\\"%s\\\"", a.val.str);
             break;
 
@@ -747,19 +686,6 @@ PFpa_dot (FILE *f, PFpa_op_t *root)
                              "node [fontsize=10];\n");
 
         pa_dot (dot, root, "node1");
-
-        /* add domain subdomain relationships if required */
-        if (PFstate.format) {
-            char *fmt = PFstate.format;
-            while (*fmt) { 
-                if (*fmt == '+') {
-                        PFprop_write_dom_rel_dot (dot, root->prop);
-                        break;
-                }
-                fmt++;
-            }
-        }
-
         /* put content of array into file */
         PFarray_printf (dot, "}\n");
         fprintf (f, "%s", (char *) dot->base);

@@ -1,0 +1,17 @@
+module(pathfinder);
+
+xquery("dm", "<a>aap</a>/text()").printf();
+xquery("dm", "<a>2</a>/text()").printf();
+
+xquery("dm-mapi", "<a>aap</a>/text()").printf();
+xquery("dm-mapi", "<a>2</a>/text()").printf();
+
+xquery("xml-seq-mapi", "<a>aap</a>/text()").printf();
+xquery("xml-seq-mapi", "<a>2</a>/text()").printf();
+
+xquery("xml-mapi", "<a>aap</a>/text()").printf();
+xquery("xml-mapi", "<a>2</a>/text()").printf();
+
+xquery("xml-noroot", "<a>aap</a>/text()").printf();
+xquery("xml-noroot", "<a>2</a>/text()").printf();
+

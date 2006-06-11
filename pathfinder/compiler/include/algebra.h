@@ -63,7 +63,6 @@ enum PFalg_simple_type_t {
     , aat_dbl   = 0x0010  /**< algebra simple atomic type double  */
     , aat_bln   = 0x0020  /**< algebra simple atomic type boolean  */
     , aat_qname = 0x0040  /**< algebra simple atomic type QName  */
-    , aat_uA    = 0x0080  /**< algebra simple atomic type untypedAtomic  */
     , aat_node  = 0x0F00  /**< algebra simple atomic type node */ 
     , aat_anode = 0x0C00  /**< algebra simple atomic type attribute */ 
     , aat_attr  = 0x0800  /**< an attribute is represented 
@@ -79,8 +78,8 @@ typedef enum PFalg_simple_type_t PFalg_simple_type_t;
 
 #define monomorphic(a) ((a) == aat_nat || (a) == aat_int || (a) == aat_str \
                         || (a) == aat_dec || (a) == aat_dbl || (a) == aat_bln \
-                        || (a) == aat_qname || (a) == aat_uA \
-                        || (a) == aat_anode || (a) == aat_pnode \
+                        || (a) == aat_qname || (a) == aat_anode \
+                        || (a) == aat_pnode \
                         || ((a) == aat_pre || (a) == aat_pfrag) \
                         || ((a) == aat_attr || (a) == aat_afrag) \
                         || ((a) == 0))
@@ -99,7 +98,7 @@ typedef unsigned short PFalg_type_t;
 union PFalg_atom_val_t {
     nat        nat;     /**< value for natural number atoms (#aat_nat) */
     int        int_;    /**< value for integer atoms (#aat_int) */
-    char      *str;     /**< value for string and untyped atoms (#aat_str)  */
+    char      *str;     /**< value for string atoms (#aat_str)  */
     float      dec;     /**< value for decimal atoms (#aat_dec) */
     double     dbl;     /**< value for double atoms (#aat_dbl) */
     bool       bln;     /**< value for boolean atoms (#aat_bln) */
@@ -158,21 +157,22 @@ enum PFalg_att_t {
     , att_sort5   = 0x00002000    /**< sort column 5 */
     , att_sort6   = 0x00004000    /**< sort column 6 */
     , att_sort7   = 0x00008000    /**< sort column 7 */
-    , att_ord     = 0x00010000    /**< ord column */
-    , att_iter2   = 0x00020000    /**< iter column 2 */
-    , att_iter3   = 0x00040000    /**< iter column 3 */
-    , att_iter4   = 0x00080000    /**< iter column 4 */
-    , att_iter5   = 0x00100000    /**< iter column 5 */
-    , att_iter6   = 0x00200000    /**< iter column 6 */
-    , att_res     = 0x00400000    /**< res column */
-    , att_res1    = 0x00800000    /**< res1 column */
-    , att_cast    = 0x01000000    /**< cast column */
-    , att_item2   = 0x02000000    /**< item2 column */
-    , att_subty   = 0x04000000    /**< subty column */
-    , att_itemty  = 0x08000000    /**< itemty column */
-    , att_notsub  = 0x10000000    /**< notsub column */
-    , att_isint   = 0x20000000    /**< isint column */
-    , att_isdec   = 0x40000000    /**< isdec column */
+    , att_sort8   = 0x00010000    /**< sort column 8 */
+    , att_sort9   = 0x00020000    /**< sort column 9 */
+    , att_sort10  = 0x00040000    /**< sort column 10 */
+    , att_sort11  = 0x00080000    /**< sort column 11 */
+    , att_sort12  = 0x00100000    /**< sort column 12 */
+    , att_sort13  = 0x00200000    /**< sort column 13 */
+    , att_sort14  = 0x00400000    /**< sort column 14 */
+    , att_res     = 0x00800000    /**< res column */
+    , att_ord     = 0x01000000    /**< ord column */
+    , att_res1    = 0x02000000    /**< res1 column */
+    , att_cast    = 0x04000000    /**< cast column */
+    , att_subty   = 0x08000000    /**< subty column */
+    , att_itemty  = 0x10000000    /**< itemty column */
+    , att_notsub  = 0x20000000    /**< notsub column */
+    , att_isint   = 0x40000000    /**< isint column */
+    , att_isdec   = 0x80000000    /**< isdec column */
 };
 /** attribute names */
 typedef enum PFalg_att_t PFalg_att_t;
@@ -209,6 +209,7 @@ struct PFalg_proj_t {
 typedef struct PFalg_proj_t PFalg_proj_t;
 
 
+
 /* ....... staircase join specs (semantic infos of scj operators) ....... */
 
 /** location steps */
@@ -225,6 +226,12 @@ enum PFalg_axis_t {
     , alg_prec         /**< preceding axis */
     , alg_prec_s       /**< preceding-sibling axis */
     , alg_self         /**< self axis */
+#ifdef BURKOWSKI
+    , alg_sn           /**< select-narrow axis */
+    , alg_sw           /**< select-wide axis */
+    , alg_rn           /**< reject-narrow axis */
+    , alg_rw           /**< reject-wide axis */
+#endif
 };
 /** location steps */
 typedef enum PFalg_axis_t PFalg_axis_t;
@@ -333,24 +340,6 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
  * Print attribute name
  */
 char * PFatt_str (PFalg_att_t att);
-
-/**
- * Create a unique name based on an id @a id and 
- * an original name @a ori that retains the usage information
- * of the new variable (iter, pos or item).
- */
-PFalg_att_t PFalg_unq_name (PFalg_att_t ori, unsigned int id);
-
-/**
- * Create an original column name based on an unique name @a unq
- * and a list of free original variables @a free.
- */
-PFalg_att_t PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free);
-
-/**
- * Print simple type name
- */
-char * PFsimple_type_str (PFalg_simple_type_t att);
 
 #endif  /* ALGEBRA_H */
 

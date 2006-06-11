@@ -28,7 +28,6 @@ lib_mem = {
 	DIR = libdir
 	SOURCES = \
 		array.c \
-		bitset.c \
 		mem.c 
 }
 

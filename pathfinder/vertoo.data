@@ -1,2 +1,2 @@
-monetdb = major:4; minor:11; release:3;
-pathfinder = major:0; minor:11; release:3; rc:x; build:1;
+monetdb = major:4; minor:10; release:3;
+pathfinder = major:0; minor:10; release:3; rc:x; build:1;

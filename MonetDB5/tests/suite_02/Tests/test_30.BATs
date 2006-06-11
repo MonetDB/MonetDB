@@ -1,2 +1,0 @@
-W10k_evenOnePercent
-W10k_tenPercent

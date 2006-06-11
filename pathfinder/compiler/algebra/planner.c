@@ -1,5 +1,3 @@
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
  * @file
  *
@@ -192,7 +190,7 @@ plan_serialize (const PFla_op_t *n)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), n->sem.serialize.pos)));
+                       PFord_refine (PFordering (), att_pos)));
 
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);
@@ -203,8 +201,7 @@ plan_serialize (const PFla_op_t *n)
             add_plan (ret,
                       serialize (
                           *(plan_t **) PFarray_at (L(n)->plans, j),
-                          *(plan_t **) PFarray_at (sorted, i),
-                          n->sem.serialize.item));
+                          *(plan_t **) PFarray_at (sorted, i)));
 
     return ret;
 }
@@ -263,35 +260,21 @@ plan_empty_tbl (const PFla_op_t *n)
     PFplanlist_t  *ret  = new_planlist ();
     plan_t        *plan = NULL;
 
+    PFalg_attlist_t attlist;
+
+    attlist.count = n->schema.count;
+    attlist.atts  = PFmalloc (attlist.count * sizeof (*attlist.atts));
+
+    for (unsigned int i = 0; i < attlist.count; i++)
+        attlist.atts[i] = n->schema.items[i].name;
+
     /*
      * There is exactly this one plan.
      */
-    plan = empty_tbl (n->schema);
+    plan = empty_tbl (attlist);
 
     /* Add this plan to the return set of plans. */
     add_plan (ret, plan);
-
-    return ret;
-}
-
-/**
- * Generate possible physical plans for logical ColumnAttach
- * operator (direct mapping from logical to physical ColumnAttac).
- */
-static PFplanlist_t *
-plan_attach (const PFla_op_t *n)
-{
-    PFplanlist_t  *ret  = new_planlist ();
-
-    assert (n); assert (n->kind == la_attach);
-    assert (L(n)); assert (L(n)->plans);
-
-    /* consider each plan in R */
-    for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
-        add_plan (ret,
-                  attach (*(plan_t **) PFarray_at (L(n)->plans, r),
-                          n->sem.attach.attname,
-                          n->sem.attach.value));
 
     return ret;
 }
@@ -570,7 +553,7 @@ plan_disjunion (const PFla_op_t *n)
 
                 if (tyR == tyS
                     && (tyR == aat_nat || tyR == aat_int || tyR == aat_str
-                        || tyR == aat_dec || tyR == aat_dbl || tyR == aat_uA))
+                        || tyR == aat_dec || tyR == aat_dbl))
 
                     PFord_set_add (prefixes, PFord_refine (PFordering (), att));
             }
@@ -807,30 +790,6 @@ plan_unary (const PFla_op_t *n)
 }
 
 /**
- * Generate physical plan for logical aggregation operators
- * (avg, max, min, sum).
- */
-static PFplanlist_t *
-plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
-{
-    PFplanlist_t  *ret  = new_planlist ();
-
-    assert (n); 
-    assert (n->kind == la_avg || n->kind == la_max 
-            || n->kind == la_min || n->kind == la_sum);
-    assert (L(n)); assert (L(n)->plans);
-
-    /* consider each plan in n */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret,
-                  aggr (kind,
-                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                        n->sem.aggr.res, n->sem.aggr.att, n->sem.aggr.part));
-
-    return ret;
-}
-
-/**
  * Generate physical plan for the logical `Count' operator.
  *
  * Currently we only provide HashCount, which neither benefits from
@@ -853,7 +812,7 @@ plan_count (const PFla_op_t *n)
         add_plan (ret,
                   hash_count (
                       *(plan_t **) PFarray_at (L(n)->plans, i),
-                      n->sem.aggr.res, n->sem.aggr.part));
+                      n->sem.count.res, n->sem.count.part));
 
     return ret;
 }
@@ -980,7 +939,7 @@ plan_type_assert (const PFla_op_t *n)
         add_plan (ret,
                   type_assert (
                       *(plan_t **) PFarray_at (L(n)->plans, i),
-                      n->sem.type.att, n->sem.type.ty));
+                      n->sem.type_a.att, n->sem.type_a.ty));
 
     return ret;
 }
@@ -1004,9 +963,9 @@ plan_cast (const PFla_op_t *n)
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         add_plan (ret,
                   cast (*(plan_t **) PFarray_at (L(n)->plans, r),
-                        n->sem.type.res,
-                        n->sem.type.att,
-                        n->sem.type.ty));
+                        n->sem.cast.res,
+                        n->sem.cast.att,
+                        n->sem.cast.ty));
 
     return ret;
 }
@@ -1020,13 +979,7 @@ plan_scjoin (const PFla_op_t *n)
 {
     PFplanlist_t *ret     = new_planlist ();
     PFpa_op_t* (*llscj) (const PFpa_op_t *, const PFpa_op_t *, const PFty_t,
-                         const PFord_ordering_t, const PFord_ordering_t,
-                         PFalg_att_t, PFalg_att_t) = NULL;
-
-#ifndef NDEBUG
-    /* ensure that input and output columns have the same name */
-    assert (n->sem.scjoin.item == n->sem.scjoin.item_res);
-#endif
+                         const PFord_ordering_t, const PFord_ordering_t) = NULL;
 
     switch (n->sem.scjoin.axis) {
         case alg_anc:       llscj = PFpa_llscj_anc;         break;
@@ -1041,6 +994,12 @@ plan_scjoin (const PFla_op_t *n)
         case alg_prec:      llscj = PFpa_llscj_prec;        break;
         case alg_prec_s:    llscj = PFpa_llscj_prec_sibl;   break;
         case alg_self:      assert (0);                     break;
+#ifdef BURKOWSKI
+        case alg_sn:        assert (0); /* llscj = PFpa_llscj_sn;  */        break;
+        case alg_sw:        assert (0); /* llscj = PFpa_llscj_sw;  */        break;
+        case alg_rn:        assert (0); /* llscj = PFpa_llscj_rn;  */        break;
+        case alg_rw:        assert (0); /* llscj = PFpa_llscj_rw;  */        break;
+#endif
     }
 
     /*
@@ -1058,19 +1017,15 @@ plan_scjoin (const PFla_op_t *n)
      * encoded in a single integer value.
      */
     const PFord_ordering_t in[2]
-        = { PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.iter),
-                              n->sem.scjoin.item),
-                PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.item),
-                              n->sem.scjoin.iter) };
+            = { PFord_refine (PFord_refine (PFordering (), att_iter),
+                              att_item),
+                PFord_refine (PFord_refine (PFordering (), att_item),
+                              att_iter) };
     const PFord_ordering_t out[2]
-            = { PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.iter),
-                              n->sem.scjoin.item),
-                PFord_refine (PFord_refine (PFordering (),
-                                            n->sem.scjoin.item),
-                              n->sem.scjoin.iter) };
+            = { PFord_refine (PFord_refine (PFordering (), att_iter),
+                              att_item),
+                PFord_refine (PFord_refine (PFordering (), att_item),
+                              att_iter) };
 
     /* consider the two possible input orderings */
     for (unsigned short i = 0; i < 2; i++) {
@@ -1097,9 +1052,7 @@ plan_scjoin (const PFla_op_t *n)
                                *(plan_t **) PFarray_at (ordered, k),
                                n->sem.scjoin.ty,
                                in[i],
-                               out[i],
-                               n->sem.scjoin.iter,
-                               n->sem.scjoin.item));
+                               out[i]));
                 else
                     for (unsigned short o = 0; o < 2; o++)
                         add_plan (
@@ -1109,9 +1062,7 @@ plan_scjoin (const PFla_op_t *n)
                                    *(plan_t **) PFarray_at (ordered, k),
                                    n->sem.scjoin.ty,
                                    in[i],
-                                   out[o],
-                                   n->sem.scjoin.iter,
-                                   n->sem.scjoin.item));
+                                   out[o]));
     }
 
     return ret;
@@ -1134,11 +1085,6 @@ plan_doc_tbl (const PFla_op_t *n)
     plan_t        *cheapest_unordered = NULL;
     plan_t        *cheapest_ordered   = NULL;
 
-#ifndef NDEBUG
-    /* ensure that input and output columns have the same name */
-    assert (n->sem.doc_tbl.item == n->sem.doc_tbl.item_res);
-#endif
-
     /* find the cheapest plan for our argument */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         if (!cheapest_unordered
@@ -1152,7 +1098,7 @@ plan_doc_tbl (const PFla_op_t *n)
         add_plans (ordered,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                       PFord_refine (PFordering (), n->sem.doc_tbl.iter)));
+                       PFord_refine (PFordering (), att_iter)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered); i++)
         if (!cheapest_ordered
@@ -1168,13 +1114,9 @@ plan_doc_tbl (const PFla_op_t *n)
      * its cost is at most 1.5 times the cost of an unordered plan.
      */
     if (cheapest_ordered->cost <= cheapest_unordered->cost * 1.5)
-        add_plan (ret, doc_tbl (cheapest_ordered, 
-                                n->sem.doc_tbl.iter,
-                                n->sem.doc_tbl.item));
+        add_plan (ret, doc_tbl (cheapest_ordered));
     else
-        add_plan (ret, doc_tbl (cheapest_unordered,
-                                n->sem.doc_tbl.iter,
-                                n->sem.doc_tbl.item));
+        add_plan (ret, doc_tbl (cheapest_unordered));
 
     return ret;
 }
@@ -1216,24 +1158,12 @@ plan_doc_access (const PFla_op_t *n)
 static PFplanlist_t *
 plan_element (const PFla_op_t *n)
 {
-    PFpa_op_t     *element;
     PFplanlist_t  *ret                = new_planlist ();
     PFplanlist_t  *ordered_qn         = new_planlist ();
     PFplanlist_t  *ordered_cont       = new_planlist ();
     plan_t        *cheapest_frag_plan = NULL;
     plan_t        *cheapest_qn_plan   = NULL;
     plan_t        *cheapest_cont_plan = NULL;
-    PFalg_att_t    iter = n->sem.elem.iter_qn;
-    PFalg_att_t    pos  = n->sem.elem.pos_val;
-    PFalg_att_t    item = n->sem.elem.item_qn;
-
-#ifndef NDEBUG
-    /* ensure that matching columns (iter, pos, item) have the same name */
-    assert (n->sem.elem.iter_qn == n->sem.elem.iter_val &&
-            n->sem.elem.iter_qn == n->sem.elem.iter_res);
-    assert (n->sem.elem.item_qn == n->sem.elem.item_val &&
-            n->sem.elem.item_qn == n->sem.elem.item_res);
-#endif
 
     /* find the cheapest plan for the fragments */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
@@ -1247,7 +1177,7 @@ plan_element (const PFla_op_t *n)
         add_plans (ordered_qn,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(R(n))->plans, i),
-                       PFord_refine (PFordering (), iter)));
+                       PFord_refine (PFordering (), att_iter)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered_qn); i++)
         if (!cheapest_qn_plan
@@ -1261,8 +1191,8 @@ plan_element (const PFla_op_t *n)
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(R(n))->plans, i),
                        PFord_refine (
-                           PFord_refine (PFordering (), iter),
-                           pos)));
+                           PFord_refine (PFordering (), att_iter),
+                           att_pos)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered_cont); i++)
         if (!cheapest_cont_plan
@@ -1270,15 +1200,9 @@ plan_element (const PFla_op_t *n)
                          cheapest_cont_plan))
             cheapest_cont_plan = *(plan_t **) PFarray_at (ordered_cont, i);
 
-    element = element (cheapest_frag_plan,
-                       cheapest_qn_plan,
-                       cheapest_cont_plan,
-                       iter, pos, item);
-
-    /* assure that element_tag also gets a property */
-    R(element)->prop = PFprop ();
-
-    add_plan (ret, element);
+    add_plan (ret, element (cheapest_frag_plan,
+                            cheapest_qn_plan,
+                            cheapest_cont_plan));
 
     return ret;
 }
@@ -1293,17 +1217,40 @@ plan_element (const PFla_op_t *n)
 static PFplanlist_t *
 plan_attribute (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret           = new_planlist ();
-    plan_t        *cheapest_plan = NULL;
+    PFplanlist_t  *ret               = new_planlist ();
+    PFplanlist_t  *ordered_qn        = new_planlist ();
+    PFplanlist_t  *ordered_str       = new_planlist ();
+    plan_t        *cheapest_qn_plan  = NULL;
+    plan_t        *cheapest_str_plan = NULL;
 
-    /* find the cheapest plan */
+    /* find the cheapest plan for the qnames */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_plan
-            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_plan))
-            cheapest_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
+        add_plans (ordered_qn,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       PFord_refine (PFordering (), att_iter)));
 
-    add_plan (ret, attribute (cheapest_plan,
+    for (unsigned int i = 0; i < PFarray_last (ordered_qn); i++)
+        if (!cheapest_qn_plan
+            || costless (*(plan_t **) PFarray_at (ordered_qn, i),
+                         cheapest_qn_plan))
+            cheapest_qn_plan = *(plan_t **) PFarray_at (ordered_qn, i);
+
+    /* find the cheapest plan for the strings */
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
+        add_plans (ordered_str,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (R(n)->plans, i),
+                       PFord_refine (PFordering (), att_iter)));
+
+    for (unsigned int i = 0; i < PFarray_last (ordered_str); i++)
+        if (!cheapest_str_plan
+            || costless (*(plan_t **) PFarray_at (ordered_str, i),
+                         cheapest_str_plan))
+            cheapest_str_plan = *(plan_t **) PFarray_at (ordered_str, i);
+
+    add_plan (ret, attribute (cheapest_qn_plan,
+                              cheapest_str_plan,
                               n->sem.attr.qn,
                               n->sem.attr.val,
                               n->sem.attr.res));
@@ -1322,18 +1269,44 @@ static PFplanlist_t *
 plan_textnode (const PFla_op_t *n)
 {
     PFplanlist_t  *ret                = new_planlist ();
-    plan_t        *cheapest_plan = NULL;
+    PFplanlist_t  *ordered            = new_planlist ();
+    plan_t        *cheapest_unordered = NULL;
+    plan_t        *cheapest_ordered   = NULL;
 
-    /* find the cheapest plan */
+    /* find the cheapest plan for our argument */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_plan
+        if (!cheapest_unordered
             || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_plan))
-            cheapest_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
+                         cheapest_unordered))
+            cheapest_unordered
+                = *(plan_t **) PFarray_at (L(n)->plans, i);
 
-    add_plan (ret, textnode (cheapest_plan,
-                             n->sem.textnode.res,
-                             n->sem.textnode.item));
+    /* an ordering by `iter' is typically helpful -> sort all plans */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (ordered,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       PFord_refine (PFordering (), att_iter)));
+
+    for (unsigned int i = 0; i < PFarray_last (ordered); i++)
+        if (!cheapest_ordered
+            || costless (*(plan_t **) PFarray_at (ordered, i),
+                         cheapest_ordered))
+            cheapest_ordered = *(plan_t **) PFarray_at (ordered, i);
+
+    /*
+     * The plan `cheapest_unordered' is always the cheapest possible
+     * plan.  However, an ordered plan could still be benefitial,
+     * even if it is slightly more expensive on its own.  We assume
+     * that the ordering makes up the cost of an unordered plan, if
+     * its cost is at most 1.5 times the cost of an unordered plan.
+     */
+    if (cheapest_ordered->cost <= cheapest_unordered->cost * 1.5)
+        add_plan (ret, textnode (cheapest_ordered, n->sem.textnode.res,
+                                 n->sem.textnode.item));
+    else
+        add_plan (ret, textnode (cheapest_unordered, n->sem.textnode.res,
+                                 n->sem.textnode.item));
 
     return ret;
 }
@@ -1349,17 +1322,6 @@ plan_merge_texts (const PFla_op_t *n)
     PFplanlist_t *sorted = new_planlist ();
     plan_t       *cheapest_frag_plan = NULL;
     plan_t       *cheapest_sorted    = NULL;
-    PFalg_att_t   iter = n->sem.merge_adjacent.iter_in;
-    PFalg_att_t   pos  = n->sem.merge_adjacent.pos_in;
-    PFalg_att_t   item = n->sem.merge_adjacent.item_in;
-
-#ifndef NDEBUG
-    /* ensure that matching columns (iter, pos, item) have the same name */
-    assert (iter == n->sem.merge_adjacent.iter_res);
-    assert (pos  == n->sem.merge_adjacent.pos_res);
-    assert (item == n->sem.merge_adjacent.item_res);
-#endif
-
 
     assert (n); assert (n->kind == la_merge_adjacent);
     assert (L(n)); assert (L(n)->plans);
@@ -1379,8 +1341,8 @@ plan_merge_texts (const PFla_op_t *n)
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
                        PFord_refine (
-                           PFord_refine (PFordering (), iter),
-                           pos)));
+                           PFord_refine (PFordering (), att_iter),
+                           att_pos)));
 
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
         if (!cheapest_sorted
@@ -1393,8 +1355,7 @@ plan_merge_texts (const PFla_op_t *n)
     add_plan (ret,
               merge_adjacent (
                   cheapest_frag_plan,
-                  cheapest_sorted,
-                  iter, pos, item));
+                  cheapest_sorted));
     return ret;
 }
 
@@ -1538,17 +1499,6 @@ plan_string_join (const PFla_op_t *n)
     PFplanlist_t *ret       = new_planlist ();
     PFplanlist_t *sorted_n1 = new_planlist ();
     PFplanlist_t *sorted_n2 = new_planlist ();
-    PFalg_att_t   iter = n->sem.string_join.iter;
-    PFalg_att_t   pos  = n->sem.string_join.pos;
-    PFalg_att_t   item = n->sem.string_join.item;
-
-#ifndef NDEBUG
-    /* ensure that matching columns (iter, pos, item) have the same name */
-    assert (iter == n->sem.string_join.iter_sep &&
-            iter == n->sem.string_join.iter_res);
-    assert (item == n->sem.string_join.item_sep &&
-            item == n->sem.string_join.item_res);
-#endif
 
     assert (n); assert (n->kind == la_string_join);
     assert (L(n)); assert (L(n)->plans);
@@ -1559,14 +1509,14 @@ plan_string_join (const PFla_op_t *n)
         add_plans (sorted_n1,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                       PFord_refine (PFord_refine (PFordering (), iter),
-                                     pos)));
+                       PFord_refine (PFord_refine (PFordering (), att_iter),
+                                     att_pos)));
 
     for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
         add_plans (sorted_n2,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), iter)));
+                       PFord_refine (PFordering (), att_iter)));
 
     /* for each remaining plan, generate a string_join operator */
     for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)
@@ -1574,8 +1524,7 @@ plan_string_join (const PFla_op_t *n)
             add_plan (ret,
                       string_join (
                           *(plan_t **) PFarray_at (sorted_n1, i),
-                          *(plan_t **) PFarray_at (sorted_n2, j),
-                          iter, item));
+                          *(plan_t **) PFarray_at (sorted_n2, j)));
     return ret;
 }
 
@@ -1811,76 +1760,72 @@ plan_subexpression (PFla_op_t *n)
 
     /* Compute possible plans. */
     switch (n->kind) {
-        case la_serialize:      plans = plan_serialize (n);    break;
+        case la_serialize:      plans = plan_serialize (n);   break;
+
+        case la_lit_tbl:        plans = plan_lit_tbl (n);     break;
+        case la_empty_tbl:      plans = plan_empty_tbl (n);   break;
+        case la_cross:          plans = plan_cross (n);       break;
+        case la_eqjoin:         plans = plan_eqjoin (n);      break;
+        case la_project:        plans = plan_project (n);     break;
+        case la_select:         plans = plan_select (n);      break;
+        case la_disjunion:      plans = plan_disjunion (n);   break;
+     /* case la_intersect:      */
+        case la_difference:     plans = plan_difference (n);  break;
+        case la_distinct:       plans = plan_distinct (n);    break;
                                                               
-        case la_lit_tbl:        plans = plan_lit_tbl (n);      break;
-        case la_empty_tbl:      plans = plan_empty_tbl (n);    break;
-        case la_attach:         plans = plan_attach (n);       break;
-        case la_cross:          plans = plan_cross (n);        break;
-        case la_eqjoin:         plans = plan_eqjoin (n);       break;
-        case la_project:        plans = plan_project (n);      break;
-        case la_select:         plans = plan_select (n);       break;
-        case la_disjunion:      plans = plan_disjunion (n);    break;
-     /* case la_intersect:      */                             
-        case la_difference:     plans = plan_difference (n);   break;
-        case la_distinct:       plans = plan_distinct (n);     break;
-                                                               
-        case la_num_add:                                       
-        case la_num_subtract:                                  
-        case la_num_multiply:                                  
-        case la_num_divide:                                    
-        case la_num_modulo:                                    
-        case la_num_eq:                                        
-        case la_num_gt:                                        
-        case la_bool_and:                                      
-        case la_bool_or:                                       
-                                plans = plan_binop (n);        break;
-                                                               
-        case la_num_neg:                                       
-        case la_bool_not:                                      
-                                plans = plan_unary (n);        break;
-        case la_avg:            plans = plan_aggr (pa_avg, n); break;
-        case la_max:            plans = plan_aggr (pa_max, n); break;
-        case la_min:            plans = plan_aggr (pa_min, n); break;
-        case la_sum:            plans = plan_aggr (pa_sum, n); break;
-        case la_count:          plans = plan_count (n);        break;
-                                                               
-        case la_rownum:         plans = plan_rownum (n);       break;
-        case la_number:         plans = plan_number (n);       break;
-        case la_type:           plans = plan_type (n);         break;
-        case la_type_assert:    plans = plan_type_assert (n);  break;
-        case la_cast:           plans = plan_cast (n);         break;
-     /* case la_seqty1:         */                             
-     /* case la_all:            */                             
-                                                               
-        case la_scjoin:         plans = plan_scjoin (n);       break;
-        case la_doc_tbl:        plans = plan_doc_tbl (n);      break;
-        case la_doc_access:     plans = plan_doc_access (n);   break;
+        case la_num_add:                                      
+        case la_num_subtract:                                 
+        case la_num_multiply:                                 
+        case la_num_divide:                                   
+        case la_num_modulo:                                   
+        case la_num_eq:                                       
+        case la_num_gt:                                       
+        case la_bool_and:
+        case la_bool_or:
+                                plans = plan_binop (n);       break;
                                                               
-        case la_element:                                       
-            plan_subexpression (L(n));                         
-            assert (R(n)->kind == la_element_tag);             
-            plan_subexpression (L(R(n)));                      
-            plan_subexpression (R(R(n)));                      
-            plans = plan_element (n);                          
-            break;                                             
-        case la_attribute:      plans = plan_attribute (n);    break;
-        case la_textnode:       plans = plan_textnode (n);     break;
-     /* case la_docnode:        */                             
-     /* case la_comment:        */                             
-     /* case la_processi:       */                             
-        case la_merge_adjacent: plans = plan_merge_texts (n);  break;
-                                                               
-        case la_roots:          plans = plan_roots (n);        break;
-        case la_fragment:       plans = plan_fragment (n);     break;
-        case la_frag_union:     plans = plan_frag_union (n);   break;
-        case la_empty_frag:     plans = plan_empty_frag (n);   break;
-                                                               
-        case la_cond_err:       plans = plan_cond_err (n);     break;
-                                                               
-        case la_concat:         plans = plan_concat (n);       break;
-        case la_contains:       plans = plan_contains (n);     break;
-        case la_string_join:    plans = plan_string_join (n);  break;
+        case la_num_neg:                                      
+        case la_bool_not:                                     
+                                plans = plan_unary (n);       break;
+     /* case la_sum:            */
+        case la_count:          plans = plan_count (n);       break;
+                                                              
+        case la_rownum:         plans = plan_rownum (n);      break;
+        case la_number:         plans = plan_number (n);      break;
+        case la_type:           plans = plan_type (n);        break;
+        case la_type_assert:    plans = plan_type_assert (n); break;
+        case la_cast:           plans = plan_cast (n);        break;
+     /* case la_seqty1:         */
+     /* case la_all:            */
+                                                              
+        case la_scjoin:         plans = plan_scjoin (n);      break;
+        case la_doc_tbl:        plans = plan_doc_tbl (n);     break;
+        case la_doc_access:     plans = plan_doc_access (n);  break;
+
+        case la_element:
+            plan_subexpression (L(n));
+            assert (R(n)->kind == la_element_tag);
+            plan_subexpression (L(R(n)));
+            plan_subexpression (R(R(n)));
+            plans = plan_element (n);
+            break;
+        case la_attribute:      plans = plan_attribute (n);   break;
+        case la_textnode:       plans = plan_textnode (n);    break;
+     /* case la_docnode:        */
+     /* case la_comment:        */
+     /* case la_processi:       */
+        case la_merge_adjacent: plans = plan_merge_texts (n); break;
+                                                              
+        case la_roots:          plans = plan_roots (n);       break;
+        case la_fragment:       plans = plan_fragment (n);    break;
+        case la_frag_union:     plans = plan_frag_union (n);  break;
+        case la_empty_frag:     plans = plan_empty_frag (n);  break;
+                                                              
+        case la_cond_err:       plans = plan_cond_err (n);    break;
+                                
+        case la_concat:         plans = plan_concat (n);      break;
+        case la_contains:       plans = plan_contains (n);    break;
+        case la_string_join:    plans = plan_string_join (n); break;
                                                               
         default:
             PFoops (OOPS_FATAL,

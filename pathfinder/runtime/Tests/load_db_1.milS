@@ -7,4 +7,3 @@ var path:=getenv("TSTSRCDIR");
 shred_doc(path+"/xml-docs/foo.xml","foo.xml");
 shred_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
 
-shred_doc(path+"/xml-docs/nodekinds.xml","nodekinds.xml");

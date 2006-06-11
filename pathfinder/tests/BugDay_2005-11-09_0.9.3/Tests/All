@@ -1,7 +1,7 @@
 self_clause.SF-1076161
 dashes_in_functions.SF-1198495
 variables_scoping.SF-1199082
-xquery_crashtest.SF-1207048
+#DEVELOPMENT?xquery_crashtest.SF-1207048 # Not fixed, yet.
 delete_doc.SF-1208129
 strange_ampersand.SF-1208620
 gt.SF-1209749

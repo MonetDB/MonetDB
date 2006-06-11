@@ -323,7 +323,7 @@ FunParam:           param (SequenceType, var)                   =  73 (10);
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
-static PFfun_t * overload (PFqname_t qn, PFcnode_t *args, int is_rpc);
+static PFfun_t * overload (PFqname_t qn, PFcnode_t *args);
 static PFty_t specific (PFfun_t *fn, PFcnode_t *args);
 
 /**
@@ -400,13 +400,6 @@ reduce (PFcnode_t * p, int goalnt)
              */
             reduce (kids[1], nts[1]);
             reduce (kids[0], nts[0]);
-
-            if (!PFty_subtype (TY(R(p)),
-                               PFty_choice (PFty_star (PFty_item ()),
-                                            PFty_star (PFty_stmt ()))))
-                PFoops (OOPS_TYPECHECK,
-                        "illegal combination of query and update features");
-
             break;
 
         /* Query:              CoreExpr */
@@ -447,38 +440,8 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
 
-            /*
-             * The specs prohibit the (statically typed) empty sequence
-             * in many places.  (see XQuery FS, beginning of Section 4)
-             */
-            if (PFty_subtype (t1, PFty_empty ()))
-                PFoops (OOPS_TYPECHECK,
-                        "binding sequence in a for clause has static "
-                        "type `empty'");
-
-            /*
-             * XQuery Update Facility disallows updates in the `for'
-             * part.
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (t1))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: binding sequence may not contain "
-                        "an updating expression (has type `%s')",
-                        PFty_str (t1));
-
-            /* sanity check */
-            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
-                PFoops (OOPS_TYPECHECK,
-                        "illegal binding in for clause, cannot iterate over "
-                        "type `%s'",
-                        PFty_str (t1));
-
             /* Var : prime (t1) */
             TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
-
-            /* Var1 should now have a sensible type (not `none') */
-            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
 
             /* E[Var : prime (t1)] |- CoreExpr : t2 */
             assert (LLL(p)->sem.var);
@@ -510,33 +473,6 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
 
-            /*
-             * The specs prohibit the (statically typed) empty sequence
-             * in many places.  (see XQuery FS, beginning of Section 4)
-             */
-            if (PFty_subtype (t1, PFty_empty ()))
-                PFoops (OOPS_TYPECHECK,
-                        "binding sequence in a for clause has static "
-                        "type `empty'");
-
-            /*
-             * XQuery Update Facility disallows updates in the `for'
-             * part.
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (t1))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: binding sequence may not contain "
-                        "an updating expression (has type `%s')",
-                        PFty_str (t1));
-
-            /* sanity check */
-            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
-                PFoops (OOPS_TYPECHECK,
-                        "illegal binding in for clause, cannot iterate over "
-                        "type `%s'",
-                        PFty_str (t1));
-
             /* Var2 : xs:integer */
             TY(LLR(p)) = PFty_xs_integer ();
             assert (LLR(p)->sem.var);
@@ -544,9 +480,6 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* Var1 : prime (t1) */
             TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
-
-            /* Var1 should now have a sensible type (not `none') */
-            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
 
             /* E[Var1 : prime (t1), Var2 : xs:integer] |- CoreExpr : t2 */
             assert (LLL(p)->sem.var);
@@ -574,16 +507,6 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
             TY(LL(p)) = t1;
-
-            /*
-             * NOTE:
-             *   The XQuery Update Facility disallows updating
-             *   expressions in the `let' part of a FLWOR clause.
-             *   However, our compilation into XQuery Core has
-             *   introduced lots of `let' clauses, such that any
-             *   update expression would fail if we really enforce
-             *   this semantics.
-             */
 
             /* E[Var : t1] |- CoreExpr : t2 */
             assert (LL(p)->sem.var);
@@ -613,18 +536,6 @@ reduce (PFcnode_t * p, int goalnt)
                         "if-then-else condition of type %s (expected %s)",
                         PFty_str (TY(L(p))), PFty_str (PFty_boolean ()));
 
-            /*
-             * no mixture of updates and expressions
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (TY(p))))
-                && !PFty_disjoint (PFty_item (),
-                                   PFty_prime (PFty_defn (TY(p)))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: illegal mix of updating and "
-                        "non-updating expressions (got type `%s')",
-                        PFty_str (TY(p)));
-
             break;
 
         /* CoreExpr:           seq (Atom, Atom) */
@@ -636,19 +547,6 @@ reduce (PFcnode_t * p, int goalnt)
              *  E |- seq (Atom1, Atom2) : t1, t2
              */
             TY(p) = *PFty_simplify (PFty_seq (TY(L(p)), TY(R(p))));
-
-            /*
-             * no mixture of updates and expressions
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (TY(p))))
-                && !PFty_disjoint (PFty_item (),
-                                   PFty_prime (PFty_defn (TY(p)))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: illegal mix of updating and "
-                        "non-updating expressions (got type `%s')",
-                        PFty_str (TY(p)));
-
             break;
 
         /* CoreExpr:           typesw (Atom,
@@ -681,36 +579,12 @@ reduce (PFcnode_t * p, int goalnt)
             t1 = TY(L(p));
             t2 = TY(RLL(p));
 
-            /*
-             * XQuery Update Facility disallows updates in the
-             * operand expression of a typeswitch.
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (t1))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: operand in `typeswitch' may not contain "
-                        "an updating expression (has type `%s')",
-                        PFty_str (t1));
-
             if (PFty_subtype (t1, t2))
                 TY(p) = TY(RLR(p));
             else if (PFty_disjoint (t1, t2))
                 TY(p) = TY(RRL(p));
             else
                 TY(p) = *PFty_simplify (PFty_choice (TY(RLR(p)), TY(RRL(p))));
-
-            /*
-             * no mixture of updates and expressions
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (TY(p))))
-                && !PFty_disjoint (PFty_item (),
-                                   PFty_prime (PFty_defn (TY(p)))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: illegal mix of updating and "
-                        "non-updating expressions (got type `%s')",
-                        PFty_str (t1));
-
         } break;
 
         /* SequenceTypeCast:   seqcast (SequenceType, CoreExpr) */
@@ -781,17 +655,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       attribute (SequenceType) */
         case 21:
-            /*
-             * For attribute steps that do not contain any wildcards,
-             * we know that there can be at most one match for each
-             * context node.
-             */
-            assert (TY(L(p)).type == ty_attr);
-            if (! (PFQNAME_NS_WILDCARD (TY(L(p)).name)
-                   || PFQNAME_LOC_WILDCARD (TY(L(p)).name)))
-                TY(p) = PFty_opt (TY(L(p)));
-            else
-                TY(p) = PFty_star (TY(L(p)));
+            TY(p) = PFty_star (TY(L(p)));
             break;
 
         /* LocationStep:       child (SequenceType) */
@@ -821,17 +685,8 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       parent (SequenceType) */
         case 27:
-        {
-            PFty_t possible_parent_types
-                = PFty_choice (PFty_xs_anyElement (),
-                               PFty_doc (PFty_xs_anyNode ()));
-
-            if (PFty_subtype (possible_parent_types,
-                              TY(L(p))))
-                TY(p) = PFty_opt (possible_parent_types);
-            else
-                TY(p) = PFty_opt (TY(L(p)));
-        } break;
+            TY(p) = PFty_opt (TY(L(p)));
+            break;
 
         /* LocationStep:       preceding (SequenceType) */
         case 28:
@@ -884,12 +739,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* resolve overloading,
              * any type errors will be detected during resolution
              */
-            p->sem.apply.fun = overload (p->sem.apply.fun->qname, L(p), (p->sem.apply.rpc_uri != NULL));
+            p->sem.fun = overload (p->sem.fun->qname, L(p));
 
             /* invoke specific typing rules for standard F&O functions 
              * (W3C XQuery Formal Semantics 6.2)
              */
-            TY(p) = specific (p->sem.apply.fun, L(p));
+            TY(p) = specific (p->sem.fun, L(p));
 
             break;
 
@@ -918,7 +773,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFty_t t1 = TY(R(p));
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
-            if (!PFty_promotable (TY(L(p)), PFty_qname ()))
+            if (!PFty_promotable (TY(L(p)), PFty_string ()))
                 PFoops (OOPS_TYPECHECK,
                         "tag name in computed element constructor"
                         " has illegal type `%s'",
@@ -938,7 +793,7 @@ reduce (PFcnode_t * p, int goalnt)
         {
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
-            if (!PFty_promotable (TY(L(p)), PFty_qname ()))
+            if (!PFty_promotable (TY(L(p)), PFty_string ()))
                 PFoops (OOPS_TYPECHECK,
                         "tag name in computed attribute constructor"
                         " has illegal type '%s'",
@@ -1006,17 +861,6 @@ reduce (PFcnode_t * p, int goalnt)
         case 49:
         /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
         case 50:
-            /*
-             * XQuery Update Facility disallows updates in `order by'
-             * clauses.
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (TY(L(p))))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: `order by' may not contain "
-                        "an updating expression (has type `%s')",
-                        PFty_str (TY(L(p))));
-
             if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
                 PFoops (OOPS_TYPECHECK,
                         "[err:XPTY0004]"
@@ -1137,14 +981,12 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * See if function body matches function return type.
              */
-	    assert (p->sem.apply.fun->sig_count == 1);
-            if (!PFty_subtype (TY(R(p)), p->sem.apply.fun->sigs[0].ret_ty))
+            if (!PFty_subtype (TY(R(p)), p->sem.fun->ret_ty))
                 PFoops (OOPS_TYPECHECK,
                         "body of %s() evaluates to `%s' which is not "
                         "a subtype of `%s'",
-                        PFqname_str (p->sem.apply.fun->qname),
-                        PFty_str (TY(R(p))), 
-			PFty_str (p->sem.apply.fun->sigs[0].ret_ty));
+                        PFqname_str (p->sem.fun->qname),
+                        PFty_str (TY(R(p))), PFty_str (p->sem.fun->ret_ty));
             break;
 
         /* ParamList:          nil */
@@ -1175,16 +1017,73 @@ reduce (PFcnode_t * p, int goalnt)
     }
 }
 
-static void fun_not_found (PFqname_t qn, PFcnode_t *args) 
+/**
+ * Resolve function overloading.  In the list of functions of the same
+ * name @a qn, find the first (most specific) to match the actual
+ * argument types @a args (matching is based on `can be promoted to'
+ * relationship).
+ *
+ * @attention NB. This relies on the list of functions for name @a qn
+ * to be sorted: the most specific instance comes first (see
+ * semantics/xquery_fo.c)
+ *
+ * @param qn name of (overloaded) function
+ * @param args right-deep core tree of function arguments 
+ *             arg (e1, arg (e2, ..., arg (en, nil)...))
+ */
+static PFfun_t *
+overload (PFqname_t qn, PFcnode_t *args)
 {
-    PFarray_t *fns = PFenv_lookup (PFfun_env, qn);
+    PFarray_t *fns;
+    PFarray_t *args_str;
+    PFcnode_t *arg;
+    PFfun_t *fn;
+    unsigned int i, a;
+    bool match;
+    char semi;
+
+    assert (args && (args->kind == c_nil || args->kind == c_arg));
+
+    fns = PFenv_lookup (PFfun_env, qn);
     assert (fns);
+
+    for (i = 0; i < PFarray_last (fns); i++) {
+        fn    = *(PFfun_t **) PFarray_at (fns, i);
+        arg   = args;
+
+        /* can all actual argument types be promoted to
+         * expected formal parameter types?
+         */
+        for (a = 0, match = true; a < fn->arity; a++) {
+            /* test if function has at least the same
+               number of arguments as the tested function */
+            if (arg->kind == c_nil)
+            {
+                match = false;
+                break;
+            }
+
+            match = match && PFty_promotable (arg->child[0]->type,
+                                              (fn->par_ty)[a]);
+            if (!match)
+                break;
+
+            arg = arg->child[1];
+            assert (arg);
+        }
+
+        /* yes, return this function (its the most specific match) */
+        /* and it has the same number of arguments */
+        if (match && arg->kind == c_nil)
+            return fn;
+    } 
 
     /* construct (error) message listing the actual argument types:
      * ": t1; t2; ...; tn" (NB: n >= 1 is guaranteed here)
      */
-    PFarray_t *args_str = PFarray (sizeof (char));
-    char semi = ':';
+    args_str = PFarray (sizeof (char));
+
+    semi = ':';
 
     do {
         PFarray_printf (args_str, "%c %s", 
@@ -1203,126 +1102,28 @@ static void fun_not_found (PFqname_t qn, PFcnode_t *args)
 
     for (unsigned int i = 0; i < PFarray_last (fns); i++) {
 
-        PFfun_t *fn       = *(PFfun_t **) PFarray_at (fns, i);
-	
-	for (unsigned j = 0; j < fn->sig_count; j++) {
-	     args_str = PFarray (sizeof (char));
+        fn       = *(PFfun_t **) PFarray_at (fns, i);
+        args_str = PFarray (sizeof (char));
 
-	     PFfun_sig_t *sig = fn->sigs + j;
+        PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
 
-	     PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
-		  
-	     for (unsigned int k = 0; k < fn->arity; k++) {
-		  PFarray_printf (args_str, "%s%s",
-				  k ? ", " : "", 
-				  PFty_str (sig->par_ty[k]));
-	     }
-	     
-	     PFarray_printf (args_str, ") as %s", 
-			     PFty_str (sig->ret_ty));
+        for (unsigned int j = 0; j < fn->arity; j++) {
+            PFarray_printf (args_str, "%s%s",
+                    j ? ", " : "", PFty_str (fn->par_ty[j]));
+        }
 
-	     PFinfo (OOPS_TYPECHECK, "  %s", 
-		     (char *) PFarray_at (args_str, 0));
-	}
+        PFarray_printf (args_str, ") as %s", PFty_str (fn->ret_ty));
+
+        PFinfo (OOPS_TYPECHECK, "  %s", (char *) PFarray_at (args_str, 0));
     }
 
     PFoops (OOPS_TYPECHECK,
             "illegal arguments for function %s", PFqname_str (qn));
-}
-
-
-/**
- * Resolve function overloading.  In the list of functions of the same
- * name @a qn, find the first (most specific) to match the actual
- * argument types @a args (matching is based on `can be promoted to'
- * relationship).
- *
- * @attention NB. This relies on the list of functions for name @a qn
- * to be sorted: the most specific instance comes first (see
- * semantics/xquery_fo.c)
- *
- * @param qn name of (overloaded) function
- * @param args right-deep core tree of function arguments 
- *             arg (e1, arg (e2, ..., arg (en, nil)...))
- */
-static PFfun_t *
-overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
-{
-    PFarray_t *fns;
-    PFcnode_t *arg;
-    PFfun_t *fn;
-    unsigned int i, a;
-    bool match;
-
-    assert (args && (args->kind == c_nil || args->kind == c_arg));
-
-    fns = PFenv_lookup (PFfun_env, qn);
-    assert (fns);
-
-    for (i = 0; i < PFarray_last (fns); i++) {
-        fn    = *(PFfun_t **) PFarray_at (fns, i);
-        arg   = args;
-
-        /* can all actual argument types be promoted to
-         * expected formal parameter types?
-         */
-        if (is_rpc) {
-            /* In RPC function call, the first actual parameter (dst URI)
-             * should be ignored for function resolution
-             */
-            if (arg->kind == c_nil) continue;
-            arg = arg->child[1];
-        }
-
-	if (fn->sig_count == 1) {
-	     for (a = 0, match = true; a < fn->arity; a++) {
-		  /* test if function has at least the same
-		     number of arguments as the tested function */
-		  if (arg->kind == c_nil)
-		  {
-		       match = false;
-		       break;
-		  }
-
-		  match = match && PFty_promotable (arg->child[0]->type,
-						    (fn->sigs[0].par_ty)[a]);
-		  if (!match)
-		       break;
-
-		  arg = arg->child[1];
-		  assert (arg);
-	     }
-
-	     /* yes, return this function (its the most specific match) */
-	     /* and it has the same number of arguments */
-	     if (match && arg->kind == c_nil)
-		  return fn;
-	}
-	else
-	     /* function with multiple signatures (dynamic overloading).
-	      * Type checking is a little bit tricky and is done in
-	      * specific. We assume that this is always the right function.
-	      */
-	     return fn;
-    }
- 
-    fun_not_found (qn, args);
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
     return 0;
 }
 
-static PFty_t next_choice (PFty_t t) {
-     if (t.type == ty_choice)
-	  return *(t.child[0]);
-     return PFty_none ();
-}
-
-static PFty_t next_type (PFty_t t) {
-     if (t.type == ty_choice)
-	  return *(t.child[1]);
-     return t;
-}
 
 /**
  * Apply specific typing rules for standard XQuery F&O functions
@@ -1348,8 +1149,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
         assert (args->kind == c_arg && R(args)->kind == c_nil);
 
         return *PFty_simplify (
-                (PFty_quantifier (TY(L(args))))
-                    (PFty_prime (PFty_defn (TY(L(args))))));
+                (PFty_quantifier (TY(L(args)))) (PFty_prime (PFty_defn (TY(L(args))))));
     }
 
     /* Typing rules for fn:data() are described by the special
@@ -1360,8 +1160,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
         /* fn:data() gets exactly one argument */
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify (
-                (PFty_quantifier (TY(L(args)))
-                    (PFty_data_on (PFty_defn (TY(L(args)))))));
+                (PFty_quantifier (TY(L(args))) (PFty_data_on (PFty_defn (TY(L(args)))))));
     }
 
     /* Typing rules for #pf:item-sequence-to-node-sequence() are described
@@ -1412,65 +1211,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
         return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
     }
 
-    if (fn->sig_count > 1) {
-	 /* special handing for functions with multiple signatures,
-	  * but one implementation ("dynamic overloading")
-	  */
-	 /* currently, only functions with 2 parameters are supported.
-	  * So we can use simple for loops and we do not need complex
-	  * permutation stuff.
-	  */	     
-	 assert (fn->arity == 2);
-	 PFty_t ret_type = PFty_none ();
-	 PFty_t arg1_type = PFty_defn (TY(L(args)));
-	 PFty_t arg2_type = PFty_defn (TY(L(R(args))));
-
-	 /* iterate through the possible types of argument 1 */
-	 for (PFty_t c1 = PFty_normalize_choice (arg1_type); 
-	      c1.type != ty_none;
-	      c1 = next_choice (c1)) 
-	 {
-	      PFty_t t1 = next_type (c1);
-
-              /* iterate through the possible types of argument 2 */
-	      for (PFty_t c2 = PFty_normalize_choice (arg2_type); 
-		   c2.type != ty_none;
-		   c2 = next_choice (c2))
-	      {
-		   PFty_t t2 = next_type (c2);
-
-		   bool found = false;
-		   /* for every combination, check if we have a matching
-		    * signature.
-		    */
-		   for (unsigned int i = 0; 
-			i < fn->sig_count && !found; i++) {
-			PFfun_sig_t *sig = fn->sigs + i;
-
-			if (PFty_promotable (t1, sig->par_ty[0])
-			    && PFty_promotable (t2, sig->par_ty[1]))
-			{
-			     found = true;
-			     /* the return type is the combination of
-			      * the return types of every matching signature
-			      */
-			     if (ret_type.type != ty_none)
-				  ret_type =
-				       PFty_choice (ret_type,
-						    sig->ret_ty);
-			     else
-				  ret_type = sig->ret_ty;
-			}
-		   }
-		   if (!found)
-		     fun_not_found (fn->qname, args);
-	      }
-	 }
-
-	 return ret_type;
-    }
-
-    return fn->sigs[0].ret_ty;
+    return fn->ret_ty;
 }
 
 

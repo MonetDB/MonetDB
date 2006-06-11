@@ -264,7 +264,7 @@ add_ufuns (PFpnode_t *n)
 static void
 check_fun_usage (PFpnode_t * n)
 {
-    unsigned int i, is_rpc = 0;
+    unsigned int i;
     PFarray_t *funs;
     PFfun_t *fun;
     unsigned int arity;
@@ -305,19 +305,9 @@ check_fun_usage (PFpnode_t * n)
                             "fn:concat expects at least two arguments "
                             "(got %u)", arity);
 
-            n->sem.apply.fun = fun;
-            n->sem.apply.rpc_uri = NULL;
+            n->sem.fun = fun;
             n->kind = n->kind == p_fun_ref ? p_apply : p_fun;
             break;
-        }
-        
-        /*
-         * RPC UDF calls are recognized by the content of 'rpc_uri'
-         * - we will require the first parameter to be string (destination machine)
-         * - it is excluded from function resolution
-         */
-        if (n->kind == p_fun_ref && n->rpc_uri != NULL) {
-            is_rpc = 1;
         }
 
         /*
@@ -325,8 +315,7 @@ check_fun_usage (PFpnode_t * n)
          * node. Note that this invalidates the sem.qname field!
          * (sem is a union type).
          */
-        n->sem.apply.fun = NULL;
-        n->sem.apply.rpc_uri = NULL;
+        n->sem.fun = NULL;
 
         /*
          * For all the other functions, we search for the last
@@ -345,18 +334,16 @@ check_fun_usage (PFpnode_t * n)
          */
         for (i = 0; i < PFarray_last (funs); i++) { 
             fun = *((PFfun_t **) PFarray_at (funs, i));
-            if ((arity - is_rpc) == fun->arity) {
-                n->sem.apply.fun = fun;
-                n->sem.apply.rpc_uri = n->rpc_uri;
-            }
+            if (arity == fun->arity)
+                n->sem.fun = fun;
         }
 
         /* see if number of actual argument matches function declaration */
-        if (! n->sem.apply.fun)
+        if (! n->sem.fun)
             PFoops_loc (OOPS_APPLYERROR, n->loc,
                         "wrong number of arguments for function `%s' "
                         "(expected %u, got %u)",
-                        PFqname_str (fun->qname), (fun->arity + is_rpc), arity);
+                        PFqname_str (fun->qname), fun->arity, arity);
         
         /*
          * Replace semantic value of abstract syntax tree node
@@ -387,15 +374,12 @@ print_fun (PFfun_t ** funs)
 
     fprintf (stderr, "function name: %s\n", PFqname_str (fun->qname));
     if (fun->builtin) {
-        for (unsigned int s = 0; s < fun->sig_count; s++) {
-            PFfun_sig_t *sig = fun->sigs + s;
-            fprintf (stderr, "\treturn type  : %s\n", PFty_str (sig->ret_ty));
+        fprintf (stderr, "\treturn type  : %s\n", PFty_str (fun->ret_ty));
   
-            for (i = 0; i < fun->arity; i++)
-                fprintf (stderr, "\t%2i. parameter: %s\n", 
-                         i + 1, 
-                         PFty_str (*(sig->par_ty + i)));
-        }
+        for (i = 0; i < fun->arity; i++)
+            fprintf (stderr, "\t%2i. parameter: %s\n", 
+                     i + 1, 
+                     PFty_str (*(fun->par_ty + i)));
     }
 }
 
@@ -430,7 +414,7 @@ fun_add_user (PFqname_t      qn,
               unsigned int   arity,
               PFvar_t      **params)
 {
-    PFfun_t      *fun = PFfun_new (qn, arity, false, 1, NULL, NULL, params);
+    PFfun_t      *fun = PFfun_new (qn, arity, false, NULL, NULL, NULL, params);
     PFarray_t    *funs = NULL;
     unsigned int  i;
 
@@ -473,7 +457,6 @@ fun_add_user (PFqname_t      qn,
  *                are not known yet, pass @c NULL.
  * @param ret_ty  Pointer to return type. If return type is not known
  *                yet, pass @c NULL.
- * @param overload Informations for dynamic function overloading.
  * @param alg     In case of built-in functions, pointer to the
  *                routine that creates the algebra representation
  *                of the function. 
@@ -483,8 +466,8 @@ PFfun_t *
 PFfun_new (PFqname_t      qn,
            unsigned int   arity,
            bool           builtin,
-           unsigned int sig_count,
-           PFfun_sig_t   *sigs,
+           PFty_t        *par_tys,
+           PFty_t        *ret_ty,
            struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                       bool,
                                       struct PFla_pair_t *),
@@ -501,25 +484,19 @@ PFfun_new (PFqname_t      qn,
     n->params  = params;
     n->core    = NULL;      /* initialize Core equivalent with NULL */
     n->fid     = 0;         /* needed for summer branch */
-    n->sigs   = NULL;
 
-    n->sig_count = sig_count;
-    /* assert (sig_count); */
-    n->sigs =  (PFfun_sig_t *) PFmalloc (sig_count * sizeof (PFfun_sig_t));
-    for (unsigned int i = 0; i < sig_count; i++) {
-        /* copy array of formal parameter types (if present) */
-        if (arity > 0 && sigs) {
-            n->sigs[i].par_ty = (PFty_t *) PFmalloc (arity * sizeof (PFty_t));
-            memcpy (n->sigs[i].par_ty, sigs[i].par_ty, 
-                    arity * sizeof (PFty_t));
-        }
-        else
-            n->sigs[i].par_ty = NULL;
-        if (sigs)
-            n->sigs[i].ret_ty  = sigs[i].ret_ty;
-        else
-            n->sigs[i].ret_ty = PFty_star (PFty_item ());
+    /* copy array of formal parameter types (if present) */
+    if (arity > 0 && par_tys) {
+        n->par_ty = (PFty_t *) PFmalloc (arity * sizeof (PFty_t));
+        memcpy (n->par_ty, par_tys, arity * sizeof (PFty_t));
     }
+    else
+        n->par_ty = NULL;
+
+    if (ret_ty)
+        n->ret_ty  = *ret_ty;
+    else
+        n->ret_ty = PFty_star (PFty_item ());
 
     return n;
 }
@@ -571,17 +548,6 @@ PFfun_check (PFpnode_t * root)
 
     /* now traverse the whole tree and check all function usages */
     check_fun_usage (root);
-}
-
-/**
- * constructor for function application struct
- */
-PFapply_t*
-PFapply(struct PFfun_t *fun) {
-    PFapply_t *app = (PFapply_t*) PFmalloc (sizeof (PFapply_t));
-    app->fun = fun;
-    app->rpc_uri = NULL;
-    return app;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -48,6 +48,22 @@
 #define false   (char)0
 #endif
 
+/** Compilation phases */
+enum PFphases_t {
+      phas_parse     = 1   /**< Parsing and abstract syntax tree generation */
+    , phas_semantics       /**< Semantics checks (varscope, ns, functions) */
+    , phas_fs              /**< Compilation to core language */
+    , phas_simpl           /**< Simplification/normalization of core language */
+    , phas_alg             /**< Algebra tree generation */
+    , phas_algopt          /**< Algebra tree rewrite/optimization */
+    , phas_mil             /**< MIL code generation */
+    , phas_mil_summer      /**< temporary MIL code generation and print */
+   
+    , phas_all             /**< Do all processing phases */
+};
+
+typedef enum PFphases_t PFphases_t;
+
 /** global state of the compiler  */
 typedef struct PFstate_t PFstate_t;
 
@@ -65,7 +81,6 @@ struct PFstate_t {
     unsigned int debug;       /**< command line switch: -d */
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
-    bool print_xml;           /**< command line switch: -X */
     bool print_pretty;        /**< command line switch: -P */
     unsigned int stop_after;  /**< processing phase to stop after */
     bool print_types;         /**< command line switch: -t */
@@ -75,12 +90,7 @@ struct PFstate_t {
     bool print_la_tree;       /**< command line switch: -l */
     bool print_pa_tree;       /**< command line switch: -a */
     bool summer_branch;       /**< command line switch: -M */
-    bool dead_code_el;        /**< command line switch: -e */
 
-    bool standoff_axis_steps; /**< command line switch: -b */
-
-    char *opt_alg;            /**< list of algebraic optimizations 
-                                   (command line switch -o) */
     char *format;             /**< dot output format (command line switch -f) */
 
     char* genType;     /* kind of output */
@@ -101,24 +111,15 @@ enum PFempty_order_t {
 };
 typedef enum PFempty_order_t PFempty_order_t;
 
-enum PFrevalidation_t {
-      revalid_strict
-    , revalid_lax
-    , revalid_skip
-};
-typedef enum PFrevalidation_t PFrevalidation_t;
-
 /**
  * Declarations given in the input query (encoding, ordering mode, etc.)
  */
 struct PFquery_t {
-    char           *version;             /**< XQuery version in query */
-    char           *encoding;            /**< Encoding specified in query */
-    bool            ordering;            /**< ordering declaration in query */
-    PFempty_order_t empty_order;         /**< `declare default order' */
+    char           *version;        /**< XQuery version in query */
+    char           *encoding;       /**< Encoding specified in query */
+    bool            ordering;       /**< ordering declaration in query */
+    PFempty_order_t empty_order;    /**< `declare default order' */
     bool            inherit_ns;
-    bool            pres_boundary_space; /**< perserve boundary space? */
-    PFrevalidation_t revalid;
 };
 typedef struct PFquery_t PFquery_t;
 
@@ -154,24 +155,6 @@ struct PFsort_t {
   enum { p_greatest, p_least } empty;   /**< empty greatest/empty least */
   char                        *coll;    /**< collation (may be 0) */
 };
-
-#include "qname.h"
-
-/**
- * Information in a Pragma:
- *   (# qname content #)
- */
-struct PFpragma_t {
-    PFqname_t   qname;
-    char       *content;
-};
-typedef struct PFpragma_t PFpragma_t;
-
-/**
- * We still require the "milprint_summer" code, but started to
- * wrap it into ENABLE_MILPRINT_SUMMER conditions.
- */
-#define ENABLE_MILPRINT_SUMMER 1
 
 #endif  /* PATHFINDER_H */
 

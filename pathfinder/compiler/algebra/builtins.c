@@ -1,5 +1,3 @@
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
  * @file
  *
@@ -41,131 +39,6 @@
 
 #include "logical.h"
 #include "logical_mnemonic.h"
-
-/** 
- * Returns a iter/pos/items schema where the items have the type
- * @a ty
- */
-static PFla_op_t *
-sel_type (const PFla_op_t *n, PFalg_simple_type_t ty)
-{
-    return project (
-               type_assert_pos (
-                    select_ (
-                           type (n, 
-                                 att_res,
-                                 att_item, ty), 
-                           att_res),
-                    att_item, ty),
-               proj (att_iter, att_iter),
-               proj (att_pos, att_pos),
-               proj (att_item, att_item));
-}
-
-/**
- * Constructs a typeswitch subtree based on the 
- * algebra type of the item column.
- * @param n The relation used as input for the typeswitch.
- * @param count The number of types in the types array
- * @param types The types to distinguish
- * @param cnst  A callback function, called for each type encounterd
- *              in the relation
- * @param params Optional parameters, passed to the callback function.
- */
-PFla_op_t *
-PFla_typeswitch (PFla_op_t *n, unsigned int count, 
-                 const PFalg_type_t *types, 
-		 PFla_op_t *(*cnst) (PFla_op_t *n, PFalg_type_t, void *),
-		 void *params)
-{
-    PFla_op_t *res = NULL;
-    PFalg_type_t item_types = 0;
-    bool found = false;
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-        if (n->schema.items[i].name == att_item) {
-            found = true;
-            item_types = n->schema.items[i].type;
-            break;
-        }
-    }
-    if (!found)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in type switch not found",
-                PFatt_str (att_item));
-    
-    for (unsigned int i = 0; i < count; i++) {
-        PFalg_type_t ty = item_types & types[i];        
-        if (ty == item_types) {
-            res = cnst (n, types[i], params);
-            break;
-        }
-        else if (ty != 0) {
-            PFla_op_t *tsw = cnst (sel_type (n, ty), types[i], params);
-            if (res != NULL)
-                res = disjunion (res, tsw);
-            else
-                res = tsw;
-        }
-    }
-    return res;
-}
-
-struct typeswitch2_params {
-    PFla_op_t *n;
-    PFalg_type_t t;
-    int count;
-    const PFalg_type_t *types;
-    void *params;
-    PFla_op_t *(*cnst) (PFla_op_t *n1, PFla_op_t *n2,
-                        PFalg_type_t, PFalg_type_t, void *);
-};
-
-static PFla_op_t *
-typeswitch2_helper2 (PFla_op_t *n2, PFalg_type_t t2, void *params) {
-    struct typeswitch2_params *p = (struct typeswitch2_params *)params;
-    return p->cnst (p->n, n2, p->t, t2, p->params);    
-}
-
-static PFla_op_t *
-typeswitch2_helper (PFla_op_t *n1, PFalg_type_t t1, void *params) {
-    struct typeswitch2_params *p = (struct typeswitch2_params *)params;
-    return PFla_typeswitch (p->n, p->count, p->types, typeswitch2_helper2,
-                            (struct typeswitch2_params[]) {{
-                                .n = n1,
-                                .t = t1,
-                                .params = p->params,
-                                .cnst = p->cnst
-                            }});    
-}
-
-/**
- * Constructs a typeswitch subtree based on the 
- * algebra type of the item column.
- * Variant with two input relations.
- * @param n1 The first relation used as input for the typeswitch.
- * @param n2 The second relation used as input for the typeswitch.
- * @param count The number of types in the types array
- * @param types The types to distinguish
- * @param cnst  A callback function, called for each type combination 
- *              encounterd in the relations
- * @param params Optional parameters, passed to the callback function.
- */
-PFla_op_t *
-PFla_typeswitch2 (PFla_op_t *n1, PFla_op_t *n2, unsigned int count, 
-                 const PFalg_type_t *types, 
-		 PFla_op_t *(*cnst) (PFla_op_t *n1, PFla_op_t *n2,
-                                     PFalg_type_t, PFalg_type_t, void *),
-		 void *params)
-{
-    return PFla_typeswitch (n1, count, types, typeswitch2_helper,
-                            (struct typeswitch2_params[]) {{
-                                .n = n2,
-                                .count = count,
-                                .types = types,
-                                .params = params,
-                                .cnst = cnst
-                            }});
-}
 
 /**
  * Worker function to construct algebra implementation of binary
@@ -275,147 +148,165 @@ un_func (PFalg_simple_type_t t,
 	.frag = PFla_empty_set () };
 }
 
-/** 
- * Callback function for the typeswitch in bin_arith_typeswitch.
- */
-static PFla_op_t *
-bin_arith_helper (PFla_op_t *n1, PFla_op_t *n2,
-                PFalg_type_t t1, PFalg_type_t t2, void *params)
-{
-    PFalg_type_t t;
-    if (t1 == t2)
-        t = t1;
-    else if (t1 == aat_dec || t2 == aat_dec) 
-        t = aat_dec;
-    else if (t1 == aat_dbl || t2 == aat_dbl)
-        t = aat_dbl;
-    else {
-        PFoops (OOPS_FATAL,
-                "invalid type combination in binary arithmetic function");
-        return NULL; /* never reached. */
-    }
-
-    return bin_arith (t, (PFla_op_t *(*) (const PFla_op_t *, PFalg_att_t,
-                                         PFalg_att_t, PFalg_att_t))params,
-                     (struct PFla_pair_t[]) {
-                         { .rel = n1, .frag = NULL },
-                         { .rel = n2, .frag = NULL },
-                     }).rel;
-}
 
 /**
- * Helper function for binary arithmetics with a typeswitch.
- * For every possible combination of input types, bin_arith is
- * called with the appropriate parameters.
+ * Algebra implementation for op:numeric-add(integer?,integer?)
  * @see bin_arith()
  */
-static struct PFla_pair_t
-bin_arith_typeswitch (struct PFla_pair_t *args, 
-                      PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
-                                        PFalg_att_t, PFalg_att_t))
-{
-    PFla_op_t *res = PFla_typeswitch2 (args[0].rel, args[1].rel,
-                                       3,
-                                       (PFalg_type_t [3])
-                                       {
-                                           aat_int,
-                                           aat_dbl,
-                                           aat_dec,
-                                       }, bin_arith_helper, OP);
-    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
-}
-
-/**
- * Algebra implementation for op:numeric-add ()
- * @see bin_arith_typeswitch()
- */
-struct PFla_pair_t 
-PFbui_op_numeric_add (const PFla_op_t *loop,
-                      bool ordering,
-                      struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_op_numeric_add_int (const PFla_op_t *loop __attribute__((unused)),
+                          bool ordering,
+                          struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-
-    return bin_arith_typeswitch (args, PFla_add);
+    return bin_arith (aat_int, PFla_add, args);
 }
 
 /**
- * Algebra implementation for op:numeric-subtract ()
- * @see bin_arith_typeswitch()
+ * Algebra implementation for op:numeric-add(decimal?,decimal?)
+ * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_subtract (const PFla_op_t *loop __attribute__((unused)),
-                           bool ordering,
-                           struct PFla_pair_t *args)
+PFbui_op_numeric_add_dec (const PFla_op_t *loop __attribute__((unused)),
+                          bool ordering,
+                          struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-
-    return bin_arith_typeswitch (args, PFla_subtract);
+    return bin_arith (aat_dec, PFla_add, args);
 }
 
-
 /**
- * Algebra implementation for op:numeric-multiply ()
- * @see bin_arith_typeswitch()
+ * Algebra implementation for op:numeric-add(double?,double?)
+ * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_multiply (const PFla_op_t *loop __attribute__((unused)),
-                           bool ordering,
-                           struct PFla_pair_t *args)
+PFbui_op_numeric_add_dbl (const PFla_op_t *loop __attribute__((unused)),
+                          bool ordering,
+                          struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-
-    return bin_arith_typeswitch (args, PFla_multiply);
+    return bin_arith (aat_dbl, PFla_add, args);
 }
 
+
 /**
- * Special typeswitch-callback function for divison.
- * If both types are integer, they are cast to decimal.
+ * Algebra implementation for op:numeric-subtract(integer?,integer?)
+ * @see bin_arith()
  */
-static PFla_op_t *
-divide_helper (PFla_op_t *n1, PFla_op_t *n2,
-                PFalg_type_t t1, PFalg_type_t t2, void *params)
+struct PFla_pair_t
+PFbui_op_numeric_subtract_int (const PFla_op_t *loop __attribute__((unused)),
+                               bool ordering,
+                               struct PFla_pair_t *args)
 {
-    (void) params;
-
-    PFalg_type_t t;
-    if (t1 == t2 && t1 == aat_int)
-        t = aat_dec;
-    else if (t1 == aat_dec || t2 == aat_dec) 
-        t = aat_dec;
-    else if (t1 == aat_dbl || t2 == aat_dbl)
-        t = aat_dbl;
-    else {
-        PFoops (OOPS_FATAL,
-                "invalid type combination in binary arithmetic function");
-        return NULL; /* never reached. */
-    }
-    return bin_arith (t, PFla_divide,
-                     (struct PFla_pair_t[]) {
-                         { .rel = n1, .frag = NULL },
-                         { .rel = n2, .frag = NULL },
-                     }).rel;
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_int, PFla_subtract, args);
 }
 
 /**
- * Algebra implementation for op:numeric-divide ()
+ * Algebra implementation for op:numeric-subtract(decimal?,decimal?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_subtract_dec (const PFla_op_t *loop __attribute__((unused)),
+                               bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_dec, PFla_subtract, args);
+}
+
+/**
+ * Algebra implementation for op:numeric-subtract(double?,double?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_subtract_dbl (const PFla_op_t *loop __attribute__((unused)),
+                               bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_dbl, PFla_subtract, args);
+}
+
+
+/**
+ * Algebra implementation for op:numeric-multiply(integer?,integer?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_multiply_int (const PFla_op_t *loop __attribute__((unused)),
+                               bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_int, PFla_multiply, args);
+}
+
+/**
+ * Algebra implementation for op:numeric-multiply(decimal?,decimal?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_multiply_dec (const PFla_op_t *loop __attribute__((unused)),
+                               bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_dec, PFla_multiply, args);
+}
+
+/**
+ * Algebra implementation for op:numeric-multiply(double?,double?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_multiply_dbl (const PFla_op_t *loop __attribute__((unused)),
+                               bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_dbl, PFla_multiply, args);
+}
+
+
+/**
+ * Algebra implementation for op:numeric-divide(decimal?,decimal?)
  * @see bin_arith()
  *
- * NB: According to the XQuery specifications, the division of two
+ * NB: A function for the division of two integer operators is required
+ * because, according to the XQuery specifications, the division of two
  * integers returns a decimal number, i.e. we let the two operands be
- * promoted to decimal (see special helper function above).     
+ * promoted to decimal and use "PFbui_op_numeric_divide_dec".     
  */
 struct PFla_pair_t
-PFbui_op_numeric_divide (const PFla_op_t *loop __attribute__((unused)),
+PFbui_op_numeric_divide_dec (const PFla_op_t *loop __attribute__((unused)),
                              bool ordering,
                              struct PFla_pair_t *args)
 {
@@ -423,27 +314,34 @@ PFbui_op_numeric_divide (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
+    return bin_arith (aat_dec, PFla_divide, args);
+}
 
-    PFla_op_t *res = PFla_typeswitch2 (args[0].rel, args[1].rel,
-                                       3,
-                                       (PFalg_type_t [3])
-                                       {
-                                           aat_int,
-                                           aat_dbl,
-                                           aat_dec,
-                                       }, divide_helper, NULL);
-    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+/**
+ * Algebra implementation for op:numeric-divide(double?,double?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_divide_dbl (const PFla_op_t *loop __attribute__((unused)),
+                             bool ordering,
+                             struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return bin_arith (aat_dbl, PFla_divide, args);
 }
 
 
 /**
- * Algebra implementation for op:numeric-integer-divide ()
- * @see bin_arith_typeswitch()
+ * Algebra implementation for op:numeric-integer-divide(integer?,integer?)
+ * @see bin_arith()
  *
  * NB: ($a idiv $b) <=> ($a div $b) cast as xs:integer
  */
 struct PFla_pair_t
-PFbui_op_numeric_idivide (const PFla_op_t *loop __attribute__((unused)),
+PFbui_op_numeric_idivide_int (const PFla_op_t *loop __attribute__((unused)),
                               bool ordering,
                               struct PFla_pair_t *args)
 {
@@ -452,7 +350,7 @@ PFbui_op_numeric_idivide (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     return (struct PFla_pair_t) {
-	.rel = project (cast (bin_arith_typeswitch (args, PFla_divide).rel,
+	.rel = project (cast (bin_arith (aat_int, PFla_divide, args).rel,
 		                  att_cast, att_item, aat_int),
                     proj (att_iter, att_iter),
                     proj (att_pos, att_pos),
@@ -461,11 +359,56 @@ PFbui_op_numeric_idivide (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /**
- * Algebra implementation for op:numeric-mod ()
- * @see bin_arith_typeswitch()
+ * Algebra implementation for op:numeric-integer-divide(decimal?,decimal?)
+ * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_modulo (const PFla_op_t *loop __attribute__((unused)),
+PFbui_op_numeric_idivide_dec (const PFla_op_t *loop __attribute__((unused)),
+                              bool ordering,
+                              struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return (struct PFla_pair_t) {
+	.rel = project (cast (bin_arith (aat_dec, PFla_divide, args).rel,
+		                  att_cast, att_item, aat_int),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos),
+                    proj (att_item, att_cast)),
+	.frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for op:numeric-integer-divide(double?,double?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_idivide_dbl (const PFla_op_t *loop __attribute__((unused)),
+                              bool ordering,
+                              struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return (struct PFla_pair_t) {
+	.rel = project (cast (bin_arith (aat_dbl, PFla_divide, args).rel,
+		                  att_cast, att_item, aat_int),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos),
+                    proj (att_item, att_cast)),
+	.frag = PFla_empty_set () };
+}
+
+
+/**
+ * Algebra implementation for op:numeric-mod(integer?,integer?)
+ * @see bin_arith()
+ */
+struct PFla_pair_t
+PFbui_op_numeric_modulo_int (const PFla_op_t *loop __attribute__((unused)),
                              bool ordering,
                              struct PFla_pair_t *args)
 {
@@ -473,334 +416,42 @@ PFbui_op_numeric_modulo (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-
-    return bin_arith_typeswitch (args, PFla_modulo);
+    return bin_arith (aat_int, PFla_modulo, args);
 }
 
 /**
- * Build up operator tree for built-in aggregate functions 'fn:avg ($arg)',
- * 'fn:min ($arg)' and 'fn:max ($arg)'
- *
- *                env,loop: e => (q,delta)
- *  -------------------------------------------------------------------
- *                         env,loop: fn:___(e) =>
- *  //                                                     \    
- * ||aggr_item:(item)/iter (proj_iter,item cast_item,t(q))) | @pos(0)
- *  \\                                                     / 
- *                                ()
- */
-static struct PFla_pair_t
-fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind, struct PFla_pair_t *args)
-{
-    return (struct PFla_pair_t) {
-        .rel = attach(aggr (kind,
-                            project (cast(args[0].rel, att_cast, att_item, t),
-                                     proj (att_iter, att_iter),
-                                     proj (att_item, att_cast)),
-                            att_item, att_item, att_iter),
-                      att_pos, lit_nat (1)),
-        .frag = PFla_empty_set () };
-}
-
-/**
- * Build up operator tree for built-in function 'fn:avg ($arg)'.
+ * Algebra implementation for op:numeric-mod(decimal?,decimal?)
+ * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_fn_avg (const PFla_op_t *loop __attribute__((unused)),
-              bool ordering __attribute__((unused)),
-              struct PFla_pair_t *args)
+PFbui_op_numeric_modulo_dec (const PFla_op_t *loop __attribute__((unused)),
+                             bool ordering,
+                             struct PFla_pair_t *args)
 {
-    (void) loop;  /* pacify picky compilers that do not understand
+    (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return fn_aggr(aat_dbl, la_avg, args);
+    return bin_arith (aat_dec, PFla_modulo, args);
 }
 
 /**
- * Build up operator tree for built-in function 'fn:max (string*)'.
+ * Algebra implementation for op:numeric-mod(double?,double?)
+ * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_fn_max_str (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
+PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop __attribute__((unused)),
+                             bool ordering,
+                             struct PFla_pair_t *args)
 {
-    (void) loop;  /* pacify picky compilers that do not understand
+    (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return fn_aggr(aat_str, la_max, args);
+    return bin_arith (aat_dbl, PFla_modulo, args);
 }
 
-/**
- * Build up operator tree for built-in function 'fn:max (integer*)'.
- */
-struct PFla_pair_t
-PFbui_fn_max_int (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_int, la_max, args);
-}
 
-/**
- * Build up operator tree for built-in function 'fn:max (decimal*)'.
- */
-struct PFla_pair_t
-PFbui_fn_max_dec (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_dec, la_max, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:max (double*)'.
- */
-struct PFla_pair_t
-PFbui_fn_max_dbl (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_dbl, la_max, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:min (string*)'.
- */
-struct PFla_pair_t
-PFbui_fn_min_str (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_str, la_min, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:min (integer*)'.
- */
-struct PFla_pair_t
-PFbui_fn_min_int (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_int, la_min, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:min (decimal*)'.
- */
-struct PFla_pair_t
-PFbui_fn_min_dec (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_dec, la_min, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:min (double*)'.
- */
-struct PFla_pair_t
-PFbui_fn_min_dbl (const PFla_op_t *loop __attribute__((unused)),
-                  bool ordering __attribute__((unused)),
-                  struct PFla_pair_t *args)
-{
-    (void) loop;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_aggr(aat_dbl, la_min, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum ($arg, $zero)'.
- *
- *  env,loop: e1 => (q1,delta1)             env,loop: e2 => (q2,delta2)
- *  -------------------------------------------------------------------
- *                         env,loop: fn:sum(e1, e2) =>
- *  //                                                      \    
- * ||sum_item:(item)/iter (proj_iter,item (cast_item,t(q1))) |
- *  \\                                                      / 
- *                                 U
- *  //                   \                    /                                     \\
- * ||loop \ proj_iter (q1)| |X|(iter, iter1) |proj_iter1:iter,item (cast_item,t(q2)) || X 
- *  \\                   /                    \                                     //
- * pos  
- * ---,
- *  1
- *                                ()
- */
-static struct PFla_pair_t
-fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
-                   struct PFla_pair_t *args)
-{
-     PFla_op_t *sum = aggr (la_sum,
-                            project (cast (args[0].rel, att_cast, att_item, t),
-                                     proj (att_iter, att_iter),
-                                     proj (att_item, att_cast)),
-                            att_item, att_item, att_iter);
-
-    return (struct PFla_pair_t) {
-        .rel = attach (
-                disjunion (
-                    sum,
-                    project (
-                         eqjoin (
-                              difference (
-                                   loop,
-                                   project (sum, proj (att_iter, att_iter))),
-                              project (cast(args[1].rel, att_cast, att_item, t),
-                                       proj (att_iter1, att_iter),
-                                       proj (att_item, att_cast)),
-                              att_iter, att_iter1),
-                         proj (att_iter, att_iter),
-                         proj (att_item, att_item))),
-                att_pos, lit_nat (1)),
-        .frag = PFla_empty_set () };
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum (integer*, integer?)'.
- */
-struct PFla_pair_t
-PFbui_fn_sum_zero_int (const PFla_op_t *loop,
-                bool ordering __attribute__((unused)),
-                struct PFla_pair_t *args)
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    return fn_sum_zero(aat_int, loop, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum (decimal*, decimal?)'.
- */
-struct PFla_pair_t
-PFbui_fn_sum_zero_dec (const PFla_op_t *loop,
-                bool ordering __attribute__((unused)),
-                struct PFla_pair_t *args)
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    return fn_sum_zero(aat_dec, loop, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum (double*, double?)'.
- */
-struct PFla_pair_t
-PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
-                bool ordering __attribute__((unused)),
-                struct PFla_pair_t *args)
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    return fn_sum_zero(aat_dbl, loop, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum ($arg)'.
- *
- *                env,loop: e => (q,delta)
- *  -------------------------------------------------------------------
- *                         env,loop: fn:sum(e) =>
- *  //                                                     \    
- * ||sum_item:(item)/iter (proj_iter,item (cast_item,t(q))) |
- *  \\                                                     / 
- *                         U
- *  //                  \    item\\    pos   
- * ||loop \ proj_iter (q)| X ---- || X ---,
- *  \\                  /      0 //     1
- *                                ()
- */
-static struct PFla_pair_t
-fn_sum (PFalg_simple_type_t t, const PFla_op_t *loop, struct PFla_pair_t *args)
-{
-    PFla_op_t *sum = aggr (la_sum,
-                           project (cast(args[0].rel, att_cast, att_item, t),
-                                   proj (att_iter, att_iter),
-                                   proj (att_item, att_cast)),
-                           att_item, att_item, att_iter);
-
-    return (struct PFla_pair_t) {
-        .rel = attach (
-                disjunion (
-                    sum,
-                    attach (
-                        difference (
-                            loop,
-                            project (sum, proj (att_iter, att_iter))),
-                        att_item, lit_int (0))),
-                att_pos, lit_nat (1)),
-        .frag = PFla_empty_set () };
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum (integer*)'.
- */
-struct PFla_pair_t
-PFbui_fn_sum_int (const PFla_op_t *loop,
-              bool ordering __attribute__((unused)),
-              struct PFla_pair_t *args)
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_sum(aat_int, loop, args); 
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum (decimal*)'.
- */
-struct PFla_pair_t
-PFbui_fn_sum_dec (const PFla_op_t *loop,
-              bool ordering __attribute__((unused)),
-              struct PFla_pair_t *args)
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_sum(aat_dec, loop, args); 
-}
-
-/**
- * Build up operator tree for built-in function 'fn:sum (double*)'.
- */
-struct PFla_pair_t
-PFbui_fn_sum_dbl (const PFla_op_t *loop,
-              bool ordering __attribute__((unused)),
-              struct PFla_pair_t *args)
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return fn_sum(aat_dbl, loop, args); 
-}
 
 /**
  * Build up operator tree for built-in function 'fn:count'.
@@ -826,15 +477,15 @@ PFbui_fn_count (const PFla_op_t *loop __attribute__((unused)),
                               att_item, att_iter);
 
     return (struct PFla_pair_t) {
-        .rel = attach (
+        .rel = cross (
                 disjunion (
                     count,
-                    attach (
+                    cross (
                         difference (
                             loop,
                             project (count, proj (att_iter, att_iter))),
-                        att_item, lit_int (0))),
-                att_pos, lit_nat (1)),
+                        lit_tbl (attlist (att_item), tuple (lit_int (0))))),
+                lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
         .frag = PFla_empty_set () };
 }
 
@@ -900,16 +551,13 @@ PFbui_fn_string_join (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     return (struct PFla_pair_t) {
-                .rel  = attach (
+		        .rel  = cross (
                             fn_string_join (args[0].rel,
                                             project (
                                                 args[1].rel,
                                                 proj (att_iter, att_iter),
-                                                proj (att_item, att_item)),
-                                            att_iter, att_pos, att_item,
-                                            att_iter, att_item,
-                                            att_iter, att_item),
-                            att_pos, lit_nat (1)),
+                                                proj (att_item, att_item))),
+                            lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
                 .frag = args[0].frag };
 }
 
@@ -1481,53 +1129,13 @@ PFbui_op_or_bln (const PFla_op_t *loop __attribute__((unused)),
 struct PFla_pair_t
 PFbui_op_and_bln (const PFla_op_t *loop __attribute__((unused)),
                   bool ordering,
-                  struct PFla_pair_t *args)
+		  struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     return bin_arith (aat_bln, PFla_and, args);
-}
-
-static struct PFla_pair_t 
-PFbui_fn_bln_lit (const PFla_op_t *loop,
-                  bool value)
-{
-    return (struct PFla_pair_t) {
-        .rel = attach(attach(loop, att_pos, lit_nat(1)), att_item, 
-                      lit_bln(value)),
-        .frag = PFla_empty_set () }; 
-}
-
-/**
- * Algebra implementation for <code>fn:true ()</code>.
- */
-struct PFla_pair_t 
-PFbui_fn_true (const PFla_op_t *loop,
-               bool ordering __attribute__((unused)),
-               struct PFla_pair_t *args __attribute__((unused)))
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) args;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return PFbui_fn_bln_lit(loop, true);
-}
-
-/**
- * Algebra implementation for <code>fn:false ()</code>.
- */
-struct PFla_pair_t 
-PFbui_fn_false (const PFla_op_t *loop,
-               bool ordering __attribute__((unused)),
-               struct PFla_pair_t *args __attribute__((unused)))
-{
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) args;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return PFbui_fn_bln_lit(loop, false);
 }
 
 /**
@@ -1580,128 +1188,51 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop __attribute__((unused)),
     return (struct PFla_pair_t) {
         .rel = disjunion (
                    args[0].rel,
-                   attach (
-                       attach (
-                           difference (
-                               loop,
-                               project (
-                                   args[0].rel,
-                                   proj (att_iter, att_iter))),
-			               att_pos, lit_nat (1)),
-                       att_item, lit_bln (false))),
+                   cross (
+			           difference (
+                           loop,
+					       project (
+                               args[0].rel,
+						       proj (att_iter, att_iter))),
+			           lit_tbl (attlist (att_pos, att_item),
+				                tuple (lit_nat (1), lit_bln (false))))),
     	.frag = PFla_empty_set () };
 }
 
-/** 
- * Helper function for PFbui_fn_boolean_item
- * Returns those rows with att_item != case_->params.
- */
-static PFla_op_t *
-fn_boolean_atomic (PFla_op_t *n, PFalg_atom_t literal)
-{
-    return project (
-                    not (
-                         eq (
-                             attach (
-                                     n,
-                                     att_item1, literal),
-                             att_res, att_item, att_item1),
-                         att_res1, att_res),
-                    proj (att_iter, att_iter),
-                    proj (att_item, att_res1),
-                    proj (att_pos, att_pos));
-}
-
-/** 
- * Helper function for PFbui_fn_boolean_item.
- * Returns true for every iteration (fn:boolean () is
- * always true when called with a non empty sequence of
- * nodes).
- */
-static PFla_op_t *
-fn_boolean_node (PFla_op_t *n)
-{
-    return attach (
-                   attach (
-                           distinct (
-                                     project (
-                                              n,
-                                              proj (att_iter, att_iter))),
-                           att_pos, lit_nat (1)),
-                   att_item, lit_bln (true));
-}
-
-static PFla_op_t *
-fn_boolean_switch (PFla_op_t *n, PFalg_type_t type, void *params) {
-    (void) params;
-
-    switch (type) {
-    case aat_node:
-        return fn_boolean_node (n);
-    case aat_bln:
-        return n;
-    case aat_nat:
-        return fn_boolean_atomic (n, lit_nat (0));
-    case aat_int:
-        return fn_boolean_atomic (n, lit_int (0));
-    case aat_dbl:
-        return fn_boolean_atomic (n, lit_dbl (0));
-    case aat_dec:
-        return fn_boolean_atomic (n, lit_dec (0));
-    case aat_uA:
-        return fn_boolean_atomic (project (
-                                      cast (n, att_cast, att_item, aat_str),
-                                      proj (att_iter, att_iter),
-                                      proj (att_pos, att_pos),
-                                      proj (att_item, att_cast)),
-                                  lit_str (""));
-    case aat_str:
-        return fn_boolean_atomic (n, lit_str (""));
-    default:
-        assert (false);
-    }
-    return NULL;
-}
- 
 /**
- * Algebra implementation for <code>fn:boolean (node()*|xs:boolean
- * xs:boolean|xs:integer|xs:decimal|xs:double|xs:string)</code>.
+ * @bug FIXME: This needs to be changed. It's just to far off the XQuery
+ *      semantics.
  */
 struct PFla_pair_t
 PFbui_fn_boolean_item (const PFla_op_t *loop __attribute__((unused)),
                        bool ordering,
                        struct PFla_pair_t *args)
 {
-    (void) ordering;
+    PFoops (OOPS_FATAL,
+            "Algebra implementation for function "
+            "`fn:boolean' is missing.");
 
-    /* Typeswitch, for helper function see above. */ 
-    PFla_op_t *res  = PFla_typeswitch (
-                                        args[0].rel, 
-                                        8,
-                                        (PFalg_type_t [8])
-                                        {
-                                            aat_node,
-                                            aat_bln,
-                                            aat_nat,
-                                            aat_int,
-                                            aat_dbl,
-                                            aat_dec,
-                                            aat_uA,
-                                            aat_str,
-                                        }, fn_boolean_switch, NULL);
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
 
-    /* handle empty sequences. */
     return (struct PFla_pair_t) {
-        .rel = disjunion (res, 
-                   attach (
-                       attach (
+        .rel = cross (
+                   disjunion (
+                       cross (
+                           distinct (project (args[0].rel,
+                              proj (att_iter, att_iter))),
+                           lit_tbl (attlist (att_item),
+                                    tuple (lit_bln (true)))),
+                       cross (
                            difference (
                                loop,
-                               project (
-                                   args[0].rel,
-                                   proj (att_iter,att_iter))),
-                           att_item, lit_bln (false)),
-                       att_pos, lit_nat (1))),
+                               project (args[0].rel,
+                                        proj (att_iter, att_iter))),
+                           lit_tbl (attlist (att_item),
+                                    tuple (lit_bln (false))))),
+                   lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
         .frag = PFla_empty_set ()};
 }
 
@@ -1751,15 +1282,15 @@ PFbui_fn_contains_opt (const PFla_op_t *loop __attribute__((unused)),
                        eqjoin (
                            disjunion (
                                args[0].rel,
-                               attach (
-                                   attach (
-                                       difference (
-                                           loop,
-                                           project (
-                                               args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                               cross (
+                                   difference (
+                                       loop,
+                                       project (
+                                           args[0].rel,
+                                           proj (att_iter, att_iter))),
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_str (""))))),
                            project (args[1].rel,
                                     proj (att_iter1, att_iter),
                                     proj (att_item1, att_item)),
@@ -1791,27 +1322,27 @@ PFbui_fn_contains_opt_opt (const PFla_op_t *loop __attribute__((unused)),
                        eqjoin (
                            disjunion (
                                args[0].rel,
-                               attach (
-                                   attach (
-                                       difference (
-                                           loop,
-                                           project (
-                                               args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                               cross (
+                                   difference (
+                                       loop,
+                                       project (
+                                           args[0].rel,
+                                           proj (att_iter, att_iter))),
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_str (""))))),
                            project (
                                disjunion (
                                    args[1].rel,
-                                   attach (
-                                       attach (
-                                           difference (
-                                               loop,
-                                               project (
-                                                   args[1].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
+                                   cross (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[1].rel,
+                                               proj (att_iter, att_iter))),
+                                       lit_tbl (attlist (att_pos, att_item),
+                                                tuple (lit_nat (1),
+                                                       lit_str (""))))),
                                proj (att_iter1, att_iter),
                                proj (att_item1, att_item)),
                            att_iter,
@@ -1849,19 +1380,21 @@ PFbui_fn_empty (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
 
     return (struct PFla_pair_t) {
-	.rel = attach (
+	.rel = cross (
                disjunion (
-                   attach (
+                   cross (
                        distinct (project (args[0].rel,
                                  proj (att_iter, att_iter))),
-                       att_item, lit_bln (false)),
-                   attach (
+                       lit_tbl (attlist (att_item),
+                                tuple (lit_bln (false)))),
+                   cross (
                        difference (
                            loop,
                            project (args[0].rel,
                                     proj (att_iter, att_iter))),
-                       att_item, lit_bln (true))),
-               att_pos, lit_nat (1)),
+                       lit_tbl (attlist (att_item),
+                                tuple (lit_bln (true))))),
+               lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
 	.frag = PFla_empty_set ()};
 }
 
@@ -1993,11 +1526,11 @@ PFbui_op_union (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+                           att_pos, sortby (att_item), att_NULL),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos, att_NULL),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -2031,11 +1564,11 @@ PFbui_op_intersect (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+                           att_pos, sortby (att_item), att_NULL),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos, att_NULL),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -2071,12 +1604,12 @@ PFbui_op_except (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+                           att_pos, sortby (att_item), att_NULL),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos, att_NULL),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
 }
@@ -2093,20 +1626,22 @@ PFbui_fn_exactly_one (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
 
-    PFla_op_t *count = eq (attach (
+    PFla_op_t *count = eq (cross (
                                disjunion (
                                    count (
                                        project (args[0].rel, 
                                                 proj (att_iter, att_iter)),
                                        att_item, att_iter),
-                                   attach (
+                                   cross (
                                        difference (
                                            loop,
                                            project (
                                                args[0].rel,
                                                proj (att_iter, att_iter))),
-                                       att_item, lit_int (0))),
-                               att_item1, lit_int (1)),
+                                       lit_tbl (attlist (att_item),
+                                                tuple (lit_int (0))))),
+                               lit_tbl (attlist (att_item1),
+                                        tuple (lit_int (1)))),
                            att_res, att_item1, att_item); 
 
     char *err_string = "err:FORG0005, fn:exactly-one called with "
@@ -2132,12 +1667,13 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
 
-    PFla_op_t *count = eq (attach (
+    PFla_op_t *count = eq (cross (
                                count (
                                    project (args[0].rel, 
                                             proj (att_iter, att_iter)),
                                    att_item, att_iter),
-                               att_item1, lit_int (1)),
+                               lit_tbl (attlist (att_item1),
+                                        tuple (lit_int (1)))),
                            att_res, att_item1, att_item); 
 
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
@@ -2201,11 +1737,11 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_iter),
+                           att_pos, sortby (att_item), att_NULL),
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_iter),
+            .rel = number (distinct, att_pos, att_NULL),
             .frag = args[0].frag };
 }
 
@@ -2229,11 +1765,11 @@ PFbui_fn_doc (const PFla_op_t *loop __attribute__((unused)),
 
     PFla_op_t *doc = doc_tbl (project (args[0].rel,
                                        proj (att_iter, att_iter),
-                                       proj (att_item, att_item)),
-                              att_iter, att_item, att_item);
+                                       proj (att_item, att_item)));
 
     return (struct PFla_pair_t) {
-        .rel  = attach (roots (doc), att_pos, lit_nat (1)),
+        .rel  = cross (lit_tbl (attlist (att_pos), tuple (lit_nat (1))),
+                       roots (doc)),
         .frag = PFla_set (fragment (doc)) };
 }
 
@@ -2348,8 +1884,7 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop __attribute__((unused)),
                            project (args[0].rel,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)),
-                           alg_desc_s, PFty_text (),
-                           att_iter, att_item, att_item),
+                           alg_desc_s, PFty_text ()),
                    att_pos, sortby (att_item), att_iter);
 
     /* concatenate all texts within an iteration using
@@ -2364,26 +1899,25 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop __attribute__((unused)),
                     proj (att_pos,  att_pos),
                     proj (att_item, att_res)),
                 project (
-                    attach (
-                        attach (loop, att_pos, lit_nat (1)),
-                        att_item, lit_str ("")),
+                    cross (loop,
+                           lit_tbl( attlist (att_pos, att_item),
+                                    tuple (lit_nat (1),
+                                           lit_str ("")))),
                     proj (att_iter, att_iter),
-                    proj (att_item, att_item)),
-                att_iter, att_pos, att_item,
-                att_iter, att_item,
-                att_iter, att_item);
+                    proj (att_item, att_item)));
 
     /* add empty strings for all empty sequences */
-    res = attach (
+    res = cross (
               disjunion (
                   nodes,
-                  attach (
+                  cross (
                       difference (
                           loop,
                           project (nodes,
                                    proj (att_iter, att_iter))),
-                      att_item, lit_str (""))),
-              att_pos, lit_nat (1));
+                      lit_tbl (attlist (att_item), 
+                               tuple (lit_str (""))))),
+              lit_tbl (attlist (att_pos), tuple (lit_nat (1))));
 
     return (struct PFla_pair_t) {
         .rel  = res,
@@ -2441,8 +1975,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                            project (sel_node,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)),
-                           alg_desc_s, PFty_text (),
-                           att_iter, att_item, att_item),
+                           alg_desc_s, PFty_text ()),
                    att_pos, sortby (att_item), att_iter);
 
     /* concatenate all texts within an iteration using
@@ -2457,29 +1990,25 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                     proj (att_pos,  att_pos),
                     proj (att_item, att_res)),
                 project (
-                    attach (
-                            project (
-                                     sel_node, 
-                                     proj(att_iter, att_iter),
-                                     proj(att_pos, att_pos)),
-                        att_item, lit_str ("")),
+                    cross (loop,
+                           lit_tbl( attlist (att_pos, att_item),
+                                    tuple (lit_nat (1),
+                                           lit_str ("")))),
                     proj (att_iter, att_iter),
-                    proj (att_item, att_item)),
-                att_iter, att_pos, att_item,
-                att_iter, att_item,
-                att_iter, att_item);
+                    proj (att_item, att_item)));
 
     /* add empty strings for all empty sequences */
-    res = attach (
+    res = cross (
               disjunion (
                   disjunion (attributes, nodes),
-                  attach (
+                  cross (
                       difference (
                           loop,
                           project (disjunion (attributes, nodes),
                                    proj (att_iter, att_iter))),
-                      att_item, lit_str (""))),
-              att_pos, lit_nat (1));
+                      lit_tbl (attlist (att_item), 
+                               tuple (lit_str (""))))),
+              lit_tbl (attlist (att_pos), tuple (lit_nat (1))));
 
     return (struct PFla_pair_t) {
         .rel  = res,
@@ -2504,159 +2033,6 @@ PFbui_pf_string_value (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
 
     return args[0];
-}
-
-/**
- * Build operator tree for built-in function 'fn:data'.
- * It uses pf:string-value() for atomizating nodes.
- */
-static struct PFla_pair_t
-fn_data (struct PFla_pair_t (*str_val) 
-             (const PFla_op_t *, bool, struct PFla_pair_t *),
-         PFalg_simple_type_t node_type,
-         const PFla_op_t *loop __attribute__((unused)),
-         bool ordering,
-         struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    /*
-     * carry out specific type test on type
-     */
-    PFla_op_t *type = type (args[0].rel, att_res, att_item, node_type);
-
-    /* select those rows that have type "node" */
-    PFla_op_t *nodes = project (
-                                type_assert_pos (
-                                                 select_ (type, att_res),
-                                                 att_item, node_type),
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_item));
-
-    /* select the remaining rows */
-    PFla_op_t *atomics = project (
-                                  type_assert_neg (
-                                                   select_ (not (type, att_res1, att_res),
-                                                            att_res1),
-                                                   att_item, node_type),
-                                  proj (att_iter, att_iter),
-                                  proj (att_pos, att_pos),
-                                  proj (att_item, att_item));
-    
-    /* renumber */
-    PFla_op_t *q = number (nodes, att_inner, att_NULL);
-    
-    PFla_op_t *map = project (q, 
-                              proj (att_outer, att_iter), 
-                              proj (att_inner, att_inner),
-                              proj (att_pos1, att_pos));
-
-    struct  PFla_pair_t str_args = {
-        .rel = attach (
-                       project (
-                                q, 
-                                proj (att_iter, att_inner), 
-                                proj (att_item, att_item)),
-                       att_pos, lit_nat(1)),
-        .frag = args[0].frag };
-
-    PFla_op_t *res = project(
-                             eqjoin(
-                                    cast(
-                                         str_val (
-                                                  project (
-                                                           q, 
-                                                           proj (att_iter, att_inner)), 
-                                                  ordering, 
-                                                  &str_args).rel, 
-                                         att_cast, att_item, aat_uA), 
-                                         map, att_iter, att_inner),
-                             proj(att_iter, att_outer),
-                             proj(att_pos, att_pos1),
-                             proj(att_item, att_cast));
-    
-    return (struct  PFla_pair_t) {
-        .rel  = disjunion (atomics, res),
-        .frag = PFla_empty_set () };
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data_attr (const PFla_op_t *loop,
-                    bool ordering,
-                    struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value_attr, aat_anode, loop, ordering, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data_text (const PFla_op_t *loop,
-                    bool ordering,
-                    struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value_text, aat_pnode, loop, ordering, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data_pi (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value_pi, aat_pnode, loop, ordering, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data_comm (const PFla_op_t *loop,
-                    bool ordering,
-                    struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value_comm, aat_pnode, loop, ordering, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data_elem (const PFla_op_t *loop,
-                    bool ordering,
-                    struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value_elem, aat_pnode, loop, ordering, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data_elem_attr (const PFla_op_t *loop,
-                         bool ordering,
-                         struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value_elem_attr, aat_node, loop, ordering, args);
-}
-
-/**
- * Build up operator tree for built-in function 'fn:data'.
- */
-struct PFla_pair_t
-PFbui_fn_data (const PFla_op_t *loop,
-               bool ordering,
-               struct PFla_pair_t *args)
-{
-    return fn_data(PFbui_pf_string_value, aat_node, loop, ordering, args);
 }
 
 /**
@@ -2726,11 +2102,12 @@ pf_item_seq_to_node_seq_worker_single_atomic (const PFla_op_t *loop,
 
     /* get the roots of the new text nodes and add pos column */
     return (struct  PFla_pair_t) {
-                 .rel  = attach (
+                 .rel  = cross (
                              project (roots (t_nodes),
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_res)),
-                             att_pos, lit_nat (1)),
+                             lit_tbl (attlist (att_pos),
+                                      tuple (lit_nat (1)))),
                  /* union of those nodes we had in the very beginning
                   * (those in frag) and those produced by text node
                   * creation
@@ -2772,24 +2149,23 @@ pf_item_seq_to_node_seq_worker_atomic (const PFla_op_t *loop,
                                  proj (att_pos, att_pos),
                                  proj (att_item, att_cast)),
                              project (
-                                 attach (
-                                     attach (loop, att_pos, lit_nat (1)),
-                                     att_item, lit_str (" ")),
+                                 cross (loop,
+                                        lit_tbl( attlist (att_pos, att_item),
+                                                 tuple (lit_nat (1),
+                                                        lit_str (" ")))),
                                  proj (att_iter, att_iter),
-                                 proj (att_item, att_item)),
-                         att_iter, att_pos, att_item,
-                         att_iter, att_item,
-                         att_iter, att_item);
+                                 proj (att_item, att_item)));
 
     PFla_op_t *t_nodes = textnode (strings, att_res, att_item);
 
     /* get the roots of the new text nodes and add pos column */
     return (struct  PFla_pair_t) {
-                 .rel  = attach (
+                 .rel  = cross (
                              project (roots (t_nodes),
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_res)),
-                             att_pos, lit_nat (1)),
+                             lit_tbl (attlist (att_pos),
+                                      tuple (lit_nat (1)))),
                  /* union of those nodes we had in the very beginning
                   * (those in part1) and those produced by text node
                   * creation
@@ -2854,8 +2230,12 @@ pf_item_seq_to_node_seq_worker_attr (
                  .rel = project (
                             rownum (
                                 disjunion (
-                                    attach (part1, att_ord, lit_nat (1)),
-                                    attach (text.rel, att_ord, lit_nat (2))),
+                                    cross (part1,
+                                           lit_tbl (attlist (att_ord),
+                                                    tuple (lit_nat (1)))),
+                                    cross (text.rel,
+                                           lit_tbl (attlist (att_ord),
+                                                    tuple (lit_nat (2))))),
                                 att_pos1, sortby (att_ord, att_pos), att_iter),
                             proj (att_iter, att_iter),
                             proj (att_pos, att_pos1),
@@ -2933,7 +2313,9 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
      */
     PFla_op_t *base = subtract (
                           cast (
-                              attach (strings, att_item1, lit_int (1)),
+                              cross (strings,
+                                  lit_tbl (attlist (att_item1),
+                                           tuple (lit_int (1)))),
                               att_pos1, att_pos, aat_int),
                           att_res, att_pos1, att_item1);
 
@@ -2958,9 +2340,12 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
     /*
      * for each pair of adjacent strings add a whitespace string
      */
-    PFla_op_t *sep = attach (
-                         attach (delim, att_item, lit_str (" ")),
-                         att_ord, lit_nat (2));
+    PFla_op_t *sep = cross (
+                         cross (delim,
+                                lit_tbl (attlist (att_item),
+                                         tuple (lit_str (" ")))),
+                         lit_tbl (attlist (att_ord),
+                                  tuple (lit_nat (2))));
 
     /*
      * create textnodes for each string
@@ -2968,11 +2353,12 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
      */
     PFla_op_t *t_nodes = textnode (
                              disjunion (
-                                 attach (project (strings,
+                                 cross (project (strings,
                                                  proj (att_iter, att_iter),
                                                  proj (att_pos, att_pos),
                                                  proj (att_item, att_cast)),
-                                        att_ord, lit_nat (1)),
+                                        lit_tbl (attlist (att_ord),
+                                                 tuple (lit_nat (1)))),
                                  sep),
                                  att_res, att_item);
                          
@@ -2988,7 +2374,9 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
                                              proj (att_pos, att_pos),
                                              proj (att_item, att_res),
                                              proj (att_ord, att_ord)),
-                                    attach (part1, att_ord, lit_nat (1))),
+                                    cross (part1,
+                                           lit_tbl (attlist (att_ord),
+                                                    tuple (lit_nat (1))))),
                                 att_pos1, sortby (att_pos, att_ord), att_iter),
                             proj (att_iter, att_iter),
                             proj (att_pos, att_pos1),
@@ -3059,9 +2447,7 @@ PFbui_pf_merge_adjacent_text_nodes (
                          "__attribute__((unused))" */
 
     PFla_op_t *merged
-        = merge_adjacent (PFla_set_to_la (args[0].frag), args[0].rel,
-                          att_iter, att_pos, att_item,
-                          att_iter, att_pos, att_item);
+        = merge_adjacent (PFla_set_to_la (args[0].frag), args[0].rel);
 
     return (struct  PFla_pair_t) {
                  .rel  = roots (merged),
@@ -3088,46 +2474,7 @@ PFbui_fn_unordered (const PFla_op_t *loop __attribute__((unused)),
                     project (args[0].rel,
                              proj (att_iter, att_iter),
                              proj (att_item, att_item)),
-                    att_pos, att_iter),
+                    att_pos, att_NULL),
         .frag = PFla_empty_set () };
 }
-
-/**
- * fn:resolve-QName (xs:string)
- *
- * Our implementation is actually off the specs.  There, the function
- * is supposed to require two arguments: a string argument, as well as
- * node argument that provides "in-scope namespace declarations".  The
- * latter are then used to resolve namespace prefixes in the string
- * argument for a proper QName result.  (Currently) we neither have
- * a suitable element node available during compilation, nor do we
- * track in-scope namespaces at runtime.  Our back-end implementation
- * thus "cheats" a bit and simply generates a new URI.  Totally off
- * the specs---feel free to improve this if you feel like it.
- *
- * Note that fs.brg introduces calls the fn:resolve-QName() for
- * computed element and attribute constructors.  fn:resolve-QName()
- * is not even the right function to use there, because the constructors
- * should do their job based on _statically-known namespace declarations_,
- * not in-scope declarations.
- */
-struct PFla_pair_t
-PFbui_fn_resolve_qname (const PFla_op_t *loop __attribute__((unused)),
-                        bool ordering __attribute((unused)),
-                        struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    /* implement it as a simple cast to xs:QName */
-    return (struct PFla_pair_t) {
-        .rel = project (cast (args[0].rel, att_cast, att_item, aat_qname),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_cast)),
-        .frag = PFla_empty_set () };
-}
-
 /* vim:set shiftwidth=4 expandtab: */

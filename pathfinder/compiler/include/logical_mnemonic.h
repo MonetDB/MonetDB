@@ -30,16 +30,13 @@
 #include "algebra_mnemonic.h"
 
 /** serialization */
-#define serialize(a,b,c,d) PFla_serialize ((a),(b),(c),(d))
+#define serialize(a,b)    PFla_serialize ((a),(b))
 
 /** literal table construction */
 #define lit_tbl(...)      PFla_lit_tbl (__VA_ARGS__)
 
 /** empty table construction */
 #define empty_tbl(atts)   PFla_empty_tbl (atts)
-
-/** ColumnAttach operator */
-#define attach(a,b,c)   PFla_attach ((a),(b),(c))
 
 /** cartesian product */
 #define cross(a,b)        PFla_cross ((a),(b))
@@ -53,13 +50,13 @@
 /* selection operator */
 #define select_(a,b)      PFla_select ((a),(b))
 
-/** disjoint union (where both argument must have the same schema) */
+/** disjoint union */
 #define disjunion(a,b)    PFla_disjunion ((a),(b))
 
-/** intersection (where both argument must have the same schema) */
+/** intersection */
 #define intersect(a,b)    PFla_intersect ((a),(b))
 
-/** difference (where both argument must have the same schema) */
+/** difference */
 #define difference(a,b)   PFla_difference ((a),(b))
 
 /* duplicate elimination operator */
@@ -98,8 +95,8 @@
 /* boolean NOT operator */
 #define not(a,b,c)        PFla_not ((a),(b),(c))
 
-/* operator applying a (partitioned) aggregation function on a column */
-#define aggr(a,b,c,d,e)      PFla_aggr ((a),(b),(c),(d),(e))
+/* operator forming (partitioned) sum of a column */
+#define sum(a,b,c,d)      PFla_sum ((a),(b),(c),(d))
 
 /* (partitioned) row counting operator */
 #define count(a,b,c)      PFla_count ((a),(b),(c))
@@ -127,20 +124,19 @@
 #define all(a,b,c,d)      PFla_all((a), (b), (c), (d))
 
 /** staircase join */
-#define scjoin(a,b,c,d,e,f,g) PFla_scjoin ((a),(b),(c),(d),(e),(f),(g))
+#define scjoin(a,b,c,d)   PFla_scjoin ((a),(b),(c),(d))
 
 /** document table */
-#define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))
+#define doc_tbl(a)        PFla_doc_tbl((a))
 
 /** document content access */
 #define doc_access(a,b,c,d,e) PFla_doc_access ((a), (b), (c), (d), (e))
 
 /* element-constructing operator */
-#define element(a,b,c,d,e,f,g,h,i,j) \
-        PFla_element ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
+#define element(a,b,c)    PFla_element ((a),(b),(c))
 
 /* attribute-constructing operator */
-#define attribute(a,b,c,d) PFla_attribute ((a),(b),(c),(d))
+#define attribute(a,b,c,d,e) PFla_attribute ((a),(b),(c),(d),(e))
 
 /* text node-constructing operator */
 #define textnode(a,b,c)   PFla_textnode ((a),(b),(c))
@@ -158,8 +154,7 @@
 #define pos_merge_str(a)  PFla_pos_merge_str ((a))
 
 /* constructor for pf:merge-adjacent-text-nodes() functionality */
-#define merge_adjacent(a,b,c,d,e,f,g,h) \
-        PFla_pf_merge_adjacent_text_nodes ((a),(b),(c),(d),(e),(f),(g),(h))
+#define merge_adjacent(a,b) PFla_pf_merge_adjacent_text_nodes ((a),(b))
 
 /** constructor for algebraic representation of newly ceated xml nodes */
 #define roots(a)          PFla_roots ((a))
@@ -176,7 +171,6 @@
 /* constructors for built-in functions */
 #define fn_concat(a,b,c,d)  PFla_fn_concat ((a), (b), (c), (d))
 #define fn_contains(a,b,c,d)  PFla_fn_contains ((a), (b), (c), (d))
-#define fn_string_join(a,b,c,d,e,f,g,h,i) \
-        PFla_fn_string_join ((a),(b),(c),(d),(e),(f),(g),(h),(i))
+#define fn_string_join(a,b) PFla_fn_string_join ((a), (b))
 
 /* vim:set shiftwidth=4 expandtab: */

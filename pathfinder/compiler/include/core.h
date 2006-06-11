@@ -46,9 +46,6 @@ extern unsigned int core_vars;
 /* PFfun_t */
 #include "functions.h"
 
-/* PFapply_t */
-#include "apply.h"
-
 /* PFla_pair_t */
 #include "logical.h"
 
@@ -127,13 +124,13 @@ enum PFctype_t {
   , c_preceding          = 41 /**< nodes before context node (document order) */
   , c_preceding_sibling  = 42 /**< all preceding nodes with same parent */
   , c_self               = 43 /**< the context node itself */
-/* #ifdef BURKOWSKI */
+#ifdef BURKOWSKI
   /* Xiraf Axes */
   , c_select_narrow      = 100 /**< give me some bastards (Burkowski stand-off matching) */
   , c_select_wide        = 101 /**< give me all bastards (Burkowski stand-off matching) */
   , c_reject_narrow      = 102 /**< give me all but some bastards (Burkowski stand-off matching) */
   , c_reject_wide        = 103 /**< give me all but the bastards (Burkowski stand-off matching) */
-/* #endif */
+#endif
 
   /* Constructor Nodes */
   , c_elem               = 44 /**< the element constructor */
@@ -174,7 +171,7 @@ union PFcsem_t {
   PFvar_t   *var;        /**< variable information */
   PFty_t     type;       /**< used with c_type */
   PFsort_t   mode;       /**< sort modifier */
-  PFapply_t  apply;   /**< function application */
+  struct PFfun_t *fun;   /**< function reference */
   /* semantic content for flwr subexpressions (let/for) */
   struct {
       PFty_t (*quantifier) (PFty_t); 
@@ -288,9 +285,9 @@ PFcnode_t *PFcore_cast (const PFcnode_t *type, const PFcnode_t *expr);
 
 
 PFfun_t *PFcore_function (PFqname_t);
-PFcnode_t *PFcore_apply (PFapply_t *, const PFcnode_t *);
+PFcnode_t *PFcore_apply (PFfun_t *, const PFcnode_t *);
 PFcnode_t *PFcore_arg (const PFcnode_t *, const PFcnode_t *);
-PFcnode_t *PFcore_apply_ (PFapply_t *, ...);
+PFcnode_t *PFcore_apply_ (PFfun_t *, ...);
 
 /**
  * Expansion functions for Calculations
@@ -303,7 +300,7 @@ PFcnode_t *PFcore_some (const PFcnode_t *, const PFcnode_t *, const PFcnode_t *)
 /**
  * Wrapper for #apply_.
  */
-#define APPLY(fn,...) PFcore_apply_ (PFapply(fn), __VA_ARGS__, 0)
+#define APPLY(fn,...) PFcore_apply_ ((fn), __VA_ARGS__, 0)
 
 PFcnode_t *PFcore_ebv (const PFcnode_t *);
 

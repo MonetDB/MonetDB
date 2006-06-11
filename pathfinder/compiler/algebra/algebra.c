@@ -1,5 +1,3 @@
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
  * @file
  *
@@ -567,6 +565,7 @@ PFalg_proj (PFalg_att_t new, PFalg_att_t old)
     return (PFalg_proj_t) { .new = new, .old = old };
 }
 
+
 /**
  * Constructor for attribute lists (e.g., for literal table
  * construction, or sort specifications in the rownum operator).
@@ -626,7 +625,6 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_nat:   return (a.val.nat == b.val.nat ? 0
                                 : (a.val.nat < b.val.nat ? -1 : 1));
         case aat_int:   return a.val.int_ - b.val.int_;
-        case aat_uA:
         case aat_str:   return strcmp (a.val.str, b.val.str);
         case aat_dec:   return a.val.dec - b.val.dec;
         case aat_dbl:   return a.val.dbl - b.val.dbl;
@@ -646,175 +644,6 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 
     assert(0); /* never reached due to "exit" in PFoops */
     return 0; /* pacify picky compilers */
-}
-
-/**
- * Print simple type name
- */
-char * PFsimple_type_str (PFalg_simple_type_t type) {
-    switch (type) {
-        case aat_nat:   return "nat";
-        case aat_int:   return "int";
-        case aat_str:   return "str";
-        case aat_dec:   return "dec";
-        case aat_dbl:   return "dbl";
-        case aat_bln:   return "bln";
-        case aat_uA:    return "uA";
-        case aat_qname: return "qname";
-        case aat_node:  return "node";
-        case aat_anode: return "anode";
-        case aat_attr:  return "attr";
-        case aat_afrag: return "afrag";
-        case aat_pnode: return "pnode";
-        case aat_pre:   return "pre";
-        case aat_pfrag: return "pfrag";
-        default:
-            PFoops (OOPS_FATAL, "unknown attribute simple type (%i)", type);
-    }
-    return NULL;
-}
-
-/**
- * Create an unique name based on an id @a id and 
- * an original name @a ori that retains the usage information
- * of the new variable (iter, pos or item).
- */
-PFalg_att_t
-PFalg_unq_name (PFalg_att_t ori, unsigned int id)
-{
-    PFalg_att_t unq;
-
-    switch (ori) {
-        case att_iter:
-        case att_iter1:
-        case att_inner:
-        case att_outer:
-        case att_iter2:
-        case att_iter3:
-        case att_iter4:
-        case att_iter5:
-        case att_iter6:
-            unq = att_iter;
-            break;
-
-        case att_pos:
-        case att_pos1:
-        case att_sort:
-        case att_sort1:
-        case att_sort2:
-        case att_sort3:
-        case att_sort4:
-        case att_sort5:
-        case att_sort6:
-        case att_sort7:
-        case att_ord:
-            unq = att_pos;
-            break;
-
-        case att_item:
-        case att_item1:
-        case att_res:
-        case att_res1:
-        case att_cast:
-        case att_item2:
-        case att_subty:
-        case att_itemty:
-        case att_notsub:
-        case att_isint:
-        case att_isdec:
-            unq = att_item;
-            break;
-
-        default:
-            PFoops (OOPS_FATAL,
-                    "Mapping variable to an unique name failed. "
-                    "(original name: %s, id: %u)",
-                    PFatt_str (ori), id);
-    }
-
-    return unq | 1 << 3 | id << 4;
-}
-
-/**
- * Create an original column name based on an unique name @a unq
- * and a list of free original variables @a free.
- */
-PFalg_att_t
-PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
-{
-    switch (unq & (att_iter | att_pos | att_item)) {
-        case att_iter:
-            if (free & att_iter)   return att_iter;
-            if (free & att_iter1)  return att_iter1;
-            if (free & att_iter2)  return att_iter2;
-            if (free & att_iter3)  return att_iter3;
-            if (free & att_iter4)  return att_iter4;
-            if (free & att_iter5)  return att_iter5;
-            if (free & att_iter6)  return att_iter6;
-            if (free & att_inner)  return att_inner;
-            if (free & att_outer)  return att_outer;
-            /* If we have relations whose schema has more than
-               10 columns of the same kind we may also use names
-               from another group. */
-
-        case att_pos:
-            if (free & att_pos)    return att_pos;
-            if (free & att_pos1)   return att_pos1;
-            if (free & att_sort)   return att_sort;
-            if (free & att_sort1)  return att_sort1;
-            if (free & att_sort2)  return att_sort2;
-            if (free & att_sort3)  return att_sort3;
-            if (free & att_sort4)  return att_sort4;
-            if (free & att_sort5)  return att_sort5;
-            if (free & att_sort6)  return att_sort6;
-            if (free & att_sort7)  return att_sort7;
-            if (free & att_ord)    return att_ord;
-
-        case att_item:
-            if (free & att_item)   return att_item;
-            if (free & att_item1)  return att_item1;
-            if (free & att_item2)  return att_item2;
-            if (free & att_subty)  return att_subty;
-            if (free & att_itemty) return att_itemty;
-            if (free & att_notsub) return att_notsub;
-            if (free & att_isint)  return att_isint;
-            if (free & att_isdec)  return att_isdec;
-            if (free & att_res)    return att_res;
-            if (free & att_res1)   return att_res1;
-            if (free & att_cast)   return att_cast;
-
-            /* repeat iter and pos columns to allow
-               other names for item columns as well */
-            if (free & att_iter)   return att_iter;
-            if (free & att_iter1)  return att_iter1;
-            if (free & att_iter2)  return att_iter2;
-            if (free & att_iter3)  return att_iter3;
-            if (free & att_iter4)  return att_iter4;
-            if (free & att_iter5)  return att_iter5;
-            if (free & att_iter6)  return att_iter6;
-            if (free & att_inner)  return att_inner;
-            if (free & att_outer)  return att_outer;
-            if (free & att_pos)    return att_pos;
-            if (free & att_pos1)   return att_pos1;
-            if (free & att_sort)   return att_sort;
-            if (free & att_sort1)  return att_sort1;
-            if (free & att_sort2)  return att_sort2;
-            if (free & att_sort3)  return att_sort3;
-            if (free & att_sort4)  return att_sort4;
-            if (free & att_sort5)  return att_sort5;
-            if (free & att_sort6)  return att_sort6;
-            if (free & att_sort7)  return att_sort7;
-            if (free & att_ord)    return att_ord;
-            break;
-
-        default:
-            break;
-    }
-
-    PFoops (OOPS_FATAL,
-            "Mapping variable to an original name failed.");
-
-    return 0; /* in case a compiler does not understand PFoops */
 }
 
 /**
@@ -840,40 +669,25 @@ PFatt_str (PFalg_att_t att) {
         case att_sort5:   return "sort5";
         case att_sort6:   return "sort6";
         case att_sort7:   return "sort7";
-        case att_ord:     return "ord";
-        case att_iter2:   return "iter2";
-        case att_iter3:   return "iter3";
-        case att_iter4:   return "iter4";
-        case att_iter5:   return "iter5";
-        case att_iter6:   return "iter6";
+        case att_sort8:   return "sort8";
+        case att_sort9:   return "sort9";
+        case att_sort10:  return "sort10";
+        case att_sort11:  return "sort11";
+        case att_sort12:  return "sort12";
+        case att_sort13:  return "sort13";
+        case att_sort14:  return "sort14";
         case att_res:     return "res";
+        case att_ord:     return "ord";
         case att_res1:    return "res1";
         case att_cast:    return "cast";
-        case att_item2:   return "item2";
-        case att_subty:   return "item3";
-        case att_itemty:  return "item4";
-        case att_notsub:  return "item5";
-        case att_isint:   return "item6";
-        case att_isdec:   return "item7";
+        case att_subty:   return "subty";
+        case att_itemty:  return "itemty";
+        case att_notsub:  return "notsub";
+        case att_isint:   return "isint";
+        case att_isdec:   return "isdec";
         default:
-            if (att & (1 << 3)) {
-                unsigned int id = att >> 4;
-                size_t len = sizeof ("iter0000");
-                char *res = PFmalloc (len);
-
-                assert (id < 10000);
-
-                if (att & att_iter)
-                    snprintf (res, len, "%s%u", "iter", id);
-                else if (att & att_pos)
-                    snprintf (res, len, "%s%u", "pos", id);
-                else if (att & att_item)
-                    snprintf (res, len, "%s%u", "item", id);
-
-                return res;
-            }
-            else
-                PFoops (OOPS_FATAL, "unknown attribute name (%i)", att);
+            PFoops (OOPS_FATAL,
+                    "unknown attribute name");
     }
     return NULL;
 }

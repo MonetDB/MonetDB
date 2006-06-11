@@ -1,0 +1,1343 @@
+%{
+
+/**
+ * @file
+ *
+ * Optimize relational algebra expression tree.
+ *
+ * Copyright Notice:
+ * -----------------
+ *
+ * The contents of this file are subject to the Pathfinder Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License.  You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the Pathfinder system.
+ *
+ * The Initial Developer of the Original Code is the Database &
+ * Information Systems Group at the University of Konstanz, Germany.
+ * Portions created by the University of Konstanz are Copyright (C)
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
+ *
+ *
+ * $Id$
+ */
+
+/* always include pathfinder.h first! */
+#include "pathfinder.h"
+#include "oops.h"         /* PFoops() */
+#include "algebra.h"
+#include "algopt.h"
+#include "mem.h"          /* PFmalloc() */
+#include "subtyping.h"
+
+#include "properties.h"
+
+#include <assert.h>
+#include <stdio.h>
+
+/*
+ * Accessors for the burg matcher
+ */
+typedef struct PFla_op_t *NODEPTR_TYPE;
+
+/* accessor to the node kind */
+#define OP_LABEL(p) ((p)->kind)
+
+/* accessors to left and right child node */
+#define LEFT_CHILD(p)  ((p)->child[0])
+#define RIGHT_CHILD(p) ((p)->child[1])
+
+/* the state determined during bottom-up labeling is stored here */
+#define STATE_LABEL(p) ((p)->state_label)
+
+/* If something goes wrong, call PFoops */
+#define PANIC(...) PFoops (OOPS_BURG, __VA_ARGS__)
+
+%}
+
+/* start non-terminal */
+%start Query
+
+/*
+ * Node identifiers.
+ * Keep them aligned with the node kinds in include/algebra.h!
+ */
+%term  serialize      =   1
+%term  lit_tbl        =   2
+%term  empty_tbl      =   3
+%term  cross          =   4
+%term  eqjoin         =   5
+%term  project        =   6
+%term  select_        =   7
+%term  disjunion      =   8
+%term  intersect      =   9
+%term  difference     =  10
+%term  distinct       =  11
+%term  num_add        =  20
+%term  num_subtract   =  21
+%term  num_multiply   =  22
+%term  num_divide     =  23
+%term  num_modulo     =  24
+%term  num_eq         =  25
+%term  num_gt         =  26
+%term  num_neg        =  27
+%term  bool_and       =  28
+%term  bool_or        =  29
+%term  bool_not       =  30
+%term  sum            =  31
+%term  count          =  32
+%term  rownum         =  35
+%term  number         =  36
+%term  type           =  40
+%term  type_assert    =  41
+%term  cast           =  42
+%term  seqty1         =  43
+%term  all            =  44
+%term  scjoin         =  50
+%term  doc_tbl        =  51
+%term  doc_access     =  52
+%term  element        =  60
+%term  element_tag    =  61
+%term  attribute      =  62
+%term  textnode       =  63
+%term  docnode        =  64
+%term  comment        =  65
+%term  processi       =  66
+%term  merge_adjacent =  67
+%term  roots_         =  70
+%term  fragment       =  71
+%term  frag_union     =  72
+%term  empty_frag     =  73
+%term  cond_err       =  80
+%term  concat         = 100
+%term  contains       = 101
+%term  string_join    = 102
+
+%%
+
+Query:  serialize (Frag, Rel)                     =   1 (10);
+
+Rel:    lit_tbl                                   =   2 (10);
+Rel:    cross (Rel, Rel)                          =   3 (10);
+Rel:    eqjoin (Rel, Rel)                         =   4 (10);
+Rel:    project (Rel)                             =  10 (10);
+Rel:    project (                                            
+            rownum (                                         
+                disjunion (                                  
+                    cross (lit_tbl,                          
+                           cross (Rel,                       
+                                  lit_tbl)),                 
+                    cross (lit_tbl,                          
+                           cross(Rel,                        
+                                 lit_tbl)))))     =  11 (40);
+Rel:    project (project (Rel))                   =  13  (1);
+Rel:    select_ (Rel)                             =  19 (10);
+Rel:    disjunion (Rel, Rel)                      =  20 (10);
+Rel:    disjunion (EmptyRel, Rel)                 =  21  (5);
+Rel:    disjunion (Rel, EmptyRel)                 =  22  (5);
+Rel:    intersect (Rel, Rel)                      =  23 (10);
+Rel:    difference (Rel, Rel)                     =  24 (10);
+Rel:    difference (Rel, EmptyRel)                =  25  (5);
+Rel:    distinct (Rel)                            =  26 (10);
+Rel:    distinct (scjoin (Frag, Rel))             =  27 (5);
+Rel:    num_add (Rel)                             =  30 (10);
+Rel:    num_subtract (Rel)                        =  31 (10);
+Rel:    num_multiply (Rel)                        =  32 (10);
+Rel:    num_divide (Rel)                          =  33 (10);
+Rel:    num_modulo (Rel)                          =  34 (10);
+Rel:    num_neg (Rel)                             =  35 (10);
+Rel:    num_gt (Rel)                              =  36 (10);
+Rel:    num_eq (Rel)                              =  37 (10);
+Rel:    bool_and (Rel)                            =  38 (10);
+Rel:    bool_or (Rel)                             =  39 (10);
+Rel:    bool_not (Rel)                            =  40 (10);
+Rel:    sum (Rel)                                 =  41 (10);
+Rel:    count (Rel)                               =  42 (10);
+Rel:    rownum (Rel)                              =  50 (10);
+Rel:    number (Rel)                              =  51 (10);
+Rel:    type (Rel)                                =  53 (10);
+Rel:    type_assert (Rel)                         =  54 (10);
+Rel:    cast (Rel)                                =  55 (10);
+Rel:    seqty1 (Rel)                              =  56 (10);
+Rel:    all (Rel)                                 =  57 (10);
+Rel:    scjoin (Frag, Rel)                        =  60 (10);
+Rel:    scjoin (Frag, distinct (Rel))             =  61 (10);
+Rel:    scjoin (Frag, scjoin (Frag, Rel))         =  62 (10);
+Rel:    doc_access (Frag, Rel)                    =  63 (10);
+
+Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
+Rel:    roots_ (element (Frag,                       
+                         element_tag (Rel, Rel))) =  71 (10);
+Rel:    roots_ (attribute (Rel, Rel))             =  72 (10);
+Rel:    roots_ (textnode (Rel))                   =  73 (10);
+Rel:    roots_ (docnode (Frag, Rel))              =  74 (10);
+Rel:    roots_ (comment (Rel))                    =  75 (10);
+Rel:    roots_ (processi (Rel))                   =  76 (10);
+Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
+
+Rel:    cond_err (Rel, Rel)                       =  80 (10);
+Rel:    concat (Rel)                              =  81 (10);
+Rel:    contains (Rel)                            =  82 (10);
+Rel:    string_join (Rel, Rel)                    =  83 (10);
+
+Rel:    EmptyRel                                  =  90  (0);
+
+
+Frag:    fragment (doc_tbl (Rel))                 = 100 (10);
+Frag:    fragment (element (Frag, 
+                            element_tag (Rel,
+                                         Rel)))   = 101 (10);
+Frag:    fragment (attribute (Rel, Rel))          = 102 (10);
+Frag:    fragment (textnode (Rel))                = 103 (10);
+Frag:    fragment (docnode (Frag, Rel))           = 104 (10);
+Frag:    fragment (comment (Rel))                 = 105 (10);
+Frag:    fragment (processi (Rel))                = 106 (10);
+Frag:    fragment (merge_adjacent (Frag, Rel))    = 107 (10);
+
+Frag:    frag_union (Frag, Frag)                  = 111 (10);
+Frag:    empty_frag                               = 112 (10);
+
+
+EmptyRel:    empty_tbl                            = 120  (0);
+
+EmptyRel:    cross (EmptyRel, Rel)                = 121  (0);
+EmptyRel:    cross (Rel, EmptyRel)                = 122  (0);
+EmptyRel:    eqjoin (EmptyRel, Rel)               = 123  (0);
+EmptyRel:    eqjoin (Rel, EmptyRel)               = 124  (0);
+EmptyRel:    project (EmptyRel)                   = 125  (0);
+EmptyRel:    select_ (EmptyRel)                   = 126  (0);
+EmptyRel:    disjunion (EmptyRel, EmptyRel)       = 130  (0);
+EmptyRel:    intersect (EmptyRel, Rel)            = 131  (0);
+EmptyRel:    intersect (Rel, EmptyRel)            = 132  (0);
+EmptyRel:    difference (EmptyRel, Rel)           = 133  (0);
+EmptyRel:    distinct (EmptyRel)                  = 134  (0);
+EmptyRel:    num_add (EmptyRel)                   = 140  (0);
+EmptyRel:    num_subtract (EmptyRel)              = 141  (0);
+EmptyRel:    num_multiply (EmptyRel)              = 142  (0);
+EmptyRel:    num_divide (EmptyRel)                = 143  (0);
+EmptyRel:    num_modulo (EmptyRel)                = 144  (0);
+EmptyRel:    num_neg (EmptyRel)                   = 145  (0);
+EmptyRel:    num_gt (EmptyRel)                    = 146  (0);
+EmptyRel:    num_eq (EmptyRel)                    = 147  (0);
+EmptyRel:    bool_and (EmptyRel)                  = 148  (0);
+EmptyRel:    bool_or (EmptyRel)                   = 149  (0);
+EmptyRel:    bool_not (EmptyRel)                  = 150  (0);
+EmptyRel:    sum (EmptyRel)                       = 151  (0);
+EmptyRel:    count (EmptyRel)                     = 152  (0);
+EmptyRel:    rownum (EmptyRel)                    = 160  (0);
+EmptyRel:    number (EmptyRel)                    = 161  (0);
+EmptyRel:    type (EmptyRel)                      = 162  (0);
+EmptyRel:    type_assert (EmptyRel)               = 163  (0);
+EmptyRel:    cast (EmptyRel)                      = 164  (0);
+EmptyRel:    seqty1 (EmptyRel)                    = 165  (0);
+EmptyRel:    all (EmptyRel)                       = 166  (0);
+EmptyRel:    scjoin (Frag, EmptyRel)              = 170  (0);
+EmptyRel:    doc_access (Frag, EmptyRel)          = 171  (0);
+EmptyRel:    roots_ (element (Frag, 
+                              element_tag (EmptyRel,
+                                          Rel)))  = 180  (0);
+EmptyRel:    roots_ (attribute (EmptyRel, Rel))   = 182  (0);
+EmptyRel:    roots_ (attribute (Rel, EmptyRel))   = 183  (0);
+EmptyRel:    roots_ (textnode (EmptyRel))         = 184  (0);
+EmptyRel:    roots_ (comment (EmptyRel))          = 185  (0);
+EmptyRel:    roots_ (processi (EmptyRel))         = 186  (0);
+EmptyRel:    roots_ (merge_adjacent (Frag,                   
+                                     EmptyRel))   = 187  (0);
+EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
+EmptyRel:    concat (EmptyRel)                    = 200 (10);
+EmptyRel:    string_join (EmptyRel, Rel)          = 201 (10);
+
+%%
+
+#include "algebra_mnemonic.h"
+
+/*
+ * Easily access subtree-parts.
+ */
+/** starting from p, make a step left */
+#define L(p) (LEFT_CHILD(p))
+/** starting from p, make a step right */
+#define R(p) (RIGHT_CHILD(p))
+/** starting from p, make two steps left */
+#define LL(p) L(L(p))
+/** starting from p, make a step left, then a step right */
+#define LR(p) R(L(p))
+/** starting from p, make a step right, then a step left */
+#define RL(p) L(R(p))
+/** starting from p, make two steps right */
+#define RR(p) R(R(p))
+#define LRL(p) L(R(L(p)))
+#define LRR(p) R(R(L(p)))
+#define RRL(p) L(R(R(p)))
+#define RRR(p) R(R(R(p)))
+
+#define MAX_KIDS 10
+
+#define LABEL_SEEN(p) ((p)->bit_opt_label)
+#define SEEN(p) ((p)->bit_opt)
+
+/* mark all nodes in the pattern of node p as seen 
+   if it is not contained in kids. */
+static void pattern_seen (PFla_op_t *p,  PFla_op_t **kids);
+
+/* update properties of node p if it is not contained in kids. */
+static void update_properties (PFla_op_t *p,  PFla_op_t **kids);
+
+/* Relabel node p if it is not contained in kids. */
+static void relabel (PFla_op_t *p,  PFla_op_t **kids);
+
+/**
+ * Reducer function. This is the heart of this source file. It
+ * contains all the action code for the above burg patterns.
+ */
+static bool
+reduce (PFla_op_t *p, int goalnt)
+{
+    int              rule;       /* rule number that matches for this node */
+    short           *nts;        /* target non-terminals for the leaf nodes of
+                                    the current rule */
+    PFla_op_t       *kids[MAX_KIDS];   /* leaf nodes of this rule */
+    bool             rewritten = false;
+
+    short            old_state_label;
+    unsigned short   i;
+
+    do {
+        assert (STATE_LABEL (p));
+
+        /* determine rule that matches for this non-terminal */
+        rule = PFalgopt_rule (STATE_LABEL (p), goalnt);
+
+        assert (rule);
+
+        /* initialize the kids[] vector */
+        for (unsigned short i = 0; i < MAX_KIDS; i++)
+            kids[i] = NULL;
+
+        /*
+         * prepare recursive traversal: get information on leaf nodes of
+         * this rule
+         */
+        nts = PFalgopt_nts[rule];
+        PFalgopt_kids (p, rule, kids);
+
+
+        rewritten = false;
+        /*
+         * prune already optimized branch of the tree
+         * (we try to treat the tree plan as DAG)
+         */
+        if (!SEEN(p))
+            /* recursively translate all leaf expressions */
+            for (i = 0; nts[i]; i++)
+                if ((rewritten = reduce (kids[i], nts[i])))
+                    break;  /* abort if a subtree was rewritten */
+
+        if (rewritten) {
+
+            /*
+             * If a subtree has been rewritten, we have to
+             *  - re-label that part of the tree, and
+             *  - possibly propagate the `rewritten' information upwards.
+             */
+
+            /* remember our old state_label (so we know if it has changed) */
+            old_state_label = STATE_LABEL(p);
+
+            /*
+             * Re-label current tree pattern.
+             * (at most down to the pattern leaves, as they should already be
+             * correctly labeled by the above reduce() call)
+             */
+            relabel (p, kids);
+
+            /* If our own state_label has changed, notify our caller. */
+            if (old_state_label != STATE_LABEL(p))
+                return true;
+        }
+    } while (rewritten);
+
+    /* save old_state_label to detect structural changes introduced
+       by the following action code */
+    old_state_label = STATE_LABEL(p);
+
+    /* mark all nodes in the current pattern as visited 
+       to avoid tree traversals */
+    pattern_seen (p, kids);
+
+    /* action code */
+    switch (rule) {
+
+        /* Query:  serialize (Frag, Rel) */
+        case 1:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    lit_tbl */
+        case 2:
+        {
+            unsigned int count = PFprop_icols_count (p->prop);
+
+            /* with icol optimization applied count cannot be greater
+               than p->schema.count. However if switched off count is
+               the maximum number of columns possible */
+            if (count && count < p->schema.count) {
+                /* prune all unnecessary columns */
+
+                /* create new schema */
+                PFalg_schema_t schema;
+                schema.items = PFmalloc (count *
+                                         sizeof (*(schema.items)));
+
+                /* create list of tuples each containing a list of atoms */
+                PFalg_tuple_t *tuples = PFmalloc (p->sem.lit_tbl.count *
+                                                  sizeof (*(tuples)));;
+                for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++) 
+                    tuples[i].atoms = PFmalloc (count *
+                                                sizeof (*(tuples[i].atoms)));
+                count = 0;
+
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (PFprop_icol (p->prop, p->schema.items[i].name)) {
+                        /* retain matching values in literal table */
+                        schema.items[count] = p->schema.items[i];
+                        for (unsigned int j = 0; j < p->sem.lit_tbl.count; j++)
+                            tuples[j].atoms[count] = 
+                                    p->sem.lit_tbl.tuples[j].atoms[i];
+                        count++;
+                    }
+
+                schema.count = count;
+                for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++) 
+                    tuples[i].count = count;
+
+                p->schema = schema;
+                p->sem.lit_tbl.tuples = tuples;
+
+            } else if (!count && p->schema.count < 1) {
+             
+                /* prune everything except one column */
+
+                /* create new schema */
+                PFalg_schema_t schema;
+                schema.items = PFmalloc (1 * sizeof (*(schema.items)));
+
+                /* create list of tuples each containing a list of atoms */
+                PFalg_tuple_t *tuples = PFmalloc (p->sem.lit_tbl.count *
+                                                  sizeof (*(tuples)));;
+                for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++) 
+                    tuples[i].atoms = PFmalloc (1 *
+                                                sizeof (*(tuples[i].atoms)));
+
+                /* retain matching values in literal table */
+                schema.items[0].name = p->schema.items[0].name;
+                schema.items[0].type = aat_nat;
+                for (unsigned int j = 0; j < p->sem.lit_tbl.count; j++)
+                    tuples[j].atoms[0] = PFalg_lit_nat (1); 
+
+                schema.count = 1;
+                for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++) 
+                    tuples[i].count = 1;
+
+                p->schema = schema;
+                p->sem.lit_tbl.tuples = tuples;
+            }
+
+            update_properties (p, kids);
+        } break;
+
+        /* Rel:    cross (Rel, Rel) */
+        case 3:
+            /* remove cross product if right argument is a literal table
+               containing one tuple whose columns are all unreferenced */
+            if (R(p)->kind == la_lit_tbl && R(p)->sem.lit_tbl.count == 1) {
+                unsigned int i;
+                for (i = 0; i < R(p)->schema.count; i++)
+                    if (PFprop_icol (R(p)->prop, R(p)->schema.items[i].name))
+                        break;
+                if (i == R(p)->schema.count) {
+                    *p = *(L(p));
+                    break;
+                }
+            } 
+            /* remove cross product if left argument is a literal table
+               containing one tuple whose columns are all unreferenced */
+            if (L(p)->kind == la_lit_tbl && L(p)->sem.lit_tbl.count == 1) {
+                unsigned int i;
+                for (i = 0; i < L(p)->schema.count; i++)
+                    if (PFprop_icol (L(p)->prop, L(p)->schema.items[i].name))
+                        break;
+                if (i == L(p)->schema.count) {
+                    *p = *(R(p));
+                    break;
+                }
+            } 
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    eqjoin (Rel, Rel) */
+        case 4:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    project (Rel) */
+        case 10:
+        {
+            bool renamed = false;
+            bool changed = false;
+
+            /* Because the icols columns are intersected with the 
+               ocol columns we can replace the current projection
+               list with the icols columns. */
+            for (unsigned int i = 0; i < p->schema.count; i++) {
+                if (!PFprop_icol (p->prop, p->schema.items[i].name)) {
+                    PFla_op_t *ret;
+                    unsigned int count = PFprop_icols_count (p->prop);
+                    PFalg_proj_t *atts = PFmalloc (count *
+                                                   sizeof (PFalg_proj_t));
+
+                    count = 0;
+                    for (unsigned int j = 0; j < p->sem.proj.count; j++)
+                        if (PFprop_icol (p->prop, p->sem.proj.items[j].new))
+                            atts[count++] = p->sem.proj.items[j];
+
+                    ret = PFla_project_ (L(p), count, atts);
+
+                    /* use property of first argument */
+                    ret->prop = p->prop;
+                    *p = *ret;
+
+                    SEEN(p) = false;
+                    update_properties (p, kids);
+                    relabel (p, kids);
+                    changed = true;
+                    break;
+                }
+                renamed = renamed ||
+                          (p->sem.proj.items[i].new !=
+                           p->sem.proj.items[i].old);
+            }
+
+            /* if the ocols list of the projection argument matches the
+               the icols list, no renaming is applied and the projection
+               hasn't been changed already we can skip the projection */
+            if (L(p)->schema.count == PFprop_icols_count (p->prop) &&
+                !renamed && !changed) {
+                *p = *(L(p));
+                break;
+            }
+
+            update_properties (p, kids);
+         } break;
+
+        /* Rel:    project (                                      
+                       rownum (                                   
+                           disjunion (                            
+                               cross (lit_tbl,                    
+                                      cross (Rel,                 
+                                             lit_tbl)),           
+                               cross (lit_tbl,                    
+                                      cross(Rel,                  
+                                            lit_tbl))))) */
+        case 11:
+            /* concatenate tuples of base relations instead
+               of applying a more expensive sequence construction */
+
+            if (/* project (iter,pos:pos1,item) */
+                p->schema.count == 3 &&
+                p->sem.proj.items[0].old == att_iter &&
+                p->sem.proj.items[0].new == att_iter &&
+                p->sem.proj.items[1].old == att_pos1 &&
+                p->sem.proj.items[1].new == att_pos &&
+                p->sem.proj.items[2].old == att_item &&
+                p->sem.proj.items[2].new == att_item &&
+                /* row_num (pos1:<ord,pos>/iter) */ 
+                L(p)->sem.rownum.attname == att_pos1 &&
+                L(p)->sem.rownum.part ==    att_iter &&
+                L(p)->sem.rownum.sortby.count == 2 &&
+                L(p)->sem.rownum.sortby.atts[0] == att_ord &&
+                L(p)->sem.rownum.sortby.atts[1] == att_pos &&
+                /*
+                                              ord
+                  compare with base relation: --- 
+                                               1
+                */ 
+                LL(LL(p))->sem.lit_tbl.count == 1 &&
+                LL(LL(p))->schema.count == 1 &&
+                LL(LL(p))->schema.items[0].name == att_ord &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].count == 1 &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat == 1 &&
+                /*
+                                              ord
+                  compare with base relation: --- 
+                                               2
+                */ 
+                RL(LL(p))->sem.lit_tbl.count == 1 &&
+                RL(LL(p))->schema.count == 1 &&
+                RL(LL(p))->schema.items[0].name == att_ord &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].count == 1 &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat == 2 &&
+                /* compare loop relations */
+                LRL(LL(p)) == RRL(LL(p)) &&
+                /* ckeck schema of literal table */
+                LRR(LL(p))->schema.count == 2 &&
+                LRR(LL(p))->schema.items[0].name == att_pos &&
+                LRR(LL(p))->schema.items[1].name == att_item &&
+                /* ckeck schema of literal table */
+                RRR(LL(p))->schema.count == 2 &&
+                RRR(LL(p))->schema.items[0].name == att_pos &&
+                RRR(LL(p))->schema.items[1].name == att_item)
+            {
+                unsigned int i, j;
+                PFla_op_t *ret;
+                PFalg_tuple_t *tuples 
+                                = PFmalloc ((LRR(LL(p))->sem.lit_tbl.count +
+                                             RRR(LL(p))->sem.lit_tbl.count) *
+                                            sizeof (PFalg_tuple_t));
+                /* copy tuples of first literal table */
+                for (i = 0; i < LRR(LL(p))->sem.lit_tbl.count; i++)
+                {
+                    tuples[i] = LRR(LL(p))->sem.lit_tbl.tuples[i];
+                    /* set new position value (starting from 1) */
+                    tuples[i].atoms[0].val.nat = i + 1; 
+                }
+                /* copy tuples of second literal table */
+                for (j = 0; j < RRR(LL(p))->sem.lit_tbl.count; j++)
+                {
+                    tuples[i+j] = RRR(LL(p))->sem.lit_tbl.tuples[j];
+                    /* set new position value 
+                       (starting from next free position: i+1) */
+                    tuples[i+j].atoms[0].val.nat = i + j + 1;
+                }
+
+                /* cross (loop, lit_tbl (tuples) */
+                ret = PFla_cross (LRL(LL(p)), 
+                                  PFla_lit_tbl_ (PFalg_attlist (att_pos, att_item),
+                                                 i+j,
+                                                 tuples));
+                /* copy properties accordingly */
+                R(ret)->prop = RRR(LL(p))->prop;
+                ret->prop    = p->prop;
+                /* and update in case of a change */
+                
+                *p = *(ret);
+                SEEN(R(p)) = false;
+                SEEN(p) = false;
+                update_properties (p, kids);
+                relabel (p, kids);
+            } else {
+                PFoops (OOPS_FATAL,
+                        "the pattern '(loop x lit_tbl, loop x lit_tbl)' "
+                        "is too fragile.");
+            }
+            break;
+
+        /* Rel:    project (project (Rel)) */
+        case 13:
+        {
+            PFalg_proj_t *atts = PFmalloc (p->schema.count *
+	                                       sizeof (PFalg_proj_t));
+
+            unsigned int i, j, count = 0;
+            for (i = 0; i < p->schema.count; i++)
+                for (j = 0; j < L(p)->schema.count; j++)
+                    if (PFprop_icol (p->prop, p->schema.items[i].name) &&
+                        p->sem.proj.items[i].old ==
+                        L(p)->sem.proj.items[j].new) {
+                        atts[count++] = PFalg_proj (
+                                            p->sem.proj.items[i].new,
+                                            L(p)->sem.proj.items[j].old);
+                        break;
+                    }
+
+            PFla_op_t *project = PFla_project_ (L(L(p)), count, atts);
+
+            /* copy properties */
+            project->prop = p->prop;
+
+            *p = *(project);
+            SEEN(p) = false;
+            update_properties (p, kids);
+            relabel (p, kids);
+        } break;
+
+        /* Rel:    select_ (Rel) */
+        case 19:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    disjunion (Rel, Rel) */
+        case 20:
+            /* ensure that both inputs are aligned - thus project away
+               all unnecessary columns (icols = projection list) */
+            for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                if (!PFprop_icol (p->prop, L(p)->schema.items[i].name)) {
+                    PFla_op_t *ret;
+                    PFalg_attlist_t icols = 
+                                    PFprop_icols_to_attlist (p->prop);
+                    PFalg_proj_t *atts = PFmalloc (icols.count *
+                                                   sizeof (PFalg_proj_t));
+
+                    for (unsigned int i = 0; i < icols.count; i++)
+                        atts[i] = PFalg_proj (icols.atts[i], icols.atts[i]);
+
+                    ret = PFla_project_ (L(p), icols.count, atts);
+
+                    /* use property of first argument */
+                    ret->prop = L(p)->prop;
+                    L(p) = ret;
+
+
+                    SEEN(L(p)) = false;
+                    break;
+                }
+
+            for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                if (!PFprop_icol (p->prop, R(p)->schema.items[i].name)) {
+                    PFla_op_t *ret;
+                    PFalg_attlist_t icols = 
+                                    PFprop_icols_to_attlist (p->prop);
+                    PFalg_proj_t *atts = PFmalloc (icols.count *
+                                                   sizeof (PFalg_proj_t));
+
+                    for (unsigned int i = 0; i < icols.count; i++)
+                        atts[i] = PFalg_proj (icols.atts[i], icols.atts[i]);
+
+                    ret = PFla_project_ (R(p), icols.count, atts);
+
+                    /* use property of first argument */
+                    ret->prop = R(p)->prop;
+                    R(p) = ret;
+
+
+                    SEEN(R(p)) = false;
+                    break;
+                }
+            
+            SEEN(p) = SEEN(L(p)) && SEEN(R(p));
+            update_properties (p, kids);
+            relabel (p, kids);
+            break;
+
+        /* Rel:    disjunion (EmptyRel, Rel) */
+        case 21:
+        {
+            /* return right child */
+            PFla_op_t *ret = R(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
+
+        /* Rel:    disjunion (Rel, EmptyRel) */
+        case 22:
+        {
+            /* return left child */
+            PFla_op_t *ret = L(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
+
+        /* Rel:    intersect (Rel, Rel) */
+        case 23:
+        /* Rel:    difference (Rel, Rel) */
+        case 24:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    difference (Rel, EmptyRel) */
+        case 25:
+        {
+            /* return left child */
+            PFla_op_t *ret = L(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
+
+        /* Rel:    distinct (Rel) */
+        case 26:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    distinct (scjoin (Frag, Rel)) */
+        case 27:
+        {
+            /* return left child */
+            PFla_op_t *ret = L(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
+
+        /* Rel:    num_add (Rel) */
+        case 30:
+        /* Rel:    num_subtract (Rel) */
+        case 31:
+        /* Rel:    num_multiply (Rel) */
+        case 32:
+        /* Rel:    num_divide (Rel) */
+        case 33:
+        /* Rel:    num_modulo (Rel) */
+        case 34:
+        /* Rel:    num_gt (Rel) */
+        case 36:
+        /* Rel:    num_eq (Rel) */
+        case 37:
+        /* Rel:    bool_and (Rel) */
+        case 38:
+        /* Rel:    bool_or (Rel) */
+        case 39:
+        /* Rel:    concat (Rel) */
+        case 81:
+        /* Rel:    contains (Rel) */
+        case 82:
+            /* prune binary operation if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.binary.res)) {
+                *p = *(L(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    num_neg (Rel) */
+        case 35:
+        /* Rel:    bool_not (Rel) */
+        case 40:
+            /* prune unary operation if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.unary.res)) {
+                *p = *(L(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    sum (Rel) */
+        case 41:
+            /* prune sum if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.sum.res)) {
+                *p = *(L(p));
+                break;
+            }
+
+            /* only include partitioning attribute if it is not constant */
+            if (p->sem.sum.part && PFprop_const (p->prop, p->sem.sum.part)) {
+                p->sem.sum.part = att_NULL;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    count (Rel) */
+        case 42:
+            /* prune count if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.count.res)) {
+                *p = *(L(p));
+                break;
+            }
+
+            /* only include partitioning attribute if it is not constant */
+            if (p->sem.count.part && PFprop_const (p->prop, p->sem.count.part)) {
+                p->sem.count.part = att_NULL;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    rownum (Rel) */
+        case 50:
+        {
+            /* prune rownum if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.rownum.attname)) {
+                *p = *(L(p));
+                break;
+            }
+
+            /* discard all sort criterions that are constant */
+            unsigned int count = 0;
+            PFalg_att_t  *atts = PFmalloc (p->sem.rownum.sortby.count *
+	                                       sizeof (PFalg_att_t));
+            
+            for (unsigned int i = 0; i < p->sem.rownum.sortby.count; i++)
+                if (!PFprop_const (p->prop, 
+                                   p->sem.rownum.sortby.atts[i]))
+                    atts[count++] = p->sem.rownum.sortby.atts[i];
+
+            p->sem.rownum.sortby = PFalg_attlist_ (count, atts);
+
+            /* only include partitioning attribute if it is not constant */
+            if (p->sem.rownum.part &&
+                PFprop_const (p->prop, p->sem.rownum.part))
+                p->sem.rownum.part = att_NULL;
+
+            update_properties (p, kids);
+        }   break;
+
+        /* Rel:    number (Rel) */
+        case 51:
+            /* prune number if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.number.attname)) {
+                *p = *(L(p));
+                break;
+            }
+
+            /* only include partitioning attribute if it is not constant */
+            if (p->sem.number.part &&
+                PFprop_const (p->prop, p->sem.number.part)) {
+                p->sem.number.part = att_NULL;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    type (Rel) */
+        case 53:
+            /* prune type if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.type.res)) {
+                *p = *(L(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    type_assert (Rel) */
+        case 54:
+            /* prune type assertion if restricted column is not
+               used afterwards */
+            if (!PFprop_icol (p->prop, p->sem.type_a.att)) {
+                *p = *(L(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    cast (Rel) */
+        case 55:
+            /* prune cast if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.cast.res)) {
+                *p = *(L(p));
+                break;
+            }
+
+            /*
+             * If an algebra expression already has the requested
+             * type, replace it by a projection.
+             */
+            for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                if (p->sem.cast.att == L(p)->schema.items[i].name &&
+                    p->sem.cast.ty == L(p)->schema.items[i].type) {
+                    PFla_op_t *ret;
+                    PFalg_proj_t *atts = PFmalloc (PFprop_icols_count (p->prop)
+                                                   * sizeof (PFalg_proj_t));
+
+                    unsigned int count = 0;
+                    if (PFprop_icol (p->prop, att_iter))
+                        atts[count++] = PFalg_proj (att_iter, att_iter);
+                    if (PFprop_icol (p->prop, att_pos))
+                        atts[count++] = PFalg_proj (att_pos, att_pos);
+                    atts[count++] = PFalg_proj (
+                                        p->sem.cast.res, p->sem.cast.att);
+                    ret = PFla_project_ (L(p), count, atts);
+
+                    /* FIXME: copy properties to avoid exception */
+                    ret->prop = p->prop;
+
+                    *p = *(ret);
+                    SEEN(p) = false;
+                    update_properties (p, kids);
+                    relabel (p, kids);
+                    break;
+                }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    seqty1 (Rel) */
+        case 56:
+        /* Rel:    all (Rel) */
+        case 57:
+            /* prune blngroup if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.blngroup.res)) {
+                *p = *(L(p));
+                break;
+            }
+
+            /* only include partitioning attribute if it is not constant */
+            if (p->sem.blngroup.part &&
+                PFprop_const (p->prop, p->sem.blngroup.part)) {
+                p->sem.blngroup.part = att_NULL;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    scjoin (Frag, Rel) */
+        case 60:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    scjoin (Frag, distinct (Rel)) */
+        case 61:
+            R(p) = L(R(p));
+            SEEN(p) = false;
+            update_properties (p, kids);
+            relabel (p, kids);
+            break;
+
+        /* Rel:    scjoin (Frag, scjoin (Frag, Rel) */
+        case 62:
+            /* combine scjoins if they are of the form:
+               ``/descandent-or-self::node()/child::element()'' */
+            if (R(p)->sem.scjoin.axis == alg_desc_s &&
+                PFty_equality (R(p)->sem.scjoin.ty, PFty_xs_anyNode ()) &&
+                p->sem.scjoin.axis == alg_chld) {
+                /* rewrite child into descendant
+                   and discard descendant-or-self step */
+                R(p) = RR(p);
+                p->sem.scjoin.axis = alg_desc;
+
+                SEEN(p) = false;
+                update_properties (p, kids);
+                relabel (p, kids);
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    doc_access (Frag, Rel) */
+        case 63:
+            /* prune doc_access if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.doc_access.res)) {
+                *p = *(R(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    roots_ (doc_tbl (Rel))) */
+        case 70:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    roots_ (element (Frag, element_tag (Rel, Rel)))) */
+        case 71:
+            /* prune element if result column is not required */
+            if (!PFprop_icol (p->prop, att_item)) {
+                *p = *(LRL(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    roots_ (attribute (Rel, Rel))) */
+        case 72:
+            /* prune attribute if result column is not required */
+            if (!PFprop_icol (p->prop, L(p)->sem.attr.res)) {
+                *p = *(LL(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    roots_ (textnode (Rel))) */
+        case 73:
+            /* prune textnode if result column is not required */
+            if (!PFprop_icol (p->prop, L(p)->sem.textnode.res)) {
+                *p = *(LL(p));
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    roots_ (docnode (Frag, Rel))) */
+        case 74:
+        /* Rel:    roots_ (comment (Rel))) */
+        case 75:
+        /* Rel:    roots_ (processi (Rel))) */
+        case 76:
+        /* Rel:    roots_ (merge_adjacent (Frag, Rel))) */
+        case 77:
+        /* Rel:    cond_err (Rel, Rel)) */
+        case 80:
+        /* Rel:    string_join (Rel, Rel)) */
+        case 83:
+        /* Frag:    fragment (doc_tbl (Rel))) */
+        case 100:
+        /* Frag:    fragment (element (Frag, element_tag (Rel, Rel)))) */
+        case 101:
+        /* Frag:    fragment (attribute (Rel, Rel))) */
+        case 102:
+        /* Frag:    fragment (textnode (Rel))) */
+        case 103:
+        /* Frag:    fragment (docnode (Frag, Rel))) */
+        case 104:
+        /* Frag:    fragment (comment (Rel))) */
+        case 105:
+        /* Frag:    fragment (processi (Rel))) */
+        case 106:
+        /* Frag:    fragment (merge_adjacent (Frag, Rel))) */
+        case 107:
+        /* Frag:    frag_union (Frag, Frag) */
+        case 111:
+        /* Frag:    empty_frag */
+        case 112:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    EmptyRel */
+        case 90:
+        {
+            /*
+             * Replace any sub-tree that we determined empty with these
+             * rules by the literal empty table.
+             */
+            PFla_op_t *ret;
+            unsigned int   i;
+            PFalg_att_t   *atts = PFmalloc (p->schema.count *
+	                                    sizeof (PFalg_att_t));
+
+            for (i = 0; i < p->schema.count; i++)
+                 atts[i] = p->schema.items[i].name;
+
+            ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count, atts));
+            ret->prop = p->prop;
+
+            *p = *ret;
+            SEEN(p) = true;
+            update_properties (p, kids);
+            relabel (p, kids);
+        } break;
+
+        /* every occurrence of EmptyRel already copes with
+           the empty relation - we therefore do not rewrite
+           any of the below rules (they are pruned anyway) */
+
+        /* EmptyRel:    empty_tbl */
+        case 120:
+        /* EmptyRel:    cross (EmptyRel, Rel) */
+        case 121:
+        /* EmptyRel:    cross (Rel, EmptyRel) */
+        case 122:
+        /* EmptyRel:    eqjoin (EmptyRel, Rel) */
+        case 123:
+        /* EmptyRel:    eqjoin (Rel, EmptyRel) */
+        case 124:
+        /* EmptyRel:    project (EmptyRel) */
+        case 125:
+        /* EmptyRel:    select_ (EmptyRel) */
+        case 126:
+        /* EmptyRel:    disjunion (EmptyRel, EmptyRel) */
+        case 130:
+        /* EmptyRel:    intersect (EmptyRel, Rel) */
+        case 131:
+        /* EmptyRel:    intersect (Rel, EmptyRel) */
+        case 132:
+        /* EmptyRel:    difference (EmptyRel, Rel) */
+        case 133:
+        /* EmptyRel:    distinct (EmptyRel) */
+        case 134:
+        /* EmptyRel:    num_add (EmptyRel) */
+        case 140:
+        /* EmptyRel:    num_subtract (EmptyRel) */
+        case 141:
+        /* EmptyRel:    num_multiply (EmptyRel) */
+        case 142:
+        /* EmptyRel:    num_divide (EmptyRel) */
+        case 143:
+        /* EmptyRel:    num_modulo (EmptyRel) */
+        case 144:
+        /* EmptyRel:    num_neg (EmptyRel) */
+        case 145:
+        /* EmptyRel:    num_gt (EmptyRel) */
+        case 146:
+        /* EmptyRel:    num_eq (EmptyRel) */
+        case 147:
+        /* EmptyRel:    bool_and (EmptyRel) */
+        case 148:
+        /* EmptyRel:    bool_or (EmptyRel) */
+        case 149:
+        /* EmptyRel:    bool_not (EmptyRel) */
+        case 150:
+        /* EmptyRel:    sum (EmptyRel) */
+        case 151:
+        /* EmptyRel:    count (EmptyRel) */
+        case 152:
+        /* EmptyRel:    rownum (EmptyRel) */
+        case 160:
+        /* EmptyRel:    number (EmptyRel) */
+        case 161:
+        /* EmptyRel:    type (EmptyRel) */
+        case 162:
+        /* EmptyRel:    type_assert (EmptyRel) */
+        case 163:
+        /* EmptyRel:    cast (EmptyRel) */
+        case 164:
+        /* EmptyRel:    seqty1 (EmptyRel) */
+        case 165:
+        /* EmptyRel:    all (EmptyRel) */
+        case 166:
+        /* EmptyRel:    scjoin (Frag, EmptyRel) */
+        case 170:
+        /* EmptyRel:    doc_access (Frag, EmptyRel) */
+        case 171:
+        /* EmptyRel:    roots_ (element (Frag, element_tag (EmptyRel, Rel))) */
+        case 180:
+        /* EmptyRel:    roots_ (attribute (EmptyRel, Rel)) */
+        case 182:
+        /* EmptyRel:    roots_ (attribute (Rel, EmptyRel)) */
+        case 183:
+        /* EmptyRel:    roots_ (textnode (EmptyRel)) */
+        case 184:
+        /* EmptyRel:    roots_ (comment (EmptyRel)) */
+        case 185:
+        /* EmptyRel:    roots_ (processi (EmptyRel)) */
+        case 186:
+        /* EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) */
+        case 187:
+        /* EmptyRel:    cond_err (EmptyRel, Rel) */
+        case 190:
+        /* EmptyRel:    concat (EmptyRel) */
+        case 200:
+        /* EmptyRel:    string_join (EmptyRel, Rel) */
+        case 201:
+            update_properties (p, kids);
+            break;
+
+        default:
+            PFinfo (OOPS_NOTICE, "unknown expression during algebra "
+                    "optimization (rule %i)", rule);
+            break;
+    }
+
+    /* if we introduced a structural change the state labels
+       will differ (before != after). Therefore the caller will
+       start matching once more */
+    return old_state_label != STATE_LABEL(p);
+}
+
+/* mark all nodes in the pattern of node p as seen 
+   if it is not contained in kids. */
+static void
+pattern_seen (PFla_op_t *p,  PFla_op_t **kids)
+{
+    unsigned int i;
+
+    for (i = 0; i < MAX_KIDS; i++) {
+        if (kids[i] && p == kids[i])
+            return;
+    }
+
+    for (i = 0; i < PFLA_OP_MAXCHILD; i++)
+        if (p->child[i])
+            pattern_seen (p->child[i], kids);
+ 
+    SEEN (p) = true;
+}
+
+/* update properties of node p if it is not contained in kids. */
+static void
+update_properties (PFla_op_t *p,  PFla_op_t **kids)
+{
+    unsigned int i;
+
+    for (i = 0; i < MAX_KIDS; i++) {
+        if (kids[i] && p == kids[i])
+            return;
+    }
+
+    for (i = 0; i < PFLA_OP_MAXCHILD; i++)
+        if (p->child[i])
+            update_properties (p->child[i], kids);
+ 
+    PFprop_update (p);
+}
+
+/* Relabel node p if it is not contained in kids. */
+static void
+relabel (PFla_op_t *p,  PFla_op_t **kids)
+{
+    unsigned int i;
+
+    for (i = 0; i < MAX_KIDS; i++) {
+        if (kids[i] && p == kids[i] && STATE_LABEL(p))
+            return;
+    }
+
+    /* Relabel p's children. */
+    if (!L(p) && !R(p)) {
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p), 0, 0);
+    }
+    else if (L(p) && !R(p)) {
+        relabel (L(p), kids);
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         0);
+    }
+    else if (!L(p) && R(p)) {
+        relabel (R(p), kids);
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(R(p)),
+                                         0);
+    }
+    else {
+        relabel (L(p), kids);
+        relabel (R(p), kids);
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         STATE_LABEL(R(p)));
+    }
+
+    assert (STATE_LABEL (p));
+}
+
+static void
+label (PFla_op_t *p)
+{
+    if (!L(p) && !R(p)) {
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p), 0, 0);
+    }
+    else if (L(p) && !R(p)) {
+        if (!LABEL_SEEN(L(p))) label (L(p));
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         0);
+    }
+    else if (!L(p) && R(p)) {
+        if (!LABEL_SEEN(R(p))) label (R(p));
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(R(p)),
+                                         0);
+    }
+    else {
+        if (!LABEL_SEEN(L(p))) label (L(p));
+        if (!LABEL_SEEN(R(p))) label (R(p));
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         STATE_LABEL(R(p)));
+    }
+    LABEL_SEEN(p) = true;
+
+    assert (STATE_LABEL (p));
+}
+
+/**
+ * Invoke algebra optimization.
+ */
+PFla_op_t *
+PFalgopt (PFla_op_t *root)
+{
+    /* Attach node labels in a DAG walk bottom-up */
+    label (root);
+
+    /* Optimize algebra tree */
+    while (reduce (root, 1));
+
+    return root;
+}
+
+/* vim:set shiftwidth=4 expandtab filetype=c: */

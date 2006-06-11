@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/>100<a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/>100 100<b>textnode</b><d><e/><f/></d><c foo2="bar"/>100<b>textnode</b><d><e/><f/></d><c foo2="bar"/>
+<a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/>100 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/>100 100 <b>textnode</b><d><e/><f/></d><c foo2="bar"/>100 <b>textnode</b><d><e/><f/></d><c foo2="bar"/>
 </XQueryResult>
 
 # 01:50:35 >  

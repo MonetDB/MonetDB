@@ -65,9 +65,6 @@ PFty_t *PFty_simplify (PFty_t);
 /** The prime type of a given type (apply #PFty_defn () first!). */
 PFty_t PFty_prime (PFty_t);
 
-/** Normalize type choices. */
-PFty_t PFty_normalize_choice (PFty_t t);
-
 /** The `data on' judgement as in W3C Formal Semantics 6.2.3. */
 PFty_t PFty_data_on (PFty_t t);
 

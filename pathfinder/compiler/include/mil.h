@@ -37,33 +37,8 @@
 /** MIL oid's are unsigned integers */
 typedef unsigned int oid;
 
-/** MIL identifiers are ints */
-typedef unsigned int PFmil_ident_t;
-
-/* reserved identifiers. */
-#define PF_MIL_VAR_UNUSED     0
-#define PF_MIL_VAR_WS         1
-#define PF_MIL_VAR_ATTR       2
-#define PF_MIL_VAR_ELEM       3
-#define PF_MIL_VAR_STR        4
-#define PF_MIL_VAR_INT        5
-#define PF_MIL_VAR_DBL        6
-#define PF_MIL_VAR_DEC        7
-#define PF_MIL_VAR_BOOL       8
-#define PF_MIL_VAR_ATTR_OWN   9
-#define PF_MIL_VAR_ATTR_QN   10
-#define PF_MIL_VAR_ATTR_CONT 11
-#define PF_MIL_VAR_QN_LOC    12
-#define PF_MIL_VAR_QN_URI    13
-#define PF_MIL_VAR_ATTR_PROP 14
-#define PF_MIL_VAR_PROP_VAL  15
-#define PF_MIL_VAR_PRE_PROP  16
-#define PF_MIL_VAR_PRE_CONT  17
-#define PF_MIL_VAR_PROP_TEXT 18
-#define PF_MIL_VAR_PROP_COM  19
-#define PF_MIL_VAR_PROP_INS  20
-
-#define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_PROP_INS + 1)
+/** MIL identifiers are strings */
+typedef char * PFmil_ident_t;
 
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {
@@ -149,18 +124,11 @@ enum PFmil_kind_t {
     , m_mand         /**< multiplexed boolean operator `and' */
     , m_mor          /**< multiplexed boolean operator `or' */
 
+    , m_max          /**< MIL max() function */
     , m_count        /**< MIL count() function */
     , m_gcount       /**< Grouped count() function `{count}()' */
     , m_egcount      /**< Grouped count() function `{count}()' */
-    , m_avg          /**< MIL avg() function */
-    , m_gavg         /**< Grouped avg() function `{avg}()' */
-    , m_max          /**< MIL max() function */
-    , m_gmax         /**< Grouped max() function `{max}()' */
-    , m_min          /**< MIL min() function */
-    , m_gmin         /**< Grouped min() function `{min}()' */
-    , m_sum          /**< MIL sum() function */
-    , m_gsum         /**< Grouped sum() function `{sum}()' */
-    
+
     , m_declare      /**< declare variable */
     , m_nop          /**< `no operation', do nothing.
                           (This may be produced during compilation.) */
@@ -313,8 +281,6 @@ enum PFmil_kind_t {
     
     , m_col_name     /**< assign BAT column name (for debugging only) */
 
-    , m_comment      /**< MIL comment (for debugging only) */ 
-
     , m_serialize    /**< serialization function.
                           The serialization function must be provided by the
                           pathfinder extension module. For now we just have
@@ -354,7 +320,7 @@ union PFmil_sem_t {
     bool          b;       /**< literal boolean */
 
     PFmil_type_t  t;       /**< MIL type (for #m_type nodes) */
-    PFmil_ident_t ident;   /**< MIL identifier */
+    PFmil_ident_t ident;   /**< MIL identifier (a string) */
     PFmil_access_t access; /**< BAT access specifier, only for #m_access nodes*/
 
     struct {
@@ -409,10 +375,7 @@ PFmil_t * PFmil_lit_dbl (double d);
 PFmil_t * PFmil_lit_bit (bool b);
 
 /** a MIL variable */
-PFmil_t * PFmil_var (PFmil_ident_t name);
-
-/** return the variable name as string */
-char * PFmil_var_str (PFmil_ident_t name);
+PFmil_t * PFmil_var (const PFmil_ident_t name);
 
 /** MIL type */
 PFmil_t * PFmil_type (PFmil_type_t);
@@ -424,7 +387,7 @@ PFmil_t * PFmil_nop (void);
 PFmil_t * PFmil_nil (void);
 
 /** shortcut for MIL variable `unused' */
-#define PFmil_unused() PFmil_var (PF_MIL_VAR_UNUSED)
+#define PFmil_unused() PFmil_var ("unused")
 
 /** MIL new() statement */
 PFmil_t * PFmil_new (const PFmil_t *, const PFmil_t *);
@@ -533,6 +496,9 @@ PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *);
 /** MIL ctderive function */
 PFmil_t * PFmil_ctderive (const PFmil_t *, const PFmil_t *);
 
+/** MIL max() function, return maximum tail value */
+PFmil_t * PFmil_max (const PFmil_t *);
+
 /** MIL count() function, return number of BUNs in a BAT */
 PFmil_t * PFmil_count (const PFmil_t *);
 
@@ -542,30 +508,6 @@ PFmil_t * PFmil_gcount (const PFmil_t *);
 /** Grouped count function `{count}()' with two parameters
     (aka. ``pumped count'') */
 PFmil_t * PFmil_egcount (const PFmil_t *, const PFmil_t *);
-
-/** MIL avg() function */
-PFmil_t * PFmil_avg (const PFmil_t *);
-
-/** Grouped avg function `{avg}()' (aka. ``pumped avg'') */
-PFmil_t * PFmil_gavg (const PFmil_t *);
-
-/** MIL max() function */
-PFmil_t * PFmil_max (const PFmil_t *);
-
-/** Grouped max function `{max}()' (aka. ``pumped max'') */
-PFmil_t * PFmil_gmax (const PFmil_t *);
-
-/** MIL min() function */
-PFmil_t * PFmil_min (const PFmil_t *);
-
-/** Grouped min function `{min}()' (aka. ``pumped min'') */
-PFmil_t * PFmil_gmin (const PFmil_t *);
-
-/** MIL sum() function */
-PFmil_t * PFmil_sum (const PFmil_t *);
-
-/** Grouped sum function `{sum}()' (aka. ``pumped sum'') */
-PFmil_t * PFmil_gsum (const PFmil_t *);
 
 /** typecast */
 PFmil_t * PFmil_cast (const PFmil_t *, const PFmil_t *);
@@ -1129,8 +1071,6 @@ PFmil_t * PFmil_declare (const PFmil_t *);
 
 PFmil_t * PFmil_print (const PFmil_t *);
 PFmil_t * PFmil_col_name (const PFmil_t *, const PFmil_t *);
-PFmil_t * PFmil_comment (const char *, ...)
-      __attribute__ ((format (printf, 1, 2)));
 
 PFmil_t *
 PFmil_ser (const PFmil_t *);

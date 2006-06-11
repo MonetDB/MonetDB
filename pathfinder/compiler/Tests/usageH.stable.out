@@ -1,17 +1,18 @@
 stdout of test 'usageH` in directory 'compiler` itself:
 
 
-# 16:22:08 >  
-# 16:22:08 >  Mtimeout -timeout 120 ./usageH usageH 
-# 16:22:08 >  
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
+# 15:32:19 >  
 
 
-# 15:11:38 >  
-# 15:11:38 >  Mtimeout -timeout 60 pf -H
-# 15:11:38 >  
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 60 pf -h
+# 15:32:19 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
-(c) Database Group, Technische Universitaet Muenchen
+(c) University of Konstanz, DBIS group
+
 Usage: pf [OPTION] [FILE]
 
   Reads from standard input if FILE is omitted.
@@ -25,8 +26,6 @@ Usage: pf [OPTION] [FILE]
 = -M, --print-mil_summer: print MIL code (summer version) (default)
 = -P, --print-human-readable: print internal tree structure human-readable
 = -D, --print-att-dot: print internal tree structure in AT&T dot notation
-= -X, --print-XML: print internal tree structure in XML notation
-        (only works for logical algebra tree)
 = -T, --timing: print elapsed times for compiler phases
 = -O[0-3], --optimize: select optimization level (default=1)
 = -t, --typing: print static types (in {...}) for Core
@@ -45,11 +44,12 @@ Usage: pf [OPTION] [FILE]
         12  after type inference and checking
         13  after XQuery Core optimization
         14  after the Core tree has been translated to the logical algebra
-        15  after the logical algebra tree has been rewritten/optimized
-        16  after the CSE on the logical algebra tree
-        17  after compiling logical into the physical algebra
-        18  after compiling the physical algebra into MIL code
-        19  after the MIL program has been serialized
+        15  after the logical algebra has been annotated with properties
+        16  after the logical algebra tree has been rewritten/optimized
+        17  after the CSE on the logical algebra tree
+        18  after compiling logical into the physical algebra
+        19  after compiling the physical algebra into MIL code
+        20  after the MIL program has been serialized
 = -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
 = -l, --print-logical-algebra: print logical algebra tree
@@ -60,31 +60,10 @@ Usage: pf [OPTION] [FILE]
          i  print icols property (logical/physical algebra)
          o  print orderings (physical algebra)
          +  print all available properties (logical/physical algebra)
-= -o options, --optimize-algebra=options: optimize algebra according to options:
-         O  apply optimization based on constant property
-         I  apply optimization based on icols property
-         K  apply optimization based on key property
-         D  apply optimization based on domain property
-         C  apply optimization using multiple properties (complex)
-            - icols based optimization will be applied afterwards.
-         G  apply general optimization (without properties)
-         V  apply optimization based on required values property
-         [  map column names to unique column names
-         J  push down equi-joins (requires unique column names)
-         ]  map column names back (from unique names to original names)
-         M  apply optimization based on multi-value dependencies
-         P  infer all properties
-            (used for debug output and physical algebra
-         _  does nothing (used for structuring the options)
-         (default is: '-o OIKDCG_VOIG_[J]_MOIGC_KDCGP')
-= -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
-         0 disable dead code elimination
-         1 enable dead code elimination (default)
-= -b, --enable-standoff: enable StandOff axis steps
 
 Enjoy.
 
-# 16:22:08 >  
-# 16:22:08 >  Done.
-# 16:22:08 >  
+# 15:32:19 >  
+# 15:32:19 >  Done.
+# 15:32:19 >  
 

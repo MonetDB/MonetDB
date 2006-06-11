@@ -18,8 +18,6 @@ var path:=getenv("TSTSRCDIR");
 shred_doc(path+"/xml-docs/foo.xml","foo.xml");
 shred_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
 
-shred_doc(path+"/xml-docs/nodekinds.xml","nodekinds.xml");
-# Shredded XML doc("nodekinds.xml"), total time after commit=0.020s
 quit();
 
 # 21:54:44 >  

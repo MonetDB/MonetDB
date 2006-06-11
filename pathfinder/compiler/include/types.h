@@ -45,8 +45,6 @@
                               +- atomic -+- boolean
                               |          |
                               |          +- string
-                              |          |
-                              |          +- QName
                               |          
                               |           
                               |            +- comm
@@ -72,8 +70,6 @@
        +- none (empty set)
        |
        +- named qn (reference to named type)
-       |
-       +- stmt
 @endverbatim
  *
  * 
@@ -123,14 +119,6 @@
  *
  *      - element qn context qn'/qn''/...  
  *      - attribute qn context qn'/qn''/... 
- *     
- *  - The type `stmt' is a Pathfinder specific extension to accomodate
- *    for our update language.  Any (update) function with side effects
- *    has type `stmt'.  An input query is allowed to either have a
- *    subtype of stmt* (i.e., be a pure update statement), or be disjoint
- *    from stmt (i.e., be a side effect free query).  With this
- *    restriction we can avoid semantical problems that might occur
- *    if an input contains a mix of query and update.
  */
 
 
@@ -166,7 +154,6 @@ enum PFtytype_t {
   ty_double,                   /**< double                      */
   ty_string,                   /**< string                      */
   ty_boolean,                  /**< boolean                     */
-  ty_qname,                    /**< QName                       */
   ty_node,                     /**< node                        */
   ty_elem,                     /**< elem                        */
   ty_attr,                     /**< attr                        */
@@ -174,7 +161,6 @@ enum PFtytype_t {
   ty_text,                     /**< text                        */
   ty_pi,                       /**< pi                          */
   ty_comm,                     /**< comm                        */
-  ty_stmt,                     /**< stmt                        */
 
   ty_types                     /**< # of types                  */
 };
@@ -226,8 +212,6 @@ PFty_t PFty_string (void);
 PFty_t PFty_boolean (void);
 PFty_t PFty_decimal (void);
 PFty_t PFty_double (void);
-PFty_t PFty_qname (void);
-PFty_t PFty_stmt (void);
 
 /** 
  * Type constructors (internal).
@@ -258,7 +242,6 @@ PFty_t PFty_xs_string (void);
 PFty_t PFty_xs_boolean (void);
 PFty_t PFty_xs_decimal (void);
 PFty_t PFty_xs_double (void);
-PFty_t PFty_xs_QName (void);
 
 PFty_t PFty_xs_anyType (void);
 PFty_t PFty_xs_anyItem (void);
@@ -295,7 +278,7 @@ PFty_t PFty_defn (PFty_t);
 /**
  * Return QName of an element or attribute type (`element qn { type }').
  */
-PFqname_t PFty_name (PFty_t t);
+PFqname_t PFty_qname (PFty_t t);
 
 /**
  * Return the child of a #PFty_t type with exactly one child.

@@ -82,7 +82,6 @@
 #define LLL(p) L(L(L(p)))
 
 #define RRRL(p) L(R(R(R(p))))
-#define RRRRL(p) L(R(R(R(R(p)))))
 
 /* starting level of user-defined functions */ 
 #define UDF_LEV 1024
@@ -478,16 +477,16 @@ saveResult_node (opt_t *f, int counter)
             "var _elem_level%03u  := _elem_level ;\n"
             "var _elem_kind%03u   := _elem_kind  ;\n"
             "var _elem_prop%03u   := _elem_prop  ;\n"
-            "var _elem_cont%03u   := _elem_cont  ;\n"
+            "var _elem_frag%03u   := _elem_frag  ;\n"
             "var _attr_iter%03u   := _attr_iter  ;\n"
             "var _attr_qn%03u     := _attr_qn    ;\n"
             "var _attr_prop%03u   := _attr_prop  ;\n"
-            "var _attr_cont%03u   := _attr_cont  ;\n"
+            "var _attr_frag%03u   := _attr_frag  ;\n"
             "var _attr_own%03u    := _attr_own   ;\n"
             "var _r_attr_iter%03u := _r_attr_iter;\n"
             "var _r_attr_qn%03u   := _r_attr_qn  ;\n"
             "var _r_attr_prop%03u := _r_attr_prop;\n"
-            "var _r_attr_cont%03u := _r_attr_cont;\n",
+            "var _r_attr_frag%03u := _r_attr_frag;\n",
             counter, counter, counter, counter, counter, counter,
             counter, counter, counter, counter, counter,
             counter, counter, counter, counter);
@@ -626,8 +625,8 @@ translateEmpty (opt_t *f)
 /**
  * translateEmpty_node translates the empty sequence and gives back 
  * empty bats for the intermediate result of the node interface
- * (elem: iter|size|level|kind|cont, attr: iter|qn|prop|cont|own,
- *  root attributes: iter|qn|prop|cont)
+ * (elem: iter|size|level|kind|frag, attr: iter|qn|prop|frag|own,
+ *  root attributes: iter|qn|prop|frag)
  * 
  * @param f the Stream the MIL code is printed to
  */
@@ -641,16 +640,16 @@ translateEmpty_node (opt_t *f)
             "_elem_level := empty_bat.project(chr(nil));\n"
             "_elem_kind  := empty_bat.project(chr(nil));\n"
             "_elem_prop  := empty_bat;\n"
-            "_elem_cont  := empty_bat;\n"
+            "_elem_frag  := empty_bat;\n"
             "_attr_iter  := empty_bat;\n"
             "_attr_qn    := empty_bat;\n"
             "_attr_prop  := empty_bat;\n"
-            "_attr_cont  := empty_bat;\n"
+            "_attr_frag  := empty_bat;\n"
             "_attr_own   := empty_bat;\n"
             "_r_attr_iter := empty_bat;\n"
             "_r_attr_qn   := empty_bat;\n"
             "_r_attr_prop := empty_bat;\n"
-            "_r_attr_cont := empty_bat;\n"
+            "_r_attr_frag := empty_bat;\n"
             "} # end of translateEmpty_node ()\n");
 }
 
@@ -674,9 +673,9 @@ translateElemContent (opt_t *f, int code, int cur_level, int counter, PFcnode_t 
         c->kind == c_seq   ||
         c->kind == c_empty ||
         (c->kind == c_apply &&
-         (!PFqname_eq(c->sem.apply.fun->qname,
+         (!PFqname_eq(c->sem.fun->qname,
                       PFqname (PFns_pf,"item-sequence-to-node-sequence")) ||
-          !PFqname_eq(c->sem.apply.fun->qname,
+          !PFqname_eq(c->sem.fun->qname,
                       PFqname (PFns_pf,"merge-adjacent-text-nodes")))))
         return translate2MIL (f, code, cur_level, counter, c);
    else
@@ -686,9 +685,9 @@ translateElemContent (opt_t *f, int code, int cur_level, int counter, PFcnode_t 
 /**
  * map2NODE_interface maps nodes from the iter|pos|item|kind
  * interface to the NODE interface
- * (r_attr: iter|qn|prop|cont,
- *  elem:   iter|size|level|kind|prop|cont,
- *  attr:   iter|qn|prop|cont|own)
+ * (r_attr: iter|qn|prop|frag,
+ *  elem:   iter|size|level|kind|prop|frag,
+ *  attr:   iter|qn|prop|frag|own)
  *
  * @param f the Stream the MIL code is printed to
  */
@@ -704,15 +703,15 @@ map2NODE_interface (opt_t *f)
             "var attr := kind.get_type(ATTR).hmark(0@0);\n"
             "var attr_iter := attr.leftfetchjoin(iter).materialize(attr);\n"
             "var attr_item := attr.leftfetchjoin(item);\n"
-            "var attr_cont := attr.leftfetchjoin(kind).get_container();\n"
+            "var attr_frag := attr.leftfetchjoin(kind).get_fragment();\n"
             "attr := nil;\n"
             "_r_attr_iter := attr_iter;\n"
-            "_r_attr_qn   := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN));\n"
-            "_r_attr_prop := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_PROP));\n"
-            "_r_attr_cont := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_CONT));\n"
+            "_r_attr_qn   := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN));\n"
+            "_r_attr_prop := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PROP));\n"
+            "_r_attr_frag := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG));\n"
             "attr_iter := nil;\n"
             "attr_item := nil;\n"
-            "attr_cont := nil;\n"
+            "attr_frag := nil;\n"
 
 
             "var nodes := kind.get_type(ELEM);\n"
@@ -723,43 +722,42 @@ map2NODE_interface (opt_t *f)
             "var oid_oid := nodes.hmark(0@0);\n"
             "nodes := nil;\n"
             "var node_items := oid_oid.leftfetchjoin(item).materialize(oid_oid);\n"
-            "var node_conts := oid_oid.leftfetchjoin(kind).get_container();\n"
+            "var node_frags := oid_oid.leftfetchjoin(kind).get_fragment();\n"
             /* set iter to a distinct list and therefore don't
                prune any node */
             "var iter_input := oid_oid.mirror();\n"
 
             /* get all subtree copies */
             "var res_scj := loop_lifted_descendant_or_self_step"
-            "(iter_input, node_items, constant2bat(node_conts), ws, 0);\n"
+            "(iter_input, node_items, constant2bat(node_frags), ws, 0);\n"
 
             "iter_input := nil;\n"
             /* variables for the result of the scj */
             "var res_iter := res_scj.fetch(0);\n" /* CONST? */
             "var res_item := res_scj.fetch(1);\n" /* CONST? */
-            "var res_cont := res_scj.fetch(2);\n" /* CONST? */
+            "var res_frag := res_scj.fetch(2);\n" /* CONST? */
             /* res_ec is the iter|dn table resulting from the scj */
 
             /* create subtree copies for all bats except content_level */
             "_elem_iter  := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).materialize(res_item).chk_order();\n"
-            "_elem_size  := mposjoin(res_item, res_cont, ws.fetch(PRE_SIZE));\n"
-            "_elem_size  := correct_sizes(res_iter, res_item, _elem_size);\n"
-            "_elem_kind  := mposjoin(res_item, res_cont, ws.fetch(PRE_KIND));\n"
-            "_elem_prop  := mposjoin(res_item, res_cont, ws.fetch(PRE_PROP));\n"
-            "_elem_cont  := mposjoin(res_item, res_cont, ws.fetch(PRE_CONT));\n"
+            "_elem_size  := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));\n"
+            "_elem_kind  := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));\n"
+            "_elem_prop  := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));\n"
+            "_elem_frag  := mposjoin(res_item, res_frag, ws.fetch(PRE_FRAG));\n"
 
             /* change the level of the subtree copies */
             /* get the level of the content root nodes */
             "var temp_ec_item := res_iter.leftfetchjoin(node_items).materialize(res_item);\n"
-            "var temp_ec_cont := res_iter.leftfetchjoin(node_conts);\n"
+            "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
             "nodes := res_item.mark(0@0);\n"
             "var root_level := mposjoin(temp_ec_item, "
-                                       "temp_ec_cont, "
+                                       "temp_ec_frag, "
                                        "ws.fetch(PRE_LEVEL));\n"
             "root_level := nodes.leftfetchjoin(root_level);\n"
 
             "temp_ec_item := res_item;\n"
-            "temp_ec_cont := res_cont;\n"
-            "var content_level := mposjoin(temp_ec_item, temp_ec_cont, "
+            "temp_ec_frag := res_frag;\n"
+            "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                           "ws.fetch(PRE_LEVEL));\n"
             "content_level := nodes.leftfetchjoin(content_level);\n"
             "content_level := content_level.[-](root_level);\n"
@@ -773,23 +771,23 @@ map2NODE_interface (opt_t *f)
 
             /* get the attributes of the subtree copy elements */
             "{ # create attribute subtree copies\n"
-            "var temp_attr := mvaljoin( mposjoin(res_item, res_cont, ws.fetch(PRE_NID)), res_cont, ws.fetch(ATTR_OWN));\n"
+            "var temp_attr := mvaljoin(res_item, res_frag, ws.fetch(ATTR_OWN));\n"
             "var oid_attr := temp_attr.tmark(0@0);\n"
-            "var oid_cont;\n"
-            "if (is_constant(res_cont)) {\n"
-            "    oid_cont := res_cont;\n"
+            "var oid_frag;\n"
+            "if (is_constant(res_frag)) {\n"
+            "    oid_frag := res_frag;\n"
             "} else {\n"
-            "    oid_cont := temp_attr.reverse().leftfetchjoin(res_cont);\n"
-            "    oid_cont := oid_cont.tmark(0@0);\n"
+            "    oid_frag := temp_attr.reverse().leftfetchjoin(res_frag);\n"
+            "    oid_frag := oid_frag.tmark(0@0);\n"
             "}\n"
-            "_attr_qn   := mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_QN));\n"
-            "_attr_prop := mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_PROP));\n"
-            "_attr_cont := mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_CONT)).materialize(_attr_prop);\n"
+            "_attr_qn   := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN));\n"
+            "_attr_prop := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_PROP));\n"
+            "_attr_frag := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)).materialize(_attr_prop);\n"
             "_attr_own  := temp_attr.hmark(0@0);\n"
             "_attr_iter := _attr_own.leftfetchjoin(_elem_iter);\n"
             "temp_attr := nil;\n"
             "oid_attr := nil;\n"
-            "oid_cont := nil;\n"
+            "oid_frag := nil;\n"
             "} # end of create attribute subtree copies\n"
 
             "} else { # if (nodes.count() != 0) ...\n"
@@ -798,11 +796,11 @@ map2NODE_interface (opt_t *f)
             "_elem_level := empty_bat.project(chr(nil));\n"
             "_elem_kind  := empty_bat.project(chr(nil));\n"
             "_elem_prop  := empty_bat;\n"
-            "_elem_cont  := empty_bat;\n"
+            "_elem_frag  := empty_bat;\n"
             "_attr_iter  := empty_bat;\n"
             "_attr_qn    := empty_bat;\n"
             "_attr_prop  := empty_bat;\n"
-            "_attr_cont  := empty_bat;\n"
+            "_attr_frag  := empty_bat;\n"
             "_attr_own   := empty_bat;\n"
             "}  # end of else in 'if (nodes.count() != 0)'\n"
             "} # end of map2NODE_interface (counter)\n");
@@ -908,7 +906,7 @@ translateSeq_node (opt_t *f, int i)
             "        _r_attr_iter := _r_attr_iter%03u;\n"
             "        _r_attr_qn := _r_attr_qn%03u;\n"
             "        _r_attr_prop := _r_attr_prop%03u;\n"
-            "        _r_attr_cont := _r_attr_cont%03u;\n"
+            "        _r_attr_frag := _r_attr_frag%03u;\n"
             "} else { if (_r_attr_iter%03u.count() != 0)\n",
             i, i, i, i, i);
     milprintf(f,
@@ -917,11 +915,11 @@ translateSeq_node (opt_t *f, int i)
             "(_r_attr_iter%03u.chk_order(), _r_attr_iter.chk_order(), "
              "_r_attr_qn%03u, _r_attr_qn, "
              "_r_attr_prop%03u, _r_attr_prop, "
-             "_r_attr_cont%03u, _r_attr_cont);\n"
+             "_r_attr_frag%03u, _r_attr_frag);\n"
             "_r_attr_iter := merged_result.fetch(0);\n" /* CONST? */
             "_r_attr_qn := merged_result.fetch(1);\n" /* CONST? */
             "_r_attr_prop := merged_result.fetch(2);\n" /* CONST? */
-            "_r_attr_cont := merged_result.fetch(3);\n" /* CONST? */
+            "_r_attr_frag := merged_result.fetch(3);\n" /* CONST? */
             "}} # end of combine attribute roots\n",
             i, i, i, i);
     /* now combine the element result sets */
@@ -934,11 +932,11 @@ translateSeq_node (opt_t *f, int i)
             "_elem_level := _elem_level%03u ;\n"
             "_elem_kind  := _elem_kind%03u  ;\n"
             "_elem_prop  := _elem_prop%03u  ;\n"
-            "_elem_cont  := _elem_cont%03u  ;\n"
+            "_elem_frag  := _elem_frag%03u  ;\n"
             "_attr_iter  := _attr_iter%03u  ;\n"
             "_attr_qn    := _attr_qn%03u    ;\n"
             "_attr_prop  := _attr_prop%03u  ;\n"
-            "_attr_cont  := _attr_cont%03u  ;\n"
+            "_attr_frag  := _attr_frag%03u  ;\n"
             "_attr_own   := _attr_own%03u   ;\n"
             "} else { if (_elem_iter%03u.count() != 0)\n",
             i, i, i, i, i, i,
@@ -955,14 +953,14 @@ translateSeq_node (opt_t *f, int i)
             "_elem_level%03u, _elem_level, "
             "_elem_kind%03u, _elem_kind, "
             "_elem_prop%03u, _elem_prop, "
-            "_elem_cont%03u, _elem_cont, "
+            "_elem_frag%03u, _elem_frag, "
             "_elem_size%03u.mark(seqb), _elem_size.mirror());\n"
             "_elem_iter := merged_result.fetch(0);\n" /* CONST? */
             "_elem_size := merged_result.fetch(1);\n" /* CONST? */
             "_elem_level:= merged_result.fetch(2);\n" /* CONST? */
             "_elem_kind := merged_result.fetch(3);\n" /* CONST? */
             "_elem_prop := merged_result.fetch(4);\n" /* CONST? */
-            "_elem_cont := merged_result.fetch(5);\n" /* CONST? */
+            "_elem_frag := merged_result.fetch(5);\n" /* CONST? */
             "var preNew_preOld := merged_result.fetch(6);\n" /* CONST? */
             "merged_result := nil;\n"
 
@@ -971,12 +969,12 @@ translateSeq_node (opt_t *f, int i)
             "_attr_iter%03u, _attr_iter, "
             "_attr_qn%03u, _attr_qn, "
             "_attr_prop%03u, _attr_prop, "
-            "_attr_cont%03u, _attr_cont, "
+            "_attr_frag%03u, _attr_frag, "
             "_attr_own%03u, _attr_own);\n"
             "_attr_iter := merged_result.fetch(0);\n" /* CONST? */
             "_attr_qn   := merged_result.fetch(1);\n" /* CONST? */
             "_attr_prop := merged_result.fetch(2);\n" /* CONST? */
-            "_attr_cont := merged_result.fetch(3);\n" /* CONST? */
+            "_attr_frag := merged_result.fetch(3);\n" /* CONST? */
             "_attr_own  := merged_result.fetch(4);\n" /* CONST? */
             "_attr_own := _attr_own.leftjoin(preNew_preOld.reverse())"
                                   ".tmark(seqbase(_attr_own));\n"
@@ -1660,11 +1658,10 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
         exp_type = PFty_child (exp_type);
     }
 
-    milprintf(f, "{ # typeswitch\n");
-
     if (TY_EQ(exp_type, PFty_empty ()))
     {
         milprintf(f,
+                "{ # typeswitch\n"
                 "var unique_iter := iter.tunique();\n"
                 "item := loop%03u.outerjoin(project(unique_iter,false)).[isnil]().[oid]();\n"
                 "iter := loop%03u;\n"
@@ -1682,71 +1679,11 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     else if (TY_EQ (exp_type, PFty_string ()))
         kind = "STR";
     else if (TY_EQ (exp_type, PFty_double ()))
-        kind = "DBL";
+        kind = "DEC";
     else if (TY_EQ (exp_type, PFty_boolean ()))
         kind = "BOOL";
     else if (TY_EQ (exp_type, PFty_untypedAtomic ()))
         kind = "U_A";
-    else if (TY_EQ (exp_type, PFty_xs_anyNode ())) {
-        milprintf(f,
-            "kind := kind.[>](ATOMIC);\n");
-        kind = "true";
-    }
-    else if (TY_EQ (exp_type, PFty_xs_anyAttribute ())) {
-        milprintf(f,
-            "kind := kind.get_types();\n");
-        kind = "ATTR";
-    }
-    else if (TY_EQ (exp_type, PFty_doc (PFty_xs_anyType ()))) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
-            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "DOCUMENT";
-    }
-    else if (TY_EQ (exp_type, PFty_xs_anyElement ())) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
-            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "ELEMENT";
-    }
-    else if (TY_EQ (exp_type, PFty_text ())) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
-            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "TEXT";
-    }
-    else if (TY_EQ (exp_type, PFty_comm ())) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
-            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "COMMENT";
-    }
-    else if (TY_EQ (exp_type, PFty_pi (NULL))) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
-            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "PI";
-    }
     else
         PFoops (OOPS_TYPECHECK,
                 "couldn't solve typeswitch at compile time "
@@ -1757,6 +1694,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     /* match one/multiple values per iteration */
     if (qualifier == 0 || qualifier == 1)
         milprintf(f,
+                "{ # typeswitch\n"
                 "var single_iters := histogram(iter).[=](1).select(true).mirror();\n"
                 "single_iters := single_iters.leftjoin(iter.reverse());\n"
                 "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s).select(true);\n"
@@ -1764,6 +1702,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 kind);
     else
         milprintf(f,
+                "{ # typeswitch\n"
                 "var iter_count := histogram(iter);\n"
                 "var iter_kind := iter.reverse().leftfetchjoin(kind);\n"
                 "var kind_count := histogram(iter_kind.[=](%s).select(true).reverse());\n"
@@ -1828,10 +1767,10 @@ loop_liftedSCJ (opt_t *f,
             "{ # attribute axis\n"
             "var oid_iter := iter;\n"
             "var oid_item := item.materialize(ipik);\n"
-            "var oid_cont := kind.get_container();\n"
-            "var temp1 := mvaljoin ( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(ATTR_OWN));\n"
+            "var oid_frag := kind.get_fragment();\n"
+            "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil;\n"
-            "oid_cont := temp1.hmark(0@0).leftfetchjoin(oid_cont);\n"
+            "oid_frag := temp1.hmark(0@0).leftfetchjoin(oid_frag);\n"
             "var oid_attr := temp1.tmark(0@0);\n"
             "oid_iter := temp1.hmark(0@0).leftfetchjoin(oid_iter);\n"
             "temp1 := nil;\n"
@@ -1841,8 +1780,8 @@ loop_liftedSCJ (opt_t *f,
         if (ns)
         {
             milprintf(f,
-                    "temp1_str := mposjoin(mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_QN)), "
-                                          "mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_CONT)), "
+                    "temp1_str := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
+                                          "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
                                           "ws.fetch(QN_URI));\n"
                     "temp1 := temp1_str.ord_uselect(\"%s\");\n"
                     "temp1_str := nil;\n",
@@ -1850,15 +1789,15 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "temp1 := temp1.hmark(0@0);\n"
                     "oid_attr := temp1.leftfetchjoin(oid_attr);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "temp1 := nil;\n");
         }
         if (loc)
         {
             milprintf(f,
-                    "temp1_str := mposjoin(mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_QN)), "
-                                      "mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_CONT)), "
+                    "temp1_str := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
+                                      "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
                                       "ws.fetch(QN_LOC));\n"
                     "temp1 := temp1_str.ord_uselect(\"%s\");\n"
                     "temp1_str := nil;\n",
@@ -1866,7 +1805,7 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "temp1 := temp1.hmark(0@0);\n"
                     "oid_attr := temp1.leftfetchjoin(oid_attr);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "temp1 := nil;\n");
         }
@@ -1876,7 +1815,7 @@ loop_liftedSCJ (opt_t *f,
         milprintf(f,
                 "iter := oid_iter.tmark(0@0);\n"
                 "item := oid_attr.tmark(0@0);\n"
-                "kind := oid_cont.tmark(0@0);\n"
+                "kind := oid_frag.tmark(0@0);\n"
                 "if (type(iter) = bat) {\n"
                 "    ipik := iter;\n"
                 "} else {\n"
@@ -1899,15 +1838,15 @@ loop_liftedSCJ (opt_t *f,
             "{ # self axis\n"
             "var oid_iter := iter.materialize(ipik);\n"
             "var oid_item := item.materialize(ipik);\n"
-            "var oid_cont := kind.get_container();\n"
+            "var oid_frag := kind.get_fragment();\n"
            );
 
         if (kind)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(%s))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(%s))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     kind);
@@ -1915,19 +1854,19 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n");
             milprintf(f,
-                    "var temp_str := mposjoin(mposjoin(oid_item, oid_cont, ws.fetch(PRE_PROP)), "
-                                             "mposjoin(oid_item, oid_cont, ws.fetch(PRE_CONT)), "
+                    "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
+                                             "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_LOC_URI));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\"+str('\\1')+\"%s\").hmark(0@0);\n"
                     "temp_str := nil;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     loc,ns);
@@ -1935,19 +1874,19 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n");
             milprintf(f,
-                    "var temp_str := mposjoin(mposjoin(oid_item, oid_cont, ws.fetch(PRE_PROP)), "
-                                             "mposjoin(oid_item, oid_cont, ws.fetch(PRE_CONT)), "
+                    "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
+                                             "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_LOC));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\").hmark(0@0);\n"
                     "temp_str := nil;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     loc);
@@ -1955,19 +1894,19 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n");
             milprintf(f,
-                    "var temp_str := mposjoin(mposjoin(oid_item, oid_cont, ws.fetch(PRE_PROP)), "
-                                             "mposjoin(oid_item, oid_cont, ws.fetch(PRE_CONT)), "
+                    "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
+                                             "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_URI));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\").hmark(0@0);\n"
                     "temp_str := nil;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
+                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     ns);
@@ -1976,7 +1915,7 @@ loop_liftedSCJ (opt_t *f,
         milprintf(f,
                 "iter := oid_iter.tmark(0@0);\n"
                 "item := oid_item.tmark(0@0);\n"
-                "kind := oid_cont.tmark(0@0);\n"
+                "kind := oid_frag.tmark(0@0);\n"
                 "ipik := iter;\n"
                 "} # end of self axis\n");
     }
@@ -1995,42 +1934,42 @@ loop_liftedSCJ (opt_t *f,
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_target_test"
-                    "(iter, item, constant2bat(kind.get_container()), ws, %i, \"%s\");\n",
+                    "(iter, item, constant2bat(kind.get_fragment()), ws, %i, \"%s\");\n",
                     axis, item_order, loc);
         }
         else if (kind)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_kind_test"
-                    "(iter, item, constant2bat(kind.get_container()), ws, %i, %s);\n",
+                    "(iter, item, constant2bat(kind.get_fragment()), ws, %i, %s);\n",
                     axis, item_order, kind);
         }
         else if (ns && loc)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_nsloc_test"
-                    "(iter, item, constant2bat(kind.get_container()), ws, %i, \"%s\", \"%s\");\n",
+                    "(iter, item, constant2bat(kind.get_fragment()), ws, %i, \"%s\", \"%s\");\n",
                     axis, item_order, ns, loc);
         }
         else if (loc)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_loc_test"
-                    "(iter, item, constant2bat(kind.get_container()), ws, %i, \"%s\");\n",
+                    "(iter, item, constant2bat(kind.get_fragment()), ws, %i, \"%s\");\n",
                     axis, item_order, loc);
         }
         else if (ns)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_ns_test"
-                    "(iter, item, constant2bat(kind.get_container()), ws, %i, \"%s\");\n", 
+                    "(iter, item, constant2bat(kind.get_fragment()), ws, %i, \"%s\");\n", 
                     axis, item_order, ns);
         }
         else
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step"
-                    "(iter, item, constant2bat(kind.get_container()), ws, %i);\n", 
+                    "(iter, item, constant2bat(kind.get_fragment()), ws, %i);\n", 
                     axis, item_order);
         }
     }
@@ -2096,7 +2035,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         case c_self:
             axis = "self";
             break;
-/* #ifdef BURKOWSKI */
+#ifdef BURKOWSKI
         case c_select_narrow:
             axis = "select_narrow";
             break;
@@ -2109,7 +2048,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         case c_reject_wide:
             axis = "reject_wide";
             break; 
-/* #endif */
+#endif
         default:
             PFoops (OOPS_FATAL, "XPath axis is not supported in MIL-translation");
     }
@@ -2139,7 +2078,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     }
     else if (PFty_subtype (in_ty, PFty_pi (NULL)))
     {
-        char *target = (PFty_name (in_ty)).loc;
+        char *target = (PFty_qname(in_ty)).loc;
         loop_liftedSCJ (f, axis, "PI", 0, target, rev_in, rev_out);
     }
     else if (PFty_subtype (in_ty, PFty_doc (PFty_xs_anyType ())))
@@ -2148,8 +2087,8 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     }
     else if (PFty_subtype (in_ty, PFty_xs_anyElement ()))
     {
-        ns = (PFty_name (in_ty)).ns.uri;
-        loc = (PFty_name (in_ty)).loc;
+        ns = (PFty_qname(in_ty)).ns.uri;
+        loc = (PFty_qname(in_ty)).loc;
 
         /* translate wildcard '*' as 0 and missing ns as "" */
         if (!ns)
@@ -2193,8 +2132,8 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
             return;
         }
 
-        ns = (PFty_name (in_ty)).ns.uri;
-        loc = (PFty_name (in_ty)).loc;
+        ns = (PFty_qname(in_ty)).ns.uri;
+        loc = (PFty_qname(in_ty)).loc;
 
         /* translate wildcard '*' as 0 and missing ns as "" */
         if (!ns)
@@ -2376,7 +2315,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "chr(0), _elem_level.[+](chr(1)), "
                 "ELEMENT,  _elem_kind, "
                 "root_prop,  _elem_prop, "
-                "WS,  _elem_cont, "
+                "WS,  _elem_frag, "
      /* attr */ "root_iter.project(nil),  _elem_iter.mirror());\n"
     
                 "root_iter  := nil;\n"
@@ -2387,7 +2326,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "_elem_level := merged_result.fetch(2);\n" /* CONST? */
                 "_elem_kind  := merged_result.fetch(3);\n" /* CONST? */
                 "_elem_prop  := merged_result.fetch(4);\n" /* CONST? */
-                "_elem_cont  := merged_result.fetch(5);\n" /* CONST? */
+                "_elem_frag  := merged_result.fetch(5);\n" /* CONST? */
      /* attr */ "var preNew_preOld := merged_result.fetch(6);\n" /* CONST? */
                 "merged_result := nil;\n"
      /* attr */ "_attr_own := _attr_own.leftjoin(preNew_preOld.reverse());\n"
@@ -2406,10 +2345,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var attr_own := _r_attr_iter.leftjoin(iter_item);\n"
                 "iter_item := nil;\n"
                 /* insert root attribute entries to the other attributes */
-                /* use iter, qn and cont to find unique combinations */
+                /* use iter, qn and frag to find unique combinations */
                 "if (_r_attr_iter.count() != 0) { # test uniqueness\n"
                 "var sorting := _r_attr_iter.tsort();\n"
-                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_cont,ws.fetch(QN_LOC_URI)));\n"
+                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_LOC_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "sorting := nil;\n"
                 /* test uniqueness */
@@ -2433,26 +2372,26 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "_attr_iter := _r_attr_iter;\n"
                 "_attr_qn   := _r_attr_qn;\n"
                 "_attr_prop := _r_attr_prop;\n"
-                "_attr_cont := _r_attr_cont;\n"
+                "_attr_frag := _r_attr_frag;\n"
                 "_attr_own  := attr_own.tmark(0@0);\n"
                 "} else {\n"
                 "var seqb := oid(_attr_iter.count() + int(_attr_iter.seqbase()));\n"
                 "_r_attr_iter := _r_attr_iter.tmark(seqb);\n"
                 "_r_attr_qn   := _r_attr_qn  .tmark(seqb);\n"
                 "_r_attr_prop := _r_attr_prop.tmark(seqb);\n"
-                "_r_attr_cont := _r_attr_cont.tmark(seqb);\n"
+                "_r_attr_frag := _r_attr_frag.tmark(seqb);\n"
                 "attr_own := attr_own.tmark(seqb);\n"
                 "seqb := nil;\n"
                 "_attr_iter := _attr_iter.access(BAT_WRITE).insert(_r_attr_iter);\n"
                 "_attr_qn   := _attr_qn  .access(BAT_WRITE).insert(_r_attr_qn);\n"
                 "_attr_prop := _attr_prop.access(BAT_WRITE).insert(_r_attr_prop);\n"
-                "_attr_cont := _attr_cont.access(BAT_WRITE).insert(_r_attr_cont);\n"
+                "_attr_frag := _attr_frag.access(BAT_WRITE).insert(_r_attr_frag);\n"
                 "_attr_own  := _attr_own .access(BAT_WRITE).insert(attr_own);\n"
                 "}\n"
                 "_r_attr_iter := empty_bat;\n"
                 "_r_attr_qn   := empty_bat;\n"
                 "_r_attr_prop := empty_bat;\n"
-                "_r_attr_cont := empty_bat;\n"
+                "_r_attr_frag := empty_bat;\n"
                 "} # end of create attribute root entries\n",
                 i, i, i, i, i, i);
     }
@@ -2463,16 +2402,16 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var root_level;\n"
                 "var root_size;\n"
                 "var root_kind;\n"
-                "var root_cont;\n"
+                "var root_frag;\n"
                 "var root_prop;\n"
     
      /* attr */ "var preNew_preOld;\n"
-     /* attr */ "var preNew_cont;\n"
+     /* attr */ "var preNew_frag;\n"
      /* attr */ "kind := kind.materialize(ipik);\n"
      /* attr */ "var attr := kind.get_type(ATTR).hmark(0@0);\n"
      /* attr */ "var attr_iter := attr.leftfetchjoin(iter).materialize(attr);\n"
      /* attr */ "var attr_item := attr.leftfetchjoin(item).materialize(attr);\n"
-     /* attr */ "var attr_cont := attr.leftfetchjoin(kind).get_container();\n"
+     /* attr */ "var attr_frag := attr.leftfetchjoin(kind).get_fragment();\n"
      /* attr */ "attr := nil;\n"
     
                 /* there can be only nodes and attributes - everything else
@@ -2487,64 +2426,53 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var oid_oid := nodes.hmark(0@0);\n"
                 "nodes := nil;\n"
                 "var node_items := oid_oid.leftfetchjoin(item).materialize(oid_oid);\n"
-                "var node_conts := oid_oid.leftfetchjoin(kind).get_container();\n"
+                "var node_frags := oid_oid.leftfetchjoin(kind).get_fragment();\n"
                 /* set iter to a distinct list and therefore don't
                    prune any node */
                 "var iter_input := oid_oid.mirror();\n"
     
                 /* get all subtree copies */
                 "var res_scj := loop_lifted_descendant_or_self_step"
-                "(iter_input, node_items, constant2bat(node_conts), ws, 0);\n"
+                "(iter_input, node_items, constant2bat(node_frags), ws, 0);\n"
     
                 "iter_input := nil;\n"
                 /* variables for the result of the scj */
                 "var res_iter := res_scj.fetch(0);\n" /* CONST? */
                 "var res_item := res_scj.fetch(1);\n" /* CONST? */
-                "var res_cont := res_scj.fetch(2);\n" /* CONST? */
+                "var res_frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
                 /* create content_iter as sorting argument for the merged union */
                 "var content_iter := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
     
                 /* create subtree copies for all bats except content_level */
-                "var content_size := mposjoin(res_item, res_cont, "
+                "var content_size := mposjoin(res_item, res_frag, "
                                              "ws.fetch(PRE_SIZE));\n"
-                /* StM (more guessing than knowing...):
-                 * Fixing the subtree sizes via correct_sizes() as for
-                 * _elem_size in map2NODE_interface() above does not seem to
-                 * work, here; res_item does not seem to contain complete
-                 * subtrees!??
-                 * Apparently, we're only dealing with container 0@0, here,
-                 * i.e., the transient document, which does not contain any
-                 * holes, and hence, does fixing the size is not necessary
-                 * at all... !??
-                 * "content_size  := correct_sizes(res_iter, res_item, content_size);\n"
-                 */
-                "var content_prop := mposjoin(res_item, res_cont, "
+                "var content_prop := mposjoin(res_item, res_frag, "
                                              "ws.fetch(PRE_PROP));\n"
-                "var content_kind := mposjoin(res_item, res_cont, "
+                "var content_kind := mposjoin(res_item, res_frag, "
                                              "ws.fetch(PRE_KIND));\n"
-                "var content_cont := mposjoin(res_item, res_cont, "
-                                             "ws.fetch(PRE_CONT));\n"
+                "var content_frag := mposjoin(res_item, res_frag, "
+                                             "ws.fetch(PRE_FRAG));\n"
     
      /* attr */ /* content_pre is needed for attribute subtree copies */
      /* attr */ "var content_pre := res_item;\n"
-     /* attr */ /* as well as content_cont_pre */
-     /* attr */ "var content_cont_pre := res_cont;\n"
+     /* attr */ /* as well as content_frag_pre */
+     /* attr */ "var content_frag_pre := res_frag;\n"
     
                 /* change the level of the subtree copies */
                 /* get the level of the content root nodes */
                 "var temp_ec_item := res_iter.leftfetchjoin(node_items).materialize(res_item);\n"
-                "var temp_ec_cont := res_iter.leftfetchjoin(node_conts);\n"
+                "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
                 "nodes := res_item.mark(0@0);\n"
                 "var contentRoot_level := mposjoin(temp_ec_item, "
-                                                  "temp_ec_cont, "
+                                                  "temp_ec_frag, "
                                                   "ws.fetch(PRE_LEVEL));\n"
                 "contentRoot_level := nodes.leftfetchjoin(contentRoot_level);\n"
     
                 "temp_ec_item := res_item;\n"
-                "temp_ec_cont := res_cont;\n"
-                "var content_level := mposjoin(temp_ec_item, temp_ec_cont, "
+                "temp_ec_frag := res_frag;\n"
+                "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                               "ws.fetch(PRE_LEVEL));\n"
                 "content_level := nodes.leftfetchjoin(content_level);\n"
                 "content_level := content_level.[-](contentRoot_level);\n"
@@ -2559,7 +2487,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /*
                 "print(\"content\");\n"
                 "print(content_iter, content_size, [int](content_level), "
-                "[int](content_kind), content_prop, content_pre, content_cont_pre);\n"
+                "[int](content_kind), content_prop, content_pre, content_frag_pre);\n"
                 */
     
                 /* get the maximum level of the new constructed nodes
@@ -2571,19 +2499,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "}\n"
     
                 /* calculate the sizes for the root nodes */
-                "var contentRoot_size := mposjoin(node_items, node_conts, "
+                "var contentRoot_size := mposjoin(node_items, node_frags, "
                                                  "ws.fetch(PRE_SIZE)).[+](1);\n"
-                /* StM (more guessing than knowing...):
-                 * Fixing the subtree sizes via correct_sizes() as for
-                 * _elem_size in map2NODE_interface() above does not seem to
-                 * work, here; res_item does not seem to contain complete
-                 * subtrees!??
-                 * Apparently, we're only dealing with container 0@0, here,
-                 * i.e., the transient document, which does not contain any
-                 * holes, and hence, does fixing the size is not necessary
-                 * at all... !??
-                 * "contentRoot_size  := correct_sizes(node_iters, node_items, contentRoot_size);\n"
-                 */
                 "var size_oid := contentRoot_size.reverse();\n"
                 "contentRoot_size := nil;\n"
                 "size_oid := size_oid.leftfetchjoin(oid_oid);\n"
@@ -2605,7 +2522,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "root_kind := ELEMENT;\n"
                 "root_prop := iter%03u.materialize(ipik%03u).reverse();\n"
                 "root_prop := root_prop.leftfetchjoin(item%03u).materialize(root_prop);\n"
-                "root_cont := WS;\n",
+                "root_frag := WS;\n",
                 i, i, i);
     
         milprintf(f,
@@ -2616,16 +2533,16 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
      /* attr */ /* root_pre is a dummy needed for merge union with content_pre */
      /* attr */ "var root_pre := oid(nil);\n"
-     /* attr */ /* as well as root_cont_pre */
-     /* attr */ "var root_cont_pre := oid(nil);\n"
+     /* attr */ /* as well as root_frag_pre */
+     /* attr */ "var root_frag_pre := oid(nil);\n"
     
                 /* merge union root and nodes */
                 "{\n"
                 "var merged_result := merged_union ("
                 "root_iter, content_iter, root_size, content_size, "
                 "root_level, content_level, root_kind, content_kind, "
-                "root_prop, content_prop, root_cont, content_cont, "
-     /* attr */ "root_pre, content_pre, root_cont_pre, content_cont_pre);\n"
+                "root_prop, content_prop, root_frag, content_frag, "
+     /* attr */ "root_pre, content_pre, root_frag_pre, content_frag_pre);\n"
                 "root_iter := nil;\n"
                 "content_iter := nil;\n"
                 "root_size := merged_result.fetch(1);\n" /* CONST? */
@@ -2636,12 +2553,12 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "content_kind := nil;\n"
                 "root_prop := merged_result.fetch(4);\n" /* CONST? */
                 "content_prop := nil;\n"
-                "root_cont := merged_result.fetch(5);\n" /* CONST? */
-                "content_cont := nil;\n"
+                "root_frag := merged_result.fetch(5);\n" /* CONST? */
+                "content_frag := nil;\n"
                 "root_pre := merged_result.fetch(6);\n" /* CONST? */
                 "content_pre := nil;\n"
-                "root_cont_pre := merged_result.fetch(7);\n" /* CONST? */
-                "content_cont_pre := nil;\n"
+                "root_frag_pre := merged_result.fetch(7);\n" /* CONST? */
+                "content_frag_pre := nil;\n"
                 "merged_result := nil;\n"
                 /* printing output for debugging purposes */
                 /* 
@@ -2656,8 +2573,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
      /* attr */ /* values merged with nil values */
      /* attr */ "preNew_preOld := root_pre;\n"
      /* attr */ "root_pre := nil;\n"
-     /* attr */ "preNew_cont := root_cont_pre;\n"
-     /* attr */ "root_cont_pre := nil;\n"
+     /* attr */ "preNew_frag := root_frag_pre;\n"
+     /* attr */ "root_frag_pre := nil;\n"
     
                 "} else { # if (nodes.count() != 0) ...\n"
                );
@@ -2667,19 +2584,19 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         milprintf(f, "root_size := item%03u.project(0);\n", i);
         milprintf(f, "root_kind := item%03u.project(ELEMENT);\n", i);
         milprintf(f, "root_prop := item%03u;\n", i);
-        milprintf(f, "root_cont := item%03u.project(WS);\n", i);
+        milprintf(f, "root_frag := item%03u.project(WS);\n", i);
     
      /* attr */ milprintf(f,
      /* attr */ "preNew_preOld := item%03u.project(oid(nil));\n", i);
      /* attr */ milprintf(f,
      /* attr */ "preNew_preOld := preNew_preOld.tmark(0@0);\n"
-     /* attr */ "preNew_cont := preNew_preOld.tmark(0@0);\n"
+     /* attr */ "preNew_frag := preNew_preOld.tmark(0@0);\n"
     
                 "root_level := root_level.tmark(0@0);\n"
                 "root_size := root_size.tmark(0@0);\n"
                 "root_kind := root_kind.tmark(0@0);\n"
                 "root_prop := root_prop.tmark(0@0);\n"
-                "root_cont := root_cont.tmark(0@0);\n"
+                "root_frag := root_frag.tmark(0@0);\n"
     
                 "}  # end of else in 'if (nodes.count() != 0)'\n"
     
@@ -2691,35 +2608,30 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "root_size := root_size.seqbase(seqb);\n"
                 "root_kind := root_kind.seqbase(seqb);\n"
                 "root_prop := root_prop.seqbase(seqb);\n"
-                "root_cont := root_cont.seqbase(seqb);\n"
+                "root_frag := root_frag.seqbase(seqb);\n"
                 /* get the new pre values */
      /* attr */ "preNew_preOld := preNew_preOld.seqbase(seqb);\n"
-     /* attr */ "preNew_cont := preNew_cont.seqbase(seqb);\n"
+     /* attr */ "preNew_frag := preNew_frag.seqbase(seqb);\n"
                 "seqb := nil;\n"
                 "}\n"
                 /* insert the new trees into the working set */
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);\n"
-                "ws.fetch(PRE_NID).fetch(WS).insert(root_size.mirror());\n"
-                "ws.fetch(NID_RID).fetch(WS).insert(root_size.mirror());\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);\n"
-                "ws.fetch(PRE_CONT).fetch(WS).insert(root_cont);\n"
+                "ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);\n"
                 "{\n"
                 "  var knd := ELEMENT;\n"
                 "  while ( knd <= DOCUMENT ) {\n"
-                "    var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(WS);\n"
-                "    var sqb := oid(int(seqbase(knd_nid)) + count(knd_nid));\n"
-                "    var knd_nid_ := root_kind.ord_uselect(knd).mark(sqb).reverse().chk_order();\n"
-                "    knd_nid.insert(knd_nid_);\n"
-                "    if ( (knd = ELEMENT) or (knd = PI) ) {\n"
-                "      var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(WS);\n"
-                "      var knd_prop_ := knd_nid.leftjoin(root_prop).chk_order();\n"
-                "      if ((htype(knd_prop_) != 0) or (head(knd_prop_) != \"void\")) {\n"
-                "          ERROR(\"milprint_summer.c: loop_liftedElemConstr(1): htype(knd_prop_) = %%d, head(knd_prop_) = %%s !\\n\",\n"
-                "                htype(knd_prop_), head(knd_prop_));\n"
-                "      }\n"
-                "      knd_prop.insert(knd_prop_);\n"
+                "    var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();\n"
+                "    ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);\n"
+                "    if ( knd = ELEMENT ) {\n"
+                "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
+                "      ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);\n"
+                "    }\n"
+                "    if ( knd = PI ) {\n"
+                "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
+                "      ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);\n"
                 "    }\n"
                 "    knd :+= chr(1);\n"
                 "  }\n"
@@ -2740,15 +2652,15 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "root_size := nil;\n"
                 "root_prop := nil;\n"
                 "root_kind := nil;\n"
-                "root_cont := nil;\n"
+                "root_frag := nil;\n"
     
                 /* adding the new constructed roots to the WS_FRAG bat of the
                    working set, that a following (preceding) step can check
                    the fragment boundaries */
                 "{  # adding new fragments to the WS_FRAG bat\n"
-                "var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));\n"
+                "var seqb := oid(count(ws.fetch(WS_FRAG)));\n"
                 "var new_pres := roots.tmark(seqb);\n"
-                "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
+                "ws.fetch(WS_FRAG).insert(new_pres);\n"
                 "}\n"
                );
     
@@ -2776,12 +2688,12 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var oid_preOld := content_preNew_preOld.tmark(0@0);\n"
                 "var oid_preNew := content_preNew_preOld.hmark(0@0);\n"
                 "content_preNew_preOld := nil;\n"
-                "var oid_cont := oid_preNew.leftfetchjoin(preNew_cont);\n"
-                "var temp_attr := mvaljoin( mposjoin(oid_preOld, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(ATTR_OWN));\n"
+                "var oid_frag := oid_preNew.leftfetchjoin(preNew_frag);\n"
+                "var temp_attr := mvaljoin(oid_preOld, oid_frag, ws.fetch(ATTR_OWN));\n"
                 "oid_preOld := nil;\n"
                 "var oid_attr := temp_attr.tmark(0@0);\n"
-                "oid_cont := temp_attr.reverse().leftfetchjoin(oid_cont);\n"
-                "oid_cont := oid_cont.tmark(0@0);\n"
+                "oid_frag := temp_attr.reverse().leftfetchjoin(oid_frag);\n"
+                "oid_frag := oid_frag.tmark(0@0);\n"
                 "oid_preNew := temp_attr.reverse().leftfetchjoin(oid_preNew);\n"
                 "# oid_preNew := oid_preNew.tmark(0@0);\n"
                 "temp_attr := nil;\n"
@@ -2790,41 +2702,41 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
                 /* get the values of the QN/OID offsets for the reference to the
                    string values */
-                "var attr_qn := mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_QN));\n"
-                "var attr_oid := mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_PROP));\n"
-                "oid_cont := mposjoin(oid_attr, oid_cont, ws.fetch(ATTR_CONT));\n"
+                "var attr_qn := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN));\n"
+                "var attr_oid := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_PROP));\n"
+                "oid_frag := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG));\n"
                 "oid_attr := nil;\n"
                 "attr_qn := attr_qn.seqbase(seqb);\n"
                 "attr_oid := attr_oid.seqbase(seqb);\n"
                 "oid_preNew := oid_preNew.tmark(seqb);\n"
-                "oid_cont := oid_cont.seqbase(seqb);\n"
+                "oid_frag := oid_frag.seqbase(seqb);\n"
                 "seqb := nil;\n"
     
                 /* insert into working set WS the attribute subtree copies 
                    only 'offsets' where to find strings are copied 
-                   (QN/CONT, OID/CONT) */
+                   (QN/FRAG, OID/FRAG) */
                 "ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);\n"
                 "ws.fetch(ATTR_PROP).fetch(WS).insert(attr_oid);\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(oid_preNew);\n"
-                "ws.fetch(ATTR_CONT).fetch(WS).insert(oid_cont);\n"
+                "ws.fetch(ATTR_FRAG).fetch(WS).insert(oid_frag);\n"
                 "} # end of create attribute subtree copies\n"
                );
     
      /* attr */ /* 2. step: add attribute bindings of new root nodes */
         milprintf(f,
                 "{ # create attribute root entries\n"
-                /* use iter, qn and cont to find unique combinations */
-                "var attr_qn_ := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN));\n"
-                "var attr_qn_cont := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_CONT));\n"
+                /* use iter, qn and frag to find unique combinations */
+                "var attr_qn_ := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN));\n"
+                "var attr_qn_frag := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG));\n"
                 "var sorting := attr_iter.tsort();\n"
-                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_cont,ws.fetch(QN_LOC_URI)));\n"
+                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_LOC_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "attr_qn_ := nil;\n"
                 "sorting := nil;\n"
                 /* 
                 "var unq_attrs := CTgroup(attr_iter).CTmap()"
-                                 ".CTgroup(mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN))).CTmap()"
-                                 ".CTgroup(mposjoin(attr_item, attr_cont, ws.fetch(ATTR_CONT)))"
+                                 ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN))).CTmap()"
+                                 ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG)))"
                                  ".CTextend();\n"
                 */
                 /* test uniqueness */
@@ -2846,9 +2758,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         milprintf(f,
                 "var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());\n"
                 /* get old QN reference and copy it into the new attribute */
-                "var attr_qn := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN)).seqbase(seqb);\n"
+                "var attr_qn := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)).seqbase(seqb);\n"
                 /* get old OID reference and copy it into the new attribute */
-                "var attr_oid := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_PROP)).seqbase(seqb);\n"
+                "var attr_oid := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PROP)).seqbase(seqb);\n"
                 /* get the iters and their corresponding new pre value (roots) and
                    multiply them for all the attributes */
                 "var attr_own := iter%03u.reverse().leftfetchjoin(roots);\n"
@@ -2857,9 +2769,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_iter := nil;\n"
                 "attr_own := attr_own.tmark(seqb);\n",
                 i);
-                /* use the old CONT values as reference */
+                /* use the old FRAG values as reference */
         milprintf(f,
-                "attr_cont := attr_cont.tmark(seqb);\n"
+                "attr_frag := attr_frag.tmark(seqb);\n"
                 "seqb := nil;\n"
       
                 "ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);\n"
@@ -2868,9 +2780,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_oid := nil;\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);\n"
                 "attr_own := nil;\n"
-                "ws.fetch(ATTR_CONT).fetch(WS).insert(attr_cont);\n"
-                "attr_qn_cont := nil;\n"
-                "attr_cont := nil;\n"
+                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_qn_frag);\n"
+                "attr_qn_frag := nil;\n"
+                "attr_frag := nil;\n"
       
                 "} # end of create attribute root entries\n"
       
@@ -2909,32 +2821,27 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "_elem_level := _elem_level.tmark(seqb);\n"
             "_elem_kind  := _elem_kind.tmark(seqb);\n"
             "_elem_prop  := _elem_prop.tmark(seqb);\n"
-            "_elem_cont  := _elem_cont.tmark(seqb);\n"
+            "_elem_frag  := _elem_frag.tmark(seqb);\n"
             "seqb := nil;\n"
             "}\n"
             /* insert the new trees into the working set */
             "ws.fetch(PRE_SIZE).fetch(WS).insert(_elem_size);\n"
-            "ws.fetch(PRE_NID).fetch(WS).insert(_elem_size.mirror());\n"
-            "ws.fetch(NID_RID).fetch(WS).insert(_elem_size.mirror());\n"
             "ws.fetch(PRE_LEVEL).fetch(WS).insert(_elem_level);\n"
             "ws.fetch(PRE_KIND).fetch(WS).insert(_elem_kind);\n"
             "ws.fetch(PRE_PROP).fetch(WS).insert(_elem_prop);\n"
-            "ws.fetch(PRE_CONT).fetch(WS).insert(_elem_cont);\n"
+            "ws.fetch(PRE_FRAG).fetch(WS).insert(_elem_frag);\n"
             "{\n"
             "  var knd := ELEMENT;\n"
             "  while ( knd <= DOCUMENT ) {\n"
-            "    var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(WS);\n"
-            "    var sqb := oid(int(seqbase(knd_nid)) + count(knd_nid));\n"
-            "    var knd_nid_ := _elem_kind.ord_uselect(knd).mark(sqb).reverse().chk_order();\n"
-            "    knd_nid.insert(knd_nid_);\n"
-            "    if ( (knd = ELEMENT) or (knd = PI) ) {\n"
-            "      var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(WS);\n"
-            "      var knd_prop_ := knd_nid.leftjoin(_elem_prop).chk_order();\n"
-            "      if ((htype(knd_prop_) != 0) or (head(knd_prop_) != \"void\")) {\n"
-            "          ERROR(\"milprint_summer.c: loop_liftedElemConstr(1): htype(knd_prop_) = %%d, head(knd_prop_) = %%s !\\n\",\n"
-            "                htype(knd_prop_), head(knd_prop_));\n"
-            "      }\n"
-            "      knd_prop.insert(knd_prop_);\n"
+            "    var kind__elem := _elem_kind.ord_uselect(knd).reverse().chk_order();\n"
+            "    ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind__elem);\n"
+            "    if ( knd = ELEMENT ) {\n"
+            "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
+            "      ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop__elem);\n"
+            "    }\n"
+            "    if ( knd = PI ) {\n"
+            "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
+            "      ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop__elem);\n"
             "    }\n"
             "    knd :+= chr(1);\n"
             "  }\n"
@@ -2954,15 +2861,15 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "_elem_size := nil;\n"
             "_elem_prop := nil;\n"
             "_elem_kind := nil;\n"
-            "_elem_cont := nil;\n"
+            "_elem_frag := nil;\n"
 
             /* adding the new constructed roots to the WS_FRAG bat of the
                working set, that a following (preceding) step can check
                the fragment boundaries */
             "{  # adding new fragments to the WS_FRAG bat\n"
-            "var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));\n"
+            "var seqb := oid(count(ws.fetch(WS_FRAG)));\n"
             "var new_pres := roots.tmark(seqb);\n"
-            "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
+            "ws.fetch(WS_FRAG).insert(new_pres);\n"
             "}\n"
             /* return the root elements in iter|pos|item|kind representation */
             /* should contain for each iter exactly 1 root element
@@ -2978,20 +2885,20 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "_attr_qn   := _attr_qn  .tmark(seqb);\n"
             "_attr_prop := _attr_prop.tmark(seqb);\n"
             "_attr_own  := _attr_own .tmark(seqb);\n"
-            "_attr_cont := _attr_cont.tmark(seqb);\n"
+            "_attr_frag := _attr_frag.tmark(seqb);\n"
             "seqb := nil;\n"
 
             /* insert into working set WS the attribute subtree copies 
                only 'offsets' where to find strings are copied 
-               (QN/CONT, OID/CONT) */
+               (QN/FRAG, OID/FRAG) */
             "ws.fetch(ATTR_QN).fetch(WS).insert(_attr_qn);\n"
             "ws.fetch(ATTR_PROP).fetch(WS).insert(_attr_prop);\n"
             "ws.fetch(ATTR_OWN).fetch(WS).insert(_attr_own);\n"
-            "ws.fetch(ATTR_CONT).fetch(WS).insert(_attr_cont);\n"
+            "ws.fetch(ATTR_FRAG).fetch(WS).insert(_attr_frag);\n"
             "_attr_qn   := nil;\n"
             "_attr_prop := nil;\n"
             "_attr_own  := nil;\n"
-            "_attr_cont := nil;\n"
+            "_attr_frag := nil;\n"
             "} # end of add attribute subtree copies to WS\n"
             "} # end of loop_liftedElemConstr (counter)\n",
             i);
@@ -3059,7 +2966,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "_r_attr_iter := iter%03u;\n"
                 "_r_attr_qn   := item%03u.materialize(ipik%03u);\n"
                 "_r_attr_prop := attr_oid;\n"
-                "_r_attr_cont := attr_oid.project(WS);\n"
+                "_r_attr_frag := attr_oid.project(WS);\n"
                 "attr_oid := nil;\n"
                 "} # end of loop_liftedAttrConstr (int i)\n",
                 i, i, i);
@@ -3075,7 +2982,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "item%03u := item%03u.materialize(ipik%03u);\n"
                 "var qn := item%03u.tmark(seqb);\n"
                 "ws.fetch(ATTR_QN).fetch(WS).insert(qn);\n"
-                "ws.fetch(ATTR_CONT).fetch(WS).insert(qn.project(WS));\n"
+                "ws.fetch(ATTR_FRAG).fetch(WS).insert(qn.project(WS));\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.project(oid(nil)));\n"
                 /* get the intermediate result */
                 "iter := iter%03u;\n"
@@ -3150,7 +3057,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "_elem_level := newPre_prop.project(chr(0));\n"
                 "_elem_kind  := newPre_prop.project(TEXT);\n"
                 "_elem_prop  := newPre_prop;\n"
-                "_elem_cont  := newPre_prop.project(WS);\n");
+                "_elem_frag  := newPre_prop.project(WS);\n");
     }
     else
     {
@@ -3160,15 +3067,12 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "newPre_prop := newPre_prop.tmark(seqb);\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));\n"
-                "ws.fetch(PRE_NID).fetch(WS).insert(newPre_prop.mirror());\n"
-                "ws.fetch(NID_RID).fetch(WS).insert(newPre_prop.mirror());\n"
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
-                "ws.fetch(PRE_CONT).fetch(WS).insert(newPre_prop.project(WS));\n"
+                "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                 "{\n"
-                "  var knd_nid := ws.fetch(KND_NID.find(TEXT)).fetch(WS);\n"
-                "  var knd_nid_ := newPre_prop.reverse().chk_order();\n"
-                "  knd_nid.append(knd_nid_);\n"
+                "  var kind_pre_ := newPre_prop.reverse().chk_order();\n"
+                "  ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).append(kind_pre_);\n"
                 "}\n"
                 "item := item%s.mark(seqb);\n"
                 "kind := ELEM;\n"
@@ -3178,10 +3082,10 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                    working set, that a following (preceding) step can check
                the fragment boundaries */
                 "{ # adding new fragments to the WS_FRAG bat\n"
-                "var seqb := ws.fetch(WS_FRAG).fetch(WS).count();\n"
+                "var seqb := ws.fetch(WS_FRAG).count();\n"
                 "seqb := oid(seqb);\n"
                 "var new_pres := item.tmark(seqb);\n"
-                "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
+                "ws.fetch(WS_FRAG).insert(new_pres);\n"
                 /* get the maximum level of the new constructed nodes
                    and set the maximum of the working set */
                 "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));\n",
@@ -3704,7 +3608,6 @@ translateCast (opt_t *f,
             translateCast2DBL (f, rcode, rc, input_type);
             break;
         case ty_untypedAtomic:
-        case ty_qname:
             rcode = (code)?U_A:NORMAL;
             translateCast2STR (f, rcode, rc, input_type);
             break;
@@ -4297,21 +4200,21 @@ string_value (opt_t *f, int code, char *kind)
             "if (kind_elem.count() = kind.count())\n"
             "{\n"
                 "kind_elem := nil;\n"
-                "var cont := kind.get_container();\n"
+                "var frag := kind.get_fragment();\n"
                 /* to get all text nodes a scj is performed */
                 "var res_scj := "
                 "loop_lifted_descendant_or_self_step_with_kind_test"
-                "(iter, item, constant2bat(cont), ws, 0, TEXT);\n"
+                "(iter, item, constant2bat(frag), ws, 0, TEXT);\n"
                 /* variables for the result of the scj */
                 "var t_iter := res_scj.fetch(0);\n" /* CONST? */
                 "var t_item := res_scj.fetch(1);\n" /* CONST? */
-                "var t_cont := res_scj.fetch(2);\n" /* CONST? */
+                "var t_frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* get the string values of the text nodes */
-                "var t_item_str := mposjoin(mposjoin(t_item, t_cont, ws.fetch(PRE_PROP)), "
-                                     "mposjoin(t_item, t_cont, ws.fetch(PRE_CONT)), "
+                "var t_item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
+                                     "mposjoin(t_item, t_frag, ws.fetch(PRE_FRAG)), "
                                      "ws.fetch(PROP_TEXT));\n"
-                "t_cont := nil;\n"
+                "t_frag := nil;\n"
                 /* for the result of the scj join with the string values */
                 "var t_iter_unq := t_iter.tunique();\n"
                 "t_iter := t_iter.materialize(t_item);\n"
@@ -4325,36 +4228,36 @@ string_value (opt_t *f, int code, char *kind)
 
     milprintf(f,
                 /* get the string value of all comment nodes */
-                "var c_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
+                "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                   ".select(COMMENT).hmark(0@0);\n"
                 "if (c_map.count() > 0) { #process comments \n"
                     "var c_iter := c_map.leftfetchjoin(iter);\n"
                     "var c_item := c_map.leftfetchjoin(item);\n"
-                    "var c_cont := c_map.leftfetchjoin(cont);\n"
+                    "var c_frag := c_map.leftfetchjoin(frag);\n"
                     /* get the string values of the comment nodes */
-                    "var c_item_str := mposjoin(mposjoin(c_item, c_cont, ws.fetch(PRE_PROP)), "
-                                               "mposjoin(c_item, c_cont, ws.fetch(PRE_CONT)), "
+                    "var c_item_str := mposjoin(mposjoin(c_item, c_frag, ws.fetch(PRE_PROP)), "
+                                               "mposjoin(c_item, c_frag, ws.fetch(PRE_FRAG)), "
                                                "ws.fetch(PROP_COM));\n"
                     "c_item := nil;\n"
-                    "c_cont := nil;\n"
+                    "c_frag := nil;\n"
                     /* merge strings from element and attribute */
                     "var res_mu := merged_union (t_iter, c_iter, t_item_str, c_item_str);\n"
                     "t_iter := res_mu.fetch(0);\n"
                     "t_item_str := res_mu.fetch(1);\n"
                 "} # end of comment processing\n"
                 /* get the string value of all processing-instruction nodes */
-                "var pi_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
+                "var pi_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                    ".select(PI).hmark(0@0);\n"
                 "if (pi_map.count() > 0) { #process processing-instructions \n"
                     "var pi_iter := pi_map.leftfetchjoin(iter);\n"
                     "var pi_item := pi_map.leftfetchjoin(item);\n"
-                    "var pi_cont := pi_map.leftfetchjoin(cont);\n"
+                    "var pi_frag := pi_map.leftfetchjoin(frag);\n"
                     /* get the string values of the processing-instruction nodes */
-                    "var pi_item_str := mposjoin(mposjoin(pi_item, pi_cont, ws.fetch(PRE_PROP)), "
-                                                "mposjoin(pi_item, pi_cont, ws.fetch(PRE_CONT)), "
+                    "var pi_item_str := mposjoin(mposjoin(pi_item, pi_frag, ws.fetch(PRE_PROP)), "
+                                                "mposjoin(pi_item, pi_frag, ws.fetch(PRE_FRAG)), "
                                                 "ws.fetch(PROP_INS));\n"
                     "pi_item := nil;\n"
-                    "pi_cont := nil;\n"
+                    "pi_frag := nil;\n"
                     /* merge strings from element and attribute */
                     "var res_mu := merged_union (t_iter, pi_iter, t_item_str, pi_item_str);\n"
                     "t_item_str := res_mu.fetch(1);\n"
@@ -4371,9 +4274,9 @@ string_value (opt_t *f, int code, char *kind)
                 "if (kind_attr.count() = kind.count())\n"
                 "{\n"
                     "kind_attr := nil;\n"
-                    "var cont := kind.get_container();\n"
-                    "item_str := mposjoin(mposjoin(item, cont, ws.fetch(ATTR_PROP)), "
-                                         "mposjoin(item, cont, ws.fetch(ATTR_CONT)), "
+                    "var frag := kind.get_fragment();\n"
+                    "item_str := mposjoin(mposjoin(item, frag, ws.fetch(ATTR_PROP)), "
+                                         "mposjoin(item, frag, ws.fetch(ATTR_FRAG)), "
                                          "ws.fetch(PROP_VAL));\n"
                     "item := nil;\n"
                 "} else {\n"
@@ -4382,34 +4285,34 @@ string_value (opt_t *f, int code, char *kind)
                     "kind_attr := kind_attr.hmark(0@0);\n"
                     "var item_attr := kind_attr.leftfetchjoin(item);\n"
                     "var iter_attr := kind_attr.leftfetchjoin(iter);\n"
-                    "var cont := kind_attr.leftfetchjoin(kind).get_container();\n"
+                    "var frag := kind_attr.leftfetchjoin(kind).get_fragment();\n"
                     "kind_attr := nil;\n"
                     "var item_attr_str "
-                        ":= mposjoin(mposjoin(item_attr, cont, ws.fetch(ATTR_PROP)), "
-                                    "mposjoin(item_attr, cont, ws.fetch(ATTR_CONT)), "
+                        ":= mposjoin(mposjoin(item_attr, frag, ws.fetch(ATTR_PROP)), "
+                                    "mposjoin(item_attr, frag, ws.fetch(ATTR_FRAG)), "
                                     "ws.fetch(PROP_VAL));\n"
                     "item_attr := nil;\n"
-                    "cont := nil;\n"
+                    "frag := nil;\n"
                     /* get element string values */
                     "kind_elem := kind_elem.hmark(0@0);\n"
                     "iter := kind_elem.leftfetchjoin(iter).materialize(kind_elem);\n"
-                    "cont := kind_elem.leftfetchjoin(kind).get_container();\n"
+                    "frag := kind_elem.leftfetchjoin(kind).get_fragment();\n"
                     "item := kind_elem.leftfetchjoin(item).materialize(kind_elem);\n"
                     "kind_elem := nil;\n"
                     /* to get all text nodes a scj is performed */
                     "var res_scj := "
                     "loop_lifted_descendant_or_self_step_with_kind_test"
-                    "(iter, item, constant2bat(cont), ws, 0, TEXT);\n"
+                    "(iter, item, constant2bat(frag), ws, 0, TEXT);\n"
                     /* variables for the result of the scj */
                     "var t_iter := res_scj.fetch(0);\n" /* CONST? */
                     "var t_item := res_scj.fetch(1);\n" /* CONST? */
-                    "var t_cont := res_scj.fetch(2);\n" /* CONST? */
+                    "var t_frag := res_scj.fetch(2);\n" /* CONST? */
                     "res_scj := nil;\n"
                     /* get the string values of the text nodes */
-                    "var t_item_str := mposjoin(mposjoin(t_item, t_cont, ws.fetch(PRE_PROP)), "
-                                               "mposjoin(t_item, t_cont, ws.fetch(PRE_CONT)), "
+                    "var t_item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
+                                               "mposjoin(t_item, t_frag, ws.fetch(PRE_FRAG)), "
                                                "ws.fetch(PROP_TEXT));\n"
-                    "t_cont := nil;\n"
+                    "t_frag := nil;\n"
                     /* for the result of the scj join with the string values */
                     "var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(t_item_str);\n"
                     "t_item := nil;\n"
@@ -4432,36 +4335,36 @@ string_value (opt_t *f, int code, char *kind)
                     /* get the string value of all comment nodes */
                     "t_iter := iter_item.hmark(0@0);\n"
                     "var t_item_str := iter_item.tmark(0@0);\n"
-                    "var c_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
+                    "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                       ".select(COMMENT).hmark(0@0);\n"
                     "if (c_map.count() > 0) { #process comments \n"
                         "var c_iter := c_map.leftfetchjoin(iter);\n"
                         "var c_item := c_map.leftfetchjoin(item);\n"
-                        "var c_cont := c_map.leftfetchjoin(cont);\n"
+                        "var c_frag := c_map.leftfetchjoin(frag);\n"
                         /* get the string values of the comment nodes */
-                        "var c_item_str := mposjoin(mposjoin(c_item, c_cont, ws.fetch(PRE_PROP)), "
-                                                   "mposjoin(c_item, c_cont, ws.fetch(PRE_CONT)), "
+                        "var c_item_str := mposjoin(mposjoin(c_item, c_frag, ws.fetch(PRE_PROP)), "
+                                                   "mposjoin(c_item, c_frag, ws.fetch(PRE_FRAG)), "
                                                    "ws.fetch(PROP_COM));\n"
                         "c_item := nil;\n"
-                        "c_cont := nil;\n"
+                        "c_frag := nil;\n"
                         /* merge strings from element and attribute */
                         "var res_mu := merged_union (t_iter, c_iter, t_item_str, c_item_str);\n"
                         "t_iter := res_mu.fetch(0);\n"
                         "t_item_str := res_mu.fetch(1);\n"
                     "} # end of comment processing\n"
                     /* get the string value of all processing-instruction nodes */
-                    "var pi_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
+                    "var pi_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                        ".select(PI).hmark(0@0);\n"
                     "if (pi_map.count() > 0) { #process processing-instructions \n"
                         "var pi_iter := pi_map.leftfetchjoin(iter);\n"
                         "var pi_item := pi_map.leftfetchjoin(item);\n"
-                        "var pi_cont := pi_map.leftfetchjoin(cont);\n"
+                        "var pi_frag := pi_map.leftfetchjoin(frag);\n"
                         /* get the string values of the processing-instruction nodes */
-                        "var pi_item_str := mposjoin(mposjoin(pi_item, pi_cont, ws.fetch(PRE_PROP)), "
-                                                    "mposjoin(pi_item, pi_cont, ws.fetch(PRE_CONT)), "
+                        "var pi_item_str := mposjoin(mposjoin(pi_item, pi_frag, ws.fetch(PRE_PROP)), "
+                                                    "mposjoin(pi_item, pi_frag, ws.fetch(PRE_FRAG)), "
                                                     "ws.fetch(PROP_INS));\n"
                         "pi_item := nil;\n"
-                        "pi_cont := nil;\n"
+                        "pi_frag := nil;\n"
                         /* merge strings from element and attribute */
                         "var res_mu := merged_union (t_iter, pi_iter, t_item_str, pi_item_str);\n"
                         "t_iter := res_mu.fetch(0);\n"
@@ -4591,20 +4494,20 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "var elem := kind.get_type(ELEM);\n"
             "elem := elem.hmark(0@0);\n"
             "var kind_elem := elem.leftfetchjoin(kind);\n"
-            "var cont_elem := kind_elem.get_container();\n"
+            "var frag_elem := kind_elem.get_fragment();\n"
             "kind_elem := nil;\n"
             "var item_elem := elem.leftfetchjoin(item).materialize(elem);\n"
-            "var kind_node := mposjoin (item_elem, cont_elem, ws.fetch(PRE_KIND));\n"
+            "var kind_node := mposjoin (item_elem, frag_elem, ws.fetch(PRE_KIND));\n"
             "var text := kind_node.ord_uselect(TEXT).hmark(0@0);\n"
             "var item_text := text.leftfetchjoin(item_elem);\n"
-            "var cont_text := text.leftfetchjoin(cont_elem);\n"
+            "var frag_text := text.leftfetchjoin(frag_elem);\n"
             "item_elem := nil;\n"
-            "cont_elem := nil;\n"
-            "var text_str := mposjoin (mposjoin (item_text, cont_text, ws.fetch(PRE_PROP)), "
-                                      "mposjoin (item_text, cont_text, ws.fetch(PRE_CONT)), "
+            "frag_elem := nil;\n"
+            "var text_str := mposjoin (mposjoin (item_text, frag_text, ws.fetch(PRE_PROP)), "
+                                      "mposjoin (item_text, frag_text, ws.fetch(PRE_FRAG)), "
                                       "ws.fetch(PROP_TEXT));\n"
             "item_text := nil;\n"
-            "cont_text := nil;\n"
+            "frag_text := nil;\n"
             "var str_text := text_str.reverse().leftfetchjoin(text);\n"
             "text_str := nil;\n"
             "text := nil;\n"
@@ -4728,7 +4631,7 @@ is2ns_node (opt_t *f, int counter)
             "_elem_level := _elem_level%03u;\n"
             "_elem_kind := _elem_kind%03u;\n"
             "_elem_prop := _elem_prop%03u;\n"
-            "_elem_cont := _elem_cont%03u;\n"
+            "_elem_frag := _elem_frag%03u;\n"
             /* select text root nodes */
             "var rootnodes := _elem_level.ord_uselect(chr(0)).mirror();\n"
             "rootnodes := rootnodes.leftfetchjoin(_elem_kind);\n"
@@ -4739,10 +4642,10 @@ is2ns_node (opt_t *f, int counter)
             "{\n"
 
             "var text_prop := textnodes.leftfetchjoin(_elem_prop);\n"
-            "var text_cont := textnodes.leftfetchjoin(_elem_cont);\n"
-            "var text_str := mposjoin (text_prop, text_cont, ws.fetch(PROP_TEXT));\n"
+            "var text_frag := textnodes.leftfetchjoin(_elem_frag);\n"
+            "var text_str := mposjoin (text_prop, text_frag, ws.fetch(PROP_TEXT));\n"
             "text_prop := nil;\n"
-            "text_cont := nil;\n"
+            "text_frag := nil;\n"
 
             "var res_mu_is2ns := merged_union (elem_nodes, textnodes, \"\", text_str, 0@0, 1@0);\n"
 
@@ -4793,8 +4696,8 @@ is2ns_node (opt_t *f, int counter)
                                      "_elem_kind,\n"
             "othernodes.leftfetchjoin(_elem_prop%03u), "
                                      "_elem_prop,\n"
-            "othernodes.leftfetchjoin(_elem_cont%03u), "
-                                     "_elem_cont,\n"
+            "othernodes.leftfetchjoin(_elem_frag%03u), "
+                                     "_elem_frag,\n"
             "othernodes.leftfetchjoin(_elem_iter%03u.mirror()), "
                                      "oid(nil));\n"
             "_elem_iter := res_mu_is2ns.fetch(1).chk_order();\n" /* CONST? */
@@ -4802,7 +4705,7 @@ is2ns_node (opt_t *f, int counter)
             "_elem_level:= res_mu_is2ns.fetch(3);\n" /* CONST? */
             "_elem_kind := res_mu_is2ns.fetch(4);\n" /* CONST? */
             "_elem_prop := res_mu_is2ns.fetch(5);\n" /* CONST? */
-            "_elem_cont := res_mu_is2ns.fetch(6);\n" /* CONST? */
+            "_elem_frag := res_mu_is2ns.fetch(6);\n" /* CONST? */
             "var preNew_preOld := res_mu_is2ns.fetch(7);\n" /* CONST? */
             /* update pre numbers */
             "_attr_own := _attr_own%03u.leftjoin(preNew_preOld.reverse());\n"
@@ -4810,11 +4713,11 @@ is2ns_node (opt_t *f, int counter)
             "_attr_iter   := _attr_iter%03u  ;\n"
             "_attr_qn     := _attr_qn%03u    ;\n"
             "_attr_prop   := _attr_prop%03u  ;\n"
-            "_attr_cont   := _attr_cont%03u  ;\n"
+            "_attr_frag   := _attr_frag%03u  ;\n"
             "_r_attr_iter := _r_attr_iter%03u;\n"
             "_r_attr_qn   := _r_attr_qn%03u  ;\n"
             "_r_attr_prop := _r_attr_prop%03u;\n"
-            "_r_attr_cont := _r_attr_cont%03u;\n",
+            "_r_attr_frag := _r_attr_frag%03u;\n",
             counter, counter, counter, counter,
             counter, counter, counter, counter,
             counter,
@@ -4902,9 +4805,8 @@ static int
 translateAggregates (opt_t *f, int code, int rc,
                      PFfun_t *fun, PFcnode_t *args, char *op, int cur_level)
 {
-    assert (fun->sig_count == 1);
     int ic = get_kind(PFty_prime(PFty_defn(TY(L(args)))));
-    int rcode = get_kind(fun->sigs[0].ret_ty);
+    int rcode = get_kind(fun->ret_ty);
     char *item_ext = (code)?kind_str(rcode):"";
     type_co t_co = kind_container(rcode);
 
@@ -5100,37 +5002,37 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     milprintf(f,
             "if (iter%03u.count() != 0) { # fn:id%s\n"
             "var strings := item%s%03u.materialize(ipik%03u);\n"
-            "var cont := kind.get_container();\n"
+            "var frag := kind.get_fragment();\n"
             "strings := strings.[normSpace]();\n"
             "strings := strings.ll_tokenize(strings.project(\" \"));\n"
             "var id_str := strings.tmark(0@0);\n"
             "var oid_iter := strings.hmark(0@0).leftfetchjoin(iter%03u);\n"
             "strings := nil;\n"
+            "#var oid_map := oid_iter.leftfetchjoin(iter.reverse());\n"
             "var oid_map := oid_iter.leftjoin(iter.reverse());\n"
-            "cont := oid_map.leftfetchjoin(cont);\n"
+            "frag := oid_map.leftfetchjoin(frag);\n"
             "oid_map := nil;\n"
             /* get id nodes */
-            "# var nodes := mvaljoin( mposjoin(id_str, cont, ws.fetch(PRE_NID)), cont, ws.fetch(ID%s_NID));\n"
-            "var iterator := cont.tunique().reverse();\n"
+            "# var nodes := mvaljoin(id_str, frag, ws.fetch(ID%s_PRE));\n"
+            "var iterator := frag.tunique().reverse();\n"
             "var nodes;\n"
             "if (iterator.count() = 1) {\n"
-            "    nodes := id_str.leftjoin(ws.fetch(ID%s_NID).fetch(iterator.fetch(0)))"
-                               ".leftjoin(ws.fetch( NID_RID).fetch(iterator.fetch(0))).[swizzle](ws.fetch(MAP_PID).fetch(iterator.fetch(0)));\n"
+            "    nodes := id_str.leftjoin(ws.fetch(ID%s_PRE).fetch(iterator.fetch(0)));\n"
             "} else {\n"
             "    var nodes_part;\n"
-            "    var cont_part;\n"
+            "    var frag_part;\n"
             "    var id_str_part;\n"
             "    nodes := bat(oid,oid).access(BAT_WRITE);\n"
             "    iterator@batloop () {\n"
-            "        cont_part := cont.ord_uselect($t).mirror();\n"
-            "        id_str_part := cont_part.leftfetchjoin(id_str);\n"
-            "        nodes_part := id_str_part.leftjoin(ws.fetch(ID%s_NID).fetch($t))"
-                                             ".leftjoin(ws.fetch( NID_RID).fetch($t)).[swizzle](ws.fetch(MAP_PID).fetch($t));\n"
+            "        frag_part := frag.ord_uselect($t).mirror();\n"
+            "        id_str_part := frag_part.leftfetchjoin(id_str);\n"
+            "        nodes_part := id_str_part.leftjoin(ws.fetch(ID%s_PRE)"
+                                                         ".fetch($t));\n"
             "        nodes := nodes.insert(nodes_part);\n"
             "    }\n"
             "}\n"
             "oid_map := nodes.hmark(0@0);\n"
-            "kind := oid_map.leftfetchjoin(cont).set_kind(ELEM);\n"
+            "kind := oid_map.leftfetchjoin(frag).set_kind(ELEM);\n"
             "iter := oid_map.leftfetchjoin(oid_iter);\n"
             "oid_iter := nil;\n"
             "item := nodes.tmark(0@0);\n"
@@ -5517,51 +5419,51 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
             "kind := kind.materialize(ipik);\n"
             "var map := kind.get_type(ELEM).hmark(0@0);\n"
             "var elem := map.leftfetchjoin(item);\n"
-            "var elem_cont := map.leftfetchjoin(kind.get_container());\n"
+            "var elem_frag := map.leftfetchjoin(kind.get_fragment());\n"
             "var elem_oid := map;\n"
             "map := nil;\n"
-            "var elem_kind := mposjoin(elem, elem_cont, ws.fetch(PRE_KIND));\n"
+            "var elem_kind := mposjoin(elem, elem_frag, ws.fetch(PRE_KIND));\n"
             "map := elem_kind.ord_uselect(ELEMENT).hmark(0@0);\n"
             "elem_kind := nil;\n"
             "elem := map.leftfetchjoin(elem);\n"
-            "elem_cont := map.leftfetchjoin(elem_cont);\n"
+            "elem_frag := map.leftfetchjoin(elem_frag);\n"
             "elem_oid  := map.leftfetchjoin(elem_oid);\n"
             "map := nil;\n"
             /* gets the qname keys */
-            "elem := mposjoin(elem, elem_cont, ws.fetch(PRE_PROP));\n"
+            "elem := mposjoin(elem, elem_frag, ws.fetch(PRE_PROP));\n"
 
             /* looks up the attribute nodes */
             "map := kind.get_type(ATTR).hmark(0@0);\n"
             "var attr := map.leftfetchjoin(item);\n"
-            "var attr_cont := map.leftfetchjoin(kind.get_container());\n"
+            "var attr_frag := map.leftfetchjoin(kind.get_fragment());\n"
             "var attr_oid := map;\n"
             "map := nil;\n"
             /* gets the qname keys */
-            "attr := mposjoin(attr, attr_cont, ws.fetch(ATTR_QN));\n"
+            "attr := mposjoin(attr, attr_frag, ws.fetch(ATTR_QN));\n"
             /* merges the qname keys of attributes and element nodes */
-            "var res_mu := merged_union(elem_oid, attr_oid, elem, attr, elem_cont, attr_cont);\n"
+            "var res_mu := merged_union(elem_oid, attr_oid, elem, attr, elem_frag, attr_frag);\n"
             "elem := nil;\n"
-            "elem_cont := nil;\n"
+            "elem_frag := nil;\n"
             "elem_oid := nil;\n"
             "attr := nil;\n"
-            "attr_cont := nil;\n"
+            "attr_frag := nil;\n"
             "attr_oid := nil;\n"
             "var qname_oid  := res_mu.fetch(0);\n" /* CONST? */
             "var qname      := res_mu.fetch(1);\n" /* CONST? */
-            "var qname_cont := res_mu.fetch(2);\n" /* CONST? */
+            "var qname_frag := res_mu.fetch(2);\n" /* CONST? */
             "res_mu := nil;\n",
             name);
 
     if (!strcmp(name,"local-name"))
         milprintf(f,
-                "var res := mposjoin(qname, qname_cont, ws.fetch(QN_LOC));\n");
+                "var res := mposjoin(qname, qname_frag, ws.fetch(QN_LOC));\n");
     else if (!strcmp(name,"namespace-uri"))
         milprintf(f,
-                "var res := mposjoin(qname, qname_cont, ws.fetch(QN_URI));\n");
+                "var res := mposjoin(qname, qname_frag, ws.fetch(QN_URI));\n");
     else if (!strcmp(name,"name"))
         milprintf(f,
                 /* creates the string representation of the qnames */
-                "var prefixes := mposjoin(qname, qname_cont, ws.fetch(QN_PREFIX));\n"
+                "var prefixes := mposjoin(qname, qname_frag, ws.fetch(QN_PREFIX));\n"
                 "var prefix_bool := prefixes.[=](\"\");\n"
                 "var true_oid := prefix_bool.ord_uselect(true).hmark(0@0);\n"
                 "var false_oid := prefix_bool.ord_uselect(false).hmark(0@0);\n"
@@ -5573,7 +5475,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
                 "prefixes := nil;\n"
                 "prefixes := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
-                "var res := prefixes.[+](mposjoin(qname, qname_cont, ws.fetch(QN_LOC)));\n"
+                "var res := prefixes.[+](mposjoin(qname, qname_frag, ws.fetch(QN_LOC)));\n"
                 "prefixes := nil;\n");
     else
         mps_error ("no case for '%s' in function fn_name.",
@@ -5581,7 +5483,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
 
     milprintf(f,
             "qname := nil;\n"
-            "qname_cont := nil;\n"
+            "qname_frag := nil;\n"
             "iter := qname_oid.leftfetchjoin(iter);\n"
             "qname_oid := nil;\n");
 
@@ -5633,9 +5535,9 @@ eval_join_helper (opt_t *f, int code, int number,
                     "var join_item%i;\n"
                     "{\n"
                     "var join_item_str;\n"
-                    "var cont := kind%03u.get_container();\n"
-                    "join_item_str := mposjoin (mposjoin (item%03u, cont, ws.fetch(ATTR_PROP)), "
-                                               "mposjoin (item%03u, cont, ws.fetch(ATTR_CONT)), "
+                    "var frag := kind%03u.get_fragment();\n"
+                    "join_item_str := mposjoin (mposjoin (item%03u, frag, ws.fetch(ATTR_PROP)), "
+                                               "mposjoin (item%03u, frag, ws.fetch(ATTR_FRAG)), "
                                                "ws.fetch(PROP_VAL));\n",
                     number, res, res, res);
         }
@@ -5645,9 +5547,9 @@ eval_join_helper (opt_t *f, int code, int number,
                     "var join_item%i;\n"
                     "{\n"
                     "var join_item_str;\n"
-                    "var cont := kind%03u.get_container();\n"
-                    "join_item_str := mposjoin (mposjoin (item%03u, cont, ws.fetch(PRE_PROP)), "
-                                               "mposjoin (item%03u, cont, ws.fetch(PRE_CONT)), "
+                    "var frag := kind%03u.get_fragment();\n"
+                    "join_item_str := mposjoin (mposjoin (item%03u, frag, ws.fetch(PRE_PROP)), "
+                                               "mposjoin (item%03u, frag, ws.fetch(PRE_FRAG)), "
                                                "ws.fetch(PROP_TEXT));\n",
                     number, res, res, res);
         }
@@ -5741,7 +5643,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
     args = R(args);
     c = L(args);
-    fun = c->sem.apply.fun;
+    fun = c->sem.fun;
 
     args = R(args);
     c = L(args);
@@ -5837,8 +5739,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         {
             milprintf(f,
                     "{\n"
-                    "var mapping := loop%03u.reverse().mirror();\n",
-                    0);
+                    "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
+                    0, 0);
             for (i = 0; i < cur_level; i++)
             {
                 milprintf(f, 
@@ -5934,10 +5836,19 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 fst_res);
     }
 
-    if (!(lev_snd & ~UDF_LEV)) /* default case: lev_snd = level 0 */
+    if (!(lev_snd & ~UDF_LEV)) /* default case */
     /* the above line only works because the current scope 0 is the one
        introduced by the UDF */
     {
+        /* introduce the correct map relation (if lev_snd == UDF_LEV) */
+        if (lev_snd == UDF_LEV)
+        {
+            milprintf(f,
+                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
+                                           ".leftfetchjoin(outer%03u);\n",
+                    snd_res, 0, 0);
+        }
+
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
@@ -6026,7 +5937,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             snd_res, kind_str(rc2),
             snd_res,
             snd_res, cur_level, cur_level);
-
+        
     /* mapBack (f, cur_level); */
     cleanUpLevel (f, cur_level);
     milprintf(f, "}  # end of for-translation\n");
@@ -6052,8 +5963,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     /* retrieves the join input arguments 'join_item1' and 'join_item2'
        from its value containers as well as covers the special cases
        (attribute step and text() test) */
-    assert (fun->sig_count == 1);
-    PFty_t input_type = (fun->sigs[0].par_ty)[0];
+    PFty_t input_type = (fun->par_ty)[0];
     if (PFty_subtype (PFty_decimal (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, dec_container());
@@ -6266,71 +6176,31 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  */
 static void
 translateUDF (opt_t *f, int cur_level, int counter, 
-        PFapply_t apply, PFcnode_t *args)
+        PFfun_t *fun, PFcnode_t *args)
 {
     int i = 0;
-    PFcnode_t *dst_args = NULL;
-
-    milprintf(f, "{ # begin of UDF - function call\n");
-
-    if (apply.rpc_uri != NULL)
-    {
-        /* The extra parameter 'dst' of an RPC call is not listed in
-         * fun->params[], so translate it separately. */
-        milprintf(f, 
-                "\n# begin of translate the 'dst' param of RPC call\n"
-                "var rpc_vid  := bat(oid,oid);\n"
-                "var rpc_iter := bat(oid,oid);\n"
-                "var rpc_item := bat(oid,oid);\n"
-                "var rpc_dsts := bat(oid,str);\n");
-
-        dst_args = L(args);
-        while (dst_args && dst_args->kind != c_nil){
-            if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
-            {
-                milprintf(f, 
-                        "iter     := iter.materialize(ipik);\n"
-                        "item     := item.materialize(ipik);\n"
-                        "rpc_vid  := rpc_vid.append(iter.project(oid(%iLL)));\n"
-                        "rpc_iter := rpc_iter.append(iter);\n"
-                        "rpc_item := rpc_item.append(item);\n",
-                        i);
-
-            }
-            i++;
-            dst_args = R(dst_args);
-        }
-        milprintf(f, 
-                "rpc_dsts := rpc_item%s;\n"
-                "rpc_dsts := rpc_iter.reverse().join(rpc_dsts);\n"
-                "# end of translate the 'dst' param of RPC call\n",
-                val_join(STR));
-        args = R(args);
-        i = 0;
-    }
 
     counter++;
     milprintf(f,
-            "# begin of add args in UDF function call\n"
+            "{ # UDF - function call\n"
             "var fun_base%03u := proc_vid.find(\"%s\");\n"
-            "var fun_vid%03u  := bat(void,oid);\n"
+            "var fun_vid%03u := bat(void,oid);\n"
             "var fun_iter%03u := bat(void,oid);\n"
             "var fun_item%03u := bat(void,oid);\n"
             "var fun_kind%03u := bat(void,int);\n",
-            counter, apply.fun->sig, counter, counter, counter, counter);
+            counter, fun->sig, counter, counter, counter, counter);
 
-    while ((args->kind != c_nil) && (apply.fun->params[i]))
+    while ((args->kind != c_nil) && (fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                "iter := iter.materialize(ipik);\n"
                 "item := item.materialize(ipik);\n"
-                "kind := kind.materialize(ipik);\n"
-                "fun_vid%03u := fun_vid%03u.append(item.project(oid(fun_base%03u + %iLL)));\n"
+                "fun_vid%03u := fun_vid%03u.append(iter.project(oid(fun_base%03u + %iLL)));\n"
                 "fun_iter%03u := fun_iter%03u.append(iter);\n"
                 "fun_item%03u := fun_item%03u.append(item);\n"
                 "kind := kind.materialize(ipik);\n"
-                "fun_kind%03u := fun_kind%03u.append(kind);\n\n",
+                "fun_kind%03u := fun_kind%03u.append(kind);\n"
+                "# end of add arg in UDF function call\n",
                 counter, counter, counter, i, 
                 counter, counter, 
                 counter, counter,
@@ -6338,14 +6208,15 @@ translateUDF (opt_t *f, int cur_level, int counter,
         args = R(args);
         i++;
     }
-    milprintf(f, "# end of add arg in UDF function call\n");
 
     /* map needed global variables into the function */
     milprintf(f, "var expOid;\n");
     getExpanded (f,
             /* we don't want to get the variables from
-               the surrounding scope like for but from the current */
-            cur_level+1, apply.fun->fid);
+               the surrounding scope like for
+               but from the current */
+            cur_level+1, 
+            fun->fid);
     milprintf(f,
             "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
@@ -6374,56 +6245,12 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "fun_kind%03u := fun_kind%03u.tmark(0@0);\n",
             counter, counter, counter, counter,
             counter, counter, counter, counter);
-
-    /* Defind a variable to hold the results of a function call. */
-    if (apply.rpc_uri != NULL) {
-        /* call rpc_sender => cont~=kind
-         * extract return value (s) from the message node
-         * into a iter|item|kind table
-         * message node: (item=0@0, kind=~cont)
-         */
-        milprintf(f, 
-                "\n"
-                "{ # begin of RPC call\n"
-                "  module(\"xquery_rpc\");\n"
-                "  var nr_iters := count(rpc_iter); # a simple estimation\n"
-                "  var res := nil;\n"
-                "  if (genType.search(\"iterrpc\") >= 0) {\n"
-                "    res := doIterativeRPC(nr_iters, genType, \"%s\", \"%s\", \"%s\", ws, rpc_dsts, rpc_iter,\n"
-                "                   fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,\n"
-                "                   int_values, dbl_values, dec_values, str_values);\n"
-                "  } else {\n"
-                "    res := doLoopLiftedRPC(nr_iters, genType, \"%s\", \"%s\", \"%s\", ws, rpc_dsts,\n"
-                "                   fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,\n"
-                "                   int_values, dbl_values, dec_values, str_values);\n"
-                "  }\n"
-
-                "  iter := res.fetch(0);\n"
-                "  item := res.fetch(1);\n"
-                "  kind := res.fetch(2);\n"
-
-                "  if (type(iter) = bat) {\n"
-                "    ipik := iter;\n"
-                "  } else {\n"
-                "    if (type(item) = bat) {\n"
-                "      ipik := item;\n"
-                "    } else {\n"
-                "      ipik := kind;\n"
-                "    }\n"
-                "  }\n"
-                "} # end of RPC call\n",
-                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
-                counter, counter, counter, counter,
-                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
-                counter, counter, counter, counter);
-    } else {
-        /* call the proc */
-        milprintf(f, PFudfMIL(),
-                apply.fun->sig,
-                cur_level, cur_level, cur_level, cur_level, 
-                counter, counter, counter, counter, 
-                apply.fun->qname.loc, apply.fun->qname.loc);
-    }
+    /* call the proc */
+    milprintf(f, PFudfMIL(), fun->sig,
+            cur_level, cur_level, cur_level, cur_level, 
+            counter, counter, counter, counter, 
+            fun->qname.loc, fun->qname.loc,
+            counter, counter, counter, counter);
     milprintf(f, "} # end of UDF - function call\n");
 }
 
@@ -6454,12 +6281,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOCID_NAME))@batloop () {\n"
+                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOC_LOADED))@batloop () {\n"
                 "    time_shred :+= add_doc(ws, $t);\n"
                 "}\n"
-                "item := item%s.leftjoin(reverse(ws.fetch(DOCID_NAME))); # get doc-oids first\n"
-                "kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);\n"
-                "item := item.leftfetchjoin(ws.fetch(DOCID_OID)).leftjoin(doc_root).tmark(0@0);\n"
+                "kind := set_kind(item%s.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
+                "item := 0@0;\n"
                 "} # end of translate fn:doc (string?) as document?\n",
                 item_ext,
                 (rc)?"":val_join(STR),
@@ -6488,26 +6314,26 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  var elements := kind.get_type(ELEM).mirror();\n"
                 "  var elem_iters := elements.leftfetchjoin(iter);\n"
                 "  var elem_items := elements.leftfetchjoin(item);\n"
-                "  var elem_conts := elements.leftfetchjoin(kind.get_container());\n"
+                "  var elem_frags := elements.leftfetchjoin(kind.get_fragment());\n"
                 "  var elem_attrs := elements.project(oid(nil));\n"
                 "  var attributes := kind.get_type(ATTR).mirror();\n"
                 "  var attr_iters := attributes.leftfetchjoin(iter).materialize(attributes);\n"
                 "  var attr_attrs := attributes.leftfetchjoin(item).materialize(attributes);\n"
-                "  var attr_conts := attributes.leftfetchjoin(kind.get_container());\n"
+                "  var attr_frags := attributes.leftfetchjoin(kind.get_fragment());\n"
                 "  var attr_key := attributes.hmark(0@0);\n"
                 "  var temp_attr := attr_attrs.tmark(0@0);\n"
-                "  var temp_cont := attr_conts.tmark(0@0);\n"
+                "  var temp_frag := attr_frags.tmark(0@0);\n"
                 "  var attr_items := attr_key.reverse().leftfetchjoin("
-                    "mposjoin(temp_attr, temp_cont, ws.fetch(ATTR_OWN)));\n"
+                    "mposjoin(temp_attr, temp_frag, ws.fetch(ATTR_OWN)));\n"
                 "  attr_key := nil;\n"
                 "  temp_attr := nil;\n"
-                "  temp_cont := nil;\n"
+                "  temp_frag := nil;\n"
                 "  sorting := elem_iters.union(attr_iters).tsort();\n"
                 "  elem_iters := nil;\n"
                 "  attr_iters := nil;\n"
-                "  sorting := sorting.CTrefine(elem_conts.union(attr_conts));\n"
-                "  elem_conts := nil;\n"
-                "  attr_conts := nil;\n"
+                "  sorting := sorting.CTrefine(elem_frags.union(attr_frags));\n"
+                "  elem_frags := nil;\n"
+                "  attr_frags := nil;\n"
                 "  sorting := sorting.CTrefine(elem_items.union(attr_items));\n"
                 "  elem_items := nil;\n"
                 "  attr_items := nil;\n"
@@ -6551,18 +6377,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "{ # fn:root ()\n"
-                "var cont := kind.get_container();\n"
+                "var frag := kind.get_fragment();\n"
                 /* get pre values for attributes */
                 "kind := kind.materialize(ipik);\n"
                 "var attr := kind.get_type(ATTR).hmark(0@0);\n"
                 "if (attr.count() != 0) {\n"
-                "var attr_cont := attr.leftfetchjoin(cont);\n"
+                "var attr_frag := attr.leftfetchjoin(frag);\n"
                 "var attr_item := attr.leftfetchjoin(item);\n"
                 "var attr_iter := attr.leftfetchjoin(iter);\n"
                 "attr := nil;\n"
-                "var attr_pre := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_OWN));\n"
+                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_OWN));\n"
                 "attr_item := nil;\n"
-                "attr_cont := nil;\n"
+                "attr_frag := nil;\n"
                 "var elem := kind.get_type(ELEM).hmark(0@0);\n"
                 "var elem_item := elem.leftfetchjoin(item);\n"
                 "var elem_iter := elem.leftfetchjoin(iter);\n"
@@ -6571,11 +6397,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item := res_mu.fetch(1);\n" /* CONST? */
                 "}\n"
 
-                "var transient_nodes := cont.ord_uselect(WS).hmark(0@0);\n"
+                "var transient_nodes := frag.ord_uselect(WS).hmark(0@0);\n"
                 /* retrieve only transient nodes */
                 "if (transient_nodes.count() = iter.count()) {\n"
                 "item := leftthetajoin(item, "
-                                      "ws.fetch(WS_FRAG).fetch(WS).reverse().mirror(), "
+                                      "ws.fetch(WS_FRAG).reverse().mirror(), "
                                       "GE).{max}();\n"
                 "item := item.tmark(0@0);\n"
                 /* retrieve only document nodes */
@@ -6586,11 +6412,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var t_item := transient_nodes.leftfetchjoin(item);\n"
                 "var t_iter := transient_nodes.leftfetchjoin(iter);\n"
                 "t_item := leftthetajoin(t_item, "
-                                        "ws.fetch(WS_FRAG).fetch(WS).reverse().mirror(), "
+                                        "ws.fetch(WS_FRAG).reverse().mirror(), "
                                         "GE).{max}();\n"
                 "t_item := t_item.tmark(0@0);\n"
 
-                "var doc_nodes := cont.ord_uselect(WS,nil,false,false).hmark(0@0);\n"
+                "var doc_nodes := frag.ord_uselect(WS,nil,false,false).hmark(0@0);\n"
                 "var d_iter := doc_nodes.leftfetchjoin(iter);\n"
                 "var d_kind := doc_nodes.leftfetchjoin(kind);\n"
 
@@ -7183,8 +7009,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"sum")))
     {
-        assert (fun->sig_count == 1);
-        int rcode = get_kind(fun->sigs[0].ret_ty);
+        int rcode = get_kind(fun->ret_ty);
         type_co t_co = kind_container(rcode);
         item_ext = kind_str(rcode);
 
@@ -7275,8 +7100,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            assert (fun->sig_count == 1); 
-            rc = get_kind(fun->sigs[0].ret_ty);
+            rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "abs");
@@ -7287,8 +7111,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            assert (fun->sig_count == 1); 
-            rc = get_kind(fun->sigs[0].ret_ty);
+            rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "ceil");
@@ -7299,8 +7122,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            assert (fun->sig_count == 1); 
-            rc = get_kind(fun->sigs[0].ret_ty);
+            rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "floor");
@@ -7311,8 +7133,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            assert (fun->sig_count == 1); 
-            rc = get_kind(fun->sigs[0].ret_ty);
+            rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "round_up");
@@ -7391,10 +7212,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var cont_before := kind%03u.[<](kind);\n"
-                "var cont_equal := kind%03u.[=](kind);\n"
+                "var frag_before := kind%03u.[<](kind);\n"
+                "var frag_equal := kind%03u.[=](kind);\n"
                 "var pre_before := item%03u.[<](item);\n"
-                "var node_before := cont_before.[or](cont_equal.[and](pre_before));\n"
+                "var node_before := frag_before.[or](frag_equal.[and](pre_before));\n"
                 "item := node_before.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
                 "} # end of translate op:node-before (node, node) as boolean\n",
@@ -7413,12 +7234,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var cont_after := kind%03u.[>](kind);\n"
-                "var cont_equal := kind%03u.[=](kind);\n"
+                "var frag_after := kind%03u.[>](kind);\n"
+                "var frag_equal := kind%03u.[=](kind);\n"
                 "var pre_after := item%03u.[>](item);\n"
-                "var node_after := cont_after[or](cont_equal[and](pre_after));\n"
-                "cont_after := nil;\n"
-                "cont_equal := nil;\n"
+                "var node_after := frag_after[or](frag_equal[and](pre_after));\n"
+                "frag_after := nil;\n"
+                "frag_equal := nil;\n"
                 "pre_after := nil;\n"
                 "item := node_after.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
@@ -7438,10 +7259,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var cont_equal := kind%03u.[=](kind);\n"
+                "var frag_equal := kind%03u.[=](kind);\n"
                 "var pre_equal := item%03u.[=](item);\n"
-                "var node_equal := cont_equal[and](pre_equal);\n"
-                "cont_equal := nil;\n"
+                "var node_equal := frag_equal[and](pre_equal);\n"
+                "frag_equal := nil;\n"
                 "pre_equal := nil;\n"
                 "item := node_equal.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
@@ -7619,101 +7440,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# ignored fn:unordered\n");
         return translate2MIL (f, code, cur_level, counter, L(args));
     }
-    else if (PFqname_eq(fnQname, PFqname (PFns_upd,"delete")) == 0)
-    {
-        milprintf(f, "# upd:delete (node) as stmt\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        milprintf(f,
-                  "int_values := int_values.append(UPDATE_DELETE);\n"
-                  "var delitemID := int_values.reverse().find(UPDATE_DELETE);\n"
-                  "var item1 := constant2bat(delitemID);\n"
-                  "var item2 := constant2bat(item);\n"
-                  "var item3 := constant2bat(nil);\n"
-                  "var item4 := item3;\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind);\n"
-                  "var kind3 := constant2bat(int(nil));\n"
-                  "var kind4 := kind3;\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n");
-        return NORMAL;
-    }        
-    else if (PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsFirst")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsLast")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_upd,"insertBefore")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_upd,"insertAfter")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_upd,"replaceValue")) == 0 ||
-             PFqname_eq(fnQname, PFqname (PFns_upd,"rename")) == 0)
-    {
-        char *func = PFqname_loc(fnQname);
-        char *update_cmd = NULL, *arg = "node";
-
-        if (strcmp(func, "insertIntoAsLast") == 0)
-            update_cmd = "UPDATE_INSERT_LAST";
-        else if (strcmp(func, "insertIntoAsFirst") == 0)
-            update_cmd = "UPDATE_INSERT_FIRST";
-        else if (strcmp(func, "insertBefore") == 0)
-            update_cmd = "UPDATE_INSERT_BEFORE";
-        else if (strcmp(func, "insertAfter") == 0)
-            update_cmd = "UPDATE_INSERT_AFTER";
-        else if (strcmp(func, "replaceValue") == 0) {
-            update_cmd = "UPDATE_REPLACE";
-            arg = "str";
-        } else if (strcmp(func, "rename") == 0) {
-            update_cmd = "UPDATE_RENAME";
-            arg = "str";
-        }
-
-        milprintf(f, "# upd:%s (node, %s) as stmt\n", func, arg);
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f,
-                  "int_values := int_values.append(%s);\n"
-                  "var cmdID := int_values.reverse().find(%s);\n"
-                  "var item1 := constant2bat(cmdID);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := constant2bat(item);\n"
-                  "var item4 := constant2bat(nil);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(kind);\n"
-                  "var kind4 := constant2bat(int(nil));\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik%03u.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
-                  "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik%03u.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
-                  "                           iter, iter);\n"
-                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
-                  "                          merge1.fetch(1), merge2.fetch(1),\n"
-                  "                          merge1.fetch(2), merge2.fetch(2),\n"
-                  "                          merge1.fetch(3), merge2.fetch(3));\n"
-                  "item := merge.fetch(1);\n"
-                  "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  update_cmd, update_cmd, counter, counter, counter, counter);
-        deleteResult (f, counter);
-        return NORMAL;
-    }
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
     {
         if (fun->arity == 0)
@@ -7766,328 +7492,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         return NORMAL;
     }
-#ifdef HAVE_PFTIJAH
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"tijah-command")))
-    {
-        char *item_ext = kind_str(STR);
 
-        int rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (rc == NORMAL)
-            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
-        add_empty_strings (f, STR, cur_level);
-        counter++;
-        saveResult_ (f, counter, STR);
-    
-        milprintf(f,
-            "{ # fn:tijah-command\n"
-            "var strings := item%s%03u;\n"
-            "item := [run_tijah_command](strings).[oid]();\n"
-            "iter := loop%03u;\n"
-            "ipik := iter;\n"
-            "pos := 1@0;\n"
-            "kind := BOOL;\n"
-            "} # end of fn:starts-with\n",
-            item_ext, counter,
-            cur_level);
-        deleteResult_ (f, counter, STR);
-        return NORMAL;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query")) )
-    {
-        milprintf(f, 
-                "{ # translate fn:tijah-query\n"
-	);
-        if (fun->arity == 3) {
-	  /* translate the first options parameter*/
-          translate2MIL (f, NORMAL, cur_level, counter, L(args));
-
-	  /* generate the serialization code */
-          milprintf(f, 
-		"      var optbat := serialize_tijah_opt(ws,1,iter,iter,item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
-
-	} else {
-	  /* no options defined */
-          milprintf(f, 
-                "      var optbat := new(str,str,32);\n");
-	}
-
-        if (fun->arity == 3) { /* get argument string */
-          rc = translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
-	} else {
-	  rc = translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-	}
-	++counter;
-        saveResult (f, counter);
-
-        if (fun->arity == 3) { /* get argument string */
-          translate2MIL (f, code, cur_level, ++counter, RL(args));
-	} else {
-          translate2MIL (f, code, cur_level, ++counter, L(args));
-	}
-       
-	milprintf(f,
-                "if (loop%03u.count() = 1) {\n"
-                "    var nexi_query := str_values.fetch(item%03u);\n"
-		"    var nexi_score;\n"
-                "    nexi_score := run_tijah_query(optbat,nexi_query);\n"
-		"    nexi_score := nexi_score.tsort_rev();\n"
-		, cur_level, counter-1
-	);
-
-	/* PROC tijah2pf(BAT[oid,dbl] nexi_score) : BAT := */
-	milprintf(f,
-          "var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
-          "var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
-          "item  := nexi_score.hmark(0@0);\n"
-          "var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
-          "item := item.join(pfpre).sort().tmark(0@0);\n"
-	  );
-
-	/* PROC align_frag() : void := */
-	milprintf(f,
-          "var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
-          "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
-          "needed_docs@batloop()\n"
-          "{\n"
-          "      if (not(loaded_docs.exist($t))) {\n"
-          "              ws.add_doc($t); }\n"
-          "}\n"
-          "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
-          "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
-          "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
-          "kind := set_kind(frag, ELEM);\n"
-	  "iter := item.project(loop%03u.fetch(0));\n"
-          "ipik := iter;\n"
-	  "ws_tijah_score := update_tijah_scores(ws,ws_tijah_score,item,kind,nexi_score.tmark(0@0));\n"
-	  "} else {\n"
-	  "  ERROR(\"unexpected size of loopxxx tijah_query()\"); }\n"
-	  , cur_level
-	);
-        deleteResult_ (f, --counter, STR);
-
-        milprintf(f, "} # end of translate fn:tijah_query\n");
-        return rc;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score")) ) 
-    {
-        milprintf(f, 
-                "{ # translate fn:tijah-score\n"
-		);
-	/* translate the node sequence parameter*/
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-
-        /* warning:item/kind and dbl values are modified in fill_tijah_scores */
-        milprintf(f, 
-                "item := item.copy();\n"
-                "kind := kind.copy();\n"
-	        "fill_tijah_scores(ws,ws_tijah_score,item,kind,dbl_values);\n"
-                "} # end of fn:tijah-score\n"
-	);
-        return NORMAL;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-query")) )
-    {
-        int opt_counter = 0;
-	int str_counter = 0;
-	int ctx_counter = 0;
-        char *item_ext = kind_str(STR);
-	
-	milprintf(f, 
-                "{ # translate fn:xtijah-query\n"
-	);
-        if (fun->arity == 3) {
-	  /* translate the first options parameter*/
-          translate2MIL (f, NORMAL, cur_level, counter, L(args));
-	  saveResult(f, ++counter);
-	  opt_counter = counter;
-
-          /* get query string */
-	  rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
-          if (rc == NORMAL)
-             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
-          add_empty_strings (f, STR, cur_level);
-          saveResult_ (f, ++counter, STR);
-	  str_counter = counter;
-	  
-	  /* get nodes to start from */ 
-	  translate2MIL (f, code, cur_level, ++counter, RL(args));
-	  saveResult(f, ++counter);
-	  ctx_counter = counter;
-	
-	} else {
-          /* get query string */
-	  rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-          if (rc == NORMAL)
-             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
-          add_empty_strings (f, STR, cur_level);
-          saveResult_ (f, ++counter, STR);
-	  str_counter = counter;
-	  
-	  /* get nodes to start from */ 
-	  translate2MIL (f, code, cur_level, ++counter, L(args));
-	  saveResult(f, ++counter);
-	  ctx_counter = counter;
-        }
-
-	milprintf(f,
-	        "var result_id := new(void,lng).seqbase(0@0);"
-	        "loop%03u@batloop() { # begin batloop over queries\n", cur_level);
-
-	/* generate the serialization code */
-        if (opt_counter)
-	  milprintf(f,
-	        "    iter := iter%03u.slice(int($h),int($h));\n"
-	        "    item := item%03u.slice(int($h),int($h));\n"
-		"    kind := constant2bat(kind%03u).slice(int($h),int($h));\n"
-		"    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n",
-		opt_counter, opt_counter, opt_counter);
-	else  
-          milprintf(f, 
-                "    var optbat := new(str,str,32);\n");
-          
-	
-	/* execute tijah query */
-	milprintf(f,
-                "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
-		, item_ext, str_counter);
-	
-	/* translate tijah-pre to pf-pre */
-	milprintf(f,
-                "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
-                "    var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
-                "    item  := nexi_score.hmark(0@0);\n"
-                "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
-                "    item := item.join(pfpre).sort().tmark();\n"
-                "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
-                "    var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
-                "    needed_docs@batloop()\n"
-                "    {\n"
-                "          if (not(loaded_docs.exist($t))) {\n"
-                "                  ws.add_doc($t); }\n"
-                "    }\n"
-                "    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
-                "    var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
-                "    frag := frag.join(fid_pffid).sort().tmark();\n");
-
-	/* store scores and nodes */
-	milprintf(f,
-	        "    tID := oid(int(tID) + 1);\n" 
-	        "    tijah_tID.append(item.project(tID));\n"
-	        "    tijah_frag.append(frag);\n"
-	        "    tijah_pre.append(item);\n"
-	        "    tijah_score.append(nexi_score.tmark());\n"
-		"    result_id.append(lng(tID));\n"
-		"} # end batloop over queries\n");
-
-	/* return query identifier */
-        item_ext = (code)?kind_str(INT):"";
-        if (code)
-            milprintf(f, "item%s := result_id;\n", item_ext);
-        else 
-            addValues (f, int_container(), "result_id", "item");
-
-        milprintf(f,
-                "iter := loop%03u.tmark(0@0);\n"
-                "ipik := iter;\n"
-                "pos := 1@0;\n"
-                "kind := INT;\n"
-                , cur_level);
-	
-	/* clean up */
-	deleteResult(f, ctx_counter);
-        deleteResult_ (f, str_counter, STR);
-	deleteResult(f, opt_counter);
-        milprintf(f, "} # end of translate fn:xtijah_query\n");
-        return (code)?INT:NORMAL;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-nodes")) )
-    {
-        char *item_int = kind_str(INT);
-        
-	milprintf(f, 
-                "{ # translate fn:xtijah-nodes\n"
-	);
-        /* get query id */
-        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (rc == NORMAL)
-        {
-            milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
-        }
-        
-	/* get nodes and create iter|item|.... */
-	milprintf(f,
-		"item := new(void,oid).seqbase(0@0);"
-		"iter := new(void,oid).seqbase(0@0);"
-		"pos := new(void,oid).seqbase(0@0);"
-		"var frag := new(void,oid).seqbase(0@0);"
-		"loop%03u@batloop() { # begin of query batloop\n"
-                "    var qid := oid(item%s.fetch(int($h)));\n"
-		"    var tmp := tijah_tID.ord_uselect(qid);\n"
-		"    item.append(tmp.mirror().leftfetchjoin(tijah_pre));\n"
-		"    iter.append(tmp.project(loop%03u.fetch(int($h))));\n"
-		"    frag.append(tmp.mirror().leftfetchjoin(tijah_frag));\n"
-	        "    pos.append(tmp.mark(1@0));\n"
-	        "} # end of query batloop \n"
-	        , cur_level, item_int, cur_level);
-        
-	milprintf(f,
-                "ipik := iter;\n"
-                "kind := set_kind(frag, ELEM);\n"
-	        "} # end of translate fn:xtijah_nodes\n");
-        
-	return NORMAL;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-score")) )
-    {
-        char *item_int = kind_str(INT);
-        milprintf(f, 
-                "{ # translate fn:xtijah-score\n"
-	);
-        /* get query id */
-        translate2MIL (f, VALUES, cur_level, counter, L(args));
-	saveResult_(f, ++counter, INT);
-        
-	/* get node */
-        rc = translate2MIL (f, code, cur_level, counter, RL(args));
-        
-	/* get scores */
-        milprintf(f, 
-		"pos := new(void,oid).seqbase(0@0);"
-		"var score := new(void,dbl).seqbase(0@0);"
-                "item%s%03u@batloop() { # begin query batloop\n"
-                "    var qid := oid(item%s%03u.fetch(int($h)));\n"
-		"    var tmp := tijah_tID.uselect(qid);\n"
-		"    var tmp1 := tijah_pre.semijoin(tmp);\n"
-		"    tmp1 := tmp1.join(item.reverse());\n"
-		"    var tmp2 := tmp1.join(kind.get_container());\n"
-		"    var tmp3 := tijah_frag.semijoin(tmp)\n;"
-		"    tmp := tmp1.semijoin(intersect(tmp3,tmp2));\n"
-		"    tmp1 := nil; tmp2 := nil; tmp3:= nil;\n"
-		"    score.append(tmp.reverse().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
-	        "    pos.append(tmp.mark(1@0).tmark(0@0));\n"
-		"} # end query batloop\n"
-		, item_int, counter, item_int, counter, item_int, counter);
-	
-	/* return score */
-        item_ext = (code)?kind_str(DBL):"";
-        if (code)
-            milprintf(f, "item%s := score;\n", item_ext);
-        else 
-            addValues (f, dbl_container(), "score", "item");
-
-        milprintf(f,
-                "iter := loop%03u.tmark(0@0);\n"
-                "pos := 1@0;"
-		"ipik := iter;\n"
-                "kind := DBL;\n"
-		, cur_level);
-	
-	/* clean up */
-	deleteResult_(f, counter, INT);
-        milprintf(f, "} # end of translate fn:xtijah_score\n");
-        return (code)?DBL:NORMAL;
-    }
-#endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
     milprintf(f,
                 "# empty intermediate result "
@@ -8462,15 +7867,15 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = translateCast (f, code, rc, cur_level, c);
             break;
         case c_apply:
-            if (c->sem.apply.fun->builtin)
+            if (c->sem.fun->builtin)
             {
                 rc = translateFunction (f, code, cur_level, counter, 
-                                        c->sem.apply.fun, D(c));
+                                        c->sem.fun, D(c));
             }
             else
             {
                 translateUDF (f, cur_level, counter,
-                              c->sem.apply, D(c));
+                              c->sem.fun, D(c));
                 rc = NORMAL;
             }
             break;
@@ -8567,7 +7972,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             } else { 
 	        f->num_fun--;
   	        opt_output(f, OPT_SEC_EPILOGUE);
-                milprintf(f, "UNDEF %s;\n", c->sem.apply.fun->sig);
+                milprintf(f, "UNDEF %s;\n", c->sem.fun->sig);
   	        opt_output(f, OPT_SEC_PROLOGUE);
             }
 /* debug statement to print actual UDF parameters
@@ -8582,20 +7987,20 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] v_iter000, "
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
-                    "var iter;\nvar pos;\nvar item;\nvar kind;\nvar ipik;\n"
+                    "var iter;\nvar pos;\nvar item;\nvar kind\n;var ipik;\n"
                     "var v_pos000 := tmark_grp_unique(v_iter000,v_iter000);\n"
                     "v_pos000 := [oid](v_pos000).access(BAT_WRITE);\n"
                     "v_vid000 := [oid](v_vid000).access(BAT_WRITE);\n"
                     "v_iter000 := [oid](v_iter000).access(BAT_WRITE);\n"
                     "v_item000 := [oid](v_item000).access(BAT_WRITE);\n"
                     "v_kind000 := [int](v_kind000).access(BAT_WRITE);\n",
-                    c->sem.apply.fun->sig, c->sem.apply.fun->qname.loc);
+                    c->sem.fun->sig, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
                     "return bat(void,bat,4).append(iter).append(item).append(kind).access(BAT_READ);\n"
                     "} # end of PROC %s\n",
-                    c->sem.apply.fun->sig);
+                    c->sem.fun->sig);
             opt_flush(f, 0);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
@@ -8679,7 +8084,7 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     else if (c->kind == c_var && c->sem.var == v)
         return 1;
     else if (c->kind == c_apply &&
-             !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
+             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
     {
         if (var_is_used (v, D(c)))
                 return 0;
@@ -8761,53 +8166,6 @@ var_is_used (PFvar_t *v, PFcnode_t *e)
   return usage;
 }
 
-#define assert_exp(e) (assert (e), (e))
-
-/*
-static bool 
-assert_exp (bool ex)
-{
-     assert (ex);
-     return ex;
-}
-*/
-
-static void 
-cast_to_expected (PFcnode_t *c, PFty_t expected) 
-{
-     PFty_t opt_expected;
-     if (expected.type == ty_opt ||
-         expected.type == ty_star ||
-         expected.type == ty_plus)
-          opt_expected = PFty_child (expected);
-     else
-          opt_expected = expected;
- 
-     if (PFty_subtype (opt_expected, PFty_atomic ()) &&
-         !TY_EQ (TY(L(c)), expected) &&
-         !TY_EQ (TY(L(c)), opt_expected))
-     {
-          if (TY_EQ (opt_expected, PFty_atomic ()))
-               /* avoid dummy casts */ ;
-          else if (L(c)->kind == c_seqcast
-                   || L(c)->kind == c_cast)
-          {
-               TY(L(c))  =
-                    TY(LL(c)) =
-                    LL(c)->sem.type = expected;
-          }
-          else
-          {
-               L(c) = PFcore_seqcast (
-                    PFcore_seqtype (expected), L(c));
-               /* type new code, to avoid multiple casts */
-               TY(c)     =
-                    TY(L(c))  =
-                    TY(LL(c)) = expected;
-          }
-     }
-}
-
 /**
  * simplifyCoreTree walks over a given tree and simplifies
  * some core nodes and appends extra information (e.g.
@@ -8822,9 +8180,8 @@ simplifyCoreTree (PFcnode_t *c)
     unsigned int i;
     PFfun_t *fun;
     PFcnode_t *new_node;
-    PFty_t expected;
+    PFty_t expected, opt_expected;
     PFty_t cast_type, input_type, opt_cast_type;
-    int is_rpc;
 
     assert(c);
     switch (c->kind)
@@ -9034,14 +8391,6 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(R(c));
             }
-            /* don't cast nodes - node type was only needed
-               for static typing */
-            else if (c->kind == c_seqcast &&
-                     PFty_subtype (input_type, PFty_xs_anyNode ()) &&
-                     PFty_subtype (cast_type, PFty_xs_anyNode ()))
-            {
-                *c = *(R(c));
-            }
             /* tests if a type is castable */
             else if (castable (input_type, cast_type));
             else if (!PFty_subtype (input_type, cast_type))
@@ -9061,8 +8410,7 @@ simplifyCoreTree (PFcnode_t *c)
             break;
         case c_apply:
             /* handle the promotable types explicitly by casting them */
-            fun = c->sem.apply.fun;
-            is_rpc = c->sem.apply.rpc_uri == NULL ? 0 : 1;
+            fun = c->sem.fun;
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
@@ -9073,12 +8421,12 @@ simplifyCoreTree (PFcnode_t *c)
                     i++;
                 }
             }
-            if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) 
-                && assert_exp (fun->sig_count == 1)
-                && PFty_subtype(TY(DL(c)), fun->sigs[0].ret_ty)) 
+
+            if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) && 
+                PFty_subtype(TY(DL(c)), fun->ret_ty))
             {
-                 /* don't use function - omit apply and arg node */
-                 *c = *(DL(c));
+                /* don't use function - omit apply and arg node */
+                *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"data")) && 
                      PFty_subtype(TY(DL(c)), PFty_star (PFty_atomic ())))
@@ -9105,7 +8453,7 @@ simplifyCoreTree (PFcnode_t *c)
                   DL(c)->kind != c_seq) ||
                  /* merge is not needed after is2ns anymore */
                  ((DL(c)->kind == c_apply) &&
-                  !PFqname_eq(DL(c)->sem.apply.fun->qname,
+                  !PFqname_eq(DL(c)->sem.fun->qname,
                               PFqname (PFns_pf,"item-sequence-to-node-sequence"))) ||
                  /* element nodes don't contain text nodes to merge */
                  (PFty_subtype(TY(DL(c)), 
@@ -9134,8 +8482,7 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                     assert_exp (fun->sig_count == 1) &&
-                     PFty_subtype (TY(DL(c)), fun->sigs[0].ret_ty))
+                     PFty_subtype (TY(DL(c)), fun->ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
@@ -9170,13 +8517,13 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
             {
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
             {
                 *c = *(DL(c));
             }
@@ -9196,7 +8543,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY(R(D(c))) = PFty_none ();
                 L(D(c)) = new_node;
                 TY(L(D(c))) = TY(new_node);
-                c->sem.apply.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
+                c->sem.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
             }
             /* concatentation with empty string not needed */
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"concat")) &&
@@ -9207,7 +8554,7 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"not")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq(DL(c)->sem.apply.fun->qname,
+                     !PFqname_eq(DL(c)->sem.fun->qname,
                                  PFqname (PFns_fn,"not")))
             {
                 *c = *(DL(DL(c)));
@@ -9220,14 +8567,14 @@ simplifyCoreTree (PFcnode_t *c)
                                    PFty_empty ()))
             {
                 if (L(DL(c))->kind == c_apply &&
-                     !PFqname_eq(L(DL(c))->sem.apply.fun->qname,
+                     !PFqname_eq(L(DL(c))->sem.fun->qname,
                                  PFqname (PFns_fn,"not")))
                 {
                     *c = *DL(L(DL(c)));
                 }
                 else
                 {
-                    c->sem.apply.fun = PFcore_function (PFqname (PFns_fn, "not"));
+                    c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
                     DL(c) = L(DL(c));
                     TY(D(c)) = TY(DL(c));
                 }
@@ -9241,59 +8588,42 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(L(DL(c)));
             }
-            /*
-             * fn:resolve-QName() translates a string argument into a QName
-             * for computed element constructors.  The element construction
-             * code handles strings there anyway, so we simply omit the
-             * call to fn:resolve-URI().
-             */
-            else if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"resolve-QName"))
-                     && assert_exp (fun->sig_count == 1))
-            {
-                 /* don't use function - omit apply and arg node */
-                 *c = *(DL(c));
-            }
             else
             {
                 c = D(c);
-                if (fun->sig_count == 1) {
-                     for (i = 0; i < fun->arity + is_rpc; i++, c = R(c))
-                     {
-                          if (is_rpc && i == 0)
-                          {
-                               expected = PFty_plus( PFty_string() );
-                          }
-                          else
-                          {
-                               assert (fun->sig_count == 1);
-                               expected = PFty_defn((fun->sigs[0].par_ty)[i]);
-                          }
-                          
-                          cast_to_expected (c, expected);
-                     }
-                }
-                else {
-                     /* quick and dirty hack to support dynamic overloading */
-                     assert (!is_rpc);
-                     assert (fun->arity == 2);
-                     bool found = false;
-                     /* choose one implementation. */
-                     for (unsigned int i = 0; i < fun->sig_count && !found; i++) {
-                          if (PFty_promotable (TY(L(c)), 
-                                               fun->sigs[i].par_ty[0]) &&
-                              PFty_promotable (TY(RL(c)), 
-                                               fun->sigs[i].par_ty[1]))
-                          {
-                               cast_to_expected (c, fun->sigs[i].par_ty[0]);
-                               cast_to_expected (R(c), fun->sigs[i].par_ty[0]);
-                               found = true;
-                          }
-                     }
-                     if (!found)
-                          PFoops (OOPS_TYPECHECK,
-                                  "no common implementation found for "
-                                  "dynamically overloaded function %s",
-                                  PFqname_str (fun->qname));
+                for (i = 0; i < fun->arity; i++, c = R(c))
+                {
+                    expected = PFty_defn((fun->par_ty)[i]);
+ 
+                    if (expected.type == ty_opt ||
+                        expected.type == ty_star ||
+                        expected.type == ty_plus)
+                        opt_expected = PFty_child (expected);
+                    else
+                        opt_expected = expected;
+ 
+                    if (PFty_subtype (opt_expected, PFty_atomic ()) &&
+                        !TY_EQ (TY(L(c)), expected) &&
+                        !TY_EQ (TY(L(c)), opt_expected))
+                    {
+                        if (TY_EQ (opt_expected, PFty_atomic ()))
+                            /* avoid dummy casts */ ;
+                        else if (L(c)->kind == c_seqcast
+                                 || L(c)->kind == c_cast)
+                        {
+                            TY(L(c))  =
+                            TY(LL(c)) =
+                            LL(c)->sem.type = expected;
+                        }
+                        else
+                        {
+                            L(c) = PFcore_seqcast (PFcore_seqtype (expected), L(c));
+                            /* type new code, to avoid multiple casts */
+                            TY(c)     =
+                            TY(L(c))  =
+                            TY(LL(c)) = expected;
+                        }
+                    }
                 }
             }
             break;
@@ -9303,7 +8633,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (RR(c));
 
             if (L(c)->kind == c_apply &&
-                !PFqname_eq(L(c)->sem.apply.fun->qname,
+                !PFqname_eq(L(c)->sem.fun->qname,
                             PFqname (PFns_fn,"not")))
             {
                 L(c) = DL(L(c));
@@ -9318,10 +8648,10 @@ simplifyCoreTree (PFcnode_t *c)
             if (R(c)->kind != c_locsteps &&
                 !PFty_subtype(TY(R(c)),PFty_opt (PFty_node ())) &&
                 !(R(c)->kind == c_apply &&
-                  !PFqname_eq(R(c)->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
+                  !PFqname_eq(R(c)->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
             {
                 fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
-                R(c) = PFcore_apply (PFapply(fun), PFcore_arg (R(c), PFcore_nil ()));
+                R(c) = PFcore_apply (fun, PFcore_arg (R(c), PFcore_nil ()));
             }
             else
             /* don't have to look at predicates because they are already expanded */
@@ -9544,15 +8874,15 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     snd_cast = (!snd_cast)?PFcore_nil():snd_cast;
 
     comp = PFcore_leaf(c_apply);
-    comp->sem.apply.fun = fun;
+    comp->sem.fun = fun;
 
     PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), /* name */
-                              10,     /* arity */
-                              true,   /* built-in function */
-                              1,      /* sig_count */
-                              NULL,   /* signatures (don't care here) */
-                              NULL,   /* no algebra equivalent */
-                              NULL);  /* no parameter variable names */
+                              10,   /* arity */
+                              true, /* built-in function */
+                              0,    /* argument types */
+                              0,    /* return type */
+                              NULL  /* algebra expression not needed here */,
+                              NULL  /* no parameter variable names */);
 
     c = PFcore_nil();
     c = PFcore_arg(PFcore_num(fid),c);
@@ -9566,7 +8896,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     c = PFcore_arg(fst_cast,c);
     c = PFcore_arg(fst_for,c);
     c = PFcore_wire1 (c_apply, c);
-    c->sem.apply.fun = join;
+    c->sem.fun = join;
     TY(c) = TY(result);
     return c;
 }
@@ -9648,7 +8978,7 @@ static int test_join_pattern(PFcnode_t *for_node,
 
     if_node = R(for_node);
     apply_node = L(if_node);
-    fun = apply_node->sem.apply.fun;
+    fun = apply_node->sem.fun;
 
     /* test quantified pattern */
     if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"empty")) &&
@@ -9667,7 +8997,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                                 PFcore_empty());
         if_node = R(c);
         apply_node = L(if_node);
-        fun = apply_node->sem.apply.fun;
+        fun = apply_node->sem.fun;
 
         /* test quantified pattern for second comparison input */
         if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
@@ -9685,7 +9015,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                                     PFcore_empty());
             if_node = R(c);
             apply_node = L(if_node);
-            fun = apply_node->sem.apply.fun;
+            fun = apply_node->sem.fun;
         }
     }
 
@@ -9723,7 +9053,9 @@ static int test_join_pattern(PFcnode_t *for_node,
             snd_inner_cast = DL(apply_node);
             switched_args = true;
         }
-        else return join_found;
+        else mps_error ("can't find variable occurrence "
+                        "of variable '%s' in join pattern testing.",
+                        PFqname_str((LLL(fst_inner)->sem.var)->qname));
         
         if (snd_inner)
         {
@@ -9738,7 +9070,9 @@ static int test_join_pattern(PFcnode_t *for_node,
                )
             {
             }
-            else return join_found;
+            else mps_error ("can't find variable occurrence "
+                            "of variable '%s' in join pattern testing.",
+                            PFqname_str((LLL(snd_inner)->sem.var)->qname));
         }
         else
         {
@@ -9765,7 +9099,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                 RL(LR(fst_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(fst_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(fst_inner))->kind == c_apply &&
-                !PFqname_eq (RR(LR(fst_inner))->sem.apply.fun->qname,
+                !PFqname_eq (RR(LR(fst_inner))->sem.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(fst_inner)))->kind == c_var &&
                 DL(RR(LR(fst_inner)))->sem.var == LLL(LR(fst_inner))->sem.var &&
@@ -9806,7 +9140,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                 RL(LR(snd_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(snd_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(snd_inner))->kind == c_apply &&
-                !PFqname_eq (RR(LR(snd_inner))->sem.apply.fun->qname,
+                !PFqname_eq (RR(LR(snd_inner))->sem.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(snd_inner)))->kind == c_var &&
                 DL(RR(LR(snd_inner)))->sem.var == LLL(LR(snd_inner))->sem.var &&
@@ -10311,7 +9645,7 @@ walk_through_UDF (opt_t *f,
         PFarray_del (way);
     }
     else if (c->kind == c_apply && 
-             !c->sem.apply.fun->builtin)
+             !c->sem.fun->builtin)
     {
         counter = walk_through_UDF (f, D(c), way, counter, active_funs);
 
@@ -10319,7 +9653,7 @@ walk_through_UDF (opt_t *f,
            (to avoid infinite recursion */
         for (i = 0, found = false; i < PFarray_last (active_funs); i++)
         {
-            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.apply.fun)
+            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.fun)
             {
                 found = true;
                 break;
@@ -10329,11 +9663,11 @@ walk_through_UDF (opt_t *f,
            to map all global variables correctly */
         if (!found)
         {
-            *(PFfun_t **) PFarray_add (active_funs) = c->sem.apply.fun;
+            *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
             /* add new active function to an active function stack and once
                again check UDFs to map all global variables correctly */
-            *(int *) PFarray_add (way) = c->sem.apply.fun->fid;
-            counter = walk_through_UDF (f, c->sem.apply.fun->core,
+            *(int *) PFarray_add (way) = c->sem.fun->fid;
+            counter = walk_through_UDF (f, c->sem.fun->core,
                                         way, counter, active_funs);
             PFarray_del (way);
             PFarray_del (active_funs);
@@ -10465,7 +9799,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     /* apply mapping correctly for recognized join */    
     else if (c->kind == c_apply && 
-             !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
+             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
     {
         /* get all necessary Core nodes */
             args = D(c);
@@ -10537,8 +9871,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* create a new valid PROC name for mil */
         /* ==================================== */
 
-        char sig[1024], *p = c->sem.apply.fun->qname.loc, *q = c->sem.apply.fun->qname.ns.uri;
-        char *r = c->sem.apply.fun->qname.ns.ns;
+        char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
+        char *r = c->sem.fun->qname.ns.ns;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
 
@@ -10573,7 +9907,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             args = R(args);
         }
         /* create the full signature that also is a valid MIL identifier */
-        c->sem.apply.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
+        c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
         /* hash uri in proc name to make it uniquely identifyable  */
         for(; *q; q++) 
@@ -10584,39 +9918,39 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                      * (_4_ cannot be a subsequent type name; those always end in [0-3])
                      */ 
             char x = (*p == '-' || *p == '.')?'_':*p;
-            c->sem.apply.fun->sig[j++] = x; 
+            c->sem.fun->sig[j++] = x; 
             hash = (hash*3) + *(unsigned char*) p;
-            if (*p == '-') c->sem.apply.fun->sig[j++] = '4';
-            else if (*p == '.') c->sem.apply.fun->sig[j++] = '5';
-            if (x == '_') c->sem.apply.fun->sig[j++] = '_';
+            if (*p == '-') c->sem.fun->sig[j++] = '4';
+            else if (*p == '.') c->sem.fun->sig[j++] = '5';
+            if (x == '_') c->sem.fun->sig[j++] = '_';
         }
 
         while(sig[i++] == ',') {
             int ch = 0;
-            c->sem.apply.fun->sig[j++] = '_';
+            c->sem.fun->sig[j++] = '_';
             while (sig[i] && sig[i] != ',') { 
                 hash = (hash*3) + *(unsigned char*) (sig+i);
                 ch = sig[i++];
                 if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
-                    c->sem.apply.fun->sig[j++] = '_';
-                    c->sem.apply.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
                 } else if (ch == ':') {
-                    c->sem.apply.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
                 } else if (ch == '?') {
-                    c->sem.apply.fun->sig[j++] = '0';
+                    c->sem.fun->sig[j++] = '0';
                 } else if (ch == '*') {
-                    c->sem.apply.fun->sig[j++] = '2';
+                    c->sem.fun->sig[j++] = '2';
                 } else if (ch == '+') {
-                    c->sem.apply.fun->sig[j++] = '3';
+                    c->sem.fun->sig[j++] = '3';
                 } else if (ch != ' ') {
-                    c->sem.apply.fun->sig[j++] = ch;
+                    c->sem.fun->sig[j++] = ch;
                 }
                     }
-            if (c->sem.apply.fun->sig[j-1] != '0' && 
-                c->sem.apply.fun->sig[j-1] != '2' && 
-                c->sem.apply.fun->sig[j-1] != '3') 
+            if (c->sem.fun->sig[j-1] != '0' && 
+                c->sem.fun->sig[j-1] != '2' && 
+                c->sem.fun->sig[j-1] != '3') 
             {
-                c->sem.apply.fun->sig[j++] = '1';
+                c->sem.fun->sig[j++] = '1';
             }
         }
 
@@ -10629,37 +9963,37 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             hash = hash*3 + *(int*) PFarray_at(counter,i);
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-        sprintf(c->sem.apply.fun->sig, "fn%08X", hash);
-        c->sem.apply.fun->sig[10] = '_';
-        c->sem.apply.fun->sig[j] = 0;
+        sprintf(c->sem.fun->sig, "fn%08X", hash);
+        c->sem.fun->sig[10] = '_';
+        c->sem.fun->sig[j] = 0;
 
         if (f->module_base || f->num_fun) {
-                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.apply.fun->sig, f->module_base+first);
+                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
                  f->num_fun--;
         }
     }
     /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
-             !c->sem.apply.fun->builtin)
+             !c->sem.fun->builtin)
     {
         /* get variable occurrences of the input arguments */
         counter = get_var_usage (f, D(c), way, counter);
 
-        if (!c->sem.apply.fun->fid) /* create fid for UDF on demand */
+        if (!c->sem.fun->fid) /* create fid for UDF on demand */
         {
             /* give fun_decl a fid to map global variables */
             (*(int *) PFarray_at (counter, FID))++;
-            c->sem.apply.fun->fid = *(int *) PFarray_at (counter, FID);
+            c->sem.fun->fid = *(int *) PFarray_at (counter, FID);
         }
 
         /* add new active function to an active function stack and once
            again check UDFs to map all global variables correctly */
-        *(int *) PFarray_add (way) = c->sem.apply.fun->fid;
+        *(int *) PFarray_add (way) = c->sem.fun->fid;
         /* create a new stack with active UDFs to avoid endless recursion */
         PFarray_t *active_funs = PFarray (sizeof (PFvar_t *));
-        *(PFfun_t **) PFarray_add (active_funs) = c->sem.apply.fun;
+        *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
 
-        counter = walk_through_UDF (f, c->sem.apply.fun->core, 
+        counter = walk_through_UDF (f, c->sem.fun->core, 
                                     way, counter, active_funs);
 
         PFarray_del (active_funs);
@@ -10677,17 +10011,6 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 const char* PFinitMIL(void) {
     return 
         "module(\"pathfinder\");\n"
-#ifdef HAVE_PFTIJAH
-        "module(\"pftijah\");\n"
-	"\n"
-	"var tID := 9999@0; # start counter at an arbitrary number\n"
-	"var tijah_tID := new(void,oid).seqbase(0@0);\n"
-	"var tijah_frag := new(void,oid).seqbase(0@0);\n"
-	"var tijah_pre := new(void,oid).seqbase(0@0);\n"
-	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
-	"var ws_tijah_score:= bat(oid,bat);\n"
-
-#endif
         "\n"
         "# value containers for literal values\n"
         "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
@@ -10705,13 +10028,7 @@ const char* PFinitMIL(void) {
         "\n"
         "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
-        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "var time_compile := 0;\n"
-        "var time_read := 0;\n"
-        "var time_shred := 0;\n"
-        "var time_print := 0;\n"
-        "var time_exec := 0;\n"
         "var genType := \"xml\";";
 }
 
@@ -10735,33 +10052,33 @@ const char* PFvarMIL(void) {
         "var item_dbl_;\n"
         "var item_str_;\n"
         "\n"
+        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
+        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
+        "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
         "var _elem_size;  # oid|int\n"
         "var _elem_level; # oid|chr\n"
         "var _elem_kind;  # oid|chr\n"
         "var _elem_prop;  # oid|oid\n"
-        "var _elem_cont;  # oid|oid\n"
+        "var _elem_frag;  # oid|oid\n"
         "\n"
         "var _attr_iter; # oid|oid\n"
         "var _attr_qn;   # oid|oid\n"
         "var _attr_prop; # oid|oid\n"
-        "var _attr_cont; # oid|oid\n"
+        "var _attr_frag; # oid|oid\n"
         "var _attr_own;  # oid|oid\n"
         "\n"
         "var _r_attr_iter; # oid|oid\n"
         "var _r_attr_qn;   # oid|oid\n"
         "var _r_attr_prop; # oid|oid\n"
-        "var _r_attr_cont; # oid|oid\n"
+        "var _r_attr_frag; # oid|oid\n"
         "\n"
-        /* Decleration of 'ws' has been moved from PFstartMIL to here to
-         * easy debugging. */
-        "var ws := int(nil);\n"
         "# environment that represents start of any query\n"
         "var v_iter000;\n"
         "var v_item000;\n"
         "var v_kind000;\n"
-	    "var outer000;\n"
+	"var outer000;\n"
         "var inner000;\n"
         "var order_000;\n";
 }
@@ -10769,11 +10086,12 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(void) {
     return  
         "{\n"
-        "time_read := 0;\n"
-        "time_shred := 0;\n"
-        "time_print := 0;\n"
-        "time_exec := time();\n"
+        "var time_read := 0;\n"
+        "var time_shred := 0;\n"
+        "var time_print := 0;\n"
+        "var time_exec := time();\n"
         "\n"
+        "var ws := int(nil);\n"
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
@@ -10796,61 +10114,46 @@ const char* PFdocbatMIL(void) {
     return  
         " var docBAT := new(str,bat,WS_SIZE);\n"
         " var height := index_doc(bat(shredBAT), docBAT);\n"
-        " add_docbat(ws, docBAT, \"\", TEMP_DOC, oid(nil), height);\n";
+        " add_docbat(ws, docBAT, \"\", \"\", height);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
 
-static const char* _PFstopMIL(bool is_update) {
-    static char buf[1024];
-
-    strcpy(buf,
-           "  time_print := time();\n"
-           "  time_exec := time_print - time_exec;\n"
-           "  \n");
-    if (is_update)
-        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
-    else
-        strcat(buf,
-               "  if (genType.search(\"none\") = -1)\n"
-               "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
-    strcat(buf,
-           "});\n"
-           "destroy_ws(ws);\n"
-#ifdef HAVE_PFTIJAH
-           "if ( ws_tijah_score.count() > 99999) destroy_ws(ws_tijah_score);\n" /* keep alive for the time */
-#endif
-           "if (not(isnil(err))) ERROR(err);\n"
-           "time_print := time() - time_print;\n"
-           "if (genType.search(\"timing\") >= 0)\n"
-           "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
-           "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
-           "}\n");
-    return buf;
-}
-
 const char* PFstopMIL(void) {
-    return _PFstopMIL(false);
+    return   
+        "  time_print := time();\n"
+        "  time_exec := time_print - time_exec;\n"
+        "  \n"
+        "  if (genType.search(\"none\") = -1)\n"
+        "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
+        "});\n"
+        "destroy_ws(ws);\n"
+        "if (not(isnil(err))) ERROR(err);\n"
+        "time_print := time() - time_print;\n"
+        "if (genType.search(\"timing\") >= 0)\n"
+        "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
+        "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
+        "}\n";
 }
 
 const char* PFudfMIL(void) {
     return  
         "{\n"
-        "  var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n"
-        "  iter := proc_res.fetch(0);\n"
-        "  item := proc_res.fetch(1);\n"
-        "  kind := proc_res.fetch(2);\n"
-        "  if (type(iter) = bat) {\n"
-        "    ipik := iter;\n"
+        "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
+        "iter := proc_res.fetch(0);\n"
+        "item := proc_res.fetch(1);\n"
+        "kind := proc_res.fetch(2);\n"
+        "if (type(iter) = bat) {\n"
+        " ipik := iter;\n"
+        "} else {\n"
+        "  if (type(item) = bat) {\n"
+        "    ipik := item;\n"
         "  } else {\n"
-        "    if (type(item) = bat) {\n"
-        "      ipik := item;\n"
-        "    } else {\n"
-        "      ipik := kind;\n"
-        "    }\n"
+        "    ipik := kind;\n"
         "  }\n"
+        "}\n"
         "}\n";
 }
 
@@ -10972,9 +10275,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
         timing = PFtimer_stop(timing);
         milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
-        milprintf(f, _PFstopMIL(PFty_subtype (TY(R(c)), PFty_empty ())
-                                    ? false /* only the empty sequence has type empty and is not updateable */
-                                    : PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
+        milprintf(f, PFstopMIL());
     }
 
     if (opt_close(f, prologue, query, epilogue)) {

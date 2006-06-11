@@ -33,8 +33,6 @@
 @a Jens Teubner
 @a Stefan Manegold
 @a Peter Boncz 
-@a Ying Zhang
-@a Niels Nes
 
 @t Runtime Support for the Pathfinder XQuery Compiler
 
@@ -43,16 +41,17 @@
 
 .USE streams;
 
-.COMMAND xquery_frontend() : ptr = xquery_frontend;
- "create/return the xquery_frontend callback interface to pass to mapi register. "
+.BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
+ "read xquery from stream, and print on a stream."
 
 .BUILTIN xquery(mode str, xquery str, is_url bit) : str = CMDxquery;
  "xquery execution. parameters: mode, query, is_url (optional)
  usage:  var result := xquery(\"xml\", \"1+1\", false); printf(result);
  or:  printf(xquery(\"xml\", \"1+1\"));"
 
-.COMMAND xquery_start_query_cache(lng maxsize) : void = CMDxquery_start_query_cache; 
- "Cached xquery clients use the query plan cache (also flushes the cache when called). if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
+.COMMAND xquery_start_query_cache(lng maxsize) : ptr = CMDxquery_start_query_cache;
+ "handle to pass to mapi_listen to let it use the query plan cache (also flushes the cache when called).
+  if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
 
 .PRELUDE = xquery_prelude;
 .EPILOGUE = xquery_epilogue;
@@ -63,35 +62,32 @@ module(mapi);       # remote client access
 module(monettime); 
 
 PROC pfstart(bit open, lng sz) : void {
-        xquery_start_query_cache(sz);
-	mapi_register(xquery_frontend());
-        if (not(mapi_running())) {
-                mapi_listen(
-                        int(monet_environment.find("mapi_port")), 
-                        str(nil), 
-                        5, 
-                        open).fork();
-        }
+    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open, xquery_start_query_cache(sz)).fork();
 }
 ADDHELP("pfstart", "boncz", "April 2005",
 "PARAMETERS:\n\
 bit whether the listener should listen to outside requests \
 (default false: only local connections).\n\
-sz per-connection size limit to the query plan cache, see also \"xquery_start_query_cache\".\n\
 DESCRIPTION:\n\
 start the xquery server.",
 "pathfinder");
 
 PROC pfstart() : void {
-        pfstart(false, 0LL);
+    pfstart(false, 0LL);
 }
 
 PROC xquery_server_start(bit global) : void {
-        pfstart(false, 0LL);
+    fork(mapi_listen(
+                int(monet_environment.find("xquery_port")),
+                5,
+                "xquery_server",
+                global
+                )
+        );
 }
 
 PROC xquery_server_start() : void {
-        xquery_server_start(false);
+    xquery_server_start(false);
 }
 
 #############################################
@@ -107,15 +103,11 @@ PROC xquery_server_start() : void {
 # the transient 'working set', a global document collection represented
 # by the ws-BAT.
 #
-# Each collection contains the following rid_* BATs from which the pre_* BATs can be reconstructed:
-# - map_pid     : BAT[oid,oid]  64K tuple page-id / and its page index in the rid_table
-# - rid_size    : BAT[oid,int]  rid-value of node / and its descendant size,
-# - rid_level   : BAT[oid,chr]  rid-value of node / and its level,
-# - rid_prop    : BAT[oid,oid]  rid-value of node / and property ID,
-# - rid_kind    : BAT[oid,chr]  rid-value of node / and node kind,
-#                              
-# NOTE: page indices start at oid(0). by putting the rid_* phyisical pages in the 
-#       order specified by map_pid we get the original pre_* tables back.
+# Each collection contains the following BATs:
+# - pre_size    : BAT[oid,int]  pre-value of node / and its descendant size,
+# - pre_level   : BAT[oid,chr]  pre-value of node / and its level,
+# - pre_prop    : BAT[oid,oid]  pre-value of node / and property ID,
+# - pre_kind    : BAT[oid,chr]  pre-value of node / and node kind,
 #
 # - qn_ns        : BAT[oid,str]  property ID / and name space (elements and attributes),
 # - qn_loc       : BAT[oid,str]  property ID / and local name (elements and attributes),
@@ -137,21 +129,57 @@ PROC xquery_server_start() : void {
 # - doc_timestamp : BAT[oid,timestamp]  document ID / end-of-cache-time (nil if none)
 # - uri_lifetime  : BAT[str,lng]        URI prefix  / time-to-live (seconds), nil if not to be cached 
 # 
-# Information on documents/containers in the working set:
-# - PRE_CONT       BAT[void,BAT[void,oid]] list of bats with containers
-#                  oids for each pre value (copied in element construction)
-# - ATTR_CONT      BAT[void,BAT[void,oid]] list of bats with containers
-#                  oids for each attr value (copied in element/attribute construction)
-# - CONT_COLL      BAT[void,oid] container-ID / collection-ID
-#                  (starts with 1@0 because WS is first 'loaded' document
-# - HEIGTH         BAT[void,int] enumeration of the containers / maximal
-#                  depth of the container (starts with 0@0 - WS)
-# - CONT_DOCID     BAT[oid,oid] container-ID / docid (this is local to ws, NOT a key to doc_* tables) 
-#
-# - DOCID_OID      BAT[void,oid] docid / persistent document-ID (the key to the doc_* tables)
-# - DOCID_NAME     BAT[void,str] docid / document name
+# Information on documents/fragments in the working set:
+# - PRE_FRAG   : BAT[void,BAT[void,oid]] list of bats with fragments
+#                oids for each pre value (copied in element construction)
+# - ATTR_FRAG  : BAT[void,BAT[void,oid]] list of bats with fragments
+#                oids for each attr value (copied in element/attribute 
+#                construction)
+# - DOC_LOADED : BAT[void,str] fragment ID / name of document 
+#                (starts with 1@0 because WS is first 'loaded' document
+# - FRAG       : BAT[void,oid] 0@0 / oid of the newest added fragment
+# - WS_FRAG    : BAT[void,oid] enumeration / root-pre values of
+#                generated element fragments
+# - HEIGTH     : BAT[void,int] enumeration of the fragments / maximal
+#                depth of the fragment (starts with 0@0 - WS)
 
 module(pf_support); 
+
+# get a handle to the global lock
+var pf_lock := pflock(); 
+
+# note that these variables may not be shared by parallel MIL clients
+var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
+var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
+
+# initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
+lock_set(pf_lock);
+if (not(isnil(CATCH(bat("doc_name").count())))) {
+    # create doc_name table in case it does not exist
+    new(oid,str).persists(true).bbpname("doc_name");
+    new(oid,str).persists(true).bbpname("doc_location");
+    new(oid,timestamp).persists(true).bbpname("doc_timestamp");
+    new(oid,int).persists(true).bbpname("doc_height");
+    new(oid,lng).persists(true).bbpname("doc_size");
+    new(str,lng).persists(true).bbpname("uri_lifetime");
+}
+if (isnil(CATCH(bat("doc_query").count()))) {
+    doc_query := bat("doc_query"); 
+    doc_sema := bat("doc_sema"); 
+} else {
+    (doc_query := new(oid,int)).bbpname("doc_query"); 
+    (doc_sema := new(oid,monet_atomtbl.find("sema"))).bbpname("doc_sema"); 
+}
+lock_unset(pf_lock);
+
+# DEFINITION of constants concerning the data model
+const PRE_BASE := 0@0;
+const ELEMENT := chr(0);
+const TEXT := chr(1);
+const COMMENT := chr(2);
+const PI := chr(3);
+const DOCUMENT := chr(4);
+const WS := 0@0;
 
 @- ws definition
 
@@ -168,93 +196,50 @@ EXCEPT when (child-T == void)
 
 ('tpe' = void means it is a view; without persistent name)
 
-All ws entries starting with '_' are master bats, whereas 
-their versions with '_' copies/views. The latter ones
-are used for querying, as they provide isolation against
-concurrent updates.
-
-         name       number  htp  ttp  col[H,T]    col-seqbase 
-         ========   ======  ===  ===  ==========  ===========
+        name       number  tpe  col[H,T]    col-seqbase 
+        ========   ======  ===  ==========  ===========
 @= ws
-@:@1_ws(PRE_SIZE,       0, void, bat, void,  int, PRE_BASE)@
-@:@1_ws(PRE_LEVEL,      1, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_PROP,       2, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_KIND,       3, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_NID,        4, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(WS_FRAG,        5, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(MAP_PID,        6, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(NID_RID,        7, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(QN_URI,         8, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_PREFIX,      9, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC,        10, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_TEXT,     11, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_COM,      12, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_INS,      13, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_TGT,      14, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_VAL,      15, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(ID_NID,        16, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(IDREF_NID,     17, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(ATTR_OWN,      18, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_QN,       19, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_PROP,     20, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(QN_PREFIX_URI, 21, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC_URI,    22, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(KND_NID_0,     23, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_0,    24, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_1,     25, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_2,     26, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_3,     27, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_3,    28, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_4,     29, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(REGION_PRE,    30, void, bat, void,  oid, oid(nil))@
-@:@1_ws(REGION_START,  31, void, bat, void,  lng, oid(nil))@
-@:@1_ws(REGION_END,    32, void, bat, void,  lng, oid(nil))@
-@:@1_ws(PRE_CONT,      33, void, void,void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_CONT,     34, void, void,void,  oid, PRE_BASE)@
-@:@1_ws(HEIGHT,        35, void, int, void, void, oid(nil))@
-@:@1_ws(DOCID_NAME,    36, void, str, void, void, oid(nil))@
-@:@1_ws(DOCID_OID,     37, void, oid, void, void, oid(nil))@
-@:@1_ws(CONT_DOCID,    38, oid,  oid, void, void, oid(nil))@
-@:@1_ws(CONT_COLL,     39, void, oid, void, void, oid(nil))@
-@:@1_ws(_RID_SIZE,     40, void, bat, void,  int, PRE_BASE)@
-@:@1_ws(_RID_LEVEL,    41, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(_RID_PROP,     42, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_RID_KIND,     43, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(_RID_NID,      44, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_WS_FRAG,      45, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_MAP_PID,      46, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_NID_RID,      47, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_QN_URI,       48, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_PREFIX,    49, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_LOC,       50, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_TEXT,    51, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_COM,     52, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_INS,     53, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_TGT,     54, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_VAL,     55, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_ID_NID,       56, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(_IDREF_NID,    57, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(_ATTR_OWN,     58, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_ATTR_QN,      59, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_ATTR_PROP,    60, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_QN_PREFIX_URI,61, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_LOC_URI,   62, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_KND_NID_0,    63, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_PROP_0,   64, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_1,    65, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_2,    66, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_3,    67, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_PROP_3,   68, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_4,    69, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_REGION_PRE,   70, void, bat, void,  oid, oid(nil))@
-@:@1_ws(_REGION_START, 71, void, bat, void,  lng, oid(nil))@
-@:@1_ws(_REGION_END,   72, void, bat, void,  lng, oid(nil))@
+@:@1_ws(PRE_SIZE,       0, bat, void,  int, PRE_BASE)@
+@:@1_ws(PRE_LEVEL,      1, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_PROP,       2, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_KIND,       3, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_FRAG,       4, void,void,  oid, PRE_BASE)@
+@:@1_ws(QN_URI,         5, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_PREFIX,      6, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC,         7, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TEXT,      8, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
+@:@1_ws(ID_PRE,        12, bat,  str,  oid, oid(nil))@
+@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, oid(nil))@
+@:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
+@:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
+@:@1_ws(DOC_LOADED,    19, str, void, void, oid(nil))@
+@:@1_ws(FRAG,          20, oid, void, void, oid(nil))@
+@:@1_ws(WS_FRAG,       21, oid, void, void, oid(nil))@
+@:@1_ws(HEIGHT,        22, int, void, void, oid(nil))@
+@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
+@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, oid(nil))@
+@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, oid(nil))@
+@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, oid(nil))@
+@:@1_ws(REGION_PRE,    32, bat, void,  oid, oid(nil))@
+@:@1_ws(REGION_START,  33, bat, void,  lng, oid(nil))@
+@:@1_ws(REGION_END,    34, bat, void,  lng, oid(nil))@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
 @= decl
-@:@1_decl_ws(WS_SIZE, 60)@
+@:@1_decl_ws(WS_SIZE, 35)@
 @:@1_decl_ws(QNAME,    2)@
 @:@1_decl_ws(BOOL,     3)@
 @:@1_decl_ws(INT,      4)@
@@ -270,35 +255,12 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 @= mil_decl_ws
 const @1 := @2;
 @mil
+
 @:ws(mil_decl)@
 @:decl(mil)@
 
-# DEFINITION of constants concerning the data model
-const PRE_BASE := 0@0;
-const ELEMENT := chr(0);
-const TEXT := chr(1);
-const COMMENT := chr(2);
-const PI := chr(3);
-const DOCUMENT := chr(4);
-const WS := 0@0;
-
-const KND_NID  := new(chr,int,5);
-const KND_PROP := new(chr,int,2);
-{
-    var knd := ELEMENT;
-    var idx := KND_NID_0;
-    while ( knd <= DOCUMENT ) {
-        KND_NID.insert(knd,idx);
-        idx :+= 1;
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-            KND_PROP.insert(knd,idx);
-            idx :+= 1;
-        }
-        knd :+= chr(1);
-    }
-}
-KND_NID .access(BAT_READ);
-KND_PROP.access(BAT_READ);
+const KIND_PRE := KIND_PRE_0;
+const PROP_PRE := PROP_PRE_0;
 
 # ATOMIC is not a type but all atomic types
 # can be retrieved with 'select(int(nil),ATOMIC)'
@@ -306,157 +268,33 @@ KND_PROP.access(BAT_READ);
 # NODE is not a type but all node types
 # can be retrieved with 'select(NODE,int(nil))'
 
-
-@- shared BATs
-
-Note that MIL variables are not shared between concurrent MIL sessions. Therefore, we need the pflock()
-command to get a global lock handle for synchronization. However, BATs are global objects and may be
-shared. This mechanism is used to share the global data structures (each XQuery session has its own
-MIL variables, but these point to the same global BATs).
-
 @= create_ws
     ws_nme.append(toLower("@1"));
-    ws_tpe.append(@4);
-    ws_htp.append(@5);
-    ws_ttp.append(@6);
-    ws_seq.append(@7);
+    ws_oid.append(oid(@1));
+    ws_tpe.append(@3);
+    ws_htp.append(@4);
+    ws_ttp.append(@5);
+    ws_seq.append(@6);
 @mil
-# get a handle to the global lock
-var pf_lock := pflock(); 
-
-# the set of document collections
-var collection_name; # collection name 
-var doc_name;        # document name
-var doc_location;    # document URI
-var doc_collection;  # collection-id 
-var doc_root;        # root oid in collection 
-var doc_height;      # height of document
-var doc_size;        # document size in bytes
-var doc_timestamp;   # caching limit (nil if none)
-
-const TEMP_DOC := 0@0; # reversed for temp docs (invalid key for doc table)
-
-# caching rules
-var uri_lifetime; 
-
-# (logical) document usage
-var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
-var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
-
-# (physical) collection usage
-var coll_lock;  # bat[oid,lock] used by append_page() to ensure unique pages are given out size
-var coll_free;  # bat[oid,bat]  per document a list with all free pages smaller than the master size
-
-# empty pages to append onto rid_* master bats
-var empty_page;  # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
-
 # the ws_* bats contain a recipe for creating a new ws
-var ws_nme; # name (prefix) of ws entry as persistent bat
-var ws_tpe; # type of ws entry (often bat)
-var ws_htp; # (if tpe=bat) head-type of nested bat
-var ws_ttp; # (if tpe=bat) tail-type of nested bat
-var ws_seq; # (if tpe=bat) seqbase of nested bat
-var ws_col; # all ws entries that are real bats, and their names
-var ws_dsk; # of those, all persistent bats on disk for a document container , and their names
-var ws_rid; # of those, all master rid_* bats, and their (remapped) pre_* views
-var ws_mem; # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
-var ws_shr; # all bats delivered by shredder, and their future persistent names
+var ws_nme := bat(void,str,WS_SIZE); 
+var ws_oid := bat(void,oid,WS_SIZE); 
+var ws_tpe := bat(void,int,WS_SIZE); 
+var ws_htp := bat(void,int,WS_SIZE); 
+var ws_ttp := bat(void,int,WS_SIZE); 
+var ws_seq := bat(void,oid,WS_SIZE); 
+@:ws(create)@
+ws_nme.access(BAT_READ).seqbase(0@0);
+ws_oid.access(BAT_READ).seqbase(0@0);
+ws_tpe.access(BAT_READ).seqbase(0@0);
+ws_htp.access(BAT_READ).seqbase(0@0);
+ws_ttp.access(BAT_READ).seqbase(0@0);
+ws_seq.access(BAT_READ).seqbase(0@0);
 
-# standoff extensions
-var standoff := false;
-if (monet_environment.exist("standoff"))
-    standoff := =(monet_environment.find("standoff"),"enabled"); 
-
-# initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
-# note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
-lock_set(pf_lock);
-if (isnil(CATCH(bat("doc_name").count()))) {
-    collection_name  := bat("collection_name");
-    doc_name         := bat("doc_name");
-    doc_location     := bat("doc_location");
-    doc_collection   := bat("doc_collection");
-    doc_root         := bat("doc_root");
-    doc_timestamp    := bat("doc_timestamp");
-    doc_height       := bat("doc_height");
-    doc_size         := bat("doc_size");
-    uri_lifetime     := bat("uri_lifetime");
-} else {
-    # create doc_name table in case it does not exist
-    (collection_name := new(oid,str).persists(true)).bbpname("collection_name");
-    (doc_name        := new(oid,str).persists(true)).bbpname("doc_name");
-    (doc_location    := new(oid,str).persists(true)).bbpname("doc_location");
-    (doc_collection  := new(oid,oid).persists(true)).bbpname("doc_collection");
-    (doc_root        := new(oid,oid).insert(0@0,0@0).persists(true)).bbpname("doc_root");
-    (doc_timestamp   := new(oid,timestamp).persists(true)).bbpname("doc_timestamp");
-    (doc_height      := new(oid,int).persists(true)).bbpname("doc_height");
-    (doc_size        := new(oid,lng).persists(true)).bbpname("doc_size");
-    (uri_lifetime    := new(str,lng).persists(true)).bbpname("uri_lifetime");
-}
-if (not(doc_height.exist(TEMP_DOC))) {
-    doc_height.insert(TEMP_DOC, 1000); # hack: store next oid as in invalid TEMP_DOC tuple
-}
-if (isnil(CATCH(bat("doc_query").count()))) {
-    doc_query  := bat("doc_query"); 
-    doc_sema   := bat("doc_sema"); 
-    coll_lock  := bat("coll_lock"); 
-    coll_free  := bat("coll_free"); 
-    empty_page := bat("empty_page"); 
-    ws_nme     := bat("ws_bat");
-    ws_tpe     := bat("ws_tpe"); 
-    ws_htp     := bat("ws_htp");
-    ws_ttp     := bat("ws_ttp");
-    ws_seq     := bat("ws_seq");
-    ws_col     := bat("ws_col");
-    ws_dsk     := bat("ws_dsk");
-    ws_rid     := bat("ws_rid");
-    ws_mem     := bat("ws_mem");
-    ws_shr     := bat("ws_shr");
-} else {
-    (doc_query := new(oid,int)).bbpname("doc_query"); 
-    (doc_sema  := new(oid,monet_atomtbl.find("sema"))).bbpname("doc_sema"); 
-    (coll_lock := new(oid,monet_atomtbl.find("lock"))).bbpname("coll_lock"); 
-    (coll_free := new(oid,bat)).bbpname("coll_free"); 
-    (empty_page:= new(void,int,REMAP_PAGE_SIZE)).bbpname("empty_page"); 
-
-    var m := int(nil), i := int(REMAP_PAGE_SIZE);
-    var bak := debugmask();
-    debugmask(0);
-    while((i :-= 1) >= 0) {
-        empty_page.append(nilor(i, m));
-    }
-    debugmask(bak);
-    empty_page.seqbase(0@0).access(BAT_READ);
-
-    ws_nme := bat(void,str,WS_SIZE);
-    ws_tpe := bat(void,int,WS_SIZE);
-    ws_htp := bat(void,int,WS_SIZE);
-    ws_ttp := bat(void,int,WS_SIZE);
-    ws_seq := bat(void,oid,WS_SIZE);
-    @:ws(create)@
-    ws_nme.seqbase(0@0).access(BAT_READ).bbpname("ws_nme");
-    ws_tpe.seqbase(0@0).access(BAT_READ).bbpname("ws_tpe");
-    ws_htp.seqbase(0@0).access(BAT_READ).bbpname("ws_htp");
-    ws_ttp.seqbase(0@0).access(BAT_READ).bbpname("ws_ttp");
-    ws_seq.seqbase(0@0).access(BAT_READ).bbpname("ws_seq");
-
-    ws_col := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
-    ws_col.bbpname("ws_col");
-    ws_dsk := ws_nme.reverse().ord_select(oid(_RID_SIZE), oid(nil)).reverse();
-    ws_dsk.bbpname("ws_dsk");
-    ws_rid := [int](ws_dsk.mirror().ord_select(oid(_RID_SIZE), oid(_RID_NID))).[-](_RID_SIZE - PRE_SIZE).[oid]();
-    ws_rid.bbpname("ws_rid");
-    ws_mem := [int](ws_dsk.mirror().ord_select(oid(_WS_FRAG), oid(nil))).[-](_RID_SIZE - PRE_SIZE).[oid]();
-    ws_mem.bbpname("ws_mem");
-    ws_shr := [+]("_", reverse(reverse(ws_col).ord_select(oid(nil), oid(PRE_CONT - 1))).[substitute]("pre_", "rid_", false));
-    ws_shr.bbpname("ws_shr");
-}
-lock_unset(pf_lock);
-
-
-PROC ws_bat(oid id, int tpe, int htp, int ttp, oid seq) : BAT[void,any]
+PROC ws_bat(int tpe, int htp, int ttp, oid seq) : BAT[void,any]
 {
-    if ((ttp != void) and (int(id) < _RID_SIZE)) { # a bat of bats (persistent or view)
-        var b := bat(htp,ttp,10000);
+    if (ttp != void) { # a bat of bats (persistent or view)
+        var b := bat(htp,ttp);
         if (not(isnil(seq))) b.seqbase(seq); 
         return bat(void,bat).seqbase(PRE_BASE).append(b);
     } 
@@ -465,17 +303,12 @@ PROC ws_bat(oid id, int tpe, int htp, int ttp, oid seq) : BAT[void,any]
 
 PROC create_ws () : BAT[void,bat]
 {
-    # only instantiates the default views of the ws-bats (not the master bats)
-    var ws := [ws_bat](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
+    var ws := [ws_bat](ws_tpe, ws_htp, ws_ttp, ws_seq);
 
     # fill the constant bats with initial values
-    ws.fetch(CONT_COLL).seqbase(1@0);       # no entry for transient container
+    ws.fetch(DOC_LOADED).seqbase(1@0);
+    ws.fetch(FRAG).seqbase(0@0).append(oid(nil));
     ws.fetch(HEIGHT).seqbase(0@0).append(0);
-
-    # add identical bat references as 'master' bats just to make the transient container complete  
-    [append](mirror(ws_rid).leftfetchjoin(ws), [fetch](ws_rid.leftfetchjoin(ws), 0));
-    [append](mirror(ws_mem).leftfetchjoin(ws), [fetch](ws_mem.leftfetchjoin(ws), 0));
-
     return ws.access(BAT_READ);
 }
 
@@ -483,14 +316,7 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : void
 {
     doc_query.select(int(ws))@batloop() {
         var doc_oid := $h;
-        var coll_oid := doc_collection.find($h);
-
         doc_query.delete(doc_oid, int(ws));
-        if (not(reverse(doc_collection).join(doc_query).exist(coll_oid))) {
-            coll_lock.find(coll_oid).lock_destroy();
-            coll_lock.delete(coll_oid);
-            coll_free.delete(coll_oid);
-        }
         if (not(doc_query.exist(doc_oid))) {
             if (doc_sema.exist(doc_oid)) {
                 sema_up(doc_sema.find(doc_oid));
@@ -498,7 +324,7 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : void
         }
     }
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-    var cursize := sum(doc_timestamp.select(timestamp(nil),timestamp(nil)).mirror().join(doc_size));
+    var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
 
     if (cursize > maxsize) {
@@ -520,113 +346,34 @@ PROC destroy_ws(BAT[void,bat] ws) : void
     if (not(isnil(err))) { ERROR(err); }
 }
 
-PROC ws_newpage_locked(BAT[void,bat] ws, oid cont) : oid {
-    var coll_oid := ws.fetch(CONT_COLL).find(cont);
-    var rid_size  := ws.fetch(_RID_SIZE).find(cont);
-    var rid_level := ws.fetch(_RID_LEVEL).find(cont);
-    var rid_prop  := ws.fetch(_RID_PROP).find(cont);
-    var rid_kind  := ws.fetch(_RID_KIND).find(cont);
-    var rid_nid   := ws.fetch(_RID_NID).find(cont);
-    var free_pages, i := 0;
-    var rid_cnt := count(rid_size);
-    var last_pid := 1 + (rid_cnt = 0).ifthenelse(0, (rid_cnt - 1) >> REMAP_PAGE_BITS);
-    
-    # obtain a free-list of pages
-    if (coll_free.exist(coll_oid)) {
-        free_pages := coll_free.find(coll_oid);
-    } else {
-        free_pages := reverse(ws.fetch(MAP_PID).find(cont).uselect(oid(nil))).access(BAT_WRITE);
-        coll_free.insert(coll_oid, free_pages);
-    }
-
-    # re-use a page from the list; or -if empty- append a new page
-    i := count(free_pages);
-    if (i > 0) {
-        last_pid := free_pages.fetch(i - 1);
-        free_pages.reverse().delete(last_pid);
-    } else {
-        # append a page to the master rid_* table
-        var empty_page_chr := empty_page.project(chr(nil));
-        var empty_page_oid := empty_page.project(oid(nil));
-        var lastpage_size := and(lng(rid_cnt),REMAP_PAGE_MASK);
-        if (lastpage_size > 0LL) {
-            # take care to fill out the last page (if not yet full)
-            rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_level.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_kind.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_prop.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_nid.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-        }
-        # append the new page
-        rid_size.append(empty_page, true);
-        rid_level.append(empty_page_chr, true);
-        rid_kind.append(empty_page_chr, true);
-        rid_prop.append(empty_page_oid, true);
-        rid_nid.append(empty_page_oid, true);
-    }
-    return oid(last_pid);
-}
-
-PROC ws_newpage(BAT[void,bat] ws, oid cont) : oid {
-    var page_lock := coll_lock.find(ws.fetch(CONT_COLL).find(cont));
-    var page_id;
-
-    lock_set(page_lock);
-    var err := CATCH(page_id := ws_newpage_locked(ws, cont));
-    lock_unset(page_lock);
-
-    if (not(isnil(err))) ERROR("ws_newpage: " + err);
-    return page_id;
-} 
-
-PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, str collection, timestamp ts, int ws, int height) : void 
+PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
 {
     # get a new persistent doc id
-    var doc_id := doc_height.find(TEMP_DOC);
-    var ws_frag := docBAT.find("_ws_frag"); 
-    var doc_oid := oid(doc_id);
-
-    # determine the collection id for this doc
-    var coll_oid := doc_oid;
-    if (collection_name.texist(collection)) {
-        coll_oid := reverse(collection_name).find(collection);
-    } else {
-        collection_name.insert(coll_oid, collection);
-    }
-
-    # add to meta table
-    doc_name.insert(doc_oid, name);
-    doc_location.insert(doc_oid, location);
-    doc_timestamp.insert(doc_oid, ts);
-    doc_height.insert(doc_oid, height);
-    doc_size.insert(doc_oid, sum([batsize](docBAT)));
-    doc_collection.insert(doc_oid, coll_oid);
-    doc_root.insert(doc_oid, ws_frag.fetch(count(ws_frag) - 1)); # last fragment
+    var doc_oid := 0@0;
+    if (bat("doc_name").count() > 0) 
+        doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); 
 
     # rename all new bats with the doc id as suffix
-    [rename](docBAT, [+](str(int(coll_oid)), mirror(docBAT)));
+    [rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
+    var totsize := sum([batsize](docBAT));
+
+    # add to meta table
+    bat("doc_name").insert(doc_oid, name);
+    bat("doc_location").insert(doc_oid, location);
+    bat("doc_timestamp").insert(doc_oid, ts);
+    bat("doc_height").insert(doc_oid, height);
+    bat("doc_size").insert(doc_oid, totsize);
+
     [persists](docBAT, true);
 
-    # set the next persistent doc id
-    while ((doc_id :+= 1) > 1000000000) {
-        # if the id has overflown, we look for an unused id (unlikely to occur ever)
-        if (not(isnil(CATCH(bat(str(doc_id) + "_rid_size"))))) break;
-        if (doc_id > 2000000000) doc_id := 1000000000; # keep cycling to find one
-    }
-    doc_height.replace(TEMP_DOC, doc_id);
-
     # add the meta table to the commit set 
-    docBAT.insert(str(nil),collection_name);
-    docBAT.insert(str(nil),doc_name);
-    docBAT.insert(str(nil),doc_location);
-    docBAT.insert(str(nil),doc_collection);
-    docBAT.insert(str(nil),doc_root);
-    docBAT.insert(str(nil),doc_timestamp);
-    docBAT.insert(str(nil),doc_height);
-    docBAT.insert(str(nil),doc_size);
-    docBAT := [bbpname](docBAT);
-    if (not(subcommit(docBAT))) 
-        ERROR("shred_doc(%s) : commit failed\n", name);
+    #docBAT.insert(str(nil),bat("doc_name"));
+    #docBAT.insert(str(nil),bat("doc_location"));
+    #docBAT.insert(str(nil),bat("doc_timestamp"));
+    #docBAT.insert(str(nil),bat("doc_height"));
+    #docBAT.insert(str(nil),bat("doc_size"));
+    #if (not(subcommit(docBAT))) 
+    if (not(commit())) ERROR("shred_doc(%s) : commit failed\n", name);
 
     if (not(isnil(ws))) {
         pin_doc(doc_oid, ws);
@@ -636,65 +383,55 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, str collectio
 PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 {
     # insert all bats from shredBAT in docBAT
-    [insert](const docBAT, ws_shr, shredBAT);
+    var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(oid(nil),oid(-(DOC_LOADED,1))).mirror();
+    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
     # these are simple concatenations (to accelerate combined lookup)
-    # the replace is because we use this slot for transferring the docseq_pre
-    # bat from the shredder to the MIL routines. This is very ugly but I tried
-    # to delete the tail of ths shredBAT bat and this did not work. JF
-    docBAT.insert("_qn_prefix_uri", docBAT.find("_qn_prefix").[+](str('\1')).[+](docBAT.find("_qn_uri")));
-    docBAT.insert("_qn_loc_uri",    docBAT.find("_qn_loc").[+](str('\1')).[+](docBAT.find("_qn_uri")));
-
-    # mapping between immutable node-id's and pre-order ranks (pre==rid, just after shredding)
-    var pre_nid := docBAT.find("_rid_nid");
+    docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
+    docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
 
     # create our indices
     var knd := ELEMENT;
-    var kinds := docBAT.find("_rid_kind").splitkind();
     while ( knd <= DOCUMENT ) {
-        var knd_no  := str(chr(48 + knd));
-        var knd_pre := kinds.fetch(int(knd)).hmark(PRE_BASE).chk_order();
-        var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
-        if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
-            ERROR("pathfinder.mx: index_doc(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
-                  htype(knd_nid), head(knd_nid));
-        }
-        docBAT.insert("_knd_nid_" + knd_no, knd_nid);
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-            var knd_prop := knd_pre.leftfetchjoin(docBAT.find("_rid_prop")).chk_order();
-            if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
-                ERROR("pathfinder.mx: index_doc(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
-                      htype(knd_prop), head(knd_prop));
-            }
-            docBAT.insert("_knd_prop_" + knd_no, knd_prop);
-        }
+        docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
+                      docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
         knd :+= chr(1);
     }
+
+    # we must now get all elemment-ids (prop) sorted, and within that, all pre's sorted
+    var prop_pre_bat, sorted_pros;
+
+    # get all element-pre's with their prop values in *reverse* pre order (note revert())
+    prop_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
+    prop_pre_bat := prop_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().access(BAT_WRITE).revert();
+
+    # get all unique props, and sort them (we hope for a small set of values => small hash table)
+    var sorted_props := prop_pre_bat.project(nil).kunique().sort().mirror();
+
+    # lefthashjoin will keep props in order and output pre's ordered again within that
+    # ..will construct a big hash-table, but exploits reverse-insert-order-out property of hash join
+    prop_pre_bat := sorted_props.lefthashjoin(prop_pre_bat);
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)), prop_pre_bat);
+
+    # same procedure for PI (tends to be very small set anyway)
+    prop_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
+    prop_pre_bat := prop_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().access(BAT_WRITE).revert();
+    sorted_props := prop_pre_bat.project(nil).kunique().sort().mirror();
+    prop_pre_bat := sorted_props.lefthashjoin(prop_pre_bat);
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)), prop_pre_bat);
+
     docBAT := docBAT.access(BAT_READ);
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }
 
-
-PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection, bit doCommit, str opt, timestamp ts, int ws) : int
+PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : int
 {
-    var shredRES;
-
-    if (false) {
-      var docseq := bat(str,str,4);
-      docseq.insert(location,"");
-      # docseq.insert("/home/flokstra/scripts/DATA/foo.xml","");
-      shredRES := shred2collection(docseq,opt);
-      # docseq_pre is a [void,oid] BAT containing the document_pre numbers of
-      # the documents in the docseq BAT in the same order.
-      var docseq_pre := shredRES.fetch(ATTR_PROP+1);
-    } else {
-      shredRES := shred2bats(location,"",opt);
-    }
+    var shredRES := shred2bats(location,"",opt);
     var err, exists := false;
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := doc_name.texist(name));
+    err := CATCH(exists := bat("doc_name").texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -703,33 +440,29 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection,
     # add indices to the shredded doc, and find out maximum doc height
     var height := index_doc(shredRES, docBAT);
 
-#[StandOff] [FIXME: OBSOLETE CODE], we do not use persistent region-indices anymore
-    # TODO: remove REGION_PRE, REGION_START and REGION_END from document-bats
-    #if (standoff) {
-    #    print("# extracting regions...\n");
-    #    docBAT := region_extract(docBAT, "lng");
-    #} else {
-       var r_nid, r_start, r_end;
-       (r_nid := bat(void, oid).seqbase(0@0)).bbpname("_region_pre");
-       (r_start := bat(void, lng).seqbase(0@0)).bbpname("_region_start");
-       (r_end := bat(void, lng).seqbase(0@0)).bbpname("_region_end");
-       docBAT.access(BAT_WRITE).insert("_region_pre",r_nid); 
-       docBAT.access(BAT_WRITE).insert("_region_start",r_start); 
-       docBAT.access(BAT_WRITE).insert("_region_end",r_end); 
-    #}
-#[/StandOff]
-    if (collection != name) {
-        # TODO: modify shredder such that it adds to the bats rather than creating new ones 
-        #       also think of rebuilding/extending to the indices!
-        ERROR("shredding of multi-document collections is not yet implemented");
-    } 
+#[BURKOWSKI]
+    var burkowski := false;
+    CATCH( { burkowski := =(monet_environment.find("burkowski"),"enabled"); } );
+    if (burkowski) {
+        print("# extracting regions...\n");
+        docBAT := region_extract(docBAT, "lng");
+    } else {
+       var r_pre := bat(void, oid).seqbase(0@0).bbpname("region_pre");
+       var r_start := bat(void, lng).seqbase(0@0).bbpname("region_start");
+       var r_end := bat(void, lng).seqbase(0@0).bbpname("region_end");
+       docBAT.access(BAT_WRITE).insert("region_pre",r_pre); 
+       docBAT.access(BAT_WRITE).insert("region_start",r_start); 
+       docBAT.access(BAT_WRITE).insert("region_end",r_end); 
+    }
+#[/BURKOWSKI]
+
     if (doCommit) {
-        [save](docBAT.[access](BAT_WRITE).[access](BAT_READ)); # flush to disk before locking
-        [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 4*int(REMAP_PAGE_SIZE)), STORE_MEM, STORE_MMAP));
+        [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 65536), STORE_MEM, STORE_MMAP));
+        [save](docBAT);
 
         # add doc to the database locked
         lock_set(pf_lock);
-        err := CATCH(shred_doc_locked(docBAT, location, name, collection, ts, ws, height));
+        err := CATCH(shred_doc_locked(docBAT, location, name, ts, ws, height));
         lock_unset(pf_lock);
 
         if (not(isnil(err))) ERROR(err);
@@ -737,11 +470,11 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection,
     return height;
 }
 
-PROC shred_doc_base(str location, str name, str collection, bit doCommit, str opt) : void
+PROC shred_doc_base(str location, str name, bit doCommit, str opt) : void
 {
     var us := usec();
     var docBAT := bat(str,bat,WS_SIZE);
-    shred_doc_impl(docBAT, location, name, collection, doCommit, opt, timestamp(nil), int(nil));
+    shred_doc_impl(docBAT, location, name, doCommit, opt, timestamp(nil), int(nil));
     var ms := (us := usec() - us) / 1000;
     if ( doCommit ) {
         printf("# Shredded XML doc(\"%s\"), total time after commit=%lld.%03llds\n", name, /(ms,1000),%(ms,1000));
@@ -749,19 +482,9 @@ PROC shred_doc_base(str location, str name, str collection, bit doCommit, str op
         printf("# Shredded XML doc(\"%s\") uncommitted, total time =%lld.%03llds\n", name, /(ms,1000),%(ms,1000));
     }
 }
-PROC shred_doc_base(str location, str name, bit doCommit, str opt) : void
-{
-    shred_doc_base(location, name, name, doCommit, opt); 
-}
-
 PROC shred_doc(str location, str name) : void
 {
-    shred_doc_base(location, name, true, "0");
-}
-
-PROC shred_doc(str location, str name, int perc) : void
-{
-    shred_doc_base(location, name, true, str(perc));
+    shred_doc_base(location, name, true, "");
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
 "PARAMETERS:\n\
@@ -797,38 +520,29 @@ PROC delete_doc_locked(oid doc_oid) : bit
         doc_sema.delete(doc_oid, sem);
     }
 
-    var coll_oid := doc_collection.find(doc_oid);
-    doc_name.delete(doc_oid);
-    doc_location.delete(doc_oid);
-    doc_collection.delete(doc_oid);
-    doc_root.delete(doc_oid);
-    doc_timestamp.delete(doc_oid);
-    doc_height.delete(doc_oid);
-    doc_size.delete(doc_oid);
+    # docBAT becomes [name,bat]
+    docBAT := [bat]([+](ws_tpe.uselect(bat).mirror().join(ws_nme), str(int(doc_oid))).reverse().mirror());
 
-    if (not(doc_collection.texist(coll_oid))) {
-        collection_name.delete(coll_oid); # delete empty collection (kludge?)
+    # rename the bats so even in case of failure they don't bother us directly anymore
+    [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
 
-        # docBAT becomes [name,bat]
-        docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror());
+    # remove them from the repository
+    [persists](docBAT, false);
 
-        # rename the bats so even in case of failure they don't bother us directly anymore
-        [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
-
-        # remove them from the repository
-        [persists](docBAT, false);
-    }
+    bat("doc_name").delete(doc_oid);
+    bat("doc_location").delete(doc_oid);
+    bat("doc_timestamp").delete(doc_oid);
+    bat("doc_height").delete(doc_oid);
+    bat("doc_size").delete(doc_oid);
 
     # also commit the meta bats
-    docBAT := [bbpname](docBAT).access(BAT_WRITE);
-    docBAT.insert(str(nil), "doc_name");
-    docBAT.insert(str(nil), "doc_location");
-    docBAT.insert(str(nil), "doc_collection");
-    docBAT.insert(str(nil), "doc_root");
-    docBAT.insert(str(nil), "doc_timestamp");
-    docBAT.insert(str(nil), "doc_height");
-    docBAT.insert(str(nil), "doc_size");
-    return subcommit(docBAT);
+    #docBAT.insert(str(nil), bat("doc_name"));
+    #docBAT.insert(str(nil), bat("doc_location"));
+    #docBAT.insert(str(nil), bat("doc_timestamp"));
+    #docBAT.insert(str(nil), bat("doc_height"));
+    #docBAT.insert(str(nil), bat("doc_size"));
+    #return subcommit(docBAT);
+    return commit();
 }
 
 PROC delete_doc(str name) : void
@@ -837,7 +551,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := doc_name.texist(name));
+    err := CATCH(exists := bat("doc_name").texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -845,7 +559,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(delete_doc_locked(doc_name.reverse().find(name)));
+    err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -859,7 +573,7 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
-    doc_timestamp.copy()@batloop() {
+    bat("doc_timestamp").copy()@batloop() {
         if (not(and(cachedOnly, isnil($t))))
             delete_doc_locked($h);
     }
@@ -888,10 +602,6 @@ PROC pin_doc(oid doc_oid, int ws) : void
 {
     # pin the document on this working set (must hold lock!)
     doc_query.insert(doc_oid, int(ws));
-    var coll_oid := doc_collection.find(doc_oid);
-    if (not(coll_lock.exist(coll_oid))) {
-          coll_lock.insert(coll_oid, lock_create());
-    }
 }
 
 
@@ -918,67 +628,54 @@ PROC doc_curtime(str filename) : timestamp {
     return ts;
 }
 
-PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oid coll_oid, int height) : oid
+PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int height) : oid
 {
-    var cont, docid := oid(count(ws.fetch(DOCID_OID)));
+    # add it to the working set
+    var frag := ws.fetch(DOC_LOADED).uselect(name);
 
-    if (ws.fetch(CONT_COLL).texist(coll_oid)) {
-        # collection is already part of the working set
-        cont := reverse(ws.fetch(CONT_COLL)).find(coll_oid);
-    } else {
-        # add the collection to the working set
-        var pre, mem, dsk, dst := ws_col.mirror().leftfetchjoin(ws);
+    if (frag.count() = 0) {
+        ws.fetch(DOC_LOADED).append(name);
+        frag := oid(ws.fetch(DOC_LOADED).count());
 
-        if (doc_oid = TEMP_DOC) { 
-            # temporary shredded (read-only) doc; no isolation needed 
-            coll_oid := TEMP_DOC;                     # must pass oid(nil) for TEMP_DOCs!!
-            dsk := ws_dsk.leftjoin(docBAT);           # doc has just been shredded into docBAT
-            pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
-            mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
-        } else {
-            # here we get transaction isolation: pre's are remapped views, and mem are normal views
-            dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
-            var map_pid := dsk.find(oid(_MAP_PID)).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
-            pre := [remap](reverse(ws_rid).leftjoin(dsk), const map_pid, false);
-            mem := [rcopy](reverse(ws_mem).leftjoin(dsk));
-        }
         # use the ws_* bats to add all bats to the working set in a multiplex
-        [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
+        var src := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
+        var dst := src.mirror().leftfetchjoin(ws);
+        if (docid != "") 
+            # if docid != "", it holds the str(id) of the persistent doc
+            src := [bat]([+](src, docid));
+        else
+            # if not, the temporary document has been shredded into docBAT
+            src := src.leftjoin(docBAT);
+        [append](dst, src);
 
-        # create views for the container-id (which is constant within a doc)
-        ws.fetch(CONT_COLL).append(coll_oid);
-        cont := oid(count(ws.fetch(CONT_COLL)));
+        # create views
+        ws.fetch(PRE_FRAG).append(constant2bat(frag));
+        ws.fetch(ATTR_FRAG).append(constant2bat(frag));
 
-        var cont_bat := constant2bat(cont);
-        ws.fetch(PRE_CONT).append(cont_bat);
-        ws.fetch(ATTR_CONT).append(cont_bat);
+        # adapt constants
+        ws.fetch(FRAG).replace(0@0,frag);
 
         if (isnil(height))
             height := ws.fetch(PRE_LEVEL).max().int() + 1;
         ws.fetch(HEIGHT).append(height);
+    } else { 
+        ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
     }
-    if (not(ws.fetch(DOCID_NAME).texist(name))) {
-        # add the document to the working set
-        ws.fetch(DOCID_OID).append(doc_oid);
-        ws.fetch(DOCID_NAME).insert(docid, name);            
-        ws.fetch(CONT_DOCID).insert(cont, docid);            
-    }
-    return cont;
+    return frag;
 }
-
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
     var doc_oid := oid(nil);
     # check if the document already existed
-    if (doc_name.texist(name)) {
-        doc_oid := doc_name.reverse().find(name);
-    } else if (doc_location.texist(name)) {
+    if (bat("doc_name").texist(name)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+    } else if (bat("doc_location").texist(name)) {
         # existed as cached location (URI): must check timestamp
-        doc_oid := doc_location.reverse().find(name);
+        doc_oid := bat("doc_location").reverse().find(name);
     }
     if (not(isnil(doc_oid))) {
-        var lim := doc_timestamp.find(doc_oid);
+        var lim := bat("doc_timestamp").find(doc_oid);
         if (not(isnil(lim))) { # a nil limit means the doc never expires
             if  (ts > lim) {
                 delete_doc_locked(doc_oid); # remove outdated document from the cache
@@ -994,6 +691,7 @@ PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : ti
 {
     if (isnil(doc_oid) and isnil(filename)) {
         # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
+        var uri_lifetime := bat("uri_lifetime");
         var b := [startsWith](name, mirror(uri_lifetime)).uselect(true);
         var lifetime := lng(nil);
         if (b.count() > 0) {
@@ -1011,7 +709,6 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     var time_shred := 0; 
     var filename := doc_filename(name);
     var t := time();
-    var coll_oid := oid(nil);
     var doc_oid := oid(nil);
     var ts := doc_curtime(filename);
     var err;
@@ -1022,24 +719,26 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     if (isnil(err)) err := CATCH(ts := lifetime_doc_locked(name,filename,doc_oid,ts));
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
+
     var docBAT := new(str,bat,WS_SIZE);
     var doCommit := true;
+    var docid := str(nil);
     var height;
 
     if (isnil(doc_oid)) {
         if (isnil(ts)) {
-            doc_oid := TEMP_DOC;
             doCommit := false;
+            docid := "";
         }
-        height := shred_doc_impl(docBAT, name, name, name, doCommit, "0", ts, int(ws));
+        height := shred_doc_impl(docBAT, name, name, doCommit, "", ts, int(ws));
         time_shred :+= time() - t;
     }
-    if (isnil(doc_oid) or (doc_oid != TEMP_DOC)) {
-        doc_oid := doc_name.reverse().find(name);
-        coll_oid := doc_collection.find(doc_oid);
-        height := doc_height.find(doc_oid);
+    if (isnil(docid)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+        height := bat("doc_height").find(doc_oid);
+        docid := str(int(doc_oid));
     }
-    add_docbat(ws, docBAT, name, doc_oid, coll_oid, height);
+    add_docbat(ws, docBAT, name, docid, height);
     return time_shred;
 }
 
@@ -1076,7 +775,7 @@ PROC xmlcache_add_rule(str uri, any lifetime) : void {
 }
 PROC xmlcache_add_rule(str uri, lng lifetime) : void {
     lock_set(pf_lock);
-    var err := CATCH({ uri_lifetime.delete(uri); uri_lifetime.insert(uri, lifetime); });
+    var err := CATCH({ bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1085,7 +784,7 @@ ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
 
 PROC xmlcache_del_rule(str uri) : void {
     lock_set(pf_lock);
-    var err := CATCH({ uri_lifetime.delete(uri);});
+    var err := CATCH({ bat("uri_lifetime").delete(uri);});
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1094,7 +793,7 @@ ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
 
 PROC xmlcache_print_rules() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(uri_lifetime.hmark(0@0).col_name("URI-prefix"), uri_lifetime.tmark(0@0).col_name("liftime-secs")); });
+    var err := CATCH({  table(bat("uri_lifetime").hmark(0@0).col_name("URI-prefix"), bat("uri_lifetime").tmark(0@0).col_name("liftime-secs")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1103,7 +802,7 @@ ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 
 PROC xmlcache_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table( doc_name.col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size"), doc_timestamp.select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
+    var err := CATCH({  table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1112,7 +811,7 @@ ADDHELP("xmlcache_print", "boncz", "May 2005",
 
 PROC xmldb_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table( tsort(mirror(doc_timestamp.uselect(timestamp(nil))).join(doc_collection).join(collection_name)).col_name("collection"), doc_name.col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size")); });
+    var err := CATCH({  table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1125,9 +824,9 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#include <monet.h>
 #include <monettime.h>
 #include <lock.h>
+#include <monet.h>
 #include <monet_context.h>
 #include <monet_interpreter.h>
 #include <streams.h>
@@ -1140,9 +839,8 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 @:ws(c_decl)@
 @:decl(c)@
 
-#define XTRACT_KIND(X)     (X & 63)
-#define XTRACT_CONT(X)     (X >> 6)
-#define SET_CONT_KIND(X,Y) (X << 6 | Y)
+#define XTRACT_KIND(X)  (X & 63)
+#define XTRACT_FRAG(X)  (X >> 6)
 
 /* xquery_method : execute a loop-lifted xquery function
  *
@@ -1157,11 +855,9 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
  *
  * we return an error string, or NULL iff everything went A-OK  
  */
-pathfinder_export char *
+char*
 xquery_method(stream *out, 
-              int rpctiming,
               char* module, 
-              char* uri, 
               char *method, 
               int argc, 
               int itercnt, 
@@ -1260,7 +956,6 @@ typedef struct _xquery_module {
     char* prologue;               /* MIL procs defined in this module */
     char* epilogue;               /* MIL procs undefs for this module */
     xquery_function *functions;   /* functions declared in this module */
-    char *nsurl;                  /* module namespace definition */
     char url[1];                  /* module url */
 } xquery_module;
 
@@ -1289,11 +984,16 @@ typedef struct _xquery_loaded_module {
 
 /* cached MIL client + Xquery specific context */
 typedef struct {
-    bit initialized;
+    int inuse; 
 
+    /* xquery_clients[stk].stk == stk; MIL client is monet_clients[stk] */
     Cntxt stk; /* stack to execute module prologues and non-cacheable queries in */  
+
     /* MIL child context of ctx->stk; it is marked as a reusable stack frame so variable records are kept */
-    Cntxt repeat_stk; /* stk to execute the prepared function trees in  for fast reuse */ 
+    Cntxt repeat_stk; /* stk to execute the prepated function trees in  for fast reuse */ 
+
+    /* last MIL variable that should be cleared after execution */ 
+    Variable lastvar; 
 
     /* value parsing buffer reuse */
     int vallen;
@@ -1302,7 +1002,6 @@ typedef struct {
     /* query buffer reuse */
     size_t buflen;
     char *buf;
-    int cacheid;        /* only reuse from the same cache */
         
     /* error stream (normally fderr=GDKerr=GDKout) */
     stream *fderr;
@@ -1315,9 +1014,6 @@ typedef struct {
     /* pointers into MIL variable records (to set values) */
     int *shredBAT; 
     int *time_compile; 
-    int *time_shred; 
-    int *time_exec; 
-    int *time_print; 
     char **genType;
 
     /* counts used to remove query (non-module) procs and stacks after execution */
@@ -1331,8 +1027,10 @@ typedef struct {
     xquery_loaded_module *loaded_modules; 
 } xquery_client;
 
+/* xquery context cache corresponds slot-by-slot with monet_clients */
+xquery_client xquery_clients[MAXCLIENTS + 1];
+
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
-int xquery_cacheid = 0;
 
 MT_Lock pf_compiler_lock;
 MT_Lock pf_module_lock;
@@ -1357,7 +1055,7 @@ MT_Lock pf_cache_lock;
  *
  * int
  * xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, 
- *                     char** prologue, char** query, char** epilogue, char* nsurl) 
+ *                     char** prologue, char** query, char** epilogue) 
  * - translate xquery to MIL and execute
  *
  * all int-returning functions return error(0)/ok(1)
@@ -1430,10 +1128,6 @@ xquery_mil_exec(xquery_client *ctx,
     return ret;
 }
 
-static char* xquery_parse_ident(char* p); 
-static char* xquery_parse_space(char* p); 
-static char* xquery_parse_string(char* p, char *buf, int len); 
-
 /*
  * translate xquery to MIL and execute, return error(0)/ok(1)
  * We collect the MIL scripts in three sections (prologue,query,epilogue).
@@ -1453,17 +1147,11 @@ xquery_compile_exec(xquery_client *ctx,
                     int is_url, 
                     char** prologue, 
                     char** query, 
-                    char** epilogue,
-                    char* nsurl)
+                    char** epilogue)
 {
     int is_mil = 0, len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
     char *err = NULL;
-
-    int options = 0;
-    /* Setting the StandOff flag based on runtime settings */
-    if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
-        options |= COMPILE_OPTION_STANDOFF;
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
@@ -1476,30 +1164,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (is_mil && query == NULL) {
             *prologue = xquery; *epilogue = NULL;
         } else {
-            err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue, options);
-            if (err == NULL && nsurl != NULL){
-                /* get the module namespace URL Y from pattern: "module namespace X = Y" */
-                char *p0 = xquery_parse_space(xquery); 
-                err = "xquery_compile_exec: cannot parse module namespace.\n";
-                if (strncmp(p0, "module", 6) == 0) {
-                    char *p1 = xquery_parse_space(p0+=6); 
-                    if (p1 > p0 && strncmp(p1, "namespace", 9) == 0) {
-                        char *p2 = xquery_parse_space(p1+=9); 
-                        if (p2 > p1) {
-                            char* p3 = xquery_parse_ident(p2);
-                            if (p3 > p2) {
-                                char *p4 = xquery_parse_space(p3); 
-                                if (p4 > p3 && *p4++ == '=') {
-                                    char *p5 = xquery_parse_space(p4); 
-                                    if (p5 > p4 && xquery_parse_string(p5, nsurl, 1024) > p5) {
-                                        err = NULL; /* success! */
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
         }
         if (err == NULL || (prologue && *prologue) || (del && *del)) {
             ret = 1; /* no errors, or some MIL script came out still */
@@ -1551,7 +1216,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (ret && *epilogue && **epilogue)
             ret = xquery_mil_exec(ctx, *epilogue, 0);
     }
-    return ret?ret+is_mil:0;
+    return ret;
 }
 
 /*
@@ -1703,10 +1368,10 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
     BATseqbase(ctx->@1, @2);
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
 @= bunins
-    if (BUNins(ctx->@1, @2, @3, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @= bunappend
-    if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (BUNappend(ctx->@1, @2) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
 @c
 /*
@@ -1734,23 +1399,20 @@ xquery_function_call(xquery_client *ctx,
     char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
 
     /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
-    for(j=0; j<argc; j++) {
-        mincnt[j] = maxcnt[j] = argcnt[0][j];
-        tpe[j] = -1;
-    }
-    for(l=i=0; i<itercnt; i++) {
-        for(j=0; j<argc; j++) {
-            if (argcnt[i][j] > maxcnt[j]) maxcnt[j] = argcnt[i][j];
-            if (argcnt[i][j] < mincnt[j]) mincnt[j] = argcnt[i][j];
-            for(k=0; k<argcnt[i][j]; k++,l++) {
+    for(l=i=0; i<argc; i++) {
+        mincnt[i] = maxcnt[i] = argcnt[0][i];
+        tpe[i] = -1;
+        for(j=0; j<itercnt; j++) {
+            if (argcnt[j][i] > maxcnt[i]) maxcnt[i] = argcnt[j][i];
+            if (argcnt[j][i] < mincnt[i]) mincnt[i] = argcnt[j][i];
+            for(k=0; k<argcnt[j][i]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
                 if (t >= XQUERY_TYPES) 
                     return (char*) -1; /* can't make a quick function resolution if unknown types are involved */
-                tpe[j] = xquery_type_common_ancestor(tpe[j],t);
+                tpe[i] = xquery_type_common_ancestor(tpe[i],t);
             }
         }
     }
-
     /* try to resolve the parameters */
     fun = xquery_resolve(ctx, ns, method, argc, mincnt, maxcnt, tpe);
     if (fun == NULL)
@@ -1779,7 +1441,7 @@ xquery_function_call(xquery_client *ctx,
             while(*src && cur < end) *cur++ = *src++;
 
             if (shredBAT) {
-                /* add shredded RPC request message to the working set */
+                /* add shredded soap message to the working set */
                 src = (char*) PFdocbatMIL();
                 while(*src && cur < end) *cur++ = *src++;
             }
@@ -1814,15 +1476,15 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
-    @:seqbase(fun_vid000, oid_nil, "oid(nil)")@
-    @:seqbase(fun_iter000, oid_nil, "oid(nil)")@
-    @:seqbase(fun_kind000, oid_nil, "oid(nil)")@
-    @:seqbase(fun_item000, oid_nil, "oid(nil)")@
-    @:seqbase(loop000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_vid000, oid_nil, "nil")@
+    @:seqbase(fun_iter000, oid_nil, "nil")@
+    @:seqbase(fun_kind000, oid_nil, "nil")@
+    @:seqbase(fun_item000, oid_nil, "nil")@
+    @:seqbase(loop000, oid_nil, "nil")@
 
-    for(l=j=0; j<itercnt; j++) {
-        for(i=0; i<argc; i++) {
-            oid item, vid = i + fun->vid, iter = j+1;
+    for(l=i=0; i<argc; i++) {
+        for(j=0; j<itercnt; j++) {
+            oid vid = i + fun->vid, iter = j+1;
             if (i == 0 && j > 0) {
                 @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
             }
@@ -1845,16 +1507,16 @@ xquery_function_call(xquery_client *ctx,
                 @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
                 @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
                 if (c == 'i') { /* xs:integer */
+                    oid item = BATcount(ctx->int_values);
                     @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
-                    item = *(oid*) BUNhead(ctx->int_values, BUNfnd(BATmirror(ctx->int_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 'd') { /* xs:double or xs:decimal */
+                    oid item = BATcount(ctx->dbl_values);
                     @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
-                    item = *(oid*) BUNhead(ctx->dbl_values, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
                     @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 's') { /* xs:string */
+                    oid item = BATcount(ctx->str_values);
                     @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
-                    item = *(oid*) BUNhead(ctx->str_values, BUNfnd(BATmirror(ctx->str_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (shredBAT == NULL) { 
                     return "xquery_function_call: node parameter without shredBAT.\n";
@@ -1886,18 +1548,10 @@ xquery_function_call(xquery_client *ctx,
     }
 
     *(ctx->time_compile) = GDKms() - msec;
-    
+
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
-        if (strstr(mode, "rpcservertime") != NULL) {
-           printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
-           printf("\tTrans: %d msec\n", (*ctx->time_compile) );
-           printf("\tShred: %d msec\n", (*ctx->time_shred) );
-           printf("\tQuery: %d msec\n", (*ctx->time_exec - *ctx->time_shred) );
-           printf("Server_Serialisation + Network_Server_2_Client: %d msec\n", (*ctx->time_print) );
-        }
-
         size_t dummy;
         if (fun->size == 0)
             fun->size = Myysize(prepfun->lt, &dummy);
@@ -1915,7 +1569,6 @@ xquery_function_call(xquery_client *ctx,
                  ctx->cachesize -= kill->def->size; 
              }
         }
-
         return NULL;
     }
     return xquery_function_error;
@@ -1965,26 +1618,19 @@ xquery_module_compile(xquery_client *ctx,
                       char* mode, 
                       char *url) 
 {
-    xquery_module *mod = NULL;
+    xquery_module *mod = GDKmalloc(sizeof(xquery_module)+strlen(url));
     BAT *b = ctx->proc_vid;
     int xx = BUNsize(b);
     int cnt = BUNindex(b, BUNlast(b));
-    int ret, url_len = strlen(url)+1;
     BUN p, q;
 
-    mod = GDKmalloc(sizeof(xquery_module)+url_len+1024);
     if (mod == NULL) return NULL;
-    memset(mod, 0, sizeof(xquery_module)+url_len+1024);
+    memset(mod, 0, sizeof(xquery_module));
     strcpy(mod->url, url);
-    mod->nsurl = mod->url + url_len;
-
-    ret = xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
-    if (!ret) {
+    if (!xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue)) {
         xquery_module_free(mod);
         return NULL;
     } 
-    if (ret == 2) mod->nsurl = NULL; /* for MIL modules (ret == 2), mod->nsurl == NULL (we don't know it :-( )*/
-
     for(p = BUNptr(b,cnt), q = BUNlast(b); p < q; p += xx) {
         char *proc = (char*) BUNhead(b,p);
         xquery_function *fun = (xquery_function*) GDKmalloc(sizeof(xquery_function)+strlen(proc));
@@ -2017,7 +1663,6 @@ static char*
 xquery_module_load(xquery_client *ctx, 
                    char* mode, 
                    char *ns, 
-                   char *module,
                    char *url) 
 {
     xquery_loaded_module *mod, *prev = NULL;
@@ -2030,30 +1675,23 @@ xquery_module_load(xquery_client *ctx,
                 if (prev) prev->next = mod->next;
                 else ctx->loaded_modules = NULL;
                 break; /* put module at front of list */
+            } else if (mod->nslen == nslen && strncmp(mod->ns, ns, nslen)) {
+                return "xquery_module_load: module already loaded under different namespace.\n";
             }
-            if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
-                return "xquery_module_load: import module statement does not match module namespace declaration.\n";
+            return NULL;
         }
     }
     if (mod == NULL) {
-        xquery_module *def;
         mod = (xquery_loaded_module*) GDKmalloc(sizeof(xquery_loaded_module));
         if (mod == NULL) 
             return "xquery_module_load: could not allocate.\n";
-        mod->def = NULL;
 
         MT_set_lock(pf_module_lock, "xquery_module_load");
-        for(def = xquery_compiled_modules; def; def = def->next) 
-            if (strcmp(def->url, url) == 0) break;
-
-        if (def == NULL){
+        for(mod->def = xquery_compiled_modules; mod->def; mod->def = mod->def->next) 
+            if (strcmp(mod->def->url, url) == 0) break;
+        if (mod->def == NULL)
             mod->def = xquery_module_compile(ctx, mode, url);
-        }
         MT_unset_lock(pf_module_lock, "xquery_module_load");
-
-        /* if a compiled module was found, we still need to execute it */
-        if (def && xquery_mil_exec(ctx, def->prologue, strstr(mode, "debug") != NULL))
-            mod->def = def; /* TODO: find a way to share PROC defs between MIL sessions */
 
         if (mod->def == NULL) {
             GDKfree(mod);
@@ -2068,51 +1706,7 @@ xquery_module_load(xquery_client *ctx,
     mod->nslen = nslen;
     mod->next = ctx->loaded_modules;
     ctx->loaded_modules = mod;
-
-    if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
-        return "xquery_module_load: import module statement does not match module namespace declaration.\n";
     return NULL;
-}
-
-/*
- * wait for all queries to finish; free all clients; clear PF url cache
- * freeing the cached YYTREEs in the xquery clients is done lazily 
- * (postponed to the next initialization of the record)
- */
-static void
-xquery_client_flushall()
-{
-    int i, wait = 100;
-    while(wait) {
-        MT_set_lock(pf_cache_lock, "xquery_client_flushall");
-        i = active_clients("xquery");
-        if (i == 0) {
-            /* ok, no xquery clients are active */
-            xquery_module *mod = xquery_compiled_modules;
-            while(mod) {
-                xquery_module *del = mod;
-                mod = mod->next;
-                xquery_module_free(del);
-            }
-            xquery_compiled_modules = NULL;
-            PFurlcache_flush();
-            wait = 0;
-        }
-        MT_unset_lock(pf_cache_lock, "xquery_client_flushall");
-        MT_sleep_ms(wait);
-    }
-}
-
-/*
- * flush the cache. 
- */
-int
-CMDxquery_start_query_cache(lng *maxsize)
-{
-    xquery_client_flushall();
-    if (*maxsize > 0) xquery_client_bytes = *maxsize;
-    xquery_cacheid++; /* old clients need to clean up their resources */
-    return GDK_SUCCEED;
 }
 
 
@@ -2120,29 +1714,63 @@ CMDxquery_start_query_cache(lng *maxsize)
  * =================== client session management ================================
  *
  * xquery_client *
- * xquery_client_alloc(mapi_client *fc);
- * - allocate a new xquery client, returns error message (NULL on success)
+ * xquery_client_alloc(stream *fdin, stream *fdout);
+ * - allocate a new xquery client, returns client cntxt (0 on error)
  *
  * char*
- * xquery_client_init(mapi_client *fc);
+ * xquery_client_init(xquery_client *ctx);
  * - initialize a new xquery cache context, returns error string (NULL if ok)
  *
  * void
- * xquery_client_free(mapi_client *fc);
- * - free a xquery cache context (terminate)
+ * xquery_client_free(xquery_client *ctx, int closeclient);
+ * - free a xquery cache context (forever)
  *
  * void
- * xquery_client_end(xquery_client *ctx, char *err);
- * - end of xquery execution (struct stays alive for reuse). 
+ * xquery_client_end(xquery_client *ctx, int forever);
+ * - end of xquery execution (if forever=0, struct stays alive for reuse). 
+ *
+ * void
+ * xquery_client_flushall() 
+ * - wait for all queries to finish; free all clients; clear PF url cache
  */
 
-@= find_var
-    v = VARfind(&ctx->stk, "@1");
-    if (v == NULL) 
-        return "xquery_client_alloc_: failed to lookup @1 variable.\n"; 
-    if (v->binding.vtype != TYPE_@2) 
-        return "xquery_client_alloc_: @1 variable has wrong type != int.\n"; 
-    ctx->@1 = &v->binding.val.@3; 
+static int xquery_caching = 0;
+
+/* 
+ * allocate a new xquery client, returns client cntxt (0 on error)
+ */
+static xquery_client* 
+xquery_client_alloc(stream *fdin, 
+                    stream *fdout) 
+{
+    xquery_client *ctx = NULL;
+    int i;
+
+    MT_set_lock(pf_cache_lock, "xquery_client_alloc");
+    if (fdin) xquery_caching = 1;
+    for(i=1; i<=MAXCLIENTS; i++) {
+        if (xquery_clients[i].inuse == 0 && xquery_clients[i].buflen) {
+            break; /* initialized & unused */
+        }
+    }
+    if (i > MAXCLIENTS && fdin == NULL) {
+        /* hack: if fdin == NULL, allocate a MIL client yourself! This is used by query_method() */
+        Client client = initClient("soap", GDKgetenv("monet_prompt"), FALSE);
+        if (client) {
+            TBL_initclient(client, monet_clients);
+            i = client - monet_clients;
+        }
+    }
+    if (i <= MAXCLIENTS) { /* suceeded to allocate a client */
+        ctx = xquery_clients + i;
+        ctx->inuse = 1;
+        monet_clients[i].fdin = fdin;
+        monet_clients[i].fdout = fdout;
+    }
+    MT_unset_lock(pf_cache_lock, "xquery_client_alloc");
+
+    return ctx;
+}
 
 @= find_bat
 {   Variable v = VARfind(&ctx->stk, "@1");
@@ -2151,152 +1779,76 @@ CMDxquery_start_query_cache(lng *maxsize)
         ctx->@1 = BATdescriptor(v->binding.val.bval);
     if (ctx->@1 == NULL) return "xquery_client_init: failed to lookup @1 variable.\n"; }
 @c
-
-static xquery_client*
-xquery_client_new(Cntxt stk) {
-    xquery_client *ctx = (xquery_client*)GDKmalloc(sizeof(xquery_client));
-
-    memset(ctx, 0, sizeof(xquery_client));
-    ctx->stk = stk; 
-    ctx->fderr = GDKerr;
-    return ctx; 
-}
-
-static char *
-xquery_client_alloc_(xquery_client *ctx)
-{
-    Variable v;
-
-    if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
-        return "xquery_client_alloc: failed to execute init script.\n"; 
-
-    @:find_var(shredBAT,int,ival)@
-    @:find_var(genType,str,sval)@
-    @:find_var(time_compile,int,ival)@
-    @:find_var(time_exec,int,ival)@
-    @:find_var(time_print,int,ival)@
-    @:find_var(time_shred,int,ival)@
-
-    @:find_bat(proc_vid)@
-    @:find_bat(var_usage)@
-    @:find_bat(dbl_values)@
-    @:find_bat(int_values)@
-    @:find_bat(str_values)@
-    @:find_bat(fun_vid000)@
-    @:find_bat(fun_iter000)@
-    @:find_bat(fun_item000)@
-    @:find_bat(fun_kind000)@
-    @:find_bat(loop000)@
-
-    ctx->var_usage_size = BATcount(ctx->var_usage);
-    ctx->proc_vid_size = BATcount(ctx->proc_vid);
-    ctx->cachesize = 0;
-    ctx->loaded_modules = NULL;
-    ctx->prepared_functions = NULL;
-    ctx->buflen = XQUERY_BUFSIZE;
-    ctx->cacheid = xquery_cacheid;
-    ctx->buf = GDKmalloc(ctx->buflen+1);
-    ctx->val = GDKmalloc(ctx->vallen = 128);
-    if (ctx->val == NULL || ctx->buf == NULL) {
-            if (ctx->buf) GDKfree(ctx->buf);
-            if (ctx->val) GDKfree(ctx->val);
-            ctx->buflen = 0;
-            return "xquery_client_alloc: failed to allocate.\n";
-    }
-    ctx->repeat_stk = CNTXTnew(ctx->stk);
-    ctx->initialized = 0;
-    CNTXTuse(ctx->repeat_stk);
-    monet_cntxt[ctx->repeat_stk].reuse = TRUE;
-
-    return NULL;
-}
-
-/* 
- * allocate a new xquery client, returns client cntxt (0 on error)
- */
-static char* 
-xquery_client_alloc(mapi_client *fc)
-{
-    xquery_client *ctx = xquery_client_new(fc->stk);
-
-    fc->fc = ctx;
-    if (!ctx) {
-        return "!ERROR: no space to allocate xquery client\n";
-    } else {
-        return xquery_client_alloc_(ctx);
-    }
-}
-
 /*
  * initialize a new xquery cache context, returns error string (NULL if ok)
  */ 
-static char *
-xquery_client_init_(xquery_client *ctx )
-{
-    if (!ctx->initialized) {
-        ctx->initialized = 1;
+static char* 
+xquery_client_init(xquery_client *ctx) 
+{ 
+    Variable v;
+
+    ctx->fderr = GDKerr;
+
+    if (ctx->buflen == 0) {
+        if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
+            return "xquery_client_init: failed to execute init script.\n"; 
+
+        ctx->lastvar = monet_cntxt[ctx->stk].var;
+
         if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
             return "xquery_client_init: failed to execute variable declarations.\n"; 
-    }
-    return NULL;
-}
 
-/*
- * free all cached subtrees and all proc definitions for all xquery modules
- * (the epilogue contains UNDEF procs) 
- */ 
-void
-xquery_client_free_cached_modules(xquery_client *ctx)
-{
-    xquery_prepared_function *fun= ctx->prepared_functions; 
-    xquery_loaded_module *mod= ctx->loaded_modules; 
+        v = VARfind(&ctx->stk, "shredBAT");
+        if (v == NULL) 
+            return "xquery_client_init: failed to lookup shredBAT variable.\n"; 
+        if (v->binding.vtype != TYPE_int) 
+            return "xquery_client_init: shredBAT variable has wrong type != int.\n"; 
+        ctx->shredBAT = &v->binding.val.ival; 
 
-    while(fun) {
-        xquery_prepared_function *del = fun;
-        fun = fun->next;
-        if (del->lt) Myyfree(del->lt);
-        GDKfree(del);
-    }
-    while(mod) {
-        xquery_loaded_module *del = mod;
-        mod = mod->next;
-        /* free all modules */
-        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
-            fprintf(stderr, "xquery_client_free: client %d error dropping %s\n", ctx->stk, del->def->url);
-        GDKfree(mod);
-    }
-    ctx->loaded_modules = NULL;
-    ctx->prepared_functions = NULL;
+        v = VARfind(&ctx->stk, "genType");
+        if (v == NULL) 
+            return "xquery_client_init: failed to lookup genType variable.\n"; 
+        if (v->binding.vtype != TYPE_str) 
+            return "xquery_client_init: genType variable has wrong type != str.\n"; 
+        ctx->genType = &v->binding.val.sval; 
 
-    /* free the query buffer */
-    if (ctx->buf) GDKfree(ctx->buf);
-    ctx->buf = NULL;
-    ctx->buflen = 0;
-}
+        v = VARfind(&ctx->stk, "time_compile");
+        if (v == NULL) 
+            return "xquery_client_init: failed to lookup time_compile variable.\n"; 
+        if (v->binding.vtype != TYPE_int) 
+            return "xquery_client_init: time_compile variable has wrong type != int.\n"; 
+        ctx->time_compile = &v->binding.val.ival; 
 
-static char* 
-xquery_client_init(mapi_client *fc) 
-{ 
-    xquery_client *ctx = fc->fc;
-    char* err = xquery_client_init_(ctx);
+        @:find_bat(proc_vid)@
+        @:find_bat(var_usage)@
+        @:find_bat(dbl_values)@
+        @:find_bat(int_values)@
+        @:find_bat(str_values)@
+        @:find_bat(fun_vid000)@
+        @:find_bat(fun_iter000)@
+        @:find_bat(fun_item000)@
+        @:find_bat(fun_kind000)@
+        @:find_bat(loop000)@
 
-    ctx->fderr = fc->c->fdout;
-
-    if (!err && ctx->cacheid != xquery_cacheid) {
-        xquery_client_free_cached_modules(ctx);
-
+        ctx->var_usage_size = BATcount(ctx->var_usage);
+        ctx->proc_vid_size = BATcount(ctx->proc_vid);
+        ctx->cachesize = 0;
+        ctx->loaded_modules = NULL;
+        ctx->prepared_functions = NULL;
         ctx->buflen = XQUERY_BUFSIZE;
-        ctx->cacheid = xquery_cacheid;
         ctx->buf = GDKmalloc(ctx->buflen+1);
-        if (ctx->buf == NULL) {
+        ctx->val = GDKmalloc(ctx->vallen = 128);
+        if (ctx->val == NULL || ctx->buf == NULL) {
             if (ctx->buf) GDKfree(ctx->buf);
+            if (ctx->val) GDKfree(ctx->val);
             ctx->buflen = 0;
-            err = "xquery_client_init: failed to allocate.\n";
+            return "xquery_client_init: failed to allocate.\n";
         }
-    }
-    if (err)
-        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
-    return err;
+        ctx->repeat_stk = CNTXTnew(ctx->stk);
+        CNTXTuse(ctx->repeat_stk);
+        monet_cntxt[ctx->repeat_stk].reuse = TRUE;
+    } 
+    return NULL;
 }
 
 
@@ -2305,14 +1857,37 @@ xquery_client_init(mapi_client *fc)
     ctx->@1 = NULL;
 @c
 /* 
- * free a xquery cache context (terminate).
+ * free a xquery cache context (forever).
  */
-static void
-xquery_client_free_(xquery_client *ctx)
+static void 
+xquery_client_free(xquery_client *ctx, 
+                   int closeclient) 
 {
-    xquery_client_free_cached_modules(ctx);
+    xquery_prepared_function *fun= ctx->prepared_functions; 
+    xquery_loaded_module *mod= ctx->loaded_modules; 
 
+    while(mod) {
+        xquery_loaded_module *del = mod;
+        mod = mod->next;
+        /* free all modules */
+        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
+            fprintf(stderr, "xquery_server: client %d error dropping %s\n", ctx->stk, del->def->url);
+        GDKfree(mod);
+    }
+    while(fun) {
+        xquery_prepared_function *del = fun;
+        fun = fun->next;
+        if (del->lt) Myyfree(del->lt);
+        GDKfree(del);
+    }
+    ctx->loaded_modules = NULL;
+    ctx->prepared_functions = NULL;
     ctx->shredBAT = NULL;
+
+    /* free the query buffer */
+    if (ctx->buf) GDKfree(ctx->buf);
+    ctx->buf = NULL;
+    ctx->buflen = 0;
 
     /* free the value buffer */
     if (ctx->val) GDKfree(ctx->val);
@@ -2334,21 +1909,20 @@ xquery_client_free_(xquery_client *ctx)
     CNTXTclear(ctx->repeat_stk);
     CNTXTfree1(ctx->repeat_stk);
     CNTXTdelete(ctx->repeat_stk);
-}
-
-static void 
-xquery_client_free(mapi_client *fc) 
-{
-    xquery_client_free_(fc->fc);
+    if (closeclient && ctx->stk)
+        closeClient(monet_clients + ctx->stk, 0);
+    ctx->inuse = 0;
 }
 
 /* 
  * end of xquery execution (struct stays alive for reuse).
  */
 static void 
-xquery_client_end(xquery_client *ctx, char *err) 
+xquery_client_end(xquery_client *ctx, 
+                  int forever) 
 {
     oid zero = 0, one = 1;
+    Variable v;
 
     /* undo any inserts by the query into the var_usage bats */
     size_t delta_var_usage = BATcount(ctx->var_usage) - ctx->var_usage_size;
@@ -2358,9 +1932,9 @@ xquery_client_end(xquery_client *ctx, char *err)
     BATsetcount(ctx->proc_vid, ctx->proc_vid_size);
     ctx->proc_vid->batBuns->free -= delta_proc_vid*BUNsize(ctx->proc_vid);
 
-    /* empty all bats (static variables) */
+    /* empty all bats (static varibales) */
     BATclear(ctx->loop000);
-    BUNins(ctx->loop000, &zero, &one, FALSE);
+    BUNins(ctx->loop000, &zero, &one);
 
     BATclear(ctx->fun_vid000);
     BATclear(ctx->fun_iter000);
@@ -2369,21 +1943,66 @@ xquery_client_end(xquery_client *ctx, char *err)
     BATclear(ctx->dbl_values);
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
-    BUNappend(ctx->str_values, (ptr)str_nil, FALSE);
-    *ctx->shredBAT = int_nil; 
+    BUNappend(ctx->str_values, (ptr)str_nil);
+
+    /* nil-assign all other variables */
+    for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {
+        ATOMunfix(v->binding.vtype, VALptr(&v->binding));
+        VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
+        VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
+    }
+    monet_clients[ctx->stk].fdin = NULL; 
+    monet_clients[ctx->stk].fdout = NULL; 
 
     MT_set_lock(pf_cache_lock, "xquery_client_end");
-    /* only deactivate the loaded modules */
-    xquery_loaded_module *mod= ctx->loaded_modules; 
-    while(mod) {
+    if (forever) {
+        xquery_client_free(ctx, 1);
+    } else {
+        /* only deactivate the loaded modules */
+        xquery_loaded_module *mod= ctx->loaded_modules; 
+        while(mod) {
             mod->nslen = 0;
             mod->ns = NULL; 
             mod = mod->next;
+        }
+        ctx->inuse = 0;
     }
     MT_unset_lock(pf_cache_lock, "xquery_client_end");
+}
 
-    if (err) 
-        fprintf(stderr, "xquery_server: client %d %s\n", ctx->stk, err);
+
+/*
+ * wait for all queries to finish; free all clients; clear PF url cache
+ */
+static void
+xquery_client_flushall() 
+{
+    int i, wait = 100;
+    while(wait) {
+        MT_set_lock(pf_cache_lock, "xquery_client_flushall");
+        for(i=0; i<=MAXCLIENTS; i++) {
+            if (xquery_clients[i].inuse) break;
+        }
+        if (i > MAXCLIENTS) {
+            /* ok, no xquery clients are active */
+            xquery_module *mod = xquery_compiled_modules;
+            for(i=0; i<=MAXCLIENTS; i++) {
+                if (xquery_clients[i].buflen)
+                    xquery_client_free(xquery_clients+i, 1);
+            }
+            while(mod) {
+                xquery_module *del = mod;
+                mod = mod->next;
+                xquery_module_free(del);
+            }
+            xquery_compiled_modules = NULL;
+            PFurlcache_flush();
+            wait = 0;
+        }
+        MT_unset_lock(pf_cache_lock, "xquery_client_flushall");
+        MT_sleep_ms(wait);
+    }
+    xquery_caching = 0;
 }
 
 
@@ -2421,7 +2040,7 @@ xquery_client_end(xquery_client *ctx, char *err)
 /* 
  * parse an identifier; accept any UTF-8 characters in it (is that correct?)
  */
-static char* 
+static inline char* 
 xquery_parse_ident(char* p) 
 {
     if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *(unsigned char*) p >= 128) {
@@ -2435,7 +2054,7 @@ xquery_parse_ident(char* p)
 /* 
  * parse an xquery (: .. :)  comment. Note it may be nested.
  */
-static char* 
+static inline char* 
 xquery_parse_comment(char* p) 
 {
     int nesting;
@@ -2450,7 +2069,7 @@ xquery_parse_comment(char* p)
  * parse xquery space, which may include comments 
  */
 #define ISSPACE(c) ((c) == ' ' || (c) == '\t' || (c) == 10 || (c) == 13) 
-static char* 
+static inline char* 
 xquery_parse_space(char* p) 
 {
     while(*p) {
@@ -2464,7 +2083,7 @@ xquery_parse_space(char* p)
 /* 
  * parse an XML datamodel string. Deliver an unescaped version as a result 
  */
-static char* 
+static inline char* 
 xquery_parse_string(char* p, 
                     char *buf, 
                     int len) 
@@ -2535,7 +2154,7 @@ xquery_parse_string(char* p,
 /* 
  * parse an XML datamodel numeric, and determine its minimal type (xs:integer, xs:decimal or xs:double) 
  */
-static char* 
+static inline char* 
 xquery_parse_numeric(char* p, 
                      char **tpe) 
 {
@@ -2569,7 +2188,7 @@ xquery_prepare(xquery_client *ctx,
                char* mode, 
                char* query) 
 {
-    int nsbuf = 0, loaded_modules = 0, len;
+    int nsbuf = 0, loaded_modules = 0;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
     char val[256], url1[256], url2[256];
     char *err = NULL;
@@ -2586,13 +2205,10 @@ xquery_prepare(xquery_client *ctx,
         if (strncmp(p, "import", 6) || !ISSPACE(p[6])) {
             break;
         } else {
-            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq";
-             * or:  import rpc-module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
+            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
             p = xquery_parse_space(p+6);
-            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
-                 (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
-                len = p[0] == 'm' ? 6 : 10;
-                p = xquery_parse_space(p+len);
+            if (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) {
+                p = xquery_parse_space(p+6);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {
                     ns = xquery_parse_space(p+9);
                     nsend = xquery_parse_ident(ns);
@@ -2600,33 +2216,37 @@ xquery_prepare(xquery_client *ctx,
                     if (*p == '=') {
                         p = xquery_parse_space(p+1);
                     } else {
-                        return "xquery_prepare: expecting '=' after namespace declaration";
+                        err = "xquery_prepare: expecting '=' after namespace declaration";
                     }
                 }
                 p = xquery_parse_string(p, url1, 256);
                 p = xquery_parse_space(p);
-                if (*p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
-                    char bak = *nsend;
+                if (err == NULL && *p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
                     loc = xquery_parse_space(p+1);
                     locend = xquery_parse_string(loc, url2, 256);
-                    p = xquery_parse_space(locend);
-
-                    /* cut off module import from the query, and load it here (to have it cached later) */
-                    *nsend = 0;
-
-                    err = xquery_module_load(ctx, mode, ns, url1, url2);
-                    if (err) return err;
-                    *nsend = bak; 
-                } while (*p == ',');
+                    if (strlen(url1) > strlen(url2) || strncmp(url1, url2, strlen(url1))) {
+                        err = "xquery_prepare: module namespace does not match import statement.\n";
+                    } else { 
+                        char bak = *nsend;
+                        p = xquery_parse_space(locend);
+                        /* cut off module import from the query, and load it here (to have it cached later) */
+                        *nsend = 0; 
+                        err = xquery_module_load(ctx, mode, ns, url2);
+                        *nsend = bak; 
+                    }
+                } while (*p == ',' && err == NULL);
             }
             if (*p != ';') {
-                return "xquery_prepare: missing ';' after module import.\n";
+                err = "xquery_prepare: missing ';' after module import.\n";
             } else {
                 loaded_modules++;
                 p++;
             }
         }
     }
+
+    /* some error has already been detected: query has failed already */
+    if (err) return err; 
 
     if (loaded_modules == 0) {
         err = (char*) -1; /* no module loaded: query not recognized as a function call */
@@ -2714,7 +2334,7 @@ xquery_prepare(xquery_client *ctx,
         char *sec2 = NULL;
         char *sec3 = NULL;
         /* compile and execute the query (minus module imports) */
-        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3, NULL)) 
+        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3)) 
                 err = NULL; /* in case of execution err, it stays -1 */
         if (sec1) free(sec1);
         if (sec2) free(sec2);
@@ -2741,34 +2361,93 @@ xquery_prepare(xquery_client *ctx,
     }
 }
 @c
-
-static void
-xquery_client_engine(mapi_client *fc )
+/*
+ * read xquery from input stream; execute and print on output stream 
+ */  
+#define XQUERY_CHALLENGE "::mserver_xquery:4\n"
+static int
+xquery_server_end(xquery_client *ctx, 
+                  Thread t, 
+                  char *err) 
 {
+    Client c = monet_clients + ctx->stk;
+    if (err) 
+        fprintf(stderr, "xquery_server: client %d %s\n", ctx->stk, err);
+    monetSetChannel(t, GDKin, GDKout);
+    if (c->fdin) {
+        stream_close(c->fdin);
+        stream_destroy(c->fdin);
+        c->fdin = GDKin;
+    }
+    if (c->fdout) {
+        stream_close(c->fdout);
+        stream_destroy(c->fdout);
+        c->fdout = GDKout;
+    }
+    xquery_client_end(ctx, !xquery_caching);
+    return err?GDK_FAIL:GDK_SUCCEED;
+}
+
+int
+CMDxquery_server(Cntxt stk, 
+                 YYSTREE lt, 
+                 ValPtr res)
+{
+    stream **In, **Out;
+    stream *in = NULL, *out = NULL;
     size_t curlen;
-    xquery_client *ctx = fc->fc;
-    stream *in = fc->c->fdin, *out = fc->c->fdout;
+    xquery_client *ctx = xquery_clients + stk;
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
-    int msec;
+    int i, msec;
+    Thread XQthread = THRget(THRgettid());
+    int blocked = 0;
+
+    if (lt->cnt != 2)
+        return handle_argerror(res, lt->cnt, 2);
+
+    /* this is a BUILTIN because we must obtain the client context (and
+     * thus the streams) */
+    @:builtin_operand(0,TYPE_Stream,In)@
+    in = *In;
+    @:builtin_operand(1,TYPE_Stream,Out)@
+    out = *Out;
+
+    /* send challenge */
+    snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
+    if (stream_write(out, buf, strlen(buf), 1) < 0) 
+        return(xquery_server_end(ctx, XQthread, "could not send challenge"));
+
+    /* get user name (ignored later), and mapiclient mode */
+    if (stream_read(in, p, 1, 1) < 0)
+        return(xquery_server_end(ctx, XQthread, "could not read response1"));
+    for (i = 0; i < BUFSIZ && *p != '\n'; i++) {
+        p++;
+        if (stream_read(in, p, 1, 1) < 0)
+            return(xquery_server_end(ctx, XQthread, "could not read response2"));
+    }
+    *p = 0;
+
+    /* check for blocked mode */
+    if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
+        in = block_stream(stream_rstream(in));
+        out = block_stream(stream_wstream(out));
+        blocked = 1;
+    }
+    monetSetChannel(XQthread, in, out);
+    err = xquery_client_init(ctx);
+    if (err) return (xquery_server_end(ctx, XQthread, err));
 
     while(1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
-        if (!fc->c->blocked && 
-                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
-            xquery_client_end(ctx, "could not write prompt"); 
-            return;
-        }
-        if (stream_flush(out)) {
-            xquery_client_end(ctx, "could not flush prompt"); 
-            return;
-        }
+        if (!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
+            return(xquery_server_end(ctx, XQthread, "could not write prompt"));
+        if (stream_flush(out))
+            return(xquery_server_end(ctx, XQthread, "could not flush prompt"));
 
         for (p = ctx->buf, curlen = 0; p; ) {
             ssize_t n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
-            if (n < 0) {
-                xquery_client_end(ctx, NULL); 
-                return;
-            }
+            if (n < 0)
+                return(xquery_server_end(ctx, XQthread, NULL));
             if (n == 0)
                 break;
 
@@ -2806,38 +2485,51 @@ xquery_client_engine(mapi_client *fc )
             /* memory debugging */
             xquery_prepared_function *fun = ctx->prepared_functions;
             BAT *b = NULL;
-            view_client_size(&b, &fc->stk);
+            view_client_size(&b, &stk);
             if (b) {
                while(fun) {
-                   BUNins(b, fun->def->proc, &fun->def->size, FALSE);
+                   BUNins(b, fun->def->proc, &fun->def->size);
                    fun = fun->next;
                 } 
                 BATprintf(GDKstdout, b);
                 BBPreclaim(b);
             } 
         }
-        /* second and on queries also need a cleared context */
-        xquery_client_end(ctx, NULL); 
+        xquery_client_end(ctx, 0);
     }
-    xquery_client_end(ctx, NULL); 
+    return(xquery_server_end(ctx, XQthread, NULL));
 }
 
-int
-xquery_frontend( ptr *F)
+/*
+ * mapi_listen may call this routine to get a recycled MIL client session from the xquery query cache
+ */
+Client
+CMDxquery_client_alloc(stream *fdin, 
+                       stream *fdout) 
 {
-	char *m_clients = GDKgetenv("mapi_clients"); 
-	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
-	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
-	*F = f;
-	f->name = GDKstrdup("xquery");
-	f->cache_limit = nr;
-	f->f_alloc = xquery_client_alloc;
-	f->f_init  = xquery_client_init;
-	f->f_free  = xquery_client_free;
-	f->f_engine  = xquery_client_engine; /* read/parse/execute loop */
-	return GDK_SUCCEED;
+    xquery_client *ctx = xquery_client_alloc(fdin,fdout);
+    if (ctx) {
+        Client c = monet_clients + ctx->stk;
+        if (MAPIinitClient(c, "xquery_server", fdin, fdout) < 0) {
+            xquery_client_end(ctx, 0);
+        } else {
+            return c;
+        }
+    }
+    return NULL; 
 }
 
+/*
+ * flush the cache and return a magic pointer. It must be passed to mapi_listen to enable caching.
+ */
+int
+CMDxquery_start_query_cache(ptr *res, lng *maxsize) 
+{
+    xquery_client_flushall();
+    if (*maxsize > 0) xquery_client_bytes = *maxsize;
+    *res = (ptr) CMDxquery_client_alloc;
+    return GDK_SUCCEED;
+}
 
 /*
  * execute xquery and return the result in a string.
@@ -2867,12 +2559,9 @@ CMDxquery(Cntxt stk,
         @:builtin_operand(2,TYPE_bit,is_url)@
     }
     CNTXTclient(stk, &c);
-    ctx = xquery_client_new(c->stk);
-    ctx->fderr = GDKerr;
+    ctx = xquery_clients + c->stk;
     MT_set_lock(pf_cache_lock, "CMDxquery");
-    err = xquery_client_alloc_(ctx);
-    if (!err)
-        err = xquery_client_init_(ctx);
+    err = xquery_client_init(ctx);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
 
     if (err == NULL && *is_url == TRUE) { 
@@ -2912,25 +2601,23 @@ CMDxquery(Cntxt stk,
         }
     }
     MT_set_lock(pf_cache_lock, "CMDxquery");
-    xquery_client_free_(ctx);
+    xquery_client_free(ctx, 0);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
     if (err) {
 	GDKerror((err==(char*)-1)?res->val.sval:err);
 	VALclear(res);
         return GDK_FAIL;
     } 
-    /* stream_printf(GDKout,"RES = %s\n",res->val.sval); */
     return GDK_SUCCEED;
 }
+
 
 /*
  * call a method in a temporary xquery client context
  */  
 char*
 xquery_method(stream *out, 
-              int rpctiming,
               char* module, 
-              char* uri, 
               char *method, 
               int argc, 
               int itercnt, 
@@ -2940,59 +2627,41 @@ xquery_method(stream *out,
               BAT* shredBAT)
 {
     int msec = GDKms();
-    MT_Id XQthread_id = THRgettid();
-    Thread XQthread = THRget(XQthread_id);
-    char *err = NULL, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
-    stream *s = NULL;
-    mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
-    xquery_client *ctx;
-
-    if (mc == NULL) 
+    Thread XQthread = THRget(THRgettid());
+    xquery_client *ctx = xquery_client_alloc(NULL, out);
+    char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
+   
+    if (ctx == NULL) 
         return "xquery_method: out of client slots.\n";
 
-    if (rpctiming){
-        mode = "xml-rpcservertime-timing-noheader-soap-root-iter";
-    }
-    
-    ctx = mc->fc; 
-    ctx->fderr = GDKerr;
-    mc->t = XQthread_id;
-    mc->thread = XQthread;
+    err = xquery_client_init(ctx);
     monetSetChannel(XQthread, GDKin, out);
+
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        s = open_wstream("/tmp/xquery_rpc.mil");
+        stream *s = open_wstream("/tmp/soap.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
-            if (rpctiming){
-                mode = "xml-rpcservertime-timing-debug-noheader-soap-root-iter";
-            } else {
-                mode = "xml-debug-noheader-soap-root-iter";
-            }
+            mode = "xml-debug-noheader-typed-root-iter";
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
     }
 
-    if (err == NULL && module){
-        err = xquery_module_load(ctx, mode, ns="xquery_rpc", module, uri); 
-    }
+    if (err == NULL && module)
+        err = xquery_module_load(ctx, mode, ns="soap", module); 
 
     if (err == NULL) { 
         err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 
-    if (s) {
+    if (ctx->fderr != GDKerr) {
         stream_close(ctx->fderr);
         stream_destroy(ctx->fderr);
     }
-    monetSetChannel(XQthread, GDKin, GDKout);
-
-    xquery_client_end(ctx, NULL);
-    mc->inuse = 0;
-    mc->t = ~(MT_Id)0;
+    xquery_client_end(ctx, 0);
     return err;
 }
 
@@ -3003,11 +2672,15 @@ extern void xmlInitThreads();
 bat *
 xquery_prelude()
 {
+    int i;
     pf_compiler_lock = MT_create_lock();
     pf_module_lock = MT_create_lock();
     pf_cache_lock = MT_create_lock();
 
     xmlInitThreads();
+    memset(xquery_clients, 0, sizeof(xquery_client)*(MAXCLIENTS+1));
+    for(i=1; i<=MAXCLIENTS; i++)        
+        xquery_clients[i].stk = i;
    
     xquery_compiled_modules = NULL;
     return NULL;

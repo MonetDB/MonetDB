@@ -22,13 +22,10 @@
  *
  * The Original Code is the Pathfinder system.
  *
- * The Original Code has initially been developed by the Database &
- * Information Systems Group at the University of Konstanz, Germany
- * and is now maintained by the Database Systems Group at the
- * Technische Universitaet Muenchen, Germany.  Portions created by
- * the University of Konstanz and the Technische Universitaet Muenchen
- * are Copyright (C) 2000-2005 University of Konstanz and (C) 2005-2006
- * Technische Universitaet Muenchen, respectively.  All Rights Reserved.
+ * The Initial Developer of the Original Code is the Database &
+ * Information Systems Group at the University of Konstanz, Germany.
+ * Portions created by the University of Konstanz are Copyright (C)
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -62,8 +59,7 @@ static PFpnode_t *root;
 /* temporay node memory */
 static PFpnode_t *c, *c1;
 
-static void add_to_module_wl (char rpc, char* id, char *ns, char *uri);
-static char *get_rpc_uri (char *prefix);
+static void add_to_module_wl (char *ns, char *uri);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -80,9 +76,13 @@ void pferror (const char *s);
 #define leaf(t,loc)       p_leaf ((t), (loc))
 #define wire1(t,loc,a)    p_wire1 ((t), (loc), (a))
 #define wire2(t,loc,a,b)  p_wire2 ((t), (loc), (a), (b))
-
 /*
- * fix-up the hole of an abstract syntax tree t and 
+#define leaf(t,loc)       PFabssyn_leaf ((t), (loc))
+#define wire1(t,loc,a)    PFabssyn_wire1 ((t), (loc), (a))
+#define wire2(t,loc,a,b)  PFabssyn_wire2 ((t), (loc), (a), (b))
+*/
+
+/* fix-up the hole of an abstract syntax tree t and 
  * replace its c-th leaf by e:
  *
  *               t.root
@@ -93,36 +93,29 @@ void pferror (const char *s);
 
 
 /* scanner information to provide better error messages */
-extern char  *pftext;
-extern int    pflineno;
+extern char *pftext;
+extern int pflineno;
 
 /**
  * True if we have been invoked via parse_module().
  *
- * For queries that contain "import module" or "import rpc-module"
- * instructions, we re-invoke the parser for each imported module.  In
- * that case we _only_ allow modules to be read and refuse query
- * scripts.
+ * For queries that contain "import module" instructions, we
+ * re-invoke the parser for each imported module.  In that case
+ * we _only_ allow modules to be read and refuse query scripts.
  */
 static bool module_only = false;
 
-#ifdef ENABLE_MILPRINT_SUMMER
-
-/*
- * quasi-random number determined by module; used as base for scope 
+/* quasi-random number determined by module; used as base for scope 
  * and variable numbers in milprint_summer (so scope numbers of 
  * different modules that are compiled separately don't collide).
  */
 static unsigned int module_base = 0;
 
-/*
- * the number of functions declared in a query. Used in milprint_summer to
+/* the number of functions declared in a query. Used in milprint_summer to
  * be able to suppress code generation for all functions defined
  * in modules;
  */
 static int num_fun = 0;
-
-#endif
 
 /**
  * Module namespace we accept during parsing.
@@ -136,29 +129,34 @@ static char *req_module_ns = NULL;
 /**
  * Work list of modules that we have to load.
  *
- * Whenever we encounter an "import module" statement or an "import
- * rpc-module" statement, we add an URI to the list (if it is not in
- * there already).  We process the work list after parsing the main
- * query file.
+ * Whenever we encounter an "import module" statement, we add an
+ * URI to the list (if it is not in there already).  We process
+ * the work list after parsing the main query file.
  */
 static PFarray_t *modules = NULL;
 
 /**
- * Each item in the work list is a id/namespace/URI triple.  The URI
+ * Each item in the work list is a namespace/URI pair.  The URI
  * denotes the URI to load the module from; the namespace is the
  * namespace that the module should be defined for (abort parsing
  * otherwise).
  */
 typedef struct module_t {
-    bool rpc;   /* is this an RPC module? */
-    char *id;
     char *ns;
     char *uri;
 } module_t;
 
+/**
+ * remember if boundary whitespace is to be stripped or preserved;
+ * XQuery default is to remove boundary whitespace (can also be 
+ * explicitely specified by declaring "xmlspace = strip"); if it is
+ * to be kept, "xmlspace = preserve" must be specified in the prolog.
+ */
+static bool xmlspace_preserve = false;
+
 /*
  * Check if the input string consists of whitespace only.
- * If this is the case and pres_boundary_space is set to false, the 
+ * If this is the case and xmlspace_preserve is set to false, the 
  * abstract syntax tree must be altered, i.e., we do not
  * create a text node but an empty sequence node.
  */
@@ -256,7 +254,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
     double          dbl;
     char           *str;
     char            chr;
-    bool            bit;
     PFqname_t       qname;
     PFpnode_t      *pnode;
     struct phole_t  phole;
@@ -265,27 +262,19 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
     PFsort_t        mode;
     PFpoci_t        oci;
     PFarray_t      *buf;
-    PFinsertmod_t   insert;
 }
 
-%token encoding_StringLiteral
-%token StringLiteral
-
-%token after                           "after"
 %token ancestor_colon_colon            "ancestor::"
 %token ancestor_or_self_colon_colon    "ancestor-or-self::"
 %token and                             "and"
 %token apos                            "'"
 %token as                              "as"
 %token ascending                       "ascending"
-%token as_first_into                   "as first into"
-%token as_last_into                    "as last into"
 %token at_dollar                       "at $"
 %token atsign                          "@"
 %token attribute_colon_colon           "attribute::"
 %token attribute_lbrace                "attribute {"
 %token attribute_lparen                "attribute ("
-%token before                          "before"
 %token case_                           "case"
 %token cast_as                         "cast as"
 %token castable_as                     "castable as"
@@ -297,10 +286,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token comma                           ","
 %token comment_lbrace                  "comment {"
 %token comment_lparen                  "comment ("
-%token copy_ns_inherit                 "inherit"
-%token copy_ns_noinherit               "no-inherit"
-%token copy_ns_nopreserve              "no-preserve"
-%token copy_ns_preserve                "preserve"
 %token declare_base_uri                "declare base-uri"
 %token declare_construction_preserve   "declare construction preserve"
 %token declare_construction_strip      "declare construction strip"
@@ -309,29 +294,20 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token declare_default_function        "declare default function"
 %token declare_default_order           "declare default order"
 %token declare_function                "declare function"
-%token declare_updating_function       "declare updating function"
-%token declare_copy_namespaces         "declare copy-namespaces"
+%token declare_inherit_namespaces_no   "declare inherit-namespaces no"
+%token declare_inherit_namespaces_yes  "declare inherit-namespaces yes"
 %token declare_namespace               "declare namespace"
 %token declare_ordering_ordered        "declare ordering ordered"
 %token declare_ordering_unordered      "declare ordering unordered"
 %token declare_variable_dollar         "declare variable $"
-%token declare_boundary_space_preserve "declare boundary-space preserve"
-%token declare_boundary_space_strip    "declare boundary-space strip"
-%token declare_option                  "declare option"
-%token declare_revalidation_lax        "declare revalidation lax"
-%token declare_revalidation_skip       "declare revalidation skip"
-%token declare_revalidation_strict     "declare revalidation strict"
+%token declare_xmlspace_preserve       "declare xmlspace preserve"
+%token declare_xmlspace_strip          "declare xmlspace strip"
 %token default_                        "default"
 %token default_element                 "default element"
 %token descendant_colon_colon          "descendant::"
 %token descendant_or_self_colon_colon  "descendant-or-self::"
 %token descending                      "descending"
 %token div_                            "div"
-%token do_delete                       "do delete"
-%token do_insert                       "do insert"
-%token do_rename                       "do rename"
-%token do_replace                      "do replace"
-%token do_replace_value_of             "do replace value of"
 %token document_lbrace                 "document {"
 %token document_node_lparen            "document-node ("
 %token dollar                          "$"
@@ -342,7 +318,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token else_                           "else"
 %token empty_greatest                  "empty greatest"
 %token empty_least                     "empty least"
-%token empty_sequence                  "empty-sequence ()"
+%token empty_lrparens                  "empty ()"
 %token eq                              "eq"
 %token equals                          "="
 %token escape_apos                     "''"
@@ -359,16 +335,13 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token greater_than_equal              ">="
 %token gt                              "gt"
 %token gt_gt                           ">>"
-%token hash_paren                      "#)"
 %token idiv                            "idiv"
 %token if_lparen                       "if ("
 %token import_module                   "import module"
-%token import_rpc_module               "import rpc-module"
 %token import_schema                   "import schema"
 %token in_                             "in"
 %token instance_of                     "instance of"
 %token intersect                       "intersect"
-%token into                            "into"
 %token is                              "is"
 %token item_lrparens                   "item ()"
 %token lbrace                          "{"
@@ -385,7 +358,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token lt_slash                        "</"
 %token minus                           "-"
 %token mod                             "mod"
-%token modify                          "modify"
 %token module_namespace                "module namespace"
 %token namespace                       "namespace"
 %token ne                              "ne"
@@ -393,7 +365,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token or                              "or"
 %token order_by                        "order by"
 %token ordered_lbrace                  "ordered {"
-%token paren_hash                      "(#"
 %token parent_colon_colon              "parent::"
 %token pi_lbrace                       "processing-instruction {"
 %token pi_lparen                       "processing-instruction ("
@@ -413,7 +384,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 /* [/BURKOWKSI] */
 %token return_                         "return"
 %token rparen                          ")"
-/* %token rparen_as                       ") as" */
+%token rparen_as                       ") as"
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
@@ -433,7 +404,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token text_lparen                     "text ("
 %token then                            "then"
 %token to_                             "to"
-%token transform_copy_dollar           "transform copy $"
 %token treat_as                        "treat as"
 %token typeswitch_lparen               "typeswitch ("
 %token union_                          "union"
@@ -442,7 +412,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token validate_lbrace                 "validate {"
 %token validate_strict_lbrace          "validate strict {"
 %token where                           "where"
-%token with                            "with"
 %token xml_comment_end                 "-->"
 %token xml_comment_start               "<!--"
 %token xquery_version                  "xquery version"
@@ -455,20 +424,19 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token DoubleLiteral
 %token ElementContentChar
 %token Element_QName_LBrace
-%token EscapeApos
-%token EscapeQuot
 %token IntegerLiteral
 %token NCName
 %token NCName_Colon_Star
 %token PITarget
 %token PI_NCName_LBrace
-%token PragmaContents
 %token PredefinedEntityRef
 %token QName
 %token QName_LParen
 %token S
 %token Star_Colon_NCName
-%token at_URILiteral
+%token StringLiteral
+%token at_StringLiteral
+%token encoding_StringLiteral
 
 /*
  * The lexer sends an error token if it reads something that shouldn't
@@ -476,20 +444,16 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
  */
 %token invalid_character
 
-%type <str>
-               at_URILiteral
-               encoding_StringLiteral
-               NCName
+%type <str>    NCName
                OptCollationStringLiteral_
                OptEncoding_
                PITarget
                PI_NCName_LBrace
-               PragmaContents
                StringLiteral
-               URILiteral
+               at_StringLiteral
+               encoding_StringLiteral
 
-%type <qname> 
-               AttributeDeclaration
+%type <qname>  AttributeDeclaration
                AttributeName
                Attribute_QName_LBrace
                ElementDeclaration
@@ -501,19 +465,17 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                Star_Colon_NCName
                TypeName
 
-%type <num>    
-               IntegerLiteral
+%type <num>    IntegerLiteral
+               OccurrenceIndicator
                OptAscendingDescending_
                OptEmptyGreatestLeast_
+               SomeEvery_
 
-%type <dec>
-               DecimalLiteral
+%type <dec>    DecimalLiteral
 
-%type <dbl>
-               DoubleLiteral
+%type <dbl>    DoubleLiteral
 
-%type <chr>    
-               "{{"
+%type <chr>    "{{"
                "}}"
                AttrContentChar
                AttributeValueContText_
@@ -521,209 +483,69 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                CharRef
                ElementContentChar
                ElementContentText_
-               EscapeQuot
                EscapeApos
+               EscapeQuot
                PredefinedEntityRef
 
-%type <mode>
-               OrderModifier
+%type <mode>   OrderModifier
 
-%type <axis>  
-               AttributeAxis_
-               BurkAxis_
-               ForwardAxis
+%type <axis>   AttributeAxis_
                ReverseAxis
+               ForwardAxis
+               BurkAxis_ /* Burkowski Axis (can only be used if corresponding 
+                            compiler flag is set) */
 
-%type <buf>  
-               AttributeValueContTexts_
+%type <buf>    AttributeValueContTexts_
                Chars_
                ElementContentTexts_
 
-%type <ptype>  
-               DivOp_
+%type <ptype>  DivOp_
                GeneralComp
                NodeComp
-               SomeEvery_
                ValueComp
 
-%type <pnode> 
-               AbbrevAttribStep_
-               AbbrevForwardStep
-               AbbrevReverseStep
-               AdditiveExpr
-               AndExpr
-               AnyKindTest
-               AtomicType
-               AttribNameOrWildcard
-               AttribNodeTest
-               AttribStep_
-               AttributeTest
-               AttributeValueCont_
-               AttributeValueConts_
-               AxisStep
-               BaseURIDecl
-               BoundarySpaceDecl
-               BurkStep_
-               CaseClause
-               CastableExpr
-               CastExpr
+%type <pnode>  AbbrevAttribStep_ AbbrevForwardStep AbbrevReverseStep
+               AdditiveExpr AndExpr AnyKindTest AtomicType AttribNameOrWildcard
+               AttribNodeTest AttribStep_ AttributeTest AttributeValueCont_
+               AttributeValueConts_ AxisStep BaseURIDecl 
+               BurkStep_  /* Burkowski Axis (can only be used if corresponding 
+                            compiler flag is set) */
                CDataSection
-               CDataSectionContents
-               Characters_
-               CommentTest
-               ComparisonExpr
-               CompAttrConstructor
-               CompCommentConstructor
-               CompDocConstructor
-               CompElemConstructor
-               CompPIConstructor
-               CompTextConstructor
-               ComputedConstructor
-               ConstructionDecl
-               Constructor
-               ContentExpr
-               ContextItemExpr
-               CopyNamespacesDecl
-               DefaultCollationDecl
-               DefaultNamespaceDecl
-               DeleteExpr
-               DirAttribute_
-               DirAttributeValue
-               DirCommentConstructor
-               DirCommentContents
-               DirectConstructor
-               DirElemConstructor
-               DirElemContent
-               DirElementContents_
-               DirPIConstructor
-               DirPIContents
-               DocumentTest
-               ElementNameOrWildcard
-               ElementTest
-               EmptyOrderDecl
-               EnclosedExpr
-               Expr
-               ExprSingle
-               ExtensionExpr
-               FilterExpr
-               FLWORExpr
-               ForClause
-               ForLetClause_
-               ForwardStep
-               FuncArgList_
-               FunctionCall
-               FunctionDecl
-               IfExpr
-               InsertExpr
-               InstanceofExpr
-               IntersectExceptExpr
-               ItemType
-               KindTest
-               LetBindings_
-               LetClause
-               LibraryModule
-               Literal
-               MainModule
-               Module
-               ModuleDecl
-               MultiplicativeExpr
-               NamespaceDecl
-               NameTest
-               NewNameExpr
-               NodeTest
-               NumericLiteral
-               OptAsSequenceType_
-               OptAtURILiterals_
-               OptContentExpr_
-               OptDollarVarName_
-               OptDollarVarNameAs_
-               OptFuncArgList_
-               OptionDecl
-               OptOrderByClause_
-               OptParamList_
-               OptParamTypeDeclaration_
-               OptPositionalVar_
-               OptPragmaExpr_
-               OptTypeDeclaration_
-               OptWhereClause_
-               OrderByClause
-               OrderedExpr
-               OrderingModeDecl
-               OrderSpecList
-               OrExpr
-               Param
-               ParamList
-               ParenthesizedExpr
-               PathExpr
-               PITest
-               PositionalVar
-               Pragma
-               Pragmas_
-               Predicate
-               PrimaryExpr
-               Prolog
-               QuantifiedExpr
-               QueryBody 
-               RangeExpr
-               RelativePathExpr
-               RenameExpr
-               ReplaceExpr
-               RevalidationDecl
-               ReverseStep
-               SchemaAttributeTest
-               SchemaElementTest
-               SequenceType
-               Setter
-               SingleType
-               SourceExpr
-               StepExpr
-               TargetExpr
-               TextTest
-               TransformBinding_
-               TransformBindings_
-               TransformExpr
-               TreatExpr
-               TypeDeclaration
-               TypeswitchExpr
-               UnaryExpr
-               UnionExpr
-               UnorderedExpr
-               ValidateExpr
-               ValueExpr
-               VarBindings_
-               VarDecl
-               VarName
-               VarPosBindings_
-               VarRef
-               WhereClause
-               Wildcard
+               CDataSectionContents CaseClause CastExpr CastableExpr Characters_
+               CommentTest CompAttrConstructor CompCommentConstructor
+               CompDocConstructor CompElemConstructor CompPIConstructor
+               CompTextConstructor ComparisonExpr ComputedConstructor
+               ConstructionDecl Constructor ContentExpr ContextItemExpr
+               DefaultCollationDecl DefaultNamespaceDecl DirAttribute_
+               DirAttributeValue DirCommentConstructor DirCommentContents
+               DirElemConstructor DirElemContent DirElementContents_
+               DirPIConstructor DirPIContents DirectConstructor DocumentTest
+               ElementNameOrWildcard ElementTest EmptyOrderingDecl EnclosedExpr
+               Expr ExprSingle FLWORExpr FilterExpr ForClause ForLetClause_
+               ForwardStep FuncArgList_ FunctionCall FunctionDecl IfExpr
+               InheritNamespacesDecl InstanceofExpr IntersectExceptExpr
+               ItemType KindTest LetBindings_ LetClause LibraryModule Literal
+               MainModule Module ModuleDecl MultiplicativeExpr NameTest
+               NamespaceDecl NodeTest NumericLiteral OptAsSequenceType_
+               OptAtStringLiterals_ OptContentExpr_ OptDollarVarNameAs_
+               OptDollarVarName_ OptFuncArgList_ OptOrderByClause_
+               OptParamList_ OptPositionalVar_ OptParamTypeDeclaration_
+               OptTypeDeclaration_ OptWhereClause_ OrExpr OrderByClause
+               OrderSpecList OrderedExpr OrderingModeDecl PITest Param
+               ParamList ParenthesizedExpr PathExpr PositionalVar Predicate
+               PrimaryExpr Prolog QuantifiedExpr QueryBody RangeExpr
+               RelativePathExpr ReverseStep SchemaAttributeTest
+               SchemaElementTest SequenceType Setter SingleType StepExpr
+               TextTest TreatExpr TypeDeclaration
+               TypeswitchExpr UnaryExpr UnionExpr UnorderedExpr
+               ValidateExpr ValueExpr VarBindings_ VarDecl VarName
+               VarPosBindings_ VarRef WhereClause Wildcard XMLSpaceDecl
 
-%type <phole> 
-               CaseClauses_
-               DirAttributeList
-               ForLetClauses_
-               Import
-               ModuleImport
-               ModuleNS_
-               ModuleNSWithoutPrefix
-               ModuleNSWithPrefix
-               PredicateList
-               RPCModuleImport /* !W3C */
-               SchemaImport
-               SchemaSrc_
-               SetterImportAndNSDecls_
-               URILiterals_
-               VarFunDecls_
 
-%type <oci>   
-               OptOccurrenceIndicator_
 
-%type <bit>   
-               PreserveMode
-               InheritMode
-
-%type <insert>
-               InsertLoc_
+%type <phole>  CaseClauses_ DirAttributeList ForLetClauses_ Import
+               ImportAndNSDecls_ ModuleImport ModuleNS_ PredicateList
+               SchemaImport SchemaSrc_ Setters_ StringLiterals_ VarFunDecls_
 
 /*
  * We expect 16 shift/reduce conflicts:
@@ -795,6 +617,7 @@ OptEncoding_              : /* empty */
                             { $$ = $1; }
                           ;
 
+
 /* [3] */
 MainModule                : Prolog QueryBody
                             {
@@ -807,12 +630,13 @@ MainModule                : Prolog QueryBody
 
 /* [4] */
 LibraryModule             : ModuleDecl Prolog 
-                            { $$ = wire2 (p_lib_mod, @$, $1, $2); }
+                            { $$ = wire2 (p_lib_mod, @$, $1, $2); 
+                              /* $$ = wire2 (p_main_mod, @$, $2, leaf (p_empty_seq, @$)); */ }
                           ;
 
 /* [5] */
 ModuleDecl                : "module namespace" NCName
-                              "=" URILiteral Separator
+                              "=" StringLiteral Separator
                             {
                               if (req_module_ns && strcmp (req_module_ns, $4))
                                   PFoops (OOPS_MODULEIMPORT,
@@ -820,10 +644,8 @@ ModuleDecl                : "module namespace" NCName
                                           "import statement (`%s' vs. `%s')",
                                           $4, req_module_ns);
 
-#ifdef ENABLE_MILPRINT_SUMMER
-                              if (!module_only)
+			      if (!module_only)
                                   module_base = 1;
-#endif
 
                               ($$ = wire1 (p_mod_ns,
                                            @$,
@@ -834,38 +656,20 @@ ModuleDecl                : "module namespace" NCName
                           ;
 
 /* [6] */
-Prolog                    : SetterImportAndNSDecls_ VarFunDecls_
+Prolog                    : Setters_ ImportAndNSDecls_ VarFunDecls_
                             { $$ = $1.root;
-                              $1.hole->child[1] = $2.root; }
+                              $1.hole->child[1] = $2.root;
+                              $2.hole->child[1] = $3.root; }
                           ;
 
-SetterImportAndNSDecls_   : /* empty */
+Setters_                  : /* empty */
                             { $$.root
                                   = $$.hole
                                   = wire2 (p_decl_imps, @$, nil (@$), nil (@$));
                             }
-                          | DefaultNamespaceDecl Separator
-                            SetterImportAndNSDecls_
+                          | Setter Separator Setters_ 
                             { $$.root = wire2 (p_decl_imps, @$, $1, $3.root);
                               $$.hole = $3.hole; }
-                          | Setter Separator SetterImportAndNSDecls_
-                            { $$.root = wire2 (p_decl_imps, @$, $1, $3.root);
-                              $$.hole = $3.hole; }
-                          | NamespaceDecl Separator SetterImportAndNSDecls_
-                            { $$.root = wire2 (p_decl_imps, @$, $1, $3.root);
-                              $$.hole = $3.hole; }
-                          | Import Separator SetterImportAndNSDecls_
-                            { $$.root
-                                  = wire2 (p_decl_imps, @$,
-                                           $1.root,
-                                           $1.hole
-                                             ? wire2 (p_decl_imps,
-                                                      loc_rng($1.hole->loc, @3),
-                                                      $1.hole,
-                                                      $3.root)
-                                             : $3.root);
-                              $$.hole = $3.hole;
-                            }
                           ;
 
 VarFunDecls_              : /* empty */
@@ -879,27 +683,46 @@ VarFunDecls_              : /* empty */
                           | FunctionDecl Separator VarFunDecls_
                             { $$.root = wire2 (p_decl_imps, @$, $1, $3.root);
                               $$.hole = $3.hole; }
-                          | OptionDecl Separator VarFunDecls_
+                          ;
+
+/* [7] */
+Setter                    : XMLSpaceDecl { $$ = $1; }
+                          | DefaultCollationDecl { $$ = $1; }
+                          | BaseURIDecl { $$ = $1; }
+                          | ConstructionDecl { $$ = $1; }
+                          | OrderingModeDecl { $$ = $1; }
+                          | EmptyOrderingDecl { $$ = $1; }
+                          | InheritNamespacesDecl { $$ = $1; }
+                          ;
+
+ImportAndNSDecls_         : /* empty */
+                            { $$.root
+                                  = $$.hole
+                                  = wire2 (p_decl_imps, @$, nil (@$), nil (@$));
+                            }
+                          | Import Separator ImportAndNSDecls_
+                            { $$.root
+                                  = wire2 (p_decl_imps, @$,
+                                           $1.root,
+                                           $1.hole
+                                             ? wire2 (p_decl_imps,
+                                                      loc_rng($1.hole->loc, @3),
+                                                      $1.hole,
+                                                      $3.root)
+                                             : $3.root);
+                              $$.hole = $3.hole;
+                            }
+                          | NamespaceDecl Separator ImportAndNSDecls_
+                            { $$.root = wire2 (p_decl_imps, @$, $1, $3.root);
+                              $$.hole = $3.hole; }
+                          | DefaultNamespaceDecl Separator ImportAndNSDecls_
                             { $$.root = wire2 (p_decl_imps, @$, $1, $3.root);
                               $$.hole = $3.hole; }
                           ;
 
-/* [7] */
-Setter                    : BoundarySpaceDecl    { $$ = $1; }
-                          | DefaultCollationDecl { $$ = $1; }
-                          | BaseURIDecl          { $$ = $1; }
-                          | ConstructionDecl     { $$ = $1; }
-                          | OrderingModeDecl     { $$ = $1; }
-                          | EmptyOrderDecl       { $$ = $1; }
-                          | RevalidationDecl     { $$ = $1; }  /* XQUpdt */
-                          | CopyNamespacesDecl   { $$ = $1; }
-                          ;
-
 /* [8] */
-/* !W3C RPC modules are a Pathfinder extension */
-Import                    : SchemaImport     { $$ = $1; }
-                          | RPCModuleImport  { $$ = $1; }
-                          | ModuleImport     { $$ = $1; }
+Import                    : SchemaImport { $$ = $1; }
+                          | ModuleImport { $$ = $1; }
                           ;
 
 /* [9] */
@@ -907,7 +730,7 @@ Separator                 : ";"
                           ;
 
 /* [10] */
-NamespaceDecl             : "declare namespace" NCName "=" URILiteral
+NamespaceDecl             : "declare namespace" NCName "=" StringLiteral
                             { ($$ = wire1 (p_ns_decl, 
                                            @$,
                                            (c = leaf (p_lit_str, @4),
@@ -917,25 +740,25 @@ NamespaceDecl             : "declare namespace" NCName "=" URILiteral
                           ;
 
 /* [11] */
-BoundarySpaceDecl         : "declare boundary-space preserve"
-                            { ($$ = leaf (p_boundspc_decl, @$))->sem.tru = true;
-                              PFquery.pres_boundary_space = true;
+XMLSpaceDecl              : "declare xmlspace preserve"
+                            { ($$ = leaf (p_xmls_decl, @$))->sem.tru = true;
+                              xmlspace_preserve = true;
                             } 
-                          | "declare boundary-space strip"
-                            { ($$ = leaf (p_boundspc_decl, @$))->sem.tru = false;
-                              PFquery.pres_boundary_space = false;
+                          | "declare xmlspace strip"
+                            { ($$ = leaf (p_xmls_decl, @$))->sem.tru = false;
+                              xmlspace_preserve = false;
                             }
                           ;
 
 /* [12] */
-DefaultNamespaceDecl      : "declare default element" "namespace" URILiteral
+DefaultNamespaceDecl      : "declare default element" "namespace" StringLiteral
                             { $$ = wire1 (p_ens_decl,
                                           @$,
                                           (c = leaf (p_lit_str, @3),
                                            c->sem.str = $3,
                                            c));
                             }
-                          | "declare default function" "namespace" URILiteral
+                          | "declare default function" "namespace" StringLiteral
                             { $$ = wire1 (p_fns_decl,
                                           @$,
                                           (c = leaf (p_lit_str, @3),
@@ -944,19 +767,7 @@ DefaultNamespaceDecl      : "declare default element" "namespace" URILiteral
                             }
                           ;
 
-/* [13] */
-OptionDecl                : "declare option" QName StringLiteral
-                            {
-                              /* FIXME:
-                                 What could we do with options, actually? */
-                              PFinfo (OOPS_NOTICE,
-                                      "option %s will be ignored",
-                                      PFqname_str ($2));
-                              $$ = nil (@$);
-                            }
-                          ;
-
-/* [14]  !W3C: Done by the lexer */
+/* [13]  !W3C: Done by the lexer */
 OrderingModeDecl          : "declare ordering ordered"
                             { ($$ = leaf (p_ordering_mode,
                                           @$))->sem.tru = true;
@@ -967,8 +778,8 @@ OrderingModeDecl          : "declare ordering ordered"
                             }
                           ;
 
-/* [15] */
-EmptyOrderDecl            : "declare default order" "empty greatest"
+/* [14] */
+EmptyOrderingDecl         : "declare default order" "empty greatest"
                             { ($$ = leaf (p_def_order,
                                           @$))->sem.mode.empty = p_greatest;
                             }
@@ -978,27 +789,15 @@ EmptyOrderDecl            : "declare default order" "empty greatest"
                             }
                           ;
 
-/* [16]  !W3C: Done by the lexer */
-CopyNamespacesDecl        : "declare copy-namespaces" PreserveMode ","
-                            InheritMode
-                            { $$ = leaf (p_copy_ns, @$);
-                              $$->sem.copy_ns.preserve = $2;
-                              $$->sem.copy_ns.inherit  = $4;
-                            }
+/* [15]  !W3C: Done by the lexer */
+InheritNamespacesDecl     : "declare inherit-namespaces yes"
+                            { ($$ = leaf (p_inherit_ns, @$))->sem.tru = true; }
+                          | "declare inherit-namespaces no"
+                            { ($$ = leaf (p_inherit_ns, @$))->sem.tru = false;}
                           ;
 
-/* [17] */
-PreserveMode              : "preserve"    { $$ = true; }
-                          | "no-preserve" { $$ = false; }
-                          ;
-
-/* [18] */
-InheritMode               : "inherit"     { $$ = true; }
-                          | "no-inherit"  { $$ = false; }
-                          ;
-                            
-/* [19] */
-DefaultCollationDecl      : "declare default collation" URILiteral
+/* [16] */
+DefaultCollationDecl      : "declare default collation" StringLiteral
                             { $$ = wire1 (p_coll_decl,
                                           @$,
                                           (c = leaf (p_lit_str, @2),
@@ -1007,8 +806,8 @@ DefaultCollationDecl      : "declare default collation" URILiteral
                             }
                           ;
 
-/* [20] */
-BaseURIDecl               : "declare base-uri" URILiteral
+/* [17] */
+BaseURIDecl               : "declare base-uri" StringLiteral
                             { $$ = wire1 (p_base_uri,
                                           @$,
                                           (c = leaf (p_lit_str, @2),
@@ -1017,8 +816,8 @@ BaseURIDecl               : "declare base-uri" URILiteral
                             }
                           ;
 
-/* [21] / [22] */
-SchemaImport              : "import schema" SchemaSrc_ OptAtURILiterals_
+/* [18] / [19] */
+SchemaImport              : "import schema" SchemaSrc_ OptAtStringLiterals_
                             { /* XQuery allows to merge a schema import
                                * and an associated namespace declaration:
                                *
@@ -1038,18 +837,18 @@ SchemaImport              : "import schema" SchemaSrc_ OptAtURILiterals_
                             }
                           ;
 
-SchemaSrc_                : URILiteral
+SchemaSrc_                : StringLiteral
                             { $$.root = NULL;
                               ($$.hole = leaf (p_lit_str, @$))->sem.str = $1;
                             }
-                          | "namespace" NCName "=" URILiteral
+                          | "namespace" NCName "=" StringLiteral
                             { ($$.root = wire1 (p_ns_decl, @$,
                                                 (c = leaf (p_lit_str, @4),
                                                  c->sem.str = $4,
                                                  c)))->sem.str = $2;
                               ($$.hole = leaf (p_lit_str, @4))->sem.str = $4;
                             }
-                          | "default element" "namespace" URILiteral
+                          | "default element" "namespace" StringLiteral
                             { $$.root = wire1 (p_ens_decl, @$,
                                                (c = leaf (p_lit_str, @3),
                                                 c->sem.str = $3,
@@ -1058,9 +857,9 @@ SchemaSrc_                : URILiteral
                             }
                           ;
 
-OptAtURILiterals_         : /* empty */
+OptAtStringLiterals_      : /* empty */
                             { $$ = nil (@$); }
-                          | at_URILiteral URILiterals_
+                          | at_StringLiteral StringLiterals_
                             { $$ = wire2 (p_schm_ats, @$,
                                           (c = leaf (p_lit_str, @1),
                                            c->sem.str = $1,
@@ -1069,9 +868,9 @@ OptAtURILiterals_         : /* empty */
                             }
                           ;
 
-URILiterals_              : /* empty */
+StringLiterals_           : /* empty */
                             { $$.root = $$.hole = NULL; }
-                          | URILiterals_ "," URILiteral
+                          | StringLiterals_ "," StringLiteral
                             {
                               if ($1.root) {
                                   $$.root = $1.root;
@@ -1090,11 +889,18 @@ URILiterals_              : /* empty */
                                                     c),
                                                    nil (@$));
                               }
+                              /*
+                              $$ = wire2 (p_schm_ats, @$,
+                                          (c = leaf (p_lit_str, @1),
+                                           c->sem.str = $1,
+                                           c),
+                                          $3);
+                              */
                             }
                           ;
 
-/* [23] */
-ModuleImport              : "import module" ModuleNS_ OptAtURILiterals_
+/* [20] */
+ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
                             { /* XQuery allows to merge a module import
                                * and an associated namespace declaration:
                                *
@@ -1109,78 +915,25 @@ ModuleImport              : "import module" ModuleNS_ OptAtURILiterals_
                                * and the namespace declaration in $$.hole
                                * ($2.root == NULL if no namespace decl given)
                                */
+                              c = $3;
 
-                              /* FIXME:
-                               *   Does this code make sense?  We add the
-                               *   module to the work list once for each
-                               *   "at" URI given in the query.  This means
-                               *   we load the module from each of the URIs
-                               *   in turn?  Shouldn't we rather try each
-                               *   of the URIs until we can successfully
-                               *   load *one* of them?
-                               */
-                              for (c = $3;
-                                   c->kind == p_schm_ats;
-                                   c = c->child[1])
+                              while (c->kind == p_schm_ats) {
                                   add_to_module_wl (
-                                      false,                       /* no RPC */
-                                      $2.root
-                                          ? $2.root->sem.str : "", /* prefix */
-                                      $2.hole->sem.str,            /* namespc */
-                                      c->child[0]->sem.str);       /* at URI */
+                                      $2.hole->sem.str,       /* NS */
+                                      c->child[0]->sem.str);  /* URI */
+                                  c = c->child[1];
+                              }
 
                               $$.root = wire2 (p_mod_imp, @$, $2.hole, $3);
                               $$.hole = $2.root;
                             }
                           ;
 
-RPCModuleImport           : "import rpc-module" ModuleNSWithPrefix
-                            OptAtURILiterals_
-                            { /* RPC extension of XQuery: call to
-                               *   functions defined in this module will
-                               *   be translated into an RPC call.
-                               *
-                               * Merge a module import and an associated
-                               * namespace declaration is not allowed
-                               * when importing rpc-modules.  Thus the
-                               * only valid syntax to import a module
-                               * for RPC is (line wrapped):
-                               *
-                               * import rpc-module
-                               *    namespace ns = "ns" [at "url"]
-                               *
-                               * We return the module import in $$.root
-                               * and the namespace declaration in
-                               * $$.hole, which is the same as the
-                               * normal module import, but $2.root is
-                               * never NULL, since namespace decl is
-                               * always present.
-                               */
-                              for (c = $3;
-                                   c->kind == p_schm_ats;
-                                   c = c->child[1])
-                                  add_to_module_wl (
-                                      true,                   /* RPC */
-                                      $2.root->sem.str,       /* prefix */
-                                      $2.hole->sem.str,       /* namespc */
-                                      c->child[0]->sem.str);  /* at URI */
-
-                              $$.root = wire2 (p_mod_imp, @$, $2.hole, $3);
-                              $$.hole = $2.root;
-                            }
-                          ;
-
-ModuleNS_                 : ModuleNSWithPrefix      { $$ = $1; }
-                          | ModuleNSWithoutPrefix   { $$ = $1; }
-                          ;
-
-ModuleNSWithoutPrefix     : URILiteral
+ModuleNS_                 : StringLiteral
                             { $$.root = NULL;
                               ($$.hole = leaf (p_lit_str, @$))->sem.str = $1;
                             }
-                          ;
-
-ModuleNSWithPrefix        : "namespace" NCName "=" URILiteral
+                          | "namespace" NCName "=" StringLiteral
                             { ($$.root = wire1 (p_ns_decl, @$,
                                                 (c = leaf (p_lit_str, @4),
                                                  c->sem.str = $4,
@@ -1189,9 +942,7 @@ ModuleNSWithPrefix        : "namespace" NCName "=" URILiteral
                             }
                           ;
 
-
-/* [24] */
-/* !W3C: Use the VarName non-terminal (not QName) */
+/* [21] */
 VarDecl                   : "declare variable $" VarName OptTypeDeclaration_
                              ":=" ExprSingle
                             { $$ = wire2 (p_var_decl, @$,
@@ -1212,35 +963,22 @@ OptTypeDeclaration_       : /* empty */      { $$ = nil (@$); }
                           | TypeDeclaration  { $$ = $1; }
                           ;
 
-/* [25]  !W3C: Done by the lexer */
+/* [22]  !W3C: Done by the lexer */
 ConstructionDecl          : "declare construction preserve"
                             { ($$ = leaf (p_constr_decl, @$))->sem.tru = true; } 
                           | "declare construction strip"
                             { ($$ = leaf (p_constr_decl, @$))->sem.tru = false;} 
                           ;
 
-/* [26] */
+/* [23] */
 FunctionDecl              : "declare function" QName_LParen
                             OptParamList_ OptAsSequenceType_ EnclosedExpr
-                            { c = wire2 (p_fun_decl, @$,
-                                         wire2 (p_fun_sig, loc_rng (@2, @4),
-                                                $3, $4),
-                                         $5);
-                              c->sem.qname = $2;
-                              /*
-                               * FIXME:
-                               *   This is not the parser's job!
-                               *   Do this during function resolution!
-                               */
-                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.ns);
-                              $$ = c;
-
-#ifdef ENABLE_MILPRINT_SUMMER
+                            { ($$ = wire2 (p_fun_decl, @$,
+                                           wire2 (p_fun_sig, loc_rng (@2, @4),
+                                                  $3, $4),
+                                           $5))->sem.qname = $2;
                               num_fun++;
-                              if (module_base)
-                                  module_base
-                                      = 1 | (module_base ^ (unsigned long) $$);
-#endif
+                              if (module_base) module_base = 1 | (module_base ^ (unsigned long) $$);
                             }
                           | "declare function" QName_LParen
                             OptParamList_ OptAsSequenceType_ "external"
@@ -1249,59 +987,7 @@ FunctionDecl              : "declare function" QName_LParen
                                                   $3, $4),
                                            leaf (p_external, @5)))
                                    ->sem.qname = $2;
-#ifdef ENABLE_MILPRINT_SUMMER
-                              if (module_base)
-                                  module_base
-                                      = 1 | (module_base ^ (unsigned long) $$);
-#endif
-                            }
-/* W3C Update Facility */ | "declare updating function" QName_LParen
-                            OptParamList_ ")" EnclosedExpr
-                            { c = wire2 (p_fun_decl, @$,
-                                         wire2 (p_fun_sig, loc_rng (@2, @4),
-                                                $3, 
-                                                (c1 = wire1 (
-                                                       p_seq_ty, @$,
-                                                       wire1 (p_stmt_ty, @$,
-                                                              nil (@4))),
-                                                 c1->sem.oci = p_zero_or_more,
-                                                 c1)),
-                                         $5);
-                              c->sem.qname = $2;
-                              /*
-                               * FIXME:
-                               *   This is not the parser's job!
-                               *   Do this during function resolution!
-                               */
-                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.ns);
-                              $$ = c;
-
-#ifdef ENABLE_MILPRINT_SUMMER
-                              num_fun++;
-                              if (module_base)
-                                  module_base
-                                      = 1 | (module_base ^ (unsigned long) $$);
-#endif
-                            }
-                          | "declare updating function" QName_LParen
-                            OptParamList_ ")" "external"
-                            { ($$ = wire2 (p_fun_decl, @$,
-                                           wire2 (p_fun_sig, loc_rng (@2, @4),
-                                                  $3,
-                                                  (c = wire1 (
-                                                         p_seq_ty, @$,
-                                                         wire1 (p_stmt_ty, @$,
-                                                                nil (@4))),
-                                                   c->sem.oci = p_zero_or_more,
-                                                   c)),
-                                           leaf (p_external, @5)))
-                                   ->sem.qname = $2;
-
-#ifdef ENABLE_MILPRINT_SUMMER
-                              if (module_base)
-                                  module_base
-                                      = 1 | (module_base ^ (unsigned long) $$);
-#endif
+                              if (module_base) module_base = 1 | (module_base ^ (unsigned long) $$);
                             }
                           ;
 
@@ -1319,17 +1005,17 @@ OptAsSequenceType_        : ")"
                                            wire1 (p_item_ty, @$, nil (@$))))
                                 ->sem.oci = p_zero_or_more;
                             }
-                          | ")" "as" SequenceType  { $$ = $3; }
+                          | ") as" SequenceType  { $$ = $2; }
                           ;
 
-/* [27] */
+/* [24] */
 ParamList                 : Param
                             { $$ = wire2 (p_params, @$, $1, nil (@$)); }
                           | Param "," ParamList
                             { $$ = wire2 (p_params, @$, $1, $3); }
                           ;
 
-/* [28] */
+/* [25] */
 Param                     : "$" VarName OptParamTypeDeclaration_
                             { $$ = wire2 (p_param, @$, $3, $2); }
                           ;
@@ -1348,15 +1034,15 @@ OptParamTypeDeclaration_  : /* empty */
                           ;
 
 
-/* [29] */
+/* [26] */
 EnclosedExpr              : "{" Expr "}" { $$ = $2; }
                           ;
 
-/* [30] */
+/* [27] */
 QueryBody                 : Expr { $$ = $1; }
                           ;
 
-/* [31] */
+/* [28] */
 Expr                      : ExprSingle
                             { $$ = wire2 (p_exprseq, @$,
                                           $1,
@@ -1365,20 +1051,15 @@ Expr                      : ExprSingle
                             { $$ = wire2 (p_exprseq, @$, $1, $3); }
                           ;
 
-/* [32] */
+/* [29] */
 ExprSingle                : FLWORExpr       { $$ = $1; }
                           | QuantifiedExpr  { $$ = $1; }
                           | TypeswitchExpr  { $$ = $1; }
                           | IfExpr          { $$ = $1; }
-                          | InsertExpr      { $$ = $1; }
-                          | DeleteExpr      { $$ = $1; }
-                          | RenameExpr      { $$ = $1; }
-                          | ReplaceExpr     { $$ = $1; }
-                          | TransformExpr   { $$ = $1; }
                           | OrExpr          { $$ = $1; }
                           ;
 
-/* [33] */
+/* [30] */
 FLWORExpr                 : ForLetClauses_ OptWhereClause_ OptOrderByClause_
                             "return" ExprSingle
                             { $$ = wire2 (p_flwr, @$, $1.root,
@@ -1408,7 +1089,7 @@ OptOrderByClause_         : /* empty */    { $$ = nil (@$); }
                           | OrderByClause  { $$ = $1; }
                           ;
 
-/* [34] */
+/* [31] */
 ForClause                 : "for $" VarPosBindings_ { $$ = $2; }
                           ;
 
@@ -1442,11 +1123,11 @@ OptPositionalVar_         : /* empty */     { $$ = nil (@$); }
                           | PositionalVar   { $$ = $1; }
                           ;
 
-/* [35] */
+/* [32] */
 PositionalVar             : "at $" VarName  { $$ = $2; }
                           ;
 
-/* [36] */
+/* [33] */
 LetClause                 : "let $" LetBindings_ { $$ = $2; }
                           ;
 
@@ -1469,18 +1150,18 @@ LetBindings_              : VarName OptTypeDeclaration_ ":=" ExprSingle
                             }
                           ;
 
-/* [37] */
+/* [34] */
 WhereClause               : "where" ExprSingle { $$ = $2; }
                           ;
 
-/* [38] */
+/* [35] */
 OrderByClause             : "order by" OrderSpecList
                             {($$ = wire1 (p_orderby, @$, $2))->sem.tru = false;}
                           | "stable order by" OrderSpecList
                             {($$ = wire1 (p_orderby, @$, $2))->sem.tru = true;}
                           ;
 
-/* [39] / [40] */
+/* [36] / [37] */
 OrderSpecList             : ExprSingle OrderModifier
                             { ($$ = wire2 (p_orderspecs, @$,
                                            $1,
@@ -1493,7 +1174,7 @@ OrderSpecList             : ExprSingle OrderModifier
                             }
                           ;
 
-/* [41] */
+/* [38] */
 OrderModifier             : OptAscendingDescending_ OptEmptyGreatestLeast_
                             OptCollationStringLiteral_
                             { $$.dir = $1, $$.empty = $2; $$.coll = $3; }
@@ -1513,7 +1194,7 @@ OptCollationStringLiteral_: /* empty */                { $$ = NULL; }
                           | "collation" StringLiteral  { $$ = $2; }
                           ;
 
-/* [42] */
+/* [39] */
 QuantifiedExpr            : SomeEvery_ VarBindings_ "satisfies" ExprSingle
                             { $$ = wire2 ($1, @$, $2, $4); }
                           ;
@@ -1541,7 +1222,7 @@ VarBindings_              : VarName OptTypeDeclaration_ "in" ExprSingle
                                      $7); }
                           ;
 
-/* [43] */
+/* [40] */
 TypeswitchExpr            : "typeswitch (" Expr ")" CaseClauses_ "default"
                               OptDollarVarName_ "return" ExprSingle
                             { FIXUP (1,
@@ -1567,7 +1248,7 @@ OptDollarVarName_         : /* empty */ { $$ = nil (@$); }
                           | "$" VarName { $$ = $2; }
                           ;
 
-/* [44] */
+/* [41] */
 CaseClause                : "case" OptDollarVarNameAs_ SequenceType
                               "return" ExprSingle
                             { $$ = wire2 (p_case, @$,
@@ -1581,7 +1262,7 @@ OptDollarVarNameAs_       : /* empty */      { $$ = nil (@$); }
                           | "$" VarName "as" { $$ = $2; }
                           ;
 
-/* [45] */
+/* [42] */
 IfExpr                    : "if (" Expr ")" "then" ExprSingle "else" ExprSingle
                             { $$ = wire2 (p_if, @$,
                                           $2,
@@ -1590,19 +1271,19 @@ IfExpr                    : "if (" Expr ")" "then" ExprSingle "else" ExprSingle
                             }
                           ;
 
-/* [46] */
+/* [43] */
 OrExpr                    : AndExpr { $$ = $1; }
                           | AndExpr "or" OrExpr
                             { $$ = wire2 (p_or, @$, $1, $3); }
                           ;
 
-/* [47] */
+/* [44] */
 AndExpr                   : ComparisonExpr { $$ = $1; }
                           | ComparisonExpr "and" AndExpr
                             { $$ = wire2 (p_and, @$, $1, $3); }
                           ;
 
-/* [48] */
+/* [45] */
 ComparisonExpr            : RangeExpr { $$ = $1; }
                           | RangeExpr ValueComp RangeExpr
                             { $$ = wire2 ($2, @$, $1, $3); }
@@ -1612,13 +1293,13 @@ ComparisonExpr            : RangeExpr { $$ = $1; }
                             { $$ = wire2 ($2, @$, $1, $3); }
                           ;
 
-/* [49] */
+/* [46] */
 RangeExpr                 : AdditiveExpr { $$ = $1; }
                           | AdditiveExpr "to" AdditiveExpr
                             { $$ = wire2 (p_range, @$, $1, $3); }
                           ;
 
-/* [50] */
+/* [47] */
 AdditiveExpr              : MultiplicativeExpr { $$ = $1; }
                           | MultiplicativeExpr "+" AdditiveExpr
                             { $$ = wire2 (p_plus, @$, $1, $3); }
@@ -1626,7 +1307,7 @@ AdditiveExpr              : MultiplicativeExpr { $$ = $1; }
                             { $$ = wire2 (p_minus, @$, $1, $3); }
                           ;
 
-/* [51] */
+/* [48] */
 MultiplicativeExpr        : UnionExpr { $$ = $1; }
                           | UnionExpr DivOp_ MultiplicativeExpr
                             { $$ = wire2 ($2, @$, $1, $3); }
@@ -1638,7 +1319,7 @@ DivOp_                    : "*"    { $$ = p_mult; }
                           | "mod"  { $$ = p_mod; }
                           ;
 
-/* [52] */
+/* [49] */
 UnionExpr                 : IntersectExceptExpr { $$ = $1; }
                           | IntersectExceptExpr "union" UnionExpr
                             { $$ = wire2 (p_union, @$, $1, $3); }
@@ -1646,7 +1327,7 @@ UnionExpr                 : IntersectExceptExpr { $$ = $1; }
                             { $$ = wire2 (p_union, @$, $1, $3); }
                           ;
 
-/* [53] */
+/* [50] */
 IntersectExceptExpr       : InstanceofExpr { $$ = $1; }
                           | InstanceofExpr "intersect" IntersectExceptExpr
                             { $$ = wire2 (p_intersect, @$, $1, $3); }
@@ -1654,43 +1335,46 @@ IntersectExceptExpr       : InstanceofExpr { $$ = $1; }
                             { $$ = wire2 (p_except, @$, $1, $3); }
                           ;
 
-/* [54] */
+/* [51] */
 InstanceofExpr            : TreatExpr { $$ = $1; }
                           | TreatExpr "instance of" SequenceType
                             { $$ = wire2 (p_instof, @$, $1, $3); }
                           ;
 
-/* [55] */
+/* [52] */
 TreatExpr                 : CastableExpr { $$ = $1; }
                           | CastableExpr "treat as" SequenceType
-                            { $$ = wire2 (p_treat, @$, $1, $3); }
+                            { /* FIXME: WARNING: swapped children here to
+                                        be consistent with other stuff. */
+                              $$ = wire2 (p_treat, @$, $1, $3); }
                           ;
 
-/* [56] */
+/* [53] */
 CastableExpr              : CastExpr { $$ = $1; }
                           | CastExpr "castable as" SingleType
                             { $$ = wire2 (p_castable, @$, $1, $3); }
                           ;
 
-/* [57] */
+/* [54] */
 CastExpr                  : UnaryExpr { $$ = $1; }
                           | UnaryExpr "cast as" SingleType
-                            { $$ = wire2 (p_cast, @$, $1, $3); }
+                            { /* FIXME: WARNING: swapped children here to
+                                        be consistent with other stuff. */
+                              $$ = wire2 (p_cast, @$, $1, $3); }
                           ;
 
-/* [58] */
+/* [55]  !W3C */
 UnaryExpr                 : ValueExpr     { $$ = $1; }
                           | "-" UnaryExpr { $$ = wire1 (p_uminus, @$, $2); }
                           | "+" UnaryExpr { $$ = wire1 (p_uplus, @$, $2); }
                           ;
 
-/* [59] */
-ValueExpr                 : ValidateExpr   { $$ = $1; }
-                          | PathExpr       { $$ = flatten_locpath ($1, NULL); }
-                          | ExtensionExpr  { $$ = $1; }
+/* [56] */
+ValueExpr                 : ValidateExpr { $$ = $1; }
+                          | PathExpr { $$ = flatten_locpath ($1, NULL); }
                           ;
 
-/* [60] */
+/* [57] */
 GeneralComp               : "="  { $$ = p_eq; }
                           | "!=" { $$ = p_ne; }
                           | "<"  { $$ = p_lt; }
@@ -1699,7 +1383,7 @@ GeneralComp               : "="  { $$ = p_eq; }
                           | ">=" { $$ = p_ge; }
                           ;
 
-/* [61] */
+/* [58] */
 ValueComp                 : "eq" { $$ = p_val_eq; }
                           | "ne" { $$ = p_val_ne; }
                           | "lt" { $$ = p_val_lt; }
@@ -1708,16 +1392,16 @@ ValueComp                 : "eq" { $$ = p_val_eq; }
                           | "ge" { $$ = p_val_ge; }
                           ;
 
-/* [62] */
+/* [59] */
 NodeComp                  : "is" { $$ = p_is; }
                           | "<<" { $$ = p_ltlt; }
                           | ">>" { $$ = p_gtgt; }
                           ;
 
-/* [63] / [64] */
+/* [60] / [138] */
+/* FIXME: Validation nodes changed */
 ValidateExpr              : "validate {" Expr "}"
-                            { /* No validation mode means `strict'
-                                 (W3C XQuery Sect. 3.13). */
+                            { /* No validation mode means `strict'. */
                               ($$ = wire1 (p_validate, @$, $2))
                                 ->sem.tru = true; }
                           | "validate lax {" Expr "}"
@@ -1728,32 +1412,7 @@ ValidateExpr              : "validate {" Expr "}"
                                 ->sem.tru = true; }
                           ;
 
-/* [65] */
-ExtensionExpr             : Pragmas_ "{" OptPragmaExpr_ "}"
-                            { $$ = p_wire2 (p_ext_expr, @$, $1, $3); }
-                          ;
-
-Pragmas_                  : Pragma
-                            { $$ = p_wire2 (p_pragmas, @$, $1, nil (@$)); }
-                          | Pragma Pragmas_
-                            { $$ = p_wire2 (p_pragmas, @$, $1, $2); }
-                          ;
-
-OptPragmaExpr_            : /* empty */  { $$ = nil(@$); }
-                          | Expr         { $$ = $1; }
-                          ;
-
-/* [66] */
-Pragma                    : "(#" S QName PragmaContents "#)"
-                            { $$ = p_leaf (p_pragma, @$);
-                              $$->sem.pragma.qname   = $3;
-                              $$->sem.pragma.content = $4;
-                            }
-                          ;
-
-/* [67] is a terminal in Pathfinder */
-
-/* [68] */
+/* [61] */
 PathExpr                  : "/"
                             { $$ = leaf (p_root, @$); }
                           | "/" RelativePathExpr
@@ -1785,7 +1444,7 @@ PathExpr                  : "/"
                           | RelativePathExpr { $$ = $1; }
                           ;
 
-/* [69] */
+/* [62] */
 RelativePathExpr          : StepExpr { $$ = $1; }
                           | StepExpr "/" RelativePathExpr
                             { $$ = wire2 (p_locpath, @$, $3, $1); }
@@ -1813,19 +1472,19 @@ RelativePathExpr          : StepExpr { $$ = $1; }
                             }
                           ;
 
-/* [70] */
-StepExpr                  : FilterExpr  { $$ = $1; }
-                          | AxisStep    { $$ = $1; }
+/* [63] */
+StepExpr                  : AxisStep   { $$ = $1; }
+                          | FilterExpr { $$ = $1; }
                           ;
 
-/* [71]  !W3C: Factored out attribute step */
-AxisStep                  : ReverseStep
-                            { $$ = $1; }
-                          | ReverseStep PredicateList
-                            { FIXUP (0, $2, $1); $$ = $2.root; }
-                          | ForwardStep
+/* [64]  !W3C: Factored out attribute step */
+AxisStep                  : ForwardStep
                             { $$ = $1; }
                           | ForwardStep PredicateList
+                            { FIXUP (0, $2, $1); $$ = $2.root; }
+                          | ReverseStep
+                            { $$ = $1; }
+                          | ReverseStep PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
                           | AttribStep_
                             { $$ = $1; }
@@ -1839,15 +1498,14 @@ AxisStep                  : ReverseStep
 /* [/BURKOWSKI] */
                           ;
 
-/* [72] */
+/* [65] */
 ForwardStep               : ForwardAxis NodeTest
                             { ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
                           | AbbrevForwardStep
                             { $$ = $1; }
                           ;
 
-/* [73] */
-/* !W3C: attribute factored out */
+/* [66] */
 ForwardAxis               : "child::"              { $$ = p_child; }
                           | "descendant::"         { $$ = p_descendant; }
                           | "self::"               { $$ = p_self; }
@@ -1856,8 +1514,7 @@ ForwardAxis               : "child::"              { $$ = p_child; }
                           | "following::"          { $$ = p_following; }
                           ;
 
-/* [74] */
-/* !W3C: attribute factored out */
+/* [67] */
 AbbrevForwardStep         : NodeTest
                             { ($$ = wire1 (p_step,
                                              @$,
@@ -1865,14 +1522,14 @@ AbbrevForwardStep         : NodeTest
                             }
                           ;
 
-/* [75] */
+/* [68] */
 ReverseStep               : ReverseAxis NodeTest
                             { ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
                           | AbbrevReverseStep
                             { $$ = $1; }
                           ;
 
-/* [76] */
+/* [69] */
 ReverseAxis               : "parent::"             { $$ = p_parent; }
                           | "ancestor::"           { $$ = p_ancestor; }
                           | "preceding-sibling::"  { $$ = p_preceding_sibling; }
@@ -1880,7 +1537,7 @@ ReverseAxis               : "parent::"             { $$ = p_parent; }
                           | "ancestor-or-self::"   { $$ = p_ancestor_or_self; }
                           ;
 
-/* [77] */
+/* [70] */
 AbbrevReverseStep         : ".."
                             { ($$ = wire1 (p_step,
                                            @$,
@@ -1909,57 +1566,50 @@ AbbrevAttribStep_         : "@" AttribNodeTest
                             }
                           ;
 
-/* !W3C: Burkowski steps are a Pathfinder extension */
 BurkStep_                 : BurkAxis_ NodeTest
-                            { /* Burkowski Axis (can only be used if
-                                 corresponding compiler flag is set) */
+                            { /* Burkowski Axis (can only be used if corresponding 
+                                 compiler flag is set) */
                               ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
                           ;
 
-BurkAxis_                 : "select-narrow::"
-                            { 
-                              if (!PFstate.standoff_axis_steps) {
-                                PFoops (OOPS_PARSE,
-                                      "invalid character "
-                                      "(StandOff was not enabled)");
-                              } else {
-                                $$ = p_select_narrow; 
-                              }
+BurkAxis_                 : "select-narrow::"      { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_select_narrow; 
+#endif
                             }
-                          | "select-wide::"
-                            { 
-                              if (!PFstate.standoff_axis_steps) {
-                                PFoops (OOPS_PARSE,
-                                      "invalid character "
-                                      "(StandOff was not enabled)");
-                              } else {
-                                $$ = p_select_wide; 
-                              }
+                          | "select-wide::"        { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_select_wide; 
+#endif
                             }
-                          | "reject-narrow::"
-                            { 
-                              if (!PFstate.standoff_axis_steps) {
-                                PFoops (OOPS_PARSE,
-                                      "invalid character "
-                                      "(StandOff was not enabled)");
-                              } else {
-                                $$ = p_reject_narrow; 
-                              }
+                          | "reject-narrow::"      { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_reject_narrow; 
+#endif
                             }
-                          | "reject-wide::"
-                            { 
-                              if (!PFstate.standoff_axis_steps) {
-                                PFoops (OOPS_PARSE,
-                                      "invalid character "
-                                      "(StandOff was not enabled)");
-                              } else {
-                                $$ = p_reject_wide; 
-                              }
+                          | "reject-wide::"        { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_reject_wide; 
+#endif
                             }
                           ;
 
 
-/* [78] */
+
+
+/* [71] */
 NodeTest                  : KindTest
                             { $$ = $1; }
                           | NameTest
@@ -1967,7 +1617,7 @@ NodeTest                  : KindTest
                                 ->sem.kind = p_kind_elem; }
                           ;
 
-/* [79] */
+/* [72] */
 NameTest                  : QName
                             { $$ = wire2 (p_req_ty, @$,
                                           (c = leaf (p_req_name, @$),
@@ -1986,7 +1636,7 @@ AttribNodeTest            : KindTest
                                 ->sem.kind = p_kind_attr; }
                           ;
 
-/* [80] */
+/* [73] */
 Wildcard                  : "*"
                             { $$ = wire2 (p_req_ty, @$, nil (@$), nil (@$)); }
                           | NCName_Colon_Star
@@ -2003,13 +1653,13 @@ Wildcard                  : "*"
                                           nil (@$)); }
                           ;
 
-/* [81] */
+/* [74] */
 FilterExpr                : PrimaryExpr { $$ = $1; }
                           | PrimaryExpr PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
                           ;
 
-/* [82] */
+/* [75] */
 PredicateList             : Predicate
                             { $$.root = $$.hole = wire2 (p_pred, @1, NULL, $1);}
                           | Predicate PredicateList
@@ -2020,28 +1670,28 @@ PredicateList             : Predicate
                             }
                           ;
 
-/* [83] */
-Predicate                 : "[" Expr "]"      { $$ = $2; }
+/* [76] */
+Predicate                 : "[" Expr "]" { $$ = $2; }
                           ;
 
-/* [84] */
+/* [77] */
 PrimaryExpr               : Literal           { $$ = $1; }
                           | VarRef            { $$ = $1; }
                           | ParenthesizedExpr { $$ = $1; }
                           | ContextItemExpr   { $$ = $1; }
                           | FunctionCall      { $$ = $1; }
+                          | Constructor       { $$ = $1; }
                           | OrderedExpr       { $$ = $1; }
                           | UnorderedExpr     { $$ = $1; }
-                          | Constructor       { $$ = $1; }
                           ;
 
-/* [85] */
+/* [78] */
 Literal                   : NumericLiteral { $$ = $1; }
                           | StringLiteral
                             { ($$ = leaf (p_lit_str, @$))->sem.str = $1; }
                           ;
 
-/* [86] */
+/* [79] */
 NumericLiteral            : IntegerLiteral
                             { ($$ = leaf (p_lit_int, @$))->sem.num = $1; }
                           | DecimalLiteral
@@ -2050,45 +1700,45 @@ NumericLiteral            : IntegerLiteral
                             { ($$ = leaf (p_lit_dbl, @$))->sem.dbl = $1; }
                           ;
 
-/* [87] */
-VarRef                    : "$" VarName   { $$ = $2; }
+/* [80] */
+VarRef                    : "$" VarName { $$ = $2; }
                           ;
 
-/* [88] */
-VarName                   : QName
-                            { ($$ = leaf (p_varref, @$))->sem.qname = $1; }
-                          ;
-
-/* [89] */
+/* [81] */
 ParenthesizedExpr         : "(" ")"       { $$ = leaf (p_empty_seq, @$); }
                           | "(" Expr ")"  { $$ = $2; }
                           ;
 
-/* [90] */
-ContextItemExpr           : "." { $$ = leaf (p_dot, @$); }
+/* [82] */
+ContextItemExpr           : "."
+                            { $$ = leaf (p_dot, @$); }
+                              /*
+                               * The `.' was a step in the Nov 2002 draft.
+                               * The translation below would be closer to
+                               * that old view.
+                               *
+                              ($$ = wire1 (p_step,
+                                           @$,
+                                           (c = wire1 (p_node_ty, @$, nil (@$)),
+                                            c->sem.kind = p_kind_node,
+                                            c)))->sem.axis = p_self;
+                              */
                           ;
 
-/* [91] */
+/* [83] */
 OrderedExpr               : "ordered {" Expr "}"
                             { $$ = wire1 (p_ordered, @$, $2); }
                           ;
 
-/* [92] */
+/* [84] */
 UnorderedExpr             : "unordered {" Expr "}"
                             { $$ = wire1 (p_unordered, @$, $2); }
                           ;
 
-/* [93] */
+/* [85] */
 FunctionCall              : QName_LParen OptFuncArgList_ ")"
-                            { c = wire1 (p_fun_ref, @$, $2);
-                              /* FIXME:
-                               *   This is not the parser's job!
-                               *   Do this during function resolution!
-                               */
-                              c->sem.qname = $1;
-                              c->rpc_uri = get_rpc_uri (c->sem.qname.ns.ns);
-                              $$ = c;
-                            }
+                            { ($$ = wire1 (p_fun_ref, @$, $2))
+                                ->sem.qname = $1; }
                           ;
 
 OptFuncArgList_           : /* empty */   { $$ = nil (@$); }
@@ -2109,18 +1759,18 @@ FuncArgList_              : ExprSingle
                               $$ = wire2 (p_args, @$, $3, $1); }
                           ;
 
-/* [94] */
+/* [86] */
 Constructor               : DirectConstructor   { $$ = $1; }
                           | ComputedConstructor { $$ = $1; }
                           ;
 
-/* [95] */
+/* [87] */
 DirectConstructor         : DirElemConstructor    { $$ = $1; }
                           | DirCommentConstructor { $$ = $1; }
                           | DirPIConstructor      { $$ = $1; }
                           ;
 
-/* [96] */
+/* [88] */
 DirElemConstructor        : "<" QName DirAttributeList "/>"
                             { if ($3.root)
                                 $3.hole->child[1] = leaf (p_empty_seq, @3);
@@ -2173,7 +1823,7 @@ DirElementContents_       : /* empty */
                             { $$ = wire2 (p_contseq, @$, $1, $2); }
                           ;
 
-/* [97] */
+/* [89] */
 DirAttributeList          : /* empty */
                             { $$.root = $$.hole = NULL; }
                           | S DirAttributeList
@@ -2195,7 +1845,7 @@ DirAttribute_             : QName OptS_ "=" OptS_ DirAttributeValue
                             }
                           ;
 
-/* [98] */
+/* [90] */
 DirAttributeValue         : "\"" AttributeValueConts_ "\"" { $$ = $2; }
                           | "'" AttributeValueConts_ "'"   { $$ = $2; }
                           ;
@@ -2235,24 +1885,22 @@ AttributeValueContTexts_  : AttributeValueContText_
                           ;
 
 AttributeValueContText_   : AttrContentChar      { $$ = $1; }
-                          | EscapeQuot           { $$ = '"'; }
-                          | EscapeApos           { $$ = '\''; }
+                          | EscapeQuot           { $$ = $1; }
+                          | EscapeApos           { $$ = $1; }
                           | PredefinedEntityRef  { $$ = $1; }
                           | CharRef              { $$ = $1; }
                           | "{{"                 { $$ = '{'; }
                           | "}}"                 { $$ = '}'; }
                           ;
 
-/* [101] */
-/* !W3C: We don't have a CommonContent non-terminal. */
-DirElemContent            : DirectConstructor      { $$ = $1; }
-                          | CDataSection           { $$ = $1; }
+/* [93] */
+DirElemContent            : DirectConstructor  { $$ = $1; }
                           | ElementContentTexts_
                             { /* add trailing '\0' to string */
                               *((char *) PFarray_add ($1)) = '\0';
                                              
                               /* xmlspace handling */
-                              if ((! PFquery.pres_boundary_space) &&
+                              if ((! xmlspace_preserve) &&
                                   (is_whitespace (PFarray_at ($1, 0))))
                                 $$ = leaf (p_empty_seq, @1);
                               else
@@ -2265,6 +1913,7 @@ DirElemContent            : DirectConstructor      { $$ = $1; }
                                                    leaf (p_empty_seq, @1)
                                                   )); 
                             }
+                          | CDataSection  { $$ = $1; }
                           | EnclosedExpr  { $$ = $1; }
                           ;
 
@@ -2290,12 +1939,12 @@ ElementContentText_       : ElementContentChar    { $$ = $1; }
                           | "}}"                  { $$ = '}'; }
                           ;
 
-/* [103] */
+/* [95] */
 DirCommentConstructor     : "<!--" DirCommentContents "-->"
                             { $$ = wire1 (p_comment, @$, $2); }
                           ;
 
-/* [104] */
+/* [96] */
 DirCommentContents        : Characters_ { $$ = $1; }
                           ;
 
@@ -2319,13 +1968,10 @@ Chars_                    : /* empty */
                             }
                           ;
 
-/* [105] */
+/* [97] */
 DirPIConstructor          : "<?" PITarget DirPIContents "?>"
-                            { 
-                              if ((strlen ($2) == 3)
-                                   && ($2[0] == 'x' || $2[0] == 'X')
-                                   && ($2[1] == 'm' || $2[1] == 'M')
-                                   && ($2[2] == 'l' || $2[2] == 'L')) {
+                            { /* FIXME: p_pi is now binary. */
+                              if (!strcmp ($2, "xml")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
                                               "`xml' is reserved and may not "
                                               "be used as a PI target.");
@@ -2340,23 +1986,22 @@ DirPIConstructor          : "<?" PITarget DirPIContents "?>"
                             }
                           ;
 
-/* [106] */
-DirPIContents             : /* empty */   { $$ = nil (@$); }
-                          | S Characters_ { $$ = $2; }
+/* [98] */
+DirPIContents             : S Characters_ { $$ = $2; }
                           ;
 
-/* [107] */
+/* [99] */
 CDataSection              : "<![CDATA[" CDataSectionContents "]]>"
                             { $$ = wire1 (p_text, @$,
                                           wire2 (p_exprseq, @2, $2,
                                                  leaf (p_empty_seq, @2))); }
                           ;
 
-/* [108] */
+/* [100] */
 CDataSectionContents      : Characters_ { $$ = $1; }
                           ;
 
-/* [109] */
+/* [101] */
 ComputedConstructor       : CompDocConstructor      { $$ = $1; }
                           | CompElemConstructor     { $$ = $1; }
                           | CompAttrConstructor     { $$ = $1; }
@@ -2365,12 +2010,12 @@ ComputedConstructor       : CompDocConstructor      { $$ = $1; }
                           | CompPIConstructor       { $$ = $1; }
                           ;
 
-/* [110] */
+/* [102] */
 CompDocConstructor        : "document {" Expr "}"
                             { $$ = wire1 (p_doc, @$, $2); }
                           ;
 
-/* [111] */
+/* [103] */
 CompElemConstructor       : Element_QName_LBrace OptContentExpr_ "}"
                             { $$ = wire2 (p_elem, @$,
                                           (c = leaf (p_tag, @1),
@@ -2389,11 +2034,11 @@ OptContentExpr_           : /* empty */   { $$ = leaf (p_empty_seq, @$); }
                           | ContentExpr   { $$ = $1; }
                           ;
 
-/* [112] */
+/* [104] */
 ContentExpr               : Expr   { $$ = $1; }
                           ;
 
-/* [113]  !W3C: OptContentExpr_ (symmetric to CompElemConstructor) */
+/* [105]  !W3C: OptContentExpr_ (symmetric to CompElemConstructor) */
 CompAttrConstructor       : Attribute_QName_LBrace OptContentExpr_ "}"
                             { $$ = wire2 (p_attr, @$,
                                           (c = leaf (p_tag, @1),
@@ -2408,17 +2053,17 @@ CompAttrConstructor       : Attribute_QName_LBrace OptContentExpr_ "}"
                                                  leaf (p_empty_seq, @5))); }
                           ;
 
-/* [114] */
+/* [106] */
 CompTextConstructor       : "text {" Expr "}"
                             { $$ = wire1 (p_text, @$, $2); }
                           ;
 
-/* [115] */
+/* [107] */
 CompCommentConstructor    : "comment {" Expr "}"
                             { $$ = wire1 (p_comment, @$, $2); }
                           ;
 
-/* [116] */
+/* [108] */
 CompPIConstructor         : PI_NCName_LBrace OptContentExpr_ "}"
                             { $$ = wire2 (p_pi, @$,
                                           (c = leaf (p_lit_str, @2),
@@ -2431,7 +2076,7 @@ CompPIConstructor         : PI_NCName_LBrace OptContentExpr_ "}"
                             { $$ = wire2 (p_pi, @$, $2, $5); }
                           ;
 
-/* [117] */
+/* [109] */
 SingleType                : AtomicType
                             { ($$ = wire1 (p_seq_ty, @$, $1))
                                 ->sem.oci = p_one; }
@@ -2440,39 +2085,38 @@ SingleType                : AtomicType
                                 ->sem.oci = p_zero_or_one; }
                           ;
 
-/* [118] */
+/* [110] */
 TypeDeclaration           : "as" SequenceType { $$ = $2; }
                           ;
 
-/* [119] */
-SequenceType              : "empty-sequence ()"
+/* [111] */
+SequenceType              : ItemType OccurrenceIndicator
+                            { ($$ = wire1 (p_seq_ty, @$, $1))->sem.oci = $2; }
+                          | "empty ()"
                             { ($$ = wire1 (p_seq_ty, @$, leaf (p_empty_ty, @$)))
                                 ->sem.oci = p_one; }
-                          | ItemType OptOccurrenceIndicator_
-                            { ($$ = wire1 (p_seq_ty, @$, $1))->sem.oci = $2; }
                           ;
 
-/* [120] */
-/* !W3C: Drafts use OccurrenceIndicator? in Rule [119] */
-OptOccurrenceIndicator_   : /* empty */   { $$ = p_one; }
+/* [112] */
+OccurrenceIndicator       : /* empty */   { $$ = p_one; }
                           | "?"           { $$ = p_zero_or_one; }
                           | "*"           { $$ = p_zero_or_more; }
                           | "+"           { $$ = p_one_or_more; }
                           ;
 
-/* [121] */
-ItemType                  : KindTest   { $$ = $1; }
+/* [113] */
+ItemType                  : AtomicType { $$ = $1; }
+                          | KindTest   { $$ = $1; }
                           | "item ()"  { $$ = wire1 (p_item_ty, @$, nil (@$)); }
-                          | AtomicType { $$ = $1; }
                           ;
 
-/* [122] */
+/* [114] */
 AtomicType                : QName
                             { ($$ = wire1 (p_atom_ty, @$, nil (@$)))
                                 ->sem.qname = $1; }
                           ;
 
-/* [123] */
+/* [115] */
 KindTest                  : DocumentTest         { $$ = $1; }
                           | ElementTest          { $$ = $1; }
                           | AttributeTest        { $$ = $1; }
@@ -2484,13 +2128,13 @@ KindTest                  : DocumentTest         { $$ = $1; }
                           | AnyKindTest          { $$ = $1; }
                           ;
 
-/* [124] */
+/* [116] */
 AnyKindTest               : "node ()"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_node; }
                           ;
 
-/* [125] */
+/* [117] */
 DocumentTest              : "document-node (" ")"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_doc; }
@@ -2502,19 +2146,19 @@ DocumentTest              : "document-node (" ")"
                                 ->sem.kind = p_kind_doc; }
                           ;
 
-/* [126] */
+/* [118] */
 TextTest                  : "text (" ")"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_text; }
                           ;
 
-/* [127] */
+/* [119] */
 CommentTest               : "comment (" ")"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_comment; }
                           ;
 
-/* [128] */
+/* [120] */
 PITest                    : "processing-instruction (" ")"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_pi; }
@@ -2534,7 +2178,7 @@ PITest                    : "processing-instruction (" ")"
                                 ->sem.kind = p_kind_pi; }
                           ;
 
-/* [129] */
+/* [121] */
 AttributeTest             : "attribute (" ")"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_attr; }
@@ -2552,23 +2196,23 @@ AttributeTest             : "attribute (" ")"
                                 ->sem.kind = p_kind_attr; }
                           ;
 
-/* [130] */
+/* [122] */
 AttribNameOrWildcard      : AttributeName
                             { ($$ = leaf (p_req_name, @$))->sem.qname = $1; }
                           | "*"
                             { $$ = nil (@$); }
                           ;
 
-/* [131] */
+/* [123] */
 SchemaAttributeTest       : "schema-attribute (" AttributeDeclaration ")"
                             { ($$ = leaf (p_schm_attr, @$))->sem.qname = $2; }
                           ;
 
-/* [132] */
+/* [124] */
 AttributeDeclaration      : AttributeName { $$ = $1; }
                           ;
 
-/* [133] */
+/* [125] */
 ElementTest               : "element (" ")"
                             { ($$ = wire1 (p_node_ty, @$, nil (@$)))
                                 ->sem.kind = p_kind_elem; }
@@ -2607,124 +2251,78 @@ ElementTest               : "element (" ")"
                             }
                           ;
 
-/* [134] */
+/* [126] */
 ElementNameOrWildcard     : ElementName
                             { ($$ = leaf (p_req_name, @$))->sem.qname = $1; }
                           | "*"
                             { $$ = nil (@$); }
                           ;
 
-/* [135] */
+/* [127] */
 SchemaElementTest         : "schema-element (" ElementDeclaration ")"
                             { ($$ = leaf (p_schm_elem, @$))->sem.qname = $2; }
                           ;
 
-/* [136] */
+/* [128] */
 ElementDeclaration        : ElementName { $$ = $1; }
                           ;
 
-/* [137] */
+/* [129] */
 AttributeName             : QName { $$ = $1; }
                           ;
 
-/* [138] */
+/* [130] */
 ElementName               : QName { $$ = $1; }
                           ;
 
-/* [139] */
+/* [131] */
 TypeName                  : QName { $$ = $1; }
                           ;
 
-/* [140] */
-URILiteral                : StringLiteral { $$ = $1; }
+/* [132]  !W3C: IntegerLiteral is a terminal */
+/* [133]  !W3C: DecimalLiteral is a terminal */
+/* [134]  !W3C: DoubleLiteral is a terminal */
+/* [135]  !W3C: StringLiteral is a terminal */
+/* [136]  !W3C: PITarget is a terminal */
+
+/* [137] */
+VarName                   : QName
+                            { ($$ = leaf (p_varref, @$))->sem.qname = $1; }
                           ;
 
-/* Update extensions follow */
+/* [138]  !W3C: in Rule [60] */
 
-/* [141] XQUpdt */
-RevalidationDecl          : "declare revalidation strict"
-                            { ($$ = p_leaf (p_revalid, @$))
-                                  ->sem.revalid = revalid_strict; }
-                          | "declare revalidation lax"
-                            { ($$ = p_leaf (p_revalid, @$))
-                                  ->sem.revalid = revalid_lax; }
-                          | "declare revalidation skip"
-                            { ($$ = p_leaf (p_revalid, @$))
-                                  ->sem.revalid = revalid_skip; }
+/* [139]  !W3C: Don't need Digits: Is in ...Literal terminals */
+
+/* [140]  !W3C: Predefined entities handled by scanner */
+
+/* [141]  !W3C: CharRef is a terminal */
+
+/* [142] */
+EscapeQuot                : "\"\""  { $$ = '"'; }
                           ;
-
-/* [142] XQUpdt */
-InsertExpr                : "do insert" SourceExpr InsertLoc_ TargetExpr
-                            { ($$ = p_wire2 (p_insert, @$, $2, $4))
-                                  ->sem.insert = $3; }
-                          ;
-
-InsertLoc_                : "as first into"  { $$ = p_first_into; }
-                          | "as last into"   { $$ = p_last_into; }
-                          | "into"           { $$ = p_into; }
-                          | "after"          { $$ = p_after; }
-                          | "before"         { $$ = p_before; }
-                          ;
-
 /* [143] */
-DeleteExpr                : "do delete" TargetExpr
-                            { $$ = p_wire1 (p_delete, @$, $2); }
+EscapeApos                : "''"    { $$ = '\''; }
                           ;
 
-/* [144] */
-ReplaceExpr               : "do replace" TargetExpr "with" ExprSingle
-                            { ($$ = p_wire2 (p_replace, @$, $2, $4))
-                                  ->sem.tru = false; }
-                          | "do replace value of" TargetExpr "with" ExprSingle
-                            { ($$ = p_wire2 (p_replace, @$, $2, $4))
-                                  ->sem.tru = true; }
-                          ;
+/* [144]  !W3C: ElementContentChar is a terminal */
+/* [145]  !W3C: QuotAttrContentChar is a terminal */
+/* [146]  !W3C: AposAttrContentChar is a terminal */
 
-/* [145] */
-/* FIXME: "with" is wrong syntax here.  But we get problems with our
-          lexical state machine if we use "as". */
-RenameExpr                : "do rename" TargetExpr "with" NewNameExpr
-                            { $$ = p_wire2 (p_rename, @$, $2, $4); }
-                          ;
+/* !W3C: We don't support pragmas [147] [148] [149] */
 
-/* [146] */
-SourceExpr                : ExprSingle    { $$ = $1; }
-                          ;
+/* !W3C: Comments are handled by the scanner [150] [151] */
 
-/* [147] */
-TargetExpr                : ExprSingle    { $$ = $1; }
-                          ;
-
-/* [148] */
-NewNameExpr               : ExprSingle    { $$ = $1; }
-                          ;
-
-/* [149] */
-TransformExpr             : "transform copy $" TransformBindings_
-                            "modify" ExprSingle "return" ExprSingle
-                            { $$ = p_wire2 (p_transform, @$,
-                                     $2,
-                                     p_wire2 (p_modify, loc_rng (@3, @6),
-                                              $4, $6)); }
-                          ;
-
-TransformBindings_        : TransformBinding_
-                            { $$ = p_wire2 (p_transbinds, @$, $1, nil (@$)); }
-                          | TransformBinding_ "," TransformBindings_
-                            { $$ = p_wire2 (p_transbinds, @$, $1, $3); }
-                          ;
-
-TransformBinding_         : VarName ":=" ExprSingle
-                            { $$ = p_wire2 (p_let, @$,
-                                     p_wire2 (p_var_type, @1, $1, nil (@1)),
-                                     $3); }
-                          ;
+/* [152]  !W3C: QName is a terminal */
+/* [153]  !W3C: NCName is a terminal */
+/* [154]  !W3C: S is a terminal */
+/* [155]  !W3C: PFChar is a terminal */
 
 %%
 
 /** 
  * Check if the input string consists of whitespace only.
- * If this is the case and @c PFquery.pres_boundary_space is set to false, the 
+ * If this is the case and @c xmlspace_preserve is set to false, the 
  * abstract syntax tree must be altered, i.e., we do not
  * create a text node but an empty sequence node.
  *
@@ -2780,34 +2378,20 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  * Add an item to the work list of modules to import.  If it is
  * already in there, do nothing.
  *
- * @param rpc  normale module or rpc module
- * @param id   namespace id
  * @param ns   namespace associated with this module
  * @param uri  URI where we will find the module definition.
  *
  *  import module [prefix =] ns at uri, uri, uri...
  */
 static void
-add_to_module_wl (char rpc, char*id, char *ns, char *uri)
+add_to_module_wl (char *ns, char *uri)
 {
     for (unsigned int i = 0; i < PFarray_last (modules); i++)
         if ( !strcmp (((module_t *) PFarray_at (modules, i))->uri, uri) )
             return;
 
     *(module_t *) PFarray_add (modules)
-        = (module_t) { .rpc = rpc, .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
-}
-
-static char *
-get_rpc_uri(char *prefix){
-    if (!prefix) return NULL;
-
-    for (unsigned int i = 0; i < PFarray_last (modules); i++){
-        module_t *m = (module_t *) PFarray_at(modules, i);
-        if ( m->rpc && (strcmp (m->id, prefix) == 0))
-            return m->uri;
-    }
-    return NULL;
+        = (module_t) { .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
 }
 
 /**
@@ -2830,11 +2414,7 @@ YYLTYPE pflloc; /* why ? */
 /**
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
-#ifdef ENABLE_MILPRINT_SUMMER
 int
-#else
-void
-#endif
 PFparse (char *input, PFpnode_t **r)
 {
 #if YYDEBUG
@@ -2846,14 +2426,11 @@ PFparse (char *input, PFpnode_t **r)
 
     /* initialize work list of modules to load */
     modules = PFarray (sizeof (module_t));
-    
+
     /* we don't explicitly ask for modules */
     module_only = false;
-
-#ifdef ENABLE_MILPRINT_SUMMER
     module_base = 0;
     num_fun = 0;
-#endif
 
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
@@ -2863,10 +2440,7 @@ PFparse (char *input, PFpnode_t **r)
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
     *r = root;
-
-#ifdef ENABLE_MILPRINT_SUMMER
     return num_fun;
-#endif
 }
 
 /**
@@ -2886,7 +2460,7 @@ parse_module (char *ns, char *uri)
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
     pflloc.first_col = pflloc.last_col = 0;
-    
+
     req_module_ns = ns;
 
     if (pfparse ())
@@ -2899,11 +2473,7 @@ parse_module (char *ns, char *uri)
  * Load and parse modules listed in working list and put them into
  * the parse tree @a r.
  */
-#ifdef ENABLE_MILPRINT_SUMMER
 int
-#else
-void
-#endif
 PFparse_modules (PFpnode_t *r)
 {
     PFpnode_t *module;
@@ -2929,10 +2499,7 @@ PFparse_modules (PFpnode_t *r)
             r->child[1]
                 = wire2 (p_decl_imps, noloc, module, r->child[1]);
     }
-
-#ifdef ENABLE_MILPRINT_SUMMER
     return (module_base%2000000)*1000;
-#endif
 }
 
 /* vim:set shiftwidth=4 expandtab: */

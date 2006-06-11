@@ -34,19 +34,20 @@
 #define APPLY_H
 
 /**
- * RPC EXTENSION (Boncz/Zhang CWI 2005)
+ * SOAP EXTENSION (Boncz/Zhang CWI 2005)
  *
- * The below structure is used in parse trees for function applications.
- * It records whether the function is being called in 'rpc' mode => if
- * yes, 'rpc_uri' contains the URI from where the module can be loaded;
- * otherwise, 'rpc_uri' is a NULL pointer.  This has consequences for
- * type checking, mainly the first actual parameter should be of type
- * string (URI destination) and the function is resolved by excluding
- * the first parameter from the parameter list.
+ * when a UDF is called (applied) with the namespace identifier 'soap' it is a soap rpc
+ *
+ * soap:fcn(p0,p1,..,pn)     ==>    call fcn(p1,..,pn) at URI=p0
+ *
+ * The below structure is used in parse trees for function applications. it records
+ * whether the function is being called in 'soap' mode. This has consequences for type
+ * checking, mainly the first actual parameter should be of type string (URI destination)
+ * and the function is resolved by excluding the first parameter from the parameter list.
  */
 typedef struct {
     struct PFfun_t *fun;
-    char *rpc_uri;
+    int rpc;
 } PFapply_t;
 
 PFapply_t *PFapply(struct PFfun_t *fun);

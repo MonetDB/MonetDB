@@ -39,7 +39,7 @@
 #include "logical.h"
 
 void PFla_dot (FILE *, PFla_op_t *);
-void PFla_xml (FILE *, PFla_op_t *);
+void PFla_pretty (FILE *, PFla_op_t *);
 
 #endif  /* LOGDEBUG_H */
 

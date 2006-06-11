@@ -122,12 +122,6 @@ int PFarray_vprintf (PFarray_t *, const char *, va_list);
 PFarray_t *PFarray_concat (PFarray_t *, PFarray_t *);
 
 /**
- * Array copy.  The entries of input are inserted
- * into a new array output.  
- */
-PFarray_t *PFarray_copy (PFarray_t *input);
-
-/**
  * Array deletion.  Delete the array's front element.
  */
 void PFarray_del (PFarray_t *);

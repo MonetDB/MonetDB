@@ -59,9 +59,6 @@ stderr of test 'for_at1` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-type error: binding sequence in a for clause has static type `empty'
-# halted in typecheck.brg (reduce), line 508
-
 # 23:29:36 >  
 # 23:29:36 >  Done.
 # 23:29:36 >  

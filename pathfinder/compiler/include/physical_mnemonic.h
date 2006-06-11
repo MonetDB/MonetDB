@@ -29,7 +29,7 @@
 /* Also import generic algebra stuff */
 #include "algebra_mnemonic.h"
 
-#define serialize(a,b,c)  PFpa_serialize ((a), (b), (c))
+#define serialize(a,b)    PFpa_serialize ((a), (b))
 
 /** literal table construction */
 #define lit_tbl(a,b,c)    PFpa_lit_tbl ((a), (b), (c))
@@ -79,8 +79,6 @@
 
 #define hash_count(a,b,c) PFpa_hash_count ((a), (b), (c))
 
-#define aggr(a,b,c,d, e) PFpa_aggr ((a), (b), (c), (d), (e))
-
 /** a sort specification list is just another attribute list */
 /* FIXME */
 #define sortby(...)       PFalg_attlist (__VA_ARGS__)
@@ -96,36 +94,25 @@
 #define cast(a,b,c,d) PFpa_cast ((a), (b), (c), (d))
 
 /** StaircaseJoin */
-#define llscj_anc(a,b,c,d,e,f,g) PFpa_llscj_anc ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_anc_self(a,b,c,d,e,f,g) PFpa_llscj_anc_self ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_attr(a,b,c,d,e,f,g) PFpa_llscj_attr ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_child(a,b,c,d,e,f,g) PFpa_llscj_child ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_desc(a,b,c,d,e,f,g) PFpa_llscj_desc ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_desc_self(a,b,c,d,e,f,g) PFpa_llscj_desc_self ((a),(b), (c), \
-        (d), (e), (f), (g))
-#define llscj_foll(a,b,c,d,e,f,g) PFpa_llscj_foll ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_foll_self(a,b,c,d,e,f,g) PFpa_llscj_foll_self ((a),(b), (c), \
-        (d), (e), (f), (g))
-#define llscj_parent(a,b,c,d,e,f,g) PFpa_llscj_parent ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_prec(a,b,c,d,e,f,g) PFpa_llscj_prec ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_prec_self(a,b,c,d,e,f,g) PFpa_llscj_prec_self ((a),(b), (c), \
-        (d), (e), (f), (g))
+#define llscj_anc(a,b,c,d,e) PFpa_llscj_anc ((a), (b), (c), (d), (e))
+#define llscj_anc_self(a,b,c,d,e) PFpa_llscj_anc_self ((a), (b), (c), (d), (e))
+#define llscj_attr(a,b,c,d,e) PFpa_llscj_attr ((a), (b), (c), (d), (e))
+#define llscj_child(a,b,c,d,e) PFpa_llscj_child ((a), (b), (c), (d), (e))
+#define llscj_desc(a,b,c,d,e) PFpa_llscj_desc ((a), (b), (c), (d), (e))
+#define llscj_desc_self(a,b,c,d,e) PFpa_llscj_desc_self ((a),(b), (c), (d), (e))
+#define llscj_foll(a,b,c,d,e) PFpa_llscj_foll ((a), (b), (c), (d), (e))
+#define llscj_foll_self(a,b,c,d,e) PFpa_llscj_foll_self ((a),(b), (c), (d), (e))
+#define llscj_parent(a,b,c,d,e) PFpa_llscj_parent ((a), (b), (c), (d), (e))
+#define llscj_prec(a,b,c,d,e) PFpa_llscj_prec ((a), (b), (c), (d), (e))
+#define llscj_prec_self(a,b,c,d,e) PFpa_llscj_prec_self ((a),(b), (c), (d), (e))
 
-#define doc_tbl(a,b,c)    PFpa_doc_tbl ((a), (b), (c))
+#define doc_tbl(a)        PFpa_doc_tbl (a)
 #define doc_access(a,b,c,d,e) PFpa_doc_access ((a), (b), (c), (d), (e))
 
-#define element(a,b,c,d,e,f)    PFpa_element ((a),(b),(c),(d),(e),(f))
-#define attribute(a,b,c,d) PFpa_attribute ((a),(b),(c),(d))
+#define element(a,b,c)    PFpa_element ((a),(b),(c))
+#define attribute(a,b,c,d,e) PFpa_attribute ((a),(b),(c),(d),(e))
 #define textnode(a,b,c)  PFpa_textnode ((a),(b),(c))
-#define merge_adjacent(a,b,c,d,e) PFpa_merge_adjacent ((a),(b),(c),(d),(e))
+#define merge_adjacent(a,b) PFpa_merge_adjacent ((a),(b))
 
 /** roots() operator */
 #define roots(a)          PFpa_roots (a)
@@ -139,6 +126,6 @@
 #define cond_err(a,b,c,d) PFpa_cond_err ((a), (b), (c), (d))
 #define fn_concat(a,b,c,d)  PFpa_fn_concat ((a), (b), (c), (d))
 #define fn_contains(a,b,c,d)  PFpa_fn_contains ((a), (b), (c), (d))
-#define string_join(a,b,c,d)  PFpa_string_join ((a),(b),(c),(d))
+#define string_join(a,b)  PFpa_string_join ((a), (b))
 
 /* vim:set shiftwidth=4 expandtab: */

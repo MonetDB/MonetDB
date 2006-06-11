@@ -83,93 +83,93 @@ PFty_t
 PFty_none (void)
 {
     PFty_t t = { .type  = ty_none,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
 }
-
+	     
 PFty_t 
 PFty_empty (void)
 {
     PFty_t t = { .type  = ty_empty,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
     
     return t;
 }
-                     
+		     
 PFty_t 
 PFty_item (void)
 {
     PFty_t t = { .type  = ty_item,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
 }
-                     
+		     
 PFty_t 
 PFty_untypedAny (void)
 {
     PFty_t t = { .type  = ty_untypedAny,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
 }
-                     
+		     
 PFty_t 
 PFty_atomic (void)
 {
     PFty_t t = { .type  = ty_atomic,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
 }
-                     
+		     
 PFty_t 
 PFty_untypedAtomic (void)
 {
     PFty_t t = { .type  = ty_untypedAtomic,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
 }
-                     
+		     
 PFty_t 
 PFty_numeric (void)
 {
     PFty_t t = { .type  = ty_numeric,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
 }
-                     
+		     
 PFty_t 
 PFty_node (void)
 {
     PFty_t t = { .type  = ty_node,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -179,9 +179,9 @@ PFty_t
 PFty_text (void)
 {
     PFty_t t = { .type  = ty_text,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -191,9 +191,9 @@ PFty_t
 PFty_pi (char *target)
 {
     PFty_t t = { .type  = ty_pi,
-                 .name  = { .ns = PFns_wild, .loc = target },
+		 .name  = { .ns = PFns_wild, .loc = target },
                  .sym_space = 0,
-                 .child = { 0 }
+		 .child = { 0 }
     };
 
     return t;
@@ -203,9 +203,9 @@ PFty_t
 PFty_comm (void)
 {
     PFty_t t = { .type  = ty_comm,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -215,9 +215,9 @@ PFty_t
 PFty_integer (void)
 {
     PFty_t t = { .type  = ty_integer,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -227,9 +227,9 @@ PFty_t
 PFty_decimal (void)
 {
     PFty_t t = { .type = ty_decimal,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -239,9 +239,9 @@ PFty_t
 PFty_double (void)
 {
     PFty_t t = { .type = ty_double,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -251,9 +251,9 @@ PFty_t
 PFty_string (void)
 {
     PFty_t t = { .type = ty_string,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -263,33 +263,9 @@ PFty_t
 PFty_boolean (void)
 {
     PFty_t t = { .type = ty_boolean,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
+		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
-                 .child = { 0 } 
-    };
-
-    return t;
-}
-
-PFty_t 
-PFty_qname (void)
-{
-    PFty_t t = { .type = ty_qname,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = 0,           
-                 .child = { 0 } 
-    };
-
-    return t;
-}
-
-PFty_t 
-PFty_stmt (void)
-{
-    PFty_t t = { .type  = ty_stmt,
-                 .name  = { .ns = PFns_wild, .loc = 0 },
-                 .sym_space = 0,           
-                 .child = { 0 } 
+		 .child = { 0 } 
     };
 
     return t;
@@ -306,9 +282,9 @@ PFty_t
 PFty_named (PFqname_t qn)
 {
     PFty_t ty = { .type      = ty_named,
-                  .name      = qn,
+		  .name      = qn,
                   .sym_space = PFtype_defns,
-                  .child     = { 0, 0 }
+		  .child     = { 0, 0 }
     };
 
     assert (PFtype_defns);
@@ -326,9 +302,9 @@ PFty_t
 PFty_named_elem (PFqname_t qn)
 {
     PFty_t ty = { .type      = ty_named,
-                  .name      = qn,
+		  .name      = qn,
                   .sym_space = PFelem_decls,
-                  .child     = { 0, 0 }
+		  .child     = { 0, 0 }
     };
 
     assert (PFelem_decls);
@@ -346,9 +322,9 @@ PFty_t
 PFty_named_attr (PFqname_t qn)
 {
     PFty_t ty = { .type      = ty_named,
-                  .name      = qn,
+		  .name      = qn,
                   .sym_space = PFattr_decls,
-                  .child     = { 0, 0 }
+		  .child     = { 0, 0 }
     };
 
     assert (PFattr_decls);
@@ -366,9 +342,9 @@ PFty_t
 PFty_named_group (PFqname_t qn)
 {
     PFty_t ty = { .type      = ty_named,
-                  .name      = qn,
+		  .name      = qn,
                   .sym_space = PFgroup_defns,
-                  .child     = { 0, 0 }
+		  .child     = { 0, 0 }
     };
 
     assert (PFgroup_defns);
@@ -386,9 +362,9 @@ PFty_t
 PFty_named_attrgroup (PFqname_t qn)
 {
     PFty_t ty = { .type      = ty_named,
-                  .name      = qn,
+		  .name      = qn,
                   .sym_space = PFattrgroup_defns,
-                  .child     = { 0, 0 }
+		  .child     = { 0, 0 }
     };
 
     assert (PFattrgroup_defns);
@@ -414,9 +390,9 @@ PFty_t
 PFty_opt (PFty_t t)
 {
     PFty_t ty = { .type  = ty_opt,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -430,9 +406,9 @@ PFty_t
 PFty_plus (PFty_t t)
 {
     PFty_t ty = { .type  = ty_plus,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -446,9 +422,9 @@ PFty_t
 PFty_star (PFty_t t)
 {
     PFty_t ty = { .type  = ty_star,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -464,9 +440,9 @@ PFty_t
 PFty_seq (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_seq,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -484,9 +460,9 @@ PFty_t
 PFty_choice (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_choice,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -504,9 +480,9 @@ PFty_t
 PFty_all (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_all,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -522,9 +498,9 @@ PFty_t
 PFty_elem (PFqname_t qn, PFty_t t)
 {
     PFty_t ty = { .type  = ty_elem,
-                  .name  = qn,
+		  .name  = qn,
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     };  
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -538,9 +514,9 @@ PFty_t
 PFty_attr (PFqname_t qn, PFty_t t)
 {
     PFty_t ty = { .type  = ty_attr,
-                  .name  = qn,
+		  .name  = qn,
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     }; 
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -554,9 +530,9 @@ PFty_t
 PFty_doc (PFty_t t)
 {
     PFty_t ty = { .type  = ty_doc,
-                  .name  = { .ns = PFns_wild, .loc = 0 },
+		  .name  = { .ns = PFns_wild, .loc = 0 },
                   .sym_space = 0,           
-                  .child = { 0, 0 }
+		  .child = { 0, 0 }
     }; 
 
     ty.child[0] = (PFty_t *) PFmalloc (sizeof (PFty_t));
@@ -604,13 +580,6 @@ PFty_t
 PFty_xs_double (void)
 {
     return PFty_double ();
-}
-
-/** type xs:QName = qname */
-PFty_t 
-PFty_xs_QName (void)
-{
-    return PFty_qname ();
 }
 
 /** type xs:anyType = item* */
@@ -691,24 +660,24 @@ defn (PFty_t t, PFarray_t *ts)
 
     switch (s->type) {
     case ty_named: {
-        /* resolve a named type reference only if we haven't seen it before */
-        unsigned int n;
-        PFty_t *rhs;
+	/* resolve a named type reference only if we haven't seen it before */
+	unsigned int n;
+	PFty_t *rhs;
     
-        for (n = 0; n < PFarray_last (ts); n++)
-            if (PFty_eq (*s, *(PFty_t *) PFarray_at (ts, n)))
-                /* avoid infinite recursion, no further unfolding */
-                return s;
+	for (n = 0; n < PFarray_last (ts); n++)
+	    if (PFty_eq (*s, *(PFty_t *) PFarray_at (ts, n)))
+		/* avoid infinite recursion, no further unfolding */
+		return s;
 
-        if (! (rhs = PFty_schema (*s)))
-            PFoops (OOPS_TYPENOTDEF, 
-                    "`%s' not registered as schema type",
-                    PFqname_str (s->name));
+	if (! (rhs = PFty_schema (*s)))
+	    PFoops (OOPS_TYPENOTDEF, 
+		    "`%s' not registered as schema type",
+		    PFqname_str (s->name));
 
-        /* add the named type we're unfolding now */
-        *(PFty_t *) PFarray_add (ts) = *s;
+	/* add the named type we're unfolding now */
+	*(PFty_t *) PFarray_add (ts) = *s;
 
-        s = defn (*rhs, ts);
+	s = defn (*rhs, ts);
 
         /* remove the named type again so that we may unfold it (once) in
          * other components of this type 
@@ -718,27 +687,27 @@ defn (PFty_t t, PFarray_t *ts)
         return s;
     }
 
-        /* unary type constructors */
+	/* unary type constructors */
     case ty_opt:
     case ty_plus:
     case ty_star:
     case ty_doc:
     case ty_elem:
     case ty_attr:
-        s->child[0] = defn (*(s->child[0]), ts);
-        break;
+	s->child[0] = defn (*(s->child[0]), ts);
+	break;
     
-        /* binary type constructors */
+	/* binary type constructors */
     case ty_seq:
     case ty_choice:
     case ty_all:
-        s->child[0] = defn (*(s->child[0]), ts);
-        s->child[1] = defn (*(s->child[1]), ts);
-        break;
+	s->child[0] = defn (*(s->child[0]), ts);
+	s->child[1] = defn (*(s->child[1]), ts);
+	break;
     
-        /* all other types have no constituent parts */
+	/* all other types have no constituent parts */
     default:
-        ;
+	;
     }
   
     return s;
@@ -772,7 +741,7 @@ PFty_defn (PFty_t t)
  *          an `attribute qn { ... }', or a `processing-instruction qn' type
  */
 PFqname_t
-PFty_name (PFty_t t)
+PFty_qname (PFty_t t)
 {
     assert (t.type == ty_elem || t.type == ty_attr || t.type == ty_pi);
     
@@ -850,7 +819,6 @@ static char* ty_id[] = {
     , [ty_double       ]   = "double"
     , [ty_string       ]   = "string"
     , [ty_boolean      ]   = "boolean"
-    , [ty_qname        ]   = "QName"
     , [ty_node         ]   = "node"
     , [ty_elem         ]   = "element"
     , [ty_attr         ]   = "attribute"
@@ -858,7 +826,6 @@ static char* ty_id[] = {
     , [ty_text         ]   = "text"
     , [ty_pi           ]   = "processing-instruction"
     , [ty_comm         ]   = "comment"
-    , [ty_stmt         ]   = "stmt"
 };
   
 /**
@@ -905,43 +872,43 @@ ty_str (PFty_t t, int prec)
     switch (t.type) {
 
     case ty_named:
-        ty_printf (s, "%s", PFqname_str (t.name)); 
-        break;
+	ty_printf (s, "%s", PFqname_str (t.name)); 
+	break;
 
     case ty_opt:
     case ty_plus:
     case ty_star:
-        ty_printf (s, "%s%s", 
-                   ty_str (*(t.child[0]), ty_prec[t.type]),
-                   ty_id[t.type]);
-        break;
+	ty_printf (s, "%s%s", 
+		   ty_str (*(t.child[0]), ty_prec[t.type]),
+		   ty_id[t.type]);
+	break;
 
     case ty_seq:
     case ty_choice:
     case ty_all:
-        ty_printf (s, "%s%s%s%s%s", 
-                   (prec > ty_prec[t.type]) ? "(" : "", 
-                   ty_str (*(t.child[0]), ty_prec[t.type]), 
-                   ty_id[t.type],
-                   ty_str (*(t.child[1]), ty_prec[t.type]), 
-                   (prec > ty_prec[t.type]) ? ")" : "");
-        break;
+	ty_printf (s, "%s%s%s%s%s", 
+		   (prec > ty_prec[t.type]) ? "(" : "", 
+		   ty_str (*(t.child[0]), ty_prec[t.type]), 
+		   ty_id[t.type],
+		   ty_str (*(t.child[1]), ty_prec[t.type]), 
+		   (prec > ty_prec[t.type]) ? ")" : "");
+	break;
     
     case ty_elem:
     case ty_attr:
-        if (PFty_wildcard (t)) {
+	if (PFty_wildcard (t)) {
     case ty_doc:
-            ty_printf (s, "%s { %s }",
-                       ty_id[t.type],
-                       ty_str (*(t.child[0]), 0));
-            break;
-        }
+	    ty_printf (s, "%s { %s }",
+		       ty_id[t.type],
+		       ty_str (*(t.child[0]), 0));
+	    break;
+	}
 
-        ty_printf (s, "%s %s { %s }",
-                   ty_id[t.type],
-                   PFqname_str (t.name),
-                   ty_str (*(t.child[0]), 0));
-        break;
+	ty_printf (s, "%s %s { %s }",
+		   ty_id[t.type],
+		   PFqname_str (t.name),
+		   ty_str (*(t.child[0]), 0));
+	break;
 
     case ty_pi:
         ty_printf (s, "%s %s {}",
@@ -950,7 +917,7 @@ ty_str (PFty_t t, int prec)
         break;
 
     default:
-        ty_printf (s, "%s", ty_id[t.type]);
+	ty_printf (s, "%s", ty_id[t.type]);
     }
 
     return (char *) PFarray_at (s, 0);
@@ -1043,7 +1010,7 @@ PFty_schema (PFty_t t)
 
     /* lookup in associated symbol space */
     if ((ts = PFenv_lookup (t.sym_space, t.name)))
-        return *((PFty_t **) PFarray_at (ts, 0));
+	return *((PFty_t **) PFarray_at (ts, 0));
   
     return 0;
 }
@@ -1059,7 +1026,6 @@ static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
     { .ns = &PFns_xs,  .loc = "boolean",       .fn = PFty_xs_boolean        },
     { .ns = &PFns_xs,  .loc = "decimal",       .fn = PFty_xs_decimal        },
     { .ns = &PFns_xs,  .loc = "double",        .fn = PFty_xs_double         },
-    { .ns = &PFns_xs,  .loc = "QName",         .fn = PFty_xs_QName          },
     { .ns = &PFns_xs,  .loc = "anyType",       .fn = PFty_xs_anyType        },
     { .ns = &PFns_xs,  .loc = "anyItem",       .fn = PFty_xs_anyItem        },
     { .ns = &PFns_xs,  .loc = "anyNode",       .fn = PFty_xs_anyNode        },
@@ -1069,7 +1035,7 @@ static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
     { .ns = &PFns_xdt, .loc = "untypedAtomic", .fn = PFty_xdt_untypedAtomic },
     { .ns = &PFns_xdt, .loc = "untypedAny",    .fn = PFty_xdt_untypedAny    },
     /* end of built-in XML Schema type list */
-    { .ns = 0,         .loc = 0,               .fn = 0                      }
+    { .ns = 0,        .loc = 0,               .fn = 0                     }
 };
 
 
@@ -1091,10 +1057,10 @@ PFty_predefined (void)
     PFattrgroup_defns = PFenv ();
 
     for (n = 0; predefined[n].loc; n++) {
-        /* construct the type definition with name ns:loc */
+	/* construct the type definition with name ns:loc */
         t = PFty_named (PFqname (*(predefined[n].ns), predefined[n].loc));
 
-        /* enter the type and its definition into its XML Schema
+	/* enter the type and its definition into its XML Schema
          * symbol space 
          */
         PFty_import (t, predefined[n].fn ());

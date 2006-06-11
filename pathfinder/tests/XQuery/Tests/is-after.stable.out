@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<b>textnode</b>false false<a/>
+<b>textnode</b>"false" "false" <a/>
 </XQueryResult>
 
 # 23:35:17 >  

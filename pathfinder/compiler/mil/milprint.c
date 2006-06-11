@@ -10,7 +10,6 @@
    statements    : statements statements                    <m_seq>
                  | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
                  | <nothing>                                <m_nop>
-                 | '#' c                                    <m_comment> 
                  | statement ';'                            <otherwise>
 
    statement     : Variable ':=' expression                 <m_assgn>
@@ -48,11 +47,8 @@
                  | expression '.mirror ()'                  <m_mirror>
                  | expression '.copy ()'                    <m_copy>
                  | expression '.sort ()'                    <m_sort>
-                 | expression '.count ()'                   <m_count>
-                 | expression '.avg ()'                     <m_avg>
                  | expression '.max ()'                     <m_max>
-                 | expression '.min ()'                     <m_min>
-                 | expression '.sum ()'                     <m_sum>
+                 | expression '.count ()'                   <m_count>
                  | expression 'bat ()'                      <m_bat>
                  | expression '.CTgroup ()'                 <m_ctgroup>
                  | expression '.CTmap ()'                   <m_ctmap>
@@ -85,10 +81,6 @@
                  | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
                  | '{count}(' expression ')'                <m_gcount>
                  | '{count}(' expression ',' expression ')' <m_egcount>
-                 | '{avg}(' expression ')'                  <m_gavg>
-                 | '{max}(' expression ')'                  <m_gmax>
-                 | '{min}(' expression ')'                  <m_gmin>
-                 | '{sum}(' expression ')'                  <m_gsum>
                  | 'new_ws ()'                              <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
@@ -369,17 +361,10 @@ static char *ID[] = {
 
     , [m_sc_desc]  = "sc_desc"
 
+    , [m_max]      = "max"
     , [m_count]    = "count"
     , [m_gcount]   = "{count}"
     , [m_egcount]  = "{count}"
-    , [m_avg]      = "avg"
-    , [m_gavg]     = "{avg}"
-    , [m_max]      = "max"
-    , [m_gmax]     = "{max}"
-    , [m_min]      = "min"
-    , [m_gmin]     = "{min}"
-    , [m_sum]      = "sum"
-    , [m_gsum]     = "{sum}"
     , [m_bat]      = "bat"
     , [m_error]    = "ERROR"
     , [m_col_name] = "col_name"
@@ -448,12 +433,6 @@ print_statements (PFmil_t * n)
 
         case m_nop:
             break;
-
-        case m_comment:
-	    milprintf ("# ");
-	    /* FIXME: What if c contains \n's? */
-	    milprintf ("%s\n", n->sem.s);
-	    break;
 
         /* statements : statement ';' */
         default:
@@ -659,16 +638,10 @@ print_expression (PFmil_t * n)
         case m_copy:
         /* expression : expression '.sort' */
         case m_sort:
-         /* expression : expression '.count' */
-        case m_count:
-        /* expression : expression '.avg' */
-        case m_avg:
         /* expression : expression '.max' */
         case m_max:
-	/* expression : expression '.min' */
-        case m_min:
-	/* expression : expression '.sum' */
-        case m_sum:
+        /* expression : expression '.count' */
+        case m_count:
         /* expression : expression 'bat()' */
         case m_bat:
         /* expression '.CTgroup ()' */
@@ -765,14 +738,6 @@ print_expression (PFmil_t * n)
 
         /* expression: '{count}(' expression ')' */
         case m_gcount:
-        /* expression: '{avg}(' expression ')' */
-        case m_gavg:
-        /* expression: '{max}(' expression ')' */
-        case m_gmax:
-        /* expression: '{min}(' expression ')' */
-        case m_gmin:
-        /* expression: '{sum}(' expression ')' */
-        case m_gsum:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");
@@ -1151,7 +1116,7 @@ print_variable (PFmil_t * n)
 {
     assert (n->kind == m_var);
 
-    milprintf ("%s", PFmil_var_str (n->sem.ident));
+    milprintf ("%s", n->sem.ident);
 }
 
 /**

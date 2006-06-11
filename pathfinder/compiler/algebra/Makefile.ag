@@ -23,10 +23,10 @@
 
 
 #SUBDIRS = hskparser
-SUBDIRS = opt prop
+SUBDIRS = 
 
-#YFLAGS = -d -p pf
-#LFLAGS = -Ppf -olex.yy.c
+YFLAGS = -d -p pf
+LFLAGS = -Ppf -olex.yy.c
 
 INCLUDES = ../include $(MONETDB_INCS)
 
@@ -38,10 +38,9 @@ lib_algebra = {
 	DIR = libdir
 	SOURCES = \
 		core2alg.brg \
-        alg_dag.c \
 		algebra.c \
 		properties.c \
-		algopt.c \
+		algopt.brg \
 		algebra_cse.c \
 		logical.c \
 		planner.c \

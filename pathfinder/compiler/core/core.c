@@ -833,7 +833,7 @@ PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
     case p_self:               
         kind = c_self; 
         break;
-/* #ifdef BURKOWSKI */
+#ifdef BURKOWSKI
     case p_select_narrow:
         kind = c_select_narrow;
         break;
@@ -846,7 +846,7 @@ PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
     case p_reject_wide:
         kind = c_reject_wide;
         break;
-/* #endif */
+#endif
     default: 
         PFoops (OOPS_FATAL, "illegal XPath axis (%d)", paxis);
     }
@@ -960,7 +960,7 @@ PFcore_fun_decl (PFfun_t *fun, const PFcnode_t *args, const PFcnode_t *body)
     PFcnode_t *ret;
 
     ret = PFcore_wire2 (c_fun_decl, args, body);
-    ret->sem.apply.fun = fun;
+    ret->sem.fun = fun;
 
     return ret;
 }
@@ -1147,8 +1147,7 @@ apply_function_conversion (const PFcnode_t *c)
     PFcnode_t *args, *result;
 
     assert (c);
-    fun = c->sem.apply.fun;
-    assert (fun->sig_count == 1);
+    fun = c->sem.fun;
     args = c->child[0];
     result = (PFcnode_t *) c;
 
@@ -1157,7 +1156,7 @@ apply_function_conversion (const PFcnode_t *c)
         /* the function conversion has only to be applied for
            arguments which are a subtype of atomic and perhaps
            have a quantifying type */
-        expected = PFty_prime((fun->sigs[0].par_ty)[i]);
+        expected = PFty_prime((fun->par_ty)[i]);
 
         if (PFty_subtype (expected, PFty_atomic ()))
         {
@@ -1234,17 +1233,16 @@ already_converted (PFfun_t *fn)
  * @return core representation of function application
  */
 PFcnode_t *
-PFcore_apply (PFapply_t *fn, const PFcnode_t *e)
+PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
 {
     PFcnode_t *core;
     PFarray_t *funs;
     PFfun_t *fun, *fun_prev;
     unsigned int arity, i;
 
-    assert (fn && fn->fun && e);
+    assert (fn && e);
     arity = actual_args (e);
-    if (fn->rpc_uri != NULL) arity--;
-    fun = fn->fun;
+    fun = fn;
     funs = PFenv_lookup (PFfun_env, fun->qname);
 
     /*
@@ -1257,7 +1255,7 @@ PFcore_apply (PFapply_t *fn, const PFcnode_t *e)
      */
     if (PFqname_eq (fun->qname, PFqname (PFns_fn, "concat")) == 0) {
         core = PFcore_wire1 (c_apply, e);
-        core->sem.apply = *fn;
+        core->sem.fun = fun;
         return core;
     }
 
@@ -1282,8 +1280,7 @@ PFcore_apply (PFapply_t *fn, const PFcnode_t *e)
                 PFqname_str (fun->qname), fun->arity, arity);
 
     core = PFcore_wire1 (c_apply, e);
-    core->sem.apply.fun = fun;
-    core->sem.apply.rpc_uri = fn->rpc_uri;
+    core->sem.fun = fun;
 
     return core;
 }
@@ -1318,7 +1315,7 @@ PFcore_arg (const PFcnode_t *e, const PFcnode_t *es)
  * @return core tree representing the function application
  */
 PFcnode_t *
-PFcore_apply_ (PFapply_t *fn, ...)
+PFcore_apply_ (PFfun_t *fn, ...)
 {
     va_list arglist;
     PFarray_t *args;
@@ -1428,29 +1425,6 @@ PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
 }
 
 /**
- * Helper function for PFcore_fs_convert_op_by_expr()
- * Creates the following expression subtree.
- * typeswitch ($var1)
- *     case type return $var2 cast as type
- *     default default_
- */
-static PFcnode_t *
-add_conversion_case (const PFcnode_t *default_, PFvar_t *var1, PFvar_t *var2, 
-                     PFty_t type) 
-{
-    return 
-        PFcore_typeswitch (
-            PFcore_var (var1),
-            PFcore_cases (
-                PFcore_case (
-                    PFcore_seqtype (type),
-                    PFcore_cast (
-                        PFcore_seqtype (type),
-                        PFcore_var (var2))),
-                PFcore_default (default_)));
-}
-
-/**
  * Represent the formal semantics function fs:convert-operand
  * as an equivalent core expression. If both, @a e1 and @a e2
  * have type @c untypedAtomic then @a e1 is casted to type string.
@@ -1484,27 +1458,14 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
      *         case xdt:untypedAtomic return
      *           typeswitch ($v2)              // $v2 is e2
      *             case xdt:untypedAtomic return cast $v3 as xs:string
-     *             case xs:string return cast $v3 as xs:string
-     *             case xs:boolean return cast $v3 as xs:boolean
-     *             case xs:integer return cast $v3 as xs:integer
-     *             case xs:double return cast $v3 as xs:double
-     *             case xs:decimal return cast $v3 as xs:decimal
-     *             default return $v3 // should not happen
+     *             default return cast $v3 as <type of $v2>
      *         default return $v3
+     *
+     * <type of $v2> is inserted into the core tree by means of a
+     * stattype node (the static type of $v2). stattype nodes are
+     * replaced by seqtype nodes (actual types) as soon as the
+     * type information is available during type checking.
      */
-    PFcnode_t *type_conv = 
-        add_conversion_case (
-            add_conversion_case (
-                add_conversion_case (
-                    add_conversion_case (
-                        add_conversion_case (
-                            PFcore_var (v3),
-                            v2, v3, PFty_xs_decimal ()),
-                        v2, v3, PFty_xs_double ()),
-                    v2, v3, PFty_xs_integer ()),
-                v2, v3, PFty_xs_boolean ()),
-            v2, v3, PFty_xs_string ());
-
     return PFcore_flwr (
                PFcore_let (PFcore_letbind (PFcore_var (v1), e1),
                            PFcore_nil ()),
@@ -1532,7 +1493,11 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
                                                    (PFcore_seqtype
                                                        (PFty_xs_string ()),
                                                     PFcore_var (v3))),
-                                            PFcore_default (type_conv)))),
+                                            PFcore_default (
+                                                PFcore_cast (
+                                                    PFcore_stattype (
+                                                        PFcore_var(v2)),
+                                                    PFcore_var (v3)))))),
                                 PFcore_default (PFcore_var (v3)))))));
 }
 

@@ -31,7 +31,6 @@
 
 #include "pathfinder.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,7 +50,7 @@ char *p_id[]  = {
     , [p_mod_ns]            = "mod_ns"
     , [p_ordering_mode]     = "ordering_mode"
     , [p_def_order]         = "def_order"
-    , [p_copy_ns]           = "copy_ns"
+    , [p_inherit_ns]        = "inherit_ns"
     , [p_base_uri]          = "base_uri"
     , [p_schm_ats]          = "schm_ats"
     , [p_mod_imp]           = "mod_imp"
@@ -152,7 +151,7 @@ char *p_id[]  = {
     , [p_comment]           = "comment"                                    
     , [p_contseq]           = "contseq"
     , [p_decl_imps]         = "decl_imps"                                  
-    , [p_boundspc_decl]     = "boundspc_decl"
+    , [p_xmls_decl]         = "xmls_decl"
     , [p_coll_decl]         = "coll_decl"
     , [p_ns_decl]           = "ns_decl"
     , [p_fun_decl]          = "fun_decl"
@@ -162,18 +161,6 @@ char *p_id[]  = {
     , [p_schm_imp]          = "schm_imp"                                   
     , [p_params]            = "params"                                     
     , [p_param]             = "param"    
-    , [p_ext_expr]          = "ext_expr"
-    , [p_pragma]            = "pragma"
-    , [p_pragmas]           = "pragmas"
-    , [p_revalid]           = "revalid"
-    , [p_insert]            = "insert"
-    , [p_delete]            = "delete"
-    , [p_replace]           = "replace"
-    , [p_rename]            = "rename"
-    , [p_transform]         = "transform"
-    , [p_modify]            = "modify"
-    , [p_transbinds]        = "transbinds"
-    , [p_stmt_ty]           = "stmt_ty"
 };
 
 /** Names of XPath axes */
@@ -190,12 +177,12 @@ static char *axis[] = {
     , [p_preceding]          = "preceding"
     , [p_preceding_sibling]  = "preceding-sibling"
     , [p_self]               = "self"
-/* #ifdef BURKOWSKI */
+#ifdef BURKOWSKI
     , [p_select_narrow]      = "select-narrow"
     , [p_select_wide]        = "select-wide"
     , [p_reject_narrow]      = "reject-narrow"
     , [p_reject_wide]        = "reject-wide"
-/* #endif */
+#endif
 };
 
 /** Names of node type tests */
@@ -332,40 +319,15 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
 
         case p_apply:
         case p_fun:
-            L2 (p_id[n->kind], PFqname_str (n->sem.apply.fun->qname), n->loc);
+            L2 (p_id[n->kind], PFqname_str (n->sem.fun->qname), n->loc);
             break;
 
-        case p_boundspc_decl:
+        case p_xmls_decl:
             L2 (p_id[n->kind], n->sem.tru ? "preserve" : "strip", n->loc);
             break;
         case p_ns_decl:
             L2 (p_id[n->kind], n->sem.str, n->loc);
             break;
-
-        case p_revalid:
-            L2 (p_id[n->kind], n->sem.revalid == revalid_strict
-                               ? "strict"
-                               : (n->sem.revalid == revalid_lax
-                                  ? "lax"
-                                  : "skip"),
-                               n->loc);
-            break;
-
-        case p_insert:
-            {
-                char *s[] = { [p_first_into] = "as first into",
-                              [p_last_into]  = "as last into",
-                              [p_into]       = "into",
-                              [p_after]      = "after",
-                              [p_before]     = "before" };
-                assert (n->sem.insert < (sizeof (s) / sizeof (*s)));
-                L2 (p_id[n->kind], s[n->sem.insert], n->loc);
-            } break;
-
-        case p_replace:
-            L2 (p_id[n->kind], n->sem.tru ? "" : "value of", n->loc);
-            break;
-
         default:
             L (p_id[n->kind], n->loc);
     }
@@ -467,7 +429,7 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;
         case p_apply:
-            PFprettyprintf ("%s", PFqname_str (n->sem.apply.fun->qname));
+            PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
             break;
         case p_fun_ref:
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
@@ -478,7 +440,7 @@ abssyn_pretty (PFpnode_t *n)
         case p_pi:
             PFprettyprintf ("%s", n->sem.str);
             break;    
-        case p_boundspc_decl:
+        case p_xmls_decl:
             PFprettyprintf ("%s", n->sem.tru ? "preserve" : "strip");
             break;
         case p_ns_decl:
@@ -488,30 +450,8 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;
         case p_fun:
-            PFprettyprintf ("%s", PFqname_str (n->sem.apply.fun->qname));
+            PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
             break;
-        case p_revalid:
-            PFprettyprintf ("%s", n->sem.revalid == revalid_strict
-                                  ? "strict"
-                                  : (n->sem.revalid == revalid_lax
-                                     ? "lax"
-                                     : "skip"));
-            break;
-        case p_insert:
-            {
-                char *s[] = { [p_first_into] = "as first into",
-                              [p_last_into]  = "as last into",
-                              [p_into]       = "into",
-                              [p_after]      = "after",
-                              [p_before]     = "before" };
-                assert (n->sem.insert < (sizeof (s) / sizeof (*s)));
-                PFprettyprintf ("%s", s[n->sem.insert]);
-            } break;
-
-        case p_replace:
-            PFprettyprintf (n->sem.tru ? "" : "value of");
-            break;
-
         default:
             comma = false;
     }

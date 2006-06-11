@@ -72,15 +72,13 @@ char *pa_alloc( pf_allocator *pa, size_t sz )
 	char *r;
 	sz = round16(sz);
 	if (sz > SA_BLOCK) {
-		char *t;
 		char *r = malloc(sz);
 		if (pa->nr >= pa->size) {
 			pa->size *=2;
 			pa->blks = (char**)realloc(pa->blks,pa->size*sizeof(char*));
 		}
-		t = pa->blks[pa->nr-1];
-		pa->blks[pa->nr-1] = r;
-		pa->blks[pa->nr] = t;
+		pa->blks[pa->nr-1] = pa->blks[pa->nr-2];
+		pa->blks[pa->nr-2] = r;
 		pa->nr ++;
 		return r;
 	}

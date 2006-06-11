@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-100 foo 100 2 100 121.000000
+100 "foo" 100 2 100 121.000000 
 </XQueryResult>
 
 # 11:46:02 >  

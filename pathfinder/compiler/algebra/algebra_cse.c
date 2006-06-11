@@ -33,16 +33,14 @@
 #include "oops.h"
 #include "algebra_cse.h"
 #include "array.h"
-#include "alg_dag.h"
 
 /* compare types in staircase join operator nodes */
 #include "subtyping.h"
 
 #include <assert.h>
-#include <string.h> /* strcmp */
 
 /* prune already checked nodes */
-#define SEEN(p) ((p)->bit_dag)
+#define SEEN(p) ((p)->bit_cse)
 
 /**
  * Subexpressions that we already saw.
@@ -87,9 +85,8 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                     mismatch = true;
                 break;
             /* if type is str, compare str member of union */
-            case aat_uA:
-	    case aat_str:
-                if (strcmp (a.atoms[i].val.str, b.atoms[i].val.str))
+            case aat_str:
+                if (a.atoms[i].val.str != b.atoms[i].val.str)
                     mismatch = true;
                 break;
             /* if type is float, compare float member of union */
@@ -155,7 +152,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
     switch (a->kind) {
 
         case la_lit_tbl:
-        case la_empty_tbl:
 
             if (a->schema.count != b->schema.count)
                 return false;
@@ -172,26 +168,21 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                                b->sem.lit_tbl.tuples[i]))
                     return false;
 
-            return true;
-            break;
+            /* split up pos(1) base tables */
+            if (a->schema.count == 1 &&
+                a->schema.items[0].name == att_pos &&
+                a->sem.lit_tbl.count == 1 &&
+                a->sem.lit_tbl.tuples[0].count == 1 &&
+                a->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
+                a->sem.lit_tbl.tuples[0].atoms[0].val.nat == 1)
+                return false;
 
-        case la_attach:
-            return (a->sem.attach.attname == b->sem.attach.attname &&
-                    PFalg_atom_comparable (a->sem.attach.value,
-                                           b->sem.attach.value) &&
-                    !PFalg_atom_cmp (a->sem.attach.value,
-                                     b->sem.attach.value));
+            return true;
             break;
 
         case la_eqjoin:
             return (a->sem.eqjoin.att1 == b->sem.eqjoin.att1
                     && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);
-            break;
-
-        case la_eqjoin_unq:
-            return (a->sem.eqjoin_unq.att1 == b->sem.eqjoin_unq.att1
-                    && a->sem.eqjoin_unq.att2 == b->sem.eqjoin_unq.att2
-                    && a->sem.eqjoin_unq.res == b->sem.eqjoin_unq.res);
             break;
 
         case la_project:
@@ -232,23 +223,30 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.unary.res == b->sem.unary.res);
             break;
 
-        case la_avg:
-	case la_max:
-	case la_min:
         case la_sum:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-            if (a->sem.aggr.att != b->sem.aggr.att
-                || a->sem.aggr.res != b->sem.aggr.res)
+            if (a->sem.sum.att != b->sem.sum.att
+                || a->sem.sum.res != b->sem.sum.res)
                 return false;
 
             /* either both aggregates are partitioned or none */
             /* partitioning attribute must be equal (if available) */
-            if (a->sem.aggr.part != b->sem.aggr.part)
+            if (a->sem.sum.part != b->sem.sum.part)
                 return false;
 
             return true;
+            break;
+
+        case la_count:
+            if (a->sem.count.res != b->sem.count.res)
+                return false;
+
+            /* either both aggregates are partitioned or none */
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.count.part != b->sem.count.part)
+                return false;
+
+            return true;
+            break;
 
         case la_rownum:
             if (a->sem.rownum.attname != b->sem.rownum.attname)
@@ -276,24 +274,33 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_type:
-        case la_cast:
             return (a->sem.type.att == b->sem.type.att
                     && a->sem.type.res == b->sem.type.res
                     && a->sem.type.ty == b->sem.type.ty);
             break;
 
         case la_type_assert:
-            return (a->sem.type.att == b->sem.type.att
-                    && a->sem.type.ty == b->sem.type.ty);
+            return (a->sem.type_a.att == b->sem.type_a.att
+                    && a->sem.type_a.ty == b->sem.type_a.ty);
+            break;
+
+        case la_cast:
+            return (a->sem.cast.att == b->sem.cast.att
+                    && a->sem.cast.ty == b->sem.cast.ty
+                    && a->sem.cast.res == b->sem.cast.res);
+            break;
+
+        case la_seqty1:
+        case la_all:
+            return (a->sem.blngroup.res == b->sem.blngroup.res
+                    && a->sem.blngroup.att == b->sem.blngroup.att
+                    && a->sem.blngroup.part == b->sem.blngroup.part);
             break;
 
         case la_scjoin:
             return (a->sem.scjoin.axis == b->sem.scjoin.axis
                     && PFty_subtype (a->sem.scjoin.ty, b->sem.scjoin.ty)
-                    && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty)
-                    && a->sem.scjoin.iter     == b->sem.scjoin.iter
-                    && a->sem.scjoin.item     == b->sem.scjoin.item
-                    && a->sem.scjoin.item_res == b->sem.scjoin.item_res);
+                    && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty));
             break;
 
         case la_doc_access:
@@ -307,54 +314,20 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.err.str == b->sem.err.str);
             break;
 
-        case la_doc_tbl:
-            return (a->sem.doc_tbl.iter        == b->sem.doc_tbl.iter
-                    && a->sem.doc_tbl.item     == b->sem.doc_tbl.item
-                    && a->sem.doc_tbl.item_res == b->sem.doc_tbl.item_res);
-            break;
-
-        case la_merge_adjacent:
-            return (a->sem.merge_adjacent.iter_in
-                    == b->sem.merge_adjacent.iter_in
-                    && a->sem.merge_adjacent.pos_in
-                    == b->sem.merge_adjacent.pos_in
-                    && a->sem.merge_adjacent.item_in
-                    == b->sem.merge_adjacent.item_in
-                    && a->sem.merge_adjacent.iter_res
-                    == b->sem.merge_adjacent.iter_res
-                    && a->sem.merge_adjacent.pos_res
-                    == b->sem.merge_adjacent.pos_res
-                    && a->sem.merge_adjacent.item_res
-                    == b->sem.merge_adjacent.item_res);
-            break;
-
-        case la_string_join:
-            return (a->sem.string_join.iter
-                    == b->sem.string_join.iter
-                    && a->sem.string_join.pos
-                    == b->sem.string_join.pos
-                    && a->sem.string_join.item
-                    == b->sem.string_join.item
-                    && a->sem.string_join.iter_sep
-                    == b->sem.string_join.iter_sep
-                    && a->sem.string_join.item_sep
-                    == b->sem.string_join.item_sep
-                    && a->sem.string_join.iter_res
-                    == b->sem.string_join.iter_res
-                    && a->sem.string_join.item_res
-                    == b->sem.string_join.item_res);
-            break;
-
         case la_serialize:
+        case la_empty_tbl:
         case la_cross:
         case la_disjunion:
         case la_intersect:
         case la_difference:
         case la_distinct:
+        case la_doc_tbl:
+        case la_merge_adjacent:
         case la_roots:
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        case la_string_join:
             return true;
             break;
 
@@ -372,11 +345,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
              */
             return false;
             break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
     }
 
     /* pacify compilers */
@@ -439,14 +407,9 @@ la_cse (PFla_op_t *n)
 PFla_op_t *
 PFla_cse (PFla_op_t *n)
 {
-    PFla_op_t *res;
-
     subexps = PFarray (sizeof (PFarray_t *));
 
-    res = la_cse (n);
-    PFla_dag_reset (res);
-
-    return res;
+    return la_cse (n);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -52,7 +52,7 @@
                   $(top_srcdir)/compiler/core/simplify.c \
                   $(top_srcdir)/compiler/semantics/normalize.c \
                   $(top_srcdir)/compiler/semantics/typecheck.c \
-                  $(top_srcdir)/compiler/algebra/opt/opt_general.c \
+                  $(top_srcdir)/compiler/algebra/algopt.c \
                   $(top_srcdir)/compiler/algebra/core2alg.c
 
 

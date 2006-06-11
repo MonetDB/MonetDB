@@ -191,10 +191,6 @@
 #define gcount(a) PFmil_gcount(a)
 #define egcount(a,b) PFmil_egcount((a),(b))
 
-/** sum() operator and grouped count */
-#define sum(a) PFmil_sum(a)
-#define gsum(a) PFmil_gsum(a)
-
 /** type cast */
 #define cast(type,e) PFmil_cast ((type), (e))
 
@@ -485,6 +481,5 @@
 #define serialize(a) PFmil_ser (a)
 #define print(a) PFmil_print (a)
 #define col_name(a,b) PFmil_col_name ((a), (b))
-#define comment(...) PFmil_comment (__VA_ARGS__)
 
 /* vim:set shiftwidth=4 expandtab: */

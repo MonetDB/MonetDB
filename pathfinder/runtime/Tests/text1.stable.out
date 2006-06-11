@@ -1,0 +1,62 @@
+stdout of test 'text1` in directory 'runtime` itself:
+
+
+# 14:00:35 >  
+# 14:00:35 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monet-stable/program/lib/MonetDB:/ufs/fabian/scratch/monet-stable/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=39064 --set sql_port=40454 --set xquery_port=51611 --set monet_prompt= --trace --dbname=mTests_runtime  < text1.milS
+# 14:00:35 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(pathfinder);
+
+xquery("dm", "<a>aap</a>/text()").printf();
+text {"aap"}
+xquery("dm", "<a>2</a>/text()").printf();
+text {"2"}
+
+xquery("dm-mapi", "<a>aap</a>/text()").printf();
+text {"aap"}
+xquery("dm-mapi", "<a>2</a>/text()").printf();
+text {"2"}
+
+xquery("xml-seq-mapi", "<a>aap</a>/text()").printf();
+&1 0 1 1 1
+# xquery_result	# table_name
+# xml	# name
+# varchar	# type
+# 60	# length
+[ "text {\"aap\"}"	]
+xquery("xml-seq-mapi", "<a>2</a>/text()").printf();
+&1 1 1 1 1
+# xquery_result	# table_name
+# xml	# name
+# varchar	# type
+# 60	# length
+[ "text {\"2\"}"	]
+
+xquery("xml-mapi", "<a>aap</a>/text()").printf();
+=<?xml version="1.0" encoding="utf-8"?>
+=<XQueryResult>
+=aap
+=</XQueryResult>
+xquery("xml-mapi", "<a>2</a>/text()").printf();
+=<?xml version="1.0" encoding="utf-8"?>
+=<XQueryResult>
+=2
+=</XQueryResult>
+
+xquery("xml-noroot", "<a>aap</a>/text()").printf();
+aap
+
+xquery("xml-noroot", "<a>2</a>/text()").printf();
+2
+
+
+quit();
+
+# 14:00:36 >  
+# 14:00:36 >  Done.
+# 14:00:36 >  
+

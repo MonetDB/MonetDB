@@ -99,12 +99,12 @@ char *c_id[]  = {
   , [c_preceding]          = "preceding"
   , [c_preceding_sibling]  = "preceding-sibling"
   , [c_self]               = "self"
-/* #ifdef BURKOWSKI */
+#ifdef BURKOWSKI
   , [c_select_narrow]      = "select-narrow"
   , [c_select_wide]        = "select-wide"
   , [c_reject_narrow]      = "reject-narrow"
   , [c_reject_wide]        = "reject-wide"
-/* #endif */
+#endif
 
   , [c_elem]               = "elem"
   , [c_attr]               = "attr" 
@@ -175,7 +175,7 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         break;
     case c_apply:     
     case c_fun_decl:     
-        L2 (c_id[n->kind], PFqname_str (n->sem.apply.fun->qname));
+        L2 (c_id[n->kind], PFqname_str (n->sem.fun->qname));
         break;
     case c_tag:
         L2 (c_id[n->kind], PFqname_str (n->sem.qname));
@@ -257,7 +257,7 @@ core_pretty (PFcnode_t *n)
         PFprettyprintf ("%.5g", n->sem.dbl);
         break;
     case c_apply:       
-        PFprettyprintf ("%s", PFqname_str (n->sem.apply.fun->qname));
+        PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
         break;
     case c_seqtype:        
         PFprettyprintf ("%s", PFty_str (n->sem.type));

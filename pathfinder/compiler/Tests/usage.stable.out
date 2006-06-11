@@ -1,17 +1,17 @@
 stdout of test 'usage` in directory 'compiler` itself:
 
 
-# 15:05:54 >  
-# 15:05:54 >  Mtimeout -timeout 120 ./usage usage 
-# 15:05:54 >  
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
+# 15:32:19 >  
 
 
-# 15:05:54 >  
-# 15:05:54 >  Mtimeout -timeout 60 pf -h
-# 15:05:54 >  
+# 15:32:19 >  
+# 15:32:19 >  Mtimeout -timeout 60 pf -h
+# 15:32:19 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
-(c) Database Group, Technische Universitaet Muenchen
+(c) University of Konstanz, DBIS group
 
 Usage: pf [OPTION] [FILE]
 
@@ -24,7 +24,7 @@ Usage: pf [OPTION] [FILE]
 
 Enjoy.
 
-# 15:05:54 >  
-# 15:05:54 >  Done.
-# 15:05:54 >  
+# 15:32:19 >  
+# 15:32:19 >  Done.
+# 15:32:19 >  
 

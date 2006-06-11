@@ -291,24 +291,6 @@ scope (PFpnode_t *n)
          * (3) bring i into scope (if present)
          */
       
-        /*
-         * Raise an error if positional variable and bound
-         * variable have the same name, e.g.
-         *
-         *   for $x at $x in e return e'
-         */
-        if (n->child[0]->child[1]->kind == p_varref) {
-            if (!PFqname_eq (n->child[0]->child[0]->child[0]->sem.qname,
-                             n->child[0]->child[1]->sem.qname)) {
-                PFoops_loc (OOPS_VARREDEFINED, n->loc,
-                            "it is illegal to use the same name for "
-                            "positional and binding variable (`for $%s "
-                            "at $%s ...')",
-                            PFqname_str (n->child[0]->child[0]->child[0]
-                                                              ->sem.qname),
-                            PFqname_str (n->child[0]->child[1]->sem.qname));
-            }
-        }
       
         /* (1) */
         scope (n->child[1]);

@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<item featured="yes" id="item9">
+<item id="item9" featured="yes">
 <location>United States</location>
 <quantity>1</quantity>
 <name>greedy ensues pays spilling </name>

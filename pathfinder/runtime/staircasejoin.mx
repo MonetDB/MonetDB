@@ -143,19 +143,16 @@ PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
     BATloopFast (ctx, ctx_cur, ctx_last, ctx_bunsize)
     {
         ctx_pre = *(oid*)BUNhead(ctx, ctx_cur);
-        post = pre_cur + (size[pre_cur]&GDK_int_max);
+        post = pre_cur + size[pre_cur];
         
         while (pre_cur @1 ctx_pre)
         {
-            if (post >= ctx_pre) {
-                if (!(size[pre_cur]&(1<<31)))
-                    *res_cur++ = pre_cur;
-                pre_cur++;
-            }
+            if (post >= ctx_pre)
+                *res_cur++ = pre_cur++;
             else   
                 /* skip preceding node and its descendants */
                 pre_cur = post + 1;
-            post = pre_cur + (size[pre_cur]&GDK_int_max);
+            post = pre_cur + size[pre_cur];
         }
     }
 
@@ -172,13 +169,10 @@ PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
         /* on-the-fly pruning of the context set */
         if ((int)pre_cur > max_post)
         {
-            max_post = (size[pre_cur]&GDK_int_max) + pre_cur;
+            max_post = size[pre_cur] + pre_cur;
             @1
-            while ((int)pre_cur <= max_post) {
-                if (!(size[pre_cur]&(1<<31)))
-                    *res_cur++ = pre_cur;
-                pre_cur++;
-            }
+            while ((int)pre_cur <= max_post)
+                *res_cur++ = pre_cur++;
         }
     }
 

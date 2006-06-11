@@ -51,15 +51,14 @@ enum PFla_op_kind_t {
                                   (Placed on the very top of the tree.) */
     , la_lit_tbl        =  2 /**< literal table */
     , la_empty_tbl      =  3 /**< empty literal table */
-    , la_attach         =  4 /**< attach constant column */
-    , la_cross          =  5 /**< cross product (Cartesian product) */
-    , la_eqjoin         =  6 /**< equi-join */
-    , la_project        =  7 /**< algebra projection and renaming operator */
-    , la_select         =  8 /**< selection of rows where column value != 0 */
-    , la_disjunion      =  9 /**< union two relations with same schema */
-    , la_intersect      = 10 /**< intersect two relations with same schema */
-    , la_difference     = 11 /**< difference of two relations w/ same schema */
-    , la_distinct       = 12 /**< duplicate elimination operator */
+    , la_cross          =  4 /**< cross product (Cartesian product) */
+    , la_eqjoin         =  5 /**< equi-join */
+    , la_project        =  6 /**< algebra projection and renaming operator */
+    , la_select         =  7 /**< selection of rows where column value != 0 */
+    , la_disjunion      =  8 /**< union two relations with same schema */
+    , la_intersect      =  9 /**< intersect two relations with same schema */
+    , la_difference     = 10 /**< difference of two relations w/ same schema */
+    , la_distinct       = 11 /**< duplicate elimination operator */
     , la_num_add        = 20 /**< arithmetic plus operator */
     , la_num_subtract   = 21 /**< arithmetic minus operator */
     , la_num_multiply   = 22 /**< arithmetic times operator */
@@ -71,13 +70,10 @@ enum PFla_op_kind_t {
     , la_bool_and       = 28 /**< boolean AND operator */
     , la_bool_or        = 29 /**< boolean OR operator */
     , la_bool_not       = 30 /**< boolean NOT operator */
-    , la_avg            = 31 /**< operator for (partitioned) avg of a column */
-    , la_max            = 32 /**< operator for (partitioned) max of a column */
-    , la_min            = 33 /**< operator for (partitioned) min of a column */
-    , la_sum            = 34 /**< operator for (partitioned) sum of a column */
-    , la_count          = 35 /**< (partitioned) row counting operator */
-    , la_rownum         = 36 /**< consecutive number generation */
-    , la_number         = 37 /**< consecutive number generation */
+    , la_sum            = 31 /**< operator for (partitioned) sum of a column */
+    , la_count          = 32 /**< (partitioned) row counting operator */
+    , la_rownum         = 35 /**< consecutive number generation */
+    , la_number         = 36 /**< consecutive number generation */
     , la_type           = 40 /**< selection of rows where a column is of a
                                   certain type */
     , la_type_assert    = 41 /**< restricts the type of a relation */
@@ -110,8 +106,7 @@ enum PFla_op_kind_t {
     , la_empty_frag     = 73 /**< representation of an empty fragment */
                             
     , la_cond_err       = 80 /**< facility to trigger runtime errors */
-    , la_cross_mvd      = 98 /**< clone column aware cross product */
-    , la_eqjoin_unq     = 99 /**< clone column aware equi-join */                            
+                            
     /* builtin support for XQuery functions */
     , la_concat         =100 /**< fn:concat */
     , la_contains       =101 /**< fn:contains */
@@ -123,37 +118,17 @@ typedef enum PFla_op_kind_t PFla_op_kind_t;
 /** semantic content in algebra operators */
 union PFla_op_sem_t {
 
-    /* semantic content for serialize operator */
-    struct {
-        PFalg_att_t     pos;      /**< name of attribute pos */
-        PFalg_att_t     item;     /**< name of attribute item */
-    } serialize;
-
     /* semantic content for literal table constr. */
     struct {
         unsigned int    count;    /**< number of tuples */
         PFalg_tuple_t  *tuples;   /**< array holding the tuples */
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
-
-    struct {
-        PFalg_att_t     attname;  /**< names of new attribute */
-        PFalg_atom_t    value;    /**< value for the new attribute */
-    } attach;                     /**< semantic content for column attachment
-                                       operator (ColumnAttach) */
-
     /* semantic content for equi-join operator */
     struct {
         PFalg_att_t     att1;     /**< name of attribute from "left" rel */
         PFalg_att_t     att2;     /**< name of attribute from "right" rel */
     } eqjoin;
-
-    /* semantic content for clone column aware equi-join operator */
-    struct {
-        PFalg_att_t     att1;     /**< name of attribute from "left" rel */
-        PFalg_att_t     att2;     /**< name of attribute from "right" rel */
-        PFalg_att_t     res;      /**< name of result attribute */
-    } eqjoin_unq;
 
     /* semantic content for projection operator */
     struct {
@@ -179,18 +154,18 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } unary;
 
-    /*
-     * semantic content for operators applying a 
-     * (partitioned) aggregation function (count, sum, min, max and avg)
-     * on a column
-     * or a boolean grouping function (seqty1, all,...)
-     */
+    /* semantic content for operators for (partitioned) sum of a column */
     struct {
-        PFalg_att_t     att;   /**< attribute to be used for the agg. func. */
-                                  /* Note that 'att' is ignored by la_count */
-        PFalg_att_t     part;  /**< partitioning attribute */
-        PFalg_att_t     res;   /**< attribute to hold the result */
-    } aggr;
+        PFalg_att_t     att;      /**< attribute to be summed up */
+        PFalg_att_t     part;     /**< partitioning attribute */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } sum;
+
+    /* semantic content for (partitioned) row counting operator */
+    struct {
+        PFalg_att_t     part;     /**< partitioning attribute */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } count;
 
     /* semantic content for rownum operator */
     struct {
@@ -207,30 +182,37 @@ union PFla_op_sem_t {
                                        otherwise NULL */
     } number;
 
-    /* semantic content for type test, cast, and type_assert operator */
+    /* semantic content for type test operator */
     struct {
-        PFalg_att_t     att;     /**< name of type-tested, casted or type
-                                      asserted attribute */
-        PFalg_simple_type_t ty;  /**< comparison, cast, and restriction type */
-        PFalg_att_t     res;     /**< column to store result of type test 
-                                      or cast */
-                             /* Note that 'res' is ignored by la_type_assert */
+        PFalg_att_t     att;     /**< name of type-tested attribute */
+        PFalg_simple_type_t ty;  /**< comparison type */
+        PFalg_att_t     res;     /**< column to store result of type test */
     } type;
+
+    /* semantic content for type_assert operator */
+    struct {
+        PFalg_att_t     att;     /**< name of the asserted attribute */
+        PFalg_simple_type_t ty;  /**< restricted type */
+    } type_a;
+
+    /* semantic content for type cast operator */
+    struct {
+        PFalg_att_t     att;     /**< name of casted attribute */
+        PFalg_simple_type_t ty;  /**< algebra type to cast to */
+        PFalg_att_t     res;     /**< column to store result of the cast */
+    } cast;
+
+    /* boolean grouping functions (seqty1, all,...) */
+    struct {
+        PFalg_att_t     res;      /**< result attribute */
+        PFalg_att_t     att;      /**< value attribute */
+        PFalg_att_t     part;     /**< partitioning attribute */
+    } blngroup;
 
     struct {
         PFalg_axis_t    axis;
         PFty_t          ty;
-        PFalg_att_t     iter;     /**< column to look up the iterations */
-        PFalg_att_t     item;     /**< column to look up the context nodes */
-        PFalg_att_t     item_res; /**< column to store the resulting nodes */
     } scjoin;
-
-    /* reference columns for document lookup */
-    struct {
-        PFalg_att_t     iter;     /**< iter column to retain */
-        PFalg_att_t     item;     /**< column that contains the references */
-        PFalg_att_t     item_res; /**< column to store the document nodes */
-    } doc_tbl;
 
     /* reference columns for document access */
     struct {
@@ -238,17 +220,6 @@ union PFla_op_sem_t {
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
-
-    /* reference columns of element constructor */
-    struct {
-        PFalg_att_t     iter_qn;  /**< iter column of qname relation */
-        PFalg_att_t     item_qn;  /**< item column of qname relation */
-        PFalg_att_t     iter_val; /**< iter column of value relation */
-        PFalg_att_t     pos_val;  /**< pos column of qname relation */
-        PFalg_att_t     item_val; /**< item column of value relation */
-        PFalg_att_t     iter_res; /**< iter column of result relation */
-        PFalg_att_t     item_res; /**< item column of result relation */
-    } elem;
 
     /* reference columns of attribute constructor */
     struct {
@@ -263,32 +234,11 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } textnode;
 
-    /* reference columns of merge_adjacent operator */
-    struct {
-        PFalg_att_t     iter_in;  /**< iter column of input relation */
-        PFalg_att_t     pos_in;   /**< pos column of input relation */
-        PFalg_att_t     item_in;  /**< item column of input relation */
-        PFalg_att_t     iter_res; /**< iter column of result relation */
-        PFalg_att_t     pos_res;  /**< pos column of result relation */
-        PFalg_att_t     item_res; /**< item column of result relation */
-    } merge_adjacent;
-
     /* semantic content for conditional error */
     struct {
         PFalg_att_t     att;     /**< name of the boolean attribute */
         char *          str;     /**< error message */
     } err;
-
-    /* reference columns of string_join operator */
-    struct {
-        PFalg_att_t     iter;     /**< iter column of string relation */
-        PFalg_att_t     pos;      /**< pos column of string relation */
-        PFalg_att_t     item;     /**< item column of string relation */
-        PFalg_att_t     iter_sep; /**< iter column of separator relation */
-        PFalg_att_t     item_sep; /**< item column of separator relation */
-        PFalg_att_t     iter_res; /**< iter column of result relation */
-        PFalg_att_t     item_res; /**< item column of result relation */
-    } string_join;
 };
 /** semantic content in algebra operators */
 typedef union PFla_op_sem_t PFla_op_sem_t;
@@ -302,15 +252,15 @@ struct PFla_op_t {
     PFla_op_kind_t     kind;       /**< operator kind */
     PFla_op_sem_t      sem;        /**< semantic content for this operator */
     PFalg_schema_t     schema;     /**< result schema */
-
+    PFarray_t         *env;        /**< environment to store the corresponding
+                                        MIL algebra expression trees (for MIL
+                                        algebra generation only) */
     short              state_label;/**< Burg puts its state information here. */
-    short              child_state_label[PFLA_OP_MAXCHILD];
-                                   /**< control information for Burg pattern
-                                        matching */
 
-    unsigned           bit_reset:1;/**< used to reset the dag bit
-                                             in a DAG traversal */
-    unsigned           bit_dag:1;  /**< enables DAG traversal */
+    unsigned     bit_opt_label :1; /**< used in algopt.brg to prune the
+                                        DAG labeling. */
+    unsigned     bit_opt       :1; /**< used in algopt.brg to work on a DAG. */
+    unsigned     bit_cse       :1; /**< used in algebra_cse.c to work on a DAG. */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */
@@ -337,14 +287,15 @@ struct PFla_pair_t {
 };
 typedef struct PFla_pair_t PFla_pair_t;
 
+
+
 /* ***************** Constructors ******************* */
 
 /**
  * A `serialize' node will be placed on the very top of the algebra
  * expression tree.
  */
-PFla_op_t * PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg,
-                            PFalg_att_t pos, PFalg_att_t item);
+PFla_op_t * PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg);
 
 /**
  * Construct algebra node representing a literal table (actually just
@@ -373,22 +324,13 @@ PFla_op_t *PFla_lit_tbl_ (PFalg_attlist_t a,
  * without any tuples to facilitate optimization.
  */
 PFla_op_t *PFla_empty_tbl (PFalg_attlist_t a);
-PFla_op_t *PFla_empty_tbl_ (PFalg_schema_t s);
 
-PFla_op_t *PFla_attach (const PFla_op_t *n,
-                        PFalg_att_t attname, PFalg_atom_t value);
 
 /**
  * Cross product (Cartesian product) of two relations.
  * No duplicate attribute names allowed.
  */
 PFla_op_t * PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2);
-
-/**
- * Cross product (Cartesian product) of two relations.
- * Duplicate attribute names allowed.
- */
-PFla_op_t * PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2);
 
 
 /**
@@ -397,14 +339,6 @@ PFla_op_t * PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2);
  */
 PFla_op_t * PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
                          PFalg_att_t att1, PFalg_att_t att2);
-
-/**
- * Equi-join between two relations.
- * Duplicate attribute names allowed.
- */
-PFla_op_t * PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
-                               PFalg_att_t att1, PFalg_att_t att2,
-                               PFalg_att_t res);
 
 /**
  * Construct projection operator
@@ -499,12 +433,9 @@ PFla_op_t * PFla_or (const PFla_op_t *n, PFalg_att_t res,
 /** Constructor for boolean NOT operators. */
 PFla_op_t * PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att);
 
-/** 
- * Constructor for operators forming the application of a 
- * (partitioned) aggregation function (sum, min, max and avg) on a column.
- */
-PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n,
-		       PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
+/** Constructor for operators forming (partitioned) sum of a column. */
+PFla_op_t * PFla_sum (const PFla_op_t *n, PFalg_att_t res,
+                      PFalg_att_t att, PFalg_att_t part);
 
 /** Constructor for (partitioned) row counting operators. */
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
@@ -555,9 +486,7 @@ PFla_op_t * PFla_all (const PFla_op_t *n, PFalg_att_t res,
  * to the evaluation of an XPath location step.
  */
 PFla_op_t * PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
-                         PFalg_axis_t axis, PFty_t seqty,
-                         PFalg_att_t iter, PFalg_att_t item,
-                         PFalg_att_t item_res);
+                         PFalg_axis_t axis, PFty_t seqty);
 
 /*********** node construction functionality *************/
 
@@ -600,9 +529,7 @@ PFla_op_t * PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
  * Access to (persistently stored) XML documents, the fn:doc()
  * function.  Returns a (frag, result) pair.
  */
-PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel, 
-                          PFalg_att_t iter, PFalg_att_t item,
-                          PFalg_att_t item_res);
+PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel);
 
 /** Constructor for string access of loaded documents */
 PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
@@ -614,14 +541,11 @@ PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
 /** Constructor for element operators. */
 PFla_op_t * PFla_element (const PFla_op_t *doc,
                           const PFla_op_t *tags,
-                          const PFla_op_t *cont,
-                          PFalg_att_t iter_qn, PFalg_att_t item_qn,
-                          PFalg_att_t iter_val, PFalg_att_t pos_val, 
-                          PFalg_att_t item_val,
-                          PFalg_att_t iter_res, PFalg_att_t item_res);
+                          const PFla_op_t *cont);
 
 /** Constructor for attribute operators. */
-PFla_op_t * PFla_attribute (const PFla_op_t *rel,
+PFla_op_t * PFla_attribute (const PFla_op_t *qn_rel,
+                            const PFla_op_t *val_rel,
                             PFalg_att_t res,
                             PFalg_att_t qn,
                             PFalg_att_t val);
@@ -647,10 +571,8 @@ PFla_op_t * PFla_processi (const PFla_op_t *cont);
 PFla_op_t * PFla_pos_merge_str (const PFla_op_t *n);
 
 /** Constructor for pf:merge-adjacent-text-nodes() functionality */
-PFla_op_t * PFla_pf_merge_adjacent_text_nodes (
-    const PFla_op_t *doc, const PFla_op_t *n,
-    PFalg_att_t iter_in, PFalg_att_t pos_in, PFalg_att_t item_in,
-    PFalg_att_t iter_res, PFalg_att_t pos_res, PFalg_att_t item_res);
+PFla_op_t * PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc,
+                                               const PFla_op_t *n);
 
 /**************** document fragment related stuff ******************/
 
@@ -739,11 +661,8 @@ PFla_op_t * PFla_fn_contains (const PFla_op_t *n, PFalg_att_t res,
 /**
  * Constructor for builtin function fn:string-join
  */
-PFla_op_t * PFla_fn_string_join (
-    const PFla_op_t *text, const PFla_op_t *sep,
-    PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item,
-    PFalg_att_t iter_sep, PFalg_att_t item_sep,
-    PFalg_att_t iter_res, PFalg_att_t item_res);
+PFla_op_t * PFla_fn_string_join (const PFla_op_t *text,
+                                 const PFla_op_t *sep);
 
 #endif  /* LOGICAL_H */
 

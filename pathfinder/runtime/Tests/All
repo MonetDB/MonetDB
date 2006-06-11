@@ -1,6 +1,5 @@
 load
 sigs
-procs
 string_join1
 string_join2
 string_join3
@@ -25,7 +24,5 @@ following
 preceding
 following-sibling
 preceding-sibling
+text1
 printTypedMode
-printTypedMode-soap
-namespaces
-serialization

@@ -13,8 +13,8 @@
       additional lexical state, similar to the proposal in older
       W3C drafts.]
 
- -- Pathfinder does support XQuery library modules. There are a
-    few deviations from the standard, though:
+ -- Pathfinder does support XQuery library modules. There are just
+    few limitations where we deviate from the standard:
 
      o You _must_ give a location hint in the "import module" statement.
        Each file hinted there will be loaded as a module. It has to
@@ -35,12 +35,6 @@
 
      o Pathfinder does allow cyclic importing of modules, regardless
        of their namespace.
-
-     o The XQuery specifications state that two module import 
-       statements that use the same target namespace should produce an 
-       error. This is not the case in MonetDB/XQuery: the module will be  
-       loaded once, but its functions and variables will be available 
-       under both namespace identifiers.
 
  -- The sequence types `schema-element (...)' and schema-attribute (...)'
     are not supported by the Pathfinder compiler. There are also issues

@@ -44,15 +44,13 @@ bin_pf = {
 		libcompiler1 \
 		schema/libschema \
 		debug/libdebug \
+		mem/libmem \
 		parser/libparser \
 		semantics/libsemantics \
 		core/libcore \
 		algebra/libalgebra \
-		algebra/opt/libopt \
-		algebra/prop/libprop \
 		mil/libmil \
 		libcompiler2 \
-		mem/libmem \
 		$(LIBXML2_LDADD) $(LIBXML2_LIBS) \
 		$(SOCKET_LIBS) $(DL_LIBS)
 		

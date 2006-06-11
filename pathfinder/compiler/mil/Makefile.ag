@@ -29,7 +29,6 @@ lib_mil = {
 	SOURCES = \
 		mil.c \
 		milgen.brg \
-		mil_dce.c \
 		milprint.c \
 		mil_opt.c \
 		milprint_summer.c

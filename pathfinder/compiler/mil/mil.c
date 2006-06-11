@@ -1,5 +1,3 @@
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
  * @file
  *
@@ -29,8 +27,6 @@
  */
 
 #include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
 
 #include "pathfinder.h"
 
@@ -38,7 +34,6 @@
 
 #include "mem.h"
 
-#include "array.h"
 /**
  * Construct a MIL tree leaf node with given node kind.
  *
@@ -310,43 +305,6 @@ PFmil_var (const PFmil_ident_t name)
     PFmil_t *ret = leaf (m_var);
     ret->sem.ident = name;
     return ret;
-}
-
-/** return the variable name as string */
-char * PFmil_var_str (PFmil_ident_t name) {
-    switch (name) {
-        case PF_MIL_VAR_UNUSED: return "unused";
-        case PF_MIL_VAR_WS: return "ws";     
-        case PF_MIL_VAR_ATTR: return "ATTR";   
-        case PF_MIL_VAR_ELEM: return "ELEM";   
-        case PF_MIL_VAR_STR: return "STR";    
-        case PF_MIL_VAR_INT: return "INT";    
-        case PF_MIL_VAR_DBL: return "DBL";    
-        case PF_MIL_VAR_DEC: return "DEC";    
-        case PF_MIL_VAR_BOOL: return "BOOL";
-        case PF_MIL_VAR_ATTR_OWN: return "ATTR_OWN";
-        case PF_MIL_VAR_ATTR_QN: return "ATTR_QN";  
-        case PF_MIL_VAR_ATTR_CONT: return "ATTR_CONT";
-        case PF_MIL_VAR_QN_LOC: return "QN_LOC";   
-        case PF_MIL_VAR_QN_URI: return "QN_URI";   
-        case PF_MIL_VAR_ATTR_PROP: return "ATTR_PROP";
-        case PF_MIL_VAR_PROP_VAL: return "PROP_VAL"; 
-        case PF_MIL_VAR_PRE_PROP: return "PRE_PROP"; 
-        case PF_MIL_VAR_PRE_CONT: return "PRE_CONT"; 
-        case PF_MIL_VAR_PROP_TEXT: return "PROP_TEXT";
-        case PF_MIL_VAR_PROP_COM: return "PROP_COM"; 
-        case PF_MIL_VAR_PROP_INS: return "PROP_INS";    
-        default:
-        {
-            assert (name >= PF_MIL_RES_VAR_COUNT);
-            name -= PF_MIL_RES_VAR_COUNT; 
-            assert (name < 10000);
-            size_t len = sizeof ("a0000");
-            char *res = PFmalloc (len);
-            snprintf (res, len, "a%04u", name);
-            return res;
-        }
-    }
 }
 
 /**
@@ -746,6 +704,15 @@ PFmil_ctderive (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Monet max operator, return maximum tail value
+ */
+PFmil_t *
+PFmil_max (const PFmil_t *a)
+{
+    return wire1 (m_max, a);
+}
+
+/**
  * Monet count operator, return number of items in @a a.
  */
 PFmil_t *
@@ -770,72 +737,6 @@ PFmil_t *
 PFmil_egcount (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_egcount, a, b);
-}
-
-/** 
- * MIL avg() function 
- */
-PFmil_t * PFmil_avg (const PFmil_t *a)
-{
-    return wire1 (m_avg, a);
-}
-
-/**
- * Grouped avg function `{avg}()' (aka. ``pumped avg'') 
- */
-PFmil_t * PFmil_gavg (const PFmil_t *a)
-{
-    return wire1 (m_gavg, a);
-}
-
-/** 
- * MIL max() function 
- */
-PFmil_t * PFmil_max (const PFmil_t *a)
-{
-    return wire1 (m_max, a);
-}
-
-/** 
- * Grouped max function `{max}()' (aka. ``pumped max'') 
- */
-PFmil_t * PFmil_gmax (const PFmil_t *a)
-{
-    return wire1 (m_gmax, a);
-}
-
-/**
- * MIL min() function 
- */
-PFmil_t * PFmil_min (const PFmil_t *a)
-{
-    return wire1 (m_min, a);
-}
-
-/** 
- * Grouped min function `{min}()' (aka. ``pumped min'') 
- */
-PFmil_t * PFmil_gmin (const PFmil_t *a)
-{
-    return wire1 (m_gmin, a);
-}
-
-/**
- * Monet sum operator
- */
-PFmil_t *
-PFmil_sum (const PFmil_t *a)
-{
-    return wire1 (m_sum, a);
-}
-
-/**
- * Monet grouped sum operator `{sum}()'
- */
-PFmil_t *
-PFmil_gsum (const PFmil_t *a)
-{
-    return wire1 (m_gsum, a);
 }
 
 /**
@@ -1954,22 +1855,6 @@ PFmil_t *
 PFmil_col_name (const PFmil_t *bat, const PFmil_t *name)
 {
     return wire2 (m_col_name, bat, name);
-}
-
-PFmil_t *
-PFmil_comment (const char *fmt, ...)
-{
-    PFmil_t *ret = leaf (m_comment);
-    PFarray_t *a = PFarray(sizeof (char));    
-    va_list args;
-
-    va_start (args, fmt);
-    PFarray_vprintf (a, fmt, args);
-    va_end (args);
-
-    ret->sem.s = PFarray_at(a, 0);
-
-    return ret;
 }
 
 PFmil_t *

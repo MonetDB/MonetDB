@@ -165,7 +165,6 @@ main(int argc, char **av)
 	while (optind < argc || fp) {
 		if (!fp && (fp=fopen(av[optind],"r")) == NULL){
 			fprintf(stderr,"could no open file %s\n", av[optind]);
-			break;
 		}
 		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
 			int n = strlen(line);
