@@ -156,8 +156,6 @@ TMsubcommit(BAT* b) {
 		if (bid < 0) bid = -bid;
 		if (bid) subcommit[cnt++] = bid;
 	}
-	/* sort the list on BAT id */ 
-	GDKqsort(subcommit+1, NULL, cnt-1, sizeof(bat), TYPE_bat, 0);
 
 	if (prelude(cnt, subcommit) == 0) { /* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global (sub-)commits */

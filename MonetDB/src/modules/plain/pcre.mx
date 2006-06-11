@@ -89,7 +89,6 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 
 .END pcre;
 
-@{
 @+ Implementation
 @c
 
@@ -248,7 +247,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), s, FALSE);
+			BUNins(r, BUNhead(strs, p), s);
 		}
 	}
 	my_pcre_free(re);
@@ -278,7 +277,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), NULL, FALSE);
+			BUNins(r, BUNhead(strs, p), NULL);
 		}
 	}
 	my_pcre_free(re);
@@ -499,10 +498,10 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str, FALSE);
+			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str);
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str, FALSE);
+			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str);
 		}
 	}
 
@@ -633,7 +632,7 @@ sql2pcre(str *r, str pat, str esc_str)
 	int len = strlen(pat);
 	int escaped = 0;
 	int hasWildcard = 0;
-	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
+	char *ppat = GDKmalloc(MAX(3,len*2)+1);
 	int esc = esc_str[0]; /* should change to utf8_convert() */
 	int specials = 0;
 
@@ -695,7 +694,6 @@ sql2pcre(str *r, str pat, str esc_str)
 	}
 	return GDK_SUCCEED; 
 }
-@}
 @mil
 
     PROC like(str s, str pat, str esc) : bit  {

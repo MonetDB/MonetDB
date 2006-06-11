@@ -1,2 +1,0 @@
-import module namespace xmark = "$TSTTRGDIR" at "$TSTTRGDIR/xmark.mil";
-xmark:q20("auctionG.xml", 30000.0, 100000.0)

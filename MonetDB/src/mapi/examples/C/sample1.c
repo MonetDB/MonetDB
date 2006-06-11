@@ -96,7 +96,7 @@ main(int argc, char **argv)
 	   printf("mapi_ping %d\n",mapi_ping(dbh)); */
 	if (mapi_close_handle(hdl) != MOK)
 		die(dbh, hdl);
-	mapi_destroy(dbh);
+	mapi_disconnect(dbh);
 
 	return 0;
 }

@@ -368,9 +368,8 @@ BBPinithash(void)
 	BBP_mask--;
 
 	while (--i > 0) {
-		str s = BBP_logical(i);
-		if (s) {
-			if (*s != '.' && BBPnamecheck(BBP_logical(i)) == 0) {
+		if (BBPvalid(i)) {
+			if (BBPnamecheck(BBP_logical(i)) == 0) {
 				BBP_insert(i);
 			}
 			if (BBP_logical(-i)) {
@@ -677,7 +676,7 @@ BBPexit(void)
 			BAT *b = BBP_cache(i);
 
 			if (b) {
-				if (VIEWparent(b))
+				if (b->batParentid)
 					VIEWdestroy(b);
 				else
 					BATfree(b);
@@ -929,11 +928,10 @@ BBPinsert(BAT *b)
 
 	/* find an empty slot */
 	if (BBP_free <= 0) {
-		if (++BBPsize >= BBPlimit) {
+		if (++BBPsize >= BBPlimit)
 			BBPextend(BATMARGIN, TRUE);
-		} else {
+		else
 			BBP_free = BBPsize - 1;
-		}
 	}
 	i = BBP_free;
 	BBP_free = BBP_next(BBP_free);
@@ -1064,9 +1062,15 @@ BBPuncacheit_(bat i, int unloaddesc)
 @- BBPclear
 @%BBPclear@ removes a BAT from the BBP directory forever.
 @c
-static INLINE void 
-bbpclear(bat i) 
+void
+BBPclear(bat i)
 {
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+
+	if (BBPcheck(i, "BBPclear")) {
+		i = ABS(i);
+		if (lock)
+			gdk_set_lock(GDKcacheLock, "BBPclear");
 		BATDEBUG {
 			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBPname(i));
 		}
@@ -1088,17 +1092,6 @@ bbpclear(bat i)
 		BBP_lrefs(i) = 0;
 		BBP_next(i) = BBP_free;
 		BBP_free = i;
-}
-
-void
-BBPclear(bat i)
-{
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
-	if (BBPcheck(i, "BBPclear")) {
-		if (lock)
-			gdk_set_lock(GDKcacheLock, "BBPclear");
-		bbpclear(ABS(i));
 		if (lock)
 			gdk_unset_lock(GDKcacheLock, "BBPclear");
 	}
@@ -1438,7 +1431,7 @@ unshare(bat parent)
 		parent = -parent;
 	if (lock)
 		gdk_set_lock(GDKswapLock[parent & BBPLOCKMASK], "BBPunshare");
-	if (--BBP_cache(parent)->batSharecnt == 0) { 
+	if (--BBP_cache(parent)->batSharecnt == 0) {
 		(void) decref(parent, FALSE, lock);
 	} else if (lock) {
 		gdk_unset_lock(GDKswapLock[parent & BBPLOCKMASK], "BBPunshare");
@@ -1611,11 +1604,9 @@ static int
 BBPdestroy(BAT *b) 
 {
 	int clear = 1;
-	bat parent = b->batParentid; 
+	bat parent = VIEWparent(b);
 
-	if (VIEWparent(b)) { /* a physical view */
-		VIEWdestroy(b);
-	} else {
+	if (!parent) {
 		/* bats that get destroyed must unfix their atoms */
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
@@ -1640,32 +1631,37 @@ BBPdestroy(BAT *b)
 			}
 		}
 		clear = BBPaddtobin(b);	/* plan for re-use */
+	} else {
+		VIEWdestroy(b);
 	}
 	if (clear)
 		BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
 
-	/* parent released when completely done with child */
-	if (parent) unshare(parent);
+	if (parent)	/* parent released when completely done with child */
+		unshare(parent);
 	return 0;
 }
 
 static int
 BBPfree(BAT *b, str calledFrom )
 {
-	bat bid = ABS(b->batCacheid), parent = b->batParentid;
 	int ret;
+	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
 
 	assert(BBPswappable(b));
 
 	/* write dirty BATs before being unloaded */
+
 	if ((ret = BBPsave(b)) != 0)
 		return ret;	/* error while saving: no go */
 
-	if (VIEWparent(b)) { /* physical view */
-		VIEWdestroy(b);
-	} else {
+	if (!parent) {
 		assert(b->batSharecnt == 0);
- 		if (BBP_cache(bid)) BATfree(b);	/* free memory */
+
+ 		if (BBP_cache(bid)) 
+			BATfree(b);	/* free memory */
+	} else {
+		VIEWdestroy(b);
 	}
 	BBPuncacheit_(bid, FALSE);
 	if (b->batMapdirty) {
@@ -1674,8 +1670,8 @@ BBPfree(BAT *b, str calledFrom )
 	}
 	BBP_unload_off(bid, calledFrom);
 
-	/* parent released when completely done with child */
-	if (parent) unshare(parent);
+	if (parent)	/* parent released when completely done with child */
+		unshare(parent);
 	return 0;
 }
 @}
@@ -2081,7 +2077,7 @@ BBPquickdesc(bat bid, int delaccess)
 
 @+ Small BAT Cache
 @T
-PETER: rewrote the batcache to make it stable with views and actually faster
+PETER: rewote the batcache to make it stable with views and actually faster
        than allocating new bats (I guess that was the purpose of it)
 
 this is tuned to minimizing the needed actions to get a BAT, in particular
@@ -2112,12 +2108,12 @@ so with caching *some* MIL programs can be nearly twice as fast (optimized compi
 though I expect the gains to be smaller in general.
 @{
 @c
-#define BATCACHE_NOTYPE(t) 	(ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
-#define BATCACHE_SIZE 		64 /* max size: 128 */ 
-#define BATCACHE_DIMS 		6 /* 0,1,2,4,8 byte types + str */
-#define BATCACHE_BIN(h,t) 	(batcache_headbin[ATOMstorage(h)]+batcache_tailbin[ATOMstorage(t)])
+#define BATCACHE_NOTYPE(t) (ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
+#define BATCACHE_SIZE 64 /* max size: 128 */ 
+#define BATCACHE_DIMS 6 /* 0,1,2,4,8 byte types + str */
+#define BATCACHE_BIN(h,t) (batcache_headbin[ATOMstorage(h)]+batcache_tailbin[ATOMstorage(t)])
 
-Dimensions batcache_dims;  	/* fast void,void bat dims initialization */
+Dimensions batcache_dims;  /* fast void,void bat dims initialization */
 int batcache_headbin[TYPE_str+1], batcache_tailbin[TYPE_str+1]; /* fast bin computation */
 
 typedef signed char batcache_int; /* make compact, whole structure is < 500 bytes: CPU cache resident  */
@@ -2125,9 +2121,7 @@ typedef signed char batcache_int; /* make compact, whole structure is < 500 byte
 ssize_t batcache_minsize = BATTINY;
 
 /* O(1) lookup structure of normalized [htype,ttype] combination (a "bin") */
-static batcache_int  batcache_batbin  [BATCACHE_DIMS*BATCACHE_DIMS]; /* each bin starts a bin_next/prev list */
-static unsigned char batcache_widthbin[BATCACHE_DIMS*BATCACHE_DIMS]; /* bun width */
-static unsigned char batcache_locbin  [BATCACHE_DIMS*BATCACHE_DIMS]; /* tloc */
+static batcache_int batbin[BATCACHE_DIMS*BATCACHE_DIMS]; /* each bin starts a bin_next/prev list */
 
 /* the list elements, use int as element pointer type (<0 means: no such element) */
 typedef struct {
@@ -2168,24 +2162,6 @@ BBPinitcache()
 	}
 	batcache_headbin[i] = 5;
 	batcache_tailbin[i] = 5*BATCACHE_DIMS; /* TYPE_str */
-
-	/* initialize the bun loc/width lookup arrays */
-	for(i = 0; i <= TYPE_str; i++) {
-		for(j = 0; j <= TYPE_str; j++) {
-			int bin = BATCACHE_BIN(i,j);
-			unsigned char bunwidth = ATOMsize(j);
-			unsigned char tailloc = ATOMsize(i);
-			if (tailloc > bunwidth) {
-				bunwidth = tailloc + tailloc;
-			} else if (tailloc) {
-				bunwidth += (tailloc = bunwidth);
-			} else if (bunwidth == 0) {
-				bunwidth = 1;
-			}
-			batcache_widthbin[bin] = bunwidth;
-			batcache_locbin[bin] = tailloc;
-		}
-	}
 	
 	/* initialize the cache */
 	for(i = 0; i < BATCACHE_SIZE; i++) {
@@ -2198,9 +2174,8 @@ BBPinitcache()
 	batcache[BATCACHE_SIZE-1].fifo_next = -1;
 
 	/* initialize the lookup mechanism */
-	for(j = 0; j < BATCACHE_DIMS*BATCACHE_DIMS; j++) {
-		batcache_batbin[j] = -1;
-	}
+	for(j = 0; j < BATCACHE_DIMS*BATCACHE_DIMS; j++)
+		batbin[j] = -1;
 	batcache_free = 0;
 }
 
@@ -2217,7 +2192,7 @@ batcache_del() {
 	if (j >= 0) {
 		batcache[j].bin_next = -1;
 	} else {
-		batcache_batbin[bin] = -1; /* had a single entry only */
+		batbin[bin] = -1; /* had a single entry only */
 	}
 	assert(batcache[i].bin_next < 0); /* LRU: we are always deleting the last */
 
@@ -2231,9 +2206,7 @@ batcache_del() {
 
 	/* revive and free the old bat */
 	*BBP_logical(bid) = 't';
-	assert(b->batParentid == 0);
 	BATfree(b);
-	bbpclear(bid);
 	return i;
 }
 
@@ -2250,12 +2223,12 @@ batcache_put(int bin, bat bid) {
 
 	/* fill in the batcache record */
 	batcache[i].bid = bid;
-	batcache[i].bin_next = j = batcache_batbin[bin];
+	batcache[i].bin_next = j = batbin[bin];
 	if (j >= 0) batcache[j].bin_prev = i;
 	batcache[i].bin_prev = -1;
 	batcache[i].fifo_next = -1;
 	batcache[i].fifo_prev = batcache_last;
-	batcache_batbin[bin] = i;
+	batbin[bin] = i;
 	if (batcache_first < 0) batcache_first = i;
 	if (batcache_last >= 0) batcache[batcache_last].fifo_next = i;
 	batcache_last = i;	
@@ -2267,7 +2240,7 @@ batcache_put(int bin, bat bid) {
 /* return and revive a cached bat from the cache */
 static INLINE bat 
 batcache_get(int bin) {
-	batcache_int i = batcache_batbin[bin];
+	batcache_int i = batbin[bin];
 	if (i >= 0) {
 		/* manage fifo-list */  
 		int bid = batcache[i].bid;
@@ -2289,7 +2262,7 @@ batcache_get(int bin) {
 		batcache_free = i;
 
 		/* manage bin-list */  
-		batcache_batbin[bin] = j = batcache[i].bin_next;
+		batbin[bin] = j = batcache[i].bin_next;
 		if (j >= 0) batcache[j].bin_prev = -1;
 
 		/* revive the bat */
@@ -2307,35 +2280,27 @@ extern char* BATstring_t;
 static int
 BBPaddtobin(BAT *b)
 {
-	int bin = BATCACHE_BIN(b->htype, b->ttype);
-	bat bid = b->batCacheid, parent = VIEWparent(b);
+	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
 	char *s = BBP_logical(bid);
 	BAT *m = BBP_cache(-bid);
+	size_t minsize = (parent || (b->htype == TYPE_void && b->ttype == TYPE_void))?0:BUNsize(b)*batcache_minsize;
+	size_t maxsize = minsize + minsize;
 
-	/* only cache simple non-saved non-renamed transient bats */
-	if (m == NULL || batcache_minsize == 0 || b->batCopiedtodisk || b->batLview || BBPnamecheck(s) == 0) {
-		BATdelete(b); /* handles persistent case also (file deletes) */
-		return 1;
-	}
-	if ((parent == 0) && (b->htype | b->ttype)) {
-		/* additional restrictions do not hold for views and void,void bats */
-		int bunwidth = batcache_widthbin[bin];
-		size_t minsize = bunwidth * batcache_minsize;
-		size_t maxsize = minsize+minsize;
-
-		/* bat should be of the right size, types and BUN layoutt */
-		if (b->batBuns->size < minsize || b->batBuns->size >= maxsize || 
-		    BUNsize(b) != bunwidth || BATCACHE_NOTYPE(b->htype) || BATCACHE_NOTYPE(b->ttype))
-		{
-			BATdelete(b); /* handles persistent case also (file deletes) */
-			return 1;
-		} 
-	} 
 	assert(BBP_refs(bid) == 0);
 	assert(BBP_lrefs(bid) == 0);
-	assert(b->batCacheid > 0);
+
+	/* pre-filter the BATs: only retain small transient bats */
+	if (m == NULL || b->batBuns->size < minsize || b->batBuns->size >= maxsize || 
+            BATCACHE_NOTYPE(b->htype) || BATCACHE_NOTYPE(b->ttype) ||
+	    b->batCopiedtodisk || b->batBuns->copied || BBPnamecheck(s) == 0 ||
+	    (b->hheap && b->hheap->copied) || (b->theap && b->theap->copied)) 
+	{
+		BATdelete(b); /* handles persistent case (file deletes) */
+		return 1;
+	}
 
 	/* change views into void,void bats */
+	b = BBP_cache(bid);
 	if (parent) {
 		BATstore *bs = (BATstore*) b;
 			
@@ -2347,11 +2312,10 @@ BBPaddtobin(BAT *b)
 		/* take care of mirror views */
 		b->H = m->T = &bs->H;
 		b->T = m->H = &bs->T;
+		b->batBuns->base = NULL; /* was shared with parent! */
 
 		/* make it a void,void bat */ 
 		b->dims = m->dims = batcache_dims;
-		b->batBuns->base = NULL; /* was shared with parent! */
-		b->hheap = b->theap = NULL;
 	}
 
 	/* free non-reusable stuff that has to be freed anyway */
@@ -2369,7 +2333,7 @@ BBPaddtobin(BAT *b)
 	if (b->T->props) { PROPdestroy(b->T->props); b->T->props = NULL; }
 
 	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
-	batcache_put(bin, b->batCacheid);
+	batcache_put(BATCACHE_BIN(b->htype,b->ttype), b->batCacheid);
 	gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 	return 0;
 }
@@ -2377,7 +2341,6 @@ BBPaddtobin(BAT *b)
 BAT *
 BBPrecycle(int ht, int tt, ssize_t cap)
 {
-	int bin = BATCACHE_BIN(ht,tt);
 	bat bid = 0;
 	BAT *b;
 
@@ -2385,40 +2348,48 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 		return NULL;
 
 	gdk_set_lock(GDKcacheLock, "BBPrecycle");
-	bid = batcache_get(bin);
+	bid = batcache_get(BATCACHE_BIN(ht,tt));
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
 
 	b = BBP_cache(bid);
 	if (b) {
 		/* make the bat empty; do this extra work only if the bat is reused (not in BBPaddtobin) */
 		BAT *m = BBP_cache(-bid);
-
-		b->htype = m->ttype = ht; 
-		b->hsorted = ATOMlinear(ht)?GDK_SORTED:0;
-		b->dims.headloc = m->dims.tailloc = 0;
-		b->halign = 0;
-		b->hkey = m->tkey = FALSE;
-		b->hdense = 0;
-		b->hseqbase = m->tseqbase = (ht == TYPE_void) ? oid_nil : 0;
-
-		b->ttype = m->htype = tt; 
-		b->tsorted = ATOMlinear(tt)?GDK_SORTED:0;
-		b->dims.tailloc = m->dims.headloc = batcache_locbin[bin];
-		b->talign = 0;
-		b->tkey = m->hkey = FALSE;
-		b->tdense = 0;
-		b->tseqbase = m->hseqbase = (tt == TYPE_void) ? oid_nil : 0;
-
-		b->batSet = FALSE;
+		oid hseq = (ht == TYPE_void) ? oid_nil : 0;
+		oid tseq = (tt == TYPE_void) ? oid_nil : 0;
+		int width = ATOMsize(ht);
+		if (width == 0) {
+			width = ATOMsize(tt);
+			if (width == 0) width = 1;
+		} else {
+			if (ATOMsize(tt) > width) width = ATOMsize(tt);
+			width += width;
+		}
+		if (BUNsize(b) != width) {
+			BATsetdims(b);
+			m->dims.headloc = b->dims.tailloc;
+			m->dims.tailloc = b->dims.headloc;
+			m->dims.bunshift = b->dims.bunshift;
+			m->dims.bunwidth = b->dims.bunwidth;
+		}
+		b->halign = b->talign = 0;
+		b->hdense = b->tdense = 0;
+		if (b->hseqbase != hseq) b->hseqbase = m->tseqbase = hseq; 
+		if (b->tseqbase != tseq) b->tseqbase = m->hseqbase = tseq; 
         	b->batFirst = b->batInserted = b->batDeleted = b->batBuns->base;
-		b->batRestricted = 0;
         	b->batBuns->free = 0;
-        	b->batDirty = TRUE;
-
+		if (b->htype != ht) b->htype = m->ttype = ht; 
+		if (b->ttype != tt) b->ttype = m->htype = tt; 
         	BATsetcount(b,0);
-
-		if (b->hheap) memset(b->hheap->base, 0, b->hheap->free = GDK_STRHASHTABLE*sizeof(var_t));
-		if (b->theap) memset(b->theap->base, 0, b->theap->free = GDK_STRHASHTABLE*sizeof(var_t));
+		if (b->hkey) b->hkey = m->tkey = FALSE;
+		if (b->tkey) b->tkey = m->hkey = FALSE;
+		b->hsorted = ATOMlinear(ht)?GDK_SORTED:0;
+		b->tsorted = ATOMlinear(tt)?GDK_SORTED:0;
+		b->batRestricted = 0;
+		if (b->hheap) memset(b->hheap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
+		if (b->theap) memset(b->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
+		b->batSet = FALSE;
+        	b->batDirty = TRUE;
 		return b;
 	}
 	return NULL;

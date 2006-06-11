@@ -558,7 +558,7 @@ Do simply an update for [+=]() kind of operations.
 @c
 	if (assignop) {
 		BATclear(assignbat);
-		BATins(assignbat, desc.b, FALSE);
+		BATins(assignbat, desc.b);
 		BBPreclaim(desc.b);
 		res->val.ival = assignbat->batCacheid;
 	} else {
@@ -662,12 +662,7 @@ bunins_failed:
 		VALnil(desc->argv, desc->b->ttype);
 		bulkerror_format(&desc->bulkerror, desc->id.vtype, @1);
 	}
-	if (desc->b->ttype != TYPE_void) {
-		bunfastins(desc->b, @1, @2);
-	} else {
-		desc->b->U->buns.free += 1;
-		BATsetcount(desc->b, desc->b->batCount+1);
-	}
+	bunfastins(desc->b, @1, @2);
 	if (desc->unfix)
 		(desc->unfix)(@2);
 
@@ -950,7 +945,7 @@ but rather discard the complete result and return an error.
 	} else {
 		oid bak = b1->halign;
 		BATclear(b1);
-		BATins(b1, retb, FALSE);
+		BATins(b1, retb);
 		BBPreclaim(retb);
 		retb = b1;
 		b1->halign = bak;
@@ -1197,7 +1192,7 @@ but rather discard the complete result and return an error.
 		} else {
 			oid bak = b1->halign;
 			BATclear(b1);
-			BATins(b1, retb, FALSE);
+			BATins(b1, retb);
 			b1->halign = bak;
 		}
 		BBPreclaim(retb);

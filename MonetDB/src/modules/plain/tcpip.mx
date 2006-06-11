@@ -404,7 +404,7 @@ cache_new(str name)
 	BUN q = BUNlast(cache_idx);
 	cache_t *c = (cache_t *) GDKmalloc(sizeof(cache_t));
 
-	BUNins(cache_idx, name, &c, FALSE);
+	BUNins(cache_idx, name, &c);
 	c->name = (str) BUNhvar(cache_idx, q);
 	c->locked = 0;
 	c->val.pval = NULL;
@@ -534,7 +534,7 @@ cache_bat(BAT **retval)
 		}
 		buf = (str) GDKmalloc(strlen(atm) + 5 + strlen(val));
 		sprintf(buf, "%s(\"%s\")", atm, val);
-		BUNins(b, BUNhvar(cache_idx, p), buf, FALSE);
+		BUNins(b, BUNhvar(cache_idx, p), buf);
 		GDKfree(buf);
 		GDKfree(val);
 	}
@@ -1125,7 +1125,7 @@ conn_bat(BAT **retval)
 			char buf[1024];
 
 			sprintf(buf, "%s:%d", connections[i].hostname, connections[i].port);
-			BUNins(b, &i, buf, FALSE);
+			BUNins(b, &i, buf);
 		}
 	*retval = b;
 	return GDK_SUCCEED;
@@ -1145,7 +1145,7 @@ wait_bat(BAT **retval)
 	strcpy(b->tident, "pid");
 	for (i = 0; i < MAX_CONN; i++)
 		if (connections[i].me) {
-			BUNins(b, &i, &connections[i].waiter->pid, FALSE);
+			BUNins(b, &i, &connections[i].waiter->pid);
 		}
 	*retval = b;
 	return GDK_SUCCEED;

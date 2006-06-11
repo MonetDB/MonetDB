@@ -1128,7 +1128,7 @@ add it to the expansion cache.
 				BUN pp = BUNfnd(yysubst, fcn_nme);
 				lng add = (LL_CONSTANT(1) << 32) + argv[0].val.ival;
 				if (pp == NULL) {
-					BUNins(yysubst, fcn_nme, &add, FALSE);
+					BUNins(yysubst, fcn_nme, &add);
 				} else {
 					*((lng *) BUNtloc(yysubst, pp)) += add;
 				}
@@ -1413,7 +1413,7 @@ interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
 		} else {
 			ptr dst = (ptr) &res->val.ival;
 
-			res->len = ATOMsize(ATOMtype(tpe));
+			res->len = ATOMsize(tpe);
 			ATOMfromstr(tpe, &dst, &res->len, s);
 		}
 		res->vtype = tpe;
@@ -1591,7 +1591,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 
 		if (BATcount(b)) {
-			int len = ATOMsize(ATOMtype(BATttype(b)));
+			int len = ATOMsize(BATttype(b));
 			BUN q = BUNlast(b);
 			BUN p = BUNfirst(b);
 			BUN r = BUNfirst(bn);
@@ -1678,7 +1678,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					reduce = 0;
 				}
 				/* reduce is set when conversion loses precision */
-				if (ATOMsize(ATOMtype(tpe)) <= ATOMsize(ATOMtype(res->vtype))) {
+				if (ATOMsize(tpe) <= ATOMsize(res->vtype)) {
 					reduce = 1;
 				} else if (b->ttype == TYPE_flt && tpe == TYPE_lng) {
 					reduce = 1;	/* rounding off */
@@ -2112,8 +2112,8 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 		GDKerror("interpret_iterator: iterator should work on a BAT.\n");
 		RETURN(-1);
 	}
-	ht = ATOMtype(BAThtype(BBP_cache(argv[1].val.bval)));
-	tt = ATOMtype(BATttype(BBP_cache(argv[1].val.bval)));
+	ht = BAThtype(BBP_cache(argv[1].val.bval));
+	tt = BATttype(BBP_cache(argv[1].val.bval));
 	argv[2].vtype = TYPE_ptr;
 
 	if (lt->token == TOK_ITERATOR) {
@@ -2506,7 +2506,7 @@ onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTR
 			BUN cnt = BUNfnd(profilerCount, namebuf);
 
 			if (cnt == NULL)
-				BUNins(profilerCount, namebuf, &one, FALSE);
+				BUNins(profilerCount, namebuf, &one);
 			else {
 				cnt = BUNtail(profilerCount, cnt);
 				*(int *) cnt = *(int *) cnt + 1;
@@ -2516,7 +2516,7 @@ onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTR
 			if (cnt == NULL) {
 				lng zero = 0;
 
-				BUNins(profilerTicks, namebuf, &zero, FALSE);
+				BUNins(profilerTicks, namebuf, &zero);
 			} else {
 				lng *tik;
 

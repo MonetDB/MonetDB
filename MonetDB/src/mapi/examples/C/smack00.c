@@ -74,7 +74,7 @@ main(int argc, char **argv)
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
 	}
-	mapi_destroy(dbh);
+	mapi_disconnect(dbh);
 
 	return 0;
 }

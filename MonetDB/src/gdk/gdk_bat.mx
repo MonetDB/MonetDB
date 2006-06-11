@@ -138,7 +138,7 @@ add to BBP
 fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
 	bn->batBuns->filename = NULL;
-	bn->batMapbuns = STORE_UNSET;
+	bn->batMapbuns = -1;
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 
@@ -149,14 +149,14 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 			bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
 			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
 			GDKfilepath(bn->hheap->filename, NULL, nme, "hheap");
-			bn->batMaphheap = STORE_UNSET;
+			bn->batMaphheap = -1;
 		}
 
 		if (ATOMneedheap(tt)) {
 			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
 			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
 			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
-			bn->batMaptheap = STORE_UNSET;
+			bn->batMaptheap = -1;
 		}
 	}
 	bn->batDirty = TRUE;
@@ -218,13 +218,13 @@ BATnewstorage(int ht, int tt, size_t cap)
 	BAT *bn = BBPrecycle(ht,tt,cap);
 	if (bn) return bn;
 	
-	bn = BATcreatedesc(ht, tt, (ht||tt));
+	bn = BATcreatedesc(ht, tt, TRUE);
 	if (bn == NULL) return NULL;
 
 	BATsetdims(bn);
 
 	/* alloc the main heaps */
-	if ((ht||tt) && HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
+	if (HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
 		return NULL;
 	}
 	if (ATOMheap(ht, bn->hheap, cap) < 0) {
@@ -346,7 +346,6 @@ BATextend(BAT *b, size_t newcap)
 	size_t heap_size;
 	int ret;
 
-	assert(b->htype || b->ttype);
 	BATcheck(b, "BATextend");
 @- 
 The main issue is to properly predict the new BAT size.
@@ -567,12 +566,9 @@ to share VM heap resources using copy-on-write maps. Note that the result of
 this is a read-only BAT (BAT_READ). The copy-on-write VM tricks can be used, 
 however, to isolate these copies from changes the in parent.
 
-In these cases the copy becomes a logical view on the original, which ensures
-that the original cannot be modified or destroyed (which could affect the shared 
-heaps).
-
 This new mode is used by the XQuery isolation mechanism and is available in MIL 
-as rcopy(). 
+as rcopy(). Note: one should not destroy the underlying BAT while the rcopy exists,
+because then the underlying files are deleted and crashes happen!!
 @{
 @c
 static int heapcopy(Heap* dst, Heap* src, int *remap) {
@@ -655,9 +651,11 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 		return NULL;
 	}
 
-	/* first try case (1); create a view, possibly with different atom-types */
-	if (BATrestricted(b) == BAT_READ && !writeable) {
-		bn = VIEWcreate(b); 
+	/* check whether we need case (4); BUN-by-BUN copy (by setting bunstocopy >=0) */
+	if (BATatoms[ht].atomFix || BATatoms[tt].atomFix) { /* oops, we need to fix/unfix atoms */
+		bunstocopy = cnt;
+	} else if (BATrestricted(b) == BAT_READ && !writeable) {
+		bn = VIEWcreate(b); /* case (1); create a view, possibly with different atom-types */
 		if (bn == NULL) return NULL;
 		if (ht != bn->htype) {
 			BAT *bm = BATmirror(bn);
@@ -672,12 +670,9 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
                 	bn->tseqbase = bm->hseqbase = b->tseqbase;
 		}
 	} else { 
-		/* check whether we need case (4); BUN-by-BUN copy (by setting bunstocopy >=0) */
 		if (ATOMsize(ht) != ATOMsize(b->htype) ||
 		    ATOMsize(tt) != ATOMsize(b->ttype)) /* oops, void materialization */
 		{
-			bunstocopy = cnt;
-		} else if (BATatoms[ht].atomFix || BATatoms[tt].atomFix) { /* oops, we need to fix/unfix atoms */
 			bunstocopy = cnt;
 		} else if (VIEWparent(b)) {
 			/* extra checks needed for views */
@@ -697,13 +692,13 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 		if (bn == NULL) return NULL;
 
 		if (ht == TYPE_void && tt == TYPE_void) {
-			/* case (2): a void,void result => nothing to copy! */
+			/* case (2): a void,void result */
 			bn->batBuns->free = cnt*BUNsize(bn);
 		} else if (bunstocopy < 0) {
 			/* case (3): just copy the heaps; if possible with copy-on-write VM support */
 			int remap = (writeable == 2) && (BATrestricted(b) != BAT_WRITE);
-			int hremap = remap && (ATOMstorage(ht) == TYPE_str) && !GDK_ELIMDOUBLES(b->hheap);
-			int tremap = remap && (ATOMstorage(tt) == TYPE_str) && !GDK_ELIMDOUBLES(b->theap);
+			int hremap = remap && (ATOMstorage(ht) == TYPE_str) && GDK_ELIMDOUBLES(b->hheap);
+			int tremap = remap && (ATOMstorage(tt) == TYPE_str) && GDK_ELIMDOUBLES(b->theap);
 			Heap hp, hhp, thp;
 			memset(&hp, 0, sizeof(Heap));
 			memset(&hhp, 0, sizeof(Heap));
@@ -731,15 +726,6 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 				BAT *bm = BATmirror(bn);
 				bn->hloc = bm->tloc = b->hloc;
 				bn->tloc = bm->hloc = b->tloc;
-			}
-			/* first/inserted must point equally far into the heap as in the source */
-			bn->batFirst = Bunbase(bn) + (b->batFirst - Bunbase(b));
-			bn->batInserted = Bunbase(bn) + (b->batInserted - Bunbase(b));
-
-			/* if we have copy-on-write heaps, bn is a logical view on b to ensure the heaps stay stable */
-			if (remap || hremap || tremap) {
-				bn->batLview = TRUE;
-				BBPshare(bn->batParentid = ABS(b->batCacheid));
 			}
 		} else if (BATatoms[ht].atomFix || BATatoms[tt].atomFix || (ht && tt) || ATOMstorage(MAX(ht,tt)) >= TYPE_str) {
 			/* case (4): one-by-one BUN insert (really slow) */
@@ -778,7 +764,7 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 			}
 		}
 		/* copy all properties (size+other) from the source bat */
-		BATsetcount(bn, cnt);
+		BATsetcount(bn, BATcount(b));
 	}
 	/* set properties (note that types may have changed in the copy) */	
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
@@ -893,22 +879,17 @@ This code assumes that new elements are appended to the BUN list.
 				bm->@2seqbase = *(oid*) @1;
 			} else if (*(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
 		 		b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
-				countonly=0;
 				if (b == NULL)
 					return b;
 			}
 		} else { 
 		 	b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
-			countonly=0;
-			if (b == NULL)
-				return b;
 		}
 	}
 @c
 BAT *
-BUNins(BAT *b, ptr h, ptr t, bit force)
+BUNins(BAT *b, ptr h, ptr t)
 {
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	BUN p;
 	BAT *bm;
 
@@ -931,7 +912,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 	} else {
 		size_t i;
 
-		ALIGNins(b, "BUNins", force);
+		ALIGNins(b, "BUNins");
 		b->batDirty = 1;
 		p = BUNlast(b);	/* insert at end */
 		i = BUNindex(b, p);
@@ -1033,12 +1014,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 				b->tkey = bm->hkey |= TRUE;
 			}
 		}
-		if (!countonly) {
-			bunfastins(b, h, t);
-		} else {
- 			b->batBuns->free += 1;
-			BATsetcount(b, b->batCount+1);
-		}
+		bunfastins(b, h, t);
 
 		/* first adapt the hashes; then the user-defined accelerators.
 		 * REASON: some accelerator updates (qsignature) use the hashes! 
@@ -1088,7 +1064,6 @@ BUNappend(BAT *b, ptr t, bit force)
 	BAT *bm;
 	ptr h = NULL;
 	oid id = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	BATcheck(b, "BUNappend");
 	bm = BBP_cache(-b->batCacheid);
@@ -1155,7 +1130,6 @@ BUNappend(BAT *b, ptr t, bit force)
 				int i = BATcount(b);
 
 				b = BATmaterializet(b, BATcount(b)+1);
-				countonly=0;
 				b->T->nodense = i;
 				b->tdense = FALSE;
 				if (b->tsorted & 1) {
@@ -1191,20 +1165,13 @@ BUNappend(BAT *b, ptr t, bit force)
 			b->tkey = bm->hkey |= b->tdense = TRUE;
 			b->tseqbase = bm->hseqbase = *(oid *) t;
 		} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-			if (*(oid*)t == oid_nil) {
+			if (*(oid*)t == oid_nil)
 				BATmaterializet(b, BATcount(b)+1);
-				countonly=0;
-			} else {
+			else 
 				b->tseqbase = bm->hseqbase = *(oid*)t;  
-			}
 		}
 	}
-	if (!countonly) {
-		bunfastins(b, h, t);
-	} else {
- 		b->batBuns->free += 1;
-		BATsetcount(b, b->batCount+1);
-	}
+	bunfastins(b, h, t);
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes! 
@@ -1485,7 +1452,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 	} else {
 		/* committed BUN */
 		BUNdelete(b, p);
-		if (BUNins(b, h, t, force) == NULL) {
+		if (BUNins(b, h, t) == NULL) {
 		      bunins_failed:
 			return NULL;
 		}
@@ -2184,29 +2151,7 @@ HEAPsetmmap(Heap *hp, int committed, int *remap)
 	return STORE_MMAP;
 }
 
-@= heap_unshare
-	if (b->@1->copied) {
-		Heap hp;
-		memset(&hp, 0, sizeof(Heap));
-		if (HEAPcopy(&hp, b->@1) < 0) {
-			GDKerror("%s: remapped @1 of %s could not be copied.\n", fcn, BATgetId(b));
-			return -1;
-		}
-		HEAPfree(b->@1);
-		*(b->@1) = hp;
-		b->@1->copied = 0;
-	}
 @c
-static int
-batunshare(BAT* b, str fcn) {
-	@:heap_unshare(batBuns)@
-	if (b->hheap) @:heap_unshare(hheap)@
-	if (b->theap) @:heap_unshare(theap)@
-	b->batLview = 0;
-	BBPunshare(b->batParentid);
-	return 0;
-}
-
 BAT *
 BATsetaccess(BAT *b, int mode)
 {
@@ -2226,9 +2171,9 @@ BATsetaccess(BAT *b, int mode)
 		int remap = FALSE;
 
 		/* copy-on-write isolated bats that are changed mode should be made independent */
-		if (b->batLview) {
-			if (batunshare(b, "BATsetaccess") < 0) return NULL;
-		}
+		@:check_copied(batBuns,BATsetaccess)@
+		if (b->hheap) @:check_copied(hheap,BATsetaccess)@
+		if (b->theap) @:check_copied(theap,BATsetaccess)@
 
 		if (b->batSharecnt && mode != BAT_READ) {
 			GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
@@ -2330,6 +2275,18 @@ need to do anything with heap modes yet at this point.
 			 ATOMname(b->htype), ATOMname(b->ttype));
 		return NULL;
 	}
+@= check_copied
+	if (b->@1->copied) {
+		Heap hp;
+		memset(&hp, 0, sizeof(Heap));
+		if (HEAPcopy(&hp, b->@1) < 0) {
+			GDKerror("@2: remapped @1 of %s could not be copied.\n", BATgetId(b));
+			return NULL;
+		}
+		HEAPfree(b->@1);
+		*(b->@1) = hp;
+		b->@1->copied = 0;
+	}
 @c
 BAT *
 BATmode(BAT *b, int mode)
@@ -2339,12 +2296,12 @@ BATmode(BAT *b, int mode)
 	if (mode != b->batPersistence) {
 		bat bid = ABS(b->batCacheid);
 
-		if (b->batLview) {
-			if (batunshare(b, "BATmode") < 0) return NULL;
-		}
 		if (mode == PERSISTENT) {
 			@:check_type(b->htype)@
 			@:check_type(b->ttype)@
+			@:check_copied(batBuns,BATmode)@
+			if (b->hheap) @:check_copied(hheap,BATmode)@
+			if (b->theap) @:check_copied(theap,BATmode)@
 		}
 		BBPdirty(1);
 

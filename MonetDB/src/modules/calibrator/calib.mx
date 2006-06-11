@@ -145,7 +145,7 @@ CMDcalib_info(BAT **retval)
 	if (!b)
 		return GDK_FAIL;
 	val = (calibInfo != 0);
-	b = BUNins(b, "ready", &val, FALSE);
+	b = BUNins(b, "ready", &val);
 
 	if (!calibInfo)
 		return GDK_SUCCEED;
@@ -155,75 +155,75 @@ CMDcalib_info(BAT **retval)
 
 	if (MHz != 0) {
 		val = MHz;
-		b = BUNins(b, "MHz", &val, FALSE);
+		b = BUNins(b, "MHz", &val);
 	}
 	val = maxrange;
-	b = BUNins(b, "maxrange", &val, FALSE);
+	b = BUNins(b, "maxrange", &val);
 #ifdef CALIBRATOR_CHECK_SMP
 /* SMP info */
 	val = calibInfo->smp.nrCpus;
-	b = BUNins(b, "nrCpus", &val, FALSE);
+	b = BUNins(b, "nrCpus", &val);
 #endif
 /* cpu info */
 	val = NSperIt(calibInfo->cache->latency1[0]);
-	b = BUNins(b, "cpuloop ns", &val, FALSE);
+	b = BUNins(b, "cpuloop ns", &val);
 	if (MHz != 0) {
 		val = cround(CYperIt(calibInfo->cache->latency1[0]));
-		b = BUNins(b, "cpuloop cc", &val, FALSE);
+		b = BUNins(b, "cpuloop cc", &val);
 	}
 	val = NSperIt(calibInfo->delayC);
-	b = BUNins(b, "cpu delay ns", &val, FALSE);
+	b = BUNins(b, "cpu delay ns", &val);
 	if (MHz != 0) {
 		val = cround(CYperIt(calibInfo->delayC));
-		b = BUNins(b, "cpu delay cc", &val, FALSE);
+		b = BUNins(b, "cpu delay cc", &val);
 	}
 /* cache info */
 	val = cache->levels;
-	b = BUNins(b, "cache levels", &val, FALSE);
+	b = BUNins(b, "cache levels", &val);
 	for (l = 0; l < cache->levels; l++) {
 		sprintf(fld, "cache %d size", l + 1);
 		val = cache->size[l];
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		sprintf(fld, "cache %d linesize", l + 1);
 		val = cache->linesize[l + 1];
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		sprintf(fld, "cache %d associativity", l + 1);
 		val = Asso->entries[l];
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		sprintf(fld, "cache %d miss-latency ns", l + 1);
 		val = NSperIt(cache->latency2[l + 1] - cache->latency2[l]);
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		if (MHz != 0) {
 			sprintf(fld, "cache %d miss-latency cc", l + 1);
 			val = cround(CYperIt(cache->latency2[l + 1] - cache->latency2[l]));
-			b = BUNins(b, fld, &val, FALSE);
+			b = BUNins(b, fld, &val);
 		}
 		sprintf(fld, "cache %d replace-time ns", l + 1);
 		val = NSperIt(cache->latency1[l + 1] - cache->latency1[l]);
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		if (MHz != 0) {
 			sprintf(fld, "cache %d replace-time cc", l + 1);
 			val = cround(CYperIt(cache->latency1[l + 1] - cache->latency1[l]));
-			b = BUNins(b, fld, &val, FALSE);
+			b = BUNins(b, fld, &val);
 		}
 	}
 /* TLB info */
 	val = TLB->levels;
-	b = BUNins(b, "TLB levels", &val, FALSE);
+	b = BUNins(b, "TLB levels", &val);
 	for (l = 0; l < TLB->levels; l++) {
 		sprintf(fld, "TLB %d entries", l + 1);
 		val = TLB->entries[l];
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		sprintf(fld, "TLB %d pagesize", l + 1);
 		val = TLB->pagesize[l + 1];
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		sprintf(fld, "TLB %d miss-latency ns", l + 1);
 		val = NSperIt(TLB->latency2[l + 1] - TLB->latency2[l]);
-		b = BUNins(b, fld, &val, FALSE);
+		b = BUNins(b, fld, &val);
 		if (MHz != 0) {
 			sprintf(fld, "TLB %d miss-latency cc", l + 1);
 			val = cround(CYperIt(TLB->latency2[l + 1] - TLB->latency2[l]));
-			b = BUNins(b, fld, &val, FALSE);
+			b = BUNins(b, fld, &val);
 		}
 	}
 	return GDK_SUCCEED;

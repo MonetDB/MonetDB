@@ -60,23 +60,22 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @{
 @c
-#define bunins(b,h,t) if (BUNins(b,h,t,force) == NULL) return NULL;
+#define bunins(b,h,t) if (BUNins(b,h,t) == NULL) return NULL;
 BAT *
-BATins(BAT *b, BAT *n, bit force)
+BATins(BAT *b, BAT *n)
 {
 	BAT *tmp = NULL, *res = NULL;
 	ssize_t needed = 0;
 	int fastpath = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
 	}
-	ALIGNins(b, "BATins", force);
+	ALIGNins(b, "BATins");
 	BATcompatible(b, n);
 
 	if (b->htype != TYPE_void && (b->ttype == TYPE_void || (!b->hhash && b->thash && ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
-		return BATmirror(BATins(BATmirror(b), BATmirror(n), force));
+		return BATmirror(BATins(BATmirror(b), BATmirror(n)));
 	}
 
 	if (b->htype == TYPE_void && b->hseqbase != oid_nil) {
@@ -88,21 +87,6 @@ BATins(BAT *b, BAT *n, bit force)
 			BATmirror(b)->tseqbase = h;
 		} else if ((t + 1) != h || !BAThdense(n)) {
 			b = BATmaterialize(b, BATcount(b) + BATcount(n));
-			countonly=0;
-			if (b == NULL)
-				return NULL;
-		}
-	}
-	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-		oid t = *(oid *) BUNtail(b, BUNlast(b) - BUNsize(b));
-		oid h = *(oid *) BUNtail(n, BUNfirst(n));
-
-		if (BATcount(b) == 0 && (BATcount(n) == 1 || BATtdense(n))) {
-			b->tseqbase = h;
-			BATmirror(b)->hseqbase = h;
-		} else if ((t + 1) != h || !BATtdense(n)) {
-			b = BATmaterializet(b, BATcount(b) + BATcount(n));
-			countonly=0;
 			if (b == NULL)
 				return NULL;
 		}
@@ -194,10 +178,7 @@ BATins(BAT *b, BAT *n, bit force)
 				b->T->nodense = idx;
 			}
 		}
-		if (countonly) {
- 			b->batBuns->free += n->batCount;
-			BATsetcount(b, b->batCount + n->batCount);
-		} else if (b->htype == TYPE_void) {
+		if (b->htype == TYPE_void) {
 			BATloopFast(n, p, q, xx) {
 				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy);
 				r += yy;
@@ -235,7 +216,6 @@ BATappend(BAT *b, BAT *n, bit force)
 	ssize_t sz = BATcount(n);
 	ssize_t needed = 0;
 	int fastpath = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (b == NULL || n == NULL || sz == 0) {
 		return b;
@@ -248,7 +228,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		fastpath = 1;
 
 	needed = sz - (((b)->batBuns->size - (b)->batBuns->free) / BUNsize(b));
-	if (!countonly && needed > 0) {
+	if (needed > 0) {
 		/* if needed exceeds a normal growth extend just with needed */
 		size_t ncap = BATcapacity(b) + needed;
 		size_t grows = BATgrows(b);
@@ -1646,7 +1626,7 @@ BAThashsplit(BAT *b, size_t n, int unary)
 		return NULL;
 	bn = unary ? VIEWhead_(b, b->batRestricted) : b;
 	if (n <= 1) {
-		if (BUNins(metabat, &i, &bn->batCacheid, FALSE) == NULL)
+		if (BUNins(metabat, &i, &bn->batCacheid) == NULL)
 			goto bunins_failed;
 	} else {
 		BUN p, q;
@@ -1662,7 +1642,7 @@ BAThashsplit(BAT *b, size_t n, int unary)
 				BBPreclaim(metabat);
 				return NULL;
 			}
-			if (BUNins(metabat, &i, &bf->batCacheid, FALSE) == NULL)
+			if (BUNins(metabat, &i, &bf->batCacheid) == NULL)
 				goto bunins_failed;
 		}
 		@:updateloop(metabat,b,BUNhash)@
@@ -1769,7 +1749,7 @@ CASE 1: just one bucket.
 This is done without copying b.
 @c
 	if (n <= 1) {
-		if (BUNins(metabat, nilval, &bn->batCacheid, FALSE) == NULL)
+		if (BUNins(metabat, nilval, &bn->batCacheid) == NULL)
 			goto bunins_failed;
 
 @-
@@ -1793,7 +1773,7 @@ of binary search.
 				h = BUNindex(b, r) - o;
 			}
 			bf = BATslice(bn, l, h);	/* produces view bat */
-			if (BUNins(metabat, seps[yy], &bf->batCacheid, FALSE) == NULL)
+			if (BUNins(metabat, seps[yy], &bf->batCacheid) == NULL)
 				goto bunins_failed;
 		}
 
@@ -1846,7 +1826,7 @@ that this routine also works efficiently on many buckets.
 				BBPreclaim(metabat);
 				return NULL;
 			}
-			if (BUNins(metabat, seps[yy], &bats[yy]->batCacheid, FALSE) == NULL)
+			if (BUNins(metabat, seps[yy], &bats[yy]->batCacheid) == NULL)
 				goto bunins_failed;
 		}
 		switch (tpe = ATOMstorage(b->ttype)) {
@@ -2178,7 +2158,7 @@ hash- and a merge-algorithms.
 				goto bunins_failed;
 			HASHloop@2(bn, bn->hhash, tt, v, r)
 				goto found@3@2;
-			if (BUNins(bn, v, &yy, FALSE) == NULL)
+			if (BUNins(bn, v, &yy) == NULL)
 				goto bunins_failed;
 			r = BUNlast(bn) - BUNsize(bn);
 found@3@2:		(*(int*) BUNtloc(bn,r))++;

@@ -301,7 +301,7 @@ BATprev(BAT *b)
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batInserted; p = BUNnext(b, p)) {
-		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p), FALSE) == NULL) {
+		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -329,7 +329,7 @@ BATalpha(BAT *b)
 		return bn;
 	}
 	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
-		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p), FALSE) == NULL) {
+		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -358,7 +358,7 @@ BATdelta(BAT *b)
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p), FALSE) == NULL) {
+		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}

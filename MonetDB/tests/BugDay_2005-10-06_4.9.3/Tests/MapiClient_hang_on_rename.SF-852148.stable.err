@@ -68,9 +68,12 @@ stderr of test 'MapiClient_hang_on_rename.SF-852148` in directory 'tests/BugDay_
 # 14:59:36 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --host=localhost --port=30816 < MapiClient_hang_on_rename.SF-852148.milC
 # 14:59:36 >  
 
-MAPI  = monetdb@localhost:33066
+MAPI  = monetdb@localhost:34194
 QUERY = var b:= new(int,int).rename("a");
-ERROR = !ERROR: rename(<tmp_42>,a): operation failed
+ERROR = !ERROR: rename(<tmp_45>,a): operation failed
+
+
+
 
 # 14:59:36 >  
 # 14:59:36 >  Done.

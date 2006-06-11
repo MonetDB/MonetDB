@@ -219,7 +219,7 @@ yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 YYSTREE
 Myynode(int tok, int tpe)
 {
-	YYSTREE t = (YYSTREE) GDKmalloc(sizeof(yystree));
+	YYSTREE t = (YYSTREE) GDKmalloc(sizeof(*t));
         YYNODE(t, tok, tpe, 0, sizeof(yystree), YYMAXSONS, 1, 1);
 	return t;
 }

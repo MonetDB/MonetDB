@@ -26,6 +26,7 @@ commands::
  cd MinGW
  ../configure --host=i386-pc-mingw32 \
               CC='gcc -mwin32 -mno-cygwin' \
+              CXX='g++ -mwin32 -mno-cygwin' \
               --enable-utf8 \
               --prefix="$HOME/MinGW"
  make

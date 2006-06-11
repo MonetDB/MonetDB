@@ -221,79 +221,79 @@ WISCgenerator(str nme,		/* string: pointer to char. */
 
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		b[0] = BUNins(b[0], &u2, &u1, FALSE);
+		b[0] = BUNins(b[0], &u2, &u1);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u2;
-		b[1] = BUNins(b[1], &u2, &tmp, FALSE);
+		b[1] = BUNins(b[1], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 2;
-		b[2] = BUNins(b[2], &u2, &tmp, FALSE);
+		b[2] = BUNins(b[2], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 4;
-		b[3] = BUNins(b[3], &u2, &tmp, FALSE);
+		b[3] = BUNins(b[3], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 10;
-		b[4] = BUNins(b[4], &u2, &tmp, FALSE);
+		b[4] = BUNins(b[4], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 20;
-		b[5] = BUNins(b[5], &u2, &tmp, FALSE);
+		b[5] = BUNins(b[5], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 100;
-		b[6] = BUNins(b[6], &u2, &tmp, FALSE);
+		b[6] = BUNins(b[6], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 10;
-		b[7] = BUNins(b[7], &u2, &tmp, FALSE);
+		b[7] = BUNins(b[7], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 5;
-		b[8] = BUNins(b[8], &u2, &tmp, FALSE);
+		b[8] = BUNins(b[8], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 2;
-		b[9] = BUNins(b[9], &u2, &tmp, FALSE);
+		b[9] = BUNins(b[9], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1;
-		b[10] = BUNins(b[10], &u2, &tmp, FALSE);
+		b[10] = BUNins(b[10], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 50 * 2;
-		b[11] = BUNins(b[11], &u2, &tmp, FALSE);
+		b[11] = BUNins(b[11], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1 % 50 * 2 + 1;
-		b[12] = BUNins(b[12], &u2, &tmp, FALSE);
+		b[12] = BUNins(b[12], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		/* (void) malloc(20); */
-		b[13] = BUNins(b[13], &u2, rndStr(u1), FALSE);
+		b[13] = BUNins(b[13], &u2, rndStr(u1));
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		b[14] = BUNins(b[14], &u2, rndStr((int) u2), FALSE);
+		b[14] = BUNins(b[14], &u2, rndStr((int) u2));
 	}
 	for (u2 = 0; u2 != count; u2++) {
-		b[15] = BUNins(b[15], &u2, rnd4Str(u2), FALSE);
+		b[15] = BUNins(b[15], &u2, rnd4Str(u2));
 	}
 	free(rnd);
 	free(rndstr);

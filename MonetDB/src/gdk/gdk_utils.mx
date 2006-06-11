@@ -120,16 +120,16 @@ static int
 GDKenvironment(str dbname, str dbfarm)
 {
 	if (dbname == 0) {
-		fprintf(stderr, "!GDKenvironment: database name missing.\n");
+		fprintf(stderr, "GDKenvironment: database name missing.\n");
 		return 0;
 	}
 	if (dbfarm == 0) {
-		fprintf(stderr, "!GDKenvironment: dbfarm missing.\n");
+		fprintf(stderr, "GDKenvironment: dbfarm missing.\n");
 		return 0;
 	}
 
 	if (!MT_path_absolute(dbfarm)) {
-		fprintf(stderr, "!GDKenvironment: wrong directory %s.\n", dbfarm);
+		fprintf(stderr, "GDKenvironment: wrong directory %s.\n", dbfarm);
 		return 0;
 	}
 
@@ -174,7 +174,7 @@ gdk_export void GDKsetenv(str name, str value);
 void
 GDKsetenv(str name, str value)
 {
-	BUNins(GDKenv, name, value, FALSE);
+	BUNins(GDKenv, name, value);
 	BATfakeCommit(GDKenv);
 }
 
@@ -661,7 +661,7 @@ GDKmemchk(int memchk, int vmchk)
 
 		if (!printing[tid - 1]) {
 			printing[tid - 1] = TRUE;
-			THRprintf(GDKerr, "!GDKmemchk (memcur=" SZFMT ",memmax=" SZFMT ") (vmcur=" SZFMT ",vmmax=" SZFMT ")\n", memtarget, GDK_mem_maxsize, GDKvm_cursize(), GDK_vm_maxsize);
+			THRprintf(GDKerr, "GDKmemchk (memcur=" SZFMT ",memmax=" SZFMT ") (vmcur=" SZFMT ",vmmax=" SZFMT ")\n", memtarget, GDK_mem_maxsize, GDKvm_cursize(), GDK_vm_maxsize);
 			printing[tid - 1] = FALSE;
 		}
 	}
@@ -992,7 +992,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 	if (GDKthreadLock)
 		gdk_set_lock(GDKthreadLock, "GDKmemfail");
-	THRprintf(GDKerr, "!%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKerr, "%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	GDKdebug |= 4;
 	if (GDKthreadLock)
@@ -1003,7 +1003,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 	if (GDKthreadLock)
 		gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug, bak);
-	THRprintf(GDKerr, "!%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKerr, "%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	if (GDKthreadLock)
 		gdk_unset_lock(GDKthreadLock, "GDKmemfail");
@@ -1078,7 +1078,7 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 			MT_alloc_print();
 			GDKfatal("GDKmallocmax: failed for %u bytes", size);
 		} else {
-			THRprintf(GDKerr, "!GDKmallocmax: recovery ok. Continuing..\n");
+			THRprintf(GDKerr, "GDKmallocmax: recovery ok. Continuing..\n");
 		}
 	}
 	*maxsize = size;
@@ -1263,7 +1263,7 @@ GDKmmap(char *path, int mode, off_t off, size_t len, void *fixed)
 		GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
 		ret = MT_mmap(path, mode, off, len, fixed);
 		if (ret != (void *) -1L) {
-			THRprintf(GDKerr, "!GDKmmap: recovery ok. Continuing..\n");
+			THRprintf(GDKerr, "GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
 	if (ret != (void *) -1L) {
@@ -1307,7 +1307,7 @@ GDKvmalloc(size_t size, size_t * maxsize, int emergency)
 			MT_alloc_print();
 			GDKfatal("GDKvmalloc: failed for %u bytes", size);
 		} else {
-			THRprintf(GDKerr, "!GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
+			THRprintf(GDKerr, "GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
 		}
 	}
 	if (ret != NULL) {
@@ -1331,7 +1331,7 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 			MT_alloc_print();
 			GDKfatal("GDKvrealloc: failed for %u bytes (from %u)", newsize, oldsize);
 		} else {
-			THRprintf(GDKerr, "!GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
+			THRprintf(GDKerr, "GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
 		}
 	}
 	if (ret != NULL) {
@@ -1413,7 +1413,7 @@ GDKvmtrim(void *limit)
 		MT_sleep_ms(wait?5000:500);
 		MEMDEBUG {
 			fp = GDKerr;
-			THRprintf(fp, "!GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
+			THRprintf(fp, "GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
 		}
 		wait = !MT_mmap_trim(*(size_t *) limit, fp);
 	} while (!GDKstopped);
@@ -2033,8 +2033,8 @@ THRnew(MT_Id pid, str name)
 		s->cleanup = NULL;
 		s->sp = THRsp();
 
-		PARDEBUG THRprintf(GDKerr, "!%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
-		PARDEBUG THRprintf(GDKerr, "!nrofthreads %d\n", GDKnrofthreads);
+		PARDEBUG THRprintf(GDKerr, "%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
+		PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
 		MT_alloc_register(&tid, 1, (char) ('0' + ((int) tid) - 1));
@@ -2055,7 +2055,7 @@ THRdel(Thread t)
 	if (t->cleanup) {
 		(*t->cleanup) (t);
 	}
-	PARDEBUG THRprintf(GDKerr, "!pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
+	PARDEBUG THRprintf(GDKerr, "pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 	t->pid = 0;
 	GDKnrofthreads--;
 	gdk_unset_lock(GDKthreadLock, "THRdel");

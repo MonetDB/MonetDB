@@ -1210,20 +1210,20 @@ insB_impl(int *res, str Str1, int *clk, struct tms *t, struct rusage *ru, struct
 	p = (BUN) BUNfnd(BATmirror(Mprof_name_bat), Str1);
 	if (p == 0) {
 		o = Mprof_oid++;
-		BUNins(Mprof_name_bat, &o, Str1, FALSE);
+		BUNins(Mprof_name_bat, &o, Str1);
 		p = (BUN) BUNfnd(BATmirror(Mprof_name_bat), Str1);
 	}
 	o = *(int *) BUNhead(Mprof_name_bat, p);
 	i = Mprof_count++;
-	BUNins(Mprof_interval_bat, &o, &i, FALSE);
-	BUNins(Mprof_Bclk_bat, &i, clk, FALSE);
-	BUNins(Mprof_Eclk_bat, &i, clk, FALSE);
-	BUNins(Mprof_Bcpu_bat, &i, t, FALSE);
-	BUNins(Mprof_Ecpu_bat, &i, t, FALSE);
-	BUNins(Mprof_Bio_bat, &i, ru, FALSE);
-	BUNins(Mprof_Eio_bat, &i, ru, FALSE);
-	BUNins(Mprof_Bmem_bat, &i, m, FALSE);
-	BUNins(Mprof_Emem_bat, &i, m, FALSE);
+	BUNins(Mprof_interval_bat, &o, &i);
+	BUNins(Mprof_Bclk_bat, &i, clk);
+	BUNins(Mprof_Eclk_bat, &i, clk);
+	BUNins(Mprof_Bcpu_bat, &i, t);
+	BUNins(Mprof_Ecpu_bat, &i, t);
+	BUNins(Mprof_Bio_bat, &i, ru);
+	BUNins(Mprof_Eio_bat, &i, ru);
+	BUNins(Mprof_Bmem_bat, &i, m);
+	BUNins(Mprof_Emem_bat, &i, m);
 	*res = i;
 	return GDK_SUCCEED;
 }
@@ -1321,7 +1321,7 @@ pmTag_impl(str Str1,		/* string: pointer to char. */
 	}
 	i = *(int *) BUNtloc(Mprof_interval_bat, p);
 
-	BUNins(Mprof_tag_bat, &i, Str2, FALSE);
+	BUNins(Mprof_tag_bat, &i, Str2);
 	return GDK_SUCCEED;
 }
 

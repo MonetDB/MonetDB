@@ -853,20 +853,19 @@ typedef struct {
 typedef struct {
 	MT_Id tid;		/* which thread created it */
 	int stamp;		/* BAT recent creation stamp */
-	unsigned int
-	    copiedtodisk:1,	/* once written */
-	    dirty:2,		/* dirty wrt disk? */
-	    dirtyflushed:1,	/* was dirty before commt started? */
-	    descdirty:1,	/* bat descriptor dirty marker */
-	    bunsdirty:1,	/* bun heap dirty marker */
-	    lview:1,		/* bat is a *logical* view on parentid */
-	    unused:25;		/* value=0 for now */
+
+	sht persistence;	/* should the BAT persist on disk? */
+	chr dirtyflushed;	/* saved dirty marker */
+	chr copiedtodisk;	/* once written */
 	chr set;		/* real set semantics */
 	chr restricted;		/* access priviliges */
-	sht persistence;	/* should the BAT persist on disk? */
-	int sharecnt;		/* incoming view count */
+	chr dirty;		/* general dirty marker */
+	chr descdirty;		/* bat descriptor dirty marker */
+	chr bunsdirty;		/* bun heap dirty marker */
+	chr sharecnt;		/* VIEW share count */
 	bat parentid;		/* cache id of VIEW parent bat */
-	bit map_dirty;		/* new mmap mode present */
+
+	char map_dirty;		/* new mmap mode present */
 	char map_buns;		/* mmap mode for bun heap */
 	char map_hheap;		/* mmap mode for head atom heap */
 	char map_theap;		/* mmap mode for tail atom heap */
@@ -949,7 +948,6 @@ typedef int (*GDKfcn) ();
 #define batDirtyflushed	P->dirtyflushed
 #define batDirty	P->dirty
 #define batConvert	P->convert
-#define batDirtyflushed P->dirtyflushed
 #define batDirtydesc	P->descdirty
 #define batDirtybuns	P->bunsdirty
 #define hheapdirty	H->heapdirty
@@ -959,7 +957,6 @@ typedef int (*GDKfcn) ();
 #define batDeleted	U->deleted
 #define batCount	U->count
 #define batParentid	P->parentid
-#define batLview	P->lview
 #define batStamp	P->stamp
 #define batSharecnt	P->sharecnt
 #define batRestricted	P->restricted
@@ -1147,13 +1144,13 @@ gdk_export int BBPreclaim(BAT *b);
 @- BUN manipulation
 @multitable @columnfractions 0.08 0.7
 @item BAT*
-@tab BATins (BAT *b, ptr *c, bit force)
+@tab BATins (BAT *b, ptr *c)
 @item BAT*
 @tab BATappend (BAT *b, ptr *c, bit force)
 @item BAT*
 @tab BATdel (BAT *b, ptr *c)
 @item BAT*
-@tab BUNins (BAT *b, ptr left, ptr right, bit force)
+@tab BUNins (BAT *b, ptr left, ptr right)
 @item BAT*
 @tab BUNappend (BAT *b, ptr right, bit force)
 @item BAT*
@@ -1257,9 +1254,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 	}
 
 gdk_export BAT *BUNfastins(BAT *b, ptr left, ptr right);
-gdk_export BAT *BUNins(BAT *b, ptr left, ptr right, bit force);
+gdk_export BAT *BUNins(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNappend(BAT *b, ptr right, bit force);
-gdk_export BAT *BATins(BAT *b, BAT *c, bit force);
+gdk_export BAT *BATins(BAT *b, BAT *c);
 gdk_export BAT *BATappend(BAT *b, BAT *c, bit force);
 gdk_export BAT *BUNdel(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNdelHead(BAT *b, ptr left);
@@ -1535,15 +1532,18 @@ expected usage pattern of the memory in a heap.
 @{
 @h
 /* Heap storage modes */
+#define STORE_MODEMASK	0xFF	/* mask for below bits */
 #define STORE_MEM	0	/* load into GDKmalloced memory */
 #define STORE_MMAP	1	/* mmap() into virtual memory */
 #define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
-#define STORE_UNSET	((char)-1)/* no mode specified */
 
 /* page size for non-linear mmaps */
 #define REMAP_PAGE_BITS 16
 #define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
 #define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
+
+/* Flags to be ORed into above mode bits */
+#define STORE_VARSIZE	0x100	/* variable sized */
 
 /* Buffer management advise for heaps */
 #define BUF_NORMAL	0	/* No further special treatment */
@@ -1662,7 +1662,7 @@ gdk_export void GDKqsort_rev(void *a, void *base, size_t n, int width, int tpe, 
 #define BAThkey(b)	(b->hkey != FALSE || BAThdense(b))
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
-#define BATsetcount(b,cnt)	((b)->batCount = (cnt),(b)->batDirtydesc = TRUE)
+#define BATsetcount(b,cnt)	((b)->batCount = cnt, (b)->batDirtydesc = TRUE)
 @
 @}
 
@@ -2623,7 +2623,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
 #define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
-#define ALIGNins(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
+#define ALIGNins(x,y)	{VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
 #define ALIGNdel(x,y)	{VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
 #define ALIGNinp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; }
 #define ALIGNapp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; }
@@ -2646,8 +2646,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * for the reversed view. A special case are the VIEWcombine bats, these
  * always refer to the same parent column (i.e. no correction needed)
  */
-#define VIEWparent(x)	((x)->batLview?0:\
-                         ((x)->H == (x)->T || (x)->batCacheid >= 0)?(x)->batParentid:-(x)->batParentid)
+#define VIEWparent(x)	(((x)->H == (x)->T || (x)->batCacheid >= 0)?\
+				(x)->batParentid:-(x)->batParentid)
 
 /* VIEWparentcol(b) tells whether the head column was inherited from the parent
  * "as is". We must check whether the type was not overridden in the view.

@@ -384,31 +384,31 @@ oo7genAssembly(int mod_oid, int level)
 
 		ba_oid = NEWOID;
 
-		BaseAssembly = BUNins(BaseAssembly, &ba_oid, &ba_oid, FALSE);
+		BaseAssembly = BUNins(BaseAssembly, &ba_oid, &ba_oid);
 		d = RandomBaId();
-		BaseAssembly_id = BUNins(BaseAssembly_id, &ba_oid, &d, FALSE);
+		BaseAssembly_id = BUNins(BaseAssembly_id, &ba_oid, &d);
 		s = RandomBaType();
-		BaseAssembly_type = BUNins(BaseAssembly_type, &ba_oid, s, FALSE);
+		BaseAssembly_type = BUNins(BaseAssembly_type, &ba_oid, s);
 		d = RandomBaBuildDate();
-		BaseAssembly_buildDate = BUNins(BaseAssembly_buildDate, &ba_oid, &d, FALSE);
+		BaseAssembly_buildDate = BUNins(BaseAssembly_buildDate, &ba_oid, &d);
 
 		/* private components: work to be done (see page 9 from spec) */
 
 		/* BaseAssembly -- priv -- CompositePart */
 
 		for (i = 0; i < NumCompPerAssm; i++)
-			priv = BUNins(priv, &ba_oid, &cp_oids[rand() % NumCompPerModule], FALSE);
+			priv = BUNins(priv, &ba_oid, &cp_oids[rand() % NumCompPerModule]);
 
 		/* shared components */
 
 		/* BaseAssembly -- shar -- CompositePart */
 
 		for (i = 0; i < NumCompPerAssm; i++)
-			shar = BUNins(shar, &ba_oid, &cp_oids[rand() % NumCompPerModule], FALSE);
+			shar = BUNins(shar, &ba_oid, &cp_oids[rand() % NumCompPerModule]);
 
 		/* Module -- assemblies -- Assembly */
 
-		assemblies = BUNins(assemblies, &mod_oid, &ba_oid, FALSE);
+		assemblies = BUNins(assemblies, &mod_oid, &ba_oid);
 
 		return (ba_oid);
 
@@ -418,22 +418,22 @@ oo7genAssembly(int mod_oid, int level)
 
 		cpa_oid = NEWOID;
 
-		ComplexAssembly = BUNins(ComplexAssembly, &cpa_oid, &cpa_oid, FALSE);
+		ComplexAssembly = BUNins(ComplexAssembly, &cpa_oid, &cpa_oid);
 		d = RandomCpaId();
-		ComplexAssembly_id = BUNins(ComplexAssembly_id, &cpa_oid, &d, FALSE);
+		ComplexAssembly_id = BUNins(ComplexAssembly_id, &cpa_oid, &d);
 		s = RandomCpaType();
-		ComplexAssembly_type = BUNins(ComplexAssembly_type, &cpa_oid, s, FALSE);
+		ComplexAssembly_type = BUNins(ComplexAssembly_type, &cpa_oid, s);
 		d = RandomCpaBuildDate();
-		ComplexAssembly_buildDate = BUNins(ComplexAssembly_buildDate, &cpa_oid, &d, FALSE);
+		ComplexAssembly_buildDate = BUNins(ComplexAssembly_buildDate, &cpa_oid, &d);
 
 		for (i = 0; i < NumAssmPerAssm; i++) {
 			child_ass_oid = oo7genAssembly(mod_oid, level - 1);
-			subass = BUNins(subass, &cpa_oid, &child_ass_oid, FALSE);
+			subass = BUNins(subass, &cpa_oid, &child_ass_oid);
 		}
 
 		/* Module -- assemblies -- Assembly */
 
-		assemblies = BUNins(assemblies, &mod_oid, &cpa_oid, FALSE);
+		assemblies = BUNins(assemblies, &mod_oid, &cpa_oid);
 
 		return (cpa_oid);
 	}
@@ -623,29 +623,29 @@ oo7_create(str par)
 		cp_oid = NEWOID;
 		cp_oids[i] = cp_oid;
 
-		CompositePart = BUNins(CompositePart, &cp_oid, &cp_oid, FALSE);
+		CompositePart = BUNins(CompositePart, &cp_oid, &cp_oid);
 		d = RandomCpId();
-		CompositePart_id = BUNins(CompositePart_id, &cp_oid, &d, FALSE);
+		CompositePart_id = BUNins(CompositePart_id, &cp_oid, &d);
 		d = RandomCpBuildDate();
-		CompositePart_buildDate = BUNins(CompositePart_buildDate, &cp_oid, &d, FALSE);
+		CompositePart_buildDate = BUNins(CompositePart_buildDate, &cp_oid, &d);
 		s = RandomType();
-		CompositePart_type = BUNins(CompositePart_type, &cp_oid, s, FALSE);
+		CompositePart_type = BUNins(CompositePart_type, &cp_oid, s);
 
 		/* Generate a Document */
 
 		doc_oid = NEWOID;
 
-		Document = BUNins(Document, &doc_oid, &doc_oid, FALSE);
+		Document = BUNins(Document, &doc_oid, &doc_oid);
 		d = RandomDocId();
-		Document_id = BUNins(Document_id, &doc_oid, &d, FALSE);
+		Document_id = BUNins(Document_id, &doc_oid, &d);
 		s = RandomTitle();
-		Document_title = BUNins(Document_title, &doc_oid, s, FALSE);
+		Document_title = BUNins(Document_title, &doc_oid, s);
 		s = RandomDocText();
-		Document_text = BUNins(Document_text, &doc_oid, s, FALSE);
+		Document_text = BUNins(Document_text, &doc_oid, s);
 
 		/* CompositePart --- doc --- Document */
 
-		doc = BUNins(doc, &cp_oid, &doc_oid, FALSE);
+		doc = BUNins(doc, &cp_oid, &doc_oid);
 
 		/* Generating the Atomic parts */
 
@@ -654,29 +654,29 @@ oo7_create(str par)
 			atom_oid = NEWOID;
 			atom_oids[j] = atom_oid;
 
-			AtomicPart = BUNins(AtomicPart, &atom_oid, &atom_oid, FALSE);
+			AtomicPart = BUNins(AtomicPart, &atom_oid, &atom_oid);
 			d = RandomAtomId();
-			AtomicPart_id = BUNins(AtomicPart_id, &atom_oid, &d, FALSE);
+			AtomicPart_id = BUNins(AtomicPart_id, &atom_oid, &d);
 			d = RandomAtomX();
-			AtomicPart_x = BUNins(AtomicPart_x, &atom_oid, &d, FALSE);
+			AtomicPart_x = BUNins(AtomicPart_x, &atom_oid, &d);
 			d = RandomAtomY();
-			AtomicPart_y = BUNins(AtomicPart_y, &atom_oid, &d, FALSE);
+			AtomicPart_y = BUNins(AtomicPart_y, &atom_oid, &d);
 			s = RandomAtomType();
-			AtomicPart_type = BUNins(AtomicPart_type, &atom_oid, s, FALSE);
+			AtomicPart_type = BUNins(AtomicPart_type, &atom_oid, s);
 			d = RandomAtomDocId();
-			AtomicPart_docId = BUNins(AtomicPart_docId, &atom_oid, &d, FALSE);
+			AtomicPart_docId = BUNins(AtomicPart_docId, &atom_oid, &d);
 			d = RandomAtomBuildDate();
-			AtomicPart_buildDate = BUNins(AtomicPart_buildDate, &atom_oid, &d, FALSE);
+			AtomicPart_buildDate = BUNins(AtomicPart_buildDate, &atom_oid, &d);
 
 			/* CompositePart -- parts -- AtomicPart */
 
-			parts = BUNins(parts, &cp_oid, &atom_oid, FALSE);
+			parts = BUNins(parts, &cp_oid, &atom_oid);
 		}
 
 		/* One Atomic Part is rootPart for a Composite Part */
 		/* CompositePart -- rootPart -- AtomicPart */
 
-		rootPart = BUNins(rootPart, &cp_oid, &atom_oids[rand() % NumAtomicPerComp], FALSE);
+		rootPart = BUNins(rootPart, &cp_oid, &atom_oids[rand() % NumAtomicPerComp]);
 
 		/* Generate the Connections */
 
@@ -688,19 +688,19 @@ oo7_create(str par)
 
 			conn_oid = NEWOID;
 
-			Connection = BUNins(Connection, &conn_oid, &conn_oid, FALSE);
+			Connection = BUNins(Connection, &conn_oid, &conn_oid);
 			s = RandomConnType();
-			Connection_type = BUNins(Connection_type, &conn_oid, s, FALSE);
+			Connection_type = BUNins(Connection_type, &conn_oid, s);
 			d = RandomConnLen();
-			Connection_length = BUNins(Connection_length, &conn_oid, &d, FALSE);
+			Connection_length = BUNins(Connection_length, &conn_oid, &d);
 
 			/* Connection -- from -- AtomicPart */
 
-			from = BUNins(from, &conn_oid, &atom_oids[j], FALSE);
+			from = BUNins(from, &conn_oid, &atom_oids[j]);
 
 			/* Connection -- to -- AtomicPart */
 
-			to = BUNins(to, &conn_oid, &atom_oids[(j + 1) % NumAtomicPerComp], FALSE);
+			to = BUNins(to, &conn_oid, &atom_oids[(j + 1) % NumAtomicPerComp]);
 		}
 
 		/* SECOND: Add random connection  (2,5 or 8 to go) */
@@ -712,19 +712,19 @@ oo7_create(str par)
 
 				conn_oid = NEWOID;
 
-				Connection = BUNins(Connection, &conn_oid, &conn_oid, FALSE);
+				Connection = BUNins(Connection, &conn_oid, &conn_oid);
 				s = RandomConnType();
-				Connection_type = BUNins(Connection_type, &conn_oid, s, FALSE);
+				Connection_type = BUNins(Connection_type, &conn_oid, s);
 				d = RandomConnLen();
-				Connection_length = BUNins(Connection_length, &conn_oid, &d, FALSE);
+				Connection_length = BUNins(Connection_length, &conn_oid, &d);
 
 				/* Connection -- from -- AtomicPart */
 
-				from = BUNins(from, &conn_oid, &atom_oids[j], FALSE);
+				from = BUNins(from, &conn_oid, &atom_oids[j]);
 
 				/* Connection -- to -- AtomicPart */
 
-				to = BUNins(to, &conn_oid, &atom_oids[rand() % NumAtomicPerComp], FALSE);
+				to = BUNins(to, &conn_oid, &atom_oids[rand() % NumAtomicPerComp]);
 
 			}
 	}
@@ -737,36 +737,36 @@ oo7_create(str par)
 
 		/* Module class, attributes */
 
-		Module = BUNins(Module, &mod_oid, &mod_oid, FALSE);
+		Module = BUNins(Module, &mod_oid, &mod_oid);
 		d = RandomModId();
-		Module_id = BUNins(Module_id, &mod_oid, &d, FALSE);
+		Module_id = BUNins(Module_id, &mod_oid, &d);
 		d = RandomModBuildDate();
-		Module_buildDate = BUNins(Module_buildDate, &mod_oid, &d, FALSE);
+		Module_buildDate = BUNins(Module_buildDate, &mod_oid, &d);
 		s = RandomModType();
-		Module_type = BUNins(Module_type, &mod_oid, s, FALSE);
+		Module_type = BUNins(Module_type, &mod_oid, s);
 
 		/* Module -- designRoot -- ComplexAssembly) */
 
-		designRoot = BUNins(designRoot, &mod_oid, &top_ass_oid, FALSE);
+		designRoot = BUNins(designRoot, &mod_oid, &top_ass_oid);
 
 		/* Manual class, attributes */
 
 		man_oid = NEWOID;
 
-		Manual = BUNins(Manual, &man_oid, &man_oid, FALSE);
+		Manual = BUNins(Manual, &man_oid, &man_oid);
 		s = RandomTitle();
-		Manual_title = BUNins(Manual_title, &man_oid, s, FALSE);
+		Manual_title = BUNins(Manual_title, &man_oid, s);
 		d = RandomManId();
-		Manual_id = BUNins(Manual_id, &man_oid, &d, FALSE);
+		Manual_id = BUNins(Manual_id, &man_oid, &d);
 
 		s = RandomManText();
-		Manual_text = BUNins(Manual_text, &man_oid, s, FALSE);
+		Manual_text = BUNins(Manual_text, &man_oid, s);
 
-		Manual_textLen = BUNins(Manual_textLen, &man_oid, &ManualSize, FALSE);
+		Manual_textLen = BUNins(Manual_textLen, &man_oid, &ManualSize);
 
 		/* Module -- man -- Manual */
 
-		man = BUNins(man, &mod_oid, &man_oid, FALSE);
+		man = BUNins(man, &mod_oid, &man_oid);
 	}
 
 	GDKfree(rtype);
@@ -784,13 +784,13 @@ oo7_create(str par)
 
 	/* Construction of the super class BATS */
 
-	BATins(Assembly, BaseAssembly, FALSE);
-	BATins(Assembly, ComplexAssembly, FALSE);
+	BATins(Assembly, BaseAssembly);
+	BATins(Assembly, ComplexAssembly);
 
-	BATins(DesignObj, AtomicPart, FALSE);
-	BATins(DesignObj, CompositePart, FALSE);
-	BATins(DesignObj, Assembly, FALSE);
-	BATins(DesignObj, Module, FALSE);
+	BATins(DesignObj, AtomicPart);
+	BATins(DesignObj, CompositePart);
+	BATins(DesignObj, Assembly);
+	BATins(DesignObj, Module);
 
 	return (1);
 }
@@ -865,7 +865,7 @@ INSERT_ANTICHECK_@1_@2_@3_@4(BAT *dst, BAT *src, BAT *chk)
 		continue;
             if (ANTICHECK_@1_@2_@3_@4(src, p, chk, tpe))
 		continue;
-            BUNins(dst, BUNh@1(src, p), BUNt@1(src, p), FALSE);
+            BUNins(dst, BUNh@1(src, p), BUNt@1(src, p));
         } 
 	BBPreclaim(src); 
 }
@@ -877,13 +877,13 @@ closure_@1_@2_@3_@4( BAT *bn, BAT *delta )
 	while (BATcount(delta) > 0) {
         	BAT *new = BATjoin(delta,bn,oid_nil);
         	BAT *dst = BATnew(tpe, tpe, BATcount(new));
-        	BATins(bn, delta, FALSE);
+        	BATins(bn, delta);
         	INSERT_ANTICHECK_@1_@2_@3_@4(dst, new, bn);
         	new = BATmirror(BATjoin(BATmirror(delta), BATmirror(bn), oid_nil));
         	BBPreclaim(delta);
         	delta = BATnew(tpe, tpe, BATcount(dst)+BATcount(new));
         	delta->hsorted = delta->tsorted = 0;
-        	BATins(delta, dst, FALSE); BBPreclaim(dst);
+        	BATins(delta, dst); BBPreclaim(dst);
         	INSERT_ANTICHECK_@1_@2_@3_@4(delta, new, bn);
 	} 
 }
@@ -953,7 +953,7 @@ BATclosure(BAT *b)
 		delta = NULL;
 	}
 	if (delta) {
-		BATins(bn, delta, FALSE);
+		BATins(bn, delta);
 		(void) BBPreclaim(delta);
 	}
 	return bn;
@@ -1003,11 +1003,11 @@ BATtraverse(BAT *b, BAT *dag)
 			fnd = 0;
 			v = BUNtloc(delta, p);
 			HASHloop_int(dag, dag->hhash, i, v, w) {
-				bn = BUNins(bn, BUNhloc(delta, p), BUNtloc(dag, w), FALSE);
+				bn = BUNins(bn, BUNhloc(delta, p), BUNtloc(dag, w));
 				fnd++;
 			}
 			if (fnd == 0) {
-				bn = BUNins(bn, BUNhloc(delta, p), v, FALSE);
+				bn = BUNins(bn, BUNhloc(delta, p), v);
 			} else
 				grows++;
 		}

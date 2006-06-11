@@ -858,7 +858,7 @@ CThistosum(
 
 		BUNfndOID(qb, res, ot);
 		if (qb == NULL) {
-			BUNins(res, ot, &i, FALSE);
+			BUNins(res, ot, &i);
 		} else {
 			z = (int *) BUNtloc(res, qb);
 			*z += i;
