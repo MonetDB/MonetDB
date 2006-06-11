@@ -1,5 +1,0 @@
-module("pathfinder");
-module("unix");
-var doc := getenv("TSTSRCDIR")+"/ID.1244326.xml";
-shred_doc(doc,"ID.1244326.xml");
-quit();

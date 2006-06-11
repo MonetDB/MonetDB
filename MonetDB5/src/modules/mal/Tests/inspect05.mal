@@ -1,7 +1,0 @@
-#Illustrate the modules loaded after start
-k:= inspect.getKind();
-m:= inspect.getModule();
-f:= inspect.getFunction();
-s:= inspect.getSignatures();
-a:= inspect.getAddresses();
-io.print(k,m,f,s,a);

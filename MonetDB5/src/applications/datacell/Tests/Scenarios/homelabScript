@@ -1,5 +1,0 @@
-streamSource -p 99061 -C 2 -N 25 -d 0
-streamSource -p 99062 -C 2 -N 5 -d 0
-streamSource -p 99063 -C 2 -N 288 -d 0
-streamSource -p 99700 -C 2 -N 7 -d 0
-streamSource -p 99800 -C 2 -N 1440 -d 0
