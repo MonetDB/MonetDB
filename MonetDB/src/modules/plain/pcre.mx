@@ -89,6 +89,7 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 
 .END pcre;
 
+@{
 @+ Implementation
 @c
 
@@ -694,6 +695,7 @@ sql2pcre(str *r, str pat, str esc_str)
 	}
 	return GDK_SUCCEED; 
 }
+@}
 @mil
 
     PROC like(str s, str pat, str esc) : bit  {

@@ -36,6 +36,7 @@ Provides access to some of the C stdlib.h functions.
 
 .END unix;
 
+@{
 @- Implementation
 The remainder is a straight forward mapping to the underlying
 facilities
@@ -85,3 +86,4 @@ unix_setenv(bit *res, str varname, str valname)
 #endif
 	return GDK_SUCCEED;
 }
+@}

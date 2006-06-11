@@ -81,6 +81,7 @@ written to disk, ie which are writen in the master log file.
  
 .END logger;
 
+@{
 @* Implementation Code 
 @h
 #ifndef _LOGGER_H_
@@ -1013,4 +1014,4 @@ proc logger_start() : void {
 	print(db);
 	logger_start(dir, db);
 }
-
+@}
