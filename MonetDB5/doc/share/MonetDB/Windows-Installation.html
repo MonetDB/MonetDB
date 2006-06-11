@@ -1,0 +1,433 @@
+<html lang="en">
+<head>
+<title>Windows Installation - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Source-Distribution.html#Source-Distribution" title="Source Distribution">
+<link rel="prev" href="Linux-Installation.html#Linux-Installation" title="Linux Installation">
+<link rel="next" href="Gentoo-Installation.html#Gentoo-Installation" title="Gentoo Installation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Windows-Installation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Gentoo-Installation.html#Gentoo-Installation">Gentoo Installation</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Linux-Installation.html#Linux-Installation">Linux Installation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Source-Distribution.html#Source-Distribution">Source Distribution</a>
+<hr>
+</div>
+
+<h4 class="subsection">1.8.5 Windows Installation</h4>
+
+<p>This section helps you to install MonetDB on a native Windows system (NT, 2000, XP).
+
+<h5 class="subsubsection">1.8.5.1 Prerequisites</h5>
+
+     <ul>
+<li><em>CVS</em>
+	You need to have a working CVS.  Several solutions are
+	available. We use internally
+	<a href="http://www.wincvs.org/">WinCVS</a> and CVS under
+	<a href="http://www.cygwin.com/">Cygwin</a>. 
+	For general information about the SourceForge repository, see
+	<a href="http://sourceforge.net/docman/?group_id=1">docman</a>
+	and look under the heading CVS Instructions.  Pointers to CVS
+	implementations for Windows can be found at e.g.:
+	<a href="http://www.cvshome.org/cyclic/cvs/windows.html">http://www.cvshome.org/cyclic/cvs/windows.html</a>
+	<a href="http://www.wincvs.org/">http://www.wincvs.org/</a>
+	<a href="http://www.componentsoftware.com/products/CVS/">http://www.componentsoftware.com/products/CVS/</a>
+<li><em>Python</em>
+	MonetDB uses Python (version 2.0.0 or better) during
+	configuration of the software.  See
+	<a href="http://www.python.org/">python.org</a> for more information. 
+<li><em>Pthreads</em>
+<a href="ftp://sources.redhat.com/pub/pthreads-win32/">Pthreads for Win32</a>
+    should be installed to C:\Pthreads, otherwise you need
+    to patch the "PTHREAD = C:\Pthreads" line in "NT\rules.msc"
+    according to your setup. Newer versions of Pthreads seem to
+    have the "include" &amp;amp; "lib" directory not in C:\Pthreads, but in
+    C:\Pthreads\prebuilt. In that case, you either have to move the
+    "include" &amp; "lib" directory from C:\Pthreads\prebuilt to
+    C:\Pthreads, or set "PTHREAD = C:\Pthreads\prebuilt" in
+    "NT\rules.msc". 
+<li><em>UnxUtils</em>
+<a href="http://UnxUtils.sourceforge.net/">UnxUtils for Win32</a>
+    must be installed in the root directory ("\", i.e.,
+    without the default "\UnxUtils\" prefix) of the drive where you
+    want to compile MonetDB. 
+    The same drive is required, as the UnxUtils do not know about
+    drive letters, and hence absolute paths start with "\" (i.e.,
+    without a leading "C:", "D:", ...).  The default "\UnxUtils\"
+    prefix has to be omitted, as otherwise the UnxUtils' "bison"
+    does not find its own "bison.simple" file, which it expects to
+    be in "/usr/share/bison/bison.simple"
+    (aka. "\usr\share\bison\bison.simple"). 
+    Next to some tools used by Mtest.py for testing MonetDB (see
+    below), UnxUtils provide the lexical analyzer generator "flex"
+    and the parser generator "bison", which are required to compile
+    MonetDB. 
+    Note: You have to install the UnxUtils using the original
+    <a href="http://UnxUtils.sourceforge.net/UnxUtils.zip">.zip file</a>. 
+    With the third-party executable
+    <a href="http://www.braindonors.net/products/unxutils.asp">installer</a>,
+    choosing another than the default installation directory doesn't seem to
+    work... 
+<li><em>Microsoft Visual C++</em>
+    You need Microsoft Visual C++ 5 or higher. 
+    Notice that if you do not own Microsoft Visual C++, you can
+    still compile on Windows using the Cygnus Posix-emulation
+    environment <a href="http://www.cygwin.com">CYGWIN</a>
+    In that case, you should follow the standard instructions in the file
+    'HowToStart'. Alternatively, it might be possible to use the
+    free <a href="http://www.mingw.org/index.shtml">WIN32-GNU compilers</a>
+    as a drop-in replacement for the Microsoft tools, but we have not
+    tried this yet.
+
+     <li><em>disk space</em>
+	After downloading, MonetDB takes up about 40 MB of disk space;
+	compilation adds another 70 MB.  Testing takes about 45 MB, and
+	the installation about 20 MB (not including any databases). 
+</ul>
+
+<h5 class="subsubsection">1.8.5.2 Compiling</h5>
+
+<p>Open a Windows command shell or a UnxUtils shell and go to the
+top-level directory of MonetDB. 
+Make sure that the proper environment for MSVC++ is set,
+otherwise call the corresponding BAT file. 
+(see C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT). 
+Make sure that Python, C:\Pthreads\lib (or wherever you installed
+Pthreads), and \usr\local\wbin are in the PATH of your command shell. 
+When all prerequisites have been satisfied, you type
+<pre class="example">     cd NT
+     nmake
+</pre>
+   <p>to compile the source code. 
+If nmake went successfully, you can try
+<pre class="example">     nmake check
+</pre>
+   <p>This will do a lot of tests, some are unfortunately still expected to
+fail, but most should go successfully.  At the end of the output there
+is a reference to an HTML file which is created by the test process and
+shows the test results.  An explanation of the test results can be found
+in XXX&ndash;to be filled in. 
+Testing takes about 46 MB of disk space in the build directory.
+
+<h5 class="subsubsection">1.8.5.3 Testing the Installation</h5>
+
+<p>Make sure that &lt;sourcedir&gt;\NT\bin, &lt;sourcedir&gt;\NT\lib, and
+&lt;sourcedir&gt;\NT\lib\MonetDB are in your PATH. 
+In the MonetDB top-level directory issue the command
+<pre class="example">     Mtest.py -r
+</pre>
+   <p>(Make sure Mtest.py can be found, it should be in the bin directory that
+was filled by the nmake install command.)
+
+   <p>This should produce much the same output as nmake check above, but uses
+the installed version of MonetDB.
+
+<h5 class="subsubsection">1.8.5.4 Documentation</h5>
+
+<p>The documentation starts in &lt;sourcedir&gt;\NT\doc\MonetDB.html
+
+   <p>NOTE: the current 'nmake install' does not yet generate this
+documentation to do this manually, execute *after* successful
+'make install'.  In the top-level directory of the MonetDB build tree, call
+<pre class="example">     nmake html
+</pre>
+   </body></html>
+

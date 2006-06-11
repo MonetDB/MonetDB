@@ -1,0 +1,366 @@
+<html lang="en">
+<head>
+<title>TRACE Statement - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="MonetDB_002fSQL-Features.html#MonetDB_002fSQL-Features" title="MonetDB/SQL Features">
+<link rel="prev" href="DEBUG-Statement.html#DEBUG-Statement" title="DEBUG Statement">
+<link rel="next" href="Optimizer-Control.html#Optimizer-Control" title="Optimizer Control">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="TRACE-Statement"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Optimizer-Control.html#Optimizer-Control">Optimizer Control</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="DEBUG-Statement.html#DEBUG-Statement">DEBUG Statement</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="MonetDB_002fSQL-Features.html#MonetDB_002fSQL-Features">MonetDB/SQL Features</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.4.6 TRACE Statement</h4>
+
+<p>Inspection of the execution time of the query plan uses the debugger
+facilities to time each request. The statement below illustrates
+the <code>trace</code> statement modifier to obtain a first glimpse
+on the expensive components of the query plan.
+
+<pre class="verbatim">
+>trace select count(*) from tables;
+#     7 usec#    mdb.setTimer(_2=true)
+#    10 usec#    _2:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _6=0)
+#     6 usec#    _8:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _9=1)
+#    12 usec#    _11 := bat.setWriteMode(_8=&lt;tmp_1255>bat[:void,:int]{0})
+#     5 usec#    _15:bat[:oid,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _16=3)
+#     3 usec#    _18 := bat.setWriteMode(_15=&lt;tmp_1256>bat[:oid,:int]{0})
+#     5 usec#    _24:bat[:void,:oid]  := sql.bind_dbat(_3="sys", _4="ptables", _6=0)
+#     6 usec#    _39:bat[:void,:int]  := sql.bind(_40="sys", _41="ttables", _42="id", _43=0)
+#     5 usec#    _45:bat[:void,:oid]  := sql.bind_dbat(_40="sys", _41="ttables", _43=0)
+#    23 usec#    _13 := algebra.kunion(_2=&lt;tmp_27>bat[:void,:int]{32}, _11=&lt;tmp_1255>bat[:void,:int]{0})
+#    19 usec#    _20 := algebra.kdifference(_13=&lt;tmp_2141>bat[:void,:int]{32}, _18=&lt;tmp_1256>bat[:oid,:int]{0})
+#     7 usec#    _22 := algebra.kunion(_20=&lt;tmp_2142>bat[:oid,:int]{32}, _18=&lt;tmp_1256>bat[:oid,:int]{0})
+#     8 usec#    _26 := bat.reverse(_24=&lt;tmp_1254>bat[:void,:oid]{0})
+#     5 usec#    _28 := algebra.kdifference(_22=&lt;tmp_2143>bat[:oid,:int]{32}, _26=&lt;~tmp_1254>bat[:oid,:void]{0})
+#    16 usec#    _33 := algebra.markT(_28=&lt;tmp_2144>bat[:oid,:int]{32}, _31=0@0)
+#     4 usec#    _35 := bat.reverse(_33=&lt;tmp_2145>bat[:oid,:void]{32})
+#    47 usec#    _37 := algebra.join(_35=&lt;~tmp_2145>bat[:void,:oid]{32}, _22=&lt;tmp_2143>bat[:oid,:int]{32})
+#     4 usec#    _47 := bat.reverse(_45=&lt;tmp_1455>bat[:void,:oid]{0})
+#     6 usec#    _49 := algebra.kdifference(_39=&lt;tmp_1456>bat[:void,:int]{0}, _47=&lt;~tmp_1455>bat[:oid,:void]{0})
+#     5 usec#    _53 := algebra.markT(_49=&lt;tmp_2146>bat[:oid,:int]{0}, _31=0@0)
+#     4 usec#    _55 := bat.reverse(_53=&lt;tmp_2150>bat[:oid,:void]{0})
+#     8 usec#    _57 := algebra.join(_55=&lt;~tmp_2150>bat[:void,:oid]{0}, _39=&lt;tmp_1456>bat[:void,:int]{0})
+#    26 usec#    _59 := bat.setWriteMode(_37=&lt;tmp_2147>bat[:void,:int]{32})
+#     9 usec#    bat.append(_59=&lt;tmp_2147>bat[:void,:int]{32}, _57=&lt;tmp_2151>bat[:void,:int]{0})
+#    14 usec#    _65 := algebra.markT(_59=&lt;tmp_2147>bat[:void,:int]{32}, _31=0@0)
+#     4 usec#    _67 := bat.reverse(_65=&lt;tmp_2153>bat[:oid,:void]{32})
+#    11 usec#    _69 := algebra.join(_67=&lt;~tmp_2153>bat[:void,:oid]{32}, _59=&lt;tmp_2147>bat[:void,:int]{32})
+#     5 usec#    _74 := algebra.markT(_69=&lt;tmp_2154>bat[:void,:int]{32}, _72=0@0)
+#     3 usec#    _76 := bat.reverse(_74=&lt;tmp_2152>bat[:oid,:void]{32})
+#    10 usec#    _78 := algebra.join(_76=&lt;~tmp_2152>bat[:void,:oid]{32}, _69=&lt;tmp_2154>bat[:void,:int]{32})
+#     4 usec#    _80 := aggr.count(_78=&lt;tmp_2156>bat[:void,:int]{32})
+&amp;1 0 1 1 1
+# sys.tables # table_name
+# count_id # name
+# int # type
+# 2 # length
+[ 32    ]
+#    36 usec#    sql.exportValue(_83=1, _84="sys.tables", _85="count_id", _86="int", _87=32, _88=0, _89=6, _80=32)
+#   911 usec#    sql_cache.s0_0()
+
+</pre>
+
+   </body></html>
+

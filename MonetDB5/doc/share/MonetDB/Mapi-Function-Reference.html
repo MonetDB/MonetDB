@@ -1,0 +1,686 @@
+<html lang="en">
+<head>
+<title>Mapi Function Reference - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="The-Mapi-Library.html#The-Mapi-Library" title="The Mapi Library">
+<link rel="prev" href="Library-Synopsis.html#Library-Synopsis" title="Library Synopsis">
+<link rel="next" href="The-Perl-Library.html#The-Perl-Library" title="The Perl Library">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Mapi-Function-Reference"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="The-Perl-Library.html#The-Perl-Library">The Perl Library</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Library-Synopsis.html#Library-Synopsis">Library Synopsis</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="The-Mapi-Library.html#The-Mapi-Library">The Mapi Library</a>
+<hr>
+</div>
+
+<h3 class="section">6.6 Mapi Function Reference</h3>
+
+<h4 class="subsection">6.6.1 Connecting and Disconnecting</h4>
+
+     <ul>
+<li>Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
+
+     <p>Setup a connection with a Mserver at a <em>host</em>:<em>port</em> and login
+with <em>username</em> and <em>password</em>. If host == NULL, the local
+host is accessed.  If host starts with a '/' and the system supports it,
+host is actually the name of a UNIX domain socket, and port is ignored. 
+If port == 0, a default port is used.  If username == NULL,
+the username of the owner of the client application
+containing the Mapi code is used.  If password == NULL, the password
+is omitted.  The preferred query language is any of
+<tt>{</tt>sql,mil,mal,xquery <tt>}</tt>.  On success, the function returns a
+pointer to a structure with administration about the connection.
+
+     <li>Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang)
+
+     <p>Setup a connection with a Mserver at a <em>host</em>:<em>port</em> and login
+with <em>username</em> and <em>password</em>. The connection is made using
+the Secure Socket Layer (SSL) and hence all data transfers to and from
+the server are encrypted. The parameters are the same as in
+<code>mapi_connect()</code>.
+
+     <li>MapiMsg mapi_disconnect(Mapi mid)
+
+     <p>Terminate the session described by <em>mid</em>.  The only possible uses
+of the handle after this call is <em>mapi_destroy()</em> and
+<code>mapi_reconnect()</code>. 
+Other uses lead to failure.
+
+     <li>MapiMsg mapi_destroy(Mapi mid)
+
+     <p>Terminate the session described by <em> mid</em> if not already done so,
+and free all resources. The handle cannot be used anymore.
+
+     <li>MapiMsg mapi_reconnect(Mapi mid)
+
+     <p>Close the current channel (if still open) and re-establish a fresh
+connection. This will remove all global session variables.
+
+     <li>MapiMsg mapi_ping(Mapi mid)
+
+     <p>Test availability of the server. Returns zero upon success. 
+</ul>
+
+<h4 class="subsection">6.6.2 Sending Queries</h4>
+
+     <ul>
+<li>MapiHdl mapi_query(Mapi mid, const char *Command)
+
+     <p>Send the Command to the database server represented by mid.  This
+function returns a query handle with which the results of the query
+can be retrieved.  The handle should be closed with
+<code>mapi_close_handle()</code>.  The command response is buffered for
+consumption, c.f. mapi\_fetch\_row().
+
+     <li>MapiMsg mapi_query_handle(MapiHdl hdl, const char *Command)
+
+     <p>Send the Command to the database server represented by hdl, reusing
+the handle from a previous query.  If Command is zero it takes the
+last query string kept around.  The command response is buffered for
+consumption, e.g. <code>mapi_fetch_row()</code>.
+
+     <li>MapiHdl mapi_query_array(Mapi mid, const char *Command, char **argv)
+
+     <p>Send the Command to the database server replacing the placeholders (?) 
+by the string arguments presented.
+
+     <li>MapiHdl mapi_quick_query(Mapi mid, const char *Command, FILE *fd)
+
+     <p>Similar to <code>mapi_query()</code>, except that the response of the server is copied
+immediately to the file indicated.
+
+     <li>MapiHdl mapi_quick_query_array(Mapi mid, const char *Command, char **argv, FILE *fd)
+
+     <p>Similar to <code>mapi_query_array()</code>, except that the response of the server
+is not analyzed, but shipped immediately to the file indicated.
+
+     <li>MapiHdl mapi_stream_query(Mapi mid, const char *Command, int windowsize)
+
+     <p>Send the request for processing and fetch a limited number of tuples
+(determined by the window size) to assess any erroneous situation. 
+Thereafter, prepare for continual reading of tuples from the stream,
+until an error occurs. Each time a tuple arrives, the cache is shifted
+one.
+
+     <li>MapiHdl mapi_prepare(Mapi mid, const char *Command)
+
+     <p>Move the query to a newly allocated query handle (which is returned). 
+Possibly interact with the back-end to prepare the query for
+execution.
+
+     <li>MapiMsg mapi_execute(MapiHdl hdl)
+
+     <p>Ship a previously prepared command to the backend for execution. A
+single answer is pre-fetched to detect any runtime error. MOK is
+returned upon success.
+
+     <li>MapiMsg mapi_execute_array(MapiHdl hdl, char **argv)
+
+     <p>Similar to mapi\_execute but replacing the placeholders for the string
+values provided.
+
+     <li>MapiMsg mapi_finish(MapiHdl hdl)
+
+     <p>Terminate a query.  This routine is used in the rare cases that
+consumption of the tuple stream produced should be prematurely
+terminated. It is automatically called when a new query using the same
+query handle is shipped to the database and when the query handle is
+closed with <code>mapi_close_handle()</code>.
+
+     <li>MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples)
+
+     <p>Submit a table of results to the library that can then subsequently be
+accessed as if it came from the server. 
+columns is the number of columns of the result set and must be greater
+than zero. 
+columnnames is a list of pointers to strings giving the names of the
+individual columns.  Each pointer may be NULL and columnnames may be
+NULL if there are no names. 
+tuplecount is the length (number of rows) of the result set.  If
+tuplecount is less than zero, the number of rows is determined by a NULL
+pointer in the list of tuples pointers. 
+tuples is a list of pointers to row values.  Each row value is a list of
+pointers to strings giving the individual results.  If one of these
+pointers is NULL it indicates a NULL/nil value. 
+</ul>
+
+<h4 class="subsection">6.6.3 Getting Results</h4>
+
+     <ul>
+<li>int mapi_get_field_count(Mapi mid)
+
+     <p>Return the number of fields in the current row.
+
+     <li>int mapi_get_row_count(Mapi mid)
+
+     <p>If possible, return the number of rows in the last select call.  A -1
+is returned if this information is not available.
+
+     <li>int mapi_rows_affected(MapiHdl hdl)
+
+     <p>Return the number of rows affected by a database update command
+such as SQL's INSERT/DELETE/UPDATE statements.
+
+     <li>int mapi_fetch_row(MapiHdl hdl)
+
+     <p>Retrieve a row from the server.  The text retrieved is kept around in
+a buffer linked with the query handle from which selective fields can
+be extracted.  It returns the number of fields recognized.  A zero is
+returned upon encountering end of sequence or error. This can be
+analyzed in using <code>mapi_error()</code>.
+
+     <li>int mapi_fetch_all_rows(MapiHdl hdl)
+
+     <p>All rows are cached at the client side first. Subsequent calls to
+<code>mapi_fetch_row()</code> will take the row from the cache. The number or
+rows cached is returned.
+
+     <li>int mapi_quick_response(MapiHdl hdl, FILE *fd)
+
+     <p>Read the answer to a query and pass the results verbatim to a
+stream. The result is not analyzed or cached.
+
+     <li>MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
+
+     <p>Reset the row pointer to the requested row number.  If whence is
+<code>MAPI_SEEK_SET</code> (0), rownr is the absolute row number (0 being the
+first row); if whence is <code>MAPI_SEEK_CUR</code> (1), rownr is relative to the
+current row; if whence is MAPI\_SEEK\_END (2), rownr is relative to
+the last row.
+
+     <li>MapiMsg mapi_fetch_reset(MapiHdl hdl)
+
+     <p>Reset the row pointer to the first line in the cache.  This need not
+be a tuple.  This is mostly used in combination with fetching all
+tuples at once.
+
+     <li>char **mapi_fetch_field_array(MapiHdl hdl)
+
+     <p>Return an array of string pointers to the individual fields.  A zero
+is returned upon encountering end of sequence or error. This can be
+analyzed in using mapi\_error().
+
+     <li>char *mapi_fetch_field(MapiHdl hdl, int fnr)
+
+     <p>Return a pointer a C-string representation of the value returned.  A
+zero is returned upon encountering an error or when the database value
+is NULL; this can be analyzed in using mapi\_error().
+
+     <li>MapiMsg mapi_next_result(MapiHdl hdl)
+
+     <p>Go to the next result set, discarding the rest of the output of the
+current result set. 
+</ul>
+
+<h4 class="subsection">6.6.4 Errors</h4>
+
+     <ul>
+<li>MapiMsg mapi_error(Mapi mid)
+
+     <p>Return the last error code or 0 if there is no error.
+
+     <li>char *mapi_error_str(Mapi mid)
+
+     <p>Return a pointer to the last error message.
+
+     <li>char *mapi_result_error(MapiHdl hdl)
+
+     <p>Return a pointer to the last error message from the server.
+
+     <li>MapiMsg mapi_explain(Mapi mid, FILE *fd)
+
+     <p>Write the error message obtained from Mserver to a file.
+
+     <li>MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)
+
+     <p>Write the error message obtained from Mserver to a file.
+
+     <li>MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd)
+
+     <p>Write the error message obtained from Mserver to a file. 
+</ul>
+
+<h4 class="subsection">6.6.5 Parameters</h4>
+
+     <ul>
+<li>MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)
+
+     <p>Bind a string variable with a field in the return table.  Upon a
+successful subsequent <code>mapi_fetch_row()</code> the indicated field is stored
+in the space pointed to by val.  Returns an error if the field
+identified does not exist.
+
+     <li>MapiMsg mapi_bind_var(MapiHdl hdl, int fldnr, int type, void *val)
+
+     <p>Bind a variable to a field in the return table.  Upon a successful
+subsequent <code>mapi_fetch_row()</code>, the indicated field is converted to the
+given type and stored in the space pointed to by val.  The types
+recognized are <tt>{</tt> <code>MAPI_TINY, MAPI_UTINY, MAPI_SHORT, MAPI_USHORT,
+MAPI_INT, MAPI_UINT, MAPI_LONG, MAPI_ULONG, MAPI_LONGLONG,
+MAPI_ULONGLONG, MAPI_CHAR, MAPI_VARCHAR, MAPI_FLOAT, MAPI_DOUBLE,
+MAPI_DATE, MAPI_TIME, MAPI_DATETIME</code> <tt>}</tt>.  The binding operations
+should be performed after the mapi_execute command.  Subsequently all
+rows being fetched also involve delivery of the field values in the
+C-variables using proper conversion. For variable length strings a
+pointer is set into the cache.
+
+     <li>MapiMsg mapi_bind_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)
+
+     <p>Bind to a numeric variable, internally represented by MAPI_INT
+Describe the location of a numeric parameter in a query template.
+
+     <li>MapiMsg mapi_clear_bindings(MapiHdl hdl)
+
+     <p>Clear all field bindings.
+
+     <li>MapiMsg mapi_param(MapiHdl hdl, int fldnr, char **val)
+
+     <p>Bind a string variable with the n-th placeholder in the query
+template.  No conversion takes place.
+
+     <li>MapiMsg mapi_param_type(MapiHdl hdl, int fldnr, int ctype, int sqltype, void *val)
+
+     <p>Bind a variable whose type is described by ctype to a parameter whose
+type is described by sqltype.
+
+     <li>MapiMsg mapi_param_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)
+
+     <p>Bind to a numeric variable, internally represented by MAPI_INT.
+
+     <li>MapiMsg mapi_param_string(MapiHdl hdl, int fldnr, int sqltype, char *val, int *sizeptr)
+
+     <p>Bind a string variable, internally represented by MAPI_VARCHAR, to a
+parameter.  The sizeptr parameter points to the length of the string
+pointed to by val.  If sizeptr == NULL or *sizeptr == -1, the string
+is NULL-terminated.
+
+     <li>MapiMsg mapi_clear_params(MapiHdl hdl)
+
+     <p>Clear all parameter bindings. 
+</ul>
+
+<h4 class="subsection">6.6.6 Miscellaneous</h4>
+
+     <ul>
+<li>MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
+
+     <p>Set the autocommit flag (default is on).  This only has an effect
+when the language is SQL.  In that case, the server commits after each
+statement sent to the server.
+
+     <li>MapiMsg mapi_cache_limit(Mapi mid, int maxrows)
+
+     <p>A limited number of tuples are pre-fetched after each <code>execute()</code>.  If
+maxrows is negative, all rows will be fetched before the application
+is permitted to continue. Once the cache is filled, a number of tuples
+are shuffled to make room for new ones, but taking into account
+non-read elements.  Filling the cache quicker than reading leads to an
+error.
+
+     <li>MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage)
+
+     <p>Make room in the cache by shuffling percentage tuples out of the
+cache.  It is sometimes handy to do so, for example, when your
+application is stream-based and you process each tuple as it arrives
+and still need a limited look-back.  This percentage can be set
+between 0 to 100.  Making shuffle= 100% (default) leads to paging
+behavior, while shuffle==1 leads to a sliding window over a tuple
+stream with 1% refreshing.
+
+     <li>MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)
+
+     <p>Forcefully shuffle the cache making room for new rows.  It ignores the
+read counter, so rows may be lost.
+
+     <li>char * mapi_quote(const char *str, int size)
+
+     <p>Escape special characters such as \n, \t in str with
+backslashes.  The returned value is a newly allocated string which
+should be freed by the caller.
+
+     <li>char * mapi_unquote(const char *name)
+
+     <p>The reverse action of <code>mapi_quote()</code>, turning the database
+representation into a C-representation. The storage space is
+dynamically created and should be freed after use.
+
+     <li>MapiMsg  mapi_trace(Mapi mid, int flag)
+
+     <p>Set the trace flag to monitor interaction with the server.
+
+     <li>int mapi_get_trace(Mapi mid)
+
+     <p>Return the current value of the trace flag.
+
+     <li>MapiMsg  mapi_trace_log(Mapi mid, const char *fname)
+
+     <p>Log the interaction between the client and server for offline
+inspection. Beware that the log file overwrites any previous log. It
+is not intended for recovery. 
+</ul>
+The remaining operations are wrappers around the data structures
+maintained. Note that column properties are derived from the table
+output returned from the server.
+     <ul>
+<li>char *mapi_get_name(MapiHdl hdl, int fnr)
+<li>char *mapi_get_type(MapiHdl hdl, int fnr)
+<li>char *mapi_get_table(MapiHdl hdl, int fnr)
+<li>int mapi_get_len(Mapi mid, int fnr)
+
+     <li>char *mapi_get_dbname(Mapi mid)
+<li>char *mapi_get_host(Mapi mid)
+<li>char *mapi_get_user(Mapi mid)
+<li>char *mapi_get_lang(Mapi mid)
+<li>char *mapi_get_motd(Mapi mid)
+
+     <li>char **mapi_tables(Mapi mid)
+
+     <p>Return a list of accessible database tables.
+
+     <li>char **mapi_fields(Mapi mid)
+
+     <p>Return a list of accessible tables fields. This can also be obtained
+by inspecting the field descriptor returned by <code>mapi_fetch_field()</code>. 
+</ul>
+
+<pre class="example"></pre>
+   </body></html>
+

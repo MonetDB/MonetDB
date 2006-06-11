@@ -1,0 +1,512 @@
+<html lang="en">
+<head>
+<title>Linux Installation - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Source-Distribution.html#Source-Distribution" title="Source Distribution">
+<link rel="prev" href="Source-Distribution.html#Source-Distribution" title="Source Distribution">
+<link rel="next" href="Windows-Installation.html#Windows-Installation" title="Windows Installation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Linux-Installation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Windows-Installation.html#Windows-Installation">Windows Installation</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Source-Distribution.html#Source-Distribution">Source Distribution</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Source-Distribution.html#Source-Distribution">Source Distribution</a>
+<hr>
+</div>
+
+<h4 class="subsection">1.8.4 Linux Installation</h4>
+
+<p>This section helps you to install the MonetDB source and compile it
+on a Unix platform (e.g., Linux, MacOS X/Darwin, or CYGWIN).
+
+<h5 class="subsubsection">1.8.4.1 Prerequisites</h5>
+
+     <ul>
+<li><em>CVS</em>
+You only need this if you are building from CVS. 
+If you start with the source distribution from SourceForge you don't need CVS. 
+For instructions, see
+<a href="http://sourceforge.net/docman/?group_id=1">docman</a>
+and look under the heading CVS Instructions. 
+<li><em>Python</em>
+MonetDB uses Python (version 2.0.0 or better) during
+configuration of the software. 
+See <a href="http://www.python.org/">python.org</a> for more information. 
+<li><em>autoconf/automake/libtool</em>
+MonetDB uses GNU
+<a href="http://www.gnu.org/software/autoconf/">autoconf</a> (&gt;= 2.53),
+<a href="http://www.gnu.org/software/automake/">automake</a> (&gt;= 1.5), and
+<a href="http://www.gnu.org/software/libtool/">libtool</a> (&gt;= 1.4) during
+configuration of the software. Libtool is also used during the build.
+
+     <li><em>standard software development tools</em>
+To compile MonetDB, you also need to have a the following
+standard software development tools installed and ready for use
+on you system:
+          <ul>
+<li>a C/C++ compiler (e.g., GNU's gcc/g++)&lt;/li&gt;
+<li>a lexical analyzer generator (e.g., "lex" or "flex")&lt;/li&gt;
+<li>a parser generator (e.g., "yacc" or "bison")&lt;/li&gt;
+<li>GNU make ("gmake") (native make's on, e.g., IRIX and Solaris usually don't work). 
+</ul>
+
+     <li>Mx, mel, and autogen
+These tools are only needed if you are building from CVS. 
+If you start with the source distribution from SourceForge you don't need this. 
+<li><em>disk space</em>
+After downloading, MonetDB takes up about 40 MB of disk space;
+compilation adds another 70 MB.  Testing takes about 45 MB, and
+the installation about 20 MB (not including any databases). 
+</ul>
+
+<h5 class="subsubsection">1.8.4.2 Bootstrap, Configure and Make</h5>
+
+<p>Before executing the following steps, make sure that your
+shell-environment (especially variables like "PATH" and
+"LD_LIBRARY_PATH") is setup, thus that the tools listed above can be
+found. 
+<!-- ("Bash"-users are welcome to simply "source conf/conf.bash". -->
+<!-- This sets the proper environment and even provides aliases -->
+<!-- "configure_MonetDB" &amp; "Mtest_MonetDB" for convenience. -->
+<!-- See conf/conf.bash itself for more details.) -->
+
+   <p>In the top-level directory of MonetDB type the command:
+<pre class="example">     ./bootstrap
+</pre>
+   <p>Then in any directory (preferably a *new empty* directory and *not* in the
+MonetDB top-level directory) give the command
+
+<pre class="example">     &lt;path-to&gt;/configure [&lt;options&gt;]
+</pre>
+   <p>where <code>&lt;path-to&gt;</code> is replaced with the (absolute or relative)
+path to the MonetDB top-level directory. 
+The directory where you execute configure is the place where all
+intermediate source and object files are generated during compilation
+via "make".
+
+   <p>By default, MonetDB is eventually (i.e., during "make install"; see
+below) installed to /usr/local/.  To choose another target directory,
+you need to call
+<pre class="example">     .../configure --prefix=&lt;prefixdir&gt; [&lt;options&gt;]
+</pre>
+   <p>A sample of other useful configure options is:
+
+<pre class="example">     --enable-debug 		 enable full debugging default=off
+     --enable-optimize 		 enable extra optimization default=off
+     --enable-warning 		 enable extended compiler warnings default=off
+     --enable-profile 		 enable profiling default=off
+     --enable-instrument 	 enable instrument default=off
+     --with-gcc=[compiler] 	 which C compiler to use
+                               ("yes" = gcc/g++,
+                                "no"  = system-specific C/C++ compiler,
+                                &amp;lt;other-compiler-name&amp;gt;)
+     --with-gxx=[compiler] 	 which C++ compiler to use
+     --with-bits=[#bits] 	 specify number of bits (32 or 64)
+</pre>
+   <p>Use the <code>--help</code> option of configure to find out more about configure
+options.
+
+   <p>In the same directory (where you called configure) give the command
+<pre class="example">     make
+</pre>
+   <p>to compile the source code.
+
+   <p>On a lightly loaded, 1.4 GHz Athlon Linux system, configure
+takes about 30 seconds, and make about 5 to 10 minutes, depending on
+the optimization level chosen during configure.
+
+<h5 class="subsubsection">1.8.4.3 Testing the Build</h5>
+
+<p>If make went successfully, you can try
+<pre class="example">     make check
+</pre>
+   <p>This will do a lot of tests, some are unfortunately still expected to
+fail, but most should go successfully.  At the end of the output there
+is a reference to an HTML file which is created by the test process and
+shows the test results.
+
+   <p>Testing takes about 46 MB of disk space in the build directory. 
+Running the tests takes about 13 minutes on the previously mentioned system.
+
+<h5 class="subsubsection">1.8.4.4 Installing</h5>
+
+<p>Give the command
+<pre class="example">     make install
+</pre>
+   <p>By default (if no &ndash;prefix option was given to configure above), this
+will install in /usr/local/.  Make sure you have appropriate privileges.
+
+<h5 class="subsubsection">1.8.4.5 Testing the Installation</h5>
+
+<p>Make sure that /usr/local/bin (respectively &lt;prefixdir&gt;/bin, where
+&lt;prefixdir&gt; is the directory you specified with <code>--prefix</code> when calling
+configure) is in your PATH.
+
+   <p>In the MonetDB top-level directory issue the command
+<pre class="example">     Mtest.py -r
+</pre>
+   <p>This should produce much the same output as make check above, but uses
+the installed version of MonetDB.
+
+   <p>You need write permissions on part of the installation directory for
+this command: it will create subdirectories <code>var/MonetDB5/dbfarm</code>
+and Tests.
+
+<h5 class="subsubsection">1.8.4.6 Documentation</h5>
+
+<p>The documentation recides in <code>share/MonetDB5/</code>. 
+It consists of the pdf files of the current document and
+its web pages. 
+The most recent version is best access from
+the <a href="http://monetdb.cwi.nl">MonetDB home page</a>.
+
+<h5 class="subsubsection">1.8.4.7 Troubleshooting</h5>
+
+<p>Bootstrap fails if any of the requisite programs can not be found or
+is an incompatible version. 
+Bootstrap adds files to the source directory, so it must have write
+permissions.
+
+   <p>During bootstrap, warnings like
+<pre class="example">     	Remember to add `AC_PROG_LIBTOOL' to `configure.in'.
+     	You should add the contents of `/usr/share/aclocal/libtool.m4' to `aclocal.m4'.
+     	configure.in:37: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+     	configure.in:104: warning: AC_PROG_LEX invoked multiple times
+     	configure.in:334: warning: do not use m4_regexp: use regexp or m4_bregexp
+     	automake/aclocal 1.6.3 is older than 1.7.
+     	Patching aclocal.m4 for Intel compiler on Linux (icc/ecc).
+     	patching file aclocal.m4
+     	Hunk #1 FAILED at 2542.
+     	1 out of 1 hunk FAILED -- saving rejects to file aclocal.m4.rej
+     	patching file aclocal.m4
+     	Hunk #1 FAILED at 1184.
+     	Hunk #2 FAILED at 2444.
+     	Hunk #3 FAILED at 2464.
+     	3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej&lt;/pre&gt;
+     might occur.
+</pre>
+   <p>For some technical reasons, it's hard to completely avoid them. However,
+it is usually save to ignore them and simply proceed with the usual
+compilation procedure. Only in case the subsequent configure or make
+do fail, these warning might have to be take more serious; in any case,
+you should include the e bootstrap output in whenever you report (see below)
+compilation problems.
+
+   <p>Configure will fail if certain essential programs can't be found or
+certain essential tasks (such as compiling a C program) can't be
+executed.  The problem will usually be clear from the error message.
+
+   <p>E.g., if configure cannot find package XYZ, it is either not installed
+on your machine, or it is not installed in places that configure
+usually searches (i.e., <code>/usr</code>, <code>/usr/local</code>). 
+In the first case, you need
+to install package XYZ before you can configure, make, and install
+MonetDB.  In the latter case, you need to tell configure via
+"&ndash;with-XYZ=&lt;DIR&gt;" where to find packages XYZ on your machine. 
+configure then looks for the respective header files in <code>&lt;DIR&gt;/include</code>,
+and for the respective libraries in <code>&lt;DIR&gt;/lib</code>.
+
+   <p>Bugs and other problems with compiling or running MonetDB should be
+reported using the respective bug-tracking system at
+<a href="https://sourceforge.net/tracker/?group_id=56967&amp;atid=482468">SourceForge</a> (preferred) or emailed
+to <a href="mailto:monet@cwi.nl">monet@cwi.nl</a>.
+
+   </body></html>
+

@@ -1,0 +1,387 @@
+<html lang="en">
+<head>
+<title>The History of MonetDB - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="General-Introduction.html#General-Introduction" title="General Introduction">
+<link rel="prev" href="Size-limitations-for-MonetDB.html#Size-limitations-for-MonetDB" title="Size limitations for MonetDB">
+<link rel="next" href="Manual-Generation.html#Manual-Generation" title="Manual Generation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="The-History-of-MonetDB"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Manual-Generation.html#Manual-Generation">Manual Generation</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Size-limitations-for-MonetDB.html#Size-limitations-for-MonetDB">Size limitations for MonetDB</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="General-Introduction.html#General-Introduction">General Introduction</a>
+<hr>
+</div>
+
+<h3 class="section">1.4 A Brief History of MonetDB</h3>
+
+<p><strong>The Dark Ages [1979-1992]</strong>
+The development of the MonetDB software family goes back as far as the
+early eighties when the first relational kernel, called Troll, was delivered to
+a larger audience. It was spread over ca 1000 sites world-wide and became part
+of a software case-tool until the beginning of the nineties. 
+<!-- not very comprehensive (what? until the beginning of the 90s?) -->
+None of the code of this system has survived, but several ideas and
+experiences on how to obtain a fast kernel by simplification and
+explicit materialization found their origin during this period.
+
+   <p>The second part of the eighties was spent on building the first
+distributed main-memory database system in the context of the
+<!-- main-memory vs. main memory ?? should do a grep on both -->
+<!-- throughout the documentation and make the spelling consistent -->
+national project PRISMA. A fully functional system of 100
+processors and a wealthy 1GB of main memory showed the road
+to develop database technology from a different perspective. 
+A more detailed account on the experiences can be found in REF.
+
+   <p><strong>The Early Days [1993-1995]</strong>
+Immediately after the PRISMA project was termed dead,
+a new database kernel based on Binary Association Tables (BATs)
+was laid out. 
+The original target was to aim for better support of scientific databases
+with their then archaic file structures.
+
+   <p><strong>The Data Distilleries Era [1996-2003]</strong>
+The datamining projects running as of 1993 called for better
+database support. It culminated in the spin-off
+Data Distilleries, which based their analytical customer
+relationship suite on the power provided by the early MonetDB
+implementations. In the years following, many technical innovations
+were paired with strong industrial maturing of the software base.
+
+   <p><strong>The Open-Source Challenge [2003-2006]</strong>
+Moving MonetDB Version 4 into the open-source field required a large number of
+extensions to the code base. It became utmost important to
+support a mature implementation of the SQL99 standard,
+and the bulk of application programming interfaces (PHP,JDBC,Perl,ODBC). 
+The culprit of this activity was the first official release in 2004
+and the release of the XQuery front-end in 2005.
+
+   <p><strong>The Road Ahead [2006-</strong>
+This manual marks the alpha-release of MonetDB Version 5,
+the result of a multi-year activity to clean up the software
+stack and to better support for simple database requests. 
+(See <a href="Backward-Compatibility.html#Backward-Compatibility">Backward Compatibility</a>)
+
+   <p><strong>The Future</strong>
+New versions in the MonetDB software family are
+under development. 
+Extensions and renovation of the kernel are tackled in
+the X100 project, which provides high-volume access to
+columns stored in compressed form. 
+Its volcano-style interpreter aims to provide
+performance in I/O-dominant and streaming settings using
+vectorized processing and Just-In-Time (de)compression.
+
+   <p>The scene of distributed database is (again) addressed in the Armada project,
+but not using the traditional centralized administration focus. Instead
+the Armada project seeks the frontiers of autonomous database systems, which
+still provide a coherent functional view to its users. 
+In its approach it challenges many dogmas in distributed database technology,
+such as the perspective on global consistency, the role of the client in
+managing the distributed world, and the way resources are spread.
+
+   <p>The MonetDB software framework provides a rich setting to pursue
+these allees of database research. We hope that many may benefit from
+our investments, both research and business wise.
+
+   </body></html>
+

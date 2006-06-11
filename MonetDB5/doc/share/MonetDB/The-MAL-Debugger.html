@@ -1,0 +1,452 @@
+<html lang="en">
+<head>
+<title>The MAL Debugger - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Debugging.html#Program-Debugging" title="Program Debugging">
+<link rel="prev" href="Program-Debugging.html#Program-Debugging" title="Program Debugging">
+<link rel="next" href="Handling-Breakpoints.html#Handling-Breakpoints" title="Handling Breakpoints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="The-MAL-Debugger"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Handling-Breakpoints.html#Handling-Breakpoints">Handling Breakpoints</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Program-Debugging.html#Program-Debugging">Program Debugging</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Debugging.html#Program-Debugging">Program Debugging</a>
+<hr>
+</div>
+
+<h3 class="section">14.1 The MAL debugger</h3>
+
+<p>To ease debugging and performance monitoring, the MAL interpreter
+comes with a gdb-like debugger. 
+An illustrative session elicits the functionality offered.
+
+<pre class="example">     &gt;function test(i:int):str;
+     &gt;	io.print(i);
+     &gt;	i:= i*2;
+     &gt;	b:= bbp.new(:int,:int);
+     &gt;	bat.insert(b,1,i);
+     &gt;	io.print(b);
+     &gt;	return test:= "ok";
+     &gt;end test;
+     &gt;user.test(1);
+     [ 1 ]
+     #-----------------#
+     # h     t         # name
+     # int   int       # type
+     #-----------------#
+     [ 1,      2       ]
+</pre>
+   <p>The debugger can be entered at any time using the call mdb.start(). 
+An overview of the available commands is readily available.
+<pre class="example">     &gt;mdb.start();
+     #mdb !end main;
+     mdb&gt;help
+     next       -- Advance to next statement
+     continue   -- Continue program being debugged
+     break      -- set breakpoint on current instruction
+     break &lt;var&gt;    -- break on assignment to &lt;var&gt;
+     delete &lt;var&gt;   -- remove break point &lt;var&gt;
+     step       -- advance to next MAL instruction
+     module     -- display the module signatures
+     finish     -- finish current call
+     exit       -- terminate current call
+     quit       -- turn off debugging
+     list &lt;fcn&gt; -- list current program block
+     List &lt;fcn&gt; -- list with type information
+     var  &lt;fcn&gt;  -- print symbol table for module
+     optimizer &lt;idx&gt;  -- display program after optimizer step
+     print &lt;var&gt;    -- display value of a variable
+     print &lt;var&gt; &lt;cnt&gt;[&lt;first&gt;] -- display BAT chunk
+     info &lt;var&gt;     -- display bat variable properties
+     run        -- restart current procedure
+     where      -- print stack trace
+     down       -- go down the stack
+     up         -- go up the stack
+     timer      -- produce micro-second response time
+     io         -- produce page activity trace
+     help       -- this message
+     mdb&gt;
+</pre>
+   <p>We walk our way through a debugging session, highlighting the
+effects of the debugger commands. 
+The call to mdb.start() has been encapsulated in a complete
+MAL function, as shown by issuing the list command. 
+A more detailed listing shows the binding to the C-routine
+and the result of type resolution.
+<pre class="example">     &gt;mdb.start();
+     #end main;
+     mdb&gt;l
+     function user.main():int;
+     	mdb.start();
+     end main;
+     mdb&gt;L
+     function user.main():int;       # 0  (main:int)
+     	mdb.start();        # 1 MDBstart (_1:void)
+     end main;       # 2
+</pre>
+   <p>The user module is the default place for function defined at
+the console. The modules loaded can be shown typeing the
+command 'modules' or 'module'(or 'm'  for short). 
+The former merely enumerates the module names, the latter also shows
+the names of the function in each. 
+The function signatures become visible using the module and optionally
+the function name.
+<pre class="example">     mdb&gt;m alarm
+     #command alarm.alarm(secs:int,action:str):void address ALARMsetalarm;
+     #command alarm.ctime():str address ALARMctime;
+     #command alarm.epilogue():void address ALARMepilogue;
+     #command alarm.epoch():int address ALARMepoch;
+     #command alarm.prelude():void address ALARMprelude;
+     #command alarm.sleep(secs:int):void address ALARMsleep;
+     #command alarm.time():int address ALARMtime;
+     #command alarm.timers():bat[:str,:str] address ALARMtimers;
+     #command alarm.usec():lng address ALARMusec;
+     mdb&gt;m alarm.sleep
+     #command alarm.sleep(secs:int):void address ALARMsleep;
+     mdb&gt;
+</pre>
+   <p>The debugger mode is left with a &lt;return&gt;. 
+Any subsequent MAL instruction re-activates the debugger to
+await for commands. The default operation is to step through
+the execution using the 'next' ('n') or 'step' ('s) commands,
+as shown below.
+<pre class="example">     &gt;user.test(1);
+     #    user.test(1);
+     mdb&gt;n
+     #    io.print(i);
+     mdb&gt;
+     [ 1 ]
+     #    i := calc.*(i,2);
+     mdb&gt;
+     #    b := bbp.new(:int,:int);
+     mdb&gt;
+</pre>
+   <p>The last instruction show is ready to be executed, which means
+the calculation has already been finished. The value assigned
+to a variable can be
+shown using a print statement, which contains the location of
+the variable on the stack frame, its name, its value and type. 
+The complete stack frame becomes visible with 'values' ('v')
+command:
+<pre class="example">     #    bat.insert(b,1,i);
+     mdb&gt;
+     #    io.print(b);
+     mdb&gt;v
+     #Stack for 'test' size=32 top=11
+     #[0] test        = nil:str
+     #[1] i   = 4:int
+     #[2] _2  = 0:int   unused
+     #[3] _3  = 2:int  constant
+     #[4] b   = &lt;tmp_1226&gt;:bat[:int,:int]   count=1 lrefs=1 refs=0
+     #[5] _5  = 0:int   type variable
+     #[6] _6  = nil:bat[:int,:int]   unused
+     #[7] _7  = 1:int  constant
+     #[8] _8  = 0:int   unused
+     #[9] _9  = "ok":str  constant
+</pre>
+   <p>The variables marked 'unused' have been introduced as temporary variables,
+but which are not referenced in the remainder of the program. 
+It also illustrates basic BAT properties, a complete description of which
+can be obtained using the 'info' ('i') command. 
+A sample of the BAT content can be printed passing tuple indices, e.g. 
+'print b 10 10' prints the second batch of ten tuples.
+
+   </body></html>
+

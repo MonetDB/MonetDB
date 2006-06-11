@@ -13,11 +13,9 @@ pdf:
 	-mkdir -p ${MONET5_PREFIX}/share/tmp
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/tmp
 	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
-	(cd ${MONET5_PREFIX}/share/tmp/; \
-	pdftex manual.texi \
-	)
-	cp ${MONET5_PREFIX}/share/tmp/manual.pdf $(MONET5_PREFIX)/share/doc/manual.pdf 
-	(cd $(MONET5_PREFIX)/share/doc/; pdfnup manual.pdf)
+	(cd ${MONET5_PREFIX}/share/tmp/; pdftex manual.texi )
+	cp ${MONET5_PREFIX}/share/tmp/manual.pdf ../share
+	(cd ../share/; pdfnup manual.pdf)
 	echo "Manual created" 
 
 web:
@@ -28,7 +26,7 @@ web:
 	(cd ${MONET5_PREFIX}/share/tmp/; \
 	makeinfo --force --html manual.texi --css-include=manual.css \
 	)
-	cp -r ${MONET5_PREFIX}/share/tmp/MonetDB $(MONET5_PREFIX)/share/doc/
+	cp -r ${MONET5_PREFIX}/share/tmp/MonetDB ../share
 	echo "Web version created"
 
 web2:
@@ -38,7 +36,7 @@ web2:
 	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
 	(cd ${MONET5_PREFIX}/share/tmp/; \
 	texi2html --split=node  --css-include=manual.css manual.texi; )
-	cp -r $(MONET5_PREFIX)/share/tmp/MonetDB $(MONET5_PREFIX)/share/doc/MonetDB
+	cp -r $(MONET5_PREFIX)/share/tmp/MonetDB ../share
 	echo "Web created"
 
 xml:
@@ -55,7 +53,7 @@ xml:
 		-e "s/&eosperiod;/<eosperiod\/>/g" \
 		-e "s/&space;/<space\/>/g" \
 			${MONET5_PREFIX}/share/tmp/MonetDB.xml
-	cp ${MONET5_PREFIX}/share/tmp/MonetDB.xml $(MONET5_PREFIX)/share/doc/manual.xml
+	cp ${MONET5_PREFIX}/share/tmp/MonetDB.xml ../share
 	echo "XML file created"
 
 gdkpdf: 
@@ -65,7 +63,7 @@ gdkpdf:
 	(cd ${MONET5_PREFIX}/share/tmp/; \
 	pdftex gdkmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/tmp/gdkmanual.pdf $(MONET5_PREFIX)/share/doc
+	cp ${MONET5_PREFIX}/share/tmp/gdkmanual.pdf ../share
 	(cd $(MONET5_PREFIX)/share/doc; pdfnup gdkmanual.pdf)
 	echo "GDK manual created" 
 
@@ -77,8 +75,8 @@ modpdf:
 	pdftex modulesmanual.texi \
 	makeinfo --force --html modulesmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/tmp/modulesmanual.pdf $(MONET5_PREFIX)/share/doc/modules.pdf
-	(cd $(MONET5_PREFIX)/share/doc; pdfnup modules.pdf)
+	cp ${MONET5_PREFIX}/share/tmp/modulesmanual.pdf ../share
+	(cd share; pdfnup modules.pdf)
 	echo "Modules manual created" 
 
 clean:

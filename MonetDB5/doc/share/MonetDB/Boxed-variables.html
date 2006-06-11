@@ -1,0 +1,498 @@
+<html lang="en">
+<head>
+<title>Boxed variables - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="MonetDB-Assembler-Language.html#MonetDB-Assembler-Language" title="MonetDB Assembler Language">
+<link rel="prev" href="Atomary-types.html#Atomary-types" title="Atomary types">
+<link rel="next" href="Property-management.html#Property-management" title="Property management">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Boxed-variables"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Property-management.html#Property-management">Property management</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Atomary-types.html#Atomary-types">Atomary types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="MonetDB-Assembler-Language.html#MonetDB-Assembler-Language">MonetDB Assembler Language</a>
+<hr>
+</div>
+
+<h2 class="chapter">9 Boxed variables</h2>
+
+<p>Clients sessions often come with a global scope of variable settings. 
+Access to these global variables should be easy,
+but they should also provide protection against concurrent update
+when the client wishes to perform parallel processing. 
+Likewise, databases, query languages, etc. may define constants and variables
+accessible, e.g. relational schemas, to a selected user group.
+
+   <p>The approach taken is to rely on persistent object spaces
+as pioniered in Lynda and -later- JavaSpaces. 
+They are called boxes in MonetDB and act as managed containers
+for persistent variables.
+
+   <p>Before a client program  can interact with a box, it
+should open it, passing qualifying authorization
+information and parameters to instruct the box-manager
+of the intended use. A built-in box is implicitly
+opened when you request for its service.
+
+   <p>At the end of a session, the box should be closed. Some box-managers
+may implement a lease-scheme to automatically close interaction
+with a client when the lease runs out. Likewise, the box can
+be notified when the last reference to a leased object
+ceases to exist.
+
+   <p>A box can be extended with a new object using the function
+deposit(name) with name a local variable. 
+The default implementation silently accepts any new definition of the box. 
+If the variable was known already in the box, its value is overwritten.
+
+   <p>A local copy of an object can be obtained using the
+pattern 'take(name,[param])', where name denotes the variable
+of interest. The type of the receiving variable should
+match the one known for the object. Whether an actual
+copy is produced or a reference to a shared object
+is returned is defined by the box manager.
+
+   <p>The object is given back to the box manager calling 'release(name)'. 
+It may update the content of the repository accordingly, release locks,
+and move the value to persistent store. Whatever the semantics
+of the box requires. [The default implementation is a no-op]
+
+   <p>Finally, the object manager can be requested to 'discard(name)'
+a variable completely.  The default implementation is to reclaim
+the space in the box.
+
+   <p>Concurrency control, replication services, as well as access
+to remote stores may be delegated to a box manager. 
+Depending on the intended semantics, the box manager
+may keep track of the clients holding links to this members,
+provide a traditional 2-phase
+locking scheme, optimistic control, or check-out/check-in scheme. 
+In all cases, these management issues are transparant to the
+main thread (=client) of control, which operates on a temporary
+snapshot. For the time being we realize the managers as critical
+code sections, i.e. one client is permitted access to the box space
+at a time.
+
+   <p>Example: consider the client function:
+<pre class="example">     function myfcn():void;
+     	b:bat[:oid,:int] := bbp.take("mytable");
+     	c:bat[:int,:str] := sql.take("person","age");
+     	d:= intersect(b,c);
+     	io.print(d);
+     	u:str:= client.take(user);
+     	io.print(u);
+     	client.release(user);
+     end function;
+</pre>
+   <p>The function binds to a copy from the local persistent BAT space,
+much like bat-names are resolved in earlier versions. The second
+statement uses an implementation of take that searches a variable
+of interest using two string properties. It illustrates that
+a box manager is free to extend/overload the predefined scheme,
+which is geared towards storing MAL variables.
+
+   <p>The result bat 'c' is temporary and disappears upon garbage
+collection. The variable 'u' is looked up as the string object user.
+
+   <p>Note that BATs b and c need be released at some point. In general
+this point in time does not coincide with a computational boundary
+like a function return. During a session, several bats may be taken
+out of the box, being processed, and only at the end of a session
+being released. In this example, it means that the reference to
+b and c is lost at the end of the function (due to garbarge collection)
+and that subsequent use requires another take() call. 
+The box manager bbp is notified of the implicit release and
+can take garbage collection actions.
+
+   <p>The box may be inspected at several times during a scenario run. 
+The first time is when the MAL program is type-checked for the
+box operations. Typechecking a take() function is tricky. 
+If the argument is a string literal, the box can be queried
+directly for the objects' type. 
+If found, its type is matched against the lhs variable. 
+This strategy fails in the situation when at
+runtime the object is subsequently replaced by another
+typed-instance in the box. We assume this not to happen and
+the exceptions it raises a valuable advice to reconsider
+the programming style.
+
+   <p>The type indicator for the destination variable should be
+provided to proceed with proper type checking. 
+It can resolve overloaded function selection.
+
+   <p>Inspection of the Box can be encoded using an iterator at the MAL
+layer and relying on the functionality of the box. 
+However, to improve introspection, we assume that all box
+implementations provide a few rudimentary functions, called objects(arglist)
+and dir(arglist). The function objects() produces a BAT with
+the object names, possibly limited to those identified by
+the arglist.
+
+<h3 class="section">9.1 Future</h3>
+
+<p>The world of boxes has not been explored deeply yet. 
+It is envisioned that it could play a role to import/export
+different objects, e.g. 
+introduce xml.take() which converts an XML document to a BAT,
+jpeg.take() similer for an image.
+
+   <p>Nesting boxes (like Russian dolls) is possible. It provides a simple
+containment scheme between boxes, but in general will interfere with
+the semantics of each box.
+
+   <p>Each box has [should] have an access control list, which names
+the users having permission to read/write its content. 
+The first one to create the box becomes the owner. He may grant/revoke
+access to the box to users on a selective basis.
+
+<h4 class="subsection">9.1.1 Session box</h4>
+
+<p>Aside from box associated with the modules, a session box is created
+dynamically on behalf of each client. Such boxes are considered private
+and require access by the user name (and password). 
+At the end of a session they are closed, which means that they are
+saved in persistent store until the next session starts. 
+For example:
+<pre class="example">     function m():void;
+     	box.open("client_name");
+     	box.deposit("client_name","pi",3.417:flt);
+     	f:flt := box.take("client_name","pi");
+     	io.print(t);
+     	box.close("client_name");
+     end function;
+</pre>
+   <p>In the namespace it is placed subordinate to any space introduced by the
+system administrator. It will contain global client data, e.g. 
+user, language, database, port, and any other session parameter. 
+The boxes are all collected in the context of the database directory,
+i.e. the directory &lt;dbfarm&gt;/box
+
+<h4 class="subsection">9.1.2 Garbage collection</h4>
+
+<p>The key objects managed by MonetDB are the persistent BATs, which
+call for an efficient scheme to make them accessible for manipulation
+in the MAL procedures taking into account a possibly hostile
+parallel access.
+
+   <p>Most kernel routines produce BATs as a result, which will be referenced
+from the runtime stack. They should be garbage collected as soon as
+deemed possible to free-up space. By default, temporary results are
+garbage collected before returning from a MAL function.
+
+<h4 class="subsection">9.1.3 Polymorphic globals</h4>
+
+<p>The top level interaction keeps a 'box' with global variables,
+i.e. each MAL statement is interpreted in an already initialized
+stack frame. 
+This causes the following problems: 1) how to get rid of global variables
+and 2) how to deal with variables that can take 'any' type. 
+It is illustrated as follows:
+<pre class="example">     f:= const.take("dbname");
+     io.print(f);
+</pre>
+   <p>When executed in the context of a function, the answer will be
+simple [ nil ]. The reason is that the expecteed type is not known
+at compilation time. The correct definition would have been
+<pre class="example">     f:str:= const.take("dbname");
+     io.print(f);
+</pre>
+   <pre class="example"></pre>
+   </body></html>
+

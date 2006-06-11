@@ -1,0 +1,615 @@
+<html lang="en">
+<head>
+<title>The JDBC Library - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Programming-Interfaces.html#Programming-Interfaces" title="Programming Interfaces">
+<link rel="prev" href="The-Python-Library.html#The-Python-Library" title="The Python Library">
+<link rel="next" href="Embedded-MonetDB.html#Embedded-MonetDB" title="Embedded MonetDB">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="The-JDBC-Library"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Embedded-MonetDB.html#Embedded-MonetDB">Embedded MonetDB</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="The-Python-Library.html#The-Python-Library">The Python Library</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Programming-Interfaces.html#Programming-Interfaces">Programming Interfaces</a>
+<hr>
+</div>
+
+<h3 class="section">6.7 The MonetDB JDBC Driver</h3>
+
+<p>The most obvious way to connect to a data source using the Java
+programming language is by making use of the in Java defined JDBC
+framework.
+
+   <p>MonetDB has a native Java JDBC driver type 4 which allows use of the
+MonetDB database in a Java alike way.
+
+   <p>It is quite difficult to have a fully complete JDBC implementation. 
+Also this driver isn't complete in that sense.  However, it is believed
+that the most prominent parts of the JDBC interface are implemented, and
+in such a way that they adhere to the specifications.  If you make
+extensive use of JDBC semantics and rely on many of its features, please
+read the release notes which are to be found in the <code>src/jdbc</code>
+directory of the sql CVS tree.
+
+   <p>This document will give a short description how to use the MonetDB JDBC
+driver in Java applications.  A familiarity with the Java JDBC API is
+required to fully understand this document.  Please note that you can
+find the complete JDBC API on Sun's web site <code>http://java.sun.com/</code>.
+
+<h4 class="subsection">6.7.1 Requirements</h4>
+
+<p>In order to use the MonetDB JDBC driver in Java applications you need
+(of course) a running MonetDB instance with the SQL module loaded.\\
+The SQL module is a separate module in the CVS tree, and should be
+installed separately, since it is not included in the main MonetDB
+module.
+
+   <p>You should be able to issue the following command on the MonetDB prompt
+without errors:
+<pre class="example">     <code>module(sql\_server);</code>
+</pre>
+   <h4 class="subsection">6.7.2 Getting the driver Jar</h4>
+
+<p>If you (compiled and) installed MonetDB and the SQL module the regular
+way, you can find a two jar-archives in the directory
+<code>share/MonetDB/lib</code> called <code>monetdb-X.Y-jdbc.jar</code> and
+<code>jdbcclient-X.Y.jar</code> in the installation root (chosen during the
+configure process).  For regular applications that only need the JDBC
+driver, the first jar-file is sufficient.  When the JdbcClient utility
+is required, the second is required.  Applications that require the JDBC
+driver will, however, work with both jar-files.  The <code>X</code> and
+<code>Y</code> in the names represent the major and minor version numbers of
+the JDBC driver.\\
+<em>Note:</em> there may also exists a file named <code>mapi.jar</code> in
+the mentioned directory, this jar does NOT contain the JDBC driver.
+
+<h4 class="subsection">6.7.3 Compiling the driver (using ant, optional)</h4>
+
+<p>The directory <code>src/jdbc</code> of the sql CVS tree contains all the
+files to build the driver using Apache's Ant tool.  Simply issuing the
+command <code>ant</code> should be sufficient to build the driver
+jar-archive in the subdirectory <code>jars</code>. See the ant web site for
+more documentation on the ant build-tool. 
+<code>http://ant.apache.org/</code>  The Java sources require at least a
+Java 2 platform 1.4 compatible compiler.
+
+<h4 class="subsection">6.7.4 Testing the driver using the JdbcClient utility</h4>
+
+<p>Before you start developing your programs which use the MonetDB JDBC
+driver it is generally a good idea to check if the driver actually works
+in your environment.\\
+Follow the steps below to assure your setup is complete:
+     <ol type=1 start=1>
+<li>start MonetDB
+<li>load the SQL module using <code>module(sql\_server);
+sql\_server\_start();</code>
+<li>run the JdbcClient utility using <code>java -jar
+path/to/jdbcclient-X.Y.jar -umonetdb</code> (with
+ password monetdb)
+        </ol>
+The last step should give you something like this:
+
+<pre class="verbatim">
+% java -jar jars/jdbcclient-1.2.jar -umonetdb
+password:
+
+Welcome to the MonetDB interactive JDBC terminal!
+Database: MonetDB 4.99.19
+Driver: MonetDB Native Driver 1.2 (Blunt+ 20060102)
+Type \q to quit, \h for a list of available commands
+auto commit mode: on
+monetdb-> 
+</pre>
+
+<h4 class="subsection">6.7.5 Using the driver in your Java programs</h4>
+
+<p>In order to use the MonetDB JDBC driver, the jar-archive has to be in
+the Java classpath.  Make sure this is actually the case.
+
+   <p>Loading the driver in your Java program requires two lines of code:
+<pre class="verbatim">
+// make sure the ClassLoader has the MonetDB JDBC driver loaded
+Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+// request a Connection to a MonetDB server running on 'localhost'
+Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+</pre>
+The first line makes sure the Java ClassLoader has initialised (and
+loaded) the Driver class of the MonetDB JDBC package, so it is
+registered with the DriverManager.  The second line requests a Connection
+object from the DriverManager which is suitable for MonetDB.
+
+   <p>The string passed to the <code>"getConnection()"</code>method is defined as
+<code>"jdbc:monetdb://&lt;host&gt;[:&lt;port&gt;]/&lt;database&gt;"</code> where elements between
+<code>"&lt;"</code> and <code>"&gt;"</code> are required and elements between <code>"["</code> and
+<code>"]"</code> are optional.  Note that even though the database can be
+specified, it usually is not supported by the database.  A warning is
+issued each time that this value is being ignored.
+
+<h4 class="subsection">6.7.6 A sample Java program</h4>
+
+<pre class="verbatim">
+import java.sql.*;
+
+/**
+ * This example assumes there exist tables a and b filled with some data.
+ * On these tables some queries are executed and the JDBC driver is tested
+ * on it's accuracy and robustness against 'users'.
+ *
+ * @author Fabian Groffen
+ */
+public class MJDBCTest {
+        public static void main(String[] args) throws Exception {
+                // make sure the driver is loaded
+                Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+                Statement st = con.createStatement();
+                ResultSet rs;
+
+                rs = st.executeQuery("SELECT a.var1, COUNT(b.id) as total FROM a, b WHERE a.var1 = b.id AND a.var1 = 'andb' GROUP BY a.var1 ORDER BY a.var1, total;");
+                // get meta data and print columns with their type
+                ResultSetMetaData md = rs.getMetaData();
+                for (int i = 1; i &lt;= md.getColumnCount(); i++) {
+                        System.out.print(md.getColumnName(i) + ":" +
+                                md.getColumnTypeName(i) + "\t");
+                }
+                System.out.println("");
+                // print the data: only the first 5 rows, while there probably are
+                // a lot more. This shouldn't cause any problems afterwards since the
+                // result should get properly discarded on the next query
+                for (int i = 0; rs.next() &amp;&amp; i &lt; 5; i++) {
+                        for (int j = 1; j &lt;= md.getColumnCount(); j++) {
+                                System.out.print(rs.getString(j) + "\t");
+                        }
+                        System.out.println("");
+                }
+
+                // tell the driver to only return 5 rows, it can optimize on this
+                // value, and will not fetch any more than 5 rows.
+                st.setMaxRows(5);
+                // we ask the database for 22 rows, while we set the JDBC driver to
+                // 5 rows, this shouldn't be a problem at all...
+                rs = st.executeQuery("select * from a limit 22");
+                // read till the driver says there are no rows left
+                for (int i = 0; rs.next(); i++) {
+                        System.out.print("[" + rs.getString("var1") + "]");
+                        System.out.print("[" + rs.getString("var2") + "]");
+                        System.out.print("[" + rs.getInt("var3") + "]");
+                        System.out.println("[" + rs.getString("var4") + "]");
+                }
+
+                // this close is not needed, should be done by next execute(Query) call
+                // however if there can be some time between this point and the next
+                // execute call, it is from a resource perspective better to close it.
+                //rs.close();
+
+                // unset the row limit; 0 means as much as the database sends us
+                st.setMaxRows(0);
+                // we only ask 10 rows
+                rs = st.executeQuery("select * from b limit 10;");
+                // and simply print them
+                while (rs.next()) {
+                        System.out.print(rs.getInt("rowid") + ", ");
+                        System.out.print(rs.getString("id") + ", ");
+                        System.out.print(rs.getInt("var1") + ", ");
+                        System.out.print(rs.getInt("var2") + ", ");
+                        System.out.print(rs.getString("var3") + ", ");
+                        System.out.println(rs.getString("var4"));
+                }
+
+                // this close is not needed, as the Statement will close the last
+                // ResultSet around when it's closed
+                // again, if that can take some time, it's nicer to close immediately
+                // the reason why these closes are commented out here, is to test if
+                // the driver really cleans up it's mess like it should
+                //rs.close();
+
+                // perform a ResultSet-less query (with no trailing ; since that should
+                // be possible as well and is JDBC standard)
+                // Note that this method should return the number of updated rows. This
+                // method however always returns -1, since Monet currently doesn't
+                // support returning the affected rows.
+                st.executeUpdate("delete from a where var1 = 'zzzz'");
+
+                // closing the connection should take care of closing all generated
+                // statements from it...
+                // don't forget to do it yourself if the connection is reused or much
+                // longer alive, since the Statement object contains a lot of things
+                // you probably want to reclaim if you don't need them anymore.
+                //st.close();
+                con.close();
+        }
+}
+</pre>
+
+<h4 class="subsection">6.7.7 Using JDBC with MonetDB/XQuery</h4>
+
+<p>Even though JDBC was designed for the SQL language, the MonetDB JDBC
+driver can be used to interact with the MonetDB/XQuery server.  The JDBC
+will act differently and limited when making such connection, but the
+basic query and answer retrieval is supported.  All SQL specific
+methods, such as <code>COMMIT</code>, <code>SAVEPOINT</code>, et-cetera will not
+work and most probably cause errors when being used.
+
+   <p>In order to use XQuery over JDBC, the driver has to be instructed to
+support this during connect:
+<pre class="verbatim">
+// make sure the ClassLoader has the MonetDB JDBC driver loaded
+Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+// request a Connection to a MonetDB/XQuery server running on
+// 'localhost' using the explicit xquery language
+Connection con = DriverManager.getConnection(
+    "jdbc:monetdb://localhost:45789/database?language=xquery",
+    "monetdb",
+    "monetdb"
+);
+Statement stmt = con.createStatement();
+
+ResultSet rs = stmt.executeQuery("1 + 1");
+while (rs.next()) {
+    System.out.println(rs.getString(1));
+}
+rs.close();
+</pre>
+In the above example, two things are different then for a normal SQL
+connection: 1) the port number to connect to is given explicitly, and 2)
+the language to use is specified.  Normally, the MonetDB/XQuery server
+runs on port <code>45789</code>.  If this is not the case, the JDBC
+connection URL has to reflect this.  The MonetDB JDBC driver supports
+additional settings and/or hints through arguments in the connection
+URL.  For a list of supported options, use the
+<code>java.sql.Driver</code>'s capabilities to report about this.  The
+option needed for XQuery communications is the <code>language</code> option,
+and should be set in as argument in the URL, like in the example above.
+
+   <p>After the connection is made, queries can be sent to the server using
+the conventional <code>Statement.executeQuery()</code> method, which returns
+<code>ResultSet</code>s containing the XQuery results.  Each row in such
+result set represents an XQuery resource.
+
+<h4 class="subsection">6.7.8 XML:DB driver</h4>
+
+<p>On top of the MonetDB JDBC driver, an XML:DB driver for MonetDB/XQuery
+exists.  It is by default not shipped, due to licence issues.  If one
+wants to use it, one has to compile it by hand, following the directions
+in the <code>sql/src/jdbc/lib/README</code> file.
+
+   <p>XML:DB gives a more XML-like approach to XQuery results from the server. 
+Since XML:DB support is built on top of JDBC, there is no difference in
+speed or features.  Since the XML:DB documentation itself is rather
+shallow, the best documentation we can give is an example of how to use
+it.  This example is included in the source distributed and located in
+<code>sql/src/jdbc/example/XMLDBtest.java</code>.
+
+<pre class="verbatim">
+import org.xmldb.api.*;
+import org.xmldb.api.base.*;
+import org.xmldb.api.modules.*;
+
+/**
+ * Quick example demonstrating the XML:DB driver.
+ *
+ * To compile and run this example, MonetDB_XMLDB.jar, MonetDB_JDBC.jar
+ * and xmldb.jar (from the lib dir) should be in the classpath.
+ *
+ * @author Fabian Groffen
+ */
+public class XMLDBtest {
+    public static void main(String[] args) throws Exception {
+        Class.forName("nl.cwi.monetdb.xmldb.base.MonetDBDatabase");
+        try {
+            Collection col = DatabaseManager.getCollection("xmldb:monetdb://localhost/demo", "monetdb", "monetdb"); 
+
+            XQueryService xqs = (XQueryService)col.getService("XQueryService", "1");
+            ResourceSet set = xqs.query("(&lt;foo>1&lt;/foo>,&lt;bar />)");
+            ResourceIterator it = set.getIterator();
+            while(it.hasMoreResources()) {
+                Resource r = it.nextResource();
+                System.out.println(r.getContent());
+            }
+            
+        } catch (XMLDBException e) {
+            e.printStackTrace();
+        }
+    }
+}
+</pre>
+
+   </body></html>
+

@@ -1,0 +1,2199 @@
+<html lang="en">
+<head>
+<title>MAL Instruction Help - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Appendices.html#Appendices" title="Appendices">
+<link rel="prev" href="MAL-Instruction-Overview.html#MAL-Instruction-Overview" title="MAL Instruction Overview">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the MonetDB Version 5.0 Reference Manual
+
+Last updated: June 5, 2006
+
+     Copyright (C) 2000-2006 CWI
+
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+body { 
+    margin: 0px;
+    padding: 0px;
+}
+a,a:visited {
+	color: #336633;
+}
+a:hover {
+	color: #003300;
+}
+
+p,body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    text-align: justify;
+    font-size: 10pt;
+}
+
+h1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-style: bold;
+	text-align: left;
+}
+
+td,th {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+div.banner {
+	padding: 5px 0px 0px 5px; 
+}
+
+div.banner img {
+	border: 0px;
+	text-decoration: none;
+}
+
+div.topmenu {
+	margin-top: -20px;
+	margin-left: 166px;
+	padding: 8px 5px 5px 5px;
+	font-size: 8pt;
+	background-color: #A9CC99;
+}
+
+div.topmenu-bottom {
+	margin-top: -4px;
+	margin-left: 166px;
+	padding: 2px 5px;
+	background-color: #BCD2ED; 
+}
+
+div.topmenu a {
+	padding: 4px 5px 1px 5px;
+	text-decoration: none; 
+}
+
+div.topmenu a:focus {
+	background-color: #6699CC; 
+}
+
+div.topmenu a:hover {
+	background-color: #5662A0; 
+}
+
+/*
+span.current {
+}
+*/
+
+div.topmenu span.current a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.current a:hover {
+	color: #336633;
+	background-color: #BCD2ED; 
+}
+
+/*
+span.submenu {
+}
+*/
+
+div.topmenu span.submenu a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.topmenu span.submenu a:hover {
+	background-color: #9FB0DB; 
+}
+
+div.topmenu span.button {
+	margin: 0px 0px 0px 10px;
+}
+
+div.topmenu span.button a {
+	padding: 5px 6px 1px 6px;
+	color: #333333;
+	background-color: #FFAC37;
+}
+
+div.topmenu span.button a:hover {
+	color: #FFFFFF;
+}
+
+div.content {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+div.header {
+	padding: 5px;
+	margin-left: 166px;
+	margin-right: 12%;
+}
+
+
+div.sidebar-a {
+	float: left;
+	width: 156px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.sidebar-b { 
+	float: right;
+	width: 146px;
+	margin: 0px 0px 0px 5px;
+	padding: 5px;
+	font-size: 8pt;
+}
+
+div.footer-a {
+	float: left;
+	width: 156px;
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	font-size: 7pt;
+	background-color: #CBEEBB;
+}
+
+div.footer-a a {
+	margin: 5px;
+	text-decoration: none; 
+}
+
+div.footer-b {
+	margin: 5px 0px 0px 0px;
+	padding: 5px;
+	background-color: #A9CC99;
+	font-size: 7pt;
+}
+
+div.footer-b a {
+	margin: 5px;
+	padding: 2px 3px;
+	text-decoration: none; 
+}
+div.footer-b a:focus {
+	background-color: #6699CC; 
+}
+div.footer-b a:hover {
+	color: #FFFFFF;
+	background-color: #5662A0; 
+}
+div.footer-b img {
+	border: 0px;
+	vertical-align: bottom;
+	text-decoration: none; 
+}
+
+div.news {
+	border: 1px solid #666699;
+	background-color: #E7E7E7; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.news li {
+	list-style: square;
+}
+
+div.submenu-b {
+	border: 1px solid #666699;
+	background-color: #CBEEBB;
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu-b a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	color: #000000;
+	background-color: #A9CC99;
+}
+
+div.submenu-b a:hover {
+	background-color: #BCD2ED; 
+}
+
+div.submenu-b ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu-b li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu {
+	border: 1px solid #666699;
+	background-color: #9FB0DB; 
+	margin: 3px 0px;
+	padding: 5px 5px 5px 5px;
+}
+
+div.submenu a {
+	text-decoration: none; 
+	display: block;
+	padding: 1px 2px;
+	_width: 100%;
+}
+
+div.submenu ul {
+	padding: 1px 0px 1px 0px;
+	margin: 0px;
+}
+
+div.submenu li {
+	list-style: none;
+	padding: 1px 0px 0px 6px;
+}
+
+div.submenu span.submenu a {
+	color: #000000;
+	background-color: #BCD2ED; 
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.submenu a:hover {
+	background-color: #A9CC99;
+}
+
+div.submenu span.current a {
+	background-color: #CBEEBB;
+}
+
+/* this should be inherited IMHO, but it doesn't so we just redefine it */
+div.submenu span.current a:hover {
+	background-color: #CBEEBB;
+}
+
+pre.code {
+	border: 1px solid Black;
+	padding: 4px;
+	font-family: monospace;
+}
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MAL-Instruction-Help"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="MAL-Instruction-Overview.html#MAL-Instruction-Overview">MAL Instruction Overview</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Appendices.html#Appendices">Appendices</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix E MAL Instruction Help</h2>
+
+<p>The table below summarizes the first commentary line encountered in
+the system associated with a MAL operation.
+
+   <p><table summary=""><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">aggr.avg
+</td><td valign="top" width="80%">Grouped tail average on dbl
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.cardinality
+</td><td valign="top" width="80%">Return the cardinality of the BAT tail values. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.count
+</td><td valign="top" width="80%">Grouped count
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.count_no_nil
+</td><td valign="top" width="80%">Return the number of elements currently
+	in a BAT ignoring BUNs with nil-tail
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.histogram
+</td><td valign="top" width="80%">Produce a BAT containing the histogram over the tail values. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.max
+</td><td valign="top" width="80%">Grouped tail maximum
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.min
+</td><td valign="top" width="80%">Grouped tail minimum
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.product
+</td><td valign="top" width="80%">Product over grouped on dbl
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.size
+</td><td valign="top" width="80%">Grouped count of true values
+<br></td></tr><tr align="left"><td valign="top" width="20%">aggr.sum
+</td><td valign="top" width="80%">Grouped tail sum on dbl
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">alarm.alarm
+</td><td valign="top" width="80%">execute action in X secs
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.ctime
+</td><td valign="top" width="80%">current time as a string
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.epilogue
+</td><td valign="top" width="80%">Finalize alarm module
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.epoch
+</td><td valign="top" width="80%">current time as unix epoch
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.prelude
+</td><td valign="top" width="80%">Initialize alarm module
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.sleep
+</td><td valign="top" width="80%">sleep X secs
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.time
+</td><td valign="top" width="80%">time in millisecs
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.timers
+</td><td valign="top" width="80%">give a list of all active timers
+<br></td></tr><tr align="left"><td valign="top" width="20%">alarm.usec
+</td><td valign="top" width="80%">return cpu microseconds info
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">algebra.antijoin
+</td><td valign="top" width="80%">Returns the antijoin
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.bandjoin
+</td><td valign="top" width="80%">This is a join() for which the predicate is that two BUNs match
+		if the left-tail value is within the range [right-head - minus,
+		right-head + plus]. Works only for the builtin numerical types,
+		and their derivates. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.between
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.betweenCO
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.betweenOC
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.betweenOO
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.copy
+</td><td valign="top" width="80%">Returns physical copy of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.crossproduct
+</td><td valign="top" width="80%">Returns the cross product
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.difference
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.exist
+</td><td valign="top" width="80%">Returns true when 'h,t' occurs as a bun in b. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.fetch
+</td><td valign="top" width="80%">Returns a positional selection of b by the oid
+	head values of s
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.fetchjoin
+</td><td valign="top" width="80%">Hook directly into the fetch implementation of the join. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.find
+</td><td valign="top" width="80%">Returns the tail value 't' for which some [h,t] BUN
+	exists in b.  If no such BUN exists, an error occurs. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.fragment
+</td><td valign="top" width="80%">Select both on head and tail range. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.groupby
+</td><td valign="top" width="80%">Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.hashjoin
+</td><td valign="top" width="80%">Hook directly into the hash implementation of the join. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.hashsplit
+</td><td valign="top" width="80%">Split a BAT on tail column according (hash-value MOD buckets). 
+		Returns a recursive BAT, containing the fragments in the tail,
+		their bucket number in the head. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.indexjoin
+</td><td valign="top" width="80%">Hook directly into the index implementation of the join. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.intersect
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.join
+</td><td valign="top" width="80%">Returns all BUNs, consisting of a head-value from 'left' and
+		a tail-value from 'right' for which there are BUNs in 'left'
+		and 'right' with equal tail- resp. head-value (i.e. the join
+	columns are projected out). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.joinPath
+</td><td valign="top" width="80%">Evaluate a join path. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.kdifference
+</td><td valign="top" width="80%">Returns the difference taken over only the *head* columns of two BATs. 
+		Results in all BUNs of 'left' that are *not* in 'right'. 
+		It does *not* do double-elimination over the 'left' BUNs. 
+		If you want this, use:
+	 'kdifference(left.kunique,right.kunique)'
+	or: 'kdifference(left,right).kunique'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.kintersect
+</td><td valign="top" width="80%">Returns the intersection taken over only the *head* columns of two BATs. 
+	Results in all BUNs of 'left' that are also in 'right'. 
+		Does *not* do double- elimination over the 'left' BUNs. 
+		If you want this, use: 'kintersect(kunique(left),kunique(right))'
+	or: 'kunique(kintersect(left,right))'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.kunion
+</td><td valign="top" width="80%">Returns the union of two BATs; looking at head-columns only. 
+		Results in all BUNs of 'left' that are  not in 'right', plus
+	all BUNs of 'right'.  *no* double-elimination is done. 
+		If you want this, do:
+	'kunion(left.kunique,right.kunique)'
+	or: 'sunion(left,right).kunique'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.kunique
+</td><td valign="top" width="80%">Select unique tuples from the input BAT.  Double elimination is
+		done only looking at the head column. The result is a BAT with
+		property hkeyed() == true. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.like
+</td><td valign="top" width="80%">Selects all elements that have 'substr' as in the tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.markH
+</td><td valign="top" width="80%">Produces a new BAT with fresh unique dense sequense of OIDs in
+		the head that starts at base (i.e. [base,..base+b.count()-1] ). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.markT
+</td><td valign="top" width="80%">Produces a BAT with fresh unique OIDs in the tail starting at 0. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.merge
+</td><td valign="top" width="80%">Merge head and tail into a single value
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.mergejoin
+</td><td valign="top" width="80%">Hook directly into the merge implementation of the join. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.number
+</td><td valign="top" width="80%">Produces a new BAT with identical head column, and consecutively
+		increasing integers (start at 0) in the tail column. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.outerjoin
+</td><td valign="top" width="80%">Returns all the result of a join, plus the BUNS formed NIL in
+		the tail and the head-values of 'outer' whose tail-value does
+		not match an head-value in 'inner'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.position
+</td><td valign="top" width="80%">Returns the position of the value pair It returns an
+	error if 'val' does not exist. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.project
+</td><td valign="top" width="80%">Fill the tail column with a constant. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.revert
+</td><td valign="top" width="80%">Returns a BAT copy with buns in reverse order
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sample
+</td><td valign="top" width="80%">Produce a random selection of size 'num' from the input BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sdifference
+</td><td valign="top" width="80%">Returns the difference taken over *both* columns of two BATs. 
+		Results in all BUNs of 'left' that are *not* in 'right'. 
+		Does *not* do double-elimination over the 'left' BUNs. 
+		If you want this, use:
+		 'sdifference(left.sunique,right.sunique)'
+	or: 'sdifference(left,right).sunique'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.select
+</td><td valign="top" width="80%">Select all BUNs of a BAT with a certain
+	tail value. Selection on NIL is also
+	possible (it should be properly casted,
+	e.g.:int(nil)). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.selectH
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.semijoin
+</td><td valign="top" width="80%">Patch to enable semijoin over void/oid columns
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sintersect
+</td><td valign="top" width="80%">Returns the intersection taken over *both* columns of two BATs. 
+		Results in all BUNs of 'left' that are also in 'right'. Does *not*
+		do double-elimination over the 'left' BUNs, If you want this, use:
+	 'sintersect(sunique(left),sunique(right))'
+	or: 'sunique(sintersect(left,right))'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.slice
+</td><td valign="top" width="80%">Return the slice with the BUNs at position x till y. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sort
+</td><td valign="top" width="80%">Returns a BAT copy sorted on the tail column. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sortHT
+</td><td valign="top" width="80%">Returns a lexicographically sorted copy on head,tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sortHead
+</td><td valign="top" width="80%">Returns a BAT copy sorted on the head column. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sortTH
+</td><td valign="top" width="80%">Returns a lexicographically sorted copy on tail,head. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.split
+</td><td valign="top" width="80%">Split head into two values
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sunion
+</td><td valign="top" width="80%">Returns the union of two BATs; looking at both columns of both BATs. 
+		Results in all BUNs of 'left' that are  not in 'right', plus all
+		BUNs of 'right'.  *no* double-elimination is done. 
+		If you want this, do:
+	 'sunion(left.sunique,right.sunique)'
+	or: 'sunion(left,right).sunique'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.sunique
+</td><td valign="top" width="80%">Select unique tuples from the input BAT. Double elimination is
+		done over BUNs as a whole (head and tail).  Result is a BAT
+	with real set() semantics. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.thetajoin
+</td><td valign="top" width="80%">Theta join on for 'mode' in ( LE, LT, EQ, GT, GE ).  JOIN_EQ is
+		just the same as join(). All other options do merge algorithms. 
+		Either using the fact that they are ordered() already (left on tail,
+	right on head), or by using/creating binary search trees on the
+		join columns. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.topN
+</td><td valign="top" width="80%">Trim all but the top N tuples. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.tunique
+</td><td valign="top" width="80%">Select unique tuples from the input BAT. Double elimination is
+		done over the BUNs tail. The result is a BAT with property
+		tkeyd()== true
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.uhashsplit
+</td><td valign="top" width="80%">Same as hashsplit, but only collect the head values in the fragments
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.union
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.unique
+<br></td></tr><tr align="left"><td valign="top" width="20%">algebra.uselect
+</td><td valign="top" width="80%">Value select, but returning only the
+	head values. SEE ALSO:select(bat,val)
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">array.grid
+</td><td valign="top" width="80%">Fills an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elemenets with a factor s
+<br></td></tr><tr align="left"><td valign="top" width="20%">array.print
+</td><td valign="top" width="80%">Prints an array, using 1 value bat and N aligned index bats
+<br></td></tr><tr align="left"><td valign="top" width="20%">array.product
+</td><td valign="top" width="80%">Produce an array product
+<br></td></tr><tr align="left"><td valign="top" width="20%">array.project
+</td><td valign="top" width="80%">Fill an array representation with constants
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">bat.append
+</td><td valign="top" width="80%">append the value u to i
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.delete
+</td><td valign="top" width="80%">Delete from the first BAT all BUNs with a corresponding BUN
+        in the second. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getAccess
+</td><td valign="top" width="80%">return the access mode attached to this BAT as a character. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getAlpha
+</td><td valign="top" width="80%">Obtain the list of BUNs added
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getBatSize
+</td><td valign="top" width="80%">A version of BATsize that does not require loading the BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getCapacity
+</td><td valign="top" width="80%">Returns the current allocation size (in max number of elements) of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getDelta
+</td><td valign="top" width="80%">Obtain the list of BUNs deleted
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getHeadType
+</td><td valign="top" width="80%">Returns the type of the head column of a BAT, as an integer type number. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getHeat
+</td><td valign="top" width="80%">Return the current BBP heat (LRU stamp)
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getName
+</td><td valign="top" width="80%">Gives back the logical name of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getRole
+</td><td valign="top" width="80%">Returns the rolename of the head column of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getSequenceBase
+</td><td valign="top" width="80%">Get the sequence base for the void column of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.getTailType
+</td><td valign="top" width="80%">Returns the type of the tail column of a BAT, as an integer type number. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.hasAppendMode
+</td><td valign="top" width="80%">return true if to this BAT is append only. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.hasReadMode
+</td><td valign="top" width="80%">return true if to this BAT is read only. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.hasWriteMode
+</td><td valign="top" width="80%">return true if to this BAT is read and write. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.info
+</td><td valign="top" width="80%">Produce a BAT containing info about a BAT in [attribute,value] format. 
+        It contains all properties of the BAT record. See the BAT documentation
+        in GDK for more information. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.insert
+</td><td valign="top" width="80%">Insert a value in a 'void' bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isCached
+</td><td valign="top" width="80%">Bat is stored in main memory. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isPersistent
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isSorted
+</td><td valign="top" width="80%">Returns whether a BAT is ordered on head or not. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isSortedReverse
+</td><td valign="top" width="80%">Returns whether a BAT is ordered on head or not. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isSynced
+</td><td valign="top" width="80%">Tests whether two BATs are synced or not. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isTransient
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isaKey
+</td><td valign="top" width="80%">return whether the head column of a BAT is unique (key). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.isaSet
+</td><td valign="top" width="80%">return whether the BAT mode is set to unique. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.load
+</td><td valign="top" width="80%">Load a particular BAT from disk
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.mirror
+</td><td valign="top" width="80%">Returns the head-mirror image of a BAT (two head columns). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.new
+</td><td valign="top" width="80%">Localize a bat by name and produce a variant
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.pack
+</td><td valign="top" width="80%">Pack a pair into a BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.replace
+</td><td valign="top" width="80%">inplace replace values on the given locations
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.reverse
+</td><td valign="top" width="80%">Returns the reverse view of a BAT (head is tail and tail is head). 
+        BEWARE  no copying is involved; input and output refer to the
+        same object! 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.revert
+</td><td valign="top" width="80%">Puts all BUNs in a BAT in reverse order.  (Belongs to the
+        BAT sequence module)
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.save
+</td><td valign="top" width="80%">Save a BAT to storage, if it was loaded and dirty. 
+        Returns whether IO was necessary.  Please realize that
+	calling this function violates the atomic commit protocol!! 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setAccess
+</td><td valign="top" width="80%">Try to change the update access priviliges
+	to this BAT. Mode:
+	 r[ead-only]      - allow only read access. 
+	 a[append-only]   - allow reads and update. 
+	 w[riteable]      - allow all operations. 
+	BATs are updatable by default. On making a BAT read-only,
+        all subsequent updates fail with an error message.Returns
+        the BAT itself. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setAppendMode
+</td><td valign="top" width="80%">Change access privilige of BAT to append only
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setCold
+</td><td valign="top" width="80%">Makes a BAT very cold for the BBP. The chance of being choses
+        for swapout is big, afterwards. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setColumn
+</td><td valign="top" width="80%">Give both columns of a BAT a new name. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setGarbage
+</td><td valign="top" width="80%">Designate a BAT as garbage
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setHash
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setHot
+</td><td valign="top" width="80%">Makes a BAT very hot for the BBP. The chance of being chosen for
+        swapout is small, afterwards. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setKey
+</td><td valign="top" width="80%">Sets the 'key' property of the head column to 'mode'. In 'key' mode,
+        the kernel will silently block insertions that cause a duplicate
+        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this
+	function does not automatically eliminate duplicates. 
+        Use b := b.kunique;
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setMemoryAdvise
+</td><td valign="top" width="80%">alias for madvise(b,mode,mode,mode, mode,mode)
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setMemoryMap
+</td><td valign="top" width="80%">Alias for mmap(b,mode,mode,mode, mode,mode)
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setName
+</td><td valign="top" width="80%">Give a logical name to a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setPersistent
+</td><td valign="top" width="80%">Make the BAT persistent.  Returns boolean which indicates
+        if the BAT administration has indeed changed. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setReadMode
+</td><td valign="top" width="80%">Change access privilige of BAT to read only
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setRole
+</td><td valign="top" width="80%">Give a logical name to the columns of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setSequenceBase
+</td><td valign="top" width="80%">Set the sequence base for the void column of a BAT. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setSet
+</td><td valign="top" width="80%">Sets the 'set' property on this BAT to 'mode'. In 'set' mode,
+        the kernel will silently block insertions that cause a duplicate
+        BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set
+        to TRUE, this function does not automatically eliminate duplicates. 
+        Use b := b.sunique; Returns the BAT itself. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setSorted
+</td><td valign="top" width="80%">Assure BAT is ordered on the head. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setTransient
+</td><td valign="top" width="80%">Make the BAT transient.  Returns
+	boolean which indicates if the
+BAT administration has indeed changed. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.setWriteMode
+</td><td valign="top" width="80%">Change access privilige of BAT to read and write
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.unload
+</td><td valign="top" width="80%">Swapout a BAT to disk. Transient BATs can also be swapped out. 
+        Returns whether the unload indeed happened. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bat.unpack
+</td><td valign="top" width="80%">Extract the first tuple from a bat
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.!=
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.%
+</td><td valign="top" width="80%">Binary BAT calculator function with new BAT result
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.*
+</td><td valign="top" width="80%">Binary BAT calculator function with new BAT result
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.+
+</td><td valign="top" width="80%">Binary BAT calculator function with new BAT result
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.++
+</td><td valign="top" width="80%">Unary minus over the tail of the bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.-
+</td><td valign="top" width="80%">Unary minus over the tail of the bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.&ndash;
+</td><td valign="top" width="80%">Unary minus over the tail of the bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc./
+</td><td valign="top" width="80%">Binary BAT calculator function with new BAT result
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.&lt;
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.&lt;=
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.==
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.&gt;
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.&gt;=
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.and
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.dbl
+</td><td valign="top" width="80%">Coerce an dbl tail to a bat with dbl tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.flt
+</td><td valign="top" width="80%">Coerce an dbl tail to a bat with flt tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.ifthen
+</td><td valign="top" width="80%">Ifthen operation to assemble a conditional result
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.ifthenelse
+</td><td valign="top" width="80%">Ifthen operation to assemble a conditional result
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.init
+</td><td valign="top" width="80%">Initialize a BAT with a tail constant
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.int
+</td><td valign="top" width="80%">Coerce an oid tail to a bat with int tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.lng
+</td><td valign="top" width="80%">Coerce an oid tail to a bat with lng tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.not
+</td><td valign="top" width="80%">Return a BAT with the negated tail
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.oid
+</td><td valign="top" width="80%">Materialize the oid into an oid
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.or
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.project
+</td><td valign="top" width="80%">Fill the tail with a constant, e.g. [0~b]
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.sht
+</td><td valign="top" width="80%">Coerce an oid tail to a bat with sht tail. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.str
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcalc.xor
+</td><td valign="top" width="80%">Binary BAT calculator function with new BAT result
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.blue
+</td><td valign="top" width="80%">Extracts blue component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.cb
+</td><td valign="top" width="80%">Extracts Cb(blue color) component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.color
+</td><td valign="top" width="80%">Converts string to color
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.cr
+</td><td valign="top" width="80%">Extracts Cr(red color) component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.green
+</td><td valign="top" width="80%">Extracts green component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.hsv
+</td><td valign="top" width="80%">Converts an HSV triplets to a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.hue
+</td><td valign="top" width="80%">Extracts hue component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.luminance
+</td><td valign="top" width="80%">Extracts Y(luminance) component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.red
+</td><td valign="top" width="80%">Extracts red component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.rgb
+</td><td valign="top" width="80%">Converts an RGB triplets to a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.saturation
+</td><td valign="top" width="80%">Extracts saturation component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.str
+</td><td valign="top" width="80%">Identity mapping for string bats
+<br></td></tr><tr align="left"><td valign="top" width="20%">batcolor.value
+</td><td valign="top" width="80%">Extracts value component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">batmath.acos
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.asin
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.atan
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.atan2
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.ceil
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.cos
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.cosh
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.exp
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.fabs
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.floor
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.fmod
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.log
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.log10
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.pow
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.sin
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.sinh
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.sqrt
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.tan
+<br></td></tr><tr align="left"><td valign="top" width="20%">batmath.tanh
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">batstr.!=
+</td><td valign="top" width="80%">Equate a bat of strings against a singleton
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.+
+</td><td valign="top" width="80%">Concatenate two strings. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.==
+</td><td valign="top" width="80%">Equate a bat of strings against a singleton
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.bytes
+</td><td valign="top" width="80%">Return the string length in bytes. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.chrAt
+</td><td valign="top" width="80%">String array lookup operation. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.endsWith
+</td><td valign="top" width="80%">Suffix check. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.length
+</td><td valign="top" width="80%">Return the length of a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.like
+</td><td valign="top" width="80%">Perform SQL like operation against a string bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.ltrim
+</td><td valign="top" width="80%">Strip whitespaces from start of a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.match
+</td><td valign="top" width="80%">POSIX pattern matching against a string BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.r_search
+</td><td valign="top" width="80%">Reverse search for a substring. Returns position, -1 if not found. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.rtrim
+</td><td valign="top" width="80%">Strip whitespaces from end of a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.search
+</td><td valign="top" width="80%">Search for a substring. Returns position, -1 if not found. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.startsWith
+</td><td valign="top" width="80%">Prefix check. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.str
+</td><td valign="top" width="80%">Identity mapping for string bats
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.string
+</td><td valign="top" width="80%">Return substring s[offset..offset+count] of a string s[0..n]
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.substitute
+</td><td valign="top" width="80%">Substitute first occurrence of 'src' by
+	'dst'.  Iff repeated = true this is
+	repeated while 'src' can be found in the
+	result string. In order to prevent
+	recursion and result strings of unlimited
+	size, repeating is only done iff src is
+	not a substring of dst. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.toLower
+</td><td valign="top" width="80%">Convert a string to lower case. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.toUpper
+</td><td valign="top" width="80%">Convert a string to upper case. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.trim
+</td><td valign="top" width="80%">Strip whitespaces around a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">batstr.unicodeAt
+</td><td valign="top" width="80%">get a unicode character (as an int) from a string position. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">bbp.bind
+</td><td valign="top" width="80%">Locate the BAT using its BBP index
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.close
+</td><td valign="top" width="80%">Close the bbp box. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.commit
+</td><td valign="top" width="80%">Commit updates for this client
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.deposit
+</td><td valign="top" width="80%">Enter a new bat into the bbp box. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.destroy
+</td><td valign="top" width="80%">Schedule a BAT for removal at session end or immediately
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.discard
+</td><td valign="top" width="80%">Remove the BAT from the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getCount
+</td><td valign="top" width="80%">Create a BAT with the cardinalities of all known BATs
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getDirty
+</td><td valign="top" width="80%">Create a BAT with the dirty/ diffs/clean status
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getHeadType
+</td><td valign="top" width="80%">Map a BAT into its head type
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getHeat
+</td><td valign="top" width="80%">Create a BAT with the heat values
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getKind
+</td><td valign="top" width="80%">Create a BAT with the persistency status
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getLRefCount
+</td><td valign="top" width="80%">Utility for debugging MAL interpreter
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getLocation
+</td><td valign="top" width="80%">Create a BAT with their disk locations
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getName
+</td><td valign="top" width="80%">Map a BAT into its internal name
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getNames
+</td><td valign="top" width="80%">Map BAT into its bbp name
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getObjects
+</td><td valign="top" width="80%">View of the box content. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getRNames
+</td><td valign="top" width="80%">Map a BAT into its bbp physical name
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getRefCount
+</td><td valign="top" width="80%">Utility for debugging MAL interpreter
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getStatus
+</td><td valign="top" width="80%">Create a BAT with the disk/load status
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.getTailType
+</td><td valign="top" width="80%">Map a BAT into its tail type
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.iterator
+</td><td valign="top" width="80%">Locates the next element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.open
+</td><td valign="top" width="80%">Locate the bbp box and open it. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.prelude
+</td><td valign="top" width="80%">Initialize the bbp box
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.release
+</td><td valign="top" width="80%">Remove the BAT from further consideration
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.releaseAll
+</td><td valign="top" width="80%">Commit updates for this client
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.take
+</td><td valign="top" width="80%">Load a particular bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">bbp.toString
+</td><td valign="top" width="80%">Get the string representation of an element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">blob.nitems
+</td><td valign="top" width="80%">get the number of bytes in this blob. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">blob.null
+<br></td></tr><tr align="left"><td valign="top" width="20%">blob.toblob
+</td><td valign="top" width="80%">store a string as a blob. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">blob.tostring
+</td><td valign="top" width="80%">get the bytes from blob as a string,
+	 starting at byte 'index' till the first
+	0 byte or the end of the blob. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">box.close
+</td><td valign="top" width="80%">Close the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.deposit
+</td><td valign="top" width="80%">Enter a new value into the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.destroy
+</td><td valign="top" width="80%">Destroy the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.discard
+</td><td valign="top" width="80%">Release the BAT from the client pool
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.getBoxNames
+</td><td valign="top" width="80%">Retrieve the names of all boxes
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.iterator
+</td><td valign="top" width="80%">Locates the next element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.open
+</td><td valign="top" width="80%">Locate the box and open it
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.release
+</td><td valign="top" width="80%">Release the BAT from the client pool
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.releaseAll
+</td><td valign="top" width="80%">Release all objects for this client
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.take
+</td><td valign="top" width="80%">Locates the typed value in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">box.toString
+</td><td valign="top" width="80%">Get the string representation of
+	the i-th element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">bstream.create
+</td><td valign="top" width="80%">create a buffered stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">bstream.destroy
+</td><td valign="top" width="80%">destroy bstream
+<br></td></tr><tr align="left"><td valign="top" width="20%">bstream.read
+</td><td valign="top" width="80%">read at least size bytes into the buffer of s
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">calc.!=
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.%
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.*
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.+
+</td><td valign="top" width="80%">Concatenate two strings
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.-
+</td><td valign="top" width="80%">negative value
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc./
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.&lt;
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.&lt;&lt;
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.&lt;=
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.==
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.&gt;
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.&gt;=
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.&gt;&gt;
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.abs
+</td><td valign="top" width="80%">absolute value
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.and
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.bat
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.between
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.bit
+</td><td valign="top" width="80%">coercion dbl to bit
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.chr
+</td><td valign="top" width="80%">coercion lng to chr
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.dbl
+</td><td valign="top" width="80%">coercion lng to dbl
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.flt
+</td><td valign="top" width="80%">coercion lng to flt
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.getBAT
+</td><td valign="top" width="80%">Coerce bat to BAT identifier
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.getBATidentifier
+</td><td valign="top" width="80%">Coerce bat to BAT identifier
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.ifthenelse
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.int
+</td><td valign="top" width="80%">coercion dbl to int
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.inv
+</td><td valign="top" width="80%">inverse value (1/x)
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.isnil
+</td><td valign="top" width="80%">is a value nil? 
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.isnotnil
+</td><td valign="top" width="80%">is a value not equal to nil? 
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.length
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.lng
+</td><td valign="top" width="80%">coercion dbl to lng
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.max
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.min
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.newoid
+</td><td valign="top" width="80%">Reserves a range of consecutive unique OIDs; returns the lowest
+		in range.  equivalent to newoid(0,incr)
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.not
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.oid
+</td><td valign="top" width="80%">coercion int to oid
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.or
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.ptr
+</td><td valign="top" width="80%">coercion lng to ptr
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.setoid
+</td><td valign="top" width="80%">Equivalent to setoid(1:oid). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.sht
+</td><td valign="top" width="80%">coercion dbl to sht
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.str
+</td><td valign="top" width="80%">coercion dbl to str
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.void
+<br></td></tr><tr align="left"><td valign="top" width="20%">calc.xor
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">chopper.getHead
+</td><td valign="top" width="80%">return the BUN head value using the cursor. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">chopper.getTail
+</td><td valign="top" width="80%">return the BUN tail value using the cursor. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">chopper.hasMoreElements
+</td><td valign="top" width="80%">Produce the next bun for processing. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">chopper.newIterator
+</td><td valign="top" width="80%">Process the buns one by one extracted from a void table. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">clients.addScenario
+</td><td valign="top" width="80%">add the given scenario to the allowed scenarios for the given user
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.addUser
+</td><td valign="top" width="80%">Allow user with password access to the given scenarios
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.changePassword
+</td><td valign="top" width="80%">Change the password for the current user
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.changeUsername
+</td><td valign="top" width="80%">Change the username of the user into the new string
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.checkPermission
+</td><td valign="top" width="80%">Check permission for a user
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.getId
+</td><td valign="top" width="80%">return a number that unique represents the current client
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.getInfo
+</td><td valign="top" width="80%">Pseudo bat with client attributes
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.getLogins
+</td><td valign="top" width="80%">Pseudo bat of client login time
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.getScenario
+</td><td valign="top" width="80%">Retrieve current scenario name
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.getUsers
+</td><td valign="top" width="80%">Pseudo bat of users logged in
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.quit
+</td><td valign="top" width="80%">Terminate the session for this client
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.removeScenario
+</td><td valign="top" width="80%">remove the given scenario from the allowed scenatios for the given user
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.removeUser
+</td><td valign="top" width="80%">Remove the given user from the system
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.setDebug
+</td><td valign="top" width="80%">Set the debugging bitset. See configuration file and documentation
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.setHistory
+</td><td valign="top" width="80%">Designate console history file
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.setListing
+</td><td valign="top" width="80%">Turn on/off echo of MAL instructions:
+	2 - show mal instruction,
+	4 - show type resolutoin,
+	8 - show binding information
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.setPassword
+</td><td valign="top" width="80%">Set the password for the given user
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.setScenario
+</td><td valign="top" width="80%">Switch to other scenario handler, return previous one
+<br></td></tr><tr align="left"><td valign="top" width="20%">clients.trace
+</td><td valign="top" width="80%">Trace (on/off) receipt of messages for all users
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">color.blue
+</td><td valign="top" width="80%">Extracts blue component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.cb
+</td><td valign="top" width="80%">Extracts Cb(blue color) component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.color
+</td><td valign="top" width="80%">Converts string to color
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.cr
+</td><td valign="top" width="80%">Extracts Cr(red color) component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.green
+</td><td valign="top" width="80%">Extracts green component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.hsv
+</td><td valign="top" width="80%">Converts an HSV triplets to a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.hue
+</td><td valign="top" width="80%">Extracts hue component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.luminance
+</td><td valign="top" width="80%">Extracts Y(luminance) component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.print
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.printf
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.red
+</td><td valign="top" width="80%">Extracts red component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.rgb
+</td><td valign="top" width="80%">Converts an RGB triplets to a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.saturation
+</td><td valign="top" width="80%">Extracts saturation component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.str
+</td><td valign="top" width="80%">Converts color to string
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.value
+</td><td valign="top" width="80%">Extracts value component from a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%">color.ycc
+</td><td valign="top" width="80%">Converts an YCC triplets to a color atom
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">const.close
+</td><td valign="top" width="80%">Close the constant box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.deposit
+</td><td valign="top" width="80%">Enter a new variable into the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.destroy
+</td><td valign="top" width="80%">Destroy the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.discard
+</td><td valign="top" width="80%">Release the const from the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.epiloque
+</td><td valign="top" width="80%">Cleanup the const box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.hasMoreElements
+</td><td valign="top" width="80%">Locate next element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.newIterator
+</td><td valign="top" width="80%">Locate next element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.open
+</td><td valign="top" width="80%">Locate and open the constant box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.prelude
+</td><td valign="top" width="80%">Initialize the const box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.release
+</td><td valign="top" width="80%">Release a new constant value
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.releaseAll
+</td><td valign="top" width="80%">Release all variables in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.take
+</td><td valign="top" width="80%">Take a variable out of the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">const.toString
+</td><td valign="top" width="80%">Get the string representation of an element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">crackers.crackOrdered
+</td><td valign="top" width="80%">Break a BAT into five pieces with
+	 tail&lt;low, tail==low, low&lt;tail&lt;hgh, tail==hgh, tail&gt;hgh,
+	 respectively; maintaining the head-oid order within each piece. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.crackOrdered_validate
+</td><td valign="top" width="80%">Validate whether a BAT is correctly broken into five pieces with
+	 tail&lt;low, tail==low, low&lt;tail&lt;hgh, tail==hgh, tail&gt;hgh,
+	 respectively; maintaining the head-oid order within each piece. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.joinuselect
+</td><td valign="top" width="80%">Join left and right on oids. From right only bun that satisfy the
+	restriction qualify. Result is a new bat. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.printIndex
+</td><td valign="top" width="80%">Print the index for a cracked table. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.select
+</td><td valign="top" width="80%">Retrieve the subset using a cracker
+        index producing preferably a BATview. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.uselect
+</td><td valign="top" width="80%">Retrieve the subset using a cracker
+        index producing preferably a BATview. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.zcrackOrdered
+</td><td valign="top" width="80%">Break a BAT into three pieces with
+	 tail&lt;=low, low&lt;tail&lt;=hgh, tail&gt;hgh,
+	 respectively; maintaining the head-oid order within each piece. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.zcrackOrdered_validate
+</td><td valign="top" width="80%">Validate whether a BAT is correctly broken into three pieces with
+	 tail&lt;=low, low&lt;tail&lt;=hgh, tail&gt;hgh,
+	 respectively; maintaining the head-oid order within each piece. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.zcrackUnordered
+</td><td valign="top" width="80%">Break a BAT into three pieces with
+	 tail&lt;=low, low&lt;tail&lt;=hgh, tail&gt;hgh,
+	 respectively. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">crackers.zcrackUnordered_validate
+</td><td valign="top" width="80%">Validate whether a BAT is correctly broken into three pieces with
+	 tail&lt;=low, low&lt;tail&lt;=hgh, tail&gt;hgh,
+	 respectively. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">date.!=
+</td><td valign="top" width="80%">Equality of two dates
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.&lt;
+</td><td valign="top" width="80%">Equality of two dates
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.&lt;=
+</td><td valign="top" width="80%">Equality of two dates
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.=
+</td><td valign="top" width="80%">Equality of two dates
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.&gt;
+</td><td valign="top" width="80%">Equality of two dates
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.&gt;=
+</td><td valign="top" width="80%">Equality of two dates
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.date
+</td><td valign="top" width="80%">Noop routine. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">date.isnil
+</td><td valign="top" width="80%">Nil test for date value
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">daytime.!=
+</td><td valign="top" width="80%">Equality of two daytimes
+<br></td></tr><tr align="left"><td valign="top" width="20%">daytime.&lt;
+</td><td valign="top" width="80%">Equality of two daytimes
+<br></td></tr><tr align="left"><td valign="top" width="20%">daytime.&lt;=
+</td><td valign="top" width="80%">Equality of two daytimes
+<br></td></tr><tr align="left"><td valign="top" width="20%">daytime.=
+</td><td valign="top" width="80%">Equality of two daytimes
+<br></td></tr><tr align="left"><td valign="top" width="20%">daytime.&gt;
+</td><td valign="top" width="80%">Equality of two daytimes
+<br></td></tr><tr align="left"><td valign="top" width="20%">daytime.&gt;=
+</td><td valign="top" width="80%">Equality of two daytimes
+<br></td></tr><tr align="left"><td valign="top" width="20%">daytime.isnil
+</td><td valign="top" width="80%">Nil test for daytime value
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">factory.getCaller
+</td><td valign="top" width="80%">Retrieve the unique identity
+        of the factory caller
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.getLocations
+</td><td valign="top" width="80%">Retrieve the location of all
+        known plants
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.getOwners
+</td><td valign="top" width="80%">Retrieve the factory owners table
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.getPlants
+</td><td valign="top" width="80%">Retrieve the factory plant description
+        for all operational factories
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.getTimeStampIn
+</td><td valign="top" width="80%">Retrieve the time stamp it was
+        received by the factory
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.getTimeStampOut
+</td><td valign="top" width="80%">Retrieve the time stamp the answer
+        was returned to the client
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.setLocation
+</td><td valign="top" width="80%">Set the location of the plant
+        manager. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">factory.shutdown
+</td><td valign="top" width="80%">Close a factory
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">group.avg
+</td><td valign="top" width="80%">grouped tail average
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.count
+</td><td valign="top" width="80%">grouped count
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.derive
+</td><td valign="top" width="80%">Cross tabulation group extension step.  Returned head values are
+		identical as in 'ct'. Tail values are from the same domain and
+		indicate further refinement of the groups in 'ct', taking into
+		account also the tail-values in 'attr'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.max
+</td><td valign="top" width="80%">grouped tail maximum
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.min
+</td><td valign="top" width="80%">grouped tail minimum
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.new
+</td><td valign="top" width="80%">Cross tabulation group initialization like GRPgroup, but with
+		user provided #bits in hashmask and #distinct values in range. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.prelude
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.refine
+</td><td valign="top" width="80%">refine the ordering of a tail-ordered BAT by sub-ordering on the
+		values of a second bat 'a' (where the heads of a and b match 1-1). 
+		The effect of this is similar to (hash-based) GRPderive, with the
+		distinction that the group ids respect the ordering of the group
+		values. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.refine_reverse
+</td><td valign="top" width="80%">refine the ordering of a tail-ordered BAT by sub-ordering on the
+		values of a second bat 'a' (where the heads of a and b match 1-1). 
+		The effect of this is similar to (hash-based) GRPderive, with the
+		distinction that the group ids respect the ordering of the group
+		values. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.size
+</td><td valign="top" width="80%">grouped count of true values
+<br></td></tr><tr align="left"><td valign="top" width="20%">group.sum
+</td><td valign="top" width="80%">Tail sum of groups of a sliding window of fixed size
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">inet.!=
+</td><td valign="top" width="80%">Inequality of two inets
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&lt;
+</td><td valign="top" width="80%">Whether v is less than w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&lt;&lt;
+</td><td valign="top" width="80%">Whether v is contained within w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&lt;&lt;=
+</td><td valign="top" width="80%">Whether v is contained within or is equal to w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&lt;=
+</td><td valign="top" width="80%">Whether v is less than or equal to w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.=
+</td><td valign="top" width="80%">Equality of two inets
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&gt;
+</td><td valign="top" width="80%">Whether v is greater than w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&gt;=
+</td><td valign="top" width="80%">Whether v is equal to or greater than w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&gt;&gt;
+</td><td valign="top" width="80%">Whether v contains w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.&gt;&gt;=
+</td><td valign="top" width="80%">Whether v contains or is equal to w
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.abbrev
+</td><td valign="top" width="80%">Abbreviated display format as text
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.broadcast
+</td><td valign="top" width="80%">Returns the broadcast address for network
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.host
+</td><td valign="top" width="80%">Extract IP address as text
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.hostmask
+</td><td valign="top" width="80%">Construct host mask for network
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.isnil
+</td><td valign="top" width="80%">Nil test for inet value
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.masklen
+</td><td valign="top" width="80%">Extract netmask length
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.netmask
+</td><td valign="top" width="80%">Construct netmask for network
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.network
+</td><td valign="top" width="80%">Extract network part of address
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.new
+</td><td valign="top" width="80%">Create an inet from a string literal
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.setmasklen
+</td><td valign="top" width="80%">Set netmask length for inet value
+<br></td></tr><tr align="left"><td valign="top" width="20%">inet.text
+</td><td valign="top" width="80%">Extract IP address and netmask length as text
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getAddress
+</td><td valign="top" width="80%">Returns the function signature(s)
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getAddresses
+</td><td valign="top" width="80%">Obtain the function address
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getAtomNames
+</td><td valign="top" width="80%">Collect a BAT with the atom names
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getAtomSizes
+</td><td valign="top" width="80%">Collect a BAT with the atom sizes
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getAtomSuperNames
+</td><td valign="top" width="80%">Collect a BAT with the atom names
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getComment
+</td><td valign="top" width="80%">Returns the function help information. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getDefinition
+</td><td valign="top" width="80%">Returns a string representation of a specific function
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getEnvironment
+</td><td valign="top" width="80%">Collect the environment variables
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getFunction
+</td><td valign="top" width="80%">Obtain the function name
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getKind
+</td><td valign="top" width="80%">Obtain the instruction kind
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getModule
+</td><td valign="top" width="80%">Obtain the function name
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getSignature
+</td><td valign="top" width="80%">Returns the function signature(s)
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getSignatures
+</td><td valign="top" width="80%">Obtain the function signatures
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getSize
+</td><td valign="top" width="80%">Return the storage size for a function (in bytes)
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getSource
+</td><td valign="top" width="80%">Return the original input for a function
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getType
+</td><td valign="top" width="80%">Return the type of a variable (expression)
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getTypeIndex
+<br></td></tr><tr align="left"><td valign="top" width="20%">inspect.getTypeName
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">io.export
+</td><td valign="top" width="80%">Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
+ is put into the .../dbfarm/$DB directory. Success of failure is indicated. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.ftable
+</td><td valign="top" width="80%">Print an n-ary table to a file. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.import
+</td><td valign="top" width="80%">Import a BAT from an ASCII dump. The new tuples are *inserted* into the
+ parameter BAT. You have to create it! Its signature must match the dump,
+ else parsing errors will occur and FALSE is returned. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.print
+</td><td valign="top" width="80%">Print a MAL value tuple . 
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.printf
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.printft
+</td><td valign="top" width="80%">Select default format
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.prompt
+</td><td valign="top" width="80%">Print a MAL value without brackets. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.stderr
+</td><td valign="top" width="80%">return the error stream for the database console
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.stdin
+</td><td valign="top" width="80%">return the input stream to the database client
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.stdout
+</td><td valign="top" width="80%">return the output stream for the database client
+<br></td></tr><tr align="left"><td valign="top" width="20%">io.table
+</td><td valign="top" width="80%">Print an n-ary table. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">language.assert
+</td><td valign="top" width="80%">Assertion test
+<br></td></tr><tr align="left"><td valign="top" width="20%">language.call
+</td><td valign="top" width="80%">Evaluate a program stored in a BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">language.newRange
+</td><td valign="top" width="80%">This routine introduces an iterator
+	over a scalar domain. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">language.nextElement
+</td><td valign="top" width="80%">Advances the iterator with a fixed value
+	until it becomes &gt;= last. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">language.raise
+</td><td valign="top" width="80%">Raise an exception labeled
+	with a specific message. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">language.register
+</td><td valign="top" width="80%">Compile the code string and register it as a MAL function
+<br></td></tr><tr align="left"><td valign="top" width="20%">language.source
+</td><td valign="top" width="80%">Merge the instructions stored in the
+	file with the current program
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">lock.create
+</td><td valign="top" width="80%">Create an unset lock
+<br></td></tr><tr align="left"><td valign="top" width="20%">lock.destroy
+</td><td valign="top" width="80%">Destroy a lock
+<br></td></tr><tr align="left"><td valign="top" width="20%">lock.set
+</td><td valign="top" width="80%">Try to set a lock. If set, block till it is freed
+<br></td></tr><tr align="left"><td valign="top" width="20%">lock.tostr
+</td><td valign="top" width="80%">Overloaded atom function
+<br></td></tr><tr align="left"><td valign="top" width="20%">lock.try
+</td><td valign="top" width="80%">Try a lock. If free set it, if not return EBUSY
+<br></td></tr><tr align="left"><td valign="top" width="20%">lock.unset
+</td><td valign="top" width="80%">Unset a lock
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">manual.completion
+</td><td valign="top" width="80%">Produces the wordcompletion table. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">manual.create
+</td><td valign="top" width="80%">Produces a XML-formatted manual over all modules loaded. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">manual.createHelp
+</td><td valign="top" width="80%">Produces a manual with help lines grouped by module. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">manual.createOverview
+</td><td valign="top" width="80%">Produces an overview of all functions grouped by module. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">manual.help
+</td><td valign="top" width="80%">Produces the help table for the pattern. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">manual.search
+</td><td valign="top" width="80%">Search the manual for entries matching the keyword
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">mat.expand
+</td><td valign="top" width="80%">Replace the group by its components
+<br></td></tr><tr align="left"><td valign="top" width="20%">mat.info
+</td><td valign="top" width="80%">retrieve the definition from the partition catalogue
+<br></td></tr><tr align="left"><td valign="top" width="20%">mat.iterator
+</td><td valign="top" width="80%">Replace the group by its components
+<br></td></tr><tr align="left"><td valign="top" width="20%">mat.new
+</td><td valign="top" width="80%">Define a Merge Association Table (MAT)
+<br></td></tr><tr align="left"><td valign="top" width="20%">mat.pack
+</td><td valign="top" width="80%">Materialize the MAT into a single BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">mat.print
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">mdb.List
+</td><td valign="top" width="80%">Dump the routine M.F on standard out. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getDefinition
+</td><td valign="top" width="80%">Returns a string representation of the current function
+	with typing information attached
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getExceptionContext
+</td><td valign="top" width="80%">extract the context string from the exception message
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getExceptionReason
+</td><td valign="top" width="80%">extract the reason from the exception message
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getExceptionVariable
+</td><td valign="top" width="80%">extract the variable name from the exception message
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getStackDepth
+</td><td valign="top" width="80%">Return the depth of the calling stack. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getStackFrame
+</td><td valign="top" width="80%">Collect variable binding of current (n-th) stack frame. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.getStackTrace
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.inspect
+</td><td valign="top" width="80%">Run the debugger on a specific function
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.list
+</td><td valign="top" width="80%">Dump the routine M.F on standard out. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.setCatch
+</td><td valign="top" width="80%">Turn on/off catching exceptions
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.setTimer
+</td><td valign="top" width="80%">Turn on/off performance timer for debugger
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.setTrace
+</td><td valign="top" width="80%">Turn on/off tracing of current routine
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.start
+</td><td valign="top" width="80%">Start interactive debugger
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.stop
+</td><td valign="top" width="80%">Stop the interactive debugger
+<br></td></tr><tr align="left"><td valign="top" width="20%">mdb.var
+</td><td valign="top" width="80%">Dump the symboltable of routine M.F on standard out. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">mkey.bulk_rotate_xor_hash
+</td><td valign="top" width="80%">pre:  h and b should be synced on head
+         post: [:xor=]([:rotate=](h, nbits), [hash](b))
+<br></td></tr><tr align="left"><td valign="top" width="20%">mkey.hash
+</td><td valign="top" width="80%">compute a hash int number from any value
+<br></td></tr><tr align="left"><td valign="top" width="20%">mkey.rotate
+</td><td valign="top" width="80%">left-rotate an int by nbits
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">mmath.acos
+</td><td valign="top" width="80%">The acos(x) function calculates the arc cosine of x, that is the
+	value whose cosine is x. The value is returned in radians and is
+	mathematically defined to be between 0 and PI (inclusive). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.asin
+</td><td valign="top" width="80%">The asin(x) function calculates the arc sine of x, that is the value
+	whose sine is x. The value is returned in radians and is mathematically
+	defined to be between -PI/20 and -PI/2 (inclusive). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.atan
+</td><td valign="top" width="80%">The atan(x) function calculates the arc tangent of x, that is the value
+	whose tangent is x. The value is returned in radians and is mathematically
+	defined to be between -PI/2 and PI/2 (inclusive). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.atan2
+</td><td valign="top" width="80%">The atan2(x,y) function calculates the arc tangent of the two
+        variables x and y.  It is similar to calculating the arc
+	tangent of y / x, except that the signs of both arguments are
+        used to determine the quadrant of the result.  The value is
+	returned in radians and is mathematically defined to be between
+        -PI/2 and PI/2 (inclusive). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.ceil
+</td><td valign="top" width="80%">The ceil(x) function rounds x upwards to the nearest integer. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.cos
+</td><td valign="top" width="80%">The cos(x) function returns the cosine of x, where x is given in
+        radians. The return value is between -1 and 1. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.cosh
+</td><td valign="top" width="80%">The cosh() function  returns the hyperbolic cosine of x, which is
+	defined mathematically as (exp(x) + exp(-x)) / 2. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.exp
+</td><td valign="top" width="80%">The exp(x) function returns the value of e (the base of
+        natural logarithms) raised to the power of x. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.fabs
+</td><td valign="top" width="80%">The fabs(x) function  returns  the  absolute value of the
+        floating-point number x. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.finite
+</td><td valign="top" width="80%">The finite(x) function returns true if x is neither infinite
+        nor a 'not-a-number' (NaN) value, and false otherwise. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.floor
+</td><td valign="top" width="80%">The floor(x) function rounds x downwards to the nearest integer. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.fmod
+</td><td valign="top" width="80%">The fmod(x,y) function computes the remainder of dividing x by y. 
+	The return value is x - n * y, where n is the quotient of x / y,
+	rounded towards zero to an integer. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.isinf
+</td><td valign="top" width="80%">The isinf(x) function returns -1 if x represents negative
+        infinity, 1 if x represents positive infinity, and 0 otherwise. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.isnan
+</td><td valign="top" width="80%">The isnan(x) function returns true if x is 'not-a-number'
+        (NaN), and false otherwise. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.log
+</td><td valign="top" width="80%">The log(x) function returns the natural logarithm of x. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.log10
+</td><td valign="top" width="80%">The log10(x) function returns the base-10 logarithm of x. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.pow
+</td><td valign="top" width="80%">The pow(x,y) function  returns the value of x raised to the power of y. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.rand
+</td><td valign="top" width="80%">return a random number
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.round
+</td><td valign="top" width="80%">The round(n, m) returns n rounded to m places to the right
+        of the decimal point; if m is omitted, to 0 places. m can be
+	negative to round off digits left of the decimal point. 
+        m must be an integer. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.sin
+</td><td valign="top" width="80%">The sin(x) function returns the cosine of x, where x is given in
+        radians. The return value is between -1 and 1. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.sinh
+</td><td valign="top" width="80%">The sinh() function  returns  the  hyperbolic sine of x, which
+        is defined mathematically as (exp(x) - exp(-x)) / 2. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.sqrt
+</td><td valign="top" width="80%">The sqrt(x) function returns the non-negative square root of x. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.srand
+</td><td valign="top" width="80%">initialize the rand() function with a seed
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.tan
+</td><td valign="top" width="80%">The tan(x) function returns the tangent of x,
+        where x is given in radians
+<br></td></tr><tr align="left"><td valign="top" width="20%">mmath.tanh
+</td><td valign="top" width="80%">The tanh() function returns the hyperbolic tangent of x, which is
+	defined mathematically as sinh(x) / cosh(x). 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">mserver.bind
+</td><td valign="top" width="80%">Bind a remote variable to a local one
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.connect
+</td><td valign="top" width="80%">Establish connection with a remote mserver
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.connect_ssl
+</td><td valign="top" width="80%">Establish connection with a remote mserver using the
+secure socket layer
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.destroy
+</td><td valign="top" width="80%">Destroy the handle
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.disconnect
+</td><td valign="top" width="80%">Terminate the session
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.epilogue
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.error
+</td><td valign="top" width="80%">Check for an error in the communication
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.explain
+</td><td valign="top" width="80%">Turn the error seen into a string
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.fetch_all_rows
+</td><td valign="top" width="80%">Retrieve all rows into the cache
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.fetch_field
+</td><td valign="top" width="80%">Retrieve a single chr field
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.fetch_field_array
+</td><td valign="top" width="80%">Retrieve all fields for a row
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.fetch_line
+</td><td valign="top" width="80%">Retrieve a complete line
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.fetch_reset
+</td><td valign="top" width="80%">Reset the cache read line. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.fetch_row
+</td><td valign="top" width="80%">Retrieve the next row for analysis
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.finish
+</td><td valign="top" width="80%">Remove all remaining answers
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.getError
+</td><td valign="top" width="80%">Get error message
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.get_field_count
+</td><td valign="top" width="80%">Return number of fields
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.get_row_count
+</td><td valign="top" width="80%">Return number of rows
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.listen
+</td><td valign="top" width="80%">Start the Mapi listener on &lt;port&gt; for &lt;maxusers&gt;. 
+	For a new client connection MAL procedure &lt;cmd&gt;(Stream s_in, Stream s_out)
+	is called.If no &lt;cmd&gt; is specified a new client thread is forked. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.listen_ssl
+</td><td valign="top" width="80%">Start the Mapi listener on &lt;port&gt; for &lt;maxusers&gt; using SSL. 
+	&lt;keyfile&gt; and &lt;certfile&gt; give the path names for files with the
+	server key and certificates in PEM format. For a new client connection
+	MAL procedure &lt;cmd&gt;(Stream s_in, Stream s_out) is called. 
+	If no &lt;cmd&gt; is specified a new client thread is forked. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.lookup
+</td><td valign="top" width="80%">Retrieve the connection identifier
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.malclient
+</td><td valign="top" width="80%">Start a Mapi client. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.next_result
+</td><td valign="top" width="80%">Go to next result set
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.ping
+</td><td valign="top" width="80%">Test availability of server
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.prelude
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.prepare
+</td><td valign="top" width="80%">Prepare a query for execution
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.put
+</td><td valign="top" width="80%">Prepare sending a value to a remote site
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.query
+</td><td valign="top" width="80%">Sent the query for execution
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.query_array
+</td><td valign="top" width="80%">Sent the query for execution replacing '?' by arguments
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.query_handle
+</td><td valign="top" width="80%">Sent the query for execution
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.reconnect
+</td><td valign="top" width="80%">Re-establish a connection
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.resume
+</td><td valign="top" width="80%">Resume connection listeners
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.rpc
+</td><td valign="top" width="80%">Sent a simple query for execution
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.setAlias
+</td><td valign="top" width="80%">Give the channel a logical name
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.stop
+</td><td valign="top" width="80%">Terminate connection listeners
+<br></td></tr><tr align="left"><td valign="top" width="20%">mserver.suspend
+</td><td valign="top" width="80%">Suspend accepting connections
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">mtime.add
+</td><td valign="top" width="80%">returns the timestamp that comes 'msecs'
+	(possibly negative) after 'value'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.adddays
+</td><td valign="top" width="80%">returns the date after a number
+	of days (possibly negative). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.addmonths
+</td><td valign="top" width="80%">returns the date after a number of
+	months (possibly negative). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.addyears
+</td><td valign="top" width="80%">returns the date after a number
+	of years (possibly negative). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.compute
+</td><td valign="top" width="80%">compute the date from a rule in a given year
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.current_date
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.current_time
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.current_timestamp
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.date
+</td><td valign="top" width="80%">extracts date from timestamp in a
+	specific timezone. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.date_add_month_interval
+</td><td valign="top" width="80%">Add months to a date
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.date_add_sec_interval
+</td><td valign="top" width="80%">Add seconds to a date
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.date_sub_sec_interval
+</td><td valign="top" width="80%">Subtract seconds from a date
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.day
+</td><td valign="top" width="80%">extract day from rule. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.dayname
+</td><td valign="top" width="80%">Returns day name from a number
+	between [1-7], str(nil) otherwise. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.daynum
+</td><td valign="top" width="80%">Returns number of day [1-7] from a
+	string or nil if does not match any. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.dayofweek
+</td><td valign="top" width="80%">Returns the current day of the week
+	where 1=sunday, .., 7=saturday
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.dayofyear
+</td><td valign="top" width="80%">Returns N where d is the Nth day
+	of the year (january 1 returns 1)
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.daytime
+</td><td valign="top" width="80%">default time with zeroed components
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.diff
+</td><td valign="top" width="80%">returns the number of milliseconds
+	between 'val1' and 'val2'. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.dst
+</td><td valign="top" width="80%">return whether DST holds in the
+	timezone at a certain point of time. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.end_dst
+</td><td valign="top" width="80%">extract rule that determines
+	end of DST from tzone. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.epilogue
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.hours
+</td><td valign="top" width="80%">extracts hour from daytime
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.local_timezone
+</td><td valign="top" width="80%">get the local tzone in seconds
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.milliseconds
+</td><td valign="top" width="80%">extracts milliseconds from daytime
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.minutes
+</td><td valign="top" width="80%">extract minutes from rule. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.month
+</td><td valign="top" width="80%">extract month from rule. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.monthname
+</td><td valign="top" width="80%">Returns month name from a number
+	between [1-12], str(nil) otherwise. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.monthnum
+</td><td valign="top" width="80%">Returns month number [1-12] from a string
+	 or nil if does not match any. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.msec
+</td><td valign="top" width="80%">get time of day in msec since 1-1-1970. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.msecs
+</td><td valign="top" width="80%">convert date components to milliseconds
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.olddate
+</td><td valign="top" width="80%">create a date from the old instant
+	format. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.oldduration
+</td><td valign="top" width="80%">parse the old duration format and
+	return an (estimated) number of days. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.prelude
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.rule
+</td><td valign="top" width="80%">create a DST start/end date rule. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.seconds
+</td><td valign="top" width="80%">extracts seconds from daytime
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.start_dst
+</td><td valign="top" width="80%">extract rule that determines
+	start of DST from tzone. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.time_add_sec_interval
+</td><td valign="top" width="80%">Add seconds to a time
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.time_sub_sec_interval
+</td><td valign="top" width="80%">Subtract seconds from a time
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.time_synonyms
+</td><td valign="top" width="80%">Allow synonyms for the parse format of
+	date/timestamp. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.timestamp
+</td><td valign="top" width="80%">creates a timestamp from (d,dt) parameters (in the local timezone). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.timestamp_add_month_interval
+</td><td valign="top" width="80%">Add months to a timestamp
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.timestamp_add_sec_interval
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.timestamp_sub_month_interval
+</td><td valign="top" width="80%">Subtract months from a timestamp
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.timestamp_sub_sec_interval
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.timezone
+</td><td valign="top" width="80%">Test and set the timezone. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.tzone
+</td><td valign="top" width="80%">create a tzone as an hour difference
+	from GMT and a DST. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.tzone_local
+</td><td valign="top" width="80%">get the local tzone; which is used for printing timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.weekday
+</td><td valign="top" width="80%">extract weekday from rule. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.weekofyear
+</td><td valign="top" width="80%">Returns the week number in the year. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">mtime.year
+</td><td valign="top" width="80%">extracts year from date (nonzero
+	value between -5867411 and +5867411). 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.aliasRemoval
+</td><td valign="top" width="80%">Alias removal optimizer
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.clrDebug
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.coercions
+</td><td valign="top" width="80%">Experiment with partitioned databases
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.commonExpressionRemoval
+</td><td valign="top" width="80%">Common subexpression optimizer
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.costEstimation
+</td><td valign="top" width="80%">Estimate the cost of a relational expression
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.crack
+</td><td valign="top" width="80%">Replace algebra select with crackers select
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.deadCodeRemoval
+</td><td valign="top" width="80%">Dead code optimizer
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.dumpQEP
+</td><td valign="top" width="80%">Produce an indented tree visualisation
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.emptySet
+</td><td valign="top" width="80%">Move constant expressions out of the blocks
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.expressionAccumulation
+</td><td valign="top" width="80%">Replace calculations with accumulator model
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.factorize
+</td><td valign="top" width="80%">Turn function into a factory
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.garbageCollector
+</td><td valign="top" width="80%">Garbage collector optimizer
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.generators
+</td><td valign="top" width="80%">Resolve the multi-table definitions
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.joinsel
+</td><td valign="top" width="80%">Replace select with join select
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.macroContraction
+</td><td valign="top" width="80%">Inliner of a specific function
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.macroExpansion
+</td><td valign="top" width="80%">Inliner of a specific function
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.multiplex
+</td><td valign="top" width="80%">Compiler for multiplexed instructions. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.multitable
+</td><td valign="top" width="80%">Resolve the multi-table definitions
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.optimize
+</td><td valign="top" width="80%">Optimize a specific operation
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.partitionedQuery
+</td><td valign="top" width="80%">Experiment with partitioned databases
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.peephole
+</td><td valign="top" width="80%">Perform local rewrites
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.prelude
+</td><td valign="top" width="80%">Initialize the optimizer
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.reduce
+</td><td valign="top" width="80%">Estimate the cost of a relational expression
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.remoteQueries
+</td><td valign="top" width="80%">Resolve the multi-table definitions
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.setDebug
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.showFlowGraph
+</td><td valign="top" width="80%">Dump the data flow of the function
+	M.F in a format recognizable by the
+	command 'dot' on the file s
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.showPlan
+</td><td valign="top" width="80%">Illustrate the plan derived so far
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.singleton
+</td><td valign="top" width="80%">Perform singleton optimization
+<br></td></tr><tr align="left"><td valign="top" width="20%">optimizer.strengthReduction
+</td><td valign="top" width="80%">Move constant expressions out of the loop
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">partitions.close
+</td><td valign="top" width="80%">Save and close the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.compress
+</td><td valign="top" width="80%">Compress the group to remove oid holes
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.delete
+</td><td valign="top" width="80%">Delete a BAT from the partition
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.deposit
+</td><td valign="top" width="80%">Enter a new BAT into the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.destroy
+</td><td valign="top" width="80%">Destroy the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.discard
+</td><td valign="top" width="80%">Release a BAT variable from the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.dump
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.epilogue
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.getLastPartition
+</td><td valign="top" width="80%">Obtain the last partition for update
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.getRange
+</td><td valign="top" width="80%">Obtain the oid range for a partition
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.hasMoreElements
+</td><td valign="top" width="80%">Localize the next partition for processing. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.insert
+</td><td valign="top" width="80%">Add a BAT as a partition to the end of the list. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.newIterator
+</td><td valign="top" width="80%">Create an iterator over the BAT partitions. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.open
+</td><td valign="top" width="80%">Locate and open the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.prelude
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.release
+</td><td valign="top" width="80%">Release a single BAT with its partitions from the  box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.releaseAll
+</td><td valign="top" width="80%">Release all partitions in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.setCapacity
+</td><td valign="top" width="80%">Limit the content of all remaining BATs
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.take
+</td><td valign="top" width="80%">Take a partition from the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">partitions.toString
+</td><td valign="top" width="80%">Get the string representation of an element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">pbm.close
+</td><td valign="top" width="80%">Save and close the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.compress
+</td><td valign="top" width="80%">Compress the group to remove oid holes
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.deposit
+</td><td valign="top" width="80%">Add a BAT to a PBAT in the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.destroy
+</td><td valign="top" width="80%">Destroy the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.discard
+</td><td valign="top" width="80%">Release a single BAT from a PBAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.dump
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.epilogue
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.generator
+</td><td valign="top" width="80%">Place holder for generator optimizer
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.getComponents
+</td><td valign="top" width="80%">Retrieve the component names of a PBAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.getLast
+</td><td valign="top" width="80%">Obtain the last partition for update
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.getNames
+</td><td valign="top" width="80%">Retrieve the component names of all PBATs
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.getNextElement
+</td><td valign="top" width="80%">Localize the next partition for processing. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.getNextName
+</td><td valign="top" width="80%">Locate next element in the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.getRange
+</td><td valign="top" width="80%">Obtain the oid range for a partition
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.newIterator
+</td><td valign="top" width="80%">Create an iterator over the BAT partitions. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.open
+</td><td valign="top" width="80%">Locate and open the partition box
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.prelude
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.releaseAll
+</td><td valign="top" width="80%">Release a PBAT definitions
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.setReadMode
+</td><td valign="top" width="80%">Perform mode change for all components of the partitioned BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.setWriteMode
+</td><td valign="top" width="80%">Perform mode change for all components of the partitioned BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">pbm.take
+</td><td valign="top" width="80%">Retrieve a single component of a PBAT by index
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">pcre.compile
+</td><td valign="top" width="80%">compile a pattern
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.like
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.match
+</td><td valign="top" width="80%">POSIX pattern matching against a string
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.null
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.prelude
+</td><td valign="top" width="80%">Initialize pcre
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.replace
+</td><td valign="top" width="80%">Replace _all_ matches of "pattern" in "origin_str" with
+	   "replacement".
+
+<p>	 Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.
+
+   <p>	   'e': if present, an empty string is considered to be a valid match
+	   'i': if present, the match operates in case-insensitive mode. Otherwise, in
+
+   <p>			case-sensitive mode.
+
+   <p>	 'm': if present, the match operates in multi-line mode.
+
+   <p>	   's': if present, the match operates in "dot-all"
+	   The specifications of the flags can be found in "man pcreapi"
+
+   <p>	   The flag letters may be repeated.
+
+   <p>	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".
+
+   <p>	   Returns the replaced string, or if no matches found, the original string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.select
+</td><td valign="top" width="80%">Select tuples based on the pattern
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.sql2pcre
+</td><td valign="top" width="80%">Convert a SQL like pattern with the given escape character into a PCRE pattern. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">pcre.uselect
+</td><td valign="top" width="80%">Select tuples based on the pattern, only returning the head
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.dequeue_max
+</td><td valign="top" width="80%">Removes top element of the max-pqueue and updates it
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.dequeue_min
+</td><td valign="top" width="80%">Removes top element of the min-pqueue and updates it
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.enqueue_max
+</td><td valign="top" width="80%">Inserts element (oid,dbl) in the max-pqueue
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.enqueue_min
+</td><td valign="top" width="80%">Inserts element (oid,dbl) in the min-pqueue
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.init
+</td><td valign="top" width="80%">Creates an empty pqueue of bat a's tailtype with maximum size maxsize
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.topn_max
+</td><td valign="top" width="80%">Return the topn elements of the bat t using a max-pqueue
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.topn_min
+</td><td valign="top" width="80%">Return the topn elements of the bat t using a min-pqueue
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.topreplace_max
+</td><td valign="top" width="80%">Replaces top element with input and updates max-pqueue
+<br></td></tr><tr align="left"><td valign="top" width="20%">pqueue.topreplace_min
+</td><td valign="top" width="80%">Replaces top element with input and updates min-pqueue
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">profiler.activate
+</td><td valign="top" width="80%">Make the specified counter active. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.cleanup
+</td><td valign="top" width="80%">Remove the temporary tables for profiling
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.clearTrace
+</td><td valign="top" width="80%">Clear the profiler tables
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.closeStream
+</td><td valign="top" width="80%">Stop sending the event records
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.clrFilter
+</td><td valign="top" width="80%">Clear the performance trace bit
+	of the selected functions. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.deactivate
+</td><td valign="top" width="80%">Deactivate the counter
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.dumpTrace
+</td><td valign="top" width="80%">List the events collected
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.getTrace
+</td><td valign="top" width="80%">Get the trace details of a specific event
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.openStream
+</td><td valign="top" width="80%">Send the log events to a file
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setAll
+</td><td valign="top" width="80%">Short cut for setFilter(*,*). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setCachedProfiling
+</td><td valign="top" width="80%">use cached events rather then online
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setEndPoint
+</td><td valign="top" width="80%">End performance tracing after mod.fcn
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setFilter
+</td><td valign="top" width="80%">Generate an event record for all
+	function calls that satisfy the regular
+	expression mod.fcn. A wildcard (*) can
+	be used as name to identify all
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setNone
+</td><td valign="top" width="80%">Short cut for clrFilter(*,*). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setOfflineProfiling
+</td><td valign="top" width="80%">Sent events over stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setOnlineProfiling
+</td><td valign="top" width="80%">Sent events over stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.setStartPoint
+</td><td valign="top" width="80%">Start performance tracing at mod.fcn
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.start
+</td><td valign="top" width="80%">Start performance tracing
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.startTrace
+</td><td valign="top" width="80%">Prepare for online tracing using the profile filter
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.stop
+</td><td valign="top" width="80%">Stop performance tracing
+<br></td></tr><tr align="left"><td valign="top" width="20%">profiler.stopTrace
+</td><td valign="top" width="80%">Stop online tracing
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">sema.create
+</td><td valign="top" width="80%">Create an unset sema, with an initial value
+<br></td></tr><tr align="left"><td valign="top" width="20%">sema.destroy
+</td><td valign="top" width="80%">Destroy a semaphore
+<br></td></tr><tr align="left"><td valign="top" width="20%">sema.down
+</td><td valign="top" width="80%">Decrement the semaphpore if &gt;0; else block
+<br></td></tr><tr align="left"><td valign="top" width="20%">sema.up
+</td><td valign="top" width="80%">Increment the semaphore
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">statistics.close
+</td><td valign="top" width="80%">Close the statistics box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.deposit
+</td><td valign="top" width="80%">Enter a new BAT into the statistics box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.destroy
+</td><td valign="top" width="80%">Destroy the statistics box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.discard
+</td><td valign="top" width="80%">Release a BAT variable from the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.dump
+</td><td valign="top" width="80%">Display the statistics table
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.epilogue
+</td><td valign="top" width="80%">Release the resources of the statistics package
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.forceUpdate
+</td><td valign="top" width="80%">Bring the statistics up to date for one BAT
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getCount
+</td><td valign="top" width="80%">Return latest stored count information
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getHistogram
+</td><td valign="top" width="80%">Return the latest histogram
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getHotset
+</td><td valign="top" width="80%">Return a table with BAT names that have been touched
+since the start of the session
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getMax
+</td><td valign="top" width="80%">Return latest stored maximum information
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getMin
+</td><td valign="top" width="80%">Return latest stored minimum information
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getObjects
+</td><td valign="top" width="80%">Return a table with BAT names managed
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.getSize
+</td><td valign="top" width="80%">Return latest stored count information
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.hasMoreElements
+</td><td valign="top" width="80%">Locate next element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.newIterator
+</td><td valign="top" width="80%">Locate next element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.open
+</td><td valign="top" width="80%">Locate and open the statistics box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.prelude
+</td><td valign="top" width="80%">Initialize the statistics package
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.release
+</td><td valign="top" width="80%">Release a single BAT from the  box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.releaseAll
+</td><td valign="top" width="80%">Release all variables in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.take
+</td><td valign="top" width="80%">Take a variable out of the statistics box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.toString
+</td><td valign="top" width="80%">Get the string representation of an element in the box
+<br></td></tr><tr align="left"><td valign="top" width="20%">statistics.update
+</td><td valign="top" width="80%">Check for stale information
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">status.batStatistics
+</td><td valign="top" width="80%">Show distribution of bats by kind
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.cpuStatistics
+</td><td valign="top" width="80%">Global cpu usage information
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.getDatabases
+</td><td valign="top" width="80%">Produce a list of known databases in the current dbfarm
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.getPorts
+</td><td valign="top" width="80%">Produce a list of default ports for a specific language
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.getThreads
+</td><td valign="top" width="80%">Produce overview of active threads
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.ioStatistics
+</td><td valign="top" width="80%">Global IO activity information
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.memStatistics
+</td><td valign="top" width="80%">Global memory usage information
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.memUsage
+</td><td valign="top" width="80%">Get a split-up of how much memory blocks are in use. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.mem_cursize
+</td><td valign="top" width="80%">the amount of physical swapspace in KB that is currently in use
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.mem_maxsize
+</td><td valign="top" width="80%">set the maximum usable amount of physical swapspace in KB
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.vmStatistics
+</td><td valign="top" width="80%">Get a split-up of how much virtual memory blocks are in use. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.vm_cursize
+</td><td valign="top" width="80%">the amount of logical VM space in KB that is currently in use
+<br></td></tr><tr align="left"><td valign="top" width="20%">status.vm_maxsize
+</td><td valign="top" width="80%">set the maximum usable amount of physical swapspace in KB
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">str.+
+</td><td valign="top" width="80%">Concatenate two strings. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.STRepilogue
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.STRprelude
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.ascii
+</td><td valign="top" width="80%">Return unicode of head of string
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.chrAt
+</td><td valign="top" width="80%">String array lookup operation. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.codeset
+</td><td valign="top" width="80%">Return the locale's codeset
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.endsWith
+</td><td valign="top" width="80%">Suffix check. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.iconv
+</td><td valign="top" width="80%">String codeset conversion
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.insert
+</td><td valign="top" width="80%">Insert a string into another
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.length
+</td><td valign="top" width="80%">Return the length of a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.like
+</td><td valign="top" width="80%">SQL pattern match function
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.locate
+</td><td valign="top" width="80%">Locate the start position of a string
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.ltrim
+</td><td valign="top" width="80%">Strip whitespaces from start of a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.nbytes
+</td><td valign="top" width="80%">Return the string length in bytes. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.prefix
+</td><td valign="top" width="80%">Extract the prefix of a given length
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.r_search
+</td><td valign="top" width="80%">Reverse search for a char. Returns
+	 position, -1 if not found. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.repeat
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.replace
+</td><td valign="top" width="80%">Insert a string into another
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.rtrim
+</td><td valign="top" width="80%">Strip whitespaces from end of a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.search
+</td><td valign="top" width="80%">Search for a character. Returns
+	 position, -1 if not found. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.space
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.startsWith
+</td><td valign="top" width="80%">Prefix check. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.str
+</td><td valign="top" width="80%">Noop routine. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.string
+</td><td valign="top" width="80%">Return substring s[offset..offset+count] of a string s[0..n]
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.stringlength
+</td><td valign="top" width="80%">Return the length of a right trimed string (SQL semantics). 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.substitute
+</td><td valign="top" width="80%">Substitute first occurrence of 'src' by
+	'dst'.  Iff repeated = true this is
+	repeated while 'src' can be found in the
+	result string. In order to prevent
+	recursion and result strings of unlimited
+	size, repeating is only done iff src is
+	not a substring of dst. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.substring
+</td><td valign="top" width="80%">Extract a substring from str starting at start, for length len
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.suffix
+</td><td valign="top" width="80%">Extract the suffix of a given length
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.toLower
+</td><td valign="top" width="80%">Convert a string to lower case. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.toUpper
+</td><td valign="top" width="80%">Convert a string to upper case. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.trim
+</td><td valign="top" width="80%">Strip whitespaces around a string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.unicode
+</td><td valign="top" width="80%">convert a unicode to a character. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">str.unicodeAt
+</td><td valign="top" width="80%">get a unicode character
+	(as an int) from a string position. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">streams.blocked
+</td><td valign="top" width="80%">open a block based stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.close
+</td><td valign="top" width="80%">close and destroy the stream s
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.flush
+</td><td valign="top" width="80%">flush the stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.openRead
+</td><td valign="top" width="80%">convert an ascii stream to binary
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.openReadBytes
+</td><td valign="top" width="80%">open a file stream for reading
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.openWrite
+</td><td valign="top" width="80%">convert an ascii stream to binary
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.openWriteBytes
+</td><td valign="top" width="80%">open a file stream for writing
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.readInt
+</td><td valign="top" width="80%">read integer data from the stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.readStr
+</td><td valign="top" width="80%">read string data from the stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.socketRead
+</td><td valign="top" width="80%">open ascii socket stream for reading
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.socketReadBytes
+</td><td valign="top" width="80%">open a socket stream for reading
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.socketWrite
+</td><td valign="top" width="80%">open ascii socket stream for writing
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.socketWriteBytes
+</td><td valign="top" width="80%">open a socket stream for writing
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.writeInt
+</td><td valign="top" width="80%">write data on the stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">streams.writeStr
+</td><td valign="top" width="80%">write data on the stream
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">tablet.display
+</td><td valign="top" width="80%">Display a formatted table
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.dump
+</td><td valign="top" width="80%">Print all pages with header to a stream
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.finish
+</td><td valign="top" width="80%">Free the storage space of the report descriptor
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.firstPage
+</td><td valign="top" width="80%">Produce the first page of output
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.getPage
+</td><td valign="top" width="80%">Produce the i-th page of output
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.getPageCnt
+</td><td valign="top" width="80%">Return the size in number of pages
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.header
+</td><td valign="top" width="80%">Display the minimal header for the table
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.input
+</td><td valign="top" width="80%">Load a bat using specific format. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.lastPage
+</td><td valign="top" width="80%">Produce the last page of output
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.load
+</td><td valign="top" width="80%">Load a bat using specific format. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.nextPage
+</td><td valign="top" width="80%">Produce the next page of output
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.output
+</td><td valign="top" width="80%">Send the bat to an output stream. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.page
+</td><td valign="top" width="80%">Display all pages at once without header
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.prevPage
+</td><td valign="top" width="80%">Produce the prev page of output
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumn
+</td><td valign="top" width="80%">Bind i-th output column to a variable
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumnBracket
+</td><td valign="top" width="80%">Format the brackets around a field
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumnDecimal
+</td><td valign="top" width="80%">Set the scale and precision for numeric values
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumnName
+</td><td valign="top" width="80%">Set the display name for a given column
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumnNull
+</td><td valign="top" width="80%">Set the display format for a null value for a given column
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumnPosition
+</td><td valign="top" width="80%">Set the character position to use for this field when loading according to
+	fixed (punch-card) layout. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setColumnWidth
+</td><td valign="top" width="80%">Set the maximal display witdh for a given column. All values exceeding
+	the length are simple shortened without any notice. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setDelimiter
+</td><td valign="top" width="80%">Set the column separator. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setFormat
+</td><td valign="top" width="80%">Initialize a new reporting structure. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setPivot
+</td><td valign="top" width="80%">The pivot bat identifies the tuples of interest. The only requirement
+	    is that all keys mentioned in the pivot tail exist in all BAT parameters
+	    of the print comment. The pivot also provides control over the order
+	    in which the tuples are produced. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setProperties
+</td><td valign="top" width="80%">Define the set of properties
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setRowBracket
+</td><td valign="top" width="80%">Format the brackets around a row
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setStream
+</td><td valign="top" width="80%">Redirect the output to a stream. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">tablet.setTableBracket
+</td><td valign="top" width="80%">Format the brackets around a table
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.!=
+</td><td valign="top" width="80%">Equality of two timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.&lt;
+</td><td valign="top" width="80%">Equality of two timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.&lt;=
+</td><td valign="top" width="80%">Equality of two timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.=
+</td><td valign="top" width="80%">Equality of two timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.&gt;
+</td><td valign="top" width="80%">Equality of two timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.&gt;=
+</td><td valign="top" width="80%">Equality of two timestamps
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.epoch
+</td><td valign="top" width="80%">unix-time (epoch) support: seconds since epoch
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.isnil
+</td><td valign="top" width="80%">Nil test for timestamp value
+<br></td></tr><tr align="left"><td valign="top" width="20%">timestamp.unix_epoch
+</td><td valign="top" width="80%">The Unix epoch time (00:00:00 UTC on January 1, 1970)
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">transaction.abort
+</td><td valign="top" width="80%">Abort changes in certain BATs. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">transaction.alpha
+</td><td valign="top" width="80%">List insertions since last commit. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">transaction.clean
+</td><td valign="top" width="80%">Declare a BAT clean without flushing to disk. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">transaction.commit
+</td><td valign="top" width="80%">Commit changes in certain BATs. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">transaction.delta
+</td><td valign="top" width="80%">List deletions since last commit. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">transaction.sync
+</td><td valign="top" width="80%">Save all persistent BATs
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">tzone.str
+<br></td></tr><tr align="left"><td valign="top" width="20%">tzone.timestamp
+</td><td valign="top" width="80%">Utility function to create a timestamp from a number of seconds since the Unix epoch
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">unix.getenv
+</td><td valign="top" width="80%">Get the environment variable string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%">unix.setenv
+</td><td valign="top" width="80%">Set the environment variable string. 
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">url.getAnchor
+</td><td valign="top" width="80%">Extract the URL anchor (reference)
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getBasename
+</td><td valign="top" width="80%">Extract the URL base file name
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getContent
+</td><td valign="top" width="80%">Get the URL resource in a local file
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getContext
+</td><td valign="top" width="80%">Get the path context of a URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getDirectory
+</td><td valign="top" width="80%">Extract directory names from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getDomain
+</td><td valign="top" width="80%">Extract Internet domain from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getExtension
+</td><td valign="top" width="80%">Extract the file extension of the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getFile
+</td><td valign="top" width="80%">Extract the last file name of the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getHost
+</td><td valign="top" width="80%">Extract the server name from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getPort
+</td><td valign="top" width="80%">Extract the port id from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getProtocol
+</td><td valign="top" width="80%">Extract the protocol from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getQuery
+</td><td valign="top" width="80%">Extract the query string from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getQueryArg
+</td><td valign="top" width="80%">Extract argument mappings from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getRobotURL
+</td><td valign="top" width="80%">Extract the location of the robot
+	control file
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.getUser
+</td><td valign="top" width="80%">Extract the user identity from the URL
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.isaURL
+</td><td valign="top" width="80%">Check conformity of the URL syntax
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.new
+</td><td valign="top" width="80%">Construct URL from protocol, host,and file
+<br></td></tr><tr align="left"><td valign="top" width="20%">url.url
+</td><td valign="top" width="80%">Create an URL from a string literal
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">user.main
+<br></td></tr><tr align="left"><td valign="top" width="20%"><br></td></tr><tr align="left"><td valign="top" width="20%">zrule.define
+</td><td valign="top" width="80%">Introduce a synomym timezone rule.
+   <br></td></tr></table>
+&gt;
+
+</body></html>
+
