@@ -298,7 +298,7 @@ at commit-time.
 			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 		}
 	} else if (mode != STORE_MMAP) {
-		GDKerror("GDKsave failed: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 	}
 	return err;
 }
@@ -309,63 +309,69 @@ Further initialization of the atom heaps require a separate action
 defined in their implementation.
 @c
 char *
-GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
+GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 {
-	char *ret = NULL;
+	char *buf = NULL;
+	int fd = -1;
+	ssize_t n;
+	size_t n_expected = 0;
+	FILE *fp = NULL;
 
 	IODEBUG {
 		THRprintf(GDKerr, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 	}
+
 	if (mode == STORE_MEM) {
-		int fd = GDKfdlocate(nme, "rb", ext);
-		if (fd >= 0) {
-			char *dst = ret = (char *) GDKmalloc(maxsize);
-			ssize_t n_expected, n = 0;
+		if ((fd = GDKfdlocate(nme, "rb", ext)) >= 0) {
+			/* some systems do not give you all at once */
+			char *dst = buf = (char *) GDKmalloc(chunk);
 
-			if (ret) {
-				/* read in chunks, some OSs do not give you all at once */
-				for (n_expected = size; n_expected > 0; n_expected -= n) {
-					n = read(fd, dst, MIN(1 << 30, n_expected));
-					IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+			for (n_expected = size; n_expected > 0; n_expected -= n) {
+				n = read(fd, dst, MIN(1 << 30, n_expected));
+				IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
 
-					if (n <= 0)
-						break;
-					dst += n;
-				}
-				if (n_expected > 0) { 
-					GDKfree(ret);
-					ret = NULL; 
-				}
+				if (n <= 0)
+					break;
+				dst += n;
 			}
-			close(fd);
 		}
 	} else {
-		char path[PATHLENGTH];
-		struct stat st;
-		GDKfilepath(path, BATDIR, nme, ext);
-		FILE *fp;
-		if (stat(path, &st) >= 0 &&
-                    (maxsize < (size_t) st.st_size || 
-		    /* mmap storage is auto-extended here */
-		     ((fp = fopen(path, "rb+")) != NULL &&
-		      fseek(fp, (ssize_t) maxsize, SEEK_SET) >= 0 &&
-		      fputc('\n', fp) >= 0 &&
-		      fflush(fp) >= 0 &&
-		      fclose(fp) >= 0)))
-		{
+		if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
+			char path[PATHLENGTH];
+			int tpe = 0;
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
-			if (mode == STORE_PRIV) mod |= MMAP_COPY;
-			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize, (void *) 0);
-			if (ret == (char *) -1L) {
+
+			fseek(fp, (ssize_t) chunk, SEEK_SET);
+			fputc('\n', fp);
+			fflush(fp);
+			fclose(fp);
+			fp = NULL;
+
+			if (mode == STORE_PRIV) 
+				mod |= MMAP_COPY;
+			GDKfilepath(path, BATDIR, nme, ext);
+			buf = (char *) GDKmmap(path, mod, (off_t) 0, chunk, (void *) 0);
+			if (buf == (char *) -1L) {
 				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext ? ext : "");
-				ret = NULL;
+				buf = NULL;
 			}
-			IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
+			IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk " SZFMT ", mod %d, tpe %d, path %s, 0) = " PTRFMT "\n", chunk, mod, tpe, path, PTRFMTCAST(void *)buf);
+
+			n_expected = 0;
 		}
 	}
-	if (ret == NULL)
-		GDKerror("GDKload failed: name=%s, ext=%s\n", nme, ext ? ext : "");
-	return ret;
+	n = (ssize_t) n_expected;
+	if (n > 0) {
+		GDKerror("GDKload: read error: name=%s, ext=%s, n=%d\n", nme, ext ? ext : "", n);
+		return 0;
+	} else if (n < 0) {
+		GDKwarning("GDKload: file larger than expected: name=%s, ext=%s\n", nme, ext ? ext : "");
+	}
+	if (fd >= 0)
+		close(fd);
+	if (fp != NULL)
+		fclose(fp);
+	return buf;
 }
 
 @}

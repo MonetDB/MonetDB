@@ -20,12 +20,14 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 BuildRequires: python 
 
-%{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
-%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
-%{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
-%{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
-%define comp_cc @CC@
 %define builddoc 0
+%if 0
+%define buildphp 1
+%define buildperl 1
+%define buildpython 1
+%define comp_cc gcc
+%define comp_cxx g++
+%endif
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -40,32 +42,31 @@ BuildRequires: python
 Summary: MonetDB clients
 Group: System
 
-%if %{?_with_php:1}%{!?_with_php:0}
+%if %{buildphp}
 %package php
 Summary: MonetDB php interface
 Group: System
 BuildRequires: php 
+%define with_php --with-php
+%else
+%define with_php --without-php
 %endif
 
-%if %{?_with_python:1}%{!?_with_python:0}
+%if %{buildpython}
 %package python
 Summary: MonetDB python interface
 Group: System
-BuildRequires: python swig
+BuildRequires: python
 %endif
 
-%if %{?_with_perl:1}%{!?_with_perl:0}
+%if %{buildperl}
 %package perl
 Summary: MonetDB perl interface
 Group: System
-BuildRequires: perl swig 
-%endif
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%package java
-Summary: MonetDB java interface
-Group: System
-BuildRequires: ant java 
+BuildRequires: perl 
+%define with_perl --with-perl
+%else
+%define with_perl --without-perl
 %endif
 
 %package server
@@ -91,7 +92,7 @@ accellerators, SQL- and XML- frontends.
 %description client
 Add the MonetDB client description here
 
-%if %{?_with_php:1}%{!?_with_php:0}
+%if %{buildphp}
 %description php
 Add the MonetDB php description here
 Requires: %{name}-client
@@ -100,7 +101,7 @@ Requires: php
 %define php_peardir %(pear config-get php_dir | sed -e s+php_dir=++g)
 %endif
 
-%if %{?_with_python:1}%{!?_with_python:0}
+%if %{buildpython}
 %description python
 Add the MonetDB python description here
 Requires: %{name}-client
@@ -108,19 +109,12 @@ Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 %endif
 
-%if %{?_with_perl:1}%{!?_with_perl:0}
+%if %{buildperl}
 %description perl
 Add the MonetDB perl description here
 Requires: %{name}-client
 Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
-%endif
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%description java
-Add the MonetDB java description here
-Requires: %{name}-client
-Requires: java
 %endif
 
 %description server
@@ -157,10 +151,7 @@ rm -rf $RPM_BUILD_ROOT
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} \
 	--libdir=%{_libdir} \
-	%{?_with_php} %{?_without_php} \
-	%{?_with_python} %{?_without_python} \
-	%{?_with_perl} %{?_without_perl} \
-	%{?_with_java} %{?_without_java} 
+	%{with_php} %{with_perl}
 
 make
 
@@ -197,6 +188,7 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libMapi.* 
 %{_libdir}/libstream.*
 %{_libdir}/MonetDB/Tests/*
+%{prefix}/share/%{name}/lib/*jar
 %{prefix}/share/%{name}/python/* 
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
@@ -205,7 +197,7 @@ rm -fr $RPM_BUILD_ROOT
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
 %{_sbindir}/useradd -d %{localstatedir}/%{name} -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
 
-%if %{?_with_php:1}%{!?_with_php:0}
+%if %{buildphp}
 %files php
 %defattr(-,monetdb,monetdb) 
 %{php_extensiondir}/*
@@ -213,23 +205,17 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/share/%{name}/php/*
 %endif
 
-%if %{?_with_python:1}%{!?_with_python:0}
+%if %{buildpython}
 %files python
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{python_libdir}/*
 %endif
 
-%if %{?_with_perl:1}%{!?_with_perl:0}
+%if %{buildperl}
 %files perl
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{perl_libdir}/*
 %{prefix}/share/%{name}/perl/* 
-%endif
-
-%if %{?_with_java:1}%{!?_with_java:0}
-%files java
-%defattr(-,monetdb,monetdb) 
-%{prefix}/share/%{name}/lib/*jar
 %endif
 
 %files server

@@ -368,9 +368,8 @@ BBPinithash(void)
 	BBP_mask--;
 
 	while (--i > 0) {
-		str s = BBP_logical(i);
-		if (s) {
-			if (*s != '.' && BBPnamecheck(BBP_logical(i)) == 0) {
+		if (BBPvalid(i)) {
+			if (BBPnamecheck(BBP_logical(i)) == 0) {
 				BBP_insert(i);
 			}
 			if (BBP_logical(-i)) {
@@ -929,11 +928,10 @@ BBPinsert(BAT *b)
 
 	/* find an empty slot */
 	if (BBP_free <= 0) {
-		if (++BBPsize >= BBPlimit) {
+		if (++BBPsize >= BBPlimit)
 			BBPextend(BATMARGIN, TRUE);
-		} else {
+		else
 			BBP_free = BBPsize - 1;
-		}
 	}
 	i = BBP_free;
 	BBP_free = BBP_next(BBP_free);
@@ -1064,9 +1062,15 @@ BBPuncacheit_(bat i, int unloaddesc)
 @- BBPclear
 @%BBPclear@ removes a BAT from the BBP directory forever.
 @c
-static INLINE void 
-bbpclear(bat i) 
+void
+BBPclear(bat i)
 {
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+
+	if (BBPcheck(i, "BBPclear")) {
+		i = ABS(i);
+		if (lock)
+			gdk_set_lock(GDKcacheLock, "BBPclear");
 		BATDEBUG {
 			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBPname(i));
 		}
@@ -1088,17 +1092,6 @@ bbpclear(bat i)
 		BBP_lrefs(i) = 0;
 		BBP_next(i) = BBP_free;
 		BBP_free = i;
-}
-
-void
-BBPclear(bat i)
-{
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
-	if (BBPcheck(i, "BBPclear")) {
-		if (lock)
-			gdk_set_lock(GDKcacheLock, "BBPclear");
-		bbpclear(ABS(i));
 		if (lock)
 			gdk_unset_lock(GDKcacheLock, "BBPclear");
 	}
@@ -2081,7 +2074,7 @@ BBPquickdesc(bat bid, int delaccess)
 
 @+ Small BAT Cache
 @T
-PETER: rewrote the batcache to make it stable with views and actually faster
+PETER: rewote the batcache to make it stable with views and actually faster
        than allocating new bats (I guess that was the purpose of it)
 
 this is tuned to minimizing the needed actions to get a BAT, in particular
@@ -2231,9 +2224,10 @@ batcache_del() {
 
 	/* revive and free the old bat */
 	*BBP_logical(bid) = 't';
-	assert(b->batParentid == 0);
-	BATfree(b);
-	bbpclear(bid);
+	if (b->batParentid)
+		VIEWdestroy(b);
+	else
+		BATfree(b);
 	return i;
 }
 
@@ -2347,11 +2341,10 @@ BBPaddtobin(BAT *b)
 		/* take care of mirror views */
 		b->H = m->T = &bs->H;
 		b->T = m->H = &bs->T;
+		b->batBuns->base = NULL; /* was shared with parent! */
 
 		/* make it a void,void bat */ 
 		b->dims = m->dims = batcache_dims;
-		b->batBuns->base = NULL; /* was shared with parent! */
-		b->hheap = b->theap = NULL;
 	}
 
 	/* free non-reusable stuff that has to be freed anyway */
@@ -2417,8 +2410,8 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 
         	BATsetcount(b,0);
 
-		if (b->hheap) memset(b->hheap->base, 0, b->hheap->free = GDK_STRHASHTABLE*sizeof(var_t));
-		if (b->theap) memset(b->theap->base, 0, b->theap->free = GDK_STRHASHTABLE*sizeof(var_t));
+		if (b->hheap) memset(b->hheap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
+		if (b->theap) memset(b->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
 		return b;
 	}
 	return NULL;

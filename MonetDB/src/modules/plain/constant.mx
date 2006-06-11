@@ -189,7 +189,6 @@ proc {avg} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl]
 {
     return project(e,[dbl](b));
 }
-@{
 @c
 #include "constant.proto.h"
 
@@ -400,4 +399,3 @@ CMDconstIntersect(BAT **res, BAT *l, ptr val)
 	*res = BAT_select_(l, val, val, TRUE, TRUE, TRUE, TRUE);
 	return (*res)?GDK_SUCCEED:GDK_FAIL;
 }
-@}

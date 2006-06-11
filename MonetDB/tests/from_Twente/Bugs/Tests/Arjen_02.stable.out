@@ -202,11 +202,11 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 # h			a		aA		aA2		  # name
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
-[ "batBuns.filename",	  "32.buns",	  "34.buns",	  "no file"	  ]
+[ "batBuns.filename",	  "32.buns",	  "34.buns",	  "36.buns"	  ]
 [ "batBuns.free",	  "12",		  "3",		  "1"		  ]
-[ "batBuns.maxsize",	  "1024",	  "256",	  "0"		  ]
-[ "batBuns.size",	  "1024",	  "256",	  "0"		  ]
-[ "batBuns.storage",	  "malloced",	  "malloced",	  "absent"	  ]
+[ "batBuns.maxsize",	  "1024",	  "256",	  "4"		  ]
+[ "batBuns.size",	  "1024",	  "256",	  "1"		  ]
+[ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "28",		  "29"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDeleted",		  "0",		  "0",		  "0"		  ]

@@ -903,6 +903,7 @@ else
 AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x)
 fi
 
+
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
 
@@ -1946,21 +1947,9 @@ if test "x$have_php" != xno; then
 	php_prefix="`$PHP_CONFIG --prefix`"
 	if test -z "$php_prefix"; then
 		have_php=no
+		AC_MSG_RESULT($have_php)
 	else
 		PHP_INCS=" `$PHP_CONFIG --includes`"
-
-		dnl check for the appropriate php 5 header files
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $PHP_INCS"
-		AC_CHECK_HEADERS([Zend/zend_exceptions.h], [], [have_php=no;], [
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <php.h>
-]) 
-		CPPFLAGS="$save_CPPFLAGS"
-	fi
-		
-	if test "x$have_php" != xno; then
 		have_php=yes
 		have_php_extensiondir=auto
 		AC_ARG_WITH(php-extensiondir,
@@ -1981,8 +1970,6 @@ if test "x$have_php" != xno; then
 		esac
 		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
 	fi
-else	
-	AC_MSG_RESULT($have_php)
 fi
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
@@ -2037,6 +2024,7 @@ else
 fi
 AC_SUBST(XPHP_PEARDIR)
 AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
+
 
 AC_SUBST(CFLAGS)
 

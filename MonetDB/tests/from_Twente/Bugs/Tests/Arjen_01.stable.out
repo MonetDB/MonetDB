@@ -141,11 +141,11 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 # h			indexA		valuesA		MMoper_2		MMuselect_3	MMoper_4		MMuselect_5	MMsemijoin_6	MMcastnil_7	MMjoin_8		MMreverse_9	MMjoin_10	  # name
 # str			str		str		str		str		str		str		str		str		str		str		str		  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "batBuns.filename",	  "32.buns",	  "34.buns",	  "35.buns",	  "35.buns",	  "37.buns",	  "40.buns",	  "35.buns",	  "35.buns",	  "no file",	  "35.buns",	  "46.buns"	  ]
+[ "batBuns.filename",	  "32.buns",	  "34.buns",	  "35.buns",	  "35.buns",	  "37.buns",	  "40.buns",	  "35.buns",	  "35.buns",	  "45.buns",	  "35.buns",	  "46.buns"	  ]
 [ "batBuns.free",	  "32",		  "16",		  "4",		  "3",		  "4",		  "24",		  "2",		  "2",		  "2",		  "2",		  "8"		  ]
-[ "batBuns.maxsize",	  "2048",	  "1024",	  "256",	  "3",		  "256",	  "2048",	  "2",		  "2",		  "0",		  "2",		  "1024"	  ]
-[ "batBuns.size",	  "2048",	  "1024",	  "256",	  "3",		  "256",	  "2048",	  "2",		  "2",		  "0",		  "2",		  "1024"	  ]
-[ "batBuns.storage",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "absent",	  "malloced",	  "malloced"	  ]
+[ "batBuns.maxsize",	  "2048",	  "1024",	  "256",	  "3",		  "256",	  "2048",	  "2",		  "2",		  "4",		  "2",		  "1024"	  ]
+[ "batBuns.size",	  "2048",	  "1024",	  "256",	  "3",		  "256",	  "2048",	  "2",		  "2",		  "1",		  "2",		  "1024"	  ]
+[ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "28",		  "29",		  "30",		  "31",		  "33",		  "-34",	  "35",		  "-37",	  "-35",	  "38"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDeleted",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]

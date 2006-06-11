@@ -1426,10 +1426,10 @@ main(int argc, char **argv)
 		char *c = command ? command : XQuerydefaultMode;
 		char *t = strstr(c, "timing-") ? "" : mark ? "timing-" : "";
 		char *d = strstr(c, "debug-") ? "" : trace ? "debug-" : "";
-		char *m = strstr(c, "mapi-") ? "" : "mapi-";
+		char *m = strstr(c, "-mapi") ? "" : "-mapi";
 
 		command = (char*) malloc(strlen(c) + 20);
-		sprintf(command, "%s%s%s%s\n", m, t, d, c);
+		sprintf(command, "%s%s%s%s\n", t, d, c, m);
 		mapi_noexplain(mid, "!");
 	}
 	if (mapi_error(mid)) {

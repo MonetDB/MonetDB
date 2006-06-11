@@ -662,12 +662,7 @@ bunins_failed:
 		VALnil(desc->argv, desc->b->ttype);
 		bulkerror_format(&desc->bulkerror, desc->id.vtype, @1);
 	}
-	if (desc->b->ttype != TYPE_void) {
-		bunfastins(desc->b, @1, @2);
-	} else {
-		desc->b->U->buns.free += 1;
-		BATsetcount(desc->b, desc->b->batCount+1);
-	}
+	bunfastins(desc->b, @1, @2);
 	if (desc->unfix)
 		(desc->unfix)(@2);
 

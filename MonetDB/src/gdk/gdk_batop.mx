@@ -67,7 +67,6 @@ BATins(BAT *b, BAT *n, bit force)
 	BAT *tmp = NULL, *res = NULL;
 	ssize_t needed = 0;
 	int fastpath = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
@@ -88,21 +87,6 @@ BATins(BAT *b, BAT *n, bit force)
 			BATmirror(b)->tseqbase = h;
 		} else if ((t + 1) != h || !BAThdense(n)) {
 			b = BATmaterialize(b, BATcount(b) + BATcount(n));
-			countonly=0;
-			if (b == NULL)
-				return NULL;
-		}
-	}
-	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-		oid t = *(oid *) BUNtail(b, BUNlast(b) - BUNsize(b));
-		oid h = *(oid *) BUNtail(n, BUNfirst(n));
-
-		if (BATcount(b) == 0 && (BATcount(n) == 1 || BATtdense(n))) {
-			b->tseqbase = h;
-			BATmirror(b)->hseqbase = h;
-		} else if ((t + 1) != h || !BATtdense(n)) {
-			b = BATmaterializet(b, BATcount(b) + BATcount(n));
-			countonly=0;
 			if (b == NULL)
 				return NULL;
 		}
@@ -194,10 +178,7 @@ BATins(BAT *b, BAT *n, bit force)
 				b->T->nodense = idx;
 			}
 		}
-		if (countonly) {
- 			b->batBuns->free += n->batCount;
-			BATsetcount(b, b->batCount + n->batCount);
-		} else if (b->htype == TYPE_void) {
+		if (b->htype == TYPE_void) {
 			BATloopFast(n, p, q, xx) {
 				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy);
 				r += yy;
@@ -235,7 +216,6 @@ BATappend(BAT *b, BAT *n, bit force)
 	ssize_t sz = BATcount(n);
 	ssize_t needed = 0;
 	int fastpath = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (b == NULL || n == NULL || sz == 0) {
 		return b;
@@ -248,7 +228,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		fastpath = 1;
 
 	needed = sz - (((b)->batBuns->size - (b)->batBuns->free) / BUNsize(b));
-	if (!countonly && needed > 0) {
+	if (needed > 0) {
 		/* if needed exceeds a normal growth extend just with needed */
 		size_t ncap = BATcapacity(b) + needed;
 		size_t grows = BATgrows(b);

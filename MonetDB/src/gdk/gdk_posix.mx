@@ -60,11 +60,9 @@ the WIN32 native platform.
 #include <io.h>
 #include <direct.h>
 #else
-#ifdef PROFILE
 /* Linux gprof messes up on multithreaded programs */
 gdk_export int gprof_pthread_create(pthread_t *__restrict, __const pthread_attr_t *__restrict, 
                                     void * (*fcn)(void *), void *__restrict);
-#endif
 #endif
 
 /* Some systems (SGI, Sun) call malloc before we get a chance to call
@@ -815,7 +813,7 @@ MT_mmap_unpin(void *base, size_t len)
 #endif
 #endif
 
-#if !defined(WIN32) && defined(PROFILE) 
+#ifndef WIN32
 #ifdef HAVE_PTHREAD_H
 #undef pthread_create
 /* for profiling purposes (btw configure with --enable-profile *and* --disable-shared --enable-static)
