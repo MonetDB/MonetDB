@@ -30,25 +30,29 @@ function user.main():void;	# 0  (main:void)
     a0 := bat.reverse(a);	# 2 BKCreverse (a0:bat[:oid,:void])<-(a:bat[:void,:oid])
     a1 := algebra.markT(a0,0@0);	# 3 ALGtmark (a1:bat[:oid,:void])<-(a0:bat[:oid,:void])(_6:oid)
     a := bat.reverse(a1);	# 4 BKCreverse (a:bat[:void,:oid])<-(a1:bat[:oid,:void])
-    b0 := bat.reverse(a);	# 5 BKCreverse (b0:bat[:oid,:void])<-(a:bat[:void,:oid])
-    algebra.markT(b0,0@0);	# 6 ALGtmark (_8:bat[:oid,:void])<-(b0:bat[:oid,:void])(_6:oid)
-    b1 := bat.reverse(b0);	# 7 BKCreverse (b1:bat[:void,:oid])<-(b0:bat[:oid,:void])
-    b := batcalc.int(b1);	# 8 CMDconvertoid_int (b:bat[:void,:int])<-(b1:bat[:void,:oid])
-    z := algebra.leftfetchjoin(a,b);	# 9 ALGleftfetchjoin (z:bat[:void,:int])<-(a:bat[:void,:oid])(b:bat[:void,:int])
-    i := bat.info(z);	# 10 BKCinfo (i:bat[:str,:str])<-(z:bat[:void,:int])
-    io.print(i);	# 11 IOprint_val (_13:int)<-(i:bat[:str,:str])
-end main;	# 12  
+#b0 := bat.reverse(a); 	# 5  (_7:str)
+#algebra.markT(b0,0@0); 	# 6  (_8:str)
+#b1:= bat.reverse(b0); 	# 7  (_9:str)
+#b:= batcalc.int(b1); 	# 8  (_10:str)
+    b := bat.new(:void,:oid);	# 9 CMDBATnew (b:bat[:void,:oid])<-(_2:void)(_3:oid)
+    b0 := bat.reverse(b);	# 10 BKCreverse (b0:bat[:oid,:void])<-(b:bat[:void,:oid])
+    b1 := algebra.markT(b0,1@0);	# 11 ALGtmark (b1:bat[:oid,:void])<-(b0:bat[:oid,:void])(_14:oid)
+    b := bat.reverse(b1);	# 12 BKCreverse (b:bat[:void,:oid])<-(b1:bat[:oid,:void])
+    z := algebra.leftfetchjoin(a,b);	# 13 ALGleftfetchjoin (z:bat[:void,:oid])<-(a:bat[:void,:oid])(b:bat[:void,:oid])
+    i := bat.info(z);	# 14 BKCinfo (i:bat[:str,:str])<-(z:bat[:void,:oid])
+    io.print(i);	# 15 IOprint_val (_17:int)<-(i:bat[:str,:str])
+end main;	# 16  
 #-----------------------------------------#
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
-[ "batId",		  "tmp_13"	  ]
-[ "batCacheid",		  "11"		  ]
+[ "batId",		  "tmp_12"	  ]
+[ "batCacheid",		  "10"		  ]
 [ "batParentid",	  "0"		  ]
 [ "batSharecnt",	  "0"		  ]
 [ "head",		  "void"	  ]
-[ "tail",		  "int"		  ]
+[ "tail",		  "oid"		  ]
 [ "batPersistence",	  "transient"	  ]
 [ "batRestricted",	  "read-only"	  ]
 [ "batRefcnt",		  "1"		  ]
@@ -71,13 +75,13 @@ end main;	# 12
 [ "hnokey[0]",		  "0"		  ]
 [ "hnokey[1]",		  "0"		  ]
 [ "tident",		  "t"		  ]
-[ "tdense",		  "0"		  ]
+[ "tdense",		  "1"		  ]
 [ "tseqbase",		  "0@0"		  ]
 [ "tsorted",		  "65"		  ]
 [ "tkey",		  "1"		  ]
 [ "tloc",		  "0"		  ]
 [ "tvarsized",		  "0"		  ]
-[ "talign",		  "1000162"	  ]
+[ "talign",		  "1000165"	  ]
 [ "tnosorted",		  "0"		  ]
 [ "tnosorted_rev",	  "0"		  ]
 [ "tnodense",		  "0"		  ]
@@ -87,17 +91,17 @@ end main;	# 12
 [ "batDeleted",		  "0"		  ]
 [ "batFirst",		  "0"		  ]
 [ "top",		  "0"		  ]
-[ "batStamp",		  "9"		  ]
-[ "lastUsed",		  "172"		  ]
-[ "curStamp",		  "10"		  ]
+[ "batStamp",		  "10"		  ]
+[ "lastUsed",		  "175"		  ]
+[ "curStamp",		  "11"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
 [ "batDirtybuns",	  "clean"	  ]
 [ "batBuns.free",	  "0"		  ]
-[ "batBuns.size",	  "1024"	  ]
-[ "batBuns.maxsize",	  "1024"	  ]
+[ "batBuns.size",	  "2048"	  ]
+[ "batBuns.maxsize",	  "2048"	  ]
 [ "batBuns.storage",	  "malloced"	  ]
-[ "batBuns.filename",	  "13.buns"	  ]
+[ "batBuns.filename",	  "12.buns"	  ]
 [ "hheapdirty",		  "clean"	  ]
 [ "theapdirty",		  "clean"	  ]
 
