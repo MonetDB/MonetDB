@@ -1,9 +1,0 @@
-include armada;
-
-b := bat.new(:str, :inet);
-bat.insert(b, nil:str, "127.0.0.2":inet);
-bat.insert(b, "func2", "127.0.0.3":inet);
-t := armada.addTrail(b);
-
-p := armada.getTrail(t);
-io.print(p);

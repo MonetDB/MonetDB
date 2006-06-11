@@ -1,8 +1,0 @@
-manual:
-The files and scripts to generate a complete
-manual for MonetDB Version 5 for browsing on the web
-and as a heavy weight book.
-
-Assets:
-contains bits and pieces that are not covered in the
-source tree are collected in the directory. 

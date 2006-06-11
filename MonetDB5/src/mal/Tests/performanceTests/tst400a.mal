@@ -1,6 +1,0 @@
-# simple iterator loop test
-
-barrier (b,v):= language.newRange(0:lng);
-	redo (b,v):= language.nextElement(1:lng,1000000:lng);
-exit	(b,v);
-io.print("end of loop");
