@@ -1,9 +1,0 @@
-setoid(oid(20000000));
-#exercise simple loop
-bats@batloop() {
-	print("enter");
-        var tmp := bats.select($2);
-        tmp.print();
-}
-
-quit();
