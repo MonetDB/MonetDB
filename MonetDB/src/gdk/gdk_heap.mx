@@ -295,15 +295,15 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 {
 	FILE *fp = (FILE *) GDKfilelocate(nme, "mrb", ext);
 	int ret = 0, desc_status = 0;
-	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> 19)) << 19;
-	size_t minsize = (1 + ((h->size - 1) >> 19)) << 19;
+	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
+	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	int priv_storage = (h->storage == STORE_PRIV);
 	char priv[80]={0};
 
 	h->maxsize = h->size;
 	h->filename = NULL;
 
-	/* round up mmap heap sizes to 512KB segments */
+	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually 512KB) segments */
 	if ((h->storage & STORE_MMAP) && (minsize != h->size)) {
 		h->size = minsize;
 		h->maxsize = MAX(minsize, h->maxsize);
