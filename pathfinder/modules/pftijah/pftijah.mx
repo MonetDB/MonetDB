@@ -46,7 +46,7 @@
 
 .COMMAND tj_add2collection_index(BAT[oid,bat],str) : void = CMDtj_add2collection_index;
  "INCOMPLETE"
-
+ 
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -867,10 +867,10 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
     var ctx_res := anc_desc( left, right );
-    
+
     # calculating the score for each region
-    reg_score := {sum}(ctx_res.join([*](size_reg,right)));
-    norm_reg := [dbl]({sum}(ctx_res.join(size_reg)));
+    reg_score := {sum}(ctx_res.join([*](size_reg,right)).sort());
+    norm_reg := [dbl]({sum}(ctx_res.join(size_reg).sort()));
 
     # Select all values > 0
     norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
