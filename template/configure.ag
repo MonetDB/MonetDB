@@ -35,7 +35,7 @@ AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
-req_monetdb_ver='4.11.3'
+req_monetdb_ver='4.12.0'
 AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
