@@ -7948,7 +7948,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	
 	/* execute tijah query */
 	milprintf(f,
-                "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
+               /* OLD_MIL_EXEC var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n" */ 
+		"    run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
+		"    source(\"/tmp/query_plan.mil\");"
 		, item_ext, str_counter);
 	
 	/* translate tijah-pre to pf-pre */
@@ -8052,7 +8054,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* get scores */
         milprintf(f, 
-		"pos := new(void,oid).seqbase(0@0);"
 		"var score := new(void,dbl).seqbase(0@0);"
                 "item%s%03u@batloop() { # begin query batloop\n"
                 "    var qid := oid(item%s%03u.fetch(int($h)));\n"
@@ -8064,7 +8065,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    tmp := tmp1.semijoin(intersect(tmp3,tmp2));\n"
 		"    tmp1 := nil; tmp2 := nil; tmp3:= nil;\n"
 		"    score.append(tmp.reverse().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
-	        "    pos.append(tmp.mark(1@0).tmark(0@0));\n"
 		"} # end query batloop\n"
 		, item_int, counter, item_int, counter, item_int, counter);
 	

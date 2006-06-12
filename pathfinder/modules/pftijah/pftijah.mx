@@ -32,7 +32,7 @@
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
-.COMMAND run_tijah_query(BAT[str,str], str q) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND run_tijah_query(BAT[str,str], str q) : void = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -1592,9 +1592,10 @@ int CMDtijah_command(bit* res, str command) {
 
 extern char* tijahParse(BAT* optbat, char* query, char** errBUFF);
 
-static int oldScoreCounter = 0;
+/*static int oldScoreCounter = 0; OLD_MIL_EXEC
 
-int CMDtijah_query(BAT** res, BAT* optbat, str q) {
+int CMDtijah_query(BAT** res, BAT* optbat, str q) {  */
+int CMDtijah_query(BAT* optbat, str q) {
 	char* err;
 	char* mil;
 
@@ -1606,11 +1607,11 @@ int CMDtijah_query(BAT** res, BAT* optbat, str q) {
             GDKerror("CMDtijah_query: %s.\n", err);
 	    return GDK_FAIL;
 	}
-	if ( 1 && !executeMIL(mil) ) {
+        /* OLD_MIL_EXEC
+        if ( 1 && !executeMIL(mil) ) {
             GDKerror("CMDtijah_query: execute MIL failed.\n");
 	    return GDK_FAIL;
 	}
-	/* */
 	BAT* scoreBAT = BATdescriptor( BBPindex("nexi_result") );
 
 	if ( ! scoreBAT ) {
@@ -1626,8 +1627,8 @@ int CMDtijah_query(BAT** res, BAT* optbat, str q) {
 	BATmode(scoreBAT,TRANSIENT);
 
 	*res = scoreBAT;
-
-	return GDK_SUCCEED;
+*/
+        return GDK_SUCCEED;
 }
 
 #define SC_DEBUG 0

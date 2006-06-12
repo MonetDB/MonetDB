@@ -40,7 +40,7 @@ static char *dummy[] = {};
 
 char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
   /* setup TijahParserContext structure */
-  if ( 0 ) stream_printf(GDKout,"- tijahParse([%s])\n",query);
+  LOGPRINTF(LOGFILE,"- tijahParse([%s])\n",query);
   parserCtx->collection= "PFX";
   parserCtx->queryText = query;
   parserCtx->logFILE   = NULL;

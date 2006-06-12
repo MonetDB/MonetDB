@@ -30,7 +30,7 @@ int COtoCPlan(int query_num, int type, struct_RMT *txt_retr_model, struct_RF *re
 
   /* variables for retrieval model selection and relevance feedback selection */
   bool rm_set;
-  bool rf_set;
+  //bool rf_set;
 
   /* files that store parser command and token output */
   FILE *command_file_pre;
@@ -300,7 +300,7 @@ int COtoCPlan(int query_num, int type, struct_RMT *txt_retr_model, struct_RF *re
     fclose(token_file);
 
   }
-
+/*
   else {
 
     fscanf(command_file, "%d", &com_var);
@@ -311,12 +311,10 @@ int COtoCPlan(int query_num, int type, struct_RMT *txt_retr_model, struct_RF *re
 
 	rf_set = TRUE;
 
-	/*printf("%d\n",rel_feedback->rf_type); */
 
 	if (rel_feedback->rf_type == RF_JOURNAL || rel_feedback->rf_type == RF_JOURNAL_ELEM || rel_feedback->rf_type == RF_JOURNAL_SIZE || rel_feedback->rf_type == RF_ALL) {
 	    
 	  fprintf(command_file_pre, "%d\n", JOURNAL_ROOT);
-	  /*printf("bla\n"); */
 
 	}
 
@@ -527,7 +525,7 @@ int COtoCPlan(int query_num, int type, struct_RMT *txt_retr_model, struct_RF *re
     fclose(token_file);
 
   }
-
+*/
 
   command_file_pre = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"r");
   token_file_pre = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"r");
