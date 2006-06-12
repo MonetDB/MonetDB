@@ -1585,6 +1585,8 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 	char *name = get_schema_name(qname);
 	sql_schema *s = mvc_bind_schema(sql, name);
 
+	if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0) 
+		return sql_error(sql, 02, "DROP SCHEMA: access denied for '%s'", name);
 	if (!schema_privs(sql->role_id, s)) 
 		return sql_error(sql, 02, "DROP SCHEMA: access denied for %s to schema ;'%s'", sql->user, s->base.name);
 

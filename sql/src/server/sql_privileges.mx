@@ -643,10 +643,8 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "privileges");
 	table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-/*
 	t = find_sql_table(s, "env");
 	table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-*/
 
 	/* owned by the users anyway 
 	s = mvc_bind_schema(m, "tmp");
