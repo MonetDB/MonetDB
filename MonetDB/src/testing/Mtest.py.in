@@ -2503,6 +2503,7 @@ def MonetDBVersion(monetdb_config):
         res = res.strip();
         pOut.close()
         (x,y,z) = res.split('.',2)
+        z = z.split('_',1)[0]
         return ((int(x)*100) + int(y)) * 100 + int(z)
     except:
         ErrXit('Could not find "%s" in your $PATH:\n%s' % (monetdb_config,os.environ['PATH']))
