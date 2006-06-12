@@ -884,9 +884,14 @@ mvc_create_schema(mvc *m, char *name, int auth_id)
 void
 mvc_drop_schema(mvc *m, char *sname)
 {
+	int sys = 0;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_schema %s\n", sname);
+	if (strcmp(m->session->schema_name, sname) == 0)
+		sys = 1;
 	sql_trans_drop_schema(m->session->tr, sname);
+	if (sys) 
+		mvc_set_schema(m, "sys");
 	m->type = Q_SCHEMA;
 }
 
