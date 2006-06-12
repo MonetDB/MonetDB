@@ -1382,24 +1382,24 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	//== this is a helper method which does not belong to the interface
 
 	/**
-	 * returns the given string where all slashes and single quotes are
+	 * Returns the given string where all slashes and single quotes are
 	 * escaped with a slash.
 	 *
 	 * @param in the string to escape
 	 * @return the escaped string
 	 */
-	private static String escapeQuotes(String in) {
+	private static final String escapeQuotes(String in) {
 		return(in.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'"));
 	}
 
 	/**
-	 * returns the given string between two double quotes for usage as
+	 * Returns the given string between two double quotes for usage as
 	 * exact column or table name in SQL queries.
 	 *
 	 * @param in the string to quote
 	 * @return the quoted string
 	 */
-	private static String dq(String in) {
+	private static final String dq(String in) {
 		return("\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"");
 	}
 
@@ -2392,9 +2392,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"cast(" + MonetDriver.getSQLTypeMap("\"sqlname\"") + " " +
 				"AS smallint) AS \"DATA_TYPE\", " +
 				"\"digits\" AS \"PRECISION\", " +
-				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\'' AS char) " +
+				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('" +
+				escapeQuotes("'") + "' AS char) " +
 					"ELSE cast(NULL AS char) END) AS \"LITERAL_PREFIX\", " +
-				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('\'' AS char) " +
+				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('" +
+				escapeQuotes("'") + "' AS char) " +
 					"ELSE cast(NULL AS char) END) AS \"LITERAL_SUFFIX\", " +
 				"cast(NULL AS varchar(1)) AS \"CREATE_PARAMS\", " +
 				"cast(CASE WHEN \"systemname\" = 'oid' THEN " + DatabaseMetaData.typeNoNulls + " " +
