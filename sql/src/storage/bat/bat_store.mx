@@ -3596,7 +3596,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		/* any inserts */
 		if (BUNlast(ins) > BUNfirst(ins)) {
 			if (BUNlast(ins) > ins->batInserted) {
-				if (transactions > 1) { 
+				if (nr_active > 1) { 
 					BAT *ci = temp_descriptor(oc->bat.ibid);
 					append_inserted(ci, ins);
 					bat_destroy(ci);
@@ -3604,7 +3604,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, ins, oc->bat.name);
 			}
-			if (transactions == 1) { /* flush all */
+			if (nr_active == 1) { /* flush all */
 				BAT *pi = temp_descriptor(oc->bat.ibid);
 				if (!BATcount(cur)) {
 					/* swap cur and ins */
@@ -3635,7 +3635,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		/* any updates */
 		if (BUNlast(ups) > BUNfirst(ups)) {
 			if (BUNlast(ups) > ups->batInserted) {
-				if (transactions > 1) { 
+				if (nr_active > 1) { 
 					BAT *cu = temp_descriptor(oc->bat.ubid);
 					copy_inserted(cu, ups);
 					bat_destroy(cu);
@@ -3643,7 +3643,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, ups, oc->bat.uname);
 			}
-			if (transactions == 1) { /* flush all */
+			if (nr_active == 1) { /* flush all */
 				void_replace_bat(cur, ups, TRUE);
 				/* cleanup the old deltas */
 				if (BUNfirst(ups) != ups->batInserted) { 
@@ -3697,7 +3697,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			/* any inserts */
 			if (BUNlast(ins) > BUNfirst(ins)) {
 				if (BUNlast(ins) > ins->batInserted) {
-					if (transactions > 1) {
+					if (nr_active > 1) {
 						BAT *ci = temp_descriptor(oi->bat.ibid);
 						append_inserted(ci, ins);
 						bat_destroy(ci);
@@ -3705,7 +3705,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (ok == SQL_OK && ttr == gtrans)
 						ok = log_bat(logger, ins, oi->bat.name);
 				}
-				if (transactions == 1) {
+				if (nr_active == 1) {
 					BAT *pi = temp_descriptor(oi->bat.ibid);
 					if (!BATcount(cur)) {
 						/* swap cur and ins */
@@ -3735,7 +3735,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			/* any updates */
 			if (BUNlast(ups) > BUNfirst(ups)) {
 				if (BUNlast(ups) > ups->batInserted) {
-					if (transactions > 1) { 
+					if (nr_active > 1) { 
 						BAT *cu = temp_descriptor(oi->bat.ubid);
 						copy_inserted(cu, ups);
 						bat_destroy(cu);
@@ -3743,7 +3743,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (ok == SQL_OK && ttr == gtrans)
 						ok = log_bat(logger, ups, oi->bat.uname);
 				}
-				if (transactions == 1) { /* flush all */
+				if (nr_active == 1) { /* flush all */
 					void_replace_bat(cur, ups, TRUE);
 					/* cleanup the old deltas */
 					if (BUNfirst(ups) != ups->batInserted) {
@@ -3951,6 +3951,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		BAT *ins, *pi;
 		BAT *upd, *pu;
 
+		assert(fc->bat.bid == pfc->bat.bid);
  		ins = temp_descriptor(fc->bat.ibid);
  		pi = temp_descriptor(pfc->bat.ibid);
 		bat_clear(ins);

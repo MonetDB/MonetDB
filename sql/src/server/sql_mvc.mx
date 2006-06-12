@@ -225,8 +225,8 @@ mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 9);
 
 		sql_create_sequences(m, s);
-		sql_create_privileges(m, s);
 		sql_create_env(m, s);
+		sql_create_privileges(m, s);
 
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
@@ -884,9 +884,14 @@ mvc_create_schema(mvc *m, char *name, int auth_id)
 void
 mvc_drop_schema(mvc *m, char *sname)
 {
+	int sys = 0;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_schema %s\n", sname);
+	if (strcmp(m->session->schema_name, sname) == 0)
+		sys = 1;
 	sql_trans_drop_schema(m->session->tr, sname);
+	if (sys) 
+		mvc_set_schema(m, "sys");
 	m->type = Q_SCHEMA;
 }
 
