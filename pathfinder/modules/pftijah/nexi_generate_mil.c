@@ -348,7 +348,9 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
       
       case QUERY_ADD_TERM:
         
-       MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(%s);\nif(tid.count() > 0) terms.append(tid.reverse().fetch(0));\n", p_com->argument);
+        //MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(%s);\n");
+        MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(tj_normalizeTerm(%s, stemmer));\n", p_com->argument);
+        MILPRINTF(MILOUT, "if(tid.count() > 0) terms.append(tid.reverse().fetch(0));\n");
 
        break;
 
@@ -680,13 +682,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 
         case MODEL_LM :
 
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q(terms, modifiers, %d, %d);\n", com_num, com_nr_left, txt_retr_model->stemming, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LM(terms, modifiers, %d, %d);\n", com_num, com_nr_left, txt_retr_model->stemming, txt_retr_model->size_type);
 
           break;
 
         case MODEL_LMS :
          
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q(terms, modifiers, %f, %d, %d);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_LMs(terms, modifiers, %f, %d, %d);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
 
           break;
         

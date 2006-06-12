@@ -160,7 +160,9 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
           yylval = yytext[0];
 	  WRITE_COMMAND(SELECT_NODE);
 	  /* INCOMPLETE, what to do with 0 or >1 tokens? */
-	  token = normalizeTerm(parserCtx->tjCtx,token);
+          // Token normalisation should not be done here:
+          // at this level, we can't tell the difference between query terms and element names!
+	  //token = normalizeTerm(parserCtx->tjCtx,token);
 	  WRITE_TOKEN(token);
           return ALPHANUMERIC;
         }

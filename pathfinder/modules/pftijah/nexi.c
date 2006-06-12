@@ -227,7 +227,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
     /** Compiler parameters **/
     // The number of elements to return
     int retNum          = -1; // -1 = unlimited
-    algebra_type        = ASPECT;
+    algebra_type        = COARSE2;
     preproc_type        = PLAIN;
     pptype_set          = TRUE;
     scale_on            = FALSE;
@@ -363,6 +363,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
     // Prepend some variables to the MIL code.
     MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection);
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
+    MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ collName +\"_param\").find(\"stemmer\");\n");
     
     
   /*

@@ -35,6 +35,9 @@
 .COMMAND run_tijah_query(BAT[str,str], str q) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
+.COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
+ "INCOMPLETE"
+
 .COMMAND update_tijah_scores(BAT[void,bat], BAT[oid,bat], BAT[void,oid], BAT[void,int], BAT[oid,dbl]) : BAT[oid,bat] = CMDupdate_tijah_scores;
  "INCOMPLETE"
 
@@ -226,9 +229,13 @@ PROC select_node(str name, bit e_class) : bat :=
 PROC select_term(str name) : bat :=
 {
     var start_time := time();
-    # Select the term positions from the global term dictionary. 
-   
-    var tids := bat("tj_globalTerms").select(name).mark(0@0).sort().reverse();
+    # 
+    var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
+    var term    := tj_normalizeTerm( name, stemmer );
+    print( "using stemmer" + stemmer + ": " + term + " instead of " + name );
+    
+    # Select the term positions from the global term dictionary.
+    var tids := bat("tj_globalTerms").select(term).mark(0@0).sort().reverse();
     
     var result := indexfetchjoin( tids,
     				  bat("tj_" + collName + "_TermIndex"),
@@ -894,29 +901,20 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 #################################################################################
 
 
-proc p_containing_q(bat ctx, bat Qterms, bat modifiers, int stemming, int size_type) : bat {   
-    return p_containing_q(ctx, Qterms,modifiers, flt(1.0), stemming, size_type);
-}
+#proc p_containing_q(bat ctx, bat Qterms, bat modifiers, int stemming, int size_type) : bat {   
+#    return p_containing_q(ctx, Qterms,modifiers, flt(1.0), stemming, size_type);
+#}
 
-proc p_containing_q(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
-    return p_containing_q_LM_basic(ctx, Qterms, modifiers, lambda, stemming, size_type);
-}
-
-proc p_containing_q_LM_basic(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
-    #var Qpositions :=  [select_term](Qterms,stemming);
-    
+proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
     var result := indexfetchjoin( Qterms,
     				  bat("tj_" + collName + "_TermIndex"),
     				  bat("tj_" + collName + "_Terms") );
     var Qpositions := result.reverse().sort().project(dbl(scoreBase));
     var context := ctx.sort();
-    print(Qpositions);
-    var termscores := p_containing_t_LMs(const context, Qpositions, lambda, size_type);
-	var results := new(oid,dbl);
-	
-    [insert](const results,termscores);
+    
+    var termscores := p_containing_t_LMs(context, Qpositions, lambda, size_type);
    
-    return {prod}(results);
+    return termscores;
 }
 
 proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
