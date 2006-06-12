@@ -225,8 +225,8 @@ mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 9);
 
 		sql_create_sequences(m, s);
-		sql_create_privileges(m, s);
 		sql_create_env(m, s);
+		sql_create_privileges(m, s);
 
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
