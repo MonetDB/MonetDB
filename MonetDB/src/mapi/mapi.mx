@@ -368,12 +368,12 @@ mapi_client_end(mapi_client *fc)
 	if (fc->c->fdout) {
 		stream_close(fc->c->fdout);
 		stream_destroy(fc->c->fdout);
-		fc->c->fdout = GDKstdout;
+		fc->c->fdout = NULL;
 	}
 	if (fc->c->fdin) {
 		stream_close(fc->c->fdin);
 		stream_destroy(fc->c->fdin);
-		fc->c->fdin = GDKstdin;
+		fc->c->fdin = NULL;
 	}
 }
 
@@ -398,7 +398,7 @@ mapi_client_free(mapi_client *fc)
 }
 
 static mapi_client *
-mapi_client_alloc_(mapi_frontend *f, Client c) 
+mapi_client_alloc_(mapi_frontend *f, Client c, stream* s) 
 {
 	char *err;
 	mapi_client *mc;
@@ -411,8 +411,10 @@ mapi_client_alloc_(mapi_frontend *f, Client c)
 	mc->s = MT_create_sema(0);
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
-		stream_printf(c->fdout, "%s\n", err);
-
+		if (s) {
+			stream_printf(s, "!ERROR: %s\n", err);
+			stream_flush(s);
+		}
 		mapi_client_end(mc); 
 		mapi_client_free(mc);
 		return NULL;
@@ -422,7 +424,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c)
 }
 
 static mapi_client *
-mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *fdin, stream *fdout)
+mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *s)
 {
 	char *mp = GDKgetenv("monet_prompt");
 	Client c = NULL;
@@ -436,17 +438,20 @@ mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *fdin, stre
 		}
 	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
 	if (c == 0) {
-		stream_printf(fdout, "mapi_client_alloc:Failed to init client\n");
+		if (s) {
+			stream_printf(s, "!ERROR: failed to init client\n");
+			stream_flush(s);
+		}
 		return NULL;
 	}
 	c->mode = BLOCKMODE;
 	c->listing = 0;
 	c->login = time(0);
-	c->fdin = fdin;
-	c->fdout = fdout;
+	c->fdin = NULL;
+	c->fdout = NULL;
 	CNTXTcopy(stk, c);
 	TBL_initclient(c, father);
-	return mapi_client_alloc_(f, c);
+	return mapi_client_alloc_(f, c, s);
 }
 
 static mapi_client *
@@ -484,7 +489,7 @@ mapi_client_get(mapi_frontend *f, Client c )
 		mc->inuse = 1;
 		res = mc;
 	} else {
-		res = mapi_client_alloc_(f, c);
+		res = mapi_client_alloc_(f, c, c->fdout);
 	}
 	MT_unset_lock(mapi_cache_lock, "mapi_client_get");
 	return res;
@@ -543,10 +548,9 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 
 	fc = mapi_client_find(f);
 	if (!fc) {
-		if (!(fc = mapi_client_alloc(f, monet_clients, 0, fdin, fdout))) 
+		if (!(fc = mapi_client_alloc(f, monet_clients, 0, fdout))) 
 			return NULL;
 	}
-
 	c = fc->c;
 	c->fdin = fdin;
 	c->fdout = fdout;
@@ -658,7 +662,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	else
 		fc = mapi_client_get(f, father);
 	if (!fc) {
-		if (!(fc = mapi_client_alloc(f, father, stk, fdin, fdout))) 
+		if (!(fc = mapi_client_alloc(f, father, stk, fdout))) 
 			return NULL;
 	}
 
@@ -675,7 +679,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 	if ((err = f->f_init(fc)) != NULL) {
 		fc->inuse = 0; 
-		stream_printf(fdout, "%s\n", err);
+		stream_printf(fdout, "!ERROR: %s\n", err);
 		prompt(fdout, blocked);
 		return NULL;
 	}
@@ -1323,6 +1327,11 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 		return GDK_FAIL;
 	}
  	mc = xchange_challenge(client, stk, in, out, 0);
+	if (mc == NULL) {
+		GDKsyserror("client:stream-w problems\n");
+		closeClient(client, 0);
+		return GDK_FAIL;
+	}
 
 	f = mapi_frontends[mc->frontend];
 	monetSetChannel(mc->thread, mc->c->fdin, mc->c->fdout);
