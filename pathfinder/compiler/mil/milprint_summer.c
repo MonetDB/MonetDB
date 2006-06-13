@@ -3223,35 +3223,37 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
 {
     milprintf(f,
             "{\n"
-            "var part_kind := kind.ord_uselect(%s);\n"
-            "var oid_oid := part_kind.hmark(0@0);\n"
-            "part_kind := nil;\n"
-            "var part_item := oid_oid.leftfetchjoin(item).materialize(oid_oid);\n",
-            ori.mil_cast);
+	    "  var oid_oid := ipik;\n"
+	    "  var part_item := item;\n"
+	    "  if (type(kind) = bat) {\n"
+            "    oid_oid := kind.ord_uselect(%s).hmark(0@0);\n"
+            "    part_item := oid_oid.leftfetchjoin(item);\n"
+            "  } else { \n"
+            "    if (kind != %s) { oid_oid := empty_bat; }\n"
+            "  }\n"
+	    "  if (count(oid_oid) > 0) {\n", ori.mil_cast, ori.mil_cast);
+
     if (ori.kind != BOOL)
         milprintf(f,
-                "var part_%s := part_item.leftfetchjoin(%s);\n",
-                ori.mil_type, ori.table);
-    else
-        milprintf(f,
-                "var part_%s := part_item;\n",
-                ori.mil_type);
+            "    part_item := part_item.leftfetchjoin(%s);\n", ori.table);
 
     /* treat special case, where boolean has to be casted to string */
     if (ori.kind == BOOL && !strcmp("str", target_type))
         milprintf(f,
-                "part_item := nil;\n"
-                "var part_val := [str]([bit](part_%s));\n",
-                ori.mil_type);
-    else
+            "    part_item := [str]([bit](part_item));\n");
+    else if (strcmp(ori.mil_type, target_type))
         milprintf(f,
-                "part_item := nil;\n"
-                "var part_val := part_%s.%s;\n",
-                ori.mil_type, cast);
+            "    part_item := part_item.%s;\n", cast);
     milprintf(f,
-            "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
-            "_oid := res_mu.fetch(0);\n"
-            "_val := res_mu.fetch(1);\n"
+            "    if (count(_oid) > 0) {\n"
+            "      var res_mu := merged_union(_oid, oid_oid, _val, part_item);\n"
+            "      _oid := res_mu.fetch(0);\n"
+            "      _val := res_mu.fetch(1);\n"
+            "    } else {\n"
+            "      _oid := oid_oid;\n"
+            "      _val := part_item;\n"
+            "    }\n"
+            "  }\n"
             "}\n");
 }
 
@@ -3350,11 +3352,15 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
                        kind_container(rc).name);
 
         milprintf(f,
-                "var _oid := kind.ord_uselect(INT);\n"
-                "_oid := _oid.hmark(0@0);\n"
-                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
-                "var _val := part_item.leftfetchjoin(int_values);\n"
-                "part_item := nil;\n");
+                "var _oid := ipik;\n"
+                "var _val := item;\n"
+                "if (type(kind) = bat) {\n"
+                "  _oid := kind.ord_uselect(INT).hmark(0@0);\n"
+                "  _val := _oid.leftfetchjoin(item).leftfetchjoin(int_values);\n"
+                "} else { if (kind != INT) {\n"
+                "  _oid := new(void,oid,count(ipik)).seqbase(0@0);\n"
+                "  _val := new(void,int,count(ipik)).seqbase(0@0);\n"
+                "}}\n");
  
         evaluateCastBlock (f, bool_container(), "[lng]()", "int");
         evaluateCastBlock (f, dec_container(), "[lng]()", "int");
@@ -3420,12 +3426,15 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
                        kind_container(rc).name);
 
         milprintf(f,
-                "kind := kind.materialize(ipik);\n"
-                "var _oid := kind.ord_uselect(DEC);\n"
-                "_oid := _oid.hmark(0@0);\n"
-                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
-                "var _val := part_item.leftfetchjoin(dec_values);\n"
-                "part_item := nil;\n");
+                "var _oid := ipik;\n"
+                "var _val := item;\n"
+                "if (type(kind) = bat) {\n"
+                "  _oid := kind.ord_uselect(DEC).hmark(0@0);\n"
+                "  _val := _oid.leftfetchjoin(item).leftfetchjoin(dec_values);\n"
+                "} else { if (kind != DEC) {\n"
+                "  _oid := new(void,oid,count(ipik)).seqbase(0@0);\n"
+                "  _val := new(void,dbl,count(ipik)).seqbase(0@0);\n"
+                "}}\n");
  
         evaluateCastBlock (f, bool_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, int_container(), "[dbl]()", "dbl");
@@ -3491,11 +3500,15 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
                        kind_container(rc).name);
 
         milprintf(f,
-                "var _oid := kind.ord_uselect(DBL);\n"
-                "_oid := _oid.hmark(0@0);\n"
-                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
-                "var _val := part_item.leftfetchjoin(dbl_values);\n"
-                "part_item := nil;\n");
+                "var _oid := ipik;\n"
+                "var _val := item;\n"
+                "if (type(kind) = bat) {\n"
+                "  _oid := kind.ord_uselect(DBL).hmark(0@0);\n"
+                "  _val := _oid.leftfetchjoin(item).leftfetchjoin(dbl_values);\n"
+                "} else { if (kind != DBL) {\n"
+                "  _oid := new(void,oid,count(ipik)).seqbase(0@0);\n"
+                "  _val := new(void,dbl,count(ipik)).seqbase(0@0);\n"
+                "}}\n");
  
         evaluateCastBlock (f, bool_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, dec_container(), "[dbl]()", "dbl");
@@ -3571,11 +3584,15 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
                        kind_container(rc).name);
 
         milprintf(f,
-                "var _oid := kind.ord_uselect(STR);\n"
-                "_oid := _oid.hmark(0@0);\n"
-                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
-                "var _val := part_item.leftfetchjoin(str_values);\n"
-                "part_item := nil;\n");
+                "var _oid := ipik;\n"
+                "var _val := item;\n"
+                "if (type(kind) = bat) {\n"
+                "  _oid := kind.ord_uselect(STR).hmark(0@0);\n"
+                "  _val := _oid.leftfetchjoin(item).leftfetchjoin(str_values);\n"
+                "} else { if (kind != STR) {\n"
+                "  _oid := new(void,oid,count(ipik)).seqbase(0@0);\n"
+                "  _val := new(void,str,count(ipik)).seqbase(0@0);\n"
+                "}}\n");
  
         evaluateCastBlock (f, bool_container(), "[str]()", "str");
         evaluateCastBlock (f, dec_container(), "[str]()", "str");
@@ -3627,11 +3644,15 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
                        kind_container(rc).name);
 
         milprintf(f,
-                "var _oid := kind.ord_uselect(BOOL);\n"
-                "_oid := _oid.hmark(0@0);\n"
-                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
-                "var _val := part_item.[bit]();\n"
-                "part_item := nil;\n");
+                "var _oid := ipik;\n"
+                "var _val := item;\n"
+                "if (type(kind) = bat) {\n"
+                "  _oid := kind.ord_uselect(BOOL).hmark(0@0);\n"
+                "  _val := [bit](_oid.leftfetchjoin(item));\n"
+                "} else { if (kind != BOOL) {\n"
+                "  _oid := new(void,oid,count(ipik)).seqbase(0@0);\n"
+                "  _val := new(void,bit,count(ipik)).seqbase(0@0);\n"
+                "}}\n");
  
         evaluateCastBlock (f, int_container(), "[bit]()", "bit");
         evaluateCastBlock (f, dec_container(), "[bit]()", "bit");
