@@ -3018,7 +3018,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 	node *n = NULL;
 
 	/* delete removed bases */
-	if (fs->dset)
+	if (fs->dset) {
 		for (n = fs->dset->h; ok == SQL_OK && n; n = n->next) {
 			sql_base *fb = n->data;
 			node *tbn = cs_find_name(ts, fb->name);
@@ -3040,6 +3040,9 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				}
 			}
 		}
+		list_destroy(fs->dset);
+		fs->dset = NULL;
+	}
 	/* changes to the existing bases */
 	if (fs->set) {
 		/* update existing */
@@ -3846,6 +3849,10 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			cs_add(fs, r, TR_OLD);
 			r->rtime = r->wtime = 0;
 		}
+	}
+	if (fs->dset) {
+		list_destroy(fs->dset);
+		fs->dset = NULL;
 	}
 	return ok;
 }
