@@ -344,7 +344,7 @@ throng grandam awak helpless ventidius tread defeat teem durst wonderful attaint
 </mail>
 </mailbox>
 </item>
-<item id="item9" featured="yes">
+<item featured="yes" id="item9">
 <location>United States</location>
 <quantity>1</quantity>
 <name>greedy ensues pays spilling </name>
@@ -437,7 +437,7 @@ crush seat either blast get humane quaint please agate implore sins remov charac
 </category>
 </categories>
 <catgraph>
-<edge from="category0" to="category0"/>
+<edge to="category0" from="category0"/>
 </catgraph>
 <people>
 <person id="person0">

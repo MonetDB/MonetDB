@@ -16,7 +16,7 @@ stdout of test 'q03` in directory 'tests/XMark/alg` itself:
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<increase first="9.00" last="27.00"/><increase first="1.50" last="4.50"/><increase first="1.50" last="6.00"/><increase first="10.50" last="21.00"/><increase first="4.50" last="19.50"/><increase first="1.50" last="15.00"/><increase first="3.00" last="7.50"/><increase first="1.50" last="45.00"/><increase first="1.50" last="6.00"/><increase first="1.50" last="3.00"/><increase first="16.50" last="33.00"/><increase first="3.00" last="12.00"/>
+<increase last="27.00" first="9.00"/><increase last="4.50" first="1.50"/><increase last="6.00" first="1.50"/><increase last="21.00" first="10.50"/><increase last="19.50" first="4.50"/><increase last="15.00" first="1.50"/><increase last="7.50" first="3.00"/><increase last="45.00" first="1.50"/><increase last="6.00" first="1.50"/><increase last="3.00" first="1.50"/><increase last="33.00" first="16.50"/><increase last="12.00" first="3.00"/>
 </XQueryResult>
 
 # 14:39:55 >  
