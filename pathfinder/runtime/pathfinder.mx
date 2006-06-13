@@ -2152,7 +2152,7 @@ CMDxquery_start_query_cache(lng *maxsize)
     ctx->@1 =  NULL;
     if (v && v->binding.vtype == TYPE_bat)
         ctx->@1 = BATdescriptor(v->binding.val.bval);
-    if (ctx->@1 == NULL) return "xquery_client_init: failed to lookup @1 variable.\n"; }
+    if (ctx->@1 == NULL) return "xquery_client_alloc: failed to lookup @1 variable.\n"; }
 @c
 
 static xquery_client*

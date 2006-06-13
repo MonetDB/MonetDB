@@ -483,48 +483,28 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
     return ret;
 }
 
-/* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
- * correct the batsize will always shrink!
+/* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. 
  */
-static int setBATcapacity(shredBAT* sb, int n, int final) {
-    BAT* b = sb->bat;
-
-    void* top;
-
-    int bottomTop = n;
-    if (final) {
-      /* if this is the final resize of the BAT */
-      if (n >= (1<<18)) { /* use mmap if we have more than 256K tuples in the pre table */
-        BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-      }
-    }
-    sb->cnt = n;
-    /* switch( shredCtx->dstBAT[idx].def->tailType ) { */
-    switch( b->ttype ) {
-        case TYPE_int :
-            top = &sb->cast.natCAST[bottomTop];
-            break;
-        case TYPE_chr: {
-              b->batBuns->free = n; 
-              BATsetcount(b, n);
-              b->tsorted = 0;
-              return 1;
-            }
-        case TYPE_oid:
-            top = &sb->cast.oidCAST[bottomTop];
-            break;
-        case TYPE_void:
-            GDKerror("shredder.mx:setBATcapacity: unexpected void tailType\n");
-            return -1;
-        default:
-            GDKerror("shredder.mx:setBATcapacity: bad tailType\n");
-            return -1;
-    }
-    b->batBuns->free = ((BUN)top) - BUNfirst(b);
-    BATsetcount(b, n);
-    b->tsorted = 0;
-    return 1;
+static void setBATcapacity(shredBAT* sb, int n) {
+        BAT* b = sb->bat;
+        BUN top = NULL;
+        if (b->ttype == TYPE_chr) {
+                top = (BUN) &sb->cast.chrCAST[n];
+        } else if (b->ttype == TYPE_int) {
+                top = (BUN) &sb->cast.natCAST[n];
+        } else if (b->ttype == TYPE_oid) {
+                top = (BUN) &sb->cast.oidCAST[n];
+        }
+        if (n+n > REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+                BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+        }
+        sb->cnt = n;
+        assert(top);
+        b->batBuns->free = ((BUN)top) - BUNfirst(b);
+        BATsetcount(b, n);
+        b->tsorted = 0;
 }
+
 
 static void printStat(shredCtxStruct* shredCtx) {
     int i;
@@ -557,6 +537,10 @@ static void printStat(shredCtxStruct* shredCtx) {
 
 static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     oid i, p = shredCtx->nnode_pre >> REMAP_PAGE_BITS;
+    shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
+    shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
+    BAT* pvu;
+    BAT* xlate_oid;
     BAT* res = NULL;
 
     /* fill the MAP_PID bat with an identity mapping */
@@ -573,26 +557,21 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         GDKerror("shredder.mx:finalizeShredCtx: resultBAT:create failed.\n");
         return NULL;
     }
-    if (
-        (setBATcapacity(&shredCtx->dstBAT[PRE_SIZE], shredCtx->nnode_pre, TRUE)  < 0) ||
-        (setBATcapacity(&shredCtx->dstBAT[PRE_LEVEL],shredCtx->nnode_pre, TRUE)  < 0) ||
-        (setBATcapacity(&shredCtx->dstBAT[PRE_PROP], shredCtx->nnode_pre, TRUE)  < 0) ||
-        (setBATcapacity(&shredCtx->dstBAT[PRE_KIND], shredCtx->nnode_pre, TRUE)  < 0) ||
-        (setBATcapacity(&shredCtx->dstBAT[ATTR_OWN], shredCtx->nnode_attr,TRUE) < 0) ||
-        (setBATcapacity(&shredCtx->dstBAT[ATTR_QN],  shredCtx->nnode_attr,TRUE) < 0) ||
-        (setBATcapacity(&shredCtx->dstBAT[ATTR_PROP],shredCtx->nnode_attr,TRUE) < 0)
-       )
-        return NULL;
+    setBATcapacity(&shredCtx->dstBAT[PRE_SIZE], shredCtx->nnode_pre);
+    setBATcapacity(&shredCtx->dstBAT[PRE_LEVEL],shredCtx->nnode_pre);
+    setBATcapacity(&shredCtx->dstBAT[PRE_PROP], shredCtx->nnode_pre);
+    setBATcapacity(&shredCtx->dstBAT[PRE_KIND], shredCtx->nnode_pre);
+    setBATcapacity(&shredCtx->dstBAT[ATTR_OWN], shredCtx->nnode_attr);
+    setBATcapacity(&shredCtx->dstBAT[ATTR_QN],  shredCtx->nnode_attr);
+    setBATcapacity(&shredCtx->dstBAT[ATTR_PROP],shredCtx->nnode_attr);
 
     if ( shredCtx->pageFree ) {
 #ifdef SHRED_HOLES
         /* PRE_NID and NID_RID data is generated tailor the BATs to the correct
 	 * size.
 	 */
-    	if (
-            (setBATcapacity(&shredCtx->dstBAT[PRE_NID], shredCtx->nnode_pre, TRUE)  < 0) ||
-            (setBATcapacity(&shredCtx->dstBAT[NID_RID], PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree), TRUE)  < 0) )
-	   return NULL;
+        setBATcapacity(&shredCtx->dstBAT[PRE_NID], shredCtx->nnode_pre);
+        setBATcapacity(&shredCtx->dstBAT[NID_RID], PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree));
 #endif
     } else {
 	/* No PRE_NID and NID_RID bat data is generated in this case. We now
@@ -612,11 +591,6 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     }
 
     /* */
-    shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
-
-    BAT* pvu;
-    BAT* xlate_oid;
-
     if ( pf_compress(pv->bat,&pvu,&xlate_oid) < 0 ) {
         GDKerror("shredder.mx:finalizeShredCtx: compressing PROP_VAL fails\n");
         return NULL;
@@ -631,7 +605,6 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     pv->cnt = (nat)BATcount(pvu); /* set the correct #values in the bat */
     pv->bat = pvu;
 
-    shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
     if (BATcount(ap->bat)) {
         BAT* lj = BATleftjoin(ap->bat,xlate_oid,BATcount(ap->bat));
         BBPunfix(BBPcacheid(ap->bat));
@@ -887,8 +860,7 @@ static int incrBATsize(shredBAT* sb, nat i) {
      * bugs.
      */
     if ( 1 ) {
-      if ( setBATcapacity(sb,sb->size,FALSE) < 0 ) 
-          return -1;
+      setBATcapacity(sb,sb->size);
     } else {
       sb->bat->batBuns->free = sb->size * sizeof(oid); 
     }
