@@ -810,17 +810,20 @@ load_idx(sql_trans *tr, BAT *idxs, BUN j, sql_table *t)
 	}
 
 	if (ni->bat.bid && ni->bat.ubid) {
+		BAT *b  = temp_descriptor(ni->bat.bid);
+		BAT *ib = temp_descriptor(ni->bat.ibid);
 		BAT *ub = temp_descriptor(ni->bat.ubid);
 		BAT *db = temp_descriptor(t->dbid);
 
 		if (BATcount(ub) || BATcount(db)) {
-			BAT *b  = temp_descriptor(ni->bat.bid);
-
 			update_table_bat(b, ub, db);
-			bat_destroy(b);
 		}
 		bat_destroy(ub);
 		bat_destroy(db);
+
+		BATseqbase(ib, BATcount(b));
+		bat_destroy(ib);
+		bat_destroy(b);
 	}
 
 	bat_destroy(idx_id);
@@ -1000,6 +1003,7 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 
 	if (c->bat.bid && c->bat.ubid && !isTempTable(t)) {
 		BAT *b  = temp_descriptor(c->bat.bid);
+		BAT *ib  = temp_descriptor(c->bat.ibid);
 		BAT *ub = temp_descriptor(c->bat.ubid);
 		BAT *db = temp_descriptor(t->dbid);
 
@@ -1007,9 +1011,12 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 		if (BATcount(ub) || BATcount(db)) {
 			update_table_bat(b, ub, db);
 		}
-		bat_destroy(b);
 		bat_destroy(ub);
 		bat_destroy(db);
+
+		BATseqbase(ib, BATcount(b));
+		bat_destroy(ib);
+		bat_destroy(b);
 	}
 
 	bat_destroy(column_id);
@@ -2637,14 +2644,7 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 			}
 			bat_destroy(b);
 		} else { /* old column */
-			b = bat_new(TYPE_void, type, ni->t->sz, "idx_dup");
-			ni->bat.ibid = temp_create(b); 
-			if (ni->bat.bid) {
-				BAT *cb = temp_descriptor(ni->bat.bid);
-				BATseqbase(b, BATcount(cb));
-				bat_destroy(cb);
-			}
-			bat_destroy(b);
+			ni->bat.ibid = temp_copy(ni->bat.ibid, 0);
 		}
 	}
 	ni->bat.ubid = i->bat.ubid;
@@ -2745,16 +2745,6 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 			temp_dup(c->bat.ibid);
 			oc->bat.bid = c->bat.ibid;
 			oc->base.flag = TR_OLD;
-		}
-		bat_destroy(b);
-	/* old column and first transaction */
-	} else if (tr->parent == gtrans) { 
-		b = bat_new(TYPE_void, c->type.type->localtype, c->t->sz, "column_dup");
-		c->bat.ibid = temp_create(b); 
-		if (c->bat.bid) {
-			BAT *cb = temp_descriptor(c->bat.bid);
-			BATseqbase(b, BATcount(cb));
-			bat_destroy(cb);
 		}
 		bat_destroy(b);
 	} else { /* old column */
