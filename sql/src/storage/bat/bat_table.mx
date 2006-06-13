@@ -195,8 +195,8 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	va_start(va, t);
 
 	c->base.wtime = tr->stime;
-	for (val = va_arg(va, void *); n && val; n = n->next, val = va_arg(va, void *)) {
-
+	for (val = va_arg(va, void *); n && val; n = n->next, val = va_arg(va, void *))
+	{
 		cnt++;
 		c = n->data;
 		b = temp_descriptor(c->bat.ibid);
