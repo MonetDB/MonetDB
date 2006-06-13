@@ -1682,7 +1682,7 @@ xquery_module_compile(xquery_client *ctx,
     strcpy(mod->url, url);
     mod->nsurl = mod->url + url_len;
 
-    ret = xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, NULL);
+    ret = xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
     if (!ret) {
         xquery_module_free(mod);
         return NULL;
