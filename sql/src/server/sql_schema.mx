@@ -693,12 +693,12 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
 		return stmt_none();
-		/* only db admin can create views on bats */
+	/* only db admin can create views on bats */
 	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
 		return sql_error(sql, 02, "CREATE VIEW AS BATS: insufficient privileges for user %s", sql->user);
 	} else {
 		char *err = NULL;
-		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0);
+		sql_table *t = NULL;
 		dnode *n = column_spec->h;
 		int nr = 0, i = 0;
 		char **names = NULL;
@@ -709,7 +709,30 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		for (n = column_spec->h; n; n = n->next, i++ )
 			names[i] = n->data.sval;
 
-		if ((err = sql_view_on_bats(sql->session->tr, t, names, nr)) != NULL){
+		if (nr == 1) {
+			char buf[BUFSIZ];
+			/* semi-colon here indicates it's a view as bats!!! */
+			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
+					name, names[0]);
+			t = mvc_create_view(sql, ss, name, buf, 0);
+			err = sql_view_from_bat(sql->session->tr, t, names[0]);
+		} else {
+			char buf[BUFSIZ];
+			char cols[BUFSIZ];
+			cols[0] = '\0';
+			for (i = 0; i < nr; i++) {
+				if (i > 0) strcat(cols, ", ");
+				strcat(cols, "\"");
+				strcat(cols, names[i]);
+				strcat(cols, "\"");
+			}
+			/* semi-colon here indicates it's a view as bats!!! */
+			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
+					name, cols);
+			t = mvc_create_view(sql, ss, name, buf, 0);
+			err = sql_view_on_bats(sql->session->tr, t, names, nr);
+		}
+		if (err != NULL) {
 			sql_error(sql, 02, err);
 			GDKfree(err);
 			sql_trans_drop_table(sql->session->tr, t->s, t->base.name, 0);
@@ -802,33 +825,28 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	char *err; 
 	int schema_id = 0;
 	list *l;
-	char buf[BUFSIZ];
 
-	if (sql_find_auth(sql, user) >= 0) {
+	if (backend_find_user(sql, user) >= 0) {
 		return sql_error(sql, 02, "CREATE USER: user '%s' already exists", user);
 	}
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
 	}
-	if ((err = backend_create_user(user,passwd)) != NULL) {
+	l = create_stmt_list();
+	if ((err = backend_create_user(l, user, passwd, fullname,
+					schema_id, sql->user_id)) != NULL)
+	{
 		(void) sql_error(sql, 02, "CREATE USER: %s", err);
-		_DELETE(err);
+		GDKfree(err);
 		return FALSE;
 	}
-	/* TODO remove passwd column */
-	l = create_stmt_list();
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
-
-	list_append(l, stmt_sql(_strdup(buf)));
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, sql->user_id);
-	list_append(l, stmt_sql(_strdup(buf)));
 	return stmt_list(l);
 }
 
 static stmt *
 drop_user(mvc *sql, char *user)
 {
-	if (sql_find_auth(sql, user) < 0)
+	if (backend_find_user(sql, user) < 0)
 		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
 
 	sql_drop_user(sql, user);
@@ -840,7 +858,7 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 {
 	int schema_id = 0;
 
-	if (sql_find_auth(sql, user) < 0)
+	if (backend_find_user(sql, user) < 0)
 		return sql_error(sql, 02, "ALTER USER: no such user '%s'", user);
 
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && strcmp(user, sql->user) != 0)

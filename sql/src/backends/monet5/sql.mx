@@ -787,14 +787,17 @@ getContext(mvc **c, backend **b )
 		return throwMessage("mvc","PARSER not initialized\n");
 	}
 	if ( _client->state[OPTIMIZE] == NULL) {
-		str schema;
+		assert(0);	/* Fabian: this looks like very dirty and wrong code to me */
+		str schema = NULL;
 		backend *be = _client->state[PARSER];
 
-		(void)be;
+		(void)be; /* Fabian: what is the use of declaring a variable, never using it, but telling the compiler to shut up? */
 		printf("#Re-establish context for client not expected\n");
 		_client->state[OPTIMIZE] = mvc_create(0,0,NULL,GDKout);
+		/* Fabian: should not GDKstrdup and should not use mvc_login
 		schema = mvc_login( _client->state[OPTIMIZE], 
 				GDKstrdup("monetdb"), GDKstrdup("monetdb") );
+		*/
 		if( !schema)
 			return throwMessage("getContext","unknown schema for monetdb\n");
 		else

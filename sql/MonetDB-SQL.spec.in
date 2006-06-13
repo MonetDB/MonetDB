@@ -41,14 +41,18 @@ Group: System
 %package java
 Summary: MonetDB SQL java interface
 Group: System
-# Requires: java
+%if !%{?buildsystem}
+BuildRequires: java ant
+%endif
 %endif
 
 %if %{?_with_python:1}%{!?_with_python:0}
 %package python
 Summary: MonetDB SQL python interface
 Group: System
+%if !%{?buildsystem}
 BuildRequires: python swig
+%endif
 %endif
 
 %package server

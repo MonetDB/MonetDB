@@ -305,11 +305,19 @@ int
 sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	Client father = NULL;
+	backend_functions *be_funcs = GDKmalloc(sizeof(backend_functions));
 
 	if (lt->cnt != 0) 
 		return handle_argerror(res, lt->cnt, 0);
 
-	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse, NULL, NULL);
+	memset((char *)be_funcs, '\0', sizeof(backend_functions));
+	be_funcs->fstack = &monet4_freestack;
+	be_funcs->fcode = &monet4_freecode;
+	be_funcs->finterpret = &monet4_parse;
+	be_funcs->fcuser = &monet4_create_user;
+	be_funcs->ffuser = &monet4_find_user;
+	be_funcs->fcrpriv = &monet4_create_privileges;
+	backend_init(be_funcs);
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
 		/* if the father itself is a temporary client, let

@@ -61,8 +61,8 @@ extern BAT *temp_descriptor(oid b);
 #include "sql_backend.h"
 #include "bat_sequence.h"
 
-/* version 03.00.00 of catalog */
-#define CATALOG_VERSION 30000
+/* version 03.00.01 of catalog */
+#define CATALOG_VERSION 30001
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;
@@ -966,7 +966,7 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 	c->bat.ibid = c->bat.bid = c->bat.ubid = 0;
 	c->bat.name = c->bat.uname = NULL;
 
-	if (t->table && !isTempTable(t)) {
+	if (t->table && !isTempTable(t)) {	/* system table */
 		int type = ATOMindex(c->type.type->base.name);
 
 		snprintf(name, BUFSIZ, "%s_%s_%s", t->s->base.name, t->base.name, c->base.name);
@@ -984,17 +984,23 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
  		b = bat_new(TYPE_void, type, t->sz, "load_column");
 		c->bat.ibid = temp_create(b);
 		bat_destroy(b);
-	} else if (t->table && isTempTable(t)) {
+	} else if (t->table && isTempTable(t)) {	/* temp table */
 		int type = c->type.type->localtype;
 
 		b = bat_new(TYPE_void, type, t->sz, "load_column");
 		c->bat.ibid = temp_create(b);
 		bat_destroy(b);
-	} else if (!t->table && !t->query) {
-		snprintf(name, BUFSIZ, "%s_%s_%s", t->s->base.name, t->base.name, c->base.name);
+	} else if (!t->table && t->query && t->query[0] == ';') {	/* view as bats */
+		snprintf(name, BUFSIZ, "%s_%s_%s",
+				t->s->base.name, t->base.name, c->base.name);
 		c->bat.name = _strdup(name);
 		b = temp_descriptor(bm_find_bat(bm, c->bat.name));
-		c->bat.bid = temp_create(b);
+		if (strcmp(c->base.name, "h") == 0) {
+			/* recreate view for head column */
+			c->bat.bid = temp_create(VIEWcombine(b));
+		} else {
+			c->bat.bid = temp_create(b);
+		}
 		bat_destroy(b);
 	}
 
@@ -1110,7 +1116,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 		fprintf(stderr, "\tload table %s\n", t->base.name);
 
 	BATloop(cols, p, q)
-	    cs_add(&t->columns, load_column(tr, t, cols, p), TR_OLD);
+		cs_add(&t->columns, load_column(tr, t, cols, p), TR_OLD);
 
 	bat_destroy(cols);
 
@@ -2809,7 +2815,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->dname = NULL;
 	t->dbid = ot->dbid;
 	if (t->dbid) {
-		if (isNew(t) ) {
+		if (isNew(t)) {
 			ot->dbid = temp_copy(t->dbid, isTempTable(t));
 		} else {
 			t->dbid = temp_copy(t->dbid, isTempTable(t));
@@ -3259,10 +3265,17 @@ rollforward_use_bat(sql_trans *tr, sql_column *c)
 	char bname[BUFSIZ];
 	BAT *b;
 
+	(void)tr;
 	/* only log on toplevel */
 	b = temp_descriptor(c->bat.ibid);
+	if (VIEWparent(b) != 0) {
+		BAT *t = b;
+		b = temp_descriptor(VIEWparent(b));
+		bat_destroy(t);
+	}
 
-	snprintf(bname, BUFSIZ, "%s_%s_%s", c->t->s->base.name, c->t->base.name, c->base.name);
+	snprintf(bname, BUFSIZ, "%s_%s_%s",
+			c->t->s->base.name, c->t->base.name, c->base.name);
 	c->bat.name = _strdup(bname);
 	c->bat.bid = bm_add_bat(bm, b, bname);
 
@@ -3283,7 +3296,6 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 
 	if (t->table && isGlobalTable(t)) {
 		/* only register bats without commit action tables */
-
 		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column);
 		if (!isTempTable(t)) {
 			char name[BUFSIZ];
@@ -3303,8 +3315,8 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 		}
 
 		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx);
+	} else if (!t->table && isGlobalTable(t) && t->query && t->query[0] == ';') {
 		/* bat views also need to be registered */
-	} else if (!t->table && isGlobalTable(t) && !t->query) {
 		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_use_bat);
 	}
 	if (tr->parent == gtrans) 
@@ -3826,13 +3838,19 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			sql_base *fb = n->data;
 			sql_base *pfb = m->data;
 
+			/* lists ordered on id */
 			/* changes to the existing bases */
 			if (fb->id == pfb->id) {
 				if (rf) 
 					ok = rf(tr, fb, pfb);
 				fb->rtime = fb->wtime = 0;
 				n = n->next;
-			} else {
+			} else if (fb->id < pfb->id) {  
+				node *t = n->next;
+				list_remove_data(fs->set, fb);
+				fs->set->destroy(fb);
+				n = t;
+			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
 				/* cs_add_before add r to fs before node n */
 				cs_add_before(fs, n, r);
@@ -3847,6 +3865,10 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			r->rtime = r->wtime = 0;
 		}
 	}
+	if (fs->dset) {
+		list_destroy(fs->dset);
+		fs->dset = NULL;
+	}
 	return ok;
 }
 
@@ -3858,6 +3880,11 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 		BAT *ins, *pi;
 		BAT *upd, *pu;
 
+		if (fi->bat.bid != pfi->bat.bid) {
+			temp_destroy(fi->bat.bid);
+			fi->bat.bid = pfi->bat.bid;
+			temp_dup(pfi->bat.bid);
+		}
  		ins = temp_descriptor(fi->bat.ibid);
  		pi = temp_descriptor(pfi->bat.ibid);
 		bat_clear(ins);
@@ -3889,7 +3916,11 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		BAT *ins, *pi;
 		BAT *upd, *pu;
 
-		assert(fc->bat.bid == pfc->bat.bid);
+		if (fc->bat.bid != pfc->bat.bid) {
+			temp_destroy(fc->bat.bid);
+			fc->bat.bid = pfc->bat.bid;
+			temp_dup(pfc->bat.bid);
+		}
  		ins = temp_descriptor(fc->bat.ibid);
  		pi = temp_descriptor(pfc->bat.ibid);
 		bat_clear(ins);
@@ -4447,14 +4478,14 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
 
-	t->query = NULL;
-	if (sql)
-		t->query = _strdup(sql);
+	t->query = sql ? _strdup(sql) : NULL;
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
 
 	ca = t->commit_action;
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &ca);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
+			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table,
+			&t->system, &ca);
 
 	systable->base.wtime = t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
@@ -4504,22 +4535,55 @@ sql_view_on_bats(sql_trans *tr, sql_table *t, char **names, int nr)
 		sql_subtype *tp;
 
 		if (!bid) {
-			snprintf(err, BUFSIZ, "Create view as bats,"
-		   		" bat %s does not exist", names[i]);
+			snprintf(err, BUFSIZ, "CREATE VIEW AS BATS: "
+					"bat %s does not exist", names[i]);
 			return _strdup(err);
 		}
 		b = BATdescriptor(bid);
 		if (b->htype != TYPE_void || b->hseqbase != 0) {
 		   	bat_destroy(b);
-			snprintf(err, BUFSIZ, "Create view as bats,"
-		   	" bat %s does not have a void head or head seqbase 0", 
-		   	names[i]);
+			snprintf(err, BUFSIZ, "CREATE VIEW AS BATS: "
+					"bat %s does not have a void head or head seqbase 0", 
+					names[i]);
 			return _strdup(err);
 		}
 		tp = sql_bind_localtype(ATOMname(b->ttype));
 		create_column_bat(tr, t, names[i], tp, b);  
 		bat_destroy(b);
 	}
+	return NULL;
+}
+
+char *
+sql_view_from_bat(sql_trans *tr, sql_table *t, char *name)
+{
+	char err[BUFSIZ];
+
+	bat bid = BBPindex(name);
+	BAT *bh, *bt;
+	sql_subtype *tp;
+
+	if (!bid) {
+		snprintf(err, BUFSIZ, "CREATE VIEW AS BATS: "
+				"bat %s does not exist", name);
+		return _strdup(err);
+	}
+	bt = BATdescriptor(bid);
+	if (bt->htype != TYPE_void && bt->htype != TYPE_oid) {
+		bat_destroy(bt);
+		snprintf(err, BUFSIZ, "CREATE VIEW AS BATS: "
+				"bat %s does not have a void or oid head", 
+				name);
+		return _strdup(err);
+	}
+	bh = VIEWcombine(bt);
+	tp = sql_bind_localtype(ATOMname(bh->ttype));
+	create_column_bat(tr, t, "h", tp, bh);  
+	tp = sql_bind_localtype(ATOMname(bt->ttype));
+	create_column_bat(tr, t, "t", tp, bt);  
+	bat_destroy(bt);
+	bat_destroy(bh);
+
 	return NULL;
 }
 
