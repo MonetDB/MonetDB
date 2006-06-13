@@ -342,8 +342,9 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 	} else {
 		char path[PATHLENGTH];
 		struct stat st;
-		GDKfilepath(path, BATDIR, nme, ext);
 		FILE *fp;
+
+		GDKfilepath(path, BATDIR, nme, ext);
 		if (stat(path, &st) >= 0 &&
                     (maxsize < (size_t) st.st_size || 
 		    /* mmap storage is auto-extended here */
