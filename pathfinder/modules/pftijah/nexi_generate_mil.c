@@ -341,16 +341,14 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
       
       case CREATE_QUERY_OBJECT:
         
-    		MILPRINTF(MILOUT, "terms := new(void,oid).seqbase(oid(0));\n");
+    		MILPRINTF(MILOUT, "terms := new(void,str).seqbase(oid(0));\n");
     		MILPRINTF(MILOUT, "modifiers := new(void,int).seqbase(oid(0));\n");
 
         break;
       
       case QUERY_ADD_TERM:
         
-        //MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(%s);\n");
-        MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(tj_normalizeTerm(%s, stemmer));\n", p_com->argument);
-        MILPRINTF(MILOUT, "if(tid.count() > 0) terms.append(tid.reverse().fetch(0));\n");
+        MILPRINTF(MILOUT, "terms.append(%s);\n", p_com->argument );
 
        break;
 

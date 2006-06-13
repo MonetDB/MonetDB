@@ -188,6 +188,28 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 }
 
 
+PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
+{
+    var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
+    var stemmed := [tj_normalizeTerm]( Qterms, stemmer );
+    
+    var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).mark(oid(0)).reverse().sort();
+    
+    var result := indexfetchjoin( tids,
+                                  bat("tj_" + collName + "_TermIndex"),
+                                  bat("tj_" + collName + "_Terms") );
+    return result;
+}
+
+PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
+{
+    var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
+    var stemmed := [tj_normalizeTerm]( Qterms, stemmer );
+    
+    var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).mark(oid(0)).reverse().sort();
+    return tids;
+}
+
 ################################################################################
 # SELECTION
 ################################################################################
@@ -361,8 +383,9 @@ PROC containing(bat left, bat right) : bat :=
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+     var terms := Qterms_to_void_tid( Qterms );
      var t1 := time();
      var tind := bat("tj_" + collName + "_TermIndex");
      var pres := bat("tj_" + collName + "_Terms");
@@ -428,8 +451,9 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,oid] terms, flt
      return res;
 }
 
-PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+     var terms := Qterms_to_void_tid( Qterms );
      var t1 := time();
      var tind := bat("tj_" + collName + "_TermIndex");
      var pres := bat("tj_" + collName + "_Terms");
@@ -492,8 +516,9 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,oid] terms, flt lmb
      return res;
 }
 
-PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+     var terms := Qterms_to_void_tid( Qterms );
      var t1 := time();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := bat("tj_" + collName + "_Terms").count();
@@ -551,8 +576,9 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,oid] te
      return res;
 }
 
-PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+     var terms := Qterms_to_void_tid( Qterms );
      var t1 := time();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := bat("tj_" + collName + "_Terms").count();
@@ -615,8 +641,9 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,oid
      return res;
 }
 
-PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat[oid,dbl] :=
+PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+     var terms := Qterms_to_void_tid( Qterms );
      var t1 := time();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := bat("tj_" + collName + "_Terms").count();
@@ -906,10 +933,8 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 #}
 
 proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
-    var result := indexfetchjoin( Qterms,
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
-    var Qpositions := result.reverse().sort().project(dbl(scoreBase));
+    var Qpositions := Qterms_to_tid_pre(Qterms).reverse().sort().project(dbl(scoreBase));
+    
     var context := ctx.sort();
     
     var termscores := p_containing_t_LMs(context, Qpositions, lambda, size_type);
@@ -917,145 +942,168 @@ proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stem
     return termscores;
 }
 
-proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
 # Smarter LM implementation that needs only a single treemergejoin per query
-  
-  var Qoids,QoidWeights;
+# Arguments: 
+#   ctx: context regions
+#   Qterms: query terms ([void,oid])
+#
+# Original code by: Thijs?
+#
+# The original code used [void,str] for Qterms. 
+# Our code stems the query terms before calling this function (is this what we want?)
+proc p_containing_q_LM_fast(bat ctx, bat Qoids, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
+    var QoidWeights;
 
-	QoidWeights := Qterms.project(dbl(1)); # TODO: add real weighting to avoid recomputation for duplicate query terms, or for morphological variants when stemming (can also be used to implement the modifiers)
-
-  var enum_word := load(col_name+"enum_word");
-	if (stemming = STEM_OFF) {
-    Qoids := Qterms.join(enum_word);
-    	    }
-  else if (stemming = STEM_ON) {
-    var word_stem := load(col_name+"word_stem");
-    var Qstems := Qterms.join(word_stem.reverse());
-    Qoids := Qstems.join(word_stem).join(enum_word);
-    word_stem:=nil;
-        }
-
-  enum_word := nil;
-  if ( Qoids.count() = 0) {
-	return ctx.[*](min(bat(col_name+"col_freq")));
-  }
-  else
-  {
- var word_name := load(col_name+"word_name");
-
-	var Qpositions:=[uselect](const word_name,Qoids.reverse().mirror()).[sort]().[project](Qoids.reverse()).[reverse]();
- word_name := nil;
+    # TODO: add real weighting to avoid recomputation for duplicate query terms, 
+    # or for morphological variants when stemming (can also be used to implement the modifiers)
     
+	QoidWeights := Qoids.project(dbl(1)); 
+    
+    #: var enum_word := load(col_name+"enum_word");
+	#: if (stemming = STEM_OFF) {
+    #: Qoids := Qterms.join(enum_word);
+    #: 	    }
+    #: else if (stemming = STEM_ON) {
+    #: var word_stem := load(col_name+"word_stem");
+    #: var Qstems := Qterms.join(word_stem.reverse());
+    #: Qoids := Qstems.join(word_stem).join(enum_word);
+    #: word_stem:=nil;
+    #:     }
+
+    #: enum_word := nil;
+    if ( Qoids.count() = 0) {
+	    #: return ctx.[*](min(bat(col_name+"col_freq")));
+        return ctx.[*](min(col_freq()));
+    }
+    #: else
+    #: {
+    #: var word_name := load(col_name+"word_name");
+
+	#: var Qpositions:=[uselect](const word_name,Qoids.reverse().mirror()).[sort]().[project](Qoids.reverse()).[reverse]();
+    #: word_name := nil;
+    
+    var Qoid_pre := indexfetchjoin( Qoids,
+                                    bat("tj_" + collName + "_TermIndex"),
+                                    bat("tj_" + collName + "_Terms") );
+    var pre_Qoid := Qoid_pre.reverse().sort();
   
-	var allpositions:=new(oid,oid);
-	[insert](const allpositions,Qpositions);
-  allpositions.reverse().sort();
+	#: var allpositions:=new(oid,oid);
+	#: [insert](const allpositions,Qpositions);
+    #: allpositions.reverse().sort();
 
-  var word_pre := load(col_name+"word_pre");
-  var pre_Qoid := allpositions.join(word_pre).reverse().sort();
+    #: var word_pre := load(col_name+"word_pre");
+    #: var pre_Qoid := allpositions.join(word_pre).reverse().sort();
 
-  var entity_pre := load(col_name+"entity_pre");  
-  var entity_post := load(col_name+"entity_post");
-	var ctx_oid :=ctx.sort().mark(oid(0)).reverse();
-  var ctx_score := ctx.reverse().mark(oid(0)).reverse();
-	var ctx_pre := ctx_oid.join(entity_pre);
-  var ctx_post := ctx_oid.join(entity_post);
-	entity_post:=nil;
+    #: var entity_pre := load(col_name+"entity_pre");  
+    #: var entity_post := load(col_name+"entity_post");
+	#: var ctx_oid :=ctx.sort().mark(oid(0)).reverse();
+    #: var ctx_score := ctx.reverse().mark(oid(0)).reverse();
+	#: var ctx_pre := ctx_oid.join(entity_pre);
+    #: var ctx_post := ctx_oid.join(entity_post);
+    #: entity_post:=nil;
+    
 
-	var res := treemergejoin_sort(ctx_pre,ctx_post,pre_Qoid.hmark(oid(0)),1);
+	#: var res := treemergejoin_sort(ctx_pre,ctx_post,pre_Qoid.hmark(oid(0)),1);
+    
+    var res := anc_desc( ctx, pre_Qoid );
 
+    # res    : [anc_pre, desc_pre]
+    
+    
 	var res_ctx := res.hmark(oid(0));
-	var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
+    # res_ctx: [void, anc_pre]
+    
+	#: var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
+    
+    var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
 	var termcounts := res_Qoid.CTgroup(res_ctx).CThistogram();
 
-  var ctx_size;
+    var ctx_size;
 
 	if (size_type = SIZE_ENTITY)
-	ctx_size:=res_oid.reverse().kunique().mirror().sort().size_entity();
+        ctx_size:=res_oid.reverse().kunique().mirror().sort().size_entity();
 	else if (size_type = SIZE_TERM)
 		ctx_size :=ctx_oid.join(BAT(col_name+"entity_text_size"));
 
-  var termprobs:=termcounts.[dbl]().[/](res_ctx.join(ctx_size).[dbl]());
+    var termprobs:=termcounts.[dbl]().[/](res_ctx.join(ctx_size).[dbl]());
 
 	termprobs:=termprobs.[*](lambda);
 	var prob;	
 
 	if (lambda<1.0)
 	{
-   var BG;
-	if (size_type = SIZE_ENTITY) {
- var col_root := load(col_name+"col_root");
-		BG := pre_Qoid.reverse().{count}().[/](size_entity(entity_pre.join(col_root)).find(oid(0)));
+        var BG;
+        if (size_type = SIZE_ENTITY) {
+            var col_root := load(col_name+"col_root");
+            BG := pre_Qoid.reverse().{count}().[/](size_entity(entity_pre.join(col_root)).find(oid(0)));
+        }  
 
+        else if (size_type = SIZE_TERM) {
 
-	}
+            BG := pre_Qoid.reverse().{count}().[/](dbl(count(word_pre)));
+        }
 
-	else if (size_type = SIZE_TERM) {
+        word_pre := nil;
+        entity_pre := nil;
 
-		BG := pre_Qoid.reverse().{count}().[/](dbl(count(word_pre)));
+        BG:= BG.[*](1-lambda);
+     
+        var BGprobs := res_Qoid.join(BG);
 
+        # This is the presence weighting scheme 
+        # (cf. for example Eq. 3.22 in thesis Thijs)
+        prob := termprobs.[/](BGprobs).[+](1); 	
+        
 
-	}
+        # Apply query term weights 
+        # normalisation for number query terms not needed (does not influence ranking)
 
-  word_pre := nil;
-  entity_pre := nil;
+        prob:= prob.[dbl]().[pow](join(res_Qoid,QoidWeights));
 
-	 BG:= BG.[*](1-lambda);
- 
-   var BGprobs := res_Qoid.join(BG);
-
-	 prob := termprobs.[/](BGprobs).[+](1); 	# This is the presence weighting scheme 
-					      	# (cf. for example Eq. 3.22 in thesis Thijs)
-
-	 # Apply query term weights 
-	 # normalisation for number query terms not needed (does not influence ranking)
-
-	 prob:= prob.[dbl]().[pow](join(res_Qoid,QoidWeights));
-
-	 # convert to (ctx_ind,prob)
-	 prob := res_ctx.reverse().join(prob);
-	
-	 # aggregate over query terms (joint probability)
-	 prob := prob.{prod}().sort(); # only scores for matchin nodes
-	
-	 # non matching-score
-   var NMS := BG.[pow](QoidWeights).prod();
-   prob:=prob.[*](NMS); # multiply matching w. NMS (cv. presence weighting scheme)
-   # non matching elements get NMS only;
-   prob:=ctx_oid.project(NMS).access(BAT_WRITE).inplace(prob).access(BAT_READ);
+        # convert to (ctx_ind,prob)
+        prob := res_ctx.reverse().join(prob);
+        
+        # aggregate over query terms (joint probability)
+        prob := prob.{prod}().sort(); # only scores for matchin nodes
+        
+        # non matching-score
+        var NMS := BG.[pow](QoidWeights).prod();
+        prob:=prob.[*](NMS); # multiply matching w. NMS (cv. presence weighting scheme)
+        # non matching elements get NMS only;
+        prob:=ctx_oid.project(NMS).access(BAT_WRITE).inplace(prob).access(BAT_READ);
 	}
 	else
 	{
 
-	 # lambda = 1 -> do not use presence weighting to avoid division by zero; 
-	 # compute without rewriting (cf. eq. 3.20 and 3.21 in Thijs' thesis)
-	 prob := termprobs;
+        # lambda = 1 -> do not use presence weighting to avoid division by zero; 
+        # compute without rewriting (cf. eq. 3.20 and 3.21 in Thijs' thesis)
+        prob := termprobs;
 
-	 # Apply query term weights 
-	 # normalisation for number query terms not needed (does not influence ranking)
+        # Apply query term weights 
+        # normalisation for number query terms not needed (does not influence ranking)
 
-	 prob:= prob.[dbl]().[pow](join(res_Qoid,QoidWeights).[dbl]());
+        prob:= prob.[dbl]().[pow](join(res_Qoid,QoidWeights).[dbl]());
 
-	 # convert to (entity_oid,prob)
-	 prob := res_ctx.reverse().join(prob);
+        # convert to (entity_oid,prob)
+        prob := res_ctx.reverse().join(prob);
 	
-	 # aggregate over query terms (joint probability)
-	 prob := prob.{prod}().sort(); # only scores for matchin nodes
+        # aggregate over query terms (joint probability)
+        prob := prob.{prod}().sort(); # only scores for matchin nodes
 	
 
-	 # add non-matching elements
-	 prob := ctx_oid.project(dbl(0)).access(BAT_WRITE).inplace(prob).access(BAT_READ);
-}
+        # add non-matching elements
+        prob := ctx_oid.project(dbl(0)).access(BAT_WRITE).inplace(prob).access(BAT_READ);
+    }
 
-	if (base = ZERO)
+	if (scoreBase = 0)
 		prob := [+](ctx_score,prob);
-	else if (base = ONE)
+	else if (scoreBase = 1)
 		prob := [*](ctx_score,prob);
 
 	prob := ctx_oid.reverse().join(prob);
 
 	return prob; 
- }
+    #: }
 }
 
 # The following functions have been copied without change from algebra_procs.mil
