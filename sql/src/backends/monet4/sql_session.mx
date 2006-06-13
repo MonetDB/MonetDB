@@ -136,9 +136,6 @@ error(stream *out, char *str)
 		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
 			 return -1;
 	}
-	/*if (stream_flush(out))
-		return -1;
-	*/
 	return 0;
 }
 
