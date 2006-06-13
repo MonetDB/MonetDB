@@ -1376,10 +1376,13 @@ SERVERquery(int *ret, int *key, str *qry){
 	@:accessTest(*key,query)@
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
-	SERVERsessions[i].hdl= mapi_query(mid, *qry);
-	if( mapi_error(mid) ) 
-		return throwMessage("mserver.query",
+	SERVERsessions[i].hdl = mapi_query(mid, *qry);
+	if (mapi_result_error(SERVERsessions[i].hdl) != NULL) {
+		str msg = throwMessage("mserver.query",
 			mapi_result_error(SERVERsessions[i].hdl));
+		mapi_close_handle(SERVERsessions[i].hdl);
+		return(msg);
+	}
 	*ret = *key;
 	return MAL_SUCCEED;
 }
