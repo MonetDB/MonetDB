@@ -34,7 +34,10 @@ lib__pf_support = {
 		prec_foll.mx \
 		levelsteps.mx \
 		shredder.mx \
-		serialize.mx 
+		serialize.mx \
+		serialize_null.mx \
+		serialize_dflt.mx \
+		serialize_sax.mx 
 
 	LIBS = \
 		$(PF_LIBS) $(MONETDB_LIBS) \

@@ -44,9 +44,6 @@ C implementation of the document shredder"
 
 @- XML print functions (serialize.mx)
 @m
-.COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
- "C interface to Workset print routine"
-
 .COMMAND print_result(str mode, BAT[oid,bat] ws,
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
@@ -1361,6 +1358,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #define PF_SUPPORT_H
 
 #include <monet.h>
+#include "pathfinder.h"
 #include "pf_support.proto.h"
 #include <monet_interpreter.h>
 #include <monettime.h>

@@ -1755,7 +1755,6 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     /* match one/multiple values per iteration */
     if (qualifier == 0 || qualifier == 1)
         milprintf(f,
-                "{ # typeswitch\n"
                 "var single_iters := histogram(iter).[=](1).select(true).mirror();\n"
                 "single_iters := single_iters.leftjoin(iter.reverse());\n"
                 "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s).select(true);\n"
@@ -1763,7 +1762,6 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 kind);
     else
         milprintf(f,
-                "{ # typeswitch\n"
                 "var iter_count := histogram(iter);\n"
                 "var iter_kind := iter.reverse().leftfetchjoin(kind);\n"
                 "var kind_count := histogram(iter_kind.[=](%s).select(true).reverse());\n"
