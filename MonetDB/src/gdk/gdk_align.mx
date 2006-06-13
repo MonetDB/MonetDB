@@ -197,14 +197,16 @@ with the parent, as they need a modified version.
 BAT *
 VIEWcreate_(BAT *b, int slice_view)
 {
-	BAT *bn, *recycled;
+	BAT *bn, *recycled = NULL;
 	bat parent;
 
 	BATcheck(b, "VIEWcreate_: bat required");
-	bn = recycled = BBPrecycle(TYPE_void, TYPE_void, 1);
-
-	if (!recycled)
+	bn = BBPrecycle(TYPE_void, TYPE_void, 1);
+	if (bn) {
+		recycled = BATmirror(bn);
+	} else {
 		bn = BATcreatedesc(b->htype, b->ttype, FALSE);
+	}
 
 	parent = VIEWparent(b);
 	if (parent == 0 || b->batBuns->copied) {
@@ -221,6 +223,7 @@ because in case of a mark, we are going to override a column with
 a void. Take care to zero the accelerator data, though. 
 @c
 	bn->dims = b->dims;
+	if (recycled) recycled->dims = BATmirror(b)->dims;
 	*bn->H = *b->H;
 	*bn->T = *b->T;
 	assert(bn->U->buns.base == (char*)1 || bn->U->buns.base == NULL);
@@ -247,11 +250,12 @@ use a copy.
 		/* equal pointers to parent mean view uses acc of parent */
 		bn->hhash = b->hhash;
 		bn->thash = b->thash;
+		if (recycled) {
+			recycled->hhash = b->thash;
+			recycled->thash = b->hhash;
+		}
 	}
-	if (recycled) {
-		/* bat already exists inclusive mirror => propagate dims */
-		BATmirror(bn)->dims = BATmirror(b)->dims;
-	} else {
+	if (recycled == NULL) {
 		BBPcacheit(bn); /* enter in BBP and create mirror */
 	}
 	return bn;
