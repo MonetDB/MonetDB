@@ -197,14 +197,16 @@ with the parent, as they need a modified version.
 BAT *
 VIEWcreate_(BAT *b, int slice_view)
 {
-	BAT *bn, *recycled;
+	BAT *bn, *recycled = NULL;
 	bat parent;
 
 	BATcheck(b, "VIEWcreate_: bat required");
-	bn = recycled = BBPrecycle(TYPE_void, TYPE_void, 1);
-
-	if (!recycled)
+	bn = BBPrecycle(TYPE_void, TYPE_void, 1);
+	if (bn) {
+		recycled = BATmirror(bn);
+	} else {
 		bn = BATcreatedesc(b->htype, b->ttype, FALSE);
+	}
 
 	parent = VIEWparent(b);
 	if (parent == 0 || b->batBuns->copied) {
@@ -221,9 +223,10 @@ because in case of a mark, we are going to override a column with
 a void. Take care to zero the accelerator data, though. 
 @c
 	bn->dims = b->dims;
+	if (recycled) recycled->dims = BATmirror(b)->dims;
 	*bn->H = *b->H;
 	*bn->T = *b->T;
-	assert(bn->U->buns.base == NULL);
+	assert(bn->U->buns.base == (char*)1 || bn->U->buns.base == NULL);
 	*bn->U = *b->U;
 	bn->H->props = bn->T->props = NULL;
 	BATinit_idents(bn);
@@ -247,11 +250,12 @@ use a copy.
 		/* equal pointers to parent mean view uses acc of parent */
 		bn->hhash = b->hhash;
 		bn->thash = b->thash;
+		if (recycled) {
+			recycled->hhash = b->thash;
+			recycled->thash = b->hhash;
+		}
 	}
-	if (recycled) {
-		/* bat already exists inclusive mirror => propagate dims */
-		BATmirror(bn)->dims = BATmirror(b)->dims;
-	} else {
+	if (recycled == NULL) {
 		BBPcacheit(bn); /* enter in BBP and create mirror */
 	}
 	return bn;
@@ -335,6 +339,7 @@ BATmaterialize(BAT *b, size_t size)
 	BATcheck(b, "BATmaterialize: bat required");
 	{
 		int ht = b->htype, tt = b->ttype, vid = 0;
+		int vv = (!ht && !tt);
 		size_t oldsize = BATcount(b);
 		size_t cnt = MAX(oldsize, size);
 		Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
@@ -469,7 +474,8 @@ BATmaterialize(BAT *b, size_t size)
 	      bunins_failed:
 		/* cleanup the old heaps */
 		/* if X.priv exists and X not, move it to X (X must be the stable image) */
-		HEAPfree(&buns);
+		if (!vv)
+			HEAPfree(&buns);
 		if (committed && buns.storage != STORE_MEM)
 			GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
 		if (hh) {
@@ -494,6 +500,7 @@ BATmaterializeh(BAT *b, size_t size)
 {
 	BAT *bm, *ret = NULL;
 	int ht = b->htype, tt = b->ttype;
+	int vv = (!ht && !tt);
 	size_t oldsize = BATcount(b);
 	size_t cnt = MAX(oldsize, size);
 	Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
@@ -598,7 +605,8 @@ BATmaterializeh(BAT *b, size_t size)
       bunins_failed:
 	/* cleanup the old heaps */
 	/* if X.priv exists and X not, move it to X (X must be the stable image) */
-	HEAPfree(&buns);
+	if (!vv)
+		HEAPfree(&buns);
 	if (committed && buns.storage != STORE_MEM)
 		GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
 	if (hh) {

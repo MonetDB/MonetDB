@@ -18,6 +18,15 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
+@HAVE_PEAR_FALSE@php=--without php
+@HAVE_PEAR_TRUE@php=--with php
+@HAVE_PERL_SWIG_FALSE@perl=--without perl
+@HAVE_PERL_SWIG_TRUE@perl=--with perl
+@HAVE_PYTHON_SWIG_FALSE@python=--without python
+@HAVE_PYTHON_SWIG_TRUE@python=--with python
+@HAVE_JAVA_FALSE@java=--without java
+@HAVE_JAVA_TRUE@java=--with java
+
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
 
@@ -37,15 +46,6 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
-	php='--without-php';
-	if [ "@HAVE_PEAR_FALSE@" = "#" ] ; then php=''; fi 
-	perl='--without-perl';
-	if [ "@HAVE_PERL_SWIG_FALSE@" = "#" ] ; then perl=''; fi 
-	python='--without-python';
-	if [ "@HAVE_PYTHON_SWIG_FALSE@" = "#" ] ; then python=''; fi 
-	java='--without-java';
-	if [ "@HAVE_JAVA_FALSE@" = "#" ] ; then java=''; fi 
-
-	$(RPMBUILD) ${php} ${perl} ${python} ${java} --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) -ta ${php} ${perl} ${python} ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc $(top_builddir)/$(distdir).tar.gz
 
 	rm -rf $(rpmtopdir)/BUILD

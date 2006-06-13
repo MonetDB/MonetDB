@@ -17,8 +17,6 @@
 ?>
 
 <?php
-# vim:ts=4:sw=4:tw=0
-
 # @author Fabian Groffen <Fabian.Groffen@cwi.nl>
 ?>
 
@@ -80,3 +78,6 @@ $tables = monetdb_query('SELECT name FROM tables');
 
   </body>
 </html>
+<?
+// vim:ts=4:sw=4:tw=0:noexpandtab
+?>

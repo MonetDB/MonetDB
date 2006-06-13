@@ -318,7 +318,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 		break;
 	}
 
-	if (nil_on_miss) {
+	if (nil_on_miss && l_start < l_last) {
+		hasnils = 1;
 		for (; l_start < l_last; l_start += l_next)
 			bunfastins(bn, BUNhead(l, l_start), nil_on_miss);
 	}

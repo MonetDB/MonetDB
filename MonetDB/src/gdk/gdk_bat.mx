@@ -215,35 +215,46 @@ it. To make this possible, we must provide it with filenames.
 BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	BAT *bn = BBPrecycle(ht,tt,cap);
-	if (bn) return bn;
+	BAT *bn, *recycled;
+	int vv = (!ht && !tt);
+
+	bn = recycled = BBPrecycle(ht,tt,cap);
 	
-	bn = BATcreatedesc(ht, tt, (ht||tt));
+	if (!bn)
+		bn = BATcreatedesc(ht, tt, (ht||tt));
 	if (bn == NULL) return NULL;
 
-	BATsetdims(bn);
+	if (!recycled) {
+		BATsetdims(bn);
 
-	/* alloc the main heaps */
-	if ((ht||tt) && HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
-		return NULL;
-	}
-	if (ATOMheap(ht, bn->hheap, cap) < 0) {
-		HEAPfree(bn->batBuns);
-		GDKfree(bn->hheap);
-		if (bn->theap) GDKfree(bn->theap);
-		return NULL;
-	}
-	if (ATOMheap(tt, bn->theap, cap) < 0) {
-		HEAPfree(bn->batBuns);
-		if (bn->hheap) {
-			HEAPfree(bn->hheap);
-			GDKfree(bn->hheap);
+		/* alloc the main heaps */
+		if ((ht||tt) && 
+			HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
+			return NULL;
 		}
-		GDKfree(bn->theap);
-		return NULL;
+	
+		if (ATOMheap(ht, bn->hheap, cap) < 0) {
+			HEAPfree(bn->batBuns);
+			GDKfree(bn->hheap);
+			if (bn->theap) GDKfree(bn->theap);
+			return NULL;
+		}
+		if (ATOMheap(tt, bn->theap, cap) < 0) {
+			HEAPfree(bn->batBuns);
+			if (bn->hheap) {
+				HEAPfree(bn->hheap);
+				GDKfree(bn->hheap);
+			}
+			GDKfree(bn->theap);
+			return NULL;
+		}
+		DELTAinit(bn);
+		BBPcacheit(bn);
 	}
-	DELTAinit(bn);
-	BBPcacheit(bn);
+	if (vv) {
+		bn->batBuns->base = (char*)1;
+		DELTAinit(bn);
+	}
 	return bn;
 }
 
@@ -500,7 +511,8 @@ BATfree(BAT *b)
 	b->T->props = NULL;
 	HASHdestroy(b);
 	DELTAsave(b);	       /* convert to disk format */
-	HEAPfree(b->batBuns);
+	if (b->htype != b->ttype || b->htype != TYPE_void)
+		HEAPfree(b->batBuns);
 	if (b->hheap) 
 		HEAPfree(b->hheap);
 	if (b->theap) 
