@@ -19,7 +19,7 @@ MTSAFE
 scripts_php = {
 	EXT = php
 	DIR = pkgdatadir/php
-	SOURCES = monetdb.php pear.php next_result_demo.php 
+	SOURCES = monetdb.php pear.php
 }
 
 scripts_ini = {
