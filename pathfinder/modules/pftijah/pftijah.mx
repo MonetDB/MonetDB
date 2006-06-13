@@ -1614,12 +1614,39 @@ PROC align_frag() : void :=
 
 #include <pathfinder.h>
 
+#define USE_MONET_EXEC
+#ifdef USE_MONET_EXEC
 int executeMIL(char* str) {
-    /* flush out and err streams to prevent problems downstream */
-    stream_flush(GDKout);
-    stream_flush(GDKerr);
+    if ( 0 ) {
+      /* flush out and err streams to prevent problems downstream */
+      stream_flush(GDKout);
+      stream_flush(GDKerr);
+    }
     return monet_exec(str);
 }
+#else
+int executeMIL(char* str) {
+	Cntxt stk = 0; /* OK??? */
+	ValRecord res;
+    
+    FILE *debug = fopen( "/tmp/executeMIL.log", "a" );
+    fprintf( debug, "%s", "\n\n");
+    fprintf( debug, "%s", str );
+    fclose( debug );
+    
+	if ( 0 ) stream_printf(GDKout,"# executeMIL(\"%s\")\n",str);
+	int ret = interpret_str(stk,str,&res);
+	if ( ret==-TOK_RETURN ) {
+	    VALclear(&res);
+	    ret = 1;
+	} else if (ret >= 0) {
+	    ret = 1;
+	} else {
+	    ret = -1;
+	}
+	return ret;
+}
+#endif
 
 int CMDtijah_command(bit* res, str command) {
 	if ( 0 ) stream_printf(GDKout,"# tijah_command(%s)\n",(char*)command);
