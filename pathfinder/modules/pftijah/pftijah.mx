@@ -525,6 +525,7 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
      _lmbd :*= collFrq; 
      var t2 := time();
      terms := terms.tsort().tmark(0@0);
+     if (terms.count() = 0) return left;
      var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
      var t3 := time();
 
@@ -551,7 +552,6 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
      var elem_tid := elem_termpre.join(tid_pre.reverse());
      tid_pre := nil;
      elem_termpre := nil;
-     
      var doc_prob := new(oid,dbl);
      terms@batloop()
      {
@@ -567,7 +567,8 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
      }
 
      var res := {sum}(doc_prob.reverse().mark(0@0).reverse(), doc_prob.mark(0@0).reverse(), elems.reverse());
-     res := res.[/](terms.count()).[+](left);
+     var fac := dbl(1.0) / dbl(terms.count());
+     res := res.[*](fac).[+](left);
      
      var t6 := time();
     
@@ -584,6 +585,8 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str
      var collFrq := bat("tj_" + collName + "_Terms").count();
      _lmbd :*= collFrq; 
      var t2 := time();
+     terms := terms.tsort().tmark(0@0);
+     if (terms.count() = 0) return left;
      var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
      var t3 := time();
 
@@ -649,6 +652,8 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      var collFrq := bat("tj_" + collName + "_Terms").count();
      _lmbd :*= collFrq; 
      var t2 := time();
+     terms := terms.tsort().tmark(0@0);
+     if (terms.count() = 0) return left;
      var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
      var t3 := time();
      var tid_frq := histogram(tid_pre.reverse());
@@ -1655,11 +1660,11 @@ int CMDtijah_query(BAT* optbat, str q) {
             GDKerror("CMDtijah_query: %s.\n", err);
 	    return GDK_FAIL;
 	}
-        /* OLD_MIL_EXEC
         if ( 1 && !executeMIL(mil) ) {
             GDKerror("CMDtijah_query: execute MIL failed.\n");
 	    return GDK_FAIL;
 	}
+        /* OLD_MIL_EXEC
 	BAT* scoreBAT = BATdescriptor( BBPindex("nexi_result") );
 
 	if ( ! scoreBAT ) {

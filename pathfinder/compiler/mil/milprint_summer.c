@@ -7950,7 +7950,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	milprintf(f,
                /* OLD_MIL_EXEC var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n" */ 
 		"    run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
-		"    source(\"/tmp/query_plan.mil\");"
 		, item_ext, str_counter);
 	
 	/* translate tijah-pre to pf-pre */
@@ -7989,9 +7988,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             addValues (f, int_container(), "result_id", "item");
 
         milprintf(f,
-                "iter := loop%03u.tmark(0@0);\n"
+                "iter := loop%03u.tmark(oid(0));\n"
                 "ipik := iter;\n"
-                "pos := 1@0;\n"
+                "pos := oid(1);\n"
                 "kind := INT;\n"
                 , cur_level);
 	
@@ -8033,8 +8032,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	        , cur_level, item_int, cur_level);
         
 	milprintf(f,
-                "ipik := iter;\n"
                 "kind := set_kind(frag, ELEM);\n"
+                "ipik := iter;\n"
 	        "} # end of translate fn:xtijah_nodes\n");
         
 	return NORMAL;
@@ -8046,7 +8045,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate fn:xtijah-score\n"
 	);
         /* get query id */
-        translate2MIL (f, VALUES, cur_level, counter, L(args));
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+	if (rc == NORMAL)
+	{
+	    milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
+	}
 	saveResult_(f, ++counter, INT);
         
 	/* get node */
@@ -8054,19 +8057,21 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* get scores */
         milprintf(f, 
-		"var score := new(void,dbl).seqbase(0@0);"
-                "item%s%03u@batloop() { # begin query batloop\n"
-                "    var qid := oid(item%s%03u.fetch(int($h)));\n"
+		"var score := new(void,dbl).seqbase(0@0);\n"
+		"var item1_unique := item%s%03u.tunique();\n"
+                "item1_unique@batloop() { # begin query batloop\n"
+		"    var item_part := item.semijoin(item%s%03u.uselect($h));\n"
+		"    var qid := oid($h);\n"
 		"    var tmp := tijah_tID.uselect(qid);\n"
 		"    var tmp1 := tijah_pre.semijoin(tmp);\n"
-		"    tmp1 := tmp1.join(item.reverse());\n"
+		"    tmp1 := tmp1.join(item_part.reverse());\n"
 		"    var tmp2 := tmp1.join(kind.get_container());\n"
 		"    var tmp3 := tijah_frag.semijoin(tmp)\n;"
 		"    tmp := tmp1.semijoin(intersect(tmp3,tmp2));\n"
 		"    tmp1 := nil; tmp2 := nil; tmp3:= nil;\n"
 		"    score.append(tmp.reverse().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
 		"} # end query batloop\n"
-		, item_int, counter, item_int, counter, item_int, counter);
+		, item_int, counter, item_int, counter);
 	
 	/* return score */
         item_ext = (code)?kind_str(DBL):"";
@@ -8077,11 +8082,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         milprintf(f,
                 "iter := loop%03u.tmark(0@0);\n"
-                "pos := 1@0;"
-		"ipik := iter;\n"
-                "kind := DBL;\n"
+	        "ipik := iter;\n"
+		"score := nil;\n"
+                "pos := 1@0;\n"
+		"kind := DBL;\n"
 		, cur_level);
-	
+        
 	/* clean up */
 	deleteResult_(f, counter, INT);
         milprintf(f, "} # end of translate fn:xtijah_score\n");
