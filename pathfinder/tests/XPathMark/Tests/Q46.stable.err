@@ -58,17 +58,8 @@ stderr of test 'Q46` in directory 'tests/XPathMark` itself:
 # cmdline opt 	sql_port = 58265
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XPathMark
-Mserver: /data/home/boncz/stable/MonetDB/src/gdk/gdk_search.mx:520: HASHremove: Assertion `0' failed.
 
-
-
-# 14:10:50 >  
-# 14:10:50 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=33927 Q46.xq
-# 14:10:50 >  
-
-Connection terminated
-
-# 14:10:50 >  
-# 14:10:50 >  Done.
-# 14:10:50 >  
+# 19:09:19 >  
+# 19:09:19 >  Done.
+# 19:09:19 >  
 
