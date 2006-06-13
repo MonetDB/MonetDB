@@ -96,7 +96,7 @@ lib_monetdb = {
 	PREFIX =
 	NAME = _monetdb
 	SOURCES = monetdb.py.i
-	LIBS = libembeddedsql $(PYTHON_LIBS) -lMapi -lmutils -lstream
+	LIBS = libembeddedsql $(PYTHON_LIBS) $(MONETDB_LIBS) -lMapi -lmutils -lstream
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
