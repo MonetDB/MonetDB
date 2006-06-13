@@ -3018,7 +3018,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 	node *n = NULL;
 
 	/* delete removed bases */
-	if (fs->dset) {
+	if (fs->dset)
 		for (n = fs->dset->h; ok == SQL_OK && n; n = n->next) {
 			sql_base *fb = n->data;
 			node *tbn = cs_find_name(ts, fb->name);
@@ -3040,9 +3040,6 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				}
 			}
 		}
-		list_destroy(fs->dset);
-		fs->dset = NULL;
-	}
 	/* changes to the existing bases */
 	if (fs->set) {
 		/* update existing */
@@ -3829,13 +3826,19 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			sql_base *fb = n->data;
 			sql_base *pfb = m->data;
 
+			/* lists ordered on id */
 			/* changes to the existing bases */
 			if (fb->id == pfb->id) {
 				if (rf) 
 					ok = rf(tr, fb, pfb);
 				fb->rtime = fb->wtime = 0;
 				n = n->next;
-			} else {
+			} else if (fb->id < pfb->id) {  
+				node *t = n->next;
+				list_remove_data(fs->set, fb);
+				fs->set->destroy(fb);
+				n = t;
+			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
 				/* cs_add_before add r to fs before node n */
 				cs_add_before(fs, n, r);
@@ -3865,6 +3868,11 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 		BAT *ins, *pi;
 		BAT *upd, *pu;
 
+		if (fi->bat.bid != pfi->bat.bid) {
+			temp_destroy(fi->bat.bid);
+			fi->bat.bid = pfi->bat.bid;
+			temp_dup(pfi->bat.bid);
+		}
  		ins = temp_descriptor(fi->bat.ibid);
  		pi = temp_descriptor(pfi->bat.ibid);
 		bat_clear(ins);
@@ -3896,7 +3904,11 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		BAT *ins, *pi;
 		BAT *upd, *pu;
 
-		assert(fc->bat.bid == pfc->bat.bid);
+		if (fc->bat.bid != pfc->bat.bid) {
+			temp_destroy(fc->bat.bid);
+			fc->bat.bid = pfc->bat.bid;
+			temp_dup(pfc->bat.bid);
+		}
  		ins = temp_descriptor(fc->bat.ibid);
  		pi = temp_descriptor(pfc->bat.ibid);
 		bat_clear(ins);
