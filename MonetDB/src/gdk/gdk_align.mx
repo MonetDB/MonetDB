@@ -223,7 +223,7 @@ a void. Take care to zero the accelerator data, though.
 	bn->dims = b->dims;
 	*bn->H = *b->H;
 	*bn->T = *b->T;
-	assert(bn->U->buns.base == NULL);
+	assert(bn->U->buns.base == (char*)1 || bn->U->buns.base == NULL);
 	*bn->U = *b->U;
 	bn->H->props = bn->T->props = NULL;
 	BATinit_idents(bn);
@@ -335,6 +335,7 @@ BATmaterialize(BAT *b, size_t size)
 	BATcheck(b, "BATmaterialize: bat required");
 	{
 		int ht = b->htype, tt = b->ttype, vid = 0;
+		int vv = (!ht && !tt);
 		size_t oldsize = BATcount(b);
 		size_t cnt = MAX(oldsize, size);
 		Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
@@ -469,7 +470,8 @@ BATmaterialize(BAT *b, size_t size)
 	      bunins_failed:
 		/* cleanup the old heaps */
 		/* if X.priv exists and X not, move it to X (X must be the stable image) */
-		HEAPfree(&buns);
+		if (!vv)
+			HEAPfree(&buns);
 		if (committed && buns.storage != STORE_MEM)
 			GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
 		if (hh) {
@@ -494,6 +496,7 @@ BATmaterializeh(BAT *b, size_t size)
 {
 	BAT *bm, *ret = NULL;
 	int ht = b->htype, tt = b->ttype;
+	int vv = (!ht && !tt);
 	size_t oldsize = BATcount(b);
 	size_t cnt = MAX(oldsize, size);
 	Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
@@ -598,7 +601,8 @@ BATmaterializeh(BAT *b, size_t size)
       bunins_failed:
 	/* cleanup the old heaps */
 	/* if X.priv exists and X not, move it to X (X must be the stable image) */
-	HEAPfree(&buns);
+	if (!vv)
+		HEAPfree(&buns);
 	if (committed && buns.storage != STORE_MEM)
 		GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
 	if (hh) {

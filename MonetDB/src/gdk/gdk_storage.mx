@@ -555,12 +555,14 @@ BATload_intern(bat i)
 	str nme = BBP_physical(bid);
 	BAT *b = DESCload(bid);
 	int ret = 0;
+	int vv = 1;
 
 	if (b == NULL) {
 		return NULL;
 	}
 	/* LOAD bun heap */
 	if (b->htype != TYPE_void || b->ttype != TYPE_void) {
+		vv = 0;
 		ret = HEAPload(b->batBuns, nme, "buns", b->batRestricted == BAT_READ);
 		if (ret < 0) {
 			return NULL;
@@ -585,7 +587,8 @@ BATload_intern(bat i)
 
 	/* handle fatal errors */
 	if (ret < 0) {
-		HEAPfree(b->batBuns);
+		if (!vv)
+			HEAPfree(b->batBuns);
 		if (b->hheap) 
 			HEAPfree(b->hheap);
 		if (b->theap) 
@@ -653,6 +656,7 @@ BATdelete(BAT *b)
 	bat bid = ABS(b->batCacheid);
 	str o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
+	int vv = (!b->htype && !b->ttype);
 
 	if (loaded) {
 		b = loaded;
@@ -672,7 +676,7 @@ BATdelete(BAT *b)
 		    HEAPdelete(b->batBuns, o, "buns") &&
 		    b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->batBuns->base) {
+	} else if (b->batBuns->base && !vv) {
 		HEAPfree(b->batBuns);
 	}
 	if (b->hheap) {
