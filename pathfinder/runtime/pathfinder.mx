@@ -1372,6 +1372,9 @@ xquery_tree_exec(xquery_client *ctx,
                  int repeat) 
 { 
     ValRecord res;
+    /* first flush streams to prevent conflicts downstream */
+    stream_flush(GDKerr);
+    stream_flush(GDKout);
     int ret = interpret(repeat?ctx->repeat_stk:ctx->stk, t, &res);
     if (ret == -TOK_RETURN) {
         /* ignore return value here */
