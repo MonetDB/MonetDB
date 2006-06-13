@@ -18,10 +18,10 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
-@HAVE_PYTHON_SWIG_FALSE@python = '--without-python';
-@HAVE_PYTHON_SWIG_TRUE@python = '--with-python';
-@HAVE_JAVA_FALSE@java = '--without-java';
-@HAVE_JAVA_TRUE@java = '--with-java';
+@HAVE_PYTHON_SWIG_FALSE@python=--without python
+@HAVE_PYTHON_SWIG_TRUE@python=--with python
+@HAVE_JAVA_FALSE@java=--without java
+@HAVE_JAVA_TRUE@java=--with java
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
