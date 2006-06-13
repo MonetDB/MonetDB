@@ -167,13 +167,21 @@ Last updated: @value{UPDATED}
 @include Mapi.bdy.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
-@node The PHP Library, The Python Library, The Perl Library , Programming Interfaces
-@node The Python Library, The JDBC Library , The PHP Library, Programming Interfaces
+@include Assets/perlmanual.texi
 
-@node The JDBC Library, Embedded MonetDB , The Python Library, Programming Interfaces
+@node The PHP Library, The Python Library, The Perl Library , Programming Interfaces
+@include Assets/phpmanual.texi
+
+@node The Python Library, The JDBC Library , The PHP Library, Programming Interfaces
+@include Assets/pythonmanual.texi
+
+@node The JDBC Library, The ODBC Library , The Python Library, Programming Interfaces
 @include Assets/jdbcmanual.texi
 
-@node Embedded MonetDB, A Simple Example, The JDBC Library , Top
+@node The ODBC Library, Embedded MonetDB , The JDBC Library, Programming Interfaces
+@include Assets/odbcmanual.texi
+
+@node Embedded MonetDB, A Simple Example, The ODBC Library , Top
 @include Assets/Mbedded.texi
 
 @node MonetDB Assembler Language, MAL instructions, Embedded MonetDB Limitations , Top

@@ -22,5 +22,6 @@ and database server is described in @ref{Embedded MonetDB}.
 * The PHP Library::
 * The Python Library::
 * The JDBC Library::
+* The ODBC Library::
 @end menu
 
