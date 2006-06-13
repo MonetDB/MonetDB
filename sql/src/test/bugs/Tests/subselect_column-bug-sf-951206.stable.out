@@ -48,11 +48,11 @@ Over..
 [ "triggers"	]
 [ "keycolumns"	]
 [ "sequences"	]
+[ "env"	]
 [ "db_users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
-[ "env"	]
 [ "profile"	]
 [ "sessions"	]
 
