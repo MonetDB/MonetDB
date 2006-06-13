@@ -1658,10 +1658,11 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
         exp_type = PFty_child (exp_type);
     }
 
+    milprintf(f, "{ # typeswitch\n");
+
     if (TY_EQ(exp_type, PFty_empty ()))
     {
         milprintf(f,
-                "{ # typeswitch\n"
                 "var unique_iter := iter.tunique();\n"
                 "item := loop%03u.outerjoin(project(unique_iter,false)).[isnil]().[oid]();\n"
                 "iter := loop%03u;\n"
@@ -1679,11 +1680,71 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     else if (TY_EQ (exp_type, PFty_string ()))
         kind = "STR";
     else if (TY_EQ (exp_type, PFty_double ()))
-        kind = "DEC";
+        kind = "DBL";
     else if (TY_EQ (exp_type, PFty_boolean ()))
         kind = "BOOL";
     else if (TY_EQ (exp_type, PFty_untypedAtomic ()))
         kind = "U_A";
+    else if (TY_EQ (exp_type, PFty_xs_anyNode ())) {
+        milprintf(f,
+            "kind := kind.[>](ATOMIC);\n");
+        kind = "true";
+    }
+    else if (TY_EQ (exp_type, PFty_xs_anyAttribute ())) {
+        milprintf(f,
+            "kind := kind.get_types();\n");
+        kind = "ATTR";
+    }
+    else if (TY_EQ (exp_type, PFty_doc (PFty_xs_anyType ()))) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
+            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "DOCUMENT";
+    }
+    else if (TY_EQ (exp_type, PFty_xs_anyElement ())) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
+            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "ELEMENT";
+    }
+    else if (TY_EQ (exp_type, PFty_text ())) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
+            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "TEXT";
+    }
+    else if (TY_EQ (exp_type, PFty_comm ())) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
+            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "COMMENT";
+    }
+    else if (TY_EQ (exp_type, PFty_pi (NULL))) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
+            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "PI";
+    }
     else
         PFoops (OOPS_TYPECHECK,
                 "couldn't solve typeswitch at compile time "
@@ -2780,7 +2841,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_oid := nil;\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);\n"
                 "attr_own := nil;\n"
-                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_qn_frag);\n"
+                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);\n"
                 "attr_qn_frag := nil;\n"
                 "attr_frag := nil;\n"
       
@@ -5739,8 +5800,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         {
             milprintf(f,
                     "{\n"
-                    "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
-                    0, 0);
+                    "var mapping := loop%03u.reverse().mirror();\n",
+                    0);
             for (i = 0; i < cur_level; i++)
             {
                 milprintf(f, 
@@ -5836,19 +5897,10 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 fst_res);
     }
 
-    if (!(lev_snd & ~UDF_LEV)) /* default case */
+    if (!(lev_snd & ~UDF_LEV)) /* default case: lev_snd = level 0  */
     /* the above line only works because the current scope 0 is the one
        introduced by the UDF */
     {
-        /* introduce the correct map relation (if lev_snd == UDF_LEV) */
-        if (lev_snd == UDF_LEV)
-        {
-            milprintf(f,
-                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
-                                           ".leftfetchjoin(outer%03u);\n",
-                    snd_res, 0, 0);
-        }
-
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
@@ -6194,11 +6246,12 @@ translateUDF (opt_t *f, int cur_level, int counter,
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
+                "iter := iter.materialize(ipik);\n"
                 "item := item.materialize(ipik);\n"
-                "fun_vid%03u := fun_vid%03u.append(iter.project(oid(fun_base%03u + %iLL)));\n"
+                "kind := kind.materialize(ipik);\n"
+                "fun_vid%03u := fun_vid%03u.append(item.project(oid(fun_base%03u + %iLL)));\n"
                 "fun_iter%03u := fun_iter%03u.append(iter);\n"
                 "fun_item%03u := fun_item%03u.append(item);\n"
-                "kind := kind.materialize(ipik);\n"
                 "fun_kind%03u := fun_kind%03u.append(kind);\n"
                 "# end of add arg in UDF function call\n",
                 counter, counter, counter, i, 
@@ -8391,6 +8444,14 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(R(c));
             }
+            /* don't cast nodes - node type was only needed
+               for static typing */
+            else if (c->kind == c_seqcast &&
+                     PFty_subtype (input_type, PFty_xs_anyNode ()) &&
+                     PFty_subtype (cast_type, PFty_xs_anyNode ()))
+            {
+                *c = *(R(c));
+            }
             /* tests if a type is castable */
             else if (castable (input_type, cast_type));
             else if (!PFty_subtype (input_type, cast_type))
@@ -9055,7 +9116,7 @@ static int test_join_pattern(PFcnode_t *for_node,
         }
         else mps_error ("can't find variable occurrence "
                         "of variable '%s' in join pattern testing.",
-                        PFqname_str((LLL(fst_inner)->sem.var)->qname));
+                        PFqname_str((LLL(snd_inner)->sem.var)->qname));
         
         if (snd_inner)
         {
@@ -10028,7 +10089,15 @@ const char* PFinitMIL(void) {
         "\n"
         "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
+        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
+        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
+        "\n"
         "var time_compile := 0;\n"
+        "var time_read := 0;\n"
+        "var time_shred := 0;\n"
+        "var time_print := 0;\n"
+        "var time_exec := 0;\n"
+        "\n"
         "var genType := \"xml\";";
 }
 
@@ -10051,9 +10120,6 @@ const char* PFvarMIL(void) {
         "var item_dec_;\n"
         "var item_dbl_;\n"
         "var item_str_;\n"
-        "\n"
-        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
@@ -10086,10 +10152,10 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(void) {
     return  
         "{\n"
-        "var time_read := 0;\n"
-        "var time_shred := 0;\n"
-        "var time_print := 0;\n"
-        "var time_exec := time();\n"
+        "time_read := 0;\n"
+        "time_shred := 0;\n"
+        "time_print := 0;\n"
+        "time_exec := time();\n"
         "\n"
         "var ws := int(nil);\n"
         "var err := CATCH({\n"

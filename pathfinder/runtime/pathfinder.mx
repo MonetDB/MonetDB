@@ -41,17 +41,16 @@
 
 .USE streams;
 
-.BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
- "read xquery from stream, and print on a stream."
+.COMMAND xquery_frontend() : ptr = xquery_frontend;
+ "create/return the xquery_frontend callback interface to pass to mapi register. "
 
 .BUILTIN xquery(mode str, xquery str, is_url bit) : str = CMDxquery;
  "xquery execution. parameters: mode, query, is_url (optional)
  usage:  var result := xquery(\"xml\", \"1+1\", false); printf(result);
  or:  printf(xquery(\"xml\", \"1+1\"));"
 
-.COMMAND xquery_start_query_cache(lng maxsize) : ptr = CMDxquery_start_query_cache;
- "handle to pass to mapi_listen to let it use the query plan cache (also flushes the cache when called).
-  if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
+.COMMAND xquery_start_query_cache(lng maxsize) : void = CMDxquery_start_query_cache; 
+ "Cached xquery clients use the query plan cache (also flushes the cache when called). if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
 
 .PRELUDE = xquery_prelude;
 .EPILOGUE = xquery_epilogue;
@@ -62,32 +61,35 @@ module(mapi);       # remote client access
 module(monettime); 
 
 PROC pfstart(bit open, lng sz) : void {
-    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open, xquery_start_query_cache(sz)).fork();
+        xquery_start_query_cache(sz);
+	mapi_register(xquery_frontend());
+        if (not(mapi_running())) {
+                mapi_listen(
+                        int(monet_environment.find("mapi_port")), 
+                        str(nil), 
+                        5, 
+                        open).fork();
+        }
 }
 ADDHELP("pfstart", "boncz", "April 2005",
 "PARAMETERS:\n\
 bit whether the listener should listen to outside requests \
 (default false: only local connections).\n\
+sz per-connection size limit to the query plan cache, see also \"xquery_start_query_cache\".\n\
 DESCRIPTION:\n\
 start the xquery server.",
 "pathfinder");
 
 PROC pfstart() : void {
-    pfstart(false, 0LL);
+        pfstart(false, 0LL);
 }
 
 PROC xquery_server_start(bit global) : void {
-    fork(mapi_listen(
-                int(monet_environment.find("xquery_port")),
-                5,
-                "xquery_server",
-                global
-                )
-        );
+        pfstart(false, 0LL);
 }
 
 PROC xquery_server_start() : void {
-    xquery_server_start(false);
+        xquery_server_start(false);
 }
 
 #############################################
@@ -857,7 +859,9 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
  */
 char*
 xquery_method(stream *out, 
+              int rpctiming,
               char* module, 
+              char* uri, 
               char *method, 
               int argc, 
               int itercnt, 
@@ -956,6 +960,7 @@ typedef struct _xquery_module {
     char* prologue;               /* MIL procs defined in this module */
     char* epilogue;               /* MIL procs undefs for this module */
     xquery_function *functions;   /* functions declared in this module */
+    char *nsurl;                  /* module namespace definition */
     char url[1];                  /* module url */
 } xquery_module;
 
@@ -984,6 +989,7 @@ typedef struct _xquery_loaded_module {
 
 /* cached MIL client + Xquery specific context */
 typedef struct {
+    bit initialized;
     int inuse; 
 
     /* xquery_clients[stk].stk == stk; MIL client is monet_clients[stk] */
@@ -1002,6 +1008,7 @@ typedef struct {
     /* query buffer reuse */
     size_t buflen;
     char *buf;
+    int cacheid;        /* only reuse from the same cache */
         
     /* error stream (normally fderr=GDKerr=GDKout) */
     stream *fderr;
@@ -1014,6 +1021,9 @@ typedef struct {
     /* pointers into MIL variable records (to set values) */
     int *shredBAT; 
     int *time_compile; 
+    int *time_shred;
+    int *time_exec;
+    int *time_print;
     char **genType;
 
     /* counts used to remove query (non-module) procs and stacks after execution */
@@ -1031,6 +1041,7 @@ typedef struct {
 xquery_client xquery_clients[MAXCLIENTS + 1];
 
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
+int xquery_cacheid = 0;
 
 MT_Lock pf_compiler_lock;
 MT_Lock pf_module_lock;
@@ -1055,7 +1066,7 @@ MT_Lock pf_cache_lock;
  *
  * int
  * xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, 
- *                     char** prologue, char** query, char** epilogue) 
+ *                     char** prologue, char** query, char** epilogue, char* nsurl) 
  * - translate xquery to MIL and execute
  *
  * all int-returning functions return error(0)/ok(1)
@@ -1128,6 +1139,10 @@ xquery_mil_exec(xquery_client *ctx,
     return ret;
 }
 
+static char* xquery_parse_ident(char* p); 
+static char* xquery_parse_space(char* p); 
+static char* xquery_parse_string(char* p, char *buf, int len); 
+
 /*
  * translate xquery to MIL and execute, return error(0)/ok(1)
  * We collect the MIL scripts in three sections (prologue,query,epilogue).
@@ -1147,7 +1162,8 @@ xquery_compile_exec(xquery_client *ctx,
                     int is_url, 
                     char** prologue, 
                     char** query, 
-                    char** epilogue)
+                    char** epilogue,
+                    char* nsurl)
 {
     int is_mil = 0, len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
@@ -1165,6 +1181,29 @@ xquery_compile_exec(xquery_client *ctx,
             *prologue = xquery; *epilogue = NULL;
         } else {
             err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
+            if (err == NULL && nsurl != NULL){
+                /* get the module namespace URL Y from pattern: "module namespace X = Y" */
+                char *p0 = xquery_parse_space(xquery); 
+                err = "xquery_compile_exec: cannot parse module namespace.\n";
+                if (strncmp(p0, "module", 6) == 0) {
+                    char *p1 = xquery_parse_space(p0+=6); 
+                    if (p1 > p0 && strncmp(p1, "namespace", 9) == 0) {
+                        char *p2 = xquery_parse_space(p1+=9); 
+                        if (p2 > p1) {
+                            char* p3 = xquery_parse_ident(p2);
+                            if (p3 > p2) {
+                                char *p4 = xquery_parse_space(p3); 
+                                if (p4 > p3 && *p4++ == '=') {
+                                    char *p5 = xquery_parse_space(p4); 
+                                    if (p5 > p4 && xquery_parse_string(p5, nsurl, 1024) > p5) {
+                                        err = NULL; /* success! */
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         if (err == NULL || (prologue && *prologue) || (del && *del)) {
             ret = 1; /* no errors, or some MIL script came out still */
@@ -1216,7 +1255,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (ret && *epilogue && **epilogue)
             ret = xquery_mil_exec(ctx, *epilogue, 0);
     }
-    return ret;
+    return ret?ret+is_mil:0;
 }
 
 /*
@@ -1368,10 +1407,10 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
     BATseqbase(ctx->@1, @2);
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
 @= bunins
-    if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (BUNins(ctx->@1, @2, @3, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @= bunappend
-    if (BUNappend(ctx->@1, @2) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
 @c
 /*
@@ -1399,20 +1438,23 @@ xquery_function_call(xquery_client *ctx,
     char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
 
     /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
-    for(l=i=0; i<argc; i++) {
-        mincnt[i] = maxcnt[i] = argcnt[0][i];
-        tpe[i] = -1;
-        for(j=0; j<itercnt; j++) {
-            if (argcnt[j][i] > maxcnt[i]) maxcnt[i] = argcnt[j][i];
-            if (argcnt[j][i] < mincnt[i]) mincnt[i] = argcnt[j][i];
-            for(k=0; k<argcnt[j][i]; k++,l++) {
+    for(j=0; j<argc; j++) {
+        mincnt[j] = maxcnt[j] = argcnt[0][j];
+        tpe[j] = -1;
+    }
+    for(l=i=0; i<itercnt; i++) {
+        for(j=0; j<argc; j++) {
+            if (argcnt[i][j] > maxcnt[j]) maxcnt[j] = argcnt[i][j];
+            if (argcnt[i][j] < mincnt[j]) mincnt[j] = argcnt[i][j];
+            for(k=0; k<argcnt[i][j]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
                 if (t >= XQUERY_TYPES) 
                     return (char*) -1; /* can't make a quick function resolution if unknown types are involved */
-                tpe[i] = xquery_type_common_ancestor(tpe[i],t);
+                tpe[j] = xquery_type_common_ancestor(tpe[j],t);
             }
         }
     }
+
     /* try to resolve the parameters */
     fun = xquery_resolve(ctx, ns, method, argc, mincnt, maxcnt, tpe);
     if (fun == NULL)
@@ -1441,7 +1483,7 @@ xquery_function_call(xquery_client *ctx,
             while(*src && cur < end) *cur++ = *src++;
 
             if (shredBAT) {
-                /* add shredded soap message to the working set */
+                /* add shredded RPC request message to the working set */
                 src = (char*) PFdocbatMIL();
                 while(*src && cur < end) *cur++ = *src++;
             }
@@ -1476,15 +1518,15 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
-    @:seqbase(fun_vid000, oid_nil, "nil")@
-    @:seqbase(fun_iter000, oid_nil, "nil")@
-    @:seqbase(fun_kind000, oid_nil, "nil")@
-    @:seqbase(fun_item000, oid_nil, "nil")@
-    @:seqbase(loop000, oid_nil, "nil")@
+    @:seqbase(fun_vid000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_iter000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_kind000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_item000, oid_nil, "oid(nil)")@
+    @:seqbase(loop000, oid_nil, "oid(nil)")@
 
-    for(l=i=0; i<argc; i++) {
-        for(j=0; j<itercnt; j++) {
-            oid vid = i + fun->vid, iter = j+1;
+    for(l=j=0; j<itercnt; j++) {
+        for(i=0; i<argc; i++) {
+            oid item, vid = i + fun->vid, iter = j+1;
             if (i == 0 && j > 0) {
                 @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
             }
@@ -1507,16 +1549,16 @@ xquery_function_call(xquery_client *ctx,
                 @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
                 @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
                 if (c == 'i') { /* xs:integer */
-                    oid item = BATcount(ctx->int_values);
                     @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
+                    item = *(oid*) BUNhead(ctx->int_values, BUNfnd(BATmirror(ctx->int_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 'd') { /* xs:double or xs:decimal */
-                    oid item = BATcount(ctx->dbl_values);
                     @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
+                    item = *(oid*) BUNhead(ctx->dbl_values, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
                     @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 's') { /* xs:string */
-                    oid item = BATcount(ctx->str_values);
                     @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
+                    item = *(oid*) BUNhead(ctx->str_values, BUNfnd(BATmirror(ctx->str_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (shredBAT == NULL) { 
                     return "xquery_function_call: node parameter without shredBAT.\n";
@@ -1548,10 +1590,18 @@ xquery_function_call(xquery_client *ctx,
     }
 
     *(ctx->time_compile) = GDKms() - msec;
-
+    
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
+        if (strstr(mode, "rpcservertime") != NULL) {
+           printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
+           printf("\tTrans: %d msec\n", (*ctx->time_compile) );
+           printf("\tShred: %d msec\n", (*ctx->time_shred) );
+           printf("\tQuery: %d msec\n", (*ctx->time_exec - *ctx->time_shred) );
+           printf("Server_Serialisation + Network_Server_2_Client: %d msec\n", (*ctx->time_print) );
+        }
+
         size_t dummy;
         if (fun->size == 0)
             fun->size = Myysize(prepfun->lt, &dummy);
@@ -1569,6 +1619,7 @@ xquery_function_call(xquery_client *ctx,
                  ctx->cachesize -= kill->def->size; 
              }
         }
+
         return NULL;
     }
     return xquery_function_error;
@@ -1618,19 +1669,26 @@ xquery_module_compile(xquery_client *ctx,
                       char* mode, 
                       char *url) 
 {
-    xquery_module *mod = GDKmalloc(sizeof(xquery_module)+strlen(url));
+    xquery_module *mod = NULL;
     BAT *b = ctx->proc_vid;
     int xx = BUNsize(b);
     int cnt = BUNindex(b, BUNlast(b));
+    int ret, url_len = strlen(url)+1;
     BUN p, q;
 
+    mod = GDKmalloc(sizeof(xquery_module)+url_len+1024);
     if (mod == NULL) return NULL;
-    memset(mod, 0, sizeof(xquery_module));
+    memset(mod, 0, sizeof(xquery_module)+url_len+1024);
     strcpy(mod->url, url);
-    if (!xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue)) {
+    mod->nsurl = mod->url + url_len;
+
+    ret = xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, NULL);
+    if (!ret) {
         xquery_module_free(mod);
         return NULL;
     } 
+    if (ret == 2) mod->nsurl = NULL; /* for MIL modules (ret == 2), mod->nsurl == NULL (we don't know it :-( )*/
+
     for(p = BUNptr(b,cnt), q = BUNlast(b); p < q; p += xx) {
         char *proc = (char*) BUNhead(b,p);
         xquery_function *fun = (xquery_function*) GDKmalloc(sizeof(xquery_function)+strlen(proc));
@@ -1663,6 +1721,7 @@ static char*
 xquery_module_load(xquery_client *ctx, 
                    char* mode, 
                    char *ns, 
+                   char *module,
                    char *url) 
 {
     xquery_loaded_module *mod, *prev = NULL;
@@ -1675,23 +1734,30 @@ xquery_module_load(xquery_client *ctx,
                 if (prev) prev->next = mod->next;
                 else ctx->loaded_modules = NULL;
                 break; /* put module at front of list */
-            } else if (mod->nslen == nslen && strncmp(mod->ns, ns, nslen)) {
-                return "xquery_module_load: module already loaded under different namespace.\n";
             }
-            return NULL;
+            if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
+                return "xquery_module_load: import module statement does not match module namespace declaration.\n";
         }
     }
     if (mod == NULL) {
+        xquery_module *def;
         mod = (xquery_loaded_module*) GDKmalloc(sizeof(xquery_loaded_module));
         if (mod == NULL) 
             return "xquery_module_load: could not allocate.\n";
+        mod->def = NULL;
 
         MT_set_lock(pf_module_lock, "xquery_module_load");
-        for(mod->def = xquery_compiled_modules; mod->def; mod->def = mod->def->next) 
-            if (strcmp(mod->def->url, url) == 0) break;
-        if (mod->def == NULL)
+        for(def = xquery_compiled_modules; def; def = def->next) 
+            if (strcmp(def->url, url) == 0) break;
+
+        if (def == NULL){
             mod->def = xquery_module_compile(ctx, mode, url);
+        }
         MT_unset_lock(pf_module_lock, "xquery_module_load");
+
+        /* if a compiled module was found, we still need to execute it */
+        if (def && xquery_mil_exec(ctx, def->prologue, strstr(mode, "debug") != NULL))
+            mod->def = def; /* TODO: find a way to share PROC defs between MIL sessions */
 
         if (mod->def == NULL) {
             GDKfree(mod);
@@ -1706,7 +1772,51 @@ xquery_module_load(xquery_client *ctx,
     mod->nslen = nslen;
     mod->next = ctx->loaded_modules;
     ctx->loaded_modules = mod;
+
+    if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
+        return "xquery_module_load: import module statement does not match module namespace declaration.\n";
     return NULL;
+}
+
+/*
+ * wait for all queries to finish; free all clients; clear PF url cache
+ * freeing the cached YYTREEs in the xquery clients is done lazily 
+ * (postponed to the next initialization of the record)
+ */
+static void
+xquery_client_flushall()
+{
+    int i, wait = 100;
+    while(wait) {
+        MT_set_lock(pf_cache_lock, "xquery_client_flushall");
+        i = active_clients("xquery");
+        if (i == 0) {
+            /* ok, no xquery clients are active */
+            xquery_module *mod = xquery_compiled_modules;
+            while(mod) {
+                xquery_module *del = mod;
+                mod = mod->next;
+                xquery_module_free(del);
+            }
+            xquery_compiled_modules = NULL;
+            PFurlcache_flush();
+            wait = 0;
+        }
+        MT_unset_lock(pf_cache_lock, "xquery_client_flushall");
+        MT_sleep_ms(wait);
+    }
+}
+
+/*
+ * flush the cache. 
+ */
+int
+CMDxquery_start_query_cache(lng *maxsize)
+{
+    xquery_client_flushall();
+    if (*maxsize > 0) xquery_client_bytes = *maxsize;
+    xquery_cacheid++; /* old clients need to clean up their resources */
+    return GDK_SUCCEED;
 }
 
 
@@ -1714,141 +1824,183 @@ xquery_module_load(xquery_client *ctx,
  * =================== client session management ================================
  *
  * xquery_client *
- * xquery_client_alloc(stream *fdin, stream *fdout);
- * - allocate a new xquery client, returns client cntxt (0 on error)
+ * xquery_client_alloc(mapi_client *fc);
+ * - allocate a new xquery client, returns error message (NULL on success)
  *
  * char*
- * xquery_client_init(xquery_client *ctx);
+ * xquery_client_init(mapi_client *fc);
  * - initialize a new xquery cache context, returns error string (NULL if ok)
  *
  * void
- * xquery_client_free(xquery_client *ctx, int closeclient);
- * - free a xquery cache context (forever)
+ * xquery_client_free(mapi_client *fc);
+ * - free a xquery cache context (terminate)
  *
  * void
- * xquery_client_end(xquery_client *ctx, int forever);
- * - end of xquery execution (if forever=0, struct stays alive for reuse). 
- *
- * void
- * xquery_client_flushall() 
- * - wait for all queries to finish; free all clients; clear PF url cache
+ * xquery_client_end(xquery_client *ctx, char *err);
+ * - end of xquery execution (struct stays alive for reuse). 
  */
 
-static int xquery_caching = 0;
-
-/* 
- * allocate a new xquery client, returns client cntxt (0 on error)
- */
-static xquery_client* 
-xquery_client_alloc(stream *fdin, 
-                    stream *fdout) 
-{
-    xquery_client *ctx = NULL;
-    int i;
-
-    MT_set_lock(pf_cache_lock, "xquery_client_alloc");
-    if (fdin) xquery_caching = 1;
-    for(i=1; i<=MAXCLIENTS; i++) {
-        if (xquery_clients[i].inuse == 0 && xquery_clients[i].buflen) {
-            break; /* initialized & unused */
-        }
-    }
-    if (i > MAXCLIENTS && fdin == NULL) {
-        /* hack: if fdin == NULL, allocate a MIL client yourself! This is used by query_method() */
-        Client client = initClient("soap", GDKgetenv("monet_prompt"), FALSE);
-        if (client) {
-            TBL_initclient(client, monet_clients);
-            i = client - monet_clients;
-        }
-    }
-    if (i <= MAXCLIENTS) { /* suceeded to allocate a client */
-        ctx = xquery_clients + i;
-        ctx->inuse = 1;
-        monet_clients[i].fdin = fdin;
-        monet_clients[i].fdout = fdout;
-    }
-    MT_unset_lock(pf_cache_lock, "xquery_client_alloc");
-
-    return ctx;
-}
+@= find_var
+    v = VARfind(&ctx->stk, "@1");
+    if (v == NULL) 
+        return "xquery_client_alloc_: failed to lookup @1 variable.\n"; 
+    if (v->binding.vtype != TYPE_@2) 
+        return "xquery_client_alloc_: @1 variable has wrong type != int.\n"; 
+    ctx->@1 = &v->binding.val.@3; 
 
 @= find_bat
 {   Variable v = VARfind(&ctx->stk, "@1");
     ctx->@1 =  NULL;
     if (v && v->binding.vtype == TYPE_bat)
         ctx->@1 = BATdescriptor(v->binding.val.bval);
-    if (ctx->@1 == NULL) return "xquery_client_init: failed to lookup @1 variable.\n"; }
+    if (ctx->@1 == NULL) return "xquery_client_alloc: failed to lookup @1 variable.\n"; }
 @c
-/*
- * initialize a new xquery cache context, returns error string (NULL if ok)
- */ 
-static char* 
-xquery_client_init(xquery_client *ctx) 
-{ 
+
+static xquery_client*
+xquery_client_new(Cntxt stk) {
+    xquery_client *ctx = (xquery_client*)GDKmalloc(sizeof(xquery_client));
+
+    memset(ctx, 0, sizeof(xquery_client));
+    ctx->stk = stk; 
+    ctx->fderr = GDKerr;
+    return ctx; 
+}
+
+static char *
+xquery_client_alloc_(xquery_client *ctx)
+{
     Variable v;
 
-    ctx->fderr = GDKerr;
+    if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
+        return "xquery_client_alloc: failed to execute init script.\n"; 
 
-    if (ctx->buflen == 0) {
-        if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
-            return "xquery_client_init: failed to execute init script.\n"; 
+    @:find_var(shredBAT,int,ival)@
+    @:find_var(genType,str,sval)@
+    @:find_var(time_compile,int,ival)@
+    @:find_var(time_exec,int,ival)@
+    @:find_var(time_print,int,ival)@
+    @:find_var(time_shred,int,ival)@
 
-        ctx->lastvar = monet_cntxt[ctx->stk].var;
+    @:find_bat(proc_vid)@
+    @:find_bat(var_usage)@
+    @:find_bat(dbl_values)@
+    @:find_bat(int_values)@
+    @:find_bat(str_values)@
+    @:find_bat(fun_vid000)@
+    @:find_bat(fun_iter000)@
+    @:find_bat(fun_item000)@
+    @:find_bat(fun_kind000)@
+    @:find_bat(loop000)@
 
-        if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
-            return "xquery_client_init: failed to execute variable declarations.\n"; 
-
-        v = VARfind(&ctx->stk, "shredBAT");
-        if (v == NULL) 
-            return "xquery_client_init: failed to lookup shredBAT variable.\n"; 
-        if (v->binding.vtype != TYPE_int) 
-            return "xquery_client_init: shredBAT variable has wrong type != int.\n"; 
-        ctx->shredBAT = &v->binding.val.ival; 
-
-        v = VARfind(&ctx->stk, "genType");
-        if (v == NULL) 
-            return "xquery_client_init: failed to lookup genType variable.\n"; 
-        if (v->binding.vtype != TYPE_str) 
-            return "xquery_client_init: genType variable has wrong type != str.\n"; 
-        ctx->genType = &v->binding.val.sval; 
-
-        v = VARfind(&ctx->stk, "time_compile");
-        if (v == NULL) 
-            return "xquery_client_init: failed to lookup time_compile variable.\n"; 
-        if (v->binding.vtype != TYPE_int) 
-            return "xquery_client_init: time_compile variable has wrong type != int.\n"; 
-        ctx->time_compile = &v->binding.val.ival; 
-
-        @:find_bat(proc_vid)@
-        @:find_bat(var_usage)@
-        @:find_bat(dbl_values)@
-        @:find_bat(int_values)@
-        @:find_bat(str_values)@
-        @:find_bat(fun_vid000)@
-        @:find_bat(fun_iter000)@
-        @:find_bat(fun_item000)@
-        @:find_bat(fun_kind000)@
-        @:find_bat(loop000)@
-
-        ctx->var_usage_size = BATcount(ctx->var_usage);
-        ctx->proc_vid_size = BATcount(ctx->proc_vid);
-        ctx->cachesize = 0;
-        ctx->loaded_modules = NULL;
-        ctx->prepared_functions = NULL;
-        ctx->buflen = XQUERY_BUFSIZE;
-        ctx->buf = GDKmalloc(ctx->buflen+1);
-        ctx->val = GDKmalloc(ctx->vallen = 128);
-        if (ctx->val == NULL || ctx->buf == NULL) {
+    ctx->var_usage_size = BATcount(ctx->var_usage);
+    ctx->proc_vid_size = BATcount(ctx->proc_vid);
+    ctx->cachesize = 0;
+    ctx->loaded_modules = NULL;
+    ctx->prepared_functions = NULL;
+    ctx->buflen = XQUERY_BUFSIZE;
+    ctx->cacheid = xquery_cacheid;
+    ctx->buf = GDKmalloc(ctx->buflen+1);
+    ctx->val = GDKmalloc(ctx->vallen = 128);
+    if (ctx->val == NULL || ctx->buf == NULL) {
             if (ctx->buf) GDKfree(ctx->buf);
             if (ctx->val) GDKfree(ctx->val);
             ctx->buflen = 0;
-            return "xquery_client_init: failed to allocate.\n";
-        }
-        ctx->repeat_stk = CNTXTnew(ctx->stk);
-        CNTXTuse(ctx->repeat_stk);
-        monet_cntxt[ctx->repeat_stk].reuse = TRUE;
-    } 
+            return "xquery_client_alloc: failed to allocate.\n";
+    }
+    ctx->repeat_stk = CNTXTnew(ctx->stk);
+    ctx->initialized = 0;
+    CNTXTuse(ctx->repeat_stk);
+    monet_cntxt[ctx->repeat_stk].reuse = TRUE;
+
     return NULL;
+}
+
+/* 
+ * allocate a new xquery client, returns client cntxt (0 on error)
+ */
+static char* 
+xquery_client_alloc(mapi_client *fc)
+{
+    xquery_client *ctx = xquery_client_new(fc->stk);
+
+    fc->fc = ctx;
+    if (!ctx) {
+        return "!ERROR: no space to allocate xquery client\n";
+    } else {
+        return xquery_client_alloc_(ctx);
+    }
+}
+
+/*
+ * initialize a new xquery cache context, returns error string (NULL if ok)
+ */ 
+static char *
+xquery_client_init_(xquery_client *ctx )
+{
+    if (!ctx->initialized) {
+        ctx->initialized = 1;
+        if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
+            return "xquery_client_init: failed to execute variable declarations.\n"; 
+    }
+    return NULL;
+}
+
+/*
+ * free all cached subtrees and all proc definitions for all xquery modules
+ * (the epilogue contains UNDEF procs) 
+ */ 
+void
+xquery_client_free_cached_modules(xquery_client *ctx)
+{
+    xquery_prepared_function *fun= ctx->prepared_functions; 
+    xquery_loaded_module *mod= ctx->loaded_modules; 
+
+    while(fun) {
+        xquery_prepared_function *del = fun;
+        fun = fun->next;
+        if (del->lt) Myyfree(del->lt);
+        GDKfree(del);
+    }
+    while(mod) {
+        xquery_loaded_module *del = mod;
+        mod = mod->next;
+        /* free all modules */
+        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
+            fprintf(stderr, "xquery_client_free: client %d error dropping %s\n", ctx->stk, del->def->url);
+        GDKfree(mod);
+    }
+    ctx->loaded_modules = NULL;
+    ctx->prepared_functions = NULL;
+
+    /* free the query buffer */
+    if (ctx->buf) GDKfree(ctx->buf);
+    ctx->buf = NULL;
+    ctx->buflen = 0;
+}
+
+static char* 
+xquery_client_init(mapi_client *fc) 
+{ 
+    xquery_client *ctx = fc->fc;
+    char* err = xquery_client_init_(ctx);
+
+    ctx->fderr = fc->c->fdout;
+
+    if (!err && ctx->cacheid != xquery_cacheid) {
+        xquery_client_free_cached_modules(ctx);
+
+        ctx->buflen = XQUERY_BUFSIZE;
+        ctx->cacheid = xquery_cacheid;
+        ctx->buf = GDKmalloc(ctx->buflen+1);
+        if (ctx->buf == NULL) {
+            if (ctx->buf) GDKfree(ctx->buf);
+            ctx->buflen = 0;
+            err = "xquery_client_init: failed to allocate.\n";
+        }
+    }
+    if (err)
+        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
+    return err;
 }
 
 
@@ -1857,37 +2009,14 @@ xquery_client_init(xquery_client *ctx)
     ctx->@1 = NULL;
 @c
 /* 
- * free a xquery cache context (forever).
+ * free a xquery cache context (terminate).
  */
-static void 
-xquery_client_free(xquery_client *ctx, 
-                   int closeclient) 
+static void
+xquery_client_free_(xquery_client *ctx)
 {
-    xquery_prepared_function *fun= ctx->prepared_functions; 
-    xquery_loaded_module *mod= ctx->loaded_modules; 
+    xquery_client_free_cached_modules(ctx);
 
-    while(mod) {
-        xquery_loaded_module *del = mod;
-        mod = mod->next;
-        /* free all modules */
-        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
-            fprintf(stderr, "xquery_server: client %d error dropping %s\n", ctx->stk, del->def->url);
-        GDKfree(mod);
-    }
-    while(fun) {
-        xquery_prepared_function *del = fun;
-        fun = fun->next;
-        if (del->lt) Myyfree(del->lt);
-        GDKfree(del);
-    }
-    ctx->loaded_modules = NULL;
-    ctx->prepared_functions = NULL;
     ctx->shredBAT = NULL;
-
-    /* free the query buffer */
-    if (ctx->buf) GDKfree(ctx->buf);
-    ctx->buf = NULL;
-    ctx->buflen = 0;
 
     /* free the value buffer */
     if (ctx->val) GDKfree(ctx->val);
@@ -1909,20 +2038,21 @@ xquery_client_free(xquery_client *ctx,
     CNTXTclear(ctx->repeat_stk);
     CNTXTfree1(ctx->repeat_stk);
     CNTXTdelete(ctx->repeat_stk);
-    if (closeclient && ctx->stk)
-        closeClient(monet_clients + ctx->stk, 0);
-    ctx->inuse = 0;
+}
+
+static void 
+xquery_client_free(mapi_client *fc) 
+{
+    xquery_client_free_(fc->fc);
 }
 
 /* 
  * end of xquery execution (struct stays alive for reuse).
  */
 static void 
-xquery_client_end(xquery_client *ctx, 
-                  int forever) 
+xquery_client_end(xquery_client *ctx, char *err) 
 {
     oid zero = 0, one = 1;
-    Variable v;
 
     /* undo any inserts by the query into the var_usage bats */
     size_t delta_var_usage = BATcount(ctx->var_usage) - ctx->var_usage_size;
@@ -1932,9 +2062,9 @@ xquery_client_end(xquery_client *ctx,
     BATsetcount(ctx->proc_vid, ctx->proc_vid_size);
     ctx->proc_vid->batBuns->free -= delta_proc_vid*BUNsize(ctx->proc_vid);
 
-    /* empty all bats (static varibales) */
+    /* empty all bats (static variables) */
     BATclear(ctx->loop000);
-    BUNins(ctx->loop000, &zero, &one);
+    BUNins(ctx->loop000, &zero, &one, FALSE);
 
     BATclear(ctx->fun_vid000);
     BATclear(ctx->fun_iter000);
@@ -1943,66 +2073,21 @@ xquery_client_end(xquery_client *ctx,
     BATclear(ctx->dbl_values);
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
-    BUNappend(ctx->str_values, (ptr)str_nil);
-
-    /* nil-assign all other variables */
-    for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {
-        ATOMunfix(v->binding.vtype, VALptr(&v->binding));
-        VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
-        VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
-    }
-    monet_clients[ctx->stk].fdin = NULL; 
-    monet_clients[ctx->stk].fdout = NULL; 
+    BUNappend(ctx->str_values, (ptr)str_nil, FALSE);
+    *ctx->shredBAT = int_nil; 
 
     MT_set_lock(pf_cache_lock, "xquery_client_end");
-    if (forever) {
-        xquery_client_free(ctx, 1);
-    } else {
-        /* only deactivate the loaded modules */
-        xquery_loaded_module *mod= ctx->loaded_modules; 
-        while(mod) {
+    /* only deactivate the loaded modules */
+    xquery_loaded_module *mod= ctx->loaded_modules; 
+    while(mod) {
             mod->nslen = 0;
             mod->ns = NULL; 
             mod = mod->next;
-        }
-        ctx->inuse = 0;
     }
     MT_unset_lock(pf_cache_lock, "xquery_client_end");
-}
 
-
-/*
- * wait for all queries to finish; free all clients; clear PF url cache
- */
-static void
-xquery_client_flushall() 
-{
-    int i, wait = 100;
-    while(wait) {
-        MT_set_lock(pf_cache_lock, "xquery_client_flushall");
-        for(i=0; i<=MAXCLIENTS; i++) {
-            if (xquery_clients[i].inuse) break;
-        }
-        if (i > MAXCLIENTS) {
-            /* ok, no xquery clients are active */
-            xquery_module *mod = xquery_compiled_modules;
-            for(i=0; i<=MAXCLIENTS; i++) {
-                if (xquery_clients[i].buflen)
-                    xquery_client_free(xquery_clients+i, 1);
-            }
-            while(mod) {
-                xquery_module *del = mod;
-                mod = mod->next;
-                xquery_module_free(del);
-            }
-            xquery_compiled_modules = NULL;
-            PFurlcache_flush();
-            wait = 0;
-        }
-        MT_unset_lock(pf_cache_lock, "xquery_client_flushall");
-        MT_sleep_ms(wait);
-    }
-    xquery_caching = 0;
+    if (err) 
+        fprintf(stderr, "xquery_server: client %d %s\n", ctx->stk, err);
 }
 
 
@@ -2040,7 +2125,7 @@ xquery_client_flushall()
 /* 
  * parse an identifier; accept any UTF-8 characters in it (is that correct?)
  */
-static inline char* 
+static char* 
 xquery_parse_ident(char* p) 
 {
     if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *(unsigned char*) p >= 128) {
@@ -2054,7 +2139,7 @@ xquery_parse_ident(char* p)
 /* 
  * parse an xquery (: .. :)  comment. Note it may be nested.
  */
-static inline char* 
+static char* 
 xquery_parse_comment(char* p) 
 {
     int nesting;
@@ -2069,7 +2154,7 @@ xquery_parse_comment(char* p)
  * parse xquery space, which may include comments 
  */
 #define ISSPACE(c) ((c) == ' ' || (c) == '\t' || (c) == 10 || (c) == 13) 
-static inline char* 
+static char* 
 xquery_parse_space(char* p) 
 {
     while(*p) {
@@ -2083,7 +2168,7 @@ xquery_parse_space(char* p)
 /* 
  * parse an XML datamodel string. Deliver an unescaped version as a result 
  */
-static inline char* 
+static char* 
 xquery_parse_string(char* p, 
                     char *buf, 
                     int len) 
@@ -2154,7 +2239,7 @@ xquery_parse_string(char* p,
 /* 
  * parse an XML datamodel numeric, and determine its minimal type (xs:integer, xs:decimal or xs:double) 
  */
-static inline char* 
+static char* 
 xquery_parse_numeric(char* p, 
                      char **tpe) 
 {
@@ -2188,7 +2273,7 @@ xquery_prepare(xquery_client *ctx,
                char* mode, 
                char* query) 
 {
-    int nsbuf = 0, loaded_modules = 0;
+    int nsbuf = 0, loaded_modules = 0, len;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
     char val[256], url1[256], url2[256];
     char *err = NULL;
@@ -2205,10 +2290,13 @@ xquery_prepare(xquery_client *ctx,
         if (strncmp(p, "import", 6) || !ISSPACE(p[6])) {
             break;
         } else {
-            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
+            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq";
+             * or:  import rpc-module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
             p = xquery_parse_space(p+6);
-            if (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) {
-                p = xquery_parse_space(p+6);
+            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
+                 (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
+                len = p[0] == 'm' ? 6 : 10;
+                p = xquery_parse_space(p+len);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {
                     ns = xquery_parse_space(p+9);
                     nsend = xquery_parse_ident(ns);
@@ -2216,37 +2304,33 @@ xquery_prepare(xquery_client *ctx,
                     if (*p == '=') {
                         p = xquery_parse_space(p+1);
                     } else {
-                        err = "xquery_prepare: expecting '=' after namespace declaration";
+                        return "xquery_prepare: expecting '=' after namespace declaration";
                     }
                 }
                 p = xquery_parse_string(p, url1, 256);
                 p = xquery_parse_space(p);
-                if (err == NULL && *p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
+                if (*p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
+                    char bak = *nsend;
                     loc = xquery_parse_space(p+1);
                     locend = xquery_parse_string(loc, url2, 256);
-                    if (strlen(url1) > strlen(url2) || strncmp(url1, url2, strlen(url1))) {
-                        err = "xquery_prepare: module namespace does not match import statement.\n";
-                    } else { 
-                        char bak = *nsend;
-                        p = xquery_parse_space(locend);
-                        /* cut off module import from the query, and load it here (to have it cached later) */
-                        *nsend = 0; 
-                        err = xquery_module_load(ctx, mode, ns, url2);
-                        *nsend = bak; 
-                    }
-                } while (*p == ',' && err == NULL);
+                    p = xquery_parse_space(locend);
+
+                    /* cut off module import from the query, and load it here (to have it cached later) */
+                    *nsend = 0;
+
+                    err = xquery_module_load(ctx, mode, ns, url1, url2);
+                    if (err) return err;
+                    *nsend = bak; 
+                } while (*p == ',');
             }
             if (*p != ';') {
-                err = "xquery_prepare: missing ';' after module import.\n";
+                return "xquery_prepare: missing ';' after module import.\n";
             } else {
                 loaded_modules++;
                 p++;
             }
         }
     }
-
-    /* some error has already been detected: query has failed already */
-    if (err) return err; 
 
     if (loaded_modules == 0) {
         err = (char*) -1; /* no module loaded: query not recognized as a function call */
@@ -2334,7 +2418,7 @@ xquery_prepare(xquery_client *ctx,
         char *sec2 = NULL;
         char *sec3 = NULL;
         /* compile and execute the query (minus module imports) */
-        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3)) 
+        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3, NULL)) 
                 err = NULL; /* in case of execution err, it stays -1 */
         if (sec1) free(sec1);
         if (sec2) free(sec2);
@@ -2361,93 +2445,34 @@ xquery_prepare(xquery_client *ctx,
     }
 }
 @c
-/*
- * read xquery from input stream; execute and print on output stream 
- */  
-#define XQUERY_CHALLENGE "::mserver_xquery:4\n"
-static int
-xquery_server_end(xquery_client *ctx, 
-                  Thread t, 
-                  char *err) 
-{
-    Client c = monet_clients + ctx->stk;
-    if (err) 
-        fprintf(stderr, "xquery_server: client %d %s\n", ctx->stk, err);
-    monetSetChannel(t, GDKin, GDKout);
-    if (c->fdin) {
-        stream_close(c->fdin);
-        stream_destroy(c->fdin);
-        c->fdin = GDKin;
-    }
-    if (c->fdout) {
-        stream_close(c->fdout);
-        stream_destroy(c->fdout);
-        c->fdout = GDKout;
-    }
-    xquery_client_end(ctx, !xquery_caching);
-    return err?GDK_FAIL:GDK_SUCCEED;
-}
 
-int
-CMDxquery_server(Cntxt stk, 
-                 YYSTREE lt, 
-                 ValPtr res)
+static void
+xquery_client_engine(mapi_client *fc )
 {
-    stream **In, **Out;
-    stream *in = NULL, *out = NULL;
     size_t curlen;
-    xquery_client *ctx = xquery_clients + stk;
+    xquery_client *ctx = fc->fc;
+    stream *in = fc->c->fdin, *out = fc->c->fdout;
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
-    int i, msec;
-    Thread XQthread = THRget(THRgettid());
-    int blocked = 0;
-
-    if (lt->cnt != 2)
-        return handle_argerror(res, lt->cnt, 2);
-
-    /* this is a BUILTIN because we must obtain the client context (and
-     * thus the streams) */
-    @:builtin_operand(0,TYPE_Stream,In)@
-    in = *In;
-    @:builtin_operand(1,TYPE_Stream,Out)@
-    out = *Out;
-
-    /* send challenge */
-    snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
-    if (stream_write(out, buf, strlen(buf), 1) < 0) 
-        return(xquery_server_end(ctx, XQthread, "could not send challenge"));
-
-    /* get user name (ignored later), and mapiclient mode */
-    if (stream_read(in, p, 1, 1) < 0)
-        return(xquery_server_end(ctx, XQthread, "could not read response1"));
-    for (i = 0; i < BUFSIZ && *p != '\n'; i++) {
-        p++;
-        if (stream_read(in, p, 1, 1) < 0)
-            return(xquery_server_end(ctx, XQthread, "could not read response2"));
-    }
-    *p = 0;
-
-    /* check for blocked mode */
-    if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
-        in = block_stream(stream_rstream(in));
-        out = block_stream(stream_wstream(out));
-        blocked = 1;
-    }
-    monetSetChannel(XQthread, in, out);
-    err = xquery_client_init(ctx);
-    if (err) return (xquery_server_end(ctx, XQthread, err));
+    int msec;
 
     while(1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
-        if (!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-            return(xquery_server_end(ctx, XQthread, "could not write prompt"));
-        if (stream_flush(out))
-            return(xquery_server_end(ctx, XQthread, "could not flush prompt"));
+        if (!fc->c->blocked && 
+                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
+            xquery_client_end(ctx, "could not write prompt"); 
+            return;
+        }
+        if (stream_flush(out)) {
+            xquery_client_end(ctx, "could not flush prompt"); 
+            return;
+        }
 
         for (p = ctx->buf, curlen = 0; p; ) {
             ssize_t n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
-            if (n < 0)
-                return(xquery_server_end(ctx, XQthread, NULL));
+            if (n < 0) {
+                xquery_client_end(ctx, NULL); 
+                return;
+            }
             if (n == 0)
                 break;
 
@@ -2485,51 +2510,38 @@ CMDxquery_server(Cntxt stk,
             /* memory debugging */
             xquery_prepared_function *fun = ctx->prepared_functions;
             BAT *b = NULL;
-            view_client_size(&b, &stk);
+            view_client_size(&b, &fc->stk);
             if (b) {
                while(fun) {
-                   BUNins(b, fun->def->proc, &fun->def->size);
+                   BUNins(b, fun->def->proc, &fun->def->size, FALSE);
                    fun = fun->next;
                 } 
                 BATprintf(GDKstdout, b);
                 BBPreclaim(b);
             } 
         }
-        xquery_client_end(ctx, 0);
+        /* second and on queries also need a cleared context */
+        xquery_client_end(ctx, NULL); 
     }
-    return(xquery_server_end(ctx, XQthread, NULL));
+    xquery_client_end(ctx, NULL); 
 }
 
-/*
- * mapi_listen may call this routine to get a recycled MIL client session from the xquery query cache
- */
-Client
-CMDxquery_client_alloc(stream *fdin, 
-                       stream *fdout) 
-{
-    xquery_client *ctx = xquery_client_alloc(fdin,fdout);
-    if (ctx) {
-        Client c = monet_clients + ctx->stk;
-        if (MAPIinitClient(c, "xquery_server", fdin, fdout) < 0) {
-            xquery_client_end(ctx, 0);
-        } else {
-            return c;
-        }
-    }
-    return NULL; 
-}
-
-/*
- * flush the cache and return a magic pointer. It must be passed to mapi_listen to enable caching.
- */
 int
-CMDxquery_start_query_cache(ptr *res, lng *maxsize) 
+xquery_frontend( ptr *F)
 {
-    xquery_client_flushall();
-    if (*maxsize > 0) xquery_client_bytes = *maxsize;
-    *res = (ptr) CMDxquery_client_alloc;
-    return GDK_SUCCEED;
+	char *m_clients = GDKgetenv("mapi_clients"); 
+	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
+	*F = f;
+	f->name = GDKstrdup("xquery");
+	f->cache_limit = nr;
+	f->f_alloc = xquery_client_alloc;
+	f->f_init  = xquery_client_init;
+	f->f_free  = xquery_client_free;
+	f->f_engine  = xquery_client_engine; /* read/parse/execute loop */
+	return GDK_SUCCEED;
 }
+
 
 /*
  * execute xquery and return the result in a string.
@@ -2559,9 +2571,12 @@ CMDxquery(Cntxt stk,
         @:builtin_operand(2,TYPE_bit,is_url)@
     }
     CNTXTclient(stk, &c);
-    ctx = xquery_clients + c->stk;
+    ctx = xquery_client_new(c->stk);
+    ctx->fderr = GDKerr;
     MT_set_lock(pf_cache_lock, "CMDxquery");
-    err = xquery_client_init(ctx);
+    err = xquery_client_alloc_(ctx);
+    if (!err)
+        err = xquery_client_init_(ctx);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
 
     if (err == NULL && *is_url == TRUE) { 
@@ -2601,23 +2616,25 @@ CMDxquery(Cntxt stk,
         }
     }
     MT_set_lock(pf_cache_lock, "CMDxquery");
-    xquery_client_free(ctx, 0);
+    xquery_client_free_(ctx);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
     if (err) {
 	GDKerror((err==(char*)-1)?res->val.sval:err);
 	VALclear(res);
         return GDK_FAIL;
     } 
+    /* stream_printf(GDKout,"RES = %s\n",res->val.sval); */
     return GDK_SUCCEED;
 }
-
 
 /*
  * call a method in a temporary xquery client context
  */  
 char*
 xquery_method(stream *out, 
+              int rpctiming,
               char* module, 
+              char* uri, 
               char *method, 
               int argc, 
               int itercnt, 
@@ -2627,41 +2644,59 @@ xquery_method(stream *out,
               BAT* shredBAT)
 {
     int msec = GDKms();
-    Thread XQthread = THRget(THRgettid());
-    xquery_client *ctx = xquery_client_alloc(NULL, out);
+    MT_Id XQthread_id = THRgettid();
+    Thread XQthread = THRget(XQthread_id);
     char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
-   
-    if (ctx == NULL) 
+    stream *s = NULL;
+    mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
+    xquery_client *ctx;
+
+    if (mc == NULL) 
         return "xquery_method: out of client slots.\n";
 
-    err = xquery_client_init(ctx);
+    if (rpctiming){
+        mode = "xml-rpcservertime-timing-noheader-typed-root-iter";
+    }
+    
+    ctx = mc->fc; 
+    ctx->fderr = GDKerr;
+    mc->t = XQthread_id;
+    mc->thread = XQthread;
     monetSetChannel(XQthread, GDKin, out);
-
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        stream *s = open_wstream("/tmp/soap.mil");
+        s = open_wstream("/tmp/xquery_rpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
-            mode = "xml-debug-noheader-typed-root-iter";
+            if (rpctiming){
+                mode = "xml-rpcservertime-timing-debug-noheader-typed-root-iter";
+            } else {
+                mode = "xml-debug-noheader-typed-root-iter";
+            }
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
     }
 
-    if (err == NULL && module)
-        err = xquery_module_load(ctx, mode, ns="soap", module); 
+    if (err == NULL && module){
+        err = xquery_module_load(ctx, mode, ns="xquery_rpc", module, uri); 
+    }
 
     if (err == NULL) { 
         err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 
-    if (ctx->fderr != GDKerr) {
+    if (s) {
         stream_close(ctx->fderr);
         stream_destroy(ctx->fderr);
     }
-    xquery_client_end(ctx, 0);
+    monetSetChannel(XQthread, GDKin, GDKout);
+
+    xquery_client_end(ctx, NULL);
+    mc->inuse = 0;
+    mc->t = ~(MT_Id)0;
     return err;
 }
 
@@ -2672,15 +2707,11 @@ extern void xmlInitThreads();
 bat *
 xquery_prelude()
 {
-    int i;
     pf_compiler_lock = MT_create_lock();
     pf_module_lock = MT_create_lock();
     pf_cache_lock = MT_create_lock();
 
     xmlInitThreads();
-    memset(xquery_clients, 0, sizeof(xquery_client)*(MAXCLIENTS+1));
-    for(i=1; i<=MAXCLIENTS; i++)        
-        xquery_clients[i].stk = i;
    
     xquery_compiled_modules = NULL;
     return NULL;

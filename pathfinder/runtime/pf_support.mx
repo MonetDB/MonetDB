@@ -1314,16 +1314,32 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
             @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
 
-            res_mu := merged_union(result_iter, result_part_iter,
-				   result_item, result_part_item,
-				   result_frag, result_part_frag);
-            result_part_iter := nil;
-            result_part_item := nil;
-            result_part_frag := nil;
-            result_iter := res_mu.fetch(0);
-            result_item := res_mu.fetch(1);
-            result_frag := res_mu.fetch(2);
-            res_mu := nil;
+            if ( and(order,2) = 2 )
+            {
+                res_mu := merged_union(result_item, result_part_item,
+                                       result_iter, result_part_iter,
+                                       result_frag, result_part_frag);
+                result_part_iter := nil;
+                result_part_item := nil;
+                result_part_frag := nil;
+                result_item := res_mu.fetch(0);
+                result_iter := res_mu.fetch(1);
+                result_frag := res_mu.fetch(2);
+                res_mu := nil;
+            }
+            else
+            {
+                res_mu := merged_union(result_iter, result_part_iter,
+                                       result_item, result_part_item,
+                                       result_frag, result_part_frag);
+                result_part_iter := nil;
+                result_part_item := nil;
+                result_part_frag := nil;
+                result_iter := res_mu.fetch(0);
+                result_item := res_mu.fetch(1);
+                result_frag := res_mu.fetch(2);
+                res_mu := nil;
+            }
         }
     }
     
@@ -1381,7 +1397,7 @@ CMDfakeProject(BAT **res, ptr val, int tpe)
 	}
 	*res = BATnew(TYPE_void, tpe, 1);
 	if (*res) {
-		if (BUNappend(*res, val)) return GDK_SUCCEED;
+		if (BUNappend(*res, val, FALSE)) return GDK_SUCCEED;
 		BBPreclaim(*res);
 	}
 	return GDK_FAIL;
@@ -1439,7 +1455,7 @@ CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe)
 	assert(h);
 	assert(t);
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
-		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid)) {
+		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid, FALSE)) {
 			BBPfix(b->batCacheid);
 			ret = GDK_SUCCEED;
 		}
@@ -1456,7 +1472,7 @@ CMDappendConvert(BAT** res, BAT *b, ptr t, int tpe)
 
 	assert(t);
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
-		if (BUNappend(*res = b, &bn->batCacheid)) {
+		if (BUNappend(*res = b, &bn->batCacheid, FALSE)) {
 			BBPfix(b->batCacheid);
 			ret = GDK_SUCCEED;
 		}
@@ -1609,7 +1625,7 @@ static BAT *BATmark_grp( BAT *b, BAT *g, oid *s )
 			}
 			BATkey(gc, TRUE);
 		} else {
-			gc = batcopy(g, g->htype, g->ttype, TRUE);
+			gc = BATcopy(g, g->htype, g->ttype, TRUE);
 			if (gc == NULL) return NULL;
 		}
 	}
