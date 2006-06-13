@@ -61,8 +61,8 @@ extern BAT *temp_descriptor(oid b);
 #include "sql_backend.h"
 #include "bat_sequence.h"
 
-/* version 03.00.00 of catalog */
-#define CATALOG_VERSION 30000
+/* version 03.00.01 of catalog */
+#define CATALOG_VERSION 30001
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;

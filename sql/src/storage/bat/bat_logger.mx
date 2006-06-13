@@ -136,8 +136,9 @@ multiple files) has a too great performance impact.]
 #define SQL_LOG_DELETE		4
 #define SQL_LOG_CREATE		5
 #define SQL_LOG_DESTROY		6
-#define SQL_LOG_CLEAR		7
-#define SQL_LOG_OID		8
+#define SQL_LOG_USE		7
+#define SQL_LOG_CLEAR		8
+#define SQL_LOG_OID		9
 
 typedef struct logformat_t {
 	char flag;
@@ -336,6 +337,19 @@ log_read_create(logger *logger, char *name)
 }
 
 static void
+log_read_use(logger *logger, logformat *l, char *name)
+{
+	oid bid = l->nr;
+	BAT *b = bat_descriptor(bid, "log_read_use");
+	
+	if (!b) {
+		GDKerror("logger could not use bat (" OIDFMT ") for %s\n", bid, name);
+		return ;
+	}
+	bm_add_bat(logger->bm, b, name);
+}
+
+static void
 tr_commit(logger *logger)
 {
 	if (logger->debug & 1)
@@ -443,6 +457,10 @@ logger_readlog(logger *logger, char *filename)
 			break;
 		case SQL_LOG_CREATE:
 			log_read_create(logger, name);
+
+			break;
+		case SQL_LOG_USE:
+			log_read_use(logger, &l, name);
 
 			break;
 		case SQL_LOG_DESTROY:
@@ -747,12 +765,18 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 	char buf[BUFSIZ];
 	logformat l;
 	int havevoid = 0;
+	int flag = (b->batPersistence == PERSISTENT)?SQL_LOG_USE:SQL_LOG_CREATE;
 
-	l.flag = SQL_LOG_CREATE;
 	l.nr = 0;
+	if (flag == SQL_LOG_USE)
+		l.nr = b->batCacheid;
+	l.flag = flag;
 	logger->changes++;
 	if (log_write_format(logger, &l) == SQL_ERR || log_write_string(logger, name) == SQL_ERR)
 		return SQL_ERR;
+
+	if (b->batPersistence == PERSISTENT) /* log SQL_LOG_USE only */
+		return SQL_OK;
 
 	ha = ATOMname(b->htype);
 	if (b->htype == TYPE_void && BAThdense(b)) {
