@@ -70,15 +70,15 @@ function tuple_get_field($handle, $get_type, $tuple, $index)
 		case $GET_ROW:
 			return $tuple[$index];
 		case $GET_ASSOC:
-			return $tuple[monetdb_field_name($index, $handle)];
+			return $tuple[monetdb_field_name($handle, $index)];
 		case $GET_ARRAY:
 			/* either index or field name */
 			if (index%2)
 				return $tuple[$index];
 			else 
-				return $tuple[monetdb_field_name($index, $handle)];
+				return $tuple[monetdb_field_name($handle, $index)];
 		case $GET_OBJECT:
-			return $tuple->{monetdb_field_name($index, $handle)};
+			return $tuple->{monetdb_field_name($handle, $index)};
 	}
 	echo "UNKNOWN TYPE!\n";
 }
@@ -91,22 +91,21 @@ function print_query($query, $get_type)
 	echo "<hr width='100%'/>\n";
 	echo "<p>Running <pre>$query</pre>\n";
 	$q = monetdb_query($query);
-	if ($q) {
+	if ($q !== FALSE) {
 		echo "SUCCESS</p>\n";
-	} else{ 
-		echo "FAIL, error number:" .monetdb_errno(). " error message:<pre>". monetdb_error() ."</pre> Dying</p>\n";
-		return;
+	} else { 
+		die "FAIL, error message:<pre>". monetdb_last_error() ."</pre> Dying</p>\n";
 	}
 	
-	$nr=monetdb_num_rows();
-	$nf=monetdb_num_fields();
+	$nr=monetdb_num_rows($q);
+	$nf=monetdb_num_fields($q);
 	echo "<p>Query result: $nf fields, $nr rows</p>\n";
 	echo "<p>Field details:</p>\n";
 	echo "<table border='1'>\n";
 	echo "  <tr><th>Name</th><th>Type</th></tr>\n";
 	for($i=0;$i<$nf;$i++) {
-		$name = monetdb_field_name($i);
-		$type = monetdb_field_type($i);
+		$name = monetdb_field_name($q, $i);
+		$type = monetdb_field_type($q, $i);
 		echo "  <tr><td>$name</td><td>$type</td></tr>\n";
 	}
 	echo "</table>\n";
@@ -116,7 +115,7 @@ function print_query($query, $get_type)
 	echo "<table width='100%' border='1'>\n";
 	echo "  <tr>\n";
 	for($i=0;$i<$nf;$i++) {
-		echo "    <th>".(monetdb_field_name($i, $q))."</th>\n";
+		echo "    <th>".(monetdb_field_name($q, $i))."</th>\n";
 	}
 	echo "  </tr>\n";
 	while($tuple=tuple_get_next($q, $get_type)) {
@@ -145,8 +144,7 @@ if(!extension_loaded($MONETDB_NAME)) {
 
 echo "<p>Testing for '$MONETDB_NAME' again... ";
 if(!extension_loaded($MONETDB_NAME)) {
-	echo "NOT LOADED, dying</p>\n";
-	exit;
+	die "NOT LOADED, dying</p>\n";
 } else {
 	echo "LOADED</p>\n";
 }
@@ -170,11 +168,10 @@ echo "</table>\n";
 
 echo "<p>Connecting to MonetDB server with default values... ";
 $db = monetdb_connect();
-if ($db) {
+if ($db !== FALSE) {
 	echo "SUCCESS</p>\n";
 } else {
-	echo "FAIL, dying</p>\n";
-	exit;
+	die "FAIL, dying</p>\n";
 }
 
 print_query("ls();", $GET_ROW);
