@@ -70,7 +70,6 @@ Over..
 [ "args",	"users",	1	]
 [ "auths",	"privileges",	1	]
 [ "auths",	"sessions",	1	]
-[ "auths",	"users",	1	]
 [ "columns",	"auths",	2	]
 [ "columns",	"db_users",	1	]
 [ "columns",	"env",	1	]
@@ -210,6 +209,7 @@ Over..
 [ "types",	"keys",	2	]
 [ "types",	"tables",	1	]
 [ "types",	"triggers",	2	]
+[ "users",	"auths",	1	]
 [ "users",	"sessions",	1	]
 # sys.tables # table_name
 # name # name
