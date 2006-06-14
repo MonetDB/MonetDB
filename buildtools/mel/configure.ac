@@ -10,10 +10,15 @@ AC_CONFIG_HEADER([mel_config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
-if test $GCC = yes && test "`$CXX -dumpversion`" = 4.0.0; then
-	dnl remove -O flags from CXXFLAGS when using g++ version 4
-	dnl otherwise we may get segfaults, at least on x86_64 Linux
-	CXXFLAGS=`echo "$CXXFLAGS" | sed 's/-O[[0-9]]*//'`
+if test $GCC = yes; then
+	case "`$CXX -dumpversion`" in
+	4.*)
+		dnl remove -O flags from CXXFLAGS when using g++ version 4
+		dnl otherwise we may get segfaults, at least on x86_64 Linux
+		dnl also, g++ 4.1.1 with optimization on Fedora Core 5 causes mel to fail in weird ways
+		CXXFLAGS=`echo "$CXXFLAGS" | sed 's/-O[[0-9]]*//'`
+		;;
+	esac
 fi
 AC_ARG_WITH(mx,
 	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
