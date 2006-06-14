@@ -357,25 +357,18 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
 
     # rename all new bats with the doc id as suffix
     [rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
+    [persists](docBAT, true);
     var totsize := sum([batsize](docBAT));
 
-    # add to meta table
-    bat("doc_name").insert(doc_oid, name);
-    bat("doc_location").insert(doc_oid, location);
-    bat("doc_timestamp").insert(doc_oid, ts);
-    bat("doc_height").insert(doc_oid, height);
-    bat("doc_size").insert(doc_oid, totsize);
-
-    [persists](docBAT, true);
-
-    # add the meta table to the commit set 
-    #docBAT.insert(str(nil),bat("doc_name"));
-    #docBAT.insert(str(nil),bat("doc_location"));
-    #docBAT.insert(str(nil),bat("doc_timestamp"));
-    #docBAT.insert(str(nil),bat("doc_height"));
-    #docBAT.insert(str(nil),bat("doc_size"));
-    #if (not(subcommit(docBAT))) 
-    if (not(commit())) ERROR("shred_doc(%s) : commit failed\n", name);
+    # add the meta table to the commit set
+    docBAT.insert(str(nil),bat("doc_name").insert(doc_oid, name));
+    docBAT.insert(str(nil),bat("doc_location").insert(doc_oid, location));
+    docBAT.insert(str(nil),bat("doc_timestamp").insert(doc_oid, ts));
+    docBAT.insert(str(nil),bat("doc_height").insert(doc_oid, height));
+    docBAT.insert(str(nil),bat("doc_size").insert(doc_oid, totsize));
+    docBAT := [bbpname](docBAT);
+    if (not(subcommit(docBAT)))
+        ERROR("shred_doc(%s) : commit failed\n", name);
 
     if (not(isnil(ws))) {
         pin_doc(doc_oid, ws);
@@ -538,13 +531,13 @@ PROC delete_doc_locked(oid doc_oid) : bit
     bat("doc_size").delete(doc_oid);
 
     # also commit the meta bats
-    #docBAT.insert(str(nil), bat("doc_name"));
-    #docBAT.insert(str(nil), bat("doc_location"));
-    #docBAT.insert(str(nil), bat("doc_timestamp"));
-    #docBAT.insert(str(nil), bat("doc_height"));
-    #docBAT.insert(str(nil), bat("doc_size"));
-    #return subcommit(docBAT);
-    return commit();
+    docBAT := [bbpname](docBAT).access(BAT_WRITE);
+    docBAT.insert(str(nil), "doc_name");
+    docBAT.insert(str(nil), "doc_location");
+    docBAT.insert(str(nil), "doc_timestamp");
+    docBAT.insert(str(nil), "doc_height");
+    docBAT.insert(str(nil), "doc_size");
+    return subcommit(docBAT);
 }
 
 PROC delete_doc(str name) : void

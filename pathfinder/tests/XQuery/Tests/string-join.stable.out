@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-"foo, bar, baz, blub" "foo-bar-baz-blub" "foobarbazblub" "" "" "" 
+foo, bar, baz, blub foo-bar-baz-blub foobarbazblub   
 </XQueryResult>
 
 # 23:35:02 >  

@@ -27,7 +27,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-"foo" 23 1 21 <a>4</a>100 "foo" 23 23 21 <a>4</a>100 "foo" 21 23 21 <a>4</a>100 "foo" 23 23 23 <a>4</a>100 "foo" 21 23 23 <a>4</a>
+foo 23 1 21<a>4</a>100 foo 23 23 21<a>4</a>100 foo 21 23 21<a>4</a>100 foo 23 23 23<a>4</a>100 foo 21 23 23<a>4</a>
 </XQueryResult>
 
 # 11:45:35 >  
