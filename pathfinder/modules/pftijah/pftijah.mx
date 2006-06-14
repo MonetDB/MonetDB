@@ -152,9 +152,12 @@ const virtRoot := 0@0;
 
 
 ##
-# Compute ancestor-descendant relation
+# Compute ancestor-descendant relation.
 #
-# Returns a bat containing [anc,desc] oid pairs
+# The arguments anc and desc must contain preorder indices in their heads. 
+# The tail values are discarded.
+#
+# Returns a bat containing [anc,desc] preorder index pairs
 ##
 PROC anc_desc( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 {
@@ -176,9 +179,8 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     # Check the order of the items:
     items.chk_order();
     
-    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
+    # Call the descendant algorithm: it returns [ancestor, descendant] pairs if we pass items as the iteration argument
     var anc_desc := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
-    #var anc_desc := desc_anc.reverse();
     
     candidates := nil;
     items := nil;
@@ -254,7 +256,6 @@ PROC select_term(str name) : bat :=
     # 
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
     var term    := tj_normalizeTerm( name, stemmer );
-    print( "using stemmer" + stemmer + ": " + term + " instead of " + name );
     
     # Select the term positions from the global term dictionary.
     var tids := bat("tj_globalTerms").select(term).mark(0@0).sort().reverse();
@@ -436,8 +437,10 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, fl
 	       var t8 := time();
 	       doc_prob.insert(tmp);
 	       var t9 := time();
-     if (DEBUG) printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
-     fflush(stdout());
+         if (DEBUG) {
+            printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
+            fflush(stdout());
+         }
 	       
           }
      }
@@ -446,8 +449,10 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, fl
      res := res.[/](terms.count()).[+](left);
      var t4 := time();
      
-     if (DEBUG) printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
-     fflush(stdout());
+     if (DEBUG) {
+        printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
+        fflush(stdout());
+     }
      return res;
 }
 
@@ -478,8 +483,10 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
 	  {
 	       fac := _lmbd / fac;
 	       var t6 := time();
-               if (DEBUG) printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
-	       fflush(stdout());
+               if (DEBUG) {
+                    printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
+                    fflush(stdout());
+               }
 	       var elem_termpre := ll_descendant(iter, 
      						 elems, 
 						 bat("tj_" + collName + "_size"), 
@@ -501,9 +508,10 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
 	       var t8 := time();
 	       doc_prob.insert(tmp);
 	       var t9 := time();
-     if (DEBUG) printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
-     fflush(stdout());
-	       
+           if (DEBUG) {
+               printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
+               fflush(stdout());
+	       }
           }
      }
      var t3 := time();
@@ -511,8 +519,10 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
      res := res.[/](terms.count()).[+](left);
      var t4 := time();
      
-     if (DEBUG) printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
-     fflush(stdout());
+     if (DEBUG) {
+        printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
+        fflush(stdout());
+     }
      return res;
 }
 
@@ -538,8 +548,10 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
      elems := elems.mark(0@0).reverse();
      var cands := tid_pre.reverse().sort().mark(0@0).reverse();
      var iter := elems.mirror();
-     if (DEBUG) printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
-	       fflush(stdout());
+     if (DEBUG){ 
+        printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
+	    fflush(stdout());
+     }
      var t4 := time();
      var elem_termpre := ll_descendant(	iter, 
      					elems, 
@@ -572,8 +584,10 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
      
      var t6 := time();
     
-     if (DEBUG) printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
-     fflush(stdout());
+     if (DEBUG) {
+        printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
+        fflush(stdout());
+     }
      return res;
 }
 
@@ -605,8 +619,10 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str
      var elem_frq := bat("tj_" + collName + "_size").semijoin(elems);
      elems := elems.mark(0@0).reverse();
      var iter := elems.mirror();
-     if (DEBUG) printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
-	       fflush(stdout());
+     if (DEBUG) {
+        printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
+        fflush(stdout());
+     }
      var t4 := time();
      var elem_termpre := ll_descendant(	iter, 
      					elems, 
@@ -639,8 +655,10 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str
      
      var t6 := time();
     
-     if (DEBUG) printf("p_containing_q: indexfetchjoin (%d), scj_anc (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t8 - t7, t5 - t4, t6 - t1);
-     fflush(stdout());
+     if (DEBUG) {
+        printf("p_containing_q: indexfetchjoin (%d), scj_anc (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t8 - t7, t5 - t4, t6 - t1);
+        fflush(stdout());
+     }
      return res;
 }
 
@@ -688,8 +706,10 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      res := res.[/](terms.count()).[+](left);
      var t6 := time();
     
-     if (DEBUG) printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
-     fflush(stdout());
+     if (DEBUG) {
+        printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
+        fflush(stdout());
+     }
      return res;
 }
 
@@ -956,13 +976,11 @@ proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stem
 #
 # The original code used [void,str] for Qterms. 
 # Our code stems the query terms before calling this function (is this what we want?)
-proc p_containing_q_LM_fast(bat ctx, bat Qoids, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
-    var QoidWeights;
-
+proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
     # TODO: add real weighting to avoid recomputation for duplicate query terms, 
     # or for morphological variants when stemming (can also be used to implement the modifiers)
     
-	QoidWeights := Qoids.project(dbl(1)); 
+	var QoidWeights := Qterms.project(dbl(1)); 
     
     #: var enum_word := load(col_name+"enum_word");
 	#: if (stemming = STEM_OFF) {
@@ -976,7 +994,7 @@ proc p_containing_q_LM_fast(bat ctx, bat Qoids, bat modifiers, flt lambda, int s
     #:     }
 
     #: enum_word := nil;
-    if ( Qoids.count() = 0) {
+    if ( Qterms.count() = 0) {
 	    #: return ctx.[*](min(bat(col_name+"col_freq")));
         return ctx.[*](min(col_freq()));
     }
@@ -987,9 +1005,7 @@ proc p_containing_q_LM_fast(bat ctx, bat Qoids, bat modifiers, flt lambda, int s
 	#: var Qpositions:=[uselect](const word_name,Qoids.reverse().mirror()).[sort]().[project](Qoids.reverse()).[reverse]();
     #: word_name := nil;
     
-    var Qoid_pre := indexfetchjoin( Qoids,
-                                    bat("tj_" + collName + "_TermIndex"),
-                                    bat("tj_" + collName + "_Terms") );
+    var Qoid_pre := Qterms_to_tid_pre( Qterms );
     var pre_Qoid := Qoid_pre.reverse().sort();
   
 	#: var allpositions:=new(oid,oid);
@@ -1018,11 +1034,18 @@ proc p_containing_q_LM_fast(bat ctx, bat Qoids, bat modifiers, flt lambda, int s
 	var res_ctx := res.hmark(oid(0));
     # res_ctx: [void, anc_pre]
     
+    # res: [anc_pre, desc_pre]
+    # res.tmark(oid(0)): [void,desc_pre]
+    # pre_Qoid: [desc_pre, tid]
+    # pre_Qoid.tmark(oid(0)): [void, tid]
+    
 	#: var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
     
     var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
 	var termcounts := res_Qoid.CTgroup(res_ctx).CThistogram();
-
+    
+    #:var termcounts := {count}res;
+    
     var ctx_size;
 
 	if (size_type = SIZE_ENTITY)
