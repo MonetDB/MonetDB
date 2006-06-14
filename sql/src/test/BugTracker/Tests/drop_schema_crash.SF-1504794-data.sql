@@ -4,6 +4,6 @@ ALTER USER "dbtapestry" SET SCHEMA "dbtapestry";
 -- after this dbtapestry user gets "sys" schema; evil?
 DROP SCHEMA "dbtapestry";
 SELECT "users"."name", "schemas"."name"
-	FROM "users", "schemas"
-	WHERE "users"."default_schema" = "schemas"."id"
-		AND "users"."name" LIKE 'dbtapestry';
+	FROM "users" LEFT JOIN "schemas"
+		ON "users"."default_schema" = "schemas"."id"
+	WHERE "users"."name" LIKE 'dbtapestry';
