@@ -7849,7 +7849,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	milprintf(f,
                 "if (loop%03u.count() = 1) {\n"
                 "    var nexi_query := str_values.fetch(item%03u);\n"
-		"    var nexi_score;\n"
                 "    nexi_score := run_tijah_query(optbat,nexi_query);\n"
 		"    nexi_score := nexi_score.tsort_rev();\n"
 		, cur_level, counter-1
@@ -7969,8 +7968,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	
 	/* execute tijah query */
 	milprintf(f,
-               /* OLD_MIL_EXEC var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n" */ 
-		"    run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
+                "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
 		, item_ext, str_counter);
 	
 	/* translate tijah-pre to pf-pre */
