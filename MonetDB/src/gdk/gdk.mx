@@ -738,6 +738,7 @@ typedef struct {
 		chr cval[4];
 		flt fval;
 		ptr pval;
+		struct BAT *Bval; /* this field is only used by mel */
 		bat bval;
 		batrec br;	/* bval + stamp */
 		str sval;
@@ -902,7 +903,7 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
-typedef struct {
+typedef struct BAT {
 	/* static bat properties */
 	sht GDKversion;		/* FIRST! */
 	bat batCacheid;		/* index into BBP */
