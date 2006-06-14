@@ -751,7 +751,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	schema = mvc_login(m, "monetdb", "monetdb");
 
 	if (!schema) {
-		stream_printf(out, "!ERROR: Schema authorization error");
+		stream_printf(out, "!schema authorization error");
 		stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
@@ -824,7 +824,7 @@ sql_client_init(mapi_client *fc)
 	mvc_reset(m, rs, fc->c->fdout);
 	schema = mvc_login(m, fc->c->user, fc->c->passwd);
 	if (!schema) {
-		char *res = "Schema authorization error";
+		char *res = "schema authorization error";
 		res_tables_destroy(m->results);
 		m->results = NULL;
 		return res;
