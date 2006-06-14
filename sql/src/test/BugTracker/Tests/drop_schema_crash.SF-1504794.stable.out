@@ -34,11 +34,11 @@ Operation successful
 
 Operation successful
 
-+------------+
-| count_name |
-+============+
-|          3 |
-+------------+
++------------+------+
+| name       | name |
++============+======+
+| dbtapestry | sys  |
++------------+------+
 1 row
 
 

@@ -15,7 +15,8 @@ drop table ff;
 select (4-1)*5;
 --select current_date;
 
-select name, query, istable, system, commit_action from _tables;
+select name, query, istable, system, commit_action from _tables
+	where name like 'foo' or name like 'ff';
 
 create table s4(i time);
 drop table s4;
@@ -30,7 +31,9 @@ select * from r;
 
 select * from r;
 
-select name, query, istable, system, commit_action from _tables;
+select name, query, istable, system, commit_action from _tables
+	where name in ('s4', 'r', 'foo', 'ff');
+
 drop table r;
 create table r(i int);
 insert into r values(1);
@@ -55,7 +58,5 @@ drop table r;
 -- next query shouldn't work
 select name, count(*) from _tables;
 -- this should
-select name, 1, 2, 3  from _tables;
-
-
-
+select name, 1, 2, 3  from _tables
+	where name in ('s4', 'r', 'foo', 'ff');

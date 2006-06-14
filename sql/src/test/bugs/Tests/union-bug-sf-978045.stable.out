@@ -21,35 +21,26 @@ Over..
 # 12:51:49 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < union-bug-sf-978045.sql
 # 12:51:49 >  
 
-#  # table_name
+[ 3	]
+# sys. # table_name
 # name # name
 # varchar # type
-# 11 # length
-[ "modules"	]
-[ "schemas"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "_tables"	]
-[ "_columns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "triggers"	]
-[ "keycolumns"	]
-[ "tables"	]
-[ "columns"	]
-[ "sequences"	]
-[ "env"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "users"	]
-[ "profile"	]
-[ "sessions"	]
-[ "test_update"	]
+# 6 # length
+[ "niels"	]
+[ "fabian"	]
+[ "martin"	]
+# sys. # table_name
+# name # name
+# varchar # type
+# 6 # length
+[ "niels"	]
+[ "fabian"	]
+[ "martin"	]
+[ "niels"	]
+[ "fabian"	]
+[ "martin"	]
 
-# 12:51:49 >  
-# 12:51:49 >  Done.
-# 12:51:49 >  
+# 10:42:45 >  
+# 10:42:45 >  Done.
+# 10:42:45 >  
 
