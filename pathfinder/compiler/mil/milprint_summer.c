@@ -8355,7 +8355,7 @@ simplifyCoreTree (PFcnode_t *c)
                 return for $x in e_y
                        return e_x
             */
-            if (LR(c)->kind == c_for)
+            if (LR(c)->kind == c_for && LLR(c)->kind != c_var)
             {
                 PFcnode_t *c_old = PFmalloc (sizeof (PFcnode_t));
                 *c_old = *c;
