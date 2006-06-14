@@ -43,7 +43,7 @@ stdout of test 'find_nil_in_void.SF-921814` in directory 'tests/BugDay_2005-10-0
 #
 function user.main():void;	# 0  (main:void)
     b := bat.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-(_2:void)(_3:str)
-    bat.setSequenceBase(b,nil);	# 2 BKCsetSequenceBaseNil (_4:bat[:void,:str])<-(b:bat[:void,:str])(_5:void)
+    bat.setSequenceBase(b,nil:void);	# 2 BKCsetSequenceBaseNil (_4:bat[:void,:str])<-(b:bat[:void,:str])(_5:void)
     bat.append(b,"zero");	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:void,:str])(_7:str)
     io.print(b);	# 4 IOprint_val (_8:int)<-(b:bat[:void,:str])
     z := algebra.find(b,0@0:oid);	# 5 ALGfind (z:str)<-(b:bat[:void,:str])(_10:oid)

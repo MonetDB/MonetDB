@@ -1291,7 +1291,7 @@ SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *p
 @-
 @= accessTest
  for(i=0; i< MAXSESSIONS; i++)
- if( SERVERsessions[i].c && 
+ if( SERVERsessions[i].c &&
      SERVERsessions[i].key== @1 ) break;
  if( i== MAXSESSIONS)
 	return throwMessage("mserver.@2","Access violation,"

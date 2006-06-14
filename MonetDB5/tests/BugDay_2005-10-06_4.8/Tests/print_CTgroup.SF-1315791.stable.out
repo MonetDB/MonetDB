@@ -19,7 +19,7 @@ stdout of test 'print_CTgroup.SF-1315791` in directory 'tests/BugDay_2005-10-06_
 function user.main():void;	# 0  (main:void)
 #CTgroup(new(void,int).insert(nil,0).seqbase(0@0)).print(); 	# 1  (_1:str)
     b := bat.new(:void,:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_3:void)(_4:int)
-    bat.insert(b,nil,0);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:void,:int])(_6:void)(_7:int)
+    bat.insert(b,nil:void,0);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:void,:int])(_6:void)(_7:int)
     bat.setSequenceBase(b,0@0);	# 4 BKCsetSequenceBase (_8:bat[:void,:int])<-(b:bat[:void,:int])(_9:oid)
     (histo,grp):= group.new(b);	# 5 GRPgroup (histo:bat[:void,:int])(grp:bat[:void,:oid])<-(b:bat[:void,:int])
     io.print(grp);	# 6 IOprint_val (_12:int)<-(grp:bat[:void,:oid])

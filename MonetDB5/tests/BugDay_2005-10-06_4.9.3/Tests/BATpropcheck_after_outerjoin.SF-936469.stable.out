@@ -29,9 +29,9 @@ stdout of test 'BATpropcheck_after_outerjoin.SF-936469` in directory 'tests/BugD
 #
 function user.main():void;	# 0  (main:void)
     x := bat.new(:void,:int);	# 1 CMDBATnew (x:bat[:void,:int])<-(_2:void)(_3:int)
-    bat.insert(x,nil,1);	# 2 BKCinsert_bun (_4:void)<-(x:bat[:void,:int])(_5:void)(_6:int)
-    bat.insert(x,nil,2);	# 3 BKCinsert_bun (_7:void)<-(x:bat[:void,:int])(_5:void)(_8:int)
-    bat.insert(x,nil,3);	# 4 BKCinsert_bun (_9:void)<-(x:bat[:void,:int])(_5:void)(_10:int)
+    bat.insert(x,nil:void,1);	# 2 BKCinsert_bun (_4:void)<-(x:bat[:void,:int])(_5:void)(_6:int)
+    bat.insert(x,nil:void,2);	# 3 BKCinsert_bun (_7:void)<-(x:bat[:void,:int])(_5:void)(_8:int)
+    bat.insert(x,nil:void,3);	# 4 BKCinsert_bun (_9:void)<-(x:bat[:void,:int])(_5:void)(_10:int)
     bat.setSequenceBase(x,1@0);	# 5 BKCsetSequenceBase (_11:bat[:void,:int])<-(x:bat[:void,:int])(_12:oid)
     y := bat.new(:oid,:int);	# 6 CMDBATnew (y:bat[:oid,:int])<-(_14:oid)(_3:int)
     bat.insert(y,1@0,14);	# 7 BKCinsert_bun (_15:void)<-(y:bat[:oid,:int])(_12:oid)(_16:int)
