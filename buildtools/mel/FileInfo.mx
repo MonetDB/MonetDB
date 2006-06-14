@@ -77,8 +77,8 @@ FileInfo::FileInfo(FILE *f, int lineno, char *filename, char *basename, FileInfo
 
 FileInfo::~FileInfo()
 {
-	delete(_filename);
-	delete(_basename);
+	free(_filename);
+	free(_basename);
 }
 
 int
@@ -108,7 +108,7 @@ FileInfo::FileName()
 void
 FileInfo::FileName(char *fname)
 {
-	delete(_filename);
+	free(_filename);
 	_filename = strdup(fname);
 }
 
