@@ -717,8 +717,8 @@ YY_SPACES    	[\t\n ]*
 			return MEL_NUMBER;	 		     	}
 "#line"		{     char line[1024], *p=line;
 			while ((*p = yyinput()) != '\n') p++;
-			check_lineno(line); return yylex();	      	}
-"#"		{     while (yyinput() != '\n'); return yylex();	}
+			check_lineno(line);			      	}
+"#"		{     while (yyinput() != '\n');			}
 {YY_SPACES}		;
 .		{ 	fprintf(stderr, "discarding '%c'\n", yytext[0]);}
 %%
