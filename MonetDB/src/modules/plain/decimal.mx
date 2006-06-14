@@ -1138,7 +1138,7 @@ decimal_from_lng(decimal **ret, lng *val)
 		lng l = *val;
 		decimal *d;
 
-		*(int *) num = 0;
+		num[0] = 0;
 		if (l < 0) {
 			sign = TRUE;
 			l = -l;
