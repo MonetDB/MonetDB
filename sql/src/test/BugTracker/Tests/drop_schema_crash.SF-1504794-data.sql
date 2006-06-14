@@ -6,5 +6,4 @@ DROP SCHEMA "dbtapestry";
 SELECT "users"."name", "schemas"."name"
 	FROM "users", "schemas"
 	WHERE "users"."default_schema" = "schemas"."id"
---		AND "users"."name" LIKE 'dbtapestry';
-;
+		AND "users"."name" LIKE 'dbtapestry';
