@@ -68,7 +68,6 @@ lib__pathfinder = {
 		../compiler/libcompiler1 \
 		../compiler/schema/libschema \
 		../compiler/debug/libdebug \
-		../compiler/mem/libmem \
 		../compiler/parser/libparser \
 		../compiler/semantics/libsemantics \
 		../compiler/core/libcore \
@@ -76,6 +75,7 @@ lib__pathfinder = {
 		../compiler/algebra/prop/libprop \
 		../compiler/algebra/opt/libopt \
 		../compiler/mil/libmil \
+		../compiler/mem/libmem \
 		../compiler/libcompiler2 \
 		$(PF_LIBS) $(MONETDB_LIBS) \
 		-lbat -lmonet -lstream \
