@@ -7815,105 +7815,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query")) )
     {
-        milprintf(f, 
-                "{ # translate fn:tijah-query\n"
-	);
-        if (fun->arity == 3) {
-	  /* translate the first options parameter*/
-          translate2MIL (f, NORMAL, cur_level, counter, L(args));
-
-	  /* generate the serialization code */
-          milprintf(f, 
-		"      var optbat := serialize_tijah_opt(ws,1,iter,iter,item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
-
-	} else {
-	  /* no options defined */
-          milprintf(f, 
-                "      var optbat := new(str,str,32);\n");
-	}
-
-        if (fun->arity == 3) { /* get argument string */
-          rc = translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
-	} else {
-	  rc = translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-	}
-	++counter;
-        saveResult (f, counter);
-
-        if (fun->arity == 3) { /* get argument string */
-          translate2MIL (f, code, cur_level, ++counter, RL(args));
-	} else {
-          translate2MIL (f, code, cur_level, ++counter, L(args));
-	}
-       
-	milprintf(f,
-                "if (loop%03u.count() = 1) {\n"
-                "    var nexi_query := str_values.fetch(item%03u);\n"
-                "    nexi_score := run_tijah_query(optbat,nexi_query);\n"
-		"    nexi_score := nexi_score.tsort_rev();\n"
-		, cur_level, counter-1
-	);
-
-	/* PROC tijah2pf(BAT[oid,dbl] nexi_score) : BAT := */
-	milprintf(f,
-          "var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
-          "var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
-          "item  := nexi_score.hmark(0@0);\n"
-          "var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
-          "item := item.join(pfpre).sort().tmark(0@0);\n"
-	  );
-
-	/* PROC align_frag() : void := */
-	milprintf(f,
-          "var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
-          "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
-          "needed_docs@batloop()\n"
-          "{\n"
-          "      if (not(loaded_docs.exist($t))) {\n"
-          "              ws.add_doc($t); }\n"
-          "}\n"
-          "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
-          "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
-          "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
-          "kind := set_kind(frag, ELEM);\n"
-	  "iter := item.project(loop%03u.fetch(0));\n"
-          "ipik := iter;\n"
-	  "ws_tijah_score := update_tijah_scores(ws,ws_tijah_score,item,kind,nexi_score.tmark(0@0));\n"
-	  "} else {\n"
-	  "  ERROR(\"unexpected size of loopxxx tijah_query()\"); }\n"
-	  , cur_level
-	);
-        deleteResult_ (f, --counter, STR);
-
-        milprintf(f, "} # end of translate fn:tijah_query\n");
-        return rc;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score")) ) 
-    {
-        milprintf(f, 
-                "{ # translate fn:tijah-score\n"
-		);
-	/* translate the node sequence parameter*/
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-
-        /* warning:item/kind and dbl values are modified in fill_tijah_scores */
-        milprintf(f, 
-                "item := item.copy();\n"
-                "kind := kind.copy();\n"
-	        "fill_tijah_scores(ws,ws_tijah_score,item,kind,dbl_values);\n"
-                "} # end of fn:tijah-score\n"
-	);
-        return NORMAL;
-    }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-query")) )
-    {
         int opt_counter = 0;
 	int str_counter = 0;
 	int ctx_counter = 0;
         char *item_ext = kind_str(STR);
 	
 	milprintf(f, 
-                "{ # translate fn:xtijah-query\n"
+                "{ # translate fn:tijah-query\n"
 	);
         if (fun->arity == 3) {
 	  /* translate the first options parameter*/
@@ -8017,15 +7925,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	deleteResult(f, ctx_counter);
         deleteResult_ (f, str_counter, STR);
 	deleteResult(f, opt_counter);
-        milprintf(f, "} # end of translate fn:xtijah_query\n");
+        milprintf(f, "} # end of translate fn:tijah_query\n");
         return (code)?INT:NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-nodes")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-nodes")) )
     {
         char *item_int = kind_str(INT);
         
 	milprintf(f, 
-                "{ # translate fn:xtijah-nodes\n"
+                "{ # translate fn:tijah-nodes\n"
 	);
         /* get query id */
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -8053,15 +7961,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	milprintf(f,
                 "kind := set_kind(frag, ELEM);\n"
                 "ipik := iter;\n"
-	        "} # end of translate fn:xtijah_nodes\n");
+	        "} # end of translate fn:tijah_nodes\n");
         
 	return NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-score")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score")) )
     {
         char *item_int = kind_str(INT);
         milprintf(f, 
-                "{ # translate fn:xtijah-score\n"
+                "{ # translate fn:tijah-score\n"
 	);
         /* get query id */
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -8109,7 +8017,23 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* clean up */
 	deleteResult_(f, counter, INT);
-        milprintf(f, "} # end of translate fn:xtijah_score\n");
+        milprintf(f, "} # end of translate fn:tijah_score\n");
+        return (code)?DBL:NORMAL;
+    }
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-tokenize")) )
+    {
+        milprintf(f, 
+                "{ # translate fn:tijah-tokenize\n"
+	);
+	/* translate the string to be tokenized parameter*/
+        translate2MIL (f, VALUES, cur_level, counter, L(args));
+
+        milprintf(f, 
+                "iter := iter.copy();\n"
+                "item := item.copy();\n"
+                "kind := kind.copy();\n"
+	);
+        milprintf(f, "} # end of translate fn:tijah_tokenize\n");
         return (code)?DBL:NORMAL;
     }
 #endif /* PFTIJAH */
@@ -10710,7 +10634,6 @@ const char* PFinitMIL(void) {
 	"var tijah_frag := new(void,oid).seqbase(0@0);\n"
 	"var tijah_pre := new(void,oid).seqbase(0@0);\n"
 	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
-	"var ws_tijah_score:= bat(oid,bat);\n"
 
 #endif
         "\n"
@@ -10844,9 +10767,6 @@ static const char* _PFstopMIL(bool is_update) {
     strcat(buf,
            "});\n"
            "destroy_ws(ws);\n"
-#ifdef HAVE_PFTIJAH
-           "if ( ws_tijah_score.count() > 99999) destroy_ws(ws_tijah_score);\n" /* keep alive for the time */
-#endif
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
            "if (genType.search(\"timing\") >= 0)\n"
