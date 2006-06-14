@@ -101,7 +101,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
        and check wether their values collide. */
     if ((overlap = n->prop->reqvals.name & reqvals.name)) {
         unsigned int bit_shift = 1;
-        while (bit_shift < overlap) {
+        while (bit_shift <= overlap) {
             /* if the values of column that is required by both
                parents do not match remove this column from the
                list of required value columns */
@@ -232,6 +232,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
                 prop_infer_reqvals (L(n), rv);
                 break;
             }
+            break;
 
         case la_bool_or:
             if (PFprop_reqval (n->prop, n->sem.binary.res) &&
@@ -243,6 +244,7 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
                 prop_infer_reqvals (L(n), rv);
                 break;
             }
+            break;
 
         case la_bool_not:
             /* if res is a required value column also add att 
