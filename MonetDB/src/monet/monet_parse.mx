@@ -53,9 +53,7 @@ C	[!<>]
  */
 #define YYLMAX 100000
 
-#ifndef FLEX_SCANNER
-extern YYSTREE yylval;
-#endif
+extern YYSTYPE yylval;
 #define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
 #define YY_USE_PROTOS		/* make sure ANSI-C prototyes are used */
 
@@ -1556,9 +1554,9 @@ should be the same. And they are not.. Sucker!
 @y
 #ifndef WIN32
 #ifndef YYBISON
+#ifndef YYBYACC
 		{
 			extern int yystate;
-			extern int yylineno;
 
 			if (GDKdebug&32768) {
 				switch (yystate) {
@@ -1639,6 +1637,7 @@ should be the same. And they are not.. Sucker!
 				}
 			}
 		}
+#endif
 #endif
 #endif
 		if (*s == 0)
