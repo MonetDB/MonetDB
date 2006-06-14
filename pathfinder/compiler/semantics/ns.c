@@ -124,7 +124,7 @@ PFns_t PFns_op  = { .ns  = "op",
  * This namespace is not accessible for the user.
  */ 
 PFns_t PFns_pf  = { .ns  = "#pf",  
-                    .uri = "http://www.inf.uni-konstanz.de/Pathfinder" };
+                    .uri = "http://www.pathfinder-xquery.org/" };
 
 /**
  * Wildcard namespace.

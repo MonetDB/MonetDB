@@ -116,7 +116,7 @@ static void mps_error(const char *format, ...)
             "The Pathfinder compiler experienced \n"
             "an internal problem in the MIL code generation.\n"
             "You may want to report this problem to the Pathfinder \n"
-            "development team (pathfinder@inf.uni-konstanz.de).\n\n"
+            "development team (pathfinder@pathfinder-xquery.org).\n\n"
             "When reporting problems, please attach your XQuery input,\n"
             "as well as the following information:\n"
             "%s\n\n"

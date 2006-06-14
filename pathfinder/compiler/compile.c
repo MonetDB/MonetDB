@@ -626,7 +626,7 @@ segfault_handler (int sig)
     fprintf (stderr,
              "You may want to report this problem to the Pathfinder \n");
     fprintf (stderr,
-             "development team (pathfinder@inf.uni-konstanz.de).\n\n");
+             "development team (pathfinder@pathfinder-xquery.org).\n\n");
     fprintf (stderr,
              "When reporting problems, please attach your XQuery input,\n");
     fprintf (stderr,
