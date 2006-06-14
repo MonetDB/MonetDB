@@ -976,7 +976,7 @@ unpack_call::gen_bat_arg(ostream &o, const BatArg &)
 	if (arg_nr > 0)
 		o << "     BBPdescriptor(argv[" << arg_nr << "].val.bval)";
 	else
-		o << "     (BAT**)&argv[0].val.pval";
+		o << "     &argv[0].val.Bval";
 	return o;
 }
 
@@ -1013,7 +1013,7 @@ unpack_getresult::gen_bat_arg(ostream &o, const BatArg &d)
 	o << "     argv[0].val.oval = void_nil;\n";
 	o << "     return -1;\n";
 	o << "   }\n";
-	o << "   argv[0].val.bval=((BAT*)argv[0].val.pval)->batCacheid;\n";
+	o << "   argv[0].val.bval=argv[0].val.Bval->batCacheid;\n";
 	gen_resultbat_chk(o, d.atom1(), 1, fcn);
 	gen_resultbat_chk(o, d.atom2(), 0, fcn);
 	return o;
@@ -1064,7 +1064,7 @@ unpack_getresult::gen_any_arg(ostream &o, const AnyArg &)
 	o << "         return -1;\n";
 	o << "      }\n";
 	o << "      if (argv[0].vtype == TYPE_bat){\n";
-	o << "         argv[0].val.bval=((BAT*)argv[0].val.pval)->batCacheid;\n";
+	o << "         argv[0].val.bval=argv[0].val.Bval->batCacheid;\n";
 	o << "         argv[0].len = 0;\n";
 	o << "      } else {\n";
 	o << "         argv[0].len = ATOMlen(argv[0].vtype, argv[0].val.pval);\n";
