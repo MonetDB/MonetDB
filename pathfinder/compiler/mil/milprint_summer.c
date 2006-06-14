@@ -703,7 +703,7 @@ map2NODE_interface (opt_t *f)
             "kind := kind.materialize(ipik);\n"
             "var attr := kind.get_type(ATTR).hmark(0@0);\n"
             "var attr_iter := attr.leftfetchjoin(iter).materialize(attr);\n"
-            "var attr_item := attr.leftfetchjoin(item)/materialize(attr);\n"
+            "var attr_item := attr.leftfetchjoin(item).materialize(attr);\n"
             "var attr_cont := attr.leftfetchjoin(kind).get_container();\n"
             "attr := nil;\n"
             "_r_attr_iter := attr_iter;\n"
