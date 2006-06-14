@@ -65,6 +65,8 @@ stderr of test 'cast2` in directory 'tests/XQuery` itself:
 
 ERROR: err:FORG0001: could not cast value to integer.
 
+
+
 # 19:01:38 >  
 # 19:01:38 >  Done.
 # 19:01:38 >  
