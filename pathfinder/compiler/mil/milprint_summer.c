@@ -8874,8 +8874,12 @@ simplifyCoreTree (PFcnode_t *c)
                 for $y in e
                 return for $x in e_y
                        return e_x
+
+                NOTE: We have to ensure that the outer iteration has no
+                      positional variable - it would get screwed up by
+                      the nesting.
             */
-            if (LR(c)->kind == c_for)
+            if (LR(c)->kind == c_for && LLR(c)->kind != c_var)
             {
                 PFcnode_t *c_old = PFmalloc (sizeof (PFcnode_t));
                 *c_old = *c;
