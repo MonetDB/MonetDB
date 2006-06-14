@@ -21,8 +21,8 @@ stdout of test 'tst292` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # check coercion of bit coercions on big/little endian platforms 	# 1  (_1:str)
     b := bat.new(:void,:bit);	# 2 CMDBATnew (b:bat[:void,:bit])<-(_3:void)(_4:bit)
-    bat.insert(b,nil,true:bit);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:void,:bit])(_6:void)(_7:bit)
-    bat.insert(b,nil,false:bit);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:void,:bit])(_6:void)(_9:bit)
+    bat.insert(b,nil:void,true:bit);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:void,:bit])(_6:void)(_7:bit)
+    bat.insert(b,nil:void,false:bit);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:void,:bit])(_6:void)(_9:bit)
     io.print(b);	# 5 IOprint_val (_10:int)<-(b:bat[:void,:bit])
 end main;	# 6  
 #-----------------#

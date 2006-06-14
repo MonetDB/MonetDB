@@ -29,7 +29,7 @@ stdout of test 'tst018` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # handling assignments of 'nil'; 	# 1  (_1:str)
     i := 23;	# 2  (i:int)<-(_3:int)
-    i := nil;	# 3  (i:int)<-(_13:int)
+    i := nil:int;	# 3  (i:int)<-(_13:int)
     io.print(i);	# 4 IOprint_val (_5:int)<-(i:int)
     b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_8:int)
     b := nil;	# 6  (b:bat[:int,:int])<-(_14:BAT)

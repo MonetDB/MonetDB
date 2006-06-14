@@ -588,6 +588,12 @@ call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			w = 0;
 			ATOMformat(val->vtype, VALptr(val), &w);
 			strcat(msg,w);
+			if( ATOMcmp(val->vtype, ATOMnilptr(val->vtype), VALptr(val))==0){
+				str tpe= getTypeName(v->type);
+				strcat(msg,":");
+				strcat(msg,tpe);
+				GDKfree(tpe);
+			}
 			/* in timer mode we show more details */
 			if( cntxt->timer && isaBatType(v->type)){
 				str tpe= getTypeName(v->type);

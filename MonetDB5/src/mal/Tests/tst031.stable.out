@@ -80,8 +80,8 @@ function user.main():void;	# 0  (main:void)
 # the void,void bat 	# 50  (_70:str)
     io.print("void,void bat");	# 51 IOprint_val (_71:int)<-(_72:str)
     f := bat.new(:void,:void);	# 52 CMDBATnew (f:bat[:void,:void])<-(_3:void)(_3:void)
-    bat.insert(f,nil,nil);	# 53 BKCinsert_bun (_74:void)<-(f:bat[:void,:void])(_75:void)(_75:void)
-    bat.insert(f,nil,nil);	# 54 BKCinsert_bun (_76:void)<-(f:bat[:void,:void])(_75:void)(_75:void)
+    bat.insert(f,nil:void,nil:void);	# 53 BKCinsert_bun (_74:void)<-(f:bat[:void,:void])(_75:void)(_75:void)
+    bat.insert(f,nil:void,nil:void);	# 54 BKCinsert_bun (_76:void)<-(f:bat[:void,:void])(_75:void)(_75:void)
     io.print(f);	# 55 IOprint_val (_77:int)<-(f:bat[:void,:void])
 end main;	# 56  
 #-----------------#
