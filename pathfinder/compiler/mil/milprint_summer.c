@@ -7830,18 +7830,20 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	/* get scores */
         milprintf(f, 
 		"var score := new(void,dbl).seqbase(0@0);\n"
+		"var tmp := [<<]([lng](tijah_frag), const 32);\n"
+		"var tijah_fragpre := [+](tmp, [lng](tijah_pre));\n"
+		"tmp := nil;\n"
 		"var item1_unique := item%s%03u.tunique();\n"
                 "item1_unique@batloop() { # begin query batloop\n"
 		"    var item_part := item.semijoin(item%s%03u.uselect($h));\n"
-		"    var qid := oid($h);\n"
-		"    var tmp := tijah_tID.uselect(qid);\n"
-		"    var tmp1 := tijah_pre.semijoin(tmp);\n"
-		"    tmp1 := tmp1.join(item_part.reverse());\n"
-		"    var tmp2 := tmp1.join(kind.get_container());\n"
-		"    var tmp3 := tijah_frag.semijoin(tmp)\n;"
-		"    tmp := tmp1.semijoin(intersect(tmp3,tmp2));\n"
-		"    tmp1 := nil; tmp2 := nil; tmp3:= nil;\n"
-		"    score.append(tmp.reverse().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
+		"    var frag_part := kind.semijoin(item_part).get_container();\n"
+		"    frag_part := [<<]([lng](frag_part), const 32);\n"
+		"    var fragpre_part := [+](frag_part, [lng](item_part));\n"
+		"    item_part := nil;\n"
+		"    tmp := tijah_tID.uselect(oid($h));\n"
+		"    tmp := tmp.mirror().leftfetchjoin(tijah_fragpre);\n"
+		"    tmp := tmp.join(fragpre_part.reverse());\n"
+		"    score.append(tmp.mirror().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
 		"} # end query batloop\n"
 		, item_int, counter, item_int, counter);
 	
@@ -7862,7 +7864,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* clean up */
 	deleteResult_(f, counter, INT);
-        milprintf(f, "} # end of translate fn:tijah_score\n");
+        milprintf(f, "} # end of translate fn:tijah-score\n");
         return (code)?DBL:NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-tokenize")) )

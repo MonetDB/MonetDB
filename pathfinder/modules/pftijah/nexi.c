@@ -52,7 +52,7 @@ char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
 #endif
   /* */
   MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder-PFTIJAH package \n#\n\n");
-  MILPRINTF(MILOUT, "module(pftijah);\n\n");
+  /* HENK MILPRINTF(MILOUT, "module(pftijah);\n\n"); */
   /* */
   parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
   if ( !old_main(0,dummy,optbat) )  {
