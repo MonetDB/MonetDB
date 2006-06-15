@@ -1,11 +1,11 @@
 @section The MonetDB JDBC Driver
 The most obvious way to connect to a data source from the Java
-programming language using the JDBC framework.
+programming language is using the JDBC framework.
 The complete definition of JDBC API is available
 on Sun's web site @code{http://java.sun.com/}.
 
 MonetDB has a native Java JDBC driver type 4, which allows use of the
-MonetDB database in a Java alike way.
+MonetDB database in a Java savvy way.
 It is quite difficult to have a fully complete JDBC implementation.
 Also our driver isn't complete in that sense.  However, it is believed
 that the most prominent parts of the JDBC interface are implemented, and
