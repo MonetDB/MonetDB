@@ -38,18 +38,15 @@
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
  "INCOMPLETE"
 
-.COMMAND update_tijah_scores(BAT[void,bat], BAT[oid,bat], BAT[void,oid], BAT[void,int], BAT[oid,dbl]) : BAT[oid,bat] = CMDupdate_tijah_scores;
- "INCOMPLETE"
-
-.COMMAND fill_tijah_scores(BAT[void,bat], BAT[oid,bat], BAT[void,oid], BAT[void,int], BAT[void,dbl]) : void = CMDfill_tijah_scores;
- "INCOMPLETE"
-
 .COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
  "INCOMPLETE"
 
 .COMMAND tj_add2collection_index(BAT[oid,bat],str) : void = CMDtj_add2collection_index;
  "INCOMPLETE"
  
+.COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
+ "INCOMPLETE"
+
 .COMMAND serialize_tijah_opt(
                       BAT[void,bat] ws,
                       int	    niters,
@@ -1685,202 +1682,16 @@ int CMDtijah_query(BAT** res, BAT* optbat, str q) {
         return GDK_SUCCEED;
 }
 
-#define SC_DEBUG 0
+char* tijah_tokenize_string(char* buf, int len, char* outbuf);
 
-static BAT** initScoreBAT(int sz) {
-	BAT** res = GDKmalloc(sz * sizeof(BAT*));
+int CMDtijah_tokenize (str* res, str arg)
+{
+	int sz    = strlen(arg);
+	char* buf = GDKmalloc(sz + 1);
 
-	if ( res ) for(int i=0; i<sz; i++) {
-		res[i] = NULL;
-	}
-	return res;
-}
+	buf[0] = 0;
+	*res = tijah_tokenize_string(arg,sz,buf);
 
-static BAT* fetchScoreBAT(BAT* wts, oid idx) {
-        BAT* res = NULL;
-	BUN bun;
-	if ( (bun = BUNfnd(wts,&idx)) )
-            res = BATdescriptor(*(bat*)BUNtail(wts,bun));
-	return res;
-}
-
-static BAT* createScoreBAT(BAT* wts, oid idx) {
-	BAT* res;
-
-	res = BATnew(TYPE_oid,TYPE_dbl,1024);
-	if ( res && BATkey(res,TRUE)) {
-	    BBPfix(BBPcacheid(res));
-            if ( !BUNins(wts,&idx,&BBPcacheid(res),FALSE) ) 
-	        res = NULL;
-	}
-	return res;
-}
-
-static int freeScoreBAT(BAT** sb) {
-	GDKfree(sb);
-	return 1;
-}
-
-int CMDupdate_tijah_scores(BAT** res, BAT* ws, BAT* ws_tijah_score, BAT* item, BAT* kind, BAT* score) {
-
-	if (SC_DEBUG) stream_printf(GDKout,"* tijah-score-adm: start updating scores\n");
-        if ( !BATkey(ws_tijah_score,TRUE) ) {
-	        stream_printf(GDKout,"SETTING KEY ON SCOREBAT failed.\n");
-		return GDK_FAIL;
-	}
-	BAT** scoreBAT;
-	int ws_size = BATcount(ws);
-	
-	if ( !(scoreBAT = initScoreBAT(ws_size)) )
-		return GDK_FAIL;
-
-	int x;
-	BUN p,q;
-	BATloopFast(item, p, q, x) {
-	   oid idx   = *(oid*) BUNhead(item, p);
-	   oid pfpre = *(oid*) BUNtail(item, p);
-
-	   BUN kindBUN = BUNfnd(kind,&idx);
-	   if ( !kindBUN ) {
-	        stream_printf(GDKout,"READ KIND failed\n");
-		return GDK_FAIL;
-	   }
-	   int kval = *(int*)BUNtail(kind, kindBUN);
-	   if ( XTRACT_KIND(kval) != ELEM ) {
-	        stream_printf(GDKout,"READ KIND failed, NO ELEM\n");
-		return GDK_FAIL;
-	   }
-	   oid cont = (oid)XTRACT_CONT(kval);
-	   BUN scoreBUN = BUNfnd(score,&idx);
-	   if ( !scoreBUN ) {
-	        stream_printf(GDKout,"READ SCORE failed\n");
-		return GDK_FAIL;
-	   }
-	   dbl sval = *(dbl*)BUNtail(score, scoreBUN);
-	   /* */
-	   if ( scoreBAT[cont] == NULL ) {
-	        if ( !(scoreBAT[cont] = fetchScoreBAT(ws_tijah_score,cont)) ) {
-	            if ( !(scoreBAT[cont] = createScoreBAT(ws_tijah_score,cont)) ) {
-                      stream_printf(GDKout,"CMDupdate_tijah_scores: fail to load scorebat container(%d)\n",cont);
-                      return GDK_FAIL;
-		    }
-		}
-	    }
-	    if ( !BUNfnd(scoreBAT[cont],&pfpre) ) {
-	      if ( !BUNins(scoreBAT[cont],&pfpre,&sval,FALSE) ) {
-		stream_printf(GDKout,"CMDupdate_tijah_scores: score replace failed.\n");
-                return GDK_FAIL;
-	       }
-	       if (SC_DEBUG) stream_printf(GDKout,"* tijah-score-adm: node(%d@0) cont(%d)] = %f[inserted]\n",pfpre,cont,sval);
-	    } else {
-	      if ( !BUNreplace(scoreBAT[cont],&pfpre,&sval,1) ) {
-		stream_printf(GDKout,"CMDupdate_tijah_scores: score replace failed.\n");
-                return GDK_FAIL;
-	      }
-	      if (SC_DEBUG) stream_printf(GDKout,"* tijah-score-adm: node(%d@0) cont(%d)] = %f[replaced]\n",pfpre,cont,sval);
-	    }
-	}
-	/* */
-	/* for(int i=0; i<ws_size; i++) if (scoreBAT[i]) BATprintf(GDKout,scoreBAT[i]); */
-	/* */
-	if ( !freeScoreBAT(scoreBAT))
-	     return GDK_FAIL;
-	/* */
-	BBPfix(BBPcacheid(ws_tijah_score));
-	*res = ws_tijah_score;
-	/* */
-	if (SC_DEBUG) stream_printf(GDKout,"* tijah-score-adm: ready updating scores\n");
-	/* */
-	return GDK_SUCCEED;
-}
-
-int CMDfill_tijah_scores(BAT* ws, BAT* ws_tijah_score, BAT* item, BAT* kind, BAT* dbl_values) {
-	if (SC_DEBUG) stream_printf(GDKout,"* CMDfill_tijah_scores: start filling scores\n");
-
-	BAT** scoreBAT;
-	int ws_size = BATcount(ws);
-	BAT* dbl_values_mirror = BATmirror(dbl_values);
-
-	if ( SC_DEBUG ) {
-	  stream_printf(GDKout,"ARGUMENT ITEM BAT =\n");
-	  BATprintf(GDKout,item);
-	}
-	
-	if ( !(scoreBAT = initScoreBAT(ws_size)) )
-		return GDK_FAIL;
-
-	int x;
-	BUN p,q;
-	BATloopFast(item, p, q, x) {
-	   oid idx      = *(oid*) BUNhead(item, p);
-	   ptr itemTAIL = BUNtail(item, p);
-	   oid pfpre    = *(oid*) itemTAIL;
-
-	   BUN kindBUN = BUNfnd(kind,&idx);
-	   if ( !kindBUN ) {
-	        stream_printf(GDKout,"READ KIND failed\n");
-		return GDK_FAIL;
-	   }
-	   ptr kindTAIL = BUNtail(kind, kindBUN);
-	   int kval = *(int*)kindTAIL;
-	   if ( XTRACT_KIND(kval) != ELEM ) {
-	        stream_printf(GDKout,"READ KIND failed, NO ELEM\n");
-		return GDK_FAIL;
-	   }
-	   oid cont = (oid)XTRACT_CONT(kval);
-	   dbl sval;
-	   /* */
-	   if ( scoreBAT[cont] == NULL ) {
-	        if ( (scoreBAT[cont] = fetchScoreBAT(ws_tijah_score,cont)) ) {
-		    if ( SC_DEBUG ) {
-		        stream_printf(GDKout,"FETCHED SCORE CONTAINER[%d] == \n",cont);
-		        BATprintf(GDKout,scoreBAT[cont]);
-		    }
-		}
-	   }
-	   if ( scoreBAT[cont] ) {
-		BUN bun;
-	        if ( !(bun=BUNfnd(scoreBAT[cont],&pfpre)) ) {
-		     sval = 0;
-		} else {
-
-		     sval = *(dbl*)BUNtail(scoreBAT[cont],bun);
-		}
-	   } else
-	        sval = 0;
-
-	   oid dbl_idx;
-	   BUN b = BUNfnd(dbl_values_mirror,&sval);
-	   if ( b ) { /* INCOMPLETE, CHECK DUPLICATES FIRST */
-	     dbl_idx = *(oid*)BUNtail(dbl_values_mirror,b);
-	   } else {
-	     if ( !BUNappend(dbl_values,&sval,1) ) {
-	       stream_printf(GDKout,"!!! SCORE APPEND FAILS.\n");
-	       return GDK_FAIL;
-	     }
-	     dbl_idx = BATcount(dbl_values)-1;
-	   }
-	   if (SC_DEBUG) stream_printf(GDKout,"FETCHING pre=%d@0[c=%d] sc=%f @ dbl_values[%d@0]\n",pfpre,cont,sval,dbl_idx);
-	   *(oid*)itemTAIL = dbl_idx;
-	   *(int*)kindTAIL = DBL;
-	}
-	/* */
-	if ( !freeScoreBAT(scoreBAT))
-	     return GDK_FAIL;
-	kind->batDirty        = TRUE;
-	item->batDirty        = TRUE;
-	dbl_values->batDirty = TRUE;
-	/* */
-	if ( SC_DEBUG ) {
-		stream_printf(GDKout,"* RESULT ITEM:\n");
-		BATprintf(GDKout,item);
-		stream_printf(GDKout,"* RESULT KIND:\n");
-		BATprintf(GDKout,kind);
-		stream_printf(GDKout,"* RESULT DBL_VALUES:\n");
-		BATprintf(GDKout,dbl_values);
-	}
-	if (SC_DEBUG) stream_printf(GDKout,"* CMDfill_tijah_scores: finish filling scores\n");
-	/* */
 	return GDK_SUCCEED;
 }
 

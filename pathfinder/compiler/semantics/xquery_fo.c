@@ -1560,7 +1560,7 @@ PFfun_xquery_fo ()
 	     .par_ty = (PFty_t[]) { PFty_integer (),
 	                            PFty_xs_anyNode () },
              .ret_ty = PFty_double () } } }
-    , /* fn:tijah-tokenize(string) as string */
+    , /* fn:tijah-tokenize(string?) as string */
       { .ns = PFns_fn, .loc = "tijah-tokenize",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_string () },

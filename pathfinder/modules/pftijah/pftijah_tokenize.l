@@ -77,11 +77,24 @@ S                                   {WhiteSpaceChar}+
 
 int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx) {
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
-  while (pftijah_tokenizelex())
+  while (pftijah_tokenizelex()) {
       if ( !handleTijahTerm(tjCtx, pftijah_tokenizetext) )
           return 0;
+  }
   yy_delete_buffer(myBuf);
   return 1;
+}
+
+char* tijah_tokenize_string(char* buf, int len, char* outbuf) {
+  int cnt = 0;
+  YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
+  while (pftijah_tokenizelex()) {
+      if ( cnt++ )
+          strcat(outbuf," ");
+      strcat(outbuf,pftijah_tokenizetext);
+  }
+  yy_delete_buffer(myBuf);
+  return outbuf;
 }
 
 char* flexScanOneTerm(char* buf, int len) {

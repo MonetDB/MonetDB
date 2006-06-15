@@ -7867,19 +7867,41 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-tokenize")) )
     {
-        milprintf(f, 
-                "{ # translate fn:tijah-tokenize\n"
-	);
-	/* translate the string to be tokenized parameter*/
-        translate2MIL (f, VALUES, cur_level, counter, L(args));
+        char *item_ext;
+        int str_counter, rc;
 
-        milprintf(f, 
-                "iter := iter.copy();\n"
-                "item := item.copy();\n"
-                "kind := kind.copy();\n"
-	);
-        milprintf(f, "} # end of translate fn:tijah_tokenize\n");
-        return (code)?DBL:NORMAL;
+        item_ext = kind_str(STR);
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+        add_empty_strings (f, STR, cur_level);
+        counter++;
+        str_counter = counter;
+        saveResult_ (f, str_counter, STR);
+
+        milprintf(f,
+                "{ # fn:tijah-tokenize\n"
+                "var res := [tijah_tokenize](item%s%03u);\n",
+                item_ext, str_counter);
+
+        if (code)
+            milprintf(f, "item%s := res;\n", item_ext);
+        else
+            addValues (f, str_container(), "res", "item");
+
+        item_ext = (code)?item_ext:"";
+        milprintf(f,
+            "iter := loop%03u;\n"
+            "ipik := iter;\n"
+            "pos := 1@0;\n"
+            "kind := STR;\n"
+            "} # end of fn:tijah-tokenize\n",
+            cur_level);
+
+        deleteResult_ (f, str_counter, STR);
+	counter--;
+        return (code)?STR:NORMAL;
     }
 #endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
