@@ -575,6 +575,10 @@ any_binary_@1(ptr ret, ptr v1, int t, ptr v2)
 	int (*cmp)(ptr, ptr) = BATatoms[t].atomCmp;
 	ptr src, nil = ATOMnilptr(t);
 
+	if (t == TYPE_bat) {
+		v1 = &(((BAT*) v1)->batCacheid);
+		v2 = &(((BAT*) v2)->batCacheid);
+	}
 	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
 		src = nil;
 	} else {
@@ -624,6 +628,10 @@ any_comp_@2(bit *retval, ptr v1, int tpe, ptr v2)
 	int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
 	ptr nil = ATOMnilptr(tpe);
 
+	if (tpe == TYPE_bat) {
+		v1 = &(((BAT*) v1)->batCacheid);
+		v2 = &(((BAT*) v2)->batCacheid);
+	}
 	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
 		*retval = bit_nil;
 	} else {
