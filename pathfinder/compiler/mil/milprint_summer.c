@@ -3223,6 +3223,87 @@ evaluateCast (opt_t *f,
                 target.mil_cast);
 }
 
+
+/**
+ * evaluateCastAny casts a (statically) heterogeneously typed sequence
+ * however, in milprint_summer, kind/item may both still be runtime constants
+ **/
+static void 
+evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast) 
+{
+    if (rc != NORMAL) 
+        mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc), tpe.name);
+
+    milprintf(f, 
+	"# cast a type-heterogeneous expression (according to static typing)\n"
+	"var _val := nil;\n"
+	"var _k := tunique(kind);\n"
+        "if (count(_k) != 1) {\n"
+	"  _val := bat(oid,%s,count(kind));\n"
+	"  if (_k.exist(INT)) {\n"
+        "    _val.insert(kind.ord_uselect(INT).mirror().leftfetchjoin(item).leftfetchjoin(int_values).[%s]());\n"
+	"  }\n"
+	"  if (_k.exist(BOOL)) {\n"
+	"    _val.insert(kind.ord_uselect(BOOL).mirror().leftfetchjoin(item).[bit]().[%s]());\n"
+	"  }\n"
+	"  if (_k.exist(DEC) or _k.exist(DBL)) {\n"
+	"    _val.insert(kind.ord_uselect(DEC,DBL).mirror().leftfetchjoin(item).leftfetchjoin(dbl_values).[%s]());\n"
+	"  }\n"
+	"  if (_k.exist(STR) or _k.exist(U_A)) {\n"
+	"    _val.insert(kind.ord_uselect(STR,U_A).mirror().leftfetchjoin(item).leftfetchjoin(str_values).%s);\n"
+	"  }\n"
+	"  _val := _val.tmark(0@0).project(%s(nil)).access(BAT_WRITE).replace(_val).access(BAT_READ);\n"
+	"} else {\n"
+	"  # at run-time, it turns out to be homogeneous\n"
+	"  kind := reverse(_k).fetch(0);\n", tpe.mil_type, tpe.mil_type, tpe.mil_type, tpe.mil_type, str_cast, tpe.mil_type);
+
+    if (rcode != NORMAL || strcmp(tpe.mil_type,"bit"))
+        milprintf(f, 
+	"  if (kind = BOOL) {\n"
+	"    _val := [bit](item).[%s]();\n"
+	"  }\n", tpe.mil_type);
+
+    if (rcode != NORMAL || strcmp(tpe.mil_type,"lng"))
+        milprintf(f, 
+	"  if (kind = INT) {\n"
+	"    _val := item.leftfetchjoin(int_values).[%s]();\n"
+	"  }\n", tpe.mil_type);
+
+    if (rcode != NORMAL || strcmp(tpe.mil_type,"dbl"))
+        milprintf(f, 
+	"  if ((kind = DEC) or (kind = DBL)) {\n"
+	"    _val := item.leftfetchjoin(dbl_values).[%s]();\n"
+	"  }\n", tpe.mil_type);
+
+    if (rcode != NORMAL || strcmp(tpe.mil_type,"str"))
+        milprintf(f, 
+	"  if ((kind = STR) or (kind = U_A)) {\n"
+	"    _val := item.leftfetchjoin(str_values).%s;\n"
+	"  }\n", str_cast);
+
+    milprintf(f, 
+	"}\n"
+        "if (type(_val) = void) { # idempotent cast leaves (_val = item)\n"
+	"  _val = item;\n"
+        "} else {\n"
+        "  if (_val.texist(%s(nil)))\n"
+        "    ERROR (\"err:FORG0001: could not cast value to %s.\");\n", tpe.mil_type, tpe.name);
+
+    if (tpe.kind == BOOL) {
+        milprintf(f, 
+	"}\nitem%s := [oid](_val);\n", kind_str(rcode));
+    } else if (rcode != NORMAL) {
+        milprintf(f, 
+	"}\nitem%s := _val;\n", kind_str(rcode));
+    } else {
+        addValues(f, tpe, "_val", "item");
+        milprintf(f, "}\n");
+    }
+    milprintf(f, 
+	"kind := %s;\n", tpe.mil_cast);
+}
+
+
 /**
  * translateCast2INT takes an intermediate result
  * and casts all possible types to INT. It produces
@@ -3237,14 +3318,12 @@ evaluateCast (opt_t *f,
 static void
 translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    char *item_ext = kind_str(rcode);
-
     if (TY_EQ (input_type, PFty_integer ()))
     {
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    item_ext, val_join(rcode));
+                    kind_str(rcode), val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3263,17 +3342,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), int_container(), "[lng]()");
     else /* handles the choice type */
-    {
-	char *cast = "castValues(containers, empty_int__bat, item, kind, ipik, lng, \"lng\", \"integer\")";
-    	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to integer.", kind_container(rc));
-
-        if (rcode != NORMAL)
-            milprintf(f, "item%s := %s;\n", item_ext, cast);
-        else
-            addValues(f, int_container(), cast, "item");
-        milprintf(f, "kind := INT;\n");
-    }
+	evaluateCastAny(f, rc, rcode, int_container(), "[lng]()");  
 }
 
 /**
@@ -3290,8 +3359,6 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    char *item_ext = kind_str(rcode);
-
     if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, rcode, rc, int_container(), dec_container(), "[dbl]()");
     else if (TY_EQ (input_type, PFty_decimal ()))
@@ -3299,7 +3366,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    item_ext, val_join(rcode));
+                    kind_str(rcode), val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3316,17 +3383,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
-    {
-	char *cast = "castValues(containers, empty_dec__bat, item, kind, ipik, dbl, \"dbl\", \"decimal\")";
-    	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to decimal.", kind_container(rc));
-
-        if (rcode != NORMAL)
-            milprintf(f, "item%s := %s;\n", item_ext, cast);
-        else
-            addValues(f, dec_container(), cast, "item");
-        milprintf(f, "kind := DEC;\n");
-    }
+	evaluateCastAny(f, rc, rcode, dec_container(), "[dbl]()");  
 }
 
 /**
@@ -3343,8 +3400,6 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    char *item_ext = kind_str(rcode);
-
     if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, rcode, rc, int_container(), dbl_container(), "[dbl]()");
     else if (TY_EQ (input_type, PFty_decimal ()))
@@ -3354,7 +3409,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    item_ext, val_join(rcode));
+                    kind_str(rcode), val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3369,17 +3424,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
-    {
-	char *cast = "castValues(containers, empty_dbl__bat, item, kind, ipik, dbl, \"dbl\", \"double\")";
-    	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to double.", kind_container(rc));
-
-        if (rcode != NORMAL)
-            milprintf(f, "item%s := %s;\n", item_ext, cast);
-        else
-            addValues(f, dbl_container(), cast, "item");
-        milprintf(f, "kind := DBL;\n");
-    }
+	evaluateCastAny(f, rc, rcode, dbl_container(), "[dbl]()");  
 }
 
 /**
@@ -3396,7 +3441,6 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    char *item_ext = kind_str(rcode);
     type_co cast_container = (rcode == STR)?str_container():u_A_container();
 
     if (TY_EQ (input_type, PFty_integer ()))
@@ -3415,7 +3459,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    item_ext, val_join(rcode));
+                    kind_str(rcode), val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3432,18 +3476,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
     else /* handles the choice type */ 
-    {
-        char *cast = "castValues(containers, empty_str__bat, item, kind, ipik, str, \"str\", \"string\")";
-	char *desc = (rcode == STR)?"string":"untyped atomic";
-    	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc), desc);
-
-        if (rcode != NORMAL)
-            milprintf(f, "item%s := %s;\n", item_ext, cast);
-        else
-            addValues(f, str_container(), cast, "item");
-        milprintf(f, "kind := %s;\n", (rcode == STR)?"STR":"U_A");
-    }
+	evaluateCastAny(f, rc, rcode, cast_container, "[str]()");  
 }
 
 /**
@@ -3471,11 +3504,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, str_container(), bool_container(), "[!=](\"\")");
     else if (TY_EQ (input_type, PFty_boolean ()));
     else /* handles the choice type */ 
-    {
-        milprintf(f,
-                "item := [oid](castValues(containers, empty_bool__bat, item, kind, ipik, bit, \"bit\", \"boolean\"));\n"
-                "kind := BOOL;\n");
-    }
+	evaluateCastAny(f, NORMAL, BOOL, bool_container(), "[!=](\"\")");  
 }
 
 /**
@@ -9942,7 +9971,6 @@ const char* PFinitMIL(void) {
         "var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
         "var dec_values := dbl_values;\n"
         "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append(\"\");\n"
-        "var containers := bat(int,bat).insert(BOOL,bool_values).insert(INT,int_values).insert(DBL,dbl_values).insert(DEC,dec_values).insert(STR,str_values).insert(U_A,str_values).access(BAT_READ);\n" 
         "\n"
         "var fun_vid000 := bat(void,oid);\n"
         "var fun_iter000 := bat(void,oid);\n"
