@@ -1527,7 +1527,10 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 		for (n = t->s->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
 
-			if (!ot->table) {
+			/* Each view must have a query, so no NULL check.  Don't
+			 * consider VIEW AS BAT here, because that won't parse so
+			 * nice all the time, and won't depend on a table either. */
+			if (!ot->table && ot->query[0] != ';') {
 				scope *scp = scope_open(NULL);
 				stmt *s = scope_sqlparse(sql, scp, ot->query);
 
