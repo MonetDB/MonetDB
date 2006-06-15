@@ -1025,9 +1025,9 @@ fi
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AC_HELP_STRING([--enable-assert],
-		[enable assertions in the code [default=yes]]),
+		[enable assertions in the code [default=no]]),
 	enable_assert=$enableval,
-	enable_assert=yes)
+	enable_assert=no)
 if test "x$enable_assert" = xno; then
   AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
 fi
@@ -1035,8 +1035,8 @@ fi
 dnl --enable-optimize
 AC_ARG_ENABLE(optimize,
 	AC_HELP_STRING([--enable-optimize],
-		[enable extra optimization [default=no]]),
-	enable_optim=$enableval, enable_optim=no)
+		[enable extra optimization [default=yes]]),
+	enable_optim=$enableval, enable_optim=yes)
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -1466,7 +1466,7 @@ fi
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
-have_netcdf=auto
+have_netcdf=no
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,
