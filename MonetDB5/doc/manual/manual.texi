@@ -163,8 +163,8 @@ Last updated: @value{UPDATED}
 
 @node Programming Interfaces, The Mapi Library, iSQL-Viewer, Top
 @include Assets/APIs.texi
-@node The Mapi Library, Sample Application, Programming Interfaces, Programming Interfaces
-@include Mapi.bdy.texi
+@node The Mapi Library, A Tiny Mapi Application, Programming Interfaces, Programming Interfaces
+@include Assets/mapimanual.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
 @include Assets/perlmanual.texi
