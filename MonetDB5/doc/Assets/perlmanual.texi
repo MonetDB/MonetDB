@@ -12,12 +12,10 @@ and knows how to talk to the real databases.
 
 MonetDB comes with its own DBD module which is included in both 
 the source and binary distribution packages. The module is 
-also available via @url{"http://cpan.perl.org/",CPAN}, 
-it can be downloaded here and look here for the module documentation.
+also available via @url{"http://cpan.perl.org/",CPAN}.
 
-A few sample Perl applications to connect with MonetDB are 
-included in the source distribution; a MIL session and a 
-simple client to interact with a running server.
+Two sample Perl applications are included in the source distribution; 
+a MIL session and a simple client to interact with a running server.
 
 For further documentation we refer to the @url{"http://www.perl.org",Perl community} home page.
 
