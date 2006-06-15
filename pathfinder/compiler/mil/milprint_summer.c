@@ -3303,7 +3303,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
     {
 	char *cast = "castValues(containers, empty_int__bat, item, kind, ipik, lng, \"lng\", \"integer\")";
     	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to integer.", kind_container(rc));
+            mps_error ("forgot to cope with type '%s' in cast to integer.", kind_container(rc).name);
 
         if (rcode != NORMAL)
             milprintf(f, "item%s := %s;\n", item_ext, cast);
@@ -3356,7 +3356,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
     {
 	char *cast = "castValues(containers, empty_dec__bat, item, kind, ipik, dbl, \"dbl\", \"decimal\")";
     	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to decimal.", kind_container(rc));
+            mps_error ("forgot to cope with type '%s' in cast to decimal.", kind_container(rc).name);
 
         if (rcode != NORMAL)
             milprintf(f, "item%s := %s;\n", item_ext, cast);
@@ -3409,7 +3409,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
     {
 	char *cast = "castValues(containers, empty_dbl__bat, item, kind, ipik, dbl, \"dbl\", \"double\")";
     	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to double.", kind_container(rc));
+            mps_error ("forgot to cope with type '%s' in cast to double.", kind_container(rc).name);
 
         if (rcode != NORMAL)
             milprintf(f, "item%s := %s;\n", item_ext, cast);
@@ -3473,7 +3473,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         char *cast = "castValues(containers, empty_str__bat, item, kind, ipik, str, \"str\", \"string\")";
 	char *desc = (rcode == STR)?"string":"untyped atomic";
     	if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc), desc);
+            mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc).name, desc);
 
         if (rcode != NORMAL)
             milprintf(f, "item%s := %s;\n", item_ext, cast);
