@@ -64,6 +64,8 @@ stderr of test 'cast2` in directory 'tests/XQuery` itself:
 # 19:01:38 >  
 
 ERROR: err:FORG0001: could not cast value to integer.
+ERROR: interpret_params: addValues(param 2): evaluation error.
+ERROR: interpret_params: tmark(param 1): evaluation error.
 
 # 19:01:38 >  
 # 19:01:38 >  Done.
