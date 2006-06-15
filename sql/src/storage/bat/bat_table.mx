@@ -89,6 +89,100 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	return r;
 }
 
+
+list*
+table_select_column_multi_values( sql_trans *tr, sql_column *val, sql_column *key1, void *key_value1, sql_column *key,list *values)
+{
+        BAT *b = NULL, *s = NULL, *valB = NULL, *d = NULL, *tmp = NULL;
+	ptr lid;
+	BUN p,q;
+	int i,sz;
+	void * value = NULL, *aux = NULL;
+	node *value_node;
+	list* res = list_create((fdestroy) NULL);
+
+	if (val->t->dbid)
+		d = bind_dbat(tr, val->t, RDONLY);
+	if(key1){
+		b = full_column(key1, d, s);
+		if(s)
+			bat_destroy(s);
+		s = BATselect(b, key_value1, key_value1);
+		bat_destroy(b);
+	}
+	b = full_column(key, d, s);
+	if (s)
+		bat_destroy(s);
+	tmp = bat_new(TYPE_void, b->ttype, key->t->sz, "tmp_table_select_column");
+	value_node = values->h;
+	for(i = 0; i < list_length(values); i++){
+		value = value_node->data;
+		BUNappend(tmp,value,FALSE);
+	}
+	s = BATjoin(b,BATmirror(tmp),BATcount(b)*BATcount(tmp));
+	
+	valB = full_column(val, d, s);
+	if (s)
+		bat_destroy(s);
+	if (d)
+		bat_destroy(d);
+	BATloop(valB,p,q){
+		lid = BUNhead(valB,p);
+		aux = bun_find(valB,lid);
+                sz = ATOMlen(valB->ttype,aux);
+                value = GDKmalloc(sz);
+		memcpy(value,aux,sz);
+		res = list_append(res,value);
+	}
+	bat_destroy(b);
+	bat_destroy(tmp);
+        bat_destroy(valB);
+        return res;
+}
+
+list*
+table_select_column( sql_trans *tr, sql_column *val, sql_column *key, void *key_value, ...)
+{
+        BAT *b = NULL, *s = NULL, *valB = NULL, *d = NULL;
+	ptr lid;
+	BUN p,q;
+	list* res = list_create((fdestroy) NULL);
+	va_list va;
+	sql_column *nc;
+	void *nv,*value = NULL, *aux = NULL;
+	int sz;
+
+	if (val->t->dbid)
+		d = bind_dbat(tr, val->t, RDONLY);
+	va_start(va, key_value);
+	while ((nc = va_arg(va, sql_column *)) != NULL) {
+		nv = va_arg(va, void *);
+		
+		b = full_column(key, d, s);
+		if (s)
+			bat_destroy(s);
+		s = BATselect(b, key_value, key_value);
+		bat_destroy(b);
+		key = nc;
+		key_value = nv;
+	}
+	valB = full_column(val, d, s);
+	if (s)
+		bat_destroy(s);
+	if (d)
+		bat_destroy(d);
+	BATloop(valB,p,q){
+		lid = BUNhead(valB,p);
+		aux = bun_find(valB,lid);
+                sz = ATOMlen(valB->ttype,aux);
+                value = GDKmalloc(sz);
+		memcpy(value,aux,sz);
+		res = list_append(res,value);
+	}
+        bat_destroy(valB);
+        return res;
+}
+
 ssize_t
 column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 {
@@ -200,7 +294,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		cnt++;
 		c = n->data;
 		b = temp_descriptor(c->bat.ibid);
-		BUNappend(b, val, TRUE);
+		BUNappend(b,val, TRUE);
 		bat_destroy(b);
 		c->base.wtime = tr->stime;
 	}

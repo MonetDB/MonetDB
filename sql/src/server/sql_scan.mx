@@ -219,7 +219,6 @@ scanner_init_keywords()
 	keywords_insert("INTERSECT", INTERSECT);
 	keywords_insert("CORRESPONDING", CORRESPONDING);
 	keywords_insert("UNIQUE", UNIQUE);
-	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
 	keywords_insert("VIEW", VIEW);
 	keywords_insert("WHERE", WHERE);
@@ -909,6 +908,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 				lc->yynext = next;
 			break;
 		}
+	} else if (token == WITH){
+		lc->view_end = lc->yycur-5;
+	} else if (token == USING){
+		lc->view_end = lc->yycur-6;
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */
 		if (lc->yylast == SCOLON) {
@@ -921,8 +924,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 			lc->yycur -= prev;
 			assert(lc->yycur >= 0);
 		}
-	} else if (token == WITH || token == USING) {
-		lc->view_end = pos;
 	}
 
 	if (lc->log) 

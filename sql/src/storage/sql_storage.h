@@ -21,6 +21,9 @@
 
 #include "sql_catalog.h"
 
+extern list* table_select_column( sql_trans *tr, sql_column *val, sql_column *key, void *key_value, ...);
+extern list* table_select_column_multi_values( sql_trans *tr, sql_column *val, sql_column *key1 , void *key_value1, sql_column *key2,list *values);
+
 extern ssize_t
  column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
 

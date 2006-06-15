@@ -159,6 +159,7 @@ typedef struct stmt {
 	struct stmt *rewritten;
 
 	int location; 		/*location id to know for who the catalog information need to be send*/
+	int location_rid; 		/*location rid usefull for the auxiliary structures*/
 } stmt;
 
 typedef struct group {
@@ -175,7 +176,7 @@ extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
 
 extern stmt *stmt_none();
 extern stmt *stmt_sql(char *query);
-extern stmt *stmt_remote(char *query,int location,stmt* st);
+extern stmt *stmt_remote(char *query,int location,int location_rid,stmt* st);
 extern stmt *stmt_var(char *varname, sql_subtype *t);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_update_var(char *varname);
@@ -450,6 +451,8 @@ stmt_create(st_type type)
 	s->t = NULL;
 	s->optimized = 0;
 	s->rewritten = NULL;
+	s->location = 0;
+	s->location_rid = -1;
 	return s;
 }
 
@@ -774,13 +777,14 @@ stmt_sql(char *query)
 }
 
 stmt *
-stmt_remote(char *query, int location,stmt* st)
+stmt_remote(char *query, int location,int location_rid,stmt* st)
 {
 	stmt *s = stmt_create(st_remote);
 
 	s->op1.sval = _strdup(query);
 	s->op2.stval = st;
 	s->location = location;
+	s->location_rid = location_rid;
 	return s;
 }
 

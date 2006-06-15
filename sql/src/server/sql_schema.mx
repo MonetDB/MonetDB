@@ -660,7 +660,6 @@ stmt*
 create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,int push_pull,int r_time, int replication_id,stmt* res){
 	SelectNode *sn = (SelectNode*) query;
 	symbol* symb = sn->from->data.lval->h->data.sym;
-	char* tname = qname_table(symb->data.lval->h->data.sym);
 	char* host = qname_host(symb->data.lval->h->data.sym);
 	char* schema = ((sql_schema*) cur_schema(sql))->base.name;
 	sql_table* view = find_sql_table(s,qname_table(sym),table_location(sql,qname_host(sym)));
@@ -673,17 +672,21 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 		int in_out = (location>0) ? 0 : 1;
 		int t_rev = 0; 
 		int column_id; 
-		sql_column* column;
-		node* next = view->columns.set->h;
+		sql_column* column_view, *column_table;
+		sql_table* table = find_sql_table(s,qname_table(symb->data.lval->h->data.sym),location);
+		node* node_view = view->columns.set->h;
+		node* node_table = table->columns.set->h;
 		sql_table* replication = find_sql_table(s,"replication",LOCATION);
 		sql_table* replication_columns = find_sql_table(s,"replication_columns",LOCATION);
 		for(int i=0; i<view->columns.set->cnt;i++){
 			column_id = store_next_oid(); 
-			column = (sql_column*) next->data;
-			table_insert(sql->session->tr, replication_columns, &column_id,&replication_id, column->base.name, tname,schema);
-			next = next->next;
+			column_view = (sql_column*) node_view->data;
+			column_table = (sql_column*) node_table->data;
+			table_insert(sql->session->tr, replication_columns, &column_id,&replication_id, column_table->base.name, column_view->base.name, column_table->t->base.name,column_table->t->s->base.name,&location);
+			node_view = node_view->next;
+			node_table = node_table->next;
 		}
-		table_insert(sql->session->tr, replication, &replication_id, &in_out, &push_pull, &r_time, &t_rev, &t_rev);
+		table_insert(sql->session->tr, replication, &view->base.id, &replication_id, &in_out, &push_pull, &r_time, &t_rev, &t_rev);
 		view->replication_id = replication_id;
 
 		snprintf(
@@ -696,10 +699,8 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 			QUERY(sql->scanner) + sql->scanner.as
 		);
 		if(location > 0){
-			table_location_info(sql,location,&dbalias,&ip,&port,&user,&password);
-			return stmt_remote(string_query,location,res);
-			/*int mid = reconnet(dbalias,ip,port,user,password,"msql");
-			query(mid,string_query);*/
+			int location_rid = table_location_info(sql,location,&dbalias,&ip,&port,&user,&password);
+			return stmt_remote(string_query,location,location_rid,res);
 		}
         }
 	else
@@ -1499,6 +1500,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		dlist *column_spec;
 		symbol* subquery;
 		int with_data;
+		int len = 0;
 		char *querystring = NULL;
 
 		if (view) {
@@ -1515,6 +1517,10 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 			}
 			querystring = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 			if (sql->scanner.view_end) {
+				char *q = QUERY(sql->scanner) + sql->scanner.as;
+				len = sql->scanner.view_end - sql->scanner.as;
+				querystring = NEW_ARRAY(char,len+2);
+				strncpy(querystring, q, len);
 				querystring[sql->scanner.view_end - sql->scanner.as] = ';';
 				querystring[sql->scanner.view_end - sql->scanner.as+1] = 0;
 			}
@@ -1529,7 +1535,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 			return NULL;
 
 		/* create table */
-		t = mvc_create_table(sql, ss, name, querystring, 0, temp, commit_action, -1, location, replication_id);
+		t = mvc_create_table(sql, ss, name, querystring, 0, temp, commit_action, -1, location, view);
 		as_subquery( sql, t, sq, column_spec);
 
 		/* insert query result into this table */
@@ -1640,6 +1646,43 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 	}
 }
 
+stmt*
+drop_remote_view(mvc *sql,sql_schema *ss,sql_table* t, symbol* sym)
+{
+	int location,i;
+	char query[BUFSIZ + 1];
+	query[BUFSIZ] = '\0';
+	stmt* st = stmt_none();
+	sql_table *rep_tab = find_sql_table(ss,"replication",LOCATION);
+	sql_table *rep_col_tab = find_sql_table(ss,"replication_columns",LOCATION);
+        sql_column *replication_column = find_sql_column(rep_tab,"replication_id");
+        sql_column *oids_col = find_sql_column(rep_tab,"tableid");
+	sql_column *location_col = find_sql_column(rep_col_tab, "table_location");
+        sql_column *replication_col = find_sql_column(rep_col_tab,"replication_id");
+	node *node;
+	
+	list * replication_ids = table_select_column(sql->session->tr, replication_column, oids_col, &t->base.id,NULL);
+	
+	list* l = table_select_column_multi_values(sql->session->tr, location_col, NULL, NULL, replication_col, replication_ids);
+	
+	node = l->h;
+	snprintf(
+		query,
+		BUFSIZ,
+		"DROP VIEW \"%s\".\"%s\"@\"%s\";",
+		ss->base.name,
+		qname_table(sym),
+		qname_host(sym)
+	);
+	for(i = 0;i< list_length(l);i++){
+		location = *(int*) node->data;
+		st = stmt_remote(query,location,-1,st);
+		node = node->next;
+	}
+	list_destroy(l);
+        return st;
+}
+
 static stmt *
 drop_view(mvc *sql, symbol *symb)
 {
@@ -1653,11 +1696,11 @@ drop_view(mvc *sql, symbol *symb)
 		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: no such view '%s'", tname);
-	} else if (!t->table) {
+	} else if (!t->table || t->query != NULL) {
 		mvc_drop_table(sql, ss, t->base.name, 0);
+		if(t->location == 0)
+			return drop_remote_view(sql,ss,t,symb);
 		return stmt_none();
-	} else if (t->query != NULL) {
-		return(drop_table(sql, symb, 0));
 	} else {
 		return sql_error(sql, 02, "DROP VIEW: no such view '%s' (is a table)", tname);
 	}
@@ -1732,7 +1775,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 				if(l->h->next->next->next->data.lval->t->data.ival && table_location(sql,qname_host(l->h->data.sym))==0){
-					stmt* res1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,1);
+					stmt* res1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,replication_id);
 					
 					res = create_replication_support(
 							sql,
@@ -1833,7 +1876,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		if(l->h->next->next->next->data.lval->t->data.ival && table_location(sql,qname_host(l->h->data.sym))==0){	 /* materialised view */
-			stmt* ret1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,1);
+			stmt* ret1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,replication_id);
 			ret = create_replication_support(sql,cur_schema(sql),l->h->data.sym,l->h->next->next->data.sym,l->h->next->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval->t->data.ival,replication_id,ret1);
 		}
 		else

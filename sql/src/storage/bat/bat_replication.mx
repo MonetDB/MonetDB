@@ -27,7 +27,6 @@
 #include "bat_store.h"
 
 
-extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits);
 extern int create_host_table(sql_trans *tr, sql_schema *s);
 extern int create_replication_table(sql_trans *tr, sql_schema *s);
 extern int create_replication_columns(sql_trans *tr, sql_schema *s);
@@ -74,7 +73,8 @@ create_replication_table(sql_trans *tr, sql_schema *s){
         sql_table *t;
         t = sql_trans_create_table(tr, s, "replication", NULL, 1, 0, 0, 1, LOCATION, REPLICATION);
         
-	create_column(tr, t, "replication_id", "int",32); 	
+	create_column(tr, t, "table_id", "int",32); 		/*The ID for the view*/	
+	create_column(tr, t, "replication_id", "int",32); 	/* The ID for each replication scenario*/
 	create_column(tr, t, "in/out", "int",9); 		/*If the table is used for a remote view(OUT-1) or use a remote table(IN-0)*/
 	create_column(tr, t, "push/pull", "int",9); 		/*The kind of refresh*/
         create_column(tr, t, "refresh_time", "int",32);		/*time for cycle refresh, -1 no cycle refresh*/
@@ -92,8 +92,10 @@ create_replication_columns(sql_trans *tr, sql_schema *s){
 	create_column(tr, t, "column_id", "int",32); 	
 	create_column(tr, t, "replication_id", "int",32); 	/*To help the refresh operation*/	
 	create_column(tr, t, "column_name", "varchar",1024); 	/*Name of the remote column*/
+	create_column(tr, t, "column_alias", "varchar",1024); 	/*Alias name of the remote column (columns name at the view)*/
         create_column(tr, t, "table_name", "varchar",1024);	/*Name of the remote table from where the column was selected*/
         create_column(tr, t, "schema", "varchar",1024);		/*Name of the remote schema*/
+        create_column(tr, t, "table_location", "int",32);	/*Location id of the remote table*/
 	return 0;
 }
 

@@ -4497,7 +4497,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, bit 
 	cs_add(&s->tables, t, TR_NEW);
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	ca = t->commit_action;
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &ca, &t->location, &t->replication_id);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &ca, &t->location, &t->replication_id);
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	return t;

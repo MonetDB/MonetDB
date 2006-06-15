@@ -295,7 +295,7 @@ dump_3(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 }
 
 static char* 
-reconnect(backend *sql, MalBlkPtr mb, stmt *s, int loc)
+reconnect(backend *sql, MalBlkPtr mb, int loc)
 {
 	InstrPtr q = NULL;
 	char *dbalias = NULL;
@@ -346,7 +346,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 		switch (s->type) {
 		case st_remote: {
-			char *dbalias = reconnect(sql, mb, s, s->location);
+			char *dbalias = reconnect(sql, mb, s->location);
 				
 			q= newStmt1(mb,sqlRef,"eval");
 			getArg(q,0)= newTmpVariable(mb, TYPE_str);
@@ -354,11 +354,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, _strdup(s->op1.sval));
 			q = pushInt(mb, q, 1);
 			if(s->op2.stval) {
-				s = s->op2.stval;	
-				q = newAssignment(mb);
-				q = pushInt(mb, q, 1);
+				s = s->op2.stval;
+				s->nr = _dumpstmt(sql,mb,s);	
 			}
-			s->nr = getDestVar(q);
+			else
+				s->nr = getDestVar(q);
 		}	break;
 		case st_none: {
 			q = newAssignment(mb);
@@ -422,9 +422,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				ht = TYPE_oid;
 			@:SQLprelude@
 			if (loc > 0)
-				dbalias = reconnect(sql, mb, s, loc);
-				
-                        q = newStmt1(mb,sqlRef,bindRef);
+				dbalias = reconnect(sql, mb, loc);
+			q = newStmt1(mb,sqlRef,bindRef);
 			getVar(mb,getArg(q,0))->isudftype= 1;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushStr(mb, q,s->op1.cval->t->s->base.name);
@@ -435,6 +434,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			else 
 				q = pushInt(mb, q, 0);
 			q = pushInt(mb, q, s->flag);
+			
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		}
@@ -445,7 +445,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int loc = s->op1.tval->location;
 			@:SQLprelude@
 			if(loc > 0)
-				dbalias = reconnect(sql, mb, s, loc);
+				dbalias = reconnect(sql, mb, loc);
 
                         q = newStmt1(mb,sqlRef,binddbatRef);
                         getVar(mb,getArg(q,0))->isudftype= 1;
@@ -471,7 +471,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				ht = TYPE_oid;
 			@:SQLprelude@
 			if(loc > 0)
-				dbalias = reconnect(sql, mb, s, loc);
+				dbalias = reconnect(sql, mb, loc);
 
 			q = newStmt1(mb, sqlRef, "bind_idxbat");
 			getVar(mb,getArg(q,0))->isudftype= 1;

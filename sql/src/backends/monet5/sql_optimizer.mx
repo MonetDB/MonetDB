@@ -105,6 +105,7 @@ factory structures.
 #include "mal_builder.h"
 #include "mal_prelude.h"
 #include "mal_remoteQueries.h"
+#include "mal_reduce.h"
 #include "mal_peephole.h"
 #include "mal_debugger.h"
 #include "mal_namespace.h"

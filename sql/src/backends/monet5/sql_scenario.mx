@@ -28,6 +28,8 @@ phase of the scenario.
 #ifndef _SQL_SCENARIO_H_
 #define _SQL_SCENARIO_H_
 #include "sql.h"
+#include "mal_multiplex.h"
+#include "mal_builder.h"
 
 /* #define _SQL_SCENARIO_DEBUG */
 /* #define _SQL_READER_DEBUG */
@@ -46,9 +48,11 @@ sql_export str SQLparser(Client c);
 sql_export str SQLengine(Client c);
 
 sql_export str SQLinitEnvironment(int *ret);
-sql_export str SQLstatement(str *ret, str *expr, int *ac);
+sql_export str SQLstatement(str *ret, str *expr, int *external_command);
 sql_export str SQLcompile(str *ret, str *expr);
 sql_export str SQLtrace(int *ret);
+
+sql_export int SQLautocommit(Client c, mvc *m);
 
 #endif /* _SQL_SCENARIO_H_ */
 
@@ -370,6 +374,7 @@ corresponding MAL block as it is known in the
 SQL_cache, where it can be picked up.
 @c
 
+
 static void
 freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {
@@ -392,7 +397,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 str
-SQLstatementIntern(str *ret, str *expr, int execute, int auto_commit)
+SQLstatementIntern(str *ret, str *expr, int execute, int external_command)
 {
 	int err = 0;
 	mvc o, *m;
@@ -451,7 +456,7 @@ SQLstatementIntern(str *ret, str *expr, int execute, int auto_commit)
 	m->params = NULL;
 	m->argc = 0;
 	m->sym = NULL;
-	m->session->auto_commit = auto_commit;
+	m->session->auto_commit = 0;
 
 @-
 System has been prepared to parse it and generate code
@@ -474,7 +479,7 @@ We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
 Now is the time to also perform the semantic analysis, 
 optimize and produce code.
-We don;t search the cache for a previous incarnation.
+We don't search the cache for a previous incarnation.
 @c
 	{	
 		int oldvtop = c->curprg->def->vtop;
@@ -482,7 +487,9 @@ We don;t search the cache for a previous incarnation.
 		stmt *s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
+#ifdef _SQL_COMPILE
 			stream_printf(c->fdout, "%s\n", m->errstr);
+#endif
 			if( m->errstr)
 				msg = throwMessage("SQLparser", m->errstr);
 			else msg = throwMessage("SQLparser", "Semantic errors\n");
@@ -507,7 +514,8 @@ We don;t search the cache for a previous incarnation.
 
 		if (!c->curprg->def->errors && execute) {
 			backend *be = c->state[PARSER];
-			sql->out = NULL; /* no output */
+			if(!external_command)
+				sql->out = NULL; /* no output */
 			c->state[PARSER] = sql;
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 			c->state[PARSER] = be;
@@ -516,7 +524,6 @@ We don;t search the cache for a previous incarnation.
 				pushEndInstruction(c->curprg->def); 
 			freeVariables(c->curprg->def, c->glb, oldvtop);
 
-			SQLautocommit(c, m);
 		}
 	}
 #ifdef _SQL_COMPILE
@@ -532,13 +539,15 @@ endofcompile:
 	bstream_destroy(m->scanner.rs);
 	*m = o;
 	m->session->auto_commit = ac;
+	if(external_command)
+		SQLautocommit(c, m);
 	return msg;
 }
 
 str
-SQLstatement(str *ret, str *expr, int *ac)
+SQLstatement(str *ret, str *expr, int *external_command)
 {
-	return SQLstatementIntern(ret,expr, TRUE, *ac);
+	return SQLstatementIntern(ret,expr, TRUE, *external_command);
 }
 
 str

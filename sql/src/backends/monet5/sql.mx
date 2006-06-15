@@ -43,11 +43,11 @@ address SQLcommit_wrap;
 command rollback():void
 address SQLrollback_wrap;
 
-pattern eval(dbalias:str, cmd:str):str 
+pattern eval(dbalias:str, cmd:str, external_command:int):str 
 address SQLstatement
 comment "Execute a single sql statement";
 
-command eval(cmd:str, ac:int):str 
+command eval(cmd:str, external_command:int):str 
 address SQLstatement
 comment "Execute a single sql statement";
 
