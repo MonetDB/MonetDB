@@ -184,6 +184,8 @@ test = (
 ##                    r'^\[ "(?:mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$',
                 # src/gdk/cast:
                     r'^\[ (?:\-|)0 \]$',
+                # src/monet/modrefcnt1 & tests/BugDay_2005-11-09_4.9.3/double_load_double_drop.SF-1082293.milM (on Itanium)
+                    r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
                 # pathfinder/tests/XQuery/fn_aps:
                     r'^0.900000 0.500000 0.400000 (?:\-|)0.000000 0.400000 0.500000 0.900000 1 *$',
                 # pathfinder/tests/XPathMark/Tests/Q1[023]:
@@ -219,7 +221,7 @@ test = (
         # element of "norm_out", unless the latter is "None" (then, the
         # respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
-                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected \$.* on line |unexpected .* in: )?(.*\n)',
+                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected .* on line |unexpected .* in: )?(.*\n)',
                 r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*\n)',
                 r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\.)',
                 r'^()(.*!ERROR: .*)(operation failed.\n)',
