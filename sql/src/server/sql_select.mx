@@ -103,6 +103,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		if (!s)
 			s = cur_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
+		/* TODO: search path */
 		if (!t && !sname) {
 			s = tmp_schema(sql);
 			t = mvc_bind_table(sql, s, tname);
