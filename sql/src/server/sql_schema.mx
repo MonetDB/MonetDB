@@ -1385,24 +1385,32 @@ static stmt *
 create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int commit_action)
 {
 	char *name = qname_table(qname);
-	
-	if (temp != SQL_PERSIST)
-		ss = mvc_bind_schema(sql, "tmp");
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
 
-	if (mvc_bind_table(sql, ss, name)) {
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
+
+	if (temp != SQL_PERSIST) {
+		s = mvc_bind_schema(sql, "tmp");
+	} else if (s == NULL) {
+		s = ss;
+	}
+
+	if (mvc_bind_table(sql, s, name)) {
 		return sql_error(sql, 02, "CREATE TABLE: name '%s' already in use", name);
-	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, ss->base.name);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		sql_table *t = mvc_create_table(sql, ss, name, 0, temp, commit_action, -1);
+		sql_table *t = mvc_create_table(sql, s, name, 0, temp, commit_action, -1);
 		list *new_columns = create_stmt_list();
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
-			stmt *te = table_element(sql, sym, ss, t, 0);
+			stmt *te = table_element(sql, sym, s, t, 0);
 
 			if (!te) {
 				list_destroy(new_columns);
@@ -1423,7 +1431,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_ele
 		if (!sq)
 			return NULL;
 		/* create table */
-		t = mvc_create_table(sql, ss, name, 0, temp, commit_action, -1);
+		t = mvc_create_table(sql, s, name, 0, temp, commit_action, -1);
 		as_subquery( sql, t, sq, column_spec);
 
 		/* insert query result into this table */
