@@ -32,13 +32,11 @@ Operation successful
 
 Operation successful
 
-Operation successful
-
-+------------+------+
++------------+------------+
 | name       | name |
-+============+======+
-| dbtapestry | sys  |
-+------------+------+
++============+============+
+| dbtapestry | dbtapestry |
++------------+------------+
 1 row
 
 
