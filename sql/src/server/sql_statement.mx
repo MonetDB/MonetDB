@@ -1564,6 +1564,7 @@ stmt_replace(stmt *c, stmt *b)
 	s->op1.stval = c;
 	s->op2.stval = b;
 	s->nrcols = 1;
+	s->h = stmt_dup(c->h);
 	return s;
 }
 

@@ -213,7 +213,17 @@ monet5_create_privileges(ptr _mvc, ptr _sql_schema)
 		sql_trans_drop_table(m->session->tr, t->s, t->base.name, 0);
 	}
 
-	t = mvc_create_view(m, s, "users", "SELECT u.\"t\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM \"sys\".\"db_users\" AS u, \"sys\".\"db_scens\" AS s, \"sys\".\"db_user_info\" AS ui WHERE u.h = ui.id; AND u.h = s.h AND s.t LIKE 'sql';", 1);
+	t = mvc_create_view(m, s, "users",
+			"SELECT u.\"t\" AS \"name\", "
+				"ui.\"fullname\", ui.\"default_schema\" "
+			"FROM \"sys\".\"db_users\" AS u, "
+				"\"sys\".\"db_user_info\" AS ui "
+			"WHERE u.\"h\" = ui.\"id\" "
+				"AND u.\"h\" NOT IN ("
+					"SELECT s.\"h\" "
+					"FROM \"sys\".\"db_scens\" AS s "
+					"WHERE s.\"t\" NOT LIKE 'sql'"
+				");", 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);

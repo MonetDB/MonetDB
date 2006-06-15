@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # necessary for version number
 source ${TSTSRCBASE}/src/jdbc/build.properties

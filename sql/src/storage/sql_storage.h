@@ -95,7 +95,7 @@ extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name);
 
 extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
-extern void sql_session_reset(sql_session *s);
+extern void sql_session_reset(sql_session *s, int autocommit);
 extern void sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 
