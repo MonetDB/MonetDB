@@ -651,15 +651,22 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 static stmt *
 create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check)
 {
-
 	char *name = qname_table(qname);
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
+
+	if (s == NULL)
+		s = ss;
 
 	(void) check;		/* Stefan: unused!? */
 
-	if (mvc_bind_table(sql, cur_schema(sql), name)) {
+	if (mvc_bind_table(sql, s, name)) {
 		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
-	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", sql->user, s->base.name);
 	} else if (query) {
 		stmt *sq = NULL;
 		int len = 0;
@@ -688,7 +695,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		} else {
 			subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		}
-		t = mvc_create_view(sql, ss, name, subquery, 0);
+		t = mvc_create_view(sql, s, name, subquery, 0);
 		_DELETE(subquery);
 		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
@@ -714,7 +721,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			/* semi-colon here indicates it's a view as bats!!! */
 			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
 					name, names[0]);
-			t = mvc_create_view(sql, ss, name, buf, 0);
+			t = mvc_create_view(sql, s, name, buf, 0);
 			err = sql_view_from_bat(sql->session->tr, t, names[0]);
 		} else {
 			char buf[BUFSIZ];
@@ -729,7 +736,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			/* semi-colon here indicates it's a view as bats!!! */
 			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
 					name, cols);
-			t = mvc_create_view(sql, ss, name, buf, 0);
+			t = mvc_create_view(sql, s, name, buf, 0);
 			err = sql_view_on_bats(sql->session->tr, t, names, nr);
 		}
 		if (err != NULL) {
@@ -746,12 +753,21 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 static stmt *
 drop_view(mvc *sql, dlist *qname)
 {
-	sql_schema *ss = cur_schema(sql);
 	char *tname = qname_table(qname);
-	sql_table *t = mvc_bind_table(sql, ss, tname);
+	char *sname = qname_schema(qname);
+	sql_table *t = NULL;
+	sql_schema *ss = NULL;
+
+	if (sname != NULL && (ss = mvc_bind_schema(sql, sname)) == NULL)
+		return sql_error(sql, 02, "DROP VIEW: no such schema '%s'", sname);
+
+	if (ss == NULL)
+		ss = cur_schema(sql);
+
+	t = mvc_bind_table(sql, ss, tname);
 
 	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", sql->user, ss->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
 	} else if (!t->table) {
@@ -1392,6 +1408,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_ele
 		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
 
 	if (temp != SQL_PERSIST) {
+		/* if (s != NULL) warn("discarding schema %s", s->base.name; */
 		s = mvc_bind_schema(sql, "tmp");
 	} else if (s == NULL) {
 		s = ss;
