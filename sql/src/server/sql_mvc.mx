@@ -524,7 +524,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 		store_unlock();
 	}
 	if (tr)
-		sql_session_reset(m->session);
+		sql_session_reset(m->session, 1 /*autocommit on*/);
 
 	if (m->user)
 		_DELETE(m->user);

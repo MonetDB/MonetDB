@@ -5098,7 +5098,7 @@ sql_session_destroy(sql_session *s)
 }
 
 void
-sql_session_reset(sql_session *s) 
+sql_session_reset(sql_session *s, int ac) 
 {
 	sql_schema *tmp;
 
@@ -5118,6 +5118,16 @@ sql_session_reset(sql_session *s)
 				sql_trans_drop_table(s->tr, tmp,t->base.name,0);
 		}
 	}
+	assert(s->active == 0);
+
+	if (s->schema_name)
+		_DELETE(s->schema_name);
+	s->schema_name = _strdup("sys");
+	s->schema = NULL;
+	s->module = NULL;
+	s->auto_commit = s->ac_on_commit = ac;
+	s->level = ISO_SERIALIZABLE;
+	s->active = 0;
 }
 
 void
