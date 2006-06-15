@@ -221,7 +221,7 @@
  *
  * The compilation follows the ideas described in the paper presented
  * at the TDM'04 workshop (``Relational Algebra: Mother Tongue---XQuery:
- * Fluent'', <a href='http://www.inf.uni-konstanz.de/~teubner/publications/algebra-mapping.pdf'>http://www.inf.uni-konstanz.de/~teubner/publications/algebra-mapping.pdf</a>).
+ * Fluent'', <a href='http://www-db.in.tum.de/cms/publications/algebra-mapping.pdf'>http://www-db.in.tum.de/cms/publications/algebra-mapping.pdf</a>).
  * The result of this compilation phase is an algebra expression (in
  * an internal tree representation, as described by @c algebra.c). The
  * algebra is an almost standard relational algebra, with some operations
@@ -625,7 +625,7 @@ main (int argc, char *argv[])
             case 'H':
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
-                printf ("(c) Database Group, Technische Universitaet Muenchen\n");
+                printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print short help message\n",
