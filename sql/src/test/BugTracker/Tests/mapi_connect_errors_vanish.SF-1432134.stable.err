@@ -68,7 +68,7 @@ stderr of test 'mapi_connect_errors_vanish.SF-1432134` in directory 'src/test/Bu
 
 MAPI  = invalid@localhost:36415
 ACTION= mapi_start_talking
-ERROR = !ERROR: Schema authorization error
+ERROR = !ERROR: schema authorization error
 
 # 14:02:05 >  
 # 14:02:05 >  Done.
