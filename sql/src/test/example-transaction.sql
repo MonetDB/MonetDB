@@ -10,6 +10,6 @@ insert into example values( 8, 'texxst', 0.0001 );
 
 COMMIT;
 
-select * from example;
+select * from example order by val1;
 
-select * from example_view;
+select * from example_view order by val1;
