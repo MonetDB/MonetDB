@@ -1134,6 +1134,10 @@ module(mapi); # mapi_listen
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
 
+proc daytime ( lng s ) : daytime {
+	return add(daytime(0), s*lng(1000));
+}
+
 proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2] {
 	if (count(b2) > 0) 
 		return kdiff(b1,b2);

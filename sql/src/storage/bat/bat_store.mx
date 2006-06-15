@@ -4497,7 +4497,7 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table,
 			&t->system, &ca);
 
-	systable->base.wtime = t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	return t;
 }
