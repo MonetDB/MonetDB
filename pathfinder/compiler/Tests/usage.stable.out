@@ -12,6 +12,7 @@ stdout of test 'usage` in directory 'compiler` itself:
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
 (c) Database Group, Technische Universitaet Muenchen
+
 Usage: pf [OPTION] [FILE]
 
   Reads from standard input if FILE is omitted.

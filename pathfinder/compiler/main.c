@@ -619,7 +619,7 @@ main (int argc, char *argv[])
             case 'H':
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
-                printf ("(c) University of Konstanz, DBIS group\n\n");
+                printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print short help message\n",
@@ -724,7 +724,7 @@ main (int argc, char *argv[])
             case 'h':
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
-                printf ("(c) Database Group, Technische Universitaet Muenchen\n");
+                printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print this help message\n",
