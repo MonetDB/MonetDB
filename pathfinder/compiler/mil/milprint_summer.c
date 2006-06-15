@@ -1815,6 +1815,15 @@ loop_liftedSCJ (opt_t *f,
 {
     /* iter|pos|item input contains only nodes (kind=ELEM) */
     milprintf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
+    milprintf(f, "if (is_constant(kind)) { "
+                      "if (not(kind.is_type(ELEM))) "
+                          "{ ERROR (\"path steps are only supported "
+                          "starting from non-attribute nodes\"); }\n"
+                 "} else { "
+                     "if (kind.get_type(ELEM).count() != kind.count()) "
+                         "{ ERROR (\"path steps are only supported "
+                         "starting from non-attribute nodes\"); } "
+                 "}\n");
 
     if (!strcmp (axis, "attribute"))
     {

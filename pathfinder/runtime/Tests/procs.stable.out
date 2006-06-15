@@ -153,6 +153,7 @@ procs();
 [ "index_doc(BAT[oid,BAT], BAT[str,BAT]) : int"														  ]
 [ "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"										  ]
 [ "io() : BAT[str,int]"																	  ]
+[ "is_type(int, int) : bit"																								  ]
 [ "join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]"											  ]
 [ "join(BAT[any::1,any::2], BAT[any::2,any::3], lng, str, ..any..) : BAT[any::1,any::3]"								  ]
 [ "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]"									  ]

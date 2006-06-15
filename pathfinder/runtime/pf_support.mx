@@ -490,6 +490,11 @@ proc tmark_grp_unique( BAT[any,any] iter, BAT[oid,any] ipik) : BAT[oid,oid]
     return iter.mark_grp(iter.tunique(), 1@0);
 }
 
+PROC is_type (int kind, int type_) : bit
+{
+        return kind.and(63) = type_;
+}
+
 PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
 {
         return kind.[and](63).ord_uselect(type_); # 63 = 2^6 - 1
