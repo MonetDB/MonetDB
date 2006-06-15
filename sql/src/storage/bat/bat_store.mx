@@ -3046,6 +3046,8 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				}
 			}
 		}
+		list_destroy(fs->dset);
+		fs->dset = NULL;
 	/* changes to the existing bases */
 	if (fs->set) {
 		/* update existing */
@@ -3129,6 +3131,8 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
 
 			ok = rf(tr, b);
 		}
+		list_destroy(cs->dset);
+		cs->dset = NULL;
 	}
 	if (cs->set) {
 		node *n;
