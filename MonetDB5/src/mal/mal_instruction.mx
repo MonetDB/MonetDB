@@ -2536,7 +2536,9 @@ Dump the type and value information.
 		} else if ( isTypeVar(mb, getArg(p, i)) || 
 				  ( isConstant(mb, getArg(p, i)) &&
 					( getVar(mb, getArg(p, i))->isudftype ||
-					ATOMcmp(getArgType(mb,p,i), ATOMnilptr(getArgType(mb,p,i)), &getVar(mb, getArg(p, i))->value) == 0
+					ATOMcmp(getArgType(mb,p,i), 
+							ATOMnilptr(getArgType(mb,p,i)), 
+							VALptr(&getVar(mb, getArg(p, i))->value) ) == 0
 
 					) )) {
 			char *tnme = getTypeName(getArgType(mb, p, i));
