@@ -3271,7 +3271,7 @@ static void
 evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast) 
 {
     if (rc != NORMAL) 
-        mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc), tpe.name);
+        mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc).name, tpe.name);
 
     milprintf(f, 
 	"# cast a type-heterogeneous expression (according to static typing)\n"
