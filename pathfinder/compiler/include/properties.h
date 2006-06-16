@@ -55,8 +55,10 @@ struct PFprop_t {
                                   along with their corresponding values. */
     PFarray_t   *domains;    /**< List of attributes along with their
                                   corresponding domain identifier. */
-    PFarray_t   *dom_rel;    /**< List of domain pairs that store 
-                                  the relationship between different domains */
+    PFarray_t   *subdoms;    /**< Subdomain relationships (parent/child
+                                  relationships between domains) */
+    PFarray_t   *disjdoms;   /**< Disjoint domains (list with pairs of
+                                  disjoint domains) */
     PFalg_att_t  icols;      /**< List of attributes required by the
                                   parent operators. */
     PFarray_t   *keys;       /**< List of attributes that have
@@ -107,11 +109,18 @@ struct dom_pair_t {
 typedef struct dom_pair_t dom_pair_t;
 
 /* domain-subdomain relationship item */
-struct dom_rel_t {
+struct subdom_t {
     dom_t dom;
-    unsigned int subdom;
+    dom_t subdom;
 };
-typedef struct dom_rel_t dom_rel_t;
+typedef struct subdom_t subdom_t;
+
+/** pair of disjoint domains */
+struct disjdom_t {
+    dom_t  dom1;
+    dom_t  dom2;
+};
+typedef struct disjdom_t disjdom_t;
 
 /* unique name item */
 struct name_pair_t {
@@ -243,6 +252,12 @@ dom_t PFprop_dom_right (const PFprop_t *prop, PFalg_att_t attr);
  * (using the domain relationship list in property container @a prop).
  */
 bool PFprop_subdom (const PFprop_t *prop, dom_t subdom, dom_t dom); 
+
+/**
+ * Test if domains @a a and @a b are disjoint
+ * (using the disjdoms field in PFprop_t)
+ */
+bool PFprop_disjdom (const PFprop_t *prop, dom_t a, dom_t b);
 
 /**
  * Writes domain represented by @a domain to character array @a f.

@@ -246,8 +246,36 @@ infer_key (PFla_op_t *n)
                 }
             break;
                                             
-        case la_empty_tbl:
         case la_disjunion:
+            n->prop->keys = new ();
+
+            /*
+             * If
+             *  (a) an attribute a is key in both arguments and
+             *  (b) the domains of a in the two arguments are disjoint
+             * a will be key in the result as well.
+             *
+             * (We need domain information for this, though.)
+             */
+            if (L(n)->prop->domains && R(n)->prop->domains
+                && n->prop->disjdoms) {
+
+                for (unsigned int i = 0;
+                        i < PFarray_last (L(n)->prop->keys); i++) {
+
+                    PFalg_att_t key_att
+                        = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
+
+                    if (key_worker (R(n)->prop->keys, key_att)
+                        && PFprop_disjdom (n->prop,
+                                           PFprop_dom (L(n)->prop, key_att),
+                                           PFprop_dom (R(n)->prop, key_att)))
+                        n->prop->keys = union_ (n->prop->keys, key_att);
+                }
+            }
+            break;
+
+        case la_empty_tbl:
         case la_element_tag:
         case la_fragment:
         case la_frag_union:

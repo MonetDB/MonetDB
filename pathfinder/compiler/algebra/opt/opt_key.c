@@ -62,7 +62,7 @@ opt_key (PFla_op_t *p)
     else
         SEEN(p) = true;
 
-    /* apply icol optimization for children */
+    /* apply key-related optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_key (p->child[i]);
 

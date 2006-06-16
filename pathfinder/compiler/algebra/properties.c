@@ -78,7 +78,8 @@ PFprop (void)
 
     /* initialize domain information */
     ret->domains   = NULL;
-    ret->dom_rel   = NULL;
+    ret->subdoms   = NULL;
+    ret->disjdoms  = NULL;
     ret->l_domains = NULL;
     ret->r_domains = NULL;
 
