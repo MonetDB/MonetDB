@@ -497,7 +497,9 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->depth = 0;
 	m->label = 0;
 
+	store_lock();
 	m->session = sql_session_create(stk, 1 /*autocommit on*/);
+	store_unlock();
 
 	m->type = Q_PARSE;
 
