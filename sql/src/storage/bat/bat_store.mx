@@ -2635,21 +2635,22 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 		if (isTempTable(ni->t)) {
 			ni->bat.ibid = temp_copy(ni->bat.ibid, 1);
 		} else if (isNew(i)) {
-			/* move the bat to the new colum, fixup the old */
+			/* move the bat to the new idx, fixup the old idx */
 			b = bat_new(TYPE_void, type, ni->t->sz, "idx_dup");
 			i->bat.ibid = temp_create(b); 
-			if (ni->bat.bid) {
-				BAT *cb = temp_descriptor(ni->bat.bid);
-				BATseqbase(b, BATcount(cb));
-				bat_destroy(cb);
-			} else if (flag == TR_NEW && tr->parent == gtrans) { 
+			if (flag == TR_NEW && tr->parent == gtrans) { 
 				/* new idxs are moved to gtrans and bat.bid */
 				temp_dup(ni->bat.ibid);
 				i->bat.bid = ni->bat.ibid;
 				i->base.flag = TR_OLD;
 			}
+			if (i->bat.bid) {
+				BAT *cb = temp_descriptor(i->bat.bid);
+				BATseqbase(b, BATcount(cb));
+				bat_destroy(cb);
+			} 
 			bat_destroy(b);
-		} else { /* old column */
+		} else { /* old idx */
 			ni->bat.ibid = temp_copy(ni->bat.ibid, 0);
 		}
 	}
@@ -2742,15 +2743,16 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 		/* move the bat to the new colum, fixup the old column */
 		b = bat_new(TYPE_void, c->type.type->localtype, c->t->sz, "column_dup");
 		oc->bat.ibid = temp_create(b);
-		if (c->bat.bid) {
-			BAT *cb = temp_descriptor(c->bat.bid);
-			BATseqbase(b, BATcount(cb));
-			bat_destroy(cb);
-		} else if (flag == TR_NEW && tr->parent == gtrans) { 
+		if (flag == TR_NEW && tr->parent == gtrans) { 
 			/* new columns are moved to gtrans and bat.bid */
 			temp_dup(c->bat.ibid);
 			oc->bat.bid = c->bat.ibid;
 			oc->base.flag = TR_OLD;
+		}
+		if (oc->bat.bid) {
+			BAT *cb = temp_descriptor(oc->bat.bid);
+			BATseqbase(b, BATcount(cb));
+			bat_destroy(cb);
 		}
 		bat_destroy(b);
 	} else { /* old column */
@@ -2778,13 +2780,12 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 
 	if (bs_debug) {
 		fprintf(stderr, "column_dup %s.%s (%d) " 
-				OIDFMT " " OIDFMT " " OIDFMT "\n", 
+				OIDFMT " " OIDFMT " " OIDFMT, 
 				c->t->base.name, c->base.name, c->base.flag,
 				c->bat.ibid, c->bat.bid, c->bat.ubid
 				);
-		fprintf(stderr, "column_dup old(%d) %s.%s " 
-				OIDFMT " " OIDFMT " " OIDFMT "\n", 
-				oc->base.flag, oc->t->base.name, oc->base.name, 
+		fprintf(stderr, " <- (%d) " OIDFMT " " OIDFMT " " OIDFMT "\n", 
+				oc->base.flag, 
 				oc->bat.ibid, oc->bat.bid, oc->bat.ubid
 				);
 	}
@@ -2859,6 +2860,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		}
 		ot->triggers.nelm = NULL;
 	}
+	if (flag == TR_NEW && tr->parent == gtrans) 
+		ot->base.flag = TR_OLD;
 	return t;
 }
 
@@ -2886,6 +2889,8 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		}
 		os->tables.nelm = NULL;
 	}
+	if (flag == TR_NEW && tr->parent == gtrans) 
+		os->base.flag = TR_OLD;
 	return s;
 }
 
@@ -3041,8 +3046,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						ts->dset = list_create(ts->destroy);
 					list_move_data(ts->set, ts->dset, tb);
 				} else {
-					list_remove_data(ts->set, tb);
-					ts->set->destroy(tb);
+					list_remove_node(ts->set, tbn);
 				}
 			}
 		}
@@ -3060,10 +3064,10 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					sql_base *tb = tbn->data;
 
 					/* update timestamps */
-					if (fb->rtime > tb->rtime)
-						tb->rtime = fb->rtime;
-					if (fb->wtime > tb->wtime)
-						tb->wtime = fb->wtime;
+					if (fb->rtime && tr->stime > tb->rtime)
+						tb->rtime = tr->stime;
+					if (fb->wtime && tr->stime > tb->wtime)
+						tb->wtime = tr->stime;
 
 					ok = rollforward_updates(tr, fb, tb);
 				}
@@ -3318,7 +3322,9 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 			bat_destroy(d);
 		}
 
+		rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key);
 		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx);
+		rollforward_changeset_creates(tr, &t->triggers, (rfcfunc) &rollforward_create_trigger);
 	} else if (!t->table && isGlobalTable(t) && t->query && t->query[0] == ';') {
 		/* bat views also need to be registered */
 		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_use_bat);
@@ -3823,10 +3829,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 	if (fs->nelm) {
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
-			sql_base *tb = n->data;
-
-			list_remove_data(fs->set, tb);
-			fs->set->destroy(tb);
+			list_remove_node(fs->set, n);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -3838,7 +3841,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 	if (fs->set)
 		n = fs->set->h;
 	if (pfs->set) {
-		for (m = pfs->set->h; ok == SQL_OK && m && n; m = m->next) { 
+		for (m = pfs->set->h; ok == SQL_OK && m && n; ) { 
 			sql_base *fb = n->data;
 			sql_base *pfb = m->data;
 
@@ -3849,16 +3852,17 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					ok = rf(tr, fb, pfb);
 				fb->rtime = fb->wtime = 0;
 				n = n->next;
+				m = m->next;
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
-				list_remove_data(fs->set, fb);
-				fs->set->destroy(fb);
+				list_remove_node(fs->set, n);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
 				/* cs_add_before add r to fs before node n */
 				cs_add_before(fs, n, r);
 				r->rtime = r->wtime = 0;
+				m = m->next;
 			}
 		}
 		/* add new bases */
@@ -3867,6 +3871,11 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			sql_base *r = fd(tr, TR_OLD, pfb,  b);
 			cs_add(fs, r, TR_OLD);
 			r->rtime = r->wtime = 0;
+		}
+		while ( ok == SQL_OK && n) { /* remove remaining old stuff */
+			node *t = n->next;
+			list_remove_node(fs->set, n);
+			n = t;
 		}
 	}
 	if (fs->dset) {
@@ -3957,10 +3966,9 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	/* did we make changes or is the global changed after we started */
 	if (ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = SQL_OK;
-		BAT *db = temp_descriptor(ft->dbid);
 
-		BATundo(db);
-		bat_destroy(db);
+		temp_destroy(ft->dbid);
+		ft->dbid = temp_copy(pft->dbid, isTempTable(ft));
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);

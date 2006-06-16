@@ -91,11 +91,17 @@ list_append(list *l, void *data)
 list *
 list_append_before(list *l, node *m, void *data)
 {
+	node *p = l->h;
 	node *n = node_create(data);
 
-	m->next = n->next;
-	if (l->t == n)
-		l->t = n;
+	n->next = m;
+	if (p == m){
+		l->h = n;
+	} else {
+		while (p->next && p->next != m)
+			p = p->next;
+		p->next = n;
+	}
 	l->cnt++;
 	return l;
 }
