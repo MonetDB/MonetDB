@@ -1,4 +1,3 @@
-
 @subsection Checkpoint and Recovery
 Safeguarding the content of your database requires carefully planned steps.
 The easiest way is to shutdown the server first.
@@ -8,11 +7,11 @@ files and name them clearly for later recall.
 
 The checkpoint is not complete without the corresponding log files
 produced by SQL. They are stored by default in a mirror directory
-of @code{dbfarm}, called @code{dblogs}. They too should be picked up
+of @sc{dbfarm}, called @sc{dblogs}. They too should be picked up
 and safeguarded for future use.
 
-The checkpoint and recover operations are packaged as shell scripts, which
-are wrapped by the @code{monetdb} script.
+On Linux platforms the checkpoint and recover operations are 
+packaged as shell scripts, which are wrapped by the @sc{monetdb} script.
 Taking a checkpoint and its recovery is as simple as:
 @example
 shell>monetdb --checkpoint --dbname=demo

@@ -1,9 +1,9 @@
 @subsection Database Configuration
 The database environment is collected in a configuration file,
 which is used by server-side applications, such as 
-@code{mserver5} and @code{mguardian}.
+@sc{mserver5} and @sc{mguardian}.
 A default version is installed in the database store upon its creation
-using the command @code{monetdb}.
+using the command @sc{monetdb}.
 Below we illustrate its most important components.
 @itemize  @bullet
 @item prefix=/ufs/myhome/monet5/Linux
@@ -19,8 +19,8 @@ Below we illustrate its most important components.
 @end itemize
 
 The header consist of system wide information.
-The @code{prefix} and @code{exec_prefix} describe the location where
-MonetDB has been installed. @code{monet_mod_path} tells where to find
+The @sc{prefix} and @sc{exec_prefix} describe the location where
+MonetDB has been installed. @sc{monet_mod_path} tells where to find
 the libraries. These arguments are critical for a proper working server.
 
 The remainder consists of arguments used by functional modules, or

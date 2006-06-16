@@ -10,9 +10,9 @@ it is adviceable to check its functionality with the following actions:
 @example
 > monetdb --help
 @end example
-The @code{monetdb} script is a wrapper around the MonetDB
-server program @code{mserver5} and its protection program @code{mguardian}.
-The call triggers @code{mserver5 --help} and responds
+The @sc{monetdb} script is a wrapper around the MonetDB
+server program @sc{mserver5} and its protection program @sc{mguardian}.
+The call triggers @sc{mserver5 --help} and responds
 with something like:
 @verbatim
 Usage: monetdb [command] [options] [script]
@@ -38,7 +38,7 @@ Secondary options:
 @end verbatim
 
 An error messages typically indicate a wrongly configured $PATH variable, 
-making the @code{monetdb} program
+making the @sc{monetdb} program
 invisible to your shell. Retrace your installation steps.
 
 An access mode violation indicates that either the directory path
@@ -54,7 +54,7 @@ Database xyz initialized
 Starting database server 'voc'... ok
 @end example
 The question is asked only the first time you attempt
-to access the @code{voc} database.
+to access the @sc{voc} database.
 
 It responds with a message that this action 
 was successful, or an error message explains the problems encountered.
@@ -64,7 +64,7 @@ More details on the server configuration parameters are
 given in @ref{Architecture overview}.
 
 At any time you can inspect the status of the (running) servers
-using the default command option @code{--status}.
+using the default command option @sc{--status}.
 @example
 > monetdb --status
 DBNAME  SERVER  GUARD   DELAY   STARTED
@@ -74,8 +74,8 @@ It tells you when the server was started, the identity of the
 process looking after it, and the delay between successive
 checks.
 A server can be put to sleep using the command
-@code{monetdb --stop --dbname=<name>}.  
+@sc{monetdb --stop --dbname=<name>}.  
 Ommission of a database name stops all running servers.
 The actions of monetdb are logged for post analysis, which can
-be inspected with @code{monetdb --log}
+be inspected with @sc{monetdb --log}
 

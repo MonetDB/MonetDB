@@ -17,7 +17,7 @@ Now add this directory to your PYTHONPATH.
 For windows setups the story is a little bit more complex.
 TODO
 
-@subsection A Tiny Python Example
+@subsection A Simple Python Example
 A small example to access the SQL functionality is shown below.
 @verbatim
 import MonetSQLdb

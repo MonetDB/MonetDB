@@ -6,15 +6,15 @@ using a database driver with a simple API and a textual protocol.
 The MonetDB application programming interface (Mapi) plays this role for
 all interface libraries.
 @menu
-* A Tiny Mapi Application::
+* A Simple Mapi Application::
 * Command Summary::
 * Library Synopsis::
 * Mapi Function Reference::
 @end menu
 
-@node A Tiny Mapi Application, Command Summary, The Mapi Library, The Mapi Library
+@node A Simple Mapi Application, Command Summary, The Mapi Library, The Mapi Library
 
-@section A Tiny MAPI Application
+@section A Simple MAPI Application
 The MAPI database driver implementation given focuses on
 developing applications in C/C++. The command collection has been
 chosen to align with common practice, i.e. queries follow a prepare,
@@ -126,7 +126,7 @@ cc sample.c `monetdb-config --cflags --libs` -lMapi -o sample
 The compilation on Windows is slightly more complicated. It requires
 more attention towards the location of the include files and libraries.
 
-@node Command Summary, Library Synopsis, A Tiny Mapi Application, The Mapi Library
+@node Command Summary, Library Synopsis, A Simple Mapi Application, The Mapi Library
 
 @section Command Summary
 The quick reference guide to the Mapi library is given below.  More

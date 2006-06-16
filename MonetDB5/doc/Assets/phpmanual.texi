@@ -32,7 +32,7 @@ include_path = ".:/opt/MonetDB-4.6/share/pear:/usr/share/pear"
 extension_dir = /opt/MonetDB-4.6/lib/php4
 @end verbatim
 
-@subsection A Tiny PHP Example
+@subsection A Simple PHP Example
 
 @verbatim
 <?php

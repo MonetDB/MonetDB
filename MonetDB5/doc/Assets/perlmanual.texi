@@ -19,7 +19,7 @@ a MIL session and a simple client to interact with a running server.
 
 For further documentation we refer to the @url{"http://www.perl.org",Perl community} home page.
 
-@subsection A Tiny Perl Example
+@subsection A Simple Perl Example
 @verbatim
 use strict;
 use warnings;

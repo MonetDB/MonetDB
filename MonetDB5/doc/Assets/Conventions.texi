@@ -25,12 +25,11 @@ A printable version of an *.mx file can be produced using the commands:
 Mx  <filename>.mx
 pdflatex <filename>.tex
 @end example
-The result, however, still includes the unexpanded tex info macros.
 
 @node Conventions and Notation, Additional Resources, Manual Generation, General Introduction
 @section Conventions and Notation
 The  typographical conventions used in this manual are straightforward.
-@code{Monospaced} text is used to designate names in the code base
+@sc{Monospaced} text is used to designate names in the code base
 and examples. 
 @emph{Italics} is used in explanations to indicate where a user
 supplied value should be substituted.

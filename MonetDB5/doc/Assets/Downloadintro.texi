@@ -48,7 +48,7 @@ overflows. This with multi-year deployment
 in a commercial setting makes the code base robust.
 
 @c what are the platforms supported
-Thanks to the GNU tools @code{autoconf}  and @code{automake} tools,
+Thanks to the GNU tools @sc{autoconf}  and @sc{automake} tools,
 the MonetDB software runs on a wide variety of hardware/software platforms.
 A summary of those operating systems and the compiler toolkits is shown below.
 

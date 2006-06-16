@@ -35,10 +35,11 @@ the validity of these design decisions.
 @strong{A multi-model system.}
 MonetDB supports multiple query language front-ends. Aside from
 its proprietary language, called the MonetDB Assembler Language (MAL),
-it supports ANSI SQL-99 and W3C XQuery. Their underlying logical
+it supports ANSI SQL-03 and W3C XQuery/XUpdate. Their underlying logical
 data model and computational scheme differs widely. The system is designed
 to provide a common ground for both languages and it is prepared to support
-languages based on yet another data model or processing paradigm.
+languages based on yet another data model or processing paradigm 
+e.g. SPARQL.
 
 @strong{A binary-relation database kernel.}
 MonetDB is built on the canonical representation of database
@@ -59,13 +60,13 @@ MonetDB is continuously developed to support a broad application
 field. Although originally developed for Analytical CRM products,
 it is now being used at the low-end scale as an embedded
 relational kernel and projects are underway to tackle the huge
-database problems encountered in science, e.g. astronomy.
+database problems encountered in scientific databases, e.g. astronomy.
 
 @strong{An extendable database system.}
 MonetDB has been strongly influenced by the scientific
 experiments to understand the interplay between algorithms
 and hardware features. It has turned MonetDB into an extensible
-database system for software experts. It proofs valuable in
+database system. It proofs valuable in
 those cases where an application specific and critical
 component makes all the difference between slow and fast
 implementation.
@@ -76,8 +77,9 @@ MonetDB has been developed over many years of research at
 are easily accessible to others.
 Be it through publication in the scientific domain or publication of the
 software components involved.
-The MonetDB users mailing list is the access point to a larger audience
-for advice. A subscription to the mailing list helps the developer
+The @url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
+is the access point to a larger audience for advice.
+A subscription to the mailing list helps the developer
 team to justify the on-and-off office hours put into
 MonetDB's development and maintenance.
 
@@ -85,9 +87,9 @@ MonetDB's development and maintenance.
 @subsection When not to consider MonetDB ?
 There are several areas where MonetDB has not yet built a reputation.
 They are the prime candidates for experimentation, but also areas
-where application construction may become risky. More mature products
-may then provide a short-term solution, while MonetDB programmers team
-works on filling the functional gaps.
+where application construction may become risky. Mature products
+or commercial support may then provide a short-term solution, 
+while MonetDB programmers team works on filling the functional gaps.
 The following areas should be considered with care:
 
 @strong{Persistent object caches.}
@@ -140,7 +142,7 @@ features of the MonetDB software packages.
 For the SQL front-end:
 @itemize @bullet
 @item
-It is based on the SQL'99 standard core.
+It is based on the SQL'03 standard core.
 @item
 It supports foreign key constraints.
 @item
@@ -151,6 +153,8 @@ It supports (materialized) views.
 It supports sequence types from the SQL'03 standard.
 @item
 It supports user defined functions in C.
+@item
+It supports triggers.
 @end itemize
 
 For the XQuery front-end:
@@ -213,5 +217,7 @@ a file, whose limit is dictated by the operating system and hardware platform.
 
 @c concurrency
 The number of concurrent user threads is a configuration parameter.
+Middleware solutions are adviced to serialize access to the database
+when large number of users are expected to access the database.
 
 @c platform
