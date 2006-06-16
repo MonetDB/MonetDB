@@ -29,7 +29,7 @@ lib_MapiLib = {
 	PREFIX =
 	NAME = MapiLib
 	SOURCES = MapiLib.pm.i
-	LIBS = ../../C/libMapi
+	LIBS = ../../C/libMapi @PERLLIB@
 	DIR = $(prefix)/$(PERL_LIBDIR)
 }
 

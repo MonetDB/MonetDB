@@ -885,6 +885,16 @@ if test "x$PERL" != xno; then
 fi
 AC_SUBST(PERLINC)
 
+PERLLIB=''
+if test "x$PERL" != xno; then
+  AC_MSG_CHECKING(for $PERL's lib directory)
+  PERLLIB=`"$PERL" -MConfig -e 'print $Config{archlib}'`
+  if test "$PERLLIB"; then
+    PERLLIB="-L$PERLLIB/CORE -lperl"
+  fi
+fi
+AC_SUBST(PERLLIB)
+
 PERL_LIBDIR=''
 if test "x$PERLINC" != x; then
   AC_MSG_CHECKING(for $PERL's library directory)
