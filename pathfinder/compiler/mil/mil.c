@@ -647,6 +647,15 @@ PFmil_kunique (const PFmil_t *a)
 }
 
 /**
+ * Monet tunique operator
+ */
+PFmil_t *
+PFmil_tunique (const PFmil_t *a)
+{
+    return wire1 (m_tunique, a);
+}
+
+/**
  * Monet kunion operator
  */
 PFmil_t *
@@ -662,6 +671,15 @@ PFmil_t *
 PFmil_kdiff (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_kdiff, a, b);
+}
+
+/**
+ * Monet sintersect operator
+ */
+PFmil_t *
+PFmil_sintersect (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_sintersect, a, b);
 }
 
 /**

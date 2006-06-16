@@ -37,6 +37,7 @@
                  | expression '.leftjoin (' expression ')'  <m_leftjoin>
                  | expression '.kunion (' expression ')'    <m_kunion>
                  | expression '.kdiff (' expression ')'     <m_kdiff>
+                 | expression '.sintersect (' expression ')'<m_sintersect>
                  | expression '.CTrefine (' expression ')'  <m_ctrefine>
                  | expression '.CTderive (' expression ')'  <m_ctderive>
                  | expression '.insert (' expression ')'    <m_binsert>
@@ -44,6 +45,7 @@
                  | expression '.fetch (' expression ')'     <m_fetch>
                  | expression '.set_kind (' expression ')'  <m_set_kind>
                  | expression '.kunique ()'                 <m_kunique>
+                 | expression '.tunique ()'                 <m_tunique>
                  | expression '.reverse ()'                 <m_reverse>
                  | expression '.mirror ()'                  <m_mirror>
                  | expression '.copy ()'                    <m_copy>
@@ -183,8 +185,10 @@ static char *ID[] = {
     , [m_mirror]       = "mirror"
     , [m_copy]         = "copy"
     , [m_kunique]      = "kunique"
+    , [m_tunique]      = "tunique"
     , [m_kunion]       = "kunion"
     , [m_kdiff]        = "kdiff"
+    , [m_sintersect]   = "sintersect"
     , [m_merged_union] = "merged_union"
     , [m_var]          = "var"
 
@@ -641,6 +645,8 @@ print_expression (PFmil_t * n)
         case m_kunion:
         /* expression : expression '.kdiff (' expression ')' */
         case m_kdiff:
+        /* expression : expression '.sintersect (' expression ')' */
+        case m_sintersect:
         /* expression : expression '.set_kind (' expression ')' */
         case m_set_kind:
             print_expression (n->child[0]);
@@ -655,6 +661,8 @@ print_expression (PFmil_t * n)
         case m_mirror:
         /* expression : expression '.kunique' */
         case m_kunique:
+        /* expression : expression '.tunique' */
+        case m_tunique:
         /* expression : expression '.copy' */
         case m_copy:
         /* expression : expression '.sort' */

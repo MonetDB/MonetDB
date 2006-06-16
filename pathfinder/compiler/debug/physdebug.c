@@ -57,7 +57,7 @@ static char *a_id[]  = {
     , [pa_select]          = "SEL"
     , [pa_append_union]    = "APPEND_UNION"
     , [pa_merge_union]     = "MERGE_UNION"
-    , [pa_intersect]       = "n"
+    , [pa_intersect]       = "INTERSECT"        /* \"#FFA500\" */
     , [pa_difference]      = "DIFF"             /* \"#FFA500\" */
     , [pa_sort_distinct]   = "SORT_DISTINCT"
     , [pa_std_sort]        = "SORT"
@@ -171,7 +171,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_select]          = "\"#00DDDD\""
         , [pa_append_union]    = "\"#909090\""
         , [pa_merge_union]     = "\"#909090\""
-        , [pa_intersect]       = "\"#909090\""
+        , [pa_intersect]       = "\"#FFA500\""
         , [pa_difference]      = "\"#FFA500\""
         , [pa_sort_distinct]   = "\"#FFA500\""
         , [pa_std_sort]        = "red"

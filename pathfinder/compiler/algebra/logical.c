@@ -763,8 +763,8 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                               .type = n1->schema.items[i].type
                                     | n2->schema.items[j].type };
                 else if (kind == la_intersect) {
-                    /* return empty table if we have already
-                       a type mismatch */
+                    /* return empty table in case of
+                       a complete column type mismatch */
                     if (!(n1->schema.items[i].type &
                           n2->schema.items[i].type))
                         return PFla_empty_tbl_ (n1->schema); 
@@ -775,11 +775,18 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                               .type = n1->schema.items[i].type
                                     & n2->schema.items[j].type };
                 }
-                else if (kind == la_difference)
+                else if (kind == la_difference) {
+                    /* return lhs argument in case of
+                       a complete column type mismatch */
+                    if (!(n1->schema.items[i].type &
+                          n2->schema.items[i].type)) 
+                        return (PFla_op_t *) n1;
+
                     ret->schema.items[i] =
                         (struct PFalg_schm_item_t) 
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type };
+                }
                 break;
             }
 

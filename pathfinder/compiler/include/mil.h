@@ -117,8 +117,10 @@ enum PFmil_kind_t {
     , m_mirror       /**< MIL mirror() operator, mirror head into tail */
     , m_copy         /**< MIL copy, returns physical copy of a BAT */
     , m_kunique      /**< MIL kunique() operator, make BAT unique in head */
+    , m_tunique      /**< MIL tunique() operator, unique BAT tails in head */
     , m_kunion       /**< MIL kunion() operator */
     , m_kdiff        /**< MIL kdiff() operator */
+    , m_sintersect   /**< MIL sintersect() operator */
 
     , m_merged_union /**< MIL merged_union() function (from the pathfinder
                           runtime module */
@@ -500,11 +502,17 @@ PFmil_t * PFmil_mirror (const PFmil_t *);
 /** MIL kunique() function, make BAT unique in head */
 PFmil_t * PFmil_kunique (const PFmil_t *);
 
+/** MIL tunique() function, unique BAT tails in head */
+PFmil_t * PFmil_tunique (const PFmil_t *);
+
 /** MIL kunion() function */
 PFmil_t * PFmil_kunion (const PFmil_t *, const PFmil_t *);
 
 /** MIL kdiff() function */
 PFmil_t * PFmil_kdiff (const PFmil_t *, const PFmil_t *);
+
+/** MIL sintersect() function */
+PFmil_t * PFmil_sintersect (const PFmil_t *, const PFmil_t *);
 
 /** MIL merged_union() function (from the pathfinder runtime module) */
 PFmil_t * PFmil_merged_union (const PFmil_t *);

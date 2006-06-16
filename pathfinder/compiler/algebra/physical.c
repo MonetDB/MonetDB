@@ -982,15 +982,13 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
  * Intersect: No specialized implementation here; always applicable.
  *
  * @todo
- *   Ordering and costs not implemented, yet.
+ *   Ordering not implemented, yet.
  */
 PFpa_op_t *
 PFpa_intersect (const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
     PFpa_op_t    *ret = wire2 (pa_intersect, n1, n2);
     unsigned int  i, j;
-
-    assert (!"PFpa_intersect(): Ordering and costs not implemented.");
 
     /* see if both operands have same number of attributes */
     if (n1->schema.count != n2->schema.count)
@@ -1022,6 +1020,10 @@ PFpa_intersect (const PFpa_op_t *n1, const PFpa_op_t *n2)
             PFoops (OOPS_FATAL,
                     "Schema of two arguments of Intersect do not match");
     }
+
+    /* ---- Intersect: costs ---- */
+    /* FIXME: Is this a reasonable cost estimate for Intersect? */
+    ret->cost = ret->schema.count + n1->cost + n2->cost;
 
     return ret;
 }

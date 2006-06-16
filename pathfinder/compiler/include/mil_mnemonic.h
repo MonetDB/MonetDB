@@ -147,11 +147,17 @@
 /** kunique() operator */
 #define kunique(a) PFmil_kunique(a)
 
+/** tunique() operator */
+#define tunique(a) PFmil_tunique(a)
+
 /** kunion() operator */
 #define kunion(a,b) PFmil_kunion((a),(b))
 
 /** kdiff() operator */
 #define kdiff(a,b) PFmil_kdiff((a),(b))
+
+/** sintersect() operator */
+#define sintersect(a,b) PFmil_sintersect((a),(b))
 
 /** merged_union() function */
 #define merged_union(a) PFmil_merged_union (a)

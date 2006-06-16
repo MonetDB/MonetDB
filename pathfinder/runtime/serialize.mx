@@ -357,14 +357,14 @@ timer_str (long elapsed)
  * Three function to retrieve the pre-value, prefix or nodename of the
  * top element on the stack.
  */
-#define topSF(ctx)    (&ctx->tagStack[ctx->stackPtr-1])
+#define topSF(ctx)    (&ctx->tagStack[(ctx)->stackPtr - 1])
 #define topPrefix(ctx)    (topSF(ctx)->prefix)
 #define topName(ctx)  (topSF(ctx)->name)
 
 /**
  * Return true if there are still nodes on stack.
  */
-#define moreTags(ctx) (ctx->stackPtr>0)
+#define moreTags(ctx) ((ctx)->stackPtr > 0)
 
 /**
  * Push the pre-value, namespace and nodename of stack
@@ -391,7 +391,8 @@ static void xmlNsPop2 (XmlNsFrame** top, XmlNsFrame* newTop);
  * finished.
  */
 static void
-popTag(XqueryCtx* ctx) {
+popTag (XqueryCtx* ctx) 
+{
     XmlNsFrame *xnf;
     if ( (xnf = topSF(ctx)->nsMark) ) {
         xmlNsPop2(&ctx->nsTop,xnf->prev);

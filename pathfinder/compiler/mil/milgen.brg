@@ -391,7 +391,7 @@ env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
     execute ( comment ("%s: %s(%s)", 
                        PFmil_var_str (v->name), 
                        PFatt_str (att), 
-                       PFsimple_type_str(ty)));
+                       PFsimple_type_str (ty)));
 #endif
 }
 
@@ -416,10 +416,11 @@ env_at (const PFarray_t *env, unsigned int i)
 }
 
 /**
- * Worker for env_mvar ()
+ * Worker for env_mvar ().  Yields NULL if the MIL variable could not be
+ * found in the enviroment @a env (in specific cases, this is not an error).
  */ 
 static mvar_t *
-env_mvar_worker (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
+env_mvar_unsafe (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 {
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
 
@@ -438,7 +439,7 @@ env_mvar_worker (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 mvar_t *
 env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 {
-    mvar_t *mvar = env_mvar_worker (env, att, ty);
+    mvar_t *mvar = env_mvar_unsafe (env, att, ty);
     if (mvar)
         return mvar;
 
@@ -453,6 +454,7 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
                  PFmil_var_str (entry.mvar->name));
     }
 
+    assert (0);
     PFoops (OOPS_FATAL,
             "attribute '%s' with type '0x%X' not found in environment",
             PFatt_str (att), ty);
@@ -1178,7 +1180,7 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:     empty_tbl */
         case 11:
             PFoops (OOPS_FATAL,
-                    "empty sequence should never occur in mil generation.");
+                    "empty sequence should never occur in MIL generation.");
             break;
 
         /* Rel:      attach (Rel) */
@@ -1296,8 +1298,8 @@ reduce (PFpa_op_t * p, int goalnt)
 
             for (PFalg_simple_type_t t = 1; t; t <<= 1) {
                 if (t == lty && t == rty) {
-                    l = env_mvar_worker (L(p)->env, p->sem.eqjoin.att1, t);
-                    r = env_mvar_worker (R(p)->env, p->sem.eqjoin.att2, t);
+                    l = env_mvar_unsafe (L(p)->env, p->sem.eqjoin.att1, t);
+                    r = env_mvar_unsafe (R(p)->env, p->sem.eqjoin.att2, t);
                     break;
                 }
             }
@@ -1716,41 +1718,126 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* Rel:      intersect (Rel, Rel) */
         case 25:
-            PFoops (OOPS_FATAL,
-                    "intersect not implemented yet.");
-            break;
+        {
+	    mvar_t **res, **r;
+	    mvar_t *is;
+	    unsigned int shared_cols;
+	    PFmil_t *intersection;
 
-        /* Rel:      difference (Rel, Rel) */
+	    /* prepare as many result variables and temporary variables as 
+	       there will be result columns */
+	    res = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+					env_count(L(p)->env));
+	    r   = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+					env_count(L(p)->env));
+
+	    shared_cols = 0;
+	    for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
+	      /* in the rhs argument, try to find the column that coresponds 
+		 (name, type) with the column in the lhs */ 
+	      r[shared_cols] = env_mvar_unsafe (R(p)->env,
+						env_at (L(p)->env, col).att,
+						env_at (L(p)->env, col).ty);
+	      if (r[shared_cols]) {
+		res[shared_cols] = new_var (p->refctr);
+		execute (assgn (var (res[shared_cols]->name), 
+				join (var (env_at (L(p)->env, col).mvar->name),
+				      reverse (var (r[shared_cols]->name)))));
+
+		env_add (p->env, 
+			 env_at (L(p)->env, col).att, 
+			 env_at (L(p)->env, col).ty,
+			 res[shared_cols]);
+
+		shared_cols++;
+	      }
+	    }
+
+	    if (!shared_cols)
+	      PFoops (OOPS_FATAL, "Arguments to Intersect do not share "
+		                  "any column with common name and type");
+
+	    /* compute intersection (column-by-column) */ 	
+	    intersection = var (res[0]->name);
+	    for (unsigned int col = 1; col < shared_cols; col++)
+	        intersection = sintersect (intersection, var (res[col]->name));
+
+	    is = new_var (1);
+	    execute (
+                assgn (var (is->name), 
+		       reverse (mark (tunique (intersection), lit_oid (0)))));
+	    
+	    for (unsigned int col = 0; col < shared_cols; col++)
+	        execute (
+	  	    assgn (var (res[col]->name),
+			   leftjoin (var (is->name), var (r[col]->name))));
+
+	    /* release temporary variable is */
+	    unpin (is, 1);
+	    
+	} break;
+
+	/* Rel:      difference (Rel, Rel) */
         case 26:
-            
-            if (env_count (L(p)->env) == 1) {
+	{
+   	    mvar_t **res, **l, *r;
+	    unsigned int shared_cols;
+	    mvar_t *is;
+	    PFmil_t *intersection;
 
-                mvar_t *v = new_var (p->refctr);
+  	    /* prepare as many result variables and temporary variables as 
+	       there will be result columns */
+  	    res = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+					env_count(L(p)->env));
+	    l   = (mvar_t **) PFmalloc (sizeof (mvar_t *) * 
+					env_count(L(p)->env));
+	    
+	    shared_cols = 0;
+	    for (unsigned int col = 0; col < env_count (L(p)->env); col++) {
+	      /* in the rhs argument, try to find the column that coresponds 
+		 (name, type) with the column in the lhs */ 
+	      r = env_mvar_unsafe (R(p)->env, env_at (L(p)->env, col).att,
+				              env_at (L(p)->env, col).ty);
+	      if (r) {
+		res[shared_cols] = new_var (p->refctr);
+		l[shared_cols]   = env_at (L(p)->env, col).mvar;
+		execute (assgn (var (res[shared_cols]->name), 
+				join (var (l[col]->name), 
+				      reverse (var (r->name)))));
 
-                execute (
-                    assgn (
-                        var (v->name),
-                        reverse (
-                            mark (
-                                kdiff (
-                                    reverse (
-                                        var (env_at (L(p)->env, 0).mvar->name)),
-                                    reverse (VAR (R(p)->env,
-                                                  env_at (L(p)->env, 0).att,
-                                                  env_at (L(p)->env, 0).ty))),
-                                lit_oid (0)))));
+		env_add (p->env, 
+			 env_at (L(p)->env, col).att, 
+			 env_at (L(p)->env, col).ty,
+			 res[shared_cols]);
 
-                env_add (p->env,
-                         env_at (L(p)->env, 0).att,
-                         env_at (L(p)->env, 0).ty,
-                         v);
-            }
-            else
-                PFoops (OOPS_FATAL,
-                        "don't know how to handle physical Difference operator "
-                        "with more than one attribute.");
+		shared_cols++;
+	      }
+	    }
 
-            break;
+	    if (!shared_cols)
+	      PFoops (OOPS_FATAL, "Arguments to Difference do not share "
+		                  "any column with common name and type");
+
+	    /* compute intersection (column-by-column) */ 	
+	    intersection = var (res[0]->name);
+	    for (unsigned int col = 1; col < shared_cols; col++)
+	        intersection = sintersect (intersection, var (res[col]->name));
+	    
+	    is = new_var (1);
+	    execute (assgn (var (is->name), intersection));
+
+	    for (unsigned int col = 0; col < shared_cols; col++)
+	      execute (
+	          assgn (var (res[col]->name),
+			 reverse (
+			     mark (reverse (kdiff (var (l[col]->name), 
+						   var (is->name))),
+				   lit_oid (0)))));
+	    
+	    /* release temporary variable is */
+	    unpin (is, 1);
+
+	} break;
 
         /* Rel:      sort_distinct (Rel) */
         case 30:
@@ -3007,7 +3094,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
              /* check occurrence of attributes and other nodes
                 and react accordingly */ 
-             if ((tmp = env_mvar_worker (R(R(p))->env,
+             if ((tmp = env_mvar_unsafe (R(R(p))->env,
                                          p->sem.ii.item,
                                          aat_pre)))
              {
@@ -3019,7 +3106,7 @@ reduce (PFpa_op_t * p, int goalnt)
                   pfrag = pre;
              }
                 
-             if ((tmp = env_mvar_worker (R(R(p))->env,
+             if ((tmp = env_mvar_unsafe (R(R(p))->env,
                                          p->sem.ii.item,
                                          aat_attr)))
              {

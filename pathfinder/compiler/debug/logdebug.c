@@ -55,7 +55,7 @@ static char *a_id[]  = {
     , [la_project]          = "¶"
     , [la_select]           = "SEL"
     , [la_disjunion]        = "U"
-    , [la_intersect]        = "n"
+    , [la_intersect]        = "INTERSECT"
     , [la_difference]       = "DIFF"             /* \"#FFA500\" */
     , [la_distinct]         = "DISTINCT"         /* indian \"#FF0000\" */
     , [la_num_add]          = "num-add"
@@ -198,7 +198,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_project]        = "\"#EEEEEE\""
         , [la_select]         = "\"#00DDDD\""
         , [la_disjunion]      = "\"#909090\""
-        , [la_intersect]      = "\"#909090\""
+        , [la_intersect]      = "\"#FFA500\""
         , [la_difference]     = "\"#FFA500\""
         , [la_distinct]       = "\"#FFA500\""
         , [la_num_add]        = "\"#C0C0C0\""
@@ -804,10 +804,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             n->child[c]->node_id =  node_id++;
 
         /* FIXME: the next line is only used to make
-           the printed graph more readable.
+           the printed graph more readable. */
         if (n->child[c]->kind == la_frag_union ||
             n->child[c]->kind == la_empty_frag) continue;
-        */ 
 
         PFarray_printf (dot, "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
@@ -818,10 +817,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
         /* FIXME: the next line is only used to make
-           the printed graph more readable.
+           the printed graph more readable. */
         if (n->child[c]->kind == la_frag_union ||
             n->child[c]->kind == la_empty_frag) continue;
-        */ 
 
         if (!n->child[c]->bit_dag)
             node_id = la_dot (dot, n->child[c], node_id);

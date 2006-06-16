@@ -601,6 +601,30 @@ plan_disjunion (const PFla_op_t *n)
 }
 
 /**
+ * Generate physical plan for the logical 'intersect' operator.
+ */
+static PFplanlist_t *
+plan_intersect (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    assert (n); assert (n->kind == la_intersect);
+    assert (L(n)); assert (L(n)->plans);
+    assert (R(n)); assert (R(n)->plans);
+    
+    /* consider each plan in L */
+    for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
+        /* and each plan in R */
+        for (unsigned int r = 0; r < PFarray_last (R(n)->plans); r++)
+            add_plan (ret,
+                      intersect (
+                          *(plan_t **) PFarray_at (L(n)->plans, l),
+                          *(plan_t **) PFarray_at (R(n)->plans, r)));
+
+    return ret;
+}
+
+/**
  * Generate physical plan for the logical `difference' operator.
  *
  * @todo
@@ -1821,7 +1845,7 @@ plan_subexpression (PFla_op_t *n)
         case la_project:        plans = plan_project (n);      break;
         case la_select:         plans = plan_select (n);       break;
         case la_disjunion:      plans = plan_disjunion (n);    break;
-     /* case la_intersect:      */                             
+        case la_intersect:      plans = plan_intersect (n);    break;
         case la_difference:     plans = plan_difference (n);   break;
         case la_distinct:       plans = plan_distinct (n);     break;
                                                                
