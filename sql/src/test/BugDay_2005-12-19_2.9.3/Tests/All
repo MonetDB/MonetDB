@@ -1,4 +1,4 @@
- tests related to bug reports:
+# tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 NULL_in_CASE.SF-1211335
 cast_bigint_to_int.SF-1211903
