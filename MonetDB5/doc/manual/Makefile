@@ -10,10 +10,10 @@ all:
 	make clean
 
 pdf: 
-	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkdir -p ${MONET5_PREFIX}/share/tmp
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/tmp
 	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
-	(cd ${MONET5_PREFIX}/share/tmp/; pdftex manual.texi )
+	(cd ${MONET5_PREFIX}/share/tmp/; pdftex manual.texi; pdftex manual.texi )
 	cp ${MONET5_PREFIX}/share/tmp/manual.pdf ../share
 	(cd ../share/; pdfnup manual.pdf)
 	echo "Manual created" 

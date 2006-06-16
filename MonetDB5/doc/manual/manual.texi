@@ -1,11 +1,13 @@
 \input texinfo
 @c %**start of header
 @setfilename MonetDB
+@setcontentsaftertitlepage
+@settitle MonetDB Reference Manual
 @c %**end of header
 
 @c environment
 @set VERSION 5.0
-@set UPDATED June 5, 2006
+@set UPDATED June 16, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -18,6 +20,14 @@ Last updated: @value{UPDATED}
      copies of this manual provided the copyright notice and
      this permission notice are preserved on all copies.
      
+@emph{Disclaimer} The reference manual and underlying source
+code base are still under development.
+This may lead to incomplete and inconsistencies descriptions,
+for which we apologize in advance. You can help improving the manual
+using the 
+@url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}.
+
+
 @end copying
 
 @titlepage
@@ -31,15 +41,16 @@ Last updated: @value{UPDATED}
 @end titlepage
 
 @iftex
+@c output the table of contents
 @contents
+@c make sure you run pdftex twice 
 @end iftex
 
 @ifnottex
-
-@page
-@node Top, General Introduction, ,(Dir)
+@node Top
 @top MonetDB Reference Manual
 @insertcopying
+@end ifnottex
 
 @menu
 * General Introduction::
@@ -64,17 +75,13 @@ Last updated: @value{UPDATED}
 * MonetDB BAT Kernel ::
 * Advanced Topics::
 * Appendices::
-@iftex
 @menu
 * MAL Syntax ::
 * Conversion of MIL Programs ::
 * MAL Instruction Overview::
 * MAL Instruction Help::
 @end menu
-@end iftex
 @end menu
-
-@end ifnottex
 
 @node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
@@ -163,7 +170,7 @@ Last updated: @value{UPDATED}
 
 @node Programming Interfaces, The Mapi Library, iSQL-Viewer, Top
 @include Assets/APIs.texi
-@node The Mapi Library, A Tiny Mapi Application, Programming Interfaces, Programming Interfaces
+@node The Mapi Library, A Simple Mapi Application, Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
