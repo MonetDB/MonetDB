@@ -271,9 +271,8 @@ sqlexecute(backend *be, stream *out)
 
 	c->type = Q_PARSE;
 	if (!c->session->active) {
-		int schema_nr = mvc_trans(c);
-		if (c->cache && (c->schema_number < schema_nr || c->qc->id > 1000)) {
-			c->schema_number = schema_nr;
+		int schema_changed = mvc_trans(c);
+		if (c->cache && (schema_changed || c->qc->id > 1000)) {
 			if (c->qc)
 				qc_destroy(c->qc);
 			c->qc = qc_create(c->clientid);

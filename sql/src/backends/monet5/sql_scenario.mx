@@ -593,9 +593,8 @@ SQLstatementIntern(str *ret, str *expr, int execute)
 	m = sql->mvc;
  	ac = m->session->auto_commit;
 	if( !m->session->active) {
-		int schema_nr = mvc_trans(m);
-		if (m->cache && (m->schema_number < schema_nr || m->qc->id > 1000)) {
-			m->schema_number = schema_nr;
+		int schema_changed = mvc_trans(m);
+		if (m->cache && (schema_changed || m->qc->id > 1000)) {
 			if (m->qc)
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid);
@@ -977,9 +976,8 @@ SQLparser(Client c)
 	m = be->mvc;
 	m->type = Q_PARSE;
 	if (!m->session->active) {
-		int schema_nr = mvc_trans(m);
-		if (m->cache && (m->schema_number < schema_nr || m->qc->id > 1000)) {
-			m->schema_number = schema_nr;
+		int schema_changed = mvc_trans(m);
+		if (m->cache && (schema_changed || m->qc->id > 1000)) {
 			if (m->qc)
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid);
