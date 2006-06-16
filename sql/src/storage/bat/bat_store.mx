@@ -63,13 +63,8 @@ extern BAT *temp_descriptor(oid b);
 #include "sql_backend.h"
 #include "bat_sequence.h"
 
-/* <<<<<<< bat_store.mx */
-/* version 03.00.00 of catalog */
-#define CATALOG_VERSION 30001
-/* ======= */
 /* version 03.00.01 of catalog */
 #define CATALOG_VERSION 30001
-/* >>>>>>> 1.78 */
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;
@@ -4552,13 +4547,9 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	cs_add(&s->tables, t, TR_NEW);
 
 	ca = t->commit_action;
-/* <<<<<<< bat_store.mx */
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &ca, &t->location, &t->replication_id);
-/* ======= */
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
-			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table,
-			&t->system, &ca);
-/* >>>>>>> 1.78 */
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, 
+			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, 
+			&t->system, &ca, &t->location, &t->replication_id);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
@@ -4866,13 +4857,8 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 	if (!col->def || !val || strcmp(col->def, val) != 0) {
 		void *p = val ? val : ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
-/* <<<<<<< bat_store.mx */
 		sql_table *syscolumn = find_sql_table(syss, "_columns", LOCATION);
-		ssize_t rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
-/* ======= */
-		sql_table *syscolumn = find_sql_table(syss, "_columns");
 		oid rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
-/* >>>>>>> 1.78 */
 					  &col->base.id, NULL);
 
 		assert(rid != -1);

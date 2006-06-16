@@ -197,7 +197,7 @@ monet5_create_privileges(ptr _mvc, ptr _sql_schema)
 	oid monetdbuser = 0;
 
 	/* now the authorisation related tables */
-	t = mvc_create_table(m, s, "db_user_info", 1, SQL_PERSIST, 0, -1, LOCATION, REPLICATION);
+	t = mvc_create_table(m, s, "db_user_info",NULL, 1, SQL_PERSIST, 0, -1, LOCATION, REPLICATION);
 	mvc_create_column_(m, t, "id", "oid", 9);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
@@ -368,7 +368,7 @@ mvc_get_schema(mvc *m, char *user)
 	mvc_trans(m);
 
 	sys = find_sql_schema(m->session->tr, "sys");
-	users = find_sql_table(sys, "db_users");
+	users = find_sql_table(sys, "db_users",LOCATION);
 	users_name = find_sql_column(users, "t");
 	/* evil stuff starts here (don't look) */
 	b = BATdescriptor(users_name->bat.bid);
@@ -376,15 +376,15 @@ mvc_get_schema(mvc *m, char *user)
 	p = BUNfnd(BATmirror(b), user);
 	if (p != NULL) {
 		oid r = *(oid *)BUNhead(b, p);
-		users = find_sql_table(sys, "db_user_info");
+		users = find_sql_table(sys, "db_user_info",LOCATION);
 		sql_column *users_schema = find_sql_column(users, "default_schema");
 		void *p = column_find_value(m->session->tr, users_schema, r);
 		/* ok, we're back to normal again now... */
 		unsigned int schema_id = *(unsigned int *)p;
-		sql_table *schemas = find_sql_table(sys, "schemas");
+		sql_table *schemas = find_sql_table(sys, "schemas",LOCATION);
 		sql_column *schemas_name = find_sql_column(schemas, "name");
 		sql_column *schemas_id = find_sql_column(schemas, "id");
-		sql_table *auths = find_sql_table(sys, "auths");
+		sql_table *auths = find_sql_table(sys, "auths",LOCATION);
 		sql_column *auths_name = find_sql_column(auths, "name");
 
 		_DELETE(p);

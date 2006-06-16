@@ -346,11 +346,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 		switch (s->type) {
 		case st_remote: {
-			char *dbalias = reconnect(sql, mb, s->location);
+			char *dbalias = NULL;
+			if(s->location > 0)
+				dbalias = reconnect(sql, mb, s->location);
 				
 			q= newStmt1(mb,sqlRef,"eval");
 			getArg(q,0)= newTmpVariable(mb, TYPE_str);
-			q = pushStr(mb, q, _strdup(dbalias));
+			if(dbalias)
+				q = pushStr(mb, q, _strdup(dbalias));
 			q = pushStr(mb, q, _strdup(s->op1.sval));
 			q = pushInt(mb, q, 1);
 			if(s->op2.stval) {
