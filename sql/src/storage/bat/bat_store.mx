@@ -3318,7 +3318,9 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 			bat_destroy(d);
 		}
 
+		rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key);
 		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx);
+		rollforward_changeset_creates(tr, &t->triggers, (rfcfunc) &rollforward_create_trigger);
 	} else if (!t->table && isGlobalTable(t) && t->query && t->query[0] == ';') {
 		/* bat views also need to be registered */
 		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_use_bat);
@@ -3823,10 +3825,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 	if (fs->nelm) {
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
-			sql_base *tb = n->data;
-
-			list_remove_data(fs->set, tb);
-			fs->set->destroy(tb);
+			list_remove_node(fs->set, n);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -3838,7 +3837,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 	if (fs->set)
 		n = fs->set->h;
 	if (pfs->set) {
-		for (m = pfs->set->h; ok == SQL_OK && m && n; m = m->next) { 
+		for (m = pfs->set->h; ok == SQL_OK && m && n; ) { 
 			sql_base *fb = n->data;
 			sql_base *pfb = m->data;
 
@@ -3849,16 +3848,17 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					ok = rf(tr, fb, pfb);
 				fb->rtime = fb->wtime = 0;
 				n = n->next;
+				m = m->next;
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
-				list_remove_data(fs->set, fb);
-				fs->set->destroy(fb);
+				list_remove_node(fs->set, n);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
 				/* cs_add_before add r to fs before node n */
 				cs_add_before(fs, n, r);
 				r->rtime = r->wtime = 0;
+				m = m->next;
 			}
 		}
 		/* add new bases */
@@ -3867,6 +3867,11 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			sql_base *r = fd(tr, TR_OLD, pfb,  b);
 			cs_add(fs, r, TR_OLD);
 			r->rtime = r->wtime = 0;
+		}
+		while ( ok == SQL_OK && n) { /* remove remaining old stuff */
+			node *t = n->next;
+			list_remove_node(fs->set, n);
+			n = t;
 		}
 	}
 	if (fs->dset) {
@@ -3957,10 +3962,9 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	/* did we make changes or is the global changed after we started */
 	if (ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = SQL_OK;
-		BAT *db = temp_descriptor(ft->dbid);
 
-		BATundo(db);
-		bat_destroy(db);
+		temp_destroy(ft->dbid);
+		ft->dbid = temp_copy(pft->dbid, isTempTable(ft));
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
