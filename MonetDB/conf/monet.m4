@@ -154,7 +154,7 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 	no)	case $host_os-$host in
 		linux*-i?86*)	CC=icc;;
 		linux*-x86_64*)	CC=icc;;
-		linux*-ia64*)	CC=ecc;;
+		linux*-ia64*)	CC=icc;;
 		aix*)		CC=xlc_r;;
 		*)		CC=cc;;
 		esac
@@ -163,9 +163,10 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
 		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
 		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
-		    icc_ver="`$CC --version 2>/dev/null`"
+		    icc_ver="`$CC -dumpversion 2>/dev/null`"
 		    case $icc_ver in
 		    8.*)	CC="icc -no-gcc";;
+		    9.*)	CC="icc -no-gcc";;
 		    esac
 		    ;;
 		esac
@@ -180,9 +181,10 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
 		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
 		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
-		    icc_ver="`$CC --version 2>/dev/null`"
+		    icc_ver="`$CC -dumpversion 2>/dev/null`"
 		    case $icc_ver in
 		    8.*)	CC="icc -no-gcc";;
+		    9.*)	CC="icc -no-gcc";;
 		    esac
 		    ;;
 		esac
@@ -323,7 +325,7 @@ yes-*-*)
 		;;
 	esac
 	;;
--icc*-linux*|-ecc*-linux*)
+-icc*-linux*|-ecc*-linux*|-unknown-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
@@ -357,6 +359,7 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
+	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
 	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
@@ -378,6 +381,7 @@ yes-*-*)
 	dnl  # 102: forward declaration of enum type is nonstandard
 	dnl  #  70: incomplete type is not allowed
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
+	dnl  #1599: declaration hides variable 
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc 8.1 does not like; since the problem only occurs with
@@ -1119,6 +1123,7 @@ if test "x$enable_optim" = xyes; then
       x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo          -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
