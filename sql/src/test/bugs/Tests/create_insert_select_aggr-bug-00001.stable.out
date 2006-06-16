@@ -49,35 +49,7 @@ Over..
 # sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
 # name,	query,	istable,	system,	commit_action # name
 # varchar,	varchar,	boolean,	boolean,	smallint # type
-# 10,	146,	5,	5,	1 # length
-[ "modules",	NULL,	true,	true,	0	]
-[ "schemas",	NULL,	true,	true,	0	]
-[ "types",	NULL,	true,	true,	0	]
-[ "functions",	NULL,	true,	true,	0	]
-[ "args",	NULL,	true,	true,	0	]
-[ "_tables",	NULL,	true,	true,	0	]
-[ "_columns",	NULL,	true,	true,	0	]
-[ "keys",	NULL,	true,	true,	0	]
-[ "idxs",	NULL,	true,	true,	0	]
-[ "triggers",	NULL,	true,	true,	0	]
-[ "keycolumns",	NULL,	true,	true,	0	]
-[ "_tables",	NULL,	true,	true,	2	]
-[ "_columns",	NULL,	true,	true,	2	]
-[ "keys",	NULL,	true,	true,	2	]
-[ "idxs",	NULL,	true,	true,	2	]
-[ "triggers",	NULL,	true,	true,	2	]
-[ "keycolumns",	NULL,	true,	true,	2	]
-[ "tables",	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables;",	false,	true,	0	]
-[ "columns",	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	false,	true,	0	]
-[ "sequences",	NULL,	true,	true,	0	]
-[ "db_users",	NULL,	true,	true,	0	]
-[ "user_role",	NULL,	true,	true,	0	]
-[ "auths",	NULL,	true,	true,	0	]
-[ "privileges",	NULL,	true,	true,	0	]
-[ "users",	"SELECT \"name\", \"fullname\", \"default_schema\" FROM \"sys\".\"db_users\";",	false,	true,	0	]
-[ "env",	NULL,	true,	true,	0	]
-[ "profile",	NULL,	true,	true,	2	]
-[ "sessions",	NULL,	true,	true,	2	]
+# 0,	0,	5,	5,	1 # length
 [ 1	]
 [ 1	]
 # r # table_name
@@ -100,35 +72,7 @@ Over..
 # sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
 # name,	query,	istable,	system,	commit_action # name
 # varchar,	varchar,	boolean,	boolean,	smallint # type
-# 10,	146,	5,	5,	1 # length
-[ "modules",	NULL,	true,	true,	0	]
-[ "schemas",	NULL,	true,	true,	0	]
-[ "types",	NULL,	true,	true,	0	]
-[ "functions",	NULL,	true,	true,	0	]
-[ "args",	NULL,	true,	true,	0	]
-[ "_tables",	NULL,	true,	true,	0	]
-[ "_columns",	NULL,	true,	true,	0	]
-[ "keys",	NULL,	true,	true,	0	]
-[ "idxs",	NULL,	true,	true,	0	]
-[ "triggers",	NULL,	true,	true,	0	]
-[ "keycolumns",	NULL,	true,	true,	0	]
-[ "_tables",	NULL,	true,	true,	2	]
-[ "_columns",	NULL,	true,	true,	2	]
-[ "keys",	NULL,	true,	true,	2	]
-[ "idxs",	NULL,	true,	true,	2	]
-[ "triggers",	NULL,	true,	true,	2	]
-[ "keycolumns",	NULL,	true,	true,	2	]
-[ "tables",	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables;",	false,	true,	0	]
-[ "columns",	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	false,	true,	0	]
-[ "sequences",	NULL,	true,	true,	0	]
-[ "db_users",	NULL,	true,	true,	0	]
-[ "user_role",	NULL,	true,	true,	0	]
-[ "auths",	NULL,	true,	true,	0	]
-[ "privileges",	NULL,	true,	true,	0	]
-[ "users",	"SELECT \"name\", \"fullname\", \"default_schema\" FROM \"sys\".\"db_users\";",	false,	true,	0	]
-[ "env",	NULL,	true,	true,	0	]
-[ "profile",	NULL,	true,	true,	2	]
-[ "sessions",	NULL,	true,	true,	2	]
+# 1,	1,	5,	5,	1 # length
 [ "r",	NULL,	true,	false,	0	]
 [ 1	]
 [ 1	]
@@ -155,37 +99,9 @@ Over..
 # ptables,	,	,	 # table_name
 # name,	single_value,	single_value,	single_value # name
 # varchar,	smallint,	smallint,	smallint # type
-# 10,	6,	6,	6 # length
-[ "modules",	1,	2,	3	]
-[ "schemas",	1,	2,	3	]
-[ "types",	1,	2,	3	]
-[ "functions",	1,	2,	3	]
-[ "args",	1,	2,	3	]
-[ "_tables",	1,	2,	3	]
-[ "_columns",	1,	2,	3	]
-[ "keys",	1,	2,	3	]
-[ "idxs",	1,	2,	3	]
-[ "triggers",	1,	2,	3	]
-[ "keycolumns",	1,	2,	3	]
-[ "_tables",	1,	2,	3	]
-[ "_columns",	1,	2,	3	]
-[ "keys",	1,	2,	3	]
-[ "idxs",	1,	2,	3	]
-[ "triggers",	1,	2,	3	]
-[ "keycolumns",	1,	2,	3	]
-[ "tables",	1,	2,	3	]
-[ "columns",	1,	2,	3	]
-[ "sequences",	1,	2,	3	]
-[ "db_users",	1,	2,	3	]
-[ "user_role",	1,	2,	3	]
-[ "auths",	1,	2,	3	]
-[ "privileges",	1,	2,	3	]
-[ "users",	1,	2,	3	]
-[ "env",	1,	2,	3	]
-[ "profile",	1,	2,	3	]
-[ "sessions",	1,	2,	3	]
+# 0,	1,	1,	1 # length
 
-# 12:47:55 >  
-# 12:47:55 >  Done.
-# 12:47:55 >  
+# 10:31:10 >  
+# 10:31:10 >  Done.
+# 10:31:10 >  
 

@@ -67,6 +67,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_optimizer.h"
 #include "sql_cache.h"
 #include "sql_env.h"
+#include "sql_mvc.h"
 #include "sql_readline.h"
 #include "mal_io.h"
 #include "mal_parser.h"
@@ -117,33 +118,125 @@ monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
 #endif
 }
 
-char *
-monet5_drop_user(char *user)
+static str
+monet5_drop_user(str user)
 {
 	return AUTHremoveUser(&user);
 }
 
-char *
-monet5_create_user(char *user, char *passwd)
+static str
+monet5_create_user(list *l, str user, str passwd, str fullname, int schema_id, int grantorid)
 {
 	oid uid = 0;
 	bat bid = 0;
 	BAT *scens;
 	str ret;
+	char buf[BUFSIZ];
+	(void)l;
 
 	/* prepare the scens BAT: it should contain the sql scenario */
-	scens = BATnew(TYPE_void, TYPE_str, 1);
+	scens = BATnew(TYPE_str, TYPE_void, 1);
 	BUNappend(scens, "sql", 0);
-	bid = BATmirror(scens)->batCacheid;
+	bid = BBPcacheid(scens);
 	/* add the user to the M5 authorisation administration */
 	if ((ret = AUTHaddUser(&uid, &user, &passwd, &bid)) != MAL_SUCCEED) {
 		BBPunfix(bid); 
 		return ret;
 	}
 	BBPunfix(bid);
-	return NULL;
+
+	/* create two SQL statements that insert the user in the SQL
+	 * adminsitration */
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s',%d);", user, fullname, schema_id);
+	list_append(l, stmt_sql(_strdup(buf)));
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, grantorid);
+	list_append(l, stmt_sql(_strdup(buf)));
+
+	return(NULL);
 }
 
+static int
+monet5_find_user(ptr mp, str user) {
+	str tmp;
+	bat b;
+	BAT *users;
+	bat bid = 0;
+	BAT *scens;
+	BUN p;
+	(void)mp;	/* we don't need mvc, as we do a M5 backend call */
+	
+	/* prepare the scens BAT: it should contain the sql scenario */
+	scens = BATnew(TYPE_str, TYPE_void, 1);
+	BUNappend(scens, "sql", 0);
+	bid = BBPcacheid(scens);
+	/* add the user to the M5 authorisation administration */
+	if ((tmp = AUTHgetUsers(&b, &bid)) != MAL_SUCCEED) {
+		BBPunfix(bid); 
+		GDKfree(tmp);
+		return(-1);
+	}
+	BBPunfix(bid);
+
+	users = BATdescriptor(b);
+	assert(users);
+	p = BUNfnd(BATmirror(users), user);
+	BBPunfix(b);
+
+	/* yeah, I would prefer to return something different too */
+	return(p == NULL ? -1 : 1);
+}
+
+static void
+monet5_create_privileges(ptr _mvc, ptr _sql_schema)
+{
+	sql_table *t, *uinfo;
+	mvc *m = (mvc *)_mvc;
+	sql_schema *s = (sql_schema *)_sql_schema;
+	char *err = NULL;
+	int schema_id = 0;
+	oid monetdbuser = 0;
+
+	/* now the authorisation related tables */
+	t = mvc_create_table(m, s, "db_user_info", 1, SQL_PERSIST, 0, -1, LOCATION, REPLICATION);
+	mvc_create_column_(m, t, "id", "oid", 9);
+	mvc_create_column_(m, t, "fullname", "varchar", 2048);
+	mvc_create_column_(m, t, "default_schema", "int", 9);
+	uinfo = t;
+
+	t = mvc_create_view(m, s, "db_users", ";CREATE VIEW \"db_users\" ([system BAT]) AS BATS", 1, LOCATION, REPLICATION);
+	err = sql_view_from_bat(m->session->tr, t, "M5system_auth_user");
+	if (err != NULL) {
+		GDKfree(err);
+		sql_trans_drop_table(m->session->tr, t->s, t->base.name, 0);
+	}
+
+	t = mvc_create_view(m, s, "db_scens", ";CREATE VIEW \"db_scens\" ([system BAT]) AS BATS", 1, LOCATION, REPLICATION);
+	err = sql_view_from_bat(m->session->tr, t, "M5system_auth_scen");
+	if (err != NULL) {
+		GDKfree(err);
+		sql_trans_drop_table(m->session->tr, t->s, t->base.name, 0);
+	}
+
+	t = mvc_create_view(m, s, "users",
+			"SELECT u.\"t\" AS \"name\", "
+				"ui.\"fullname\", ui.\"default_schema\" "
+			"FROM \"sys\".\"db_users\" AS u, "
+				"\"sys\".\"db_user_info\" AS ui "
+			"WHERE u.\"h\" = ui.\"id\" "
+				"AND u.\"h\" NOT IN ("
+					"SELECT s.\"h\" "
+					"FROM \"sys\".\"db_scens\" AS s "
+					"WHERE s.\"t\" NOT LIKE 'sql'"
+				");", 1, LOCATION, REPLICATION);
+	mvc_create_column_(m, t, "name", "varchar", 1024);
+	mvc_create_column_(m, t, "fullname", "varchar", 2024);
+	mvc_create_column_(m, t, "default_schema", "int", 9);
+
+	schema_id = sql_find_schema(m, "sys");
+	assert(schema_id >= 0);
+
+	table_insert(m->session->tr, uinfo, &monetdbuser, "MonetDB Administrator", &schema_id);
+}
 
 str
 SQLsession(str *ret)
@@ -206,6 +299,7 @@ SQLinit(Client c)
 {
 	char *gmt = "GMT";
 	tzone tz;
+	backend_functions *be_funcs = GDKmalloc(sizeof(backend_functions));
 
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinit Monet 5\n");
@@ -216,7 +310,15 @@ SQLinit(Client c)
 	(void) c;		/* not used */
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
-	backend_init(&monet5_freestack, &monet5_freecode, &monet5_parse, &monet5_create_user, &monet5_drop_user);
+	memset((char *)be_funcs, '\0', sizeof(backend_functions));
+	be_funcs->fstack = &monet5_freestack;
+	be_funcs->fcode = &monet5_freecode;
+	be_funcs->finterpret = &monet5_parse;
+	be_funcs->fcuser = &monet5_create_user;
+	be_funcs->fduser = &monet5_drop_user;
+	be_funcs->ffuser = &monet5_find_user;
+	be_funcs->fcrpriv = &monet5_create_privileges;
+	backend_init(be_funcs);
 	if (mvc_init(FALSE, 0) < 0) {
 		return throwMessage("SQLinit", "Catalogue initialization failed\n");
 	}
@@ -246,6 +348,75 @@ SQLtrace(int *ret)
 	(void)ret;
 	keep_trace = !keep_trace;
 	return MAL_SUCCEED;
+}
+
+char *
+mvc_get_schema(mvc *m, char *user)
+{
+	ssize_t rid;
+	sql_schema *sys = NULL;
+	sql_table *users = NULL;
+	sql_column *users_name = NULL;
+	BAT *b;
+	BUN p;
+
+	char *schema = NULL;
+
+	if (m->debug)
+		fprintf(stderr, "mvc_get_schema %s\n", user);
+
+	mvc_trans(m);
+
+	sys = find_sql_schema(m->session->tr, "sys");
+	users = find_sql_table(sys, "db_users");
+	users_name = find_sql_column(users, "t");
+	/* evil stuff starts here (don't look) */
+	b = BATdescriptor(users_name->bat.bid);
+	assert(b);
+	p = BUNfnd(BATmirror(b), user);
+	if (p != NULL) {
+		oid r = *(oid *)BUNhead(b, p);
+		users = find_sql_table(sys, "db_user_info");
+		sql_column *users_schema = find_sql_column(users, "default_schema");
+		void *p = column_find_value(m->session->tr, users_schema, r);
+		/* ok, we're back to normal again now... */
+		unsigned int schema_id = *(unsigned int *)p;
+		sql_table *schemas = find_sql_table(sys, "schemas");
+		sql_column *schemas_name = find_sql_column(schemas, "name");
+		sql_column *schemas_id = find_sql_column(schemas, "id");
+		sql_table *auths = find_sql_table(sys, "auths");
+		sql_column *auths_name = find_sql_column(auths, "name");
+
+		_DELETE(p);
+		if ((rid = column_find_row(m->session->tr, schemas_id, &schema_id, NULL)) >= 0)
+			schema = column_find_value(m->session->tr, schemas_name, rid);
+
+		/* only set schema if user is found */
+		rid = column_find_row(m->session->tr, auths_name, user, NULL);
+		if (rid >= 0) {
+			sql_column *auths_id = find_sql_column(auths, "id");
+			void *p = column_find_value(m->session->tr, auths_id, rid);
+			int id = *(int *) p;
+
+			_DELETE(p);
+			m->user_id = m->role_id = id;
+
+			m->user = _strdup(user);
+			m->role = _strdup(user);
+		} else {
+			schema = NULL;
+		}
+	}
+
+	if (!schema || !mvc_set_schema(m, schema)) {
+		if (m->session->active)
+			mvc_rollback(m, 0, NULL);
+		return NULL;
+	}
+	/* only now we can initialize the sessions table */
+	sql_sessions(m);
+	mvc_rollback(m, 0, NULL);
+	return schema;
 }
 
 @-
@@ -304,8 +475,8 @@ SQLinitClient(Client c)
 
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
+
 		/* pass through credentials of the user if not console */
-		
 		rethrow("SQLinitClient", tmp, AUTHresolveUser(&user, &(c->user)));
 		schema = mvc_get_schema(m, user);
 		if (!schema) {

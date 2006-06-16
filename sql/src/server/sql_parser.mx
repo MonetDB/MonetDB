@@ -1846,7 +1846,6 @@ drop_action:
  |  RESTRICT		{ $$ = 0; }
  |  CASCADE		{ $$ = 1; }
  ;
-
 	/* data manipulative stmts */
 
 sql:

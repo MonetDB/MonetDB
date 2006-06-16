@@ -13,7 +13,5 @@ EOF
 LANG="en_US.UTF-8"
 export LANG
 
-Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d $TSTDB -f $RELSRCDIR/type_dump_test.SF-989257-src.sql"
-	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d $TSTDB -f $RELSRCDIR/type_dump_test.SF-989257-src.sql 
-
-rm -f .monetdb
+Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -f $RELSRCDIR/drop_schema_crash.SF-1504794-data.sql"
+	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB} -f $RELSRCDIR/drop_schema_crash.SF-1504794-data.sql

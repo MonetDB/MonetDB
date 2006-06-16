@@ -51,6 +51,9 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 		case SQL_AUTOCOMMIT_ON:
 		case SQL_AUTOCOMMIT_OFF:
 			dbc->sql_attr_autocommit = (SQLUINTEGER) (size_t) ValuePtr;
+#ifdef ODBCDEBUG
+			ODBCLOG("SQLSetConnectAttr set autocommit %s\n", dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON ? "on" : "off");
+#endif
 			if (dbc->mid)
 				mapi_setAutocommit(dbc->mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 			break;

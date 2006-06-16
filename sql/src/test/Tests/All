@@ -62,6 +62,7 @@ identifiers
 seq-default
 alter-sequence
 restart-sequence
+create_in_schema
 
 null-byte-hang
 orderby_limit

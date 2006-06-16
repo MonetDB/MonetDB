@@ -1,14 +1,14 @@
-stderr of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
+stderr of test 'drop_schema_crash.SF-1504794` in directory 'src/test/BugTracker` itself:
 
 
-# 09:15:18 >  
-# 09:15:18 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log" --set mapi_port=36877 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 09:15:18 >  
+# 11:12:03 >  
+# 11:12:03 >  Mtimeout -timeout 300 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log" --set mapi_port=35369 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:12:03 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.12.0_rc1
-# builtin opt 	monet_pid = 24482
+# builtin opt 	monet_pid = 4760
 # builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -53,16 +53,22 @@ stderr of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'src/test/Bug
 # cmdline opt 	monet_mod_path = /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin
 # cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log
-# cmdline opt 	mapi_port = 36877
+# cmdline opt 	mapi_port = 35369
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-12-19_2.9.3
+# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker
 
-# 09:15:18 >  
-# 09:15:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36877  < prepare_doesnot_like_LIKE.SF-1234205.sql
-# 09:15:18 >  
+# 11:12:03 >  
+# 11:12:03 >  Mtimeout -timeout 180 ./drop_schema_crash.SF-1504794.SQL drop_schema_crash.SF-1504794 
+# 11:12:03 >  
 
 
-# 09:15:18 >  
-# 09:15:18 >  Done.
-# 09:15:18 >  
+# 11:12:03 >  
+# 11:12:03 >  Mtimeout -timeout 60 java -jar /net/koala.ins.cwi.nl/export/scratch0/niels/rc/Linux-x86_64/build-sql/src/jdbc/jdbcclient-1.4.jar -h localhost -p 35369 -d mTests_src_test_BugTracker -f ../../../../../../../..//scratch1/niels/rc/sql/src/test/BugTracker/Tests/drop_schema_crash.SF-1504794-data.sql
+# 11:12:03 >  
+
+Error on line 5: DROP SCHEMA: cannot drop schema because users depend on it
+
+# 11:12:03 >  
+# 11:12:03 >  Done.
+# 11:12:03 >  
 

@@ -524,7 +524,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 		store_unlock();
 	}
 	if (tr)
-		sql_session_reset(m->session);
+		sql_session_reset(m->session, 1 /*autocommit on*/);
 
 	if (m->user)
 		_DELETE(m->user);
@@ -875,8 +875,6 @@ mvc_create_schema(mvc *m, char *name, int auth_id)
 		fprintf(stderr, "mvc_create_schema %s %d\n", name, auth_id);
 
 	s = sql_trans_create_schema(m->session->tr, name, auth_id);
-	if (s) 
-		mvc_set_schema(m, name);
 	m->type = Q_SCHEMA;
 	return s;
 }
@@ -884,14 +882,10 @@ mvc_create_schema(mvc *m, char *name, int auth_id)
 void
 mvc_drop_schema(mvc *m, char *sname)
 {
-	int sys = 0;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_schema %s\n", sname);
-	if (strcmp(m->session->schema_name, sname) == 0)
-		sys = 1;
+
 	sql_trans_drop_schema(m->session->tr, sname);
-	if (sys) 
-		mvc_set_schema(m, "sys");
 	m->type = Q_SCHEMA;
 }
 

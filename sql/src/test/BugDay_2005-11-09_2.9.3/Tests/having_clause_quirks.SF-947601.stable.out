@@ -21,66 +21,23 @@ Over..
 # 12:45:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < having_clause_quirks.SF-947601.sql
 # 12:45:11 >  
 
-# tables # table_name
+[ 3	]
+# sys.t947601 # table_name
 # name # name
 # varchar # type
-# 10 # length
-[ "modules"	]
-[ "schemas"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "_tables"	]
-[ "_columns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "triggers"	]
-[ "keycolumns"	]
-[ "_tables"	]
-[ "_columns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "triggers"	]
-[ "keycolumns"	]
-[ "tables"	]
-[ "columns"	]
-[ "sequences"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "users"	]
-[ "env"	]
-[ "profile"	]
-[ "sessions"	]
-# sys.tables # table_name
+# 6 # length
+[ "niels"	]
+[ "fabian"	]
+[ "martin"	]
+# sys.t947601 # table_name
 # name # name
 # varchar # type
-# 10 # length
-[ "modules"	]
-[ "schemas"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "_tables"	]
-[ "_columns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "triggers"	]
-[ "keycolumns"	]
-[ "tables"	]
-[ "columns"	]
-[ "sequences"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "users"	]
-[ "env"	]
-[ "profile"	]
-[ "sessions"	]
+# 6 # length
+[ "niels"	]
+[ "fabian"	]
+[ "martin"	]
 
-# 12:45:11 >  
-# 12:45:11 >  Done.
-# 12:45:11 >  
+# 10:09:59 >  
+# 10:09:59 >  Done.
+# 10:09:59 >  
 

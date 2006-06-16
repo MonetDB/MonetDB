@@ -95,7 +95,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0)
-		port = 45123;
+		port = 50000;
 
 	/* TODO: get and use a database name */
 

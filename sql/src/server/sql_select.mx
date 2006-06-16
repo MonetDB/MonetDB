@@ -110,7 +110,12 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		}
 		if (!s)
 			s = cur_schema(sql);
+/* <<<<<<< sql_select.mx */
 		t = mvc_bind_table(sql, s, tname, location);
+/* ======= */
+		t = mvc_bind_table(sql, s, tname);
+		/* TODO: search path */
+/* >>>>>>> 1.134 */
 		if (!t && !sname) {
 			s = tmp_schema(sql);
 			t = mvc_bind_table(sql, s, tname, location);
