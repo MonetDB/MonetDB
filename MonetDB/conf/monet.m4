@@ -199,6 +199,89 @@ case $GCC-$host_os in
 yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
 
+
+AC_ARG_WITH(bits,
+	AC_HELP_STRING([--with-bits=BITS],
+		[obsolete: use --enable-bits instead]),
+	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
+
+bits=32
+AC_ARG_ENABLE(bits,
+	AC_HELP_STRING([--enable-bits=BITS],
+		[specify number of bits (32 or 64)]), [
+case $enableval in
+32)	case "$host" in
+	ia64*)	AC_MSG_ERROR([we do not support 32 bits on $host, yet]);;
+	esac
+	;;
+64)	case "$host-$GCC-$CC" in
+	i?86*-*-*)  AC_MSG_ERROR([$host does not support 64 bits]);;
+	esac
+	;;
+*)	AC_MSG_ERROR(--enable-bits argument must be either 32 or 64);;
+esac
+bits=$enableval
+])
+if test "$bits" = "64"; then
+	dnl  Keep in mind how to call the 32-bit compiler.
+	case "$GCC-$CC-$host_os-$host" in
+	yes-*-linux*-x86_64*)
+		dnl  On our x86_64 machine, "gcc" defaults to "gcc -m64" ...
+		CC32="$CC -m32";;
+	-pgcc*-linux*-x86_64*)
+		dnl  On our x86_64 machine, "pgcc" defaults to "pgcc -tp=k8-64" ...
+		CC32="$CC -tp=k8-32";;
+	*)	CC32="$CC";;
+	esac
+fi
+case "$GCC-$CC-$host_os-$host-$bits" in
+yes-*-solaris*-64)
+	case `$CC -v 2>&1` in
+	*'gcc version 3.'*)	;;
+	*)	AC_MSG_ERROR([need GCC version 3.X for 64 bits]);;
+	esac
+	CC="$CC -m$bits"
+	;;
+-*-solaris*-64)
+	CC="$CC -xarch=v9"
+	;;
+yes-*-irix*-64)
+	CC="$CC -mabi=$bits"
+	;;
+-*-irix*-64)
+	CC="$CC -$bits"
+	;;
+yes-*-aix*-64)
+	CC="$CC -maix$bits"
+	AR="ar -X64"
+	NM="nm -X64 -B"
+	;;
+-*-aix*-64)
+	CC="$CC -q$bits"
+	AR="ar -X64"
+	NM="nm -X64 -B"
+	;;
+yes-*-linux*-x86_64*-*)
+	CC="$CC -m$bits"
+	;;
+-pgcc*-linux*-x86_64*-*)
+	CC="$CC -tp=k8-$bits"
+	;;
+yes-*-darwin8*-powerpc*-*)
+	CC="$CC -m$bits"
+	;;
+esac
+
+AC_ARG_ENABLE(oid32,
+	AC_HELP_STRING([--enable-oid32],
+		[use 32 bits vor OIDs on a 64-bit architecture]),
+	enable_oid32=$enableval,
+	enable_oid32=no)
+case $enable_oid32 in
+yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture]);;
+esac
+
+
 dnl  Set compiler switches.
 dnl  The idea/goal is to be as strict as possible, i.e., enable preferable
 dnl  *all* warnings and make them errors. This should help keeping the code
@@ -328,6 +411,13 @@ yes-*-*)
 -icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
+ 	dnl  On 64-bit systems, icc 9.1 does not seem to find its own libraries,
+ 	dnl  even if the respective directory is in LD_LIBRARY_PATH ...!??
+ 	dnl  Explicitely listing it via -L... with the linker call seems to help.
+	case $bits-$icc_ver in
+	64-9.*)	LDFLAGS="$LDFLAGS -L`type -p icc | sed 's|/bin/icc|/lib64|'`" ;;
+	*)	;;
+	esac
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
@@ -419,87 +509,6 @@ AC_SUBST(NO_X_CFLAGS)
 dnl  default javac flags
 JAVACFLAGS="$JAVACFLAGS -g:none -O"
 AC_SUBST(JAVACFLAGS)
-
-AC_ARG_WITH(bits,
-	AC_HELP_STRING([--with-bits=BITS],
-		[obsolete: use --enable-bits instead]),
-	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
-
-bits=32
-AC_ARG_ENABLE(bits,
-	AC_HELP_STRING([--enable-bits=BITS],
-		[specify number of bits (32 or 64)]), [
-case $enableval in
-32)	case "$host" in
-	ia64*)	AC_MSG_ERROR([we do not support 32 bits on $host, yet]);;
-	esac
-	;;
-64)	case "$host-$GCC-$CC" in
-	i?86*-*-*)  AC_MSG_ERROR([$host does not support 64 bits]);;
-	esac
-	;;
-*)	AC_MSG_ERROR(--enable-bits argument must be either 32 or 64);;
-esac
-bits=$enableval
-])
-if test "$bits" = "64"; then
-	dnl  Keep in mind how to call the 32-bit compiler.
-	case "$GCC-$CC-$host_os-$host" in
-	yes-*-linux*-x86_64*)
-		dnl  On our x86_64 machine, "gcc" defaults to "gcc -m64" ...
-		CC32="$CC -m32";;
-	-pgcc*-linux*-x86_64*)
-		dnl  On our x86_64 machine, "pgcc" defaults to "pgcc -tp=k8-64" ...
-		CC32="$CC -tp=k8-32";;
-	*)	CC32="$CC";;
-	esac
-fi
-case "$GCC-$CC-$host_os-$host-$bits" in
-yes-*-solaris*-64)
-	case `$CC -v 2>&1` in
-	*'gcc version 3.'*)	;;
-	*)	AC_MSG_ERROR([need GCC version 3.X for 64 bits]);;
-	esac
-	CC="$CC -m$bits"
-	;;
--*-solaris*-64)
-	CC="$CC -xarch=v9"
-	;;
-yes-*-irix*-64)
-	CC="$CC -mabi=$bits"
-	;;
--*-irix*-64)
-	CC="$CC -$bits"
-	;;
-yes-*-aix*-64)
-	CC="$CC -maix$bits"
-	AR="ar -X64"
-	NM="nm -X64 -B"
-	;;
--*-aix*-64)
-	CC="$CC -q$bits"
-	AR="ar -X64"
-	NM="nm -X64 -B"
-	;;
-yes-*-linux*-x86_64*-*)
-	CC="$CC -m$bits"
-	;;
--pgcc*-linux*-x86_64*-*)
-	CC="$CC -tp=k8-$bits"
-	;;
-yes-*-darwin8*-powerpc*-*)
-	CC="$CC -m$bits"
-	;;
-esac
-
-AC_ARG_ENABLE(oid32,
-	AC_HELP_STRING([--enable-oid32],
-		[use 32 bits vor OIDs on a 64-bit architecture]),
-	enable_oid32=$enableval,
-	enable_oid32=no)
-case $enable_oid32 in
-yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture]);;
-esac
 
 
 dnl find out, whether the C compiler is C99 compliant
@@ -1122,7 +1131,9 @@ if test "x$enable_optim" = xyes; then
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
       x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+      x86_64-*-*-9.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      i*86-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
