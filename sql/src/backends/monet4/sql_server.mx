@@ -317,6 +317,7 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	be_funcs->fcuser = &monet4_create_user;
 	be_funcs->ffuser = &monet4_find_user;
 	be_funcs->fcrpriv = &monet4_create_privileges;
+	be_funcs->fshuser = &monet4_schema_has_user;
 	backend_init(be_funcs);
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
