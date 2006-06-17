@@ -218,7 +218,6 @@ function stop_mserver()
 	pid=`getPID $1`
 	if [ -n "$pid" ]
 	then
-		echo -n "Stopping database server '$1'... "
 		stopped=`expr $stopped + 1 `
 		# disable the guardian first
 		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
@@ -228,6 +227,7 @@ function stop_mserver()
 		if [ "`ps -p $pid -o comm=`" == "mserver5" ];
 		then
 			# give it some time to wrap up
+			echo -n "Stopping database server '$1'... "
 			sleep 5
 			if [ "`ps -p $pid -o comm=`" == "mserver5" ];
 			then
@@ -236,10 +236,8 @@ function stop_mserver()
 				echo "ok"
 			fi
 		else
-			echo "ok"
+			echo "Stopping database server '$1'... ok"
 		fi
-	else
-		echo "Database '$1' is not running"
 	fi
 }
 
@@ -295,14 +293,30 @@ function show_status()
 # Avoid creating database as a result from typos
 function create_database ()
 {
-		read -p "Do you want to create database '$1' ? [yes/no]" answer
+		echo "The database can be initialized to accept SQL or MAL connections."
+		echo "The latter prohibits SQL sessions unless an authorized user "
+		echo "has explicitly loaded the SQL module and started its scenario."
+		echo ""
+		read -p "Do you want to create the database '$1' for SQL sessions ? [yes/no]" answer
 		if [ "$answer" = "yes" ]
 		then
 			mkdir $1
 			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
-			echo "Database $1 initialized"
-		else
-			exit
+			echo "include sql;sql.start();" > $1/.mserver5.dbinit
+			echo "Database '$1' initialized for SQL sessionsi."
+			return
+		fi
+		read -p "Do you want to create the database '$1' for MAL sessions ? [yes/no]" answer
+		if [ "$answer" = "yes" ]
+		then
+			mkdir $1
+			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
+			echo "Database '$1' initialized"
+			echo ""
+			echo "To accept SQL sessions in the future start the server"
+			echo 'once with the argument --dbinit="include sql;sql.start();"'
+			echo "Subsequence server starts use the last setting."
+			echo ""
 		fi
 }
 
