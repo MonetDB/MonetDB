@@ -12,9 +12,9 @@ Below we illustrate its most important components.
 @item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
 @item checkpoint_dir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/chkpnt
 @item dbname=demo
-@item version=5.0
+@item version=4.99.29
 @item welcome=yes
-@item embedded=no
+@item gdk_embedded=no
 @item gdk_debug=0	# to control level of debugging
 @end itemize
 
@@ -24,12 +24,11 @@ MonetDB has been installed. @sc{monet_mod_path} tells where to find
 the libraries. These arguments are critical for a proper working server.
 
 The remainder consists of arguments used by functional modules, or
-related tools. Consult the documentation before changing them.
+related tools. Consult their documentation before changing them.
 @itemize @bullet
 @item delay=120		
 @item mal_init=$@verb{ { }prefix@verb{ } }/lib/MonetDB5/mal_init.mal
 @item mal_listing = 7    
-@item sql_debug=0
 @item sql_logdir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dblogs 
 @item pf_httpd_port=8080
 @item xquery_output=dm

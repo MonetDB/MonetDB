@@ -11,7 +11,7 @@ it is adviceable to check its functionality with the following actions:
 > monetdb --help
 @end example
 The @sc{monetdb} script is a wrapper around the MonetDB
-server program @sc{mserver5} and its protection program @sc{mguardian}.
+server program @sc{mserver5} and its protection program @sansserif{mguardian}.
 The call triggers @sc{mserver5 --help} and responds
 with something like:
 @verbatim
@@ -46,11 +46,15 @@ to the location of the MonetDB data store does not exists, or the
 user has lack of file system permissions to create new directories/files
 in the location specified.
 
-To start a server for a database simpy type
+To start a server for your first database simply type:
 @example
 > monetdb --start --dbname=voc
-Do you want to create database 'voc' ? [yes/no]yes
-Database xyz initialized
+The database can be initialized to accept SQL or MAL connections.
+The latter prohibits SQL sessions unless an authorized user
+has explicitly loaded the SQL module and started its scenario.
+
+Do you want to create the database 'voc' for SQL sessions ? [yes/no]yes
+Database 'voc' initialized for SQL sessions.
 Starting database server 'voc'... ok
 @end example
 The question is asked only the first time you attempt

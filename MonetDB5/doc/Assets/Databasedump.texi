@@ -18,18 +18,7 @@ and start the server. Once done, it suffices to feed the dump file
 to a MonetDB client program to populate the database.
 @example
 shell> monetdb --start --dbname=voc
-Do you want to create database 'voc' ? [yes/no]yes
-Database voc initialized
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm/voc/.monetdb.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:voc
-# Visit http://monetdb.cwi.nl/ for further information.
-#include sql; mapi.listen();
+....
 shell> mclient -lsql /tmp/voc.sql
 @end example
 
