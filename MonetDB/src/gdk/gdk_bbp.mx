@@ -2313,7 +2313,7 @@ BBPaddtobin(BAT *b)
 	BAT *m = BBP_cache(-bid);
 
 	/* only cache simple non-saved non-renamed transient bats */
-	if (m == NULL || batcache_minsize == 0 || b->batCopiedtodisk || b->batLview || BBPnamecheck(s) == 0) {
+	if (m == NULL || batcache_minsize == 0 || b->batCopiedtodisk || b->batLview || BBPnamecheck(s) == 0 || b->htype > TYPE_str || b->ttype > TYPE_str) {
 		BATdelete(b); /* handles persistent case also (file deletes) */
 		return 1;
 	}
