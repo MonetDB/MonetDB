@@ -68,9 +68,6 @@ stderr of test 'schema_change.SF-1026845` in directory 'src/test/BugDay_2005-11-
 # 19:58:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46797  < schema_change.SF-1026845.sql
 # 19:58:10 >  
 
-MAPI  = monetdb@localhost:45579
-QUERY = set schema voc; -- not allowed
-ERROR = !You have no permissions to change the session variable current_schema
 
 
 
