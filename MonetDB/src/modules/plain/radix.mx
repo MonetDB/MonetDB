@@ -1090,7 +1090,7 @@ radix_cluster(attr_int,
 
 #include "radix.proto.h"
 
-#if defined(ia64) && !defined(__GNUC__)
+#ifdef HAVE_XMMINTRIN_H 
 /* constants for use with _mm_prefetch */
 #include <xmmintrin.h>
 #endif
@@ -3619,7 +3619,7 @@ Mem2Cache(int *__r from, size_t size)
 }
 #else
 
-#if defined(ia64)
+#ifdef HAVE_XMMINTRIN_H
 /* L2 has 128 byte cachelines */
 static INLINE int
 Mem2Cache(int *__r from, size_t size)
