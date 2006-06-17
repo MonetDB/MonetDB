@@ -39,7 +39,7 @@ Over..
 # 16,	7,	12,	10 # length
 [ "debug",	"0",	"int",	0	]
 [ "explain",	"",	"varchar",	0	]
-[ "current_schema",	"sys",	"varchar",	1	]
+[ "current_schema",	"sys",	"varchar",	0	]
 [ "current_user",	"monetdb",	"varchar",	1	]
 [ "current_role",	"monetdb",	"varchar",	0	]
 [ "current_timezone",	"0",	"sec_interval",	0	]
