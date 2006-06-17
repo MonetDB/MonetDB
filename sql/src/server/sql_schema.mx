@@ -1615,6 +1615,8 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 			}
 			scope_close(scp);
 			res = stmt_list(l);
+		} else {
+			res = stmt_none();
 		}
 		stmt_destroy(sq);
 		return res;

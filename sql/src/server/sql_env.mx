@@ -256,9 +256,9 @@ sql_set_var(mvc *sql, symbol *s)
 		stmt *r;
 
 		if (access < 0) {
-			return sql_error(sql, 02, "Unknown session variable %s\n", name);
+			return sql_error(sql, 02, "Unknown session variable %s", name);
 		} else if (access == SESSION_RO) {
-			return sql_error(sql, 02, "You have no permissions to change the session variable %s\n", name);
+			return sql_error(sql, 02, "You have no permissions to change the session variable %s", name);
 		}
 		typename = sql_get_type(sql,name);
 		r = set_var(sql, name, val, typename);
@@ -400,7 +400,7 @@ sql_sessions(mvc *m)
 	else if (m->explain == m_profile)
 		table_insert(tr, s, "explain", "profile", "varchar", &rw, NULL);
 
-	table_insert(tr, s, "current_schema", m->session->schema_name, "varchar", &ro, NULL);
+	table_insert(tr, s, "current_schema", m->session->schema_name, "varchar", &rw, NULL);
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
 	table_insert(tr, s, "current_user", m->user, "varchar", &ro, NULL);

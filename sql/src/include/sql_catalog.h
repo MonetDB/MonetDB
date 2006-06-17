@@ -397,6 +397,7 @@ typedef struct sql_trans {
 	int stime;		/* transaction time stamp (aka start time) */
 	int rtime;
 	int wtime;
+	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
 

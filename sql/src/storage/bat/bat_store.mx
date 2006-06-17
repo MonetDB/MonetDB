@@ -414,12 +414,10 @@ kc_destroy(sql_kc *kc)
 void
 key_destroy(sql_key *k)
 {
-	sql_ukey *uk;
-
 	/* remove key from schema */
 	list_remove_data(k->t->s->keys,k);
 	if (k->type == ukey || k->type == pkey) {
-		uk = (sql_ukey *) k;
+		sql_ukey *uk = (sql_ukey *) k;
 		if (uk->keys)
 			list_destroy(uk->keys);
 	}
@@ -534,10 +532,10 @@ sql_trans_destroy(sql_trans *t)
 
 	transactions--;
 #ifdef STORE_DEBUG
-		fprintf(stderr, "destroy trans (%p)\n", t);
+	fprintf(stderr, "destroy trans (%p)\n", t);
 #endif
 
-	if (res == gtrans && spares < MAX_SPARES && !t->name && !t->schema_updates) {
+	if (res == gtrans && spares < MAX_SPARES && !t->name) {
 #ifdef STORE_DEBUG
 		fprintf(stderr, "spared (%d) trans (%p)\n", spares, t);
 #endif
@@ -2299,7 +2297,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id)
 	return s;
 }
 
-int
+static int
 store_schema_number()
 {
 	return schema_number;
@@ -2787,8 +2785,8 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	if (!c->t->table) {
 		temp_dup(c->bat.ibid); 
 	} else if (isTempTable(c->t)) {
-		c->bat.ibid = temp_copy(c->bat.ibid, isTempTable(c->t));
-	/* created in the first transaction */
+		c->bat.ibid = temp_copy(c->bat.ibid, 1);
+	/* created in this transaction */
 	} else if (isNew(oc)) { 
 		/* move the bat to the new colum, fixup the old column */
 		b = bat_new(TYPE_void, c->type.type->localtype, c->t->sz, "column_dup");
@@ -3030,6 +3028,7 @@ trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 	if (ot != gtrans)
 		t->schema_updates = ot->schema_updates;
 
+	t->schema_number = store_schema_number();
 	t->parent = ot;
 	t->stk = stk;
 
@@ -3570,7 +3569,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (bs_debug) {
 			fprintf(stderr, 
 				"%s " SZFMT "\n", tt->dname, BATcount(odb));
-			BATprint(odb);
 		}
 
 		if (ttr == gtrans)
@@ -3607,6 +3605,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		ins = temp_descriptor(cc->bat.ibid);
 		/* any inserts */
 		if (BUNlast(ins) > BUNfirst(ins)) {
+			assert(nr_active>0);
 			if (BUNlast(ins) > ins->batInserted) {
 				if (nr_active > 1) { 
 					BAT *ci = temp_descriptor(oc->bat.ibid);
@@ -3830,6 +3829,7 @@ rollforward_trans(sql_trans *tr)
 		if (tr->schema_updates) 
 			schema_number++;
 	}
+	tr->wtime = tr->rtime = 0;
 	return ok;
 }
 
@@ -4049,7 +4049,9 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 static int
 reset_trans(sql_trans *tr, sql_trans *ptr)
 {
-	return reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
+	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
+	tr->wtime = tr->rtime = 0;
+	return res;
 }
 
 sql_trans *
@@ -4060,23 +4062,14 @@ sql_trans_create(backend_stack stk, sql_trans *parent, char *name)
 	transactions++;
 	if (gtrans) {
 		if (!parent && spares > 0 && !name) {
-			int need_reset = 1;
-
 			tr = spare_trans[--spares];
-
-			if (tr->stime >= gtrans->stime && !tr->status)
-				need_reset = 0;
-			tr = trans_init(tr, stk, gtrans);
-			if (need_reset)
-				reset_trans(tr, gtrans);
-
 #ifdef STORE_DEBUG
-				fprintf(stderr, "reuse trans (%p) %d %d\n", tr, need_reset, spares);
+			fprintf(stderr, "reuse trans (%p) %d\n", tr, spares);
 #endif
 		} else {
 			tr = trans_dup(stk, (parent) ? parent : gtrans, name);
 #ifdef STORE_DEBUG
-				fprintf(stderr, "new trans (%p)\n", tr);
+			fprintf(stderr, "new trans (%p)\n", tr);
 #endif
 		}
 	}
@@ -4089,6 +4082,9 @@ sql_trans_validate(sql_trans *tr)
 	node *n;
 
 	/* depends on the iso level */
+
+	if (tr->schema_number != store_schema_number())
+		return 0;
 
 	/* since we protect usage through private copies both the iso levels
 	   read uncommited and read commited always succeed.
@@ -4158,6 +4154,7 @@ sql_trans_commit(sql_trans *tr)
 		ok = log_oid(logger, store_oid);
 		if (ok == SQL_OK)
 			ok = log_tend(logger);
+		tr->schema_number = store_schema_number();
 	}
 	if (bs_debug)
 		fprintf(stderr, "done forwarding changes\n");
@@ -5202,12 +5199,14 @@ sql_session_reset(sql_session *s, int ac)
 	s->active = 0;
 }
 
-void
+int
 sql_trans_begin(sql_session *s)
 {
 	sql_trans *tr = s->tr;
+	int snr = tr->schema_number;
 
-	if (tr->stime < gtrans->stime || tr->wtime)
+	if (tr->stime < gtrans->stime || tr->wtime || 
+			store_schema_number() != snr)
 		reset_trans(tr, gtrans);
 	tr = trans_init(tr, tr->stk, tr->parent);
 	s->active = 1;
@@ -5215,6 +5214,7 @@ sql_trans_begin(sql_session *s)
 	s->tr = tr;
 	nr_active ++;
 	s->status = 0;
+	return snr != tr->schema_number;
 }
 
 void

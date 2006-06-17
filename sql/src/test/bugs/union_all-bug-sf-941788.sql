@@ -7,6 +7,8 @@ AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "REF_GENERATION" FROM "_tables" as ptables, "schemas" WHERE
 "ptables"."schema_id" = "schemas"."id" AND
 "ptables"."istable" = true AND "ptables"."system" = true
+AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
+    'keycolumns', 'keys', 'modules', 'sequences')
 UNION ALL SELECT null AS
 "TABLE_CAT", "schemas"."name" AS "TABLE_SCHEM",
 "ttables"."name" AS "TABLE_NAME", 'TABLE' AS
@@ -14,7 +16,10 @@ UNION ALL SELECT null AS
 AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
 "REF_GENERATION" FROM tmp."_tables" as ttables, "schemas" WHERE
-"ttables"."schema_id" = "schemas"."id"  and "ttables"."system" = true ) AS "ttables" WHERE 1 = 1 
+"ttables"."schema_id" = "schemas"."id"  and "ttables"."system" = true
+AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
+    'keycolumns', 'keys', 'modules', 'sequences')
+) AS "ttables" WHERE 1 = 1 
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME";
 
 SELECT * FROM (
@@ -26,6 +31,8 @@ null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM "_tables" as ptables, "schemas" WHERE "ptables"."schema_id" =
 "schemas"."id" AND "ptables"."istable" = true AND "ptables"."system" = true
+AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
+    'keycolumns', 'keys', 'modules', 'sequences')
 UNION ALL
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
 "TABLE_SCHEM", "ttables"."name" AS "TABLE_NAME",
@@ -35,6 +42,8 @@ null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM tmp."_tables" as ttables, "schemas" WHERE "ttables"."schema_id" =
 "schemas"."id" AND "ttables"."istable" = true and "ttables"."system" = true
+AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
+    'keycolumns', 'keys', 'modules', 'sequences')
 UNION ALL
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
 "TABLE_SCHEM", "ttables"."name" AS "TABLE_NAME",
@@ -44,5 +53,7 @@ null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM tmp."_tables" as ttables, "schemas" WHERE "ttables"."schema_id" =
 "schemas"."id" AND "ttables"."commit_action" > 0 
+AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
+    'keycolumns', 'keys', 'modules', 'sequences')
 ) AS "ttables" WHERE 1 = 1
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME";

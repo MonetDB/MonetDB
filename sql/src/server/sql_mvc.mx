@@ -55,7 +55,6 @@ typedef struct mvc {
 
 	sql_allocator *sa;
 	struct qc *qc;
-	int schema_number;  /* schema number changes result in cache cleanup */
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 
@@ -279,16 +278,15 @@ mvc_type(mvc *m)
 int
 mvc_trans(mvc *m)
 {
-	int nr = 0;
+	int schema_changed = 0;
 	assert(!m->session->active);	/* can only start a new transaction */
 
 	store_lock();
-	sql_trans_begin(m->session);
+	schema_changed = sql_trans_begin(m->session);
 	if (m->session->active) 
 		m->type = Q_TRANS;
-	nr = store_schema_number();
 	store_unlock();
-	return nr;
+	return schema_changed;
 }
 
 int
@@ -298,6 +296,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	int ok = SQL_OK;
 
 	assert(tr);
+	assert(m->session->active);	/* only commit an active transaction */
 	
 	if (mvc_debug)
 		fprintf(stderr, "mvc_commit %s\n", (name) ? name : "");
@@ -382,6 +381,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		fprintf(stderr, "mvc_rollback %s\n", (name) ? name : "");
 
 	assert(tr);
+	assert(m->session->active);	/* only abort an active transaction */
 
 	store_lock();
 	if (name && name[0] != '\0') {
@@ -437,6 +437,9 @@ mvc_release(mvc *m, char *name)
 	sql_trans *tr = m->session->tr;
 	sql_trans *cur = tr;
 
+	assert(tr);
+	assert(m->session->active);	/* only release active transactions */
+
 	if (mvc_debug)
 		fprintf(stderr, "mvc_release %s\n", (name) ? name : "");
 
@@ -477,7 +480,6 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid);
-	m->schema_number = 0;
 	m->sa = sa_create();
 
 	m->params = NULL;
@@ -540,7 +542,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 		m->sa = sa_create();
 
 	m->errstr[0] = '\0';
-	m->schema_number = 0;
 
 	m->params = NULL;
 	m->argc = 0;
