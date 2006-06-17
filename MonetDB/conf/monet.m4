@@ -325,7 +325,7 @@ yes-*-*)
 		;;
 	esac
 	;;
--icc*-linux*|-ecc*-linux*|-unknown-linux*)
+-icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
@@ -334,13 +334,14 @@ yes-*-*)
 	dnl  Check for PIC does not work with Version 8.1, unless we disable
 	dnl  remark #1418: external definition with no prior declaration ... !?
 	case $icc_ver in
-	8.1*)	CFLAGS="$CFLAGS -wd1418"
-		;;
+	8.1*)	CFLAGS="$CFLAGS -wd1418" ;;
+	9.*)	CFLAGS="$CFLAGS -wd1418" ;;
 	*)	;;
 	esac
 	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
+	9.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl Define the same settings as for gcc, as we use the same
@@ -1123,7 +1124,7 @@ if test "x$enable_optim" = xyes; then
       x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo          -tpp2 -mcpu=itanium2";;
+      ia64-*-*-9.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
