@@ -1,4 +1,4 @@
-@section Mapi Client Calling Arguments
+@subsection Mapi Client Calling Arguments
 
 The @code{mclient} program provides a textual interface to a
 MonetDB server. On a Linux platform it provides readline

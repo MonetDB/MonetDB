@@ -1,4 +1,4 @@
-@section Jdbc Client Calling Arguments
+@subsection Jdbc Client Calling Arguments
 The textual client using the JDBC protocol
 comes with several options to fine-tune the
 interaction with the database server. A synopsis of the calling

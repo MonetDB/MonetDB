@@ -65,7 +65,7 @@ was successful, or an error message explains the problems encountered.
 The server is run as a daemon process and you need a 
 MonetDB client program to connect to it.
 More details on the server configuration parameters are
-given in @ref{Architecture overview}.
+given in @ref{Architecture Overview}.
 
 At any time you can inspect the status of the (running) servers
 using the default command option @sc{--status}.

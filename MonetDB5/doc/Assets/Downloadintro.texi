@@ -97,7 +97,7 @@ geared at supporting front-end apllication code generation. It is not
 a language for programmers to write their applications on a daily basis.
 This simplicity greatly enhances the parsing and interpretation
 performance. Especially, small SQL queries run more than twice as fast.
-For more details see @ref{Design considerations}
+For more details see @ref{Design Considerations}
 
 The MonetDB code base evolves quickly with daily builds available for
 users preferring living at the edge. Application developers, however,

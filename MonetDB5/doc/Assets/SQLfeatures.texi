@@ -165,7 +165,7 @@ the global structure is easy to explain.
 The SQL compiler keeps a limited cache of queries.
 Each query is looked up in this cache based on an expression pattern 
 match where the constants may take on different values.
-If it doesn;t exist, the query is converted into 
+If it doesn't exist, the query is converted into 
 a @emph{factory} code block and stored in the module @code{sqlcache}. 
 It consists of a prelude section, which locates
 the tables of interest in the SQL catalogs.

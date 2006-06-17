@@ -11,7 +11,7 @@ It is important to recognize that the MonetDB language interfaces are
 primarily aimed at
 experienced system programmers and administrators. End-users are
 advised to use any of the open-source graphical SQL workbenches to
-interact with the system. (Sec @ref{User Interfaces})
+interact with the system.
 
 @menu
 * When to consider MonetDB::

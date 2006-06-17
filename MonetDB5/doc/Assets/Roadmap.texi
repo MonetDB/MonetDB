@@ -1,7 +1,6 @@
 @section Development Roadmap
-In this section we summarize the MonetDB development roadmap as
-foreseen early 2006. The information is organized around the major
-system components.
+In this section we summarize the MonetDB development roadmap.
+The information is organized around the major system components.
 A precise timeline can not be given. It depends too much on the
 available resources and urgency (= pressure) by our research needs and
 clients.
@@ -18,7 +17,7 @@ The long term objective for the SQL front-end is to provide all features
 available in SQL:2003. The priority for individual features
 is determined in an ad hoq way.
 The SQL features scheduled for implementation
-and those that won;t be supported in the foreseeable future
+and those that won't be supported in the foreseeable future
 are shown below.
 
 Our current assessment of the features planned for upcoming releases,
@@ -31,7 +30,7 @@ a relational table. This index is built using well-known
 Information Retrieval techniques, such as stemming, keyword
 recognition, and stop-word reduction.
 Several IR projects are underway, which enhance MonetDB with
-IR capabilities, e.g. see @url{spiegle,spiegle}.
+IR capabilities, e.g. see @url{http://monetdb.cwi.nl/projects/trecvid/MN5/index.php/PFTijah_Wiki,Tijah}.
 @item @emph{Stored SQL procedures}
 Stored procedures are a powerful scheme to offload operational
 abstractions to the server. The MonetDB server comes with its own programming
@@ -40,10 +39,14 @@ Linking with the SQL compiler is readily
 available, leaving a MonetDB specific implementation of stored SQL
 procedures less important.
 @item @emph{Support for multi-media objects}
+MonetDB has been used in several multi-media projects, but mostly
+to store and manipulate derived features. Multimedia objects can
+be stored as unprotected URLs, i.e. there is no guarantee the
+object referred to exists upon answering a query. The functionality
+should be extended with image, audio, and video types.
 @item @emph{General column and table constraint enforcement}
 @item @emph{Internationalization of the character sets}
 @item @emph{Full outer-join queries}
-@item @emph{Triggers}
 @end itemize
 The database backend architecture prohibits easy implementation of
 several SQL-99 features. Those on the list below are not expected to
@@ -62,9 +65,7 @@ provided using table level locks.
 @node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Development Roadmap
 @subsection XQuery Roadmap
 The XQuery compiler is currently only available on MonetDB Version 4.
-It is based on the @url{pathfinder.org,Pathfinder} compiler project.
-We expect that an alpha release for MonetDB Version 5
-becomes available in the fall of 2006.
+It is based on the @url{http://pathfinder-xquery.org,Pathfinder} compiler project.
 
 @node Embedded Server Roadmap, Server Roadmap, XQuery Roadmap, Development Roadmap
 @subsection Embedded MonetDB Roadmap

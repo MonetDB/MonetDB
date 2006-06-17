@@ -1,4 +1,4 @@
-@section Embedded MonetDB
+@chapter Embedded MonetDB
 The Embedded MonetDB version is optimized for running on small board computers
 as a database back-end for a single client.
 It is of particular interest if you need database functionality within

@@ -39,7 +39,7 @@ The architecture is based on a separate compiler module, which translates
 SQL statements into MAL. In this process common optimization heuristics,
 specific to relational algebra are performed.
 There are bindings for SQL with JDBC, ODBC, PHP and C,
-(see @ref{User Interfaces}) to integrate seamlessly in existing
+see @ref{Programming Interfaces}) to integrate seamlessly in existing
 developments environments.
 Client utilities like @ref{Aqua Data Studio},
 @ref{DbVisualizer} and @ref{iSQL-Viewer}
@@ -69,7 +69,7 @@ section at SourceForge. It is already included in the Windows installers.
 The first step is to start the database backend following
 the steps in @ref{Start and Stop the Server} or illustrated below.
 Once it runs, you can choose between a textual interface or
-one of the graphical user interfaces (See @ref{User Interfaces}).
+one of the graphical user interfaces.
 The easiest to start with is a textual SQL client.
 Under Windows, this client is already configured to directly contact
 the running server. For Linux users we illustrate the actions taken
@@ -144,5 +144,5 @@ If you haven't managed to contact the database server either way,
 backtrack your steps. Is the server running? (use @code{monetdb --status})
 More arguments may be needed if the server lives on
 a different machine or the client does not have access to the
-MonetDB configuration file to access the defaults. See @ref{Mapi Client}
-or @ref{Jdbc Client} for details.
+MonetDB configuration file to access the defaults see @ref{Textual Clients}
+for details.

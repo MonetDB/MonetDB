@@ -5,7 +5,7 @@ This option is standard available for the @sc{mclient} and @sc{mjClient}.
 However, be prepared that not all SQL schema features may be retained 
 in the process. It also takes much more time to produce the dump file.
 
-Consider you have already installed the SQL tutorial database @sc{VOC}
+Consider you have already installed the SQL tutorial database @sc{voc}
 and wish to transport it to another machine. The following steps are
 required after you have started the database server.
 @example
