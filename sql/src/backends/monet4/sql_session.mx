@@ -41,12 +41,6 @@ typedef struct backend {
 	stream *out;
 } backend;
 
-extern void monet4_parse(backend_stack stk, char *code);
-extern char *monet4_create_user(list *l, char *user, char *pass, char * fullname, int schema_id, int grantor_id);
-extern int monet4_find_user(ptr mp, char *user);
-extern void monet4_create_privileges(ptr _mvc, ptr _sql_schema);
-extern int monet4_schema_has_user(ptr _mvc, ptr _sql_schema);
-
 extern int sqlstatement(char *cmd, Cntxt stk);
 extern int mvc_sql(mvc *c, str query);
 extern char *mvc_login(mvc *c, char *user, char *passwd);

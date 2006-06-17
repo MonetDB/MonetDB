@@ -240,8 +240,9 @@ handles and returns proper error messages upon failure.
 @c
 #include "sql_server.h"
 #include "sql_result.h"
-#include "sql_privileges.h"
 #include "sql_session.h"
+#include "sql_gencode.h"
+#include <sql_privileges.h>
 #include <sql_decimal.h>
 #include <sql_string.h>
 #include <sql_datetime.h>
