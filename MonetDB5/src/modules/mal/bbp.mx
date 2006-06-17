@@ -67,6 +67,9 @@ comment "Load a particular bat";
 pattern deposit(name:str,v:bat[:any_1,:any_2]) :void 			
 address CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
+pattern deposit(name:str,loc:str) :bat[:any_1,:any_2]
+address CMDbbpbindDefinition
+comment "Relate a logical name to a physical BAT in the buffer pool.";
 pattern commit():void 	
 address CMDbbpReleaseAll
 comment "Commit updates for this client";
@@ -104,17 +107,17 @@ pattern prelude():void
 address CMDbbpprelude
 comment "Initialize the bbp box";
 
-pattern bind(name:str,loc:str) :bat[:any_1,:any_2]
-address CMDbbpbindDefinition
-comment "Relate a logical name to a physical BAT in the buffer pool.";
 pattern bind(name:str):bat[:any_1,:any_2]
 address CMDbbpbind
-comment "Locate the BAT using its logical name,
-	but without making a local copy. 
-	No guarantees are given for consistent reads.";
+comment "Locate the BAT using its logical name";
+command bind(head:str,tail:str):bat[:any_1,:any_2]
+address CMDbbpbind2
+comment "Locate the BAT using the head and tail names");
+
 command bind(idx:int):bat[:any_1,:any_2] 
 address CMDbbpbindindex
 comment "Locate the BAT using its BBP index";
+
 pattern getObjects():bat[:int,:str] 
 address CMDbbpGetObjects
 	comment "View of the box content.";
@@ -255,6 +258,7 @@ mal_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpbind2(int *ret, str *hnme, str *tnme);
 mal_export str CMDbbpbindindex(int *ret, int *bid);
 mal_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -447,6 +451,28 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+CMDbbpbind2(int *ret, str *hnme, str *tnme)
+{
+	int i;
+	/* find a specific BAT in the buffer pool */
+	BBPlock("CMDbbpbind2");
+	for (i = 1; i < BBPsize; i++){
+		BAT *b = (BAT *) BATdescriptor(i);
+		if( b == 0 ) 
+			continue;
+		if( strcmp(b->hident,*hnme)==0 &&
+			strcmp(b->tident,*tnme)==0 ){
+			BBPkeepref(i);
+			*ret = i;
+			BBPunlock("CMDbbpbind2");
+			return MAL_SUCCEED;
+		}
+		BBPreleaseref(i);
+	}
+	BBPunlock("CMDbbpbind2");
+	return throwMessage("bbp.bind","BAT not found");
+}
 str
 CMDbbpbindindex(int *ret, int *bid)
 {
