@@ -17,7 +17,7 @@
 @a M. L. Kersten
 @v 5.0
 @-
-@+ MonetDB Client Interface
+@+ Textual Client Interface
 Clients gain access to the Monet server through a internet connection
 or through its server console.
 Access through the internet requires a client program at the

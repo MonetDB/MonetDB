@@ -17,7 +17,6 @@
 @f mal_scenario
 @a M. Kersten
 @v 0.0
-@-
 @+ Session Scenarios
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
@@ -45,8 +44,8 @@ we end up with a type correct program.
 The code block is subsequently sent to an MAL optimizer.
 In the default case the program is left untouched. For other languages, 
 the optimizer deploys language specific code transformations,
-e.g. foreign-key optimizations in joins and volume reduction over
-intermediates. All optimization information is statically derived from the
+e.g. foreign-key optimizations in joins and remote query execution.
+All optimization information is statically derived from the
 code blocks and possible catalogues maintained for the query language
 at hand. Optimizers leave advice and their findings in properties
 in the symbol table, see @ref{Property management}.
@@ -65,7 +64,7 @@ or vectorized pipe-line execution by a dedicated engine.
 
 A failure encountered in any of the steps terminates the scenario
 cycle. It returns to the user for a new command.
-@node Scenario management, Client administration, Session Scenarios, MonetDB Overview 
+@node Scenario Management, Textual Clients , Session Scenarios, MonetDB Overview 
 @- Scenario management
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
@@ -547,11 +546,6 @@ The @code{XYZengine(Client c)} contains the applicable back-end engine.
 The default is the MAL interpreter, which provides good balance
 between speed and ability to analysis its behavior.
 
-@menu
-* Scenario management::
-* Client administration::
-* Session Scenarios::
-@end menu
 @-
 @{
 @= runPhase

@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f mal
-@* Introduction to MonetDB Version 5
+@* MonetDB Version 5
 The MonetDB product family consists of a large number of components
 developed within our group over the last decade. Some components have
 already been shipped to happy customers, some are still in the making,
@@ -40,16 +40,17 @@ MonetDB Version 5 design considerations and
 a quick overview of the its architecture.
 
 @menu
-* Design considerations::
-* Architecture overview::
-* MAL synopsis::
-* MAL execution::
+* Design Considerations::
+* Architecture Overview::
+* MAL Synopsis::
+* Execution Engine::
 * Backward Compatibility::
 * Session Scenarios::
-* Scenario management::
-* Client administration ::
+* Scenario Management::
+* Textual Clients::
+* Data Management Tools::
 @end menu
-@node  Design considerations, Architecture overview, MonetDB Overview ,MonetDB Overview
+@node  Design Considerations, Architecture Overview, MonetDB Overview ,MonetDB Overview
 @+ Design considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the effort to extend the system into novel directions
@@ -72,7 +73,7 @@ Result delivery to the application
 @end itemize
 
 Choosing an architecture for processing database operations pre-supposes an
-intuition on where and how the cost will be distributed. In an OLTP
+intuition on how the cost will be distributed. In an OLTP
 setting you expect most of the cost to be in (P,O), while in OLAP it will
 be (D,E,R). In a distributed setting the components (O,D,E) are dominant.
 Web-applications would focus on (A,E,R).
@@ -101,8 +102,9 @@ our experience with earlier system versions
 showed that the overhead can be kept within acceptable bounds.
 Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
+The XML trend as the language for tool interaction supports our decision.
 
-@node Architecture overview, MAL synopsis, Design considerations, MonetDB Overview
+@node Architecture Overview, MAL Synopsis, Design Considerations, MonetDB Overview
 @+ Architecture overview
 The architecture is built around three independent components:
 the MonetDB server, the MonetDB guardian, and the client application.
@@ -111,32 +113,43 @@ physical database on one machine for all (concurrent) applications.
 The guardian program works along side a single server, keeping
 an eye on its behavior. If the server accidently crashes, it is this program
 that will attempt an automatic restart.
-Server and guardian are managed with the @code{monetdb} script,
+Server and guardian are managed with the @sc{monetdb} script,
 introduced in @ref{Start and Stop the Server}.
 
 The top layer consists of applications written in your favorite
 language.
 They provide both specific functionality
-for a particular product, e.g. Proximity,
-and generic functionality, e.g. the Aquabrowser.
+for a particular product, e.g. @url{http://kdl.cs.umass.edu/prox-overview,Proximity},
+and generic functionality, e.g. 
+the @url{http://www.aquafold.com,Aquabrowser} or @url{http://www.minq.se,Dbvisualizer}.
 The applications communicate with the server 
 using a de-facto standard interface packaged as a library
 e.g. JDBC, ODBC, Perl, PHP, etc..
 
-The prime query language processors available in the MonetDB family are
+The middle layer consists of query language processors such as 
 SQL and XQuery. The former supports the core functionality
-of SQL:1999 and extends into SQL:2003. The latter is based on
+of SQL'99 and extends into SQL'03. The latter is based on
 the W3C standard and includes the XUpdate functionality.
 The query language processors each manage their own private catalog structure.
 Software bridges, e.g. import/export routines, are used to
 share data between language paradigms.
 
-For each a language specific, strategic optimizer is included. 
+For each query language a specific, strategic optimizer is included. 
 It uses knowledge on the language semantics and general
 heuristics, such as pushing down selections through
-joins, to derive better programs.
+joins, to derive better programs. The output of the compilers
+are MAL programs ran against the server.
 
-@node MAL synopsis, MAL execution, Architecture overview,  MonetDB Overview
+@iftex
+@float Figure,fig:ex1
+@image{base00,,,,.pdf}
+@end float
+@end iftex
+
+The MonetDB server software stack consists of four layers,
+aligned with the @ref{Session Scenarios} functions.
+
+@node MAL Synopsis, Execution Engine, Architecture Overview,  MonetDB Overview
 @+ MonetDB Assembler Language (MAL)
 The target language for the query compilers is an assembler-like language,
 called the MonetDB Assembler Language (MAL).
@@ -242,16 +255,18 @@ str *monet_script;
 int monet_daemon=0;
 @}
 @-
-@node MAL execution, Session Scenarios, MAL synopsis , MonetDB Overview
-@- MonetDB bootstrap
+@node Execution Engine, Session Scenarios, MAL Synopsis , MonetDB Overview
+@+ Execution Engine
 
-Startup of the MonetDB server leads to loading the system kernel
-libraries as defined in a bootstrap script @code{mal_init.mx}.
-Its default location is decribed in the MonetDB configuration file.
+Startup of the MonetDB server trigger localization and execution of
+a bootstrap script @sc{mal_init.mx}
 Failure to find the startup-file terminates the session.
-The global symbol table is initialized with function signatures, and
-the pre-compiled commands and pattern code blocks are loaded. 
-The libraries may be dynamically loaded by default.
+It most likely points to an error in the MonetDB configuration file.
+
+During the boot phase, the global symbol table is initialized 
+with MAL function and factory definitions, and
+loading the pre-compiled commands and pattern. 
+The libraries are dynamically loaded by default.
 Expect tens of modules and hundreds of operations to become readily available.
 
 Modules once loaded can not be dropped without restarting the server.
@@ -264,6 +279,18 @@ able to detect all references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which is known to be a severe performance hindrence.
 
+The execution engine comes in several flavors. The default is a
+simple, sequential MAL interpreter. For each MAL function it creates
+a stack frame, which is initialized with all constants found in the
+function definition. During interpretation the garbage collector
+ensures freeing of space consumptive tables (BATs) and strings.
+Furthermore, all temporary structures are garbage collected before
+the funtion returns the result.
+
+This simple approach leads to an accumulation of temporary variables.
+They can be freed earlier in the process using an explicit garbage collection
+command, but the general intend is to leave such decisions to an optimizer
+or scheduler.
 @{
 @h
 
