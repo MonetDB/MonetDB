@@ -10,8 +10,10 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
+
 cd ${MONET5_PREFIX}/../src/optimizer
 ls
 for f in  `ls *.mx`
@@ -19,8 +21,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
 
 cd ${MONETDB_PREFIX}/../src/gdk
 ls *mx
@@ -29,10 +32,11 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
-cp *png ${MONET5_PREFIX}/share/tmp
-cp *feps ${MONET5_PREFIX}/share/tmp
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
+cp *pdf ${MONET5_PREFIX}/share/tmp
+cp *feps *pdf ${MONET5_PREFIX}/share/tmp
 sed -i -e "/@t/,/@contents/d" ${MONET5_PREFIX}/share/tmp/gdk.bdy.texi
 
 cd ${MONETDB_PREFIX}/../src/mapi/clients/C
@@ -42,8 +46,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
 
 cd ${MONET5_PREFIX}/../src/modules/mal
 ls *mx
@@ -52,8 +57,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
 cd ${MONET5_PREFIX}/../src/mil
 ls *mx
 for f in  `ls *.mx`
@@ -61,8 +67,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
 cd ${MONET5_PREFIX}/../src/modules/atoms
 ls *mx
 for f in  `ls *.mx`
@@ -70,8 +77,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done
+cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
 cd ${MONET5_PREFIX}/../src/modules/kernel
 ls *mx
 for f in  `ls *.mx`
@@ -79,5 +87,5 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi ${MONET5_PREFIX}/share/tmp
+        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
 done

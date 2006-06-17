@@ -61,7 +61,6 @@ using the
 * Development Roadmap::
 * SQL ::
 * XQuery ::
-* User Interfaces::
 * Programming Interfaces::
 * Embedded MonetDB::
 * MonetDB Assembler Language::
@@ -113,17 +112,33 @@ using the
 @node Database Dumps, MonetDB Overview, Checkpoint and Recovery, Download and Installation
 @include Assets/Databasedump.texi
 
-@node MonetDB Overview, Design considerations, Database Dumps, Top
+@node MonetDB Overview, Design Considerations, Database Dumps, Top
 @include mal.bdy.texi
 
-@node Session Scenarios , Scenario management , MAL execution, MonetDB Overview
+@node Session Scenarios , Scenario Management , Execution Engine, MonetDB Overview
 @include mal_scenario.bdy.texi
 
-
-@node Client administration, Development Roadmap, Scenario management, MonetDB Overview
+@node Textual Clients, Data Management Tools, Scenario Management, MonetDB Overview
 @include mal_client.bdy.texi
+@include Assets/MapiClient.texi
+@include Assets/JdbcClient.texi
 
-@node Development Roadmap, SQL Roadmap, Client administration, Top
+@subsection Console Interaction
+@include mal_readline.bdy.texi
+
+@node Data Management Tools, Aqua Data Studio, Textual Clients , MonetDB Overview
+@include Assets/DBA-GUIs.texi
+
+@node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
+@include Assets/AquaDataStudio.texi
+
+@node DbVisualizer, iSQL-Viewer, Aqua Data Studio, Data Management Tools
+@include Assets/DbVisualiser.texi
+
+@node iSQL-Viewer, Development Roadmap, DbVisualizer, Data Management Tools
+@include Assets/iSQL-Viewer.texi
+
+@node Development Roadmap, SQL Roadmap, iSQL-Viewer, Top
 @include Assets/Roadmap.texi
 
 @node Backward Compatibility, SQL ,Server Roadmap, MonetDB Overview
@@ -141,34 +156,10 @@ using the
 @node MonetDB/SQL Features, Feature List, SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
 
-@node XQuery, User Interfaces, Overlaying the BAT storage, Top
+@node XQuery, Programming Interfaces, Overlaying the BAT storage, Top
 @include Assets/XQueryOverview.texi
 
-@node User Interfaces, Mapi Client, XQuery, Top
-@include Assets/UserInterfaces.texi
-
-@node Mapi Client, Jdbc Client, User Interfaces , User Interfaces
-@include Assets/MapiClient.texi
-@node Jdbc Client, Data Management Tools, Mapi Client, User Interfaces
-@include Assets/JdbcClient.texi
-
-@section Console and Mapi Client
-@include mal_readline.bdy.texi
-
-@node Data Management Tools, Aqua Data Studio, Jdbc Client , User Interfaces
-@include Assets/DBA-GUIs.texi
-
-@node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
-@include Assets/AquaDataStudio.texi
-
-@node DbVisualizer, iSQL-Viewer, Aqua Data Studio, Data Management Tools
-@include Assets/DbVisualiser.texi
-
-@node iSQL-Viewer, Programming Interfaces, DbVisualizer, Data Management Tools
-@include Assets/iSQL-Viewer.texi
-
-
-@node Programming Interfaces, The Mapi Library, iSQL-Viewer, Top
+@node Programming Interfaces, The Mapi Library, XQuery, Top
 @include Assets/APIs.texi
 @node The Mapi Library, A Simple Mapi Application, Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
