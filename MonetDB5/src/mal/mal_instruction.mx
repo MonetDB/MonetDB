@@ -2493,22 +2493,18 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		if (isConstant(mb, getArg(p, i))) {
 			str cv = NULL;
 
-			/* if (getArgType(mb, p, i) == TYPE_void) {
-				strcat(t, "nil");
-			} else */{
-				VALformat(&cv, &getVar(mb, getArg(p, i))->value);
-				if (strlen(cv) > len - (t - s)) {
-					char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
+			VALformat(&cv, &getVar(mb, getArg(p, i))->value);
+			if (strlen(cv) > len - (t - s)) {
+				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
 
-					*t = 0;
-					strcpy(ns, s);
-					t = ns + (t - s);
-					GDKfree(s);
-					s = ns;
-				}
-				strcat(t, cv);
-				GDKfree(cv);
+				*t = 0;
+				strcpy(ns, s);
+				t = ns + (t - s);
+				GDKfree(s);
+				s = ns;
 			}
+			strcat(t, cv);
+			GDKfree(cv);
 			advance(t);
 		} else {
 			if( ! isTypeVar(mb,getArg(p,i)) ){

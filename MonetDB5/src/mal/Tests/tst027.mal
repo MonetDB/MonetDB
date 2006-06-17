@@ -1,3 +1,4 @@
+#variable arguments are only allowed in patterns
 function test(s:str, b:bat[:any_1,:any_2]...);
 	io.print(s);
 end test;

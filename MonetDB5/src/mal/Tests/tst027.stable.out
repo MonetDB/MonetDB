@@ -22,12 +22,13 @@ end test;	# 2
 #c:= bbp.new(:int,:int);
 #user.test("hello",b,c);
 #
-!ERROR: 'user.test' undefined in user.main[3] _4:any := user.test(_5:str, b:bat[:int,:int], c:bat[:int,:int])
+!ERROR: 'user.test' undefined in user.main[4] _5:any := user.test(_6:str, b:bat[:int,:int], c:bat[:int,:int])
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    c := bat.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)
-    user.test("hello",b,c);	# 3  unknown (_4:any)<-(_5:str)(b:bat[:int,:int])(c:bat[:int,:int])
-end main;	# 4  
+#variable arguments are only allowed in patterns 	# 1  (_1:str)
+    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
+    c := bat.new(:int,:int);	# 3 CMDBATnew (c:bat[:int,:int])<-(_3:int)(_3:int)
+    user.test("hello",b,c);	# 4  unknown (_5:any)<-(_6:str)(b:bat[:int,:int])(c:bat[:int,:int])
+end main;	# 5  
 
 # 07:58:40 >  
 # 07:58:40 >  Done.

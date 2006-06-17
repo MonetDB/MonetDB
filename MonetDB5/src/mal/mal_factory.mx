@@ -202,6 +202,39 @@ identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
 administrative overhead.
 
+@- Materialized views
+An area where factories might be useful are support
+for materialized views, i.e. the result of a query
+is retained for ease of access.
+
+A simple strategy is to prepare the result once
+and return it on each successive call. 
+Provided the arguments have not changed.
+For example:
+
+@example
+factory user.view1(l:int, h:int):bat[:void,:str];
+	a:bat[:void,:int]:= bbp.bind("emp","age");
+	b:bat[:void,:str]:= bbp.bind("emp","name");
+barrier always := true;
+    lOld := l;
+    hOld := h;
+    c := algebra.select(a,l,h);
+    d := algebra.semijoin(b,c);
+barrier available := true;
+    yield d;
+    leave available := calc.!=(lOld,l);
+    leave available := calc.!=(hOld,h);
+    redo available := true;
+exit available;
+    redo always;
+exit always;
+end view1;
+@end example
+
+The code should be extended to also check validity of the BATs.
+It requires a check against the last transaction identifier known.
+
 The Factory concept is still rather experimental and many
 questions should be considered, e.g.
 What is the lifetime of a factory? Does it persists after
