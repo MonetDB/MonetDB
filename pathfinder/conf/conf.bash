@@ -234,13 +234,19 @@ if [ "${os}" = "Linux" ] ; then
 			;;
 		esac
 	fi
-	if [ "${hw}${COMP}${BITS}" = "x86_64ntv64" ] ; then
-		d="`ls -d /soft/64/IntelC* | tail -n1`"
+	if [ "${COMP}" = "ntv" ] ; then
+		d="`ls -d /soft/${BITS}/icc-* 2>/dev/null | tail -n1`"
+		if [ ! "$d" ] ; then
+			d="`ls -d /soft/${BITS}/IntelC* 2>/dev/null | tail -n1`"
+		fi
 		if [ "$d"  -a  -d "$d/bin" ] ; then
 			binpath="$d/bin:${binpath}"
 		fi
 		if [ "$d"  -a  -d "$d/lib" ] ; then
 			libpath="$d/lib:${libpath}"
+		fi
+		if [ "$d"  -a  -d "$d/lib${BITS}" ] ; then
+			libpath="$d/lib${BITS}:${libpath}"
 		fi
 	fi
 	if [ "${hw}${COMP}${BITS}${host%-*}${domain}" = "x86_64ntv64singlebeo-cluster" ] ; then
