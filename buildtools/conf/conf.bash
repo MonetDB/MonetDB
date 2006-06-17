@@ -234,13 +234,19 @@ if [ "${os}" = "Linux" ] ; then
 			;;
 		esac
 	fi
-	if [ "${hw}${COMP}${BITS}" = "x86_64ntv64" ] ; then
-		d="`ls -d /soft/64/IntelC* | tail -n1`"
+	if [ "${COMP}" = "ntv" ] ; then
+		d="`ls -d /soft/${BITS}/icc-* 2>/dev/null | tail -n1`"
+		if [ ! "$d" ] ; then
+			d="`ls -d /soft/${BITS}/IntelC* 2>/dev/null | tail -n1`"
+		fi
 		if [ "$d"  -a  -d "$d/bin" ] ; then
 			binpath="$d/bin:${binpath}"
 		fi
 		if [ "$d"  -a  -d "$d/lib" ] ; then
 			libpath="$d/lib:${libpath}"
+		fi
+		if [ "$d"  -a  -d "$d/lib${BITS}" ] ; then
+			libpath="$d/lib${BITS}:${libpath}"
 		fi
 	fi
 	if [ "${hw}${COMP}${BITS}${host%-*}${domain}" = "x86_64ntv64singlebeo-cluster" ] ; then
@@ -304,9 +310,24 @@ if [ "${os}" = "Darwin" ] ; then
 	done
 	binpath="${mypath}:${binpath}"
 	unset mypath
+	if [ "${BITS}" = 64 ] ; then
+		if [ -f /Users/monet/soft/local/lib/libz.dylib ] ; then
+			conf_opts="${conf_opts} --with-z=/Users/monet/soft/local"
+		fi
+		if [ -f /Users/monet/soft/local/lib/libiconv.dylib ] ; then
+			conf_opts="${conf_opts} --with-iconv=/Users/monet/soft/local"
+		fi
+	fi
 fi
 
-if [ "${os}" = "SunOS" ] ; then
+if [ "${os}" = "SunOS" -a "${hw}" = "i86pc" ] ; then
+	# pkg-get software 
+	softpath="/opt/csw"
+	binpath="$softpath/bin:${binpath}"
+	libpath="$softpath/lib:${libpath}"
+fi
+
+if [ "${os}" = "SunOS" -a "${hw}" != "i86pc" ] ; then
 	# "our" /soft[64] path on apps
 	soft32="/var/tmp${soft32}"
 	soft64="/var/tmp${soft64}"
@@ -466,6 +487,12 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		modpath="${WHAT_PREFIX}/lib/${pkgdir}"
 		libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+	fi
+	if [ "${os}" = "CYGWIN" ] ; then
+		# CYGWIN finds dlls using the PATH variable 
+		if [ "${what}" = "MONETDB" ] ; then
+			binpath="${WHAT_PREFIX}/lib/bin:${binpath}"
+		fi
 	fi
 	if [ "${os}" = "IRIX64" ] ; then
 		# IRIX64 requires this to find dependend modules
