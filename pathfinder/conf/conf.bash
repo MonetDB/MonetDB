@@ -314,7 +314,14 @@ if [ "${os}" = "Darwin" ] ; then
 	fi
 fi
 
-if [ "${os}" = "SunOS" ] ; then
+if [ "${os}" = "SunOS" -a "${hw}" = "i86pc" ] ; then
+	# pkg-get software 
+	softpath="/opt/csw"
+	binpath="$softpath/bin:${binpath}"
+	libpath="$softpath/lib:${libpath}"
+fi
+
+if [ "${os}" = "SunOS" -a "${hw}" != "i86pc" ] ; then
 	# "our" /soft[64] path on apps
 	soft32="/var/tmp${soft32}"
 	soft64="/var/tmp${soft64}"
@@ -474,6 +481,12 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		modpath="${WHAT_PREFIX}/lib/${pkgdir}"
 		libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+	fi
+	if [ "${os}" = "CYGWIN" ] ; then
+		# CYGWIN finds dlls using the PATH variable 
+		if [ "${what}" = "MONETDB" ] ; then
+			binpath="${WHAT_PREFIX}/lib/bin:${binpath}"
+		fi
 	fi
 	if [ "${os}" = "IRIX64" ] ; then
 		# IRIX64 requires this to find dependend modules
