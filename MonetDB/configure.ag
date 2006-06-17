@@ -218,7 +218,7 @@ AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h sys/un.h termios.h)
-AC_CHECK_HEADERS(ieeefp.h winsock.h)
+AC_CHECK_HEADERS(ieeefp.h winsock.h xmmintrin.h)
 CFLAGS="$CFLAGS_bak"
 dnl We don't need to check for these two: they're only present on
 dnl Windows.  We list them here for completeness, since the
