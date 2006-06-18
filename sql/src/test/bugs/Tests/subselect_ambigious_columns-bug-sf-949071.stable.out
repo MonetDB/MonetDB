@@ -1,19 +1,19 @@
 stdout of test 'subselect_ambigious_columns-bug-sf-949071` in directory 'src/test/bugs` itself:
 
 
-# 12:48:47 >  
-# 12:48:47 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:48:47 >  
+# 21:42:22 >  
+# 21:42:22 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=34895 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="include sql;" ; echo ; echo Over..
+# 21:42:22 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
+# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm
+# dbname:mTests_src_test_bugs
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -26,61 +26,31 @@ Over..
 # varchar # type
 # 10 # length
 [ "modules"	]
-[ "schemas"	]
-[ "types"	]
 [ "functions"	]
 [ "args"	]
-[ "_tables"	]
-[ "_columns"	]
 [ "keys"	]
 [ "idxs"	]
-[ "triggers"	]
 [ "keycolumns"	]
-[ "_tables"	]
-[ "_columns"	]
 [ "keys"	]
 [ "idxs"	]
-[ "triggers"	]
 [ "keycolumns"	]
 [ "sequences"	]
-[ "env"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "profile"	]
-[ "sessions"	]
 # sys.tables # table_name
 # name # name
 # varchar # type
 # 10 # length
 [ "modules"	]
-[ "schemas"	]
-[ "types"	]
 [ "functions"	]
 [ "args"	]
-[ "_tables"	]
-[ "_columns"	]
 [ "keys"	]
 [ "idxs"	]
-[ "triggers"	]
 [ "keycolumns"	]
-[ "_tables"	]
-[ "_columns"	]
 [ "keys"	]
 [ "idxs"	]
-[ "triggers"	]
 [ "keycolumns"	]
 [ "sequences"	]
-[ "env"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "profile"	]
-[ "sessions"	]
 
-# 12:48:50 >  
-# 12:48:50 >  Done.
-# 12:48:50 >  
+# 21:42:22 >  
+# 21:42:22 >  Done.
+# 21:42:22 >  
 
