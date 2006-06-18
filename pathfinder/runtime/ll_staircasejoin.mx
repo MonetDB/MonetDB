@@ -74,6 +74,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 /*******************************************************************/
 
 /* DESCENDANT STEP */
+@:ll_proto(descendant)@
 @:ll_head(descendant)@
     self = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
@@ -86,6 +87,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_main(descendant)@
 
 /* CHILD STEP */
+@:ll_proto(child)@
 @:ll_head(child)@
     trivial_cases = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
@@ -93,10 +95,12 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 /* Templates / Wrappers */
 
-@= ll_head
+@= ll_proto
 static int
 ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
 	int height, oid min_iter, oid max_iter, bit no_iter_order, bit self);
+@
+@= ll_head
 int
 PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
 	 int *_height, bit *_one_iter, bit *_one_ctx,
