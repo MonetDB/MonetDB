@@ -490,10 +490,12 @@ query string with "M".
 				int commit = (!m->session->auto_commit && v);
 				m->session->auto_commit = (v)?1:0;
 				m->session->ac_on_commit = m->session->auto_commit;
-				if (commit && mvc_commit(m, 0, NULL) < 0)
-					break;
-				else if (mvc_rollback(m, 0, NULL) < 0)
-					break;
+				if (m->session->active) {
+					if (commit && mvc_commit(m, 0, NULL)< 0)
+						break;
+					else if (mvc_rollback(m, 0, NULL) < 0)
+						break;
+				}
 				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
 			}

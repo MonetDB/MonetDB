@@ -995,13 +995,13 @@ SQLparser(Client c)
 		m->scanner.mode = LINE_1;
 	}
 	if (be->language == 'X') {
-		int n = 0, id, off, len;
+		int n = 0, v, off, len;
 
 		if( strncmp(in->buf + in->pos,"export ",7)==0 )
-			n = sscanf(in->buf + in->pos+7, "%d %d %d", &id, &off, &len);
+			n = sscanf(in->buf + in->pos+7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_chunk(m, out, id, off, n == 3 ? len : m->reply_size);
+			mvc_export_chunk(m, out, v, off, n == 3 ? len : m->reply_size);
 
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
@@ -1009,25 +1009,30 @@ SQLparser(Client c)
 		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
 			res_table *t;
 
-			id = (int) strtol(in->buf+in->pos+6,NULL,0);
- 			t = res_tables_find(m->results, id);
+			v = (int) strtol(in->buf+in->pos+6,NULL,0);
+ 			t = res_tables_find(m->results, v);
 			if (t)
 				m->results = res_tables_remove(m->results, t);
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
 		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
-			id= (int) strtol(in->buf+in->pos+12,NULL,10);
-			m->session->auto_commit = (id)?1:0;
+			v= (int) strtol(in->buf+in->pos+12,NULL,10);
+			int commit = (!m->session->auto_commit && v);
+			m->session->auto_commit = (v)?1:0;
 			m->session->ac_on_commit = m->session->auto_commit;
-			if (mvc_rollback(m, 0, NULL) < 0)
-				return throwMessage("SQLparser", "Xauto_commit failed\n");
+			if (m->session->active) {
+				if (commit && mvc_commit(m, 0, NULL)< 0)
+					return throwMessage("SQLparser", "Xauto_commit (commit) failed\n");
+				else if (mvc_rollback(m, 0, NULL) < 0)
+					return throwMessage("SQLparser", "Xauto_commit (rollback) failed\n");
+			}
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
 		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
-			id= (int) strtol(in->buf+in->pos+11,NULL,10);
-			m->reply_size = id;
+			v= (int) strtol(in->buf+in->pos+11,NULL,10);
+			m->reply_size = v;
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
