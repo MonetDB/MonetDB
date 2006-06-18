@@ -185,6 +185,7 @@ tst908
 
 tst911
 tst912
+tst913
 HAVE_PCRE?tst960
 
 #tests for garbage collection of strings
