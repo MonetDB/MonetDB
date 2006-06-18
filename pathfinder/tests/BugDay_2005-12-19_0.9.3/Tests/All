@@ -17,7 +17,7 @@ non-existent_attribute.SF-1324219
 doc-order_in_attributes.SF-1328671
 empty.SF-1331808
 merged_union_and_join.SF-1337630
-#DEVELOPMENT?parent_step_bug.SF-1339844 # Not fixed, yet.
+parent_step_bug.SF-1339844
 #DEVELOPMENT?text_nodes_with_empty_content_seq.SF-1350418 # Not fixed, yet.
 #DEVELOPMENT?attribute_after_non-attribute_content.SF-1351516 # Not fixed, yet.
 shredding_one_attribute.SF-1376942
