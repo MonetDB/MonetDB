@@ -447,7 +447,7 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,981,810,193,111,171,188,1357"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,981,810,193,111,1357"
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
@@ -459,8 +459,6 @@ yes-*-*)
 	dnl  # 810: conversion from "." to "." may lose significant bits
 	dnl  # 193: zero used for undefined preprocessing identifier
 	dnl  # 111: statement is unreachable
-	dnl  # 171: invalid type conversion: "." to "."
-	dnl  # 188: enumerated type mixed with another type
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
