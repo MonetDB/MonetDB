@@ -23,7 +23,7 @@ e.g. @url{http://www.tanap.net/content/voc/organization/organization_intro.htm, 
 which includes a short historic overview of the VOC written by
 world expert on the topic F. Gaastra.
 The archives of the VOC are spread around the world, but a large
-contingent still resides in the @url{ http://www.nationaalarchief.nl/,National Archive<},
+contingent still resides in the @url{ http://www.nationaalarchief.nl/,National Archive},
 The Hague.
 The archives comprise over 25 million historical records.
 Much of which has not (yet) been digitized.
@@ -52,8 +52,8 @@ Make sure the MonetDB server has been started, then start the SQL client.
 Under Linux you will see something like this:
 
 @example
-shell> mjclient -uvoc
-password: ***
+shell> mjclient --database=voc -umonetdb 
+password: ******
 Welcome to the MonetDB interactive JDBC terminal!
 Database: MonetDB 4.99.19
 Driver: MonetDB Native Driver 1.3 (Spur_pre1 20060112)
@@ -73,7 +73,7 @@ The tutorial database can be initialized using either @code{mjclient} and
 @code{mclient} as follows, provided the sql-dump file has already been
 downloaded:
 @example
-shell> mjclient -uvoc -f voc_dump.sql -Xbatching
+shell> mjclient --database=voc -uvoc -f voc_dump.sql -Xbatching
 password: ***
 @end example
 Or using a remotely living dump.

@@ -6,7 +6,7 @@ known as SQL-2003.
 The SQL standard provides an ideal language framework,
 in terms of standardization committee viewpoints.  It is, however,
 hardly met by any of the existing (commercial) implementations.
-This is largely due to legacy of old software and backward compatibility
+This is largely due to software legacy and backward compatibility
 requirements from their client base.  See for instance
 @url{http://www.dbazine.com/gulutzan3.shtml,this}
 on-line article on SQL standards.
@@ -38,20 +38,20 @@ Relational Language Components, ISBN 1558604561.
 The architecture is based on a separate compiler module, which translates
 SQL statements into MAL. In this process common optimization heuristics,
 specific to relational algebra are performed.
-There are bindings for SQL with JDBC, ODBC, PHP and C,
+There are bindings for SQL with e.g. JDBC, PHP and C,
 see @ref{Programming Interfaces}) to integrate seamlessly in existing
 developments environments.
 Client utilities like @ref{Aqua Data Studio},
 @ref{DbVisualizer} and @ref{iSQL-Viewer}
 work flawlessly with the MonetDB SQL implementation and make
-your experience with even better!
+your experience with it even better!
 
 The remainder of this chapter provides a short tutorial to get
 going with MonetDB/SQL. A synopsis of the language features
 provides a quick intro on the scope of the current implementation
 and the short list for functional enhancements planned.
 The programming support sections illustrate some of the advanced
-features to analyse and your SQL code.
+features to analyse your SQL code.
 @menu
 * Getting Started with SQL::
 * The VOC Tutorial::
@@ -66,14 +66,14 @@ and SQL compiler module.  It can be downloaded from the
 @url{http://sourceforge.net/project/showfiles.php?group_id=56967,download}
 section at SourceForge. It is already included in the Windows installers.
 
-The first step is to start the database backend following
+The first step is to start the database back-end following
 the steps in @ref{Start and Stop the Server} or illustrated below.
 Once it runs, you can choose between a textual interface or
 one of the graphical user interfaces.
 The easiest to start with is a textual SQL client.
 Under Windows, this client is already configured to directly contact
-the running server. For Linux users we illustrate the actions taken
-behind the scene.
+the running server using @code{mjclient}.
+For Linux users we illustrate the actions taken behind the scene.
 
 The first action on Linux is to start the database server as described
 in @ref{Start and Stop the Server}.
@@ -131,7 +131,7 @@ The alternative interface is @code{mclient} with its Spartan rendering scheme:
 @example
 shell> mclient -lsql
 sql>SELECT 'Hello SQL, here I come' AS "message";
-#  # table_name
+# . # table_name
 # message # name
 # char # type
 # 22 # length

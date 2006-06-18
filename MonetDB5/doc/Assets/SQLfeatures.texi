@@ -20,8 +20,7 @@ separately. The list below provides a synopsis of the SQL features
 supported in the released version.
 
 @menu
-* Feature List::
-* SET Statement::
+* Session Variables ::
 * EXPLAIN Statement::
 * DEBUG Statement::
 * TRACE Statement::
@@ -29,86 +28,66 @@ supported in the released version.
 * Overlaying the BAT storage::
 @end menu
 
-@node Feature List, SET Statement, MonetDB/SQL Features, MonetDB/SQL Features
-@subsection SQL-99 Feature list
-In this section we give an itemized list of the SQL-99 features
-supported in the current release.
-@itemize @bullet
-@item 
-Primary and foreign key integrity enforcement.
-@item
-Subqueries are fully supported.
-@item
-Table expression @code{union} and @code{intersection}.
-@item
-Table views for query processing only.
-@item
-Binding SQL functions with to externally supplied routines.
-@item
-Auto-increment keys (SQL 2003).
-@end itemize
+@node Session Variables, EXPLAIN Statement, MonetDB/SQL Features, MonetDB/SQL Features
+@subsection Session Variables 
+MonetDB/SQL supports session variables declared by the user. 
+They are indistinguishable from table and column names
+and can be used anywhere a literal constant is allowed.
 
-
-@node SET Statement, EXPLAIN Statement, Feature List, MonetDB/SQL Features
-@subsection DECLARE Statement
-The user can declare local variables to hold scalar values.
 @example
-DECLARE myvar integer;
-SET myvar=21;
+sql>DECLARE high integer;
+sql>DECLARE n varchar(256);
+sql>SET high=4000;
+[ 1     ]
+sql>SET n='monetdb';
+[ 1     ]
+sql>SELECT count(*) from tables where id > high;
+# sys.tables # table_name
+# count_id # name
+# int # type
+# 2 # length
+[ 30    ]
 @end example
-This area requires further extension to make it more usefull.
-
-@subsection SET Statement
-MonetDB/SQL comes with a limited variable scheme.
-Globel, session based variables can be set using the
-construct:
-@example
-SET <variable>=<string>
-SET <variable>=<boolean>
-SET <variable>=<int>
-@end example
-Their type is inherited from the literal value supplied.
-The SQL engine comes with a limited set of environment variables
-to control its behavior.
-@itemize @bullet
-@item
-The @code{debug} variable takes an integer and sets the server global
-debug flag. (See MonetDB documentation) It also activates the
-debugger when the query is being executed.
-@item
-The @code{explain} variable takes a string value and when set 
-to 'plan' shows the MAL plan before it is being executed.
-When set to 'trace' it produces the execution trace information
-for each query.
-When set to 'profile', it keep track of the SQL global performance
-in a table called @code{profile}.
-@end itemize
-
-By default all remaining variables are stored as strings and
-any type analysis is up to the user. The can be freely used by the
-SQL programmer for inclusion in his queries. [TODO, a little more
-flexibilty would mean a lot]
-
-The variables and their type definition are assembled in a system table
-called 'sessions'. Its default content is shown below:
+The SQL variables are stored in the global temporary table @code{sessions}.
+The initial state is something like:
 @example
 >select * from sessions;
 #---------------------------------------------------------------------#
 # t                     t                   t               t         # name
 # str                   str                 str             int       # type
 #---------------------------------------------------------------------#
-[ "debug",                "0",                "int",          0       ]
-[ "explain",              "",                 "varchar",      0       ]
 [ "current_schema",       "sys",              "varchar",      1       ]
 [ "current_user",         "monetdb",          "varchar",      1       ]
 [ "current_role",         "monetdb",          "varchar",      0       ]
 [ "current_timezone",     "0",                "sec_interval", 0       ]
 [ "cache",                "true",             "boolean",      0       ]
+[ "profile",              "false",            "boolean",      0       ]
+[ "optimizer",            "on",               "varchar",      0       ]
 [ "trace",                "false",            "boolean",      0       ]
-[ "optimizer",            "sql.optimizer();", "varchar",      0       ]
 @end example
+The table is shared? private?
 
-@node EXPLAIN Statement, DEBUG Statement, SET Statement, MonetDB/SQL Features
+@itemize @bullet
+@item
+The @code{debug} variable takes an integer and sets the server global
+debug flag (See MonetDB configuration documentation file). 
+It also activates the debugger when the query is being executed.
+@item
+The @code{profile} variable takes a boolean and when set collects
+execution statistics on the SQL queries executed in the table @code{profile}.
+@item
+The @code{trace} variable takes a boolean and when set lists
+the execution timing of all MAL instructions to solve the SQL query.
+@item
+The @code{cache} variable takes a boolean and when set
+SQL uses a query cache to speed up subsequent calls to identical
+(up to constants) queries.
+@item
+The @code{optimizer} variable takes a string. It controls the
+quer optimizers, See @ref{SQL}.
+@end itemize
+
+@node EXPLAIN Statement, DEBUG Statement, Session Variables, MonetDB/SQL Features
 @subsection EXPLAIN Statement
 The intermediate code produced by the SQL Implementation compiler can be made 
 visible using the @code{explain} statement modifier. 
@@ -179,9 +158,6 @@ The call to the cached function is included in the function @code{main},
 which is the only piece of code produced if the query is used more than once.
 The query cache disappears when the server is brought to a halt. 
 
-When/how is the cache cleared? Can you list elements in the
-cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain sqlcache.sql0;}
-
 @node DEBUG Statement, TRACE Statement, EXPLAIN Statement, MonetDB/SQL Features
 @subsection DEBUG Statement
 
@@ -202,7 +178,7 @@ mdb>next
 #    _2:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _6=0)
 mdb>next
 #    _8:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _9=1)
-mdb>
+mdb> ...
 @end verbatim
 
 @node TRACE Statement, Optimizer Control, DEBUG Statement, MonetDB/SQL Features
@@ -253,7 +229,6 @@ on the expensive components of the query plan.
 [ 32    ]
 #    36 usec#    sql.exportValue(_83=1, _84="sys.tables", _85="count_id", _86="int", _87=32, _88=0, _89=6, _80=32)
 #   911 usec#    sql_cache.s0_0()
-
 @end verbatim
 
 @node Optimizer Control, Overlaying the BAT storage, TRACE Statement,  MonetDB/SQL Features
@@ -274,43 +249,29 @@ to a list of optimizers to identify the steps needed.
 [ "commonExpressionRemoval,garbageCollector"    ]
 @end example
 
-The optimizers available, in various stages of maturity, are:
-commonExpressionRemoval")@
+The optimizers available to work with in the SQL context,
+in various stages of maturity, are:
 @multitable @columnfractions .2 .8
 @item aliasRemoval
 @tab Remove alias assignments
 @item deadCodeRemoval
 @tab Remove all code not leading to used results
 @item garbageCollector
-@tab
-@item partitionedQuery
-@tab
+@tab Injects calls to the garbage collector to free up space.
 @item expressionAccumulation
-@tab
+@tab Looks after aritmetic expressions, turning them into accumulator
+expressions
 @item factorize
-@tab
-@item strengthReduction
-@tab
-@item emptySet
-@tab
-@item singleton
-@tab
+@tab Produce a factory from a function
 @item peephole
 @tab
 @item costEstimation
 @tab
-@item multitable
-@tab
-@item generators
-@tab
 @item reduce
-@tab
+@tab Reduces the stack space claimed by variables
 @item coercions
-@tab
-@item remoteQueries
-@tab
+@tab Performs static coercions
 @end multitable 
-
 
 The final result the optimizer steps become visible using the @code{explain}
 statement modifier.  Alternatively, the @code{debug} statement modifier
