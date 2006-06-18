@@ -143,7 +143,7 @@ monet5_create_user(list *l, str user, str passwd, str fullname, int schema_id, i
 
 	/* create two SQL statements that insert the user in the SQL
 	 * adminsitration */
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s',%d);", user, fullname, schema_id);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_user_info\" VALUES('%s','%s',%d);", user, fullname, schema_id);
 	list_append(l, stmt_sql(_strdup(buf)));
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, grantorid);
 	list_append(l, stmt_sql(_strdup(buf)));
