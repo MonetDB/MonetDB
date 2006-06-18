@@ -239,27 +239,27 @@ static char     label[DOT_LABELS];
 
 /** Print node with no content */
 #define L(t, loc)           snprintf (label, DOT_LABELS,                    \
-				      "%s\\n(%i,%i-%i,%i)\\r",              \
+				      "%s\\n(%u,%u-%u,%u)\\r",              \
                                       (t), (loc).first_row, (loc).first_col,\
                                            (loc).last_row, (loc).last_col)
 
 /** Print node with single content */
 #define L2(l1, l2, loc)     snprintf (label, DOT_LABELS,                    \
-				      "%s [%s]\\n(%i,%i-%i,%i)\\r",         \
+				      "%s [%s]\\n(%u,%u-%u,%u)\\r",         \
                                       (l1), (l2),                           \
                                       (loc).first_row, (loc).first_col,     \
                                       (loc).last_row, (loc).last_col)
 
 /** Print node with two content parts */
 #define L3(l1, l2, l3, loc) snprintf (label, DOT_LABELS,                    \
-                                      "%s [%s,%s]\\n(%i,%i-%i,%i)\\r",      \
+                                      "%s [%s,%s]\\n(%u,%u-%u,%u)\\r",      \
                                       (l1), (l2), (l3),                     \
                                       (loc).first_row, (loc).first_col,     \
                                       (loc).last_row, (loc).last_col)
 
 /** Print node with two content parts */
 #define L4(l1, l2, l3, l4, loc) snprintf (label, DOT_LABELS,                \
-                                      "%s [%s,%s,%s]\\n(%i,%i-%i,%i)\\r",   \
+                                      "%s [%s,%s,%s]\\n(%u,%u-%u,%u)\\r",   \
                                       (l1), (l2), (l3), (l4),               \
                                       (loc).first_row, (loc).first_col,     \
                                       (loc).last_row, (loc).last_col)

@@ -977,22 +977,22 @@ timer_str (long elapsed)
     tm = str = strdup ("000h 00m 00s 000ms 000us");
 
     if (elapsed / 3600000000UL) {
-        str += sprintf (str, "%03ldh ", elapsed / 3600000000UL);
+        str += sprintf (str, "%03luh ", elapsed / 3600000000UL);
         elapsed %= 3600000000UL;
     }
 
     if (elapsed / 60000000UL) {
-        str += sprintf (str, "%02ldm ", elapsed / 60000000UL);
+        str += sprintf (str, "%02lum ", elapsed / 60000000UL);
         elapsed %= 60000000UL;
     }
 
     if (elapsed / 1000000UL) {
-        str += sprintf (str, "%02lds ", elapsed / 1000000UL);
+        str += sprintf (str, "%02lus ", elapsed / 1000000UL);
         elapsed %= 1000000UL;
     }
 
     if (elapsed / 1000UL) {
-        str += sprintf (str, "%03ldms ", elapsed / 1000UL);
+        str += sprintf (str, "%03lums ", elapsed / 1000UL);
         elapsed %= 1000UL;
     }
 
@@ -1255,11 +1255,11 @@ static nat store_PfxLocNEW(
     if ( a_uri ) {
         if ( !a_pfx )
             a_pfx = (xmlChar*)emptyString;
-        sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
+        sprintf(shredCtx->workSpace,"%s:%s:%s",(char*)a_uri,(char*)a_pfx,(char*)a_tag);
         pfxloc = &shredCtx->workSpace[0];
     } else if ( a_pfx ) {
         a_uri = (xmlChar*)emptyString;
-        sprintf(shredCtx->workSpace,"%s:%s",a_pfx,a_tag);
+        sprintf(shredCtx->workSpace,"%s:%s",(char*)a_pfx,(char*)a_tag);
         pfxloc = &shredCtx->workSpace[0];
     } else {
         a_uri = a_pfx = (xmlChar*)emptyString;
