@@ -403,6 +403,8 @@ comment "Materialize the oid into an oid";
 
 command str(b:bat[:any_1,:str]):bat[:any_1,:str]
 address CMDconvertstr_str;
+command bit(b:bat[:any_1,:str]):bat[:any_1,:bit]
+address CMDconvertstr_bit;
 @-
 @}
 @{
@@ -1794,13 +1796,51 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 		x++;
 	}
 	  bunins_failed:
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+	if (!(bn->batDirty&2)) 
+		bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 #endif
 
+}
+mal_export str CMDconvertstr_bit(int *ret, int *bid);
+str
+CMDconvertstr_bit(int *ret, int *bid)
+{
+	BAT *b, *bn;
+	int xx;
+	BUN p, q;
+	str x;
+	bit y;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	}
+
+	bn = newBATresult(b, TYPE_bit);
+
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b, p);
+
+		x = (str) BUNtail(b, p);
+		if( strcmp(x,"true")== 0 || strcmp(x,"TRUE")== 0)
+			y= TRUE;
+		else
+		if( strcmp(x,"false")== 0 || strcmp(x,"FALSE")== 0)
+			y= FALSE;
+		else
+			y = bit_nil;
+		bunfastins(bn, h, &y);
+	}
+  bunins_failed:
+	if (!(bn->batDirty&2))
+		bn = BATsetaccess(bn, BAT_READ); 
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
 }
 @- IfThenElse
 The conditional multiplex operations .
