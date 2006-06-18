@@ -5552,10 +5552,11 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 {
     unsigned int lev_fst, lev_snd,
         fst_res, snd_res, 
-        snd_var, i,
+        snd_var, 
         cast_fst, cast_snd,
         switched_args, fid,
         rc, rc1, rc2;
+    int i;
     PFcnode_t *fst, *snd, *res, *c;
     PFfun_t *fun;
     char *comp;
