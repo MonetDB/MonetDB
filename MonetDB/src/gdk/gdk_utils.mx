@@ -30,7 +30,6 @@ gdk_export void GDKlog(const char *format, ...);
 gdk_export void GDKlockHome(void);
 gdk_export void GDKunlockHome(void);
 gdk_export int GDKgetHome(void);
-gdk_export void GDKprotect();
 
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);

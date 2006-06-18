@@ -658,6 +658,7 @@ conn_kill(int i)
 	return 0;
 }
 
+#if 0				/* not used */
 static int
 conn_invalidate(int i)
 {
@@ -671,8 +672,6 @@ conn_invalidate(int i)
 	return 0;
 }
 
-
-#if 0				/* not used */
 static int
 conn_write(int conn_id, int len, char *src, char *msg)
 {

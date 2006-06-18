@@ -2262,7 +2262,7 @@ gdk_export int GDKnrofthreads;
 gdk_export int GDKdebug;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
-gdk_export void GDKprotect();
+gdk_export void GDKprotect(void);
 @}
 @-
 The GDKembedded variable is a property set in the configuration file

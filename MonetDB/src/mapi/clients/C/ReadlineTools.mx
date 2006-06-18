@@ -350,7 +350,7 @@ init_readline(Mapi mid, char *lang, int save_history)
 		rl_attempted_completion_function = mil_completion;
 	} else {
 		/* recognize the help function, should react to <FCN2> */
-		/* rl_bind_key('\033',mal_help); */
+		rl_bind_key('\033', mal_help); 
 		rl_attempted_completion_function = mal_completion;
 	}
 

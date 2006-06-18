@@ -647,8 +647,8 @@ m_export int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res);
 m_export void ll_flushbuffer(void);
 m_export int ll_getstring(char *buf, int max_size);
 m_export int ll_push(str s, str mod);
-m_export void ll_reset();
-m_export str ll_parent_module();
+m_export void ll_reset(void);
+m_export str ll_parent_module(void);
 
 #endif /* _MONET_PARSE_H */
 

@@ -42,7 +42,7 @@ extern "C" {
 
 /* Generic initialization/cleanup routines */
 m_export void TBL_init(void);
-m_export void TBL_protect();
+m_export void TBL_protect(void);
 m_export void TBL_initclient(Client c, Client father);
 m_export void TBL_exitclient(Client c);
 
