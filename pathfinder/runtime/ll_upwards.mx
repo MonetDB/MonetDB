@@ -1,0 +1,378 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Initial Developer of the Original Code is the Database &
+@' Information Systems Group at the University of Konstanz, Germany.
+@' Portions created by the University of Konstanz are Copyright (C)
+@' 2000-2006 University of Konstanz.  All Rights Reserved.
+@'
+@' $Id$
+@f ll_upwards
+@a Peter Boncz 
+@t loop-lifted upwards staircase steps
+@c
+#include <gdk.h>
+#include "pathfinder.h"
+
+static char LL_UPWARDS_PARENT[] = "parent";
+static char LL_UPWARDS_ANCESTOR[] = "ancestor";
+static char LL_UPWARDS_ANCESTOR_SELF[] = "ancestor-or-self";
+
+typedef struct {
+ oid iter;
+ oid pre; 
+} duple;
+
+static INLINE oid 
+skipholes(oid pre, unsigned int *pre_size) {
+     while(pre_size[pre] & (1<<31)) 
+         pre += pre_size[pre] & ~(1<<31); /* skip over holes */
+     return pre; 
+}
+
+@= found_parent
+
+    /* parent pass: generate the parent as a result 
+     */
+    oid pos = bounds[iter-min_iter]++;  /* position to write result to */  
+    oid parent = stack[depth-1]-1; /* parent is top-of-stack */ 
+    if (pos >= result_size) break; /* SANITY */
+    result[pos].pre = parent; 
+    result[pos].iter = iter;
+
+@= found_ancestor_cnt
+
+    /* anc pass1: count how many nodes are on the stack (that we haven't seen before in this iter) 
+     */
+    int i = depth;
+    while(i > 0 && stack[i-1] > bounds[iter-min_iter]) i--;
+    bounds[iter-min_iter] = stack[depth-1]; /* biggest ancestor so far for this context node */
+    result[cur].iter = depth-i;             /* #new ancestors generated for this context node */ 
+
+@= found_ancestor_gen
+
+    /* anc pass2: generate the precomputed number of (unique) ancestors for this iter 
+     */
+    duple* final_result = (duple*) bounds; /* HACK, result was passed as bounds  */
+    int hitcnt = (int) result[cur].iter; 
+    oid pos = result[cur].pre;
+    if (pos > result_size || hitcnt > depth) break; /* SANITY */
+    while(hitcnt > 0) {
+        final_result[pos].pre = stack[depth-hitcnt]-1;    
+        final_result[pos].iter = iter;
+        hitcnt--; pos++;
+    }
+
+@= upwards_core
+static int 
+ll_upwards_@1(                            /* OUTPUT: */
+        duple* result, oid result_size,   /* - pre-allocated result array */
+        size_t* bounds,                   /* - per iter bound */ 
+                                          /* DOCUMENT: */
+        unsigned int* pre_size,           /* - pre_size column */
+        oid root, oid limit, int height,  /* - valid range of pre ids in the document */
+                                          /* INPUT: */
+        oid min_iter,                     /* - minimum iter */      
+        duple* context, oid context_size) /* - the context array and its size */
+{  
+    /* NOTE: for paritioning in ancestor, we need an initial bound smaller than the 
+     * root to compare with pre values on the stack. for that reason, the stack 
+     * contains pre values INCREMENTED BY ONE. 
+     * THUS: when putting a pre on the stack, add 1, when reading from it subtract 1.
+     */
+    oid *stack = (oid*) alloca(height*sizeof(oid)); /* STACK CONTAINS pre+1 NUMBERS */ 
+    oid pre = root;  
+    oid cur = 0;  
+    int depth = 0;  
+
+   (void) result_size;
+   (void) min_iter;
+
+    /* roots don't have ancestors -- skip them (they appear first anyway) */
+    while(context[cur].pre == root) cur++; /* there is a sentinel at context_size */
+
+    /* we perform a forwards scan with skipping, that carries out an *optimal* 
+     * depth-first DOM tree traversal (where we visit nodes only if needed)
+     */ 
+    while(cur < context_size) { /* while still context nodes active */
+
+        if (context[cur].pre == pre) { 
+
+            /* generate result for each iteration */
+            while(context[cur].pre == pre) { /* can disregard cur<context_size, thanks to sentinel */         
+                oid iter = context[cur].iter;      
+ 	        @:found_@1@
+                cur++;
+            }
+
+        } else if (context[cur].pre <= pre + pre_size[pre]) {
+
+            /* next context node is in the descendants: go find it */
+            stack[depth++] = pre+1;
+            pre = skipholes(pre+1, pre_size);
+  	    if (depth == height || pre > limit) break; /* SANITY */
+
+        } else if (context[cur].pre < stack[depth-1] + pre_size[stack[depth-1]-1]) {
+
+            /* none of the above, but next context node is in the descendants of the parent */
+            pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* go to the next sibling */
+  	    if (pre > limit) return -1;
+
+        } else {
+
+            /* pop the stack */
+            if (depth == 0) break; /* SANITY */
+            pre = stack[--depth]-1;
+       }
+   }
+   return (cur == context_size);
+}
+
+@c
+@:upwards_core(parent)@
+@:upwards_core(ancestor_cnt)@
+@:upwards_core(ancestor_gen)@
+
+static int
+ll_upwards(               /* RESULT: */
+        BAT **ret,        /* - [oid,oid] bat sorted on [iter,pre] */
+                          /* INPUT: */
+        BAT *iter_bat,    /* - [void,oid] bat, no order assumed */
+        BAT *ctx_bat,     /* - [void,oid] bat, synced with iter_bat */
+                          /* DOCUMENT: */
+        BAT *size_bat,    /* - [void,int] bat, doc representation with holes */ 
+        int height,       /* - document height */
+        str axis) 
+{ 
+    oid root = *(oid*) BUNhead(size_bat, BUNfirst(size_bat));
+    oid killed = (axis == LL_UPWARDS_ANCESTOR_SELF)?oid_nil:root;
+    oid *pre_size = ((oid*) BUNfirst(size_bat)) - root;
+    oid min_iter = 1<<(8*sizeof(oid)-1), max_iter = 0, prev_pre = 0;
+    size_t* bounds, niters=1, i=0, n, m = BATcount(ctx_bat);
+    duple *context, *context_result, *prune;
+    int sorted = 1, status = GDK_FAIL;
+    BUN p, q;
+    BAT *bn;
+
+    if (!ALIGNsynced(iter_bat,ctx_bat)) {
+        GDKerror("%s: iter and context bat should be in sync.\n", axis);
+        return status;
+    }
+    if (BUNsize(size_bat) != sizeof(int)) {
+        GDKerror("%s: illegal size bat passed in.\n", axis);
+        return status;
+    }
+
+    /* context will hold the pruned set of [iter,pre] context nodes */
+    context = (duple*) GDKmalloc((m+1)*sizeof(duple));
+    if (context == NULL) return status;
+
+    /* gather the context nodes and analyze them (order, min/max iter)  */
+    BATloopFast(ctx_bat, p, q, n) {
+        oid pre = *(oid*) BUNtail(ctx_bat,p);
+        context[i++].pre = pre;
+        if (pre < prev_pre) sorted = 0;
+        prev_pre = pre;
+    }
+    i=0;
+    BATloopFast(iter_bat, p, q, n) {
+        oid iter = *(oid*) BUNtail(iter_bat,p);
+        context[i++].iter = iter;
+	if (iter < min_iter) min_iter = iter;
+	if (iter > max_iter) max_iter = iter;
+    }
+    /* now we know the size of the offset/prune arrays should be */
+    if (m) niters += max_iter - min_iter;
+    
+    if (!sorted) { /* if needed, sort context set on pre-s */
+        GDKqsort(context, NULL, m, sizeof(duple), TYPE_oid, sizeof(oid));
+    }
+
+    /* prune is a temporary array of duples, one duple per iter
+     * - duple.pre  contains the pre-bound for pruning the previous node
+     * - duple.iter is (mis)used to contain the position in context[] of
+     *              the previous node (for that same iter, that is).
+     */
+    prune = (duple*) GDKmalloc(niters*sizeof(duple));
+    if (prune == NULL) return 0;
+    for(i=0; i<niters; i++) {
+        prune[i].pre = root;
+        prune[i].iter = oid_nil; 
+    }
+
+    /* we can now do pruning, remember we see context nodes in pre order */
+    for(i=0; i<m; i++) {
+        oid pre = context[i].pre;
+        oid iter = context[i].iter - min_iter;
+
+        if (pre < prune[iter].pre) { 
+            context[prune[iter].iter].pre = killed; /* prune it */ 
+        }
+        /* set the new bound */
+        prune[iter].iter = i; 
+        prune[iter].pre = pre + 1; /* this just removes duplicates */
+        if (axis != LL_UPWARDS_PARENT) { 
+            prune[iter].pre += pre_size[pre]; /* this prunes ancestors */
+        }
+    }
+    GDKfree(prune);
+
+    /* remove pruned tuples */
+    for(n=i=0; i<m; i++) {
+        oid pre = context[i].pre;
+        oid iter = context[i].iter;
+        int inc = (pre != killed); /* filter out root and pruned nodes */
+        context[n].pre = pre;
+        context[n].iter = iter;
+        n += inc; /* pruned nodes will be overwritten*/
+    }
+    /* write sentinel record */
+    context[n].pre = oid_nil;
+    context[n].iter = oid_nil;
+
+    /* bounds is used (mostly) to keep per-iter start positions in the result BAT
+     * it allows us to directly generate a [iter,pre] ordered result
+     */
+    bounds = (size_t*) GDKzalloc((niters+1)*sizeof(size_t));
+    if (bounds == NULL) {
+        GDKfree(context);
+        return status;
+    }
+
+    /* go do the staircase join */
+    if (axis == LL_UPWARDS_PARENT) {
+        /* bounds will contain offsets into the result for each iter */
+        for(i=0; i<n; i++) 
+            bounds[1+context[i].iter - min_iter]++; /* count by iter */
+        for(i=1; i<=niters; i++) 
+            bounds[i] += bounds[i-1];  /* running sum produces offsets */
+
+        *ret = bn = BATnew(TYPE_oid, TYPE_oid, n);
+        if (bn) {
+            if (ll_upwards_parent(
+                context_result = (duple*) BUNfirst(bn), n, 
+                bounds, 
+                pre_size,
+                root, root+BATcount(size_bat), height, 
+                min_iter, context, n))
+            {
+		/* filter out duplicates */
+                oid pre_prev = oid_nil;
+                oid iter_prev = oid_nil;
+                for(m=i=0; i<n; i++) {
+                    oid pre = context_result[i].pre;
+                    oid iter = context_result[i].iter;
+                    context_result[m].pre = pre;
+                    context_result[m].iter = iter;
+                    m += (pre_prev != pre || iter_prev != iter);
+                    pre_prev = pre;
+                    iter_prev = iter;
+                }
+    	        if (iter_bat->tkey) BATkey(bn, TRUE);
+                status = GDK_SUCCEED;
+            } else  {
+                GDKerror("%s: illegal data in size column or context list.\n", axis);
+            }
+        }
+    } else if ((context_result=GDKzalloc(n*sizeof(duple))) != NULL) {
+        /* HACK: in first pass, bounds contains a partitioning bound */
+        for(i=0; i<=niters; i++) bounds[i] = root;
+
+        /* first pass */
+        if (ll_upwards_ancestor_cnt(
+                 context_result, n, 
+                 bounds,
+                 pre_size,
+                 root, root+BATcount(size_bat), height, 
+                 min_iter, context, n))
+        {
+            /* count the hits per-iter, by examining hitcnt (context_result.iter) of each context node.
+             * while doing so, put in context_result.pre the absolute position of self in the result 
+             */
+            for(i=0; i <= niters; i++)
+                bounds[i] = 0; /* reset iter-bounds, now use it for counting again */
+
+            for(i=0; i<n; i++) {
+                size_t iter = context[i].iter - min_iter; 
+                oid hitcnt = context_result[i].iter;
+                context_result[i].pre = bounds[iter+1]; /* offset within the iter block */
+                bounds[iter+1] += hitcnt + (axis == LL_UPWARDS_ANCESTOR_SELF); /* per-iter result size */
+            }
+            for(i=1; i<=niters; i++) 
+                bounds[i] += bounds[i-1];  /* running sum to get per-iter offsets */
+
+            for(i=0; i < n; i++) {
+                size_t iter = context[i].iter - min_iter; 
+                context_result[i].pre += bounds[iter]; /* add iter-start to get absolute offset */
+            }
+
+            /* second pass, generating the results, knowing the final result size m */
+            *ret = bn = BATnew(TYPE_oid, TYPE_oid, m=bounds[niters]);
+            if (bn) {
+                if (axis == LL_UPWARDS_ANCESTOR_SELF) { /* insert the self nodes beforehand */ 
+                    duple *result = (duple*) BUNfirst(bn);
+                    for(i=0; i<n; i++) {
+                        size_t pos = context_result[i].pre + context_result[i].iter; /* start + hitcnt */
+                        result[pos].pre = context[i].pre;
+                        result[pos].iter = context[i].iter;
+                    }
+                }
+		if (ll_upwards_ancestor_gen(
+                        context_result, m,
+                        (size_t*) BUNfirst(bn), /* HACK, pass result as bounds */ 
+                        pre_size,
+                        root, root+BATcount(size_bat), height, 
+                        min_iter, context, n)) 
+                {
+                    status = GDK_SUCCEED;
+                } else {
+                    GDKerror("%s: illegal data during result generation.\n", axis);
+                }
+            }
+        } else {
+            GDKerror("%s: illegal data in size column or context list.\n", axis);
+        }
+        GDKfree(context_result);
+    }
+    if (bn) {
+        BATsetcount(bn, m);
+        bn->batBuns->free = m*sizeof(duple);
+        bn->hsorted = 1;
+        bn->tsorted = 0;
+        if (niters == 1) {
+	    bn->tsorted = 1;
+	    BATkey(BATmirror(bn), 1);
+        }
+        if (status == GDK_FAIL) BBPreclaim(bn);
+    }
+    GDKfree(bounds);
+    GDKfree(context);
+    return status;
+}
+
+int
+PFll_parent(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int *height) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, 1 + *height, LL_UPWARDS_PARENT);
+}
+
+int
+PFll_ancestor(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int *height) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, 1 + *height, LL_UPWARDS_ANCESTOR);
+}
+
+int
+PFll_ancestor_or_self(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int *height) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, 1 + *height, LL_UPWARDS_ANCESTOR_SELF);
+}

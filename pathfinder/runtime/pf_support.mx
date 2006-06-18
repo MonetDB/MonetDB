@@ -297,8 +297,25 @@ bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
 oid           min_iter,max_iter (smallest and largest iter id)
 bit           no_iter_order (descendant & descendant_or_self, only: 
                result will be ordered on item, but not sub-ordered on iter)
-DESCRIPITON:
+DESCRIPTION:
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+@m
+@:ll_upwards(parent,parent)@
+@:ll_upwards(ancestor,ancestor)@
+@:ll_upwards(ancestor_or_self,ancestor-or-self)@
+
+@= ll_upwards
+.COMMAND ll_@1(BAT[oid,oid] iter,
+                   BAT[oid,oid] ctx,
+                   BAT[oid,int] pre_size,
+                   int height): BAT[oid,oid] = PFll_@1;
+"PARAMETERS:
+BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
+BAT[void,oid] ctx (context set; sorted on tail)
+BAT[void,int] pre_size (from the working set)
+int           height (height of the document)
+DESCRIPITON:
+returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
 @m
 @:lev_cmd(child,child)@
 @:lev_cmd(parent,parent)@
@@ -675,8 +692,14 @@ proc ll_htordered_unique_thetajoin( int mode,
 @:wrap(descendant)@
 @:wrap(descendant_or_self)@
 
+@(
+@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
 @:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
+@)
+@:upwards(parent)@
+@:upwards(ancestor)@
+@:upwards(ancestor_or_self)@
 
 @(
 @:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
@@ -684,7 +707,6 @@ proc ll_htordered_unique_thetajoin( int mode,
 
 @:wrap(child)@
 
-@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
 @:step(following,following,following_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
@@ -945,6 +967,16 @@ BAT[void,bat] ws (working set)\n\
 DESCRIPITON:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
+
+@= upwards
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[void,bat]
+{
+    # "order" is not (yet?) used, here.
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    var heights := ws.fetch(HEIGHT).fetch(frag);
+    var res := ll_@1(iter, ctx, pre_sizes, heights);
+    return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+}
 @
 
 @mil
