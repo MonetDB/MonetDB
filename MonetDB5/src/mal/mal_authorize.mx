@@ -380,8 +380,8 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
-	BUNappend(user, *username, 0);
-	BUNappend(pass, hash, 0);
+	BUNappend(user, *username, TRUE);
+	BUNappend(pass, hash, TRUE);
 	/* retrieve the oid of the just inserted user */
 	p = BUNfnd(userrev, *username);
 	assert (p != NULL);
