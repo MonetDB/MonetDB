@@ -164,7 +164,7 @@ ll_upwards(               /* RESULT: */
     duple *context, *context_result, *prune;
     int sorted = 1, status = GDK_FAIL;
     BUN p, q;
-    BAT *bn;
+    BAT *bn = NULL;
 
     if (!ALIGNsynced(iter_bat,ctx_bat)) {
         GDKerror("%s: iter and context bat should be in sync.\n", axis);
