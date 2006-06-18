@@ -3625,7 +3625,7 @@ static INLINE int
 Mem2Cache(int *__r from, size_t size)
 {
 	char *data = (char *) from;
-	int i;
+	size_t i;
 
 	for (i = 0; i < size; i += 64) {
 #ifndef __GNUC__
@@ -3635,7 +3635,7 @@ Mem2Cache(int *__r from, size_t size)
 #endif
 		data += 64;
 	}
-	return i;
+	return (int)i;
 }
 #else
 
