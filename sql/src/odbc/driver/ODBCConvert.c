@@ -1244,7 +1244,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			}
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%04u-%02u-%02u", dval.year, dval.month, dval.day);
+			sz = snprintf(data, buflen, "%04hu-%02hu-%02hu", dval.year, dval.month, dval.day);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -1266,7 +1266,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			}
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%02u:%02u:%02u", tval.hour, tval.minute, tval.second);
+			sz = snprintf(data, buflen, "%02hu:%02hu:%02hu", tval.hour, tval.minute, tval.second);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -1278,7 +1278,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 		case SQL_TYPE_TIMESTAMP:
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%04u-%02u-%02u %02u:%02u:%02u", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			sz = snprintf(data, buflen, "%04hu-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -2600,15 +2600,15 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 			break;
 		}
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "%04d-%02u-%02u", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu", dval.year, dval.month, dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_TYPE_TIME:
-			snprintf(data, sizeof(data), "%02u:%02u:%02u", tval.hour, tval.minute, tval.second);
+			snprintf(data, sizeof(data), "%02hu:%02hu:%02hu", tval.hour, tval.minute, tval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_TYPE_TIMESTAMP:
-			snprintf(data, sizeof(data), "%04d-%02u-%02u %02u:%02u:%02u", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
 				snprintf(data, sizeof(data), ".%09u", tsval.fraction);
@@ -2631,19 +2631,19 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_DAY:
-			snprintf(data, sizeof(data), "%s%0*d", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_HOUR:
-			snprintf(data, sizeof(data), "%s%0*d", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.hour);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.hour);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_MINUTE:
-			snprintf(data, sizeof(data), "%s%0*d", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.minute);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.minute);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_SECOND:
-			snprintf(data, sizeof(data), "%s%0*d", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.second);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
 				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
@@ -2718,7 +2718,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 			}
 			/* fall through */
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "DATE '%u-%02u-%02u'", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "DATE '%hu-%02hu-%02hu'", dval.year, dval.month, dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2754,7 +2754,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIME:
-			snprintf(data, sizeof(data), "TIME '%u:%02u:%02u'", tval.hour, tval.minute, tval.second);
+			snprintf(data, sizeof(data), "TIME '%hu:%02hu:%02hu'", tval.hour, tval.minute, tval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2813,7 +2813,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIMESTAMP:
-			snprintf(data, sizeof(data), "TIMESTAMP '%u-%02d-%02d %02u:%02u:%02u", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			snprintf(data, sizeof(data), "TIMESTAMP '%hu-%02hd-%02hd %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
 				snprintf(data, sizeof(data), ".%09u", tsval.fraction);

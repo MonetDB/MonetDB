@@ -125,28 +125,28 @@ SQLForeignKeys_(ODBCStmt *stmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalog
 	if (szPKSchemaName != NULL && nPKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and pks.\"name\" = '%.*s'", nPKSchemaNameLength, szPKSchemaName);
+		sprintf(query_end, " and pks.\"name\" = '%.*s'", nPKSchemaNameLength, (char*)szPKSchemaName);
 		query_end += strlen(query_end);
 	}
 
 	if (szPKTableName != NULL && nPKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and pkt.\"name\" = '%.*s'", nPKTableNameLength, szPKTableName);
+		sprintf(query_end, " and pkt.\"name\" = '%.*s'", nPKTableNameLength, (char*)szPKTableName);
 		query_end += strlen(query_end);
 	}
 
 	if (szFKSchemaName != NULL && nFKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and fks.\"name\" = '%.*s'", nFKSchemaNameLength, szFKSchemaName);
+		sprintf(query_end, " and fks.\"name\" = '%.*s'", nFKSchemaNameLength, (char*)szFKSchemaName);
 		query_end += strlen(query_end);
 	}
 
 	if (szFKTableName != NULL && nFKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and fkt.\"name\" = '%.*s'", nFKTableNameLength, szFKTableName);
+		sprintf(query_end, " and fkt.\"name\" = '%.*s'", nFKTableNameLength, (char*)szFKTableName);
 		query_end += strlen(query_end);
 	}
 

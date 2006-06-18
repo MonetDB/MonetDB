@@ -51,7 +51,7 @@ SQLProcedures_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nProcNameLength, szProcName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nProcNameLength, (char*)szProcName);
 #endif
 
 	/* SQLProcedures returns a table with the following columns:

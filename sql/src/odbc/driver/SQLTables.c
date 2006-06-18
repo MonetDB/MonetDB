@@ -139,7 +139,7 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped. Check it
 			   and maybe convert it. */
-			sprintf(query_end, " and s.\"name\" %s '%.*s'", memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=", nSchemaNameLength, szSchemaName);
+			sprintf(query_end, " and s.\"name\" %s '%.*s'", memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=", nSchemaNameLength, (char*)szSchemaName);
 			query_end += strlen(query_end);
 		}
 
@@ -148,7 +148,7 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped.  Check
 			   it and may be convert it. */
-			sprintf(query_end, " and t.\"name\" %s '%.*s'", memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=", nTableNameLength, szTableName);
+			sprintf(query_end, " and t.\"name\" %s '%.*s'", memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=", nTableNameLength, (char*)szTableName);
 			query_end += strlen(query_end);
 		}
 

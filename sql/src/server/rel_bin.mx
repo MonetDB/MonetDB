@@ -1100,7 +1100,7 @@ subrel_bin(mvc *sql, sql_rel *rel )
 		s = rel2bin_topn(sql, rel);
 		break;
 	default:
-		printf("todo: print %d\n", rel->op);
+		printf("todo: print %u\n", rel->op);
 	}
 	return s;
 }

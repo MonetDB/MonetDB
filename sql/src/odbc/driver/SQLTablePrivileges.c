@@ -51,7 +51,7 @@ SQLTablePrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalog
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName);
 #endif
 
 	/* SQLTablePrivileges returns a table with the following columns:

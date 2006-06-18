@@ -784,20 +784,20 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			if (s->op4.typeval.type->eclass == EC_STRING && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) ) 
-				len += snprintf(buf+len, buflen-len, "myc, %d, %d, %d, %d, ", s->op3.typeval.type->eclass, s->op3.typeval.digits, s->op3.typeval.scale, type_has_tz(&s->op3.typeval));
+				len += snprintf(buf+len, buflen-len, "myc, %d, %u, %u, %d, ", s->op3.typeval.type->eclass, s->op3.typeval.digits, s->op3.typeval.scale, type_has_tz(&s->op3.typeval));
 			else if (s->op3.typeval.type->eclass == EC_DEC) 
-				len += snprintf(buf+len, buflen-len, "%d, ", s->op3.typeval.scale);
+				len += snprintf(buf+len, buflen-len, "%u, ", s->op3.typeval.scale);
 	
 			len += snprintf(buf+len, buflen-len, "s%d", l);
 
 			if (s->op4.typeval.type->eclass == EC_DEC ||
 			    s->op4.typeval.type->eclass == EC_INTERVAL)
-				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval.digits, s->op4.typeval.scale);
+				len += snprintf(buf+len, buflen-len, ", %u, %u", s->op4.typeval.digits, s->op4.typeval.scale);
 			/* convert to string, give error on to large strings */
 			if (s->op4.typeval.type->eclass == EC_STRING && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) )
-				len += snprintf(buf+len, buflen-len, ", %d", s->op4.typeval.digits);
+				len += snprintf(buf+len, buflen-len, ", %u", s->op4.typeval.digits);
 			len += snprintf(buf+len, buflen-len, ");\n");
 			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);
@@ -1203,7 +1203,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 					len = snprintf(buf, buflen, "var s%d := mvc_export_value(myc, Output, %d, ", -s->nr, sql->mvc->type );
 	
-					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
+					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %u, %u, %d, s%d);\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
 					write_command(sql, buf);
 					write_part(sql, buf, len);
 					len = 0;
@@ -1252,7 +1252,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						buflen += BUFSIZ + sl;
 						buf = RENEW_ARRAY(char, buf, buflen);
 					}
-					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s.%s\", \"%s\", \"%s\", %d, %d, s%d);\n", nsn, ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
+					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s.%s\", \"%s\", \"%s\", %u, %u, s%d);\n", nsn, ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
 					assert(len <= buflen);
 					_DELETE(cn);
 					_DELETE(nsn);
@@ -1278,7 +1278,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				write_part(sql, buf, len);
 				len = 0;
 			} else {
-				fprintf(stderr, "not a valid output list %d %d %d\n", lst->type, st_list, st_ordered);
+				fprintf(stderr, "not a valid output list %u\n", lst->type);
 			}
 			write_tail(sql, -s->nr);
 			_DELETE(buf);

@@ -156,7 +156,7 @@ exp_destroy(sql_exp *exp)
 		if (exp->l) list_destroy(exp->l);
 		break;
 	default:
-		printf("TODO: exp_destroy %d\n", exp->type);
+		printf("TODO: exp_destroy %u\n", exp->type);
 	}
 	_DELETE(exp);
 }

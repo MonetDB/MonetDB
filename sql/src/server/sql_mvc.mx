@@ -898,7 +898,7 @@ mvc_create_key(mvc *m, sql_table *t, char *name, key_type kt, sql_key *rkey)
 	sql_key *k;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_key %s %d %ld\n", t->base.name, kt, (long) rkey);
+		fprintf(stderr, "mvc_create_key %s %u %ld\n", t->base.name, kt, (long) rkey);
 	k = sql_trans_create_key(m->session->tr, t, name, kt, rkey);
 	m->type = Q_SCHEMA;
 	return k;
@@ -926,7 +926,7 @@ mvc_create_idx(mvc *m, sql_table *t, char *name, idx_type it)
 	sql_idx *i;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_idx %s %d\n", t->base.name, it);
+		fprintf(stderr, "mvc_create_idx %s %u\n", t->base.name, it);
 
 	i = sql_trans_create_idx(m->session->tr, t, name, it);
 	m->type = Q_SCHEMA;

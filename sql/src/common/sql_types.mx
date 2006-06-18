@@ -476,10 +476,10 @@ subtype2string(sql_subtype *t)
 
 	if (t->digits > 0) {
 		if (t->scale > 0)
-			snprintf(buf, BUFSIZ, "%s(%d,%d)", 
+			snprintf(buf, BUFSIZ, "%s(%u,%u)", 
 				t->type->sqlname, t->digits, t->scale);
 		else
-			snprintf(buf, BUFSIZ, "%s(%d)", 
+			snprintf(buf, BUFSIZ, "%s(%u)", 
 				t->type->sqlname, t->digits);
 	} else {
 			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);

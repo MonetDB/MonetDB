@@ -713,7 +713,7 @@ stmt_destroy(stmt *s)
 			break;
 
 		default:
-			printf("! TODO: stmt_destroy(%d=%s) !\n", s->type, st_type2string(s->type));
+			printf("! TODO: stmt_destroy(%u=%s) !\n", s->type, st_type2string(s->type));
 		}
 		if (s->h)
 			stmt_destroy(s->h);
@@ -726,8 +726,8 @@ stmt_destroy(stmt *s)
 		if (s->nr2 > 0) {
 /*
  * happens far too often for now, hence, we keep it for debugging, only ...
-			printf("= sql_statement.mx: stmt_destroy: (result of) statement %s (%d) was used %d times less often than its refcnt indicated!\n",
-				st_type2string(s->type), (int)s->type, s->nr2);
+			printf("= sql_statement.mx: stmt_destroy: (result of) statement %s (%u) was used %d times less often than its refcnt indicated!\n",
+				st_type2string(s->type), s->type, s->nr2);
  */
 		} else if (s->nr2 == int_nil) {
 /*
@@ -735,12 +735,12 @@ stmt_destroy(stmt *s)
 
 NIELS: Because the optimizer rewrites partly inplace some parts of the
   statement tree are really not executed!
-			printf("= sql_statement.mx: stmt_destroy: statement %s (%d) was never executed!\n",
-				st_type2string(s->type), (int)s->type);
+			printf("= sql_statement.mx: stmt_destroy: statement %s (%u) was never executed!\n",
+				st_type2string(s->type), s->type);
 
  */
 		} else if (s->nr2 < 0) {
-			printf("= sql_statement.mx: stmt_destroy: (rssult of) statement %s (%d) was used %d times more often than its refcnt indicated!\n", st_type2string(s->type), (int) s->type, -s->nr2);
+			printf("= sql_statement.mx: stmt_destroy: (rssult of) statement %s (%u) was used %d times more often than its refcnt indicated!\n", st_type2string(s->type), s->type, -s->nr2);
 		}
 #endif
 
@@ -1841,7 +1841,7 @@ tail_type(stmt *st)
 		return NULL;
 	case st_relselect:
 	default:
-		fprintf(stderr, "missing tail type %d: %s\n", st->type, st_type2string(st->type));
+		fprintf(stderr, "missing tail type %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);
 		return NULL;
 	}
@@ -1900,7 +1900,7 @@ head_type(stmt *st)
 		return head_type(st->op2.stval);
 
 	default:
-		fprintf(stderr, "missing head type %d: %s\n", st->type, st_type2string(st->type));
+		fprintf(stderr, "missing head type %u: %s\n", st->type, st_type2string(st->type));
 		return NULL;
 	}
 }
@@ -2046,7 +2046,7 @@ column_name(stmt *st)
 			return column_name(st->op1.lval->h->data);
 		return NULL;
 	default:
-		fprintf(stderr, "missing column name %d: %s\n", st->type, st_type2string(st->type));
+		fprintf(stderr, "missing column name %u: %s\n", st->type, st_type2string(st->type));
 		return NULL;
 	}
 }
@@ -2393,7 +2393,7 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			break;
 
 		default:
-			printf("! TODO: stmt_stmt2dot(%d=%s) !\n",s->type,st_type2string(s->type));
+			printf("! TODO: stmt_stmt2dot(%u=%s) !\n",s->type,st_type2string(s->type));
 			assert(0);
 		}
 		if (s->h) 

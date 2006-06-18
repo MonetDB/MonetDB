@@ -52,7 +52,7 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHA
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\"\n", cbSqlStrIn, szSqlStrIn);
+	ODBCLOG("\"%.*s\"\n", cbSqlStrIn, (char*)szSqlStrIn);
 #endif
 
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn, stmt->noScan);
