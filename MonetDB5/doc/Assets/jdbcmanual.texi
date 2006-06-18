@@ -1,4 +1,4 @@
-@section The MonetDB JDBC Driver
+@section MonetDB JDBC Driver
 The most obvious way to connect to a data source from the Java
 programming language is using the JDBC framework.
 The complete definition of JDBC API is available

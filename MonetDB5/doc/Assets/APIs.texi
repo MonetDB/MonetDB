@@ -1,4 +1,4 @@
-@section Application Programming Interfaces
+@chapter Application Programming Interfaces
 MonetDB comes with a complete set of programming libraries.
 Their basis is the Mapi library, which describes the protocol understood
 by the server.

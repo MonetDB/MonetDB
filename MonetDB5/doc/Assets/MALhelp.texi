@@ -1,7 +1,7 @@
 The table below summarizes the first commentary line encountered in
 the system associated with a MAL operation.
 
-@multitable @columnfractions .2 .8 
+@multitable @columnfractions .33 .67 
 @item
 @item aggr.avg
 @tab Grouped tail average on dbl

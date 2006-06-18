@@ -1,4 +1,4 @@
-@subsection MonetDB Application Programming Interface
+@section MonetDB C/C++ Library
 
 The easiest way to extend the functionality of MonetDB is to construct
 an independent application, which communicates with a running server
@@ -26,9 +26,9 @@ operations.
 @verbatim
 #include <Mapi.h>
 
-#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
-                          dbh?mapi_explain(dbh,stderr):			\
-                              fprintf(stderr,"command failed\n"),	\
+#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):\
+                          dbh?mapi_explain(dbh,stderr):	\
+                              fprintf(stderr,"command failed\n"),\
                       exit(-1))
 
 int main(int argc, char **argv)
@@ -261,7 +261,7 @@ do {
 
 @subsection Mapi Function Reference
 
-@subsubsection Connecting and Disconnecting
+@subsection Connecting and Disconnecting
 @itemize
 @item Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
 
@@ -306,7 +306,7 @@ connection. This will remove all global session variables.
 Test availability of the server. Returns zero upon success.
 @end itemize
 
-@subsubsection Sending Queries
+@subsection Sending Queries
 @itemize
 @item MapiHdl mapi_query(Mapi mid, const char *Command)
 
@@ -388,7 +388,7 @@ pointers to strings giving the individual results.  If one of these
 pointers is NULL it indicates a NULL/nil value.
 @end itemize
 
-@subsubsection Getting Results
+@subsection Getting Results
 @itemize
 @item int mapi_get_field_count(Mapi mid)
 
@@ -455,7 +455,7 @@ Go to the next result set, discarding the rest of the output of the
 current result set.
 @end itemize
 
-@subsubsection Errors
+@subsection Errors
 @itemize
 @item MapiMsg mapi_error(Mapi mid)
 
@@ -482,7 +482,7 @@ Write the error message obtained from Mserver to a file.
 Write the error message obtained from Mserver to a file.
 @end itemize
 
-@subsubsection Parameters
+@subsection Parameters
 
 @itemize
 @item MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)
@@ -541,7 +541,7 @@ is NULL-terminated.
 Clear all parameter bindings.
 @end itemize
 
-@subsubsection Miscellaneous
+@subsection Miscellaneous
 @itemize
 @item MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
 

@@ -2,7 +2,7 @@ The table below gives a condensed overview of the operations
 defined in each of the modules. Further details can be obtained
 using the MAL commandline interface (See tobedone).
 
-@multitable @columnfractions .24 .24 .24 .24
+@multitable @columnfractions .25 .25 .25 .25
 @item
 @item
 aggr.avg

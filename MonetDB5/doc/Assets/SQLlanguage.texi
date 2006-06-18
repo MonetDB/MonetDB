@@ -5,6 +5,7 @@ releases.
 
 @menu
 * SQL Preface::
+* SQL Comments ::
 * SQL Data Definition ::
 * SQL Data Types::
 * SQL Data Manipulation ::
@@ -13,7 +14,7 @@ releases.
 * SQL Transactions::
 @end menu
 
-@node SQL Preface, SQL Data Definition, SQL Language , SQL Language
+@node SQL Preface, SQL Comments, SQL Language , SQL Language
 @subsection SQL Preface
 We use the following notation to explain the supported variation SQL.
 The SQL syntax is summarized in extended BNF. Alternative constructs 
@@ -49,8 +50,24 @@ Character sets
 SQL User Defined Types 
 @end itemize
 
-@node SQL Data Definition, SQL Data Types, SQL Preface, SQL Language
+@node SQL Comments, SQL Data Definition, SQL Preface, SQL Language
 
+@subsection SQL Comments
+Comments can be added to query scripts for documentation purposes.
+MonetDB/SQL supports two forms of comments. Any text beginning with '- -'
+and up to the end of line is ignored. Furthermore, C-style comments
+can be injected in a SQL query where a language token is expected.
+@example
+sql>-- this is comment
+sql>select /* ignore this */ 3;
+# . # table_name
+# single_value # name
+# smallint # type
+# 1 # length
+[ 3     ]
+@end example
+
+@node SQL Data Definition, SQL Data Types, SQL Comments, SQL Language
 @subsection SQL Data Definition
 @subsubsection Create TABLE
 
@@ -58,7 +75,6 @@ The parser currently supports the full <table scope> specifier, but the
 implementation is limited to LOCAL TEMPORARY tables 
 (ie the tables are only visable in the clients session) and 
 on COMMIT we 'DROP' these temporaries. 
-
 
 @verbatim
 The CREATE table statement follows the 2003 syntax, ie 

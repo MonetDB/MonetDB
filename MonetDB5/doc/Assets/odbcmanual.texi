@@ -1,4 +1,4 @@
-@section MonetDB ODBC Coupling
+@section MonetDB ODBC Driver
 Short for Open DataBase Connectivity, a standard database access method
 developed by the SQL Access group in 1992. The goal of ODBC is to make it
 possible to access any data from any application, regardless of which
