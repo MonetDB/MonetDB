@@ -1379,7 +1379,7 @@ TBL_delproc(Client client, str nme)
 
 		if (*(int *) BUNtloc(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
 			TBL_decproc(pid);
-			if (BUNdelete(client->fcntbl, p) == NULL)
+			if (BUNdelete(client->fcntbl, p, FALSE) == NULL)
 				assert(0);
 		}
 	}
@@ -1553,7 +1553,7 @@ TBL_M_load(TBLinstall *inst, Client client, str module)
 		DL_close(hdl);
 		return 0;
 	}
-	if (BUNdelHead(TBL_mod_hdl, &mid) == NULL)
+	if (BUNdelHead(TBL_mod_hdl, &mid, FALSE) == NULL)
 		assert(0);
 	if (BUNins(TBL_mod_hdl, &mid, &hdl, FALSE) == NULL)
 		assert(0);
@@ -1716,15 +1716,15 @@ TBL_M_decref(Client client, oid mid)
 		BUN p = BUNlocate(TBL_mod_use, &mid, &cid);
 
 		assert(p);
-		if (BUNdelete(TBL_mod_use, p) == NULL)
+		if (BUNdelete(TBL_mod_use, p, FALSE) == NULL)
 			assert(0);
 		if (--i == 0) {
-			if (BUNdelHead(TBL_mod_nme, &mid) == NULL)
+			if (BUNdelHead(TBL_mod_nme, &mid, FALSE) == NULL)
 				assert(0);
-			if (BUNdelHead(TBL_mod_cnt, &mid) == NULL)
+			if (BUNdelHead(TBL_mod_cnt, &mid, FALSE) == NULL)
 				assert(0);
 		} else {
-			if (BUNreplace(TBL_mod_cnt, &mid, &i, 0) == NULL)
+			if (BUNreplace(TBL_mod_cnt, &mid, &i, FALSE) == NULL)
 				assert(0);
 		}
 	}
@@ -1944,7 +1944,7 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 			BBP_status_on(bid, BBPUNLOADING, "TBL_unloadmod");
 		}
 	}
-	if (BUNdelHead(TBL_mod_drop, &mid) == NULL)
+	if (BUNdelHead(TBL_mod_drop, &mid, FALSE) == NULL)
 		assert(0);
 	BBPunlock("drop");	/* others can try to load BATs again */
 	return 0;
@@ -2056,21 +2056,21 @@ drop will go through;
 				BUNfndOID(r, fcntbl, fidp);
 				if (r) {
 					TBL_decproc(fid);
-					if (BUNdelete(fcntbl, r) == NULL)
+					if (BUNdelete(fcntbl, r, FALSE) == NULL)
 						assert(0);
 				}
 			}
 		} else {
 			/* delete all the C-modules's atoms and functions */
 			for (j = 0; j < ntpes; j++)
-				if (BUNdelHead(BATmirror(client->atomtbl), tpes + j) == NULL)
+				if (BUNdelHead(BATmirror(client->atomtbl), tpes + j, FALSE) == NULL)
 					assert(0);
 			if (BATprepareHash(fcn_mid))
 				assert(0);
 			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
 				fid = *(oid *) BUNtail(fcn_mid, r);
 				BUNfndOID(r, fcntbl, fidp);
-				if (r && BUNdelete(fcntbl, r) == NULL)
+				if (r && BUNdelete(fcntbl, r, FALSE) == NULL)
 					assert(0);
 			}
 		}
@@ -2099,9 +2099,9 @@ drop will go through;
 				p = BUNptr(TBL_mod_var, j);
 				VARdel(client->stk, *(ptr *) BUNtloc(TBL_mod_var, p));
 			}
-			if (BUNdelHead(TBL_mod_proc, module) == NULL)
+			if (BUNdelHead(TBL_mod_proc, module, FALSE) == NULL)
 				assert(0);
-			if (BUNdelHead(TBL_mod_var, module) == NULL)
+			if (BUNdelHead(TBL_mod_var, module, FALSE) == NULL)
 				assert(0);
 		} else {
 			/* C-module: call C epilogue, dlcose, drop dependencies and deinstall it */
@@ -2119,7 +2119,7 @@ drop will go through;
 				addr = (int (*)(void)) DL_sym(hdl, mod_del_name);
 				if (addr != NULL)
 					(*addr) ();
-				if (BUNdelete(TBL_mod_hdl, p) == NULL)
+				if (BUNdelete(TBL_mod_hdl, p, FALSE) == NULL)
 					assert(0);
 				DL_close(hdl);
 			}
@@ -2130,7 +2130,7 @@ drop will go through;
 			}
 			BBPreclaim(b2);
 		}
-		if (BUNdelHead(TBL_mod_dep, &mid) == NULL)
+		if (BUNdelHead(TBL_mod_dep, &mid, FALSE) == NULL)
 			assert(0);
 	}
 
@@ -3008,25 +3008,25 @@ Its done in TBL_unpacked()
 void
 TBL_Deinstall_Function(oid pid)
 {
-	if (BUNdelHead(TBL_fcn_nme, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_nme, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_fcn, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_fcn, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_mid, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_mid, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_imp, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_imp, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_tpe, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_tpe, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_sig, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_sig, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_dsc, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_dsc, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_aut, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_aut, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_dat, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_dat, &pid, FALSE) == NULL)
 		assert(0);
-	if (BUNdelHead(TBL_fcn_cnt, &pid) == NULL)
+	if (BUNdelHead(TBL_fcn_cnt, &pid, FALSE) == NULL)
 		assert(0);
 
 	/* periodically clean up TBL_fcn_pro */

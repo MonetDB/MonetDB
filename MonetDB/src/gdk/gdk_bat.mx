@@ -422,7 +422,7 @@ BATclear(BAT *b)
 	/* small BAT: delete all elements by hand */
 	if (!voidbat && BATcount(b) < 20) {
 		BATloopDEL(b, p, q, bs) {
-			p = BUNdelete(b, p);
+			p = BUNdelete(b, p, FALSE);
 		}
 		return b;
 	}
@@ -1246,26 +1246,26 @@ are now being overwritten by the last element; instead of causing
 a cascade of moves. The sequential deletability property
 is changed somewhat: instead of doing 
 @verbatim
-	BATloop(b,p,q) BUNdelete(b,p)
+	BATloop(b,p,q) BUNdelete(b,p,FALSE)
 one now must do:
-	BATloopDEL(b,p) p = BUNdelete(b,p)
+	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
 @end verbatim
 @
 @c
 static INLINE BUN
-BUNdelete_(BAT *b, BUN p)
+BUNdelete_(BAT *b, BUN p, bit force)
 {
 	BAT *bm = BBP_cache(-b->batCacheid);
 	int bs = BUNsize(b);
 	BUN l, last = BUNlast(b) - bs;
 	size_t idx1, idx2;
 
-	ALIGNdel(b, "BUNdelete");	/* zap alignment info */
+	ALIGNdel(b, "BUNdelete", force);	/* zap alignment info */
 
 @- Committed Delete. 
 Deleting a (committed) bun the first and deleted swap position.
 @c
-	if (p < b->batInserted) {
+	if (p < b->batInserted && !force) {
 		idx1 = BUNindex(b, p);
 
 		if (p == b->batFirst) { /* first can simply be discarded */
@@ -1365,7 +1365,7 @@ last inserted bun (if present) is copied over it.
 }
 
 BUN
-BUNdelete(BAT *b, BUN p)
+BUNdelete(BAT *b, BUN p, bit force)
 {
 	if (p == NULL) {
 		return p;
@@ -1375,7 +1375,7 @@ BUNdelete(BAT *b, BUN p)
 		int bs = BUNsize(b);
 		BUN last = BUNlast(b) - bs;
 
-		if (p < b->batInserted || p != last) {
+		if ((p < b->batInserted || p != last) && !force) {
 			size_t i = BUNindex(b, p);
 
 			b = BATmaterialize(b, BATcount(b));
@@ -1384,11 +1384,11 @@ BUNdelete(BAT *b, BUN p)
 			p = BUNptr(b, i);
 		}
 	}
-	return BUNdelete_(b, p);
+	return BUNdelete_(b, p, force);
 }
 
 BAT *
-BUNdel(BAT *b, ptr x, ptr y)
+BUNdel(BAT *b, ptr x, ptr y, bit force)
 {
 	BUN p;
 
@@ -1396,8 +1396,8 @@ BUNdel(BAT *b, ptr x, ptr y)
 	BATcheck(x, "BUNdel: head value is nil\n");
 
 	if ((p = BUNlocate(b, x, y)) != NULL) {
-		ALIGNdel(b, "BUNdel");	/* zap alignment info */
-		BUNdelete(b, p);
+		ALIGNdel(b, "BUNdel", force);	/* zap alignment info */
+		BUNdelete(b, p, force);
 		return b;
 	}
 	return 0;
@@ -1408,7 +1408,7 @@ The routine @%BUNdelHead@ is similar, but removes all BUNs whose head matches
 the argument passed.
 @c
 BAT *
-BUNdelHead(BAT *b, ptr x)
+BUNdelHead(BAT *b, ptr x, bit force)
 {
 	BUN p;
 
@@ -1418,9 +1418,9 @@ BUNdelHead(BAT *b, ptr x)
 		x = ATOMnilptr(b->htype);
 	}
 	if ((p = BUNfnd(b, x)) != NULL) {
-		ALIGNdel(b, "BUNdelHead");	/* zap alignment info */
+		ALIGNdel(b, "BUNdelHead", force);	/* zap alignment info */
 		do {
-			BUNdelete(b, p);
+			BUNdelete(b, p, force);
 		} while ((p = BUNfnd(b, x)) != NULL);
 	}
 	return b;
@@ -1496,7 +1496,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 		b->batDirtybuns = b->theapdirty = TRUE;
 	} else {
 		/* committed BUN */
-		BUNdelete(b, p);
+		BUNdelete(b, p, force);
 		if (BUNins(b, h, t, force) == NULL) {
 		      bunins_failed:
 			return NULL;

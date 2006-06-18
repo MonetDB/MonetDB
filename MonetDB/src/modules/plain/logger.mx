@@ -301,7 +301,7 @@ log_read_insdel(logger *logger, logformat *l)
 			if (l->flag == LOG_INSERT)
 				BUNins(b, h, t, FALSE);
 			else if (l->flag == LOG_DELETE)
-				BUNdel(b, h, t);
+				BUNdel(b, h, t, FALSE);
 			cnt++;
 			if (h != hv)
 				GDKfree(h);

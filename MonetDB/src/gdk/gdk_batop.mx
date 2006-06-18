@@ -434,31 +434,32 @@ bunins_failed:
 }
 
 
+#define bundel(b,h,t) if (BUNdel(b,h,t,force) == NULL) return NULL;
 BAT *
-BATdel(BAT *b, BAT *n)
+BATdel(BAT *b, BAT *n, bit force)
 {
 	ERRORcheck(b == NULL, "set:BAT required\n");
 	ERRORcheck(n == NULL, "set:BAT required\n");
 	if (BATcount(n) == 0) {
 		return b;
 	}
-	ALIGNdel(b, "BATdel");
+	ALIGNdel(b, "BATdel", force);
 	TYPEcheck(b->htype, n->htype);
 	TYPEcheck(b->ttype, n->ttype);
-	@:updateloop(b,n,BUNdel)@
+	@:updateloop(b,n,bundel)@
 	return b;
 }
 
-#define bundelhead(b,h,t) BUNdelHead(b,h)
+#define bundelhead(b,h,t) if (BUNdelHead(b,h,force) == NULL) return NULL;
 BAT *
-BATdelHead(BAT *b, BAT *n)
+BATdelHead(BAT *b, BAT *n, bit force)
 {
 	ERRORcheck(b == NULL, "set:BAT required\n");
 	ERRORcheck(n == NULL, "set:BAT required\n");
 	if (BATcount(n) == 0) {
 		return b;
 	}
-	ALIGNdel(b, "BATdelHead");
+	ALIGNdel(b, "BATdelHead", force);
 	TYPEcheck(b->htype, n->htype);
 	@:updateloop(b,n,bundelhead)@
 	return b;
@@ -946,7 +947,7 @@ BATtopN(BAT *b, size_t topN)
 	} else if (b->dims.headvarsized || b->dims.tailvarsized) {
 		HASHremove(b);
 		while (BATcount(b) > topN)
-			BUNdelete(b, BUNlast(b));
+			BUNdelete(b, BUNlast(b), FALSE);
 	} else {
 		HASHremove(b);
 		b->batBuns->free = BUNptr(b, topN) - Bunbase(b);
@@ -1537,7 +1538,7 @@ BATorder@3(BAT *b)
 	}
 	GDKqsort@3(BUNfirst(b), (b->hheap)?b->hheap->base:NULL, BATcount(b), BUNsize(b), b->htype, b->hloc);
 	HASHdestroy(b);
-	ALIGNdel(b, "BATorder@3");
+	ALIGNdel(b, "BATorder@3", FALSE);
 	b->hsorted = (bit) GDK_SORTED@2;
 	b->tsorted = FALSE;
 	b->hdense = FALSE;
@@ -1562,7 +1563,7 @@ BATrevert(BAT *b)
 		/* materialize void columns in-place */
 		b = BATmaterialize(b, BATcount(b));
 	}
-	ALIGNdel(b, "BATrevert");
+	ALIGNdel(b, "BATrevert", FALSE);
 	xx = BUNsize(b);
 	buf = (char *) GDKmalloc(xx);
 	for (p = BUNlast(b) - xx, q = BUNfirst(b); p > q; p -= xx, q += xx) {

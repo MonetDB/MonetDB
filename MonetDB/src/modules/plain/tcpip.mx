@@ -447,7 +447,7 @@ cache_del(cache_t *c)
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	if (!c->locked) {
-		BUNdelHead(BATmirror(cache_idx), &c);
+		BUNdelHead(BATmirror(cache_idx), &c, FALSE);
 		cache_free(c);
 	}
 	return 0;

@@ -1337,7 +1337,7 @@ val_bitrefine(BAT **res, BAT *sel, BAT *b, ptr v)
 	BAT *bn = sel;
 	int vector = 0;
 
-	ALIGNdel(sel, "val_oidrefine");
+	ALIGNdel(sel, "val_oidrefine", FALSE);
 	@:check_bitsel(val_bitrefine,sel,b,BATcount(b))@
 	@:bitselect(refine,val)@
 
@@ -1356,7 +1356,7 @@ rng_bitrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
 	BAT *bn = sel;
 	int vector = 0;
 
-	ALIGNdel(sel, "val_oidrefine");
+	ALIGNdel(sel, "val_oidrefine", FALSE);
 	@:check_bitsel(rng_bitrefine,sel,b,BATcount(b))@
 	@:bitselect(refine,rng)@
 
@@ -1952,7 +1952,7 @@ val_oidrefine(BAT **res, BAT *sel, BAT *b, ptr v)
 	BAT *bn = NULL;
 
 	(void) last;
-	ALIGNdel(sel, "val_oidrefine");
+	ALIGNdel(sel, "val_oidrefine", FALSE);
 	@:check_oidsel(val_oidrefine,sel)@
 	@:oidrefine(val,FALSE)@
 
@@ -1971,7 +1971,7 @@ rng_oidrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
 	BAT *bn = NULL;
 
 	(void) last;
-	ALIGNdel(sel, "val_oidrefine");
+	ALIGNdel(sel, "val_oidrefine", FALSE);
 	@:check_oidsel(rng_oidrefine,sel)@
 	@:oidrefine(rng,FALSE)@
 
