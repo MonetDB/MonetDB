@@ -493,7 +493,7 @@ query string with "M".
 				if (m->session->active) {
 					if (commit && mvc_commit(m, 0, NULL)< 0)
 						break;
-					else if (mvc_rollback(m, 0, NULL) < 0)
+					else if (!commit && mvc_rollback(m, 0, NULL) < 0)
 						break;
 				}
 				in->pos = in->len;	/* HACK: should use parsed lenght */
