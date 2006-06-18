@@ -254,6 +254,7 @@ sql_schema_has_user(mvc *m, sql_schema *schema)
 int
 sql_alter_user(mvc *m, str user, str passwd, oid schema_id)
 {
+ <<<<<<< sql_privileges.mx
 	ssize_t rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *users = find_sql_table(sys, "db_users", LOCATION);
@@ -274,6 +275,9 @@ sql_alter_user(mvc *m, str user, str passwd, oid schema_id)
 		column_update_value(m->session->tr, users_schema, rid, &schema_id);
 	}
 	return TRUE;
+ =======
+	return(backend_alter_user(m, user, passwd, schema_id));
+ >>>>>>> 1.48
 }
 
 int

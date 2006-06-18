@@ -249,7 +249,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			printf(" as %s", rel->name);
 		break;
 	default:
-		printf("todo: print %d\n", rel->op);
+		printf("todo: print %u\n", rel->op);
 	}
 	if (!depth)
 		printf("\n");

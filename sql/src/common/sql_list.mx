@@ -43,7 +43,7 @@ list_create(fdestroy destroy)
 	return l;
 }
 
-void
+static void
 node_destroy(list *l, node *n)
 {
 	if (n->data && l->destroy)
@@ -208,7 +208,7 @@ list_cmp(list *l1, list *l2, fcmp cmp)
 	if (l1 == l2)
 		return 0;
 
-	if (!l1 || !l2 || list_length(l1) != list_length(l2))
+	if (!l1 || !l2 || (list_length(l1) != list_length(l2)))
 		return -1;
 
 	for (n = l1->h, m = l2->h; res == 0 && n; n = n->next, m = m->next) {

@@ -115,7 +115,7 @@ tail_column(stmt *st)
 		return NULL;
 
 	default:
-		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type));
+		fprintf(stderr, "missing tail column %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);
 		return NULL;
 	}
@@ -215,7 +215,7 @@ head_column(stmt *st)
 
 	case st_set:
 	case st_sets:
-		fprintf(stderr, "missing head column %d: %s\n", st->type, st_type2string(st->type));
+		fprintf(stderr, "missing head column %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);
 		return NULL;
 	}

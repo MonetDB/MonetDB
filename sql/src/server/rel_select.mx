@@ -157,7 +157,7 @@ exp_destroy(sql_exp *exp)
 		if (exp->l) list_destroy(exp->l);
 		break;
 	default:
-		printf("TODO: exp_destroy %d\n", exp->type);
+		printf("TODO: exp_destroy %u\n", exp->type);
 	}
 	_DELETE(exp);
 }
@@ -758,6 +758,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname )
 	return NULL;
 }
 
+/*
 static sql_exp *
 exp_copy( sql_exp *e )
 {
@@ -768,6 +769,7 @@ exp_copy( sql_exp *e )
 	}
 	return e;
 }
+*/
 
 static sql_rel *
 rel_copy( sql_rel *i ) 

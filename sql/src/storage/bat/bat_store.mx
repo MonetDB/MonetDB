@@ -132,7 +132,7 @@ temp_copy(oid b, int temp)
 	BAT *c;
 	oid r;
 
-	if (bs_debug)
+	if (bs_debug&4)
 		fprintf(stderr, "temp_copy " OIDFMT "\n", b);
 
 	if (!temp) {
@@ -367,29 +367,6 @@ copy_inserted(BAT *b, BAT *i )
 }
 
 
-static size_t
-void_delete_bat(BAT *b, BAT *d, int delta)
-{
-	size_t nr = 0;
-	BUN r, s;
-	ptr nil = ATOMnilptr(b->ttype);
-
-	if (delta) {
-		for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
-			oid delid = *(oid *) BUNtail(d, r);
-			void_inplace(b, delid, nil, TRUE);
-			nr++;
-		}
-	} else {
-		BATloop(d, r, s) {
-			oid delid = *(oid *) BUNtail(d, r);
-			void_inplace(b, delid, nil, TRUE);
-			nr++;
-		}
-	}
-	return nr;
-}
-
 /* probably not needed any more */
 static void
 update_table_bat(BAT *b, BAT *ub, BAT *db)
@@ -398,11 +375,6 @@ update_table_bat(BAT *b, BAT *ub, BAT *db)
 		void_replace_bat(b, ub, TRUE);
 	}
 	(void)db;
-/*
-	if (db && BATcount(db)) {
-		void_delete_bat(b, db, 0);
-	}
-*/
 }
 
 void
@@ -1362,6 +1334,7 @@ do_load_module(sql_trans *tr, char *name)
 	backend_interpret(tr->stk, buf);
 }
 
+/*
 static void
 do_drop_module(sql_trans *tr, char *name)
 {
@@ -1370,6 +1343,7 @@ do_drop_module(sql_trans *tr, char *name)
 	snprintf(buf, BUFSIZ, "drop(\"%s\");", name);
 	backend_interpret(tr->stk, buf);
 }
+*/
 
 static sql_module *
 load_module(sql_trans *tr, BAT *modules, BUN j)
@@ -1484,7 +1458,7 @@ sys_bat(struct bm *bm, char *name, int type)
 }
 
 static int
-next_oid()
+next_oid(void)
 {
 	int id = 0;
 	MT_set_lock(bs_lock, "next_oid");
@@ -1494,7 +1468,7 @@ next_oid()
 }
 
 int
-store_next_oid()
+store_next_oid(void)
 {
 	return next_oid();
 }
@@ -2468,7 +2442,7 @@ static int active = 1;
 static int logging = 0;
 
 void
-store_exit()
+store_exit(void)
 {
 	struct logger *l = logger;
 
@@ -2518,7 +2492,7 @@ store_exit()
 }
 
 void
-store_manager()
+store_manager(void)
 {
 	while (active) {
 		int res = SQL_OK;
@@ -2541,7 +2515,7 @@ store_manager()
 
 
 void
-store_lock()
+store_lock(void)
 {
 	MT_set_lock(bs_lock, "trans_lock");
 #ifdef STORE_DEBUG
@@ -2550,7 +2524,7 @@ store_lock()
 }
 
 void
-store_unlock()
+store_unlock(void)
 {
 #ifdef STORE_DEBUG
 	fprintf(stderr, "unlocked\n");
@@ -2826,7 +2800,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	if (c->bat.bid)
 		temp_dup(c->bat.bid);
 
-	if (bs_debug) {
+	if (bs_debug&2) {
 		fprintf(stderr, "column_dup %s.%s (%d) " 
 				OIDFMT " " OIDFMT " " OIDFMT, 
 				c->t->base.name, c->base.name, c->base.flag,
@@ -3033,6 +3007,9 @@ trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 	t->stk = stk;
 
 	t->name = NULL;
+	if (bs_debug) 
+		fprintf(stderr, "trans init (%d,%d)\n", 
+			t->stime, t->schema_number ); 
 	return t;
 }
 
@@ -3353,6 +3330,9 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 {
 	int ok = SQL_OK;
 
+	if (bs_debug) 
+		fprintf(stderr, "create table %s\n", t->base.name);
+
 	if (t->table && isGlobalTable(t)) {
 		/* only register bats without commit action tables */
 		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column);
@@ -3469,6 +3449,9 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 {
 	int ok = SQL_OK;
 
+	if (bs_debug) 
+		fprintf(stderr, "drop table %s\n", t->base.name);
+
 	if (t->table && !isTempTable(t)) {
 		if (tr->parent == gtrans) {
 			oid bid;
@@ -3558,6 +3541,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (ttr == gtrans)
 			ok = log_bat_clear(logger, tt->dname);
 	}
+
+	if (bs_debug) 
+		fprintf(stderr, "update table %s\n", tt->base.name);
 
 	deleted = BATcount(db);
 	tt->cnt = 0;
@@ -3905,8 +3891,16 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				fb->rtime = fb->wtime = 0;
 				n = n->next;
 				m = m->next;
+				if (bs_debug) 
+					fprintf(stderr, "reset_cs %s\n",
+						(fb->name)?fb->name:"help");
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
+				if (bs_debug) {
+					sql_base *b = n->data;
+					fprintf(stderr, "reset_cs free %s\n",
+						(b->name)?b->name:"help");
+				}
 				list_remove_node(fs->set, n);
 				n = t;
 			} else { /* a new id */
@@ -3915,6 +3909,10 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				cs_add_before(fs, n, r);
 				r->rtime = r->wtime = 0;
 				m = m->next;
+				if (bs_debug) {
+					fprintf(stderr, "reset_cs new %s\n",
+						(r->name)?r->name:"help");
+				}
 			}
 		}
 		/* add new bases */
@@ -3923,9 +3921,18 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			sql_base *r = fd(tr, TR_OLD, pfb,  b);
 			cs_add(fs, r, TR_OLD);
 			r->rtime = r->wtime = 0;
+			if (bs_debug) {
+				fprintf(stderr, "reset_cs new %s\n",
+					(r->name)?r->name:"help");
+			}
 		}
 		while ( ok == SQL_OK && n) { /* remove remaining old stuff */
 			node *t = n->next;
+			if (bs_debug) {
+				sql_base *b = n->data;
+				fprintf(stderr, "reset_cs free %s\n",
+					(b->name)?b->name:"help");
+			}
 			list_remove_node(fs->set, n);
 			n = t;
 		}
@@ -4005,6 +4012,21 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		bat_destroy(upd);
 		bat_destroy(pu);
 		fc->base.wtime = fc->base.rtime = 0;
+		if (bs_debug) {
+			fprintf(stderr, "reset_column %s.%s (%d) " 
+				OIDFMT " " OIDFMT " " OIDFMT, 
+				fc->t->base.name, fc->base.name, fc->base.flag,
+				fc->bat.ibid, fc->bat.bid, fc->bat.ubid
+				);
+			fprintf(stderr, " <- (%d) " 
+				OIDFMT " " OIDFMT " " OIDFMT, 
+				pfc->base.flag, 
+				pfc->bat.ibid, pfc->bat.bid, pfc->bat.ubid
+				);
+			fprintf(stderr, " (%d<%d)\n", 
+				tr->stime, pfc->base.wtime);
+		}
+		return SQL_OK;
 	}
 	return SQL_OK;
 }
@@ -4030,6 +4052,14 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) NULL, (dupfunc) &key_dup);
 		if (ok == SQL_OK)
 			ok = reset_changeset( tr, &ft->triggers, &pft->triggers, &ft->base, (resetf) NULL, (dupfunc) &trigger_dup);
+
+		if (bs_debug) {
+			assert(ft->base.flag == 0);
+			fprintf(stderr, "reset_table %s (%d) (%d<%d)\n", 
+				ft->base.name, ft->base.flag,
+				tr->stime, pft->base.wtime
+			);
+		}
 		return ok;
 	}
 	return SQL_OK;
@@ -4138,7 +4168,7 @@ sql_trans_commit(sql_trans *tr)
 
 	/* write phase */
 	if (bs_debug)
-		fprintf(stderr, "forwarding changes\n");
+		fprintf(stderr, "forwarding changes %d,%d\n", gtrans->stime, tr->stime);
 	if (tr->parent == gtrans) {
 		tr->stime = timestamp ();
 		if (!logger)
@@ -4157,7 +4187,7 @@ sql_trans_commit(sql_trans *tr)
 		tr->schema_number = store_schema_number();
 	}
 	if (bs_debug)
-		fprintf(stderr, "done forwarding changes\n");
+		fprintf(stderr, "done forwarding changes %d\n", gtrans->stime);
 	return ok;
 }
 
@@ -5144,13 +5174,10 @@ sql_session_create(backend_stack stk, int ac )
 	if (!s)
 		return NULL;
 	s->tr = sql_trans_create(s->stk, NULL, NULL);
-	s->schema_name = _strdup("sys");
-	s->schema = NULL;
-	s->module = NULL;
-	s->auto_commit = s->ac_on_commit = ac;
-	s->level = ISO_SERIALIZABLE;
+	s->schema_name = NULL;
 	s->active = 0;
 	s->stk = stk;
+	sql_session_reset(s, ac);
 	nr_sessions++;
 	return s;
 }
@@ -5183,7 +5210,7 @@ sql_session_reset(sql_session *s, int ac)
 
 			if (isGlobalTable(t))
 				sql_trans_clear_table(s->tr, t);
-			else if (!isGlobalTable(t))/* remove local tmp*/
+			else if (!isGlobalTable(t)) /* remove local tmp*/
 				sql_trans_drop_table(s->tr, tmp,t->base.name,0);
 		}
 	}
@@ -5196,7 +5223,6 @@ sql_session_reset(sql_session *s, int ac)
 	s->module = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;
-	s->active = 0;
 }
 
 int

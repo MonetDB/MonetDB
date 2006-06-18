@@ -122,7 +122,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 	fixODBCstring(szConnStrIn, nConnStrIn, addDbcError, dbc);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" %d\n", nConnStrIn, szConnStrIn, nDriverCompletion);
+	ODBCLOG("\"%.*s\" %hu\n", nConnStrIn, (char*)szConnStrIn, nDriverCompletion);
 #endif
 
 	/* check input arguments */

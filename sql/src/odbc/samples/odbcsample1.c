@@ -38,7 +38,7 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 		if (msglen >= (signed int) sizeof(msg))
 			fprintf(stderr, "(message truncated)\n");
 	case SQL_SUCCESS:
-		fprintf(stderr, "%s: %s: SQLstate %s, Errnr %d, Message %s\n", func, pref, state, (int)errnr, msg);
+		fprintf(stderr, "%s: %s: SQLstate %s, Errnr %d, Message %s\n", func, pref, (char*)state, (int)errnr, (char*)msg);
 		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: %s, invalid handle passed to error function\n", func, pref);

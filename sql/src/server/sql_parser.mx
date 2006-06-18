@@ -2189,6 +2189,7 @@ select_stmt:
 		$$ = NULL;
 		yyerror("order by and limit are only allowed with a select statement");
 		YYABORT;
+		YYERROR; /* just to silence intel compiler */
 	   }
 	}
  |  set_select				%prec UMINUS

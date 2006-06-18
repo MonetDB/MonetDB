@@ -95,14 +95,6 @@ static stmt *column( stmt *val )
 	return val;
 }
 
-static stmt *copy_column( stmt *val )
-{
-	sql_subtype *ct = tail_type(val);
-	stmt *temp = stmt_temp(ct);
-
-	return stmt_insert(temp, stmt_dup(val));
-}
-
 static stmt *
 bin_first_column( stmt *sub ) 
 {
@@ -1108,7 +1100,7 @@ subrel_bin(mvc *sql, sql_rel *rel )
 		s = rel2bin_topn(sql, rel);
 		break;
 	default:
-		printf("todo: print %d\n", rel->op);
+		printf("todo: print %u\n", rel->op);
 	}
 	return s;
 }

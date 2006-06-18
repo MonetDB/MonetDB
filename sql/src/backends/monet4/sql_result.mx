@@ -356,30 +356,6 @@ dec_frstr(void *extra, int type, char *s, char *e, char quote)
 	return NULL;
 }
 
-static char *
-coerce(char *s)
-{
-	char *n = GDKmalloc(strlen(s) + 1);
-	char *t = n;
-
-	for (; *s; s++)
-		switch (*s) {
-		case '\\':
-			s++;
-			if (*s == 'n')
-				*t++ = '\n';
-			else if (*s == 't')
-				*t++ = '\t';
-			else if (*s == '\\')
-				*t++ = '\\';
-			else
-		default:
-				*t++ = *s;
-		}
-	*t = 0;
-	return n;
-}
-
 ptr *
 _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {

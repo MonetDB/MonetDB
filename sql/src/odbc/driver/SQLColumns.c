@@ -100,7 +100,7 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName, nColumnNameLength, szColumnName);
+	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nColumnNameLength, (char*)szColumnName);
 #endif
 
 	/* construct the query now */
@@ -168,7 +168,7 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped. Check it and may
 		   be convert it. */
-		sprintf(query_end, " and s.\"name\" %s '%.*s'", memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=", nSchemaNameLength, szSchemaName);
+		sprintf(query_end, " and s.\"name\" %s '%.*s'", memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=", nSchemaNameLength, (char*)szSchemaName);
 		query_end += strlen(query_end);
 	}
 
@@ -177,7 +177,7 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
 		   may be convert it. */
-		sprintf(query_end, " and t.\"name\" %s '%.*s'", memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=", nTableNameLength, szTableName);
+		sprintf(query_end, " and t.\"name\" %s '%.*s'", memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=", nTableNameLength, (char*)szTableName);
 		query_end += strlen(query_end);
 	}
 
@@ -186,7 +186,7 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
 		   may be convert it. */
-		sprintf(query_end, " and c.\"name\" %s '%.*s'", memchr(szColumnName, '%', nColumnNameLength) || memchr(szColumnName, '_', nColumnNameLength) ? "like" : "=", nColumnNameLength, szColumnName);
+		sprintf(query_end, " and c.\"name\" %s '%.*s'", memchr(szColumnName, '%', nColumnNameLength) || memchr(szColumnName, '_', nColumnNameLength) ? "like" : "=", nColumnNameLength, (char*)szColumnName);
 		query_end += strlen(query_end);
 	}
 
