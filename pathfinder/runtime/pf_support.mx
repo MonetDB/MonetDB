@@ -64,7 +64,7 @@ BAT[oid,oid] - the values which have to be looked up
 BAT[oid,oid] - the corresponding fragments in which the values have to be looked up
 BAT[oid,BAT[oid,any]] - the list of bats where the values are looked up
 All BAT-heads must be dense.
-DESCRIPITON:
+DESCRIPTION:
 looks up the values in a list of bats. The first argument specifies the
 value to be looked up (joined) and the second one saves which bat contains
 the value (see also 'mvaljoin').
@@ -78,7 +78,7 @@ BAT[oid,oid] - the values which have to be joined
 BAT[oid,oid] - the corresponding fragments in which the values have to be looked up
 BAT[oid,BAT[oid,oid]] - the list of bats where the tail values are joined
 All BAT-heads must be dense.
-DESCRIPITON:
+DESCRIPTION:
 joins the tail values of the first argument with the tail values of the bat
 from one bat of the third argument. Which bat from the list is chosen is
 specified by the second argument (see also 'mposjoin').
@@ -112,7 +112,7 @@ and the head values from the batlist"
 Even number of BAT[oid,any] with dense heads and pairs of equal tail type;
 all odd BATs must be head-aligned and all even BATs must be head-aligned;
 first two BATs must be sorted on tail values.
-DESCRIPITON:
+DESCRIPTION:
 Merges pairs of bats according to the order as defined by the first pair's tails."
 @(
 "Returns the union of two *tail-sorted* BATs. All BUNs of both BATs appear
@@ -127,7 +127,7 @@ Merges pairs of bats according to the order as defined by the first pair's tails
 "PARAMETERS:
 BAT[void,str] - the strings which are going to be tokenized
 BAT[void,str] - seperators for the strings
-DESCRIPITON:
+DESCRIPTION:
 ll_tokenize is a special version of [split](bat(void,str),bat(void,str)), which
 tokenizes a string using the aligned seperator string and adds a row for
 each substring, with the oid of the input head identifying the original boundaries."
@@ -144,7 +144,7 @@ round(dbl, 0) is that negative numbers with .5 are rounded up
 		: str = CMDnormSpace;
 "PARAMETERS:
 BAT[void,str] - the strings which are going to be normalized
-DESCRIPITON:
+DESCRIPTION:
 normSpace normalizes the whitespaces to a single space."
 
 .COMMAND combine_text_string( BAT[void,oid] iter, BAT[void,oid] kind, BAT[void,str] str_value, int result_size )
@@ -153,7 +153,7 @@ normSpace normalizes the whitespaces to a single space."
 BAT[void,oid] - iter values which have to be ordered
 BAT[void,oid] - one of three different kinds (strings '2@0'; text-nodes '1@0' and other nodes '0@0')
 BAT[void,str] - string values of the strings and text-nodes; an empty string for each other node
-DESCRIPITON:
+DESCRIPTION:
 very specialized helper function for the translation of the item-sequence-to-node-sequence function in XQuery.
 It expects three aligned columns and creates out of adjazent strings and text-nodes one string,
 which can be translated into a text-node again. Every other node and every new iter divide the strings.
@@ -165,7 +165,7 @@ Empty strings are not added to the output."
 "PARAMETERS:
 BAT[oid,str] - sorted iters in the head, string values in the tail
 BAT[oid,str] - separator which is added between strings, within an iter
-DESCRIPITON:
+DESCRIPTION:
 string_join constructs for each iter one strings by appending the strings
 with the separator for this iter in between."
 
@@ -314,7 +314,7 @@ BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
 BAT[void,int] pre_size (from the working set)
 int           height (height of the document)
-DESCRIPITON:
+DESCRIPTION:
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
 @m
 @:lev_cmd(child,child)@
@@ -881,7 +881,7 @@ int order (input & output order properties:\n\
            bit 0: input is sorted on iter(0) or item(1)\n\
            bit 1: output must be sorted on iter(0) or item(1))\n\
 BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
 @
@@ -964,7 +964,7 @@ BAT[void,any] iter (grouping relation)\n\
 BAT[void,any] ctx (context set)\n\
 oid frag (the current fragment of the ws)\n\
 BAT[void,bat] ws (working set)\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
 
