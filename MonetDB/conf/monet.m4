@@ -447,7 +447,7 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,981,810,444,193,111,171,181,764,269,108,188,1357,102,70"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,981,810,193,111,171,188,1357"
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
@@ -455,22 +455,13 @@ yes-*-*)
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 279: controlling expression is constant
-	dnl  # 310: old-style parameter list (anachronism)
 	dnl  # 981: operands are evaluated in unspecified order
 	dnl  # 810: conversion from "." to "." may lose significant bits
-	dnl  # 444: destructor for base class "." is not virtual
 	dnl  # 193: zero used for undefined preprocessing identifier
 	dnl  # 111: statement is unreachable
-	dnl  # 177: function "." was declared but never referenced
 	dnl  # 171: invalid type conversion: "." to "."
-	dnl  # 181: argument is incompatible with corresponding format string conversion
-	dnl  # 764: nonstandard format string conversion
-	dnl  # 269: invalid format string conversion
-	dnl  # 108: implicitly-signed bit field of length 1
 	dnl  # 188: enumerated type mixed with another type
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
-	dnl  # 102: forward declaration of enum type is nonstandard
-	dnl  #  70: incomplete type is not allowed
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
 

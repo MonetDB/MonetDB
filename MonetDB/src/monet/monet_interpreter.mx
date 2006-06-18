@@ -1900,7 +1900,7 @@ immediately.
 			if (qm_profile) {
 				char msg[40];
 
-				sprintf(msg, "[%d]", i);
+				sprintf(msg, "[%u]", i);
 				QMmessage(current, msg);
 			}
 			if (p == 0) {
