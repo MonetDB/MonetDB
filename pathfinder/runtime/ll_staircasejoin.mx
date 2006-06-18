@@ -79,11 +79,13 @@ const int PF_SOFTWARE_PREFETCH = 128;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(descendant)@
 
-/* DESCENDANT-OR-SELF STEP */
+/* DESCENDANT-OR-SELF STEP (not used) */
+@-
 @:ll_head(descendant_or_self)@
     self = TRUE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(descendant)@
+@c
 
 /* CHILD STEP */
 @:ll_head(child)@
