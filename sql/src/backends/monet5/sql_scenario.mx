@@ -1026,7 +1026,7 @@ SQLparser(Client c)
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL)< 0)
 					return throwMessage("SQLparser", "Xauto_commit (commit) failed\n");
-				else if (mvc_rollback(m, 0, NULL) < 0)
+				else if (!commit && mvc_rollback(m, 0, NULL) < 0)
 					return throwMessage("SQLparser", "Xauto_commit (rollback) failed\n");
 			}
 			in->pos = in->len;	/* HACK: should use parsed lenght */
