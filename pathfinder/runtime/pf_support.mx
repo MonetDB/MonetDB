@@ -86,7 +86,7 @@ BAT[oid,oid] - the values which have to be looked up
 BAT[oid,oid] - the corresponding containers in which the values have to be looked up
 BAT[oid,BAT[oid,any]] - the list of bats where the values are looked up
 All BAT-heads must be dense.
-DESCRIPITON:
+DESCRIPTION:
 looks up the values in a list of bats. The first argument specifies the
 value to be looked up (joined) and the second one saves which bat contains
 the value (see also 'mvaljoin').
@@ -100,7 +100,7 @@ BAT[oid,oid] - the values which have to be joined
 BAT[oid,oid] - the corresponding containers in which the values have to be looked up
 BAT[oid,BAT[oid,oid]] - the list of bats where the tail values are joined
 All BAT-heads must be dense.
-DESCRIPITON:
+DESCRIPTION:
 joins the tail values of the first argument with the tail values of the bat
 from one bat of the third argument. Which bat from the list is chosen is
 specified by the second argument (see also 'mposjoin').
@@ -134,7 +134,7 @@ and the head values from the batlist"
 Even number of BAT[oid,any] with dense heads and pairs of equal tail type;
 all odd BATs must be head-aligned and all even BATs must be head-aligned;
 first two BATs must be sorted on tail values.
-DESCRIPITON:
+DESCRIPTION:
 Merges pairs of bats according to the order as defined by the first pair's tails."
 @(
 "Returns the union of two *tail-sorted* BATs. All BUNs of both BATs appear
@@ -149,7 +149,7 @@ Merges pairs of bats according to the order as defined by the first pair's tails
 "PARAMETERS:
 BAT[void,str] - the strings which are going to be tokenized
 BAT[void,str] - seperators for the strings
-DESCRIPITON:
+DESCRIPTION:
 ll_tokenize is a special version of [split](bat(void,str),bat(void,str)), which
 tokenizes a string using the aligned seperator string and adds a row for
 each substring, with the oid of the input head identifying the original boundaries."
@@ -166,7 +166,7 @@ round(dbl, 0) is that negative numbers with .5 are rounded up
 		: str = CMDnormSpace;
 "PARAMETERS:
 BAT[void,str] - the strings which are going to be normalized
-DESCRIPITON:
+DESCRIPTION:
 normSpace normalizes the whitespaces to a single space."
 
 .COMMAND combine_text_string( BAT[void,oid] iter, BAT[void,oid] kind, BAT[void,str] str_value, int result_size )
@@ -175,7 +175,7 @@ normSpace normalizes the whitespaces to a single space."
 BAT[void,oid] - iter values which have to be ordered
 BAT[void,oid] - one of three different kinds (strings '2@0'; text-nodes '1@0' and other nodes '0@0')
 BAT[void,str] - string values of the strings and text-nodes; an empty string for each other node
-DESCRIPITON:
+DESCRIPTION:
 very specialized helper function for the translation of the item-sequence-to-node-sequence function in XQuery.
 It expects three aligned columns and creates out of adjazent strings and text-nodes one string,
 which can be translated into a text-node again. Every other node and every new iter divide the strings.
@@ -187,7 +187,7 @@ Empty strings are not added to the output."
 "PARAMETERS:
 BAT[oid,str] - sorted iters in the head, string values in the tail
 BAT[oid,str] - separator which is added between strings, within an iter
-DESCRIPITON:
+DESCRIPTION:
 string_join constructs for each iter one strings by appending the strings
 with the separator for this iter in between."
 
@@ -324,8 +324,25 @@ bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
 oid           min_iter,max_iter (smallest and largest iter id)
 bit           no_iter_order (descendant & descendant_or_self, only: 
                result will be ordered on item, but not sub-ordered on iter)
-DESCRIPITON:
+DESCRIPTION:
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+@m
+@:ll_upwards(parent,parent)@
+@:ll_upwards(ancestor,ancestor)@
+@:ll_upwards(ancestor_or_self,ancestor-or-self)@
+
+@= ll_upwards
+.COMMAND ll_@1(BAT[oid,oid] iter,
+                   BAT[oid,oid] ctx,
+                   BAT[oid,int] pre_size,
+                   int height): BAT[oid,oid] = PFll_@1;
+"PARAMETERS:
+BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
+BAT[void,oid] ctx (context set; sorted on tail)
+BAT[void,int] pre_size (from the working set)
+int           height (height of the document)
+DESCRIPTION:
+returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
 @m
 @:lev_cmd(child,child)@
 @:lev_cmd(parent,parent)@
@@ -405,47 +422,7 @@ const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
-const empty_bool__bat := bat(void,bit,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
-const bool_values := bat(void,bit,2).append(false).append(true).seqbase(0@0).access(BAT_READ);
-
-proc [bit](bat[any::1,str] b) : bat[any::1,bit]
-{
-    return [!=](b,"");
-}
-
-proc [bit](str b) : bit
-{
-    return !=(b,"");
-}
-
-proc castValues(bat[int,bat] tpe_vals, bat[void,any] _val, any item, any kind, any ipik, int tpe, str mil_tpe, str xq_tpe) : any {
-    var _oid := empty_bat;
-    tpe_vals@batloop() {
-        var sel_oid := ipik;
-        var sel_item := item;
-        if (type(kind) = bat) {
-            sel_oid := kind.ord_uselect($h).hmark(0@0);
-            sel_item := sel_oid.leftfetchjoin(item);
-        } else if (kind != $h) {
-            sel_oid := empty_bat;
-        }
-        if (count(sel_oid) > 0) {
-            sel_item := [*mil_tpe](sel_item.leftfetchjoin($t));
-            if (count(_oid) > 0) {
-                var res_mu := merged_union(_oid, sel_oid, _val, sel_item);
-                _oid := res_mu.fetch(0);
-                _val := res_mu.fetch(1);
-            } else {
-                _oid := sel_oid;
-                _val := sel_item;
-            }
-        }
-     }
-     if (_val.texist(cast(nil,tpe)))
-         ERROR ("err:FORG0001: could not cast value to %s.", xq_tpe);
-     return _val;
-}
 
 proc addValues(bat[void,any::1] container, any::1 delta) : oid
 {
@@ -751,8 +728,15 @@ proc ll_htordered_unique_thetajoin( int mode,
 @:wrap(descendant)@
 @:wrap(descendant_or_self)@
 
+@(
+@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
 @:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
+@)
+
+@:upwards(parent)@
+@:upwards(ancestor)@
+@:upwards(ancestor_or_self)@
 
 @(
 @:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
@@ -760,7 +744,6 @@ proc ll_htordered_unique_thetajoin( int mode,
 
 @:wrap(child)@
 
-@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
 @:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
@@ -949,7 +932,7 @@ int order (input & output order properties:\n\
            bit 0: input is sorted on iter(0) or item(1)\n\
            bit 1: output must be sorted on iter(0) or item(1))\n\
 BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
 @
@@ -1031,9 +1014,19 @@ BAT[void,any] iter (grouping relation)\n\
 BAT[void,any] ctx (context set)\n\
 oid cont (the current container of the ws)\n\
 BAT[void,bat] ws (working set)\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
+
+@= upwards
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[void,bat]
+{
+    # "order" is not (yet?) used, here.
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    var heights := ws.fetch(HEIGHT).fetch(frag);
+    var res := ll_@1(iter, ctx, pre_sizes, heights);
+    return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
+}
 @
 
 @mil
@@ -1592,7 +1585,7 @@ ADDHELP("delete_nodes_prepare", "manegold", "Aug 26 2005",
  BAT[void,bat] ws (working set)\n\
 RESULT:\n\
  BAT[bat,bat] BAT of BAT-pairs ('dst','src')\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
  Given a list of nodes (item) to be deleted and their container-id (encoded in kind),\n\
  delete_nodes_prepare() finds all decendants of the nodes that have to be deleted,\n\
  and returns a BAT of BAT-pairs ('dst','src'), where\n\
@@ -1617,7 +1610,7 @@ ADDHELP("delete_nodes_execute", "manegold", "Aug 26 2005",
  BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
  BAT[void,oid] kind (encoded container-id of nodes that are to be deleted)\n\
  BAT[void,bat] ws (working set)\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
  Given a list of nodes (item) to be deleted and their container-id (encoded in kind),\n\
  delete_nodes_execute() calls delete_nodes_prepare()\n\
  to calculate all BATs that have to be updates and their new values.\n\
