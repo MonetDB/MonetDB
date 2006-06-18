@@ -207,7 +207,7 @@ PFoops_loc_ (PFrc_t rc, PFloc_t loc,
     va_list args;
     char    buf[OOPS_SIZE];
 
-    snprintf (buf, OOPS_SIZE, "at (%i,%i-%i,%i): %s",
+    snprintf (buf, OOPS_SIZE, "at (%u,%u-%u,%u): %s",
               loc.first_row, loc.first_col,
               loc.last_row, loc.last_col, msg);
 
@@ -254,7 +254,7 @@ PFinfo_loc (PFrc_t rc, PFloc_t loc, const char *msg, ...)
     if (PFstate.debug == 0)
         return;
 
-    snprintf (buf, OOPS_SIZE, "at (%i,%i-%i,%i): %s",
+    snprintf (buf, OOPS_SIZE, "at (%u,%u-%u,%u): %s",
               loc.first_row, loc.first_col,
               loc.last_row, loc.last_col, msg);
 

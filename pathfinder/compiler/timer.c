@@ -130,21 +130,21 @@ PFtimer_str (long elapsed)
     str = tm;
 
     if (elapsed / 3600000000UL) {
-        str += sprintf (str, "%03ldh ", elapsed / 3600000000UL);
+        str += sprintf (str, "%03luh ", elapsed / 3600000000UL);
         elapsed %= 3600000000UL;
     }
   
     if (elapsed / 60000000UL) {
-        str += sprintf (str, "%02ldm ", elapsed / 60000000UL);
+        str += sprintf (str, "%02lum ", elapsed / 60000000UL);
         elapsed %= 60000000UL;
     }
   
     if (elapsed / 1000000UL) {
-        str += sprintf (str, "%02lds ", elapsed / 1000000UL);
+        str += sprintf (str, "%02lus ", elapsed / 1000000UL);
         elapsed %= 1000000UL;
     }
 
-    str += sprintf (str, "%03ldms", elapsed / 1000UL);
+    str += sprintf (str, "%03lums", elapsed / 1000UL);
 
     return tm;
 }

@@ -5550,7 +5550,7 @@ eval_join_helper (opt_t *f, int code, int number,
 static int
 evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 {
-    int lev_fst, lev_snd,
+    unsigned int lev_fst, lev_snd,
         fst_res, snd_res, 
         snd_var, i,
         cast_fst, cast_snd,
