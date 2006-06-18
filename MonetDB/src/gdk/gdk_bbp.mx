@@ -127,7 +127,7 @@ gdk_export bat BBPindex(str nme);
 gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
-gdk_export int BBPrecover();
+gdk_export int BBPrecover(void);
 gdk_export lng BBPdiskscan(void);
 gdk_export int BBPsync(int cnt, bat* subcommit);
 gdk_export int BBPincref(bat b, int logical);
@@ -181,7 +181,7 @@ static void BBPspin(bat bid, str debug, int event);
 static int BBPfree(BAT *b, str calledFrom );
 static int BBPdestroy(BAT *b);
 static void BBPuncacheit_(bat bid, int unloaddesc);
-static void BBPinitcache();
+static void BBPinitcache(void);
 static int BBPprepare(bit subcommit); 
 
 
@@ -456,7 +456,7 @@ int recover_dir(int direxists)
 
 #define CONTINUE_IF_NO_SIZES_IN_BBP 1 /* provide backward compatibility */
 
-static int BBPrecover_subdir();
+static int BBPrecover_subdir(void);
 
 void
 BBPinit(void)

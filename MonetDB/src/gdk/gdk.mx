@@ -1152,7 +1152,7 @@ gdk_export int BBPreclaim(BAT *b);
 @item BAT*
 @tab BATappend (BAT *b, ptr *c, bit force)
 @item BAT*
-@tab BATdel (BAT *b, ptr *c)
+@tab BATdel (BAT *b, ptr *c, bit force)
 @item BAT*
 @tab BUNins (BAT *b, ptr left, ptr right, bit force)
 @item BAT*
@@ -1160,9 +1160,9 @@ gdk_export int BBPreclaim(BAT *b);
 @item BAT*
 @tab BUNreplace (BAT *b, ptr left, ptr right, bit force)
 @item int
-@tab BUNdel (BAT *b, ptr left, ptr right)
+@tab BUNdel (BAT *b, ptr left, ptr right, bit force)
 @item int
-@tab BUNdelHead (BAT *b, ptr left)
+@tab BUNdelHead (BAT *b, ptr left, bit force)
 @item BUN
 @tab BUNfnd (BAT *b, ptr head)
 @item void
@@ -1262,11 +1262,11 @@ gdk_export BAT *BUNins(BAT *b, ptr left, ptr right, bit force);
 gdk_export BAT *BUNappend(BAT *b, ptr right, bit force);
 gdk_export BAT *BATins(BAT *b, BAT *c, bit force);
 gdk_export BAT *BATappend(BAT *b, BAT *c, bit force);
-gdk_export BAT *BUNdel(BAT *b, ptr left, ptr right);
-gdk_export BAT *BUNdelHead(BAT *b, ptr left);
-gdk_export BUN BUNdelete(BAT *b, BUN p);
-gdk_export BAT *BATdel(BAT *b, BAT *c);
-gdk_export BAT *BATdelHead(BAT *b, BAT *c);
+gdk_export BAT *BUNdel(BAT *b, ptr left, ptr right, bit force);
+gdk_export BAT *BUNdelHead(BAT *b, ptr left, bit force);
+gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
+gdk_export BAT *BATdel(BAT *b, BAT *c, bit force);
+gdk_export BAT *BATdelHead(BAT *b, BAT *c, bit force);
 
 gdk_export BAT *BUNreplace(BAT *b, ptr left, ptr right, bit force);
 gdk_export BAT *BUNinplace(BAT *b, BUN p, ptr left, ptr right, bit force);
@@ -2262,7 +2262,7 @@ gdk_export int GDKnrofthreads;
 gdk_export int GDKdebug;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
-gdk_export void GDKprotect();
+gdk_export void GDKprotect(void);
 @}
 @-
 The GDKembedded variable is a property set in the configuration file
@@ -2628,7 +2628,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
 #define ALIGNins(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
-#define ALIGNdel(x,y)	{VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
+#define ALIGNdel(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
 #define ALIGNinp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; }
 #define ALIGNapp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; }
 

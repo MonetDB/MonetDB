@@ -252,16 +252,6 @@ log_read_string(logger *l)
 	return buf;
 }
 
-static int
-log_write_string(logger *l, char *n)
-{
-	int len = strlen(n) + 1;	/* log including EOS */
-
-	if (!stream_writeInt(l->log, len) || stream_write(l->log, n, 1, len) != (ssize_t) len)
-		return LOG_ERR;
-	return LOG_OK;
-}
-
 static void
 log_read_clear(logger *logger, logformat *l)
 {
@@ -311,7 +301,7 @@ log_read_insdel(logger *logger, logformat *l)
 			if (l->flag == LOG_INSERT)
 				BUNins(b, h, t, FALSE);
 			else if (l->flag == LOG_DELETE)
-				BUNdel(b, h, t);
+				BUNdel(b, h, t, FALSE);
 			cnt++;
 			if (h != hv)
 				GDKfree(h);

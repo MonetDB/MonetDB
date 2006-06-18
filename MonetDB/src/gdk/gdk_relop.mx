@@ -529,6 +529,7 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		dst += zz;
 	}
 	ret = bn;
+      goto bunins_failed;
       bunins_failed:
  	bn->batBuns->free = dst - bn->batBuns->base;
 	BATsetcount(bn,bn->batBuns->free/zz);
@@ -560,6 +561,7 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		dst += zz;
 	}
 	ret = bn;
+      goto bunins_failed;
       bunins_failed:
 	bn->batBuns->free = dst - bn->batBuns->base;
 	BATsetcount(bn,bn->batBuns->free/zz);
@@ -598,6 +600,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	}
 	BATmmap_unpin(r);
 	ret = bn;
+      goto bunins_failed;
       bunins_failed:
 	BATmmap_unpin(r);
 	bn->batBuns->free = dst - bn->batBuns->base;
@@ -920,6 +923,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			@:voidfetchjoin(tloc,bn->ttype,ATOM)@
 		}
 		ret = bn;
+      	      goto bunins_failed;
 	      bunins_failed:
 		bn->batBuns->free = dst - bn->batBuns->base;
 		BATsetcount(bn,bn->batBuns->free/zz);
@@ -1256,6 +1260,7 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
+      goto bunins_failed;
       bunins_failed:
 	BATmmap_unpin(r);
 	BBPreclaim(bn);
@@ -2024,6 +2029,7 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATsetcount(bn,bn->batBuns->free/bn_sz);
 	return bn;
 
+	goto bunins_failed;
 bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
@@ -2175,7 +2181,8 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 	bn->batBuns->free = dst - bn->batBuns->base;
 	BATsetcount(bn,bn->batBuns->free/bn_sz);
 	return bn;
-
+ 	     
+	goto bunins_failed;
 bunins_failed:
 	BBPreclaim(bn);
 	return NULL;

@@ -207,7 +207,7 @@ gdk_export void MT_dump_sema(MT_Sema s, FILE *fp, char *name);
 @-
 Create a thread condition variable.
 @h
-gdk_export MT_Cond MT_create_cond();
+gdk_export MT_Cond MT_create_cond(void);
 
 @-
 Destroy a counting thread semaphore;

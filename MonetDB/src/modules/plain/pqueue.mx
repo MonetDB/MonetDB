@@ -207,7 +207,7 @@ int pqueue_dequeue_@1@2(BAT *h)
   memcpy(hbase, hbase+(num_elements-1)*hBUNsize, hBUNsize);
 
   /*delete last element*/
-  BUNdelete(h, hbase+(num_elements-1)*hBUNsize);
+  BUNdelete(h, hbase+(num_elements-1)*hBUNsize, FALSE);
 
   pqueue_movedowntop_@1@2(h);
   return GDK_SUCCEED;
@@ -404,7 +404,7 @@ int pqueue_dequeue_any@1(BAT *h)
   memcpy(hbase, hbase+(num_elements-1)*hBUNsize, hBUNsize);
 
   /*delete last element*/
-  BUNdelete(h, hbase+(num_elements-1)*hBUNsize);
+  BUNdelete(h, hbase+(num_elements-1)*hBUNsize, FALSE);
 
   pqueue_movedowntop_any@1(h);
   return GDK_SUCCEED;

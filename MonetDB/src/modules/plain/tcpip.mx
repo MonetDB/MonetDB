@@ -447,7 +447,7 @@ cache_del(cache_t *c)
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	if (!c->locked) {
-		BUNdelHead(BATmirror(cache_idx), &c);
+		BUNdelHead(BATmirror(cache_idx), &c, FALSE);
 		cache_free(c);
 	}
 	return 0;
@@ -658,6 +658,7 @@ conn_kill(int i)
 	return 0;
 }
 
+#if 0				/* not used */
 static int
 conn_invalidate(int i)
 {
@@ -671,8 +672,6 @@ conn_invalidate(int i)
 	return 0;
 }
 
-
-#if 0				/* not used */
 static int
 conn_write(int conn_id, int len, char *src, char *msg)
 {

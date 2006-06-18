@@ -615,10 +615,10 @@ salgebra_uncacheIt(clusterhash *ch)
 	int bid = ABS(ch->b);
 
 	MT_set_lock(salgebra_cacheLock, "uncacheIt");
-	BUNdelHead(salgebra_namecache, &bid);
-	BUNdelHead(salgebra_cache, &bid);
+	BUNdelHead(salgebra_namecache, &bid, FALSE);
+	BUNdelHead(salgebra_cache, &bid, FALSE);
 	MT_set_lock(salgebra_refcntLock, "uncacheIt");
-	BUNdelHead(salgebra_refcnt, &bid);
+	BUNdelHead(salgebra_refcnt, &bid, FALSE);
 	MT_unset_lock(salgebra_refcntLock, "uncacheIt");
 	MT_unset_lock(salgebra_cacheLock, "uncacheIt");
 }
@@ -953,7 +953,7 @@ salgebra_CMDrename(clusterhash *ch, str name)
 		MT_unset_lock(salgebra_cacheLock, "rename");
 		return GDK_FAIL;
 	}
-	BUNdelHead(salgebra_namecache, &batId);
+	BUNdelHead(salgebra_namecache, &batId, FALSE);
 	BUNins(salgebra_namecache, &batId, name, FALSE);
 	MT_unset_lock(salgebra_cacheLock, "rename");
 	return GDK_SUCCEED;

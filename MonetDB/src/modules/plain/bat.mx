@@ -771,7 +771,7 @@ CMDreplace_bat_force(BAT **r, BAT *b, BAT *s, bit *force)
 int
 CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNdel(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+	if (BUNdel(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -780,7 +780,7 @@ CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDdelete_head(BAT **r, BAT *b, ptr h)
 {
-	if (BUNdelHead(*r = b, @:batconvert(b,h)@) == NULL)
+	if (BUNdelHead(*r = b, @:batconvert(b,h)@, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -798,7 +798,7 @@ CMDdelete_all(BAT **r, BAT *b)
 int
 CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s)
 {
-	if (BATdel(*r = b, s) == NULL)
+	if (BATdel(*r = b, s, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -807,7 +807,7 @@ CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s)
 int
 CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 {
-	if (BATdelHead(*r = b, s) == NULL)
+	if (BATdelHead(*r = b, s, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;

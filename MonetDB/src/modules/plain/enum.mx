@@ -445,7 +445,7 @@ enum_new(int *retval, str name, BAT *b)
 	ptr nil = ATOMnilptr(b->htype);
 	int ret;
 
-	BUNdelHead(h, nil);
+	BUNdelHead(h, nil, FALSE);
 	BATorder(h);
 	BATrename(h, name);
 	BATmode(h, PERSISTENT);

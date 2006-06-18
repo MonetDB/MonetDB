@@ -136,9 +136,9 @@ m_export int startProfiler(stream *o);
 m_export int stopProfiler(void);
 m_export int setProfilerFilter(str left, str right);
 m_export void setProfilerMode(int mode);
-m_export BAT *getProfilerCount();
-m_export BAT *getProfilerTicks();
-m_export void resetProfiler();
+m_export BAT *getProfilerCount(void);
+m_export BAT *getProfilerTicks(void);
+m_export void resetProfiler(void);
 #endif /* _MONET_INTERPRETER_H_ */
 
 @c
@@ -501,8 +501,8 @@ It should be explicitly set afterwards.
 #include <sys/resource.h>
 #endif
 #include "monet_deparse.h"
-m_export void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTREE lt);
-m_export void onlineProfilerHeader();
+static void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTREE lt);
+static void onlineProfilerHeader(void);
 
 static stream *eventstream = NULL;
 static int delayswitch = 0;
@@ -1900,7 +1900,7 @@ immediately.
 			if (qm_profile) {
 				char msg[40];
 
-				sprintf(msg, "[%d]", i);
+				sprintf(msg, "[%u]", i);
 				QMmessage(current, msg);
 			}
 			if (p == 0) {

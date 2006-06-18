@@ -282,7 +282,7 @@ comparison when comparing decimals of the same precision; comparing 8 digits at 
 #define _DECIMAL_H_
 
 typedef struct {
-	int scale:16, negative:1, precision:15;
+	unsigned int scale:16, negative:1, precision:15;
 	unsigned int num[1];	/* array of digits: 2-digits-per-byte = 8-digits-per-integer */
 	/* array extends beyond boundary */
 } decimal;
