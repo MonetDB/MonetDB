@@ -71,7 +71,7 @@ the various underlying storage types.
 #define ST_READ  0
 #define ST_WRITE 1
 
-#define short_int_SWAP(s) (((0x00ff&(s))<<8) | ((0xff00&(s))>>8))
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
@@ -773,7 +773,7 @@ stream_gzflush(stream *s)
 	return 0;
 }
 
-stream *
+static stream *
 open_gzstream(const char *filename, const char *flags)
 {
 	stream *s;
@@ -804,7 +804,7 @@ open_gzrstream(const char *filename)
 	return s;
 }
 
-stream *
+static stream *
 open_gzwstream_(const char *filename, const char *mode)
 {
 	stream *s;
@@ -835,7 +835,7 @@ open_gzrastream(const char *filename)
 	return s;
 }
 
-stream *
+static stream *
 open_gzwastream_(const char *filename, const char *mode)
 {
 	stream *s;
@@ -894,7 +894,7 @@ stream_bzflush(stream *s)
 	return 0;
 }
 
-stream *
+static stream *
 open_bzstream(const char *filename, const char *flags)
 {
 	stream *s;
@@ -925,7 +925,7 @@ open_bzrstream(const char *filename)
 	return s;
 }
 
-stream *
+static stream *
 open_bzwstream_(const char *filename, const char *mode)
 {
 	stream *s;
@@ -956,7 +956,7 @@ open_bzrastream(const char *filename)
 	return s;
 }
 
-stream *
+static stream *
 open_bzwastream_(const char *filename, const char *mode)
 {
 	stream *s;
@@ -1015,7 +1015,7 @@ open_rstream(const char *filename)
 	return s;
 }
 
-stream *
+static stream *
 open_wstream_(const char *filename, char *mode)
 {
 	stream *s;
@@ -1100,7 +1100,7 @@ open_rastream(const char *filename)
 	return s;
 }
 
-stream *
+static stream *
 open_wastream_(const char *filename, char *mode)
 {
 	stream *s;
@@ -1423,7 +1423,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 /* Read one line (seperated by \n) of at most maxcnt characters from the 
    stream. Returns the number of characters actually read. */
-ssize_t
+static ssize_t
 socket_readline(stream *s, void *buf, size_t maxcnt)
 {
 	size_t len = 0;
@@ -1774,7 +1774,7 @@ ssl_error(stream *s)
 	return strdup(errstr);
 }
 
-stream *
+static stream *
 ssl_open(SSL * ssl, const char *name)
 {
 	struct ssl_data *ssl_data;
@@ -1867,7 +1867,7 @@ ssl_wastream(SSL * ssl, const char *name)
 }
 #endif /* HAVE_OPENSSL */
 
-stream *
+static stream *
 file_stream(const char *name)
 {
 	stream *s;
@@ -2221,7 +2221,7 @@ bs_flush(stream *ss)
 			printf("W %s 0\n", ss->name);
 		}
 #endif
-		blksize = s->nr << 1;
+		blksize = (short) (s->nr << 1);
 		/* indicate that this is the last buffer of a block by
 		   setting the low-order bit */
 		blksize |= (short) 1;
@@ -2622,7 +2622,7 @@ bstream_read(bstream *s, size_t size)
 #define STREAM_LINE_MAX 2048
 #endif
 
-ssize_t
+static ssize_t
 bstream_readline(bstream *s)
 {
 	size_t size = STREAM_LINE_MAX;
