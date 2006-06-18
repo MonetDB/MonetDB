@@ -123,7 +123,7 @@ extern sql_func *sql_create_func_(char *name, char *imp, list *ops, sql_subtype 
 extern sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res);
 
 extern void types_init(int debug);
-extern void types_exit();
+extern void types_exit(void);
 
 #endif /* SQL_TYPES_H */
 @c
@@ -143,7 +143,7 @@ list *funcs = NULL;
 
 static list *localtypes = NULL;
 
-static void sqltypeinit();
+static void sqltypeinit(void);
 
 int digits2bits(int digits) 
 {
@@ -476,10 +476,10 @@ subtype2string(sql_subtype *t)
 
 	if (t->digits > 0) {
 		if (t->scale > 0)
-			snprintf(buf, BUFSIZ, "%s(%d,%d)", 
+			snprintf(buf, BUFSIZ, "%s(%u,%u)", 
 				t->type->sqlname, t->digits, t->scale);
 		else
-			snprintf(buf, BUFSIZ, "%s(%d)", 
+			snprintf(buf, BUFSIZ, "%s(%u)", 
 				t->type->sqlname, t->digits);
 	} else {
 			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
@@ -1093,7 +1093,7 @@ The current implementation uses a hardwired type and function table.
 This routine is called once upon restart of the system.
 @c
 void
-sqltypeinit()
+sqltypeinit(void)
 {
 	int i;
 
@@ -1405,7 +1405,7 @@ sqltypeinit()
 }
 
 void
-types_exit()
+types_exit(void)
 {
 #ifndef NDEBUG
 	sql_end = END_SUBAGGR;

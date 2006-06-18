@@ -48,7 +48,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalo
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName, nColumnNameLength, szColumnName);
+	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nColumnNameLength, (char*)szColumnName);
 #endif
 
 	/* SQLColumnPrivileges returns a table with the following columns:

@@ -43,6 +43,7 @@ sql_server_export char *monet4_create_user(list *l, char *user, char *pass, char
 sql_server_export int monet4_find_user(ptr mp, char *user);
 sql_server_export void monet4_create_privileges(ptr _mvc, sql_schema *s);
 sql_server_export int monet4_schema_has_user(ptr _mvc, sql_schema *s);
+sql_server_export int monet4_alter_user(ptr _mvc, str user, str passwd, oid schema_id);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -784,20 +785,20 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			if (s->op4.typeval.type->eclass == EC_STRING && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) ) 
-				len += snprintf(buf+len, buflen-len, "myc, %d, %d, %d, %d, ", s->op3.typeval.type->eclass, s->op3.typeval.digits, s->op3.typeval.scale, type_has_tz(&s->op3.typeval));
+				len += snprintf(buf+len, buflen-len, "myc, %d, %u, %u, %d, ", s->op3.typeval.type->eclass, s->op3.typeval.digits, s->op3.typeval.scale, type_has_tz(&s->op3.typeval));
 			else if (s->op3.typeval.type->eclass == EC_DEC) 
-				len += snprintf(buf+len, buflen-len, "%d, ", s->op3.typeval.scale);
+				len += snprintf(buf+len, buflen-len, "%u, ", s->op3.typeval.scale);
 	
 			len += snprintf(buf+len, buflen-len, "s%d", l);
 
 			if (s->op4.typeval.type->eclass == EC_DEC ||
 			    s->op4.typeval.type->eclass == EC_INTERVAL)
-				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval.digits, s->op4.typeval.scale);
+				len += snprintf(buf+len, buflen-len, ", %u, %u", s->op4.typeval.digits, s->op4.typeval.scale);
 			/* convert to string, give error on to large strings */
 			if (s->op4.typeval.type->eclass == EC_STRING && 
 			    !(s->op3.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits == 0) )
-				len += snprintf(buf+len, buflen-len, ", %d", s->op4.typeval.digits);
+				len += snprintf(buf+len, buflen-len, ", %u", s->op4.typeval.digits);
 			len += snprintf(buf+len, buflen-len, ");\n");
 			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);
@@ -1203,7 +1204,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 					len = snprintf(buf, buflen, "var s%d := mvc_export_value(myc, Output, %d, ", -s->nr, sql->mvc->type );
 	
-					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
+					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %u, %u, %d, s%d);\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
 					write_command(sql, buf);
 					write_part(sql, buf, len);
 					len = 0;
@@ -1252,7 +1253,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						buflen += BUFSIZ + sl;
 						buf = RENEW_ARRAY(char, buf, buflen);
 					}
-					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s.%s\", \"%s\", \"%s\", %d, %d, s%d);\n", nsn, ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
+					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s.%s\", \"%s\", \"%s\", %u, %u, s%d);\n", nsn, ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
 					assert(len <= buflen);
 					_DELETE(cn);
 					_DELETE(nsn);
@@ -1278,7 +1279,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				write_part(sql, buf, len);
 				len = 0;
 			} else {
-				fprintf(stderr, "not a valid output list %d %d %d\n", lst->type, st_list, st_ordered);
+				fprintf(stderr, "not a valid output list %u\n", lst->type);
 			}
 			write_tail(sql, -s->nr);
 			_DELETE(buf);
@@ -1597,6 +1598,32 @@ monet4_schema_has_user(ptr _mvc, sql_schema *s)
 	ssize_t rid = column_find_row(m->session->tr, users_schema, &schema_id, NULL);
 	if (rid < 0)
 		return FALSE;
+	return TRUE;
+}
+
+int
+monet4_alter_user(ptr _mvc, str user, str passwd, oid schema_id)
+{
+	mvc *m = (mvc*)_mvc;
+	ssize_t rid;
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
+	sql_column *users_name = find_sql_column(users, "name");
+
+	rid = column_find_row(m->session->tr, users_name, user, NULL);
+	if (rid < 0)
+		return FALSE;
+
+	if (passwd) {
+		sql_column *users_passwd = find_sql_column(users, "passwd");
+
+		column_update_value(m->session->tr, users_passwd, rid, passwd);
+	}
+	if (schema_id) {
+		sql_column *users_schema = find_sql_column(users, "default_schema");
+
+		column_update_value(m->session->tr, users_schema, rid, &schema_id);
+	}
 	return TRUE;
 }
 

@@ -44,14 +44,14 @@ extern int
 extern int
  store_init(int debug, char *logdir, char *dbname, backend_stack stk);
 extern void
- store_exit();
+ store_exit(void);
 
 extern void
- store_manager();
+ store_manager(void);
 
-extern void store_lock();
-extern void store_unlock();
-extern int store_next_oid();
+extern void store_lock(void);
+extern void store_unlock(void);
+extern int store_next_oid(void);
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, char *name);
 extern sql_trans *sql_trans_destroy(sql_trans *tr);

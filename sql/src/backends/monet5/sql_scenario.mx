@@ -143,7 +143,7 @@ monet5_create_user(list *l, str user, str passwd, str fullname, int schema_id, i
 
 	/* create two SQL statements that insert the user in the SQL
 	 * adminsitration */
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s',%d);", user, fullname, schema_id);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_user_info\" VALUES('%s','%s',%d);", user, fullname, schema_id);
 	list_append(l, stmt_sql(_strdup(buf)));
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, grantorid);
 	list_append(l, stmt_sql(_strdup(buf)));
@@ -165,7 +165,6 @@ monet5_find_user(ptr mp, str user) {
 	scens = BATnew(TYPE_str, TYPE_void, 1);
 	BUNappend(scens, "sql", 0);
 	bid = BBPcacheid(scens);
-	/* add the user to the M5 authorisation administration */
 	if ((tmp = AUTHgetUsers(&b, &bid)) != MAL_SUCCEED) {
 		BBPunfix(bid); 
 		GDKfree(tmp);
@@ -191,21 +190,21 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	int schema_id = 0;
 	oid monetdbuser = 0;
 
-	/* now the authorisation related tables */
+	/* create the authorisation related tables */
 	t = mvc_create_table(m, s, "db_user_info", 1, SQL_PERSIST, 0, -1);
 	mvc_create_column_(m, t, "id", "oid", 9);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	uinfo = t;
 
-	t = mvc_create_view(m, s, "db_users", ";CREATE VIEW \"db_users\" ([system BAT]) AS BATS", 1);
+	t = mvc_create_view(m, s, "db_users", ";CREATE VIEW \"db_users\" (\"[system BAT]\") AS BATS", 1);
 	err = sql_view_from_bat(m->session->tr, t, "M5system_auth_user");
 	if (err != NULL) {
 		GDKfree(err);
 		sql_trans_drop_table(m->session->tr, t->s, t->base.name, 0);
 	}
 
-	t = mvc_create_view(m, s, "db_scens", ";CREATE VIEW \"db_scens\" ([system BAT]) AS BATS", 1);
+	t = mvc_create_view(m, s, "db_scens", ";CREATE VIEW \"db_scens\" (\"[system BAT]\") AS BATS", 1);
 	err = sql_view_from_bat(m->session->tr, t, "M5system_auth_scen");
 	if (err != NULL) {
 		GDKfree(err);
@@ -246,6 +245,35 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 	rid = column_find_row(m->session->tr, users_schema, &schema_id, NULL);
 	if (rid < 0)
 		return FALSE;
+	return TRUE;
+}
+
+int
+monet5_alter_user(ptr _mvc, str user, str passwd, oid schema_id)
+{
+	mvc *m = (mvc *)_mvc;
+	ssize_t rid;
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
+	sql_column *users_name = find_sql_column(users, "t");
+
+	rid = column_find_row(m->session->tr, users_name, user, NULL);
+	if (rid < 0)
+		return FALSE;
+
+	if (passwd != NULL) {
+		str err = AUTHsetPassword(&user, &passwd);
+		if (err != MAL_SUCCEED) {
+			(void)sql_error(m, 02, err);
+			return(FALSE);
+		}
+	}
+	if (schema_id) {
+		sql_table *info = find_sql_table(sys, "db_user_info");
+		sql_column *users_schema = find_sql_column(info, "default_schema");
+
+		column_update_value(m->session->tr, users_schema, rid, &schema_id);
+	}
 	return TRUE;
 }
 
@@ -315,6 +343,7 @@ SQLinit(Client c)
 	be_funcs->ffuser = &monet5_find_user;
 	be_funcs->fcrpriv = &monet5_create_privileges;
 	be_funcs->fshuser = &monet5_schema_has_user;
+	be_funcs->fauser = &monet5_alter_user;
 	backend_init(be_funcs);
 	if (mvc_init(FALSE, 0) < 0) {
 		return throwMessage("SQLinit", "Catalogue initialization failed\n");
@@ -355,6 +384,7 @@ mvc_get_schema(mvc *m, char *user)
 	sql_table *users = NULL;
 	sql_column *users_name = NULL;
 	BAT *b;
+	bat bid;
 	BUN p;
 
 	char *schema = NULL;
@@ -368,7 +398,8 @@ mvc_get_schema(mvc *m, char *user)
 	users = find_sql_table(sys, "db_users");
 	users_name = find_sql_column(users, "t");
 	/* evil stuff starts here (don't look) */
-	b = BATdescriptor(users_name->bat.bid);
+	bid = users_name->bat.ibid?users_name->bat.ibid:users_name->bat.bid;
+	b = BATdescriptor(bid);
 	assert(b);
 	p = BUNfnd(BATmirror(b), user);
 	if (p != NULL) {
@@ -995,13 +1026,13 @@ SQLparser(Client c)
 		m->scanner.mode = LINE_1;
 	}
 	if (be->language == 'X') {
-		int n = 0, id, off, len;
+		int n = 0, v, off, len;
 
 		if( strncmp(in->buf + in->pos,"export ",7)==0 )
-			n = sscanf(in->buf + in->pos+7, "%d %d %d", &id, &off, &len);
+			n = sscanf(in->buf + in->pos+7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_chunk(m, out, id, off, n == 3 ? len : m->reply_size);
+			mvc_export_chunk(m, out, v, off, n == 3 ? len : m->reply_size);
 
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
@@ -1009,25 +1040,30 @@ SQLparser(Client c)
 		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
 			res_table *t;
 
-			id = (int) strtol(in->buf+in->pos+6,NULL,0);
- 			t = res_tables_find(m->results, id);
+			v = (int) strtol(in->buf+in->pos+6,NULL,0);
+ 			t = res_tables_find(m->results, v);
 			if (t)
 				m->results = res_tables_remove(m->results, t);
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
 		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
-			id= (int) strtol(in->buf+in->pos+12,NULL,10);
-			m->session->auto_commit = (id)?1:0;
+			v= (int) strtol(in->buf+in->pos+12,NULL,10);
+			int commit = (!m->session->auto_commit && v);
+			m->session->auto_commit = (v)?1:0;
 			m->session->ac_on_commit = m->session->auto_commit;
-			if (mvc_rollback(m, 0, NULL) < 0)
-				return throwMessage("SQLparser", "Xauto_commit failed\n");
+			if (m->session->active) {
+				if (commit && mvc_commit(m, 0, NULL)< 0)
+					return throwMessage("SQLparser", "Xauto_commit (commit) failed\n");
+				else if (!commit && mvc_rollback(m, 0, NULL) < 0)
+					return throwMessage("SQLparser", "Xauto_commit (rollback) failed\n");
+			}
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
 		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
-			id= (int) strtol(in->buf+in->pos+11,NULL,10);
-			m->reply_size = id;
+			v= (int) strtol(in->buf+in->pos+11,NULL,10);
+			m->reply_size = v;
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}

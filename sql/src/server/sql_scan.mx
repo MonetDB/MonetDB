@@ -53,7 +53,7 @@ struct scanner {
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
 extern void scanner_query_processed(struct scanner *s);
 
-extern void scanner_init_keywords();
+extern void scanner_init_keywords(void);
 #endif /* _SQL_SCAN_H_ */
 
 @c
@@ -75,7 +75,7 @@ extern void scanner_init_keywords();
 #include <sql_keyword.h>
 
 void
-scanner_init_keywords()
+scanner_init_keywords(void)
 {
 	keywords_insert("false", BOOL_FALSE);
 	keywords_insert("true", BOOL_TRUE);

@@ -53,7 +53,7 @@ typedef struct dlist {
 	int cnt;
 } dlist;
 
-extern dlist *dlist_create();
+extern dlist *dlist_create(sql_allocator *sa);
 extern int dlist_length(dlist *l);
 
 extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);

@@ -299,7 +299,7 @@ bm_add_bat(bm *bm, BAT *b, char *name)
 
 	if (bid) {
 		if (bid != b->batCacheid) 
-			BUNdelHead(bm->bat_name, &bid);
+			BUNdelHead(bm->bat_name, &bid, FALSE);
 		else
 			return bid;
 	}
@@ -314,7 +314,7 @@ bm_add_bat(bm *bm, BAT *b, char *name)
 void
 bm_del_bat(bm *bm, oid bid)
 {
-	BUNdelHead(bm->bat_name, &bid);
+	BUNdelHead(bm->bat_name, &bid, FALSE);
 }
 
 oid

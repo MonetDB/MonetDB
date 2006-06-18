@@ -58,7 +58,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %d %d\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName, nScope, nNullable);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %hd %hu\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nScope, nNullable);
 #endif
 
 	/* check for valid IdentifierType argument */
@@ -159,13 +159,13 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 
 		/* add the selection condition */
 		/* search pattern is not allowed for table name so use = and not LIKE */
-		sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, szTableName);
+		sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, (char*)szTableName);
 		query_end += strlen(query_end);
 
 		if (szSchemaName != NULL && nSchemaNameLength > 0) {
 			/* filtering requested on schema name */
 			/* search pattern is not allowed so use = and not LIKE */
-			sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, szSchemaName);
+			sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, (char*)szSchemaName);
 			query_end += strlen(query_end);
 		}
 

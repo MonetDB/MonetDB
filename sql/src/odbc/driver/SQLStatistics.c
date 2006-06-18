@@ -57,7 +57,7 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %d %d\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName, nUnique, nReserved);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %hu %hu\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nUnique, nReserved);
 #endif
 
 	/* check for valid Unique argument */
@@ -146,13 +146,13 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, szTableName);
+	sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, (char*)szTableName);
 	query_end += strlen(query_end);
 
 	if (szSchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, szSchemaName);
+		sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, (char*)szSchemaName);
 		query_end += strlen(query_end);
 	}
 
