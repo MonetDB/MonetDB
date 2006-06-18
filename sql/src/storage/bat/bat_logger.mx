@@ -263,7 +263,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				if (l->flag == SQL_LOG_INSERT)
 					BUNins(b, h, t, FALSE);
 				else if (l->flag == SQL_LOG_DELETE)
-					BUNdel(b, h, t);
+					BUNdel(b, h, t, FALSE);
 				if (h != hv)
 					_DELETE(h);
 				if (t != tv)
@@ -523,7 +523,7 @@ logger_commit(logger *logger)
 	if (logger->debug & 1)
 		fprintf(stderr, "logger_commit\n");
 
-	BUNdelHead(logger->sql_log, &id);
+	BUNdelHead(logger->sql_log, &id, FALSE);
 	BUNins(logger->sql_log, &id, &logger->id, FALSE);
 	return bm_commit(logger->bm);
 }
