@@ -853,7 +853,7 @@ BAT[oid,any] ctx (context set)\n\
 oid cont (the current container of the ws)\n\
 BAT[oid,bat] ws (working set)\n\
 BAT[void,oid] cands (candidate set)\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
 "pf_standoff");
 @
@@ -1287,7 +1287,7 @@ ADDHELP("region_extract", "wouter", "Oct 2005",
 BAT[str,BAT] an active ws (Working Set)\n\
 oid i (index in the active working set)\n\
 str tpe (type of region-values (int or lng))\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and fills them.",
 "pf_standoff");
 
@@ -1366,7 +1366,7 @@ ADDHELP("region_extract", "wouter", "Oct 2005",
 "PARAMETERS:\n\
 BAT[str,BAT] ws (Working Set)\n\
 str tpe (type of region-values (int or lng))\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and fills them.",
 "pf_standoff");
 @

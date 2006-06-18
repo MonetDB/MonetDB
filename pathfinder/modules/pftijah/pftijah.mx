@@ -66,7 +66,7 @@
 "PARAMETERS:
 BAT[void,oid] - the offset index 
 ressize       - the result size, equals number of different tids + 1
-DESCRIPITON:
+DESCRIPTION:
 creates an offset index.
 "
 
@@ -76,7 +76,7 @@ creates an offset index.
 BAT[any,oid] - bat with tail values which have to be joined (e.g. tid values)
 BAT[void,oid] - join index bat with value-offset
 BAT[void,oid] - bat with indexed offset and tail values to be returned
-DESCRIPITON:
+DESCRIPTION:
 the join algorithm comes down to a repeated slice and insert operation.
 "
 
