@@ -15,8 +15,7 @@
 @' All Rights Reserved.
 @-
 The textual interface to the MonetDB server also supports a limited
-form of online help 
-using manual commands and the readline key-binding '<TAB><TAB>'. 
+form of online help commands and the readline key-binding '<TAB><TAB>'. 
 The argument is a (partial) operator call,
 which is looked up in the symbol table.
 If the pattern includes a '(' it also

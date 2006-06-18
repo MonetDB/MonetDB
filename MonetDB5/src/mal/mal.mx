@@ -106,7 +106,7 @@ The XML trend as the language for tool interaction supports our decision.
 
 @node Architecture Overview, MAL Synopsis, Design Considerations, MonetDB Overview
 @+ Architecture overview
-The architecture is built around three independent components:
+The architecture is built around a few independent components:
 the MonetDB server, the MonetDB guardian, and the client application.
 The MonetDB server is the heart of the system, it manages a single
 physical database on one machine for all (concurrent) applications.
@@ -123,7 +123,7 @@ for a particular product, e.g. @url{http://kdl.cs.umass.edu/prox-overview,Proxim
 and generic functionality, e.g. 
 the @url{http://www.aquafold.com,Aquabrowser} or @url{http://www.minq.se,Dbvisualizer}.
 The applications communicate with the server 
-using a de-facto standard interface packaged as a library
+using de-facto standard interface packaged,
 e.g. JDBC, ODBC, Perl, PHP, etc..
 
 The middle layer consists of query language processors such as 
@@ -134,55 +134,50 @@ The query language processors each manage their own private catalog structure.
 Software bridges, e.g. import/export routines, are used to
 share data between language paradigms.
 
-For each query language a specific, strategic optimizer is included. 
-It uses knowledge on the language semantics and general
-heuristics, such as pushing down selections through
-joins, to derive better programs. The output of the compilers
-are MAL programs ran against the server.
-
 @iftex
-@float Figure,fig:ex1
 @image{base00,,,,.pdf}
-@end float
+@emph{Figure 2.1}
 @end iftex
-
-The MonetDB server software stack consists of four layers,
-aligned with the @ref{Session Scenarios} functions.
 
 @node MAL Synopsis, Execution Engine, Architecture Overview,  MonetDB Overview
 @+ MonetDB Assembler Language (MAL)
-The target language for the query compilers is an assembler-like language,
-called the MonetDB Assembler Language (MAL).
-It is a simplified subset of the Monet Interface Language introduced
-previously. The language provides a direct the textual interface to
-the server back-end, i.e. MAL is a language available to applications
-as well.
+The target language for a query compiler is 
+the MonetDB Assembler Language (MAL).
+It was designed to ease code generation 
+and fast interpretation by the server.
+The compiler produces algebraic query plans, which 
+are turned into  physical execution
+plans by the MAL optimizers.
 
-Its design is geared to provide a controlled setting for the
-query processors. They can produce algebraic representations
-of query plans, which by the MAL optimizers are turned into
-physical execution plans.
-In this process an execution paradigm is chosen to best fit
-the engines available and application needs.
+The output of a compiler is either an @sc{ascii} representation
+of the MAL program or the compiler is tightly coupled with
+the server to save parsing and communication overhead.
 
-The @emph{box} container model for MAL objects is a balance 
-between hardwired decisions based on the typing scheme
-and hooks to implement those as user-defined extensions.
-For example, objects can be assembled in @emph{ box}es, which come
-with a simple management protocol. Their implementation can be
-geared towards any management style required, e.g. delivery of
-read-only objects for query processing, transparency to external
-resources through wrappers, and high-volume transaction support.
+A snippet of the MAL code produced by the SQL compiler
+for the query @code{select count(*) from tables}
+is shown below. It illustrates a sequences of relational
+operations against a table column and producing a
+partial result.
+@example
+	...
+    _22:bat[:void,:oid]  := sql.bind_dbat("tmp","_tables",0);
+    _23 := bat.reverse(_22);
+    _24 := algebra.kdifference(_20,_23);
+    _25 := algebra.markT(_24,0:oid);
+    _26 := bat.reverse(_25);
+    _27 := algebra.join(_26,_20);
+    _28 := bat.setWriteMode(_19);
+    bat.append(_28,_27,true);
+	...
+@end example
 
-Much in the spirit of Version 4
-MAL can be readily extended with user defined types and
-service modules. 
-Furthermore, the language design is meant to support the
-full breath of computational paradigms deployed in a database
-setting. In particular, it should provide a clean infrastructure
-to implement triggers and stream-based database applications.
-Its design and implementation takes the functionality a 
-significant step further. To name a few:
+MAL supports the full breath of computational paradigms 
+deployed in a database setting. It is language framework
+where the execution semantics is determined by the
+code transformations and the final engine choosen.
+
+The design and implementation of MAL takes the functionality offered
+previously a significant step further. To name a few:
 @itemize @bullet
 @item All instructions are strongly typed before being executed. 
 @item Polymorphic functions are supported. 
@@ -193,7 +188,11 @@ it forms a point in the dataflow graph.
 @item Co-routines (Factories) support building streaming applications.
 @item Properties are associated with the program code for
 ease of optimization and scheduling.
+@item It can be readily extended with user defined types and
+function modules. 
 @end itemize
+
+A more indepth description of the MAL language is given in @ref{MonetDB Assembler Language}
 @-
 @{
 @+ Critical sections and semaphores
@@ -257,15 +256,29 @@ int monet_daemon=0;
 @-
 @node Execution Engine, Session Scenarios, MAL Synopsis , MonetDB Overview
 @+ Execution Engine
+The execution engine comes in several flavors. The default is a
+simple, sequential MAL interpreter. For each MAL function call it creates
+a stack frame, which is initialized with all constants found in the
+function definition. During interpretation the garbage collector
+ensures freeing of space consumptive tables (BATs) and strings.
+Furthermore, all temporary structures are garbage collected before
+the funtion returns the result.
 
-Startup of the MonetDB server trigger localization and execution of
-a bootstrap script @sc{mal_init.mx}
+This simple approach leads to an accumulation of temporary variables.
+They can be freed earlier in the process using an explicit garbage collection
+command, but the general intend is to leave such decisions to an optimizer
+or scheduler.
+
+The execution engine is only called when all MAL instructions
+can be resolved against the available libraries.
+Most modules are loaded when the server starts using a 
+bootstrap script @sc{mal_init.mx}
 Failure to find the startup-file terminates the session.
 It most likely points to an error in the MonetDB configuration file.
 
 During the boot phase, the global symbol table is initialized 
 with MAL function and factory definitions, and
-loading the pre-compiled commands and pattern. 
+loading the pre-compiled commands and patterns. 
 The libraries are dynamically loaded by default.
 Expect tens of modules and hundreds of operations to become readily available.
 
@@ -279,18 +292,6 @@ able to detect all references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which is known to be a severe performance hindrence.
 
-The execution engine comes in several flavors. The default is a
-simple, sequential MAL interpreter. For each MAL function it creates
-a stack frame, which is initialized with all constants found in the
-function definition. During interpretation the garbage collector
-ensures freeing of space consumptive tables (BATs) and strings.
-Furthermore, all temporary structures are garbage collected before
-the funtion returns the result.
-
-This simple approach leads to an accumulation of temporary variables.
-They can be freed earlier in the process using an explicit garbage collection
-command, but the general intend is to leave such decisions to an optimizer
-or scheduler.
 @{
 @h
 

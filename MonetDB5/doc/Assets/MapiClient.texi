@@ -23,19 +23,19 @@ mclient [ options ]
 @end example
 Options are:
 @verbatim
- -b t/f      | --blocked=true/false /* blocked mode */
+ -b t/f      | --blocked=true/false /* blocked mode (default=false) */
  -D          | --dump           /* dump sql database */
  -e          | --error          /* exit on error */
  -H          | --history        /* load/save cmdline history (default off) */
  -h hostname | --host=hostname  /* host to connect to */
  -i          | --interactive    /* read stdin after command line args */
- -l language | --language=lang  /* {mal,sql,xquery} */
- -P passwd   | --passwd=passwd  /* password */
+ -l<language>| --language=lang  /* {mal,sql,xquery} */
+ -P<passwd>  | --passwd=passwd  /* password */
  -p portnr   | --port=portnr    /* port to connect to */
  -q          | --quiet          /* don't print welcome message [default=on]*/
  -s stmt     | --statement=stmt /* run single statement */
- -T          | --time           /* time commands */
+ -T          | --time           /* time individual commands */
  -t          | --trace          /* trace Monet interaction */
- -u user     | --user=user      /* user id [default=monetdb] */
+ -u<user>    | --user=user      /* user id [default=monetdb] */
  -?          | --help           /* show this usage message */
 @end verbatim

@@ -32,7 +32,7 @@ Data Distilleries, which based their analytical customer
 relationship suite on the power provided by the early MonetDB
 implementations. In the years following, many technical innovations
 were paired with strong industrial maturing of the software base.
-Data Distilleries became a subsidary of SPSS in 2003.
+Data Distilleries became a subsidiary of SPSS in 2003.
 
 @strong{The Open-Source Challenge [2003-2006]}
 Moving MonetDB Version 4 into the open-source field required a large number of
@@ -66,5 +66,5 @@ such as the perspective on global consistency, the role of the client in
 managing the distributed world, and the way resources are spread.
 
 The MonetDB software framework provides a rich setting to pursue
-these allees of database research. We hope that many may benefit from
+these alleys of database research. We hope that many may benefit from
 our investments, both research and business wise.

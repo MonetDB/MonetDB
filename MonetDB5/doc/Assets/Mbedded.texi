@@ -42,7 +42,7 @@ Only one connection is permitted.
 @end menu
 
 @node A Simple Example, Configuration Parameters, Embedded MonetDB, Embedded MonetDB
-@subsection Mbedded Example
+@section Mbedded Example
 A minimalistic embedded application is shown below. It creates
 a temporary table in the database, fills it, and retrieves the
 records for some statistics gathering.
@@ -172,7 +172,7 @@ main(){
 For an overview of the system configuration parameters see XYZ.
 
 @node Embedded MonetDB Limitations , MonetDB Assembler Language, Configuration Parameters, Embedded MonetDB
-@subsection Limitations for Embedded MonetDB
+@section Limitations for Embedded MonetDB
 
 In embedded applications the memory footprint is a factor of concern.
 The raw footprint as delivered by the Unix @code{size} command is often used.
@@ -185,23 +185,23 @@ The minimal static footprint of MonetDB is about 16 Mb (+ ca 4Mb for SQL).
 After module loading the space quickly grows to about 60Mb.
 @emph{This footprint should be reduced.}
 
-A better frame of reference for embedded applications is our sample
-program, which is a simple, yet complete embedded application inspired by an
-MP3 player. The table below illustrates some basic properties
-on different embedded SQL platforms.
-
-@multitable @columnfractions 0.2 0.2 0.2 0.2 0.2
-@item
-@tab Mbedded
-@tab SQLite
-@tab MySQL
-@tab PostgreSQL
-@item Prepare time
-@item Max memory
-@item CPU time
-@end multitable
-The @code{Prepare time} denotes the compilation and link time on
-a state-of-the-art PC.
+@c A better frame of reference for embedded applications is our sample
+@c program, which is a simple, yet complete embedded application inspired by an
+@c MP3 player. The table below illustrates some basic properties
+@c on different embedded SQL platforms.
+@c 
+@c @multitable @columnfractions 0.2 0.2 0.2 0.2 0.2
+@c @item
+@c @tab Mbedded
+@c @tab SQLite
+@c @tab MySQL
+@c @tab PostgreSQL
+@c @item Prepare time
+@c @item Max memory
+@c @item CPU time
+@c @end multitable
+@c The @code{Prepare time} denotes the compilation and link time on
+@c a state-of-the-art PC.
 
 The embedded application world calls for many, highly specialized
 enhancements. It is often well worth the effort to carve out the

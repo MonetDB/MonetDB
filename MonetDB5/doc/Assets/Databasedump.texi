@@ -22,5 +22,5 @@ shell> monetdb --start --dbname=voc
 shell> mclient -lsql /tmp/voc.sql
 @end example
 
-The dump facility is also avaible as an option to the @sc{monetdb} script.
+The dump facility is also available as an option to the @sc{monetdb} script.
 It tags the dump and stores it away in the checkpoint directory.
