@@ -153,7 +153,7 @@ using the
 @node SQL Language, SQL Preface, The VOC Tutorial, SQL
 @include Assets/SQLlanguage.texi
 
-@node MonetDB/SQL Features, Feature List, SQL Transactions, SQL
+@node MonetDB/SQL Features, Session Variables, SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
 
 @node XQuery, Programming Interfaces, Overlaying the BAT storage, Top
