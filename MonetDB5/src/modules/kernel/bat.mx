@@ -955,7 +955,7 @@ CMDreplace_bat(BAT **r, BAT *b, BAT *s)
 int
 CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNdel(*r = b, h, t) == NULL)
+	if (BUNdel(*r = b, h, t, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -964,7 +964,7 @@ CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDdelete_head(BAT **r, BAT *b, ptr h)
 {
-	if (BUNdelHead(*r = b, @:batconvert(b,h)@) == NULL)
+	if (BUNdelHead(*r = b, @:batconvert(b,h)@, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -982,7 +982,7 @@ CMDdelete_all(BAT **r, BAT *b)
 int
 CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s)
 {
-	if (BATdel(*r = b, s) == NULL)
+	if (BATdel(*r = b, s, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -991,7 +991,7 @@ CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s)
 int
 CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 {
-	if (BATdelHead(*r = b, s) == NULL)
+	if (BATdelHead(*r = b, s, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -2060,7 +2060,7 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if (BUNdel(b, h, t) != NULL) {
+	if (BUNdel(b, h, t, FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -2078,7 +2078,7 @@ BKCdelete(int *r, int *bid, ptr h)
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,h)@
-	if (BUNdelHead(b, h) != NULL) {
+	if (BUNdelHead(b, h, FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -2116,7 +2116,7 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	if (BATdel(b, s) != NULL) {
+	if (BATdel(b, s, FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return MAL_SUCCEED;
@@ -2139,7 +2139,7 @@ BKCdelete_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	if (BATdelHead(b, s) != NULL) {
+	if (BATdelHead(b, s, FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return MAL_SUCCEED;

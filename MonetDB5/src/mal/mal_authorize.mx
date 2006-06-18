@@ -144,7 +144,7 @@ If the BATs do not exist, they are created, and the monetdb/monetdb
 administrator account is added.  Initialising the authorization tables
 can only be done after the GDK kernel has been initialized.
 @c
-static BAT *user = NULL, *userrev = NULL;
+static BAT *user = NULL;
 static BAT *pass = NULL;
 static BAT *scen = NULL;
 
@@ -190,7 +190,6 @@ AUTHinitTables() {
 	}	
 	assert(b);
 	user = b;
-	userrev = BATmirror(b);
 
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd");
@@ -286,13 +285,13 @@ AUTHcheckCredentials(
 	if (*username == NULL || strNil(*username))
 		throwIC("checkCredentials", "Invalid credentials for unknown user");
 
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL) {
 		/* DO NOT reveal that the user doesn't exist here! */
 		throwICf("checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
-	id = (oid*)(BUNtail(userrev, p));
+	id = (oid*)(BUNhead(user, p));
 
 	/* a NULL password is impossible (since we should be dealing with
 	 * hashes here) so we can bail out immediately
@@ -374,18 +373,19 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		throwIllArg("addUser", "password cannot be nil");
 
 	/* ensure that the username is not already there */
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	if (p != NULL)
 		throwMalf("addUser", "user '%s' already exists", *username);
 	
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+	/* needs force, as SQL makes a view over user */
 	BUNappend(user, *username, TRUE);
-	BUNappend(pass, hash, TRUE);
+	BUNappend(pass, hash, FALSE);	/* should always be private! */
 	/* retrieve the oid of the just inserted user */
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	assert (p != NULL);
-	id = (oid*)(BUNtail(userrev, p));
+	id = (oid*)(BUNhead(user, p));
 
 	if (*scenarios != bat_nil) {
 		b = BATdescriptor(*scenarios);
@@ -403,7 +403,8 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		/* associate scenarios given in the BAT with the user */
 		if (BATcount(b) > 0) {
 			BATloop(b, p, q) {
-				BUNins(scen, id, BUNhead(b, p), FALSE);
+				/* needs force, as sql makes a view over it */
+				BUNins(scen, id, BUNhead(b, p), TRUE);
 			}
 		}
 	}
@@ -433,24 +434,24 @@ AUTHremoveUser(str *username) {
 		throwIllArg("removeUser", "username cannot be nil");
 
 	/* ensure that the username exists */
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
 		throwMalf("removeUser", "no such user: '%s'", *username);
-	id = *(oid*)(BUNtail(userrev, p));
+	id = *(oid*)(BUNhead(user, p));
 
 	/* find the name of the administrator and see if it equals username */
 	if (id == MCgetClient()->user)
 		throwMal("removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
-	b = BATselect(userrev, &id, &id);
+	b = BATmirror(BATselect(BATmirror(user), &id, &id));
 	assert(BATcount(b) != 0);
-	BATdel(userrev, b);
-	b = BATselect(BATmirror(pass), &id, &id);
+	BATdel(user, b, TRUE);
+	b = BATmirror(BATselect(BATmirror(pass), &id, &id));
 	assert(BATcount(b) != 0);
-	BATdel(BATmirror(pass), b);
-	b = BATselect(BATmirror(scen), &id, &id);
-	BATdel(BATmirror(scen), b);
+	BATdel(pass, b, FALSE);
+	b = BATmirror(BATselect(BATmirror(scen), &id, &id));
+	BATdel(scen, b, TRUE);
 
 	/* make the stuff persistent */
 	AUTHcommit();
@@ -477,16 +478,16 @@ AUTHchangeUsername(str *olduser, str *newuser) {
 		throwIllArg("changeUsername", "new username should not be nil");
 
 	/* see if the olduser is valid */
-	p = BUNfnd(userrev, *olduser);
+	p = BUNfnd(BATmirror(user), *olduser);
 	if (p == NULL)
 		throwMalf("changeUsername", "user '%s' does not exist", *olduser);
 	/* ... and if the newuser is not there yet */
-	q = BUNfnd(userrev, *newuser);
+	q = BUNfnd(BATmirror(user), *newuser);
 	if (q != NULL)
 		throwMalf("changeUsername", "user '%s' already exists", *newuser);
 
-	/* ok, just do it! */
-	BUNinplace(userrev, p, *newuser, BUNtail(userrev, p), 0);
+	/* ok, just do it! (with force, because sql makes view over it) */
+	BUNinplace(BATmirror(user), p, *newuser, BUNhead(user, p), TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -522,7 +523,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
-	BUNinplace(pass, p, BUNhead(pass, p), &hash, 0);
+	BUNinplace(pass, p, BUNhead(pass, p), &hash, FALSE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -559,17 +560,17 @@ AUTHsetPassword(str *username, str *passwd) {
 		throwIC("setPassword", "The administrator cannot set its own password, use changePassword instead");
 
 	/* see if the user is valid */
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
 		throwMalf("setPassword", "no such user '%s'", *username);
-	id = *(oid*)BUNtail(userrev, p);
+	id = *(oid*)BUNhead(user, p);
 
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
 	p = BUNfnd(pass, &id);
 	assert (p != NULL);
-	BUNinplace(pass, p, BUNhead(pass, p), &hash, 0);
+	BUNinplace(pass, p, BUNhead(pass, p), &hash, FALSE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -597,10 +598,10 @@ AUTHaddScenario(str *username, str *scenario) {
 		throwIllArg("addScenario", "scenario should not be nil");
 
 	/* see if the user is valid */
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
 		throwMalf("addScenario", "user '%s' does not exist", *username);
-	id = (oid*)BUNtail(userrev, p);
+	id = (oid*)BUNhead(user, p);
 
 	/* see if this scenario is not already there */
 	b = BATselect(BATmirror(scen), id, id);
@@ -610,8 +611,8 @@ AUTHaddScenario(str *username, str *scenario) {
 	if (BATcount(b) > 1)
 		throwMalf("addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
-	/* add the scenario for this user */
-	BUNins(scen, BUNtail(userrev, p), *scenario, FALSE);
+	/* add the scenario for this user, use force as sql makes view over it */
+	BUNins(scen, BUNhead(user, p), *scenario, TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -638,10 +639,10 @@ AUTHremoveScenario(str *username, str *scenario) {
 		throwIllArg("removeScenario", "scenario should not be nil");
 
 	/* see if the user is valid */
-	p = BUNfnd(userrev, *username);
+	p = BUNfnd(BATmirror(user), *username);
 	if (p == NULL)
 		throwMalf("removeScenario", "user '%s' does not exist", *username);
-	id = (oid*)BUNtail(userrev, p);
+	id = (oid*)BUNhead(user, p);
 
 	/* see if the scenario is valid for this user */
 	b = BATselect(BATmirror(scen), id, id);
@@ -652,7 +653,7 @@ AUTHremoveScenario(str *username, str *scenario) {
 		throwMalf("removeScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* ok, remove it */
-	BATdel(scen, BATmirror(b));
+	BATdel(scen, BATmirror(b), TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);

@@ -331,15 +331,15 @@ STATdrop(str nme)
 	if (p == 0)
 		return throwMessage("statistics.drop", "BAT not enrolled");
 	idx = *(int *) BUNhead(STAT_id_nme,p);
-	BUNdelHead(STAT_id_nme, &idx);
-	BUNdelHead(STAT_id_expire, &idx);
-	BUNdelHead(STAT_id_stamp, &idx);
-	BUNdelHead(STAT_id_count, &idx);
-	BUNdelHead(STAT_id_size, &idx);
-	BUNdelHead(STAT_id_min_lng, &idx);
-	BUNdelHead(STAT_id_max_lng, &idx);
-	BUNdelHead(STAT_id_histogram, &idx);
-	BUNdelHead(STAT_id_inuse, &idx);
+	BUNdelHead(STAT_id_nme, &idx, FALSE);
+	BUNdelHead(STAT_id_expire, &idx, FALSE);
+	BUNdelHead(STAT_id_stamp, &idx, FALSE);
+	BUNdelHead(STAT_id_count, &idx, FALSE);
+	BUNdelHead(STAT_id_size, &idx, FALSE);
+	BUNdelHead(STAT_id_min_lng, &idx, FALSE);
+	BUNdelHead(STAT_id_max_lng, &idx, FALSE);
+	BUNdelHead(STAT_id_histogram, &idx, FALSE);
+	BUNdelHead(STAT_id_inuse, &idx, FALSE);
 	STATcommit();
 	return MAL_SUCCEED;
 }
@@ -429,26 +429,26 @@ STATforceUpdate(int *ret, str *nme)
 		return throwMessage("statistics.forceUpdate", "Could not find BAT");
 	p = BUNfnd(STAT_id_nme, &idx);
 	if (p)
-		BUNdelete(STAT_id_nme, p);
+		BUNdelete(STAT_id_nme, p, FALSE);
 	BUNins(STAT_id_nme, &idx, *nme, FALSE);
 	cnt = BATcount(b);
 	p = BUNfnd(STAT_id_count, &idx);
 	if (p)
-		BUNdelete(STAT_id_count, p);
+		BUNdelete(STAT_id_count, p, FALSE);
 	BUNins(STAT_id_count, &idx, &cnt, FALSE);
 
 	cnt = BATmemsize(b, 0);
 	p = BUNfnd(STAT_id_size, &idx);
 	if (p)
-		BUNdelete(STAT_id_size, p);
+		BUNdelete(STAT_id_size, p, FALSE);
 	BUNins(STAT_id_size, &idx, &cnt, FALSE);
 
 	p = BUNfnd(STAT_id_min_lng, &idx);
 	if (p)
-		BUNdelete(STAT_id_min_lng, p);
+		BUNdelete(STAT_id_min_lng, p, FALSE);
 	p = BUNfnd(STAT_id_max_lng, &idx);
 	if (p)
-		BUNdelete(STAT_id_max_lng, p);
+		BUNdelete(STAT_id_max_lng, p, FALSE);
 
 	if (b->ttype == TYPE_int) {
 		int val;
@@ -471,12 +471,12 @@ STATforceUpdate(int *ret, str *nme)
 
 	p = BUNfnd(STAT_id_histogram, &idx);
 	if (p)
-		BUNdelete(STAT_id_histogram, p);
+		BUNdelete(STAT_id_histogram, p, FALSE);
 	BUNins(STAT_id_histogram, &idx, BATgetId(h), FALSE);
 
 	p = BUNfnd(STAT_id_inuse, &idx);
 	if (p)
-		BUNdelete(STAT_id_inuse, p);
+		BUNdelete(STAT_id_inuse, p, FALSE);
 	BUNins(STAT_id_inuse, &idx, &idx, FALSE);
 	STATcommit();
 	return MAL_SUCCEED;
