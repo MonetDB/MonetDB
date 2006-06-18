@@ -374,7 +374,6 @@ FunParam:           param (SequenceType, Atom)                  =  75 (10);
 #define MAX_KIDS 10
 
 static void relabel (PFcnode_t *p,  PFcnode_t **kids);
-static bool replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e);
 
 #include "core_mnemonic.h"
 
