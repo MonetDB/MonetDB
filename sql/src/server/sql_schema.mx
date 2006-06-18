@@ -1787,6 +1787,17 @@ schemas(mvc *sql, symbol *s)
 		/* grantor ? */
 		sql->type = Q_SCHEMA;
 	} break;
+	case SQL_REVOKE_ROLES:
+	{
+		dlist *l = s->data.lval;
+
+		ret = revoke_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
+				  l->h->next->data.lval,	/* grantees */
+				  l->h->next->next->data.ival,	/* admin? */
+				  l->h->next->next->next->data.ival ? sql->user_id : sql->role_id);
+		/* grantor ? */
+		sql->type = Q_SCHEMA;
+	} break;
 	case SQL_GRANT:
 	{
 		dlist *l = s->data.lval;

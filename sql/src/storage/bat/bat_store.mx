@@ -362,29 +362,6 @@ copy_inserted(BAT *b, BAT *i )
 }
 
 
-static size_t
-void_delete_bat(BAT *b, BAT *d, int delta)
-{
-	size_t nr = 0;
-	BUN r, s;
-	ptr nil = ATOMnilptr(b->ttype);
-
-	if (delta) {
-		for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
-			oid delid = *(oid *) BUNtail(d, r);
-			void_inplace(b, delid, nil, TRUE);
-			nr++;
-		}
-	} else {
-		BATloop(d, r, s) {
-			oid delid = *(oid *) BUNtail(d, r);
-			void_inplace(b, delid, nil, TRUE);
-			nr++;
-		}
-	}
-	return nr;
-}
-
 /* probably not needed any more */
 static void
 update_table_bat(BAT *b, BAT *ub, BAT *db)
@@ -393,11 +370,6 @@ update_table_bat(BAT *b, BAT *ub, BAT *db)
 		void_replace_bat(b, ub, TRUE);
 	}
 	(void)db;
-/*
-	if (db && BATcount(db)) {
-		void_delete_bat(b, db, 0);
-	}
-*/
 }
 
 void
@@ -1346,6 +1318,7 @@ do_load_module(sql_trans *tr, char *name)
 	backend_interpret(tr->stk, buf);
 }
 
+/*
 static void
 do_drop_module(sql_trans *tr, char *name)
 {
@@ -1354,6 +1327,7 @@ do_drop_module(sql_trans *tr, char *name)
 	snprintf(buf, BUFSIZ, "drop(\"%s\");", name);
 	backend_interpret(tr->stk, buf);
 }
+*/
 
 static sql_module *
 load_module(sql_trans *tr, BAT *modules, BUN j)
@@ -1468,7 +1442,7 @@ sys_bat(struct bm *bm, char *name, int type)
 }
 
 static int
-next_oid()
+next_oid(void)
 {
 	int id = 0;
 	MT_set_lock(bs_lock, "next_oid");
@@ -1478,7 +1452,7 @@ next_oid()
 }
 
 int
-store_next_oid()
+store_next_oid(void)
 {
 	return next_oid();
 }
@@ -2418,7 +2392,7 @@ static int active = 1;
 static int logging = 0;
 
 void
-store_exit()
+store_exit(void)
 {
 	struct logger *l = logger;
 
@@ -2468,7 +2442,7 @@ store_exit()
 }
 
 void
-store_manager()
+store_manager(void)
 {
 	while (active) {
 		int res = SQL_OK;
@@ -2491,7 +2465,7 @@ store_manager()
 
 
 void
-store_lock()
+store_lock(void)
 {
 	MT_set_lock(bs_lock, "trans_lock");
 #ifdef STORE_DEBUG
@@ -2500,7 +2474,7 @@ store_lock()
 }
 
 void
-store_unlock()
+store_unlock(void)
 {
 #ifdef STORE_DEBUG
 	fprintf(stderr, "unlocked\n");

@@ -43,7 +43,7 @@ extern void keywords_insert(char *k, int token);
 extern keyword *find_keyword(char *text);
 extern int keyword_exists(char *text);
 
-extern void keyword_init();
-extern void keyword_exit();
+extern void keyword_init(void);
+extern void keyword_exit(void);
 
 #endif /* SQL_KEYWORD_H */

@@ -2894,27 +2894,6 @@ query_groupby(mvc *sql, scope *scp, symbol *groupby, stmt *subset)
 	return cur;
 }
 
-static list *
-rel_groupby(mvc *sql, scope *scp, symbol *groupby)
-{
-	list *l = create_stmt_list();
-	dnode *o = groupby->data.lval->h;
-
-	while (o) {
-		symbol *grp = o->data.sym;
-		stmt *c = sql_column_ref(sql, scp, grp);
-
-		if (!c) {
-			if (l)
-				list_destroy(l);
-			return NULL;
-		}
-		list_append(l, c);
-		o = o->next;
-	}
-	return l;
-}
-
 static group *
 query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 {
@@ -3237,18 +3216,11 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 	if (s) {
 		s = stmt2pivot(scp, s);
 		if (s && sn->groupby) {
-			/*
-			   list *cols = rel_groupby(sql, scp, sn->groupby);
-			 */
-
 			grp = query_groupby(sql, scp, sn->groupby, s);
 			if (!grp) {
 				sql_select_cleanup(sql, s, subset, grp);
 				return sql_error(sql, 02, "SELECT: subquery result missing");
 			}
-			/*
-			   s = stmt_groupby(s, cols);
-			 */
 		}
 
 		if (s && list_length(scp->outers) > 0) {

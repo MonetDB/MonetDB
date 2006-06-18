@@ -95,14 +95,6 @@ static stmt *column( stmt *val )
 	return val;
 }
 
-static stmt *copy_column( stmt *val )
-{
-	sql_subtype *ct = tail_type(val);
-	stmt *temp = stmt_temp(ct);
-
-	return stmt_insert(temp, stmt_dup(val));
-}
-
 static stmt *
 bin_first_column( stmt *sub ) 
 {

@@ -757,6 +757,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname )
 	return NULL;
 }
 
+/*
 static sql_exp *
 exp_copy( sql_exp *e )
 {
@@ -767,6 +768,7 @@ exp_copy( sql_exp *e )
 	}
 	return e;
 }
+*/
 
 static sql_rel *
 rel_copy( sql_rel *i ) 

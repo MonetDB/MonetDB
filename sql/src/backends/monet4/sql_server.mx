@@ -259,19 +259,6 @@ both program representation (YYSTREE), runtime stack (Cntxt),
 and the MIL interpreter. Details can be found in the src/monet
 directory.
 @c
-static int
-builtin_operand(Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr res)
-{
-	int k = interpret(stk, arg(lt, arg_nr), res);
-
-	if (k < 0)
-		return k;
-	*Res = VALconvert(type, res);
-	if ((res == ILLEGALVALUE) || (type == TYPE_bat && res)) {
-		return handle_paramerror(res, arg_nr, res->vtype, type);
-	}
-	return 0;
-}
 
 void
 monet4_freestack(backend_stack stk)
