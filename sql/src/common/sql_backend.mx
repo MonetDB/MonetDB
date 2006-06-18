@@ -45,7 +45,8 @@ typedef char *(*create_user_fptr) (list *l, char *user, char *passwd, char *full
 typedef char *(*drop_user_fptr) (char *user);
 typedef int  (*find_user_fptr) (ptr m, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
-typedef int (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
+typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
+typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, oid schema_id);
 
 /* backing struct for this interface */
 typedef struct _backend_functions {
@@ -57,6 +58,7 @@ typedef struct _backend_functions {
 	find_user_fptr ffuser;
 	create_privileges_fptr fcrpriv;
 	schema_has_user_fptr fshuser;
+	alter_user_fptr fauser;
 } backend_functions;
 
 extern void backend_init(backend_functions *funcs);
@@ -68,6 +70,7 @@ extern char *backend_drop_user(char *user);
 extern int  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
+extern int	backend_alter_user(ptr mvc, str user, str passwd, oid schema_id);
 
 #endif /* _SQL_BACKEND_H_ */
 @c
@@ -149,6 +152,15 @@ backend_schema_has_user(ptr mvc, sql_schema *s)
 	assert(be_funcs != NULL);
 	if (be_funcs->fshuser != NULL)
 		return(be_funcs->fshuser(mvc, s));
+	return(FALSE);
+}
+
+int
+backend_alter_user(ptr mvc, str user, str passwd, oid schema_id)
+{
+	assert(be_funcs != NULL);
+	if (be_funcs->fauser != NULL)
+		return(be_funcs->fauser(mvc, user, passwd, schema_id));
 	return(FALSE);
 }
 @}
