@@ -230,8 +230,8 @@ sqlcleanup(mvc *c, int err)
 void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
 {
 	mvc *c = be->mvc;
-	int mode = c->mode;
-	int explain = c->explain;
+	modes_t mode = c->mode;
+	modes_t explain = c->explain;
 	char *q = query;
 
 	char buf[BUFSIZ];

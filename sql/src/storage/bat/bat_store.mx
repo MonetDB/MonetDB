@@ -1038,7 +1038,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 		t->query = _strdup(query);
 	t->table = *(bit *) bun_find(table_istable, lid);
 	t->system = *(bit *) bun_find(table_system, lid);
-	t->commit_action = *(sht *) bun_find(table_commit_action, lid); 
+	t->commit_action = (ca_t)*(sht *) bun_find(table_commit_action, lid); 
 	t->persistence = SQL_PERSIST; 
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
@@ -2117,8 +2117,8 @@ create_table_intern(char *name, bit table, bit system, int persistence, int comm
 	base_init(&t->base, next_oid(), TR_NEW, name);
 	t->table = table;
 	t->system = system;
-	t->persistence = persistence;
-	t->commit_action = commit_action;
+	t->persistence = (temp_t)persistence;
+	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);

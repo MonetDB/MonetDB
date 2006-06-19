@@ -238,7 +238,7 @@ static sql_exp * exp_create( int type )
 	e->card = 0;
 	e->flag = 0;
 	e->l = e->r = NULL;
-	e->type = type;
+	e->type = (expression_type)type;
 	e->f = NULL;
 	return e;
 }
@@ -3766,7 +3766,7 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 			list_destroy(nrs);
 		}
 	}
-	rel = rel_setop(l, r, op );
+	rel = rel_setop(l, r, (operator_type)op );
 	rel = rel_project(sql, rel, rel_projections(sql,rel, rel->name ));
 	rel->processed = 1;
 	return rel;

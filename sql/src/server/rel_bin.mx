@@ -261,7 +261,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 				if (escape) stmt_destroy(escape);
 				return NULL;
 			}
-			return stmt_likeselect(l, r, escape, e->flag);
+			return stmt_likeselect(l, r, escape, (comp_type)e->flag);
 		}
 		if (swapped || !right)
  			r = exp_bin(sql, e->r, left, NULL, grp);
@@ -275,11 +275,11 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		}
 		if (left && right) {
 			if (swapped)
-				s = stmt_join(r, stmt_reverse(l), swap_compare(e->flag));
+				s = stmt_join(r, stmt_reverse(l), swap_compare((comp_type)e->flag));
 			else
-				s = stmt_join(l, stmt_reverse(r), e->flag);
+				s = stmt_join(l, stmt_reverse(r), (comp_type)e->flag);
 		} else {
-			s = stmt_select(l, r, e->flag);
+			s = stmt_select(l, r, (comp_type)e->flag);
 		}
 	 }	break;
 	default:
@@ -405,7 +405,7 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 				stmt *le = stmt_join(l, ld, cmp_equal);
 				stmt *re = stmt_join(r, rd, cmp_equal);
 
-				sql_subfunc *f = sql_bind_func(sql->session->module, compare_func(s->flag), tail_type(le), tail_type(le));
+				sql_subfunc *f = sql_bind_func(sql->session->module, compare_func((comp_type)s->flag), tail_type(le), tail_type(le));
 				stmt * cmp;
 
 				assert(f);
