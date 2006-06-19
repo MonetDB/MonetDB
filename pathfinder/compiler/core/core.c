@@ -797,7 +797,7 @@ PFcore_locsteps (const PFcnode_t *l, const PFcnode_t *ls)
 PFcnode_t *
 PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
 {
-    PFctype_t kind = 0;
+    PFctype_t kind = (PFctype_t)0;
 
     switch (paxis) {
     case p_ancestor:           
@@ -914,7 +914,7 @@ PFcore_constr_pi (const PFcnode_t *e1, const PFcnode_t *e2)
 PFcnode_t *
 PFcore_constr (PFptype_t pkind, const PFcnode_t *e)
 {
-    PFctype_t kind = 0;
+    PFctype_t kind = (PFctype_t)0;
 
     assert (e);
 
