@@ -61,7 +61,7 @@ skipholes(oid pre, unsigned int *pre_size) {
      */
     int i = depth;
     while(i > 0 && stack[i-1] > bounds[iter-min_iter]) i--;
-    bounds[iter-min_iter] = stack[depth-1]; /* biggest ancestor so far for this context node */
+    bounds[iter-min_iter] = stack[depth-1]; /* biggest ancestor so far for this iter */
     result[cur].iter = depth-i;             /* #new ancestors generated for this context node */ 
 
 @= found_ancestor_gen
@@ -170,8 +170,8 @@ ll_upwards(               /* RESULT: */
     size_t* bounds, niters=1, i=0, n, m = BATcount(ctx_bat);
     duple *context, *context_result, *prune;
     int sorted = 1, status = GDK_FAIL;
-    BUN p, q;
     BAT *bn = NULL;
+    BUN p, q;
 
     if (!ALIGNsynced(iter_bat,ctx_bat)) {
         GDKerror("%s: iter and context bat should be in sync.\n", axis);
@@ -266,7 +266,7 @@ ll_upwards(               /* RESULT: */
         for(i=1; i<=niters; i++) 
             bounds[i] += bounds[i-1];  /* running sum produces offsets */
 
-        *ret = bn = BATnew(TYPE_oid, TYPE_oid, n);
+        bn = BATnew(TYPE_oid, TYPE_oid, n);
         if (bn) {
             if (ll_upwards_parent(
                 context_result = (duple*) BUNfirst(bn), n, 
@@ -287,8 +287,11 @@ ll_upwards(               /* RESULT: */
                     pre_prev = pre;
                     iter_prev = iter;
                 }
-    	        if (iter_bat->tkey) BATkey(bn, TRUE);
                 status = GDK_SUCCEED;
+
+                /* for each context node, parent gives back 1 or 0 results */ 
+    	        if (iter_bat->tkey) BATkey(bn, TRUE);
+    	        if (ctx_bat->tkey) BATkey(BATmirror(bn), TRUE);
             } else  {
                 GDKerror("%s: illegal data in size column or context list.\n", axis);
             }
@@ -319,14 +322,15 @@ ll_upwards(               /* RESULT: */
             }
             for(i=1; i<=niters; i++) 
                 bounds[i] += bounds[i-1];  /* running sum to get per-iter offsets */
+            m = bounds[niters]; /* this is the size of the result */
 
-            for(i=0; i < n; i++) {
+            for(i=0; i<n; i++) {
                 size_t iter = context[i].iter - min_iter; 
                 context_result[i].pre += bounds[iter]; /* add iter-start to get absolute offset */
             }
 
             /* second pass, generating the results, knowing the final result size m */
-            *ret = bn = BATnew(TYPE_oid, TYPE_oid, m=bounds[niters]);
+            bn = BATnew(TYPE_oid, TYPE_oid, m);
             if (bn) {
                 if (axis == LL_UPWARDS_ANCESTOR_SELF) { /* insert the self nodes beforehand */ 
                     duple *result = (duple*) BUNfirst(bn);
@@ -353,19 +357,22 @@ ll_upwards(               /* RESULT: */
         }
         GDKfree(context_result);
     }
-    if (bn) {
+    GDKfree(bounds);
+    GDKfree(context);
+
+    if (status == GDK_SUCCEED) {
         BATsetcount(bn, m);
         bn->batBuns->free = m*sizeof(duple);
         bn->hsorted = 1;
         bn->tsorted = 0;
         if (niters == 1) {
-	    bn->tsorted = 1;
+            bn->tsorted = 1;
 	    BATkey(BATmirror(bn), 1);
         }
-        if (status == GDK_FAIL) BBPreclaim(bn);
+	*ret = bn;
+    } else if (bn) {
+        BBPreclaim(bn);
     }
-    GDKfree(bounds);
-    GDKfree(context);
     return status;
 }
 
