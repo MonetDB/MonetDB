@@ -25,6 +25,63 @@
 @f ll_upwards
 @a Peter Boncz 
 @t loop-lifted upwards staircase steps
+
+Previously, we used upwards steps that depended on the 'level' column.
+These where non-loop-lifted. As opposed to XPath, XQuery produces query
+plans with path steps *nested* in for-loops. Loop-lifted staircase join
+algorithms deal with all iterations in a single document scan, whereas
+non-loop-lifted algorithms can only be used repetitively (once for every
+iteration).
+
+The new loop-lifted variants depend on the 'size' column which allows
+for skipping. Using  'level', this is not possible.
+
+@verbatim
+
+single: count(doc("auctionsX.xml")/descendant::person/STEP::*)
+multi:  count(for $x in doc("auctionsX.xml")/descendant::person return $x/STEP::*)
+
+(time in msec)            10MB          100MB           1GB
+STEP                    single  multi   single  multi   single  multi
+=====================================================================
+
+old-parent                  10   1335       23 103028      157    DNF
+new-parent                   9     13       18     52      125    449
+
+old-ancestor                 9    594       17  48205      105    DNF
+new-ancestor                10     16       24     78      187    717
+
+old-ancestor-or-self        10    595       34  57127      268    DNF
+new-ancestor-or-self        11     17       37     96      312    907
+
+@end verbatim
+
+Experiments were performed on db2.cwi.nl (non-optimized gcc compile) on
+XMark datasets of various sizes with two query variants (single and multi)
+for each step, one that executes the steps on a single sequence of N persons, 
+and the other on N sequences of size 1. The latter variant takes the form of 
+a for-loop and in the old non-loop-lifted implementation leads to 
+repetitive execution.
+
+We conclude the following from these experiments
+@itemize
+@item loop-lifting is very effective, the loop-lifted variant is less
+than twice slower on the multi-variant, whereas in the older variant
+we observe quadratic degredation, causing the performance difference
+to grow very large.
+@item in case of parent on a single context sequence, the new variant is 
+slightly faster than the old implementation. 
+@item in case of ancestor-or-self on a single context sequence, 
+performance is identical.
+@item in case of ancestor on a single context sequence, the old the 
+performance is slightly slower.
+@end itemize
+The latter two observations are striking as the new implementation on the
+surface seems optimal, as it touches only the result nodes. On the other
+hand, the 'size' column is wider, which may explain some of the difference.
+
+On the whole, the new loop-lifted upwards axes seem a profitable addition
+for the pathfinder runtime.
 @c
 #include <gdk.h>
 #include "pathfinder.h"
