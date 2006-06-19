@@ -1112,9 +1112,9 @@ sqltypeinit(void)
 	sql_create_alias(BIT->sqlname, "BOOL");
 
 	strings = t;
-	*t++ = sql_create_type("CLOB",    0, 0, 0, EC_STRING, "str");
-	*t++ = sql_create_type("VARCHAR", 0, 0, 0, EC_STRING, "str");
 	*t++ = sql_create_type("CHAR",    0, 0, 0, EC_CHAR,   "str");
+	*t++ = sql_create_type("VARCHAR", 0, 0, 0, EC_STRING, "str");
+	*t++ = sql_create_type("CLOB",    0, 0, 0, EC_STRING, "str");
 
 	numerical = t;
 
