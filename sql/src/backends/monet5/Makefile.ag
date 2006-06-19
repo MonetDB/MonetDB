@@ -21,6 +21,7 @@ lib__sql = {
 	DIR = libdir/MonetDB5
 	SOURCES = \
 		sql.mx \
+		sql_user.mx \
 		sql_scenario.mx \
 		sql_gencode.mx \
 		sql_optimizer.mx \

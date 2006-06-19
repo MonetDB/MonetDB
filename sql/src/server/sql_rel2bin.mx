@@ -814,20 +814,20 @@ stmt *
 push_select( stmt *select, stmt *s )
 {
 	if (select->type == st_select2) 
-		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 
 	if (select->type == st_uselect2) 
-		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 
 	if (select->type == st_select) {
 		if (select->flag == cmp_like || select->flag == cmp_notlike)
-			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 		else
-			return stmt_select( s, stmt_dup(select->op2.stval), select->flag);
+			return stmt_select( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
 	}
 
 	if (select->type == st_uselect) 
-		return stmt_uselect( s, stmt_dup(select->op2.stval), select->flag);
+		return stmt_uselect( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
 	assert(0);
 	return NULL;
 }
@@ -842,20 +842,20 @@ push_semijoin( stmt *select, stmt *s )
 
 	s = stmt_semijoin(stmt_dup(select->op1.stval), s);
 	if (select->type == st_select2) 
-		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 
 	if (select->type == st_uselect2) 
-		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 
 	if (select->type == st_select) {
 		if (select->flag == cmp_like || select->flag == cmp_notlike)
-			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 		else
-			return stmt_select( s, stmt_dup(select->op2.stval), select->flag);
+			return stmt_select( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
 	}
 
 	if (select->type == st_uselect) 
-		return stmt_uselect( s, stmt_dup(select->op2.stval), select->flag);
+		return stmt_uselect( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
 	assert(0);
 	return NULL;
 }

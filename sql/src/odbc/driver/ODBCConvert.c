@@ -689,7 +689,7 @@ parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *
 		return SQL_ERROR;
 	leadingprecision = eptr - sval;
 
-	ival->interval_type = 0; /* unknown as yet */
+	ival->interval_type = (SQLINTERVAL)0; /* unknown as yet */
 	ival->intval.day_second.day = 0;
 	ival->intval.day_second.hour = 0;
 	ival->intval.day_second.minute = 0;

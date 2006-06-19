@@ -754,7 +754,7 @@ push_selects_down(mvc *c, list *con)
 			if (j->t == join->h && j->type == st_join && j->flag == cmp_equal ) {
 				stmt *jh = stmt_dup(j->op2.stval->op1.stval);
 				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));
-				jn->data = stmt_join(jh, jt, j->flag);
+				jn->data = stmt_join(jh, jt, (comp_type)j->flag);
 				stmt_destroy(j);
 			} else if (j->t == join->h && j->type == st_reljoin) {
 				list *l1 = list_dup(j->op1.lval, (fdup)&stmt_dup);
