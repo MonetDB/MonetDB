@@ -543,6 +543,7 @@ PFprop_infer_key (PFla_op_t *root) {
        discover more key columns */
     PFprop_infer_card (root);
     PFprop_infer_const (root);
+    PFprop_infer_dom (root);
 
     prop_infer (root);
     PFla_dag_reset (root);
