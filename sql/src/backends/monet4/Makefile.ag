@@ -20,6 +20,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 lib__sql_server = {
 	DIR = libdir/MonetDB
 	SOURCES = \
+		sql_user.mx \
 		sql_server.mx \
 		sql_session.mx \
 		sql_gencode.mx \
