@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 SWIGFLAGS = -I../../C
-INCLUDES = -I../../C -I../../../../common -I@PERLINC@
+INCLUDES = -I../../C -I../../../../common $(PERL_INCS)
 
 # we need this flag to allow for a name that does not start with "lib"
 MapiLib_la_LDFLAGS = -module
@@ -29,7 +29,7 @@ lib_MapiLib = {
 	PREFIX =
 	NAME = MapiLib
 	SOURCES = MapiLib.pm.i
-	LIBS = ../../C/libMapi @PERLLIB@
+	LIBS = ../../C/libMapi $(PERL_LIBS)
 	DIR = $(prefix)/$(PERL_LIBDIR)
 }
 
