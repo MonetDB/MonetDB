@@ -757,8 +757,8 @@ if test "x$have_python" != xno; then
 	if test $cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
 		if test "x$PYTHON" = xno; then
-			if "x$have_python" != xauto; then
-				AC_MSG_ERROR([No Python executable found]);
+			if test "x$have_python" != xauto; then
+				AC_MSG_ERROR([No Python executable found])
 			fi
 			have_python=no
 		fi
@@ -846,30 +846,131 @@ AC_SUBST(PYTHON_LIBS)
 AC_SUBST(PYTHON_LIBDIR)
 AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
 if test -f "$srcdir"/vertoo.data; then
-AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)
+	AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)
 else
-AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
+	AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
 fi
 
+have_perl=auto
+PERL=perl
+PERL_INCS=
+PERL_LIBS=
 AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
-	PERL="$withval",
-	PERL=perl)
-case "$PERL" in
-yes|auto)
-  PERL=perl;;
+	have_perl="$withval")
+case "$have_perl" in
+yes|not|auto)
+	;;
+*)
+	PERL="$have_perl"
+	have_perl=yes
+	;;
 esac
-case "$PERL" in
-no) ;;
-/*) AC_MSG_CHECKING(whether $PERL exists and is executable)
-    if test -x "$PERL"; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      PERL=no
-    fi;;
-*)  AC_PATH_PROG(PERL,$PERL,no,$PATH);;
-esac
+if test "x$have_perl" != xno; then
+	if test $cross_compiling != xyes; then
+		AC_PATH_PROG(PERL,$PERL,no,$PATH)
+		if test "x$PERL" = xno; then
+			if test "x$have_perl" != xauto; then
+				AC_MSG_ERROR([No Perl executable found])
+			fi
+			have_perl=no
+		fi
+	fi
+fi
+if test "x$have_perl" != xno; then
+	have_perl_incdir=auto
+	AC_ARG_WITH(perl-incdir,
+		AC_HELP_STRING([--with-perl-incdir=DIR],
+			[Perl include directory]),
+		have_perl_incdir="$withval")
+	case "$have_perl_incdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+		fi
+		PERL_INCS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PERL_INCS="$have_perl_incdir"
+		have_perl_incdir=yes
+		;;
+	esac
+	if test "x$have_perl_incdir" != no -a ! -f "$PERL_INCS/perl.h"; then
+		if test "x$have_perl_incdir" = yes; then
+			AC_MSG_ERROR([No perl.h found, is Perl installed properly?])
+		fi
+		have_perl_incdir=no
+	fi
+	if test "x$have_perl_incdir" != no; then
+		PERL_INCS="-I$PERL_INCS"
+	fi
+
+	have_perl_library=auto
+	AC_ARG_WITH(perl-library,
+		AC_HELP_STRING([--with-perl-library=DIR],
+			[Perl library directory (where -lperl can be found)]),
+		have_perl_library="$withval")
+	case "$have_perl_library" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+		fi
+		PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PERL_LIBS="$have_perl_library"
+		have_perl_library=yes
+		;;
+	esac
+	if test "x$have_perl_library" != no; then
+		PERL_LIBS="-L$PERL_LIBS -lperl"
+	fi
+
+	have_perl_libdir=auto
+	AC_ARG_WITH(perl-libdir,
+		AC_HELP_STRING([--with-perl-libdir=DIR],
+			[relative path for Perl library directory (where Perl modules should be installed)]),
+		have_perl_libdir="$withval")
+	case "$have_perl_libdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+		fi
+		PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PERL_LIBDIR="$have_perl_libdir"
+		have_perl_libdir=yes
+		;;
+	esac
+else
+	# no Perl implies no Perl includes or libraries
+	have_perl_incdir=no
+	have_perl_libdir=no
+fi
+if test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $PERL_INCS"
+	LIBS="$LIBS $PERL_LIBS"
+	AC_TRY_LINK([#include <EXTERN.h>
+#include <perl.h>], [], [],
+		[ if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+	LIBS="$save_LIBS"
+fi
+AC_SUBST(PERL)
+AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
+AC_SUBST(PERL_INCS)
+AC_SUBST(PERL_LIBS)
+AC_SUBST(PERL_LIBDIR)
+AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
+if test -f "$srcdir"/vertoo.data; then
+	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
+else
+	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
+fi
+
 AC_SUBST(PERL)
 AM_CONDITIONAL(HAVE_PERL, test x"$PERL" != xno)
 
