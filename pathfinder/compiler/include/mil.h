@@ -18,10 +18,13 @@
  *
  * The Original Code is the Pathfinder system.
  *
- * The Initial Developer of the Original Code is the Database &
- * Information Systems Group at the University of Konstanz, Germany.
- * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2006 University of Konstanz.  All Rights Reserved.
+ * The Original Code has initially been developed by the Database &
+ * Information Systems Group at the University of Konstanz, Germany and
+ * is now maintained by the Database Systems Group at the Technische
+ * Universitaet Muenchen, Germany.  Portions created by the University of
+ * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+ * 2000-2005 University of Konstanz and (C) 2005-2006 Technische
+ * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
  * $Id$
  */
