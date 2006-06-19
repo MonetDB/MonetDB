@@ -925,8 +925,8 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 #ifdef TJ_TRACE
 	    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CALL INDEXING SHREDDER\n",tjctx->name);
 #endif
-
-            if ( EXTshred_and_index_doc(docName, (str)"", &pftijahSerializeFun, tjctx) == GDK_FAIL)
+	    XqueryCtx xqctx;
+            if ( EXTshred_and_index_doc(docName, (str)"", &pftijahSerializeFun, &xqctx) == GDK_FAIL)
 	    	 return GDK_FAIL;
 	} else {
 #ifdef TJ_TRACE
