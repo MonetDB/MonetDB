@@ -207,7 +207,7 @@ typedef enum xquery_states {
 	XS_CHARREF,
 } xstate;
 
-extern void xscanner_init_keywords();
+extern void xscanner_init_keywords(void);
 
 extern xscanner *xscanner_new(Client c);
 extern int xscanner_lex(xscanner *xs, char **sval);

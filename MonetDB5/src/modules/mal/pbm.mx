@@ -242,7 +242,7 @@ pbm_export int ptop, plimit;
 
 
 pbm_export void PBMresize(int size);
-pbm_export str PBMdump();
+pbm_export str PBMdump(void);
 pbm_export str PBMprelude(int *ret);
 pbm_export str PBMepilogue(int *ret);
 pbm_export str PBMopen(int *ret);

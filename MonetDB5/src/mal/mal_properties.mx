@@ -319,7 +319,7 @@ typedef struct PROPSET {
 	Property prop[MAXPROPLIST];
 } *PropertySet;
 
-mal_export PropertySet newPropertySet();
+mal_export PropertySet newPropertySet(void);
 mal_export void freePropertySet(PropertySet ps);
 mal_export PropertySet cpyPropertySet(PropertySet old);
 mal_export Property cpyProperty(PropertySet * target, Property src);

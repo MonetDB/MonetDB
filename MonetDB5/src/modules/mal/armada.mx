@@ -107,9 +107,9 @@ mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
 mal_export str ARMADAgetStep(str *ret, int *step);
 mal_export str ARMADAgetTrail(str *ret, int *trail);
 
-static void ARMADAinit();
-static void ARMADAexit();
-static void ARMADAcommit();
+static void ARMADAinit(void);
+static void ARMADAexit(void);
+static void ARMADAcommit(void);
 
 
 str

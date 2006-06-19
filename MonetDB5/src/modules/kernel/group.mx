@@ -1094,9 +1094,9 @@ This is captured as a runtime check in the implementation.
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
 		return throwMessage("group.@2", "(v)oid head required\n");
 @c
-mal_export str GRPprelude();
+mal_export str GRPprelude(void);
 str
-GRPprelude()
+GRPprelude(void)
 {
 	/* printf("#init group\n"); */
 	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t), sizeof(oid), "mapentry");

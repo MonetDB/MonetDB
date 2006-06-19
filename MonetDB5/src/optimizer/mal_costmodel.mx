@@ -93,21 +93,6 @@ fixPropertySet(MalBlkPtr mb, int dst)
 	if (mb->var[dst]->props == 0)
 		mb->var[dst]->props = newPropertySet();
 }
-static void
-RMcpyProperty(MalBlkPtr mb, str srcnme, int src, str dstnme, int dst)
-{
-	Property pr;
-
-	if (getProps(src) == NULL)
-		return;
-
-	pr = fndProperty(getProps(src), srcnme);
-	if (pr) {
-		fixPropertySet(mb, dst);
-		setProperty(getProps(dst), dstnme, "=", pr->val.vtype, VALptr(&pr->val));
-	}
-}
-
 #define getVarCost(Y) (fndProperty(mb->var[Y]->props,"RMcost")?\
 		(int*) getPropertyValue(mb->var[Y]->props,"RMcost"):\
 		(int*)getPropertyValue(mb->var[Y]->props,"count") )

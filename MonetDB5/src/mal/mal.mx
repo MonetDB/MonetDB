@@ -234,8 +234,6 @@ See the MonetDB5.conf file for additional system variable settings
 @h
 #define MAXSCRIPT 64
 
-mal_export void monet_hello();
-
 mal_export char            monet_cwd[PATHLENGTH];
 mal_export int             monet_welcome; 
 mal_export str             *monet_script;
@@ -295,10 +293,11 @@ in a critical section, which is known to be a severe performance hindrence.
 @{
 @h
 
+
 mal_export MT_Lock  mal_contextLock;
 
-mal_export int mal_init();
-mal_export void mal_exit();
+mal_export int mal_init(void);
+mal_export void mal_exit(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -327,12 +326,12 @@ mal_export void mal_exit();
 
 #endif /*  _MAL_H*/
 @c
-#include "mal_client.h"
 #include "mal_linker.h"
 #include "mal_session.h"
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
+#include "mal_client.h"
 
 MT_Lock     mal_contextLock=0;
 @-
@@ -384,7 +383,8 @@ Upon exit we should attempt to remove all allocated memory explicitly.
 This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
-void mal_exit(Client cntxt){
+void mal_exit(void){
+	Client cntxt = mal_clients;
 #ifdef MALprofiler
 	stream *f;
 	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));

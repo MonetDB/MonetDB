@@ -320,7 +320,7 @@ m_export str SERVERlisten_port(int *ret, int *pid);
 m_export str SERVERstop(int *ret);
 m_export str SERVERsuspend(int *ret);
 m_export str SERVERresume(int *ret);
-m_export void SERVERexit();
+m_export void SERVERexit(void);
 
 m_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
 m_export str SERVERreconnectAlias(int *ret, str *dbalias, str *host, int *port, str *username, str *password, str *lang);
@@ -446,7 +446,7 @@ doChallenge(str cmd, int msgsock) {
 		if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert (0);
 		/* temporarily misuse name
 		   note that we claim to speak proto 6 here */
-		snprintf(name, BLOCK, "%2d:%s:mserver:6:%s\n",
+		snprintf(name, BLOCK, "%2u:%s:mserver:6:%s\n",
 				(unsigned int) (strlen(challenge) + 13 + strlen(algos)),
 				challenge, algos);
 		stream_write(fdout, name, strlen(name), 1);
@@ -1131,7 +1131,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 	challenge = "::mserver_mal:4\n";
 
 	/* temporarily misuse name */
-	snprintf(name, BLOCK, "%2d%s", (unsigned int) strlen(challenge), challenge);
+	snprintf(name, BLOCK, "%2u%s", (unsigned int) strlen(challenge), challenge);
 	stream_write(fdout, name, strlen(name), 1);
 	/* get user name */
 	*user = 0;

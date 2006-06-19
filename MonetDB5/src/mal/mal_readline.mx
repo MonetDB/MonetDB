@@ -279,7 +279,7 @@ init_readline(void)
 	rl_readline_name = "MonetDB";
 
 	/* recognize the help function, should react to <FCN-2> */
-	/* rl_bind_key('\033',mal_help);*/
+	rl_bind_key('\033',mal_help);
 
 	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
 	rl_attempted_completion_function = mal_completion;

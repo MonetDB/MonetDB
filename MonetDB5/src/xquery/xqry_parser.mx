@@ -157,6 +157,7 @@ parseQName_(Xbackend xb)
 	return PARSE_ERR;
 }
 
+#if 0
 STATIC int
 parseQName__(Client cntxt, Xbackend xb)
 {
@@ -184,6 +185,7 @@ parseQName__(Client cntxt, Xbackend xb)
 	xb->vars[xb->vtop++].tmpid = id;
 	return ret;
 }
+#endif
 
 STATIC int
 parseQName(Client cntxt, Xbackend xb)

@@ -2209,23 +2209,6 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	return throwMessage("algebra.fragment", "GDKerror");
 }
 
-static int
-operatorCode(str opname)
-{
-	if (idcmp(opname, "EQ") == 0)
-		return 0;
-	if (idcmp(opname, "LT") == 0)
-		return -1;
-	if (idcmp(opname, "LE") == 0)
-		return -2;
-	if (idcmp(opname, "GT") == 0)
-		return 1;
-	if (idcmp(opname, "GE") == 0)
-		return 2;
-	GDKerror("Illegal operator code, EQ assumed\n");
-	return 0;
-}
-
 mal_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 str
 ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)

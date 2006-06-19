@@ -38,8 +38,8 @@ the name space by deletion of non-used names once in a while.
 #ifndef _MAL_NAMESPACE_H
 #define _MAL_NAMESPACE_H
 
-mal_export void initNamespace();
-mal_export void finishNamespace();
+mal_export void initNamespace(void);
+mal_export void finishNamespace(void);
 mal_export str putName(str nme,int len);
 mal_export str getName(str nme,int len);
 mal_export void delName(str nme,int len);

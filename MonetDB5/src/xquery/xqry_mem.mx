@@ -42,7 +42,7 @@ typedef struct xqry_allocator {
 	size_t used; 	/* memory used in last block */
 } xqry_allocator;
 
-extern xqry_allocator *xa_create();
+extern xqry_allocator *xa_create(void);
 extern xqry_allocator *xa_reset( xqry_allocator *xa );
 extern char *xa_alloc( xqry_allocator *xa,  size_t sz );
 extern void xa_destroy( xqry_allocator *xa );

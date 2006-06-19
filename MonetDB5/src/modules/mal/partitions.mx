@@ -188,12 +188,12 @@ as a handle.
 
 mal_export int BPTfindGrp(int bid);
 mal_export void BPTresize(int size);
-mal_export str BPTdump();
+mal_export str BPTdump(void);
 mal_export str BPTprelude(int *ret);
 mal_export str BPTepilogue(int *ret);
-mal_export str BPTopen();
-mal_export str BPTclose();
-mal_export str BPTdestroy();
+mal_export str BPTopen(void);
+mal_export str BPTclose(void);
+mal_export str BPTdestroy(void);
 mal_export str BPTtake(int *ret, int *idx);
 mal_export int BPTfindGrp(int bid);
 mal_export int BPTfindPartition(int bid, int pid);

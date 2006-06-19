@@ -83,7 +83,7 @@ opt_export  str unpackRef;
 opt_export  str unsafeRef;
 opt_export  str bind_dbatRef;
 
-opt_export void optimizerInit();
+opt_export void optimizerInit(void);
 #endif
 @c
 #include "mal_prelude.h"

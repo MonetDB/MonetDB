@@ -49,9 +49,9 @@ mal_export str AUTHresolveUser(str *ret, oid *uid);
 mal_export str AUTHgetUsername(str *ret);
 mal_export str AUTHgetUsers(bat *ret, bat *scenarios);
 
-mal_export str AUTHrequireAdmin();
+mal_export str AUTHrequireAdmin(void);
 mal_export str AUTHrequirteAdminOrUser(str *username);
-mal_export str AUTHinitTables();
+mal_export str AUTHinitTables(void);
 
 @-
 Authorisation is based on a password.  The passwords are stored cyphered
@@ -65,8 +65,6 @@ needed.  A locked vault means noone can log into the system, hence, the
 vault needs to be unlocked as part of the server startup ritual.
 @h
 mal_export str AUTHunlockVault(str *password);
-static str AUTHdecypherValue(str *ret, str *value);
-static str AUTHcypherValue(str *ret, str *value);
 
 @-
 To avoid the passwords from being sent over the wire in plain text
@@ -78,7 +76,6 @@ comma separated list offered by the server through the challenge
 (protocol >=6).
 @h
 mal_export str AUTHgetHashAlgorithms(str *ret);
-static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
 
 /* convenience macros */
 #define throwIC(X, Y) throw("InvalidCredentialsException", X, Y);
@@ -93,6 +90,10 @@ static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
 #include <openssl/md5.h>
 #endif
 
+
+static str AUTHdecypherValue(str *ret, str *value);
+static str AUTHcypherValue(str *ret, str *value);
+static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
 /**
  * Requires the current client to be the admin user.  If not the case,
  * this function returns an InvalidCredentialsException.

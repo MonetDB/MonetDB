@@ -432,7 +432,6 @@ All other instructions should be checked for a MAT dependency.
 It require the MAT to be materialized. We drop the MAT
 afterwards for further consideration.
 @c
-MATdefault:
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
 #ifdef DEBUG_MAL_MERGETABLE

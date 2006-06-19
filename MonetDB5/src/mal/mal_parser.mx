@@ -54,7 +54,7 @@ this buffer contains the complete MIL structure to be parsed.
 #define nextChar(X) X->yycur++
 #define prevChar(X) if(X->yycur) X->yycur--
 
-mal_export void initParser();   /* needed in src/mal/mal.c */
+mal_export void initParser(void);   /* needed in src/mal/mal.c */
 mal_export int parseMAL(Client cntxt, Symbol curPrg);
 mal_export void echoInput(Client cntxt);
 mal_export void debugParser(int i);

@@ -483,7 +483,7 @@ the configuration file.
 			MT_sleep_ms(5000);
 	} else
 		MSserveClient(mal_clients);
-	mal_exit(mal_clients);
+	mal_exit();
 	return 0;
 }
 @}

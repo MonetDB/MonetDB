@@ -30,8 +30,8 @@ The XQUERY scenario implementation is a derivative of the MAL session scenario.
 /* #define _XQUERY_PARSER_DEBUG */
 
 xqry_export str XQUERYsession(str *ret);
-xqry_export str XQUERYprelude();
-xqry_export str XQUERYepilogue();
+xqry_export str XQUERYprelude(void);
+xqry_export str XQUERYepilogue(void);
 
 xqry_export str XQUERYexit(Client c);
 xqry_export str XQUERYinit(Client c);

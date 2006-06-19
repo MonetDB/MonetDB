@@ -195,7 +195,7 @@ mal_export str SYSgetPorts(int *ret, str *lang);
 # endif
 #endif
 
-extern lng GDKcur_cursize();
+extern lng GDKcur_cursize(void);
 mal_export str SYSgetmem_cursize(lng *num);
 str
 SYSgetmem_cursize(lng *num)

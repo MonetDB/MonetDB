@@ -216,19 +216,19 @@ to keep track of critical elements.
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
-mal_export Client   MCgetClient   ();
+mal_export Client   MCgetClient   (void);
 mal_export Client   MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export void     MCinitClientThread(Client c);
 mal_export void     MCcloseClient    (Client c);
 mal_export Client   MCforkClient     (Client c);
 mal_export void     MCkillClient     (Client c);
-mal_export int		MCcountClients();
+mal_export int		MCcountClients(void);
 mal_export int      MCreadClient  (Client c);
 mal_export str      MCstopClient(Client c, oid which);
 mal_export str      MCstopClientIndex(Client c, int id);
 mal_export str      MCresumeClient(Client c, int sessionkey);
 mal_export str      MCsuspendClient(Client c, int sessionkey, int timeout);
-mal_export void     MCcleanupClients();
+mal_export void     MCcleanupClients(void);
 mal_export void     MCtraceAllClients(int flag);
 mal_export void     MCtraceClient(oid which, int flag);
 

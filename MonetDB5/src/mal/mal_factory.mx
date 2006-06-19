@@ -268,7 +268,7 @@ mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
 mal_export str shutdownFactoryByName(Module m,str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag);
-mal_export int factoryHasFreeSpace();
+mal_export int factoryHasFreeSpace(void);
 #endif /*  _MAL_FACTORY_H */
 @-
 The initial implementation is geared at a central

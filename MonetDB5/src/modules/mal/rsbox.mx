@@ -289,7 +289,7 @@ mal_export str RSBcreate(int *retval, int *columns, char *type);
 mal_export str RSBtake(int *retval, int *id);
 mal_export str RSBdelete(void *retval, int *handle);
 mal_export str RSBrelease(void *retval, int *id);
-mal_export str RSBreleaseAll();
+mal_export str RSBreleaseAll(void);
 mal_export str RSBhasMoreElements(lng *ret1, int *ret2);
 mal_export str RSBiterator(lng *ret1, int *ret2);
 mal_export str RSpopulateColumn(int *retval, int *handle, int *colno, int *bat);

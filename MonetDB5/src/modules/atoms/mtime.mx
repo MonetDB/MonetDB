@@ -871,8 +871,8 @@ mtime_export str MTIMEdate2date(date *ret, date *src);
 mtime_export str MTIMEdaytime2daytime(daytime *ret, daytime *src);
 mtime_export str MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src);
 mtime_export str MTIMErule_fromstr(rule *ret, str *s);
-mtime_export str MTIMEprelude();
-mtime_export str MTIMEepilogue();
+mtime_export str MTIMEprelude(void);
+mtime_export str MTIMEepilogue(void);
 mtime_export str MTIMEsynonyms(bit *allow);
 mtime_export str MTIMEoldduration(int *ndays, str *s);
 mtime_export str MTIMEolddate(date *d, str *buf);
@@ -2844,9 +2844,8 @@ MTIMEprelude()
 
 
 str
-MTIMEepilogue(int *ret)
+MTIMEepilogue()
 {
-	(void)ret;
 	closeBox("time", 0);
 	return MAL_SUCCEED;
 }

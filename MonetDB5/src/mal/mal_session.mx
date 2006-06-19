@@ -34,14 +34,13 @@ It may overwritten using a command line argument.
 
 #include "mal_scenario.h"
 
-mal_export int malBootstrap();
+mal_export int malBootstrap(void);
 mal_export void MSserveClient(void *dummy);
 mal_export void MSinitClientPrg(Client cntxt, str nme);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
-mal_export void MALexit(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void MSresetInstructions(MalBlkPtr mb, int start);
@@ -87,11 +86,6 @@ malBootstrap()
 	return 1;
 }
 
-void
-MALexit(Client c){
-	stream_printf(c->fdout,"End of MAL session\n");
-	mal_exit(c);
-}
 @+ Client main routine
 Every client has a 'main' function to collect the statements.
 Once the END instruction has been found, it is added to the

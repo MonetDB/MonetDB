@@ -84,8 +84,8 @@ mil_export str MILengine(Client c);
 mil_export void enterMILscope(Client c);
 mil_export void leaveMILscope(Client c);
 
-mil_export str MILprelude();
-mil_export str MILepilogue();
+mil_export str MILprelude(void);
+mil_export str MILepilogue(void);
 #endif
 @-
 The MIL compilation environment is tagged with the client record.
