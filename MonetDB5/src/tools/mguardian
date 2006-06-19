@@ -104,6 +104,7 @@ function getPID ()
 # before we restart we have to test for a bad system environment,
 # such as a full disk
 restartcount=0
+maxtrials=8
 mailtrigger=1
 restartwindow=60
 started=`date +%s`
@@ -112,10 +113,23 @@ function restart_server()
 {
 	full=`df . |sed -e 1d -e "s/%.*//" -e "s/.* //"` 
 
+	if [[ "$restartcount" > $maxtrials  ]]
+	then
+		return
+	fi
 	if [ "$full" -gt 90 ]
 	then
 		echo "Running out of disk space"
 		echo `date +"%F %T"` "WARNING disk use $full%" >>monetdb.log
+		if [[ "$restartcount" > $mailtrigger  ]]
+		then
+mail -s "Notification: mserver5 encounters disk limits" $USER <<!EOF
+The mguardian process $$ running on node `uname -n` has detected
+that you are running low on disk space.
+`df`
+Please take precautions against loosing your data.
+!EOF
+		fi
 	fi
 
 	now=`date +%s`
@@ -124,6 +138,14 @@ function restart_server()
 	then
 		if [[ "$restartcount" > $mailtrigger ]]
 		then
+			if [[ "$restartcount" == $maxtrials ]]
+			then
+			mail -s "Notification: mserver5 stopped" $USER <<!EOF
+The mguardian process $$ running on node `uname -n` has attempted
+to restart the server against database '$1' $maxtrials times.
+The server remains down until you have checked the situation.
+!EOF
+			fi
 			now=`date`
 			mail -s "Notification: mserver5 restarted" $USER <<!EOF
 The mguardian process $$ running on node `uname -n` has restarted

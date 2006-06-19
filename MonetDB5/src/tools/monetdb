@@ -147,6 +147,17 @@ function getTIME ()
 	fi
 }
 
+function ping_mserver()
+{
+	# test lifeness of a specific server on the default port.
+	# this is a database/scenario specific script
+	# which should be created upon restart
+	port=`cat $DBFARM/$1/.mal.port`
+	echo "Ping $1 on port " $port
+	answer=`mclient -lsql -umonetdb -Pmonetdb -p $port`
+	echo "result" $answer
+}
+
 function start_mserver()
 {
 	# make sure the configuration file is in place
@@ -189,7 +200,7 @@ function start_mserver()
 			echo "FAILED"
 		else
 			echo `date +"%F %T"` " START $1 $ARGS" >>monetdb.log
-			echo "ok"
+			echo "ok" 
 		fi
 		# start the guardian for this server as well
 		if [ -n "$DELAY" ]
