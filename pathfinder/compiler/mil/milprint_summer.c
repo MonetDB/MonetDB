@@ -1813,7 +1813,7 @@ loop_liftedSCJ (opt_t *f,
 {
     /* iter|pos|item input contains only nodes (kind=ELEM) */
     milprintf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
-    milprintf(f, "if (kind.texist(ATTR))"
+    milprintf(f, "if ([and](reverse(tunique(kind)),63).texist(ATTR))"
                   "ERROR (\"path steps are only supported "
                           "starting from non-attribute nodes\");\n");
 
