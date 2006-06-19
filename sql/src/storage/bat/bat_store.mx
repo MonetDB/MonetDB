@@ -965,12 +965,7 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 				t->s->base.name, t->base.name, c->base.name);
 		c->bat.name = _strdup(name);
 		b = temp_descriptor(bm_find_bat(bm, c->bat.name));
-		if (strcmp(c->base.name, "h") == 0) {
-			/* recreate view for head column */
-			c->bat.bid = temp_create(VIEWcombine(b));
-		} else {
-			c->bat.bid = temp_create(b);
-		}
+		c->bat.bid = temp_create(b);
 		bat_destroy(b);
 	}
 
@@ -3250,13 +3245,7 @@ rollforward_use_bat(sql_trans *tr, sql_column *c)
 	BAT *b;
 
 	(void)tr;
-	/* only log on toplevel */
 	b = temp_descriptor(c->bat.ibid);
-	if (VIEWparent(b) != 0) {
-		BAT *t = b;
-		b = temp_descriptor(VIEWparent(b));
-		bat_destroy(t);
-	}
 
 	snprintf(bname, BUFSIZ, "%s_%s_%s",
 			c->t->s->base.name, c->t->base.name, c->base.name);
@@ -4605,7 +4594,7 @@ sql_view_from_bat(sql_trans *tr, sql_table *t, char *name)
 	char err[BUFSIZ];
 
 	bat bid = BBPindex(name);
-	BAT *bh, *bt;
+	BAT *bt;
 	sql_subtype *tp;
 
 	if (!bid) {
@@ -4621,13 +4610,9 @@ sql_view_from_bat(sql_trans *tr, sql_table *t, char *name)
 				name);
 		return _strdup(err);
 	}
-	bh = VIEWcombine(bt);
-	tp = sql_bind_localtype(ATOMname(bh->ttype));
-	create_column_bat(tr, t, "h", tp, bh);  
 	tp = sql_bind_localtype(ATOMname(bt->ttype));
 	create_column_bat(tr, t, "t", tp, bt);  
 	bat_destroy(bt);
-	bat_destroy(bh);
 
 	return NULL;
 }
