@@ -10551,7 +10551,6 @@ const char* PFinitMIL(void) {
         "var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
         "var dec_values := dbl_values;\n"
         "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append(\"\");\n"
-        "var containers := bat(int,bat).insert(BOOL,bool_values).insert(INT,int_values).insert(DBL,dbl_values).insert(DEC,dec_values).insert(STR,str_values).insert(U_A,str_values).access(BAT_READ);\n"
         "\n"
         "var fun_vid000 := bat(void,oid);\n"
         "var fun_iter000 := bat(void,oid);\n"
