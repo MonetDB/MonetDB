@@ -363,47 +363,7 @@ const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
-const empty_bool__bat := bat(void,bit,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
-const bool_values := bat(void,bit,2).append(false).append(true).seqbase(0@0).access(BAT_READ);
-
-proc [bit](bat[any::1,str] b) : bat[any::1,bit]
-{
-    return [!=](b,"");
-}
-
-proc [bit](str b) : bit
-{
-    return !=(b,"");
-}
-
-proc castValues(bat[int,bat] tpe_vals, bat[void,any] _val, any item, any kind, any ipik, int tpe, str mil_tpe, str xq_tpe) : any {
-    var _oid := empty_bat;
-    tpe_vals@batloop() {
-        var sel_oid := ipik;
-        var sel_item := item;
-        if (type(kind) = bat) {
-            sel_oid := kind.ord_uselect($h).hmark(0@0);
-            sel_item := sel_oid.leftfetchjoin(item);
-        } else if (kind != $h) {
-            sel_oid := empty_bat;
-        }
-        if (count(sel_oid) > 0) {
-            sel_item := [*mil_tpe](sel_item.leftfetchjoin($t));
-            if (count(_oid) > 0) {
-                var res_mu := merged_union(_oid, sel_oid, _val, sel_item);
-                _oid := res_mu.fetch(0);
-                _val := res_mu.fetch(1);
-            } else {
-                _oid := sel_oid;
-                _val := sel_item;
-            }
-        }
-     }
-     if (_val.texist(cast(nil,tpe)))
-         ERROR ("err:FORG0001: could not cast value to %s.", xq_tpe);
-     return _val;
-}
 
 proc addValues(bat[void,any::1] container, any::1 delta) : oid
 {
