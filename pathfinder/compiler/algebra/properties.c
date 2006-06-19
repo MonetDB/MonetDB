@@ -96,7 +96,7 @@ PFprop (void)
     ret->constants = PFarray (sizeof (const_t));
 
     /* initialize icols attribute list */
-    ret->icols = 0;
+    ret->icols = att_NULL;
 
     return ret;
 }
@@ -796,7 +796,7 @@ PFalg_attlist_t
 PFprop_icols_to_attlist (const PFprop_t *prop)
 {
     PFalg_attlist_t new_list;
-    PFalg_att_t icols = prop->icols;
+    unsigned int icols = prop->icols;
     unsigned int counter = 0, bit_shift = 1;
 
     new_list.count = icols_count (prop);
@@ -819,7 +819,7 @@ static void prop_infer_icols (PFla_op_t *n, PFalg_att_t icols);
 static PFalg_att_t
 intersect_ocol (PFalg_att_t icols, PFalg_schema_t schema_ocols)
 {
-    PFalg_att_t ocols = 0;
+    PFalg_att_t ocols = att_NULL;
 
     /* intersect attributes */
     for (unsigned int j = 0; j < schema_ocols.count; j++)
@@ -852,7 +852,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
        we have infer the children separately */
     bool skip_children = false;
     /* inferred icols property for children */
-    PFalg_att_t inf_icols = 0;
+    PFalg_att_t inf_icols = att_NULL;
 
     assert (n);
 
@@ -872,7 +872,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
     switch (n->kind) {
         case la_serialize:
             /* infer empty list for fragments */
-            prop_infer_icols (L(n), 0);
+            prop_infer_icols (L(n), att_NULL);
 
             /* infer pos|item schema for query body */
             inf_icols = union_ (att_pos, att_item);
@@ -1084,7 +1084,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_scjoin:
             /* infer empty list for fragments */
-            prop_infer_icols (L(n), 0);
+            prop_infer_icols (L(n), att_NULL);
 
             /* infer iter|item schema for input relation */
             inf_icols = union_ (att_iter, att_item);
@@ -1116,7 +1116,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                used as replacement */
                
             /* infer empty list for fragments */
-            prop_infer_icols (L(n), 0);
+            prop_infer_icols (L(n), att_NULL);
 
             /* do only infer input columns if operator is not required */
             if (!(n->prop->icols & att_item))
@@ -1126,7 +1126,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                 prop_infer_icols (RL(n), inf_icols);
 
                 /* infer empty list for missing content */
-                prop_infer_icols (RR(n), 0);
+                prop_infer_icols (RR(n), att_NULL);
             } else {
                 /* infer iter|item schema for element name relation */
                 inf_icols = union_ (att_iter, att_item);
@@ -1158,7 +1158,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                 inf_icols = diff (n->prop->icols, n->sem.attr.res);
                 prop_infer_icols (L(n), inf_icols);
 
-                prop_infer_icols (R(n), 0);
+                prop_infer_icols (R(n), att_NULL);
             }
 
 
@@ -1186,7 +1186,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_merge_adjacent:
             /* infer empty list for fragments */
-            prop_infer_icols (L(n), 0);
+            prop_infer_icols (L(n), att_NULL);
 
             /* infer iter|pos|item schema for element content relation */
             inf_icols = union_ (union_ (att_iter, att_item), att_pos);
@@ -1204,7 +1204,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_frag_union:
         case la_empty_frag:
             /* infer empty list for fragments */
-            inf_icols = 0;
+            inf_icols = att_NULL;
             break;
 
         case la_cond_err:
@@ -1277,7 +1277,7 @@ void
 PFprop_infer (PFla_op_t *n)
 {
     prop_infer (n);
-    prop_infer_icols (n, 0);
+    prop_infer_icols (n, att_NULL);
 }
 
 /**

@@ -1133,7 +1133,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* EmptyOrderingDecl:      def_order */
         case 31:
-            PFquery.empty_order = p->sem.mode.empty;
+            PFquery.empty_order = p->sem.mode.empty==p_greatest?greatest:least;
             break;
 
         /* InheritNamespacesDecl:  inherit_ns */
