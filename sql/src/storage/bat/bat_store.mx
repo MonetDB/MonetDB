@@ -4610,7 +4610,13 @@ sql_view_from_bat(sql_trans *tr, sql_table *t, char *name)
 				name);
 		return _strdup(err);
 	}
-	tp = sql_bind_localtype(ATOMname(bt->ttype));
+	if (bt->ttype == TYPE_str) {
+		/* hack: if we have a string, do mapping manually, because it
+		 * otherwise gets mapped on a char */
+		tp = sql_bind_subtype("clob", 0, 0);
+	} else {
+		tp = sql_bind_localtype(ATOMname(bt->ttype));
+	}
 	create_column_bat(tr, t, "t", tp, bt);  
 	bat_destroy(bt);
 
