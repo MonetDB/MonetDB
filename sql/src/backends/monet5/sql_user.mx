@@ -55,7 +55,7 @@ monet5_create_user(list *l, str user, str passwd, str fullname, int schema_id, i
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
-	BUNappend(scens, "sql", 0);
+	BUNins(scens, "sql", 0, FALSE);
 	bid = BBPcacheid(scens);
 	/* add the user to the M5 authorisation administration */
 	if ((ret = AUTHaddUser(&uid, &user, &passwd, &bid)) != MAL_SUCCEED) {
@@ -86,7 +86,7 @@ monet5_find_user(ptr mp, str user) {
 	
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
-	BUNappend(scens, "sql", 0);
+	BUNins(scens, "sql", 0, FALSE);
 	bid = BBPcacheid(scens);
 	if ((tmp = AUTHgetUsers(&b, &bid)) != MAL_SUCCEED) {
 		BBPunfix(bid); 
