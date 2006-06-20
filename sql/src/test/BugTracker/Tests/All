@@ -19,3 +19,4 @@ HAVE_MONET?connect_crash.SF-1436626
 drop_schema_crash.SF-1504794
 set_session_vars.SF-1505987
 reset_session_vars.SF-1505987
+cast_interval2time.SF-1488247
