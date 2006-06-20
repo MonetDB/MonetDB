@@ -55,6 +55,7 @@ bulk assignment instructions.
 The remainder of this chapter provide a concise overview of the
 language features and illustrative examples.
 @menu
+* MAL variables::
 * MAL instructions::
 * Flow of control::
 * Function definitions::
@@ -62,11 +63,17 @@ language features and illustrative examples.
 * Type resolution::
 * Atomary types::
 * Boxed variables::
-* Property management::
+* Property Management::
 @end menu
 
-@node MAL instructions, Flow of control, MonetDB Assembler Language , MonetDB Assembler Language
-@+ MAL instructions
+@node MAL variables, MAL instructions, MonetDB Assembler Language , MonetDB Assembler Language
+@+ MAL Literals and Variables
+Variables are implicitly defined upon first use and take
+on a type through a type classifier or inherit it from
+the context in which they are used, see @ref{Type resolution}. 
+
+@node MAL instructions, Flow of control, MAL variables , MonetDB Assembler Language
+@+ MAL Instructions
 MAL instructions have purposely a simple format. 
 Each instruction denotes a data-flow statement.
 It is syntactically represented by an assignment, where
@@ -80,10 +87,9 @@ t1 := constant;
 (t1,..,tn) := (a1,..,an);
 @end example
 
-Variables are implicitly defined upon first use and take
-on a type through a type classifier or inherit it from
-the context in which they are used, see @ref{Type resolution}. 
-Operators are grouped into user defined modules @ref{MAL Modules}.
+Ommission of the module name is interpreter as the @sc{user} module.
+
+Operators are grouped into user defined modules.
 Binary arithmetic operations are merely provided as a short-hand,
 e.g. the expression @code{t:=2+2} is converted directly 
 into @code{t:= calc.+(2,2)}.
@@ -112,7 +118,7 @@ information to produce a listing and to aid symbolic debugging.
 @node Flow of control, Function definitions, MAL instructions, MonetDB Assembler Language
 @+ Flow of control
 The flow of control within a MAL program block can be changed by
-tagging an assignment with either @code{return}, @code{yield},
+tagging an statement with either @code{return}, @code{yield},
 @code{barrier}, @code{catch}, @code{leave}, @code{redo}, or @code{exit}.
 
 The flow modifiers @code{return} and @code{yield} mark the end 
@@ -143,9 +149,6 @@ The action is taken when the condition is met.
 The @code{exit} marks the exit for a block. Its optional assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
-
-A control block is recognized by its target variable set,
-which implies that nesting on the same target set is prohibited.
 
 The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
@@ -190,15 +193,15 @@ affecting the outcome. Moreover, neither block would
 have been entered if the variable happens to be assigned @code{nil}.
 
 The primitives are sufficient to model a wide variety of iterators, 
-whose pattern look like:
+whose pattern look like (for a module M):
 @example
-barrier i:= newIterator(T);
-    elm:= getElement(T,i);
+barrier i:= M.newIterator(T);
+    elm:= M.getElement(T,i);
     ...
-    leave i:= noMoreElements(T);
+    leave i:= M.noMoreElements(T);
     ...
-    redo i:= hasMoreElements(T);
-exit i:= exitIterator(T);
+    redo i:= M.hasMoreElements(T);
+exit i:= M.exitIterator(T);
 @end example
 The semantics obeyed by the iterator implementations is as follows.
 The redo expression updates the target variable @emph{ i} and control
@@ -214,11 +217,11 @@ possibly changed.
 
 A recurring situation is to iterate over the elements in
 a BAT. This is supported by an iterator implementation in
-the bbp module as follows:
+the @sc{chopper} module as follows:
 @example
-barrier (idx,hd,tl):= newIterator(B);
+barrier (idx,hd,tl):= chopper.newIterator(B);
     ...
-    redo (idx,hd,tl):= hasMoreElements(B);
+    redo (idx,hd,tl):= chopper.hasMoreElements(B);
 exit (ids,hd,tl);
 @end example
 Where idx is an integer to denote the row in the BAT,

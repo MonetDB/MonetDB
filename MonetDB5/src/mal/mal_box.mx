@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @a M.L. Kersten
-@* Boxed variables
+@+ Boxed variables
 Clients sessions often come with a global scope of variable settings.
 Access to these global variables should be easy,
 but they should also provide protection against concurrent update
@@ -130,7 +130,6 @@ and dir(arglist). The function objects() produces a BAT with
 the object names, possibly limited to those identified by
 the arglist.
 
-@+ Future
 The world of boxes has not been explored deeply yet.
 It is envisioned that it could play a role to import/export
 different objects, e.g.
@@ -391,7 +390,7 @@ destroyBox(str name)
 
 }
 
-@+ Operations
+@- Operations
 The deposit operation silently accepts any request to store
 an element.
 @c
@@ -536,7 +535,7 @@ discardBox(Box box, str name)
 	return 0;
 }
 
-@+
+@-
 The elements can be obtained using iterator, which returns the name
 of the next element in the box.
 @c
@@ -586,7 +585,7 @@ getBoxNames(int *bid)
 	return MAL_SUCCEED;
 }
 
-@+ Persistency
+@- Persistency
 The content of a box is saved on a file for subsequent re-use.
 The storage is explicitly in terms of MAL operations.
 For BAT objects, the corresponding object is made persistent.
@@ -741,7 +740,7 @@ loadBox(str name)
 	}
 }
 
-@+ Utilities
+@- Utilities
 Utilities for the debugger permit dumping of all the object
 spaces.
 @c

@@ -48,7 +48,7 @@ e.g. foreign-key optimizations in joins and remote query execution.
 All optimization information is statically derived from the
 code blocks and possible catalogues maintained for the query language
 at hand. Optimizers leave advice and their findings in properties
-in the symbol table, see @ref{Property management}.
+in the symbol table, see @ref{Property Management}.
 
 Once the program has thus been refined, the
 MAL scheduler prepares for execution using tactical optimizations.

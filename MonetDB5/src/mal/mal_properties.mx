@@ -16,7 +16,7 @@
 
 @f mal_properties
 @a M. Kersten
-@* Property Management
+@+ Property Management
 
 Properties come in several classes, those linked with the symbol table and
 those linked with the runtime environment. The former are determined
@@ -45,7 +45,6 @@ The operator satisfy the syntax rules for MAL operators.
 Conditional operators are quite common, e.g. the triple (count, <, 1000) 
 can be used to denote a small table.
 
-@+ Property Associations
 The property bearing objects in the MAL setting are 
 variables (symbol table entries) and MAL function blocks.
 The direct relationship between instructions and

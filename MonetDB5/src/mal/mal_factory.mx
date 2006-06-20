@@ -16,7 +16,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ Factories 
+@+ MAL Factories 
 A convenient programming construct is the co-routine, which
 is specified as an ordinary function, but maintains its
 own state between calls, and permits re-entry other than
@@ -213,7 +213,7 @@ Provided the arguments have not changed.
 For example:
 
 @example
-factory user.view1(l:int, h:int):bat[:void,:str];
+factory view1(l:int, h:int):bat[:void,:str];
 	a:bat[:void,:int]:= bbp.bind("emp","age");
 	b:bat[:void,:str]:= bbp.bind("emp","name");
 barrier always := true;

@@ -16,7 +16,7 @@
 
 @a M. Kersten
 @v 1.0
-@* MAL Type Resolution
+@+ MAL Type Resolution
 Given the interpretative nature of many of the MAL instructions,
 when and where type resolution takes place is a critical design issue.
 Performing it too late, i.e. at each instruction call, leads to 
@@ -96,7 +96,7 @@ extern str traceFcnName;
 mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);
 
 #endif /*  _MAL_RESOLVE_H*/
-@+ Function call resolution
+@- Function call resolution
 Search the first definition of the operator in the current module
 and check the parameter types.
 For a polymorphic MAL function we make a fully instantiated clone.
@@ -671,7 +671,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 		} else p->typechk= TYPE_RESOLVED;
 		return;
 	}
-@+ Assignment 
+@- Assignment 
 When we arrive here the operator is an assignment.
 The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
@@ -754,7 +754,7 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	return pci;
 }
-@+ Function binder
+@- Function binder
 In some cases the front-end may already assure type correctness
 of the MAL instruction generated (e.g. the SQL front-end)
 In that case we merely have to locate the function address and
@@ -842,7 +842,7 @@ void chkProgram(Module s, MalBlkPtr mb)
 	chkFlow(mb);
 	chkDeclarations(mb,FALSE);
 }
-@+ Polymorphic type analysis
+@- Polymorphic type analysis
 MAL provides for type variables of the form any$N. This feature
 supports polymorphic types, but also complicates the subsequent
 analysis. A variable typed with any$N not occuring in the function

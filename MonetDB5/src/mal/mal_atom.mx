@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @a M.L.Kersten
-@+ Atomary types 
+@- Atomary types 
 MonetDB supports an extensible type system to accomodate a wide
 spectrum of database kernels and application needs.
 The type administration keeps track of their properties and

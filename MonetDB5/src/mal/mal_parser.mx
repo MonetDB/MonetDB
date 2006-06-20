@@ -961,11 +961,8 @@ the function definition in a particular module instead of the current one.
 		return (MalBlkPtr)parseError(cntxt, "function header '(' expected\n");
  	advance(cntxt,1);
 
-	if( modnme == 0){
-		setModuleScope(curInstr, cntxt->nspace);
-	} else{
-		setModuleId(curInstr, putName(modnme,strlen(modnme)) );
-	}
+	setModuleId(curInstr, modnme?putName(modnme,strlen(modnme)): 
+			putName(cntxt->nspace->name, strlen(cntxt->nspace->name)));
 
 	/* get calling parameters */
 	ch= currChar(cntxt);
@@ -1284,14 +1281,23 @@ int parseEnd(Client cntxt)
 		curBlk = curPrg->def;   
 		l = idLength(cntxt);
 		if(l==0) l= operatorLength(cntxt);
+		
+		if( strncmp(CURRENT(cntxt), getModuleId(getSignature(curPrg)), l)==0) {
+			advance(cntxt,l);
+			skipSpace(cntxt);
+			if( currChar(cntxt) == '.')
+				nextChar(cntxt);
+			skipSpace(cntxt);
+			l = idLength(cntxt);
+			if(l==0) l= operatorLength(cntxt);
+		} 
+		/* parse fcn */
 		if( (l== strlen(curPrg->name) &&
 			 strncmp(CURRENT(cntxt), curPrg->name, l)==0) || l==0) {
 			/* its ok */
 		} else {
 			parseError(cntxt,"non matching end label, overruled\n");
 		}
-		
-		advance(cntxt,l);
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
 		trimMalBlk(cntxt->curprg->def);
@@ -1412,7 +1418,7 @@ parseAssign(Client cntxt, int cntrl)
 			return;
 		}  
 		/* Check if we are dealing with module.fcn call*/
-		if( CURRENT(cntxt)[l]=='.') {
+		if( CURRENT(cntxt)[l]=='.' || CURRENT(cntxt)[l]=='(') {
 			curInstr->argv[0]= newTmpVariable(curBlk,TYPE_any);
 			goto FCNcallparse;
 		}
@@ -1537,14 +1543,20 @@ We have so far the LHS part of an assignment. The remainder is
 either a simple term expression, a multi assignent, or the start 
 of a function call.
 @c
-	if( (l=idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
 FCNcallparse:
+	if( (l=idLength(cntxt)) && CURRENT(cntxt)[l] == '(') {
+		setModuleId(curInstr,putName("user",4));
+		i= l;
+		goto FCNcallparse2;
+	} else
+	if( (l=idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
 		/* continue with parseing a function/operator call */
 		arg= putName(CURRENT(cntxt),l);
 		advance(cntxt,l+1); /* skip '.' too */
 		setModuleId(curInstr,arg);
 		i = idLength(cntxt);
 		if( i==0) i= operatorLength(cntxt);
+FCNcallparse2:
 		if( i ) {
 			 setFunctionId(curInstr, putName(((char*)CURRENT(cntxt)),i));
 			advance(cntxt,i);
@@ -1752,7 +1764,7 @@ str parseError(Client cntxt, str msg)
 	MalBlkPtr curBlk;
 	char buf[10*1024];
 	char *s=buf, *t, *l = lastline(cntxt);
-	long i;
+	lng i;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;

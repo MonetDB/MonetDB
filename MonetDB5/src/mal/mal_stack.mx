@@ -54,7 +54,7 @@ ensure we are still within safe bounds.
 typedef struct MALSTK {
 	int stksize;
 	int stktop;
-	long stkdepth;		/* to protect against overflow */
+	lng stkdepth;		/* to protect against overflow */
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
 	MT_Lock stklock;	/* used for parallel processing */
