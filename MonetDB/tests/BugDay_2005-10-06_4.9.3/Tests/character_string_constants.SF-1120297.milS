@@ -1,5 +1,0 @@
-print('c');
-print("s");
-print(type("s"));
-print(type('c'));
-quit();

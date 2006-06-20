@@ -1,4 +1,0 @@
-stderr of test 'bat_nil` in directory 'src/monet` itself:
-
-#> Mtest:	milM bat_nil milM
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db src_monet bat_nil.milM
