@@ -100,8 +100,8 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 	REGISTER @1 *bnp;
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2,@4](l=%s,r=%s);\n",
-		BATgetId(l),BATgetId(r));
+	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@6@2,@4](l=%s,r=%s);\n", 
+		BATgetId(l),BATgetId(r)); 
 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
 		   "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
 
@@ -130,7 +130,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 			memcpy(rbuf,rp,y);
 			for (i=0; i<x; i++) {
 				if (@4 && (rbuf[i] == 0)) {
-					GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+					GDKerror("[@6@2] (batbat_@1_@3): Division by Zero!");
 					GDKfree(lbuf);
 					BBPreclaim(bn);
 					return GDK_FAIL;
@@ -162,7 +162,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 			memcpy(rbuf,rp,z);
 			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
 				if (@4 && (*(@1*)rbp == 0)) {
-					GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+					GDKerror("[@6@2] (batbat_@1_@3): Division by Zero!");
 					GDKfree(lbuf);
 					BBPreclaim(bn);
 					return GDK_FAIL;
@@ -186,7 +186,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 		for (; lp < lq; lp+=ls, rp+=rs) {
 			if (@4 && (*(@1*)rp == 0)) {
-                                GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+                                GDKerror("[@6@2] (batbat_@1_@3): Division by Zero!");
                                 BBPreclaim(bn);
                                 return GDK_FAIL;
 			} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
@@ -212,7 +212,7 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 	REGISTER int ls = BUNsize(l);
 	REGISTER int rs = BUNsize(r);
 
-	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@2,@4](l=%s,r=%s);\n",
+	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@6@2,@4](l=%s,r=%s);\n",
 		BATgetId(l),BATgetId(r));
 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
 		   "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
@@ -223,7 +223,7 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 	rp = (chr*)BUNtloc(r,BUNfirst(r));
 	for (; lp < lq; lp+=ls, rp+=rs) {
 		if (@4 && (*(@1*)rp == 0)) {
-                        GDKerror("[:@2=] (batbat_@1_@3_inplace): Division by Zero!");
+                        GDKerror("[:@6@2=] (batbat_@1_@3_inplace): Division by Zero!");
                         return GDK_FAIL;
 		} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
 			*(@1*)lp = (@1) OP(*(@1*)lp,@2,*(@1*)rp);
@@ -246,7 +246,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2,@4](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@6@2,@4](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for *, + and - ) */
@@ -263,7 +263,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 		for (; bp < bq; bp+=bs) {
 			REGISTER @1 bv = *(@1*)bp;
 			if (@4 && (bv == 0)) {
-                                GDKerror("[@2] (valbat_@1_@3): Division by Zero!");
+                                GDKerror("[@6@2] (valbat_@1_@3): Division by Zero!");
                                 BBPreclaim(bn);
                                 return GDK_FAIL;
 			} else if (bv != @1_nil) {
@@ -293,7 +293,7 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@2,@4](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@6@2,@4](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
@@ -304,7 +304,7 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			if (@4 && (*(@1*)bp == 0)) {
-                                GDKerror("[:@2=] (valbat_@1_@3_inplace): Division by Zero!");
+                                GDKerror("[:@6@2=] (valbat_@1_@3_inplace): Division by Zero!");
                                 return GDK_FAIL;
 			} else if (*(@1*)bp != @1_nil) {
 				*(@1*)bp = (@1) OP(vv,@2,*(@1*)bp);
@@ -333,7 +333,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2,@4](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@6@2,@4](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3: BAT b must be void-headed.\n");
 
@@ -346,7 +346,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	if (@4 && (vv == 0)) {
-                GDKerror("[@2] (batval_@1_@3): Division by Zero!");
+                GDKerror("[@6@2] (batval_@1_@3): Division by Zero!");
                 BBPreclaim(bn);
                 return GDK_FAIL;
 	} else if (vv != @1_nil) {
@@ -380,7 +380,7 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-	ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@2,@4](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@6@2,@4](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3_inplace: BAT b must be void-headed.\n");
 
@@ -388,7 +388,7 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	bq = (chr*)BUNtloc(b,BUNlast(b));
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	if (@4 && (vv == 0)) {
-                GDKerror("[:@2=] (batval_@1_@3_inplace): Division by Zero!");
+                GDKerror("[:@6@2=] (batval_@1_@3_inplace): Division by Zero!");
                 return GDK_FAIL;
 	} else if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
@@ -417,17 +417,17 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 @:implementations(sht,-,sub,0,1)@
 @:implementations(sht,*,mul,0,2)@
 @:implementations(sht,/,div,1,1)@
-@:implementations(sht,%,mod,1,0)@
+@:implementations(sht,%,mod,1,0,%)@
 @:implementations(int,+,add,0,2)@
 @:implementations(int,-,sub,0,1)@
 @:implementations(int,*,mul,0,2)@
 @:implementations(int,/,div,1,1)@
-@:implementations(int,%,mod,1,0)@
+@:implementations(int,%,mod,1,0,%)@
 @:implementations(lng,+,add,0,2)@
 @:implementations(lng,-,sub,0,1)@
 @:implementations(lng,*,mul,0,2)@
 @:implementations(lng,/,div,1,1)@
-@:implementations(lng,%,mod,1,0)@
+@:implementations(lng,%,mod,1,0,%)@
 @:implementations(flt,+,add,0,2)@
 @:implementations(flt,-,sub,0,1)@
 @:implementations(flt,*,mul,0,2)@
@@ -440,5 +440,5 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
    an alternative way of calculating the result */
 #undef OP
 #define OP(l,op,r)	((l) - (dbl) ((lng) ((l) / (r))) * (r))
-@:implementations(flt,%,mod,1,1)@
-@:implementations(dbl,%,mod,1,1)@
+@:implementations(flt,%,mod,1,1,%)@
+@:implementations(dbl,%,mod,1,1,%)@

@@ -326,7 +326,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 				/* read in chunks, some OSs do not give you all at once */
 				for (n_expected = size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, MIN(1 << 30, n_expected));
-					IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+					IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
 
 					if (n <= 0)
 						break;
@@ -531,7 +531,7 @@ BATsave(BAT *bd)
 			DESCclean(b);
 			b->batCopiedtodisk = 1;
 			err = BATsavedesc(b, nme);
-			IODEBUG THRprintf(GDKerr, "BATsavedesc(%s,free=%d) = %d\n", nme, b->batBuns->free, err);
+			IODEBUG THRprintf(GDKerr, "BATsavedesc(%s,free=" SZFMT ") = %d\n", nme, b->batBuns->free, err);
 		}
 
 	if (b->hheap) GDKfree(b->hheap);

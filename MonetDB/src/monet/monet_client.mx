@@ -564,7 +564,9 @@ readClient(Client c)
 				}
 			} while (*c->top++ != '\n');
 		}
+                /* no idea what %.* is but icc sure don't like it -- commented out by Peter 
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input + offset);
+                 */
 
 		if (c->input + offset == c->top) {
 			/* We didn't get any data this time round.

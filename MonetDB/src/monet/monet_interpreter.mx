@@ -336,11 +336,11 @@ interpret_pin(batrec *r, int force, str s)
 			BBPunfix(r->id);
 
 			v->batStamp = b->batCacheid;
-			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[" SSZFMT "," SSZFMT "]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
+			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 
 			_b = b = v;
 		} else {
-			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) => %d[" SSZFMT "," SSZFMT "]\n", s, b->batCacheid, _b->void_cnt + 1, _b->void_tid);
+			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) => %d[%d,%d]\n", s, b->batCacheid, _b->void_cnt + 1, _b->void_tid);
 		}
 		_b->void_cnt++;
 		_b->void_tid = tid;
@@ -366,11 +366,11 @@ interpret_unpin(batrec *r, str s)
 
 			monet_set_lock(monet_voidLock, "unpin");
 			if (--(_b->void_cnt) == 0) {
-				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[" SSZFMT "," SSZFMT "]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
+				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 
 				_b->void_tid = 0;
 			} else {
-				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[" SSZFMT "," SSZFMT "]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
+				BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[%d,%d]\n", s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 			}
 			monet_unset_lock(monet_voidLock, "unpin");
 		}
@@ -501,7 +501,7 @@ It should be explicitly set afterwards.
 #include <sys/resource.h>
 #endif
 #include "monet_deparse.h"
-static void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTREE lt);
+static void onlineProfilerEvent(char *caller, lng clk, lng ticks, struct tms *timer, YYSTREE lt);
 static void onlineProfilerHeader(void);
 
 static stream *eventstream = NULL;
@@ -664,7 +664,7 @@ It is dumped on the eventstream whenever we leave the interpreter();
 @= profileEvent
 #ifdef HAVE_TIMES
 	if (profilemode) {
-		long nc = GDKusec();
+		lng nc = GDKusec();
 		onlineProfilerEvent("@1", nc, nc - clk, &timer, lt);
 	}
 #endif
@@ -709,7 +709,7 @@ interpret(Cntxt stk, YYSTREE lt, ValPtr res)
 	int stamp, i = res->len = 0, r = 0;
 
 #ifdef HAVE_TIMES
-	long clk = 0;
+	lng clk = 0;
 	struct tms timer;
 
 	@:profileCapture@
@@ -2487,7 +2487,7 @@ quote(char *buf, int lim)
 }
 
 void
-onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTREE lt)
+onlineProfilerEvent(char *caller, lng clk, lng ticks, struct tms *timer, YYSTREE lt)
 {
 	static struct mallinfo prevMalloc;
 	static struct rusage prevUsage;
@@ -2568,39 +2568,39 @@ onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTR
 	    quote(namebuf, 256);
 	log("\"%s\",\t", namebuf);
 
-	log("%d,\t", ticks);
-	log("%d,\t", clk);
+	log(LLFMT ",\t", ticks);
+	log(LLFMT ",\t", clk);
 
 	namebuf[0] = 0;
 	yydeparseCall(monet_clients, lt, namebuf, namebuf + 256);
 	quote(namebuf, 256);
 	log("\"%s\",\t", namebuf);
 
-	log("%d,\t", newTms.tms_utime - timer->tms_utime);
-	log("%d,\t", newTms.tms_cutime - timer->tms_cutime);
-	log("%d,\t", newTms.tms_stime - timer->tms_stime);
-	log("%d,\t", newTms.tms_cstime - timer->tms_cstime);
+	log(LLFMT ",\t", (lng) (newTms.tms_utime - timer->tms_utime));
+	log(LLFMT ",\t", (lng) (newTms.tms_cutime - timer->tms_cutime));
+	log(LLFMT ",\t", (lng) (newTms.tms_stime - timer->tms_stime));
+	log(LLFMT ",\t", (lng) (newTms.tms_cstime - timer->tms_cstime));
 
-	log("%d,\t", infoUsage.ru_maxrss);
-	log("%d,\t", infoMalloc.arena - prevMalloc.arena);
-	log("%d,\t", infoMalloc.ordblks - prevMalloc.ordblks);
-	log("%d,\t", infoMalloc.smblks - prevMalloc.smblks);
-	log("%d,\t", infoMalloc.hblkhd - prevMalloc.hblkhd);
-	log("%d,\t", infoMalloc.hblks - prevMalloc.hblks);
-	log("%d,\t", infoMalloc.fsmblks - prevMalloc.fsmblks);
-	log("%d,\t", infoMalloc.uordblks - prevMalloc.uordblks);
+	log(LLFMT ",\t", (lng) (infoUsage.ru_maxrss));
+	log(LLFMT ",\t", (lng) (infoMalloc.arena - prevMalloc.arena));
+	log(LLFMT ",\t", (lng) (infoMalloc.ordblks - prevMalloc.ordblks));
+	log(LLFMT ",\t", (lng) (infoMalloc.smblks - prevMalloc.smblks));
+	log(LLFMT ",\t", (lng) (infoMalloc.hblkhd - prevMalloc.hblkhd));
+	log(LLFMT ",\t", (lng) (infoMalloc.hblks - prevMalloc.hblks));
+	log(LLFMT ",\t", (lng) (infoMalloc.fsmblks - prevMalloc.fsmblks));
+	log(LLFMT ",\t", (lng) (infoMalloc.uordblks - prevMalloc.uordblks));
 	prevMalloc = infoMalloc;
 
-	log("%d,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
-	log("%d,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-	log("%d,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-	log("%d,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-	log("%d,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-	log("%d,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-	log("%d,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+	log(LLFMT ",\t", (lng) (infoUsage.ru_minflt - prevUsage.ru_minflt));
+	log(LLFMT ",\t", (lng) (infoUsage.ru_majflt - prevUsage.ru_majflt));
+	log(LLFMT ",\t", (lng) (infoUsage.ru_nswap - prevUsage.ru_nswap));
+	log(LLFMT ",\t", (lng) (infoUsage.ru_inblock - prevUsage.ru_inblock));
+	log(LLFMT ",\t", (lng) (infoUsage.ru_oublock - prevUsage.ru_oublock));
+	log(LLFMT ",\t", (lng) (infoUsage.ru_nvcsw - prevUsage.ru_nvcsw));
+	log(LLFMT ",\t", (lng) (infoUsage.ru_nivcsw - prevUsage.ru_nivcsw));
 	prevUsage = infoUsage;
 
-	log("%d ]\n", eventcounter);
+	log(LLFMT " ]\n", (lng) (eventcounter));
 	eventcounter++;
 	if (eventstream && stream_flush(eventstream))
 		eventstream = 0;
