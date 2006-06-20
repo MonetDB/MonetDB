@@ -103,7 +103,7 @@ CLKalarm(time_t t, str action)
 	int j;
 	int k;
 
-	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push %d \n", t);
+	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push " LLFMT "\n", (lng) t);
 
 	if (timerTop == MAXtimer) {
 		GDKerror("CLKalarm: timer stack overflow\n");
