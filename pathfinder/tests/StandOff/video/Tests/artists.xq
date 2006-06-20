@@ -1,4 +1,4 @@
-let $d := doc("$TSTSRCBASE/tests/XMark/Tests/video.xml")
+let $d := doc("video.xml")
 for $b in distinct-values($d//song/@artist)
 return element { "music-per-artist" } {
   let $s := $d//song[@artist=$b]
