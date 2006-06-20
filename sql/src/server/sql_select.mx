@@ -227,7 +227,7 @@ flat_subquery(mvc *sql, symbol *sq)
  * A special column reference is 'rowid'.
  */
 static stmt *
-sql_var_ref(mvc *sql, scope *scp, char *name)
+sql_var_ref(mvc *sql, scope *scp, char *name, int at)
 {
 	char *tpe = sql_get_type(sql, name);
 
@@ -245,7 +245,12 @@ sql_var_ref(mvc *sql, scope *scp, char *name)
 		_DELETE(tpe);
 		return res;
 	} else {
-		return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+		if (at) {
+			return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+		} else {
+	
+			return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
+		}
 	}
 }
 
@@ -273,7 +278,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			/* maybe simple param */
 			sql_arg *a = sql_bind_param(sql, name);
 			if (!a) {
-				return sql_var_ref(sql, scp, name);
+				return sql_var_ref(sql, scp, name, 0);
 			} else {
 				cs = stmt_var(a->name, &a->type);
 			}
@@ -1133,7 +1138,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	case SQL_COLUMN:
 		return sql_column_value(sql, scp, se, grp, subset, f);
 	case SQL_NAME:
-		return sql_var_ref(sql, scp, se->data.sval);
+		return sql_var_ref(sql, scp, se->data.sval, 1);
 	case SQL_SELECT:{
 		stmt *s = scope_subquery(sql, scp, se);
 

@@ -192,3 +192,16 @@ INSERT INTO userss(name,passwd,email,affiliation)
 INSERT INTO userss(name,passwd,email,affiliation) 
 	VALUES ('manzano15','manzano','manzano@cwi.nl','cwi');
 
+DROP TABLE experiment;
+DROP TABLE scenario;
+DROP TABLE userss;
+DROP TABLE configuration;
+DROP TABLE system;
+DROP TABLE target;
+DROP TABLE tapestry;
+DROP TABLE query_walk;
+DROP TABLE partition;
+DROP TABLE results;
+drop sequence conf_id_seq;
+drop sequence scenario_id_seq;
+drop sequence results_id_seq;
