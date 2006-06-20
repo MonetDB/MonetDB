@@ -3564,7 +3564,7 @@ proc build_indices(bat[void,bat] ws, oid cont) : void
     var n := k.leftfetchjoin(pre_nid).tmark(0@0);
     var b := ws.fetch(KND_NID.find(chr(i)) + (_KND_NID_0 - KND_NID_0)).find(cont);
     b := b.access(BAT_WRITE).delete().insert(n);
-    if ((i = 0) or (i = 3)) {
+    if ((i = int(ELEMENT)) or (i = int(PI))) {
       var p := k.leftfetchjoin(pre_prop).tmark(0@0);
       var b := ws.fetch(KND_PROP.find(chr(i)) + (_KND_NID_0 - KND_NID_0)).find(cont);
       b := b.access(BAT_WRITE).delete().insert(p);
@@ -5682,9 +5682,9 @@ CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
 	prev_item = oid_nil;
 	pre = oid_nil;
 	for (cur_size = fst_size ; cur_size < lst_size ; cur_size += bs_size, cur_item += bs_item, cur_iter += bs_iter) {
-		oid iter = *(oid*)BUNtloc(bat_iter, cur_iter);
-		oid item = *(oid*)BUNtloc(bat_item, cur_item);
-		int *sze =  (int*)BUNtloc(bat_size, cur_size);
+		oid iter = *(oid*)BUNtail(bat_iter, cur_iter);
+		oid item = *(oid*)BUNtail(bat_item, cur_item);
+		int *sze =  (int*)BUNtail(bat_size, cur_size);
 		int size = *sze;
 		    pre  = *(oid*)BUNhead(bat_size, cur_size);
 		while (stack_top >= 0 && ( iter != prev_iter || item > stack[stack_top].limit || item < prev_item )) {
