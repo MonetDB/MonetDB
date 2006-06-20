@@ -22,3 +22,4 @@ reset_session_vars.SF-1505987
 cast_interval2time.SF-1488247
 drop_sequence_crash.SF-1505973
 drop_sequence_crash_2.SF-1505973
+case_in_aggr_bug.SF-1506545
