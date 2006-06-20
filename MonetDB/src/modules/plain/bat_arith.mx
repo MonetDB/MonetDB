@@ -417,7 +417,7 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 @:implementations(sht,-,sub,0,1)@
 @:implementations(sht,*,mul,0,2)@
 @:implementations(sht,/,div,1,1)@
-@:implementations(sht,%,mod,1,0)@
+@:implementations(sht,%,mod,1,0,%)@
 @:implementations(int,+,add,0,2)@
 @:implementations(int,-,sub,0,1)@
 @:implementations(int,*,mul,0,2)@
