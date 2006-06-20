@@ -15,3 +15,6 @@ mposjoin_void_void.SF-1404023.q1c
 mposjoin_void_void.SF-1404023.q2
 module_order_matters.SF-1400200
 empty_distinct_values.SF-1431357
+string_join.SF-1505520
+nested_doc.SF-1446426
+nlthetajoin.SF-1437299
