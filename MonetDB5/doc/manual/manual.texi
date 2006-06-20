@@ -7,7 +7,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED June 16, 2006
+@set UPDATED June 21, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -64,8 +64,7 @@ using the
 * Programming Interfaces::
 * Embedded MonetDB::
 * MonetDB Assembler Language::
-* MAL Modules::
-* MAL interpreter::
+* MAL Interpreter::
 * Optimizer landscape::
 * Optimizer toolkit::
 * Program Debugging::
@@ -182,7 +181,7 @@ using the
 @node Embedded MonetDB, A Simple Example, The ODBC Library , Top
 @include Assets/Mbedded.texi
 
-@node MonetDB Assembler Language, MAL instructions, Embedded MonetDB Limitations , Top
+@node MonetDB Assembler Language, MAL variables, Embedded MonetDB Limitations , Top
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Polymorphic Functions ,Flow of control , MonetDB Assembler Language
@@ -196,21 +195,18 @@ using the
 @node Atomary types, Boxed variables, Type resolution, MonetDB Assembler Language
 @include mal_atom.bdy.texi
 
-@node Boxed variables, Property management , Atomary types, MonetDB Assembler Language
+@node Boxed variables, Property Management , Atomary types, MonetDB Assembler Language
 @include mal_box.bdy.texi
 
-@node Property management,  MAL Modules, Boxed variables, MonetDB Assembler Language
+@node Property Management,  MAL Interpreter, Boxed variables, MonetDB Assembler Language
 @include mal_properties.bdy.texi
 
-@node MAL Modules , MAL interpreter , Property management, Top
-@include mal_import.bdy.texi
-
-@node MAL interpreter, Optimizer landscape, MAL Modules, Top
+@node MAL Interpreter, Optimizer landscape, Property Management, Top
 @include mal_interpreter.bdy.texi
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Optimizer landscape, Optimizers, MAL interpreter, Top
+@node Optimizer landscape, Optimizers, MAL Interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
