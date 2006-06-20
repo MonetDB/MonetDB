@@ -77,11 +77,6 @@
 @:install_module(uchr)@
 @:install_module(qt)@
 
-/* pf */
-@:install_module(pathfinder)@
-@:install_module(pf_support)@
-@:install_module(pf_burk)@
-
 #ifndef smallTOC
 /* plain */
 @:install_module(counters)@
