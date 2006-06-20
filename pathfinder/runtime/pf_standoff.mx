@@ -901,7 +901,7 @@ PROC ll_standoff_@1_@2(BAT[void,oid] void_DOCnodes,
   result := result.leftjoin(sel_region2);
   result := result.leftjoin(region_pre);
 
-  # mt have [iter,pre] order. First sort on iter (in-place, with order()).
+  # must have [iter,pre] order. First sort on iter (in-place, with order()).
   result.chk_order().access(BAT_WRITE).order().access(BAT_READ);
 
   # get positions in [iter,pre] order with CTrefine, and fetch positionally

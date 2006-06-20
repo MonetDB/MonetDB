@@ -11,6 +11,8 @@ stdout of test 'load` in directory 'runtime` itself:
 var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
+mods.insert(nil,"pf_standoff");
+mods.insert(nil,"xquery_rpc");
 
 loaded();
 #---------------------------------#
@@ -99,7 +101,71 @@ loading module 'pathfinder'
 [ "xtables",	  1		  ]
 dropping module 'pathfinder'
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+loading module 'pf_standoff'
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "mmath",	  1		  ]
+[ "pf_standoff",  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+dropping module 'pf_standoff'
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+loading module 'xquery_rpc'
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "xquery_rpc",  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+dropping module 'xquery_rpc'
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]

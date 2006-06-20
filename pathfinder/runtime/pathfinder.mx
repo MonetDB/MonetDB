@@ -68,7 +68,7 @@ module(monettime);
 # standoff extensions
 var standoff := false;
 if (monet_environment.exist("standoff"))
-    standoff := =(monet_environment.find("standoff"),"enabled"); 
+     standoff := =(monet_environment.find("standoff"),"enabled"); 
 
 if (standoff) {
     module("pf_standoff");

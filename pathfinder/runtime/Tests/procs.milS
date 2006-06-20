@@ -1,4 +1,5 @@
 module(pathfinder);
+module(pf_standoff);
 module(xquery_rpc);
 procs();
 quit();
