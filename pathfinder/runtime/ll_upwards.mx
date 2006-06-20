@@ -340,7 +340,7 @@ ll_upwards(               /* RESULT: */
             if (bn) {
                 if (ll_upwards_parent(
                     context_result = (duple*) BUNfirst(bn), n, 
-                    bounds, iter_stack, 
+                    bounds, iter_stack+1, 
                     pre_size,
                     root, root+BATcount(size_bat), height, 
                     min_iter, context, n))
