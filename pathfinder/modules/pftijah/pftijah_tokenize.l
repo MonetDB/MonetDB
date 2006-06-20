@@ -44,6 +44,8 @@ S                                   {WhiteSpaceChar}+
 {S}	                            { /* zap white space */ }
 
 {Word}                              { /* case WORD */ 
+                                      for (c = pftijah_tokenizetext; *c != '\0'; c++) 
+                                        *c = tolower(*c); 
                                       return 1;
 				    }
 
@@ -53,12 +55,14 @@ S                                   {WhiteSpaceChar}+
                                       e = pftijah_tokenizetext;
                                       for (c = pftijah_tokenizetext; *c != '\0'; c++) 
                                         if (*c != '-') 
-                                          *(e++) = *c;
+                                          *(e++) = tolower(*c);
                                       *e = '\0';
                                       return 1;
 				    }
 
 {Word}[\']{Letter}{1,2}             { /* case CONTRACTION */ 
+                                      for (c = pftijah_tokenizetext; *c != '\0'; c++) 
+                                        *c = tolower(*c); 
                                       return 1;
 				    }
 
@@ -66,7 +70,7 @@ S                                   {WhiteSpaceChar}+
                                       e = pftijah_tokenizetext;
                                       for (c = pftijah_tokenizetext; *c != '\0'; c++) 
                                         if (*c != '.') 
-                                          *(e++) = *c;
+                                          *(e++) = tolower(*c);
                                       *e = '\0';
                                       return 1;
                                     }

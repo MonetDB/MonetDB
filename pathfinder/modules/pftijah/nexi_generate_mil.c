@@ -692,7 +692,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         
         case MODEL_NLLR :
             
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR_batloop_aggregation(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR_batloop(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
         
           break;
         
@@ -1012,6 +1012,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
     MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
     MILPRINTF(MILOUT, "if ( retNum >= 0 ) { R%d := R%d.slice(0, retNum - 1); }\n", com_num, com_num);
     MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
+    MILPRINTF(MILOUT, "}\n");
       
     p_com_array++;
     p1_command = *p_com_array;

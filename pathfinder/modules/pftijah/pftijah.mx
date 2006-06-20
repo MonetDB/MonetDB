@@ -387,6 +387,7 @@ PROC containing(bat left, bat right) : bat :=
 PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
      var terms := Qterms_to_void_tid( Qterms );
+     if (terms.count() = 0) {return new[oid,dbl]};
      var t1 := time();
      var tind := bat("tj_" + collName + "_TermIndex");
      var pres := bat("tj_" + collName + "_Terms");
@@ -459,11 +460,12 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, fl
 PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
      var terms := Qterms_to_void_tid( Qterms );
+     if (terms.count() = 0) {return new[oid,dbl]};
      var t1 := time();
      var tind := bat("tj_" + collName + "_TermIndex");
      var pres := bat("tj_" + collName + "_Terms");
      var elem_frq := bat("tj_" + collName + "_size").semijoin(left);
-     var elems := left.mark(0@0).reverse();
+     var elems := left.hmark(0@0);
      var iter := elems.mirror();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := pres.count();
@@ -495,7 +497,6 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
 						 false, false, min(iter), max(iter), false);
                var t7 := time();
 	       cands := nil;
-	       iter := nil;
 	       tid_pre := nil;
      	       elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
 	       var tmp := elem_termpre.reverse().histogram();
@@ -529,12 +530,12 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
 PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
      var terms := Qterms_to_void_tid( Qterms );
+     if (terms.count() = 0) {return new[oid,dbl]};
      var t1 := time();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := bat("tj_" + collName + "_Terms").count();
      _lmbd :*= collFrq; 
      var t2 := time();
-     terms := terms.tsort().tmark(0@0);
      if (terms.count() = 0) return left;
      var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
      var t3 := time();
@@ -545,8 +546,8 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
      var _tid_frq := [/](_lmbd, tid_frq);
      tid_frq := nil;
      var elem_frq := bat("tj_" + collName + "_size").semijoin(elems);
-     elems := elems.mark(0@0).reverse();
-     var cands := tid_pre.reverse().sort().mark(0@0).reverse();
+     elems := elems.hmark(0@0);
+     var cands := tid_pre.reverse().sort().hmark(0@0);
      var iter := elems.mirror();
      if (DEBUG){ 
         printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
@@ -594,6 +595,7 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qt
 PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
      var terms := Qterms_to_void_tid( Qterms );
+     if (terms.count() = 0) {return new[oid,dbl]};
      var t1 := time();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := bat("tj_" + collName + "_Terms").count();
@@ -665,6 +667,7 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
      var terms := Qterms_to_void_tid( Qterms );
+     if (terms.count() = 0) {return new[oid,dbl]};
      var t1 := time();
      var _lmbd := (1.0 - lmbd) / lmbd;
      var collFrq := bat("tj_" + collName + "_Terms").count();
