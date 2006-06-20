@@ -624,12 +624,13 @@ Module: "logger"
 
 Module: "mapi"
 
-[ 32 ]
-[ 32 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 27 ]
+[ 27 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																																								  # name
 # str			str		str										str																																								  # type
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "client",		  "BUILTIN:   ",  "client(stream in, stream out) : void ",				  "mapi-client"																												  ]
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",							  "not available"																																						  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"																																						  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"																																						  ]
@@ -638,27 +639,21 @@ Module: "mapi"
 [ "listen",		  "PROC:      ",  "listen() : void",								  "Start the Mapi listener on 50000."																																				  ]
 [ "listen",		  "PROC:      ",  "listen(bit) : void",								  "Start the Mapi listener on 50000.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																														  ]
 [ "listen",		  "PROC:      ",  "listen(int) : void",								  "Start the Mapi listener on <port>."																																				  ]
-[ "listen",		  "PROC:      ",  "listen(int, bit) : void",							  "Start the Mapi listener on <port>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																														  ]
+[ "listen",		  "PROC:      ",  "listen(int, bit) : void",						  "Start the Mapi listener on <port>.\nIf <open> is true, accept connections from everywhere, otherwise only from localhost."														  ]
+[ "listen",		  "PROC:      ",  "listen(int, int) : void",						  "Start the Mapi listener on <port> for <maxusers>."																							  ]
 [ "listen",		  "PROC:      ",  "listen(int, int) : void",							  "Start the Mapi listener on <port> for <maxusers>."																																		  ]
+[ "listen",		  "PROC:      ",  "listen(int, int, bit) : void",					  "Start the Mapi listener on <port> for <maxusers>.\nIf <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."	  ]
 [ "listen",		  "PROC:      ",  "listen(int, int, bit) : void",						  "Start the Mapi listener on <port> for <maxusers>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																												  ]
-[ "listen",		  "PROC:      ",  "listen(int, int, str) : void",						  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."																		  ]
-[ "listen",		  "PROC:      ",  "listen(int, int, str, bit) : void",						  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."	  ]
-[ "listen",		  "PROC:      ",  "listen(int, str) : void",							  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
-[ "listen",		  "PROC:      ",  "listen(int, str, bit) : void",						  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																					  ]
-[ "listen",		  "PROC:      ",  "listen(int, str, int, str) : void",						  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."																  ]
-[ "listen",		  "PROC:      ",  "listen(int, str, int, str, bit) : void",					  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."										  ]
-[ "listen",		  "PROC:      ",  "listen(str) : void",								  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
-[ "listen",		  "PROC:      ",  "listen(str, bit) : void",							  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																					  ]
-[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str) : void",							  "not available"																																											  ]
-[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str, bit) : void",						  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."																					  ]
-[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str, bit, ptr) : void",					  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."										  ]
-[ "mapi_listen2",	  "BUILTIN:   ",  "mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open, ptr handle) ",	  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."		  ]
-[ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "listen",		  "PROC:      ",  "listen(int, str, int) : void",					  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>."																					  ]
+[ "mapi_listen",	  "BUILTIN:   ",  "mapi_listen(int port, str sockfile, int maxusers, bit open) ",	  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."				  ]
+[ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile) ",  "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format."								  ]
+[ "mapi_register",	  "COMMAND:   ",  "mapi_register(ptr) : void",						  "register a frontend"																											  ]
+[ "mapi_running",	  "COMMAND:   ",  "mapi_running() : bit",						  "Is there an mapi listen active ?"																									  ]
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start() : void",							  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start(bit) : void",							  "not available"																																						  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '1' character."																																		  ]
-[ "milclient",		  "BUILTIN:   ",  "milclient(stream in, stream out) : void ",					  "mapi-client"																																												  ]
+[ "mil_frontend",	  "COMMAND:   ",  "mil_frontend() : ptr",						  "create/return the mil_frontend"																									  ]
 [ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",							  "Read a string from <S> until a newline."																																			  ]
 [ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",						  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."																												  ]
 [ "stream_until",	  "COMMAND:   ",  "stream_until(Stream, str) : str",						  "read a string from <S> until the <stop> word"																																		  ]
@@ -883,18 +878,20 @@ Module: "pcl"
 
 Module: "pcre"
 
-[ 6 ]
-[ 6 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 8 ]
+[ 8 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature							help								  # name
 # str		str		str								str								  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "pcre_compile", "COMMAND:   ",  "pcre_compile(str) : pcre",					  "compile a pattern"						  ]
 [ "pcre_match",	  "COMMAND:   ",  "pcre_match(pcre, str) : bit",				  "match a pattern"						  ]
+[ "pcre_quote",	  "COMMAND:   ",  "pcre_quote(str) : str",						  "Return a PCRE pattern string that matches the argument exactly."																																																																																				  ]
 [ "pcre_replace", "COMMAND:   ",  "pcre_replace(BAT[any::1,str], str, str, str) : BAT[any::1,str]",	  "Replace _all_ matches of \"pattern\" in every string contained in\\n   \"origin_strs\" with \"replacement\".\n\\n   If no matches found in a string, the string is copied to the returned BAT."																																																																				  ]
 [ "pcre_replace", "COMMAND:   ",  "pcre_replace(str, str, str, str) : str",				  "Replace _all_ matches of \"pattern\" in \"origin_str\" with\\n\t\"replacement\".\n\\n    Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n\\n\t'e': if present, an empty string is considered to be a valid match\n\\n\t'i': if present, the match operates in case-insensitive mode. Otherwise, in\\n\t     case-sensitive mode.\n\\n    'm': if present, the match operates in multi-line mode.\n\\n\t's': if present, the match operates in \"dot-all\"\n\tThe specifications of the flags can be found in \"man pcreapi\"\n\\n\tThe flag letters may be repeated.\n\\n\tNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n\\n\tReturns the replaced string, or if no matches found, the original string."	  ]
 [ "pcre_select",  "COMMAND:   ",  "pcre_select(str, BAT[any::1,str]) : BAT[any::1,str]",	  "Select tuples based on the pattern"				  ]
 [ "pcre_uselect", "COMMAND:   ",  "pcre_uselect(str, BAT[any::1,str]) : BAT[any::1,void]",	  "Select tuples based on the pattern, only returning the head"	  ]
+[ "sql2pcre",	  "COMMAND:   ",  "sql2pcre(str, str) : str",						  "Convert a SQL like pattern with the given escape character into a PCRE pattern."																																																																																		  ]
 
 Module: "pqueue"
 
