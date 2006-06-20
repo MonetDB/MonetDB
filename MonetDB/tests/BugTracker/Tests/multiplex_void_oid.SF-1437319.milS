@@ -1,5 +1,0 @@
-var c := new(void,void).seqbase(0@0).reverse().seqbase(0@0).append(1@0).append(1@0);
-var d := new(void,void).seqbase(0@0).reverse().seqbase(0@0).append(1@0).append(2@0);
-c.print();
-d.print();
-[<](c,d).print();

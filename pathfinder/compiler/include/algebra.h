@@ -44,8 +44,8 @@
  *
  * Actual attribute types can be any combination of types from here
  * (polymorphism). We represent these polymorphic algebra types with
- * help of a bit-vector.  Each of the bits corresponds to one of the
- * const values here.
+ * help of a bit-vector. Each of the bits corresponds to one of the
+ * enumeration types here.
  *
  * Observe that the type #aat_node has four bits set, as nodes are split
  * in MonetDB into attribute nodes (#aat_anode) and other nodes (#aat_pnode).
@@ -58,24 +58,26 @@
  *   first sort by the frag BAT, then by the pre BAT this way.
  *   This implements document order across documents correctly.
  */
-#define aat_nat   0x0001 /**< algebra simple atomic type natural number */
-#define aat_int   0x0002 /**< algebra simple atomic type integer */
-#define aat_str   0x0004 /**< algebra simple atomic type string  */
-#define aat_dec   0x0008 /**< algebra simple atomic type decimal */
-#define aat_dbl   0x0010 /**< algebra simple atomic type double  */
-#define aat_bln   0x0020 /**< algebra simple atomic type boolean  */
-#define aat_qname 0x0040 /**< algebra simple atomic type QName  */
-#define aat_node  0x0F00 /**< algebra simple atomic type node */ 
-#define aat_anode 0x0C00 /**< algebra simple atomic type attribute */ 
-#define aat_attr  0x0800 /**< an attribute is represented 
+enum PFalg_simple_type_t {
+      aat_nat   = 0x0001  /**< algebra simple atomic type natural number */
+    , aat_int   = 0x0002  /**< algebra simple atomic type integer */
+    , aat_str   = 0x0004  /**< algebra simple atomic type string  */
+    , aat_dec   = 0x0008  /**< algebra simple atomic type decimal */
+    , aat_dbl   = 0x0010  /**< algebra simple atomic type double  */
+    , aat_bln   = 0x0020  /**< algebra simple atomic type boolean  */
+    , aat_qname = 0x0040  /**< algebra simple atomic type QName  */
+    , aat_node  = 0x0F00  /**< algebra simple atomic type node */ 
+    , aat_anode = 0x0C00  /**< algebra simple atomic type attribute */ 
+    , aat_attr  = 0x0800  /**< an attribute is represented 
                                by an attr value... */
-#define aat_afrag 0x0400 /**< ...and a attribute fragment */
-#define aat_pnode 0x0300 /**< algebra simple atomic type representing
+    , aat_afrag = 0x0400  /**< ...and a attribute fragment */
+    , aat_pnode = 0x0300  /**< algebra simple atomic type representing
                                all other nodes */ 
-#define aat_pre   0x0200 /**< a node is represented by a pre value... */
-#define aat_pfrag 0x0100 /**< ...and a node fragment */
+    , aat_pre   = 0x0200  /**< a node is represented by a pre value... */
+    , aat_pfrag = 0x0100  /**< ...and a node fragment */
+};
 /** Simple atomic types in our algebra */
-typedef unsigned int PFalg_simple_type_t;
+typedef enum PFalg_simple_type_t PFalg_simple_type_t;
 
 #define monomorphic(a) ((a) == aat_nat || (a) == aat_int || (a) == aat_str \
                         || (a) == aat_dec || (a) == aat_dbl || (a) == aat_bln \
@@ -139,44 +141,44 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 
 /* ................ algebra attribute lists ................ */
 
-/** An attribute (name) is represented by constants 
-        (as these are bit vectors we don't use an enum) */
-#define att_NULL    0x00000000    /**< cope with empty partions */
-#define att_iter    0x00000001    /**< iter column */
-#define att_item    0x00000002    /**< item column */ 
-#define att_pos     0x00000004    /**< pos column */  
-#define att_iter1   0x00000008    /**< iter1 column */
-#define att_item1   0x00000010    /**< item1 column */
-#define att_pos1    0x00000020    /**< pos1 column */
-#define att_inner   0x00000040    /**< inner column */
-#define att_outer   0x00000080    /**< outer column */
-#define att_sort    0x00000100    /**< sort column */
-#define att_sort1   0x00000200    /**< sort column 1 */
-#define att_sort2   0x00000400    /**< sort column 2 */
-#define att_sort3   0x00000800    /**< sort column 3 */
-#define att_sort4   0x00001000    /**< sort column 4 */
-#define att_sort5   0x00002000    /**< sort column 5 */
-#define att_sort6   0x00004000    /**< sort column 6 */
-#define att_sort7   0x00008000    /**< sort column 7 */
-#define att_sort8   0x00010000    /**< sort column 8 */
-#define att_sort9   0x00020000    /**< sort column 9 */
-#define att_sort10  0x00040000    /**< sort column 10 */
-#define att_sort11  0x00080000    /**< sort column 11 */
-#define att_sort12  0x00100000    /**< sort column 12 */
-#define att_sort13  0x00200000    /**< sort column 13 */
-#define att_sort14  0x00400000    /**< sort column 14 */
-#define att_res     0x00800000    /**< res column */
-#define att_ord     0x01000000    /**< ord column */
-#define att_res1    0x02000000    /**< res1 column */
-#define att_cast    0x04000000    /**< cast column */
-#define att_subty   0x08000000    /**< subty column */
-#define att_itemty  0x10000000    /**< itemty column */
-#define att_notsub  0x20000000    /**< notsub column */
-#define att_isint   0x40000000    /**< isint column */
-#define att_isdec   0x80000000    /**< isdec column */
-
+/** An attribute (name) is represented by an enum */
+enum PFalg_att_t {
+      att_NULL    = 0x00000000    /**< cope with empty partions */
+    , att_iter    = 0x00000001    /**< iter column */
+    , att_item    = 0x00000002    /**< item column */ 
+    , att_pos     = 0x00000004    /**< pos column */  
+    , att_iter1   = 0x00000008    /**< iter1 column */
+    , att_item1   = 0x00000010    /**< item1 column */
+    , att_pos1    = 0x00000020    /**< pos1 column */
+    , att_inner   = 0x00000040    /**< inner column */
+    , att_outer   = 0x00000080    /**< outer column */
+    , att_sort    = 0x00000100    /**< sort column */
+    , att_sort1   = 0x00000200    /**< sort column 1 */
+    , att_sort2   = 0x00000400    /**< sort column 2 */
+    , att_sort3   = 0x00000800    /**< sort column 3 */
+    , att_sort4   = 0x00001000    /**< sort column 4 */
+    , att_sort5   = 0x00002000    /**< sort column 5 */
+    , att_sort6   = 0x00004000    /**< sort column 6 */
+    , att_sort7   = 0x00008000    /**< sort column 7 */
+    , att_sort8   = 0x00010000    /**< sort column 8 */
+    , att_sort9   = 0x00020000    /**< sort column 9 */
+    , att_sort10  = 0x00040000    /**< sort column 10 */
+    , att_sort11  = 0x00080000    /**< sort column 11 */
+    , att_sort12  = 0x00100000    /**< sort column 12 */
+    , att_sort13  = 0x00200000    /**< sort column 13 */
+    , att_sort14  = 0x00400000    /**< sort column 14 */
+    , att_res     = 0x00800000    /**< res column */
+    , att_ord     = 0x01000000    /**< ord column */
+    , att_res1    = 0x02000000    /**< res1 column */
+    , att_cast    = 0x04000000    /**< cast column */
+    , att_subty   = 0x08000000    /**< subty column */
+    , att_itemty  = 0x10000000    /**< itemty column */
+    , att_notsub  = 0x20000000    /**< notsub column */
+    , att_isint   = 0x40000000    /**< isint column */
+    , att_isdec   = 0x80000000    /**< isdec column */
+};
 /** attribute names */
-typedef unsigned int PFalg_att_t;
+typedef enum PFalg_att_t PFalg_att_t;
 
 /** A list of attributes (actually: attribute names) */
 struct PFalg_attlist_t {
