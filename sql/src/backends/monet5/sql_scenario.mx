@@ -858,9 +858,9 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
-	/* we need to beable to switch back from explain and profile modes */
+	/* we need to be able to switch back from explain and profile modes */
 	if ((c->mode == m_explain || c->mode == m_profile) && 
-	    c->sym->token == SQL_SET)
+	    m->sym->token == SQL_SET)
 		c->mode = m_normal;
 @-
 We have dealt with the first parsing step and advanced the input reader
