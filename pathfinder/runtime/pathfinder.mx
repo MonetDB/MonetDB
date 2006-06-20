@@ -65,6 +65,15 @@
 module(mapi);       # remote client access
 module(monettime); 
 
+# standoff extensions
+var standoff := false;
+if (monet_environment.exist("standoff"))
+    standoff := =(monet_environment.find("standoff"),"enabled"); 
+
+if (standoff) {
+    module("pf_standoff");
+}
+
 PROC pfstart(bit open, lng sz) : void {
         xquery_start_query_cache(sz);
 	mapi_register(xquery_frontend());
@@ -364,11 +373,6 @@ var ws_dsk; # of those, all persistent bats on disk for a document container , a
 var ws_rid; # of those, all master rid_* bats, and their (remapped) pre_* views
 var ws_mem; # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
 var ws_shr; # all bats delivered by shredder, and their future persistent names
-
-# standoff extensions
-var standoff := false;
-if (monet_environment.exist("standoff"))
-    standoff := =(monet_environment.find("standoff"),"enabled"); 
 
 # initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
 # note that this is required for concurrent MapiClient MIL sessions to share each other's variables.

@@ -810,7 +810,7 @@ PROC @1(BAT[oid,oid] iter, BAT[oid,oid] ctx, oid cont, BAT[oid,bat] ws, int orde
     var pre_level := ws.fetch(PRE_LEVEL).find(cont);
 
     # FIXME: the select-operation can be done more efficiently using the PRE_SIZE-bat
-    var void_DOCnodes := pre_level.select(chr(-1)).mark(nil).reverse();
+    var void_DOCnodes := pre_level.ord_uselect(chr(-1)).hmark(nil);
 
     var region_pre := ws.fetch(REGION_PRE).find(cont);
     var region_start := ws.fetch(REGION_START).find(cont);
@@ -831,8 +831,6 @@ PROC @1(BAT[oid,oid] iter, BAT[oid,oid] ctx, oid cont, BAT[oid,bat] ws, int orde
     if (loop_lifted) 
     { 
       result := ll_@3(void_DOCnodes, region_pre, region_start, region_end, cands, iter, ctx); 
-      # FIXME: properly sort first on iter, and then on item.
-      # result := result.reverse().sort().reverse();
     } 
     if (not(loop_lifted)) 
     {  
@@ -878,15 +876,15 @@ PROC ll_standoff_@1_@2(BAT[void,oid] void_DOCnodes,
   var source_region := ctx.join(region_pre.reverse()).reverse();
   var region_iter := source_region.leftjoin(iter); 
   source_region := source_region.mirror().leftjoin(region_start).sort().project(nil).reverse();
-  var source_iter := source_region.leftjoin(region_iter).reverse().mark(0@0).reverse();
+  var source_iter := source_region.leftjoin(region_iter).tmark(0@0);
   
   #  try to get a iter_start...
-  var source_start := source_region.leftjoin(region_start).reverse().mark(0@0).reverse(); 
+  var source_start := source_region.leftjoin(region_start).tmark(0@0); 
   var iter_start := source_iter.[oid]().reverse().leftjoin(source_start);
-  var source_end := source_region.leftjoin(region_end).reverse().mark(0@0).reverse();     
+  var source_end := source_region.leftjoin(region_end).tmark(0@0);     
 
   var sel_region := cands.reverse().mirror().leftjoin(region_pre.reverse()).reverse().mirror();
-  var sel_region2 := sel_region.leftjoin(region_start).sort().mark(0@0).reverse();
+  var sel_region2 := sel_region.leftjoin(region_start).sort().hmark(0@0);
   var sel_start := sel_region2.leftjoin(region_start); 
   var sel_end := sel_region2.leftjoin(region_end);     
 
@@ -902,7 +900,12 @@ PROC ll_standoff_@1_@2(BAT[void,oid] void_DOCnodes,
   # and convert the regions back to PRE's
   result := result.leftjoin(sel_region2);
   result := result.leftjoin(region_pre);
-  return result;
+
+  # mt have [iter,pre] order. First sort on iter (in-place, with order()).
+  result.chk_order().access(BAT_WRITE).order().access(BAT_READ);
+
+  # get positions in [iter,pre] order with CTrefine, and fetch positionally
+  return result.fetch(CTrefine(result.hmark(0@0), result.tmark(0@0)));
 }
 @
 @= standoff_mil
@@ -917,13 +920,13 @@ PROC standoff_@1_@2(BAT[void,oid] void_DOCnodes,
   # prepare all the regions
   var source_region := ctx.reverse().join(region_pre.reverse()).reverse().mirror();
   source_region := source_region.leftjoin(region_start).sort().reverse();
-  var source_start := source_region.leftjoin(region_start).reverse().mark(0@0).reverse(); 
-  var source_end := source_region.leftjoin(region_end).reverse().mark(0@0).reverse();     
+  var source_start := source_region.leftjoin(region_start).tmark(0@0); 
+  var source_end := source_region.leftjoin(region_end).tmark(0@0);     
 
   # sel_region = region_region?
   var sel_region := cands.reverse().mirror().leftjoin(region_pre.reverse()).reverse().mirror();
   # sel_region2 is translation-table sel-region
-  var sel_region2 := sel_region.leftjoin(region_start).sort().mark(0@0).reverse();
+  var sel_region2 := sel_region.leftjoin(region_start).sort().hmark(0@0);
   var sel_start := sel_region2.leftjoin(region_start); 
   var sel_end := sel_region2.leftjoin(region_end);     
 
@@ -1118,7 +1121,7 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oi
         result_part_item := nil;
         result_part_cont := nil;
     } else {
-        var result_part_cont := cont.ord_uselect(theFrag).mark(0@0).reverse();
+        var result_part_cont := cont.ord_uselect(theFrag).hmark(0@0);
         var result_part_iter := result_part_cont.leftfetchjoin(iter);
         var result_part_item := result_part_cont.leftfetchjoin(item);
 
@@ -1134,7 +1137,7 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oi
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
-            result_part_cont := cont.ord_uselect(theFrag).mark(0@0).reverse();
+            result_part_cont := cont.ord_uselect(theFrag).hmark(0@0);
             result_part_iter := result_part_cont.leftfetchjoin(iter);
             result_part_item := result_part_cont.leftfetchjoin(item);
 
@@ -1173,8 +1176,8 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oi
 	@4
         var result := @1 (result_part_iter, result_part_item, theFrag, ws, order, cands);
 
-	result_part_iter := result.mark(0@0).reverse();
-	result_part_item := result.reverse().mark(0@0).reverse();
+	result_part_iter := result.hmark(0@0);
+	result_part_item := result.tmark(0@0);
         result_part_cont := constant2bat(theFrag);
 	cands := nil;
 
@@ -1225,32 +1228,32 @@ PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
 
   # my_ws.access(BAT_WRITE);
   var XIRAF_nodes := my_ws.fetch(QN_LOC).fetch(i).reverse().leftjoin(
-                        my_ws.fetch(QN_PREFIX).fetch(i).select(region_namespace).mirror());
+                        my_ws.fetch(QN_PREFIX).fetch(i).ord_uselect(region_namespace).mirror());
 
   var region_pre, region_start, region_end;
   var start_qn := nil, end_qn := nil;
   if (isnil(CATCH({ start_qn := XIRAF_nodes.find(region_start_attr_tag);
                     end_qn := XIRAF_nodes.find(region_end_attr_tag); }))) {
       # get all start attributes, then their numerical value, sort it, and then get the PRE's
-      var attr_attr := my_ws.fetch(ATTR_QN).find(i).uselect(start_qn).mirror();
+      var attr_attr := my_ws.fetch(ATTR_QN).find(i).ord_uselect(start_qn).mirror();
       var attr_prop := attr_attr.leftjoin(my_ws.fetch(ATTR_PROP).find(i));
       var val_start := [*tpe](attr_prop.leftjoin(my_ws.fetch(PROP_VAL).find(i))).reverse().sort();
       # Wouter?: ATTR_OWN now points to PREs? (i.o. PRE?s)
       var start_pre := val_start.leftjoin(my_ws.fetch(ATTR_OWN).find(i));
 
       # now we have a table with a PRE column and a start (numerical) column in the right order
-      var left_pre := start_pre.reverse().mark(0@0).reverse();
-      var left_start := start_pre.mark(0@0).reverse();
+      var left_pre := start_pre.tmark(0@0);
+      var left_start := start_pre.hmark(0@0);
 
       # go get the PRE numbers that have an end attribute
-      var right_attr := my_ws.fetch(ATTR_QN).find(i).uselect(end_qn).mark(0@0).reverse();
+      var right_attr := my_ws.fetch(ATTR_QN).find(i).ord_uselect(end_qn).hmark(0@0);
       var right_pre := right_attr.leftjoin(my_ws.fetch(ATTR_OWN).find(i));
       var right_end := [*tpe](right_attr.leftjoin(my_ws.fetch(ATTR_PROP).find(i)).leftjoin(my_ws.fetch(PROP_VAL).find(i)));
 
       # the region table is the intersection between start and end
       var left_right := left_pre.leftjoin(right_pre.reverse());
-      var region_left := left_right.mark(0@0).reverse();
-      var region_right := left_right.reverse().mark(0@0).reverse();
+      var region_left := left_right.hmark(0@0);
+      var region_right := left_right.tmark(0@0);
 
 ## TODO: FIXME : the following code does not work, but should assign
 ##               the largest possible region to the document-node
@@ -1307,31 +1310,31 @@ PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
 
     my_ws.access(BAT_WRITE);
     var XIRAF_nodes := my_ws.find("qn_loc").reverse().leftjoin(
-                          my_ws.find("qn_prefix").select(region_namespace).mirror());
+                          my_ws.find("qn_prefix").ord_uselect(region_namespace).mirror());
 
     var region_pre, region_start, region_end;
     var start_qn := nil, end_qn := nil;
     if (isnil(CATCH({ start_qn := XIRAF_nodes.find(region_start_attr_tag);
                       end_qn := XIRAF_nodes.find(region_end_attr_tag); }))) {
         # get all start attributes, then their numerical value, sort it, and then get the pre's
-        var attr_attr := my_ws.find("attr_qn").uselect(start_qn).mirror();
+        var attr_attr := my_ws.find("attr_qn").ord_uselect(start_qn).mirror();
         var attr_prop := attr_attr.leftjoin(my_ws.find("attr_prop"));
         var val_start := [*tpe](attr_prop.leftjoin(my_ws.find("prop_val"))).reverse().sort();
         var start_pre := val_start.leftjoin(my_ws.find("attr_own"));
 
         # now we have a table with a pre column and a start (numerical) column in the right order
-        var left_pre := start_pre.reverse().mark(0@0).reverse();
-        var left_start := start_pre.mark(0@0).reverse();
+        var left_pre := start_pre.tmark(0@0);
+        var left_start := start_pre.hmark(0@0);
 
         # go get the pre numbers that have an end attribute
-        var right_attr := my_ws.find("attr_qn").uselect(end_qn).mark(0@0).reverse();
+        var right_attr := my_ws.find("attr_qn").ord_uselect(end_qn).hmark(0@0);
         var right_pre := right_attr.leftjoin(my_ws.find("attr_own"));
         var right_end := [*tpe](right_attr.leftjoin(my_ws.find("attr_prop")).leftjoin(my_ws.find("prop_val")));
 
         # the region table is the intersection between start and end
         var left_right := left_pre.leftjoin(right_pre.reverse());
-        var region_left := left_right.mark(0@0).reverse();
-        var region_right := left_right.reverse().mark(0@0).reverse();
+        var region_left := left_right.hmark(0@0);
+        var region_right := left_right.tmark(0@0);
 
 ## TODO: FIXME : the following code does not work, but should assign
 ##               the largest possible region to the document-node
