@@ -242,6 +242,7 @@ handles and returns proper error messages upon failure.
 #include "sql_result.h"
 #include "sql_session.h"
 #include "sql_gencode.h"
+#include "sql_user.h"
 #include <sql_privileges.h>
 #include <sql_decimal.h>
 #include <sql_string.h>
@@ -302,12 +303,8 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	be_funcs->fstack = &monet4_freestack;
 	be_funcs->fcode = &monet4_freecode;
 	be_funcs->finterpret = &monet4_parse;
-	be_funcs->fcuser = &monet4_create_user;
-	be_funcs->ffuser = &monet4_find_user;
-	be_funcs->fcrpriv = &monet4_create_privileges;
-	be_funcs->fshuser = &monet4_schema_has_user;
-	be_funcs->fauser = &monet4_alter_user;
-	backend_init(be_funcs);
+	monet4_user_init(be_funcs);
+	backend_init(be_funcs);	/* we probably leak be_funcs here */
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
 		/* if the father itself is a temporary client, let

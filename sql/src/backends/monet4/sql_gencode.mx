@@ -39,11 +39,6 @@ sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
 sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr, char *name);
 sql_server_export void monet4_parse(backend_stack stk, char *code);
-sql_server_export char *monet4_create_user(list *l, char *user, char *pass, char * fullname, int schema_id, int grantor_id);
-sql_server_export int monet4_find_user(ptr mp, char *user);
-sql_server_export void monet4_create_privileges(ptr _mvc, sql_schema *s);
-sql_server_export int monet4_schema_has_user(ptr _mvc, sql_schema *s);
-sql_server_export int monet4_alter_user(ptr _mvc, str user, str passwd, oid schema_id);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -1534,6 +1529,7 @@ monet4_parse(backend_stack stack, char *cmd)
 	backend_parse((Cntxt) stack, cmd);
 }
 
+ <<<<<<< sql_gencode.mx
 char *
 monet4_create_user(list *l, char *user, char *passwd, char *fullname, int schema_id, int grantorid) {
 	char buf[BUFSIZ];
@@ -1636,6 +1632,8 @@ monet4_alter_user(ptr _mvc, str user, str passwd, oid schema_id)
 	return TRUE;
 }
 
+ =======
+ >>>>>>> 1.115
 int backend_dump(backend *be, cq *q, stmt *s)
 {
 	int err = 0;

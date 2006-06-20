@@ -69,6 +69,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_env.h"
 #include "sql_mvc.h"
 #include "sql_readline.h"
+#include "sql_user.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
@@ -77,9 +78,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_debugger.h"
 #include "bat.h"
 #include <mtime.h>
-/* include mal optimizer */
 #include "optimizer.h"
-#include "mal_authorize.h"
 
 static int SQLinitialized;
 
@@ -118,6 +117,7 @@ monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
 #endif
 }
 
+ <<<<<<< sql_scenario.mx
 static str
 monet5_drop_user(str user)
 {
@@ -281,6 +281,8 @@ monet5_alter_user(ptr _mvc, str user, str passwd, oid schema_id)
 	return TRUE;
 }
 
+ =======
+ >>>>>>> 1.185
 str
 SQLsession(str *ret)
 {
@@ -342,28 +344,26 @@ SQLinit(Client c)
 {
 	char *gmt = "GMT";
 	tzone tz;
-	backend_functions *be_funcs = GDKmalloc(sizeof(backend_functions));
+	backend_functions *be_funcs;
 
+	(void) c;		/* not used */
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinit Monet 5\n");
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
-	SQLinitialized = FALSE;
-	(void) c;		/* not used */
+	/* SQLinitialized == FALSE; */
+
+	be_funcs = GDKmalloc(sizeof(backend_functions));
+	memset((char *)be_funcs, '\0', sizeof(backend_functions));
+	be_funcs->fstack		= &monet5_freestack;
+	be_funcs->fcode			= &monet5_freecode;
+	be_funcs->finterpret	= &monet5_parse;
+	monet5_user_init(be_funcs);
+	backend_init(be_funcs); /* be_funcs probably leaks */
+
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
-	memset((char *)be_funcs, '\0', sizeof(backend_functions));
-	be_funcs->fstack = &monet5_freestack;
-	be_funcs->fcode = &monet5_freecode;
-	be_funcs->finterpret = &monet5_parse;
-	be_funcs->fcuser = &monet5_create_user;
-	be_funcs->fduser = &monet5_drop_user;
-	be_funcs->ffuser = &monet5_find_user;
-	be_funcs->fcrpriv = &monet5_create_privileges;
-	be_funcs->fshuser = &monet5_schema_has_user;
-	be_funcs->fauser = &monet5_alter_user;
-	backend_init(be_funcs);
 	if (mvc_init(FALSE, 0) < 0) {
 		return throwMessage("SQLinit", "Catalogue initialization failed\n");
 	}
@@ -395,6 +395,7 @@ SQLtrace(int *ret)
 	return MAL_SUCCEED;
 }
 
+ <<<<<<< sql_scenario.mx
 char *
 mvc_get_schema(mvc *m, char *user)
 {
@@ -466,6 +467,8 @@ mvc_get_schema(mvc *m, char *user)
 	return schema;
 }
 
+ =======
+ >>>>>>> 1.185
 @-
 It should become possible to initialize the SQL
 from a MAL program to setup an environment to
@@ -486,7 +489,7 @@ SQLinitAdmin(Client c)
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
 		/* replace user name with client record setting later on */
-		schema = mvc_get_schema(m, "monetdb");
+		schema = monet5_user_get_def_schema(m, (oid)0);
 		if (!schema) {
 			_DELETE(schema);
 			return throwMessage("SQLparser", "No schema defined\n");
@@ -516,19 +519,14 @@ SQLinitClient(Client c)
 		return msg;
 	
 	if ((backend *) c->state[PARSER] == 0) {
-		char u[BUFSIZ];
-		str user = u;
-		str tmp;
-
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
 
 		/* pass through credentials of the user if not console */
-		rethrow("SQLinitClient", tmp, AUTHresolveUser(&user, &(c->user)));
-		schema = mvc_get_schema(m, user);
+		schema = monet5_user_get_def_schema(m, c->user);
 		if (!schema) {
 			_DELETE(schema);
-			throwMal("SQLinitClient", "Schema authorization error");
+			throwMal("SQLinitClient", "schema authorization error");
 		}
 		_DELETE(schema);
 
@@ -1125,6 +1123,11 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
+
+	/* we need to be able to switch back from explain and profile modes */
+	if ((c->mode == m_explain || c->mode == m_profile) && 
+	    m->sym->token == SQL_SET)
+		c->mode = m_normal;
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).

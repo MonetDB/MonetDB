@@ -841,7 +841,7 @@ stmt_seq_next(char *seqname)
 stmt *
 stmt_internal(int st, list *ops)
 {
-	stmt *s = stmt_create(st);
+	stmt *s = stmt_create((st_type)st);
 	int len = list_length(ops);
 
 	if (len >= 1) s->op1.stval = stmt_dup(ops->h->data);

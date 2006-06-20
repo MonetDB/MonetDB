@@ -220,11 +220,16 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 	stmt *st, *v = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
 	sql_column *c = mvc_bind_column(sql, sessions, "value");
 	list *l;
+	char *comma;
 
 	if (!v) {
 		scope_close(scp);
 		return NULL;
 	}
+	/* currently we don't use the length specification */
+	comma=strchr(typename,'(');
+	if (comma)
+		*comma = 0;
 
 	/* find variable */
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -394,19 +399,19 @@ sql_sessions(mvc *m)
 
 	buf[0] = 0;
 	if (m->explain == m_normal)
-		table_insert(tr, s, "explain", "", "varchar", &rw, NULL);
+		table_insert(tr, s, "explain", "", "varchar(8)", &rw, NULL);
 	else if (m->explain == m_explain)
-		table_insert(tr, s, "explain", "plan", "varchar", &rw, NULL);
+		table_insert(tr, s, "explain", "plan", "varchar(8)", &rw, NULL);
 	else if (m->explain == m_profile)
-		table_insert(tr, s, "explain", "profile", "varchar", &rw, NULL);
+		table_insert(tr, s, "explain", "profile", "varchar(8)", &rw, NULL);
 
-	table_insert(tr, s, "current_schema", m->session->schema_name, "varchar", &rw, NULL);
+	table_insert(tr, s, "current_schema", m->session->schema_name, "varchar(1024)", &rw, NULL);
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
-	table_insert(tr, s, "current_user", m->user, "varchar", &ro, NULL);
+	table_insert(tr, s, "current_user", m->user, "varchar(1024)", &ro, NULL);
 
 	/* MonetDB/SQL role/current_role/session_role */
-	table_insert(tr, s, "current_role", m->role, "varchar", &rw, NULL);
+	table_insert(tr, s, "current_role", m->role, "varchar(1024)", &rw, NULL);
 
 	snprintf(buf, BUFSIZ, "%d", m->timezone * 60);
 	table_insert(tr, s, "current_timezone", buf, "sec_interval", &rw, NULL);
@@ -414,7 +419,7 @@ sql_sessions(mvc *m)
 	table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
 
 /* M5 default session variables */
-	table_insert(tr, s, "optimizer", "on", "varchar", &rw, NULL);
+	table_insert(tr, s, "optimizer", "on", "varchar(1024)", &rw, NULL);
 /* Actually 'factory' and 'cache' are optimizer decisions too */
 	return 0;
 }
