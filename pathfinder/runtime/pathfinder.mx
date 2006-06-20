@@ -2696,9 +2696,9 @@ xquery_method(stream *out,
 /*
  * module initialization
  */
-extern void xmlInitThreads(void);
+extern void xmlInitThreads();
 bat *
-xquery_prelude(void)
+xquery_prelude()
 {
     pf_compiler_lock = MT_create_lock();
     pf_module_lock = MT_create_lock();
@@ -2714,7 +2714,7 @@ xquery_prelude(void)
  * module cleanup
  */
 void
-xquery_epilogue(void)
+xquery_epilogue()
 {
     xquery_client_flushall();
     MT_destroy_lock(pf_compiler_lock);

@@ -1,8 +1,0 @@
-autogen/
-	bin/autogen.py
-autogen/autogen/
-	PYTHON_LIBDIR/autogen/am.py
-	PYTHON_LIBDIR/autogen/codegen.py
-	PYTHON_LIBDIR/autogen/__init__.py
-	PYTHON_LIBDIR/autogen/msc.py
-	PYTHON_LIBDIR/autogen/var.py

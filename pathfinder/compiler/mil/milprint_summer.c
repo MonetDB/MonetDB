@@ -1813,9 +1813,6 @@ loop_liftedSCJ (opt_t *f,
 {
     /* iter|pos|item input contains only nodes (kind=ELEM) */
     milprintf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
-    milprintf(f, "if (kind.texist(ATTR))"
-                  "ERROR (\"path steps are only supported "
-                          "starting from non-attribute nodes\");\n");
 
     if (!strcmp (axis, "attribute"))
     {
@@ -3235,7 +3232,7 @@ static void
 evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast) 
 {
     if (rc != NORMAL) 
-        mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc).name, tpe.name);
+        mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc), tpe.name);
 
     milprintf(f, 
 	"# cast a type-heterogeneous expression (according to static typing)\n"
@@ -5550,13 +5547,12 @@ eval_join_helper (opt_t *f, int code, int number,
 static int
 evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 {
-    unsigned int lev_fst, lev_snd,
+    int lev_fst, lev_snd,
         fst_res, snd_res, 
-        snd_var, 
+        snd_var, i,
         cast_fst, cast_snd,
         switched_args, fid,
         rc, rc1, rc2;
-    int i;
     PFcnode_t *fst, *snd, *res, *c;
     PFfun_t *fun;
     char *comp;
