@@ -47,7 +47,7 @@
 typedef PFarray_t PFbitset_t;
 
 /** Creates a new bitset, initalized with false. */
-PFbitset_t *PFbitset();
+PFbitset_t *PFbitset(void);
 
 /* Sets the bit on position pos to value. */
 void PFbitset_set(PFbitset_t *, unsigned int pos, bool value);
