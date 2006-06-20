@@ -17,13 +17,16 @@ quit();
 
 Over..
 
-# 02:51:03 >  
-# 02:51:03 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52665 parent_step_bug.SF-1339844.xq
-# 02:51:03 >  
+# 01:13:36 >  
+# 01:13:36 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=32375 parent_step_bug.SF-1339844.xq
+# 01:13:36 >  
 
-? What's the correct/expected output ?
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
 
-# 02:51:03 >  
-# 02:51:03 >  Done.
-# 02:51:03 >  
+</XQueryResult>
+
+# 01:13:38 >  
+# 01:13:38 >  Done.
+# 01:13:38 >  
 
