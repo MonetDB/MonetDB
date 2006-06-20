@@ -103,6 +103,7 @@ step_descendant-or-self8
 step_attribute3
 step_attribute4
 step_attribute5
+transient_upward_steps
 bool1
 bool2
 bool3
