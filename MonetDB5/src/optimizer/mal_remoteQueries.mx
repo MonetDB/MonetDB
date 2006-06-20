@@ -17,7 +17,7 @@
 @f mal_remoteQueries
 @a M. Kersten
 @-
-@+ Remote Query Execution
+@- Remote Query Execution
 MAL variables may live at a different site from where they are used.
 In particular, the SQL front-end uses portions of remote
 BATs as replication views. Each time such a view is needed,

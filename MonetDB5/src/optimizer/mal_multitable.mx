@@ -19,7 +19,7 @@
 @-
 @node Multi-Association Tables , Partitioned Databases, Code Factorization, Optimizer toolkit
 
-@+ Multiple Association Tables 
+@- Multiple Association Tables 
 A Multi Association Table descriptor (MAT) defines an ordered collection 
 of type compatible BATs, whose union represents a single (virtual) BAT.
 The MAT may relate to a partitioned BAT, but could also be an arbitrary

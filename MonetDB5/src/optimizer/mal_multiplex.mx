@@ -20,7 +20,7 @@
 @a M. Kersten
 @-
 @node Multiplex Compiler, Garbage Collector,  Peephole Optimization, Optimizer toolkit
-@+ Multiplex Compilation
+@- Multiplex Compilation
 The MonetDB operator multiplex concept has been pivotal to
 easily apply any scalar function to elements in a containers.
 Any operator @code{cmd} came with its multiplex variant [@code{cmd}].

@@ -18,7 +18,7 @@
 @a M. Kersten
 @-
 @node Peephole Optimization, Multiplex Compiler,  Singleton Set Replacement, Optimizer toolkit
-@+ Peephole optimization
+@- Peephole optimization
 Recursive descend query compilers easily miss opportunities
 for better code generation, because limited context is retained
 or lookahead available. The peephole optimizer is

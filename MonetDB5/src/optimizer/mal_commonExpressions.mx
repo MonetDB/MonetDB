@@ -40,7 +40,7 @@ opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @}
 @-
 @node Common Sub-Expression Removal,Empty Set Reduction, Heuristic Rewrite Rules,   Optimizer toolkit
-@+ Common Subexpression Elimination
+@- Common Subexpression Elimination
 Common subexpression elimination merely involves a single scan through the 
 program block to detect re-curring statements.
 The key problem to be addressed is to make sure that the parameters involved

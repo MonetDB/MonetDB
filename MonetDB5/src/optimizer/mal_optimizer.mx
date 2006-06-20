@@ -39,7 +39,7 @@ but can also be ran at runtime for query fragments.
 @end menu
 
 @node Optimizers, Optimizer Dependencies ,Optimizer landscape, Optimizer landscape
-@+ Optimizers
+@- Optimizers
 A query optimizer is often a large and complex piece of code, which
 enumerates alternative evaluation plans from which 'the best' plan
 is selected for evaluation. Limited progress has been made sofar to
@@ -549,6 +549,26 @@ and the total cpu time spent.
 The body performs a full flow and type check and re-initializes
 the lifespan administration. In debugging mode also a copy
 of the new block is retained for inspection.
+@- Lifespan analysis
+Optimizers may be interested in the characteristic of the
+barrier blocks for making a decision.
+The variables have a lifespan in the code blocks, denoted by properties
+beginLifespan,endLifespan. The beginLifespan denotes the intruction where
+it receives its first value, the endLifespan the last instruction in which
+it was used as operand or target.
+
+If, however, the last use lies within a BARRIER block, we can not be sure
+about its end of life status, because a block redo may implictly
+revive it. For these situations we associate the endLifespan with
+the block exit.
+
+In many cases, we have to determine if the lifespan interferes with
+a optimization decision being prepared.
+The lifespan is calculated once at the beginning of the optimizer sequence.
+It should either be maintained to reflect the most accurate situation while
+optimizing the code base. In particular it means that any move/remove/addition
+of an instruction calls for either a recalculation or delta propagation.
+Unclear what will be the best strategy. For the time being we just recalc.
 @{
 If one of the optimizers fails, we should not attempt others.
 @c
@@ -1059,7 +1079,7 @@ It suffice to respect the flow graph.
 
 @node Optimizer toolkit, Alias Removal, Query Optimizer Framework , Optimizer landscape
 
-@* The Optimizer Toolkit
+@+ The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
 by experimentation and curiousity. Several optimizers require
@@ -1087,7 +1107,7 @@ Such limitations on the implementation are indicated where appropriate.
 @end menu
 
 @node Alias Removal, Dead Code Removal, Optimizer toolkit, Optimizer toolkit
-@+ Alias Removal
+@- Alias Removal
 The routine @code{optimizer.aliasRemoval()}
 walks through the program looking for simple
 assignment statements, e.g. V:=W. It replaces all subsequent
@@ -1264,7 +1284,7 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @}
 @-
 @node Dead Code Removal, Accumulator Evaluations, Alias Removal, Optimizer toolkit
-@+ Dead Code Removal
+@- Dead Code Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. 
 It can be detected  by marking all variables used as 
@@ -1434,7 +1454,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @-
 @node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Optimizer toolkit
-@+ Accumulator Evaluations
+@- Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
 because new @code{BAT}s are created for each expression. 
 This memory hunger can be reduced
@@ -1716,7 +1736,7 @@ at the end of the optimization attempt.
 @}
 @-
 @node Heuristic Rewrite Rules, Common Sub-Expression Removal, Accumulator Evaluations,  Optimizer toolkit
-@+ Heuristic rewrites rules
+@- Heuristic rewrites rules
 One of the oldest optimizer tricks in relational query processing is
 to apply heuristic rules to reduce the processing cost. For example,
 a selection predicate is pushed through another operator to reduce
