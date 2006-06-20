@@ -114,6 +114,7 @@ PFstate_t PFstate = {
     .print_la_tree       = false,
     .print_pa_tree       = false,
     .summer_branch       = true,
+    .standoff_axis_steps = false,
 
     .format              = NULL,
 
@@ -572,7 +573,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
 char*
-PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
+PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue, int options)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
@@ -588,6 +589,11 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
 
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
+
+        /* the state of the standoff_axis_steps support should be
+         * passed through the function arguments.
+         */
+        PFstate.standoff_axis_steps = (options & COMPILE_OPTION_STANDOFF);
 
         PFstate.genType = mode;
         if (setjmp(PFexitPoint) != 0 ) {

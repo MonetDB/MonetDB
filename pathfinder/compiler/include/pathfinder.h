@@ -93,6 +93,7 @@ struct PFstate_t {
     bool print_la_tree;       /**< command line switch: -l */
     bool print_pa_tree;       /**< command line switch: -a */
     bool summer_branch;       /**< command line switch: -M */
+    bool standoff_axis_steps; /**< command line switch: -b */
 
     char *format;             /**< dot output format (command line switch -f) */
 

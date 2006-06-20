@@ -130,11 +130,13 @@ extern char *pfinput;
 /* If the BURKOWSKI flag was set, the steps should be recognized
    Otherwise, they (select-narrow::, select-wide::, reject-narrow::, and
    reject-wide::,  should return an error */
-#ifdef BURKOWSKI
+/* #ifdef BURKOWSKI */
 #define burk_yield(t) yield(t);
+/* 
 #else
 #define burk_yield(t) yield(invalid_character);
 #endif
+*/
 
 /* lexical state stack */
 static PFarray_t *lexical_stack = NULL;

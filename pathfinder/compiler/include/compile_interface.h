@@ -33,8 +33,11 @@
 #ifndef COMPILEINT_H
 #define COMPILEINT_H
 
+#define COMPILE_OPTION_STANDOFF 1 /* use bit 0 of the 'options'
+                                     param to enable StandOff */
+
 /* main compiler call from the Monet runtime environment */
-char* PFcompile_MonetDB (char* xquery, char* mode, char** prologue, char** query, char** epilogue);
+char* PFcompile_MonetDB (char* xquery, char* mode, char** prologue, char** query, char** epilogue, int options);
 
 /* get a document by URL (if not in cache, fetch it) */
 char* PFurlcache(char *url, int keep);

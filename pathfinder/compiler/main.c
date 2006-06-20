@@ -459,6 +459,10 @@ static struct option long_options[] = {
     { "print-human-readable",         no_argument,    NULL, 'P' },
     { "timing",                       no_argument,    NULL, 'T' },
     { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
+/* Wouter: enable-standoff  (with the short-option b (Burkowski ;)
+   sorrt for the confusion, but I'm afraid all other letters
+   have been picked by now... */
+    { "enable-standoff",              no_argument,    NULL, 'b' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
     { "debug",                     optional_argument, NULL, 'd' },
     { "format",                    required_argument, NULL, 'f' },
@@ -679,6 +683,8 @@ main (int argc, char *argv[])
                 printf ("         +  print all available properties (logical/"
                                      "physical algebra)\n");
 
+                printf ("  -b%s: enable StandOff axis steps\n",
+                        long_option (opt_buf, ", --%s", 'b'));
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
@@ -701,6 +707,10 @@ main (int argc, char *argv[])
 
             case 'a':
                 status->print_parse_tree = true;
+                break;
+
+            case 'b':
+                status->standoff_axis_steps = true;
                 break;
 
             case 'c':

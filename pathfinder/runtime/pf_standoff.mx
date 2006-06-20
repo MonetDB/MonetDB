@@ -1264,9 +1264,9 @@ PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
       region_end := region_right.leftjoin(right_end);
   } else {
       # if there are either no start or end nodes, the result is empty
-      region_pre := bat(void,oid);
-      region_start := bat(void,monet_atomtbl.find(tpe));
-      region_end := bat(void,monet_atomtbl.find(tpe));
+      region_pre := bat(oid,oid);
+      region_start := bat(oid,monet_atomtbl.find(tpe));
+      region_end := bat(oid,monet_atomtbl.find(tpe));
   }
   if (not(exist(my_ws.fetch(REGION_PRE), i))) {
     my_ws.fetch(REGION_PRE).access(BAT_WRITE).insert(i,region_pre);
@@ -1343,9 +1343,9 @@ PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
         region_end := region_right.leftjoin(right_end);
     } else {
         # if there are either no start or end nodes, the result is empty
-        region_pre := bat(void,oid);
-        region_start := bat(void,monet_atomtbl.find(tpe));
-        region_end := bat(void,monet_atomtbl.find(tpe));
+        region_pre := bat(oid,oid);
+        region_start := bat(oid,monet_atomtbl.find(tpe));
+        region_end := bat(oid,monet_atomtbl.find(tpe));
     }
     printf("# extracted %d regions\n",region_pre.count());
     my_ws.insert("region_pre",region_pre);

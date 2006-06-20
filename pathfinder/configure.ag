@@ -284,20 +284,6 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
-dnl Check for Burkowski Axis Steps support
-dnl --enable-burk
-AC_ARG_ENABLE(burk,
-	AC_HELP_STRING([--enable-burk],
-		[enable support for Burkowski Axis Steps [default=no]]),
-	enable_burk=$enableval,
-	enable_burk=no)
-case $enable_burk in
-yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
-      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
-;;
-esac
-
-
 dnl The Burg code requires strdup(). We test here if strdup() is
 dnl available on the system. If not, we will define it ourselves
 dnl in burg/main.c
