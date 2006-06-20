@@ -11,7 +11,7 @@ sub connect
 
   eval "require( $_ )" and return $_->connect( @_ ) for @Modules;
 
-  die 'No MonetDB::CLI implementation found';
+  chomp $@; die "No MonetDB::CLI implementation found: $@";
 }
 
 __PACKAGE__;
