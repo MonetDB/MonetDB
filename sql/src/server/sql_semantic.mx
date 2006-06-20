@@ -82,7 +82,7 @@ extern char *dlist2string(mvc *sql, dlist *s);
 
 extern char * toUpper(char *dest, const char *src); 
 
-extern void* find_table_value(mvc * sql, char* table, char* column, char* key_column, void* key,int location);
+extern void* find_table_value(mvc * sql, char * schema, char* table, char* column, char* key_column, void* key,int location);
 extern int table_location(mvc *sql, char* host);
 extern int find_remote_views(mvc *sql,char *schema_tab, char *tname, char *col_tab, int location_tab,list **schemas_views, list **views, list **columns_views, list **locations_views);
 extern int table_location_info(mvc* sql,int location,char **dbalias,char** ip,int* port,char** user,char** password);
@@ -207,16 +207,16 @@ sql_destroy_args(mvc *sql)
 
 
 void*
-find_table_value(mvc* sql, char* table, char* column, char* key_column, void* key, int location)
+find_table_value(mvc* sql, char * schema, char* table, char* column, char* key_column, void* key, int location)
 {
-        sql_schema *sch = find_sql_schema(sql->session->tr, "sys");
+        sql_schema *sch = find_sql_schema(sql->session->tr, schema);
         sql_table *tab = find_sql_table(sch, table,location);
         sql_column *key_col = find_sql_column(tab, key_column);
         sql_column *col = find_sql_column(tab, column);
 	ssize_t rid = -1;
 	rid = column_find_row(sql->session->tr, key_col, key, NULL);
         if (rid >= 0)
-                 return (int*) column_find_value(sql->session->tr,col,rid);
+                 return column_find_value(sql->session->tr,col,rid);
         return NULL;
 }
 
@@ -226,7 +226,7 @@ table_location(mvc* sql,char* host)
 {
 	int* location = NULL;
         if(host){
-               	location = (int*) find_table_value(sql,"hosts","location","dbname",host,LOCATION);
+               	location = (int*) find_table_value(sql,(cur_schema(sql))->base.name, "hosts","location","dbname",host,LOCATION);
 		if(location)
 			return *location;
 	}
@@ -1114,6 +1114,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
+	case SQL_REFRESH:
 		return updates(sql, scp, s);
 
 	case SQL_DECLARE:

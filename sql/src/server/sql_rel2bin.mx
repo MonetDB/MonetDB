@@ -935,6 +935,11 @@ rel2bin(mvc *c, stmt *s)
 		 * and user authentication.
 		 */
 	case st_remote:
+		if(s->op2.stval)
+			s->op2.stval = rel2bin(c,s->op2.stval);
+		s->optimized = 2;
+		return stmt_dup(s);
+			
 	case st_none:
 	case st_sql:
 	case st_dbat:

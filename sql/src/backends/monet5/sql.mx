@@ -1009,7 +1009,7 @@ mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
 }
 
 str
-mvc_clear_table_wrap(lng *res, str *sname, str *tname, int location)
+mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 {
 	sql_schema *s;
 	sql_table *t;
@@ -1019,7 +1019,7 @@ mvc_clear_table_wrap(lng *res, str *sname, str *tname, int location)
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
-	t = mvc_bind_table(m, s, *tname,location);
+	t = mvc_bind_table(m, s, *tname,LOCATION);
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }

@@ -95,6 +95,7 @@ typedef enum tokens {
 	SQL_INSERT,
 	SQL_DELETE,
 	SQL_UPDATE,
+	SQL_REFRESH,
 	SQL_CROSS,
 	SQL_JOIN,
 	SQL_SELECT,
@@ -278,6 +279,7 @@ int yydebug=1;
 	join_spec
 	search_condition
 	update_stmt
+	refresh_stmt
 	select_stmt
 	select_with_parens
 	select_no_parens
@@ -563,7 +565,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN
 %token INDEX
-%token<sval> PULL PUSH R_TIME
+%token<sval> PULL PUSH R_TIME REFRESH
 
 %token TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
 
@@ -1854,6 +1856,7 @@ sql:
  | insert_stmt
  | update_stmt
  | copyfrom_stmt
+ | refresh_stmt
  ;
 
 transaction_stmt:
@@ -1995,6 +1998,9 @@ update_stmt:
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
+refresh_stmt:
+    REFRESH VIEW qname {$$ = _symbol_create_symbol( SQL_REFRESH, $3 ); }
+;
 
 insert_stmt:
     INSERT INTO qname values_or_query_spec
@@ -3751,6 +3757,8 @@ char *token2string(int token)
 		return "Intersect";
 	case SQL_UPDATE:
 		return "Update";
+	case SQL_REFRESH:
+		return "Refresh";
 	case SQL_INSERT:
 		return "Insert";
 	case SQL_DELETE:

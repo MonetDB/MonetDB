@@ -217,67 +217,13 @@ sql_find_schema(mvc *m, str schema)
 int
 sql_schema_has_user(mvc *m, sql_schema *s)
 {
- <<<<<<< sql_privileges.mx
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *users = find_sql_table(sys, "db_users", LOCATION);
-	int schema_id = -1;
-
-	if (!(sql_create_role(m, user, grantor)))
-		return FALSE;
-
-	if ((schema_id = sql_find_schema(m, schema_name)) < 0)
-		return FALSE;
-
-	table_insert(m->session->tr, users, user, passwd, fullname, &schema_id);
-	return TRUE;
-}
-#endif
-
-int
-sql_schema_has_user(mvc *m, sql_schema *schema)
-{
-	ssize_t rid;
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *users = find_sql_table(sys, "db_users", LOCATION);
-	sql_column *users_schema = find_sql_column(users, "default_schema");
-	oid schema_id = schema->base.id;
-
-	rid = column_find_row(m->session->tr, users_schema, &schema_id, NULL);
-	if (rid < 0)
-		return FALSE;
-	return TRUE;
- =======
 	return(backend_schema_has_user(m, s));
- >>>>>>> 1.47
 }
 
 int
 sql_alter_user(mvc *m, str user, str passwd, oid schema_id)
 {
- <<<<<<< sql_privileges.mx
-	ssize_t rid;
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *users = find_sql_table(sys, "db_users", LOCATION);
-	sql_column *users_name = find_sql_column(users, "name");
-
-	rid = column_find_row(m->session->tr, users_name, user, NULL);
-	if (rid < 0)
-		return FALSE;
-
-	if (passwd) {
-		sql_column *users_passwd = find_sql_column(users, "passwd");
-
-		column_update_value(m->session->tr, users_passwd, rid, passwd);
-	}
-	if (schema_id) {
-		sql_column *users_schema = find_sql_column(users, "default_schema");
-
-		column_update_value(m->session->tr, users_schema, rid, &schema_id);
-	}
-	return TRUE;
- =======
 	return(backend_alter_user(m, user, passwd, schema_id));
- >>>>>>> 1.48
 }
 
 int

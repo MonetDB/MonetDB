@@ -904,7 +904,7 @@ update_remote_views(mvc* sql, sql_table* t, stmt* res)
         sql_column *oids_col = find_sql_column(rep_tab,"table_id");
 	sql_column *replication_col = find_sql_column(rep_tab, "replication_id");
 	
-	list * replication_ids = table_select_column(sql->session->tr, rep_col, tab_col, &t->base.name, schema_col, &t->s->base.name,NULL);
+	list * replication_ids = table_select_column(sql->session->tr, rep_col, tab_col, t->base.name, schema_col, t->s->base.name,NULL);
 	if(list_length(replication_ids)==0)
 		return st;
 	
@@ -912,26 +912,17 @@ update_remote_views(mvc* sql, sql_table* t, stmt* res)
 	
 	node* node_oid = oids->h;
 	for(i = 0; i < list_length(oids); i++){
-		view_name = (char *) find_table_value(sql, "_tables", "name", "id", (int *) node_oid->data,LOCATION);
-		schema_name = (char *) find_table_value(sql, "schemas", "name", "id", find_table_value(sql, "_tables", "schema", "id", node_oid->data,LOCATION),LOCATION);
-		location = * (int *) find_table_value(sql, "_tables", "location", "id", (int *) node_oid->data,LOCATION);
+		view_name = (char *) find_table_value(sql, ss->base.name, "_tables", "name", "id", (int *) node_oid->data,LOCATION);
+		schema_name = (char *) find_table_value(sql, ss->base.name, "schemas", "name", "id", (int *) find_table_value(sql, ss->base.name, "_tables", "schema_id", "id", node_oid->data,LOCATION),LOCATION);
+		location = * (int *) find_table_value(sql, ss->base.name, "_tables", "location", "id", (int *) node_oid->data,LOCATION);
 		snprintf(
 			query,
 			BUFSIZ,
-			"UPDATE \"%s\".\"%s\";",
+			"REFRESH VIEW \"%s\".\"%s\";",
 			schema_name,
 			view_name
 		);
-		st = stmt_remote(query,location,-1,st);
-				
-		snprintf(
-			query,
-			BUFSIZ,
-			"DROP VIEW \"%s\".\"%s\";",
-			schema_name,
-			view_name
-		);
-		st = stmt_remote(query,location,-1,st);
+		st = stmt_remote(_strdup(query),location,-1,st);
 		node_oid = node_oid->next;
 	}
 	return st;
@@ -1415,11 +1406,59 @@ update_table(mvc *sql, scope *scp, symbol *symb, dlist *assignmentlist, symbol *
 	t = mvc_bind_table(sql, s, tname, location);
 	if (!t && !sname) 
 		s = tmp_schema(sql);
-	if(t->query)
-		return stmt_remote(t->query,LOCATION,-1,NULL);
+
 	res = sql_update_table(sql, scp, s, tname, assignmentlist, opt_where, location);
 
 	return update_remote_views(sql,t,res);
+}
+
+stmt* 
+refresh_view(mvc *sql, symbol *symb)
+{
+	char *sname = qname_schema(symb);
+	char *tname = qname_table(symb);
+	char *host = qname_host(symb);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	int location = table_location(sql,host);
+
+	if(location ==-1){
+		return sql_error(sql, 02, "REFRESH: no such database '%s'", host);
+	}
+	if(location>0){
+		return sql_error(sql, 02, "REFRESH: no permission to modify the table %s for database '%s'", tname, host);
+	}
+
+	if (sname && !(s=mvc_bind_schema(sql,sname))) {
+		(void) sql_error(sql, 02, "REFRESH: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname, location);
+	if (!t && !sname) 
+		s = tmp_schema(sql);
+	
+	char del_query[BUFSIZ + 1];
+	char upd_query[BUFSIZ + 1];
+	del_query[BUFSIZ] = '\0';
+	upd_query[BUFSIZ] = '\0';
+	snprintf(
+		del_query,
+		BUFSIZ,
+		"DELETE FROM \"%s\".\"%s\";",
+		t->s->base.name,
+		t->base.name
+	);
+	snprintf(
+		upd_query,
+		BUFSIZ,
+		"INSERT INTO \"%s\".\"%s\" %s",
+		t->s->base.name,
+		t->base.name,
+		t->query
+	);
+	return stmt_remote(del_query,LOCATION,-1,stmt_remote(upd_query,LOCATION,-1,NULL));
 }
 
 
@@ -1611,6 +1650,12 @@ updates(mvc *sql, scope *scp, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = update_table(sql, scp, l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym);
+		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_REFRESH:
+	{
+		ret = refresh_view(sql, s->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;

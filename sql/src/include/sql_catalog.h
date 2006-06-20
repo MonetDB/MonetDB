@@ -29,6 +29,7 @@
 #define PRIV_DELETE 8
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
+#define PRIV_REFRESH 32
 
 
 #define LOCATION 0	/*Default value*/

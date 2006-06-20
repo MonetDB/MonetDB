@@ -152,6 +152,7 @@ sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantab
 {
 	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable));
 	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable));
+	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_REFRESH, grantor, grantable));
 	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable));
 	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable));
 }
@@ -164,6 +165,8 @@ priv2string(int priv)
 		return "SELECT";
 	case PRIV_UPDATE:
 		return "UPDATE";
+	case PRIV_REFRESH:
+		return "REFRESH";
 	case PRIV_INSERT:
 		return "INSERT";
 	case PRIV_DELETE:
@@ -187,7 +190,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 	l = create_stmt_list();
 	if (privs == NULL) {	/* ALL [ PRIVILEGES ] */
-		int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+		int all = PRIV_SELECT | PRIV_UPDATE | PRIV_REFRESH | PRIV_INSERT | PRIV_DELETE;
 		int allowed = schema_privs(grantor, t->s);
 
 		if (!allowed)
@@ -242,6 +245,9 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 				priv = PRIV_UPDATE;
 				break;
 
+			case SQL_REFRESH:
+				priv = PRIV_REFRESH;
+				break;
 			case SQL_INSERT:
 				priv = PRIV_INSERT;
 				break;
@@ -405,6 +411,7 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 
 			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_SELECT, grantor, grant));
 			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant));
+			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_REFRESH, grantor, grant));
 			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant));
 			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant));
 		}
@@ -435,6 +442,10 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 				break;
 			case SQL_UPDATE:
 				priv = PRIV_UPDATE;
+				break;
+			
+			case SQL_REFRESH:
+				priv = PRIV_REFRESH;
 				break;
 
 			case SQL_INSERT:
@@ -1550,9 +1561,8 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		dlist *column_spec;
 		symbol* subquery;
 		int with_data;
-		/*int len = 0;*/
-		char querystring[BUFSIZ + 1];
-		querystring[BUFSIZ] = '\0';
+		int len = 0;
+		char * querystring = NULL;
 
 		if (view) {
 			column_spec = NULL;
@@ -1566,26 +1576,16 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 				if (sn->orderby)
 					return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 			}
-			/*querystring = _strdup(QUERY(sql->scanner) + sql->scanner.as);*/
+			querystring = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 			
-			snprintf(
-				querystring,
-				BUFSIZ,
-				"CREATE VIEW \"%s\".\"%s\"@\"%s\" %s",
-				ss->base.name,
-				name,
-				host,
-				(char *) _strdup(QUERY(sql->scanner) + sql->scanner.as)
-			);
-				
-			/*if (sql->scanner.view_end) {
+			if (sql->scanner.view_end) {
 				char *q = QUERY(sql->scanner) + sql->scanner.as;
 				len = sql->scanner.view_end - sql->scanner.as;
 				querystring = NEW_ARRAY(char,len+2);
 				strncpy(querystring, q, len);
 				querystring[sql->scanner.view_end - sql->scanner.as] = ';';
 				querystring[sql->scanner.view_end - sql->scanner.as+1] = 0;
-			}*/
+			}
 		} else {
 			column_spec = as_sq->h->data.lval;
 			subquery = as_sq->h->next->data.sym;
@@ -1593,15 +1593,15 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		}
 
 		sq = scope_subquery(sql, NULL, subquery);
-		if (!sq)
+		if (!sq && !view)
 			return NULL;
 
 		/* create table */
-		t = mvc_create_table(sql, s, name, querystring, 0, temp, commit_action, -1, location, view);
-		as_subquery(sql, t, sq, column_spec);
+		t = mvc_create_table(sql, s, name, _strdup(querystring), 0, temp, commit_action, -1, location, view);
 
 		/* insert query result into this table */
-		if (with_data) {
+		if (with_data && sq) {
+			as_subquery(sql, t, sq, column_spec);
 			node *n, *m;
 			scope *scp = scope_open(NULL);
 			tvar *tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
@@ -1615,10 +1615,10 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 			}
 			scope_close(scp);
 			res = stmt_list(l);
+			stmt_destroy(sq);
 		} else {
 			res = stmt_none();
 		}
-		stmt_destroy(sq);
 		return res;
 	}
 }
@@ -1716,37 +1716,76 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 stmt*
 drop_remote_view(mvc *sql,sql_schema *ss,sql_table* t, symbol* sym)
 {
-	int location,i;
-	char query[BUFSIZ + 1];
-	query[BUFSIZ] = '\0';
+	int location,i,replication_id;
+	char drop_query[BUFSIZ + 1];
+	drop_query[BUFSIZ] = '\0';
+	char rep_query[BUFSIZ + 1];
+	rep_query[BUFSIZ] = '\0';
+	char rep_col_query[BUFSIZ + 1];
+	rep_col_query[BUFSIZ] = '\0';
+	char del_rep_col_query[BUFSIZ + 1];
+	del_rep_col_query[BUFSIZ] = '\0';
+	
 	stmt* st = stmt_none();
 	sql_table *rep_tab = find_sql_table(ss,"replication",LOCATION);
 	sql_table *rep_col_tab = find_sql_table(ss,"replication_columns",LOCATION);
         sql_column *replication_column = find_sql_column(rep_tab,"replication_id");
-        sql_column *oids_col = find_sql_column(rep_tab,"tableid");
+        sql_column *oids_col = find_sql_column(rep_tab,"table_id");
 	sql_column *location_col = find_sql_column(rep_col_tab, "table_location");
         sql_column *replication_col = find_sql_column(rep_col_tab,"replication_id");
-	node *node;
+	node *node, *rep_node;
 	
 	list * replication_ids = table_select_column(sql->session->tr, replication_column, oids_col, &t->base.id,NULL);
+	if(list_length(replication_ids) == 0)
+		return stmt_none();
+
+	rep_node = replication_ids->h;
+	for(i = 0;i< list_length(replication_ids);i++){
+                replication_id = *(int*) rep_node->data;
+		if(i)
+                	sprintf(del_rep_col_query,"%s,%d",del_rep_col_query,replication_id);
+		else
+                	sprintf(del_rep_col_query,"%d",replication_id);
+                rep_node = rep_node->next;
+        }
 	
 	list* l = table_select_column_multi_values(sql->session->tr, location_col, NULL, NULL, replication_col, replication_ids);
 	
 	node = l->h;
 	snprintf(
-		query,
+		drop_query,
 		BUFSIZ,
 		"DROP VIEW \"%s\".\"%s\"@\"%s\";",
 		ss->base.name,
 		qname_table(sym),
 		qname_host(sym)
 	);
+	snprintf(
+		rep_query,
+		BUFSIZ,
+		"DELETE FROM \"%s\".replication@\"%s\" WHERE table_id = %d;",
+		ss->base.name,
+		qname_host(sym),
+		t->base.id
+	);
+	snprintf(
+		rep_col_query,
+		BUFSIZ,
+		"DELETE FROM \"%s\".replication_columns@\"%s\" WHERE replication_id in {%s};",
+		ss->base.name,
+		qname_host(sym),
+		_strdup(del_rep_col_query)
+	);
 	for(i = 0;i< list_length(l);i++){
 		location = *(int*) node->data;
-		st = stmt_remote(query,location,-1,st);
+		if(t->location == LOCATION)
+			st = stmt_remote(drop_query,location,-1,st);
+		st = stmt_remote(rep_query,LOCATION,-1,st);
+		st = stmt_remote(rep_col_query,LOCATION,-1,st);
 		node = node->next;
 	}
 	list_destroy(l);
+	list_destroy(replication_ids);
         return st;
 }
 

@@ -333,6 +333,7 @@ scanner_init_keywords(void)
 	keywords_insert("R_TIME", R_TIME);
 	keywords_insert("PULL", PULL);
 	keywords_insert("PUSH", PUSH);
+	keywords_insert("REFRESH", REFRESH);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
