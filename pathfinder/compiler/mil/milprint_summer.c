@@ -3327,7 +3327,7 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
     milprintf(f, 
 	"}\n"
         "if (type(_val) = void) { # idempotent cast leaves (_val = item)\n"
-	"  _val = item;\n"
+	"  _val := item;\n"
         "} else {\n"
         "  if (_val.texist(%s(nil)))\n"
         "    ERROR (\"err:FORG0001: could not cast value to %s.\");\n", tpe.mil_type, tpe.name);
