@@ -127,7 +127,7 @@ mail -s "Notification: mserver5 encounters disk limits" $USER <<!EOF
 The mguardian process $$ running on node `uname -n` has detected
 that you are running low on disk space.
 The endangered database is located in '$DBFARM/$1'.
-`df -h`
+`df -h $MONET5_PREFIX/var/MonetDB5/db* | tail -n +2 | sort | uniq`
 Please take precautions against loosing your data.
 !EOF
 		fi
