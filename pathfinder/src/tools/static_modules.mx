@@ -49,8 +49,9 @@
 /* contrib */
 @:install_module(txtsim)@
 
-/* SQL */
+/* Pathfinder/XQuery */
 @:install_module(pf_support)@
 @:install_module(pathfinder)@
+@:install_module(pf_standoff)@
 
 #endif

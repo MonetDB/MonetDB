@@ -86,6 +86,10 @@ The options have the following meaning:
 #include "monet_options.h"
 #include "initmodules.h"
 #include <locale.h>
+
+#ifdef NATIVE_WIN32
+#define getcwd _getcwd
+#endif
 @-
 The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input
@@ -198,14 +202,19 @@ Monet_init(opt *set, int setlen)
 
 
 	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
-		GDK_mem_bigsize = strtol(p, NULL, 10);
-		if (GDK_mem_bigsize > GDK_mem_maxsize)
-			GDK_mem_bigsize = GDK_mem_maxsize/2;
+		/* when allocating >6% of all RAM; do so using vmalloc() iso malloc() */
+		lng max_mem_bigsize = GDK_mem_maxsize/16;
+
+		/* sanity check to avoid memory fragmentation */
+		GDK_mem_bigsize = MIN(max_mem_bigsize, strtol(p, NULL, 10));
 	}
 	if ((p = GDKgetenv("gdk_vm_minsize"))) {
-		GDK_vm_minsize = strtol(p, NULL, 10);
-		if (GDK_vm_minsize > GDK_mem_maxsize)
-			GDK_vm_minsize = GDK_mem_maxsize/2;
+		/* when allocating HUGE regions, switch from vmalloc() to mmap() on a real file */
+		/* for 32-bits systems HUGE = RAM/8, for 64-bits systems HUGE = RAM/2 */
+		lng max_vm_minsize = (GDK_mem_maxsize*sizeof(void*)*sizeof(void*))/128;
+
+		/* sanity check to avoid running out of swap space */
+		GDK_vm_minsize = MIN(max_vm_minsize, strtol(p, NULL, 10));
 	}
 	if (GDKgetenv_isyes("gdk_embedded")) {
 		GDKembedded = 1;
