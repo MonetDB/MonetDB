@@ -599,7 +599,7 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTacd::f:hlpqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTacd::f:hlpqrs:tb", 
                          long_options, &option_index);
 #else
         c = getopt (argc, argv, "ADHMO::PTacd::f:hlpqrs:t");
