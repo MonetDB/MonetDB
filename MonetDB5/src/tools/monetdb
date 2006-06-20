@@ -154,8 +154,9 @@ function ping_mserver()
 	# which should be created upon restart
 	port=`cat $DBFARM/$1/.mal.port`
 	echo "Ping $1 on port " $port
-	answer=`mclient -lsql -umonetdb -Pmonetdb -p $port`
+	answer=`mclient -lsql -p $port`
 	echo "result" $answer
+	# not complete yet!
 }
 
 function start_mserver()
