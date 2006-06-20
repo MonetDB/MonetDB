@@ -597,7 +597,7 @@ handle_doc_height(tjCtx* tjctx) {
 	   if ( ! replaceCollParam(tjctx,"height",(str)&buff[0]))
 	       return 0;
 	}
-	stream_printf(GDKout,"# **** SET MAX DOC HEIGHT TO: %d\n",tjctx->max_doc_height);
+	if ( 1 ) stream_printf(GDKout,"# **** SET MAX DOC HEIGHT TO: %d\n",tjctx->max_doc_height);
 	return 1;
 }
 
@@ -731,10 +731,24 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     	    return 0;
         if ( tj_pushTag(tjctx,tjPre) < 0 ) return 0;
 #ifdef TJ_TRACE
-        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TAG: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
+        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
         if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
     /* } */
+    return 1;
+}
+
+static bool
+pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
+    tjCtx* tjctx = (tjCtx*)ctx->driverWs;
+    --tjctx->doc_height;
+    oid start = tj_popTag(tjctx); /* oid of the first node of the element */
+    int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
+    if ( insertPreSize(tjctx,start,size) < 0 )
+	    return 0;
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
+#endif
     return 1;
 }
 
@@ -752,6 +766,9 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
 	if ( insertPreSize(tjctx,start,size) < 0 )
 	    return 0;
+#ifdef TJ_TRACE
+        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
+#endif
     /* } */
     if ( !checkSelectTag(tjctx,name,-1) ) return 0;
     return 1;
@@ -860,7 +877,7 @@ struct serializeFunStruct pftijahSerializeFun = {
     null_handle_processingInstruction,
 
     null_complete_startElement,
-    null_complete_startElementEmpty,
+    pftijah_complete_startElementEmpty,
     pftijah_handle_attribute,
 
     null_seqEmitBool,
@@ -899,9 +916,6 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	(void) gettimeofday (&now, 0);
 	start = now.tv_sec * 1000000 + now.tv_usec;
 
-#ifdef HAVE_PFTIJAH
-	if ( 0 ) stream_printf(GDKout,"# HAVE_ PFTIJAH Macro is set.\n");
-#endif
 	if ( !(tjctx = loadTijahContext(tjCtx_BAT, selTagList)) )
 		return GDK_FAIL;
 #ifdef TJ_TRACE
@@ -935,16 +949,14 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	    if ( xquery_print_doc_DRIVER("",&pftijahSerializeFun,NULL,ws,docName) == GDK_FAIL)
 	        return GDK_FAIL;
 	}
-	/* 
-	 * if ( tijah_print_doc_main(tjctx,ws,docName) == GDK_FAIL )
-	 *	return GDK_FAIL;
-	 */
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINISH INDEXING\n",tjctx->name);
 #endif
 
-	if ( dbat_finalize(&tjctx->dbat_collPre) < 0 ) return GDK_FAIL;
-	if ( dbat_finalize(&tjctx->dbat_collSize) < 0 ) return GDK_FAIL;
+	if ( dbat_finalize(&tjctx->dbat_collPre) < 0 )
+		return GDK_FAIL;
+	if ( dbat_finalize(&tjctx->dbat_collSize) < 0 )
+		return GDK_FAIL;
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
 #endif
