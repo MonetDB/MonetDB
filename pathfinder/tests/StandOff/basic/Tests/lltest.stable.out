@@ -1,0 +1,2 @@
+<test><c start="2" end="3"/></test>,
+<test><c start="2" end="3"/><c start="4" end="5"/></test>

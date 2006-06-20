@@ -1,2 +1,1 @@
 environment().insert("standoff","enabled");
-module("pf_standoff");
