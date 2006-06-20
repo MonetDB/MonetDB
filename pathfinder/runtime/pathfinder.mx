@@ -63,6 +63,15 @@
 module(mapi);       # remote client access
 module(monettime); 
 
+# standoff extensions
+var standoff := false;
+if (monet_environment.exist("standoff"))
+     standoff := =(monet_environment.find("standoff"),"enabled"); 
+
+if (standoff) {
+    module("pf_standoff");
+}
+
 PROC pfstart(bit open, lng sz) : void {
         xquery_start_query_cache(sz);
 	mapi_register(xquery_frontend());
@@ -439,8 +448,6 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
     var height := index_doc(shredRES, docBAT);
 
 #[BURKOWSKI]
-    var standoff := false;
-    CATCH( { standoff := =(monet_environment.find("standoff"),"enabled"); } );
     if (standoff) {
         print("# extracting regions...\n");
         docBAT := region_extract(docBAT, "lng");
