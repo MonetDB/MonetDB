@@ -1,3 +1,4 @@
 module(pathfinder);
+module(pf_standoff);
 procs();
 quit();

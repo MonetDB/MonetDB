@@ -11,6 +11,7 @@ stdout of test 'sigs` in directory 'runtime` itself:
 var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
+mods.insert(nil,"pf_standoff");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -95,6 +96,35 @@ module 'pathfinder'
 [ "xquery(mode str, xquery str, is_url bit) : str "													  ]
 [ "xquery_frontend() : ptr"				  ]
 [ "xquery_start_query_cache(lng) : void"		  ]
+module 'pf_standoff'
+#---------------------------------------------------------------------------------------------------------#
+# signature												  # name
+# str													  # type
+#---------------------------------------------------------------------------------------------------------#
+[ "blob(BAT[void,int], BAT[void,int], str) : BAT[void,str]"						  ]
+[ "blob(BAT[void,lng], BAT[void,lng], str) : BAT[void,str]"						  ]
+[ "ll_reject_narrow_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[oid,oid]"	  ]
+[ "ll_reject_narrow_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[oid,oid]"	  ]
+[ "ll_reject_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[oid,oid]"	  ]
+[ "ll_reject_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[oid,oid]"	  ]
+[ "ll_select_narrow_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[oid,oid]"	  ]
+[ "ll_select_narrow_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[oid,oid]"	  ]
+[ "ll_select_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[oid,oid]"	  ]
+[ "ll_select_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[oid,oid]"	  ]
+[ "region_extract(BAT[oid,BAT], oid, str) : BAT[oid,BAT]"						  ]
+[ "region_extract(BAT[str,BAT], str) : BAT[str,BAT]"							  ]
+[ "reject_narrow(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,oid]) : BAT[oid,oid]"	  ]
+[ "reject_narrow_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
+[ "reject_narrow_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
+[ "reject_wide(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,oid]) : BAT[oid,oid]"	  ]
+[ "reject_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
+[ "reject_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
+[ "select_narrow(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,oid]) : BAT[oid,oid]"	  ]
+[ "select_narrow_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
+[ "select_narrow_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
+[ "select_wide(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,oid]) : BAT[oid,oid]"	  ]
+[ "select_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
+[ "select_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
 
 quit();
 
