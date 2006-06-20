@@ -38,13 +38,13 @@ Over..
 # varchar,	varchar,	varchar,	int # type
 # 16,	7,	12,	10 # length
 [ "debug",	"0",	"int",	0	]
-[ "explain",	"",	"varchar",	0	]
-[ "current_schema",	"sys",	"varchar",	0	]
-[ "current_user",	"monetdb",	"varchar",	1	]
-[ "current_role",	"monetdb",	"varchar",	0	]
+[ "explain",	"",	"varchar(8)",	0	]
+[ "current_schema",	"sys",	"varchar(1024)",	0	]
+[ "current_user",	"monetdb",	"varchar(1024)",	1	]
+[ "current_role",	"monetdb",	"varchar(1024)",	0	]
 [ "current_timezone",	"0",	"sec_interval",	0	]
 [ "cache",	"true",	"boolean",	0	]
-[ "optimizer",	"on",	"varchar",	0	]
+[ "optimizer",	"on",	"varchar(1024)",	0	]
 
 # 12:37:13 >  
 # 12:37:13 >  Done.
