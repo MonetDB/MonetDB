@@ -1,0 +1,7 @@
+module("pathfinder");
+module("pf_standoff");
+module("unix");
+environment().insert("standoff","enabled");
+var doc := getenv("TSTSRCDIR")+"/lltest.xml";
+shred_doc(doc,"lltest.xml");
+quit();
