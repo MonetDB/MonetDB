@@ -60,6 +60,7 @@ Usage: pf [OPTION] [FILE]
          i  print icols property (logical/physical algebra)
          o  print orderings (physical algebra)
          +  print all available properties (logical/physical algebra)
+= -b, --enable-standoff: enable StandOff axis steps
 
 Enjoy.
 
