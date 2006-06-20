@@ -237,6 +237,10 @@ sql_create_sequence(sql_trans *tr, char *seq )
 	s -> cached = *(lng*)(p=column_find_value(tr, seq_cached, id)); _DELETE(p);
 	s -> cur = s->cached ? s->cached : s->start;
 
+	/* clear the read timestamps, else we cannot commit */
+	seq_name->base.rtime = seq_start->base.rtime = seq_inc->base.rtime = seq_cache->base.rtime = seq_min->base.rtime = seq_max->base.rtime = seq_cycle->base.rtime = seq_cached->base.rtime = seq_called->base.rtime = 0;
+	seqs->base.rtime = 0;
+
 	/* move to the global transaction, to get the current values */
 	while(tr->parent) 
 		tr = tr->parent;

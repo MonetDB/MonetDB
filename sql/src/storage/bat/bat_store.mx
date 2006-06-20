@@ -3767,6 +3767,10 @@ validate_tables(sql_schema *s, sql_schema *os)
 			sql_table *ot = find_sql_table(os, t->base.name);
 
 			if (ot && ot->table && t->table) {
+				if (t->base.wtime && (t->base.wtime < ot->base.rtime || (t->base.wtime < ot->base.wtime && t->base.rtime))) 
+					return 0;
+				if (t->base.rtime && t->base.rtime < ot->base.wtime) 
+					return 0;
 				for (o = t->columns.set->h, p = ot->columns.set->h; o && p; o = o->next, p = p->next) {
 					sql_column *c = o->data;
 					sql_column *oc = p->data;

@@ -38,7 +38,7 @@ sql_server_export void monet4_user_init(backend_functions *be_funcs);
 #include <sql_privileges.h>
 
 char *
-monet4_create_user(list *l, char *user, char *passwd, char *fullname, int schema_id, int grantorid) {
+monet4_create_user(list *l, char *user, char *passwd, char *fullname, sqlid schema_id, sqlid grantorid) {
 	char buf[BUFSIZ];
 	/* create two SQL statements that insert the user in the SQL
 	 * adminsitration */
@@ -114,7 +114,7 @@ monet4_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 int
-monet4_alter_user(ptr _mvc, str user, str passwd, oid schema_id)
+monet4_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 {
 	mvc *m = (mvc*)_mvc;
 	ssize_t rid;

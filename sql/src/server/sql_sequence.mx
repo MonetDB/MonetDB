@@ -72,6 +72,8 @@ sql_find_seq(mvc *m, str seq)
 
 	if (rid >= 0)
 		res = 1;
+	/* dirty hack don't mark sequences as read (else next value for fails)*/
+	seqs->base.rtime = seqname->base.rtime = 0;
 	return res;
 }
 

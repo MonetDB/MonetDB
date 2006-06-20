@@ -3509,6 +3509,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
 | PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }	/* sloppy: officially reserved */
 | ROLE		{ $$ = sa_strdup(SA, "role"); }		/* neither reserved nor non-reserv. */
+| sqlSIZE	{ $$ = sa_strdup(SA, "size"); }		/* sloppy: officially reserved */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
@@ -3518,7 +3519,10 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
 |  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
 |  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
+|  sqlDATE	{ $$ = sa_strdup(SA, "date"); }
+|  TIME 	{ $$ = sa_strdup(SA, "time"); }
 |  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
+|  INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
 
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
