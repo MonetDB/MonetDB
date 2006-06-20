@@ -68,6 +68,10 @@ stderr of test 'string_join.SF-1505520` in directory 'tests/BugTracker` itself:
 # 13:35:32 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52158 string_join.SF-1505520.xq
 # 13:35:32 >  
 
+type error: no variant of function fn:string-join accepts the given argument type(s): (untypedAtomic | string)*; string
+type error: maybe you meant:
+type error:   fn:string-join (string*, string) as string
+type error: illegal arguments for function fn:string-join
 
 # 13:09:06 >  
 # 13:09:06 >  Done.
