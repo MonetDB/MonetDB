@@ -37,23 +37,18 @@ The new loop-lifted variants depend on the 'size' column which allows
 for skipping. Using  'level', this is not possible.
 
 @verbatim
-
-single: count(doc("auctionsX.xml")/descendant::person/STEP::*)
-multi:  count(for $x in doc("auctionsX.xml")/descendant::person return $x/STEP::*)
-
 (time in msec)            10MB          100MB           1GB
 STEP                    single  multi   single  multi   single  multi
 =====================================================================
-
 old-parent                  10   1335       23 103028      157    DNF
 new-parent                   9     13       18     52      125    449
-
 old-ancestor                 9    594       17  48205      105    DNF
 new-ancestor                10     16       24     78      187    717
-
 old-ancestor-or-self        10    595       34  57127      268    DNF
 new-ancestor-or-self        11     17       37     96      312    907
 
+single: count(doc("auctionsX.xml")/descendant::person/STEP::*)
+multi:  count(for $x in doc("auctionsX.xml")/descendant::person return $x/STEP::*)
 @end verbatim
 
 Experiments were performed on db2.cwi.nl (non-optimized gcc compile) on
@@ -63,11 +58,11 @@ and the other on N sequences of size 1. The latter variant takes the form of
 a for-loop and in the old non-loop-lifted implementation leads to 
 repetitive execution.
 
-We conclude the following from these experiments
+We conclude the following from these experiments:
 @itemize
 @item loop-lifting is very effective, the loop-lifted variant is less
 than twice slower on the multi-variant, whereas in the older variant
-we observe quadratic degredation, causing the performance difference
+we observe quadratic degradation, causing the performance difference
 to grow very large.
 @item in case of parent on a single context sequence, the new variant is 
 slightly faster than the old implementation. 
@@ -76,12 +71,16 @@ performance is identical.
 @item in case of ancestor on a single context sequence, the old the 
 performance is slightly slower.
 @end itemize
-The latter two observations are striking as the new implementation on the
-surface seems optimal, as it touches only the result nodes. On the other
-hand, the 'size' column is wider, which may explain some of the difference.
+The new ancestor is 'optimal' in the sense that it only touches the
+result nodes. However, it touches them twice, the algorithm
+is more jump than the level one, and the size column is wider
+than level. These factors may explain why on single node sequences
+it is slightly slower.
 
-On the whole, the new loop-lifted upwards axes seem a profitable addition
-for the pathfinder runtime.
+Taking into account that in single-iterations the performance loss
+is very limited, but is huge on multiple iterations, the new loop-lifted 
+algorithms for the upwards XPath axes seem a profitable addition for the 
+pathfinder runtime.
 @c
 #include <gdk.h>
 #include "pathfinder.h"
@@ -348,7 +347,6 @@ ll_upwards(               /* RESULT: */
 
                 /* for each context node, parent gives back 1 or 0 results */ 
     	        if (iter_bat->tkey) BATkey(bn, TRUE);
-    	        if (ctx_bat->tkey) BATkey(BATmirror(bn), TRUE);
             } else  {
                 GDKerror("%s: illegal data in size column or context list.\n", axis);
             }
