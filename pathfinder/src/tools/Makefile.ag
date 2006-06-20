@@ -33,6 +33,7 @@ smallTOC_SHARED_MODS =	\
 	-l_bat_arith	\
 	-l_blob	\
 	-l_enum	\
+	-l_lock	\
 	-l_mkey	\
 	-l_mmath	\
 	-l_monettime	\
@@ -42,6 +43,7 @@ smallTOC_SHARED_MODS =	\
 	-l_unix	\
 	-l_xtables	\
 	\
+	-l_malalgebra	\
 	-l_txtsim	\
 	\
 	../../runtime/lib_pf_support \
