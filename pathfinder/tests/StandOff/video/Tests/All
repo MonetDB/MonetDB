@@ -1,4 +1,4 @@
-StandOff?import_doc
-StandOff?scenes.xq
-StandOff?songs.xq
-StandOff?artists.xq
+import_doc
+scenes.xq
+songs.xq
+artists.xq
