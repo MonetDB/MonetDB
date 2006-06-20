@@ -18,28 +18,30 @@
 @' 2000-2005 University of Konstanz and (C) 2005-2006 Technische
 @' Universitaet Muenchen, respectively.  All Rights Reserved.
 
-@f pf_burk
+@f pf_standoff
 @a Wouter Alink
+@a Peter Boncz
 @v 0.1
-@t MIL primitives to support the Burkowski Axis Steps in XQuery 
+@t MIL primitives to support the StandOff Axis Steps in XQuery 
 
 @* Introduction
 @T
-This module provides MIL primitives to support the Burkowski
+This module provides MIL primitives to support the StandOff
 Axis Steps on top of MonetDB within the "Pathfinder" project.
-This module needs to be loaded in order to use the Burkowski Steps.
+This module needs to be loaded in order to use the StandOff Steps.
 
-Actually there are 3 things to do in order to enable the Burkowski
+Actually there are 3 things to do in order to enable the StandOff
 steps:
 \begin{itemize}
-\item at compile time the Burkowski flag needs to be set by adding
-\texttt{--enable-burk} as a \texttt{./configure} switch.
+
+\item (FIXME: SHOULD BECOME OBSOLETE: at compile time the StandOff flag needs to be set by adding
+\texttt{--enable-standoff} as a \texttt{./configure} switch.)
 \item when all is compiled and Mserver is started it is needed to
-allow Burkowski steps by adding \texttt{burkowski=enabled} to the 
-\texttt{--set} option list. The default is \texttt{burkowski=disabled}.
+allow StandOff steps by adding \texttt{standoff=enabled} to the 
+\texttt{--set} option list. The default is \texttt{standoff=disabled}.
 \item and even when MonetDB is started, it is not possible to use
-Burkowski without first loading this module (\emph{pf\_burk}) by
-typing \texttt{module("pf\_burk")}.
+StandOff without first loading this module (\emph{pf\_standoff}) by
+typing \texttt{module("pf\_standoff")}.
 \end{itemize}
 
 @- Select Narrow / Select Wide / Reject Narrow / Reject Wide
@@ -81,9 +83,9 @@ particle" which are not inside a chapter-region.
 @
 @* Module Definition 
 @m
-.MODULE pf_burk;
+.MODULE pf_standoff;
 
-@+ Burkowski Joins
+@+ StandOff Joins
 @T
 The input for the joins are the current context: 
 \begin{verbatim}
@@ -100,27 +102,24 @@ The result is a list to the items in the destination context that match:
 these joins could as well be implemented on floats, dates, and other data-types 
 without much effort.
 
-@- non loop-lifted Burkowski joins
-@= burkowski_join_sigs
+@- non loop-lifted StandOff joins
+@= standoff_join_sigs
    .COMMAND @1_@2_join_sort(BAT[oid, @3], BAT[oid,@3], BAT[oid,@3], BAT[oid,@3]) :
 	BAT[void,oid] = CMD@1_@2_join_sort_@3; "@1 @2 join (on @3s), using inputs sorted on start"
 @
 @m
-# declaration Burkowski joins (int)
-@:burkowski_join_sigs(select,narrow,int)@
-@:burkowski_join_sigs(select,wide,int)@
-@:burkowski_join_sigs(reject,narrow,int)@
-@:burkowski_join_sigs(reject,wide,int)@
+# declaration StandOff joins (int)
+@:standoff_join_sigs(select,narrow,int)@
+@:standoff_join_sigs(select,wide,int)@
+@:standoff_join_sigs(reject,narrow,int)@
+@:standoff_join_sigs(reject,wide,int)@
 
-# declaration Burkowski joins (lng)
-@:burkowski_join_sigs(select,narrow,lng)@
-@:burkowski_join_sigs(select,wide,lng)@
-@:burkowski_join_sigs(reject,narrow,lng)@
-@:burkowski_join_sigs(reject,wide,lng)@
+# declaration StandOff joins (lng)
+@:standoff_join_sigs(select,narrow,lng)@
+@:standoff_join_sigs(select,wide,lng)@
+@:standoff_join_sigs(reject,narrow,lng)@
+@:standoff_join_sigs(reject,wide,lng)@
    
-# convenience
-.COMMAND burk_enabled() : bit = CMD_burk_enabled; "returns the status of Burkowski"
-
 # interaction with the underlying data
 .COMMAND blob(BAT[void,lng], BAT[void,lng], str) : 
 	BAT[void,str] = CMDfetch_standoff_data_lng; "fetch data from region (start,end) blob (file)"
@@ -128,9 +127,9 @@ without much effort.
 	BAT[void,str] = CMDfetch_standoff_data_int; "fetch data from region (start,end) blob (file)"
 @
 
-@- Loop-Lifted Burkowski joins
+@- Loop-Lifted StandOff joins
 @T
-This variant of the Burkowski joins uses loop-lifting to do the join for
+This variant of the StandOff joins uses loop-lifting to do the join for
 multiple inputs in a single pass. The input are the input regions (with there
 iteration value, sorted on "start"): 
 \begin{verbatim}
@@ -150,7 +149,7 @@ the bat (iter,end) is optional (can be void as well) as it is not used.
 
 \emph{NOTE}: the seqbase of the id-columns is currently supposed to be 0@0.
 
-\emph{NOTE}: the loop-lifted burkowski joins (SN, SW, RN, RW) have not been tested 
+\emph{NOTE}: the loop-lifted standoff joins (SN, SW, RN, RW) have not been tested 
 thoroughly. The result is ordered on tail (the region identifier) and NOT on 
 head (iter). (any additional testcases are welcome)
  
@@ -158,29 +157,29 @@ head (iter). (any additional testcases are welcome)
 @T
 \emph{KNOWN ISSUE}: currently the iter needs to be of type OID (and may NOT be VOID)
 
-\emph{KNOWN ISSUE}: the loop-lifted REJECT burkowski joins do NOT work
-workaround: use the non-loop-lifted Burkowski join or take the 
+\emph{KNOWN ISSUE}: the loop-lifted REJECT standoff joins do NOT work
+workaround: use the non-loop-lifted StandOff join or take the 
 loop-lifted-"select"-join and calculate per iter the inverse of the result.
 
 @m
-# declaration Burkowski joins (loop lifted, int)
-@:ll_burkowski_join_sigs(select,narrow,int)@
-@:ll_burkowski_join_sigs(select,wide,int)@
-@:ll_burkowski_join_sigs(reject,narrow,int)@
-@:ll_burkowski_join_sigs(reject,wide,int)@
+# declaration StandOff joins (loop lifted, int)
+@:ll_standoff_join_sigs(select,narrow,int)@
+@:ll_standoff_join_sigs(select,wide,int)@
+@:ll_standoff_join_sigs(reject,narrow,int)@
+@:ll_standoff_join_sigs(reject,wide,int)@
 
-# declaration Burkowski joins (loop lifted, lng)
-@:ll_burkowski_join_sigs(select,narrow,lng)@
-@:ll_burkowski_join_sigs(select,wide,lng)@
-@:ll_burkowski_join_sigs(reject,narrow,lng)@
-@:ll_burkowski_join_sigs(reject,wide,lng)@
+# declaration StandOff joins (loop lifted, lng)
+@:ll_standoff_join_sigs(select,narrow,lng)@
+@:ll_standoff_join_sigs(select,wide,lng)@
+@:ll_standoff_join_sigs(reject,narrow,lng)@
+@:ll_standoff_join_sigs(reject,wide,lng)@
 
-@= ll_burkowski_join_sigs
+@= ll_standoff_join_sigs
    .COMMAND ll_@1_@2_join_sort(BAT[oid, @3], BAT[oid,@3], BAT[oid,@3], BAT[oid,@3]) :
 	BAT[oid,oid] = CMDll_@1_@2_join_sort_@3; "loop lifted @1 @2 join (on @3s), using inputs sorted on start"
 @
 
-@- Burkowski steps (Burkowski Steps)
+@- StandOff Axis Steps
 
 @mil
 module(alarm);
@@ -189,33 +188,33 @@ module(malalgebra);
 module(mmath);
 module(xtables);
 
-const BURKOWSKI := nil;
+
+# FIXME/TODO: the attribute-names should be set by a 'declare option' statement inside
+# an XQuery expression
 var region_namespace := "";
 var region_start_attr_tag := "start";
 var region_end_attr_tag := "end";
 
 # Wouter: 
-@:ll_burkowski(select,narrow)@
-@:ll_burkowski(select,wide)@
-@:ll_burkowski(reject,narrow)@
-@:ll_burkowski(reject,wide)@
-@:burkowski(select,narrow)@
-@:burkowski(select,wide)@
-@:burkowski(reject,narrow)@
-@:burkowski(reject,wide)@
+@:ll_standoff_mil(select,narrow)@
+@:ll_standoff_mil(select,wide)@
+@:ll_standoff_mil(reject,narrow)@
+@:ll_standoff_mil(reject,wide)@
+@:standoff_mil(select,narrow)@
+@:standoff_mil(select,wide)@
+@:standoff_mil(reject,narrow)@
+@:standoff_mil(reject,wide)@
 @
 
-@+ Burkowski helpers
-
 @m
-.END pf_burk;
+.END pf_standoff;
 @
 
 @h
-#ifndef __PF_BURK_H__
-#define __PF_BURK_H__
+#ifndef __PF_STANDOFF_H__
+#define __PF_STANDOFF_H__
 
-#include "pf_burk.proto.h"
+#include "pf_standoff.proto.h"
 #include <monet.h>
 #include <monet_interpreter.h>
 #include <monettime.h>
@@ -233,8 +232,8 @@ var region_end_attr_tag := "end";
 #define MIN_int INT_MIN
 #define MIN_lng LLONG_MIN
 
-/* maximum size of stack for loop-lifted burkowski join */ 
-#define abs_max_stack_size 65536
+/* maximum size of heap for loop-lifted StandOff join */ 
+#define abs_max_heap_size 65536
 
 #endif 
 @
@@ -301,7 +300,7 @@ var region_end_attr_tag := "end";
 @= region_jump_decl_wide
 @
 
-@= burkowski_join_impl
+@= standoff_join_impl
 int 
 CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *region_start, BAT *region_end) {   
 
@@ -373,25 +372,25 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
 @
 @= ll_reject_outside
             /* insert nodes which are not contained */
-            // FIXME: we need to include the iters not on the stack...
+            // FIXME: we need to include the iters not on the heap...
             index = BUNindex(region_start,iter_start) - BUNindex(region_start, BUNfirst(region_start));
-            BUNins(bn, (ptr)(&(stack[i].iter)), (ptr)(&index), FALSE);
+            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
 @
 @= ll_select_inside
             /* insert nodes which are contained */
             index = BUNindex(region_start,iter_start) - BUNindex(region_start, BUNfirst(region_start)); 
-            BUNins(bn, (ptr)(&(stack[i].iter)), (ptr)(&index), FALSE);
+            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
 @
 @= ll_reject_inside
             /* skip nodes which are contained */
 @
 @= ll_narrow
         /* loop through the not strictly contained region */ 
-        /* nearest_start contains first upcoming starting point on stack
-           stack contains a single element (or more if more regions start on 
+        /* nearest_start contains first upcoming starting point on heap
+           heap contains a single element (or more if more regions start on 
            same place) */
         while(@:more_target_regions@ && *iter_start < nearest_start) { 
-            for (i=0;i<stack_size;i++) {
+            for (i=0;i<heap_size;i++) {
               @:ll_@1_outside@
             }
             iter_start+=Srs; iter_end+=Sre;
@@ -399,26 +398,20 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
 
         /* loop through the strictly contained regions */
         while(@:more_target_regions@ && *iter_start < nearest_next_start) {
-            /* if there is a item that should be removed from the stack,
+            /* if there is a item that should be removed from the heap,
                we need to remove (it/them) */
             if (*iter_start > nearest_end) {
               nearest_end = MAX_@2;
-              for (i=0; i < stack_size;i++) {
-                if (stack[i].end < *iter_start) {
-                  /* we only need to remove the item, nearest_next_start will 
-                     tell us when to fetch a new one */
-                  stack_size = remove_from_stack_@2(stack,stack_size,i--);
-                } else {
-                  /* in the same loop we can efficiently calculate the next 
-                     nearest end */
-                  if (stack[i].end < nearest_end) 
-                    nearest_end = stack[i].end;
-                }
-              }
+              while ((heap_size > 0) && (heap[heap_size-1].end < *iter_start))
+                  heap_size--;
+              if (heap_size > 0) 
+                  nearest_end = heap[heap_size-1].end;
             }
 
-            for (i=0;i<stack_size;i++) {
-              if (*iter_end <= stack[i].end) {
+            /* FIXME: we now know that the heap is sorted on END, so we can 
+               remove the if-statement here */
+            for (i=0;i<heap_size;i++) {
+              if (*iter_end <= heap[i].end) {
                 @:ll_@1_inside@
               } else {
                 @:ll_@1_outside@
@@ -426,41 +419,35 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
             }
             iter_start+=Srs; iter_end+=Sre; 
         }
-        /* by now, we should be ready to push a new item on the stack 
+        /* by now, we should be ready to push a new item on the heap 
            we processed as much as possible without this new item... */
 @
 @= ll_wide
         /* loop through the not even contained regions */
-        /* nearest_start contains first upcoming starting point on stack
-           stack should contain a single element (with outer_iter_start as nearest_start)
+        /* nearest_start contains first upcoming starting point on heap
+           heap should contain a single element (with outer_iter_start as nearest_start)
            if not, this step will automatically be skipped as iter_end will be more than 
            nearest_start */
         while(@:more_target_regions@ && *iter_end < nearest_start) {
-            for (i=0;i<stack_size;i++) {
+            for (i=0;i<heap_size;i++) {
               @:ll_@1_outside@
             }
             iter_start+=Srs; iter_end+=Sre;
         }
 
         /* loop through the partly contained regions 
-           now there are some elements on the stack that want our attention */
+           now there are some elements on the heap that want our attention */
         while(@:more_target_regions@ && *iter_end < nearest_next_start) {
             /* if we think there is at least one region that could be popped... */
             if (*iter_start > nearest_end ) {
               nearest_end = MAX_@2;
-              for (i=0;i<stack_size;i++) {
-                /* is this one of them */
-                if (*iter_start > stack[i].end) {
-                  /* i-- to keep the for-loop happy */
-                  stack_size = remove_from_stack_@2(stack, stack_size, i--);
-                } else {
-                  /* if not, let it compete in the nearest_end */
-                  if (nearest_end > stack[i].end) nearest_end=stack[i].end;
-                }
-              }
+              while ((heap_size > 0) && (heap[heap_size-1].end < *iter_start))
+                  heap_size--;
+              if (heap_size > 0) 
+                  nearest_end = heap[heap_size-1].end;
             }
-            for (i=0;i < stack_size;i++) {
-              if (*iter_end >= stack[i].start) {
+            for (i=0;i < heap_size;i++) {
+              if (*iter_end >= heap[i].start) {
                 @:ll_@1_inside@
               } else { 
                 @:ll_@1_outside@
@@ -468,7 +455,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
             }
             iter_start+=Srs; iter_end+=Sre; 
         }
-        /* by now, we should be ready to push a new item on the stack 
+        /* by now, we should be ready to push a new item on the heap 
            we processed as much as possible without this new item... */
 @
 
@@ -476,9 +463,9 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
  (iter_start < last_start)
 @
 
-@= ll_burkowski_join_impl
+@= ll_standoff_join_impl
 /* 4 aug 2005
-   loop lifted burkowski join implementation */
+   loop lifted standoff join implementation */
 int 
 CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *region_start, BAT *region_end) {
 
@@ -487,9 +474,9 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
         *outer_iter_start_next, *outer_iter_end_next, 
         nearest_end = MIN_@3, nearest_next_start = MAX_@3, nearest_start = MAX_@3; 
 
-    BURKstack_@3 *stack;
-    int max_stack_size = 16;
-    int stack_size = 0, i;
+    heap_@3 *heap;
+    int max_heap_size = 16;
+    int heap_size = 0, i;
     oid index;
     oid *outer_iter_iter, *outer_iter_iter_next;
     int Sss,Sse,Srs,Sre, Ssi;
@@ -498,7 +485,7 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
     *result=NULL;
 
     // KNOWN ISSUE: the reject-part does not work (it needs to know which iters there are beforehand)
-    // it also has to add the regions to all the iters that are currently not on the stack
+    // it also has to add the regions to all the iters that are currently not on the heap
 
     if (BATcount(source_start) != BATcount(source_end)) {
         GDKerror("ll_@1_@2_join_sort_@3: source BATs not related size(start) = %d != size(end) = %d.\n",
@@ -523,21 +510,21 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
         return(GDK_FAIL);
     }
 
-    // the number of iters is also the maximum depth of the stack 
-    // (however, in most cases the stack will be very shallow,
-    // only overlapping nodes will share the stack)
+    // the number of iters is also the maximum depth of the heap 
+    // (however, in most cases the heap will be very shallow,
+    // only overlapping nodes will share the heap)
     // we could allocate a lot less space:
     // probably log(|iter|) would be more than enough in most cases
     // counting iters is probably expensive, for now we only reserve for a fixed amount.. 
-    if ((stack = (BURKstack_@3 *)GDKmalloc(sizeof(BURKstack_@3) * max_stack_size)) == NULL) {
-        GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for stack.\n"); 
+    if ((heap = (heap_@3 *)GDKmalloc(sizeof(heap_@3) * max_heap_size)) == NULL) {
+        GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for heap.\n"); 
         return(GDK_FAIL);
     }
     // the size of the bat is maybe not correct (could be more, could be less)
     
     if ((bn = BATnew(TYPE_oid, TYPE_oid, BATcount(region_start))) == NULL) {
         GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for result BAT.\n"); 
-        GDKfree(stack);
+        GDKfree(heap);
         return(GDK_FAIL);
     }
 
@@ -557,7 +544,7 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
     Sse = BUNsize(source_end) / sizeof(@4);
     Ssi = BUNsize(source_start) / sizeof(oid);
 
-    stack_size = replace_in_stack_@3(stack,stack_size,
+    heap_size = replace_in_heap_@3(heap,heap_size,
             *outer_iter_iter,
             *outer_iter_start,
             *outer_iter_end);
@@ -571,10 +558,10 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
            this is NOT an optimization, it is neccessary to capture all the regions */
         while (outer_iter_start_next < outer_last_start) { 
             i=0;
-            while (i < stack_size && stack[i].iter != *(outer_iter_iter_next)) i++;
+            while (i < heap_size && heap[i].iter != *(outer_iter_iter_next)) i++;
             /* only skip region if there already is a region with the same iter 
-               and the region is contained in the current region on the stack. */
-            if (i < stack_size && stack[i].end > *(outer_iter_end_next)) {
+               and the region is contained in the current region on the heap. */
+            if (i < heap_size && heap[i].end > *(outer_iter_end_next)) {
                 /* skip region */
                 outer_iter_start_next+=Sss; 
                 outer_iter_end_next+=Sse;
@@ -595,7 +582,7 @@ endofskipping:
             nearest_start = MAX_@3;
 
         // todo: an optimization would be to add all the regions with same start-pos at once
-        //       if stack[next_iter].start = next_start --> add to stack
+        //       if heap[next_iter].start = next_start --> add to heap
         // if (nearest_start == nearest_next_start) -> skip inner loop (next part)
 
         @:ll_@2(@1,@3)@
@@ -605,29 +592,29 @@ endofskipping:
         outer_iter_iter=outer_iter_iter_next; 
 
         if (outer_iter_start < outer_last_start) {
-            stack_size = replace_in_stack_@3(stack,stack_size,
+            heap_size = replace_in_heap_@3(heap,heap_size,
                     *outer_iter_iter,
                     *outer_iter_start,
                     *outer_iter_end);
-            if (stack_size >= max_stack_size) {
-                if (max_stack_size < abs_max_stack_size) {
-                    max_stack_size *= 2;
-                    GDKwarning("ll_@1_@2_join_sort_@3: (stack overflow) "
-                            "the stack capacity will be doubled and will hold %d items\n", 
-                            (int)max_stack_size );
-                    GDKfree(stack);
-                    if ((stack = (BURKstack_@3 *)GDKmalloc(sizeof(BURKstack_@3) * 
-                                    max_stack_size)) == NULL) {
-                        GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for stack.\n"); 
+            if (heap_size >= max_heap_size) {
+                if (max_heap_size < abs_max_heap_size) {
+                    max_heap_size *= 2;
+                    GDKwarning("ll_@1_@2_join_sort_@3: (heap overflow) "
+                            "the heap capacity will be doubled and will hold %d items\n", 
+                            (int)max_heap_size );
+                    GDKfree(heap);
+                    if ((heap = (heap_@3 *)GDKmalloc(sizeof(heap_@3) * 
+                                    max_heap_size)) == NULL) {
+                        GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for heap.\n"); 
                         BBPreclaim(bn);
                         return(GDK_FAIL);
                     }
                 } else {
-                    GDKerror("ll_@1_@2_join_sort_@3: (stack overflow) "
+                    GDKerror("ll_@1_@2_join_sort_@3: (heap overflow) "
                             "Houston, please contact 911 (or increase "
-                            "the max_stack_size = %d)\n", 
-                            (int)max_stack_size );
-                    GDKfree(stack);
+                            "the max_heap_size = %d)\n", 
+                            (int)max_heap_size );
+                    GDKfree(heap);
                     BBPreclaim(bn);
                     return(GDK_FAIL);
                 }
@@ -636,57 +623,69 @@ endofskipping:
                 nearest_end=*outer_iter_end;
         }
     }
-    GDKfree(stack); /* it might be possible there are still items left on the stack, 
+    GDKfree(heap); /* it might be possible there are still items left on the heap, 
                        but we are out of target-regions, so they starve... */
     *result=bn;
     return(GDK_SUCCEED);
 }
 @
 
-@= ll_burk
-@:ll_burkowski_join_impl(select,narrow,@1,@2)@
-@:ll_burkowski_join_impl(select,wide,@1,@2)@
-@:ll_burkowski_join_impl(reject,narrow,@1,@2)@
-@:ll_burkowski_join_impl(reject,wide,@1,@2)@
+
+@= ll_standoff
+@:ll_standoff_join_impl(select,narrow,@1,@2)@
+@:ll_standoff_join_impl(select,wide,@1,@2)@
+@:ll_standoff_join_impl(reject,narrow,@1,@2)@
+@:ll_standoff_join_impl(reject,wide,@1,@2)@
 @
 
-@= burk
-@:burkowski_join_impl(select,narrow,@1,@2)@
-@:burkowski_join_impl(select,wide,@1,@2)@
-@:burkowski_join_impl(reject,narrow,@1,@2)@
-@:burkowski_join_impl(reject,wide,@1,@2)@
+@= standoff
+@:standoff_join_impl(select,narrow,@1,@2)@
+@:standoff_join_impl(select,wide,@1,@2)@
+@:standoff_join_impl(reject,narrow,@1,@2)@
+@:standoff_join_impl(reject,wide,@1,@2)@
 @
 
-@= stack_procs
-/* actually its more like a heap */
-typedef struct BURKstack_@1 {
+@= heap_procs
+typedef struct heap_@1 {
     @2 end,start;
     oid iter;
-} BURKstack_@1;
+} heap_@1;
 
-/* returns the new stacksize */
-int replace_in_stack_@1(BURKstack_@1 stack[], int size, oid iter, @2 start, @2 end) {
-    int i=0;
-    while (i < size && stack[i].iter != iter) i++;
-    stack[i].start=start;
-    stack[i].end=end;
-    stack[i].iter=iter;
-    if (i >= size) 
-        return size+1;
-    else
-        return size;
-}
-
-/* returns the new stacksize */
-int remove_from_stack_@1(BURKstack_@1 stack[], int size, int index) {
-    int i = size-1;
-    // stack doesn't need to be sorted 
-    // (we can fill the gap with the one on top of the stack)
-    stack[index].start = stack[i].start;
-    stack[index].end = stack[i].end;
-    stack[index].iter = stack[i].iter;
+/* iters are unique within the heap */
+int remove_iter_from_heap_@1(heap_@1 heap[], int size, oid iter) {
+    int i;
+    for (i=0;i < size && heap[i].iter != iter; i++);
+    for (;   i < size-1;i++) {
+      heap[i].end = heap[i+1].end;
+      heap[i].start = heap[i+1].start;
+      heap[i].iter = heap[i+1].iter;
+    } 
     return i;
 }
+
+/* assume the heap is sorted on 'end'
+   we need to do two things:
+    - if the same iter is already in the heap, remove it.
+    - put the new values in the heap 
+*/
+int replace_in_heap_@1(heap_@1 heap[], int size, oid iter, @2 start, @2 end) {
+    size = remove_iter_from_heap_@1(heap, size, iter);
+    /* now we are sure there is no heap-item with our iter anymore */      
+    /* lets bubble to new location for item */
+    int i;
+    for (i=size;(i > 0) && (heap[i].end < end); i--) {
+        heap[i].end = heap[i-1].end; 
+        heap[i].start = heap[i-1].start; 
+        heap[i].iter = heap[i-1].iter; 
+        
+    }
+    heap[i].iter = iter;
+    heap[i].end = end;
+    heap[i].start = start;
+    /* return the new heapsize */
+    return size+1;
+}
+
 @
 
 @= ffb
@@ -699,8 +698,8 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
     @2 *iter_start, *iter_end, start_inc, end_inc, *start_next;
     @2 count, blob_pos, *last_iter_start, next_stop, min_end;
     int c =0;
-    int stack_size, i, j;
-    struct { @2 start, end; } stack[256]; // probably a to high estimation, but to be sure...
+    int heap_size, i, j;
+    struct { @2 start, end; } heap[256]; // probably a to high estimation, but to be sure...
     char buf[4098], temp[4096];
 
     FILE *blob;
@@ -721,36 +720,36 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
     last_iter_start =  (@2 *) BUNtail(region_start, BUNlast(region_start));
     count = 0;   
     blob_pos =0;   
-    stack_size = 0;
+    heap_size = 0;
     while (iter_start < last_iter_start) {
         start_next = iter_start + start_inc;
-        //  fast-forward if stack is empty
-        if (stack_size==0) { 
+        //  fast-forward if heap is empty
+        if (heap_size==0) { 
 		fseek(blob,*iter_start,SEEK_SET); 
 		blob_pos=*iter_start; 
 	}
-        //   push new region on stack
+        //   push new region on heap
 	if ((*iter_end - *iter_start) / 4096 > 0) {
             GDKerror("BLOB: Cannot handle regions larger than 4096 bytes\n");
             return(GDK_FAIL);
         }
-        stack[stack_size].start=*iter_start;
-        stack[stack_size].end=*iter_end;
-	stack_size++;
+        heap[heap_size].start=*iter_start;
+        heap[heap_size].end=*iter_end;
+	heap_size++;
         
         // also allocate the memory for the string. 
-        if (stack_size == 255) {
+        if (heap_size == 255) {
             GDKerror("Houston, please call 911, and please hurry up! (or increase "
-                    "the stacksize in the ffb() function)\n");
+                    "the heapsize in the ffb() function)\n");
             fclose(blob);
             return(GDK_FAIL);
         }
 
         //   start fetching till either: end of region or start of new region (whichever comes first)
         min_end = MAX_@1; 
-        for (i=0;i<stack_size;i++)  
-            if (stack[i].end < min_end) 
-               min_end=stack[i].end; 
+        for (i=0;i<heap_size;i++)  
+            if (heap[i].end < min_end) 
+               min_end=heap[i].end; 
         if (start_next == last_iter_start || *start_next > min_end) 
 		next_stop = min_end; 
 	else 
@@ -764,26 +763,26 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
             blob_pos++;
         }
 	
-        // remove all stack-items with end == blob_pos (or if EndOfFile, end all items on stack)
+        // remove all heap-items with end == blob_pos (or if EndOfFile, end all items on heap)
         // there could have been an item ending, otherwise a new one 
         // will start
         if ((blob_pos == min_end) || (c == EOF)) 
-            for (i=0;i<stack_size;i++) 
-                if ((stack[i].end == min_end) || (c == EOF)) { 
-                    if ((stack[i].start % 4096) < (blob_pos % 4096)) {
+            for (i=0;i<heap_size;i++) 
+                if ((heap[i].end == min_end) || (c == EOF)) { 
+                    if ((heap[i].start % 4096) < (blob_pos % 4096)) {
                       // we have to return (start..end)
                       buf[blob_pos % 4096] = '\0'; // zero-terminate string
-                      BUNappend(*result, (ptr)(buf + (stack[i].start % 4096)), FALSE);
+                      BUNappend(*result, (ptr)(buf + (heap[i].start % 4096)), FALSE);
                     } else {
                       // we have to concatenate the two parts (start..4095) + (0...end)
-                      for (j=0; j < blob_pos - stack[i].start; j++) 
-                        temp[j] = buf[(stack[i].start + j) % 4096];
+                      for (j=0; j < blob_pos - heap[i].start; j++) 
+                        temp[j] = buf[(heap[i].start + j) % 4096];
                       temp[j]='\0'; // zero-terminate string
                       BUNappend(*result, (ptr)temp, FALSE);
                     }
-                    stack_size--; // pop from stack
-                    stack[i].start = stack[stack_size].start; 
-                    stack[i].end = stack[stack_size].end; 
+                    heap_size--; // pop from heap
+                    heap[i].start = heap[heap_size].start; 
+                    heap[i].end = heap[heap_size].end; 
                 }
         // move to next item
         iter_start+=start_inc; iter_end+=end_inc; start_next+=start_inc; count++;
@@ -794,7 +793,7 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
 }
 @
 
-@= burk_step
+@= standoff_step
 PROC @1(BAT[oid,oid] iter, BAT[oid,oid] ctx, oid frag, BAT[oid,bat] ws, int order, bat[void,oid] cands) : BAT[oid,oid]
 {
     # TODO: "order" is not (yet?) used, here.
@@ -851,14 +850,14 @@ BAT[oid,bat] ws (working set)\n\
 BAT[void,oid] cands (candidate set)\n\
 DESCRIPTION:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
-"pf_burk");
+"pf_standoff");
 @
 
-@= ll_burkowski
+@= ll_standoff_mil
 ################################################
-# Loop Lifted version of the @1-@2 Burkowski Step 
-# invoked by burk_step
-PROC ll_burkowski_@1_@2(BAT[oid,oid] region_pre, 
+# Loop Lifted version of the @1-@2 StandOff Step 
+# invoked by standoff_step (returns PRE's)
+PROC ll_standoff_@1_@2(BAT[oid,oid] region_pre, 
                              BAT[oid,any] region_start,
                              BAT[oid,any] region_end,
                              BAT[void,oid] cands,
@@ -883,18 +882,23 @@ PROC ll_burkowski_@1_@2(BAT[oid,oid] region_pre,
   var sel_end := sel_region2.leftjoin(region_end);     
 
   # do the join
+  # FIXME: Wouter: as of version 0.12 document-containers can hold multiple documents
+  # we actually should do a batloop here (iterate over all documents in a document-container)
+  # and per-document we should find the proper context-nodes and candidates
+
+  # another option would be to modify the ll_@1_@2_join_sort
   var result := ll_@1_@2_join_sort(iter_start, source_end, 
                                    sel_start, sel_end);
   
-  # and convert the regions back to pre's
+  # and convert the regions back to PRE's
   result := result.leftjoin(sel_region2);
   result := result.leftjoin(region_pre);
   return result;
 }
 @
-@= burkowski
+@= standoff_mil
 # actual step (non-loop-lifted)
-PROC burkowski_@1_@2(BAT[oid,oid] region_pre, 
+PROC standoff_@1_@2(BAT[oid,oid] region_pre, 
                              BAT[oid,any] region_start,
                              BAT[oid,any] region_end,
                              BAT[void,oid] cands,
@@ -914,10 +918,12 @@ PROC burkowski_@1_@2(BAT[oid,oid] region_pre,
   var sel_end := sel_region2.leftjoin(region_end);     
 
   # do the join
+  # FIXME: Wouter: as of version 0.12 document-containers can hold multiple documents
+  # we actually should do a batloop here (iterate over all documents in a document-container)
   var result := @1_@2_join_sort(source_start, source_end, 
                                 sel_start, sel_end);
   
-  # and convert the regions back to pre's
+  # and convert the regions back to PRE's
   result := result.leftjoin(sel_region2);
   result := result.leftjoin(region_pre).reverse().mark(0@0).sort();
   return result;
@@ -1062,7 +1068,7 @@ PROC burkowski_@1_@2(BAT[oid,oid] region_pre,
  }
 @
 
-@= loop_lifted_scj_step_burk2
+@= loop_lifted_scj_step_standoff2
 proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oid] frag, bat[oid, bat] ws @3 ) : bat[oid,bat]
 {
     var result := loop_lifted_@1_step@2 (iter, item, frag, ws, 0 @4);
@@ -1163,18 +1169,18 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oi
 	cands := nil;
 
 	# post-test
-        # wouter: there is no post-test for any burkowski step, but lets leave this 
+        # wouter: there is no post-test for any standoff step, but lets leave this 
         # for compatibility with the regular steps
 	@2
 @
 
-@= loop_lifted_scj_step_burk1
-@:loop_lifted_scj_step_burk2(@1,,,,,                                             cands,@:no_pre@)@
-@:loop_lifted_scj_step_burk2(@1,_with_kind_test,@:kind_args@, @:kind_params@, ,cands,@:kind_pre(kind)@)@
-@:loop_lifted_scj_step_burk2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   ,cands,@:ns_pre@)@
-@:loop_lifted_scj_step_burk2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  ,cands,@:loc_pre@)@
-@:loop_lifted_scj_step_burk2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  ,cands,@:target_pre@)@
-@:loop_lifted_scj_step_burk2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,cands,@:nsloc_pre@)@
+@= loop_lifted_scj_step_standoff1
+@:loop_lifted_scj_step_standoff2(@1,,,,,                                             cands,@:no_pre@)@
+@:loop_lifted_scj_step_standoff2(@1,_with_kind_test,@:kind_args@, @:kind_params@, ,cands,@:kind_pre(kind)@)@
+@:loop_lifted_scj_step_standoff2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   ,cands,@:ns_pre@)@
+@:loop_lifted_scj_step_standoff2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  ,cands,@:loc_pre@)@
+@:loop_lifted_scj_step_standoff2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  ,cands,@:target_pre@)@
+@:loop_lifted_scj_step_standoff2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,cands,@:nsloc_pre@)@
 @
 
 @mil
@@ -1185,25 +1191,25 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oi
 # interface provides...
 # 
 
-# Wouter: added burkowski
+# Wouter: added standoff
 #one of the ?_pre steps probably does some filtering (all nodes before the #1 node in source are removed from cands)
-# this should not be done in case of Burk (bug is illustrated in Video-example)
+# this should not be done in case of StandOff (bug is illustrated in Video-example)
 # i assume it is the :shrink_code!!
-@:loop_lifted_scj_step_burk1(select_narrow)@
-@:loop_lifted_scj_step_burk1(select_wide)@
-@:loop_lifted_scj_step_burk1(reject_narrow)@
-@:loop_lifted_scj_step_burk1(reject_wide)@
+@:loop_lifted_scj_step_standoff1(select_narrow)@
+@:loop_lifted_scj_step_standoff1(select_wide)@
+@:loop_lifted_scj_step_standoff1(reject_narrow)@
+@:loop_lifted_scj_step_standoff1(reject_wide)@
 
-# Wouter: added burkowski steps 
+# Wouter: added standoff steps 
 # last argument tells whether to use the loop-lifted version
-@:burk_step(select_narrow,select-narrow,burkowski_select_narrow, true)@
-@:burk_step(select_wide,select-wide,burkowski_select_wide,       true)@
-@:burk_step(reject_narrow,reject-narrow,burkowski_reject_narrow, true)@
-@:burk_step(reject_wide,reject-wide,burkowski_reject_wide,       true)@
+@:standoff_step(select_narrow,select-narrow,standoff_select_narrow, true)@
+@:standoff_step(select_wide,select-wide,standoff_select_wide,       true)@
+@:standoff_step(reject_narrow,reject-narrow,standoff_reject_narrow, true)@
+@:standoff_step(reject_wide,reject-wide,standoff_reject_wide,       true)@
 
 
 PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
-  # how-to: this region extract is used for the BURKOWSKI steps
+  # how-to: this region extract is used for the StandOff steps
   # if your regions are stored in different attributes than "start" and "end",
   # than modify the variables below
 
@@ -1215,17 +1221,18 @@ PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
   var start_qn := nil, end_qn := nil;
   if (isnil(CATCH({ start_qn := XIRAF_nodes.find(region_start_attr_tag);
                     end_qn := XIRAF_nodes.find(region_end_attr_tag); }))) {
-      # get all start attributes, then their numerical value, sort it, and then get the pre's
+      # get all start attributes, then their numerical value, sort it, and then get the PRE's
       var attr_attr := my_ws.fetch(ATTR_QN).find(i).uselect(start_qn).mirror();
       var attr_prop := attr_attr.leftjoin(my_ws.fetch(ATTR_PROP).find(i));
       var val_start := [*tpe](attr_prop.leftjoin(my_ws.fetch(PROP_VAL).find(i))).reverse().sort();
+      # Wouter?: ATTR_OWN now points to PREs? (i.o. PRE?s)
       var start_pre := val_start.leftjoin(my_ws.fetch(ATTR_OWN).find(i));
 
-      # now we have a table with a pre column and a start (numerical) column in the right order
+      # now we have a table with a PRE column and a start (numerical) column in the right order
       var left_pre := start_pre.reverse().mark(0@0).reverse();
       var left_start := start_pre.mark(0@0).reverse();
 
-      # go get the pre numbers that have an end attribute
+      # go get the PRE numbers that have an end attribute
       var right_attr := my_ws.fetch(ATTR_QN).find(i).uselect(end_qn).mark(0@0).reverse();
       var right_pre := right_attr.leftjoin(my_ws.fetch(ATTR_OWN).find(i));
       var right_end := [*tpe](right_attr.leftjoin(my_ws.fetch(ATTR_PROP).find(i)).leftjoin(my_ws.fetch(PROP_VAL).find(i)));
@@ -1275,10 +1282,11 @@ oid i (index in the active working set)\n\
 str tpe (type of region-values (int or lng))\n\
 DESCRIPTION:\n\
 adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and fills them.",
-"pf_burk");
+"pf_standoff");
+
 
 PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
-    # how-to: this region extract is used for the BURKOWSKI steps
+    # how-to: this region extract is used for the StandOff steps
     # if your regions are stored in different attributes than "start" and "end",
     # than modify the variables below
     #printf("extracting regions from %s:%s and %s:%s\n", 
@@ -1351,31 +1359,22 @@ BAT[str,BAT] ws (Working Set)\n\
 str tpe (type of region-values (int or lng))\n\
 DESCRIPTION:\n\
 adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and fills them.",
-"pf_burk");
+"pf_standoff");
 @
 
 @c
-#include "pf_burk.h"
+#include "pf_standoff.h"
 
-int CMD_burk_enabled(bit * result) {
-    if (GDKgetenv("burkowski") != NULL)
-        (*result) = (bit) !strcmp(GDKgetenv("burkowski"),"enabled");
-    else 
-        (*result) = (bit) 0; /* appearantly false */
-    return(GDK_SUCCEED);
-}
+/* simple heap operations for the loop-lifted StandOff join */
+@:heap_procs(int,int)@
+@:heap_procs(lng,long long)@
 
-/* simple stack operations for the loop-lifted burkowski join */
-// TODO: test if a sorted stack could be exploited...
-@:stack_procs(int,int)@
-@:stack_procs(lng,long long)@
+/* StandOff joins */
+@:standoff(lng,long long)@
+@:standoff(int,int)@
 
-/* burkowski joins */
-@:burk(lng,long long)@
-@:burk(int,int)@
-
-@:ll_burk(lng,long long)@
-@:ll_burk(int,int)@
+@:ll_standoff(lng,long long)@
+@:ll_standoff(int,int)@
 
 @- not implemented yet
 @c
