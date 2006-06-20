@@ -1,1 +1,1 @@
-$RELSRCDIR/StandOff.py
+$TSTSRCBASE/tests/StandOff/StandOff.py
