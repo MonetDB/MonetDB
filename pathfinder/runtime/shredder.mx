@@ -414,24 +414,37 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
 /* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
  * correct the batsize will always shrink!
  */
-static void setBATcapacity(shredBAT* sb, int n) {
-        BAT* b = sb->bat;
-        BUN top = NULL;
-        if (b->ttype == TYPE_chr) {
-                top = (BUN) &sb->cast.chrCAST[n];
-        } else if (b->ttype == TYPE_int) {
-                top = (BUN) &sb->cast.natCAST[n];
-        } else if (b->ttype == TYPE_oid) {
-                top = (BUN) &sb->cast.oidCAST[n]; 
-        } 
-        if (n+n > REMAP_PAGE_MAXSIZE) {
+static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
+        BAT* b = shredCtx->dstBAT[idx].bat;
+
+        void* top;
+        
+        int bottomTop = n;
+        if (n > 65536) {
                 BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
         }
-        sb->cnt = n;
-        assert(top);
+        shredCtx->dstBAT[idx].cnt = n;
+        switch( shredCtx->dstBAT[idx].def->tailType ) {
+         case TYPE_int :
+                top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
+                break;
+         case TYPE_chr: {
+                b->batBuns->free = n; 
+                BATsetcount(b, n);
+                b->tsorted = 0;
+                return 1;
+                }
+         case TYPE_oid:
+                top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
+                break;
+         default:
+                GDKerror("shredder.mx:setBATcapacity: bad tailType\n");
+                return -1;
+        }
         b->batBuns->free = ((BUN)top) - BUNfirst(b);
         BATsetcount(b, n);
         b->tsorted = 0;
+	return 1;
 }
 
 static void printStat(shredCtxStruct* shredCtx) {
@@ -464,24 +477,29 @@ static void printStat(shredCtxStruct* shredCtx) {
 }
 
 static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
-        BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
-	shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
-	shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
-	BAT* pvu;
-	BAT* xlate_oid;
         oid i;
+
+        BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
 
         if ( !res ) {
                 GDKerror("shredder.mx:finalizeShredCtx: resultBAT:create failed.\n");
                 return NULL;
         }
-        setBATcapacity(&shredCtx->dstBAT[PRE_SIZE], shredCtx->nnode_pre);
-        setBATcapacity(&shredCtx->dstBAT[PRE_LEVEL],shredCtx->nnode_pre);
-        setBATcapacity(&shredCtx->dstBAT[PRE_PROP], shredCtx->nnode_pre);
-        setBATcapacity(&shredCtx->dstBAT[PRE_KIND], shredCtx->nnode_pre);
-        setBATcapacity(&shredCtx->dstBAT[ATTR_OWN], shredCtx->nnode_attr);
-        setBATcapacity(&shredCtx->dstBAT[ATTR_QN],  shredCtx->nnode_attr);
-        setBATcapacity(&shredCtx->dstBAT[ATTR_PROP],shredCtx->nnode_attr);
+	if (
+          (setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr) < 0) ||
+          (setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr) < 0) ||
+          (setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr) < 0)
+	)
+		return NULL;
+	/* */
+	shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
+
+	BAT* pvu;
+	BAT* xlate_oid;
 
 	if ( pf_compress(pv->bat,&pvu,&xlate_oid) < 0 ) {
         	GDKerror("shredder.mx:finalizeShredCtx: compressing PROP_VAL fails\n");
@@ -497,6 +515,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 	pv->cnt = (nat)BATcount(pvu); /* set the correct #values in the bat */
 	pv->bat = pvu;
 
+	shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
         if (BATcount(ap->bat)) {
 		BAT* lj = BATleftjoin(ap->bat,xlate_oid,BATcount(ap->bat));
 		BBPunfix(BBPcacheid(ap->bat));
@@ -521,7 +540,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
                         stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
                 sb->bat = BATsetaccess( sb->bat, BAT_READ );
                 bat bbb = BBPcacheid( sb->bat );
-                if ( ! BUNins(res, &i, &bbb, FALSE) ) {
+                if ( ! BUNins(res, &i, &bbb) ) {
                      GDKerror("shredder.mx:finalizeShredCtx: copy2result fails\n");
                      return NULL;
                 }
@@ -636,17 +655,17 @@ static int incrBATsize(shredBAT* sb, nat i) {
      */
     if ( newsize > INT_MAX ) {
     	newsize = INT_MAX;
+
 	if ( sb->size == INT_MAX ) {
         	GDKerror("shredder.mx:incrBATsize: BATextend[\"%s\"](size>INT_MAX) fails\n",sb->def->name);
 		return -1;
 	}
     }
-    setBATcapacity(sb,sb->size);
+    sb->size= newsize;
     if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
         GDKerror("shredder.mx:incrBATsize: BATextend[\"%s\"](%d to %d) fails\n",sb->def->name,sb->size,newsize);
         return -1;
     }
-    sb->size = newsize;
     if ( sb->def->tailType != TYPE_str ) {
          sb->cast.voidCAST = (void*)BUNfirst(sb->bat);
     }
@@ -710,7 +729,7 @@ static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
 #ifdef VERBOSE
         stream_printf(GDKout,"APPEND-STR[%s](%s)\n",sb->def->name,v);
 #endif
-        if ( !BUNappend(sb->bat, (ptr)v, FALSE) ) {
+        if ( !BUNappend(sb->bat, (ptr)v) ) {
             GDKerror("shredder.mx:append_str2bat: APPEND-STR[%s](%s), BUNappend fails\n",sb->def->name,v);
             return NATNIL;
         }
@@ -722,7 +741,7 @@ static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, o
 #ifdef VERBOSE
         stream_printf(GDKout,"APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
 #endif
-        if ( !BUNins(sb->bat,(ptr)s,(ptr)&o,FALSE) ) {
+        if ( !BUNins(sb->bat,(ptr)s,(ptr)&o) ) {
             return NATNIL;
         }
         return sb->cnt++;
@@ -763,22 +782,22 @@ timer_str (long elapsed)
     tm = str = strdup ("000h 00m 00s 000ms 000us");
 
     if (elapsed / 3600000000UL) {
-        str += sprintf (str, "%03luh ", elapsed / 3600000000UL);
+        str += sprintf (str, "%03ldh ", elapsed / 3600000000UL);
         elapsed %= 3600000000UL;
     }
   
     if (elapsed / 60000000UL) {
-        str += sprintf (str, "%02lum ", elapsed / 60000000UL);
+        str += sprintf (str, "%02ldm ", elapsed / 60000000UL);
         elapsed %= 60000000UL;
     }
   
     if (elapsed / 1000000UL) {
-        str += sprintf (str, "%02lus ", elapsed / 1000000UL);
+        str += sprintf (str, "%02lds ", elapsed / 1000000UL);
         elapsed %= 1000000UL;
     }
 
     if (elapsed / 1000UL) {
-        str += sprintf (str, "%03lums ", elapsed / 1000UL);
+        str += sprintf (str, "%03ldms ", elapsed / 1000UL);
         elapsed %= 1000UL;
     }
 
@@ -942,7 +961,7 @@ static nat store_PfxLoc4SAX1(shredCtxStruct* shredCtx, char* pfxloc) {
         }
 #ifdef USE_COMPRESSION
 	res_oid = (oid)res;
-        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid,FALSE) ) {
+        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
                 GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
                 return NATNIL;
         }
@@ -966,11 +985,11 @@ static nat store_PfxLocNEW(
 	if ( a_uri ) {
 	   if ( !a_pfx )
 	       a_pfx = (xmlChar*)emptyString;
-	   sprintf(shredCtx->workSpace,"%s:%s:%s",(char*)a_uri,(char*)a_pfx,(char*)a_tag);
+	   sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
 	   pfxloc = &shredCtx->workSpace[0];
 	} else if ( a_pfx ) {
 	   a_uri = (xmlChar*)emptyString;
-	   sprintf(shredCtx->workSpace,"%s:%s",(char*)a_pfx,(char*)a_tag);
+	   sprintf(shredCtx->workSpace,"%s:%s",a_pfx,a_tag);
 	   pfxloc = &shredCtx->workSpace[0];
 	} else {
 	   a_uri = a_pfx = (xmlChar*)emptyString;
@@ -997,7 +1016,7 @@ static nat store_PfxLocNEW(
         }
 #ifdef USE_COMPRESSION
 	res_oid = (oid)res;
-        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid,FALSE) ) {
+        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
                 GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
                 return NATNIL;
         }
@@ -1146,9 +1165,6 @@ shred_start_element(void *xmlCtx,
     	    stream_printf(GDKout,",val=\"%s\"",a_val);
     	    stream_printf(GDKout,")\n");
 #endif
-            if ( !a_pfx && a_uri) { 
-                a_uri = NULL; /* attribute without prefix cannot have a namespace */
-            }
             qn_id  = store_PfxLocNEW(shredCtx,a_uri,a_pfx,a_tag);
 
 	    /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
@@ -1165,7 +1181,7 @@ shred_start_element(void *xmlCtx,
             }
 	    int attrType;
 
-	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)a_tag)) ) {
+	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)*atts)) ) {
 	        if ( !handleID_IDREF(shredCtx,(char*)e_loc,node.pre,(char*)a_tag,(char*)a_val,attrType) ) {
                 	BAILOUT(xmlCtx);
 		}
@@ -1485,10 +1501,9 @@ static void my_startElementNsSAX2Func(
 		int nb_attributes, 
 		int nb_defaulted, 
 		const xmlChar ** attributes) {
-	(void)nb_defaulted; 
 	(void)nb_namespaces; 
 	(void)namespaces; 
-	shred_start_element(ctx,URI,prefix,localname,nb_attributes,attributes);
+	shred_start_element(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
 }
 
 /* libxml2 SAX2 version for the endElement construction */

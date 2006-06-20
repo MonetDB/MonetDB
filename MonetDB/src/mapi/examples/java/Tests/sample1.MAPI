@@ -1,3 +1,0 @@
-#!/bin/sh
-
-Mlog -x "ant -emacs -buildfile ${TSTSRCDIR}/../build.xml -Dbuilddir=${TSTBLDDIR}/../ -Dhost=\"${HOST}\" -Dport=${MAPIPORT} -Dmapi_jar=${TSTBLDDIR}/../../../clients/java/mapi.jar ${TST}"

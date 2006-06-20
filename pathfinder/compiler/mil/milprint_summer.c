@@ -116,7 +116,7 @@ static void mps_error(const char *format, ...)
             "The Pathfinder compiler experienced \n"
             "an internal problem in the MIL code generation.\n"
             "You may want to report this problem to the Pathfinder \n"
-            "development team (pathfinder@pathfinder-xquery.org).\n\n"
+            "development team (pathfinder@inf.uni-konstanz.de).\n\n"
             "When reporting problems, please attach your XQuery input,\n"
             "as well as the following information:\n"
             "%s\n\n"
@@ -702,7 +702,7 @@ map2NODE_interface (opt_t *f)
             "kind := kind.materialize(ipik);\n"
             "var attr := kind.get_type(ATTR).hmark(0@0);\n"
             "var attr_iter := attr.leftfetchjoin(iter).materialize(attr);\n"
-            "var attr_item := attr.leftfetchjoin(item).materialize(attr);\n"
+            "var attr_item := attr.leftfetchjoin(item);\n"
             "var attr_frag := attr.leftfetchjoin(kind).get_fragment();\n"
             "attr := nil;\n"
             "_r_attr_iter := attr_iter;\n"
@@ -1658,11 +1658,10 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
         exp_type = PFty_child (exp_type);
     }
 
-    milprintf(f, "{ # typeswitch\n");
-
     if (TY_EQ(exp_type, PFty_empty ()))
     {
         milprintf(f,
+                "{ # typeswitch\n"
                 "var unique_iter := iter.tunique();\n"
                 "item := loop%03u.outerjoin(project(unique_iter,false)).[isnil]().[oid]();\n"
                 "iter := loop%03u;\n"
@@ -1680,71 +1679,11 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     else if (TY_EQ (exp_type, PFty_string ()))
         kind = "STR";
     else if (TY_EQ (exp_type, PFty_double ()))
-        kind = "DBL";
+        kind = "DEC";
     else if (TY_EQ (exp_type, PFty_boolean ()))
         kind = "BOOL";
     else if (TY_EQ (exp_type, PFty_untypedAtomic ()))
         kind = "U_A";
-    else if (TY_EQ (exp_type, PFty_xs_anyNode ())) {
-        milprintf(f,
-            "kind := kind.[>](ATOMIC);\n");
-        kind = "true";
-    }
-    else if (TY_EQ (exp_type, PFty_xs_anyAttribute ())) {
-        milprintf(f,
-            "kind := kind.get_types();\n");
-        kind = "ATTR";
-    }
-    else if (TY_EQ (exp_type, PFty_doc (PFty_xs_anyType ()))) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
-            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "DOCUMENT";
-    }
-    else if (TY_EQ (exp_type, PFty_xs_anyElement ())) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
-            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "ELEMENT";
-    }
-    else if (TY_EQ (exp_type, PFty_text ())) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
-            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "TEXT";
-    }
-    else if (TY_EQ (exp_type, PFty_comm ())) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
-            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "COMMENT";
-    }
-    else if (TY_EQ (exp_type, PFty_pi (NULL))) {
-        milprintf(f,
-            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
-            "var oid_item := oid_node.leftfetchjoin(item);\n"
-            "var oid_frag := oid_node.leftfetchjoin(kind).get_fragment();\n"
-            "var oid_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
-            "kind := kind.mirror().outerjoin(oid_kind);\n");
-        kind = "PI";
-    }
     else
         PFoops (OOPS_TYPECHECK,
                 "couldn't solve typeswitch at compile time "
@@ -1755,6 +1694,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     /* match one/multiple values per iteration */
     if (qualifier == 0 || qualifier == 1)
         milprintf(f,
+                "{ # typeswitch\n"
                 "var single_iters := histogram(iter).[=](1).select(true).mirror();\n"
                 "single_iters := single_iters.leftjoin(iter.reverse());\n"
                 "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s).select(true);\n"
@@ -1762,6 +1702,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 kind);
     else
         milprintf(f,
+                "{ # typeswitch\n"
                 "var iter_count := histogram(iter);\n"
                 "var iter_kind := iter.reverse().leftfetchjoin(kind);\n"
                 "var kind_count := histogram(iter_kind.[=](%s).select(true).reverse());\n"
@@ -1813,9 +1754,6 @@ loop_liftedSCJ (opt_t *f,
 {
     /* iter|pos|item input contains only nodes (kind=ELEM) */
     milprintf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
-    milprintf(f, "if (kind.texist(ATTR))"
-                  "ERROR (\"path steps are only supported "
-                          "starting from non-attribute nodes\");\n");
 
     if (!strcmp (axis, "attribute"))
     {
@@ -2842,7 +2780,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_oid := nil;\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);\n"
                 "attr_own := nil;\n"
-                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);\n"
+                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_qn_frag);\n"
                 "attr_qn_frag := nil;\n"
                 "attr_frag := nil;\n"
       
@@ -3176,6 +3114,50 @@ testCastComplete (opt_t *f, int cur_level, PFty_t type_)
             cur_level, PFty_str (type_));
 }
 
+/**
+ * evaluateCastBlock casts a block from a given type to the target_type type
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param original_type is the type of the items which are casted
+ * @param table is the table where the actual item values are saved
+ * @param target_type is the type to which it is casted
+ */
+static void
+evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
+{
+    milprintf(f,
+            "{\n"
+            "var part_kind := kind.ord_uselect(%s);\n"
+            "var oid_oid := part_kind.hmark(0@0);\n"
+            "part_kind := nil;\n"
+            "var part_item := oid_oid.leftfetchjoin(item).materialize(oid_oid);\n",
+            ori.mil_cast);
+    if (ori.kind != BOOL)
+        milprintf(f,
+                "var part_%s := part_item.leftfetchjoin(%s);\n",
+                ori.mil_type, ori.table);
+    else
+        milprintf(f,
+                "var part_%s := part_item;\n",
+                ori.mil_type);
+
+    /* treat special case, where boolean has to be casted to string */
+    if (ori.kind == BOOL && !strcmp("str", target_type))
+        milprintf(f,
+                "part_item := nil;\n"
+                "var part_val := [str]([bit](part_%s));\n",
+                ori.mil_type);
+    else
+        milprintf(f,
+                "part_item := nil;\n"
+                "var part_val := part_%s.%s;\n",
+                ori.mil_type, cast);
+    milprintf(f,
+            "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
+            "_oid := res_mu.fetch(0);\n"
+            "_val := res_mu.fetch(1);\n"
+            "}\n");
+}
 
 /**
  * evaluateCast casts from a given type to the target_type type
@@ -3226,87 +3208,6 @@ evaluateCast (opt_t *f,
                 target.mil_cast);
 }
 
-
-/**
- * evaluateCastAny casts a (statically) heterogeneously typed sequence
- * however, in milprint_summer, kind/item may both still be runtime constants
- **/
-static void 
-evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast) 
-{
-    if (rc != NORMAL) 
-        mps_error ("forgot to cope with type '%s' in cast to %s.", kind_container(rc).name, tpe.name);
-
-    milprintf(f, 
-	"# cast a type-heterogeneous expression (according to static typing)\n"
-	"var _val := nil;\n"
-	"var _k := tunique(kind);\n"
-        "if (count(_k) != 1) {\n"
-	"  _val := bat(oid,%s,count(kind));\n"
-	"  if (_k.exist(INT)) {\n"
-        "    _val.insert(kind.ord_uselect(INT).mirror().leftfetchjoin(item).leftfetchjoin(int_values).[%s]());\n"
-	"  }\n"
-	"  if (_k.exist(BOOL)) {\n"
-	"    _val.insert(kind.ord_uselect(BOOL).mirror().leftfetchjoin(item).[bit]().[%s]());\n"
-	"  }\n"
-	"  if (_k.exist(DEC) or _k.exist(DBL)) {\n"
-	"    _val.insert(kind.ord_uselect(DEC,DBL).mirror().leftfetchjoin(item).leftfetchjoin(dbl_values).[%s]());\n"
-	"  }\n"
-	"  if (_k.exist(STR) or _k.exist(U_A)) {\n"
-	"    _val.insert(kind.ord_uselect(STR,U_A).mirror().leftfetchjoin(item).leftfetchjoin(str_values).%s);\n"
-	"  }\n"
-	"  _val := _val.tmark(0@0).project(%s(nil)).access(BAT_WRITE).replace(_val).access(BAT_READ);\n"
-	"} else {\n"
-	"  # at run-time, it turns out to be homogeneous\n"
-	"  kind := reverse(_k).fetch(0);\n", tpe.mil_type, tpe.mil_type, tpe.mil_type, tpe.mil_type, str_cast, tpe.mil_type);
-
-    if (rcode != NORMAL || strcmp(tpe.mil_type,"bit"))
-        milprintf(f, 
-	"  if (kind = BOOL) {\n"
-	"    _val := [bit](item).[%s]();\n"
-	"  }\n", tpe.mil_type);
-
-    if (rcode != NORMAL || strcmp(tpe.mil_type,"lng"))
-        milprintf(f, 
-	"  if (kind = INT) {\n"
-	"    _val := item.leftfetchjoin(int_values).[%s]();\n"
-	"  }\n", tpe.mil_type);
-
-    if (rcode != NORMAL || strcmp(tpe.mil_type,"dbl"))
-        milprintf(f, 
-	"  if ((kind = DEC) or (kind = DBL)) {\n"
-	"    _val := item.leftfetchjoin(dbl_values).[%s]();\n"
-	"  }\n", tpe.mil_type);
-
-    if (rcode != NORMAL || strcmp(tpe.mil_type,"str"))
-        milprintf(f, 
-	"  if ((kind = STR) or (kind = U_A)) {\n"
-	"    _val := item.leftfetchjoin(str_values).%s;\n"
-	"  }\n", str_cast);
-
-    milprintf(f, 
-	"}\n"
-        "if (type(_val) = void) { # idempotent cast leaves (_val = item)\n"
-	"  _val = item;\n"
-        "} else {\n"
-        "  if (_val.texist(%s(nil)))\n"
-        "    ERROR (\"err:FORG0001: could not cast value to %s.\");\n", tpe.mil_type, tpe.name);
-
-    if (tpe.kind == BOOL) {
-        milprintf(f, 
-	"}\nitem%s := [oid](_val);\n", kind_str(rcode));
-    } else if (rcode != NORMAL) {
-        milprintf(f, 
-	"}\nitem%s := _val;\n", kind_str(rcode));
-    } else {
-        addValues(f, tpe, "_val", "item");
-        milprintf(f, "}\n");
-    }
-    milprintf(f, 
-	"kind := %s;\n", tpe.mil_cast);
-}
-
-
 /**
  * translateCast2INT takes an intermediate result
  * and casts all possible types to INT. It produces
@@ -3321,12 +3222,14 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
 static void
 translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
+    char *item_ext = kind_str(rcode);
+
     if (TY_EQ (input_type, PFty_integer ()))
     {
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    kind_str(rcode), val_join(rcode));
+                    item_ext, val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3345,7 +3248,34 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), int_container(), "[lng]()");
     else /* handles the choice type */
-	evaluateCastAny(f, rc, rcode, int_container(), "[lng]()");  
+    {
+        if (rc != NORMAL) 
+            mps_error ("forgot to cope with type '%s' in integer cast.",
+                       kind_container(rc).name);
+
+        milprintf(f,
+                "var _oid := kind.ord_uselect(INT);\n"
+                "_oid := _oid.hmark(0@0);\n"
+                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
+                "var _val := part_item.leftfetchjoin(int_values);\n"
+                "part_item := nil;\n");
+ 
+        evaluateCastBlock (f, bool_container(), "[lng]()", "int");
+        evaluateCastBlock (f, dec_container(), "[lng]()", "int");
+        evaluateCastBlock (f, dbl_container(), "[lng]()", "int");
+        evaluateCastBlock (f, str_container(), "[lng]()", "int");
+        evaluateCastBlock (f, u_A_container(), "[lng]()", "int");
+
+        milprintf(f,
+                "if (_val.texist(lng(nil)))\n"
+                "{    ERROR (\"err:FORG0001: could not cast value to integer.\"); }\n");
+ 
+        if (rcode != NORMAL)
+            milprintf(f, "item%s := _val;\n", item_ext);
+        else
+            addValues(f, int_container(), "_val", "item");
+        milprintf(f, "kind := INT;\n");
+    }
 }
 
 /**
@@ -3362,6 +3292,8 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
+    char *item_ext = kind_str(rcode);
+
     if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, rcode, rc, int_container(), dec_container(), "[dbl]()");
     else if (TY_EQ (input_type, PFty_decimal ()))
@@ -3369,7 +3301,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    kind_str(rcode), val_join(rcode));
+                    item_ext, val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3386,7 +3318,35 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
-	evaluateCastAny(f, rc, rcode, dec_container(), "[dbl]()");  
+    {
+        if (rc != NORMAL) 
+            mps_error ("forgot to cope with type '%s' in decimal cast.",
+                       kind_container(rc).name);
+
+        milprintf(f,
+                "kind := kind.materialize(ipik);\n"
+                "var _oid := kind.ord_uselect(DEC);\n"
+                "_oid := _oid.hmark(0@0);\n"
+                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
+                "var _val := part_item.leftfetchjoin(dec_values);\n"
+                "part_item := nil;\n");
+ 
+        evaluateCastBlock (f, bool_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, int_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, dbl_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, str_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
+ 
+        milprintf(f,
+                "if (_val.texist(dbl(nil)))\n"
+                "{    ERROR (\"err:FORG0001: could not cast value to decimal.\"); }\n");
+ 
+        if (rcode != NORMAL)
+            milprintf(f, "item%s := _val;\n", item_ext);
+        else
+            addValues(f, dec_container(), "_val", "item");
+        milprintf(f, "kind := DEC;\n");
+    }
 }
 
 /**
@@ -3403,6 +3363,8 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
+    char *item_ext = kind_str(rcode);
+
     if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, rcode, rc, int_container(), dbl_container(), "[dbl]()");
     else if (TY_EQ (input_type, PFty_decimal ()))
@@ -3412,7 +3374,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    kind_str(rcode), val_join(rcode));
+                    item_ext, val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3427,7 +3389,34 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
-	evaluateCastAny(f, rc, rcode, dbl_container(), "[dbl]()");  
+    {
+        if (rc != NORMAL) 
+            mps_error ("forgot to cope with type '%s' in double cast.",
+                       kind_container(rc).name);
+
+        milprintf(f,
+                "var _oid := kind.ord_uselect(DBL);\n"
+                "_oid := _oid.hmark(0@0);\n"
+                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
+                "var _val := part_item.leftfetchjoin(dbl_values);\n"
+                "part_item := nil;\n");
+ 
+        evaluateCastBlock (f, bool_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, dec_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, int_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, str_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
+ 
+        milprintf(f,
+                "if (_val.texist(dbl(nil)))\n"
+                "{    ERROR (\"err:FORG0001: could not cast value to double.\"); }\n");
+ 
+        if (rcode != NORMAL)
+            milprintf(f, "item%s := _val;\n", item_ext);
+        else
+            addValues(f, dbl_container(), "_val", "item");
+        milprintf(f, "kind := DBL;\n");
+    }
 }
 
 /**
@@ -3444,6 +3433,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
+    char *item_ext = kind_str(rcode);
     type_co cast_container = (rcode == STR)?str_container():u_A_container();
 
     if (TY_EQ (input_type, PFty_integer ()))
@@ -3462,7 +3452,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
-                    kind_str(rcode), val_join(rcode));
+                    item_ext, val_join(rcode));
         else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
@@ -3479,7 +3469,35 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
     else /* handles the choice type */ 
-	evaluateCastAny(f, rc, rcode, cast_container, "[str]()");  
+    {
+        if (rc != NORMAL) 
+            mps_error ("forgot to cope with type '%s' in string cast.",
+                       kind_container(rc).name);
+
+        milprintf(f,
+                "var _oid := kind.ord_uselect(STR);\n"
+                "_oid := _oid.hmark(0@0);\n"
+                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
+                "var _val := part_item.leftfetchjoin(str_values);\n"
+                "part_item := nil;\n");
+ 
+        evaluateCastBlock (f, bool_container(), "[str]()", "str");
+        evaluateCastBlock (f, dec_container(), "[str]()", "str");
+        evaluateCastBlock (f, dbl_container(), "[str]()", "str");
+        evaluateCastBlock (f, int_container(), "[str]()", "str");
+        evaluateCastBlock (f, u_A_container(), "[str]()", "str");
+ 
+        milprintf(f,
+                "if (_val.texist(str(nil)))\n"
+                "{    ERROR (\"err:FORG0001: could not cast value to string.\"); }\n");
+ 
+        if (rcode != NORMAL)
+            milprintf(f, "item%s := _val;\n", item_ext);
+        else
+            addValues(f, str_container(), "_val", "item");
+
+        milprintf(f, "kind := %s;\n", (rcode == STR)?"STR":"U_A");
+    }
 }
 
 /**
@@ -3507,7 +3525,32 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, str_container(), bool_container(), "[!=](\"\")");
     else if (TY_EQ (input_type, PFty_boolean ()));
     else /* handles the choice type */ 
-	evaluateCastAny(f, NORMAL, BOOL, bool_container(), "[!=](\"\")");  
+    {
+        if (rc != NORMAL) 
+            mps_error ("forgot to cope with type '%s' in boolean cast.",
+                       kind_container(rc).name);
+
+        milprintf(f,
+                "var _oid := kind.ord_uselect(BOOL);\n"
+                "_oid := _oid.hmark(0@0);\n"
+                "var part_item := _oid.leftfetchjoin(item).materialize(_oid);\n"
+                "var _val := part_item.[bit]();\n"
+                "part_item := nil;\n");
+ 
+        evaluateCastBlock (f, int_container(), "[bit]()", "bit");
+        evaluateCastBlock (f, dec_container(), "[bit]()", "bit");
+        evaluateCastBlock (f, dbl_container(), "[bit]()", "bit");
+        evaluateCastBlock (f, str_container(), "[!=](\"\")", "bit");
+        evaluateCastBlock (f, u_A_container(), "[!=](\"\")", "bit");
+ 
+        milprintf(f,
+                "if (_val.texist(bit(nil)))\n"
+                "{    ERROR (\"err:FORG0001: could not cast value to boolean.\"); }\n");
+ 
+        milprintf(f,
+                "item := _val.[oid]();\n"
+                "kind := BOOL;\n");
+    }
 }
 
 /**
@@ -5550,13 +5593,12 @@ eval_join_helper (opt_t *f, int code, int number,
 static int
 evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 {
-    unsigned int lev_fst, lev_snd,
+    int lev_fst, lev_snd,
         fst_res, snd_res, 
-        snd_var, 
+        snd_var, i,
         cast_fst, cast_snd,
         switched_args, fid,
         rc, rc1, rc2;
-    int i;
     PFcnode_t *fst, *snd, *res, *c;
     PFfun_t *fun;
     char *comp;
@@ -5697,8 +5739,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         {
             milprintf(f,
                     "{\n"
-                    "var mapping := loop%03u.reverse().mirror();\n",
-                    0);
+                    "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
+                    0, 0);
             for (i = 0; i < cur_level; i++)
             {
                 milprintf(f, 
@@ -5794,10 +5836,19 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 fst_res);
     }
 
-    if (!(lev_snd & ~UDF_LEV)) /* default case: lev_snd = level 0  */
+    if (!(lev_snd & ~UDF_LEV)) /* default case */
     /* the above line only works because the current scope 0 is the one
        introduced by the UDF */
     {
+        /* introduce the correct map relation (if lev_snd == UDF_LEV) */
+        if (lev_snd == UDF_LEV)
+        {
+            milprintf(f,
+                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
+                                           ".leftfetchjoin(outer%03u);\n",
+                    snd_res, 0, 0);
+        }
+
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
@@ -6143,12 +6194,11 @@ translateUDF (opt_t *f, int cur_level, int counter,
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                "iter := iter.materialize(ipik);\n"
                 "item := item.materialize(ipik);\n"
-                "kind := kind.materialize(ipik);\n"
-                "fun_vid%03u := fun_vid%03u.append(item.project(oid(fun_base%03u + %iLL)));\n"
+                "fun_vid%03u := fun_vid%03u.append(iter.project(oid(fun_base%03u + %iLL)));\n"
                 "fun_iter%03u := fun_iter%03u.append(iter);\n"
                 "fun_item%03u := fun_item%03u.append(item);\n"
+                "kind := kind.materialize(ipik);\n"
                 "fun_kind%03u := fun_kind%03u.append(kind);\n"
                 "# end of add arg in UDF function call\n",
                 counter, counter, counter, i, 
@@ -7519,7 +7569,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "str_values.append(\"%s\");\n"
+                        "str_values := str_values.append(\"%s\");\n"
                         "var itemID := str_values.reverse().find(\"%s\");\n",
                         PFesc_string (c->sem.str),
                         PFesc_string (c->sem.str));
@@ -7547,7 +7597,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "int_values.append(" LLFMT "LL);\n"
+                        "int_values := int_values.append(" LLFMT "LL);\n"
                         "var itemID := int_values.reverse().find(" LLFMT "LL);\n",
                         c->sem.num, c->sem.num);
                 /* translateConst needs a bound variable itemID */
@@ -7574,7 +7624,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dec_values.append(dbl(%gLL));\n"
+                        "dec_values := dec_values.append(dbl(%gLL));\n"
                         "var itemID := dec_values.reverse().find(dbl(%gLL));\n",
                         c->sem.dec, c->sem.dec);
                 /* translateConst needs a bound variable itemID */
@@ -7601,7 +7651,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dbl_values.append(dbl(%gLL));\n"
+                        "dbl_values := dbl_values.append(dbl(%gLL));\n"
                         "var itemID := dbl_values.reverse().find(dbl(%gLL));\n",
                         c->sem.dbl, c->sem.dbl);
                 /* translateConst needs a bound variable itemID */
@@ -8233,7 +8283,7 @@ simplifyCoreTree (PFcnode_t *c)
                 return for $x in e_y
                        return e_x
             */
-            if (LR(c)->kind == c_for && LLR(c)->kind != c_var)
+            if (LR(c)->kind == c_for)
             {
                 PFcnode_t *c_old = PFmalloc (sizeof (PFcnode_t));
                 *c_old = *c;
@@ -8338,14 +8388,6 @@ simplifyCoreTree (PFcnode_t *c)
                 ((cast_type.type == ty_opt ||
                   cast_type.type == ty_star) &&
                  TY_EQ (input_type, PFty_empty ())))
-            {
-                *c = *(R(c));
-            }
-            /* don't cast nodes - node type was only needed
-               for static typing */
-            else if (c->kind == c_seqcast &&
-                     PFty_subtype (input_type, PFty_xs_anyNode ()) &&
-                     PFty_subtype (cast_type, PFty_xs_anyNode ()))
             {
                 *c = *(R(c));
             }
@@ -9013,7 +9055,7 @@ static int test_join_pattern(PFcnode_t *for_node,
         }
         else mps_error ("can't find variable occurrence "
                         "of variable '%s' in join pattern testing.",
-                        PFqname_str((LLL(snd_inner)->sem.var)->qname));
+                        PFqname_str((LLL(fst_inner)->sem.var)->qname));
         
         if (snd_inner)
         {
@@ -9986,15 +10028,7 @@ const char* PFinitMIL(void) {
         "\n"
         "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
-        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
-        "\n"
         "var time_compile := 0;\n"
-        "var time_read := 0;\n"
-        "var time_shred := 0;\n"
-        "var time_print := 0;\n"
-        "var time_exec := 0;\n"
-        "\n"
         "var genType := \"xml\";";
 }
 
@@ -10017,6 +10051,9 @@ const char* PFvarMIL(void) {
         "var item_dec_;\n"
         "var item_dbl_;\n"
         "var item_str_;\n"
+        "\n"
+        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
+        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
@@ -10049,10 +10086,10 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(void) {
     return  
         "{\n"
-        "time_read := 0;\n"
-        "time_shred := 0;\n"
-        "time_print := 0;\n"
-        "time_exec := time();\n"
+        "var time_read := 0;\n"
+        "var time_shred := 0;\n"
+        "var time_print := 0;\n"
+        "var time_exec := time();\n"
         "\n"
         "var ws := int(nil);\n"
         "var err := CATCH({\n"
