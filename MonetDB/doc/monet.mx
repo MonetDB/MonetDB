@@ -456,7 +456,7 @@ xquery_cacheMB=100
 @+ Usage Scenario 
 @T
 In this scenario, we use the 'gold' example of data mining/@[<acronym title="On-Line Analytical Processing">OLAP</acronym>@ access to a car
-insurance database which you can find in the {\tt src/gold/} subdirectory of 
+insurance database which you can find in the {\tt scripts/gold/} subdirectory of 
 the MonetDB distribution.  Please consult the README file there for all the details.\\
 
 Go to the top-level source directory and do the following (where \$PREFIX is the 
@@ -492,12 +492,10 @@ We now load the modules {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} (
 \begin{verbatim}
 MonetDB>module(xtables);
 MonetDB>module(mapi); 
-MonetDB>fork(listen(50000));
+MonetDB>mapi_start();
 \end{verbatim}
 
-The {\tt @[<a href="../Modules/mapi/index.html">listen(port)</a>@} command from the {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} module starts a client
-listener. As this command blocks, it is executed as a parameter to {\tt @[<a href="../Modules/builtin/index.html#mod_2_3_1">fork()</a>@}
-which forks off a separate @[<acronym title="MonetDB Interpreter Language">MIL</acronym>@ client that runs in the background.
+The {\tt @[<a href="../Modules/mapi/index.html">mapi_start()</a>@} mil proc from the {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} module forks a client listener. 
 
 We now open a new window and start the @[<a href="../../Tools/MapiClient/index.html">MapiClient</a>@, telling it to connect
 to the same port number we passed to {\tt @[<a href="../Modules/mapi/index.html">listen()</a>@} on the local machine. This
@@ -577,7 +575,7 @@ A more difficult query would ask for the counts of all car owners in Boston grou
 and category (in SQL: {\tt select count(*) from car where town = 'boston' group by class, category}):
 
 \begin{verbatim}
-mil>print(bat("car_class"),bat("car_category"),bat("car_town").uselect("boston").mirror().join(bat("car_class")).CTgroup(bat("car_category")).reverse().{count}());
+mil>print(bat("car_class"),bat("car_category"),bat("car_town").uselect("boston").mirror().join(bat("car_class")).CTgroup(bat("car_category")).map().reverse().{count}());
 #---------------------------------------------------------#
 # h             car_class       car_category    tmp_57    # name
 # void          str             str             int       # type
@@ -600,15 +598,15 @@ mil>sigs("xtables");
 # str  # type
 #---------------------------------------------------------------------------------#
 [ ...  ]
-[ "CTgroup(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"  ]
+[ "CTgroup(BAT[oid,any], BAT[oid,any]) : grp"  ]
 [ ...  ]
 mil>
 mil>help("CTgroup");
-COMMAND:   CTgroup(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]
+COMMAND:   CTgroup(BAT[oid,any], BAT[oid,any]) : grp
 MODULE:    xtables
-COMPILED:  by adm on Tue Sep 28 13:49:07 2004
+COMPILED:  by adm on Fri Jun 16 08:24:38 2006
 binary grouping; a synonym for CTderive(ct,attr)
- 
+
 ...
  
 mil>help("mirror");
