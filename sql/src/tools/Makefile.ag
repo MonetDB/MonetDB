@@ -100,12 +100,10 @@ lib_monetdb = {
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
-headers_py = {
+scripts_py = {
 	COND = HAVE_PYTHON_SWIG
-        HEADERS = py
+        EXT = py
         SOURCES = monetdb.py.i
         TARGETS = monetdb.py
         DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
-
-EXTRA_DIST = monetdb.py
