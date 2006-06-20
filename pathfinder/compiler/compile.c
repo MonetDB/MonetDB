@@ -391,7 +391,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
         if (PFprintMILtemp (croot, status->optimize, module_base, -1, status->genType, tm_first, 
-                            &prologue, &query, &epilogue))
+                            &prologue, &query, &epilogue, status->standoff_axis_steps))
             goto failure;
         fputs(prologue, pfout);
         fputs(query, pfout);
@@ -615,7 +615,8 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, PFstate.genType, timing, prologue, query, epilogue);
+        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, PFstate.genType, timing, 
+                                prologue, query, epilogue, PFstate.standoff_axis_steps);
         pa_destroy(pf_alloc);
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }

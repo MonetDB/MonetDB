@@ -10001,6 +10001,11 @@ const char* PFinitMIL(void) {
         "var genType := \"xml\";";
 }
 
+const char* PFstandoffMIL(void) {
+    return
+        "module(\"pf_standoff\"); # load StandOff axis support\n";
+}
+
 const char* PFvarMIL(void) {
     return
         "# volatile variable environment\n"
@@ -10182,7 +10187,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
  */
 int
 PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *genType, long timing, 
-                char** prologue, char** query, char** epilogue)
+                char** prologue, char** query, char** epilogue, bool standoff)
 {
     PFarray_t *way, *counter;
     opt_t *f = opt_open(optimize);
@@ -10213,6 +10218,11 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     	opt_output(f, OPT_SEC_PROLOGUE);
     }
     milprintf(f, PFinitMIL()); 
+
+    if (standoff) {
+	milprintf(f, PFstandoffMIL());
+    }
+
     milprintf(f, PFvarMIL()); 
 
     /* get_var_usage appends information to the core nodes and creates a 
