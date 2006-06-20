@@ -44,6 +44,7 @@ function get() {
 }
 
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
+DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
 DELAY=300
 ACTION=start
 
@@ -111,7 +112,9 @@ started=`date +%s`
 
 function restart_server()
 {
-	full=`df . |sed -e 1d -e "s/%.*//" -e "s/.* //"` 
+	# FIXME: add support for $DBLOGS someday; it can also grow beyond
+	#        disk capacities...
+	full=`df $DBFARM/$1 |sed -e 1d -e "s/%.*//" -e "s/.* //"` 
 
 	if [[ "$restartcount" > $maxtrials  ]]
 	then
@@ -127,7 +130,9 @@ mail -s "Notification: mserver5 encounters disk limits" $USER <<!EOF
 The mguardian process $$ running on node `uname -n` has detected
 that you are running low on disk space.
 The endangered database is located in '$DBFARM/$1'.
-`df -h $MONET5_PREFIX/var/MonetDB5/db* | tail -n +2 | sort | uniq`
+`df -h $DBFARM/$1 $DBLOGS/$1 | tail -n +2 | sort | uniq`
+The space taken by the database:
+`du -shc $DBFARM/$1 $DBLOGS/$1`
 Please take precautions against loosing your data.
 !EOF
 		fi
