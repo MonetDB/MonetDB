@@ -40,18 +40,18 @@ for skipping. Using  'level', this is not possible.
 (time in msec)            10MB          100MB           1GB
 STEP                    single  multi   single  multi   single  multi
 =====================================================================
-old-parent                  10   1335       23 103028      157    DNF
-new-parent                   9     13       18     52      125    449
-old-ancestor                 9    594       17  48205      105    DNF
-new-ancestor                10     16       24     78      187    717
-old-ancestor-or-self        10    595       34  57127      268    DNF
-new-ancestor-or-self        11     17       37     96      312    907
+old-parent                   5    646       12  45344       79    DNF
+new-parent                   5      7       10     27       72    249
+old-ancestor                 5    452       11  44962       66    DNF
+new-ancestor                 5      7       15     37      114    376 
+old-ancestor-or-self         6    454       19  44653      132    DNF
+new-ancestor-or-self         5      9       19     47      167    480
 
 single: count(doc("auctionsX.xml")/descendant::person/STEP::*)
 multi:  count(for $x in doc("auctionsX.xml")/descendant::person return $x/STEP::*)
 @end verbatim
 
-Experiments were performed on db2.cwi.nl (non-optimized gcc compile) on
+Experiments were performed on db2.cwi.nl (optimized icc compile) on
 XMark datasets of various sizes with two query variants (single and multi)
 for each step, one that executes the steps on a single sequence of N persons, 
 and the other on N sequences of size 1. The latter variant takes the form of 
@@ -68,17 +68,17 @@ to grow very large.
 slightly faster than the old implementation. 
 @item in case of ancestor-or-self on a single context sequence, 
 performance is identical.
-@item in case of ancestor on a single context sequence, the old the 
-performance is slightly slower.
+@item in case of ancestor on a single context sequence, the 
+new algorithm is slower (up to a factor 2).
 @end itemize
 The new ancestor is 'optimal' in the sense that it only touches the
-result nodes. However, it touches them twice, the algorithm
-is more jump than the level one, and the size column is wider
-than level. These factors may explain why on single node sequences
-it is slightly slower.
+result nodes (plus the preceding siblings). However, it touches them 
+twice, and the algorithm is more jumpy than the old level scan, and the 
+size column is wider than level. These factors may explain why on single 
+node sequences it is slower.
 
 Taking into account that in single-iterations the performance loss
-is very limited, but is huge on multiple iterations, the new loop-lifted 
+is limited, but is huge on multiple iterations, the new loop-lifted 
 algorithms for the upwards XPath axes seem a profitable addition for the 
 pathfinder runtime.
 @c
