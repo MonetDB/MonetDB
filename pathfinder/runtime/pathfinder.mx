@@ -447,7 +447,6 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
     # add indices to the shredded doc, and find out maximum doc height
     var height := index_doc(shredRES, docBAT);
 
-#[BURKOWSKI]
     if (standoff) {
         print("# extracting regions...\n");
         docBAT := region_extract(docBAT, "lng");
@@ -459,7 +458,6 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
        docBAT.access(BAT_WRITE).insert("region_start",r_start); 
        docBAT.access(BAT_WRITE).insert("region_end",r_end); 
     }
-#[/BURKOWSKI]
 
     if (doCommit) {
         [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 65536), STORE_MEM, STORE_MMAP));

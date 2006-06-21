@@ -381,20 +381,20 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token rbrace                          "}"
 %token rbrace_rbrace                   "}}"
 %token rbracket                        "]"
-/* [BURKOWSKI] */
+/* [STANDOFF] */
 %token reject_narrow_colon_colon       "reject-narrow::"
 %token reject_wide_colon_colon         "reject-wide::"
-/* [/BURKOWKSI] */
+/* [/STANDOFF] */
 %token return_                         "return"
 %token rparen                          ")"
 %token rparen_as                       ") as"
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
-/* [BURKOWKSI] */
+/* [STANDOFF] */
 %token select_narrow_colon_colon       "select-narrow::"
 %token select_wide_colon_colon         "select-wide::"
-/* [/BURKOWKSI] */
+/* [/STANDOFF] */
 %token self_colon_colon                "self::"
 %token semicolon                       ";"
 %token slash                           "/"
@@ -495,8 +495,9 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %type <axis>   AttributeAxis_
                ReverseAxis
                ForwardAxis
-               BurkAxis_ /* Burkowski Axis (can only be used if corresponding 
-                            compiler flag is set) */
+/* [STANDOFF] */
+               StandOffAxis_ 
+/* [/STANDOFF] */
 
 %type <buf>    AttributeValueContTexts_
                Chars_
@@ -511,8 +512,9 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                AdditiveExpr AndExpr AnyKindTest AtomicType AttribNameOrWildcard
                AttribNodeTest AttribStep_ AttributeTest AttributeValueCont_
                AttributeValueConts_ AxisStep BaseURIDecl 
-               BurkStep_  /* Burkowski Axis (can only be used if corresponding 
-                            compiler flag is set) */
+/* [STANDOFF] */
+               StandOffStep_   
+/* [/STANDOFF] */
                CDataSection
                CDataSectionContents CaseClause CastExpr CastableExpr Characters_
                CommentTest CompAttrConstructor CompCommentConstructor
@@ -1493,12 +1495,12 @@ AxisStep                  : ForwardStep
                             { $$ = $1; }
                           | AttribStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
-/* [BURKOWSKI] */
-                          | BurkStep_
+/* [STANDOFF] */
+                          | StandOffStep_
                             { $$ = $1; }
-                          | BurkStep_ PredicateList
+                          | StandOffStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
-/* [/BURKOWSKI] */
+/* [/STANDOFF] */
                           ;
 
 /* [65] */
@@ -1569,13 +1571,14 @@ AbbrevAttribStep_         : "@" AttribNodeTest
                             }
                           ;
 
-BurkStep_                 : BurkAxis_ NodeTest
-                            { /* Burkowski Axis (can only be used if corresponding 
-                                 compiler flag is set) */
-                              ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
+/* [STANDOFF] */
+StandOffStep_             : StandOffAxis_ NodeTest
+                            { ($$ = wire1 (p_step, 
+                                           @$, 
+                                           $2))->sem.axis = $1; }
                           ;
 
-BurkAxis_                 : "select-narrow::"      { 
+StandOffAxis_             : "select-narrow::"      { 
                               if (!PFstate.standoff_axis_steps) {
                                 PFoops (OOPS_PARSE,
                                       "invalid character "
@@ -1612,7 +1615,7 @@ BurkAxis_                 : "select-narrow::"      {
                               }
                             }
                           ;
-
+/* [/STANDOFF] */
 
 
 

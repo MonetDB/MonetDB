@@ -227,12 +227,6 @@ enum PFalg_axis_t {
     , alg_prec         /**< preceding axis */
     , alg_prec_s       /**< preceding-sibling axis */
     , alg_self         /**< self axis */
-#ifdef BURKOWSKI
-    , alg_sn           /**< select-narrow axis */
-    , alg_sw           /**< select-wide axis */
-    , alg_rn           /**< reject-narrow axis */
-    , alg_rw           /**< reject-wide axis */
-#endif
 };
 /** location steps */
 typedef enum PFalg_axis_t PFalg_axis_t;

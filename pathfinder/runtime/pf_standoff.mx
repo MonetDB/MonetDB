@@ -28,21 +28,15 @@
 @T
 This module provides MIL primitives to support the StandOff
 Axis Steps on top of MonetDB within the "Pathfinder" project.
-This module needs to be loaded in order to use the StandOff Steps.
+This module is loaded when standoff-axis steps are enabled on
+the server-side or when 'pf' is provided the option '-b' or the
+equivalent long option '--enable-standoff'. In order to enable 
+the StandOff Axis steps on the server side you need to add 
+\texttt{standoff=enabled} to the \texttt{--set} option list. 
+The default is \texttt{standoff=disabled}.
 
-Actually there are 3 things to do in order to enable the StandOff
-steps:
-\begin{itemize}
-
-\item (FIXME: SHOULD BECOME OBSOLETE: at compile time the StandOff flag needs to be set by adding
-\texttt{--enable-standoff} as a \texttt{./configure} switch.)
-\item when all is compiled and Mserver is started it is needed to
-allow StandOff steps by adding \texttt{standoff=enabled} to the 
-\texttt{--set} option list. The default is \texttt{standoff=disabled}.
-\item and even when MonetDB is started, it is not possible to use
-StandOff without first loading this module (\emph{pf\_standoff}) by
-typing \texttt{module("pf\_standoff")}.
-\end{itemize}
+note: runtime support for the StandOff axis steps was added in the
+0.12 release.
 
 @- Select Narrow / Select Wide / Reject Narrow / Reject Wide
 @T
@@ -853,7 +847,7 @@ PROC ll_standoff_@1_@2(BAT[oid,oid] region_pre,
   
   #  try to get a iter_start...
   var source_start := source_region.leftjoin(region_start).tmark(0@0); 
-  var iter_start := source_iter.[oid]().reverse().leftjoin(source_start);
+  var iter_start := source_iter.[oid]().reverse().leftjoin(source_start).reverse().[oid]().reverse();
   var source_end := source_region.leftjoin(region_end).tmark(0@0);     
 
   var sel_region := cands.reverse().mirror().leftjoin(region_pre.reverse()).reverse().mirror();

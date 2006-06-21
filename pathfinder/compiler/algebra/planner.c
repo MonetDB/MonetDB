@@ -997,12 +997,6 @@ plan_scjoin (const PFla_op_t *n)
         case alg_prec:      llscj = PFpa_llscj_prec;        break;
         case alg_prec_s:    llscj = PFpa_llscj_prec_sibl;   break;
         case alg_self:      assert (0);                     break;
-#ifdef BURKOWSKI
-        case alg_sn:        assert (0); /* llscj = PFpa_llscj_sn;  */        break;
-        case alg_sw:        assert (0); /* llscj = PFpa_llscj_sw;  */        break;
-        case alg_rn:        assert (0); /* llscj = PFpa_llscj_rn;  */        break;
-        case alg_rw:        assert (0); /* llscj = PFpa_llscj_rw;  */        break;
-#endif
     }
 
     /*

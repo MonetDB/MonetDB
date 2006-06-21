@@ -176,12 +176,12 @@ static PFarray_t *var_env[HASH_BUCKETS];
 %term preceding          = 41 /**< nodes before context node (document order) */
 %term preceding_sibling  = 42 /**< all preceding nodes with same parent */
 %term self               = 43 /**< the context node itself */
-/* [BURKOWSKI] */
-%term select_narrow      = 100 /**< give me some bastards (Burkowski stand-off matching) */
-%term select_wide        = 101 /**< give me all bastards (Burkowski stand-off matching) */
-%term reject_narrow      = 102 /**< give me all but some bastards (Burkowski stand-off matching) */
-%term reject_wide        = 103 /**< give me all but the bastards (Burkowski stand-off matching) */
-/* [/BURKOWSKI] */
+/* [STANDOFF] */
+%term select_narrow      = 100 /**< regions contained in a context-node */
+%term select_wide        = 101 /**< regions overlapping a context-node */
+%term reject_narrow      = 102 /**< all regions except the contained regions */
+%term reject_wide        = 103 /**< all regions except the overlapping regions */
+/* [/STANDOFF] */
 
 %term elem               = 44 /**< the element constructor */
 %term attr               = 45 /**< the attribute constructor */
@@ -280,12 +280,12 @@ LocationStep:       parent (SequenceType)                       =  35 (10);
 LocationStep:       preceding (SequenceType)                    =  36 (10);
 LocationStep:       preceding_sibling (SequenceType)            =  37 (10);
 LocationStep:       self (SequenceType)                         =  38 (10);
-/* [BURKOWSKI] */
+/* [STANDOFF] */
 LocationStep:       select_narrow (SequenceType)                =  100 (10);
 LocationStep:       select_wide (SequenceType)                  =  101 (10);
 LocationStep:       reject_narrow (SequenceType)                =  102 (10);
 LocationStep:       reject_wide (SequenceType)                  =  103 (10);
-/* [/BURKOWSKI] */
+/* [/STANDOFF] */
                                                                      
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =  39 (10);
 LocationSteps:      locsteps (LocationStep, Atom)               =  40 (10);
