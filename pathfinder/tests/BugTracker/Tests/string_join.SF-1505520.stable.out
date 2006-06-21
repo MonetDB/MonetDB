@@ -17,12 +17,16 @@ quit();
 
 Over..
 
-# 22:18:24 >  
-# 22:18:24 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=38295 string_join.SF-1505520.xq
-# 22:18:24 >  
+# 13:09:06 >  
+# 13:09:06 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=32935 string_join.SF-1505520.xq
+# 13:09:06 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+1 1
+</XQueryResult>
 
-# 22:18:24 >  
-# 22:18:24 >  Done.
-# 22:18:24 >  
+# 13:09:06 >  
+# 13:09:06 >  Done.
+# 13:09:06 >  
 
