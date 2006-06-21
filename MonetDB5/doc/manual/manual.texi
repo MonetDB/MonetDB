@@ -65,10 +65,9 @@ using the
 * Embedded MonetDB::
 * MonetDB Assembler Language::
 * MAL Interpreter::
-* Optimizer landscape::
-* Optimizer toolkit::
-* Program Debugging::
-* Execution Profiling::
+* The MAL Optimizer::
+* The MAL Debugger::
+* The MAL Profiler::
 * MonetDB Extension Modules ::
 * MonetDB BAT Kernel ::
 * Advanced Topics::
@@ -201,13 +200,14 @@ using the
 @node Property Management,  MAL Interpreter, Boxed variables, MonetDB Assembler Language
 @include mal_properties.bdy.texi
 
-@node MAL Interpreter, Optimizer landscape, Property Management, Top
+@node MAL Interpreter, The MAL Optimizer, Property Management, Top
 @include mal_interpreter.bdy.texi
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Optimizer landscape, Optimizers, MAL Interpreter, Top
+@node The MAL Optimizer, Optimizer Landscape, MAL Interpreter, Top
 @include mal_optimizer.bdy.texi
+@include mal_macro.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
 @include mal_singleton.bdy.texi
@@ -220,13 +220,13 @@ using the
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
 @include mal_reduce.bdy.texi
-@node Query Execution Plans, Program Debugging, Variable Stack Reduction,  Optimizer toolkit
+@node Query Execution Plans, The MAL Debugger, Variable Stack Reduction,  Optimizer Toolkit
 @include mal_qep.bdy.texi
 
-@node Program Debugging, The MAL Debugger, Query Execution Plans, Top
+@node The MAL Debugger, Program Debugging, Query Execution Plans, Top
 @include mal_debugger.bdy.texi
 
-@node Execution Profiling, Event Filtering, Runtime Inspection, Top
+@node The MAL Profiler, Event Filtering, Runtime Inspection, Top
 @include mal_profiler.bdy.texi
 
 @node MonetDB Extension Modules , MonetDB BAT Kernel, Event Caching, Top
