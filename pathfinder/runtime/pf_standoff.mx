@@ -597,6 +597,9 @@ endofskipping:
                 GDKerror("ll_@1_@2_join_sort_@3: "
                             "too many (>=%d) overlapping input intervals for standoff steps to work well.\n", 
                             (int)max_heap_size );
+                GDKfree(heap); 
+                BBPreclaim(bn);
+                return GDK_FAIL;
             }
             if (*outer_iter_end < nearest_end)  
                 nearest_end=*outer_iter_end;
