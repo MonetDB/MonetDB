@@ -541,7 +541,7 @@ static PFmil_type_t impl_types[] = {
 #ifndef NDEBUG
 #define implty(n) type (impl_types[n] \
                         ? impl_types[n] \
-                        : (PFoops (OOPS_FATAL, "illegal type in implty()"), 0))
+                        : (PFoops (OOPS_FATAL, "illegal type in implty()"), (PFmil_type_t)0))
 #else
 #define implty(n) type (impl_types[n])
 #endif
