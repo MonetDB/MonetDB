@@ -39,9 +39,9 @@ opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_prelude.h"
 @}
 @-
-@node Common Sub-Expression Removal,Empty Set Reduction, Heuristic Rewrite Rules,   Optimizer toolkit
+@node Common Sub-Expression Removal,Empty Set Reduction, Macro Processing,   Optimizer Toolkit
 @- Common Subexpression Elimination
-Common subexpression elimination merely involves a single scan through the 
+Common subexpression elimination merely involves a scan through the 
 program block to detect re-curring statements.
 The key problem to be addressed is to make sure that the parameters involved
 in the repeatative instruction are invariant. 

@@ -17,7 +17,7 @@
 @f mal_emptyset
 @a M. Kersten
 @-
-@node Empty Set Reduction, Singleton Set Replacement, Common Sub-Expression Removal, Optimizer toolkit
+@node Empty Set Reduction, Singleton Set Replacement, Common Sub-Expression Removal, Optimizer Toolkit
 @- Emptyset Reduction
 One of the key decisions during MAL optimization is to estimate
 the size of the BATs produced and consumed. Two cases are of interest

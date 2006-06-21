@@ -17,8 +17,8 @@
 @f mal_costmodel
 @a M. L. Kersten
 @-
-@node Costmodels, Variable Stack Reduction, Strength Reduction, Optimizer toolkit
-@- The MAL costmodel
+@node Costmodels, Variable Stack Reduction, Strength Reduction, Optimizer Toolkit
+@- The costmodel approach
 Cost models form the basis for many optimization decisions.
 The cost parameters are typically the size of the (intermediate)
 results and response time. Alternatively, they are running

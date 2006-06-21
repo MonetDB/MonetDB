@@ -17,7 +17,7 @@
 @f mal_factorize
 @a M. Kersten
 @-
-@node Code Factorization, Multi-Association Tables, Garbage Collector,  Optimizer toolkit
+@node Code Factorization, Multi-Association Tables, Garbage Collector,  Optimizer Toolkit
 @- Code Factorization
 In most real-life situations queries are repeatedly called with
 only slight changes in their parameters. This situation can be

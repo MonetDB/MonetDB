@@ -17,7 +17,7 @@
 @f mal_multitable
 @a M. Kersten
 @-
-@node Multi-Association Tables , Partitioned Databases, Code Factorization, Optimizer toolkit
+@node Multi-Association Tables , Partitioned Databases, Code Factorization, Optimizer Toolkit
 
 @- Multiple Association Tables 
 A Multi Association Table descriptor (MAT) defines an ordered collection 
@@ -46,7 +46,7 @@ be decide differently.
 
 To illustrate, consider 
 @example
-    m0:= bat.new(:void,:int);
+	m0:= bat.new(:void,:int);
 	m1:= bat.new(:void,:int);
 	m2:= bat.new(:void,:int);
 	b := mat.new(m0,m1,m2);
