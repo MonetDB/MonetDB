@@ -329,8 +329,9 @@ MT_init(void)
 	{
 		MEMORYSTATUSEX memStatEx;
 
+		memStatEx.dwLength = sizeof(memStatEx);
 		if (GlobalMemoryStatusEx(&memStatEx))
-			_MT_npages = memStatEx.allAvailPhys / _MT_pagesize;
+			_MT_npages = memStatEx.ullAvailPhys / _MT_pagesize;
 	}
 #endif
 #ifdef HAVE_GLOBALMEMORYSTATUS
