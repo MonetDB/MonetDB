@@ -1,4 +1,4 @@
-@appendix SQL 1999 Features
+@appendix SQL Features
 The table below illustrates the features supported (S) and not
 supported (N) in the MonetDB/SQL distribution.
 Beware, some of the features are technically impossible to
