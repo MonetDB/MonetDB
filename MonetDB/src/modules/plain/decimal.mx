@@ -282,7 +282,11 @@ comparison when comparing decimals of the same precision; comparing 8 digits at 
 #define _DECIMAL_H_
 
 typedef struct {
+#if (__GNUC__ == 3)
+	signed int scale:16, negative:1, precision:15;
+#else
 	unsigned int scale:16, negative:1, precision:15;
+#endif
 	unsigned int num[1];	/* array of digits: 2-digits-per-byte = 8-digits-per-integer */
 	/* array extends beyond boundary */
 } decimal;
@@ -331,8 +335,8 @@ unsigned short val_table[10000];	/* 4-digit shorts with numbers from 0000 to 999
 #define MASK_(x)	(15U << POS(x))
 #define GETNUM(d,x)	LO((NUM(d,x) & MASK_(x)) >> POS(x))
 #define SETNUM(d,x,y)	NUM(d,x) = ((y) << POS(x)) | (NUM(d,x) & ~MASK_(x))
-#define PREC(d)		((int)(sht)((d)->precision))	/* required for the PGI's compiler; otherwise precision seems to be treated as 15-bit unsigned int */
-#define SCALE(d)	((int)(sht)((d)->scale))	/* required for Sun's native compiler; otherwise scale seems to be treated as 16-bit unsigned int */
+#define PREC(d)		((int)(sht)((d)->precision))	
+#define SCALE(d)	((int)(sht)((d)->scale))	
 #define ISNIL(d)	(SCALE(d) > SCALE_MAX)
 #define ISZERO(d)	((d)->num[0] == 0)
 
