@@ -9,10 +9,9 @@ stdout of test 'test1_import` in directory 'tests/StandOff/basic` itself:
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module("pathfinder");
-module("pf_standoff");
-module("unix");
 environment().insert("standoff","enabled");
+module("pathfinder");
+module("unix");
 var doc := getenv("TSTSRCDIR")+"/test1.xml";
 shred_doc(doc,"test1.xml");
 [ "# extracting regions...\n" ]

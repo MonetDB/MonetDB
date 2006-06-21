@@ -14,11 +14,12 @@ stdout of test 'songs` in directory 'tests/StandOff/video` itself:
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<song end="4500" start="0" artist="Beatles"/><song end="13000" start="10000" artist="Bach"/>
+</XQueryResult>
 
-
-
-
-# 17:28:09 >  
-# 17:28:09 >  Done.
-# 17:28:09 >  
+# 08:57:07 >  
+# 08:57:07 >  Done.
+# 08:57:07 >  
 

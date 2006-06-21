@@ -1,5 +1,5 @@
+environment().insert("standoff","enabled");
 module("pathfinder");
-module("pf_standoff");
 module("unix");
 
 var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/StandOff/video/Tests";

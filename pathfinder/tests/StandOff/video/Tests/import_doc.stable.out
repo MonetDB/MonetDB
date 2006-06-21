@@ -9,8 +9,8 @@ stdout of test 'import_doc` in directory 'tests/StandOff/video` itself:
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+environment().insert("standoff","enabled");
 module("pathfinder");
-module("pf_standoff");
 module("unix");
 
 var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/StandOff/video/Tests";
@@ -21,7 +21,9 @@ region_start_attr_tag := "start";
 region_end_attr_tag := "end";
 
 shred_doc(TSTSRCDIR + "/" + "video.xml", "video.xml");
-# Shredded XML doc("video.xml"), total time after commit=0.013s
+[ "# extracting regions...\n" ]
+# extracted 5 regions
+# Shredded XML doc("video.xml"), total time after commit=0.011s
 
 commit();
 quit();

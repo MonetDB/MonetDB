@@ -501,9 +501,9 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
         GDKerror("ll_@1_@2_join_sort_@3: region BAT not sorted (on start).\n"); 
         return(GDK_FAIL);
     }
-    //TODO: in case the iter-table is void, do something special... (should be easy)
-    if (source_start->htype == TYPE_void) { 
-        GDKerror("ll_@1_@2_join_sort_@3: iter-list is of type VOID instead of OID.\n"); 
+    //TODO: in case the iter-table is void-nil, do something special... (should be easy)
+    if (source_start->htype == TYPE_void && source_start->hseqbase == oid_nil) { 
+        GDKerror("ll_@1_@2_join_sort_@3: iter-list is of type NIL instead of [V]OID.\n"); 
         return(GDK_FAIL);
     }
 
@@ -595,11 +595,11 @@ endofskipping:
                     *outer_iter_end);
             if (heap_size >= max_heap_size) {
                 GDKerror("ll_@1_@2_join_sort_@3: "
-                            "too many (>=%d) overlapping input intervals for standoff steps to work well.\n",
+                            "too many (>=%d) overlapping input intervals for standoff steps to work well.\n", 
                             (int)max_heap_size );
-                    GDKfree(heap);
-                    BBPreclaim(bn);
-                    return(GDK_FAIL);
+                GDKfree(heap); 
+                BBPreclaim(bn);
+                return GDK_FAIL;
             }
             if (*outer_iter_end < nearest_end)  
                 nearest_end=*outer_iter_end;
