@@ -25,7 +25,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("sql", 2.12.0_rc1, [no-define])
+AM_INIT_AUTOMAKE("sql", 2.12.0, [no-define])
 AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
