@@ -191,7 +191,7 @@ log_read_string(logger *l)
 
 	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t)len) {
 		buf[len-1] = 0;
-		printf("ERROR: couldn't read name (%s) %d\n", buf, nr);
+		printf("!ERROR: couldn't read name (%s) %d\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
