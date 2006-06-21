@@ -1,0 +1,2 @@
+#The manual example
+proc hello(str s):void {s.print();}
