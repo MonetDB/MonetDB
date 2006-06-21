@@ -41,6 +41,7 @@ smallTOC_SHARED_MODS =	\
 	-l_pqueue	\
 	-l_streams	\
 	-l_unix	\
+	-l_url	\
 	-l_xtables	\
 	\
 	-l_malalgebra	\
@@ -48,7 +49,8 @@ smallTOC_SHARED_MODS =	\
 	\
 	../../runtime/lib_pf_support \
 	../../runtime/lib_pathfinder \
-	../../runtime/lib_pf_standoff
+	../../runtime/lib_pf_standoff \
+	../../runtime/lib_xquery_rpc
 
 EXTRA_DIST = static_modules.mx
 

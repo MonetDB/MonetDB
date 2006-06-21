@@ -45,6 +45,7 @@
 @:install_module(pcre)@
 @:install_module(pqueue)@
 @:install_module(unix)@
+@:install_module(url)@
 @:install_module(ascii_io)@
 
 /* contrib */
@@ -55,5 +56,6 @@
 @:install_module(pf_support)@
 @:install_module(pathfinder)@
 @:install_module(pf_standoff)@
+@:install_module(xquery_rpc)@
 
 #endif
