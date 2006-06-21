@@ -164,6 +164,9 @@ PROC anc_desc( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
    return anc_desc_llscj(anc,desc);
 }
 
+##
+# Compute ancestor-descendant relation using the loop-lifted staircase join.
+##
 PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 {
     # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
@@ -189,7 +192,12 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     return anc_desc;
 }
 
-
+##
+# Converts a list of query terms to a list of term id->document position mappings.
+#
+# Stemming on the query terms is performed using the same stemmer
+# that was used for the collection.
+##
 PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
 {
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
@@ -203,6 +211,12 @@ PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
     return result;
 }
 
+##
+# Converts a list of query terms to a list of term ids
+#
+# Stemming on the query terms is performed using the same stemmer
+# that was used for the collection.
+##
 PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
 {
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
@@ -958,13 +972,15 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 #}
 
 proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
-    var Qpositions := Qterms_to_tid_pre(Qterms).reverse().sort().project(dbl(scoreBase));
-    
-    var context := ctx.sort();
-    
-    var termscores := p_containing_t_LMs(context, Qpositions, lambda, size_type);
-   
-    return termscores;
+    if ( false ) {
+        # Forward to p_containing_q_LM_fast:
+        return p_containing_q_LM_fast( ctx, Qterms, modifiers, lambda, stemming, size_type );
+    } else {
+        var Qpositions := Qterms_to_tid_pre(Qterms).reverse().sort().project(dbl(scoreBase));
+        var context := ctx.sort();
+        var termscores := p_containing_t_LMs(context, Qpositions, lambda, size_type);
+        return termscores;
+    }
 }
 
 # Smarter LM implementation that needs only a single treemergejoin per query
@@ -972,16 +988,16 @@ proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stem
 #   ctx: context regions
 #   Qterms: query terms ([void,oid])
 #
-# Original code by: Thijs?
-#
-# The original code used [void,str] for Qterms. 
-# Our code stems the query terms before calling this function (is this what we want?)
+# Original code by: Thijs, prefixed by #:
+
 proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
     # TODO: add real weighting to avoid recomputation for duplicate query terms, 
     # or for morphological variants when stemming (can also be used to implement the modifiers)
     
 	var QoidWeights := Qterms.project(dbl(1)); 
     
+    # Stemming is done in Qterms_to_tid_pre, called below
+    #
     #: var enum_word := load(col_name+"enum_word");
 	#: if (stemming = STEM_OFF) {
     #: Qoids := Qterms.join(enum_word);
@@ -995,7 +1011,7 @@ proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int 
 
     #: enum_word := nil;
     if ( Qterms.count() = 0) {
-	    #: return ctx.[*](min(bat(col_name+"col_freq")));
+        #: return ctx.[*](min(bat(col_name+"col_freq")));
         return ctx.[*](min(col_freq()));
     }
     #: else
