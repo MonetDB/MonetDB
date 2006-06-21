@@ -25,6 +25,11 @@
 
 #define SMART_STR_PREALLOC 512
 
+#ifdef _MSC_VER
+#define WIN32 1
+#define WINNT 1
+#endif
+
 #include <stdlib.h>
 
 #include "php.h"

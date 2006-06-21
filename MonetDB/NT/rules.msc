@@ -25,11 +25,11 @@ SWIG=swig
 PTHREAD = C:\Pthreads
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
-PHP_SRCDIR = $(TOPDIR)\..\..\php-4.4.0
-PHP_INSTDIR = C:\php-4.4.0-Win32
+PHP_SRCDIR = $(TOPDIR)\..\..\php-5.1.4
+PHP_INSTDIR = C:\php-5
 # for these, also see configure.py
 PHP_PEARDIR = share\pear
-PHP_EXTENSIONDIR = lib\php4
+PHP_EXTENSIONDIR = lib\php5
 
 PYTHONBASE=C:\Python24
 PYTHON_INCS=-I$(PYTHONBASE)\include
@@ -87,7 +87,7 @@ CFLAGS = $(CFLAGS)
 !ENDIF
 
 PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
-PHP_LIBS = $(PHP_INSTDIR)\php4ts.lib
+PHP_LIBS = $(PHP_INSTDIR)\php5embed.lib
 # there's nothing special about PEAR on Windows
 HAVE_PEAR = 1
 

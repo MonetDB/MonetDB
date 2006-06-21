@@ -859,7 +859,7 @@ AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
 	have_perl="$withval")
 case "$have_perl" in
-yes|not|auto)
+yes|no|auto)
 	;;
 *)
 	PERL="$have_perl"
@@ -969,52 +969,6 @@ if test -f "$srcdir"/vertoo.data; then
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
 else
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
-fi
-
-AC_SUBST(PERL)
-AM_CONDITIONAL(HAVE_PERL, test x"$PERL" != xno)
-
-PERLINC=''
-if test "x$PERL" != xno; then
-  AC_MSG_CHECKING(for $PERL's include directory)
-  PERLINC=`"$PERL" -MConfig -e 'print "$Config{archlibexp}/CORE"'`
-  if test ! "$PERLINC"; then
-    AC_MSG_RESULT(not found.  Is Perl installed properly?)
-  elif test ! -f "$PERLINC/perl.h"; then
-    AC_MSG_RESULT($PERLINC/perl.h does not exist.  Is Perl installed properly?)
-    PERLINC=''
-  else
-    AC_MSG_RESULT($PERLINC)
-  fi
-fi
-AC_SUBST(PERLINC)
-
-PERLLIB=''
-if test "x$PERL" != xno; then
-  AC_MSG_CHECKING(for $PERL's lib directory)
-  PERLLIB=`"$PERL" -MConfig -e 'print $Config{archlib}'`
-  if test "$PERLLIB"; then
-    PERLLIB="-L$PERLLIB/CORE -lperl"
-  fi
-fi
-AC_SUBST(PERLLIB)
-
-PERL_LIBDIR=''
-if test "x$PERLINC" != x; then
-  AC_MSG_CHECKING(for $PERL's library directory)
-  PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
-  if test ! "$PERL_LIBDIR"; then
-    AC_MSG_RESULT(not found.  Is Perl installed properly?)
-  else
-    AC_MSG_RESULT(\$prefix/$PERL_LIBDIR)
-  fi
-fi
-AC_SUBST(PERL_LIBDIR)
-AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$PERL_LIBDIR" != x)
-if test -f "$srcdir"/vertoo.data; then
-AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x -a x"$SWIG" != xno)
-else
-AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x)
 fi
 
 dnl to shut up automake (.m files are used for mel not for objc)

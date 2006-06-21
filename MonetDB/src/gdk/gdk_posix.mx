@@ -1155,7 +1155,7 @@ MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 		ret = MapViewOfFile(h2, mode4, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len);
 	}
 	if (ret == NULL) {
-		GDKsyserror("MT_mmap: MapViewOfFile%s(%x, %d, %d, %u, %d, %x) failed\n", h2, (fixed ? "Ex" : ""), mode4, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, fixed);
+		GDKsyserror("MT_mmap: MapViewOfFile%s(%x, %d, %d, %u, %d, %x) failed\n", (fixed ? "Ex" : ""), h2, mode4, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, fixed);
 		ret = (void *) -1L;
 	}
 	CloseHandle(h1);
