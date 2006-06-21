@@ -1,1 +1,0 @@
-set explain='plan';
