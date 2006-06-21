@@ -97,13 +97,13 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	stmt *ts = stmt_basetable(k->t, k->t->base.name);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 
 	if (list_length(k->columns) > 1) {
 		node *m;
 		stmt *s = inserts[0]->op2.stval;
 		sql_subaggr *sum;
 		stmt *count_sum = NULL;
-		sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 
 		/* 1st stage: find out if original contains same values */
 		if (s->key && s->nrcols == 0) {
@@ -157,11 +157,6 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 		stmt *h = stmt_dup(inserts[c->c->colnr]->op2.stval);
 		stmt *s = stmt_bat(c->c, stmt_dup(ts), RDONLY);
 
-		if (k->type == pkey) {
-			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
-		} else {
-			snprintf(buf, BUFSIZ, "INSERT INTO: UNIQUE constraint '%s.%s' violated", k->t->base.name, k->base.name);
-		}
 		if (h->nrcols) {
 			s = stmt_join(s, stmt_reverse(h), cmp_equal);
 			/* s should be empty */
@@ -170,6 +165,33 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_uselect(s, h, cmp_equal);
 			/* s should be empty */
 			s = stmt_aggr(s, NULL, cnt);
+		}
+		/* s should be empty */
+		s = stmt_binop(s, stmt_atom_int(0), ne);
+
+		/* 2e stage: find out if inserts are unique */
+		if (h->nrcols) {	/* insert multiple atoms */
+			sql_subaggr *sum;
+			stmt *count_sum = NULL;
+			sql_subfunc *or = sql_bind_func_result(sql->session->module, "or", bt, bt, bt);
+			stmt *ssum;
+
+			stmt *ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
+			group *g = grp_create(ins, NULL, NULL);
+			stmt *ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt));
+
+			/* (count(ss) <> sum(ss)) */
+			sum = sql_bind_aggr(sql->session->module, "sum", tail_type(ss));
+			ssum = stmt_aggr(ss, NULL, sum);
+			count_sum = stmt_binop(check_types(sql, tail_type(ssum), stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), type_equal), ssum, sql_dup_func(ne));
+
+			/* combine results */
+			s = stmt_binop(s, count_sum, or);
+		}
+		if (k->type == pkey) {
+			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
+		} else {
+			snprintf(buf, BUFSIZ, "INSERT INTO: UNIQUE constraint '%s.%s' violated", k->t->base.name, k->base.name);
 		}
 		res = stmt_exception(NULL, s, _strdup(buf), 00001);
 	}
