@@ -130,13 +130,12 @@ enum PFctype_t {
   , c_preceding          = 41 /**< nodes before context node (document order) */
   , c_preceding_sibling  = 42 /**< all preceding nodes with same parent */
   , c_self               = 43 /**< the context node itself */
-/* #ifdef BURKOWSKI */
-  /* Xiraf Axes */
-  , c_select_narrow      = 100 /**< give me some bastards (Burkowski stand-off matching) */
-  , c_select_wide        = 101 /**< give me all bastards (Burkowski stand-off matching) */
-  , c_reject_narrow      = 102 /**< give me all but some bastards (Burkowski stand-off matching) */
-  , c_reject_wide        = 103 /**< give me all but the bastards (Burkowski stand-off matching) */
-/* #endif */
+/* [STANDOFF] */
+  , c_select_narrow      = 100 /**< regions contained in a context-node */
+  , c_select_wide        = 101 /**< regions overlapping a context-node */
+  , c_reject_narrow      = 102 /**< all regions except the contained regions */
+  , c_reject_wide        = 103 /**< all regions except the overlapping regions */
+/* [/STANDOFF] */
 
   /* Constructor Nodes */
   , c_elem               = 44 /**< the element constructor */
