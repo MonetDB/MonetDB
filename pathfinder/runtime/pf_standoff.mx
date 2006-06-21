@@ -232,9 +232,6 @@ var region_end_attr_tag := "end";
 #define MIN_int INT_MIN
 #define MIN_lng LLONG_MIN
 
-/* maximum size of heap for loop-lifted StandOff join */ 
-#define abs_max_heap_size 65536
-
 #endif 
 @
 
@@ -475,7 +472,7 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
         nearest_end = MIN_@3, nearest_next_start = MAX_@3, nearest_start = MAX_@3; 
 
     heap_@3 *heap;
-    int max_heap_size = 16;
+    int max_heap_size = 1024;
     int heap_size = 0, i;
     oid index;
     oid *outer_iter_iter, *outer_iter_iter_next;
@@ -597,27 +594,9 @@ endofskipping:
                     *outer_iter_start,
                     *outer_iter_end);
             if (heap_size >= max_heap_size) {
-                if (max_heap_size < abs_max_heap_size) {
-                    max_heap_size *= 2;
-                    GDKwarning("ll_@1_@2_join_sort_@3: (heap overflow) "
-                            "the heap capacity will be doubled and will hold %d items\n", 
+                GDKerror("ll_@1_@2_join_sort_@3: "
+                            "too many (>=%d) overlapping input intervals for standoff steps to work well.\n", 
                             (int)max_heap_size );
-                    GDKfree(heap);
-                    if ((heap = (heap_@3 *)GDKmalloc(sizeof(heap_@3) * 
-                                    max_heap_size)) == NULL) {
-                        GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for heap.\n"); 
-                        BBPreclaim(bn);
-                        return(GDK_FAIL);
-                    }
-                } else {
-                    GDKerror("ll_@1_@2_join_sort_@3: (heap overflow) "
-                            "Houston, please contact 911 (or increase "
-                            "the max_heap_size = %d)\n", 
-                            (int)max_heap_size );
-                    GDKfree(heap);
-                    BBPreclaim(bn);
-                    return(GDK_FAIL);
-                }
             }
             if (*outer_iter_end < nearest_end)  
                 nearest_end=*outer_iter_end;
@@ -673,7 +652,7 @@ int replace_in_heap_@1(heap_@1 heap[], int size, oid iter, @2 start, @2 end) {
     /* now we are sure there is no heap-item with our iter anymore */      
     /* lets bubble to new location for item */
     int i;
-    for (i=size;(i > 0) && (heap[i].end < end); i--) {
+    for (i=size;(i > 0) && (heap[i-1].end < end); i--) {
         heap[i].end = heap[i-1].end; 
         heap[i].start = heap[i-1].start; 
         heap[i].iter = heap[i-1].iter; 
@@ -699,7 +678,7 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
     @2 count, blob_pos, *last_iter_start, next_stop, min_end;
     int c =0;
     int heap_size, i, j;
-    struct { @2 start, end; } heap[256]; // probably a to high estimation, but to be sure...
+    struct { @2 start, end; } heap[1024]; // probably a to high estimation, but to be sure...
     char buf[4098], temp[4096];
 
     FILE *blob;
@@ -738,9 +717,8 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
 	heap_size++;
         
         // also allocate the memory for the string. 
-        if (heap_size == 255) {
-            GDKerror("Houston, please call 911, and please hurry up! (or increase "
-                    "the heapsize in the ffb() function)\n");
+        if (heap_size == 1023) {
+            GDKerror("fetch_standoff_data: too many (>= 1024) overlapping intervals for standoff steps to work well.\n");
             fclose(blob);
             return(GDK_FAIL);
         }
