@@ -548,19 +548,20 @@ between speed and ability to analysis its behavior.
 @-
 @{
 @= runPhase
-    if(msg== MAL_SUCCEED && c->phase[@1] && ((msg= (str) (*c->phase[@1])(c)) ||  c->mode <= FINISHING)){
-        /* error occurred */
+	if(msg== MAL_SUCCEED && c->phase[@1] && ((msg= (str) (*c->phase[@1])(c)) ||  c->mode <= FINISHING)){
+		/* error occurred */
 #ifdef MAL_SCENARIO_DEBUG
-        stream_printf(GDKstdout,"Error in @1 phase\n");
-        if( /*c->mode > FINISHING &&*/ msg )
-            stream_printf(GDKstdout,"%s",msg);
+		stream_printf(GDKstdout,"Error in @1 phase\n");
+		if( /*c->mode > FINISHING &&*/ msg )
+			stream_printf(GDKstdout,"%s",msg);
 #endif
-	if (msg) {
-        	GDKfree(msg); 
-		msg=0;
+		if (msg) {
+			/* FIXME: why is the error not handed back to the user here? */
+			GDKfree(msg); 
+			msg=0;
+		}
+		continue;
 	}
-        continue;
-    }
 @-
 Access control enforcement. Except for the server owner
 running a scenario should be explicitly permitted.
