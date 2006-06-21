@@ -75,6 +75,8 @@ public class JdbcClient {
 		// arguments which have no argument(s)
 		copts.addOption(null, "help", CmdLineOpts.CAR_ZERO, null,
 				"This help screen.");
+		copts.addOption(null, "version", CmdLineOpts.CAR_ZERO, null,
+				"Display driver version and exit.");
 		copts.addOption("e", "echo", CmdLineOpts.CAR_ZERO, null,
 				"Also outputs the contents of the input file, if any.");
 		copts.addOption("q", "quiet", CmdLineOpts.CAR_ZERO, null,
@@ -170,6 +172,13 @@ public class JdbcClient {
 "OPTIONS\n" +
 copts.produceHelpMessage()
 );
+			System.exit(0);
+		} else if (copts.getOption("version").isPresent()) {
+			// We cannot use the DatabaseMetaData here, because we
+			// cannot get a Connection.  So instead, we just get the
+			// values we want out of the Driver directly.
+			System.out.println("Driver: " + 
+					nl.cwi.monetdb.jdbc.MonetDriver.getDriverVersion());
 			System.exit(0);
 		}
 

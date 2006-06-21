@@ -357,7 +357,7 @@ final public class MonetDriver implements Driver {
 	 *
 	 * @return the version string
 	 */
-	static String getDriverVersion() {
+	public static String getDriverVersion() {
 		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " (" + DRIVERVERSIONSUFFIX + ")");
 	}
 }
