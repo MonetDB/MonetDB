@@ -73,6 +73,10 @@ Make sure that Python, ``C:\Pthreads\lib`` (or wherever you installed
 Pthreads), and ``\usr\local\wbin`` are in the ``PATH`` of your command
 shell.
 
+Make sure that the location where the autogen.py script from the
+buildtools is installed is in your ``PATH``.  Typically this is in
+``C:\\Python24\Scripts``.
+
 Further, create an enviroment variable ``MONETDB_PREFIX`` that
 contains the absolute path of the directory where your installed
 MonetDB, e.g.,
@@ -83,6 +87,13 @@ MonetDB, e.g.,
 
 and make sure that ``%MONETDB_PREFIX%\bin``, ``%MONETDB_PREFIX%\lib``,
 and ``%MONETDB_PREFIX%\lib\MonetDB`` are in your ``PATH``.
+
+Also set the environment variable ``SQL_BUILD`` to the path of the sql
+``NT`` directory, e.g.,
+
+::
+
+ set SQL_BUILD=<sql-source>\NT
 
 When all prerequisites have been satisfied, you type
 

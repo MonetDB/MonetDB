@@ -196,12 +196,16 @@ Make sure that Python, ``C:\Pthreads\lib`` (or wherever you installed
 Pthreads), and ``\usr\local\wbin`` are in the ``PATH`` of your command
 shell.
 
+Make sure that the location where the autogen.py script from the
+buildtools is installed is in your ``PATH``.  Typically this is in
+``C:\\Python24\Scripts``.
+
 When all prerequisites have been satisfied, you type
 
 ::
 
  cd NT
- nmake
+ nmake NEED_MX=1
 
 to compile the source code.  If you want to compile with Java and PHP
 support, the command is
