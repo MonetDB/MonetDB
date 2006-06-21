@@ -55,6 +55,7 @@ typedef struct sql_sequence {
 	bit cycle;
 	lng cached;
 	bit called;
+	bit save;
 } sql_sequence;
 
 static list *sql_seqs = NULL;
@@ -225,17 +226,17 @@ sql_create_sequence(sql_trans *tr, char *seq )
 		return NULL;
 	
 	s = NEW(sql_sequence);
+	s -> save = 0;
 	s -> name = _strdup(seq);
 	s -> start = *(lng*)(p=column_find_value(tr, seq_start, id)); _DELETE(p);
 	s -> increment = *(lng*)(p=column_find_value(tr, seq_inc, id)); _DELETE(p);
+	/* todo cacheinc should be multiple of increment */
 	s -> cacheinc = s->increment * *(lng*)(p=column_find_value(tr, seq_cache, id)); _DELETE(p);
 	s -> minvalue = *(lng*)(p=column_find_value(tr, seq_min, id)); _DELETE(p);
 	s -> maxvalue = *(lng*)(p=column_find_value(tr, seq_max, id)); _DELETE(p);
 	s -> cycle = *(bit*)(p=column_find_value(tr, seq_cycle, id)); _DELETE(p);
 	s -> called = *(bit*)(p=column_find_value(tr, seq_called, id)); _DELETE(p);
-	/* note: we default to the start value for cur here if cached is zero */
 	s -> cached = *(lng*)(p=column_find_value(tr, seq_cached, id)); _DELETE(p);
-	s -> cur = s->cached ? s->cached : s->start;
 
 	/* clear the read timestamps, else we cannot commit */
 	seq_name->base.rtime = seq_start->base.rtime = seq_inc->base.rtime = seq_cache->base.rtime = seq_min->base.rtime = seq_max->base.rtime = seq_cycle->base.rtime = seq_cached->base.rtime = seq_called->base.rtime = 0;
@@ -250,11 +251,18 @@ sql_create_sequence(sql_trans *tr, char *seq )
 	seq_name = find_sql_column(seqs, "name");
 	seq_cached = find_sql_column(seqs, "cached");
 
-	if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) 
-		return s;
-	nr = *(lng*)(p=column_find_value(tr, seq_cached, id)); _DELETE(p);
-	if (nr > s->cur) 
-		s->cur = s->cached = nr;
+	if (s->called) {
+		s -> cur = s->cached;
+		if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) 
+			return s;
+		nr = *(lng*)(p=column_find_value(tr, seq_cached, id)); _DELETE(p);
+		if (nr > s->cur) 
+			s->cur = s->cached = nr;
+	} else {
+		s -> cur = s->start;
+		s -> called = 1;
+		s -> save = 1;
+	}
 	return s;
 }
 
@@ -262,84 +270,50 @@ int
 sql_next_value(sql_trans *tr, char *seq, lng *val)
 {
 	lng nr = 0;
-	node *n;
+	node *n = NULL;
 	sql_sequence *s;
 
+	*val = 0;
 	store_lock();
-
 	for ( n = sql_seqs->h; n; n = n ->next ) {
-
 		s = n->data;
-		if (strcmp(s->name, seq) == 0) {
-			if (s->called) {
-				/* handle min/max and cycle */
-				s->cur += s->increment;
-				if ((s->maxvalue && s->cur > s->maxvalue) ||
-						(s->minvalue && s->cur < s->minvalue))
-				{
-					if (s->cycle) {
-						/* cycle to the start value again */
-						s->cur = s->start;
-					} else {
-						/* we're out of numbers */
-						*val = 0;
-						store_unlock();
-						/* error message:
-						 * printf("No more numbers: %lld < %lld < %lld\n", s->minvalue, s->cur, s->maxvalue);
-						 */
-						return(0);
-					}
-				}
-			}
-			s->called = 1;
-			nr = s->cur;
-			*val = nr;
-			if (!s->cached || nr == s->cached) {
-				/* update value in a single transaction */
-				s->cached += s->cacheinc;
-				store_unlock(); 
-				sql_update_sequence_cache(tr, seq, s->cached, s->called);
-				return 1;
-			}
-			store_unlock(); 
-			return 1;
+		if (strcmp(s->name, seq) == 0) 
+			break;
+	}
+	if (!n) {
+		s = sql_create_sequence(tr, seq);
+		if (!s) {
+			store_unlock();
+			return 0;
 		}
-	}
-	s = sql_create_sequence(tr, seq);
-	if (!s) {
-		*val = 0;
-		store_unlock();
-		/* error message:
-		 * printf("No such sequence %s\n", seq);
-		 */
-		return 0;
-	}
-	if (s->called) {
-		/* handle min/max and cycle */
+		list_append(sql_seqs, s);
+	} else {
+		s = n->data;
 		s->cur += s->increment;
-		if ((s->maxvalue && s->cur > s->maxvalue) ||
-				(s->minvalue && s->cur < s->minvalue))
-		{
-			if (s->cycle) {
-				/* cycle to the start value again */
-				s->cur = s->start;
-			} else {
-				/* we're out of numbers */
-				*val = 0;
-				store_unlock();
-				/* error message:
-				 * printf("No more numbers: %lld < %lld < %lld\n", s->minvalue, s->cur, s->maxvalue);
-				 */
-				return(0);
-			}
+	}
+	/* handle min/max and cycle */
+	if ((s->maxvalue && s->cur > s->maxvalue) ||
+	    (s->minvalue && s->cur < s->minvalue))
+	{
+		if (s->cycle) {
+			/* cycle to the start value again */
+			s->cur = s->start;
+			s->save = 1;
+		} else { /* we're out of numbers */
+			store_unlock();
+			return(0);
 		}
 	}
-	s->called = 1;
 	nr = s->cur;
-	list_append(sql_seqs, s);
-	store_unlock();
-	sql_update_sequence_cache(tr, seq, s->cached, s->called);
 	*val = nr;
+	if (s->save || nr == s->cached) {
+		/* update value in a single transaction */
+		s->cached = nr + s->cacheinc;
+		store_unlock(); 
+		sql_update_sequence_cache(tr, seq, s->cached, s->called);
+		return 1;
+	}
+	assert(nr<s->cached);
+	store_unlock(); 
 	return 1;
 }
-

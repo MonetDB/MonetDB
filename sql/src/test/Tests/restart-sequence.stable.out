@@ -39,14 +39,14 @@ Over..
 # sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences # table_name
 # name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
 # varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	20,	20,	20,	20,	20,	0,	20,	0 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	1,	true	]
-# sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences # table_name
+# 6,	3,	1,	1,	1,	1,	1,	5,	1,	5 # length
+[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	3,	true	]
+# sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
 # name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
 # varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	20,	20,	20,	20,	20,	0,	20,	0 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	10,	false	]
-#  # table_name
+# 6,	3,	1,	1,	1,	1,	1,	5,	2,	5 # length
+[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	10,	true	]
+# . # table_name
 # mytest # name
 # bigint # type
 # 20 # length
@@ -59,8 +59,8 @@ Over..
 # sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences # table_name
 # name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
 # varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	20,	20,	20,	20,	20,	0,	20,	0 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	10,	true	]
+# 6,	3,	1,	1,	1,	1,	1,	5,	2,	5 # length
+[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	12,	true	]
 
 # 12:37:20 >  
 # 12:37:20 >  Done.
