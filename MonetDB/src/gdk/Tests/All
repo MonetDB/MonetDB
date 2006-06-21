@@ -21,8 +21,8 @@ TMsubcommit
 insert_bat_bun.new
 #append_bat_val.old # disabled; kept for comparison
 append_bat_val.new
-insert_bat_bat.old
-insert_bat_bat.new
-append_bat_bat.old
-append_bat_bat.new
+#DEVELOPMENT?insert_bat_bat.old # not available, yet.
+#DEVELOPMENT?insert_bat_bat.new # not available, yet.
+#DEVELOPMENT?append_bat_bat.old # not available, yet.
+#DEVELOPMENT?append_bat_bat.new # not available, yet.
 append_dense_tail
