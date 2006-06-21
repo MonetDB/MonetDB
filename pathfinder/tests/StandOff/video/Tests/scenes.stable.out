@@ -1,24 +1,25 @@
 stdout of test 'scenes` in directory 'tests/StandOff/video` itself:
 
 
-# 17:28:08 >  
-# 17:28:08 >  Mtimeout -timeout 180 /usr/bin/python scenes.py scenes 
-# 17:28:08 >  
+# 20:01:50 >  
+# 20:01:50 >  Mtimeout -timeout 180 /usr/bin/python scenes.py scenes 
+# 20:01:50 >  
 
 
-# 17:28:08 >  
-# 17:28:08 >  pf --enable-standoff /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/pathfinder/tests/StandOff/video/Tests/scenes.xq | Mtimeout -timeout 60 Mserver --config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./MONETDB/etc/MonetDB.conf --debug=10 --set monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./PATHFINDER/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./MONETDB/lib/MonetDB --set gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./MONETDB/var/MonetDB/dbfarm --set sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./MONETDB/var/MonetDB/log --set mapi_port=35732 --set monet_prompt= --dbname=mTests_tests_StandOff_video
-# 17:28:08 >  
+# 20:01:50 >  
+# 20:01:50 >  pf --enable-standoff /export/scratch1/alink/src/tmp/pathfinder/tests/StandOff/video/Tests/scenes.xq | Mtimeout -timeout 60 Mserver --config=/ufs/alink/local/etc/MonetDB.conf --debug=10 --set monet_mod_path=/export/scratch1/alink/src/tmp/pathfinder/Linux/lib/MonetDB:/ufs/alink/local/lib/MonetDB --set gdk_dbfarm=/ufs/alink/local/var/MonetDB/dbfarm --set sql_logdir=/ufs/alink/local/var/MonetDB/log --set mapi_port=33338 --set monet_prompt= --set standoff=enabled --dbname=mTests_tests_StandOff_video
+# 20:01:50 >  
 
 # Monet Database Server V4.12.0_rc1
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<beatleScenes><scene end="800" start="0" id="1"/><scene end="10400" start="801" id="2"/></beatleScenes>
+</XQueryResult>
 
-
-
-
-# 17:28:09 >  
-# 17:28:09 >  Done.
-# 17:28:09 >  
+# 20:01:50 >  
+# 20:01:50 >  Done.
+# 20:01:50 >  
 
