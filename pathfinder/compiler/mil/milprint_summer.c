@@ -7805,7 +7805,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	/* clean up */
 	deleteResult(f, ctx_counter);
         deleteResult_ (f, str_counter, STR);
-	deleteResult(f, opt_counter);
+	if ( opt_counter )
+	    deleteResult(f, opt_counter);
         milprintf(f, "} # end of translate fn:tijah_query\n");
         return (code)?INT:NORMAL;
     }
