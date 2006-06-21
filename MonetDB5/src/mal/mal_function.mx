@@ -16,7 +16,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ MAL Functions
+@+ Functions
 MAL comes with a standard functional abstraction scheme.
 MAL functions are represented by MAL instruction lists, enclosed
 by a @code{function} and @code{end} statement. The @code{function}

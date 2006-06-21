@@ -16,7 +16,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ MAL Factories 
+@+ Factories 
 A convenient programming construct is the co-routine, which
 is specified as an ordinary function, but maintains its
 own state between calls, and permits re-entry other than

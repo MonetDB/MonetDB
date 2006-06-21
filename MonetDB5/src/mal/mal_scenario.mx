@@ -497,8 +497,6 @@ resetScenario(Client c)
 	if (scen != NULL && scen->exitClientCmd)
 		(*scen->exitClientCmd) (c);
 
-	if (c->scenario)
-		GDKfree(c->scenario);
 	c->scenario = c->oldscenario;
 	for (i = 0; i < 7; i++) {
 		c->state[i] = c->oldstate[i];

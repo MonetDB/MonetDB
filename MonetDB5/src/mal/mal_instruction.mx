@@ -67,13 +67,13 @@ language features and illustrative examples.
 @end menu
 
 @node MAL variables, MAL instructions, MonetDB Assembler Language , MonetDB Assembler Language
-@+ MAL Literals and Variables
+@+ Literals and Variables
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
 the context in which they are used, see @ref{Type resolution}. 
 
 @node MAL instructions, Flow of control, MAL variables , MonetDB Assembler Language
-@+ MAL Instructions
+@+ Instructions
 MAL instructions have purposely a simple format. 
 Each instruction denotes a data-flow statement.
 It is syntactically represented by an assignment, where

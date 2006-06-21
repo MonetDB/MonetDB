@@ -16,7 +16,7 @@
 
 @a M. Kersten
 @v 0.0
-@* Execution Profiling
+@* The MAL Profiler
 A key issue in the road towards a high performance implementation
 is to understand where resources are being spent. This information
 can be obtained using different tools and at different levels of
@@ -45,7 +45,7 @@ emptied explicitly upon need.
 * Event Caching::
 @end menu
 
-@node Event Filtering, Event Caching, Execution Profiling, Execution Profiling
+@node Event Filtering, Event Caching, The MAL Profiler, The MAL Profiler
 @+ Event Filtering 
 The profiler supports selective retrieval of such information by
 tagging the instructions of interest. This means that a profiler
@@ -103,7 +103,7 @@ of a code block with the pair @code{profiler.setOfflineProfiling()}.
 The default is tuple format, which can be requested
 explicitly using @code{profiler.setOnlineProfiling()}.
 
-@node Event Caching, MonetDB Extension Modules, Event Filtering, Execution Profiling
+@node Event Caching, MonetDB Extension Modules, Event Filtering, The MAL Profiler
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
 can keep the events in a local @code{BAT} group, 

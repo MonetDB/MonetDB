@@ -16,8 +16,10 @@
 
 @f mal_macro
 @a M. L. Kersten
-@+ MAL macro processors
-Two MAL optimizers are based on MAL macro expansion and contraction.
+@-
+@node Macro Processing, Common Sub-Expression Removal, Heuristic Rewrite Rules, Optimizer Toolkit
+@- Macro Processing
+Two optimizers are based on MAL macro expansion and contraction.
 The former involves replacing individual instructions by a block of
 MAL code.
 The latter depicts the inverse operation, a group of instructions
@@ -29,8 +31,8 @@ point of view. They could have been called, or the block need
 not be compressed.
 
 The optimizers form the basis for replacing code fragments.
-In particular, it provides a handle to implement peep-hole
-based optimization. 
+In particular, it provides a basis to develop front-end
+specific code generation templates.
 The prototypical test case is the following template:
 @example
 function joinPath( a:bat[:any$1,:any$2],
@@ -191,7 +193,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	return 1;
 }
 
-@+ Macro expansions
+@- Macro expansions
 The macro expansion routine walks through the MAL code block in search
 for the function to be expanded.  
 The macro expansion process is restarted at the first new instruction.
@@ -338,8 +340,7 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 	return msg;
 }
 
-@}
-@+ Macro inversions
+@- Macro inversions
 Macro inversions map a consecutive sequences of MAL instructions
 into a single call. Subsequence resolution will bind it with the proper
 function. The pattern being replaced should be a self-standing
@@ -348,7 +349,6 @@ assignment. [could be improved]
 The function being replaced should assign the result to
 the signature variables. Otherwise it will be difficult
 to assess which result to retain.
-@{
 @c
 int
 replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
