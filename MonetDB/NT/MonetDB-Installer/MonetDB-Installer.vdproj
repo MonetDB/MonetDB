@@ -15,25 +15,49 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_01E014DB912A4BA4B24321B4326D9B7E"
+        "MsmKey" = "8:_01F1458813F14674AD8EBAABFB40FBC0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_08BCF21084AC4A54A52E0DE5BD6C4C12"
+        "MsmKey" = "8:_041C9EDDAB0B4A1B8635879F6461537C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_0D0E2DDA9C7F4477AB750261E8851995"
+        "MsmKey" = "8:_078CF97426234656A56AE8652929EB5F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_104E6DA828A744DA9A1B76DE1EA2B8AB"
+        "MsmKey" = "8:_0888E1F5F1254BC7995DF11C95191763"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_08A467991DB44D29B13F24360ADE3124"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_08C2BD4762E949AFB018BD7F442F8693"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_09059BCF262640A38CA38D7F25F1AB66"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_10E43A09221C4D7E9A4ED8DBCBE382F3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -45,13 +69,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1118853A37624BA8BD759CE7148F5F4E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_140D8CB4118640F19F900E9E833E1145"
+        "MsmKey" = "8:_132800F129304066A682B426D0FC0DF4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -63,43 +81,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_161863A794F34474BA7EB6F22737326E"
+        "MsmKey" = "8:_14E0B77710C94ECEA66019F10AB2B81B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_177AD9B347FD4F0B81C78EB6DC41CBFD"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_18148B941C334B6ABD9D0ED9A96E5AEC"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_19FC8466E8544577B2A5E82BA3A09E22"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1A9C5886B3984E3EAF92CC49CA668080"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1B1935D2F30B4D04BA5EF36425164568"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1EB0140CE42C436BA8F485F1EAA2555F"
+        "MsmKey" = "8:_1DA85C66B6504DFABE23476E667EAC7A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -111,19 +99,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_2032A32A33A840D8BF5348CFB353E4C9"
+        "MsmKey" = "8:_203FE07F74E54A71945F9264E89C3BA5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_221912C829334619B4BBA8C6DA7E014F"
+        "MsmKey" = "8:_20C4C68E7D2241D5BD0CAE30043875A8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_22B09752DD8C4D599F9FB0E31210C01E"
+        "MsmKey" = "8:_212D23F781304DF096809D7517218B89"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -135,49 +123,97 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_26553330135B422E94016EB938095E97"
+        "MsmKey" = "8:_284D9A453A1A4BC88BB4F8B1460844FC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_280B957ABFC24992809078B5B408FC11"
+        "MsmKey" = "8:_293210DFF6B94737AFC36C6FD70B6A58"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_2D8191305B524BBABAC619325E2192F5"
+        "MsmKey" = "8:_2ADCD22F3C8C4B0AA2AEFA6918C8BA9D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_342C8EEBBD7F41DC96ACED821E0ACA3F"
+        "MsmKey" = "8:_2B25AF023C1D4E6F9F73E2AD744C6D4F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_34AB471FDD2C413E8D30100D1A2BE5B4"
+        "MsmKey" = "8:_2B832C4E6C8843A39BD96BA38C4E2D08"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_38184109C5E1443BB636804DDB8B192D"
+        "MsmKey" = "8:_2BC3FE9616694F409E05556078915AFB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_3EC8FC0E61C748DFA92374DCEDB12C5B"
+        "MsmKey" = "8:_2C6358DF94BC4008B0E2887093D728AE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_40BEFAD74EED44428B4B5F8552C30376"
+        "MsmKey" = "8:_30C5FCDAE67A44019167F48AE9F4C32F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_325A2C257E584D838CA92A84138043FB"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_35F414571EF84E24BE049018A5F7E96D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_361EC3CD59134F6CA833C414DE7EF6EC"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_37B05F574076490FB6537534B9CA33C1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3C9D1A8A18F842F687402C2645CB3442"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3D49FC0B2331497A9A80EF378AE105BE"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3F7CBF15E07D46BBA483D81EB15374B4"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_404EFFE39F884FEBB72E661981368CB1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -189,61 +225,73 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_420C3F8D05FC444782F5C5AB5E16147C"
+        "MsmKey" = "8:_4206B8531A5749C5909C15176C4E73CE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_442600AAAD2B48F7A0BCC6F47AC19BCA"
+        "MsmKey" = "8:_44FBAADF84F449EC84619750EE783987"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4972700AE1CA40B3BA146BCEC17CC6CF"
+        "MsmKey" = "8:_454C036B954B4466AD0DAC2AB935D64E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4996116F1EA245C1B854BF2F1D5C24A0"
+        "MsmKey" = "8:_454E5004342B4707838EFDA8C6B58385"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_49FE9E5A762D4C3388A4877F1030368F"
+        "MsmKey" = "8:_45D16E3C52CC4726BA112C26AD74C4FF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4A3BD15205974EB3B10A3A6A18027EC2"
+        "MsmKey" = "8:_46974F97B4DA4B8F92C8A714203EBFB1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4A716EF6884F4A61BC58EB7C94E823A7"
+        "MsmKey" = "8:_4A658948608F40D4B997A949C73E8383"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4F72E250A93345519E1C68D1FA2A055A"
+        "MsmKey" = "8:_4C76212A9DEE44539183373F345478A5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5368859DEF09498F8449762586D371BF"
+        "MsmKey" = "8:_4CDAC7688AA346F5A10D9AA9510DD8D6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_57050D8F2C724CFF937D75295D4A648F"
+        "MsmKey" = "8:_4D86B13FD6A4402D8B7487822D1EFDB8"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_55A4A034A09A43889294B723E02057ED"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5785502162514E4AB8B48765A88ED17D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -255,19 +303,25 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_58ACEA28A7C04A3F8FE1482D3B1E2A66"
+        "MsmKey" = "8:_5834294EF036483C8BBC8A4A4AC1F8A6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_59DE9F14A90E4689A21A00A5D0B0EA48"
+        "MsmKey" = "8:_5864860D145A427DB5EEE49479CD7264"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5D9FFEBBFD5A484FB57A1A0F54614880"
+        "MsmKey" = "8:_59C2909E9B6A4A069D7A9EADF236B705"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5E1395C79CDD412CBFF875EBB404BFDF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -279,79 +333,97 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_5F1C4E6E36AA4E92969B3502C902D9E1"
+        "MsmKey" = "8:_64F4C779897D46C1B6D5EFBF04F181FE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5F51C40EAF7E4487933D87BDFE8C2F06"
+        "MsmKey" = "8:_65BFFEB4E8D5452AA06D760FF6B524AB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_641AC8A00FFB4417885DACAC627BBAF9"
+        "MsmKey" = "8:_6731ADA08C5547ECAE14BF669FB04847"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_666CC31C58BE40DFA5645120F07897F4"
+        "MsmKey" = "8:_69AB1F88B6604E4FA076FB4FCEC83B11"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_68EE081F3BB441928A38F9272CA4C8A9"
+        "MsmKey" = "8:_6A4D7DAB8B1C40CCB71F2A0C9F2EC9B0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_6A43258F33024200BC917E50C205FD0F"
+        "MsmKey" = "8:_6C00EB5E50714FCD97D3FE1C6F1BB9F2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_6CEBFBB5AF434AC59792FE6A315724CA"
+        "MsmKey" = "8:_6ED0408B7980414DBAC20021396E3B3A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_70C0C7C4B08043B1813CCEBA6DF61552"
+        "MsmKey" = "8:_6F53066861A94020811A2CD0EADF9C52"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_73220115C4E04149A7F59F8B82A7C007"
+        "MsmKey" = "8:_6FA6D56D80DB48008DC99CDD5684991C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_7505B1E98B0E4D69AC7B5A281AFE46DF"
+        "MsmKey" = "8:_70E9584173C24CF4952466630872AC5C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_755B6050960F486ABDECC6F2064FAFB1"
+        "MsmKey" = "8:_71A044401AA7414B8F7C00580FFED0A4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_78B6609D3B8A49F48E876B7423BA737C"
+        "MsmKey" = "8:_7319F7872A364A90B5AD413CDFB247D1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_79503BB0C39C47CC897035E9E24113A0"
+        "MsmKey" = "8:_78129140FC134FD2BC0DD54C84C8539D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_7CC466ED51F74DE3A9CE2CCEFFCEE650"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_7DC67E0BF7374EE490229D7A26D498CC"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_7DD13189335D4D94BA2A1E2F5E6B1592"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -363,61 +435,55 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7ED8F36E84D742CE9DB6F534C406E119"
+        "MsmKey" = "8:_7E47FB92051D48BC90E0EC28B5933BA3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_7F75217401F6469A9D3786442209260E"
+        "MsmKey" = "8:_7F98BA32A6884A59B83FFC7BF3101804"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_80938F8650E94B929471A0E33CD1819A"
+        "MsmKey" = "8:_804146D694964F729C82B775BF7C8D51"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_810D932EFC0F45D28BFEB1B8FA535647"
+        "MsmKey" = "8:_8134E2E1BD894C3D9DC3E7A34CA03F1E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_81B83D37F46E4268BB4F9D74ACA62DAB"
+        "MsmKey" = "8:_83510CF844134847849A4CD4D8940057"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_89136223FB924A0EA4CA68FE14CB596C"
+        "MsmKey" = "8:_859C6DAC4EDD4969AB0E18038F271D84"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_8A6ED2F07A9548A783B37F0325820B58"
+        "MsmKey" = "8:_876690EA8D2F42A59AE3A63A704DB2D6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_8A781EE0F6D94F358950AA05F954999E"
+        "MsmKey" = "8:_8772BACD24F643D8B3859D2C87BC4A22"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_8C08E1D1D3A248888182D82D83151179"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8C20B68F939A472687F698C54E714AF7"
+        "MsmKey" = "8:_879F163B3EED48F4BC48545DEC1DF72E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -429,19 +495,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_97A15E91024B47699CE254BE21302FB4"
+        "MsmKey" = "8:_8DE424D3A5C64BEDAE548B8D494F4061"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_9B6732A0366F4539AA509E555776D2AF"
+        "MsmKey" = "8:_8EDE752735314BCC942C70E4B7974045"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_9BA10D7CE69E426DB9103CECCD7D69CE"
+        "MsmKey" = "8:_90201D28CBBA48D6AF8B25964EFF9075"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -453,31 +519,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9DA0ABC88B11412FB208B795934A58DB"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_A24466F5F5AC4A1082B759BA4D4E03AF"
+        "MsmKey" = "8:_A07151B7E158451BB08B61C9CCF54B22"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_A2E7F0B6A48A4589985FE4F2B6E01B61"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_A4BBD1AF7B034CF5A8BE6CCF9C8D27AC"
+        "MsmKey" = "8:_A0F913DE69C14D35A1118E93BC8B9ADF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -495,7 +549,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_AB92DDD814DE432994849F72A9A3F52D"
+        "MsmKey" = "8:_AB4BF3018F88488593337AF71EFE56EB"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_ABB578BCC9804581A3C3854A382A374C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AC2129F6F9AD410D9BFC93BED892F3F0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -507,43 +573,61 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_ADDFA68DF68145A4AFFC1A404B774006"
+        "MsmKey" = "8:_ACB807EF072A4436AA8D8DF71D15A058"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_ADE29C2061EB48A6B744DC6751018759"
+        "MsmKey" = "8:_AD2FB4AC2D114738ADCBB50992DFF99E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_AE472DBA7FA74E41B3958ED2AD4A632A"
+        "MsmKey" = "8:_AE8AE64AC7B54F5DBE2E17E92CEB47DA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_AF4930B9BAD64E35BB313D3DE0ADA217"
+        "MsmKey" = "8:_AF44E5A11DF34B93AE04F71E71656534"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_B6005D5BDB364EE8AFCC11DC4CD43D44"
+        "MsmKey" = "8:_B09A20BD25C44A7290AFD9C7154FD5E0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_BB84EB0736BA416AB192A16CFC801A8C"
+        "MsmKey" = "8:_B1F0492D0F6244A2A4C0B8BB62B0598B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_BC635461F8D7418AA073E5378B09201B"
+        "MsmKey" = "8:_B372A0CD01D84F6A968D4C53464FA92D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B598FBF4C8E7423689DA38F848C1102D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B9A3D3F52B0D4C129E71EF76FC2E84B6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BD1F149F1A59412C9144519F596BD944"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -561,13 +645,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_BFFAB60014FE42C9B74DDF14EE037439"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C00B50B142344612982AE9D20EA83E51"
+        "MsmKey" = "8:_BE28F3ACCDBF43C8BBA3AD5DC90EFEF0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -579,25 +657,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C22042B40FB6423FA15317C9D35C3485"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_C464E85622B641E5A8EEA48F39228B0C"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C57F31297E4543AC8B1D4DA0B3528D6F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C756001A5068414C9ABCA719CED38CE6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -609,7 +669,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C7E1B2AD753146CDAD2065E29E4F7EE4"
+        "MsmKey" = "8:_C85EAE57890A413FB4FAF4B3F300AA46"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C8710B41C7604EC783B373DB50D9C2E2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C9839F4F0ABF4FAC85693AA2A2E8B6DA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -621,97 +693,85 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_CAE099AE7FCC471D96D83D39F57E4512"
+        "MsmKey" = "8:_CBDE661E1C704CF5BFC59ADA86CBBC87"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D2CE4A22446B47CBBED0B8DFB6C7C60E"
+        "MsmKey" = "8:_CCE0A500E80D45CB87A5734EDF1D2772"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D6560452E27247EDA8168B3F76EB78B6"
+        "MsmKey" = "8:_CEEAE7191CB24D5894F25F729CDF8FDF"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D705C12FB81141FA896AC63587F44BA8"
+        "MsmKey" = "8:_D28DEC68FCF442F68795A843123A09C4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D73C2ED676FD42A3B58FA2ED602B2CEA"
+        "MsmKey" = "8:_D4617B65C97A4C4C8A9EE5D7F61011B0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D913FFB491694A1B9E5DD48695D9E144"
+        "MsmKey" = "8:_D71C8B59A9FC4C14BD3E6E006DED8CD8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_DF22D8A83CE94BF0A27F4D0E0DA1660B"
+        "MsmKey" = "8:_D9A4158966A5459C95EA3A7DE32CC787"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E07DFC0A6D4345E8B8FA4FDC7C6069B2"
+        "MsmKey" = "8:_D9FA25CE8B4947A4861589C15A1DF288"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E23B043075C04AA5A38D8C4A56793E55"
+        "MsmKey" = "8:_DD0F88A7D9ED4A63B8439B2ACD856202"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E2F56C84037F46EA8FBFBEE084FACC53"
+        "MsmKey" = "8:_DDB26B6965894560814DA62B1C1D8AA0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E52240F0DB57427FAEA440B05A9185FA"
+        "MsmKey" = "8:_DE0844A87CDE4ED88AF03C72DD703EAA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E6076E6D89CA4D99BA36E54350D90FC1"
+        "MsmKey" = "8:_E038D6FBF3B14F0D88CEE1C0D806AAEA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E64A6DC1EEE24DFCBE0DE62FDFCC5A1C"
+        "MsmKey" = "8:_E43AD300139C42479FC3366DEF9A3007"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_E6889D1D073B4834B824AC60BE1D5205"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E6BC40BF7585429BA2009D391518FEBA"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E71FF817005446CD88FCE6628659A97F"
+        "MsmKey" = "8:_E81D14DD2D2C420BA1187440D1F31912"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -723,37 +783,55 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_EA5DE3237DEB42769074C4A5F956B66F"
+        "MsmKey" = "8:_EA1ABB8F983B4891B1CB48A70EF87F5F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EC13E3A1A45F4971860868570C6D3D0F"
+        "MsmKey" = "8:_EA2FE86E060549CC8CF8C9A3292F90C5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EE16A5261B7B44D79B6D9C671EBFE5DF"
+        "MsmKey" = "8:_EDBDE2F13EDC4AD2957972BEA80D579E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EF1DC9F751AE4FB796BC9B5519C74409"
+        "MsmKey" = "8:_EF0703C7D7A24AAEB45635CB5C15F2B1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EFCF5FED00FA408AB7E154A8302B28B6"
+        "MsmKey" = "8:_EFDBCA4007CA46AE85B39A2AF6DFDBBE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F0CAEE4DFCED4484B7DD2CD30F13BE46"
+        "MsmKey" = "8:_F00B93C3D3184818A4CAE48191B12F6D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F0151D1C95B4440793C3956399F02C50"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F08AC16BD0A74006B598B109206793D5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F0E04CC1ACA24D04B974C9D5379F0B34"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -765,61 +843,73 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_F15E9FEC2E104B8E836432EFCE9D0FCA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_F1814E899F4C48309149ABD5B9E5365F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F1BABCD4647F4386B2E2FA73BDB1BA44"
+        "MsmKey" = "8:_F2E5C2171D4C4A9F904A88F1A03DF795"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F50B9F7C628C444EA037ABCCB58D37BA"
+        "MsmKey" = "8:_F3983E1FDA6F4B0ABD1F43546F1FE00B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F69362104B0540EE980A5E3DE098C752"
+        "MsmKey" = "8:_F3E9C2CBEAF84887AB98953AEBFBD8E2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F6A96D2F2C894D4FBD9EFEA32E0CCFC0"
+        "MsmKey" = "8:_F40E561EABBC4B3EBCD14131A7CBC7D8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F7032259DF2A40ACBE75C85401074D35"
+        "MsmKey" = "8:_F80E59B0717649E68569698017BFF995"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F9150C6F1D354175A69298968EC8D2AD"
+        "MsmKey" = "8:_F9216D31DE264A5ABA1CFD76BD4C8A53"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_FBBA218AA4114D7B948E8EAB21E9AD99"
+        "MsmKey" = "8:_F950BF37121F4E74965350FC6C8C680A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_FC1A1369076D465798D3CC96AFCD8DBD"
+        "MsmKey" = "8:_F9E9A83C71F347D8A5117409E28C1D36"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_FEE1D03101FE417A8274E1F171E2C28E"
+        "MsmKey" = "8:_FBD0328C696E4AA0ADED0C699912D1FD"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FE953AA8CAD44A028A27B1FCC98CFAC4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -909,7 +999,127 @@
         }
         "File"
         {
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_01E014DB912A4BA4B24321B4326D9B7E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_01F1458813F14674AD8EBAABFB40FBC0"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mel.dll"
+            "TargetName" = "8:lib_mel.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_041C9EDDAB0B4A1B8635879F6461537C"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_algebra.dll"
+            "TargetName" = "8:lib_algebra.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_078CF97426234656A56AE8652929EB5F"
+            {
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\MonetSQLdb\\monetexceptions.py"
+            "TargetName" = "8:monetexceptions.py"
+            "Tag" = "8:"
+            "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_0888E1F5F1254BC7995DF11C95191763"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_alarm.dll"
+            "TargetName" = "8:lib_alarm.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_08A467991DB44D29B13F24360ADE3124"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\array.mil"
+            "TargetName" = "8:array.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_08C2BD4762E949AFB018BD7F442F8693"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_enum.dll"
+            "TargetName" = "8:lib_enum.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_09059BCF262640A38CA38D7F25F1AB66"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\malalgebra.mil"
             "TargetName" = "8:malalgebra.mil"
@@ -929,50 +1139,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_08BCF21084AC4A54A52E0DE5BD6C4C12"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_10E43A09221C4D7E9A4ED8DBCBE382F3"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\bat_cast.mil"
-            "TargetName" = "8:bat_cast.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_0D0E2DDA9C7F4477AB750261E8851995"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\uchr.mil"
-            "TargetName" = "8:uchr.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_104E6DA828A744DA9A1B76DE1EA2B8AB"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_txtsim.dll"
-            "TargetName" = "8:lib_txtsim.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_streams.dll"
+            "TargetName" = "8:lib_streams.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1009,32 +1179,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1118853A37624BA8BD759CE7148F5F4E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_132800F129304066A682B426D0FC0DF4"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_xtables.dll"
-            "TargetName" = "8:lib_xtables.dll"
+            "SourcePath" = "8:..\\share\\MonetDB\\php\\monetdb.php"
+            "TargetName" = "8:monetdb.php"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_140D8CB4118640F19F900E9E833E1145"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\oo7.mil"
-            "TargetName" = "8:oo7.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_69999C4142A6488CB44E3C22BC2E4BFA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1069,10 +1219,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_161863A794F34474BA7EB6F22737326E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_14E0B77710C94ECEA66019F10AB2B81B"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_unix.dll"
-            "TargetName" = "8:lib_unix.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_str.dll"
+            "TargetName" = "8:lib_str.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1089,112 +1239,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_177AD9B347FD4F0B81C78EB6DC41CBFD"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1DA85C66B6504DFABE23476E667EAC7A"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_streams.dll"
-            "TargetName" = "8:lib_streams.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_vector.dll"
+            "TargetName" = "8:lib_vector.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_18148B941C334B6ABD9D0ED9A96E5AEC"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_tcpip.dll"
-            "TargetName" = "8:lib_tcpip.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_19FC8466E8544577B2A5E82BA3A09E22"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mapi.dll"
-            "TargetName" = "8:lib_mapi.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1A9C5886B3984E3EAF92CC49CA668080"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_decimal.dll"
-            "TargetName" = "8:lib_decimal.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1B1935D2F30B4D04BA5EF36425164568"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\bat_mmath.mil"
-            "TargetName" = "8:bat_mmath.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_1EB0140CE42C436BA8F485F1EAA2555F"
-            {
-            "SourcePath" = "8:..\\share\\MonetDB\\tools\\restore.mil"
-            "TargetName" = "8:restore.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_A7E9AB371F514EDD8F6D26B2011F98E7"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1229,50 +1279,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2032A32A33A840D8BF5348CFB353E4C9"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_203FE07F74E54A71945F9264E89C3BA5"
+            {
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\Mapi.py"
+            "TargetName" = "8:Mapi.py"
+            "Tag" = "8:"
+            "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_20C4C68E7D2241D5BD0CAE30043875A8"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\iterator.mil"
+            "TargetName" = "8:iterator.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_212D23F781304DF096809D7517218B89"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_bitvector.dll"
             "TargetName" = "8:lib_bitvector.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_221912C829334619B4BBA8C6DA7E014F"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_stats.dll"
-            "TargetName" = "8:lib_stats.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_22B09752DD8C4D599F9FB0E31210C01E"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\array.mil"
-            "TargetName" = "8:array.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1309,10 +1359,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_26553330135B422E94016EB938095E97"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_284D9A453A1A4BC88BB4F8B1460844FC"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\logger.mil"
-            "TargetName" = "8:logger.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_monettime.dll"
+            "TargetName" = "8:lib_monettime.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1329,10 +1379,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_280B957ABFC24992809078B5B408FC11"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_293210DFF6B94737AFC36C6FD70B6A58"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_counters.dll"
-            "TargetName" = "8:lib_counters.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_uchr.dll"
+            "TargetName" = "8:lib_uchr.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1349,10 +1399,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2D8191305B524BBABAC619325E2192F5"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2ADCD22F3C8C4B0AA2AEFA6918C8BA9D"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_qt.dll"
-            "TargetName" = "8:lib_qt.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_image.dll"
+            "TargetName" = "8:lib_image.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1369,30 +1419,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_342C8EEBBD7F41DC96ACED821E0ACA3F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2B25AF023C1D4E6F9F73E2AD744C6D4F"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\tools\\backup.mil"
-            "TargetName" = "8:backup.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_A7E9AB371F514EDD8F6D26B2011F98E7"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_34AB471FDD2C413E8D30100D1A2BE5B4"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_blob.dll"
-            "TargetName" = "8:lib_blob.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat.dll"
+            "TargetName" = "8:lib_bat.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1409,10 +1439,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_38184109C5E1443BB636804DDB8B192D"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2B832C4E6C8843A39BD96BA38C4E2D08"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\str.mil"
-            "TargetName" = "8:str.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mmath.dll"
+            "TargetName" = "8:lib_mmath.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1429,10 +1459,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3EC8FC0E61C748DFA92374DCEDB12C5B"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2BC3FE9616694F409E05556078915AFB"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\sys.mil"
-            "TargetName" = "8:sys.mil"
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\sql_server.mil"
+            "TargetName" = "8:sql_server.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1449,10 +1479,190 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_40BEFAD74EED44428B4B5F8552C30376"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_2C6358DF94BC4008B0E2887093D728AE"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\builtin.mil"
-            "TargetName" = "8:builtin.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\algebra.mil"
+            "TargetName" = "8:algebra.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_30C5FCDAE67A44019167F48AE9F4C32F"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_aggr.dll"
+            "TargetName" = "8:lib_aggr.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_325A2C257E584D838CA92A84138043FB"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_upgrade.dll"
+            "TargetName" = "8:lib_upgrade.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_35F414571EF84E24BE049018A5F7E96D"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\decimal.mil"
+            "TargetName" = "8:decimal.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_361EC3CD59134F6CA833C414DE7EF6EC"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\wisc.mil"
+            "TargetName" = "8:wisc.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_37B05F574076490FB6537534B9CA33C1"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_tcpip.dll"
+            "TargetName" = "8:lib_tcpip.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3C9D1A8A18F842F687402C2645CB3442"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_logger.dll"
+            "TargetName" = "8:lib_logger.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3D49FC0B2331497A9A80EF378AE105BE"
+            {
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\monet_options.py"
+            "TargetName" = "8:monet_options.py"
+            "Tag" = "8:"
+            "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3F7CBF15E07D46BBA483D81EB15374B4"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_xtables.dll"
+            "TargetName" = "8:lib_xtables.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_404EFFE39F884FEBB72E661981368CB1"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\bitvector.mil"
+            "TargetName" = "8:bitvector.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1489,10 +1699,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_420C3F8D05FC444782F5C5AB5E16147C"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4206B8531A5749C5909C15176C4E73CE"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\salgebra.mil"
-            "TargetName" = "8:salgebra.mil"
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\MapiLib.py"
+            "TargetName" = "8:MapiLib.py"
+            "Tag" = "8:"
+            "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_44FBAADF84F449EC84619750EE783987"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\ascii_io.mil"
+            "TargetName" = "8:ascii_io.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1509,10 +1739,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_442600AAAD2B48F7A0BCC6F47AC19BCA"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_454C036B954B4466AD0DAC2AB935D64E"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\mmath.mil"
-            "TargetName" = "8:mmath.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_wisc.dll"
+            "TargetName" = "8:lib_wisc.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1529,10 +1759,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4972700AE1CA40B3BA146BCEC17CC6CF"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_454E5004342B4707838EFDA8C6B58385"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_monettime.dll"
-            "TargetName" = "8:lib_monettime.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\url.mil"
+            "TargetName" = "8:url.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1549,10 +1779,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4996116F1EA245C1B854BF2F1D5C24A0"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_45D16E3C52CC4726BA112C26AD74C4FF"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_algebra.dll"
-            "TargetName" = "8:lib_algebra.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\constant.mil"
+            "TargetName" = "8:constant.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1569,10 +1799,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_49FE9E5A762D4C3388A4877F1030368F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_46974F97B4DA4B8F92C8A714203EBFB1"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\upgrade.mil"
-            "TargetName" = "8:upgrade.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pcl.dll"
+            "TargetName" = "8:lib_pcl.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1589,92 +1819,112 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4A3BD15205974EB3B10A3A6A18027EC2"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bitset.dll"
-            "TargetName" = "8:lib_bitset.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4A716EF6884F4A61BC58EB7C94E823A7"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\ddbench.mil"
-            "TargetName" = "8:ddbench.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4F72E250A93345519E1C68D1FA2A055A"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\iterator.mil"
-            "TargetName" = "8:iterator.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5368859DEF09498F8449762586D371BF"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\wisc.mil"
-            "TargetName" = "8:wisc.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_57050D8F2C724CFF937D75295D4A648F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4A658948608F40D4B997A949C73E8383"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\bat_arith.mil"
             "TargetName" = "8:bat_arith.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4C76212A9DEE44539183373F345478A5"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\sys.mil"
+            "TargetName" = "8:sys.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4CDAC7688AA346F5A10D9AA9510DD8D6"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_url.dll"
+            "TargetName" = "8:lib_url.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_4D86B13FD6A4402D8B7487822D1EFDB8"
+            {
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\MonetSQLdb\\cursors.py"
+            "TargetName" = "8:cursors.py"
+            "Tag" = "8:"
+            "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_55A4A034A09A43889294B723E02057ED"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\mkey.mil"
+            "TargetName" = "8:mkey.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5785502162514E4AB8B48765A88ED17D"
+            {
+            "SourcePath" = "8:..\\bin\\MapiClient.py"
+            "TargetName" = "8:MapiClient.py"
+            "Tag" = "8:"
+            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1709,10 +1959,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_58ACEA28A7C04A3F8FE1482D3B1E2A66"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5834294EF036483C8BBC8A4A4AC1F8A6"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\url.mil"
-            "TargetName" = "8:url.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\profiler.mil"
+            "TargetName" = "8:profiler.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1729,10 +1979,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_59DE9F14A90E4689A21A00A5D0B0EA48"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5864860D145A427DB5EEE49479CD7264"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\counters.mil"
-            "TargetName" = "8:counters.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_oo7.dll"
+            "TargetName" = "8:lib_oo7.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1749,10 +1999,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5D9FFEBBFD5A484FB57A1A0F54614880"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_59C2909E9B6A4A069D7A9EADF236B705"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_arith.dll"
-            "TargetName" = "8:lib_arith.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\bat_mmath.mil"
+            "TargetName" = "8:bat_mmath.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5E1395C79CDD412CBFF875EBB404BFDF"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_decimal.dll"
+            "TargetName" = "8:lib_decimal.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1789,10 +2059,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5F1C4E6E36AA4E92969B3502C902D9E1"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_64F4C779897D46C1B6D5EFBF04F181FE"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\aggrX3.mil"
-            "TargetName" = "8:aggrX3.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\counters.mil"
+            "TargetName" = "8:counters.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1809,10 +2079,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_5F51C40EAF7E4487933D87BDFE8C2F06"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_65BFFEB4E8D5452AA06D760FF6B524AB"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_array.dll"
-            "TargetName" = "8:lib_array.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\bitset.mil"
+            "TargetName" = "8:bitset.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1829,10 +2099,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_641AC8A00FFB4417885DACAC627BBAF9"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6731ADA08C5547ECAE14BF669FB04847"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mel.dll"
-            "TargetName" = "8:lib_mel.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\pcl.mil"
+            "TargetName" = "8:pcl.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1849,10 +2119,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_666CC31C58BE40DFA5645120F07897F4"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_69AB1F88B6604E4FA076FB4FCEC83B11"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_logger.dll"
-            "TargetName" = "8:lib_logger.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\bat_cast.mil"
+            "TargetName" = "8:bat_cast.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1869,10 +2139,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_68EE081F3BB441928A38F9272CA4C8A9"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6A4D7DAB8B1C40CCB71F2A0C9F2EC9B0"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_trans.dll"
-            "TargetName" = "8:lib_trans.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\pqueue.mil"
+            "TargetName" = "8:pqueue.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1889,10 +2159,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6A43258F33024200BC917E50C205FD0F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6C00EB5E50714FCD97D3FE1C6F1BB9F2"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\vector.mil"
-            "TargetName" = "8:vector.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mapi.dll"
+            "TargetName" = "8:lib_mapi.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1909,10 +2179,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6CEBFBB5AF434AC59792FE6A315724CA"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6ED0408B7980414DBAC20021396E3B3A"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pcl.dll"
-            "TargetName" = "8:lib_pcl.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\logger.mil"
+            "TargetName" = "8:logger.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1929,10 +2199,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_70C0C7C4B08043B1813CCEBA6DF61552"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6F53066861A94020811A2CD0EADF9C52"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\pcre.mil"
-            "TargetName" = "8:pcre.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\salgebra.mil"
+            "TargetName" = "8:salgebra.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1949,10 +2219,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_73220115C4E04149A7F59F8B82A7C007"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6FA6D56D80DB48008DC99CDD5684991C"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_upgrade.dll"
-            "TargetName" = "8:lib_upgrade.dll"
+            "SourcePath" = "8:..\\lib\\libembeddedmil.dll"
+            "TargetName" = "8:libembeddedmil.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_70E9584173C24CF4952466630872AC5C"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_color.dll"
+            "TargetName" = "8:lib_color.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1969,10 +2259,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7505B1E98B0E4D69AC7B5A281AFE46DF"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_71A044401AA7414B8F7C00580FFED0A4"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\decimal.mil"
-            "TargetName" = "8:decimal.mil"
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\MonetSQLdb\\__init__.py"
+            "TargetName" = "8:__init__.py"
+            "Tag" = "8:"
+            "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7319F7872A364A90B5AD413CDFB247D1"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\str.mil"
+            "TargetName" = "8:str.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1989,10 +2299,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_755B6050960F486ABDECC6F2064FAFB1"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_78129140FC134FD2BC0DD54C84C8539D"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\ascii_io.mil"
-            "TargetName" = "8:ascii_io.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\radix.mil"
+            "TargetName" = "8:radix.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2009,10 +2319,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_78B6609D3B8A49F48E876B7423BA737C"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7CC466ED51F74DE3A9CE2CCEFFCEE650"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_sys.dll"
-            "TargetName" = "8:lib_sys.dll"
+            "SourcePath" = "8:..\\..\\website.html"
+            "TargetName" = "8:website.html"
+            "Tag" = "8:"
+            "Folder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7DC67E0BF7374EE490229D7A26D498CC"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_radix.dll"
+            "TargetName" = "8:lib_radix.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2029,10 +2359,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_79503BB0C39C47CC897035E9E24113A0"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7DD13189335D4D94BA2A1E2F5E6B1592"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_url.dll"
-            "TargetName" = "8:lib_url.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_stats.dll"
+            "TargetName" = "8:lib_stats.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2069,10 +2399,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7ED8F36E84D742CE9DB6F534C406E119"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7E47FB92051D48BC90E0EC28B5933BA3"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_str.dll"
-            "TargetName" = "8:lib_str.dll"
+            "SourcePath" = "8:..\\share\\pear\\DB\\monetdb.php"
+            "TargetName" = "8:monetdb.php"
+            "Tag" = "8:"
+            "Folder" = "8:_0F729EFE52944263B1874DED76287A98"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7F98BA32A6884A59B83FFC7BF3101804"
+            {
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\CMapi.py"
+            "TargetName" = "8:CMapi.py"
+            "Tag" = "8:"
+            "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_804146D694964F729C82B775BF7C8D51"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_counters.dll"
+            "TargetName" = "8:lib_counters.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2089,10 +2459,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7F75217401F6469A9D3786442209260E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8134E2E1BD894C3D9DC3E7A34CA03F1E"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_oo7.dll"
-            "TargetName" = "8:lib_oo7.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\mapi.mil"
+            "TargetName" = "8:mapi.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2109,10 +2479,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_80938F8650E94B929471A0E33CD1819A"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_83510CF844134847849A4CD4D8940057"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\image.mil"
-            "TargetName" = "8:image.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_arith.dll"
+            "TargetName" = "8:lib_arith.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2129,10 +2499,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_810D932EFC0F45D28BFEB1B8FA535647"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_859C6DAC4EDD4969AB0E18038F271D84"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pqueue.dll"
-            "TargetName" = "8:lib_pqueue.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\txtsim.mil"
+            "TargetName" = "8:txtsim.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2149,10 +2519,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_81B83D37F46E4268BB4F9D74ACA62DAB"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_876690EA8D2F42A59AE3A63A704DB2D6"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\stats.mil"
-            "TargetName" = "8:stats.mil"
+            "SourcePath" = "8:..\\share\\MonetDB\\php\\php.ini"
+            "TargetName" = "8:php.ini"
+            "Tag" = "8:"
+            "Folder" = "8:_69999C4142A6488CB44E3C22BC2E4BFA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8772BACD24F643D8B3859D2C87BC4A22"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_unix.dll"
+            "TargetName" = "8:lib_unix.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2169,90 +2559,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_89136223FB924A0EA4CA68FE14CB596C"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_builtin.dll"
-            "TargetName" = "8:lib_builtin.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8A6ED2F07A9548A783B37F0325820B58"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\unix.mil"
-            "TargetName" = "8:unix.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8A781EE0F6D94F358950AA05F954999E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_879F163B3EED48F4BC48545DEC1DF72E"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\enum.mil"
             "TargetName" = "8:enum.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8C08E1D1D3A248888182D82D83151179"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\aggr.mil"
-            "TargetName" = "8:aggr.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8C20B68F939A472687F698C54E714AF7"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\pqueue.mil"
-            "TargetName" = "8:pqueue.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2289,10 +2599,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_97A15E91024B47699CE254BE21302FB4"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8DE424D3A5C64BEDAE548B8D494F4061"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\monettime.mil"
-            "TargetName" = "8:monettime.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bitset.dll"
+            "TargetName" = "8:lib_bitset.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2309,10 +2619,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_9B6732A0366F4539AA509E555776D2AF"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_8EDE752735314BCC942C70E4B7974045"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\mapi.mil"
-            "TargetName" = "8:mapi.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\aggr.mil"
+            "TargetName" = "8:aggr.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2329,10 +2639,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_9BA10D7CE69E426DB9103CECCD7D69CE"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_90201D28CBBA48D6AF8B25964EFF9075"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_aggrX3.dll"
-            "TargetName" = "8:lib_aggrX3.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_iterator.dll"
+            "TargetName" = "8:lib_iterator.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2369,26 +2679,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_9DA0ABC88B11412FB208B795934A58DB"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\pcl.mil"
-            "TargetName" = "8:pcl.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_9F3B9B983BD048919D9A6C1C9EB96D73"
             {
             "SourcePath" = "8:..\\..\\..\\sql\\NT\\bin\\odbcinstall.exe"
@@ -2409,10 +2699,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A24466F5F5AC4A1082B759BA4D4E03AF"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A07151B7E158451BB08B61C9CCF54B22"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_wisc.dll"
-            "TargetName" = "8:lib_wisc.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\upgrade.mil"
+            "TargetName" = "8:upgrade.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2429,30 +2719,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A2E7F0B6A48A4589985FE4F2B6E01B61"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A0F913DE69C14D35A1118E93BC8B9ADF"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_alarm.dll"
-            "TargetName" = "8:lib_alarm.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A4BBD1AF7B034CF5A8BE6CCF9C8D27AC"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_ddbench.dll"
-            "TargetName" = "8:lib_ddbench.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_profiler.dll"
+            "TargetName" = "8:lib_profiler.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2509,10 +2779,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AB92DDD814DE432994849F72A9A3F52D"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AB4BF3018F88488593337AF71EFE56EB"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\constant.mil"
-            "TargetName" = "8:constant.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_aggrX3.dll"
+            "TargetName" = "8:lib_aggrX3.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ABB578BCC9804581A3C3854A382A374C"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\bat.mil"
+            "TargetName" = "8:bat.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AC2129F6F9AD410D9BFC93BED892F3F0"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_trans.dll"
+            "TargetName" = "8:lib_trans.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2549,10 +2859,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ADDFA68DF68145A4AFFC1A404B774006"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ACB807EF072A4436AA8D8DF71D15A058"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_vector.dll"
-            "TargetName" = "8:lib_vector.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\blob.mil"
+            "TargetName" = "8:blob.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2569,10 +2879,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ADE29C2061EB48A6B744DC6751018759"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AD2FB4AC2D114738ADCBB50992DFF99E"
             {
-            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\sql_server.mil"
-            "TargetName" = "8:sql_server.mil"
+            "SourcePath" = "8:..\\lib\\php5\\php_monetdb.dll"
+            "TargetName" = "8:php_monetdb.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_7C47F0F21AA74610A98A8091E0F37567"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AE8AE64AC7B54F5DBE2E17E92CEB47DA"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\builtin.mil"
+            "TargetName" = "8:builtin.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2589,10 +2919,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AE472DBA7FA74E41B3958ED2AD4A632A"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AF44E5A11DF34B93AE04F71E71656534"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pcre.dll"
-            "TargetName" = "8:lib_pcre.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\trans.mil"
+            "TargetName" = "8:trans.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2609,10 +2939,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_AF4930B9BAD64E35BB313D3DE0ADA217"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B09A20BD25C44A7290AFD9C7154FD5E0"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_iterator.dll"
-            "TargetName" = "8:lib_iterator.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_builtin.dll"
+            "TargetName" = "8:lib_builtin.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2629,10 +2959,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B6005D5BDB364EE8AFCC11DC4CD43D44"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B1F0492D0F6244A2A4C0B8BB62B0598B"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\bitvector.mil"
-            "TargetName" = "8:bitvector.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\qt.mil"
+            "TargetName" = "8:qt.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2649,10 +2979,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BB84EB0736BA416AB192A16CFC801A8C"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B372A0CD01D84F6A968D4C53464FA92D"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\streams.mil"
-            "TargetName" = "8:streams.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_arith.dll"
+            "TargetName" = "8:lib_bat_arith.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2669,10 +2999,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BC635461F8D7418AA073E5378B09201B"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B598FBF4C8E7423689DA38F848C1102D"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_lock.dll"
-            "TargetName" = "8:lib_lock.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\aggrX3.mil"
+            "TargetName" = "8:aggrX3.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_B9A3D3F52B0D4C129E71EF76FC2E84B6"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mkey.dll"
+            "TargetName" = "8:lib_mkey.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BD1F149F1A59412C9144519F596BD944"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_sys.dll"
+            "TargetName" = "8:lib_sys.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2729,30 +3099,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BFFAB60014FE42C9B74DDF14EE037439"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_BE28F3ACCDBF43C8BBA3AD5DC90EFEF0"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_mmath.dll"
-            "TargetName" = "8:lib_bat_mmath.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C00B50B142344612982AE9D20EA83E51"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\arith.mil"
-            "TargetName" = "8:arith.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\unix.mil"
+            "TargetName" = "8:unix.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2789,72 +3139,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C22042B40FB6423FA15317C9D35C3485"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\mel.mil"
-            "TargetName" = "8:mel.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C464E85622B641E5A8EEA48F39228B0C"
             {
             "SourcePath" = "8:C:\\Pthreads\\lib\\pthreadVC2.dll"
             "TargetName" = "8:pthreadVC2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C57F31297E4543AC8B1D4DA0B3528D6F"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\blob.mil"
-            "TargetName" = "8:blob.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C756001A5068414C9ABCA719CED38CE6"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\tcpip.mil"
-            "TargetName" = "8:tcpip.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2889,10 +3179,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C7E1B2AD753146CDAD2065E29E4F7EE4"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C85EAE57890A413FB4FAF4B3F300AA46"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\bat.mil"
-            "TargetName" = "8:bat.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_blob.dll"
+            "TargetName" = "8:lib_blob.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2909,10 +3199,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CAE099AE7FCC471D96D83D39F57E4512"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C8710B41C7604EC783B373DB50D9C2E2"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_uchr.dll"
-            "TargetName" = "8:lib_uchr.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\alarm.mil"
+            "TargetName" = "8:alarm.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2929,10 +3219,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D2CE4A22446B47CBBED0B8DFB6C7C60E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C9839F4F0ABF4FAC85693AA2A2E8B6DA"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_radix.dll"
-            "TargetName" = "8:lib_radix.dll"
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\MonetSQLdb\\times.py"
+            "TargetName" = "8:times.py"
+            "Tag" = "8:"
+            "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CBDE661E1C704CF5BFC59ADA86CBBC87"
+            {
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\_MapiLib.pyd"
+            "TargetName" = "8:_MapiLib.pyd"
+            "Tag" = "8:"
+            "Folder" = "8:_7FBFE910168F4B7C817DFA594E7BB44E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CCE0A500E80D45CB87A5734EDF1D2772"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\mmath.mil"
+            "TargetName" = "8:mmath.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2949,10 +3279,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D6560452E27247EDA8168B3F76EB78B6"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CEEAE7191CB24D5894F25F729CDF8FDF"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lock.mil"
-            "TargetName" = "8:lock.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\mel.mil"
+            "TargetName" = "8:mel.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2969,10 +3299,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D705C12FB81141FA896AC63587F44BA8"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D28DEC68FCF442F68795A843123A09C4"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_salgebra.dll"
-            "TargetName" = "8:lib_salgebra.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_txtsim.dll"
+            "TargetName" = "8:lib_txtsim.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2989,10 +3319,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D73C2ED676FD42A3B58FA2ED602B2CEA"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D4617B65C97A4C4C8A9EE5D7F61011B0"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_enum.dll"
-            "TargetName" = "8:lib_enum.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_ddbench.dll"
+            "TargetName" = "8:lib_ddbench.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3009,167 +3339,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D913FFB491694A1B9E5DD48695D9E144"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\trans.mil"
-            "TargetName" = "8:trans.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_DF22D8A83CE94BF0A27F4D0E0DA1660B"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mmath.dll"
-            "TargetName" = "8:lib_mmath.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E07DFC0A6D4345E8B8FA4FDC7C6069B2"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_malalgebra.dll"
-            "TargetName" = "8:lib_malalgebra.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E23B043075C04AA5A38D8C4A56793E55"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_profiler.dll"
-            "TargetName" = "8:lib_profiler.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E2F56C84037F46EA8FBFBEE084FACC53"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_constant.dll"
-            "TargetName" = "8:lib_constant.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E52240F0DB57427FAEA440B05A9185FA"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\color.mil"
-            "TargetName" = "8:color.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E6076E6D89CA4D99BA36E54350D90FC1"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_mkey.dll"
-            "TargetName" = "8:lib_mkey.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E64A6DC1EEE24DFCBE0DE62FDFCC5A1C"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\xtables.mil"
-            "TargetName" = "8:xtables.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E6889D1D073B4834B824AC60BE1D5205"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D71C8B59A9FC4C14BD3E6E006DED8CD8"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_ascii_io.dll"
             "TargetName" = "8:lib_ascii_io.dll"
@@ -3189,10 +3359,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E6BC40BF7585429BA2009D391518FEBA"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D9A4158966A5459C95EA3A7DE32CC787"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\qt.mil"
-            "TargetName" = "8:qt.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lock.mil"
+            "TargetName" = "8:lock.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3209,10 +3379,130 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E71FF817005446CD88FCE6628659A97F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D9FA25CE8B4947A4861589C15A1DF288"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\txtsim.mil"
-            "TargetName" = "8:txtsim.mil"
+            "SourcePath" = "8:..\\bin\\Mbeddedmil.exe"
+            "TargetName" = "8:Mbeddedmil.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_DD0F88A7D9ED4A63B8439B2ACD856202"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_malalgebra.dll"
+            "TargetName" = "8:lib_malalgebra.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_DDB26B6965894560814DA62B1C1D8AA0"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\xtables.mil"
+            "TargetName" = "8:xtables.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_DE0844A87CDE4ED88AF03C72DD703EAA"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\image.mil"
+            "TargetName" = "8:image.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E038D6FBF3B14F0D88CEE1C0D806AAEA"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\oo7.mil"
+            "TargetName" = "8:oo7.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E43AD300139C42479FC3366DEF9A3007"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\monettime.mil"
+            "TargetName" = "8:monettime.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E81D14DD2D2C420BA1187440D1F31912"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\arith.mil"
+            "TargetName" = "8:arith.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3249,10 +3539,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EA5DE3237DEB42769074C4A5F956B66F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EA1ABB8F983B4891B1CB48A70EF87F5F"
             {
-            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\lib_sql_server.lib"
-            "TargetName" = "8:lib_sql_server.lib"
+            "SourcePath" = "8:..\\lib\\MonetDB\\stats.mil"
+            "TargetName" = "8:stats.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3269,10 +3559,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EC13E3A1A45F4971860868570C6D3D0F"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EA2FE86E060549CC8CF8C9A3292F90C5"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_arith.dll"
-            "TargetName" = "8:lib_bat_arith.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_lock.dll"
+            "TargetName" = "8:lib_lock.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3289,10 +3579,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EE16A5261B7B44D79B6D9C671EBFE5DF"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EDBDE2F13EDC4AD2957972BEA80D579E"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_image.dll"
-            "TargetName" = "8:lib_image.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pqueue.dll"
+            "TargetName" = "8:lib_pqueue.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3309,10 +3599,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EF1DC9F751AE4FB796BC9B5519C74409"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EF0703C7D7A24AAEB45635CB5C15F2B1"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\alarm.mil"
-            "TargetName" = "8:alarm.mil"
+            "SourcePath" = "8:..\\share\\MonetDB\\php\\pear.php"
+            "TargetName" = "8:pear.php"
+            "Tag" = "8:"
+            "Folder" = "8:_69999C4142A6488CB44E3C22BC2E4BFA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EFDBCA4007CA46AE85B39A2AF6DFDBBE"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\lib_sql_server.dll"
+            "TargetName" = "8:lib_sql_server.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3329,10 +3639,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_EFCF5FED00FA408AB7E154A8302B28B6"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F00B93C3D3184818A4CAE48191B12F6D"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\radix.mil"
-            "TargetName" = "8:radix.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\pcre.mil"
+            "TargetName" = "8:pcre.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3349,10 +3659,50 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F0CAEE4DFCED4484B7DD2CD30F13BE46"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F0151D1C95B4440793C3956399F02C50"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\bitset.mil"
-            "TargetName" = "8:bitset.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_array.dll"
+            "TargetName" = "8:lib_array.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F08AC16BD0A74006B598B109206793D5"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_mmath.dll"
+            "TargetName" = "8:lib_bat_mmath.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F0E04CC1ACA24D04B974C9D5379F0B34"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_cast.dll"
+            "TargetName" = "8:lib_bat_cast.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3389,6 +3739,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F15E9FEC2E104B8E836432EFCE9D0FCA"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\vector.mil"
+            "TargetName" = "8:vector.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F1814E899F4C48309149ABD5B9E5365F"
             {
             "SourcePath" = "8:..\\MapiClient.bat"
@@ -3409,10 +3779,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F1BABCD4647F4386B2E2FA73BDB1BA44"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F2E5C2171D4C4A9F904A88F1A03DF795"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat_cast.dll"
-            "TargetName" = "8:lib_bat_cast.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_constant.dll"
+            "TargetName" = "8:lib_constant.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3429,10 +3799,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F50B9F7C628C444EA037ABCCB58D37BA"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F3983E1FDA6F4B0ABD1F43546F1FE00B"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_aggr.dll"
-            "TargetName" = "8:lib_aggr.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\uchr.mil"
+            "TargetName" = "8:uchr.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3449,10 +3819,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F69362104B0540EE980A5E3DE098C752"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F3E9C2CBEAF84887AB98953AEBFBD8E2"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_color.dll"
-            "TargetName" = "8:lib_color.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\tcpip.mil"
+            "TargetName" = "8:tcpip.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3469,10 +3839,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F6A96D2F2C894D4FBD9EFEA32E0CCFC0"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F40E561EABBC4B3EBCD14131A7CBC7D8"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_bat.dll"
-            "TargetName" = "8:lib_bat.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_salgebra.dll"
+            "TargetName" = "8:lib_salgebra.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3489,30 +3859,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F7032259DF2A40ACBE75C85401074D35"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F80E59B0717649E68569698017BFF995"
             {
-            "SourcePath" = "8:..\\share\\MonetDB\\quit.mil"
-            "TargetName" = "8:quit.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F9150C6F1D354175A69298968EC8D2AD"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\profiler.mil"
-            "TargetName" = "8:profiler.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\color.mil"
+            "TargetName" = "8:color.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3529,10 +3879,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FBBA218AA4114D7B948E8EAB21E9AD99"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F9216D31DE264A5ABA1CFD76BD4C8A53"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\mkey.mil"
-            "TargetName" = "8:mkey.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_qt.dll"
+            "TargetName" = "8:lib_qt.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3549,10 +3899,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FC1A1369076D465798D3CC96AFCD8DBD"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F950BF37121F4E74965350FC6C8C680A"
             {
-            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\lib_sql_server.dll"
-            "TargetName" = "8:lib_sql_server.dll"
+            "SourcePath" = "8:..\\share\\MonetDB\\python\\MonetSQLdb\\converters.py"
+            "TargetName" = "8:converters.py"
+            "Tag" = "8:"
+            "Folder" = "8:_8BEAD47AF9E04B72BD661C6E4482E400"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F9E9A83C71F347D8A5117409E28C1D36"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\ddbench.mil"
+            "TargetName" = "8:ddbench.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3569,10 +3939,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FEE1D03101FE417A8274E1F171E2C28E"
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FBD0328C696E4AA0ADED0C699912D1FD"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\algebra.mil"
-            "TargetName" = "8:algebra.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\streams.mil"
+            "TargetName" = "8:streams.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FE953AA8CAD44A028A27B1FCC98CFAC4"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_pcre.dll"
+            "TargetName" = "8:lib_pcre.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3647,6 +4037,17 @@
                     "Property" = "8:_80D6207522D04B3ABA92EB707E60ED56"
                         "Folders"
                         {
+                            "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_7C47F0F21AA74610A98A8091E0F37567"
+                            {
+                            "Name" = "8:php5"
+                            "AlwaysCreate" = "11:FALSE"
+                            "Condition" = "8:"
+                            "Transitive" = "11:FALSE"
+                            "Property" = "8:_5F09361C413947F582838048DBAF99FD"
+                                "Folders"
+                                {
+                                }
+                            }
                             "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_B593DAA0787744D6A44D17884E0C3951"
                             {
                             "Name" = "8:MonetDB"
@@ -3680,6 +4081,28 @@
                     "Property" = "8:_43ED3174086746B9B5D7799434738856"
                         "Folders"
                         {
+                            "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_1E6616FA50F9490FA29125759246B098"
+                            {
+                            "Name" = "8:pear"
+                            "AlwaysCreate" = "11:FALSE"
+                            "Condition" = "8:"
+                            "Transitive" = "11:FALSE"
+                            "Property" = "8:_68F166165F06495187184FF01AC72092"
+                                "Folders"
+                                {
+                                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_0F729EFE52944263B1874DED76287A98"
+                                    {
+                                    "Name" = "8:DB"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_5898C905FCD8423E98DE00CD5947A9A5"
+                                        "Folders"
+                                        {
+                                        }
+                                    }
+                                }
+                            }
                             "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_562B007DB0FC4C0D8EBC256D71FF091B"
                             {
                             "Name" = "8:MonetDB"
@@ -3700,15 +4123,37 @@
                                         {
                                         }
                                     }
-                                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_A7E9AB371F514EDD8F6D26B2011F98E7"
+                                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_69999C4142A6488CB44E3C22BC2E4BFA"
                                     {
-                                    "Name" = "8:tools"
+                                    "Name" = "8:php"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
-                                    "Property" = "8:_15CEC42C931140139119471570DDFAC1"
+                                    "Property" = "8:_FEABDCFB46E84AEEB3312A2A9998C21F"
                                         "Folders"
                                         {
+                                        }
+                                    }
+                                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_7FBFE910168F4B7C817DFA594E7BB44E"
+                                    {
+                                    "Name" = "8:python"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_8CB247EA5BE14A8180E727C408F461D9"
+                                        "Folders"
+                                        {
+                                            "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_8BEAD47AF9E04B72BD661C6E4482E400"
+                                            {
+                                            "Name" = "8:MonetSQLdb"
+                                            "AlwaysCreate" = "11:FALSE"
+                                            "Condition" = "8:"
+                                            "Transitive" = "11:FALSE"
+                                            "Property" = "8:_68D1B0D75A884FDF9F38ED749B3FAA76"
+                                                "Folders"
+                                                {
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -3733,7 +4178,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{7186FA2E-C651-40D8-9573-D66C9BCC05F5}"
+        "PackageCode" = "8:{DA5B1D9D-6935-4C13-AC60-3373871C4515}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -3858,6 +4303,20 @@
             "Target" = "8:_F1814E899F4C48309149ABD5B9E5365F"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_873BBA36384E4F8DBDD2C108ACB97F2E"
+            {
+            "Name" = "8:MonetDB Web Site"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_7CC466ED51F74DE3A9CE2CCEFFCEE650"
+            "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
+            "WorkingFolder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
             "Icon" = "8:"
             "Feature" = "8:"
             }

@@ -549,7 +549,7 @@
 #define MONETDB_LOCALSTATEDIR "${prefix}\\var"
 
 /* architecture-independent files */
-#define MONETDB_PREFIX "@Xprefix@"
+#define MONETDB_PREFIX "@QXprefix@"
 
 /* read-only single-machine data */
 #define MONETDB_SYSCONFDIR "${prefix}\\etc"
@@ -719,7 +719,7 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
 
-/*#define HAVE_GLOBALMEMORYSTATUSEX only on >= NT 5 */
+#define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
 #define HAVE_GLOBALMEMORYSTATUS 1
 
 #else
@@ -1377,7 +1377,7 @@
 
 #define fdopen	_fdopen
 
-/*#define HAVE_GLOBALMEMORYSTATUSEX only on >= NT 5 */
+#define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
 #define HAVE_GLOBALMEMORYSTATUS 1
 #define ALLREADY_HAVE_WINDOWS_TYPE
 
