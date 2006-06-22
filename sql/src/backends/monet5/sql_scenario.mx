@@ -34,8 +34,8 @@ phase of the scenario.
 /* #define _SQL_PARSER_DEBUG */
 
 sql_export str SQLsession(str *ret);
-sql_export str SQLprelude();
-sql_export str SQLepilogue();
+sql_export str SQLprelude(void);
+sql_export str SQLepilogue(void);
 
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
@@ -124,7 +124,7 @@ SQLsession(str *ret)
 }
 
 str
-SQLprelude()
+SQLprelude(void)
 {
 	Scenario s = getFreeScenario();
 	if (!s)
@@ -144,7 +144,7 @@ SQLprelude()
 }
 
 str
-SQLepilogue()
+SQLepilogue(void)
 {
 	if( SQLinitialized){
 		/*mvc_exit(); 
@@ -857,11 +857,6 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
-
-	/* we need to be able to switch back from explain and profile modes */
-	if ((c->mode == m_explain || c->mode == m_profile) && 
-	    m->sym->token == SQL_SET)
-		c->mode = m_normal;
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
@@ -1085,8 +1080,8 @@ backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, ln
 {
 	str msg = NULL;
 	mvc *c = be->mvc;
-	int mode = c->mode;
-	int explain = c->explain;
+	modes_t mode = c->mode;
+	modes_t explain = c->explain;
 	char *q = query;
 
 	char buf[BUFSIZ], *stmt = buf;

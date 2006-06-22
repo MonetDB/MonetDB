@@ -21,6 +21,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_6A30CD408F5246B8BBF0C306A57EA9DA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6C43B75D0CC34B588C20E796B29984EE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -151,6 +157,26 @@
             {
             "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\license.rtf"
             "TargetName" = "8:license.rtf"
+            "Tag" = "8:"
+            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6A30CD408F5246B8BBF0C306A57EA9DA"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\..\\MonetDB\\website.html"
+            "TargetName" = "8:website.html"
             "Tag" = "8:"
             "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
             "Condition" = "8:"
@@ -322,6 +348,17 @@
             "Property" = "8:ProgramMenuFolder"
                 "Folders"
                 {
+                    "{F27BD5C5-A65D-4608-96D4-7C5DA1F76302}:_1CAF389F5D9043A1AEDFA7B5978DF66F"
+                    {
+                    "Name" = "8:MonetDB ODBC Driver"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_9C58D0D2EEC640E180BA78B4D1A8E1BD"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
             "{78BAF5CE-F2E5-45BE-83BC-DB6AF387E941}:_9245CDB6FEBD4976A80FD08B79835724"
@@ -374,7 +411,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
         "ProductCode" = "8:{B6693F48-B71B-4679-B006-404AA9E1B204}"
-        "PackageCode" = "8:{06D34BDB-BC18-4DD6-BF55-F5E69DECA4DB}"
+        "PackageCode" = "8:{8C278848-9717-48B2-91B9-28B6448A0DF1}"
         "UpgradeCode" = "8:{C1F69378-3F5C-4120-8224-32F07D3458F3}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -488,6 +525,20 @@
         }
         "Shortcut"
         {
+            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_F4135ABDC8AD41C490511A29C7FCF285"
+            {
+            "Name" = "8:MonetDB Web Site"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_6A30CD408F5246B8BBF0C306A57EA9DA"
+            "Folder" = "8:_1CAF389F5D9043A1AEDFA7B5978DF66F"
+            "WorkingFolder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
