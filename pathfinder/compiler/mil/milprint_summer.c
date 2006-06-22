@@ -7704,13 +7704,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, counter, STR);
         return NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query")) )
+    else if (
+          ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query-id")))
+	)
     {
         int opt_counter = 0;
 	int str_counter = 0;
 	int ctx_counter = 0;
         char *item_ext = kind_str(STR);
 	
+	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query-id"));
 	milprintf(f, 
                 "{ # translate fn:tijah-query\n"
 	);
@@ -7770,8 +7774,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
 		, item_ext, str_counter);
 	
-	/* translate tijah-pre to pf-pre */
-	milprintf(f,
+	if ( storeScore ) {
+	    /* translate tijah-pre to pf-pre */
+	    milprintf(f,
                 "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
                 "    var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
                 "    item  := nexi_score.hmark(0@0);\n"
@@ -7788,8 +7793,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
                 "    frag := frag.join(fid_pffid).sort().tmark();\n");
 
-	/* store scores and nodes */
-	milprintf(f,
+	    /* store scores and nodes */
+	    milprintf(f,
 	        "    tID := oid(int(tID) + 1);\n" 
 	        "    tijah_tID.append(item.project(tID));\n"
 	        "    tijah_frag.append(frag);\n"
@@ -7798,19 +7803,23 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    result_id.append(lng(tID));\n"
 		"} # end batloop over queries\n");
 
-	/* return query identifier */
-        item_ext = (code)?kind_str(INT):"";
-        if (code)
-            milprintf(f, "item%s := result_id;\n", item_ext);
-        else 
-            addValues (f, int_container(), "result_id", "item");
+	    /* return query identifier */
+            item_ext = (code)?kind_str(INT):"";
+            if (code)
+                milprintf(f, "item%s := result_id;\n", item_ext);
+            else 
+                addValues (f, int_container(), "result_id", "item");
 
-        milprintf(f,
+            milprintf(f,
                 "iter := loop%03u.tmark(oid(0));\n"
                 "ipik := iter;\n"
                 "pos := oid(1);\n"
                 "kind := INT;\n"
                 , cur_level);
+	} else {
+	    /* do not store score, return nodes instead */
+           PFoops(OOPS_FATAL,"regular %s function not supported yet.", PFqname_str (fnQname));
+	}
 	
 	/* clean up */
 	deleteResult(f, ctx_counter);

@@ -1537,20 +1537,35 @@ PFfun_xquery_fo ()
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_string ()) },
              .ret_ty = PFty_boolean () } } }
-    , /* fn:tijah-query(item*, string) as integer */
-      { .ns = PFns_fn, .loc = "tijah-query",
+    , /* fn:tijah-query-id(item*, string) as integer */
+      { .ns = PFns_fn, .loc = "tijah-query-id",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_string () },
              .ret_ty = PFty_integer () },
 	     } }
-    , /* fn:tijah-query(item, item*, string) as integer */
-      { .ns = PFns_fn, .loc = "tijah-query",
+    , /* fn:tijah-query-id(item, item*, string) as integer */
+      { .ns = PFns_fn, .loc = "tijah-query-id",
         .arity = 3, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
 	     			    PFty_star (PFty_xs_anyNode ()),
                                     PFty_string () },
              .ret_ty = PFty_integer () },
+	     } }
+    , /* fn:tijah-query(item*, string) as node* */
+      { .ns = PFns_fn, .loc = "tijah-query",
+        .arity = 2, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+                                    PFty_string () },
+             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+	     } }
+    , /* fn:tijah-query(item, item*, string) as node* */
+      { .ns = PFns_fn, .loc = "tijah-query",
+        .arity = 3, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
+	     			    PFty_star (PFty_xs_anyNode ()),
+                                    PFty_string () },
+             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
     , /* fn:tijah-nodes(integer) as node* */
       { .ns = PFns_fn, .loc = "tijah-nodes",
