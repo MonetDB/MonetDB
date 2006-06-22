@@ -1,8 +1,0 @@
-# this file should be ran after a M2m compile
-echo "patch test_90"
-echo "reason: rename cpu()"
-ex - test_90.mal <<!EOF
-g/memory/s//memStatistics/
-w test_90.mal
-q
-!EOF
