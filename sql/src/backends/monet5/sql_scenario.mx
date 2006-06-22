@@ -34,8 +34,8 @@ phase of the scenario.
 /* #define _SQL_PARSER_DEBUG */
 
 sql_export str SQLsession(str *ret);
-sql_export str SQLprelude();
-sql_export str SQLepilogue();
+sql_export str SQLprelude(void);
+sql_export str SQLepilogue(void);
 
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
@@ -124,7 +124,7 @@ SQLsession(str *ret)
 }
 
 str
-SQLprelude()
+SQLprelude(void)
 {
 	Scenario s = getFreeScenario();
 	if (!s)
@@ -144,7 +144,7 @@ SQLprelude()
 }
 
 str
-SQLepilogue()
+SQLepilogue(void)
 {
 	if( SQLinitialized){
 		/*mvc_exit(); 
