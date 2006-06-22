@@ -26,15 +26,15 @@ MAKEFILE_HEAD = '''
 
 # cl -help describes the options
 !IFDEF DEBUG
-CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
+CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
+CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -Ox
 !ENDIF
 ARCHIVER = lib
 GENDLL =
-# optimize use -Ox
 RC = rc
 
+MT = mt
 JAVAC = javac
 JAR = jar
 ANT = ant.bat
@@ -448,7 +448,7 @@ def msc_scripts(fd, var, scripts, msc):
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
             fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
             fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
-        if script != 'mprof.mil':
+        if script != 'mprof.mil' and script != 'monetdb.py':
             msc['INSTALL'].append((script, script, '', sd, 0))
             msc['SCRIPTS'].append(script)
 
@@ -570,7 +570,8 @@ def msc_binary(fd, var, binmap, msc):
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname.replace('-','_')))
     fd.write('\t$(CC) $(CFLAGS)')
-    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
+    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
+    fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
 
     if SCRIPTS:
         fd.write(binname.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -647,7 +648,8 @@ def msc_bins(fd, var, binsmap, msc):
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
         fd.write('\t$(CC) $(CFLAGS)')
-        fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
+        fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
+	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
 
     if SCRIPTS:
         fd.write(name.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -790,6 +792,7 @@ def msc_library(fd, var, libmap, msc):
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
+	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s%s" ".libs\\%s%s"\n' % (ln, dll, ln, dll))
@@ -875,6 +878,7 @@ def msc_libs(fd, var, libsmap, msc):
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
+	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s.dll" ".libs\\%s.dll"\n' % (ln, ln))
