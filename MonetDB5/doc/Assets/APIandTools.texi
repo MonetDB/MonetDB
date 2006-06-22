@@ -1,5 +1,0 @@
-Give a brief introduction to Mapi, JDBC, ODBC,Perl....
-@subsection PHP
-@subsection JDBC
-@subsection ODBC
-@subsection Perl
