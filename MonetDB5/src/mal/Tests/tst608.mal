@@ -1,9 +1,0 @@
-# Testing global consts defined for all users
-io.print("Content of the 'mil' box");
-mil.open();
-barrier (b,n):= mil.newIterator();
-	io.printf("%s=",n);
-	val:str := mil.toString(n);
-	io.printf("%s\n",val);
-	redo (b,n):= mil.hasMoreElements();
-exit b;

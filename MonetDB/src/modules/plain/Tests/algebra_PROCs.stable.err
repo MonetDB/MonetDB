@@ -1,4 +1,0 @@
-stderr of test 'algebra_PROCs` in directory 'src/modules/plain` itself:
-
-#> Mtest (13:31:39):	milS algebra_PROCs milS
-#> Mtest (13:31:39):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain -single algebra_PROCs.milS
