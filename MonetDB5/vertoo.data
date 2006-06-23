@@ -1,2 +1,2 @@
 monetdb = major:4; minor:12; release:0;
-monet5 = major:4; minor:99; release:19; rc:x; build:1;
+monet5 = major:4; minor:99; release:21; rc:x; build:1;
