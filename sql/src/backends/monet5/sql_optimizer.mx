@@ -89,6 +89,7 @@ str.iconv
 sql_export void addQueryToCache(Client c);
 sql_export str SQLoptimizer(Client c);
 sql_export void SQLsetAccessMode(Client c);
+sql_export void optimizeMalBlk(Client c, backend * be, MalBlkPtr mb);
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -264,42 +265,9 @@ the cache when the underlying table is changed.
 }
 
 void
-addQueryToCache(Client c)
+optimizeMalBlk(Client c, backend * be, MalBlkPtr mb)
 {
-	Module cache;
-	backend *be = ((backend *) c->state[PARSER]);
 	str optimizer;
-	MalBlkPtr mb;
-
-	cache = findModule(c->nspace, putName("sql_cache",9));
-	if (cache == 0) 
-		return;
-	
-	insertSymbol(cache, c->curprg);
-	trimMalBlk(c->curprg->def);
-	c->blkmode = 0;
-	mb= c->curprg->def;
-	chkProgram(c->nspace, mb);
-#ifdef _SQL_OPTIMIZER_DEBUG
-	printf("ADD QUERY TO CACHE\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
-#endif
-@-
-An error in the compilation should be reported to the user.
-And if the debugging option is set, the debugger is called
-to allow inspection.
-@c
-	if (mb->errors) {
-		mvc *m;
-		m = ((mvc *) c->state[OPTIMIZE]);
-		showErrors();
-
-		if (c->listing)
-			printFunction(c->fdout, mb, c->listing);
-		if ( m->debug )
-			runMALDebugger(c->curprg);
-		return;
-	}
 	(void)be;
 	optimizer = sql_get_var(be->mvc,"optimizer");
 #ifdef _SQL_OPTIMIZER_DEBUG
@@ -349,6 +317,49 @@ care of.
 			optimizerCheck(mb,"sql.baseline",-1,0);
 		optimizeMALBlock(mb);
 	}
+}
+
+void
+addQueryToCache(Client c)
+{
+	Module cache;
+	backend *be = ((backend *) c->state[PARSER]);
+	/*str optimizer;*/
+	MalBlkPtr mb;
+
+	cache = findModule(c->nspace, putName("sql_cache",9));
+	if (cache == 0) 
+		return;
+	
+	insertSymbol(cache, c->curprg);
+	trimMalBlk(c->curprg->def);
+	c->blkmode = 0;
+	mb= c->curprg->def;
+	chkProgram(c->nspace, mb);
+#ifdef _SQL_OPTIMIZER_DEBUG
+	printf("ADD QUERY TO CACHE\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+@-
+An error in the compilation should be reported to the user.
+And if the debugging option is set, the debugger is called
+to allow inspection.
+@c
+	if (mb->errors) {
+		mvc *m;
+		m = ((mvc *) c->state[OPTIMIZE]);
+		showErrors();
+
+		if (c->listing)
+			printFunction(c->fdout, mb, c->listing);
+		if ( m->debug )
+			runMALDebugger(c->curprg);
+		return;
+	}
+	/*aqui*/
+	
+	optimizeMalBlk(c,be,mb);
+
 	OPTmultiplex(mb,0,0);	/* multiplex expansions */
 }
 

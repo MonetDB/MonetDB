@@ -347,6 +347,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		switch (s->type) {
 		case st_remote: {
 			char *dbalias = NULL;
+			
+			@:SQLprelude@
 			if(s->location > 0)
 				dbalias = reconnect(sql, mb, s->location);
 				
@@ -362,6 +364,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			else
 				s->nr = getDestVar(q);
+			@:SQLpostlude@
 		}	break;
 		case st_none: {
 			q = newAssignment(mb);
@@ -1586,6 +1589,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 	mvc *m = be->mvc;
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
+	/*char *optimizer;*/
 
 	curInstr = getInstrPtr(curBlk, 0);
 
@@ -1616,6 +1620,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
+	optimizeMalBlk(c, be, curBlk);
 	c->curprg->def = curBlk;
 }
 
