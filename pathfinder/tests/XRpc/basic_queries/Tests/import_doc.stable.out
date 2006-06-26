@@ -1,0 +1,26 @@
+stdout of test 'import_doc` in directory 'tests/XRpc/basic_queries` itself:
+
+
+# 16:07:37 >  
+# 16:07:37 >  Mtimeout -timeout 60 Mserver "--config=/ufs/zhang/scratch/monet/dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet/dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet/dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet/dev-install/var/MonetDB/log" --set mapi_port=35077 --set monet_prompt= --trace --dbname=mTests_tests_XRpc_basic_queries  < import_doc.milS
+# 16:07:37 >  
+
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module("pathfinder");
+module("unix");
+
+var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XRpc/basic_queries/Tests";
+
+shred_doc(TSTSRCDIR + "/" + "hello.xml", "hello.xml");
+# Shredded XML doc("hello.xml"), total time after commit=0.015s
+
+commit();
+quit();
+
+# 16:07:37 >  
+# 16:07:37 >  Done.
+# 16:07:37 >  
+
