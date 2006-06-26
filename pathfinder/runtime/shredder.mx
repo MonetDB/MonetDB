@@ -1011,7 +1011,7 @@ emitPreTuple(shredCtxStruct* shredCtx, oid pre, int size, chr level, oid prop, c
  */
 
 #ifdef SHRED_HOLES
-#define CHECK_HOLE(P) if (P->pageFree && ((P->nnode_pre % TUPLES_PER_PAGE) == P->pageFree)) createHole(P);
+#define CHECK_HOLE(P) if (P->pageFree && ((P->nnode_pre % TUPLES_PER_PAGE) == (oid)P->pageFree)) (void)createHole(P);
 
 static int createHole(shredCtxStruct* shredCtx)
 {
@@ -1032,7 +1032,7 @@ static int createHole(shredCtxStruct* shredCtx)
 #define CHECK_HOLE(P)
 #endif
 
-#define NEXT_PRE(P)     { if ( (P->nnode_pre++) == GDK_oid_max ) { GDKerror("shredder.mx: FATAL_ERROR: NEXT_PRE(): pre >GDK_oid_max. Use 64bit oid!\n"); exit(0); }; CHECK_HOLE(P); if (0) stream_printf(GDKout,"NEXT_PRE=%d\n",P->nnode_pre); }
+#define NEXT_PRE(P)     { if ( (P->nnode_pre++) == GDK_oid_max ) { GDKerror("shredder.mx: FATAL_ERROR: NEXT_PRE(): pre >GDK_oid_max. Use 64bit oid!\n"); exit(0); }; CHECK_HOLE(P); if (0) stream_printf(GDKout,"NEXT_PRE=" OIDFMT "\n",P->nnode_pre); }
 
 #define SHREDCTX(X)   ((shredCtxStruct*)((xmlParserCtxtPtr)X)->_private)
 
