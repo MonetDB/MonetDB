@@ -692,7 +692,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
         
         case MODEL_NLLR :
             
-          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR_batloop(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
         
           break;
         

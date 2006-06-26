@@ -7752,29 +7752,36 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	  ctx_counter = counter;
         }
 
-	milprintf(f,
-	        "var result_id := new(void,lng).seqbase(0@0);"
-	        "loop%03u@batloop() { # begin batloop over queries\n", cur_level);
-
+	if ( storeScore )
+	  milprintf(f,
+	        "var result_id := new(void,lng).seqbase(0@0);");
+        else
+	  milprintf(f,
+	        "var result_iter := new(void,oid).seqbase(0@0);"
+	        "var result_item := new(void,oid).seqbase(0@0);"
+	        "var result_pos := new(void,oid).seqbase(0@0);"
+	        "var result_frag := new(void,oid).seqbase(0@0);");
+	
 	/* generate the serialization code */
-        if (opt_counter)
+	milprintf(f,
+	        "loop%03u@batloop() { # begin batloop over queries\n"
+                , cur_level);
+	if (opt_counter)
 	  milprintf(f,
 	        "    iter := iter%03u.slice(int($h),int($h));\n"
 	        "    item := item%03u.slice(int($h),int($h));\n"
 		"    kind := constant2bat(kind%03u).slice(int($h),int($h));\n"
-		"    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n",
-		opt_counter, opt_counter, opt_counter);
+		"    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n"
+		, opt_counter, opt_counter, opt_counter);
 	else  
           milprintf(f, 
                 "    var optbat := new(str,str,32);\n");
           
-	
 	/* execute tijah query */
 	milprintf(f,
                 "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
 		, item_ext, str_counter);
 	
-	if ( storeScore ) {
 	    /* translate tijah-pre to pf-pre */
 	    milprintf(f,
                 "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
@@ -7784,15 +7791,20 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    item := item.join(pfpre).sort().tmark();\n"
                 "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
                 "    var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
-                "    needed_docs@batloop()\n"
+                "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
+		"    [add_doc](const ws, docs_to_load);\n"
+/*		"    needed_docs@batloop()\n"
                 "    {\n"
                 "          if (not(loaded_docs.exist($t))) {\n"
                 "                  ws.add_doc($t); }\n"
-                "    }\n"
+                "    }\n" */
+		"    docs_to_load := nil;\n"
+		"    loaded_docs := nil;\n"
                 "    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
                 "    var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
                 "    frag := frag.join(fid_pffid).sort().tmark();\n");
 
+	if ( storeScore ) {
 	    /* store scores and nodes */
 	    milprintf(f,
 	        "    tID := oid(int(tID) + 1);\n" 
@@ -7818,7 +7830,23 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 , cur_level);
 	} else {
 	    /* do not store score, return nodes instead */
-           PFoops(OOPS_FATAL,"regular %s function not supported yet.", PFqname_str (fnQname));
+	    milprintf(f,
+	        "    result_iter.append(item.project($t));\n"
+	        "    result_pos.append(item.mark(1@0));\n"
+	        "    result_frag.append(frag);\n"
+	        "    result_item.append(item);\n"
+		"} # end batloop over queries\n");
+	    milprintf(f,
+	        "iter := result_iter;\n"
+		"result_iter := nil;\n"
+	        "pos := result_pos;\n"
+		"result_pos := nil;\n"
+	        "kind := set_kind(result_frag, ELEM);\n"
+		"result_frag := nil;\n"
+	        "item := result_item;\n"
+		"result_item := nil;\n"
+                "ipik := iter;\n"
+		);
 	}
 	
 	/* clean up */
@@ -7827,7 +7855,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	if ( opt_counter )
 	    deleteResult(f, opt_counter);
         milprintf(f, "} # end of translate fn:tijah_query\n");
-        return (code)?INT:NORMAL;
+        return (code && storeScore)?INT:NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-nodes")) )
     {

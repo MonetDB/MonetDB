@@ -646,52 +646,7 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str
 
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
-     var terms := Qterms_to_void_tid( Qterms );
-     if (terms.count() = 0) {return new(oid,dbl);}
-     var t1 := time();
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := bat("tj_" + collName + "_Terms").count();
-     _lmbd :*= collFrq; 
-     var t2 := time();
-     var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
-     var t3 := time();
-     var tid_frq := histogram(tid_pre.reverse());
-     var _tid_frq := [/](_lmbd, tid_frq);
-     tid_frq := nil;
-     var elem_frq := bat("tj_" + collName + "_size").semijoin(left);
-     var elems := left.mark(0@0).reverse().chk_order();
-     var t4 := time();
-     var elem_termpre := ll_descendant(	elems, 
-     					elems, 
-					bat("tj_" + collName + "_size"), 
-					tid_pre.reverse().sort().mark(0@0).reverse(), 
-					collHeight, 
-					false, false, min(elems), max(elems), false);
-     var t5 := time();
-     var elem_tid := elem_termpre.join(tid_pre.reverse());
-     tid_pre := nil;
-     elem_termpre := nil; 
-     var dtf_elem := elem_tid.mark(0@0).reverse();
-     var dtf_tid := elem_tid.reverse().mark(0@0).reverse();
-     elem_tid := nil;
-     var tmp :=  CTderive(dtf_elem, dtf_tid);
-     var dtf_frq := CThistogram(tmp).[dbl]();
-     tmp := nil;
-     dtf_frq := [/](dtf_frq, dtf_elem.join(elem_frq));
-     elem_frq := nil;
-     dtf_frq := [*](dtf_frq, dtf_tid.join(_tid_frq));
-     _tid_frq := nil;
-     dtf_frq := [+](dtf_frq, 1);
-     dtf_frq := [log](dtf_frq);
-     var res := {sum}(dtf_frq, dtf_elem, elems.reverse());
-     res := res.[/](terms.count()).[+](left);
-     var t6 := time();
-    
-     if (DEBUG) {
-        printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
-        fflush(stdout());
-     }
-     return res;
+     return p_containing_q_NLLR_batloop_aggregation(left, Qterms, lmbd);
 }
 
 PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat := 
