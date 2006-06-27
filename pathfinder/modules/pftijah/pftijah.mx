@@ -203,7 +203,7 @@ PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( Qterms, stemmer );
     
-    var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).mark(oid(0)).reverse().sort();
+    var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
     
     var result := indexfetchjoin( tids,
                                   bat("tj_" + collName + "_TermIndex"),
@@ -528,96 +528,70 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
      return res;
 }
 
-PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
+PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
-     var terms := Qterms_to_void_tid( Qterms );
-     if (terms.count() = 0) {return new(oid,dbl);}
-     var t1 := time();
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := bat("tj_" + collName + "_Terms").count();
-     _lmbd :*= collFrq; 
-     var t2 := time();
-     var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
-     var t3 := time();
-
-     var elems := left;
-
-     var tid_frq := histogram(tid_pre.reverse());
-     var _tid_frq := [/](_lmbd, tid_frq);
-     tid_frq := nil;
-     var elem_frq := bat("tj_" + collName + "_size").semijoin(elems);
-     elems := elems.hmark(0@0);
-     var cands := tid_pre.reverse().sort().hmark(0@0);
+     var elems := left.hmark(0@0);
+     var cands := tid_pre.tmark(0@0);
      var iter := elems.mirror();
-     if (DEBUG){ 
-        printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
-	    fflush(stdout());
-     }
-     var t4 := time();
      var elem_termpre := ll_descendant(	iter, 
      					elems, 
 					bat("tj_" + collName + "_size"), 
 					cands, 
 					collHeight, 
 					false, false, min(iter), max(iter), false);
-     var t5 := time();
      elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
      var elem_tid := elem_termpre.join(tid_pre.reverse());
-     tid_pre := nil;
      elem_termpre := nil;
-     var doc_prob := new(oid,dbl);
-     terms@batloop()
-     {
-	  var tmp := elem_tid.select($t);
-	  var fac := _lmbd / tmp.count();
-	  tmp := tmp.reverse().histogram();
-	  tmp := [dbl](tmp);
-	  tmp := [/](tmp, elem_frq);
-	  tmp := [*](tmp, fac);
-	  tmp := [+](tmp, 1);
-	  tmp := [log](tmp);
-	  doc_prob.insert(tmp);
-     }
-
-     var res := {sum}(doc_prob.reverse().mark(0@0).reverse(), doc_prob.mark(0@0).reverse(), elems.reverse());
-     var fac := dbl(1.0) / dbl(terms.count());
-     res := res.[*](fac).[+](left);
-     
-     var t6 := time();
-    
-     if (DEBUG) {
-        printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
-        fflush(stdout());
-     }
-     return res;
+     return elem_tid;
 }
 
-PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
+PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
-     var terms := Qterms_to_void_tid( Qterms );
-     if (terms.count() = 0) {return new(oid,dbl);}
-     var t1 := time();
-     var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := bat("tj_" + collName + "_Terms").count();
-     _lmbd :*= collFrq; 
-     var t2 := time();
-     var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
-     var tid_frq := histogram(tid_pre.reverse());
-     var _tid_frq := [/](_lmbd, tid_frq);
-     tid_frq := nil;
-     var t3 := time();
-     tid_pre := tid_pre.tsort();
      var tmp_pre := tid_pre.tmark(0@0);
-     var t7 := time();
-     var elems := ll_ancestor(tmp_pre, tmp_pre, bat("tj_" + collName + "_size"), collHeight).reverse(); 
-     var t8 := time();
+     var elems := ll_ancestor(tmp_pre, 
+                              tmp_pre, 
+                              bat("tj_" + collName + "_size"), 
+                              collHeight).reverse(); 
      tmp_pre := nil;
      elems := elems.semijoin(left);
      var elem_tid := elems.join(tid_pre.reverse());
      var elems := nil;
-     var elem_frq := bat("tj_" + collName + "_size").semijoin(elem_tid);
-     var t5 := time();
+     return elem_tid;
+}
+
+PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
+{
+     # fetch term occurrences
+     var terms := Qterms_to_void_tid( Qterms );
+     if (terms.count() = 0) {return new(oid,dbl);}
+     var tid_pre := indexfetchjoin(terms, 
+                                   bat("tj_" + collName + "_TermIndex"), 
+                                   bat("tj_" + collName + "_Terms") );
+     tid_pre := tid_pre.tsort();
      
+     # compute constant factor in score computation
+     var _lmbd := (1.0 - lmbd) / lmbd;
+     var collFrq := bat("tj_" + collName + "_Terms").count();
+     _lmbd :*= collFrq;
+
+     # compute collection terms frequencies
+     var tid_frq := histogram(tid_pre.reverse());
+     var _tid_frq := [/](_lmbd, tid_frq);
+     tid_frq := nil;
+
+     # get evaluate doc/term (anc/desc) relationship
+     # including rule-of-thumb optimization
+     var elem_tid;
+     if ((tid_pre.count() * 50000) > collFrq)
+          elem_tid := _containing_desc(left.mark(0@0), tid_pre);
+     else
+          elem_tid := _containing_anc(left.mark(0@0), tid_pre);
+     tid_pre := nil;
+
+     # compute document frequencies
+     var elem_frq := bat("tj_" + collName + "_size").semijoin(elem_tid);
+
+     # compute scores in batloop over terms
      var doc_prob := new(oid,dbl);
      terms@batloop()
      {
@@ -631,22 +605,11 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,str
 	  tmp := [log](tmp);
 	  doc_prob.insert(tmp);
      }
-
+     
+     # aggregate doc scores
      var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elem_tid.mirror());
      res := res.[/](terms.count()).[+](left);
-     
-     var t6 := time();
-    
-     if (DEBUG) {
-        printf("p_containing_q: indexfetchjoin (%d), scj_anc (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t8 - t7, t5 - t4, t6 - t1);
-        fflush(stdout());
-     }
      return res;
-}
-
-PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
-{
-     return p_containing_q_NLLR_batloop_aggregation(left, Qterms, lmbd);
 }
 
 PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat := 
