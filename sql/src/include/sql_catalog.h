@@ -33,7 +33,6 @@
 
 
 #define LOCATION 0	/*Default value*/
-#define REPLICATION 0	/*Default value*/
 
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
@@ -355,8 +354,6 @@ typedef struct sql_table {
 	oid dbid;		/* bat with deletes */
 
 	
-	int replication_id;	/*Key to access to replication table, if 0 no replication scenario for this table*/
-
 	struct sql_schema *s;
 	int location ;		/*Location of the table. If it is local 0 otherwise the 'hostid' from Hosts table*/
 } sql_table;

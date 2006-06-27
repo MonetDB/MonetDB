@@ -3492,6 +3492,43 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 	return s;
 }
 
+stmt*
+pull_refresh(mvc * sql, symbol *symb, stmt * ret)
+{
+	SelectNode * sn = (SelectNode*) symb;
+	dlist *fl = sn->from->data.lval;
+	stmt *res = ret;
+	int location;
+	char query[BUFSIZ + 1];
+	query[BUFSIZ] = '\0';
+
+	location = ret->location;
+	if(location == 0){
+		sql_schema *schema ;
+		char *sname = qname_schema(fl->h->data.sym->data.lval->h->data.sym);
+		if (sname && !(schema=mvc_bind_schema(sql, sname))) {
+			(void) sql_error(sql, 02, "SELECT: no such schema '%s'", sname);
+			return ret;
+		}
+		if (!sname)
+			schema = cur_schema(sql);
+		sql_table *view = find_sql_table(schema,qname_table(fl->h->data.sym->data.lval->h->data.sym),LOCATION);
+		if(view->table && view->query){
+			if(*(int *) find_table_value(sql, schema->base.name, "replication", "push/pull", "view_id", &view->base.id, LOCATION)){
+				snprintf(
+					query,
+					BUFSIZ,
+					"REFRESH VIEW \"%s\".\"%s\";",
+					schema->base.name,
+					view->base.name
+				);
+				res = stmt_remote(_strdup(query),location,ret);
+			}
+		}
+	}
+	return res;
+}
+
 
 stmt *
 selects(mvc *sql, symbol *s)
@@ -3533,5 +3570,6 @@ selects(mvc *sql, symbol *s)
 	default:
 		return sql_error(sql, 01, "SELECT statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
+	ret = pull_refresh(sql,s, ret);
 	return ret;
 }

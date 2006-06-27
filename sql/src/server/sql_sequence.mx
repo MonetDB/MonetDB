@@ -45,7 +45,7 @@ sql_create_sequences(mvc *m, sql_schema *s)
 {
 	sql_table *t;
 
-	t = mvc_create_table(m, s, "sequences", NULL, 1, SQL_PERSIST, 0, -1, LOCATION, REPLICATION);
+	t = mvc_create_table(m, s, "sequences", NULL, 1, SQL_PERSIST, 0, -1, LOCATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "schema", "varchar", 1024);
 	mvc_create_column_(m, t, "start", "bigint", 19);

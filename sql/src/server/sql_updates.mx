@@ -916,36 +916,31 @@ update_remote_views(mvc* sql, sql_table* t, stmt* res)
 	sql_schema * ss = cur_schema(sql);
 	query[BUFSIZ] = '\0';
 	stmt * st = res;
-	sql_table *rep_tab = find_sql_table(ss,"replication",LOCATION);
 	sql_table *rep_col_tab = find_sql_table(ss,"replication_columns",LOCATION);
         sql_column *tab_col = find_sql_column(rep_col_tab,"table_name");
         sql_column *schema_col = find_sql_column(rep_col_tab,"schema");
-	sql_column *rep_col = find_sql_column(rep_col_tab, "replication_id");
-
+	sql_column *view_col = find_sql_column(rep_col_tab, "view_id");
 	
-        sql_column *oids_col = find_sql_column(rep_tab,"table_id");
-	sql_column *replication_col = find_sql_column(rep_tab, "replication_id");
-	
-	list * replication_ids = table_select_column(sql->session->tr, rep_col, tab_col, t->base.name, schema_col, t->s->base.name,NULL);
-	if(list_length(replication_ids)==0)
+	list * view_ids = table_select_column(sql->session->tr, view_col, tab_col, t->base.name, schema_col, t->s->base.name,NULL);
+	if(list_length(view_ids)==0)
 		return st;
 	
-	list* oids = table_select_column_multi_values(sql->session->tr, oids_col, NULL, NULL, replication_col, replication_ids);
-	
-	node* node_oid = oids->h;
-	for(i = 0; i < list_length(oids); i++){
-		view_name = (char *) find_table_value(sql, ss->base.name, "_tables", "name", "id", (int *) node_oid->data,LOCATION);
-		schema_name = (char *) find_table_value(sql, ss->base.name, "schemas", "name", "id", (int *) find_table_value(sql, ss->base.name, "_tables", "schema_id", "id", node_oid->data,LOCATION),LOCATION);
-		location = * (int *) find_table_value(sql, ss->base.name, "_tables", "location", "id", (int *) node_oid->data,LOCATION);
-		snprintf(
-			query,
-			BUFSIZ,
-			"REFRESH VIEW \"%s\".\"%s\";",
-			schema_name,
-			view_name
-		);
-		st = stmt_remote(_strdup(query),location,-1,st);
-		node_oid = node_oid->next;
+	node* node_oid = view_ids->h;
+	for(i = 0; i < list_length(view_ids); i++){
+		if(*(int*) find_table_value(sql, ss->base.name, "replication", "push/pull", "view_id", (int *) node_oid->data,LOCATION) == 0){
+			view_name = (char *) find_table_value(sql, ss->base.name, "_tables", "name", "id", (int *) node_oid->data,LOCATION);
+			schema_name = (char *) find_table_value(sql, ss->base.name, "schemas", "name", "id", (int *) find_table_value(sql, ss->base.name, "_tables", "schema_id", "id", node_oid->data,LOCATION),LOCATION);
+			location = * (int *) find_table_value(sql, ss->base.name, "_tables", "location", "id", (int *) node_oid->data,LOCATION);
+			snprintf(
+				query,
+				BUFSIZ,
+				"REFRESH VIEW \"%s\".\"%s\";",
+				schema_name,
+				view_name
+			);
+			st = stmt_remote(_strdup(query),location,st);
+		}
+			node_oid = node_oid->next;
 	}
 	return st;
 }
@@ -1480,7 +1475,7 @@ refresh_view(mvc *sql, symbol *symb)
 		t->base.name,
 		t->query
 	);
-	return stmt_remote(del_query,LOCATION,-1,stmt_remote(upd_query,LOCATION,-1,NULL));
+	return stmt_remote(del_query,LOCATION,stmt_remote(upd_query,LOCATION,NULL));
 }
 
 

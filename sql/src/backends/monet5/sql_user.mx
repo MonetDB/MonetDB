@@ -114,13 +114,13 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	str monetdbuser = "monetdb";
 
 	/* create the authorisation related tables */
-	t = mvc_create_table(m, s, "db_user_info", NULL, 1, SQL_PERSIST, 0, -1, LOCATION, REPLICATION);
+	t = mvc_create_table(m, s, "db_user_info", NULL, 1, SQL_PERSIST, 0, -1, LOCATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	uinfo = t;
 
-	t = mvc_create_view(m, s, "db_users", ";CREATE VIEW \"db_users\" (\"[system BAT]\") AS BATS", 1, LOCATION, REPLICATION);
+	t = mvc_create_view(m, s, "db_users", ";CREATE VIEW \"db_users\" (\"[system BAT]\") AS BATS", 1, LOCATION);
 	err = sql_view_from_bat(m->session->tr, t, "M5system_auth_user");
 	if (err != NULL) {
 		GDKfree(err);
@@ -142,7 +142,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 			"FROM \"sys\".\"db_users\" AS u LEFT JOIN "
 				"\"sys\".\"db_user_info\" AS ui "
 				"ON u.\"t\" = ui.\"name\" "
-			";", 1, LOCATION, REPLICATION);
+			";", 1, LOCATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);

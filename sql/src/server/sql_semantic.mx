@@ -242,15 +242,15 @@ find_remote_views(mvc *sql,char *schema_tab, char *tname, char *col_tab, int loc
        	table_oid = table->base.id; 
 
        	sql_table *rep_col_tab = find_sql_table(sch,"replication_columns" ,LOCATION);
-        sql_column *rep_col = find_sql_column(rep_col_tab, "replication_id");
+        sql_column *rep_col = find_sql_column(rep_col_tab, "view_id");
        	sql_column *schema_col = find_sql_column(rep_col_tab, "schema");
 	sql_column *table_col = find_sql_column(rep_col_tab, "table_name");
        	sql_column *col_col = find_sql_column(rep_col_tab, "column_name");
        	sql_column *loc_col = find_sql_column(rep_col_tab, "table_location");
        	sql_column *alias_col = find_sql_column(rep_col_tab, "column_alias");
 
-	list * replication_ids = table_select_column(sql->session->tr,rep_col, schema_col, schema_tab, table_col, tname, col_col, col_tab, loc_col, &location_tab);
-	if(replication_ids->cnt == 0)
+	list * view_ids = table_select_column(sql->session->tr,rep_col, schema_col, schema_tab, table_col, tname, col_col, col_tab, loc_col, &location_tab);
+	if(view_ids->cnt == 0)
 		return 0;
 	
 
@@ -260,9 +260,9 @@ find_remote_views(mvc *sql,char *schema_tab, char *tname, char *col_tab, int loc
 	sql_table *rep_tab = find_sql_table(sch,"replication" ,LOCATION);
         sql_column *table_id_col = find_sql_column(rep_tab, "table_id");
         sql_column *pushpull_col = find_sql_column(rep_tab, "push/pull");
-        sql_column *rep_column = find_sql_column(rep_tab, "replication_id");
+        sql_column *rep_column = find_sql_column(rep_tab, "view_id");
 	
-	list * views_oids = table_select_column_multi_values(sql->session->tr, table_id_col, pushpull_col, &refresh, rep_column, replication_ids);
+	list * views_oids = table_select_column_multi_values(sql->session->tr, table_id_col, pushpull_col, &refresh, rep_column, view_ids);
 	if(views_oids->cnt == 0)
 		return 0;
 
@@ -275,7 +275,7 @@ find_remote_views(mvc *sql,char *schema_tab, char *tname, char *col_tab, int loc
 	*locations_views = table_select_column_multi_values(sql->session->tr, location_col, NULL, NULL, id_col, views_oids);
 	
 	
-	*schemas_views = table_select_column_multi_values(sql->session->tr, schema_col, NULL, NULL, rep_col, replication_ids);
+	*schemas_views = table_select_column_multi_values(sql->session->tr, schema_col, NULL, NULL, rep_col, view_ids);
 	
 	if((*schemas_views)->cnt)
 		return 1;

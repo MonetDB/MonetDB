@@ -33,7 +33,7 @@ phase of the scenario.
 
 /* #define _SQL_SCENARIO_DEBUG */
 /* #define _SQL_READER_DEBUG */
-/* #define _SQL_PARSER_DEBUG */
+#define _SQL_PARSER_DEBUG 
 
 sql_export str SQLsession(str *ret);
 sql_export str SQLprelude();
@@ -459,6 +459,8 @@ We don't search the cache for a previous incarnation.
 	{	
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
+		InstrPtr *oldstmt = NULL;
+		int oldssize = 0;
 		stmt *s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
@@ -476,12 +478,13 @@ We don't search the cache for a previous incarnation.
 		/* generate MAL code */
 		if (oldstop == 2) /* remove main.end */
 			c->curprg->def->stop = 1; 
-		if (oldstop == 3) /* recursive call to SQLstatement */
-			c->curprg->def->stop = 1; 
-		if (oldstop == 4) /* recursive call to SQLstatement */
-			c->curprg->def->stop = 1; 
-		if (oldstop == 5) /* recursive call to SQLstatement */
-			c->curprg->def->stop = 1; 
+		if (oldstop > 2) { /* recursive call to SQLstatement, we need to save the statement */
+			oldstmt = c->curprg->def->stmt; 
+			oldssize = c->curprg->def->ssize; 
+			newMalBlkStmt(c->curprg->def, oldssize);
+			c->curprg->def->stop = 1;
+			c->curprg->def->stmt[0] = oldstmt[0];
+		}
 		backend_callinline(sql, c, s );
 		pushEndInstruction(c->curprg->def);
 
@@ -502,7 +505,12 @@ We don't search the cache for a previous incarnation.
 			if (oldstop == 2) /* put main.end back */
 				pushEndInstruction(c->curprg->def); 
 			freeVariables(c->curprg->def, c->glb, oldvtop);
-
+			/* todo if oldstms cleanup c->curprg->def->stmt */
+			if (oldstmt) {
+				c->curprg->def->stmt = oldstmt;
+				c->curprg->def->ssize = oldssize;
+				c->curprg->def->stop = oldstop;
+			}
 		}
 	}
 #ifdef _SQL_COMPILE
@@ -961,8 +969,7 @@ produce code.
 		stmt_destroy(s);
 	}
 #ifdef _SQL_PARSER_DEBUG
-	else
-		stream_printf(GDKout, "#parse result %d\n", err);
+	stream_printf(GDKout, "#parse result %d\n", err);
 #endif
 	if( be->q ){
 		if (m->mode == m_prepare)

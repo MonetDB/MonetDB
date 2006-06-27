@@ -909,9 +909,9 @@ sqllex(YYSTYPE * yylval, void *parm)
 				lc->yynext = next;
 			break;
 		}
-	} else if (token == WITH){
+	} else if (token == WITH && (lc->view_end == 0)){
 		lc->view_end = lc->yycur-5;
-	} else if (token == USING){
+	} else if (token == USING && (lc->view_end == 0)){
 		lc->view_end = lc->yycur-6;
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */

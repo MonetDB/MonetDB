@@ -668,7 +668,7 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 }
 
 stmt*
-create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,int push_pull,int r_time, int replication_id,stmt* res){
+create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,int push_pull,int r_time, stmt* res){
 	SelectNode *sn = (SelectNode*) query;
 	symbol* symb = sn->from->data.lval->h->data.sym;
 	char* host = qname_host(symb->data.lval->h->data.sym);
@@ -677,8 +677,6 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 	int location = table_location(sql,host);
 	char string_query[BUFSIZ + 1];
 	string_query[BUFSIZ] = '\0';
-	int port;
-	char *ip,*user,*password,*dbalias;	
 	if((location > 0) ||(view->location >0)){
 		int in_out = (location>0) ? 0 : 1;
 		int t_rev = 0; 
@@ -693,13 +691,13 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 			column_id = store_next_oid(); 
 			column_view = (sql_column*) node_view->data;
 			column_table = (sql_column*) node_table->data;
-			table_insert(sql->session->tr, replication_columns, &column_id,&replication_id, column_table->base.name, column_view->base.name, column_table->t->base.name,column_table->t->s->base.name,&location);
+			table_insert(sql->session->tr, replication_columns, &column_id, &view->base.id, column_table->base.name, column_view->base.name, column_table->t->base.name,column_table->t->s->base.name,&location);
 			node_view = node_view->next;
 			node_table = node_table->next;
 		}
-		table_insert(sql->session->tr, replication, &view->base.id, &replication_id, &in_out, &push_pull, &r_time, &t_rev, &t_rev);
-		view->replication_id = replication_id;
+		table_insert(sql->session->tr, replication, &view->base.id, &in_out, &push_pull, &r_time, &t_rev, &t_rev);
 
+		if(location > 0){
 		snprintf(
 			string_query,
 			BUFSIZ,
@@ -709,13 +707,9 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 			qname_host(sym),
 			QUERY(sql->scanner) + sql->scanner.as
 		);
-		if(location > 0){
-			int location_rid = table_location_info(sql,location,&dbalias,&ip,&port,&user,&password);
-			return stmt_remote(string_query,location,location_rid,res);
+			return stmt_remote(string_query,location,res);
 		}
         }
-	else
-		view->replication_id = 0;
 	return res;
 }
 
@@ -726,7 +720,6 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 	char *sname = qname_schema(symb);
 	char *host = qname_host(symb);
 	int location = table_location(sql,host); 
-	int replication_id = store_next_oid();
 	stmt *res = stmt_none();
 	sql_schema *s = NULL;
 
@@ -771,14 +764,14 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 		} else {
 			subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		}
-		t = mvc_create_view(sql, s, name, subquery, 0, location, replication_id);
+		t = mvc_create_view(sql, s, name, subquery, 0, location);
 		_DELETE(subquery);
 		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
 		if(dlist_length(using)==2)
-			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,replication_id,res);
+			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,res);
 		else
-			res = create_replication_support(sql,s,symb,query,using->h->data.ival,0, replication_id,res);
+			res = create_replication_support(sql,s,symb,query,using->h->data.ival,0, res);
 		return res;
 	/* only db admin can create views on bats */
 	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
@@ -786,11 +779,11 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 	} else {
 		char *err = NULL;
 		sql_table *t = NULL;
-		t = mvc_create_view(sql, s, name, NULL, 0, location, replication_id);
+		t = mvc_create_view(sql, s, name, NULL, 0, location);
 		if(dlist_length(using)==2)
-			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,replication_id,res);
+			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,res);
 		else
-			res = create_replication_support(sql,s,symb,query,using->h->data.ival,0, replication_id,res);
+			res = create_replication_support(sql,s,symb,query,using->h->data.ival,0, res);
 		dnode *n = column_spec->h;
 		int nr = 0, i = 0;
 		char **names = NULL;
@@ -806,7 +799,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 			/* semi-colon here indicates it's a view as bats!!! */
 			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
 					name, names[0]);
-			t = mvc_create_view(sql, s, name, buf, 0,location,replication_id);
+			t = mvc_create_view(sql, s, name, buf, 0,location);
 			err = sql_view_from_bat(sql->session->tr, t, names[0]);
 		} else {
 			char buf[BUFSIZ];
@@ -821,7 +814,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 			/* semi-colon here indicates it's a view as bats!!! */
 			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
 					name, cols);
-			t = mvc_create_view(sql, s, name, buf, 0,location, replication_id);
+			t = mvc_create_view(sql, s, name, buf, 0,location);
 			err = sql_view_on_bats(sql->session->tr, t, names, nr);
 		}
 		if (err != NULL) {
@@ -1516,7 +1509,6 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 	char *host = qname_host(symb);
 	sql_schema *s = NULL;
 	int location = table_location(sql,host);
-	int replication_id = REPLICATION;
 	sql_table* t;
 	
 	if (location ==-1) 
@@ -1539,7 +1531,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		t = mvc_create_table(sql, s, name, NULL, 0, temp, commit_action, -1, location, replication_id);
+		t = mvc_create_table(sql, s, name, NULL, 0, temp, commit_action, -1, location);
 		list *new_columns = create_stmt_list();
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
@@ -1597,7 +1589,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 			return NULL;
 
 		/* create table */
-		t = mvc_create_table(sql, s, name, _strdup(querystring), 0, temp, commit_action, -1, location, view);
+		t = mvc_create_table(sql, s, name, _strdup(querystring), 0, temp, commit_action, -1, location);
 
 		/* insert query result into this table */
 		if (with_data && sq) {
@@ -1716,7 +1708,7 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 stmt*
 drop_remote_view(mvc *sql,sql_schema *ss,sql_table* t, symbol* sym)
 {
-	int location,i,replication_id;
+	int location,i,view_id;
 	char drop_query[BUFSIZ + 1];
 	drop_query[BUFSIZ] = '\0';
 	char rep_query[BUFSIZ + 1];
@@ -1729,27 +1721,27 @@ drop_remote_view(mvc *sql,sql_schema *ss,sql_table* t, symbol* sym)
 	stmt* st = stmt_none();
 	sql_table *rep_tab = find_sql_table(ss,"replication",LOCATION);
 	sql_table *rep_col_tab = find_sql_table(ss,"replication_columns",LOCATION);
-        sql_column *replication_column = find_sql_column(rep_tab,"replication_id");
+        sql_column *view_column = find_sql_column(rep_tab,"view_id");
         sql_column *oids_col = find_sql_column(rep_tab,"table_id");
 	sql_column *location_col = find_sql_column(rep_col_tab, "table_location");
-        sql_column *replication_col = find_sql_column(rep_col_tab,"replication_id");
+        sql_column *view_col = find_sql_column(rep_col_tab,"view_id");
 	node *node, *rep_node;
 	
-	list * replication_ids = table_select_column(sql->session->tr, replication_column, oids_col, &t->base.id,NULL);
-	if(list_length(replication_ids) == 0)
+	list * view_ids = table_select_column(sql->session->tr, view_column, oids_col, &t->base.id,NULL);
+	if(list_length(view_ids) == 0)
 		return stmt_none();
 
-	rep_node = replication_ids->h;
-	for(i = 0;i< list_length(replication_ids);i++){
-                replication_id = *(int*) rep_node->data;
+	rep_node = view_ids->h;
+	for(i = 0;i< list_length(view_ids);i++){
+                view_id = *(int*) rep_node->data;
 		if(i)
-                	sprintf(del_rep_col_query,"%s,%d",del_rep_col_query,replication_id);
+                	sprintf(del_rep_col_query,"%s,%d",del_rep_col_query,view_id);
 		else
-                	sprintf(del_rep_col_query,"%d",replication_id);
+                	sprintf(del_rep_col_query,"%d",view_id);
                 rep_node = rep_node->next;
         }
 	
-	list* l = table_select_column_multi_values(sql->session->tr, location_col, NULL, NULL, replication_col, replication_ids);
+	list* l = table_select_column_multi_values(sql->session->tr, location_col, NULL, NULL, view_col, view_ids);
 	
 	node = l->h;
 	snprintf(
@@ -1771,7 +1763,7 @@ drop_remote_view(mvc *sql,sql_schema *ss,sql_table* t, symbol* sym)
 	snprintf(
 		rep_col_query,
 		BUFSIZ,
-		"DELETE FROM \"%s\".replication_columns@\"%s\" WHERE replication_id in {%s};",
+		"DELETE FROM \"%s\".replication_columns@\"%s\" WHERE view_id in {%s};",
 		ss->base.name,
 		qname_host(sym),
 		_strdup(del_rep_col_query)
@@ -1779,13 +1771,13 @@ drop_remote_view(mvc *sql,sql_schema *ss,sql_table* t, symbol* sym)
 	for(i = 0;i< list_length(l);i++){
 		location = *(int*) node->data;
 		if(t->location == LOCATION)
-			st = stmt_remote(drop_query,location,-1,st);
-		st = stmt_remote(rep_query,LOCATION,-1,st);
-		st = stmt_remote(rep_col_query,LOCATION,-1,st);
+			st = stmt_remote(drop_query,location,st);
+		st = stmt_remote(rep_query,LOCATION,st);
+		st = stmt_remote(rep_col_query,LOCATION,st);
 		node = node->next;
 	}
 	list_destroy(l);
-	list_destroy(replication_ids);
+	list_destroy(view_ids);
         return st;
 }
 
@@ -1855,7 +1847,6 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	char *name = get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
 	int auth_id = sql->role_id;
-	int replication_id = store_next_oid();
 
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0) {
 		return sql_error(sql, 02, "CREATE SCHEMA: no such authorization '%s'", auth);
@@ -1877,11 +1868,11 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_table(sql, ss , l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival,0);
+				res = create_table(sql, ss , l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival, 0);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 				if(l->h->next->next->next->data.lval->t->data.ival && table_location(sql,qname_host(l->h->data.sym))==0){
-					stmt* res1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,replication_id);
+					stmt* res1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0, 1);
 					
 					res = create_replication_support(
 							sql,
@@ -1890,7 +1881,6 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 							l->h->next->next->data.sym,
 							l->h->next->next->next->next->data.lval->h->data.ival,
 							l->h->next->next->next->next->data.lval->t->data.ival,
-							replication_id,
 							res1
 						);
 				}
@@ -1936,7 +1926,6 @@ stmt *
 schemas(mvc *sql, symbol *s)
 {
 	stmt *ret = NULL;
-	int replication_id = store_next_oid();
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
@@ -1985,8 +1974,8 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		if(l->h->next->next->next->data.lval->t->data.ival && table_location(sql,qname_host(l->h->data.sym))==0){	 /* materialised view */
-			stmt* ret1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,replication_id);
-			ret = create_replication_support(sql,cur_schema(sql),l->h->data.sym,l->h->next->next->data.sym,l->h->next->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval->t->data.ival,replication_id,ret1);
+			stmt* ret1 = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0, 1);
+			ret = create_replication_support(sql,cur_schema(sql),l->h->data.sym,l->h->next->next->data.sym,l->h->next->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval->t->data.ival,ret1);
 		}
 		else
 			ret = create_view(sql, cur_schema(sql), l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval);
