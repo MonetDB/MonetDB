@@ -2364,6 +2364,9 @@ phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 	} else {
 		hash_t y = @1_RADIX(BUN@2(r,r_cur),rd);
 
+		/* hack alert */
+		if (!h.mask)
+			h.mask = 1;
 		/* merge join on phash number */
 		while(l_cur < l_last) {
 			/* find l range */
