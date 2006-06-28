@@ -449,6 +449,8 @@ address MTIMEdaytime_fromstr
 comment "convert the string to a daytime value.";
 command daytime(:daytime):daytime
 address MTIMEdaytime2daytime;
+command daytime(:lng):daytime
+address MTIMEsecs2daytime;
 
 command daytime(h:int,m:int,s:int,mi:int)
 		:daytime 
@@ -869,6 +871,7 @@ mtime_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 mtime_export str MTIMEnil2date(date *ret, int *src);
 mtime_export str MTIMEdate2date(date *ret, date *src);
 mtime_export str MTIMEdaytime2daytime(daytime *ret, daytime *src);
+mtime_export str MTIMEsecs2daytime(daytime *ret, lng *src);
 mtime_export str MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src);
 mtime_export str MTIMErule_fromstr(rule *ret, str *s);
 mtime_export str MTIMEprelude(void);
@@ -2743,6 +2746,7 @@ MTIMEdaytime2daytime(daytime *ret, daytime *src)
 	*ret = *src;
 	return MAL_SUCCEED;
 }
+
 str
 MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
 {
@@ -3484,6 +3488,13 @@ MTIMEdaytime1(daytime *ret, int *h)
 	int m = 0, s = 0, ms = 0;
 
 	daytime_create(ret, h, &m, &s, &ms);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEsecs2daytime(daytime *ret, lng *s)
+{
+	*ret = (daytime)((*s)*1000);
 	return MAL_SUCCEED;
 }
 
