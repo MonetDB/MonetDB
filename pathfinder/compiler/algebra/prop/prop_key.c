@@ -182,7 +182,6 @@ union_list (PFarray_t *a, PFarray_t *b)
 /**
  * FIXME: unused
  * Returns difference of a key list and an attribute
- */
 static PFarray_t *
 diff (PFarray_t *a, PFalg_att_t b)
 {
@@ -195,6 +194,7 @@ diff (PFarray_t *a, PFalg_att_t b)
 
     return ret;
 }
+ */
 
 /**
  * Infer key property of a given node @a n; worker for prop_infer().

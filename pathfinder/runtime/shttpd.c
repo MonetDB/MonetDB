@@ -1226,7 +1226,7 @@ log_access(const struct conn *c)
 
 	strftime(date, sizeof(date), "%d/%b/%Y %H:%M:%S", localtime(&now));
 	(void) fprintf(accesslog,
-	    "%s - %s [%s] \"%s %s %s\" %d %lu ",
+	    "%s - %s [%s] \"%s %s %s\" %u %lu ",
 	    inet_ntoa(c->sa.u.sin.sin_addr), c->user ? c->user : "-",
 	    date, c->method, c->ouri, c->proto, c->status,
 	    c->nsent > c->shlength ? c->nsent - c->shlength : 0);

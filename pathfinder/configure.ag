@@ -180,7 +180,6 @@ dnl give helpful messages to the user, if available.
 AC_CHECK_HEADERS(signal.h)
 AC_TYPE_SIGNAL
 
-
 dnl The user may enter a location of the libxml2 library on the command line
 dnl (with `--with-libxml2=DIR) or disable the libxml2 support.
 dnl
