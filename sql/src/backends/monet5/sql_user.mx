@@ -213,7 +213,7 @@ str
 monet5_user_get_def_schema(mvc *m, oid user)
 {
 	ssize_t rid;
-	oid schema_id;
+	sqlid schema_id;
 	sql_schema *sys = NULL;
 	sql_table *user_info = NULL;
 	sql_column *users_schema = NULL;
@@ -243,7 +243,7 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	user_info = find_sql_table(sys, "db_user_info");
 	users_schema = find_sql_column(user_info, "default_schema");
 	p = column_find_value(m->session->tr, users_schema, user);
-	schema_id = *(oid*)p;
+	schema_id = *(sqlid*)p;
 	_DELETE(p);
 
 	schemas = find_sql_table(sys, "schemas");
