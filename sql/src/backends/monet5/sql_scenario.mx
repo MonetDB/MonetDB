@@ -857,6 +857,12 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
+
+	/* we need to be able to switch back from explain and profile modes 
+	if ((c->mode == m_explain || c->mode == m_profile) && 
+	    m->sym->token == SQL_SET)
+		c->mode = m_normal;
+	*/
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
@@ -942,7 +948,7 @@ produce code.
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if( m->mode == m_debug )
+	if( m->mode == m_debug ) 
 		SQLsetDebugger(c, m, FALSE);
 	if( m->mode == m_trace )
 		SQLsetTrace(c, FALSE);

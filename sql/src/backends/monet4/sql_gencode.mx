@@ -701,7 +701,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 			len = snprintf(buf, BUFSIZ,
-				"var s%dg := s%d.CTgroup();\n", -s->nr, l);
+				"var s%dg := s%d.SQLgroup();\n", -s->nr, l);
 			len += snprintf(buf + len, BUFSIZ - len,
 				"var s%d := s%dg.map();\n", -s->nr, -s->nr);
 			dump(sql, buf, len, -s->nr);
@@ -724,7 +724,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op2.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 			len = snprintf(buf, BUFSIZ,
-				"var s%dg := s%d.CTgroup(s%d);\n", -s->nr, g,l);
+				"var s%dg := s%dg.CTgroup(s%d);\n", -s->nr, g,l);
 			len += snprintf(buf + len, BUFSIZ - len,
 				"var s%d := s%dg.map();\n", -s->nr, -s->nr);
 			dump(sql, buf, len, -s->nr);
@@ -760,6 +760,19 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			size_t buflen = SMALLBUFSIZ;
 
+			if (s->op4.typeval.type->localtype ==
+			    s->op3.typeval.type->localtype &&
+			    s->op4.typeval.type->eclass ==
+			    s->op3.typeval.type->eclass &&
+			    s->op3.typeval.type->eclass != EC_INTERVAL &&
+			    s->op3.typeval.type->eclass != EC_DEC 
+			   ) {
+				char b[128];
+				len = snprintf(b, buflen, "var s%d := s%d;\n", -s->nr, l);
+				dump(sql, b, len, -s->nr);
+				backend_dump_nil(sql, s->op1.stval);
+				break;
+			}
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			if (s->op4.typeval.type->eclass == EC_INTERVAL) {

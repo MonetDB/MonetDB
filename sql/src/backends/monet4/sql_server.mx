@@ -83,7 +83,7 @@ the updates to the persistent versions.
 
 	.COMMAND mvc_append( mvc c, str sname, str tname, str cname, int access, BAT[oid,any::1] b ) : 
 		BAT[void,any::1] = 
-		mvc_append; "Append b to the column, tname.cname (possibly optimized to a replace the insert bat of tname.cname"
+		mvc_append; "Append b to the column, tname.cname (possibly optimized to replace the insert bat of tname.cname"
 
 	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
@@ -1137,6 +1137,33 @@ proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::
 #	if (count(b2) > 0)
 		return kunion(b1,b2);
 #	return b1;
+}
+
+proc log2(int i) : int {
+  var n := 0;
+  while(i > 1)  {
+     i >>= 1;
+     n :+= 1;
+  }
+  return n;
+}
+
+proc SQLgroup(BAT[oid,any] a) : grp {
+	# handle the grouping for unique checks with the special _CTgroup 
+	if (and(or((a.ttype()=int),(a.ttype()=lng)),(a.count()>(1024*1024)))) {
+		var N := (max(a) - min(a));
+		if (isnil(N))
+			N := a.count();
+		if (N > a.count()) 
+			N := a.count();
+		return _CTgroup(a, log2(N), 1); 
+	}
+	return CTgroup(a);
+}
+
+proc [rotate_xor_hash](BAT[any::1,int] h, int nbits, BAT[any::1, any] b) : BAT[any::1,int] {
+	h.access(BAT_WRITE);
+	return [:rotate_xor_hash=](h,nbits,b);
 }
 
 proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
