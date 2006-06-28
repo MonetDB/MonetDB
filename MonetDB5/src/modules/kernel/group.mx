@@ -102,13 +102,16 @@ address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
 		user provided #bits in hashmask and #distinct values in range.";
 
-command derive(ct:bat[:any_1,:any_3], attr:bat[:any_1,:any_2])
-	(histo:bat[:any_1,:oid],grp:bat[:any_1,:oid]) 
+command derive(map:bat[:any_1,:oid], histo:bat[:any_1,:int], attr:bat[:any_1,:any_2])
+	(histo:bat[:any_1,:int],grp:bat[:any_1,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
 		identical as in 'ct'. Tail values are from the same domain and 
 		indicate further refinement of the groups in 'ct', taking into 
 		account also the tail-values in 'attr'.";
+command derive(map:bat[:void,:oid], hist:bat[:void,:int], attr:bat[:oid,:any_2])
+	(histo:bat[:oid,:int],grp:bat[:oid,:oid]) 
+address GRPderive;
 
 command refine(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
 address GRPrefine
@@ -223,7 +226,7 @@ macros identical to file names.
 #define _GROUP_H_
 #include "gdk.h"
 
-extern int CTderive(BAT **B, BAT **H, BAT *ct, BAT *b);
+extern int CTderive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b);
 extern int CTgroup(BAT **B, BAT **H, BAT *b);
 
 #endif /* _GROUP_H_ */
@@ -343,10 +346,11 @@ typedef struct {
 	if (m) {							\
 		map = m->map; hash = m->hash; mask = m->mask;		\
 	} else {							\
+		hash_t yy;						\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
-		hash = (hash_t*) alloca((int)(sizeof(hash_t)*((mask=@2)+1))); \
-		for (xx=0; xx<=@2; xx++) {				\
-			hash[xx] = HASH_MAX;				\
+		hash = (hash_t*) GDKmalloc((int)(sizeof(hash_t)*((mask=@2)+1))); \
+		for (yy=0; yy<=@2; yy++) {				\
+			hash[yy] = HASH_MAX;				\
 		}							\
 	}								\
 	entry.cnt = 1;							\
@@ -376,6 +380,8 @@ map2histo(BAT *map)
 	map->ttype = BATmirror(map)->htype = TYPE_int;
 	if (map->tvarsized && map->theap) {
 		HEAPfree(map->theap);
+		GDKfree(map->theap);
+		map->theap = NULL;
 	}
 	BATmirror(map)->hvarsized = map->tvarsized = 0;
 	/* do these in the right order: map->dims.headloc is used, so
@@ -421,7 +427,7 @@ BAT *
 CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 {
 	oid *dst = (oid*) BUNfirst(bn);
-	hash_t xx, *hash, mask;
+	hash_t xx=0, *hash, mask;
 	size_t zz, mapsize;
 	mapentry_t entry, *e;
 	BUN p, q, r;
@@ -471,9 +477,13 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	ALIGNsetH(bn,b);
+	if (hash && !m)
+		GDKfree(hash);
 	return m ? NULL : map2histo(map);
 bunins_failed:
 	BBPreclaim(bn);
+	if (hash && !m)
+		GDKfree(hash);
 	return NULL;
 }
 @c
@@ -536,6 +546,18 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 	@:CTgroupbody(CUSTOM)@
 }
 
+static int 
+bits(int i)
+{
+	int sh;
+
+        for (sh = 0; i != 0; sh++) {
+                i >>= 1;
+        }
+	return sh;
+}
+
+
 @= CTgroupbody
 	BAT *histo = NULL, *bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 	declare_mask_@1
@@ -543,6 +565,7 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 		return GDK_FAIL;
 	}
 	/* Poor man's clustered test: sorted & !keyed => clustered  */
+	/* todo if b->tkey, simply return map with a void tail */
 	if ( ((b->tsorted)&1) && !(b->tkey) ) {
 		@:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
 	} else {
@@ -551,6 +574,10 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 	if (histo == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
+	}
+	if (BATcount(histo) == BATcount(bn)) {
+		BATkey(BATmirror(bn),TRUE);
+		BATkey(BATmirror(histo),TRUE);
 	}
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
@@ -601,17 +628,21 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 
 @= derive
 BAT *
-CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m)
+CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 {
 	oid *dst = (oid*) BUNfirst(bn);
-	size_t yy = BUNsize(ct), zz, mapsize;
-	hash_t xx, *hash, mask;
-	BUN p, q, r, cp = BUNfirst(ct) - yy;
+	size_t yy = BUNsize(ct_map), zz, mapsize;
+	hash_t xx, *hash;
+	BUN p, q, r, cp = BUNfirst(ct_map) - yy;
 	mapentry_t entry, *e;
 	BAT *map;
+	int n = bits(BATcount(ct_histo)),*N = &n;
 	declare_@4
+	declare_mask_CUSTOM
+	int custom_rng = 1; /* expect small stuff, change to max(ct_histo) */
+	hash_t custom_MASK = mask;
 
-	map_init_STANDARD(map,hash,mask,entry,mapsize);
+	map_init_CUSTOM(map,hash,mask,entry,mapsize);
 	if (map == NULL)
 		return NULL;
 
@@ -622,9 +653,9 @@ CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m)
 		oid hcur;
 		declare_@5
 
-		/* find corresponding value in 'ct' */
-		match_@1(ct, BUNhead(b,p), cp);
-		hcur = *(oid*) BUNtloc(ct,cp);
+		/* find corresponding value in 'ct_map' */
+		match_@1(ct_map, BUNhead(b,p), cp);
+		hcur = *(oid*) BUNtloc(ct_map,cp);
 
 		/* hash-lookup of [hcur,tcur] in map */
 		c = (((hash_t) hcur) ^ HASH_@2(tcur));
@@ -650,16 +681,20 @@ CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m)
 		bunfastins(map, &entry, tcur);
 		e = &entry;
 
-found:		/* ultra-fast 'insert' of [oid,gid] into ct */
+found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 		if (bn->htype)
 			*dst++ = *(oid*) BUNhead(b,p);
 		*dst++ = m?zz:e->gid;
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	if (hash && !m)
+		GDKfree(hash);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	return m?NULL:map2histo(map);
 bunins_failed:
+	if (hash && !m)
+		GDKfree(hash);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -686,63 +721,76 @@ bunins_failed:
 	/* Choose appropriate (@1 && @2) CTderive implementation */
 	switch(tt) {
 	case TYPE_chr:
-		histo = CTderive_@1_chr_@2(ct,b,bn,m);
+		histo = CTderive_@1_chr_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_sht:
-		histo = CTderive_@1_sht_@2(ct,b,bn,m);
+		histo = CTderive_@1_sht_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_int:
-		histo = CTderive_@1_int_@2(ct,b,bn,m);
+		histo = CTderive_@1_int_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_lng:
-		histo = CTderive_@1_lng_@2(ct,b,bn,m);
+		histo = CTderive_@1_lng_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	default:
-		histo = CTderive_@1_any_@2(ct,b,bn,m);
+		histo = CTderive_@1_any_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	}
 @c
 int
-derive(BAT **B, BAT **H, BAT *ct, BAT *b, int tt, map_T *m)
+derive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b, int tt, map_T *m)
 {
 	BAT *histo = NULL, *bn = NULL;
-	int synced = ALIGNsynced(ct, b);
+	int synced = ALIGNsynced(ct_map, b);
 
 	/* create the result bat 'bn' */
 	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
 
-	bn = BATnew(ht, TYPE_oid, BATcount(b));
-	if (bn == NULL) {
-		return GDK_FAIL;
-	}
-
-	/* CTderive with correct lookup method (hash,synced) and type */
-	if (synced) {
-		if (((ct->tsorted) & 1) && !(ct->tkey)) {
-			@:choosederive(sync,clustered)@
-		} else {
-			@:choosederive(sync,unclustered)@
+	if (!ct_map->tkey) { /* cannot derive more groups */
+		bn = BATnew(ht, TYPE_oid, BATcount(b));
+		if (bn == NULL) {
+			return GDK_FAIL;
 		}
-	} else {
-		if (((ct->tsorted) & 1) && !(ct->tkey)) {
-			@:choosederive(hash,clustered)@
-		} else {
-			@:choosederive(hash,unclustered)@
-		}
-	}
-	if (histo == NULL) {
-		assert(histo);
-		BBPunfix(bn->batCacheid);
-	}
 
-	/* postprocess the result bat 'bn' */
-	bn->tsorted = 0;
-	if (BATcount(bn) == BATcount(b)) {
-		ALIGNsetH(bn, b);
+		/* CTderive with correct lookup method (hash,synced) and type */
+		if (synced) {
+			if (((ct_map->tsorted) & 1)) {
+				@:choosederive(sync,clustered)@
+			} else {
+				@:choosederive(sync,unclustered)@
+			}
+		} else {
+			if (((ct_map->tsorted) & 1)) {
+				@:choosederive(hash,clustered)@
+			} else {
+				@:choosederive(hash,unclustered)@
+			}
+		}
+		if (histo == NULL) {
+			assert(histo);
+			BBPunfix(bn->batCacheid);
+		}
+
+		/* postprocess the result bat 'bn' */
+		bn->tsorted = 0;
+		if (BATcount(bn) == BATcount(b)) {
+			ALIGNsetH(bn, b);
+		} else {
+			bn->hsorted = BAThordered(b);
+			if (b->hkey)
+				BATkey(bn, TRUE);
+		}
+
 	} else {
-		bn->hsorted = BAThordered(b);
-		if (b->hkey)
-			BATkey(bn, TRUE);
+		bn = ct_map;
+		histo = ct_histo;
+		if (!synced) {
+			bn = BATsemijoin(ct_map, b);
+			histo = BATsemijoin(ct_histo, BATmirror(bn));
+		} else {
+			BBPfix(ct_map->batCacheid);
+			BBPfix(ct_histo->batCacheid);
+		}
 	}
 	*B = bn;
 	*H = histo;
@@ -750,20 +798,11 @@ derive(BAT **B, BAT **H, BAT *ct, BAT *b, int tt, map_T *m)
 }
 
 int
-CTderive(BAT **B, BAT **H, BAT *ct, BAT *b)
+CTderive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b)
 {
-	BAT *bn = ct;
 	int ret;
 
-	if (tailtype(ct, TRUE) != TYPE_int) {
-		if (!CTgroup(B, H, ct))
-			return GDK_FAIL;
-		ct = *B;
-		BBPunfix((*H)->batCacheid);
-	}
-	ret = derive(B, H, ct, b, tailtype(b, TRUE), NULL);
-	if (bn != ct)
-		BBPunfix(ct->batCacheid);
+	ret = derive(B, H, ct_map, ct_histo, b, tailtype(b, TRUE), NULL);
 	return ret;
 }
 
@@ -1123,6 +1162,7 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	return MAL_SUCCEED;
 }
 
+mal_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
 mal_export str GRPgroup(int *rethisto, int *retbid, int *bid);
 str
 GRPgroup(int *rethisto, int *retbid, int *bid)
@@ -1132,6 +1172,27 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("group.group", "Cannot access descriptor");
 	}
+	if (BATcount(b) > 1024*1024 &&
+	    (b->ttype == TYPE_int || b->ttype == TYPE_int)) { 
+		int N = BATcount(b), one = 1;
+		if (b->ttype == TYPE_int) {
+			int h, l;
+			BATmax(b,&h);
+			BATmin(b,&l);
+			if (h != int_nil && l != int_nil && h-l < N) 
+				N = h-l;
+		} else if (b->ttype == TYPE_lng) {
+			lng h, l;
+			BATmax(b,&h);
+			BATmin(b,&l);
+			if (h != lng_nil && l != lng_nil && (int)(h-l) < N) 
+				N = (int)(h-l);
+		}
+		N = bits(N);
+		assert(N);
+		BBPunfix(b->batCacheid);
+		return GRPgroup_custom(rethisto, retbid, bid, &N, &one);
+	}
 	@:chkHeader(b,GRPgroup)@
 	CTgroup(&bn, &histo, b);
 	*rethisto = histo ? histo->batCacheid : 0;
@@ -1140,7 +1201,6 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
 str
 GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 {
@@ -1157,46 +1217,40 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	return MAL_SUCCEED;
 }
 
-mal_export str GRPderive(int *hid, int *mid, int *ctid, int *bid);
+mal_export str GRPderive(int *hid, int *mid, int *ct_mapid, int *ct_histoid, int *bid);
 str
-GRPderive(int *hid, int *mid, int *ctid, int *bid)
+GRPderive(int *hid, int *mid, int *ct_mapid, int *ct_histoid, int *bid)
 {
-	BAT *ct, *b;
+	BAT *ct_map, *ct_histo, *b;
 	BAT *bn = NULL, *histo = NULL;
 
-	if ((ct = BATdescriptor(*ctid)) == NULL) {
+	if ((ct_map = BATdescriptor(*ct_mapid)) == NULL) {
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
-	@:chkHeader(ct,GRPderive)@
+	@:chkHeader(ct_map,GRPderive)@
+	if ((ct_histo = BATdescriptor(*ct_histoid)) == NULL) {
+		BBPreleaseref(ct_map->batCacheid);
+		return throwMessage("group.derive", "Cannot access descriptor");
+	}
+	@:chkHeader(ct_histo,GRPderive)@
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		BBPreleaseref(ct->batCacheid);
+		BBPreleaseref(ct_map->batCacheid);
+		BBPreleaseref(ct_histo->batCacheid);
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPderive)@
-	if (tailtype(ct, TRUE) != TYPE_int) {
-		if (!CTgroup(&bn, &histo, ct)){
-			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(ct->batCacheid);
-			return throwMessage("group.derive","Could not group");
-		}
-		BBPreleaseref(ct->batCacheid);
-		BBPfix(bn->batCacheid);
-		ct = bn;
-		BBPdecref(bn->batCacheid, TRUE);
-		if (histo)
-			BBPdecref(histo->batCacheid, TRUE);
-		
-	}
-	if( derive(&bn, &histo, ct, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
+	if( derive(&bn, &histo, ct_map, ct_histo, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(ct->batCacheid);
+		BBPreleaseref(ct_map->batCacheid);
+		BBPreleaseref(ct_histo->batCacheid);
 		return throwMessage("group.derive","Could not derive group");
 	}
 
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(ct->batCacheid);
+	BBPreleaseref(ct_map->batCacheid);
+	BBPreleaseref(ct_histo->batCacheid);
 	return MAL_SUCCEED;
 }
 
