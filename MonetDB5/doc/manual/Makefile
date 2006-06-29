@@ -2,11 +2,11 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB5 website
 
-M4DIR = ${MONETDB_PREFIX}
 M5DIR = ${MONET5_PREFIX}
+M4DIR = ${MONETDB_PREFIX}
 
 all:
-	-mkdir -p $(M5DIR)/doc/share/doc
+	mkdir -p $(M5DIR)/doc/share/doc
 	make pdf
 	make web
 	make xml
@@ -22,8 +22,11 @@ pdf:
 	echo "Manual created" 
 
 web:
-	-mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(M5DIR) $(M4DIR); cp manual.texi $(M5DIR)/doc/share/tmp
+	echo "Create tmp:" $(M5DIR)/doc/share/tmp
+	echo "using:" $(M4DIR)
+	mkdir -p $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR)
+	cp manual.texi $(M5DIR)/doc/share/tmp
 	cp manual.css $(M5DIR)/doc/share/tmp
 	cp -r ../Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
@@ -33,7 +36,7 @@ web:
 	echo "Web version created"
 
 web2:
-	-mkdir -p $(M5DIR)/doc/share/tmp
+	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(M5DIR) $(M4DIR); cp manual.texi $(M5DIR)/doc/share/tmp
 	cp manual.css $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
@@ -43,7 +46,7 @@ web2:
 	echo "Web created"
 
 xml:
-	-mkdir -p $(M5DIR)/doc/share/tmp
+	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(M5DIR) $(M4DIR); cp manual.texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
@@ -60,7 +63,7 @@ xml:
 	echo "XML file created"
 
 gdkpdf: 
-	-mkdir -p $(M5DIR)/doc/share/tmp
+	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(M5DIR) $(M4DIR); cp gdkmanual.texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
@@ -71,7 +74,7 @@ gdkpdf:
 	echo "GDK manual created" 
 
 modpdf: 
-	-mkdir -p $(M5DIR)/doc/share/tmp
+	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(M5DIR) $(M4DIR); cp modulesmanual.texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
