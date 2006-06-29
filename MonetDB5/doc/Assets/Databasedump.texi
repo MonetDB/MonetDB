@@ -1,7 +1,7 @@
 @subsection Database Dumps
 An alternative scheme to safeguard and transport a SQL database is to produce
 an @sc{ascii}-based database dump. 
-This option is standard available for the @sc{mclient} and @sc{mjClient}. 
+This option is standard available for the client programs.
 However, be prepared that not all SQL schema features may be retained 
 in the process. It also takes much more time to produce the dump file.
 
@@ -22,5 +22,5 @@ shell> monetdb --start --dbname=voc
 shell> mclient -lsql /tmp/voc.sql
 @end example
 
-The dump facility is also available as an option to the @sc{monetdb} script.
+The dump facility is available as an option to the @sc{monetdb} script.
 It tags the dump and stores it away in the checkpoint directory.

@@ -25,14 +25,15 @@ To compile MonetDB, you also need to have a the following
 standard software development tools installed and ready for use
 on you system:
 @itemize @bullet
-@item a C/C++ compiler (e.g., GNU's gcc/g++)</li>
-@item a lexical analyzer generator (e.g., "lex" or "flex")</li>
-@item a parser generator (e.g., "yacc" or "bison")</li>
+@item a C/C++ compiler (e.g., GNU's gcc/g++)
+@item a lexical analyzer generator (e.g., "lex" or "flex")
+@item a parser generator (e.g., "yacc" or "bison")
 @item GNU make ("gmake") (native make's on, e.g., IRIX and Solaris usually don't work).
 @end itemize
 
 @item Mx, mel, and autogen
 These tools are only needed if you are building from CVS. 
+They are shipped as the @code{buildtools} package and should be installed first.
 If you start with the source distribution from SourceForge you don't need this.
 @item
 @emph{disk space}
@@ -44,7 +45,7 @@ the installation about 20 MB (not including any databases).
 @subsubsection Bootstrap, Configure and Make
 Before executing the following steps, make sure that your
 shell-environment (especially variables like "PATH" and
-"LD_LIBRARY_PATH") is setup, thus that the tools listed above can be
+"LD_LIBRARY_PATH") is setup, so that the tools listed above can be
 found. 
 @c ("Bash"-users are welcome to simply "source conf/conf.bash".
 @c This sets the proper environment and even provides aliases
@@ -60,7 +61,7 @@ Then in any directory (preferably a *new empty* directory and *not* in the
 MonetDB top-level directory) give the command
 
 @example
-<path-to>/configure [<options>]
+.../configure [<options>]
 @end example
 
 where @code{<path-to>} is replaced with the (absolute or relative)
@@ -75,7 +76,7 @@ you need to call
 @example
 .../configure --prefix=<prefixdir> [<options>]
 @end example
-A sample of other useful configure options is:
+A list of other useful configure options is:
 
 @example
 --enable-debug 		 enable full debugging default=off
@@ -88,7 +89,7 @@ A sample of other useful configure options is:
                            "no"  = system-specific C/C++ compiler,
                            &lt;other-compiler-name&gt;)
 --with-gxx=[compiler] 	 which C++ compiler to use
---with-bits=[#bits] 	 specify number of bits (32 or 64)
+--enable-bits=[#bits] 	 specify number of bits (32 or 64)
 @end example
 Use the @code{--help} option of configure to find out more about configure
 options.
@@ -118,8 +119,8 @@ is a reference to an HTML file which is created by the test process and
 shows the test results.  
 
 
-Testing takes about 46 MB of disk space in the build directory.
-Running the tests takes about 13 minutes on the previously mentioned system.
+Testing takes about 50 MB of disk space in the build directory.
+Running the tests takes 10-15 minutes.
 
 @subsubsection Installing
 Give the command
@@ -130,25 +131,53 @@ make install
 By default (if no --prefix option was given to configure above), this
 will install in /usr/local/.  Make sure you have appropriate privileges.
 
-@subsubsection Testing the Installation
-Make sure that /usr/local/bin (respectively <prefixdir>/bin, where
-<prefixdir> is the directory you specified with @code{--prefix} when calling
-configure) is in your PATH.
+@c @subsubsection Testing the Installation
+@c Make sure that /usr/local/bin (respectively <prefixdir>/bin, where
+@c <prefixdir> is the directory you specified with @code{--prefix} when calling
+@c configure) is in your PATH.
 
-In the MonetDB top-level directory issue the command
+@c In the MonetDB top-level directory issue the command
+@c @example
+@c Mtest.py -r
+@c @end example
+
+@c This should produce much the same output as make check above, but uses
+@c the installed version of MonetDB.
+
+@c You need write permissions on part of the installation directory for
+@c this command: it will create subdirectories @code{var/MonetDB5/dbfarm}
+@c and Tests.
+
+@subsubsection Usage
+There are two alternatives for using MonetDB interactively. 
+In both cases you first need to make sure that your environment 
+is set as described in Bootstrap, Configure and Make and Testing 
+the Installation above.
+
+If you are "in a hurry", you can then simply start
 @example
-Mtest.py -r
+mserver5
+@end example
+and you'll get the "server console", where you can type your MAL commands.
+The server console is mainly meant for administrative use.
+
+For a more convenient MAL interface, you should use the @code{mclient}.
+To do so, first start the server.
+Then, in a second shell, set up the same environment and start @code{mclient}
+
+@example
+mclient -lsql
 @end example
 
-This should produce much the same output as make check above, but uses
-the installed version of MonetDB.
-
-You need write permissions on part of the installation directory for
-this command: it will create subdirectories @code{var/MonetDB5/dbfarm}
-and Tests.
-
+With @code{mclient}, you get a text-based interface that supports command-line 
+editing and a command-line history. The latter can even be stored 
+persistently to be re-used after stopping and restarting @code{mclient};
+for details type:
+@example
+MapiClient --help
+@end example
 @subsubsection Documentation
-The documentation recides in @code{share/MonetDB5/}.
+The documentation recides in @code{doc/share/}.
 It consists of the pdf files of the current document and
 its web pages.
 The most recent version is best access from 
@@ -176,14 +205,14 @@ During bootstrap, warnings like
 	Hunk #1 FAILED at 1184.
 	Hunk #2 FAILED at 2444.
 	Hunk #3 FAILED at 2464.
-	3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej</pre>
-might occur.
+	3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej
 @end example
+might occur.
 For some technical reasons, it's hard to completely avoid them. However,
 it is usually save to ignore them and simply proceed with the usual 
 compilation procedure. Only in case the subsequent configure or make
-do fail, these warning might have to be take more serious; in any case, 
-you should include the e bootstrap output in whenever you report (see below)
+do fail, these warning might have to be taken more seriously; in any case, 
+you should include the bootstrap output in whenever you report (see below)
 compilation problems.
 
 
@@ -202,10 +231,69 @@ MonetDB.  In the latter case, you need to tell configure via
 configure then looks for the respective header files in @code{<DIR>/include},
 and for the respective libraries in @code{<DIR>/lib}.
 
+@subsubsection Rescue
+In case one of bootstrap, configure, or make fails --- especially 
+after a cvs update, or after you changed some code yourself --- try 
+the following steps (in this order; if you are using the 
+pre-packaged source distribution, you can to skip steps 2 and 3):
 
+(In case you experience problems after a cvs update, first make 
+sure that you used cvs update -dP (or have a line update -dP in 
+your ~/.cvsrc); -d ensures that cvs checks out directories that 
+have been added since your last cvs update; -P removes directories 
+that have become empty, because all their file have been removed 
+from the cvs repository. In case you did not use 
+cvs update -dP, re-run cvs update -dP, and remember to always 
+use cvs update -dP from now on (or simply add a 
+line update -dP to your ~/.cvsrc)!)
+
+@enumerate
+@item
+In case only make fails, you can try running:
+@example
+make clean
+@end example
+in your build directory and proceed with step 5; however, if make then still fails, you have to re-start with step 1.
+
+@item
+Clean up your whole build directory (i.e., the one where you ran configure and make) by going there and running:
+@example
+make maintainer-clean
+@end example
+In case your build directory is different from your source directory, you are advised to remove the whole build directory.
+
+@item 
+Go to the top-level source directory and run:
+@example
+./de-bootstrap
+@end example
+and type y when asked whether to remove the listed files. This will remove all the files that were created during bootstrap.
+
+@item
+In the top-level source directory, re-run:
+@example
+./bootstrap
+@end example
+
+@item
+In the build-directory, re-run:
+@example
+configure
+@end example
+as described above.
+@item
+In the build-directory, re-run:
+@example
+make
+make install
+@end example
+
+@end enumerate
+If this still does not help, please contact us.
 Bugs and other problems with compiling or running MonetDB should be
 reported using the respective bug-tracking system at 
 @url{https://sourceforge.net/tracker/?group_id=56967&atid=482468,
 SourceForge} (preferred) or emailed
 to @url{mailto:monet@@cwi.nl,monet@@cwi.nl}.  
+Please make sure that you give a @emph{detailed} description.
 

@@ -86,6 +86,7 @@ the scenario may patch the code so as to assure that subsequent
 execution can use a different scenario, e.g. to handle dynamic
 code fragments.
 
+@{
 The state of execution is maintained in the scenario record for
 each individual client. Sharing this information between clients
 should be dealt with in the implementation of the scenario managers.
@@ -95,7 +96,6 @@ processor). Propagation of the state information is
 encapsulated a scenario2scenario() call. Not all transformations
 may be legal.
 
-@{
 @+ Scenario administration
 Administration of scenarios follows the access rules 
 defined for code modules in general.
@@ -527,7 +527,7 @@ The client scenario initialization and finalization brackets
 are  @code{XYZinitClient()} and @code{XYZexitClient()}.
 
 The @code{XYZparser(Client c)} contains the parser for language XYZ
-and should fill the mal program block associated with the client record.
+and should fill the @caode{MAL} program block associated with the client record.
 The latter may have been initialized with variables. 
 Each language parser may require a catalog with information
 on the translation of language specific datastructures into their BAT

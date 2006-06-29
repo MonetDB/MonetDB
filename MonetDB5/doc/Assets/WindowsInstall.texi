@@ -40,15 +40,15 @@ This section helps you to install MonetDB on a native Windows system (NT, 2000, 
     does not find its own "bison.simple" file, which it expects to
     be in "/usr/share/bison/bison.simple"
     (aka. "\usr\share\bison\bison.simple").
-    Next to some tools used by Mtest.py for testing MonetDB (see
+    Beside some tools used by Mtest.py for testing MonetDB (see
     below), UnxUtils provide the lexical analyzer generator "flex"
     and the parser generator "bison", which are required to compile
     MonetDB.
     Note: You have to install the UnxUtils using the original 
     @url{http://UnxUtils.sourceforge.net/UnxUtils.zip,.zip file}. 
-    With the third-party executable 
+    The third-party executable 
     @url{http://www.braindonors.net/products/unxutils.asp,installer}, 
-    choosing another than the default installation directory doesn't seem to
+    chooses another default installation directory that doesn't seem to
     work...
 @item @emph{Microsoft Visual C++}
     You need Microsoft Visual C++ 5 or higher.
@@ -94,8 +94,8 @@ in XXX--to be filled in.
 Testing takes about 46 MB of disk space in the build directory.
 
 @subsubsection Testing the Installation
-Make sure that <sourcedir>\NT\bin, <sourcedir>\NT\lib, and
-<sourcedir>\NT\lib\MonetDB are in your PATH.
+Make sure that ...\NT\bin, ...\NT\lib, and
+...\NT\lib\MonetDB are in your PATH.
 In the MonetDB top-level directory issue the command
 @example
 Mtest.py -r
@@ -108,11 +108,11 @@ the installed version of MonetDB.
 
 @subsubsection Documentation
 
-The documentation starts in <sourcedir>\NT\doc\MonetDB.html
-
+The documentation starts in ...\NT\doc\MonetDB.html
 NOTE: the current 'nmake install' does not yet generate this
-documentation to do this manually, execute *after* successful
-'make install'.  In the top-level directory of the MonetDB build tree, call
+documentation automatically. 
+To do this manually, 
+in the top-level directory of the MonetDB build tree call
 @example
 nmake html
 @end example

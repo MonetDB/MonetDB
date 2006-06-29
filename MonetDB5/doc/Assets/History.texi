@@ -13,10 +13,11 @@ The second part of the eighties was spent on building the first
 distributed main-memory database system in the context of the
 @c main-memory vs. main memory ?? should do a grep on both
 @c throughout the documentation and make the spelling consistent
-national project PRISMA. A fully functional system of 100
+national project 
+@url{http://www.cwi.nl/themes/ins1/publications/docs/KeMaBoNe:EUROPAR:01.pdf,PRISMA}.
+A fully functional system of 100
 processors and a wealthy 1GB of main memory showed the road
 to develop database technology from a different perspective.
-A more detailed account on the experiences can be found in REF.
 
 @strong{The Early Days [1993-1995]}
 Immediately after the PRISMA project was termed dead, 

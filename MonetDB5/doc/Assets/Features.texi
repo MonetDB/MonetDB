@@ -66,7 +66,7 @@ database problems encountered in scientific databases, e.g. astronomy.
 MonetDB has been strongly influenced by the scientific
 experiments to understand the interplay between algorithms
 and hardware features. It has turned MonetDB into an extensible
-database system. It proofs valuable in
+database system. It proves valuable in
 those cases where an application specific and critical
 component makes all the difference between slow and fast
 implementation.
@@ -75,7 +75,7 @@ implementation.
 MonetDB has been developed over many years of research at
 @url{http://monetdb.cwi.nl/,CWI}, whose charter ensures that results
 are easily accessible to others.
-Be it through publication in the scientific domain or publication of the
+Either through publications in the scientific domain or publication of the
 software components involved.
 The @url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
 is the access point to a larger audience for advice.
@@ -171,12 +171,12 @@ The software characteristics for the MonetDB packages are:
 The kernel source code is written in ANSI-C and POSIX compliant.
 @item
 The application interface libraries source code complies
-with in the latest language versions.
+with the latest language versions.
 @item
 The source code is written in a literate programming style, to stimulate
 proximity of code and its documentation.
 @item
-The source code is compiled and tests on many platforms with different compiler
+The source code is compiled and tested on many platforms with different compiler
 options to ensure portability.
 @item
 The source code is based on the GNU toolkit, e.g. Automake, Autoconf, and Libtool for portability.
@@ -211,7 +211,7 @@ device, i.e. the file system and disk raids.
 
 @c table spaces
 The number of columns per tables is practically unlimited.
-Unlike traditional database systems, the storage space limitation depend
+Unlike traditional database systems, the storage space limitation depends
 on the maximal size for an individual column. Each column is mapped to
 a file, whose limit is dictated by the operating system and hardware platform.
 

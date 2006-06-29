@@ -1,5 +1,5 @@
 @section Manual Generation
-The MonetDB code base is large collection of files, scattered
+The MonetDB code base is a large collection of files, scattered
 over the system modules. Each source file is written in a
 literal programming style, which physically binds documentation with 
 the relevant code sections. The utility program Mx processes the
@@ -18,7 +18,7 @@ These pieces are collected and
 glued together in a manual framework, running @emph{makeinfo} to produce
 the desired output format.
 The @emph{Texinfo} information is currently limited
-to the documentation, it could also be extended to also process the code.
+to the documentation, it could also be extended to process the code.
 
 A printable version of an *.mx file can be produced using the commands:
 @example
@@ -38,7 +38,7 @@ Snippets of code are illustrated in verbatim font.
 The interaction with textual client interfaces uses the default 
 prompt-setting of the underlying operating system. 
 
-Keywords in the MonetDB interface languages are key sensitive;
+Keywords in the MonetDB interface languages are case sensitive;
 SQL keywords are not case sensitive. No distinction is made
 in this manual.
 

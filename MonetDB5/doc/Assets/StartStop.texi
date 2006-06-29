@@ -37,13 +37,13 @@ Secondary options:
     --help                    This list of options
 @end verbatim
 
-An error messages typically indicate a wrongly configured $PATH variable, 
+Error messages typically indicate a wrongly configured $PATH variable, 
 making the @sc{monetdb} program
 invisible to your shell. Retrace your installation steps.
 
 An access mode violation indicates that either the directory path
-to the location of the MonetDB data store does not exists, or the
-user has lack of file system permissions to create new directories/files
+to the location of the MonetDB dbfarm does not exists, or the
+user lacks file system permissions to create new directories/files
 in the location specified.
 
 To start a server for your first database simply type:

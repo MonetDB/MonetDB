@@ -7,7 +7,7 @@ files and name them clearly for later recall.
 
 The checkpoint is not complete without the corresponding log files
 produced by SQL. They are stored by default in a mirror directory
-of @sc{dbfarm}, called @sc{dblogs}. They too should be picked up
+of @sc{dbfarm}, called @sc{dblogs}. They should also be picked up
 and safeguarded for future use.
 
 On Linux platforms the checkpoint and recover operations are 
@@ -34,5 +34,5 @@ Database recovery finished
 @end example
 Before the checkpoint operation starts the database server is brought down
 and restarted afterwards.
-The checkpoint files are stored away in a path available in the
+The checkpoint files are stored away in a path specified in the
 database configuration file. 
