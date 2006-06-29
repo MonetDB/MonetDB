@@ -2,90 +2,99 @@
 
 echo "create bdy files"
 
-mkdir ${MONET5_PREFIX}/share/tmp
-cd ${MONET5_PREFIX}/../src/mal
+if [ -z "$1" ] ||  [ -z "$2" ];
+then
+	echo "usage $0 m5prefix m4prefix" > /dev/stderr
+	exit -1
+fi
+
+dir=$1
+m4dir=$2
+
+mkdir ${dir}/doc/share/tmp
+cd ${dir}/src/mal
 ls
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp
 
-cd ${MONET5_PREFIX}/../src/optimizer
+cd ${dir}/src/optimizer
 ls
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp
 
-cd ${MONETDB_PREFIX}/../src/gdk
+cd ${m4dir}/src/gdk
 ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
-cp *pdf ${MONET5_PREFIX}/share/tmp
-cp *feps *pdf ${MONET5_PREFIX}/share/tmp
-sed -i -e "/@t/,/@contents/d" ${MONET5_PREFIX}/share/tmp/gdk.bdy.texi
+cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *pdf ${dir}/doc/share/tmp
+cp *feps *pdf ${dir}/doc/share/tmp
+sed -i -e "/@t/,/@contents/d" ${dir}/doc/share/tmp/gdk.bdy.texi
 
-cd ${MONETDB_PREFIX}/../src/mapi/clients/C
+cd ${m4dir}/src/mapi/clients/C
 ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp
 
-cd ${MONET5_PREFIX}/../src/modules/mal
+cd ${dir}/src/modules/mal
 ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
-cd ${MONET5_PREFIX}/../src/mil
+cp *gif *eps *pdf ${dir}/doc/share/tmp
+cd ${dir}/src/mil
 ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
-cd ${MONET5_PREFIX}/../src/modules/atoms
+cp *gif *eps *pdf ${dir}/doc/share/tmp
+cd ${dir}/src/modules/atoms
 ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${MONET5_PREFIX}/share/tmp
-cd ${MONET5_PREFIX}/../src/modules/kernel
+cp *gif *eps *pdf ${dir}/doc/share/tmp
+cd ${dir}/src/modules/kernel
 ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-        mv $b.bdy.texi  ${MONET5_PREFIX}/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
