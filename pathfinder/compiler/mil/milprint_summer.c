@@ -9172,7 +9172,7 @@ simplifyCoreTree (PFcnode_t *c)
                           else
                           {
                                assert (fun->sig_count == 1);
-                               expected = PFty_defn((fun->sigs[0].par_ty)[i]);
+                               expected = PFty_defn((fun->sigs[0].par_ty)[i-is_rpc]);
                           }
                           
                           cast_to_expected (c, expected);
