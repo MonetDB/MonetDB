@@ -214,7 +214,7 @@ PROC get_rpc_res (
                 if (prefix = "xs") {
                     var val := prop_text.fetch(prop); # str value
                     if (tpe = "integer"){
-                        i := int(val);
+                        i := lng(val);
                         int_values.append(i);
                         res_iter.append(oid(itercnt));
                         res_item.append(int_values.reverse().find(i));
