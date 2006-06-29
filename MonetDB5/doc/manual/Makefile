@@ -39,7 +39,7 @@ web2:
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
 	texi2html --split=node  --css-include=manual.css manual.texi; )
-	cp -r $(M5DIR)/doc/share/tmp/MonetDB $(M5DIR)/doc/share
+	cp -r $(M5DIR)/doc/share/tmp/manual $(M5DIR)/doc/share/MonetDB2
 	echo "Web created"
 
 xml:
