@@ -25,6 +25,12 @@ EXTRA_DIST = \
 		Test_Sbatching.java \
 		Test_Rmetadata.java \
 		Test_Cmanycon.java \
+		Test_Remote_Catalog_Information.java \
+		Test_Remote_View.java \
+		Test_Remote_Location.java \
+		Test_Remote_Select.java \
+		Test_Remote_View_Refresh.java \
+		Test_Remote_View_Syntax.java \
 		build.xml build.properties
 
 ant_compile = {
@@ -39,5 +45,11 @@ ant_compile = {
 		Test_Rtimedate.class \
 		Test_Sbatching.class \
 		Test_Rmetadata.class \
+		Test_Remote_Catalog_Information.class \
+		Test_Remote_View.class \
+		Test_Remote_Location.class \
+		Test_Remote_Select.class \
+		Test_Remote_View_Refresh.class \
+		Test_Remote_View_Syntax.class \
 		Test_Cmanycon.class
 }
