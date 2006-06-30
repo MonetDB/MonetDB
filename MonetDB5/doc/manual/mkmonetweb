@@ -187,8 +187,6 @@ generate_menu() {
 	local title="`get_entry $1 title`"
 	local code=""
 
-	code=${code}"<ul>"
-	
 	[ -z "$4" ] && code=${code}"<li><span class=\"submenu\">"
 	[ -z "$4" ] || code=${code}"<li><span class=\"current\">"
 	code=${code}"<a href=\"$1\" title=\"$title\">$title</a>"
@@ -200,7 +198,7 @@ generate_menu() {
 	do
 		if [ "$m" = "$2" ];
 		then
-			code=${code}$3
+			code=${code}"<ul>$3</ul>"
 			continue
 		fi
 		title="`get_entry $m title`"
@@ -210,17 +208,15 @@ generate_menu() {
 	done
 	[ -z "$c" ] && code=${code}"</ul>"
 
-	code=${code}"</ul>"
-
 	c=`get_parent $1`
 	if [ ! -z "$c" ];
 	then
 		generate_menu $c $1 "$code"
 	else
-		echo $code
+		echo "<div class=\"submenu\"><ul>$code</ul></div>"
 	fi
 }
 
 #create_index_scan
 #create_index_traverse
-transform_files /var/tmp/monetweb $HOME/scratch/monetweb
+transform_files $HOME/scratch/monetweb/Manual $HOME/scratch/monetweb
