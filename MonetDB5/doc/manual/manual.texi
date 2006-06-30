@@ -70,7 +70,7 @@ using the
 * Appendices::
 @menu
 * MAL Syntax ::
-* Conversion of MIL Programs ::
+* MIL Programs ::
 * MAL Instruction Overview::
 * MAL Instruction Help::
 @end menu
@@ -233,23 +233,23 @@ Some additional stuff
 @menu
 * SQL 1999 Features::
 * MAL Syntax ::
-* Conversion of MIL Programs::
+* MIL Programs::
 * MAL Instruction Overview::
 * MAL Instruction Help::
 @end menu
 
 @node SQL 1999 Features, MAL Syntax, Appendices, Appendices
 @include Assets/SQL1999.texi
-@node MAL Syntax, Conversion of MIL Programs, SQL 1999 Features, Appendices
+@node MAL Syntax, MIL Programs, SQL 1999 Features, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
 
-@node Conversion of MIL Programs, MAL Instruction Overview , MAL Syntax, Appendices
+@node MIL Programs, MAL Instruction Overview , MAL Syntax, Appendices
 @appendix Conversion of MIL programs
 @include mil_parser.bdy.texi
 
-@node MAL Instruction Overview, MAL Instruction Help, Conversion of MIL Programs, Appendices
+@node MAL Instruction Overview, MAL Instruction Help, MIL Programs, Appendices
 @appendix MAL Instruction Overview
 @include Assets/MALinstructions.texi
 
