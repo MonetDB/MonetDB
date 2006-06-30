@@ -38,7 +38,7 @@ Only one connection is permitted.
 @menu
 * A Simple Example::
 * Configuration Parameters::
-* Embedded MonetDB Limitations::
+* Embedded Limitations::
 @end menu
 
 @node A Simple Example, Configuration Parameters, Embedded MonetDB, Embedded MonetDB
@@ -149,7 +149,7 @@ clean: myprog.o
 @end verbatim
 @end example
 
-@node Configuration Parameters , Embedded MonetDB Limitations, A Simple Example , Embedded MonetDB
+@node Configuration Parameters , Embedded Limitations, A Simple Example , Embedded MonetDB
 The configuration parameters for the server are read from its default
 location in the file system. In an embedded setting this location may
 not be accessible.
@@ -171,7 +171,7 @@ main(){
 @end example
 For an overview of the system configuration parameters see XYZ.
 
-@node Embedded MonetDB Limitations , MonetDB Assembler Language, Configuration Parameters, Embedded MonetDB
+@node Embedded Limitations , MAL , Configuration Parameters, Embedded MonetDB
 @section Limitations for Embedded MonetDB
 
 In embedded applications the memory footprint is a factor of concern.

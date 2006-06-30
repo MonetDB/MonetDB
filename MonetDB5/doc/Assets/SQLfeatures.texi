@@ -95,7 +95,7 @@ It gives a detailed description of the actions taken to produce the
 answer. The example below illustrates what you can expect when a
 simple query is pre-pended by the @code{explain} modifier.
 Although the details of this program are better understood
-when you have read the Chapter on MAL @ref{MonetDB Assembler Language}
+when you have read the Chapter on @ref{MAL} 
 the global structure is easy to explain.
 
 @verbatim

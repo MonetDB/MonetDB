@@ -25,7 +25,7 @@ the property of their respective owners.
 * Intended audience::
 * How to read this manual::
 * Features and Limitations::
-* A Brief History of MonetDB::
+* A Brief History ::
 * Manual Generation::
 * Download and Installation::
 * Start and Stop the Server::
@@ -89,7 +89,7 @@ available for MonetDB Version 4.
 
 If you are interested in technical details
 of the MonetDB system, you should start reading @ref{MonetDB Overview}.
-Two reading  tracks are possible. The @ref{MonetDB Assembler Language}
+Two reading  tracks are possible. The @ref{MAL } language
 and subsequent sections describe the abstract machine and MAL
 optimizers to improve execution speed.
 It is relevant for a better understanding of the query processing
