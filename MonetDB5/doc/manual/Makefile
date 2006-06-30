@@ -2,8 +2,8 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB5 website
 
-M5DIR = ${MONET5_PREFIX}
-M4DIR = ${MONETDB_PREFIX}
+M5DIR = ../..
+M4DIR = /path/to/m4/sources
 
 all:
 	mkdir -p $(M5DIR)/doc/share/doc
