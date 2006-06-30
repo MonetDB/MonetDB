@@ -3,7 +3,7 @@
 #inclusion in the MonetDB5 website
 
 # FIXME / WARNING: this is not "portable" and probably not the best
-#                  solution either, but it will most of the time "work"
+#                  solution either.  Actually, it will not work.
 M5DIR=/ufs/mk/monet5/
 M4DIR=/ufs/mk/opensource/MonetDB
 
