@@ -527,7 +527,7 @@ The client scenario initialization and finalization brackets
 are  @code{XYZinitClient()} and @code{XYZexitClient()}.
 
 The @code{XYZparser(Client c)} contains the parser for language XYZ
-and should fill the @caode{MAL} program block associated with the client record.
+and should fill the @code{MAL} program block associated with the client record.
 The latter may have been initialized with variables. 
 Each language parser may require a catalog with information
 on the translation of language specific datastructures into their BAT

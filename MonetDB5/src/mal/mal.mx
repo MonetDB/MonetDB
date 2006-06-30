@@ -49,6 +49,7 @@ a quick overview of its architecture.
 * Scenario Management::
 * Textual Clients::
 * Data Management Tools::
+* Development Roadmap::
 @end menu
 @node  Design Considerations, Architecture Overview, MonetDB Overview ,MonetDB Overview
 @+ Design Considerations
