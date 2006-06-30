@@ -243,7 +243,24 @@ generate_menu() {
 	fi
 }
 
-#create_index_scan
-#create_index_traverse
-#transform_files $HOME/scratch/monetweb/Manual $HOME/scratch/monetweb
-transform_files $1 $2
+if [ -z "$1" ];
+then
+	echo "$0: please tell me that to do (yes, just read the script)" > /dev/stderr
+	exit -1
+fi
+
+case $1 in
+	scan)
+		create_index_scan
+	;;
+	traverse)
+		create_index_traverse
+	;;
+	transform)
+		transform_files $2 $3
+	;;
+	*)
+		echo "I have no clue what $1 means!" > /dev/stderr
+		exit -1
+	;;
+esac
