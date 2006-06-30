@@ -59,8 +59,8 @@ using the
 * XQuery ::
 * Programming Interfaces::
 * Embedded MonetDB::
-* MonetDB Assembler Language::
-* MAL Interpreter::
+* MAL::
+* The MAL Interpreter::
 * The MAL Optimizer::
 * The MAL Debugger::
 * The MAL Profiler::
@@ -79,13 +79,13 @@ using the
 @node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
 
-@node Features and Limitations, When to consider MonetDB, How to read this manual, General Introduction
+@node Features and Limitations, MonetDB Pro's, How to read this manual, General Introduction
 @include Assets/Features.texi
 
-@node A Brief History of MonetDB, Manual Generation, Size Limitations for MonetDB, General Introduction
+@node A Brief History , Manual Generation, Size Limitations, General Introduction
 @include Assets/History.texi
 
-@node Manual Generation, Conventions and Notation, A Brief History of MonetDB, General Introduction
+@node Manual Generation, Conventions , A Brief History , General Introduction
 @include Assets/Conventions.texi
 
 @node Download and Installation, Software Versions, Additional Resources, General Introduction
@@ -176,32 +176,32 @@ using the
 @node Embedded MonetDB, A Simple Example, The ODBC Library , Top
 @include Assets/Mbedded.texi
 
-@node MonetDB Assembler Language, MAL variables, Embedded MonetDB Limitations , Top
+@node MAL, MAL variables, Embedded Limitations , Top
 @include mal_instruction.bdy.texi
 
-@node Function definitions, Polymorphic Functions ,Flow of control , MonetDB Assembler Language
+@node Function definitions, Polymorphic Functions ,Flow of control , MAL
 @include mal_function.bdy.texi
 
-@node Factory definitions, Type resolution , Commands and Patterns, MonetDB Assembler Language
+@node Factory definitions, Type resolution , Commands and Patterns, MAL
 @include mal_factory.bdy.texi
 
-@node Type resolution, Atomary types, Factory definitions, MonetDB Assembler Language
+@node Type resolution, Atomary types, Factory definitions, MAL
 @include mal_resolve.bdy.texi
-@node Atomary types, Boxed variables, Type resolution, MonetDB Assembler Language
+@node Atomary types, Boxed variables, Type resolution, MAL
 @include mal_atom.bdy.texi
 
-@node Boxed variables, Property Management , Atomary types, MonetDB Assembler Language
+@node Boxed variables, Property Management , Atomary types, MAL
 @include mal_box.bdy.texi
 
-@node Property Management,  MAL Interpreter, Boxed variables, MonetDB Assembler Language
+@node Property Management,  The MAL Interpreter, Boxed variables, MAL
 @include mal_properties.bdy.texi
 
-@node MAL Interpreter, The MAL Optimizer, Property Management, Top
+@node The MAL Interpreter, The MAL Optimizer, Property Management, Top
 @include mal_interpreter.bdy.texi
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node The MAL Optimizer, Optimizer Landscape, MAL Interpreter, Top
+@node The MAL Optimizer, Optimizer Landscape, The MAL Interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_macro.bdy.texi
 @include mal_commonExpressions.bdy.texi
