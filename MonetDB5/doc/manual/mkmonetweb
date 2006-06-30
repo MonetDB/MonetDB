@@ -227,4 +227,4 @@ generate_menu() {
 #create_index_scan
 #create_index_traverse
 #transform_files $HOME/scratch/monetweb/Manual $HOME/scratch/monetweb
-transform_files /ufs/monet/test/monetweb/Manual $HOME/scratch/monetweb
+transform_files $1 $2
