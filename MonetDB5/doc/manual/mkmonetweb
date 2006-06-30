@@ -155,6 +155,8 @@ transform_files() {
 			gsub(/_SUBMENU_/, menu, $0);
 			gsub(/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/title.shtml" -->/,
 				title, $0);
+			gsub(/<!--#include virtual="_ROOTDIR_\/_TOPMENU_\/topmenu.shtml" -->/,
+				"<!--#include virtual=\"_ROOTDIR_/topmenu.shtml\" -->", $0);
 			if (/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/content.shtml" -->/) {
 				exit;
 			}
@@ -172,7 +174,12 @@ transform_files() {
 			gsub(/_SUBMENU_/, menu, $0);
 			gsub(/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/title.shtml" -->/,
 				title, $0);
-			print $0
+			gsub(/<!--#include virtual="_ROOTDIR_\/_TOPMENU_\/topmenu.shtml" -->/,
+				"<!--#include virtual=\"_ROOTDIR_/topmenu.shtml\" -->", $0);
+			if (doprint == 1) {
+				print $0;
+			}
+			doprint = 1;
 		}
 		' "$2/index.html" >> "$1/$f"
 	done
@@ -219,4 +226,5 @@ generate_menu() {
 
 #create_index_scan
 #create_index_traverse
-transform_files $HOME/scratch/monetweb/Manual $HOME/scratch/monetweb
+#transform_files $HOME/scratch/monetweb/Manual $HOME/scratch/monetweb
+transform_files /ufs/monet/test/monetweb/Manual $HOME/scratch/monetweb
