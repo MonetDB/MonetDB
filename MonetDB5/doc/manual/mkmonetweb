@@ -179,7 +179,11 @@ transform_files() {
 		}
 		' "$2/index.html" > "$1/$f"
 		# extract the real content, and store it
-		awk '/<body>/,/<\/body>/' $file | tail -n+2 | head -n-1 >> "$1/$f"
+		awk '
+		BEGIN { doprint = 1; }
+		/<div class="node">/,/<\/div>/ { doprint = 0; }
+		/<body>/,/<\/body>/ { if (doprint == 1) { print $0; } doprint =	1; }
+		' $file | tail -n+2 | head -n-1 >> "$1/$f"
 		# We use awk again to put back the rest of the page
 		awk \
 			-v title="$title" \
