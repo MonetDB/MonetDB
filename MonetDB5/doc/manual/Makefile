@@ -2,6 +2,8 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB5 website
 
+# FIXME / WARNING: this is not "portable" and probably not the best
+#                  solution either, but it will most of the time "work"
 M5DIR=/ufs/mk/monet5/
 M4DIR=/ufs/mk/opensource/MonetDB
 
