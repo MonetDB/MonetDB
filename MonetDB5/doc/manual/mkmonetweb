@@ -143,6 +143,8 @@ transform_files() {
 	if [ -z "$1" ] || [ -z "$2" ];
 	then
 		echo "usage: transform_files: targetdir monetwebroot" > /dev/stderr
+		echo "   targetdir: where to store the generated files" > /dev/stderr
+		echo "   monetwebroot: where to fetch the index.html template file from" > /dev/stderr
 		exit -1
 	fi
 
@@ -159,6 +161,8 @@ transform_files() {
 			-v title="$title" \
 			-v menu="$menu" \
 			'
+		BEGIN { doprint = 1; }
+		/<div class="header">/,/<\/div>/ { doprint = 0; }
 		{
 			gsub(/_SUBMENU_/, menu, $0);
 			gsub(/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/title.shtml" -->/,
@@ -168,7 +172,10 @@ transform_files() {
 			if (/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/content.shtml" -->/) {
 				exit;
 			}
-			print $0
+			if (doprint == 1) {
+				print $0;
+			}
+			doprint = 1;
 		}
 		' "$2/index.html" > "$1/$f"
 		# extract the real content, and store it
@@ -178,6 +185,7 @@ transform_files() {
 			-v title="$title" \
 			-v menu="$menu" \
 			'
+		/<div class="header">/,/<\/div>/ { doprint = 0; }
 		/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/content.shtml" -->/,EOF {
 			gsub(/_SUBMENU_/, menu, $0);
 			gsub(/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/title.shtml" -->/,
