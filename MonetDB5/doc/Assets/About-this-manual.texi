@@ -23,16 +23,18 @@ Other trademarks and copyrights referred to in this manual are
 the property of their respective owners.
 @menu
 * Intended audience::
-* Get Going::
+* How to read this manual::
 * Features and Limitations::
-* The History of MonetDB::
+* A Brief History of MonetDB::
 * Manual Generation::
-* Software Versions::
-* Conventions and Notation::
-* Additional Resources::
+* Download and Installation::
+* Start and Stop the Server::
+* Database Configuration::
+* Checkpoint and Recovery::
+* Database Dumps::
 @end menu
 
-@node Intended audience, Get Going,General Introduction, Top
+@node Intended audience, How to read this manual, General Introduction, General Introduction
 @section Intended Audience
 The MonetDB reference manual is aimed at application developers and
 researchers with an intermediate level exposure to database technology,
@@ -63,8 +65,8 @@ Share your comments and thoughts through the
 @url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
 held at SourceForge.
 
-@node Get Going, Features and Limitations, Intended audience, General Introduction
-@section How to Read This Manual
+@node How to read this manual, Features and Limitations, Intended audience, General Introduction
+@section How to read this manual
 The reference manual covers a lot of ground, which at first reading
 may be slightly confusing. The material is presented in a top-down fashion.
 Starting at installing the system components,

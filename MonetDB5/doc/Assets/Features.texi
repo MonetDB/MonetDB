@@ -17,7 +17,7 @@ interact with the system.
 * When to consider MonetDB::
 * When not to consider MonetDB::
 * What are the MonetDB key features::
-* Size limitations for MonetDB::
+* Size Limitations for MonetDB::
 @end menu
 
 @node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, Features and Limitations
@@ -135,7 +135,7 @@ data parallelism to speedup processing and reduce the synchronization cost.
 The underlying platforms were Linux-based cluster computers with
 sizeable main memories.
 
-@node What are the MonetDB key features, Size limitations for MonetDB, When not to consider MonetDB, Features and Limitations
+@node What are the MonetDB key features, Size Limitations for MonetDB, When not to consider MonetDB, Features and Limitations
 @subsection What are the MonetDB key features
 The list below provides a glimpse on the technical characteristics and
 features of the MonetDB software packages.
@@ -203,8 +203,8 @@ The operations are cache- and memory-aware with supreme performance.
 The database backend is multi-threaded and guards a single physical database
 instance.
 @end itemize
-@node Size limitations for MonetDB, The History of MonetDB, What are the MonetDB key features, Features and Limitations
-@subsection Size limitations for MonetDB
+@node Size Limitations for MonetDB, A Brief History of MonetDB, What are the MonetDB key features, Features and Limitations
+@subsection Size Limitations for MonetDB
 The maximal database size supported by MonetBD depends on the underlying
 processing platform, i.e. a 32- or 64-bit processor, and storage
 device, i.e. the file system and disk raids.

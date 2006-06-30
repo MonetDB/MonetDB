@@ -2,8 +2,8 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB5 website
 
-M5DIR = ../..
-M4DIR = /path/to/m4/sources
+M5DIR=/ufs/mk/monet5/
+M4DIR=/ufs/mk/opensource/MonetDB
 
 all:
 	mkdir -p $(M5DIR)/doc/share/doc

@@ -26,8 +26,12 @@ Mx  <filename>.mx
 pdflatex <filename>.tex
 @end example
 
-@node Conventions and Notation, Additional Resources, Manual Generation, General Introduction
-@section Conventions and Notation
+@menu
+* Conventions and Notation::
+* Additional Resources::
+@end menu
+@node Conventions and Notation, Additional Resources, Manual Generation, Manual Generation
+@subsection Conventions and Notation
 The  typographical conventions used in this manual are straightforward.
 @sc{Monospaced} text is used to designate names in the code base
 and examples. 
@@ -42,8 +46,8 @@ Keywords in the MonetDB interface languages are case sensitive;
 SQL keywords are not case sensitive. No distinction is made
 in this manual.
 
-@node Additional Resources, Download and Installation, Conventions and Notation, General Introduction
-@section Additional Resources
+@node Additional Resources, Download and Installation, Conventions and Notation, Manual Generation
+@subsection Additional Resources
 Although this reference manual aims to be complete for developing
 applications with MonetDB, it also depends on
 additional resources for a full understanding.

@@ -7,7 +7,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED June 21, 2006
+@set UPDATED June 22, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -54,11 +54,7 @@ using the
 
 @menu
 * General Introduction::
-* Intended audience::
-* Features and Limitations::
-* Download and Installation::
 * MonetDB Overview ::
-* Development Roadmap::
 * SQL ::
 * XQuery ::
 * Programming Interfaces::
@@ -83,31 +79,31 @@ using the
 @node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
 
-@node Features and Limitations, When to consider MonetDB, Get Going, Top
+@node Features and Limitations, When to consider MonetDB, How to read this manual, General Introduction
 @include Assets/Features.texi
 
-@node The History of MonetDB, Manual Generation, Size limitations for MonetDB, General Introduction
+@node A Brief History of MonetDB, Manual Generation, Size Limitations for MonetDB, General Introduction
 @include Assets/History.texi
 
-@node Manual Generation, Conventions and Notation, The History of MonetDB, General Introduction
+@node Manual Generation, Conventions and Notation, A Brief History of MonetDB, General Introduction
 @include Assets/Conventions.texi
 
-@node Download and Installation, Software Versions, Additional Resources, Top
+@node Download and Installation, Software Versions, Additional Resources, General Introduction
 @include Assets/Downloadintro.texi
 
 @node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
 @include Assets/Setup.texi
 
-@node Start and Stop the Server, Database Configuration ,Daily Builds, Download and Installation
+@node Start and Stop the Server, Database Configuration ,Daily Builds, General Introduction
 @include Assets/StartStop.texi
 
-@node Database Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
+@node Database Configuration , Checkpoint and Recovery, Start and Stop the Server, General Introduction
 @include Assets/DatabaseConfiguration.texi
 
-@node Checkpoint and Recovery, Database Dumps, Database Configuration, Download and Installation
+@node Checkpoint and Recovery, Database Dumps, Database Configuration, General Introduction
 @include Assets/Checkpoints.texi
 
-@node Database Dumps, MonetDB Overview, Checkpoint and Recovery, Download and Installation
+@node Database Dumps, MonetDB Overview, Checkpoint and Recovery, General Introduction
 @include Assets/Databasedump.texi
 
 @node MonetDB Overview, Design Considerations, Database Dumps, Top
@@ -136,7 +132,7 @@ using the
 @node iSQL-Viewer, Development Roadmap, DbVisualizer, Data Management Tools
 @include Assets/iSQL-Viewer.texi
 
-@node Development Roadmap, SQL Roadmap, iSQL-Viewer, Top
+@node Development Roadmap, SQL Roadmap, iSQL-Viewer, MonetDB Overview
 @include Assets/Roadmap.texi
 
 @node Backward Compatibility, SQL ,Server Roadmap, MonetDB Overview
