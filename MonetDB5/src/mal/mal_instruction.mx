@@ -16,7 +16,7 @@
 
 @a M. Kersten
 @v 1.0
-@* Monetdb Assembler Language
+@* MonetDB Assembler Language (MAL)
 The primary textual interface to the Monetdb kernel
 is a simple, assembler-like language, called MAL. 
 The language reflects the virtual machine architecture around the
@@ -66,13 +66,13 @@ language features and illustrative examples.
 * Property Management::
 @end menu
 
-@node MAL variables, MAL instructions, MonetDB Assembler Language , MonetDB Assembler Language
+@node MAL variables, MAL instructions, MAL, MAL
 @+ Literals and Variables
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
 the context in which they are used, see @ref{Type resolution}. 
 
-@node MAL instructions, Flow of control, MAL variables , MonetDB Assembler Language
+@node MAL instructions, Flow of control, MAL variables , MAL
 @+ Instructions
 MAL instructions have purposely a simple format. 
 Each instruction denotes a data-flow statement.
@@ -115,7 +115,7 @@ Variable- and statement- block together describe the
 static part of a MAL procedure. It carries carry enough 
 information to produce a listing and to aid symbolic debugging.
 
-@node Flow of control, Function definitions, MAL instructions, MonetDB Assembler Language
+@node Flow of control, Function definitions, MAL instructions, MAL
 @+ Flow of control
 The flow of control within a MAL program block can be changed by
 tagging an statement with either @code{return}, @code{yield},
