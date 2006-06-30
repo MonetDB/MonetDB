@@ -66,6 +66,18 @@ do_traverse() {
 	done
 }
 
+# Cleans up the given string by removing overdone spaces which confuse
+# for instance the -z operation of `test`
+# @ do_cleanup string
+do_cleanup() {
+	local c=""
+	for m in $*;
+	do
+		c="$c $m"
+	done
+	echo $c | cut -c1-
+}
+
 # Returns all children for the given page in the right order
 # @ generate_children file
 generate_children() {
@@ -89,14 +101,8 @@ generate_children() {
 		done
 	done
 
-	# clean up c
-	p=$c
-	c=""
-	for m in $p;
-	do
-		c="$c $m"
-	done
-	
+	c=`do_cleanup $c`
+
 	[ ! -z "$c" ] && echo "orphans: $c" > /dev/stderr
 	echo $s
 }
@@ -117,14 +123,16 @@ get_parent() {
 # Returns the children for the given page
 # @ get_children file
 get_children() {
-	egrep -m1 "^$1:o[\+]*=" ${indexfile}.children | cut -d'=' -f2
+	do_cleanup `egrep -m1 "^$1:o[\+]*=" ${indexfile}.children | \
+		cut -d'=' -f2`
 }
 
 # Returns the depth of the given page
 # @ get_depth file
 get_depth() {
-	egrep -m1 "^$1:o[\+]*=" ${indexfile}.children | \
-		cut -d':' -f2 | cut -d'=' -f1
+	do_cleanup `egrep -m1 "^$1:o[\+]*=" ${indexfile}.children | \
+		cut -d':' -f2 | \
+		cut -d'=' -f1`
 }
 
 # Copies over all html files and inserts the general layout.  In
@@ -200,25 +208,28 @@ generate_menu() {
 	code=${code}"</span>"
 
 	local c=`get_children $1`
-	[ -z "$c" ] && code=${code}"<ul>"
+	[ -z "$c" ] || code=${code}"<ul>"
 	for m in $c;
 	do
 		if [ "$m" = "$2" ];
 		then
-			code=${code}"<ul>$3</ul>"
+			code=${code}"$3"
 			continue
+		else
+			title="`get_entry $m title`"
+			code=${code}"<li><span class=\"submenu\">"
+			code=${code}"<a href=\"$m\" title=\"$title\">$title</a>"
+			code=${code}"</span></li>"
 		fi
-		title="`get_entry $m title`"
-		code=${code}"<li><span class=\"submenu\">"
-		code=${code}"<a href=\"$m\" title=\"$title\">$title</a>"
-		code=${code}"</span></li>"
 	done
-	[ -z "$c" ] && code=${code}"</ul>"
+	[ -z "$c" ] || code=${code}"</ul>"
 
-	c=`get_parent $1`
-	if [ ! -z "$c" ];
+	code=${code}"</li>"
+
+	local p=`get_parent $1`
+	if [ ! -z "$p" ];
 	then
-		generate_menu $c $1 "$code"
+		generate_menu $p $1 "$code"
 	else
 		echo "<div class=\"submenu\"><ul>$code</ul></div>"
 	fi
