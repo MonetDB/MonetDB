@@ -7,7 +7,7 @@ tablet.display(first,last);
 
 tablet.setFormat(first,last);
 tablet.setProperties("name,type");
-tablet.setColumnName(0,"Eerste");
+tablet.setName(0,"Eerste");
 #tablet.setRowBracket("|","|");
 
 b1:= bat.new(:void,:int);
@@ -25,14 +25,14 @@ sn := calc.str(nil);
 bat.append(b1,in);
 bat.append(b2,sn);
 tablet.setProperties(sn);
-tablet.setColumnDecimal(0,3,1);
-tablet.setColumnNull(1,"unknown");
+tablet.setDecimal(0,3,1);
+tablet.setNull(1,"unknown");
 tablet.display(b1,b2);
 
 tablet.setTableBracket("<rowset>","</rowset>");
 tablet.setRowBracket("<row>","</row>");
-tablet.setColumnBracket(0,"<age>","</age>");
-tablet.setColumnBracket(1,"<title>","</title>");
+tablet.setBracket(0,"<age>","</age>");
+tablet.setBracket(1,"<title>","</title>");
 tablet.page(b1,b2);
 
 #leftover typeing

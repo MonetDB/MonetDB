@@ -76,7 +76,7 @@ exit forever;
 end random;
 @end example
 
-@- Client support
+@- Client Authorization
 For simple cases, e.g. implementation of a random function,
 it suffices to ensure that the state is secured between calls.
 But, in a database context there are multiple clients
@@ -135,11 +135,11 @@ exit always;
 end random;
 @end example
 
-@- Complex factory examples 
+@- Complex Factories
 One interesting use of the factory scheme is to model
 a volcano-style query processor. Each node in the query
 tree is an iterator that calls upon the operands to produce
-a chunk, which are combined into a new  chunk for concumption
+a chunk, which are combined into a new  chunk for consumption
 of the parent. The prototypical join(R,S) query illustrates it.
 The plan does not test for all boundary conditions, it merely
 implements a nested loop. The end of a sequence is identified
@@ -159,16 +159,16 @@ end query;
 
 #nested loop join
 factory sql.joinStep(Left:bat[:any,:any],Right:bat[:any,:any]):bat[:any,:any];
-    lc:= chopper.chunkStep(Left);
+    lc:= bat.chunkStep(Left);
 barrier outer:= lc != nil;
-    rc:= chopper.chunkStep(Right);
+    rc:= bat.chunkStep(Right);
     barrier inner:= rc != nil;
         chunk:= algebra.join(lc,rc);
         yield chunk;
-        rc:= chopper.chunkStep(Right);
+        rc:= bat.chunkStep(Right);
         redo inner:= rc != nil;
     exit inner;
-    lc:= chopper.chunkStep(Left);
+    lc:= bat.chunkStep(Left);
     redo outer:= lc != nil;
 exit outer;
     # we have seen everything
@@ -202,14 +202,13 @@ identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
 administrative overhead.
 
-@- Materialized views
+@- Materialized Views
 An area where factories might be useful are support
 for materialized views, i.e. the result of a query
 is retained for ease of access.
-
 A simple strategy is to prepare the result once
 and return it on each successive call. 
-Provided the arguments have not changed.
+Provided the arguments have not been changed.
 For example:
 
 @example

@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @a M.L. Kersten
-@+ Boxed variables
+@+ Boxed Variables
 Clients sessions often come with a global scope of variable settings.
 Access to these global variables should be easy,
 but they should also provide protection against concurrent update
@@ -76,13 +76,13 @@ at a time.
 Example: consider the client function:
 @example
 function myfcn():void;
-	b:bat[:oid,:int] := bbp.take("mytable");
-	c:bat[:int,:str] := sql.take("person","age");
-	d:= intersect(b,c);
-	io.print(d);
-	u:str:= client.take(user);
-	io.print(u);
-	client.release(user);
+    b:bat[:oid,:int] := bbp.take("mytable");
+    c:bat[:int,:str] := sql.take("person","age");
+    d:= intersect(b,c);
+    io.print(d);
+    u:str:= client.take(user);
+    io.print(u);
+    client.release(user);
 end function;
 @end example
 
@@ -154,11 +154,11 @@ saved in persistent store until the next session starts.
 For example:
 @example
 function m():void;
-	box.open("client_name");
-	box.deposit("client_name","pi",3.417:flt);
-	f:flt := box.take("client_name","pi");
-	io.print(t);
-	box.close("client_name");
+    box.open("client_name");
+    box.deposit("client_name","pi",3.417:flt);
+    f:flt := box.take("client_name","pi");
+    io.print(t);
+    box.close("client_name");
 end function;
 @end example
 @-

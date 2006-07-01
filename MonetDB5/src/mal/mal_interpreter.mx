@@ -19,19 +19,6 @@
 @* The MAL Interpreter
 The MAL interpreter always works in the context of a single user session,
 which provides for storage access to global variables and modules.
-
-Runtime storage for variables are allocated on the stack of the
-interpreter thread. The physical stack is often limited in size,
-which calls for safeguarding their value and garbage collection before returning.
-A malicious procedure or implementation will lead to memory leakage.
-
-A system command (linked C-routine) may be interested in extending the
-stack. This is precluded, because it could interfere with the recursive
-calling sequence of procedures. To accommodate the (rare) case, the routine
-should issue an exception to be handled by the interpreter before retrying.
-All other errors are turned into an exception, followed by continuing
-at the exception handling block of the MAL procedure.
-
 @{
 @h
 #ifndef _MAL_INTERPRET_H
@@ -1318,6 +1305,7 @@ The interpreter has a built-in performance monitor hook, which is
 activated using the compile option MALprofiler. Activation can lead to
 a significant performance degradation, because for all traced functions
 we have to keep track of essential system counter information.
+See @url{The MAL Profiler} for more details.
 
 @{
 @= performanceVariables
