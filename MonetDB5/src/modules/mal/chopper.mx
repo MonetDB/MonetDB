@@ -17,7 +17,7 @@
 @f chopper
 @v 2.0
 @a M.L.Kersten
-@* BAT chopper
+@* BAT Iterators
 In many low level algorithms an iterator is often used to break a
 collection into smaller pieces. Each piece is subsequently processed
 by a block.
@@ -34,7 +34,7 @@ to realize an iterator over the individual BAT elements.
 For larger sized chunks, the operators return a BATview. 
 
 All iterators require storage space to administer the
-location of the next element. The chopper module uses a simple
+location of the next element. The BAT iterator module uses a simple
 lng variable, which also acts as a cursor for barrier statements.
 
 The larger chunks produced are currently static, i.e.
@@ -43,28 +43,26 @@ are interesting for time-series query processing. (See another module)
 @+ BAT iterator
 
 @mal
-module chopper;
-
-command newIterator(b:bat[:any_1,:any_2], size:lng)
+command bat.newIterator(b:bat[:any_1,:any_2], size:lng)
 	(:lng,:bat[:any_1,:any_2])
 address CHPnewChunkIterator
 comment "Create an iterator with fixed granule size.
 	  The result is a view.";
 
-command hasMoreElements(b:bat[:any_1,:any_2], size:lng)
+command bat.hasMoreElements(b:bat[:any_1,:any_2], size:lng)
 	(:lng, :bat[:any_1,:any_2])
 address CHPhasMoreChunks
 comment "Produce the next chunk for processing.";
 
-pattern newIterator(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
+pattern bat.newIterator(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
 address CHPbunIterator;
-pattern newIterator(b:bat[:void,:any_2]) (:lng, h:oid, t:any_2)
+pattern bat.newIterator(b:bat[:void,:any_2]) (:lng, h:oid, t:any_2)
 address CHPbunIterator
 comment "Process the buns one by one extracted from a void table.";
 
-pattern hasMoreElements(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
+pattern bat.hasMoreElements(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
 address CHPbunHasMoreElements;
-pattern hasMoreElements(b:bat[:void,:any_2]) (:lng, h:oid, t:any_2)
+pattern bat.hasMoreElements(b:bat[:void,:any_2]) (:lng, h:oid, t:any_2)
 address CHPbunHasMoreElements
 comment "Produce the next bun for processing.";
 
@@ -74,11 +72,11 @@ It point to the first bun in the chunk under consideration.
 It is often more effective due to use the iterator with automatic
 extraction of head and tail value; the overhead involved is much less.
 @mal
-pattern getHead(b:bat[:any_1,:any],i:lng):any_1 
+pattern bat.getHead(b:bat[:any_1,:any],i:lng):any_1 
 address CHPgetHead
 comment "return the BUN head value using the cursor.";
 
-pattern getTail(b:bat[:any_2,:any_1],i:lng):any_1 
+pattern bat.getTail(b:bat[:any_2,:any_1],i:lng):any_1 
 address CHPgetTail
 comment "return the BUN tail value using the cursor.";
 @-

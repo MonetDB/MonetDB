@@ -117,7 +117,7 @@ end main;	# 9
 #---------------------------------------------------------------------------------------------------------------------------------#
 [ 1,	  "monet_environment",	  "str",  "str",	  32,	  156,	  "dirty",	  "dirty",	  "transient",	  1	  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  157,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  158,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 3,	  "timezones",		  "str",  "timezone",	  24,	  158,	  "dirty",	  "dirty",	  "transient",	  1	  ]
 [ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  53,	  "clean",	  "clean",	  "persistent",	  1	  ]
 [ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  54,	  "clean",	  "clean",	  "persistent",	  1	  ]
 [ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  55,	  "clean",	  "clean",	  "persistent",	  1	  ]

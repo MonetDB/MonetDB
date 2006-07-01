@@ -144,12 +144,12 @@ these seconds are lost, so time difference calculations in milliseconds (rather 
 in days) have a small error if the time difference spans many hundreds of years.
 \end{description}
 
-TODO: we cannot handle well changes in the tzone rules (e.g., DST only exists since
+TODO: we cannot handle well changes in the timezone rules (e.g., DST only exists since
 40 years, and some countries make frequent changes to the DST policy). To accommodate
-this we should make tzone\_local a function with a year parameter. The tool should
-maintain and access the tzone database stored in two bats [str,tzone],[str,year].
-Lookup of the correct tzone would be dynamic in this structure. The tzone\_setlocal
-would just set the string name of the tzone.
+this we should make timezone\_local a function with a year parameter. The tool should
+maintain and access the timezone database stored in two bats [str,timezone],[str,year].
+Lookup of the correct timezone would be dynamic in this structure. The timezone\_setlocal
+would just set the string name of the timezone.
 
 @+ Time/date comparison 
 
@@ -339,8 +339,8 @@ Other values of the rule parameters on creating a timezone will produce a
 nil-timezone.
 
 @mal
-atom tzone :lng;
-command fromstr():tzone 
+atom timezone :lng;
+command fromstr():timezone 
 address tzone_fromstr;
 command tostr():str   
 address tzone_tostr;
@@ -411,7 +411,7 @@ comment "Add months to a date";
 #command int(d:date):int = MTIMEdate_2int;
 #command int(d:daytime):int = MTIMEdaytime_2int;
 #command lng(d:timestamp):int = MTIMEtimestamp_2lng;
-#command lng(d:tzone):lng = MTIMEtzone_2lng;
+#command lng(d:timezone):lng = MTIMEtzone_2lng;
 #command int(d:zrule):int = MTIMErule_2int;
 
 command date(:date):date
@@ -423,14 +423,14 @@ comment "generate the nil date";
 
 command local_timezone():lng 
 address MTIMElocal_timezone 
-comment "get the local tzone in seconds";
+comment "get the local timezone in seconds";
 
-command tzone_local(t:tzone):void 
+command timezone_local(t:timezone):void 
 address MTIMEtzone_set_local 
-comment "set the local tzone; which is used for printing timestamps";
-command tzone_local() :tzone 
+comment "set the local timezone; which is used for printing timestamps";
+command timezone_local() :timezone 
 address MTIMEtzone_get_local 
-comment "get the local tzone; which is used for printing timestamps";
+comment "get the local timezone; which is used for printing timestamps";
 
 @+ Time/date construction
 Construct temporal values from simple(r) parameters.
@@ -457,9 +457,9 @@ command daytime(h:int,m:int,s:int,mi:int)
 address MTIMEdaytime_create 
 comment "creates a time from (hours,minutes,
 	seconds,milliseconds) parameters.";
-command timestamp(d:date,dt:daytime,t:tzone) :timestamp 
+command timestamp(d:date,dt:daytime,t:timezone) :timestamp 
 address MTIMEtimestamp_create 
-comment "creates a timestamp from (date, daytime,tzone) parameters.";
+comment "creates a timestamp from (date, daytime,timezone) parameters.";
 command timestamp(d:date,dt:daytime) :timestamp 
 address MTIMEtimestamp_create_default 
 comment "creates a timestamp from (d,dt) parameters (in the local timezone).";
@@ -471,18 +471,18 @@ command rule (mo:int,d:int,wkday:int,mi:int) :zrule
 address MTIMErule_create 
 comment "create a DST start/end date rule.";
 
-command tzone(s:str):tzone 
+command timezone(s:str):timezone 
 address MTIMEtzone_fromstr
-comment "Convert the string to a tzone.";
-command tzone(s:int):tzone 
+comment "Convert the string to a timezone.";
+command timezone(s:int):timezone 
 address MTIMEtzone_create
-comment "Convert the int to a tzone.";
-command tzone(s:lng):tzone 
+comment "Convert the int to a timezone.";
+command timezone(s:lng):timezone 
 address MTIMEtzone_create
-comment "Convert the int to a tzone.";
-command tzone(mi:int,s:zrule,erule:zrule):tzone 
+comment "Convert the int to a timezone.";
+command timezone(mi:int,s:zrule,erule:zrule):timezone 
 address MTIMEtzone_create_dst 
-comment "create a tzone as an hour difference 
+comment "create a timezone as an hour difference 
 	from GMT and a DST.";
 
 @- Time/date decomposition
@@ -542,34 +542,34 @@ command daytime(t:timestamp) :daytime
 address MTIMEtimestamp_extract_daytime_default 
 comment "extracts daytime from timestamp 
 	in the local timezone.";
-command daytime(t:timestamp, v:tzone) :daytime 
+command daytime(t:timestamp, v:timezone) :daytime 
 address MTIMEtimestamp_extract_daytime 
 comment "extracts daytime from timestamp 
-	in a specific tzone.";
+	in a specific timezone.";
 
 command date(t:timestamp) :date 
 address MTIMEtimestamp_extract_date_default 
 comment "extracts date from timestamp 
 	in the local timezone.";
-command date(t:timestamp,v:tzone) :date 
+command date(t:timestamp,v:timezone) :date 
 address MTIMEtimestamp_extract_date 
 comment "extracts date from timestamp in a 
 	specific timezone.";
 
-# tzone
-command timezone(name:str):tzone 
+# timezone
+command setTimezone(name:str):timezone 
 address MTIMEtimezone
 comment "Test and set the timezone.";
 
-command start_dst(t:tzone) :zrule 
+command start_dst(t:timezone) :zrule 
 address MTIMEtzone_extract_start 
 comment "extract rule that determines 
-	start of DST from tzone.";
-command end_dst(t:tzone) :zrule 
+	start of DST from timezone.";
+command end_dst(t:timezone) :zrule 
 address MTIMEtzone_extract_end 
 comment "extract rule that determines 
-	end of DST from tzone.";
-command minutes(t:tzone) :int 
+	end of DST from timezone.";
+command minutes(t:timezone) :int 
 address MTIMEtzone_extract_minutes 
 comment "extract number of minutes that 
 	time zone is offset wrt GMT.";
@@ -637,7 +637,7 @@ address MTIMEtimestamp_diff
 comment "returns the number of milliseconds 
 	between 'val1' and 'val2'.";
 
-command dst(t:timestamp,v:tzone) :bit 
+command dst(t:timestamp,v:timezone) :bit 
 address MTIMEtimestamp_inside_dst 
 comment "return whether DST holds in the 
 	timezone at a certain point of time.";
@@ -843,8 +843,8 @@ typedef union {
 #define DAY_ZERO	32
 #define OFFSET_ZERO	4096
 
-@- tzone
-A tzone consists of an offset and two DST rules, all crammed into one lng.
+@- timezone
+A timezone consists of an offset and two DST rules, all crammed into one lng.
 @h
 typedef struct {
 	/* we had this as bitfields in one unsigned long long, but native sun CC does not eat that.  */
@@ -1061,7 +1061,7 @@ monettime_prelude(void)
 	TYPE_date = ATOMindex("date");
 	TYPE_daytime = ATOMindex("daytime");
 	TYPE_timestamp = ATOMindex("timestamp");
-	TYPE_tzone = ATOMindex("tzone");
+	TYPE_tzone = ATOMindex("timezone");
 	TYPE_rule = ATOMindex("rule");
 	date_prelude();
 	return NULL;
@@ -2801,17 +2801,17 @@ MTIMEprelude()
 		return throwMessage("time.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		BAT *tz = BATnew(TYPE_str, ATOMindex("tzone"), 30);
+		BAT *tz = BATnew(TYPE_str, ATOMindex("timezone"), 30);
 
 		if (tz == NULL)
 			return throwMessage("time.prelude", "failed to create box");
 		BBPrename(tz->batCacheid, "timezones");
 		timezones = tz;
-		newVariable(box->sym, GDKstrdup("timezones"), newBatType(TYPE_str, ATOMindex("tzone")));
+		newVariable(box->sym, GDKstrdup("timezones"), newBatType(TYPE_str, ATOMindex("timezone")));
 		if (bindBAT(box, "timezones", "timezones")) {
 			return throwMessage("time.prelude", "could not bind timezones");
 		}
-		vr.vtype = ATOMindex("tzone");
+		vr.vtype = ATOMindex("timezone");
 		@:TIMEZONES("Wake Island", 12 * 60)@
 		@:TIMEZONES("Melbourne/Australia", 11 * 60)@
 		@:TIMEZONES("Brisbane/Australia", 10 * 60)@

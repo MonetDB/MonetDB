@@ -47,12 +47,12 @@ explicitly. The result of the optimizer is:
     b := bat.new(:int,:int);
     bat.insert(b,1,1);
     _8 := bat.new(:int,:int);
-barrier (_11,_12,_13):= chopper.newIterator(b);
+barrier (_11,_12,_13):= bat.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
 catch MALexception;
 exit MALexception;
-    redo (_11,_12,_13):= chopper.hasMoreElements(b);
+    redo (_11,_12,_13):= bat.hasMoreElements(b);
 exit (_11,_12,_13);
     c := _8;
 @end verbatim
@@ -98,13 +98,13 @@ structure:
 
 @verbatim
 	resB:= bat.new(A1);
-barrier (mloop,h,t):= chopper.newIterator(A1);
+barrier (mloop,h,t):= bat.newIterator(A1);
 	$1:= algebra.find(A1,h); 
 	$2:= A2;	# in case of constant?
 	...
 	cr:= mod.CMD($1,...,$n);
 	bat.insert(resB,h,cr);
-	redo (mloop,h,t):= chopper.hasMoreElements(A1);
+	redo (mloop,h,t):= bat.hasMoreElements(A1);
 end mloop;
 @end verbatim
 
@@ -171,7 +171,7 @@ find the actual arguments at the proper place of the callee.
 		resB = getDestVar(q);
 	}
 	/* barrier (mloop,h,r):= newIterator(refBat); */
-	q = newFcnCall(mb, "chopper", "newIterator");
+	q = newFcnCall(mb, "bat", "newIterator");
 	q->barrier = BARRIERsymbol;
 	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
 	hvar = newTmpVariable(mb, TYPE_any);
@@ -221,7 +221,7 @@ find the actual arguments at the proper place of the callee.
 	pushInstruction(mb,q);
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
-	q = newFcnCall(mb, "chopper", "hasMoreElements");
+	q = newFcnCall(mb, "bat", "hasMoreElements");
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = mloop;
 	pushReturn(mb, q, hvar);

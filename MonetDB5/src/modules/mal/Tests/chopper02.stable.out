@@ -55,11 +55,11 @@ function user.main():void;	# 0  (main:void)
     io.print(t);	# 15 IOprint_val (_30:int)<-(t:bat[:int,:url])
     rb := bat.new(:int,:url);	# 16 CMDBATnew (rb:bat[:int,:url])<-(_2:int)(_3:url)
     io.print("start loop");	# 17 IOprint_val (_32:int)<-(_33:str)
-barrier (mloop:lng ,h:int ,B2:url ):= chopper.newIterator(t);	# 18 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
+barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);	# 18 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
     io.print(h);	# 19 IOprint_val (_37:int)<-(h:int)
     io.print(B2);	# 20 IOprint_val (_38:int)<-(B2:url)
     bat.insert(rb,h,B2);	# 21 BKCinsert_bun (_39:void)<-(rb:bat[:int,:url])(h:int)(B2:url)
-    redo (mloop:lng ,h:int ,B2:url ):= chopper.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 19
+    redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 19
 exit mloop;	# 23  (mloop:lng)
     io.print(rb);	# 24 IOprint_val (_40:int)<-(rb:bat[:int,:url])
 end main;	# 25  

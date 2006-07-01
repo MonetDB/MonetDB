@@ -839,6 +839,8 @@ CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap)
 	if (*cap < 0)
 		*cap = 0;
 	*ret = BATnew(*ht, *tt, (size_t) * cap);
+	if (*ret)
+		(*ret)->batDirty |= 2;
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -919,7 +921,7 @@ CMDorder_rev(BAT **ret, BAT *b)
 int
 CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNins(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, FALSE) == NULL)
+	if (BUNins(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@,FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -1243,7 +1245,7 @@ CMDgetaccess(int *r, BAT *input)
 static char *
 pre(str s1, str s2)
 {
-	static char buf[64];
+	static char buf[64]="";
 
 	snprintf(buf, 64, "%s%s", s1, s2);
 	return buf;
@@ -1251,7 +1253,7 @@ pre(str s1, str s2)
 static char *
 local_itoa(ssize_t i)
 {
-	static char buf[32];
+	static char buf[32]="";
 
 	snprintf(buf, 32, SSZFMT, i);
 	return buf;
@@ -1259,7 +1261,7 @@ local_itoa(ssize_t i)
 static char *
 local_utoa(size_t i)
 {
-	static char buf[32];
+	static char buf[32]="";
 
 	snprintf(buf, 32, SZFMT, i);
 	return buf;
@@ -1277,9 +1279,9 @@ HASHinfo(BAT *bn, Hash *h, str s)
 	size_t largetot = 0;
 	char buf[32];
 
-	BUNins(bn, pre(s, "type"), ATOMname(h->type), FALSE);
-	BUNins(bn, pre(s, "mask"), local_utoa(h->mask), FALSE);
-	BUNins(bn, pre(s, "lim"), local_utoa(h->lim), FALSE);
+	BUNins(bn, pre(s, "type"), ATOMname(h->type),FALSE);
+	BUNins(bn, pre(s, "mask"), local_utoa(h->mask),FALSE);
+	BUNins(bn, pre(s, "lim"), local_utoa(h->lim),FALSE);
 
 	for (i = 0; i <= COLLISION + 1; i++) {
 		cnt[i] = 0;
@@ -1299,10 +1301,10 @@ HASHinfo(BAT *bn, Hash *h, str s)
 
 	for (i = 0; i <= COLLISION + 1; i++)
 		if (cnt[i]) {
-			BUNins(bn, pre(s, local_utoa(i)), local_utoa(cnt[i]), FALSE);
+			BUNins(bn, pre(s, local_utoa(i)), local_utoa(cnt[i]),FALSE);
 		}
 	snprintf(buf, 32, SZFMT " on " SZFMT, largetot, largebuckets);
-	BUNins(bn, pre(s, "collision"), buf, FALSE);
+	BUNins(bn, pre(s, "collision"), buf,FALSE);
 }
 
 static void
@@ -1315,15 +1317,15 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	while (*nme)
 		*p++ = *nme++;
 	strcpy(p, "free");
-	BUNins(bn, buf, local_utoa(hp->free), FALSE);
+	BUNins(bn, buf, local_utoa(hp->free),FALSE);
 	strcpy(p, "size");
-	BUNins(bn, buf, local_utoa(hp->size), FALSE);
+	BUNins(bn, buf, local_utoa(hp->size),FALSE);
 	strcpy(p, "maxsize");
-	BUNins(bn, buf, local_utoa(hp->maxsize), FALSE);
+	BUNins(bn, buf, local_utoa(hp->maxsize),FALSE);
 	strcpy(p, "storage");
-	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", FALSE);
+	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced",FALSE);
 	strcpy(p, "filename");
-	BUNins(bn, buf, hp->filename ? hp->filename : "no file", FALSE);
+	BUNins(bn, buf, hp->filename ? hp->filename : "no file",FALSE);
 }
 
 static char *
@@ -1371,67 +1373,67 @@ CMDinfo(BAT **retval, BAT *b)
 		access = "unknown";
 	}
 
-	BUNins(bn, "version", local_itoa(b->GDKversion), FALSE);
-	BUNins(bn, "batId", BATgetId(b), FALSE);
-	BUNins(bn, "batCacheid", local_itoa(b->batCacheid), FALSE);
-	BUNins(bn, "batParentid", local_itoa(b->batParentid), FALSE);
-	BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt), FALSE);
-	BUNins(bn, "head", ATOMname(b->htype), FALSE);
-	BUNins(bn, "tail", ATOMname(b->ttype), FALSE);
-	BUNins(bn, "batPersistence", mode, FALSE);
-	BUNins(bn, "batRestricted", access, FALSE);
-	BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)), FALSE);
-	BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)), FALSE);
-	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean", FALSE);
-	BUNins(bn, "batSet", local_itoa(b->batSet), FALSE);
-	BUNins(bn, "void_tid", local_itoa(b->void_tid), FALSE);
-	BUNins(bn, "void_cnt", local_itoa(b->void_cnt), FALSE);
+	BUNins(bn, "version", local_itoa(b->GDKversion),FALSE);
+	BUNins(bn, "batId", BATgetId(b),FALSE);
+	BUNins(bn, "batCacheid", local_itoa(b->batCacheid),FALSE);
+	BUNins(bn, "batParentid", local_itoa(b->batParentid),FALSE);
+	BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt),FALSE);
+	BUNins(bn, "head", ATOMname(b->htype),FALSE);
+	BUNins(bn, "tail", ATOMname(b->ttype),FALSE);
+	BUNins(bn, "batPersistence", mode,FALSE);
+	BUNins(bn, "batRestricted", access,FALSE);
+	BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)),FALSE);
+	BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)),FALSE);
+	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean",FALSE);
+	BUNins(bn, "batSet", local_itoa(b->batSet),FALSE);
+	BUNins(bn, "void_tid", local_itoa(b->void_tid),FALSE);
+	BUNins(bn, "void_cnt", local_itoa(b->void_cnt),FALSE);
 
-	BUNins(bn, "hsorted", local_itoa(BAThordered(b)), FALSE);
-	BUNins(bn, "hident", b->hident, FALSE);
-	BUNins(bn, "hdense", local_itoa(BAThdense(b)), FALSE);
-	BUNins(bn, "hseqbase", oidtostr(b->hseqbase), FALSE);
-	BUNins(bn, "hkey", local_itoa(b->hkey), FALSE);
-	BUNins(bn, "hloc", local_itoa(b->hloc), FALSE);
-	BUNins(bn, "hvarsized", local_itoa(b->hvarsized), FALSE);
-	BUNins(bn, "halign", local_utoa(b->halign), FALSE);
-	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted), FALSE);
-	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev), FALSE);
-	BUNins(bn, "hnodense", local_utoa(b->H->nodense), FALSE);
-	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]), FALSE);
-	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]), FALSE);
+	BUNins(bn, "hsorted", local_itoa(BAThordered(b)),FALSE);
+	BUNins(bn, "hident", b->hident,FALSE);
+	BUNins(bn, "hdense", local_itoa(BAThdense(b)),FALSE);
+	BUNins(bn, "hseqbase", oidtostr(b->hseqbase),FALSE);
+	BUNins(bn, "hkey", local_itoa(b->hkey),FALSE);
+	BUNins(bn, "hloc", local_itoa(b->hloc),FALSE);
+	BUNins(bn, "hvarsized", local_itoa(b->hvarsized),FALSE);
+	BUNins(bn, "halign", local_utoa(b->halign),FALSE);
+	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted),FALSE);
+	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev),FALSE);
+	BUNins(bn, "hnodense", local_utoa(b->H->nodense),FALSE);
+	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]),FALSE);
+	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]),FALSE);
 
-	BUNins(bn, "tident", b->tident, FALSE);
-	BUNins(bn, "tdense", local_itoa(BATtdense(b)), FALSE);
-	BUNins(bn, "tseqbase", oidtostr(b->tseqbase), FALSE);
-	BUNins(bn, "tsorted", local_itoa(BATtordered(b)), FALSE);
-	BUNins(bn, "tkey", local_itoa(b->tkey), FALSE);
-	BUNins(bn, "tloc", local_itoa(b->tloc), FALSE);
-	BUNins(bn, "tvarsized", local_itoa(b->tvarsized), FALSE);
-	BUNins(bn, "talign", local_utoa(b->talign), FALSE);
-	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted), FALSE);
-	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev), FALSE);
-	BUNins(bn, "tnodense", local_utoa(b->T->nodense), FALSE);
-	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]), FALSE);
-	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]), FALSE);
+	BUNins(bn, "tident", b->tident,FALSE);
+	BUNins(bn, "tdense", local_itoa(BATtdense(b)),FALSE);
+	BUNins(bn, "tseqbase", oidtostr(b->tseqbase),FALSE);
+	BUNins(bn, "tsorted", local_itoa(BATtordered(b)),FALSE);
+	BUNins(bn, "tkey", local_itoa(b->tkey),FALSE);
+	BUNins(bn, "tloc", local_itoa(b->tloc),FALSE);
+	BUNins(bn, "tvarsized", local_itoa(b->tvarsized),FALSE);
+	BUNins(bn, "talign", local_utoa(b->talign),FALSE);
+	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted),FALSE);
+	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev),FALSE);
+	BUNins(bn, "tnodense", local_utoa(b->T->nodense),FALSE);
+	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]),FALSE);
+	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]),FALSE);
 
-	BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)), FALSE);
-	BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)), FALSE);
-	BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)), FALSE);
-	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))), FALSE);
-	BUNins(bn, "batStamp", local_itoa(b->batStamp), FALSE);
-	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)), FALSE);
-	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()), FALSE);
-	BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk), FALSE);
-	BUNins(bn, "batDirtydesc", b->batDirtydesc ? "dirty" : "clean", FALSE);
+	BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)),FALSE);
+	BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)),FALSE);
+	BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)),FALSE);
+	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))),FALSE);
+	BUNins(bn, "batStamp", local_itoa(b->batStamp),FALSE);
+	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)),FALSE);
+	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()),FALSE);
+	BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk),FALSE);
+	BUNins(bn, "batDirtydesc", b->batDirtydesc ? "dirty" : "clean",FALSE);
 
-	BUNins(bn, "batDirtybuns", b->batDirtybuns ? "dirty" : "clean", FALSE);
+	BUNins(bn, "batDirtybuns", b->batDirtybuns ? "dirty" : "clean",FALSE);
 	infoHeap(bn, b->batBuns, "batBuns.");
 
-	BUNins(bn, "hheapdirty", b->hheapdirty ? "dirty" : "clean", FALSE);
+	BUNins(bn, "hheapdirty", b->hheapdirty ? "dirty" : "clean",FALSE);
 	infoHeap(bn, b->hheap, "hheap.");
 
-	BUNins(bn, "theapdirty", b->theapdirty ? "dirty" : "clean", FALSE);
+	BUNins(bn, "theapdirty", b->theapdirty ? "dirty" : "clean",FALSE);
 	infoHeap(bn, b->theap, "theap.");
 
 	/* dump index information */
@@ -1524,7 +1526,7 @@ CMDrename(bit *retval, BAT *b, str s)
 	}
 
 	ret = BATname(b, s);
-	*retval = FALSE;
+	*retval =FALSE;
 	if (ret == 1) {
 		GDKerror("CMDrename: identifier expected: %s\n", s);
 		return GDK_FAIL;
@@ -1552,7 +1554,7 @@ CMDunload(bit *res, str input)
 {
 	bat bid = ABS(BBPindex(input));
 
-	*res = FALSE;
+	*res =FALSE;
 	if (bid > 0) {
 		BAT *b;
 
@@ -1599,7 +1601,7 @@ CMDsave(bit *res, str input)
 	bat bid = BBPindex(input);
 	BAT *b;
 
-	*res = FALSE;
+	*res =FALSE;
 	if (bid) {
 		BBPfix(bid);
 		b = BBP_cache(bid);
@@ -1667,7 +1669,7 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 
 @- Wrapping
 The remainder contains the wrapper code over the version 4
-@+ Information Functions
+@+ InformationFunctions
 In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
@@ -1839,7 +1841,7 @@ BKCinsert_void_bun(int *r, int *bid, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,t)@
-	BUNappend(b, t, FALSE);
+	BUNappend(b, t,FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1855,7 +1857,7 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	BUNins(b, h, t, FALSE);
+	BUNins(b, h, t,FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1886,7 +1888,7 @@ BKCinsert_bun_oid_any(int *r, int *bid, ptr h, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	/* tail is not(!) a string */
-	BUNins(b, h, t, FALSE);
+	BUNins(b, h, t,FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1899,7 +1901,7 @@ BKCinsert_bun_int_int(int *r, int *bid, int *h, int *t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
-	BUNins(b, h, t, FALSE);
+	BUNins(b, h, t,FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1913,7 +1915,7 @@ BKCinsert_bun_oid_str(int *r, int *bid, ptr h, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,t)@
-	BUNins(b, h, t, FALSE);
+	BUNins(b, h, t,FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1931,7 +1933,7 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
-	if (BATins(b, s, FALSE) == NULL) {
+	if (BATins(b, s,FALSE) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return throwMessage("bat.insert", "Failed");
@@ -1978,7 +1980,7 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 	@:derefStr(b,t,t)@
 	if (BUNreplace(b, h, t, 0) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("bat.replace", "BUNreplace Failed");
+		return throwMessage("bat.replace", "BUNreplaceFailed");
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2020,7 +2022,7 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	@:derefStr(b,t,t)@
 	if (BUNreplace(b, h, t, *force) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		return throwMessage("bat.replace", "BUNreplace Failed");
+		return throwMessage("bat.replace", "BUNreplaceFailed");
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2060,7 +2062,7 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if (BUNdel(b, h, t, FALSE) != NULL) {
+	if (BUNdel(b, h, t,FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -2078,7 +2080,7 @@ BKCdelete(int *r, int *bid, ptr h)
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,h)@
-	if (BUNdelHead(b, h, FALSE) != NULL) {
+	if (BUNdelHead(b, h,FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -2116,7 +2118,7 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	if (BATdel(b, s, FALSE) != NULL) {
+	if (BATdel(b, s,FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return MAL_SUCCEED;
@@ -2139,7 +2141,7 @@ BKCdelete_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	if (BATdelHead(b, s, FALSE) != NULL) {
+	if (BATdelHead(b, s,FALSE) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return MAL_SUCCEED;
@@ -2219,7 +2221,7 @@ void_insert_delta(BAT *b, BAT *u)
 	BUN r;
 
 	for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) {
-		BUNappend(b, BUNtail(u, r), FALSE);
+		BUNappend(b, BUNtail(u, r),FALSE);
 		nr++;
 	}
 	return nr;
@@ -2254,7 +2256,7 @@ BKCappend_wrap(int *r, int *bid, int *uid)
 		BBPreleaseref(i->batCacheid);
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
-	BATappend(i, u, FALSE);
+	BATappend(i, u,FALSE);
 	BBPreleaseref(i->batCacheid);
 	BBPreleaseref(u->batCacheid);
 	return MAL_SUCCEED;
@@ -2271,7 +2273,7 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 	}
 
 	@:derefStr(i,t,u)@
-	BUNappend(i, u, FALSE);
+	BUNappend(i, u,FALSE);
 	BBPreleaseref(i->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2320,7 +2322,7 @@ BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
 	if ((o = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.inplace", "Cannot access descriptor");
 	}
-	void_inplace(o, *id, t, FALSE);
+	void_inplace(o, *id, t,FALSE);
 	BBPreleaseref(o->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2352,7 +2354,7 @@ BKCbat_inplace(int *r, int *bid, int *rid)
 		BBPreleaseref(o->batCacheid);
 		return throwMessage("bat.inplace", "Cannot access descriptor");
 	}
-	void_replace_bat(o, d, FALSE);
+	void_replace_bat(o, d,FALSE);
 	BBPreleaseref(o->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
@@ -2451,7 +2453,7 @@ BKCsetkey(int *res, int *bid, bit *param)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setKey", "Cannot access descriptor");
 	}
-	BATkey(b, *param ? BOUND2BTRUE : FALSE);
+	BATkey(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2465,7 +2467,7 @@ BKCsetSet(int *res, int *bid, bit *param)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setSet", "Cannot access descriptor");
 	}
-	BATset(b, *param ? BOUND2BTRUE : FALSE);
+	BATset(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2551,7 +2553,7 @@ BKCpersists(int *r, int *bid, bit *flg)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setPersistence", "Cannot access descriptor");
 	}
-	BATmode(b, (*flg == TRUE) ? PERSISTENT : (*flg == FALSE) ? TRANSIENT : SESSION);
+	BATmode(b, (*flg == TRUE) ? PERSISTENT : (*flg ==FALSE) ? TRANSIENT : SESSION);
 	BBPreleaseref(b->batCacheid);
 	*r = 0;
 	return MAL_SUCCEED;
@@ -2572,7 +2574,7 @@ BKCisPersistent(bit *res, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setPersistence", "Cannot access descriptor");
 	}
-	*res = (b->batPersistence == PERSISTENT) ? TRUE : FALSE;
+	*res = (b->batPersistence == PERSISTENT) ? TRUE :FALSE;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2990,7 +2992,7 @@ BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp)
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	*res = FALSE;
+	*res =FALSE;
 	BBPreleaseref(b->batCacheid);
 	return throwMessage("bat.mmap", " failed");
 }

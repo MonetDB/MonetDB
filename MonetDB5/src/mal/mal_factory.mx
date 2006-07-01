@@ -42,7 +42,7 @@ The plant carries the stack frame and synchronizes access.
 
 In this case it initializes the generator. 
 The random number is generated and @code{yield}  as
-a result of the call. The factory process is then put to sleep.
+a result of the call. The factory plant is then put to sleep.
 The second call received by the factory wakes it up at the
 point where it went to sleep. In this case it will
 find a @code{redo} statement and produces the next random number.

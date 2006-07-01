@@ -240,13 +240,13 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     _86 := bat.new(:void,:lng);	# 109 CMDBATnew (_86:bat[:void,:lng])<-(_4:void)(_5:lng)
     _88 := bat.getSequenceBase(b);	# 110 BKCgetSequenceBase (_88:oid)<-(b:bat[:void,:lng])
     _89 := bat.setSequenceBase(_86,_88);	# 111 BKCsetSequenceBase (_89:bat[:void,:lng])<-(_86:bat[:void,:lng])(_88:oid)
-barrier (_91,_92,_93):= chopper.newIterator(b);	# 112 CHPbunIterator (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 119
+barrier (_91,_92,_93):= bat.newIterator(b);	# 112 CHPbunIterator (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 119
     _95 := algebra.find(c,_92);	# 113 ALGfind (_95:lng)<-(c:bat[:void,:lng])(_92:oid)
     _97 := calc.+(_93,_95);	# 114 CALCbinaryADDlnglng (_97:lng)<-(_93:lng)(_95:lng)
     bat.insert(_89,_92,_97);	# 115 BKCinsert_bun (_98:void)<-(_89:bat[:void,:lng])(_92:oid)(_97:lng)
 catch MALexception;	# 116  (MALexception:str) jump 117
 exit MALexception;	# 117  (MALexception:str)
-    redo (_91,_92,_93):= chopper.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 113
+    redo (_91,_92,_93):= bat.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 113
 exit (_91,_92,_93);	# 119  (_91:lng)(_92:oid)(_93:lng)
     x:bat[:void,:lng]  := _89;	# 120  (x:bat[:void,:lng])<-(_89:bat[:void,:lng])
     t1 := alarm.usec();	# 121 ALARMusec (t1:lng)

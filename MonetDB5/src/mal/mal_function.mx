@@ -18,9 +18,10 @@
 @v 0.0
 @+ Functions
 MAL comes with a standard functional abstraction scheme.
-MAL functions are represented by MAL instruction lists, enclosed
-by a @code{function} and @code{end} statement. The @code{function}
-designates its signature, i.e. it lists the arguments and their types.
+Functions are represented by MAL instruction lists, enclosed
+by a @code{function} signature statement
+and @code{end} statement. The @code{function}
+signature lists the arguments and their types.
 The @code{end} statement marks the end of this sequence. 
 Its argument is the function name.
 
@@ -32,12 +33,14 @@ function user.helloWorld(msg:str):str;
 end user.hellowWorld;
 @end example
 
+The module name designates the collection to which this function
+belongs.
 All user defined functions are assembled in the module @sc{user}
-by default.
-The identifier may be dropped without affecting the intended semantics.
+by default. It may be dropped without affecting the intended semantics.
 
 The functional abstraction scheme comes with several variations:
-commands, patterns, and factories. They are discussed shortly.
+ @code{commands}, @code{patterns}, and @code{factories}.
+They are discussed shortly.
 @menu
 * Polymorphic Functions ::
 * Commands and Patterns::
@@ -411,14 +414,14 @@ int getBarrierEnvelop(MalBlkPtr mb){
 @-
 @node Polymorphic Functions, Commands and Patterns, Function definitions, Function definitions
 @- Polymorphic Functions
-MAL supports polymorphic functions using type variables.
-The type variable is denoted by @sc{:any} and an optional index.
+Polymorphic functions are characterised by type variables
+denoted by @sc{:any} and an optional index.
 Each time a polymorphic  MAL function is called, the
 symbol table is first inspected for the matching strongly typed
-version.  If non exists, a copy of
-the polymorphic routine is generated, whereafter the type
+version.  If it does not exists, a copy of MAL program
+is generated, whereafter the type
 variables are replaced with their concrete types.
-The function body is immediately type checked and, if
+The new MAL program is immediately type checked and, if
 no errors occured, added to the symbol table.
 
 The generic type variable @code{:any} designates an unknown type, which may
@@ -445,7 +448,7 @@ For example, calling @code{helloWorld(3.14:flt)} echoes
 a float value.
 
 @node Commands and Patterns, Factory definitions, Polymorphic Functions, Function definitions
-@- Commands and patterns
+@- Commands and Patterns
 The MAL function body can also be implemented with a C-function.
 They are introduced to the MAL type checker by providing their
 signature and an @code{address} qualifier for linkage.
@@ -462,6 +465,8 @@ with the function @code{bat.insert()}.
 It does not fully specify the result type.
 The @code{io.print()} pattern applies to any BAT argument list, 
 provided they match on the head column type.
+Such a polymorphic type list may only be used in the context of
+a pattern.
 @example
 command bat.insert(b:bat[:any_1,:any_2], ht:any_1, tt:any_2) :bat[:any_1,:any_2]
 address BKCinsert_bun;

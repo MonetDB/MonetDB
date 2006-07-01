@@ -28,14 +28,14 @@ properties should be communicated with the GDK kernel library.
 The commands defined in an @code{atom } block are screened as of interest 
 to the gdk_atom library. 
 
-MonetDB comes with the hardwired types @code{bit,chr,sht,int,lng,oid,flt,
-dbl,str} and @code{bat}, the representation of a bat identifier.
+MonetDB comes with the hardwired types @code{bit, chr, sht, int, lng, oid, flt, 
+dbl, str} and @code{bat}, the representation of a bat identifier.
 The kernel code has been optimized to deal with these types efficiently,
 i.e. without unnecessary function call overheads.
 
 A small collection of user-defined @code{atom} types is shipped with the sysem.
 They implement types considered essential for end-user applications,
-such as @code{color, date, time, blob}, and @code{url}.
+such as @code{color, date, daytime,  time, timestamp, timezone, blob}, and @code{url}.
 They are implemented using the type extension mechanism described below.
 As such, they provide examples for future extensions.
 A concrete example is the 'blob' datatype in the MonetDB atom module

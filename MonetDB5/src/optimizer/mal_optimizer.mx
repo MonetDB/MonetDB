@@ -1068,7 +1068,6 @@ removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p)
 	return FALSE;
 }
 
-@}
 @- Basic Algebraic Blocks
 Many code snippets produced by e.g. the SQL compiler is just 
 a linear representation of an algebra tree/graph. Its detection
@@ -1077,9 +1076,9 @@ the operations are known to be side-effect free within the tree/graph.
 This can be used to re-order the plan without concern on impact of the outcome.
 It suffice to respect the flow graph.
 [unclear as what we need]
-
+@}
+@-
 @node Optimizer Toolkit, Alias Removal, Optimizer Framework , The MAL Optimizer
-
 @+ The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
@@ -1087,15 +1086,22 @@ by experimentation and curiousity. Several optimizers require
 further development to cope with the many features making up the MonetDB system.
 Such limitations on the implementation are indicated where appropriate.
 
+Experience shows that construction and debugging of a front-end specific optimizer
+is simplified when you retain information on the origin of the MAL code 
+produced as long as possible. For example,
+the snippet @code{ sql.insert(col, 12@@0, "hello")} can be the target
+of simple SQL rewrites using the module name as the discriminator.
+An alternative is to add properties to the target variables, 
+e.g. @code{ res@verb{ { }source="sql" @verb{ } } := bat.insert(col,12@@0,"hello")}.
 @menu
 * Alias Removal::
 * Dead Code Removal::
 * Accumulator Evaluations::
 * Heuristic Rewrite Rules::
 * Macro Processing::
-* Common Sub-Expression Removal::
+* Common Sub-Expressions::
 * Empty Set Reduction::
-* Singleton Set Replacement::
+* Singleton Sets ::
 * Peephole Optimization::
 * Multiplex Compiler::
 * Garbage Collector::
@@ -1503,6 +1509,11 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	b = getArg(p, 1);
 	t = getVarType(mb, b);
 	if( getVarType(mb,a) != t) return 0;
+	if (strcmp(getFunctionId(p), ATOMname(t)) == 0) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
+		return 1;
+	}
 	if (strcmp(getFunctionId(p), "int") == 0 && t == TYPE_int) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);

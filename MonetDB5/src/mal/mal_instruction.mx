@@ -68,14 +68,40 @@ language features and illustrative examples.
 
 @node MAL variables, MAL instructions, MAL, MAL
 @+ Literals and Variables
+Literals in MAL follow the lexical conventions of C/C++.
+A default type is attached, e.g. the literal 1 is typed
+as an @code{int} value.
+Likewise, the literal 3.14 is typed @code{flt} rather than @code{dbl}.
+
+A literal can be coerced to another type by tagging it with a type
+classifier, provided a coercion operation is defined.
+For example, @code{1:lng} marks the literal as of type @code{lng}.
+and @code{"1999-12-10":date} creates a @code{date} literal.
+
+MonetDB comes with the hardwired types @code{bit, chr, sht, int, lng, oid, flt, 
+dbl, str} and @code{bat}, the bat identifier.
+The kernel code has been optimized to deal with these types efficiently,
+i.e. without unnecessary function call overheads
+In addition,  the system supports
+temporal types @code{date, daytime, time, timestamp, timezone},
+extensions to deal with IPv4 addresses and URLs using @code{inet, url},
+and several types to interact more closely with the 
+kernel @code{lock, semphore}.
+This list can be extended with user defined types.
+
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
-the context in which they are used, see @ref{Type resolution}. 
+the context in which they are first used, see @ref{Type resolution}. 
+
+Variables are organized into two classes, starting with and without
+an underscore. The latter are reserved for MAL parser, they represent
+temporary variable whose name aligns with an entry in the symbol table.
+In general they can not be used in MAL programs, but they may become
+visible in MAL program listings or during debugging.
 
 @node MAL instructions, Flow of control, MAL variables , MAL
 @+ Instructions
 MAL instructions have purposely a simple format. 
-Each instruction denotes a data-flow statement.
 It is syntactically represented by an assignment, where
 an expression (function call) delivers results to multiple target variables. 
 The assignment patterns recognized are illustrated below.
@@ -87,16 +113,15 @@ t1 := constant;
 (t1,..,tn) := (a1,..,an);
 @end example
 
+Operators are grouped into user defined modules.
 Ommission of the module name is interpreter as the @sc{user} module.
 
-Operators are grouped into user defined modules.
-Binary arithmetic operations are merely provided as a short-hand,
+Simple binary arithmetic operations are merely provided as a short-hand,
 e.g. the expression @code{t:=2+2} is converted directly 
 into @code{t:= calc.+(2,2)}.
 
 Target variables are optional. The compiler introduces temporary 
 variables to hold the result of the expression upon need. 
-They act as data sinks in the flow graph.
 
 For parsing simplicity, each instruction fits on a single line.
 Comments start with a sharp '#' and continues to the end of the line.
@@ -109,8 +134,7 @@ The MAL instruction is a code byte string overlaid with the
 instruction pattern, which contains references into the symbol tables
 and administrative data for the interpreter. 
 
-This method leads to a large allocated block, which can be easily freed, and
-pattern makes it possible to accommodate a variable argument list.
+This method leads to a large allocated block, which can be easily freed.
 Variable- and statement- block together describe the
 static part of a MAL procedure. It carries carry enough 
 information to produce a listing and to aid symbolic debugging.
@@ -128,12 +152,12 @@ or an assignment, which is executed first.
 
 The @code{barrier} (@code{catch}) and @code{exit} pair mark a
 guarded statement block. They may be nested to form a proper
-hierarchy identified by their target variables.
+hierarchy identified by their primary target variable,
+also called the control variable.
 
 The @code{leave} and @code{redo} are conditional flow modifiers. 
-Their first target variable is also denoted as the control variable.
-It is used after  the assignment statement has been evaluated to decide
-on the flow-of-control action to be taken.
+The control variable is used after the assignment statement has 
+been evaluated to decide on the flow-of-control action to be taken.
 Built-in controls exists for booleans and numeric values.
 The barrier block is opened when the control variable holds
 true, when its numeric value >= 0, or when it is a non-empty
@@ -216,12 +240,12 @@ Note, in both failed cases the control variable is
 possibly changed.
 
 A recurring situation is to iterate over the elements in
-a BAT. This is supported by an iterator implementation in
-the @sc{chopper} module as follows:
+a BAT. This is supported by an iterator implementation for BATs
+as follows:
 @example
-barrier (idx,hd,tl):= chopper.newIterator(B);
+barrier (idx,hd,tl):= bat.newIterator(B);
     ...
-    redo (idx,hd,tl):= chopper.hasMoreElements(B);
+    redo (idx,hd,tl):= bat.hasMoreElements(B);
 exit (ids,hd,tl);
 @end example
 Where idx is an integer to denote the row in the BAT,
