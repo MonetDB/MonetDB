@@ -114,13 +114,15 @@ the system associated with a MAL operation.
 @tab Select unique tuples from the input BAT.  Double elimination is 
 		done only looking at the head column. The result is a BAT with
 		property hkeyed() == true.
+@item algebra.leftfetchjoin
+@tab Hook directly into the left fetch join implementation.
 @item algebra.like
 @tab Selects all elements that have 'substr' as in the tail.
 @item algebra.markH
 @tab Produces a new BAT with fresh unique dense sequense of OIDs in 
 		the head that starts at base (i.e. [base,..base+b.count()-1] ).
 @item algebra.markT
-@tab Produces a BAT with fresh unique OIDs in the tail starting at 0.
+@tab Produces a BAT with fresh unique OIDs in the tail starting at 0@@0.
 @item algebra.merge
 @tab Merge head and tail into a single value
 @item algebra.mergejoin
@@ -186,7 +188,7 @@ the system associated with a MAL operation.
 		done over BUNs as a whole (head and tail).  Result is a BAT 
 	with real set() semantics.
 @item algebra.thetajoin
-@tab Theta join on for 'mode' in ( LE, LT, EQ, GT, GE ).  JOIN_EQ is 
+@tab Theta join on for 'mode' in @verb{ { } LE, LT, EQ, GT, GE @verb{ } }.  JOIN_EQ is 
 		just the same as join(). All other options do merge algorithms. 
 		Either using the fact that they are ordered() already (left on tail, 
 	right on head), or by using/creating binary search trees on the 
@@ -230,6 +232,8 @@ and shift all elemenets with a factor s
 @tab Returns the current allocation size (in max number of elements) of a BAT.
 @item bat.getDelta
 @tab Obtain the list of BUNs deleted
+@item bat.getHead
+@tab return the BUN head value using the cursor.
 @item bat.getHeadType
 @tab Returns the type of the head column of a BAT, as an integer type number.
 @item bat.getHeat
@@ -240,10 +244,14 @@ and shift all elemenets with a factor s
 @tab Returns the rolename of the head column of a BAT.
 @item bat.getSequenceBase
 @tab Get the sequence base for the void column of a BAT.
+@item bat.getTail
+@tab return the BUN tail value using the cursor.
 @item bat.getTailType
 @tab Returns the type of the tail column of a BAT, as an integer type number.
 @item bat.hasAppendMode
 @tab return true if to this BAT is append only.
+@item bat.hasMoreElements
+@tab Produce the next bun for processing.
 @item bat.hasReadMode
 @tab return true if to this BAT is read only.
 @item bat.hasWriteMode
@@ -252,8 +260,10 @@ and shift all elemenets with a factor s
 @tab Produce a BAT containing info about a BAT in [attribute,value] format. 
         It contains all properties of the BAT record. See the BAT documentation 
         in GDK for more information.
+@item bat.inplace
+@tab inplace replace values on the given locations
 @item bat.insert
-@tab Insert a value in a 'void' bat
+@tab Insert one BUN[h,t] in a BAT.
 @item bat.isCached
 @tab Bat is stored in main memory.
 @item bat.isPersistent
@@ -274,10 +284,12 @@ and shift all elemenets with a factor s
 @tab Returns the head-mirror image of a BAT (two head columns).
 @item bat.new
 @tab Localize a bat by name and produce a variant
+@item bat.newIterator
+@tab Process the buns one by one extracted from a void table.
 @item bat.pack
 @tab Pack a pair into a BAT
 @item bat.replace
-@tab inplace replace values on the given locations
+@tab Replace the tail value of one BUN that has some head value.
 @item bat.reverse
 @tab Returns the reverse view of a BAT (head is tail and tail is head).
         BEWARE  no copying is involved; input and output refer to the 
@@ -373,6 +385,7 @@ BAT administration has indeed changed.
 @item batcalc.>
 @item batcalc.>=
 @item batcalc.and
+@item batcalc.bit
 @item batcalc.dbl
 @tab Coerce an dbl tail to a bat with dbl tail.
 @item batcalc.flt
@@ -503,7 +516,7 @@ BAT administration has indeed changed.
 @item bbp.commit
 @tab Commit updates for this client
 @item bbp.deposit
-@tab Enter a new bat into the bbp box.
+@tab Relate a logical name to a physical BAT in the buffer pool.
 @item bbp.destroy
 @tab Schedule a BAT for removal at session end or immediately
 @item bbp.discard
@@ -553,7 +566,6 @@ BAT administration has indeed changed.
 @item
 @item blob.nitems
 @tab  get the number of bytes in this blob.
-@item blob.null
 @item blob.toblob
 @tab store a string as a blob.
 @item blob.tostring
@@ -656,15 +668,6 @@ BAT administration has indeed changed.
 @item calc.void
 @item calc.xor
 @item
-@item chopper.getHead
-@tab return the BUN head value using the cursor.
-@item chopper.getTail
-@tab return the BUN tail value using the cursor.
-@item chopper.hasMoreElements
-@tab Produce the next bun for processing.
-@item chopper.newIterator
-@tab Process the buns one by one extracted from a void table.
-@item
 @item clients.addScenario
 @tab add the given scenario to the allowed scenarios for the given user
 @item clients.addUser
@@ -684,11 +687,11 @@ BAT administration has indeed changed.
 @item clients.getScenario
 @tab Retrieve current scenario name
 @item clients.getUsers
-@tab Pseudo bat of users logged in
+@tab return a BAT with user id and name available in the system with access to the given scenario(s)
 @item clients.quit
 @tab Terminate the session for this client
 @item clients.removeScenario
-@tab remove the given scenario from the allowed scenatios for the given user
+@tab remove the given scenario from the allowed scenarios for the given user
 @item clients.removeUser
 @tab Remove the given user from the system
 @item clients.setDebug
@@ -765,42 +768,6 @@ BAT administration has indeed changed.
 @item const.toString
 @tab Get the string representation of an element in the box
 @item
-@item crackers.crackOrdered
-@tab Break a BAT into five pieces with
-	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
-	 respectively; maintaining the head-oid order within each piece.
-@item crackers.crackOrdered_validate
-@tab Validate whether a BAT is correctly broken into five pieces with
-	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
-	 respectively; maintaining the head-oid order within each piece.
-@item crackers.joinuselect
-@tab Join left and right on oids. From right only bun that satisfy the 
-	restriction qualify. Result is a new bat.
-@item crackers.printIndex
-@tab Print the index for a cracked table.
-@item crackers.select
-@tab Retrieve the subset using a cracker
-        index producing preferably a BATview.
-@item crackers.uselect
-@tab Retrieve the subset using a cracker
-        index producing preferably a BATview.
-@item crackers.zcrackOrdered
-@tab Break a BAT into three pieces with
-	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively; maintaining the head-oid order within each piece.
-@item crackers.zcrackOrdered_validate
-@tab Validate whether a BAT is correctly broken into three pieces with
-	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively; maintaining the head-oid order within each piece.
-@item crackers.zcrackUnordered
-@tab Break a BAT into three pieces with
-	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively.
-@item crackers.zcrackUnordered_validate
-@tab Validate whether a BAT is correctly broken into three pieces with
-	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively.
-@item
 @item date.!=
 @tab Equality of two dates
 @item date.<
@@ -844,10 +811,10 @@ BAT administration has indeed changed.
 @item factory.getPlants
 @tab Retrieve the factory plant description
         for all operational factories
-@item factory.getTimeStampIn
+@item factory.getTimeIn
 @tab Retrieve the time stamp it was
         received by the factory
-@item factory.getTimeStampOut
+@item factory.getTimeOut
 @tab Retrieve the time stamp the answer
         was returned to the client
 @item factory.setLocation
@@ -859,16 +826,16 @@ BAT administration has indeed changed.
 @item group.avg
 @tab grouped tail average
 @item group.count
-@tab grouped count
+@tab Grouped count
 @item group.derive
 @tab Cross tabulation group extension step.  Returned head values are 
 		identical as in 'ct'. Tail values are from the same domain and 
 		indicate further refinement of the groups in 'ct', taking into 
 		account also the tail-values in 'attr'.
 @item group.max
-@tab grouped tail maximum
+@tab Select the minimum element of each group
 @item group.min
-@tab grouped tail minimum
+@tab Select the minimum element of each group
 @item group.new
 @tab Cross tabulation group initialization like GRPgroup, but with 
 		user provided #bits in hashmask and #distinct values in range.
@@ -886,7 +853,7 @@ BAT administration has indeed changed.
 		distinction that the group ids respect the ordering of the group 
 		values.
 @item group.size
-@tab grouped count of true values
+@tab Grouped count of true values
 @item group.sum
 @tab Tail sum of groups of a sliding window of fixed size
 @item
@@ -941,7 +908,7 @@ BAT administration has indeed changed.
 @tab Collect a BAT with the atom names
 @item inspect.getAtomSizes
 @tab Collect a BAT with the atom sizes
-@item inspect.getAtomSuperNames
+@item inspect.getAtomSuper
 @tab Collect a BAT with the atom names
 @item inspect.getComment
 @tab Returns the function help information.
@@ -1055,11 +1022,11 @@ BAT administration has indeed changed.
 @item mdb.getDefinition
 @tab Returns a string representation of the current function 
 	with typing information attached
-@item mdb.getExceptionContext
+@item mdb.getContext
 @tab extract the context string from the exception message
-@item mdb.getExceptionReason
+@item mdb.getReason
 @tab extract the reason from the exception message
-@item mdb.getExceptionVariable
+@item mdb.getException
 @tab extract the variable name from the exception message
 @item mdb.getStackDepth
 @tab Return the depth of the calling stack.
@@ -1246,6 +1213,8 @@ secure socket layer
 @tab Terminate connection listeners
 @item mserver.suspend
 @tab Suspend accepting connections
+@item mserver.trace
+@tab Toggle the Mapi library tracer
 @item
 @item mtime.add
 @tab returns the timestamp that comes 'msecs' 
@@ -1297,12 +1266,12 @@ secure socket layer
 	timezone at a certain point of time.
 @item mtime.end_dst
 @tab extract rule that determines 
-	end of DST from tzone.
+	end of DST from timezone.
 @item mtime.epilogue
 @item mtime.hours
 @tab extracts hour from daytime
 @item mtime.local_timezone
-@tab get the local tzone in seconds
+@tab get the local timezone in seconds
 @item mtime.milliseconds
 @tab extracts milliseconds from daytime
 @item mtime.minutes
@@ -1330,9 +1299,11 @@ secure socket layer
 @tab create a DST start/end date rule.
 @item mtime.seconds
 @tab extracts seconds from daytime
+@item mtime.setTimezone
+@tab Test and set the timezone.
 @item mtime.start_dst
 @tab extract rule that determines 
-	start of DST from tzone.
+	start of DST from timezone.
 @item mtime.time_add_sec_interval
 @tab Add seconds to a time
 @item mtime.time_sub_sec_interval
@@ -1349,12 +1320,10 @@ secure socket layer
 @tab Subtract months from a timestamp
 @item mtime.timestamp_sub_sec_interval
 @item mtime.timezone
-@tab Test and set the timezone.
-@item mtime.tzone
-@tab create a tzone as an hour difference 
+@tab create a timezone as an hour difference 
 	from GMT and a DST.
-@item mtime.tzone_local
-@tab get the local tzone; which is used for printing timestamps
+@item mtime.timezone_local
+@tab get the local timezone; which is used for printing timestamps
 @item mtime.weekday
 @tab extract weekday from rule.
 @item mtime.weekofyear
@@ -1363,15 +1332,15 @@ secure socket layer
 @tab extracts year from date (nonzero 
 	value between -5867411 and +5867411).
 @item
+@item optimizer.accumulators
+@tab Replace calculations with accumulator model
 @item optimizer.aliasRemoval
 @tab Alias removal optimizer
 @item optimizer.clrDebug
 @item optimizer.coercions
-@tab Experiment with partitioned databases
+@tab Handle simple type coercions
 @item optimizer.commonExpressionRemoval
 @tab Common subexpression optimizer
-@item optimizer.costEstimation
-@tab Estimate the cost of a relational expression
 @item optimizer.crack
 @tab Replace algebra select with crackers select
 @item optimizer.deadCodeRemoval
@@ -1380,20 +1349,18 @@ secure socket layer
 @tab Produce an indented tree visualisation
 @item optimizer.emptySet
 @tab Move constant expressions out of the blocks
-@item optimizer.expressionAccumulation
-@tab Replace calculations with accumulator model
 @item optimizer.factorize
 @tab Turn function into a factory
 @item optimizer.garbageCollector
 @tab Garbage collector optimizer
 @item optimizer.generators
 @tab Resolve the multi-table definitions
-@item optimizer.joinsel
-@tab Replace select with join select
+@item optimizer.heuristics
+@tab Handle simple replacements
 @item optimizer.macroContraction
 @tab Inliner of a specific function
 @item optimizer.macroExpansion
-@tab Inliner of a specific function
+@tab Inline a specific function
 @item optimizer.multiplex
 @tab Compiler for multiplexed instructions.
 @item optimizer.multitable
@@ -1407,7 +1374,7 @@ secure socket layer
 @item optimizer.prelude
 @tab Initialize the optimizer
 @item optimizer.reduce
-@tab Estimate the cost of a relational expression
+@tab Reduce the stack space claims
 @item optimizer.remoteQueries
 @tab Resolve the multi-table definitions
 @item optimizer.setDebug
@@ -1505,7 +1472,6 @@ secure socket layer
 @item pcre.like
 @item pcre.match
 @tab POSIX pattern matching against a string
-@item pcre.null
 @item pcre.prelude
 @tab Initialize pcre
 @item pcre.replace
@@ -1541,9 +1507,9 @@ secure socket layer
 @item pqueue.dequeue_min
 @tab Removes top element of the min-pqueue and updates it
 @item pqueue.enqueue_max
-@tab Inserts element (oid,dbl) in the max-pqueue
+@tab Inserts element (oid,any) in the max-pqueue
 @item pqueue.enqueue_min
-@tab Inserts element (oid,dbl) in the min-pqueue
+@tab Inserts element (oid,any) in the min-pqueue
 @item pqueue.init
 @tab Creates an empty pqueue of bat a's tailtype with maximum size maxsize
 @item pqueue.topn_max
@@ -1871,6 +1837,10 @@ since the start of the session
 @item timestamp.unix_epoch
 @tab The Unix epoch time (00:00:00 UTC on January 1, 1970)
 @item
+@item timezone.str
+@item timezone.timestamp
+@tab Utility function to create a timestamp from a number of seconds since the Unix epoch
+@item
 @item transaction.abort
 @tab Abort changes in certain BATs.
 @item transaction.alpha
@@ -1883,10 +1853,6 @@ since the start of the session
 @tab List deletions since last commit.
 @item transaction.sync
 @tab Save all persistent BATs
-@item
-@item tzone.str
-@item tzone.timestamp
-@tab Utility function to create a timestamp from a number of seconds since the Unix epoch
 @item
 @item unix.getenv
 @tab Get the environment variable string.
@@ -1931,9 +1897,12 @@ since the start of the session
 @item url.url
 @tab Create an URL from a string literal
 @item
+@item user.costModel
+@tab Estimate the cost of a relational expression
+@item user.joinselect
+@tab Replace select with join select
 @item user.main
 @item
 @item zrule.define
 @tab Introduce a synomym timezone rule.
 @end multitable
->

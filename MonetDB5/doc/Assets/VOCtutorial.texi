@@ -41,7 +41,7 @@ The VOC data set can be downloaded from
 @url{http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz,the MonetDB Assets site}
 as a gzipped file with SQL statements.
 After the zipfile has been extracted, the file should be loaded into MonetDB
-via the @ref{Textual Clients}.
+via the @ref{Client Interfaces}.
 Alternatively, the URL to the VOC data file can be supplied to the
 @code{mjclient} utility, which then directly reads from the URL.
 
