@@ -103,7 +103,7 @@ address INSPECTtypeIndex;
 command getAtomNames():bat[:int,:str] 
 address INSPECTatom_names
 comment "Collect a BAT with the atom names";
-command getAtomSuperNames():bat[:int,:str] 
+command getAtomSuper():bat[:int,:str] 
 address INSPECTatom_sup_names
 comment "Collect a BAT with the atom names";
 command getAtomSizes():bat[:int,:int] 
@@ -749,7 +749,7 @@ INSPECTatom_sup_names(int *ret)
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("inspect.getAtomSuperNames", "failed to create BAT");
+		return throwMessage("inspect.getAtomSuper", "failed to create BAT");
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = BATatoms[i].storage; k > TYPE_str; k = BATatoms[k].storage)

@@ -109,13 +109,13 @@ the SQL compiler
 @verbatim
 	tablet.setFormat(B1,B2);
 	tablet.setDelimiters("|","\t","|\n");
-	tablet.setColumnName(0, "Name");
-	tablet.setColumnNull(0, "?");
-	tablet.setColumnWidth(0, 15);
-	tablet.setColumnBracket(0, " ", ",");
-	tablet.setColumnName(1, "Age");
-	tablet.setColumnNull(1, "-");
-	tablet.setColumnDecimal(1, 9,2);
+	tablet.setName(0, "Name");
+	tablet.setNull(0, "?");
+	tablet.setWidth(0, 15);
+	tablet.setBracket(0, " ", ",");
+	tablet.setName(1, "Age");
+	tablet.setNull(1, "-");
+	tablet.setDecimal(1, 9,2);
 	tablet.SQLtitle("Query: select * from tables");
 	tablet.page();
 	tablet.SQLfooter(count(B1),cpuTicks);
@@ -140,8 +140,8 @@ Another example involves printing a two column table in XML format.
 	tablet.setFormat(B1,B2);
 	tablet.setTableBracket("<rowset>","</rowset>");
 	tablet.setRowBracket("<row>","</row>");
-	tablet.setColumnBracket(0, "<name>", "</name>");
-	tablet.setColumnBracket(1, "<age>", "</age>");
+	tablet.setBracket(0, "<name>", "</name>");
+	tablet.setBracket(1, "<age>", "</age>");
 	tablet.page();
 @end verbatim
 @+ Tablet properties
@@ -307,24 +307,24 @@ comment "Format the brackets around a row";
 pattern setColumn(idx:int, v:any_1)
 address TABsetColumn
 comment "Bind i-th output column to a variable";
-command setColumnName(idx:int, nme:str)
+command setName(idx:int, nme:str)
 address TABsetColumnName
 comment "Set the display name for a given column";
-command setColumnBracket(idx:int,lbrk:str,rbrk:str)
+command setBracket(idx:int,lbrk:str,rbrk:str)
 address TABsetColumnBracket
 comment "Format the brackets around a field";
-command setColumnNull(idx:int, fmt:str)
+command setNull(idx:int, fmt:str)
 address TABsetColumnNull
 comment "Set the display format for a null value for a given column";
-command setColumnWidth(idx:int, maxwidth:int)
+command setWidth(idx:int, maxwidth:int)
 address TABsetColumnWidth
 comment "Set the maximal display witdh for a given column. All values exceeding 
 	the length are simple shortened without any notice.";
-command setColumnPosition(idx:int,f:int,i:int)
+command setPosition(idx:int,f:int,i:int)
 address TABsetColumnPosition
 comment "Set the character position to use for this field when loading according to 
 	fixed (punch-card) layout.";
-command setColumnDecimal(idx:int,s:int,p:int)
+command setDecimal(idx:int,s:int,p:int)
 address TABsetColumnDecimal
 comment "Set the scale and precision for numeric values";
 

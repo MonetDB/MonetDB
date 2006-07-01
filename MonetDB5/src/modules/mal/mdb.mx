@@ -64,17 +64,17 @@ adhere to the structure:
 <variable>:<context>:<reason>.
 These components can be extracted for further analysis.
 @mal
-command getExceptionVariable(s:str):str
+command getException(s:str):str
 address MDBgetExceptionVariable
-comment "extract the variable name from the exception message";
+comment "Extract the variable name from the exception message";
 
-command getExceptionReason(s:str):str
+command getReason(s:str):str
 address MDBgetExceptionReason
-comment "extract the reason from the exception message";
+comment "Extract the reason from the exception message";
 
-command getExceptionContext(s:str):str
+command getContext(s:str):str
 address MDBgetExceptionContext
-comment "extract the context string from the exception message";
+comment "Extract the context string from the exception message";
 
 @+ Display operation code
 Part of the debugger operations can also be used independently.

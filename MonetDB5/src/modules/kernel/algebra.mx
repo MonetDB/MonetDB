@@ -678,28 +678,6 @@ address ALG@1_@2 comment @3;
 For SQL convenience we provide a serie of interval selectors.
 @mal
 module algebra;
-# Extend select to the cases where we can ignore nils altogether
-function between(b:bat[:any_1,:any_2], l:any_2, h:any_2) 
-		:bat[:any_1,:any_2];
-	k:= algebra.select(b,l,h);
-	return k;
-end between;
-# between Close Open interval
-function betweenCO(b:bat[:any_1,:any_2], l:any_2, h:any_2)
-		:bat[:any_1,:any_2];
-	t:= algebra.select(b,l,h, true,false);
-	return t;
-end betweenCO;
-function betweenOC(b:bat[:any_1,:any_2], l:any_2, h:any_2)
-		:bat[:any_1,:any_2];
-	t:= algebra.select(b,l,h,false,true);
-	return t;
-end betweenOC;
-function betweenOO(b:bat[:any_1,:any_2], l:any_2, h:any_2)
-	:bat[:any_1,:any_2];
-	t:= algebra.select(b,l,h,false,false);
-	return t;
-end betweenOO;
 @+ Modeling With Properties
 The Monet kernel performs run-time optimizations. To choose between
 alternative algorithms in a sensible way, it maintains knowledge about

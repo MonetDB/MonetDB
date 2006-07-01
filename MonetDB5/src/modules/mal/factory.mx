@@ -37,15 +37,13 @@ command getOwners():bat[:int,:str]
 address FCTgetOwners
 comment "Retrieve the factory owners table";
 
-command getTimeStampIn():date
+command getTimeIn():date
 address FCTgetTimeStampIn
-comment "Retrieve the time stamp it was
-        received by the factory";
+comment "Retrieve the time stamp it was received by the factory";
 
-command getTimeStampOut():date
+command getTimeOut():date
 address FCTgetTimeStampOut
-comment "Retrieve the time stamp the answer
-        was returned to the client";
+comment "Retrieve the time stamp the answer was returned to the client";
 
 command setLocation(uri:str):void
 address FCTsetLocation
