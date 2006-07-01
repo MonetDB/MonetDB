@@ -724,8 +724,8 @@ SQLshowPlan(Client c)
 
 	q = newInstruction(c->curprg->def,ASSIGNsymbol);
 	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
-	getModuleId(q) = putName("inspect",7);
-	getFunctionId(q) = putName("showSource",10);
+	getModuleId(q) = putName("mdb",3);
+	getFunctionId(q) = putName("list",4);
 	pushInstruction(c->curprg->def, q);
 }
 

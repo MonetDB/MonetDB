@@ -314,21 +314,21 @@ command calc.timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 command calc.daytime(t:timestamp) :daytime
 address MTIMEtimestamp_extract_daytime_default;
-command calc.daytime(t:timestamp, v:tzone) :daytime
+command calc.daytime(t:timestamp, v:timezone) :daytime
 address MTIMEtimestamp_extract_daytime;
 
 command calc.date(t:timestamp) :date
 address MTIMEtimestamp_extract_date_default;
-command calc.date(t:timestamp,v:tzone) :date
+command calc.date(t:timestamp,v:timezone) :date
 address MTIMEtimestamp_extract_date;
 
-# tzone
+# timezone
 command calc.local_timezone() :lng address MTIMElocal_timezone;
-command calc.timezone(name:str):tzone address MTIMEtimezone;
+command calc.timezone(name:str):timezone address MTIMEtimezone;
 
-command calc.start_dst(t:tzone) :zrule address MTIMEtzone_extract_start;
-command calc.end_dst(t:tzone) :zrule address MTIMEtzone_extract_end;
-command calc.minutes(t:tzone) :int address MTIMEtzone_extract_minutes;
+command calc.start_dst(t:timezone) :zrule address MTIMEtzone_extract_start;
+command calc.end_dst(t:timezone) :zrule address MTIMEtzone_extract_end;
+command calc.minutes(t:timezone) :int address MTIMEtzone_extract_minutes;
 
 # zrule
 command calc.month(t:zrule) :int address MTIMErule_extract_month;
@@ -1515,8 +1515,8 @@ str @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	return MAL_SUCCEED;
 }
 @c
-@:fround(flt)@
-@:fround(dbl)@
+@:fround(flt,flt)@
+@:fround(dbl,dbl)@
 
 @= cast
 str
