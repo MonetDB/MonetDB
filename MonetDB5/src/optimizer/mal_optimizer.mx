@@ -1091,8 +1091,6 @@ is simplified when you retain information on the origin of the MAL code
 produced as long as possible. For example,
 the snippet @code{ sql.insert(col, 12@@0, "hello")} can be the target
 of simple SQL rewrites using the module name as the discriminator.
-An alternative is to add properties to the target variables, 
-e.g. @code{ res@verb{ { }source="sql" @verb{ } } := bat.insert(col,12@@0,"hello")}.
 @menu
 * Alias Removal::
 * Dead Code Removal::
