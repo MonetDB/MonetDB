@@ -47,7 +47,7 @@ a quick overview of its architecture.
 * Backward Compatibility::
 * Session Scenarios::
 * Scenario Management::
-* Textual Clients::
+* Client Interfaces::
 * Data Management Tools::
 * Development Roadmap::
 @end menu
