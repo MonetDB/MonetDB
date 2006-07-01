@@ -6,13 +6,13 @@ using a database driver with a simple API and a textual protocol.
 The MonetDB application programming interface (Mapi) plays this role for
 all interface libraries.
 @menu
-* A Simple Mapi Application::
+* An Example::
 * Command Summary::
 * Library Synopsis::
 * Mapi Function Reference::
 @end menu
 
-@node A Simple Mapi Application, Command Summary, The Mapi Library, The Mapi Library
+@node An Example, Command Summary, The Mapi Library, The Mapi Library
 
 @subsection A Simple MAPI Application
 The MAPI database driver implementation given focuses on
@@ -126,7 +126,7 @@ cc sample.c `monetdb-config --cflags --libs` -lMapi -o sample
 The compilation on Windows is slightly more complicated. It requires
 more attention towards the location of the include files and libraries.
 
-@node Command Summary, Library Synopsis, A Simple Mapi Application, The Mapi Library
+@node Command Summary, Library Synopsis, An Example, The Mapi Library
 
 @subsection Command Summary
 The quick reference guide to the Mapi library is given below.  More
@@ -261,7 +261,7 @@ do {
 
 @subsection Mapi Function Reference
 
-@subsection Connecting and Disconnecting
+@subsubsection Connecting and Disconnecting
 @itemize
 @item Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
 
@@ -306,7 +306,7 @@ connection. This will remove all global session variables.
 Test availability of the server. Returns zero upon success.
 @end itemize
 
-@subsection Sending Queries
+@subsubsection Sending Queries
 @itemize
 @item MapiHdl mapi_query(Mapi mid, const char *Command)
 
@@ -388,7 +388,7 @@ pointers to strings giving the individual results.  If one of these
 pointers is NULL it indicates a NULL/nil value.
 @end itemize
 
-@subsection Getting Results
+@subsubsection Getting Results
 @itemize
 @item int mapi_get_field_count(Mapi mid)
 
@@ -455,7 +455,7 @@ Go to the next result set, discarding the rest of the output of the
 current result set.
 @end itemize
 
-@subsection Errors
+@subsubsection Runtime Errors
 @itemize
 @item MapiMsg mapi_error(Mapi mid)
 
@@ -482,7 +482,7 @@ Write the error message obtained from Mserver to a file.
 Write the error message obtained from Mserver to a file.
 @end itemize
 
-@subsection Parameters
+@subsubsection Parameters
 
 @itemize
 @item MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)
@@ -541,7 +541,7 @@ is NULL-terminated.
 Clear all parameter bindings.
 @end itemize
 
-@subsection Miscellaneous
+@subsubsection Miscellaneous
 @itemize
 @item MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
 
