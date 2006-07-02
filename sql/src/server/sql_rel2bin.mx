@@ -745,9 +745,9 @@ static stmt *
 stmt_hash( mvc *sql, list *l ) 
 {
 	node *m;
-	int bits = 0;
 	sql_subtype *it;
 	stmt *h = NULL;
+	stmt *bits = stmt_atom_int(1 + 31/list_length(l));
 
 	it = sql_bind_localtype("int");
 	for (m = l->h; m; m = m->next) {
@@ -758,15 +758,15 @@ stmt_hash( mvc *sql, list *l )
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
-				stmt_atom_int(bits)), 
+				stmt_dup(bits)), 
 				s)), 
 				xor);
-			bits += 8;
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->session->module, "hash", tail_type(s), NULL, it);
 			h = stmt_unop(s, hf);
 		}
 	}
+	stmt_destroy(bits);
 	return h;
 }
 

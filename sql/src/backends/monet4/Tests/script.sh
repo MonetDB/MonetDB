@@ -3,6 +3,7 @@ users=$1
 delay=$2
 runs=$3
 query=$4
+user=$5
 
 function query()
 {
@@ -11,7 +12,7 @@ function query()
 	do
 		sleep $1
 		echo "fire $$.$i:" `date +"%F %T"`
-		MapiClient -lsql <$3
+		MapiClient -lsql $user <$3
 		echo "done $$.$i";
 		i=`expr $i + 1`
 	done
