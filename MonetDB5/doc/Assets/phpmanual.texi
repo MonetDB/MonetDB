@@ -1,94 +1,93 @@
 @subsection MonetDB PHP Library
-The MonetDB distribution comes with a Mapi-based interface 
-for @url{http://www.php.net,PHP}. It consists of two parts: the dynamically
-loadable PHP module, MonetDB.so/dll and a driver for the @url{http://pear.php.net/package/DB,PEAR::DB} abstraction interface, MonetDB.php. 
 
-@subsubsection Installation
-The unix configure process tries to detect if you have PHP 
-including developer packages installed and builds the PHP module only 
-the those circumstances. With the @code{ --with-php}
-option you could tell 'configure' where to find the PHP installation.
+The MonetDB distribution comes with a <a href="../C">MAPI</a> based interface 
+for <a href=http://www.php.net>php</a>. It consists of 2 parts the dynamically
+loadable php module, MonetDB.so/dll and a driver for the <a href="http://pear.php.net/package/DB">PEAR DB</a> abstraction interface, MonetDB.php. 
+
+@subsubsection Compilation
+
+For general compilation of MonetDB see the howto's for 
+<a href="_ROOTURL_/MonetDB/Version4/Documentation/Installation/Unix/index.html">Unix</a>
+and <a href="_ROOTURL_/MonetDB/Version4/Documentation/Installation/Windows/index.html">Windows</a>.
+The unix configure process normally tries to detect if you have php 
+including developer packages installed and builds the php module only 
+if you have it.  With the @code{--with-php} option you could tell 'configure' 
+where to find the php installation.
+
 
 For windows setups the story is a little bit more complex.
 TODO
 
-When the build process is complete you should have a PHP extension_dir under
-your MonetDB prefix directory. Usually this is @emph{<prefix>/lib/php4}.
-In addition,  the PEAR::DB driver should be installed under
-@emph{<prefix>/php_peardir/db},
-which usually is available in @emph{<prefix>/share/pear/db}.
-Depending on your local PHP setup you could now use these files by coping them
-into the system @emph{extension_dir} and @emph{php_peardir}
-or with a private webserver
-you could simply reset the environment variables, include_path and
-extension_dir. For example you could have a @code{php.ini}
-file which has the following PHP section.
 
-@verbatim
+@subsubsection Installation
+When the build process is complete you should have a php extension_dir under
+your MonetDB prefix directory. Usually this is prefix/lib/php4.
+Besides this binary module the pear db driver should be installed under
+prefix/php_peardir/db, which usually is prefix/share/pear/db.
+Depending on your local setup you could now use these files by coping them
+into the system extension_dir and php_peardir or with a private webserver
+you could simply reset the environment variables, include_path and
+extension_dir. For example you could have a php.ini file which has the following
+php section.
+
+@example
 [PHP]
 safe_mode = Off
 safe_mode_gid = Off
 include_path = ".:/opt/MonetDB-4.6/share/pear:/usr/share/pear"
 extension_dir = /opt/MonetDB-4.6/lib/php4
-@end verbatim
+@end example
 
-@subsubsection A Simple PHP Example
+A tiny example of the use the MonetDB php module follows:
 
 @verbatim
 <?php
-/* Connecting to MonetDB */
-$link = monetdb_connect()
-    or die("Could not connect : " . monetdb_error());
-echo "Connected successfully";
 
-/* Executing MIL query */
-$query = "ls;";
-$result = monetdb_query($query) 
-    or die("Query failed : " . monetdb_error());
+# if monetdb.php isn't installed into the correct pear/DB directory
+# we load first 
+#require("DB/monetdb.php");
+require("DB.php");
 
-/* Printing results in HTML */
-echo "<table>\n";
-while ($line = monetdb_fetch_row()) {
-    echo "\t<tr>\n";
-    foreach ($line as $col_value) {
-        echo "\t\t<td>$col_value</td>\n";
-    }
-    echo "\t</tr>\n";
+function printtable($resultset) {
+    echo "<table border='1'>";
+    echo "<tr>";
+    foreach(array_keys($resultset[0]) as $head) 
+	echo "<th>".ucfirst($head)."</th>";
+    echo "</tr>";
+    
+    foreach($resultset as $row) {
+	echo "<tr&>";
+	foreach($row as $k=&>$v)
+	echo "</tr&>";
+    } 
+    echo "</table&>";
 }
-echo "</table>\n";
 
-/* Closing connection */
-monetdb_close();
+// Connect to monet giving a user/password/host; default language is SQL. 
+$db = DB::connect("monetdb://monetdb:monetdb@@localhost/");
+$db->setFetchMode(DB_FETCHMODE_ASSOC);
+$db->autoCommit(false);
+
+$db->query("CREATE TABLE testtable (name VARCHAR(255), zipcode VARCHAR(10), registered BOOLEAN);");
+$db->query("INSERT INTO testtable VALUES('Arjan Scherpenisse', '1092 GJ', true);");
+$db->query("INSERT INTO testtable VALUES('Test', '123', false);");
+
+// Get table names
+$tables = $db->getCol($db->getSpecialQuery("tables")); 
+
+echo "<p>The following tables are defined: <strong>" . implode(", ", $tables) . "</strong>";
+
+echo "<p>Contents of testtable:";
+$all = $db->getAll("SELECT * FROM testtable;");
+printtable($all);
+ 
+$db->disconnect();
+
 ?>
 @end verbatim
 
-@subsubsection PHP MonetDB functions
-The PEAR::DB driver is based on the MonetDB PHP module which can
-ofcourse also be used directly. It supports the following instructions:
+More examples can be found in the sources. 
 
-@multitable @columnfractions .2 .8
-@item monetdb_affected_rows  @tab 
-@item monetdb_close  @tab Close MonetDB connection
-@item monetdb_connect  @tab Open a connection to a MonetDB Server
-@item monetdb_data_seek  @tab 
-@item monetdb_errno  @tab  Returns the numerical value of the error message from previous MonetDB operation
-@item monetdb_error  @tab  Returns the text of the error message from previous MonetDB operation
-@item monetdb_escape_string  @tab 
-@item monetdb_fetch_array  @tab  Fetch a result row as an both associative array and numeric array.
-@item monetdb_fetch_assoc  @tab  Fetch a result row as an associative array
-@item monetdb_fetch_object  @tab Fetch a result row as an object
-@item monetdb_fetch_row  @tab Get a result row as an enumerated array
-@item monetdb_field_len  @tab 
-@item monetdb_field_name  @tab  Get the name of the specified field in a result
-@item monetdb_field_table  @tab 
-@item monetdb_field_type  @tab  Get the type of the specified field in a result
-@item monetdb_free_result  @tab 
-@item monetdb_info  @tab 
-@item monetdb_next_result  @tab 
-@item monetdb_num_fields  @tab Get number of fields in result
-@item monetdb_num_rows  @tab Get number of rows in result
-@item monetdb_ping  @tab 
-@item monetdb_query  @tab Send a query to MonetDB server
-@end multitable
-  
-Check out the PHP documentation for more details on these functions.
+The PEAR::DB driver is based on the MonetDB php module which can
+ofcourse also be used directly.  
+Check out the @url{"www.monetdb.com/MonetDB/Version5//phpdoc",PHPdoc documentation} for these functions.

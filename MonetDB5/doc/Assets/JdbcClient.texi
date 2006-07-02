@@ -57,8 +57,6 @@ Writes a transmission log to disk for debugging purposes.  If a
 file name is given, it is used, otherwise a file called
 monet<timestamp>.log is created.  A given file will never be
 overwritten; instead a unique variation of the file is used.
-@item -Xblksize  
-Specifies the blocksize when using block mode, given in bytes.
 @item -Xoutput   
 The output mode when dumping.  Default is sql, xml may be used for
 an experimental XML output.

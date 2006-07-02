@@ -11,10 +11,6 @@ port argument. The default setting is geared
 at establing a guest connection to a SQL database at a default
 server running on the localhost.
 
-A blocked mode interaction permits assemblage of multiple
-instructions in a buffer before it is shipped to the server
-for execution.
-
 The timer switch reports on the round-about time for
 queries sent to the server. It provides a first impression
 on the execution cost.
@@ -23,7 +19,6 @@ mclient [ options ]
 @end example
 Options are:
 @verbatim
- -b t/f      | --blocked=true/false /* blocked mode (default=false) */
  -D          | --dump           /* dump sql database */
  -e          | --error          /* exit on error */
  -H          | --history        /* load/save cmdline history (default off) */
