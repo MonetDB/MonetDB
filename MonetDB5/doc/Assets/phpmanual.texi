@@ -1,26 +1,20 @@
-@subsection MonetDB PHP Library
+@section MonetDB PHP Library
 
-The MonetDB distribution comes with a <a href="../C">MAPI</a> based interface 
-for <a href=http://www.php.net>php</a>. It consists of 2 parts the dynamically
-loadable php module, MonetDB.so/dll and a driver for the <a href="http://pear.php.net/package/DB">PEAR DB</a> abstraction interface, MonetDB.php. 
+The MonetDB distribution comes with a MAPI based interface 
+for @url{"http://www.php.net",PHP}. It consists of 2 parts the dynamically
+loadable php module, MonetDB.so/dll and a driver for 
+the @url{"http://pear.php.net/package/DB",PEAR DB} abstraction interface, MonetDB.php. 
 
-@subsubsection Compilation
-
-For general compilation of MonetDB see the howto's for 
-<a href="_ROOTURL_/MonetDB/Version4/Documentation/Installation/Unix/index.html">Unix</a>
-and <a href="_ROOTURL_/MonetDB/Version4/Documentation/Installation/Windows/index.html">Windows</a>.
-The unix configure process normally tries to detect if you have php 
-including developer packages installed and builds the php module only 
+For general compilation of MonetDB see the howto's for Unix and Linux.
+The unix configure process normally tries to detect if you have PHP 
+including developer packages installed and builds the PHP module only 
 if you have it.  With the @code{--with-php} option you could tell 'configure' 
-where to find the php installation.
-
+where to find the PHP installation.
 
 For windows setups the story is a little bit more complex.
 TODO
 
-
-@subsubsection Installation
-When the build process is complete you should have a php extension_dir under
+When the build process is complete you should have a PHP extension_dir under
 your MonetDB prefix directory. Usually this is prefix/lib/php4.
 Besides this binary module the pear db driver should be installed under
 prefix/php_peardir/db, which usually is prefix/share/pear/db.
@@ -38,7 +32,8 @@ include_path = ".:/opt/MonetDB-4.6/share/pear:/usr/share/pear"
 extension_dir = /opt/MonetDB-4.6/lib/php4
 @end example
 
-A tiny example of the use the MonetDB php module follows:
+@subsection A Simple PHP Example
+A tiny example of the use the MonetDB PHP module follows:
 
 @verbatim
 <?php
@@ -90,4 +85,4 @@ More examples can be found in the sources.
 
 The PEAR::DB driver is based on the MonetDB php module which can
 ofcourse also be used directly.  
-Check out the @url{"www.monetdb.com/MonetDB/Version5//phpdoc",PHPdoc documentation} for these functions.
+Check out the @url{"http://www.monetdb.com/MonetDB/Version5//phpdoc",PHPdoc documentation} for these functions.
