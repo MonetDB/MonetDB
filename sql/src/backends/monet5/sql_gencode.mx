@@ -1624,8 +1624,11 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	}
 	backend_dumpstmt(be, curBlk, s);
 
-	if (cq)
+	if (cq){
+		be->Toptimize = GDKusec();
 		addQueryToCache(c);
+		be->Toptimize = GDKusec()- be->Toptimize;
+	}
 	pushEndInstruction(curBlk);
 	curPrg = c->curprg;
 	if (c->backup) {

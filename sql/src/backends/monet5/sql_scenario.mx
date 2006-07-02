@@ -1108,6 +1108,7 @@ backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, ln
 	SQLstatement(&msg, &stmt);
 	c->mode = mode;
 	c->explain = explain;
+	be->Tparse= be->Toptimize = be->Tschedule = be->Texec = 0;
 	return msg;
 }
 
@@ -1199,7 +1200,7 @@ unless auto_commit has been set.
 		lng tot = be->Tparse; 
 
 		tot += be->Texec = GDKusec() - T0;
-		msg = backend_profile(be, be->qry, be->Tparse, 0, be->Texec, tot);
+		msg = backend_profile(be, be->qry, be->Tparse-be->Toptimize, be->Toptimize, be->Texec, tot);
 		be->qry = NULL;
 	}
 
