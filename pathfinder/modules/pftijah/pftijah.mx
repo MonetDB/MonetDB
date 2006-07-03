@@ -109,6 +109,20 @@ const DEBUG := false;
 const SIZE_ENTITY := 1;
 const SIZE_TERM := 2;
 
+# Comparisons
+const GREATER := 10;
+const LESS := 11;
+const EQUAL := 12;
+const GEQ := 13;
+const LEQ := 14;
+
+# Modifiers
+const NORMAL := 71;
+const PLUS := 72;
+const MINUS := 73;
+const MUST := 74;
+const MUST_NOT := 75;
+
 #default
 var scoreBase := 0;
 
@@ -171,16 +185,13 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 {
     # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
     # The table must be [void,oid], so:
-    var items := anc.mark(0@0).reverse();
+    var items := anc.sort().mark(0@0).reverse();
     
     # Candidates contains the right side argument. This must also be [void,oid]:
-    var candidates := desc.mark(0@0).reverse();
+    var candidates := desc.sort().mark(0@0).reverse();
     
     # Load the pre-size table
     var pre_size := load( "tj_" + collName + "_size");
-    
-    # Check the order of the items:
-    items.chk_order();
     
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs if we pass items as the iteration argument
     var anc_desc := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
@@ -190,6 +201,32 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     pre_size := nil;
     
     return anc_desc;
+}
+
+PROC parent_child( bat[oid,any] context ) : bat[oid,oid] :=
+{
+    return parent_child_llscj( context );
+}
+
+PROC parent_child_llscj( bat[oid,any] context ) : bat[oid,oid] :=
+{
+    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # The table must be [void,oid], so:
+    var items := context.mark(0@0).reverse();
+    
+    # Load the pre-size table
+    var pre_size := load( "tj_" + collName + "_size");
+    
+    # Check the order of the items:
+    items.chk_order();
+    
+    var par_chld := ll_child(items, items, pre_size, nil, collHeight, false, false, min(items), max(items), false);
+    
+    candidates := nil;
+    items := nil;
+    pre_size := nil;
+    
+    return par_chld;
 }
 
 ##
@@ -355,6 +392,19 @@ PROC contained_by(bat left, bat right) : bat :=
     
     var end_time := time();
     if (DEBUG) printf( "contained_by: \t\t%d ms\n", end_time - start_time );
+    return result;
+}
+
+
+##
+# Returns all regions contained by the argument. Equivalent with a descendant step
+##
+PROC contained_by(bat region) : bat :=
+{
+    var ctx      := region;
+    var pre_size := load( "tj_" + collName + "_size");    
+    var desc     := scj_desc( pre_size, ctx, collHeight, count(pre_size) );
+    var result   := desc.project(dbl(scoreBase));
     return result;
 }
 
@@ -1178,6 +1228,103 @@ PROC and_prob(bat left, bat right) : bat :=
 	return [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
 
 }
+
+################################################################################
+# VALUE SELECTION
+################################################################################
+
+PROC near_val(bat region, int command, str value) : bat :=
+{
+    var r_value;
+    var reg_res := new(oid,dbl,ENTITY_NUM);
+    var reg_tmp := new(oid,oid,ENTITY_NUM);
+
+    var entity_pre := new(oid,oid,WORD_NUM);
+    entity_pre := load(col_name+"entity_pre");
+
+    # region:               [region-id, score]
+    # region.mirror():      [region-id, region-id]
+    # entity_pre:           [region-id, region pre-id]
+    # reg_tmp:              [region-id, region pre-id]
+    reg_tmp := region.mirror().join(entity_pre);
+
+    entity_pre := nil;
+
+    r_value := int(value);
+
+    if (command = GREATER)
+        reg_tmp := gt(reg_tmp, r_value);
+    else if (command = LESS)
+        reg_tmp := lt(reg_tmp, r_value);
+    else if (command = EQUAL)
+        reg_tmp := eq(reg_tmp, r_value);
+    else if (command = GEQ)
+        reg_tmp := gte(reg_tmp, r_value);
+    else if (command = LEQ)
+        reg_tmp := lte(reg_tmp, r_value);
+
+    reg_res := reg_tmp.mirror().join(region);
+
+    return reg_res;
+}
+#ADDHELP("near_val", "vojkan", "March 16, 2005",
+#"Selects regions that satisfy the inequality (integer) test.",
+#"TIJAH");
+
+########################################################################################################
+# Procudures for executing value comparison:
+#       - eq            selects the regions with equal text content
+#       - lt            selects the regions with less than text content
+#       - gt            selects the regions with greater then text content
+#       - lte           selects the regions with less than or equal text content
+#       - gte           selects the regions with greater than or equal text content
+#########################################################################################################
+
+PROC gt(bat ctx, int comp) : bat :=
+{
+
+        var entity_pre := new(oid,oid,ENTITY_NUM);
+        entity_pre := load(col_name+"entity_pre");
+        var entity_type := new(oid,oid,ENTITY_NUM);
+        entity_type := load(col_name+"entity_type");
+
+        var word_pre := new(oid,oid,ENTITY_NUM);
+        word_pre := load(col_name+"word_pre");
+        var word_name := new(oid,oid,ENTITY_NUM);
+        word_name := load(col_name+"word_name");
+        var enum_word := new(str,int,ENTITY_NUM);
+        enum_word := load(col_name+"enum_word");
+
+        var cur_tmp := new(oid,oid,ENTITY_NUM);
+        var ctx_tmp := new(oid,oid,TERM_NUM);
+        var ctx_reg := new(oid,oid,ENTITY_NUM);
+
+        cur_tmp:= ctx.child().mirror().join(entity_type).uselect('t').mirror().join(entity_pre);
+
+        entity_type := nil;
+
+        ctx_reg := [int]([str](word_pre.join(cur_tmp.reverse()).mirror().join(word_name).join(enum_word.reverse())));
+
+        word_name := nil;
+        enum_word := nil;
+
+        var low := comp + 1;
+        ctx_tmp := ctx_reg.select(comp,int(nil),false,false).mirror().join(word_pre);
+        cur_tmp := entity_pre.join(ctx_tmp.reverse().mirror()).parent().mirror().join(ctx);
+
+        word_pre := nil;
+        entity_pre := nil;
+
+        ctx := cur_tmp;
+
+        return ctx;
+
+}
+#ADDHELP("gt", "vojkan", "Nov 14, 2003",
+#"Performing greater than comparison between element content and integer.",
+#"TIJAH");
+
+
 
 ################################################################################
 # PRIOR
