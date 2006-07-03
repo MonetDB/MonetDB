@@ -263,6 +263,28 @@ PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
     return tids;
 }
 
+##
+# Return only the nodes in region ctx
+##
+PROC nodes( bat[oid,any] ctx ) : bat[oid,any] :=
+{
+    # pfpre only stores element nodes, so we can use it as a filter
+    var pfpre  := bat( "tj_" + collName + "_pfpre");
+    var result := pfpre.mirror().join( ctx );
+    return result;
+}
+
+##
+# Return only the terms in region ctx
+##
+PROC terms( bat[oid,any] ctx ) : bat[oid,any] :=
+{
+    var nodes  := nodes( ctx );
+    var result := ctx.kdiff( nodes );
+    return result;
+}
+
+
 ################################################################################
 # SELECTION
 ################################################################################
@@ -276,6 +298,14 @@ PROC select_root() : bat :=
     
     root_reg.insert( virtRoot, dbl(scoreBase) );
     return root_reg;
+}
+
+PROC select_node() : bat[oid,dbl] := 
+{
+    # pfpre only stores element nodes, so we can use it as a filter
+    var pfpre  := bat( "tj_" + collName + "_pfpre");
+    
+    return pfpre.project( dbl(scoreBase ) );
 }
 
 PROC select_node(str name) : bat :=
@@ -404,7 +434,7 @@ PROC contained_by(bat region) : bat :=
     var ctx      := region;
     var pre_size := load( "tj_" + collName + "_size");    
     var desc     := scj_desc( pre_size, ctx, collHeight, count(pre_size) );
-    var result   := desc.project(dbl(scoreBase));
+    var result   := nodes( desc ).project( dbl(scoreBase) );
     return result;
 }
 
@@ -833,6 +863,33 @@ PROC size_entity( bat region ) : bat :=
 ################################################################################
 # PROBABILISTIC CONTAINMENT
 ################################################################################
+
+PROC p_contained_by_sum(bat region) : bat :=
+{
+    # Candidates: all nodes
+    var candidates := select_node();
+
+    var ctx_res := anc_desc( region, candidates );
+
+    var ctx := ctx_res.reverse().mirror();
+
+    var reg_size := [dbl](size_term(ctx));
+
+    reg_size:= reg_size.select(dbl(0),dbl(nil),false,true);
+
+    ctx := reg_size.mirror();
+
+    # calculating the score for each region
+    var reg_score := {sum}(ctx_res.reverse().join(region));
+
+    var res_reg := ctx.join(reg_score);
+
+    return res_reg;
+}
+
+#ADDHELP("p_contained_by_sum", "vojkan", "March 22, 2005",
+#"Assings score after score propagation to contained by regions in the colection.",
+#"TIJAH");
 
 
 PROC p_contained_by_sum(bat left, bat right) : bat := 
