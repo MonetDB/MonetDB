@@ -769,7 +769,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      terms@batloop()
      {
 	  var tmp := elem_tid.select($t);
-	  var fac := _lmbd / tmp.count();
+	  var fac := _tid_frq.find($t);
 	  tmp := tmp.reverse().histogram();
 	  tmp := [dbl](tmp);
 	  tmp := [/](tmp, elem_frq);
