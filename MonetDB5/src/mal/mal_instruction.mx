@@ -2437,7 +2437,14 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		if (p->argc <= 1 && getFunctionId(p) == NULL) {
 			ps = getVar(mb, getArg(p, 0))->props;
 			pstring = propertySet2str(ps);
-			sprintf(t, "%s%s", nme, pstring);
+			if (getVar(mb, getArg(p, 0))->isudftype) {
+				str tpe = getTypeName(getVarType(mb, getArg(p, 0)));
+
+				sprintf(t, "%s:%s%s ", nme, tpe, pstring);
+				GDKfree(tpe);
+			} else
+				sprintf(t, "%s%s", nme, pstring);
+			advance(t);
 			if (pstring)
 				GDKfree(pstring);
 		} else {
@@ -2557,13 +2564,13 @@ Dump the type and value information.
 			GDKfree(d2);
 			advance(t);
 		} else if ( isTypeVar(mb, getArg(p, i)) || 
+					getVar(mb, getArg(p, i))->isudftype ||
 				  ( isConstant(mb, getArg(p, i)) &&
-					( getVar(mb, getArg(p, i))->isudftype ||
 					ATOMcmp(getArgType(mb,p,i), 
 							ATOMnilptr(getArgType(mb,p,i)), 
 							VALptr(&getVar(mb, getArg(p, i))->value) ) == 0
 
-					) )) {
+					)) {
 			char *tnme = getTypeName(getArgType(mb, p, i));
 
 			sprintf(t, ":%s", tnme);
