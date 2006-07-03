@@ -11,7 +11,8 @@
 # Fabian Groffen <fabian@cwi.nl> - 2006-07-03
 #  menu generation is now based on a "template" file which should
 #  contain _M5_MANUAL_HOOK_START_ and _M5_MANUAL_HOOK_END_ markers.
-#  This allows the generated menu to be embedded into another.
+#  This allows the generated menu to be embedded into another.  A
+#  title.txt is now generated with titles from the index.html file.
 # Fabian Groffen <fabian@cwi.nl> - 2006-06-30
 #  initial version
 
