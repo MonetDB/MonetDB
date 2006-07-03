@@ -8,7 +8,12 @@
 # generated.  The first is provided by the html output of makeinfo, the
 # latter has to be derived, which takes a fair amount of CPU cycles.
 #
+# Fabian Groffen <fabian@cwi.nl> - 2006-07-03
+#  menu generation is now based on a "template" file which should
+#  contain _M5_MANUAL_HOOK_START_ and _M5_MANUAL_HOOK_END_ markers.
+#  This allows the generated menu to be embedded into another.
 # Fabian Groffen <fabian@cwi.nl> - 2006-06-30
+#  initial version
 
 dir=../..
 indexfile=$dir/doc/share/tmp/monetwebmenu.index
@@ -138,11 +143,12 @@ get_depth() {
 # scan and children indices.
 # @ transform_files targetdir monetwebroot
 transform_files() {
-	if [ -z "$1" ] || [ -z "$2" ];
+	if [ -z "$1" ] || [ -z "$2" ] | [ -z "$3" ];
 	then
-		echo "usage: transform_files: targetdir monetwebroot" > /dev/stderr
+		echo "usage: transform_files: targetdir monetwebroot menuprefixfile" > /dev/stderr
 		echo "   targetdir: where to store the generated files" > /dev/stderr
 		echo "   monetwebroot: where to fetch the index.html template file from" > /dev/stderr
+		echo "   menuprefixfile: template file which should include _M5_MANUAL_HOOK_START_ and _M5_MANUAL_HOOK_END_ markers" > /dev/stderr
 		exit -1
 	fi
 
@@ -151,7 +157,7 @@ transform_files() {
 	do
 		f=`basename $file`
 		local title=`get_entry $f title`
-		local menu=`generate_menu $f "" "" true`
+		local menu=`generate_menu $f "" "" true $3`
 
 		# remove target file if already exists before we start
 		rm -f "$1/$f" >& /dev/null
@@ -204,13 +210,19 @@ transform_files() {
 		}
 		' "$2/index.html" >> "$1/$f"
 	done
+
+	# Finally write title.txt with the right content
+	rm -f "$1/title.txt" >& /dev/null
+	local title="`get_entry index.html title`"
+	echo $title >> "$1/title.txt"
+	echo $title >> "$1/title.txt"
 }
 
 # Generates the menu for the given file.  The menu is recursively
 # generated starting from the desired level, then traversing up to the
-# root, expanding all levels on that route.
-# TODO: allow to have a "prefix" so we can "embed" the documentation
-# @ generate_menu file child code selected
+# root, expanding all levels on that route.  The given template file
+# is processed such that _M5_MANUAL_HOOK_ is replaced with menu code.
+# @ generate_menu file child code selected templatefile
 generate_menu() {
 	local title="`get_entry $1 title`"
 	local code=""
@@ -242,9 +254,26 @@ generate_menu() {
 	local p=`get_parent $1`
 	if [ ! -z "$p" ];
 	then
-		generate_menu $p $1 "$code"
+		generate_menu $p $1 "$code" "" $5
 	else
-		echo "<div class=\"submenu\"><ul>$code</ul></div>"
+		awk -v menu="$code" '
+		BEGIN {
+			doprint = 1;
+			hasprintedmenu = 0;
+		}
+		/_M5_MANUAL_HOOK_START_/,/_M5_MANUAL_HOOK_END_/ {
+			doprint = 0;
+			if (hasprintedmenu == 0) {
+				print menu;
+				hasprintedmenu = 1;
+			}
+		}
+		{
+			if (doprint) {
+				print $0;
+			}
+			doprint = 1;	
+		}' "$5"
 	fi
 }
 
@@ -262,10 +291,12 @@ case $1 in
 		create_index_traverse
 	;;
 	transform)
-		transform_files $2 $3
+		transform_files $2 $3 $4
 	;;
 	*)
 		echo "I have no clue what $1 means!" > /dev/stderr
 		exit -1
 	;;
 esac
+
+# vim:set ts=4 sw=4 noexpandtab:
