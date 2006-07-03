@@ -56,9 +56,9 @@ function user.main():void;	# 0  (main:void)
 # the temporary bats of the user 	# 11  (_16:str)
     bbp.open();	# 12 CMDbbpopen (_17:void)
     v := bbp.take("myfirstbat");	# 13 CMDbbptake (v:bat[:any,:any])<-(_12:str)
-catch MALexception;	# 14  (MALexception:str) jump 16
+catch MALexception:str ;	# 14  (MALexception:str) jump 16
     io.printf(MALexception);	# 15 IOprint_str (_20:int)<-(MALexception:str)
-exit MALexception;	# 16  (MALexception:str)
+exit MALexception:str ;	# 16  (MALexception:str)
     io.print("v");	# 17 IOprint_val (_21:int)<-(_22:str)
     io.print(v);	# 18 IOprint_val (_23:int)<-(v:bat[:any,:any])
     x := bbp.getObjects();	# 19 CMDbbpGetObjects (x:bat[:int,:str])

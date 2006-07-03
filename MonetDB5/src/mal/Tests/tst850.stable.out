@@ -34,8 +34,8 @@ function user.main():void;	# 0  (main:void)
 barrier (_23,_24,_25):= bat.newIterator(t);	# 10 CHPbunIterator (_23:lng)(_24:oid)(_25:str)<-(t:bat[:void,:str]) jump 16
     _27 := str.startsWith(_25,"");	# 11 STRPrefix (_27:bit)<-(_25:str)(_14:str)
     bat.insert(_21,_24,_27);	# 12 BKCinsert_bun (_28:void)<-(_21:bat[:void,:bit])(_24:oid)(_27:bit)
-catch MALexception;	# 13  (MALexception:str) jump 14
-exit MALexception;	# 14  (MALexception:str)
+catch MALexception:str ;	# 13  (MALexception:str) jump 14
+exit MALexception:str ;	# 14  (MALexception:str)
     redo (_23,_24,_25):= bat.hasMoreElements(t);	# 15 CHPbunHasMoreElements (_23:lng)(_24:oid)(_25:str)<-(t:bat[:void,:str]) jump 11
 exit (_23,_24,_25);	# 16  (_23:lng)(_24:oid)(_25:str)
     b:bat[:void,:bit]  := _21;	# 17  (b:bat[:void,:bit])<-(_21:bat[:void,:bit])

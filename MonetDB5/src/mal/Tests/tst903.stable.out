@@ -244,8 +244,8 @@ barrier (_91,_92,_93):= bat.newIterator(b);	# 112 CHPbunIterator (_91:lng)(_92:o
     _95 := algebra.find(c,_92);	# 113 ALGfind (_95:lng)<-(c:bat[:void,:lng])(_92:oid)
     _97 := calc.+(_93,_95);	# 114 CALCbinaryADDlnglng (_97:lng)<-(_93:lng)(_95:lng)
     bat.insert(_89,_92,_97);	# 115 BKCinsert_bun (_98:void)<-(_89:bat[:void,:lng])(_92:oid)(_97:lng)
-catch MALexception;	# 116  (MALexception:str) jump 117
-exit MALexception;	# 117  (MALexception:str)
+catch MALexception:str ;	# 116  (MALexception:str) jump 117
+exit MALexception:str ;	# 117  (MALexception:str)
     redo (_91,_92,_93):= bat.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 113
 exit (_91,_92,_93);	# 119  (_91:lng)(_92:oid)(_93:lng)
     x:bat[:void,:lng]  := _89;	# 120  (x:bat[:void,:lng])<-(_89:bat[:void,:lng])
