@@ -45,7 +45,9 @@ create_index_scan() {
 			echo "`basename "${file}"`:$type=${tmp}" >> ${indexfile}.scan
 		done
 		tmp=`egrep -m1 '<title>.*</title>' "$file" | \
-			sed -e 's:^<title>::' -e 's: - MonetDB Reference Manual</title>$::'`
+			sed -e 's:^<title>::' \
+				-e 's: - MonetDB Reference Manual</title>$::' \
+				-e 's:</title>$::'`
 		echo "`basename "${file}"`:title=${tmp}" >> ${indexfile}.scan
 	done
 }
