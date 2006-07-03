@@ -113,9 +113,9 @@ command bind(sname:str, tname:str, cname:str, location:str, access:int ):bat[:an
 address mvc_bind_wrap
 comment "only needed for type checking";
 
-command append(sname:str, tname:str, cname:str, access:int, b:bat[:oid,:any_1] ):bat[:any_1,:any_2]
+command append(sname:str, tname:str, cname:str, location:int, access:int, b:bat[:oid,:any_1] ):bat[:any_1,:any_2]
 address mvc_append_wrap;
-command append(sname:str, tname:str, cname:str, access:int, b:bat[:void,:any_1] ):bat[:any_1,:any_2]
+command append(sname:str, tname:str, cname:str, location:int, access:int, b:bat[:void,:any_1] ):bat[:any_1,:any_2]
 address mvc_append_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
 
@@ -904,11 +904,11 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int location, int access
 }
 
 int 
-mvc_append(BAT **b, mvc *m, str sname, str tname, str cname, int *access, BAT *i)
+mvc_append(BAT **b, mvc *m, str sname, str tname, str cname, int location, int *access, BAT *i)
 {
 	sql_trans *tr = m->session->tr;
 	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_table *t = mvc_bind_table(m, s, tname,location);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
 	if (*access == UPD || *access == RD_UPD)
@@ -981,7 +981,7 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *location, int *
 }
 
 str
-mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *ins)
+mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *location, int *access, int *ins)
 {
 	BAT *I, *B = NULL;
 	mvc *m;
@@ -992,7 +992,7 @@ mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *
 
 	if (msg)
 		return msg;
-	mvc_append(&B, m, *sname, *tname, *cname, access, I);
+	mvc_append(&B, m, *sname, *tname, *cname, *location, access, I);
 	BBPunfix(I->batCacheid);
 	if (B) {
 		BBPkeepref( *bid = B->batCacheid);
