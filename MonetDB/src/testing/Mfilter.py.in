@@ -213,6 +213,8 @@ test = (
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
                 # suspicious output/messages/errors? with Pathfinder on SuSE 9.3 !??:
                     r'^! /.*/bin/M(?:server|apiClient):e+$',
+                # suspicious error on Gentoo with "hardened" kernel
+                    r'^! Cannot open /proc/net/unix: Permission denied$',
                  ])+')',  re.MULTILINE)
        )
 
