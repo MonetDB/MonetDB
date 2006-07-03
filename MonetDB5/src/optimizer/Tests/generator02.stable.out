@@ -39,7 +39,7 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (
     _19 := aggr.count(s);	# 10 ALGcount_bat (_19:int)<-(s:bat[:void,:int])
     c := calc.+(c,_19);	# 11 CALCbinaryADDintint (c:int)<-(c:int)(_19:int)
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 12 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 9
-exit b;	# 13  (b:bat[:void,:int])
+exit b:bat[:void,:int] ;	# 13  (b:bat[:void,:int])
     io.print(c);	# 14 IOprint_val (_14:int)<-(c:int)
     io.print("finished");	# 15 IOprint_val (_15:int)<-(_16:str)
 end main;	# 16  
@@ -56,7 +56,7 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
     _19 := aggr.count(s);
     c := calc.+(c,_19);
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit b;
+exit b:bat[:void,:int] ;
     io.print(c);
     io.print("finished");
 end main;

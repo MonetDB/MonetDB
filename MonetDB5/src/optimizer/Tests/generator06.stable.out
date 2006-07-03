@@ -38,9 +38,9 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (
     t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:void,:int])<-(b:bat[:void,:int])(_12:int)(_13:int)
     u := algebra.select(c,4,6);	# 10 ALGselect (u:bat[:void,:int])<-(c:bat[:void,:int])(_15:int)(_16:int)
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 8
-exit b;	# 12  (b:bat[:void,:int])
+exit b:bat[:void,:int] ;	# 12  (b:bat[:void,:int])
     redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (c:bat[:void,:int])<-(_7:str) jump 6
-exit c;	# 14  (c:bat[:void,:int])
+exit c:bat[:void,:int] ;	# 14  (c:bat[:void,:int])
     io.print("finished");	# 15 IOprint_val (_17:int)<-(_18:str)
 end main;	# 16  
 function user.main():void;
@@ -55,9 +55,9 @@ barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
     t := algebra.select(b,0,3);
     u := algebra.select(c,4,6);
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit b;
+exit b:bat[:void,:int] ;
     redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");
-exit c;
+exit c:bat[:void,:int] ;
     io.print("finished");
 end main;
 [ "start" ]

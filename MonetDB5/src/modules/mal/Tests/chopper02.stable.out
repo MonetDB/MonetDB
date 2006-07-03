@@ -60,7 +60,7 @@ barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);	# 18 CHPbunIterator (m
     io.print(B2);	# 20 IOprint_val (_38:int)<-(B2:url)
     bat.insert(rb,h,B2);	# 21 BKCinsert_bun (_39:void)<-(rb:bat[:int,:url])(h:int)(B2:url)
     redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 19
-exit mloop;	# 23  (mloop:lng)
+exit mloop:lng ;	# 23  (mloop:lng)
     io.print(rb);	# 24 IOprint_val (_40:int)<-(rb:bat[:int,:url])
 end main;	# 25  
 [ "build a table finished" ]

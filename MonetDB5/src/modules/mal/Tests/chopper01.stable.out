@@ -63,7 +63,7 @@ function user.main():void;	# 0  (main:void)
 barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);	# 20 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
     io.print(B2);	# 21 IOprint_val (_41:int)<-(B2:url)
     redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 21
-exit mloop;	# 23  (mloop:lng)
+exit mloop:lng ;	# 23  (mloop:lng)
 end main;	# 24  
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
