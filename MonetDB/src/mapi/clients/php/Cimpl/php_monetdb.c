@@ -1987,7 +1987,7 @@ PHP_FUNCTION(monetdb_connection_reset)
 #ifdef I_FEEL_LIKE_IMPLEMENTING_COPY_INTO_PROPERLY
 #define	COPYBUFSIZ	8192
 /* {{{ proto bool monetdb_put_line([resource connection,] string query)
-   Send null-terminated string to backend server*/
+   Send null-terminated string to backend server */
 PHP_FUNCTION(monetdb_put_line)
 {
 	zval **query, **pgsql_link = NULL;
