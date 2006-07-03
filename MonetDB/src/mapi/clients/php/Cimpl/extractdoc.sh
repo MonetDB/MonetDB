@@ -24,20 +24,20 @@
 # function prototypes and their (limited) available documentation.
 
 awk '
-BEGIN { printdoc = 0; msg = "<ul>"; }
+BEGIN { printdoc = 0; print "<ul>"; }
 	{
 		if ($2 == "{{{" && $3 == "proto") {
 			printdoc = 1;
-			msg = msg "<li><b>"
-			for (i = 3; i < NF; i++) msg = msg $i " ";
-			msg = msg $NF "</b><br />\n";
+			print "<li><b>"
+			for (i = 3; i < NF; i++) print $i " ";
+			print $NF "</b><br />\n";
 		} else if (printdoc != 0 && $0 ~ /*\//) {
 			printdoc = 0;
-			for (i = 1; $i != "*/"; i++) msg = msg $i " ";
-			msg = msg "</li>\n";
+			for (i = 1; $i != "*/"; i++) print $i " ";
+			print "</li>\n";
 		} else if (printdoc != 0) {
-			msg = msg $0 "\n";
+			print $0 "\n";
 		}
 	}
-END { print msg "</ul>"; }
+END { print "</ul>"; }
 ' php_monetdb.c
