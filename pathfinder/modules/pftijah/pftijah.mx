@@ -166,26 +166,33 @@ const virtRoot := 0@0;
 
 
 ##
-# Compute ancestor-descendant relation.
+# Compute ancestor-descendant relation. 
 #
-# The arguments anc and desc must contain preorder indices in their heads. 
-# The tail values are discarded.
-#
-# Returns a bat containing [anc,desc] preorder index pairs
+# Forwards to anc_desc_llscj: see below.
 ##
 PROC anc_desc( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 {
    return anc_desc_llscj(anc,desc);
 }
 
+
 ##
 # Compute ancestor-descendant relation using the loop-lifted staircase join.
+#
+# The arguments anc and desc must contain preorder indices in their heads. 
+# The tail values are discarded.
+#
+# Returns a bat containing [anc,desc] preorder index pairs
 ##
 PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 {
-    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # Items contains the context nodes for the descendant step: 
+    # this is the right side argument to contained_by.
     # The table must be [void,oid], so:
     var items := anc.sort().mark(0@0).reverse();
+    
+    # Suggestion from Thijs: make iters a [void,void], with the same length as anc
+    var iters := anc.hmark(oid(0)).mark(oid(0));
     
     # Candidates contains the right side argument. This must also be [void,oid]:
     var candidates := desc.sort().mark(0@0).reverse();
@@ -193,8 +200,12 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     # Load the pre-size table
     var pre_size := load( "tj_" + collName + "_size");
     
-    # Call the descendant algorithm: it returns [ancestor, descendant] pairs if we pass items as the iteration argument
-    var anc_desc := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    # Call the descendant algorithm: it returns [ancestor, descendant] pairs 
+    # if we pass items as the iteration argument
+    var void_desc := ll_descendant(iters, items, pre_size, candidates, collHeight, false, false, min(iters), max(iters), false);
+    
+    # Map back the ancestors
+    var anc_desc  := anc.mark(oid(0)).join(void_desc);
     
     candidates := nil;
     items := nil;
@@ -203,16 +214,35 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     return anc_desc;
 }
 
-PROC parent_child( bat[oid,any] context ) : bat[oid,oid] :=
+
+## 
+# Compute parent-child relation. 
+# 
+# Forwards to parent_child_llscj: see below.
+##
+PROC parent_child( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid] :=
 {
-    return parent_child_llscj( context );
+    return parent_child_llscj( parent, child );
 }
 
-PROC parent_child_llscj( bat[oid,any] context ) : bat[oid,oid] :=
+
+## 
+# Compute parent-child relation using the loop-lifted staircase join. 
+# 
+# The arguments parent and child must contain preorder indices in their heads. 
+# The tail values are discarded.
+#
+# Returns a bat containing [parent,child] preorder index pairs
+##
+PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid] :=
 {
-    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # Items contains the context nodes for the descendant step: 
+    # this is the right side argument to contained_by.
     # The table must be [void,oid], so:
     var items := context.mark(0@0).reverse();
+    
+    # Candidates: all element nodes
+    var candidates := child.sort().mark(0@0).reverse();
     
     # Load the pre-size table
     var pre_size := load( "tj_" + collName + "_size");
@@ -220,7 +250,7 @@ PROC parent_child_llscj( bat[oid,any] context ) : bat[oid,oid] :=
     # Check the order of the items:
     items.chk_order();
     
-    var par_chld := ll_child(items, items, pre_size, nil, collHeight, false, false, min(items), max(items), false);
+    var par_chld := ll_child(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
     
     candidates := nil;
     items := nil;
@@ -228,6 +258,7 @@ PROC parent_child_llscj( bat[oid,any] context ) : bat[oid,oid] :=
     
     return par_chld;
 }
+
 
 ##
 # Converts a list of query terms to a list of term id->document position mappings.
@@ -248,6 +279,7 @@ PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
     return result;
 }
 
+
 ##
 # Converts a list of query terms to a list of term ids
 #
@@ -263,22 +295,25 @@ PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
     return tids;
 }
 
+
 ##
-# Return only the nodes in region ctx
+# Return only the element nodes from region ctx
 ##
 PROC nodes( bat[oid,any] ctx ) : bat[oid,any] :=
 {
-    # pfpre only stores element nodes, so we can use it as a filter
+    # The pfpre table only stores element nodes, so we can use it as a filter:
     var pfpre  := bat( "tj_" + collName + "_pfpre");
     var result := pfpre.mirror().join( ctx );
     return result;
 }
 
+
 ##
-# Return only the terms in region ctx
+# Return only the terms from region ctx
 ##
 PROC terms( bat[oid,any] ctx ) : bat[oid,any] :=
 {
+    # A term is everything that is not an element node
     var nodes  := nodes( ctx );
     var result := ctx.kdiff( nodes );
     return result;
@@ -289,7 +324,13 @@ PROC terms( bat[oid,any] ctx ) : bat[oid,any] :=
 # SELECTION
 ################################################################################
 
-PROC select_root() : bat :=
+##
+# Select the root node of the collection
+#
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
+PROC select_root() : bat[oid,dbl] :=
 {
     # Because TIJAH expects all documents in a collection to be contained by one 
     # "virtual root" element, his behaviour should be emulated by the light index. 
@@ -300,15 +341,29 @@ PROC select_root() : bat :=
     return root_reg;
 }
 
+
+##
+# Select all element nodes in the collection
+#
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
 PROC select_node() : bat[oid,dbl] := 
 {
-    # pfpre only stores element nodes, so we can use it as a filter
+    # The table pfpre only stores element nodes, so we can use it as a filter:
     var pfpre  := bat( "tj_" + collName + "_pfpre");
     
     return pfpre.project( dbl(scoreBase ) );
 }
 
-PROC select_node(str name) : bat :=
+
+##
+# Select all element nodes in the collection with the given name
+#
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
+PROC select_node(str name) : bat[oid,dbl] :=
 {
     var start_time := time();
 
@@ -325,13 +380,29 @@ PROC select_node(str name) : bat :=
     return result;
 }
 
-PROC select_node(str name, bit e_class) : bat :=
+
+##
+# Select all element nodes in the collection with the given name.
+#
+# Equivalence classes are taken into account. 
+# 
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
+PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
 {
     if ( e_class ) printf( "WARNING: equivalences are not yet supported!\n" );
     return select_node(name);
 }
 
-PROC select_term(str name) : bat :=
+
+##
+# Select all terms with the given value
+# 
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
+PROC select_term(str name) : bat[oid,dbl] :=
 {
     var start_time := time();
     # 
@@ -351,11 +422,29 @@ PROC select_term(str name) : bat :=
     return result;
 }
 
-PROC select_term(str name, int stemming) : bat := 
+
+##
+# Select all terms with the given value, possibly performing stemming on the argument.
+#
+# This variant of the select_term function is present for compatibility reasons:
+# at the moment, stemming is always performed using the same stemmer that was
+# used to index the collection.
+# 
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
+PROC select_term(str name, int stemming) : bat[oid,dbl] := 
 {
     return select_term( name );
 }
 
+
+##
+# Select a number of terms by their term-id.
+# 
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
+##
 PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 {
     var start_time := time();
@@ -405,7 +494,7 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 # Returns: region from left if it is contained a region in right
 #
 #####################################
-PROC contained_by(bat left, bat right) : bat :=
+PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 {
     var start_time := time();
     
@@ -427,9 +516,13 @@ PROC contained_by(bat left, bat right) : bat :=
 
 
 ##
-# Returns all regions contained by the argument. Equivalent with a descendant step
+# Returns all regions in the collection that are contained by the argument. 
+# Equivalent with a descendant step in XPath.
+#
+# Returns a bat [preorder rank,score].
+# The score is initalized based on the scoreBase global variable.
 ##
-PROC contained_by(bat region) : bat :=
+PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
     var ctx      := region;
     var pre_size := load( "tj_" + collName + "_size");    
@@ -453,7 +546,7 @@ PROC contained_by(bat region) : bat :=
 # Returns: region from left if it contains a region in right
 #
 #####################################
-PROC containing(bat left, bat right) : bat :=
+PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 {
     var start_time := time();
     
@@ -692,7 +785,19 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      return res;
 }
 
-PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat := 
+##
+# Implementation of the Language Modeling retrieval model, with smoothing.
+#
+# This function is meant for term-at-a-time score computation (ASPECT algebra), e.g.:
+#
+# var R1 := select_node("article");
+# var R2 := select_term("information");
+# var R3 := p_containing_t_LMs(R1, R2, 0.5, SIZE_TERM);
+#
+# R3 now contains all regions in R1, however with scores attached according
+# to the occurrence of the term "information" (R2)
+##
+PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int size_type) : bat[oid,dbl] := 
 {
     var start_time := time();
     var lambda;
@@ -752,8 +857,10 @@ PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat :=
     return res_reg;
 }
 
+##
 # Returns the collection frequency table (should be precomputed, but is calculated for now)
-PROC col_freq() : bat :=
+##
+PROC col_freq() : bat[oid,dbl] :=
 {
     var start_time := time();
     var allterms := bat("tj_globalTerms").sort().mark(0@0).reverse();
@@ -764,8 +871,9 @@ PROC col_freq() : bat :=
     return col_freqs;
 }
 
-
+##
 # Returns the collection frequency of the term with the indicated tid
+##
 PROC col_freq(oid tid) : dbl :=
 {
     var start_time := time();
@@ -776,8 +884,10 @@ PROC col_freq(oid tid) : dbl :=
     return result;
 }
 
+##
 # For each region in left, count the number of regions in right it contains.
-PROC reg_freq(bat left, bat right, int size_type) : bat    :=    
+##
+PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,dbl]    :=    
 {
     var start_time := time();
     
@@ -812,7 +922,7 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
 
 
 # Calculate the term size of the region: how many terms does it contain?
-PROC size_term( bat region ) : bat := 
+PROC size_term( bat[oid,any] region ) : bat[oid,dbl] := 
 {
     # For now, we use size_term = size_entity
     return size_entity( region );
@@ -844,7 +954,7 @@ PROC size_term( bat region ) : bat :=
 }
 
 # Calculate the entity size of the region: how many entities (tags and terms) does it contain?
-PROC size_entity( bat region ) : bat :=
+PROC size_entity( bat[oid,any] region ) : bat[oid,dbl] :=
 {
     var start_time := time();
     
@@ -852,7 +962,7 @@ PROC size_entity( bat region ) : bat :=
     # Entity sizes:
     var pre_size := load( "tj_" + collName + "_size");
     
-    var result := region.mirror().join( pre_size );
+    var result := [dbl](region.mirror().join( pre_size ));
 
     var end_time := time();
     if (DEBUG) printf( "size_entity: \t\t%d ms\n", end_time - start_time );
@@ -864,7 +974,7 @@ PROC size_entity( bat region ) : bat :=
 # PROBABILISTIC CONTAINMENT
 ################################################################################
 
-PROC p_contained_by_sum(bat region) : bat :=
+PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
     # Candidates: all nodes
     var candidates := select_node();
@@ -887,12 +997,8 @@ PROC p_contained_by_sum(bat region) : bat :=
     return res_reg;
 }
 
-#ADDHELP("p_contained_by_sum", "vojkan", "March 22, 2005",
-#"Assings score after score propagation to contained by regions in the colection.",
-#"TIJAH");
 
-
-PROC p_contained_by_sum(bat left, bat right) : bat := 
+PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] := 
 {
 
     var ctx_res := anc_desc( right, left );
@@ -915,7 +1021,7 @@ PROC p_contained_by_sum(bat left, bat right) : bat :=
 }
 
 
-PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
+PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,dbl] :=
 {
     var ctx := left.project(dbl(0));
     var size_reg;
@@ -955,7 +1061,7 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 }
 
 #################################################################################
-# SET BASED PROBABILISTIC TERM CONTAINING
+# SET BASED PROBABILISTIC TERM CONTAINING (COARSE2 ALGEBRA)
 #################################################################################
 
 
@@ -963,7 +1069,7 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 #    return p_containing_q(ctx, Qterms,modifiers, flt(1.0), stemming, size_type);
 #}
 
-proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
+proc p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
     if ( false ) {
         # Forward to p_containing_q_LM_fast:
         return p_containing_q_LM_fast( ctx, Qterms, modifiers, lambda, stemming, size_type );
@@ -975,72 +1081,35 @@ proc p_containing_q_LMs(bat ctx, bat Qterms, bat modifiers, flt lambda, int stem
     }
 }
 
+##
 # Smarter LM implementation that needs only a single treemergejoin per query
 # Arguments: 
 #   ctx: context regions
 #   Qterms: query terms ([void,oid])
 #
 # Original code by: Thijs, prefixed by #:
-
-proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
+##
+proc p_containing_q_LM_fast(bat[oid,dbl] ctx, bat[oid,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
     # TODO: add real weighting to avoid recomputation for duplicate query terms, 
     # or for morphological variants when stemming (can also be used to implement the modifiers)
     
 	var QoidWeights := Qterms.project(dbl(1)); 
     
-    # Stemming is done in Qterms_to_tid_pre, called below
-    #
-    #: var enum_word := load(col_name+"enum_word");
-	#: if (stemming = STEM_OFF) {
-    #: Qoids := Qterms.join(enum_word);
-    #: 	    }
-    #: else if (stemming = STEM_ON) {
-    #: var word_stem := load(col_name+"word_stem");
-    #: var Qstems := Qterms.join(word_stem.reverse());
-    #: Qoids := Qstems.join(word_stem).join(enum_word);
-    #: word_stem:=nil;
-    #:     }
-
-    #: enum_word := nil;
     if ( Qterms.count() = 0) {
-        #: return ctx.[*](min(bat(col_name+"col_freq")));
         return ctx.[*](min(col_freq()));
     }
-    #: else
-    #: {
-    #: var word_name := load(col_name+"word_name");
-
-	#: var Qpositions:=[uselect](const word_name,Qoids.reverse().mirror()).[sort]().[project](Qoids.reverse()).[reverse]();
-    #: word_name := nil;
     
     var Qoid_pre := Qterms_to_tid_pre( Qterms );
+    
+    # pre_Qoid  : [pre, term-oid] 
     var pre_Qoid := Qoid_pre.reverse().sort();
-  
-	#: var allpositions:=new(oid,oid);
-	#: [insert](const allpositions,Qpositions);
-    #: allpositions.reverse().sort();
-
-    #: var word_pre := load(col_name+"word_pre");
-    #: var pre_Qoid := allpositions.join(word_pre).reverse().sort();
-
-    #: var entity_pre := load(col_name+"entity_pre");  
-    #: var entity_post := load(col_name+"entity_post");
-	#: var ctx_oid :=ctx.sort().mark(oid(0)).reverse();
-    #: var ctx_score := ctx.reverse().mark(oid(0)).reverse();
-	#: var ctx_pre := ctx_oid.join(entity_pre);
-    #: var ctx_post := ctx_oid.join(entity_post);
-    #: entity_post:=nil;
     
-
-	#: var res := treemergejoin_sort(ctx_pre,ctx_post,pre_Qoid.hmark(oid(0)),1);
-    
+    # res       : [anc_pre, desc_pre]
     var res := anc_desc( ctx, pre_Qoid );
-
-    # res    : [anc_pre, desc_pre]
     
     
-	var res_ctx := res.hmark(oid(0));
-    # res_ctx: [void, anc_pre]
+	# res_ctx: [void, anc_pre]
+    var res_ctx := res.hmark(oid(0));
     
     # res: [anc_pre, desc_pre]
     # res.tmark(oid(0)): [void,desc_pre]
@@ -1049,17 +1118,18 @@ proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int 
     
 	#: var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
     
-    var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
+    var res_Qoid := res.join(pre_Qoid);
 	var termcounts := res_Qoid.CTgroup(res_ctx).CThistogram();
     
-    #:var termcounts := {count}res;
+    #:var termcounts := {count}(res);
     
     var ctx_size;
 
 	if (size_type = SIZE_ENTITY)
         ctx_size:=res_oid.reverse().kunique().mirror().sort().size_entity();
 	else if (size_type = SIZE_TERM)
-		ctx_size :=ctx_oid.join(BAT(col_name+"entity_text_size"));
+		#: ctx_size :=ctx_oid.join(BAT(col_name+"entity_text_size"));
+        ctx_size := size_term(ctx);      
 
     var termprobs:=termcounts.[dbl]().[/](res_ctx.join(ctx_size).[dbl]());
 
@@ -1141,8 +1211,6 @@ proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int 
 	return prob; 
     #: }
 }
-
-# The following functions have been copied without change from algebra_procs.mil
 
 
 ################################################################################
