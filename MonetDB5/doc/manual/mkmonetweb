@@ -31,11 +31,9 @@ create_index_scan() {
 				if [ "$tmp" = "../index.html" ];
 				then
 					tmp=""
-					echo "root:next=index.html" >> ${indexfile}.scan
-					echo "root:title=Manual" >> ${indexfile}.scan
 				elif [ -z "$tmp" ];
 				then
-					tmp="root"
+					tmp="index.html"
 				fi
 			fi
 			echo "`basename "${file}"`:$type=${tmp}" >> ${indexfile}.scan
@@ -52,7 +50,7 @@ create_index_scan() {
 create_index_traverse() {
 	rm ${indexfile}.children >& /dev/null
 	create_index_scan
-	do_traverse "root" "o"
+	do_traverse "index.html" "o"
 }
 
 # Recursive helper function to create the children index
@@ -155,6 +153,9 @@ transform_files() {
 		local title=`get_entry $f title`
 		local menu=`generate_menu $f "" "" true`
 
+		# remove target file if already exists before we start
+		rm -f "$1/$f" >& /dev/null
+		
 		# We use awk here, because with sed we would have to ultimately
 		# escape the replacement content...
 		awk \
