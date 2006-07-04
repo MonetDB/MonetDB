@@ -22,7 +22,7 @@ This late development made it possible to immediately start from the SQL'99
 definition. As soon as the SQL'03 specifications became available, its content
 was taken as the primary frame of reference.
 The SQL development strategy is driven by immediate needs of the
-user base, such that less-frequently used features end up low on
+user base, so that less-frequently used features end up low on
 the development stack.
 
 The purpose of this chapter is to give a quick introduction on the SQL
@@ -37,9 +37,9 @@ Relational Language Components, ISBN 1558604561.
 
 The architecture is based on a separate compiler module, which translates
 SQL statements into MAL. In this process common optimization heuristics,
-specific to relational algebra are performed.
+specific to the relational algebra are performed.
 There are bindings for SQL with e.g. JDBC, PHP and C,
-see @ref{Programming Interfaces}) to integrate seamlessly in existing
+(see @ref{Programming Interfaces}) to integrate seamlessly in existing
 developments environments.
 Client utilities like @ref{Aqua Data Studio},
 @ref{DbVisualizer} and @ref{iSQL-Viewer}
@@ -144,5 +144,5 @@ If you haven't managed to contact the database server either way,
 backtrack your steps. Is the server running? (use @code{monetdb --status})
 More arguments may be needed if the server lives on
 a different machine or the client does not have access to the
-MonetDB configuration file to access the defaults see @ref{Client Interfaces}
+MonetDB configuration file to access the defaults, see @ref{Client Interfaces}
 for details.

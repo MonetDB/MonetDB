@@ -25,25 +25,16 @@ world expert on the topic F. Gaastra.
 The archives of the VOC are spread around the world, but a large
 contingent still resides in the @url{ http://www.nationaalarchief.nl/,National Archive},
 The Hague.
-The archives comprise over 25 million historical records.
-Much of which has not (yet) been digitized.
+The archives comprise over 25 million historical records, much of which has not (yet) been digitized.
 
-The MonetDB/SQL tutorial is based on the material published in the book
-J.R. Bruijn, F.S. Gaastra and I. Schaar, @emph{Dutch-Asiatic Shipping in the 17th
-and 18th Centuries}, which gives an account of the trips made to the East
+The MonetDB/SQL tutorial is based on the material published in the book 
+@emph{Dutch-Asiatic Shipping in the 17th and 18th Centuries} by J.R. Bruijn, F.S. Gaastra and I. Schaar, which gives an account of the trips made to the East
 and ships returned safely (or wrecked on the way).  A total of 8000 records
 are provided.  They include information about ship name and type, captain,
 the arrival/departure of harbors along the route, personnel accounts,
 and anecdotal information.
 
 @subsection Acquiring and loading the VOC data set
-The VOC data set can be downloaded from
-@url{http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz,the MonetDB Assets site}
-as a gzipped file with SQL statements.
-After the zipfile has been extracted, the file should be loaded into MonetDB
-via the @ref{Client Interfaces}.
-Alternatively, the URL to the VOC data file can be supplied to the
-@code{mjclient} utility, which then directly reads from the URL.
 
 Before you load the VOC data set, it is advised to first add a different user
 with its own schema to the MonetDB database.
@@ -66,8 +57,16 @@ Operation successful
 voc> ALTER USER "voc" SET SCHEMA "voc";
 voc>\q
 @end example
-In the remainder of the tutorial you can no log onto the server
+In the remainder of the tutorial you can log onto the server
 as user @code{voc}.
+
+The VOC data set can be downloaded from
+@url{http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz,the MonetDB Assets site}
+as a gzipped file with SQL statements.
+After the zipfile has been extracted, the file should be loaded into MonetDB
+via the @ref{Client Interfaces}.
+Alternatively, the URL to the VOC data file can be supplied to the
+@code{mjclient} utility, which then directly reads from the URL.
 
 The tutorial database can be initialized using either @code{mjclient} and
 @code{mclient} as follows, provided the sql-dump file has already been
@@ -75,12 +74,12 @@ downloaded:
 @example
 shell> mjclient --database=voc -uvoc -f voc_dump.sql -Xbatching
 password: ***
+shell>mclient -lsql -uvoc <voc_dump.sql
 @end example
-Or using a remotely living dump.
+Alternatively, a remotely living dump file can be used:
 @example
 shell> mjclient -uvoc -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching
 password:***
-shell>mclient -lsql -uvoc <voc_dump.sql
 @end example
 The argument @code{Xbatching} instructs the JDBC client to batch instructions
 before shipping them to the server. Loading the database takes a few
@@ -90,17 +89,17 @@ seconds on a state-of-the-art machine.
 The @code{mjclient} contains a @emph{describe} operator, 
 denoted by @code{\d} to inspect the
 definition of the database schema and its tables.
-This functionality is not available in @code{MapiClient}. 
+This functionality is not available in @code{mclient}. 
 @example
 voc-> \d
-TABLE   sys.craftsmen
-TABLE   sys.impotenten
-TABLE   sys.invoices
-TABLE   sys.passengers
-TABLE   sys.seafarers
-TABLE   sys.soldiers
-TABLE   sys.total
-TABLE   sys.voyages
+TABLE   voc.craftsmen
+TABLE   voc.impotenten
+TABLE   voc.invoices
+TABLE   voc.passengers
+TABLE   voc.seafarers
+TABLE   voc.soldiers
+TABLE   voc.total
+TABLE   voc.voyages
 @end example
 The set consists of 8 tables, which are all bound to each other using 
 FOREIGN KEY relationships. The voyages table is considered to be the 
@@ -110,8 +109,8 @@ Since the invoices table holds zero or more invoices per voyage
 (identified by number, number_sub) a PRIMARY KEY constraint is 
 not possible. Details of the tables are readily available.
 @example
-voc-> \d sys.soldiers
-CREATE TABLE "sys"."soldiers" (
+voc-> \d voc.soldiers
+CREATE TABLE "voc"."soldiers" (
         "number"               int      NOT NULL,
         "number_sup"           char(1)  NOT NULL,
         "trip"                 int ,
@@ -123,7 +122,7 @@ CREATE TABLE "sys"."soldiers" (
         "death_during_voyage"  int ,
         "onboard_at_arrival"   int ,
         CONSTRAINT "soldiers_number_number_sup_pkey" PRIMARY KEY ("number", "number_sup"),
-        CONSTRAINT "soldiers_number_number_sup_fkey" FOREIGN KEY ("number", "number_sup") REFERENCES "sys"."voyages" ("number", "number_sup")
+        CONSTRAINT "soldiers_number_number_sup_fkey" FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup")
 );
 voc->
 @end example
@@ -148,7 +147,7 @@ voc=( ) AS onboard_people_table;
 Operation successful
 @end example
 The new view will show up and we can just use it as a normal table, 
-to for instance calculate the number of records for each group of people:
+for instance to calculate the number of records for each group of people:
 @example
 voc-> SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
 +------------+-------+
@@ -222,12 +221,12 @@ left on 26 December 1794. After news of the changed situation in the
 Netherlands was received in Asia, the last homeward voyage took place in 
 the spring of 1795. The VOC itself was disbanded in 1798.
 
-In total 66 voyages of the voorcompagnieëare listed, one more than the 
+In total 66 voyages of the voorcompagnieë are listed, one more than the 
 traditionally accepted number. The reconnaissance ship, POSTILJON, from the 
 fleet of Mahu and De Cordes, that was collected en route is given its 
 own number (0022). Since the attempt of the Australische Compagnie to 
 circumvent the monopoly of the VOC can be considered as a continuation of 
-the voorcompagnieëthe voyage of Schouten and Le Maire is also 
+the voorcompagnieë the voyage of Schouten and Le Maire is also 
 listed (0196-0197).
 For the rest, exclusively the outward and homeward voyages of the VOC 
 are mentioned in the tables. Of those there were in total 4722 outward and 
@@ -296,7 +295,7 @@ kapiteinluitenant. The index is arranged by surname or patronymic.
 The volume of the ships is given in metric tons. The sources give the 
 figures in lasten (1 last = 2 tons). After 1636, however, information in 
 lasten is no longer of any value, as, for fiscal reasons, the VOC's 
-figures were kept artificially low. From then on the volume has been 
+figures were kept artificially low. Since then the volume has been 
 calculated on the basis of the measurements of the ships, according to 
 a simple formula (volume in lasten = length x breadth x depth in 
 Amsterdam feet, divided by 200; 1 ft. = 28,3 cm). The results of this 
