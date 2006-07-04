@@ -18,7 +18,7 @@ releases.
 @subsection SQL Preface
 We use the following notation to explain the supported variation SQL.
 The SQL syntax is summarized in extended BNF. Alternative constructs 
-are separated by | and grouped by parenthesis. Optional parts are 
+are separated by | and grouped by parentheses. Optional parts are 
 marked with square brackets. A repetition is marked with either '+' 
 or '*' to indicate at least once and many times, respectively.
 Lexical tokens are illustrated in capitals.
