@@ -86,6 +86,9 @@ test = (
 		    r"^\[ .?\\000\\000\\000.?\\000\\000\\000.? \]$",
                 # ignore compile date/time in helps messages:
                     r"^COMPILED:  by adm on .*$",
+                # `fuser` (in MkillUsers) triggers these errors on Gentoo with "hardened" kernel
+                    r'^! Cannot open /proc/net/unix: Permission denied$',
+                    r'^! Cannot stat file /proc/[0-9]+/fd/[0-9]*: No such file or directory$',
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
