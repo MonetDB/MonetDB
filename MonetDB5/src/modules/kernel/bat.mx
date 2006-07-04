@@ -80,9 +80,9 @@ comment "Returns the head-mirror image of a BAT (two head columns).";
 #        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
 #	DANGEROUS! DEBUGGING PURPOSES ONLY!";
 
-#command sort(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-#address BKCsort
-#comment "Sorts the BAT itself on the head, in place. ";
+command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+address BKCorder
+comment "Sorts the BAT itself on the head, in place. ";
 
 command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCrevert
@@ -749,8 +749,8 @@ mal_export str BKCreverse(int *ret, int *bid);
 mal_export str BKCmirror(int *ret, int *bid);
 mal_export str BKCconvert(int *ret, int *bid);
 mal_export str BKCrevert(int *ret, int *bid);
-mal_export str BKCsort(int *ret, int *bid);
-mal_export str BKCsort_rev(int *ret, int *bid);
+mal_export str BKCorder(int *ret, int *bid);
+mal_export str BKCorder_rev(int *ret, int *bid);
 mal_export str BKCinsert_bat(int *r, int *bid, int *sid);
 mal_export str BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force);
 mal_export str BKCreplace_bun(int *r, int *bid, ptr h, ptr t);
@@ -1784,7 +1784,7 @@ BKCrevert(int *ret, int *bid)
 }
 
 str
-BKCsort(int *ret, int *bid)
+BKCorder(int *ret, int *bid)
 {
 	BAT *b;
 
@@ -1801,7 +1801,7 @@ BKCsort(int *ret, int *bid)
 }
 
 str
-BKCsort_rev(int *ret, int *bid)
+BKCorder_rev(int *ret, int *bid)
 {
 	BAT *b;
 
