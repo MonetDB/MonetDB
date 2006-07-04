@@ -239,7 +239,10 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid
     # Items contains the context nodes for the descendant step: 
     # this is the right side argument to contained_by.
     # The table must be [void,oid], so:
-    var items := context.mark(0@0).reverse();
+    var items := parent.mark(0@0).reverse();
+    
+    # Suggestion from Thijs: make iters a [void,void], with the same length as anc
+    var iters := parent.hmark(oid(0)).mark(oid(0));
     
     # Candidates: all element nodes
     var candidates := child.sort().mark(0@0).reverse();
@@ -250,7 +253,10 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid
     # Check the order of the items:
     items.chk_order();
     
-    var par_chld := ll_child(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    var void_chld := ll_child(iters, items, pre_size, candidates, collHeight, false, false, min(iters), max(iters), false);
+    
+    # Map back the ancestors
+    var par_desc  := parent.mark(oid(0)).join(void_chld);
     
     candidates := nil;
     items := nil;
@@ -954,14 +960,14 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     }
     
     # We now have a table that lists [doc, term score] pairs. These need to be aggregated
-    # into [doc, score] pairs: (this is the product, or sum when scoreBase = 0)
-    var res;
+    # into [doc, score] pairs: (this is the product in the formula)
+    #var res := {prod}(doc_termscore, ctx.mark(oid(0)));
+    var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), ctx.mark(0@0).semijoin(doc_tid));
+
     if ( scoreBase = 0 ) {
-        res := {sum}(doc_termscore, ctx.mark(oid(0)));
         # Add the scores to the context set (this should have scores 0, so adding is OK)
         res := [+](ctx, res);
     } else {
-        res := {prod}(doc_termscore, ctx.mark(oid(0)));
         # Add the scores to the context set (this should have scores 1, so multiplying is OK)
         res := [*](ctx, res);
     }
