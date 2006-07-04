@@ -783,7 +783,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      }
      
      # aggregate doc scores
-     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elem_tid.mirror());
+     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), left.mark(0@0).semijoin(elem_tid));
      
      res := res.[/](terms.count()).[+](left);
      return res;
