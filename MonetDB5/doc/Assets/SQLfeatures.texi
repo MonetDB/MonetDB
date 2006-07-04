@@ -1,5 +1,5 @@
 @section MonetDB/SQL Features 
-The SQL Implementation implementation is based on the SQL-99 standard. 
+The SQL Implementation is based on the SQL-99 standard. 
 It is built incrementally over time to cope with the effort
 required to realize all features. Priority is given to those
 features relevant to our research and upon request from our valued
@@ -8,7 +8,7 @@ partners.
 The plethora of SQL implementations also show that the standard
 alone is hardly sufficient. All database systems have extended
 or twisted the language definition to satisfy the needs of their
-customer, to support legacy, and to better tap into the functionality
+customers, to support legacy, and to better tap into the functionality
 offered by their kernel implementations. 
 MonetDB/SQL is bound to follow this path too. The kernel imposes
 limitations on the features that can and cannot be realized.
@@ -84,7 +84,7 @@ SQL uses a query cache to speed up subsequent calls to identical
 (up to constants) queries.
 @item
 The @code{optimizer} variable takes a string. It controls the
-quer optimizers, See @ref{SQL}.
+query optimizers, see @ref{SQL}.
 @end itemize
 
 @node EXPLAIN Statement, DEBUG Statement, Session Variables, MonetDB/SQL Features
@@ -95,7 +95,7 @@ It gives a detailed description of the actions taken to produce the
 answer. The example below illustrates what you can expect when a
 simple query is pre-pended by the @code{explain} modifier.
 Although the details of this program are better understood
-when you have read the Chapter on @ref{MAL} 
+when you have read the Chapter on @ref{MAL}, 
 the global structure is easy to explain.
 
 @verbatim
@@ -168,7 +168,7 @@ It provides a simple mechanism to trace the execution, hunting
 for possible errors and detect performance bottlenecks
 (@ref{Runtime Inspection}).
 
-The example below, illustrates the start of such a session:
+The example below illustrates the start of such a session:
 @verbatim
 >debug select count(*) from tables;
 #    mdb.start()
@@ -184,7 +184,7 @@ mdb> ...
 @node TRACE Statement, Optimizer Control, DEBUG Statement, MonetDB/SQL Features
 @subsection TRACE Statement
 Inspection of the execution time of the query plan uses the debugger
-facilities to time each request. The statement below illustrates
+facilities to time each request. The example below illustrates
 the @code{trace} statement modifier to obtain a first glimpse
 on the expensive components of the query plan.
 
@@ -259,7 +259,7 @@ in various stages of maturity, are:
 @item garbageCollector
 @tab Injects calls to the garbage collector to free up space.
 @item expressionAccumulation
-@tab Looks after aritmetic expressions, turning them into accumulator
+@tab Looks after arithmetic expressions, turning them into accumulator
 expressions
 @item factorize
 @tab Produce a factory from a function
@@ -273,7 +273,7 @@ expressions
 @tab Performs static coercions
 @end multitable 
 
-The final result the optimizer steps become visible using the @code{explain}
+The final result of the optimizer steps become visible using the @code{explain}
 statement modifier.  Alternatively, the @code{debug} statement modifier
 in combination with the 'o' command provides access to the intermediate
 optimizer results.
@@ -285,11 +285,11 @@ MonetDB kernel. Most notably, its efficient column-wise storage
 scheme with associated algebraic primitives.
 However, this kernel can also be programmed directly using the
 MonetDB Assembler Language (MAL), which provides a much richer
-set of operators then strictly necessary for a correct implementation
+set of operators than the ones strictly necessary for a correct implementation
 and execution of SQL
 
 Although the BATs used for SQL storage can be manipulated directly
-at the MAL layer, it is strongly discouraged. For, SQL uses a
+at the MAL layer, it is strongly discouraged because SQL uses a
 rather complex administration to realise transaction safety.
 Working at the MAL layer directly could easily compromise
 the integrity of the system as a whole.
@@ -297,7 +297,7 @@ the integrity of the system as a whole.
 However, there are cases where access to a collection of BATs from
 the SQL environment can be handy. For example, to inspect some
 of the system tables maintained in the kernel.
-This functionality is realised using an variation of the @code{view
+This functionality is realised using a variation of the @code{view
 statement}. It is best illustrated with a short example.
 
 First, create in MonetDB the BATs of interest. Only void-BATs are allowed

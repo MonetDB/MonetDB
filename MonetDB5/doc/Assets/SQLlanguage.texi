@@ -18,19 +18,19 @@ releases.
 @subsection SQL Preface
 We use the following notation to explain the supported variation SQL.
 The SQL syntax is summarized in extended BNF. Alternative constructs 
-are seperated by | and grouped by parenthesis. Optional parts are 
+are separated by | and grouped by parenthesis. Optional parts are 
 marked with square brackets. A repetition is marked with either '+' 
 or '*' to indicate at least once and many times, respectively.
 Lexical tokens are illustrated in capitals.
 
-Sometimes MonetDB/SQL supports extra syntax this is identified by a
+Sometimes MonetDB/SQL supports extra syntax that is identified by a
 '+' before the clause. Unfortunately, we do not support the full
-SQL 2003 jet and this is specified by a '-' before the clause. 
+SQL 2003 yet and this is specified by a '-' before the clause. 
 If next to the '-' a '<' and version number are given the feature is supported
 in the older releases.
 
 Currently we have partial support for SQL-2003. Features are added when 
-(enough) users express their interest in these.
+(enough) users express their interest in these. Some of the currently not supported features are:
 
 @itemize @bullet
 @item 
@@ -69,16 +69,16 @@ sql>select /* ignore this */ 3;
 
 @node SQL Data Definition, SQL Data Types, SQL Comments, SQL Language
 @subsection SQL Data Definition
-@subsubsection Create TABLE
+@subsubsection Create Table
 
 The parser currently supports the full <table scope> specifier, but the 
 implementation is limited to LOCAL TEMPORARY tables 
-(ie the tables are only visable in the clients session) and 
+(i.e. the tables are only visible in the clients session) and 
 on COMMIT we 'DROP' these temporaries. 
 
-@verbatim
-The CREATE table statement follows the 2003 syntax, ie 
+The CREATE table statement follows the SQL-2003 syntax: 
 
+@verbatim
 	CREATE [ <table scope> ] TABLE 
 		<table name> 
 		<table contents source>
@@ -122,12 +122,12 @@ The CREATE table statement follows the 2003 syntax, ie
 -<supertable name> ::= <table name>
 @end verbatim
 
-@subsubsection create table like 
+@subsubsection Create Table Like 
 
 It is posible to create a table which looks like an existing table. This 
 can be done using the create table like statement. Currently there is no
 support for additional options. A work around is to use the alter
-statement to change options.
+statement to change the options.
 
 @verbatim
 <like clause> ::= LIKE <table name> [ <like options> ]
@@ -139,7 +139,7 @@ statement to change options.
 -<column default option> ::= INCLUDING DEFAULTS | EXCLUDING DEFAULTS
 @end verbatim
 
-@subsubsection create table AS subquery
+@subsubsection Create Table AS Subquery
 As of version 3.0 support is added for table construction based on subqueries.
 
 @verbatim
@@ -148,7 +148,7 @@ As of version 3.0 support is added for table construction based on subqueries.
 -<3.0	<with or without data> ::= WITH NO DATA | WITH DATA
 @end verbatim
 	
-@subsubsection columns
+@subsubsection Columns
 
 @verbatim
 <column definition> ::=
@@ -157,10 +157,10 @@ As of version 3.0 support is added for table construction based on subqueries.
                 [ <column constraint definition>... ] [ -<collate clause> ]
 @end verbatim
 
-@subsubsection Identity column
-SQL 2003 added identity columns, which are columns for which the values are
-coming from a sequenc generator. Besides the SQL 2003 syntax also the 
-syntax from mysql (auto_increment) and postgress (serial data type) are 
+@subsubsection Identity Column
+SQL-2003 added identity columns, which are columns for which the values are
+coming from a sequence generator. Besides the SQL-2003 standard the 
+syntax from MySql (auto_increment) and Postgress (serial data type) are also
 supported.
 
 @verbatim
@@ -183,9 +183,9 @@ supported.
 @c  as domain/attribute are currently not support default values are only 
 @c  important for columns
 
-To make insert statements easier a default value can associated with
+To make insert statements easier a default value can be associated with
 each column. Besides literal values, temporal and sequence functions 
-can be used as default value. Value of these functions at insert time will
+can be used as default values. The value of these functions at insert time will
 be used. 
 @c todo explain that our DEFAULT is more powerfull (like postgress), ie 
 @c support any function not just temporal and sequence related
@@ -215,10 +215,11 @@ the missing triggers, ie we currently check constraints directly on insert,
 update and delete. The NULL matching on foreign keys is limited to the SIMPLE
 MATCH type (NULL values statisfy the constraint). The FULL and PARTIAL MATCH
 types are not supported. The referential action is currently limited to 
-RESTRICT, ie an update fails if a other columns have references to it. 
+RESTRICT, ie an update fails if other columns have references to it. 
 
 @verbatim
-<column constraint definition> ::= [ <constraint name definition> ] <column constraint> [ <constraint characteristics> ]
+<column constraint definition> ::= [ <constraint name definition> ]
+               <column constraint> [ <constraint characteristics> ]
 
 <column constraint> ::=
                 NOT NULL
