@@ -20,9 +20,9 @@
 The combination of joins and selects is effective in the 
 context of cracker optimizations.
 @mal
-pattern joinselect():str
+pattern optimizer.joinselect():str
 address QOTJSoptimizer;
-pattern joinselect(mod:str, fcn:str):str
+pattern optimizer.joinselect(mod:str, fcn:str):str
 address QOTJSoptimizer
 comment "Replace select with join select";
 @h
