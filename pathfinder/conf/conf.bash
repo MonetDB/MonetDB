@@ -287,6 +287,11 @@ if [ "${os}" = "Linux" ] ; then
 	if [ -x /var/tmp/soft/local/bin/swig ]; then
 		conf_opts="${conf_opts} --with-swig=/var/tmp/soft/local/bin/swig"
 	fi
+	if [ -s /etc/debian_version -a -x /soft/${BITS}/flex-2.5.33/bin/flex ] ; then
+		# Debian's default flex 2.5.31 does not like the Pathfinder code;
+		# hence, we use our own flex 2.5.33 instead.
+		binpath="/soft/${BITS}/flex-2.5.33/bin:${binpath}"
+	fi
 fi
 
 if [ "${os}" = "CYGWIN" ] ; then
