@@ -897,12 +897,28 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 # to the occurrence of the terms "information" and "retrieval"
 #
 #
-# This function implements the following formula:
-#             ___                 tc(tm_i, doc)                  tc(tm_i,col)
-#  S(doc|q) = | |        lambda * ------------- + (1 - lambda) * ------------
-#            tm_i in q              len(doc)                       len(col)
+# The score value for a single term and document is defined as follows:
+#                                                  
+#  S(doc|tm) = lambda * FG(tm) + (1 - lambda) * BG(tm)
 #
-# where:
+# where 
+#            tc(tm,doc)
+#  FG(tm) = ------------       (foreground statistics)
+#             len(doc)
+#
+#            tc(tm,col)
+#  BG(tm) = ------------       (background statistics)
+#             len(col)
+#
+# To compute score values for a set of terms at once, this function implements 
+# presence weighting (thanks to Thijs for pointing this out), using the following 
+# formula:
+#
+#            /    ___       lambda * FG(tm_i)         \        ___     
+# S(doc|q) = |    | |     ----------------------  + 1 |  *     | |    (1 - lambda) * BG(tm_i)
+#            \ tm_i in q  (1 - lambda) * BG(tm_i)     /     tm_i in q  
+#
+# where:                                                   
 #  q            : query: set of query terms
 #  tm_i         : query term
 #  doc          : search document or, in this case, context region
@@ -935,14 +951,17 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var col_len := bat("tj_" + collName + "_Terms").count();
     
     # Now, we need to compute the probability for each document->term pair
-    var doc_termscore := new(oid,dbl);
+    var doc_termscore   := new(oid,dbl);
+    var prod_background := dbl(1);
     
     # TODO: Qterms_to_void_tid is now called twice (also to compute tid_pre)!
     var terms := Qterms_to_void_tid( Qterms );
     
     # Iterate over all terms.
     # TODO: some computation (lamda) can be done beforehand
+    
     terms@batloop() {
+        # Compute the first factor
         # $t contains the term id 
         var occurrences := doc_tid.select($t).sort();
         
@@ -955,14 +974,22 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
         var tc_tm_col  := col_term_frq.find($t); 
         var background := dbl(tc_tm_col) / dbl(col_len);
         
-        var total := [+]( [*](lambda, foreground), (1.0 - lambda) * background);
+        # Compute the first factor. This generates a [doc, term score] table for
+        # each combination of doc and term
+        var total := [+]( [/]( [*](lambda, foreground), (1.0 - lambda) * background), dbl(1) );
         doc_termscore.insert( [dbl](total) );
+        
+        # Compute the second factor: product of background statistics over all terms
+        prod_background := prod_background * background;
     }
     
     # We now have a table that lists [doc, term score] pairs. These need to be aggregated
-    # into [doc, score] pairs: (this is the product in the formula)
+    # into [doc, score] pairs: (this is the first aggregate product in the formula)
     #var res := {prod}(doc_termscore, ctx.mark(oid(0)));
     var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), ctx.mark(0@0).semijoin(doc_tid));
+    
+    # Now compute the final scores: multiply by the background score
+    res := [*](res, prod_background);
 
     if ( scoreBase = 0 ) {
         # Add the scores to the context set (this should have scores 0, so adding is OK)
