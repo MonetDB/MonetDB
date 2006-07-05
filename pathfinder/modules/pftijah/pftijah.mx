@@ -532,6 +532,10 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 ##
 PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
+    if ( and((count( region ) = 1),(region.reverse().fetch(0) = virtRoot))) {
+        return select_node();
+    }
+
     var ctx      := region;
     var pre_size := load( "tj_" + collName + "_size");    
     var desc     := scj_desc( pre_size, ctx, collHeight, count(pre_size) );
