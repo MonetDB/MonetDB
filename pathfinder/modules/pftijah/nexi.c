@@ -87,6 +87,8 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   bool restable_set;
   bool ofilename_set;
   bool scale_on;
+  bool orcomb_set;
+  bool andcomb_set;
 
   bool query_set;
 
@@ -196,6 +198,8 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   ofilename_set = FALSE;
   query_set = FALSE;
   scale_on = TRUE;
+  orcomb_set = FALSE;
+  andcomb_set = FALSE;
 
     /* structure initialization */
     txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
@@ -303,7 +307,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
             } else if ( strcmp(optVal,"PROD") == 0 ) {
                 txt_retr_model->or_comb = OR_PROD;
             }
-            
+            orcomb_set = TRUE;
         } else if ( strcmp(optName,"txtmodel_andcomb") == 0 ) {
             if ( strcmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->and_comb = AND_SUM;
@@ -318,7 +322,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
             } else if ( strcmp(optVal,"PROD") == 0 ) {
                 txt_retr_model->and_comb = AND_PROD;
             }
-
+            andcomb_set = TRUE;
         } else if ( strcmp(optName,"txtmodel_upprop") == 0 ) {        
             if ( strcmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->up_prop = UP_SUM;
@@ -356,9 +360,21 @@ int old_main(int argc, char * const argv[], BAT* optbat)
         }
     }
     
-    // Switch to COARSE2 algebra for NLLR
-    if ( txt_retr_model->model == MODEL_NLLR )
+    // Some special cases for NLLR, since:
+    //  - NLLR is log-based (therefore requiring different combination and propagation operators)
+    //  - NLLR only works with COARSE2 at the moment
+    if ( txt_retr_model->model == MODEL_NLLR ) {
+        // Switch to COARSE2 algebra for NLLR
         algebra_type = COARSE2;
+
+        if ( !orcomb_set ) 
+            txt_retr_model->or_comb = OR_MAX;
+        
+        if ( !andcomb_set )
+            txt_retr_model->and_comb = AND_SUM;
+        
+    }
+        
     
     // Prepend some variables to the MIL code.
     MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection);
