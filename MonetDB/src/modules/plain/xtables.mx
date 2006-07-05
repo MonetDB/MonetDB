@@ -812,7 +812,11 @@ CTderive(grp *g, BAT *ct, BAT *b)
 	BAT *bn = ct;
 	int ret;
 
+#if SIZEOF_OID == SIZEOF_INT
 	if (tailtype(ct, TRUE) != TYPE_int) {
+#else
+	if (tailtype(ct, TRUE) != TYPE_lng) {
+#endif
 		if (!CTgroup(g, ct))
 			return GDK_FAIL;
 		ct = BATdescriptor(g->map);
