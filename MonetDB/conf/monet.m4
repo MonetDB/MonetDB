@@ -681,8 +681,13 @@ AC_PROG_LIBTOOL()
 AM_PROG_LIBTOOL()
 
 dnl AC_PROG_CC_STDC()
+if test -f "$srcdir"/vertoo.data; then
 AM_PROG_LEX()
 AC_PROG_YACC()
+else
+LEX=''
+YACC=''
+fi
 AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
