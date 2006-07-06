@@ -8633,8 +8633,9 @@ expandable (PFcnode_t *c)
 {
     if (noConstructor(LR(c)) 
 #ifdef HAVE_PFTIJAH
-	    && noTijahFun(LR(c)))
-#endif	
+	    && noTijahFun(LR(c))
+#endif
+        )
 	return 1;
     return noForBetween(LL(c)->sem.var, R(c));
 }
