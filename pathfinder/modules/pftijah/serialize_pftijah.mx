@@ -953,6 +953,8 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINISH INDEXING\n",tjctx->name);
 #endif
 
+	if ( 0 /* ROEL CHANGE VIRTUAL ROOT SIZE HERE */ )
+	        insertPreSize(tjctx,0,tjctx->tijahPre - 1);
 	if ( dbat_finalize(&tjctx->dbat_collPre) < 0 )
 		return GDK_FAIL;
 	if ( dbat_finalize(&tjctx->dbat_collSize) < 0 )
