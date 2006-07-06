@@ -150,107 +150,95 @@ PROC get_rpc_res (
     # get values out of WS for later use
     var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+    var pre_prop  := ws.fetch(PRE_PROP).fetch(cont); # reference to the value tables
     var pre_kind  := ws.fetch(PRE_KIND).fetch(cont);
     var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
-    var pre_prop  := ws.fetch(PRE_PROP).fetch(cont); # reference to the value tables
+
     var qn_prefix := ws.fetch(QN_PREFIX).fetch(cont);
     var qn_loc    := ws.fetch(QN_LOC).fetch(cont); # str name of ELEM nodes
     var prop_text := ws.fetch(PROP_TEXT).fetch(cont); # str value of TEXT nodes
-    # First BUN is the DOCUMENT node, never used, so remove it
-    pre_size  := pre_size.slice(1,  pre_size.count() - 1);
-    pre_level := pre_level.slice(1, pre_level.count() - 1);
-    pre_kind  := pre_kind.slice(1,  pre_kind.count() - 1);
-    pre_prop  := pre_prop.slice(1,  pre_prop.count() - 1);
 
-    # Get 'pre_prop' value of an "iter" node.  It's save to use 'find',
+    # Get "pre_prop" value of an "iter" node.  It's save to use 'find',
     # since "iter" appears only once in 'qn_loc'.
     var a;
-    var error := CATCH ({ a := qn_loc.reverse().find("iter"); });
-    # If we can not find "iter", then the result is empty, so return empty BATs
-    if (not(isnil(error))) {
-        return bat(void,bat,3).append(res_iter).append(res_item).append(res_kind);
+    var err := CATCH ({ a := qn_loc.reverse().find("iter"); });
+    if (not(isnil(err))) {
+        ERROR("get_rpc_res: RPC result should contain at lease *one* \"<iter>\" tag.\n");
     }
 
-    # Fetch the position of the "pre_prop" value.  Must use 'ord_select'
-    # and 'fetch', since the the "pre_prop" value can appear more than
-    # once in the 'pre_prop' bat.
+    # Fetch the position of the first "pre_prop" value of the "iter"
+    # node.  Must use "ord_select" and "fetch", since the the "pre_prop"
+    # value can appear more than once in the "pre_prop" bat.
     a := pre_prop.ord_select(a).reverse().fetch(0);
-    # Calculate the level number of a "xs:anyNode" value, which is the
-    # grandchild of an "iter".
-    var nodev_level :=  pre_level.find(a) + 2;
 
-    var k := int(nil); # kind nr of the current iteration
+    # To reduce #iter in batloop: everything before the first "iter" is
+    # not used, so remove them
+    pre_size  := pre_size.slice (int(a), pre_size.count() - 1);
+    pre_level := pre_level.slice(int(a), pre_level.count()- 1);
+    pre_prop  := pre_prop.slice (int(a), pre_prop.count() - 1);
+    pre_kind  := pre_kind.slice (int(a), pre_kind.count() - 1);
+
+    var level_typeNode :=  pre_level.find(a).int() + 1;
     var itercnt := 0;
-    var prop := oid(nil);
-    var prefix := "";
     var tpe := "";
     var i := int(nil);
     var d := dbl(nil);
 
     pre_size@batloop(){
-        # Skip holes in the BATs
-        if (not(isnil($t))){
-            k := pre_kind.fetch($h);
-            prop := pre_prop.fetch($h);
+        if (not(isnil($t))){ # Skip holes in the BATs
+            var l := pre_level.fetch($h).int();
+            var k := pre_kind.fetch($h);
+            var prop := pre_prop.fetch($h);
 
-            if (int(pre_level.fetch($h)) = nodev_level) {
-                if (k = '\000') { # element node value
-                    res_iter.append(oid(itercnt));
-                    res_item.append(pre_nid.fetch($h));
-                    i := set_kind(local_name.leftjoin(reverse(ws.fetch(DOCID_NAME))).leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);
-                    res_kind.append(i);
-                } else if(k = '\001') { # text node
-                    var val := prop_text.fetch(prop); # str value
-                    str_values.append(val);
-                    res_iter.append(oid(itercnt));
-                    res_item.append(str_values.reverse().find(val));
-                    res_kind.append(STR);
-                } else {
-                    printf("WARNING: get_rpc_res: unknow kind '%c'\n", k);
-                }
-                prefix := tpe := ""; # clean up type info
-            } else if (k = '\000') { # ELEM node
-                if (qn_loc.fetch(prop) = "iter"){
-                    # A new iteration starts
-                    itercnt :+= 1;
-                } else if (prefix = ""){
-                    prefix := qn_prefix.fetch(prop);
-                    if (prefix = "xs") {
-                        # only assign 'tpe' a value if the prefix is
-                        # 'xs', which means that this node contains type
-                        # information
-                        tpe := qn_loc.fetch(prop);
+            if (l < (level_typeNode + 2)) { # skip contents of a node value
+                if (k = '\000') { # ELEM node
+                    if (qn_loc.fetch(prop) = "iter"){
+                        # A new iteration starts
+                        itercnt :+= 1;
+                    } else if (l = level_typeNode){
+                        var prefix := qn_prefix.fetch(prop);
+                        if (prefix = "xs") {
+                            tpe := qn_loc.fetch(prop);
+                        } else {
+                            ERROR("get_rpc_res: invalid prefix of type node.  Expected \"xs\", got \"%s\".\n", prefix);
+                        }
+                    } else if (tpe = "anyNode"){
+                        res_iter.append(oid(itercnt));
+                        res_item.append(pre_nid.fetch($h));
+                        i := set_kind(local_name.leftjoin(reverse(ws.fetch(DOCID_NAME))).leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);
+                        res_kind.append(i);
+                        tpe := ""; # clean up type info
                     }
+                } else if ( and((k = '\001'), (tpe != "")) ) { # TEXT node                
+                    var val := prop_text.fetch(prop); # value in str
+                    if (tpe = "integer"){
+                        i := lng(val);
+                        int_values.append(i);
+                        res_iter.append(oid(itercnt));
+                        res_item.append(int_values.reverse().find(i));
+                        res_kind.append(INT);
+                    } else if(tpe = "double") {
+                        d := dbl(val);
+                        dbl_values.append(d);
+                        res_iter.append(oid(itercnt));
+                        res_item.append(dbl_values.reverse().find(d));
+                        res_kind.append(DBL);
+                    } else if(tpe = "decimal") {
+                        d := dbl(val);
+                        dbl_values.append(d);
+                        res_iter.append(oid(itercnt));
+                        res_item.append(dbl_values.reverse().find(d));
+                        res_kind.append(DEC);
+                    } else if(or( (tpe = "string"), (tpe = "anyNode") )) {
+                        str_values.append(val);
+                        res_iter.append(oid(itercnt));
+                        res_item.append(str_values.reverse().find(val));
+                        res_kind.append(STR);
+                    } else {
+                        printf("get_rpc_res: value with unsupported type \"%s\" ignored.\n", tpe);
+                    }
+                    tpe := ""; # clean up type info
                 }
-            } else if (k = '\001') { # TEXT node                
-                var val := prop_text.fetch(prop); # str value
-                if (tpe = "integer"){
-                    i := lng(val);
-                    int_values.append(i);
-                    res_iter.append(oid(itercnt));
-                    res_item.append(int_values.reverse().find(i));
-                    res_kind.append(INT);
-                } else if(tpe = "double") {
-                    d := dbl(val);
-                    dbl_values.append(d);
-                    res_iter.append(oid(itercnt));
-                    res_item.append(dbl_values.reverse().find(d));
-                    res_kind.append(DBL);
-                } else if(tpe = "decimal") {
-                    d := dbl(val);
-                    dbl_values.append(d);
-                    res_iter.append(oid(itercnt));
-                    res_item.append(dbl_values.reverse().find(d));
-                    res_kind.append(DEC);
-                } else if(tpe = "string") {
-                    str_values.append(val);
-                    res_iter.append(oid(itercnt));
-                    res_item.append(str_values.reverse().find(val));
-                    res_kind.append(STR);
-                } else if(tpe != "") {
-                    ERROR("WARNING: get_rpc_res: ignore value with unsupported type \"%s\"\n", tpe);
-                }
-                prefix := tpe := ""; # clean up type info
             }
         }
     }

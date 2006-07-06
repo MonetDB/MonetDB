@@ -23,10 +23,13 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<hello>
+
+    <hello>
         <world>
         </world>
-    </hello><hello>
+    </hello>
+ 
+    <hello>
         <world>
         </world>
     </hello>
