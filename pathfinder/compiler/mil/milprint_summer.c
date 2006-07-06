@@ -8557,6 +8557,33 @@ noConstructor (PFcnode_t *c)
     return 1;
 }
 
+#ifdef HAVE_PFTIJAH
+/**
+ * noTijahFun tests if Tijah-functions are used in core tree
+ * and report 0 if at least one is found and 1 else
+ *
+ * @param c the core tree, which is tested on Tijah-function containment
+ * @return 1 if no Tijah function is found - else 0
+ */
+static int
+noTijahFun (PFcnode_t *c)
+{
+    int i;
+    if (c->kind == c_apply && (
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-query"))) ||
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-query-id"))) ||
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-nodes"))) ||
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-score")))))
+        return 0;
+    else 
+        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+            if (!noTijahFun (c->child[i]))
+                return 0;
+
+    return 1;
+}
+#endif
+
 /**
  * noForBetween tests wether between the declaration of a variable and
  * its usage is a for loop, which stops a bound element construction
@@ -8604,8 +8631,12 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
 static int
 expandable (PFcnode_t *c)
 {
-    return ((noConstructor(LR(c)))?1:noForBetween(LL(c)->sem.var,
-                                                  R(c)));
+    if (noConstructor(LR(c)) 
+#ifdef HAVE_PFTIJAH
+	    && noTijahFun(LR(c)))
+#endif	
+	return 1;
+    return noForBetween(LL(c)->sem.var, R(c));
 }
 
 /**
