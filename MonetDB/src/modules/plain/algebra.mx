@@ -1020,17 +1020,11 @@ that for the moment are defined as procs.
 
     PROC sort_ht (bat[any::1,any::2] B) : bat[any::1,any::2]
     {
-	var R := new(htype(B),ttype(B),count(B));
-	B.kunique().sort()@batloop() {
-	    B.reverse().select($h).sort()@batloop() {
-		R.insert($t,$h);
-	    }
-	}
-	return R;
+	return B.tsort().ssort();
     }
-    ADDHELP("sort_ht", "manegold", "Dec 17 1998",
-	    "sorts a BAT according to its head (primary) and tail values (secondary).\
-(straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
+    ADDHELP("sort_ht", "manegold", "Jul 7 2006",
+	    "sorts a BAT according to its head (primary) and tail values (secondary): `B.tsort().ssort();`",
+            "algebra");
 
 @= milsumprod
     proc sum( bat[any,@1] b ) : @1 { return sum_@1(b); }

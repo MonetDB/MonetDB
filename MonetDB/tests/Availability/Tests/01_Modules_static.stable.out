@@ -238,7 +238,7 @@ Module: "algebra"
 [ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																								  ]
 [ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], lng, lng) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																													  ]
 [ "sort",	  "COMMAND:   ",  "sort(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on ascending head values."																				  ]
-[ "sort_ht",			  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "sorts a BAT according to its head (primary) and tail values (secondary).(straight forward hack, not tuned for performance at all, just used for testing.)"																																																	  ]
+[ "sort_ht",			  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "sorts a BAT according to its head (primary) and tail values (secondary): `B.tsort().ssort();`"																																																  ]
 [ "sort_rev",	  "COMMAND:   ",  "sort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on descending head values."																				  ]
 [ "split",	  "COMMAND:   ",  "split(BAT[lng,void]) : BAT[oid,oid]",						  "Split head into two values"																																																																									  ]
 [ "ssort",			  "COMMAND:   ",  "ssort(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns copy of a BAT with the BUNs sorted on ascending head values.\nThis is a stable sort."																																																  ]
