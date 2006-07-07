@@ -82,6 +82,7 @@ mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
 mal_export void     showModules(stream *f, Module v);
 mal_export void     debugModule(stream *f, Module v, str nme);
 mal_export void     dumpManual(stream *f, Module v, int recursive);
+mal_export void     dumpManualSection(stream *f, Module v);
 mal_export void 	dumpManualHelp(stream *f, Module s, int recursive);
 mal_export void 	dumpHelpTable(stream *f, Module s, str text, int flag);
 mal_export void 	dumpSearchTable(stream *f, str text);
@@ -559,6 +560,35 @@ void dumpManual(stream *f, Module s, int recursive){
 	stream_printf(f,"</%smodule>\n", (s->isAtomModule?"atom":""));
 	endtag=0;
 	}
+}
+void dumpManualSection(stream *f, Module s){
+	int j;
+	Symbol t;
+	InstrPtr sig;
+	str ps;
+	char *pt;
+
+	if(s==NULL || f==NULL || s->subscope== NULL)
+		return;
+
+	stream_printf(f,"@table\n");
+	for(j=0;j<MAXSCOPE;j++)
+	if(s->subscope[j]){
+		for(t= s->subscope[j];t!=NULL;t=t->peer) {
+			sig= getSignature(t);
+			ps= instruction2str(t->def,sig,0);
+			pt= strchr(ps,')');
+			if(pt){
+				pt++;
+				*pt=0;
+				stream_printf(f,"@tab %s\n",ps+1);
+			} else
+			stream_printf(f,"@tab %s\n",t->name);
+			if( t->def->help)
+				stream_printf(f," %s\n",t->def->help);
+		}
+	}
+	stream_printf(f,"@end table\n");
 }
 @-
 The manual overview merely lists the mod.function names

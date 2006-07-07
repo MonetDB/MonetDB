@@ -100,7 +100,7 @@ typedef struct CLIENT_INPUT {
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
-	int sessionkey; /* unique key addressed to session */
+	int sessionkey; /* NOTUSED ANYMORE */
 	int permission; /* access mode */
 @-
 The actions for a client is separated into several stages: parsing,
@@ -226,8 +226,6 @@ mal_export int		MCcountClients(void);
 mal_export int      MCreadClient  (Client c);
 mal_export str      MCstopClient(Client c, oid which);
 mal_export str      MCstopClientIndex(Client c, int id);
-mal_export str      MCresumeClient(Client c, int sessionkey);
-mal_export str      MCsuspendClient(Client c, int sessionkey, int timeout);
 mal_export void     MCcleanupClients(void);
 mal_export void     MCtraceAllClients(int flag);
 mal_export void     MCtraceClient(oid which, int flag);
@@ -601,7 +599,7 @@ void MCcloseClient(Client c) {
 	Client k;
 
 #ifdef MAL_DEBUG_CLIENT
-	printf("closeClient %d %s\n",c-mal_clients,c->user);
+	printf("closeClient %d %d\n",c-mal_clients,c->user);
 #endif
 	/* kill living background clients */
 	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
@@ -734,26 +732,6 @@ str MCstopClient(Client c, oid which){
 }
 @}
 @-
-
-A client may temporarily leave the scene by calling the routine suspend(K,T),
-where K is a user defined random number to represent the session, and T is
-a timeout value (in seconds). If the client returns within T seconds the changes
-are high his thread of control is still avaiable and the session can be
-continued where he left off.
-@{
-@c
-str MCsuspendClient(Client c, int sessionkey, int timeout){
-	c->sessionkey= sessionkey;
-	c->delay += timeout *1000;
-
-	return throwMessage("suspend","Not yet implemented");
-}
-str MCresumeClient(Client c,int sessionkey){
-	(void) c; (void) sessionkey; /* fool the compiler */
-	return throwMessage("suspend","Not yet implemented");
-}
-@}
-@-
 In embedded mode there can be at most one console client and one 
 Mapi connection. Moreover, the Mapi connection should disable the administrator
 console.
@@ -847,7 +825,7 @@ int MCreadClient(Client c){
 	bstream *in = c->fdin;
 
 #ifdef MAL_CLIENT_DEBUG
-	printf("# streamClient %s\n",c->user);
+	printf("# streamClient %d\n",c->user);
 #endif
 
 	while (in->pos < in->len && 
