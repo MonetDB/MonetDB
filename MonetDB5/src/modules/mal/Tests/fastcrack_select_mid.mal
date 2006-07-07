@@ -1,7 +1,6 @@
 # The first reference case for fast cracking
 
 include microbenchmark;
-include crackers;
 
 tuples:=1048576;
 values:= tuples;

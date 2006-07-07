@@ -2,9 +2,7 @@
 
 include microbenchmark;
 
-tuples:= 1; #67108864= 64* 1024*1024
-tuples:= tuples * 1024;
-tuples:= tuples * 1024;
+tuples:=1048576;
 values:= tuples;
 io.printf(" tuples %d\n",tuples);
 io.printf(" values %d\n",values);
