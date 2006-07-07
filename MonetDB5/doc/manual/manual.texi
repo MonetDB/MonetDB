@@ -7,7 +7,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED July 1, 2006
+@set UPDATED July 7, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -225,10 +225,20 @@ using the
 @node The MAL Profiler, Event Filtering, Runtime Inspection, Top
 @include mal_profiler.bdy.texi
 
-@node The Extension Modules , MonetDB BAT Kernel, Event Caching, Top
-@node MonetDB BAT Kernel , Advanced Topics, The Extension Modules , Top
+@node The Extension Modules , Clients, Event Caching, Top
+@include Assets/modules.texi
+
+@node Clients, Inspect , The Extension Modules, The Extension Modules
+@include clients.bdy.texi
+@node Inspect, Language, Clients, The Extension Modules
+@include inspect.bdy.texi
+@node Language, Manual, Inspect, The Extension Modules
+@include language.bdy.texi
+@node Manual, MonetDB BAT Kernel, Language, The Extension Modules
+@include manual.bdy.texi
+
+@node MonetDB BAT Kernel , Advanced Topics, Manual , Top
 @node Advanced Topics , Appendices, MonetDB BAT Kernel , Top
-Some additional stuff
 @node Appendices, SQL 1999 Features , Advanced Topics, Top
 @menu
 * SQL 1999 Features::

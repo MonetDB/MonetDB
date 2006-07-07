@@ -16,7 +16,6 @@ m4dir=$2
 
 mkdir ${dir}/doc/share/tmp
 cd ${dir}/src/mal
-ls
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
@@ -27,7 +26,6 @@ done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 
 cd ${dir}/src/optimizer
-ls
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
@@ -38,7 +36,6 @@ done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 
 cd ${m4dir}/src/gdk
-ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
@@ -52,7 +49,6 @@ cp *feps *pdf ${dir}/doc/share/tmp
 sed -i -e "/@t/,/@contents/d" ${dir}/doc/share/tmp/gdk.bdy.texi
 
 cd ${m4dir}/src/mapi/clients/C
-ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
@@ -63,17 +59,34 @@ done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 
 cd ${dir}/src/modules/mal
-ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
+		ex $b.bdy.texi <<!EOF
+		/^@example/+1a
+@table @code
+.
+/^@end example/s//@end table/
+		g/^command/s//@item
+		g/^address/d
+		g/^comment "/s///
+		g/^comment/s///
+		g/";/s///
+		/^@example/,/^@end example/d
+		/^@example/,/^module/-1d
+		/^module/s/.*/ @noindent @code{&}/
+		0i
+		@page
+.
+		f
+		w!
+!EOF
 		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 cd ${dir}/src/mil
-ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
@@ -83,7 +96,6 @@ do
 done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 cd ${dir}/src/modules/atoms
-ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
@@ -93,7 +105,6 @@ do
 done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 cd ${dir}/src/modules/kernel
-ls *mx
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
