@@ -254,6 +254,32 @@ MonetDB/SQL front end by calling
 
  MapiClient -lsql -umonetdb -Pmonetdb
 
+Usage of SQL Front-end with MonetDB5
+-----
+
+To use MonetDB/SQL front-end with MonetDB 5, you first need to install both MonetDB 4 and MonetDB 5. Then perform the `Bootstrap, Configure and Make` sequence for the SQL module. 
+Note: check that the SQL configure finds MonetDB5 installation, which is a prerequisite for the installation of SQL front-end for MonetDB5. There should be a message like:
+...
+checking for monetdb5-config... <monetdb5-prefix>/bin/monetdb5-config
+checking whether MonetDB version 4.99.19 or newer is installed... yes: found version 4.99.21
+...
+
+ 
+After successful instalation of the SQL module, start MonetDB5 server by
+
+::
+
+ mserver5 --set monet_mod_path=<monetdb5-prefix>/lib/MonetDB5:<sql-prefix>/lib/MonetDB5
+ --dbinit="include sql;"
+
+
+Then, in a second shell, set up the same environment and start the
+MonetDB/SQL front-end by calling
+
+::
+
+ mclient -lsql -umonetdb -Pmonetdb
+
 
 Documentation
 -------------

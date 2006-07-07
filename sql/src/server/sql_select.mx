@@ -1063,7 +1063,13 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			if (!foundsubset) {
 				return sql_error(sql, 02, "%s: no subset for column '%s'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), cv->cname);
 			}
-			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
+			s = foundsubset;
+			if (s && distinct) {
+				s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
+				s = stmt_unique(s, NULL);
+			}
+			a = sql_bind_aggr(sql->session->module, aggrstr, NULL);
+			return stmt_aggr(stmt_alias(s,NULL,_strdup("")),NULL,a);
 		} else if (!cv) { /* count(*) without from */
 			/* if we have a where (boolean only) */
 			if (!(s = scope_bind(scp, NULL, "row"))) 
