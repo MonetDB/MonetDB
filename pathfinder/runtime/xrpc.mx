@@ -24,7 +24,7 @@
 @' $Id$
 @'
 
-@f xquery_rpc
+@f xrpc
 @a Ying Zhang
 
 @t MIL primitives to support the RPC extension for XQuery using HTTP connection
@@ -35,7 +35,7 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
 @
 @* Module Definition
 @m
-.MODULE xquery_rpc;
+.MODULE xrpc;
 
 .USE pathfinder;
 .USE pf_support;
@@ -65,38 +65,38 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
         BAT[oid, str] str_values) : BAT[oid, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
-.PRELUDE = xquery_rpc_prelude;
-.EPILOGUE = xquery_rpc_epilogue;
+.PRELUDE = xrpc_prelude;
+.EPILOGUE = xrpc_epilogue;
 
-.END xquery_rpc;
+.END xrpc;
 
 @mil
-PROC rpc_receiver_start(int port, str option) : void {
+PROC rpcd_start(int port, str option) : void {
     fork(httpd_start(port, option));
 }
-ADDHELP("rpc_receiver_start", "zhang", "November 2005",
+ADDHELP("rpcd_start", "zhang", "November 2005",
 "PARAMETER:\n\
 int: port number\n\
 str: option, currently, only \"rpctime\"\n\
 DESCRIPTION:\n\
-Start receiver for RPC calls on the specified port",
-"xquery_rpc");
+Start XRPC receiver on the specified port",
+"xrpc");
 
-PROC rpc_receiver_start(int port) : void {
+PROC rpcd_start(int port) : void {
     fork(httpd_start(port, ""));
 }
-ADDHELP("rpc_receiver_start", "zhang", "November 2005",
+ADDHELP("rpcd_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
-Start receiver for RPC calls on the specified port",
-"xquery_rpc");
+Start XRPC receiver on the specified port",
+"xrpc");
 
-PROC rpc_receiver_start() : void {
-    rpc_receiver_start( int(monet_environment.find("pf_httpd_port")), "");
+PROC rpcd_start() : void {
+    rpcd_start( int(monet_environment.find("pf_httpd_port")), "");
 }
-ADDHELP("rpc_receiver_start", "zhang", "November 2005",
+ADDHELP("rpcd_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
-Start receiver for RPC calls on the default port as specified in \"monet_environment\" by \"pf_httpd_port\"",
-"xquery_rpc");
+Start XPRC receiver on the default port as specified in \"monet_environment\" by \"pf_httpd_port\"",
+"xrpc");
 
 PROC rpc_client(
         str local_name,
@@ -132,7 +132,7 @@ PROC rpc_client(
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\
 Send a RPC request to the destination \"location\", save the reults in the WorkingSet and return the fragment-id of the new added document",
-"xquery_rpc");
+"xrpc");
 
 PROC get_rpc_res ( 
         oid cont, 
@@ -250,7 +250,7 @@ This proc is used to retrieve the return values of RPC call(s), which are tempor
 1. retrieves the right values\n\
 2. builds temporary iter|item|kind BATs\n\
 3. fill in the value containers",
-"xquery_rpc");
+"xrpc");
 
 PROC doLoopLiftedRPC(
         int nr_iters,
@@ -318,7 +318,7 @@ PROC doLoopLiftedRPC(
             rpc_iter.append(iter_dst.hmark(1@0));
             lock_unset(mylock);
         } else { # layman's error handling simplifies debugging; better solution is more than welcome!
-            ERROR("RPC call: rpc_client:\n" + rpc_err);
+            ERROR("rpc_client: " + rpc_err);
         }
         var time_milClntDeSeriaEnd := msec();
         if (options.search("rpctime") >= 0) {
@@ -352,7 +352,7 @@ PROC doLoopLiftedRPC(
 }
 ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 "DESCRIPTION: implementation of the loop-lifted RPC",
-"xquery_rpc");
+"xrpc");
 
 @h
 #ifndef XQUERY_RPC_H
@@ -397,14 +397,14 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 #include "serialize.h"
 #include "shttpd.h"
 
-#define MXQ_SIGNATURE "signature\01http://monetdb.cwi.nl/xquery/rpc"
-#define MXQ_TYPE "type\01http://monetdb.cwi.nl/xquery/rpc"
+#define MXQ_SIGNATURE "signature\01http://monetdb.cwi.nl/xrpc"
+#define MXQ_TYPE "type\01http://monetdb.cwi.nl/xrpc"
 
 #define PFTEXT      1
 #define ELEMENT     0
 #define MAXPARAMS   32
 #define HTTP_PORT   48080
-#define HTTPD_FUNC  "/xquery_rpc"
+#define HTTPD_FUNC  "/xrpc"
 
 /* Used by the http_post client */
 #define MIN_RESPONSE_SIZE       19
@@ -440,13 +440,13 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
     }
 
 /* To prevent start the HTTP server twice */
-int rpc_receiver_running = 0;
+int rpcd_running = 0;
 int servertiming = 0;
 
 #endif /* XQUERY_RPC_H */
 
 @c
-#include "xquery_rpc.h"
+#include "xrpc.h"
 
 /* Create a HTTP client socket.
  * Returns the socket if succeeded, -1 otherwise.
@@ -685,12 +685,12 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     if ((strstr(req_msg, "<?xml") != req_msg) ||
         (strptr = strchr(strptr, (int)'<')) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
-                "XQuery RPC request: bad XML structure\n");
+                "XRPC request: bad XML structure\n");
     }
 
     if ((CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL)) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
-                "XQuery RPC request: bad XML structure, could not shred\n");
+                "XRPC request: bad XML structure, could not shred\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
 
@@ -712,35 +712,35 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
     nattrs    = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
 
-    /* There are at least two nodes before "XQueryRpcRequest", namely
+    /* There are at least two nodes before "XRPC-Request", namely
      * "Envelope" and "Body" (a "Header" node is optional). There are at
-     * least two nodes after "XQueryRpcRequest", namely "iter" and
+     * least two nodes after "XRPC-Request", namely "iter" and
      * "param". */
-    if (!(pre = get_node_pre("XQueryRpcRequest", 2, (pre_size[0] - 2), pre_prop, pre_kind, qn_loc))) {
+    if (!(pre = get_node_pre("XRPC-Request", 2, (pre_size[0] - 2), pre_prop, pre_kind, qn_loc))) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
-                "XQuery RPC request must have a \"XQueryRpcRequest\" tag\n");
+                "XRPC request must have a \"XRPC-Request\" tag\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
     if ((module = find_attribute("module", pre, nattrs, attr_own, attr_qn, attr_prop, qn_loc, prop_val)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
-            "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"module\" attribute.\n");
+            "XRPC request: \"XRPC-Request\" tag does not have a \"module\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
     if ((uri = find_attribute("uri", pre, nattrs, attr_own, attr_qn, attr_prop, qn_loc, prop_val)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
-            "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"uri\" attribute.\n");
+            "XRPC request: \"XRPC-Request\" tag does not have a \"uri\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
     if ((method = find_attribute("method", pre, nattrs, attr_own, attr_qn, attr_prop, qn_loc, prop_val)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
-            "XQuery RPC request: \"SoapRpcRquest\" tag does not have a \"method\" attribute.\n");
+            "XRPC request: \"SoapRpcRquest\" tag does not have a \"method\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
 
     /* Calculate the number of iterations */
     iterc = count_node("iter", (pre+1), pre_size[0], pre_prop, pre_kind, qn_loc);
     if (iterc == 0) {
-        snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: should have at "
+        snprintf(errstr, 1024, "XRPC request [%s:%s]: should have at "
                 "least one <iter> tag.\n", module, method);
         send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
         goto FINISH_HANDLE_RPC_REQUEST;
@@ -791,7 +791,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 tnode_size = pre_size[tnode_pre];
 
                 if (tnode_size <= 0) {
-                    snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
+                    snprintf(errstr, 1024, "XRPC request [%s:%s]: "
                             "iteration[%d]->parameter[%d]->value[%d] does not contain value\n",
                             module, method, (i + 1), (j + 1), k);
                     send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
@@ -800,7 +800,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
                 if (nr_args == max_args) {
                     snprintf(errstr, 1024, 
-                            "XQuery RPC request [%s:%s]: too many parameters, "
+                            "XRPC request [%s:%s]: too many parameters, "
                             "maximum number of parameters is %d.\n",
                             module, method, MAXPARAMS);
                     send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
@@ -840,7 +840,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                     start_invalidate = vnode_pre + pre_size[vnode_pre] + 1;
                 } else {
                     if (pre_kind[vnode_pre] != PFTEXT) {
-                        snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
+                        snprintf(errstr, 1024, "XRPC request [%s:%s]: "
                                 "iteration[%d]->parameter[%d]->value[\"%d\"] "
                                 "of type[\"%s\"] is expected to have a simple value.\n",
                                 module, method, (i + 1), (j + 1), k, argtpe[nr_args]);
@@ -878,7 +878,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 "    xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
                 "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
                 "<env:Body>\n"
-                "<XQueryRpcResults \n"
+                "<XRPC-Result \n"
                 "    module=\"%s\"\n"
                 "    uri=\"%s\"\n"
                 "    method=\"%s\">\n",
@@ -892,7 +892,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
             send_error(out, 0, "", "env:Sender", err);
             goto FINISH_HANDLE_RPC_REQUEST;
         }
-        stream_printf(out, "</XQueryRpcResults>\n</env:Body>\n</env:Envelope>\n");
+        stream_printf(out, "</XRPC-Result>\n</env:Body>\n</env:Envelope>\n");
     }
 
     if (servertiming){
@@ -998,7 +998,7 @@ int CMDhttp_post(BAT **res,
             "    xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
             "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
             "<env:Body>\n"
-            "<XQueryRpcRequest\n"
+            "<XRPC-Request\n"
             "    module=\"%s\"\n"
             "    uri=\"%s\"\n"
             "    method=\"%s\">\n",
@@ -1131,7 +1131,7 @@ int CMDhttp_post(BAT **res,
             str2buf(b, "</iter>\n");
         }
     }
-    str2buf(b, "</XQueryRpcRequest>\n</env:Body>\n</env:Envelope>\n");
+    str2buf(b, "</XRPC-Request>\n</env:Body>\n</env:Envelope>\n");
     b->buf[b->pos] = 0;
     /* Stop timing Client Serialisation */
     time_clntSeria = GDKms() - time_clntSeria;
@@ -1148,7 +1148,7 @@ int CMDhttp_post(BAT **res,
             "%s",
             HTTPD_FUNC, location, b->pos, b->buf);
     if (bytes_sent < b->pos) {
-        GDKerror("CMDhttp_post: failed to send XQuery RPC request.");
+        GDKerror("CMDhttp_post: failed to send XRPC request.");
         goto FINISH_HTTP_POST;
     }
     /* Stop timing Network Send Client2Server */
@@ -1201,7 +1201,7 @@ int CMDhttp_post(BAT **res,
     strptr = strstr(strptr, "<env:Envelope");
 
     if (CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL) {
-        GDKerror("CMDhttp_post: invalid XQuery RPC response received\n");
+        GDKerror("CMDhttp_post: invalid XRPC response received\n");
         goto FINISH_HTTP_POST;
     }
 
@@ -1238,7 +1238,7 @@ int CMDhttpd_start(int* port, str option) {
     shttpd_socket ctx;
        
     /*
-    if (rpc_receiver_running) {
+    if (rpcd_running) {
         GDKerror("CMDhttpd_start: RPC receiver already running\n");
         return GDK_FAIL;
     }
@@ -1249,8 +1249,8 @@ int CMDhttpd_start(int* port, str option) {
         servertiming = 0;
     }
 
-    if (!rpc_receiver_running) {
-        rpc_receiver_running = 1;
+    if (!rpcd_running) {
+        rpcd_running = 1;
 
         /* Initialize with specific config file, pass NULL to use default values */
         shttpd_init(NULL);
@@ -1263,23 +1263,23 @@ int CMDhttpd_start(int* port, str option) {
     ctx = shttpd_open_port(*port);
 
     /* Serve connections infinitely until someone kills us */
-    for (;rpc_receiver_running;) {
+    for (;rpcd_running;) {
         shttpd_poll(&ctx, 200);
     }
     return GDK_SUCCEED;
 }
 
-bat* xquery_rpc_prelude() {
+bat* xrpc_prelude() {
     /* Nothing to do here. */
     return NULL;
 }
 
-void xquery_rpc_epilogue() {
+void xrpc_epilogue() {
     /* Shut down the HTTP server. */
     shttpd_fini();
 
     /* stop RPC receiver */
-    rpc_receiver_running = 0;
+    rpcd_running = 0;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

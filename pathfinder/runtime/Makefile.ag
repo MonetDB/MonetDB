@@ -86,11 +86,11 @@ lib__pathfinder = {
 		-l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
-lib__xquery_rpc = {
+lib__xrpc = {
 	DIR = libdir/MonetDB
 	SOURCES = \
 		shttpd.c shttpd.h \
-		xquery_rpc.mx
+		xrpc.mx
 
 	LIBS = \
 		   $(MONETDB_LIBS) $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
@@ -100,6 +100,6 @@ lib__xquery_rpc = {
 
 scripts_mil = {
 	DIR = libdir/MonetDB
-	SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xquery_rpc.mx
+	SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc.mx
 }
 

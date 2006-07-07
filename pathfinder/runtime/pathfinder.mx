@@ -2968,7 +2968,7 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, out);
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        s = open_wstream("/tmp/xquery_rpc.mil");
+        s = open_wstream("/tmp/xrpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
@@ -2983,7 +2983,7 @@ xquery_method(stream *out,
     }
 
     if (err == NULL && module){
-        err = xquery_module_load(ctx, mode, ns="xquery_rpc", module, uri); 
+        err = xquery_module_load(ctx, mode, ns="xrpc", module, uri); 
     }
 
     if (err == NULL) { 
