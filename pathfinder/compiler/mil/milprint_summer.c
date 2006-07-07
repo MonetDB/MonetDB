@@ -7906,7 +7906,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* get scores */
         milprintf(f, 
-		"var score := new(void,dbl).seqbase(0@0);\n"
+		"var score := new(oid,dbl);\n"
 		"var tmp := [<<]([lng](tijah_frag), const 32);\n"
 		"var tijah_fragpre := [+](tmp, [lng](tijah_pre));\n"
 		"tmp := nil;\n"
@@ -7917,11 +7917,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    frag_part := [<<]([lng](frag_part), const 32);\n"
 		"    var fragpre_part := [+](frag_part, [lng](item_part));\n"
 		"    item_part := nil;\n"
+		"    frag_part := nil;\n"
 		"    tmp := tijah_tID.uselect(oid($h));\n"
 		"    tmp := tmp.mirror().leftfetchjoin(tijah_fragpre);\n"
 		"    tmp := tmp.join(fragpre_part.reverse());\n"
-		"    score.append(tmp.mirror().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
+		"    score.insert(tmp.reverse().leftfetchjoin(tijah_score));\n"
 		"} # end query batloop\n"
+		"score := score.sort().tmark(0@0);\n"
 		, item_int, counter, item_int, counter);
 	
 	/* return score */
