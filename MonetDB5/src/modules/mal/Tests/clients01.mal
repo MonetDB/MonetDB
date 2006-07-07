@@ -2,8 +2,6 @@
 
 d:= clients.getId();
 io.print(d);
-s:= clients.getScenario();
-io.print(s);
 i:= clients.getInfo();
 io.print(i);
 

@@ -58,6 +58,11 @@ pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
+command setDebug(flg:int):void
+address MDBsetDebug
+comment "Set the kernel debugging bit-set.
+See the MonetDB configuration file for details";
+
 @+ Decoding exceptions
 The exception message produced by the modules
 adhere to the structure:
@@ -166,6 +171,7 @@ mdb_export str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
@@ -272,6 +278,14 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	b = *(chr *) getArgReference(stk, p, 1);
 	MDBtraceFlag(MCgetClient(), stk, (b? (int) 't':0));
 	return MAL_SUCCEED;
+}
+
+str
+MDBsetDebug(int *ret, int *flg)
+{
+    (void) ret;
+    GDKdebug= *flg;
+    return MAL_SUCCEED;
 }
 
 str

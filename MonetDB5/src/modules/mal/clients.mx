@@ -17,65 +17,57 @@
 @f clients
 @a Martin Kersten, Fabian Groffen
 @v 0.2
-@* Client management
-
-This module contains the primitives to inspect and adjust
-the client records maintained during a session.
-
-The administrator has full rights to change everything, while users are
-only allowed to change their password or username.
-
+@+ Client Management
+Each online client is represented with an entry in the clients table.
+The client may inspect his record at run-time and partially change its
+properties.
+The administrator sees all client records and has the right to
+adjust global properties.
 @mal
 module clients;
 
-command setListing(flg:int):int
+#Operations for all clients
+command setListing(flag:int):int
 address CLTsetListing
 comment "Turn on/off echo of MAL instructions:
 	2 - show mal instruction,
-	4 - show type resolutoin, 
-	8 - show binding information";
-
-command setDebug(flg:int):void
-address CLTsetDebug
-comment "Set the debugging bitset. See configuration file and documentation";
+	4 - show details of type resolutoin, 
+	8 - show binding information.";
 
 command setHistory(s:str)
 address CLTsetHistory
-comment "Designate console history file";
-
-command getUsers( ):bat[:int,:str] 
-address CLTusers
-comment "Pseudo bat of users logged in";
-command getLogins( ):bat[:int,:str] 
-address CLTLogin
-comment "Pseudo bat of client login time";
+comment "Designate console history file for readline.";
 
 command getId():int
 address CLTgetClientId
-comment "return a number that unique represents the current client";
+comment "Return a number that uniquely represents the current client.";
 command getInfo( ):bat[:str,:str] 
 address CLTInfo
-comment "Pseudo bat with client attributes";
+comment "Pseudo bat with client attributes.";
 
 command getScenario():str 
 address CLTgetScenario
-comment "Retrieve current scenario name";
+comment "Retrieve current scenario name.";
 command setScenario(msg:str):str 
 address CLTsetScenario
-comment "Switch to other scenario handler, return previous one";
-
-
-command trace(nme:str, flag:bit):void
-address CLTtrace2
-comment "Trace (on/off) receipt of all messages from a specific user";
-command trace(flag:bit):void
-address CLTtrace
-comment "Trace (on/off) receipt of messages for all users";
+comment "Switch to other scenario handler, return previous one.";
 
 command quit():void
 address CLTquit
-comment "Terminate the session for this client"';
+comment "Terminate the session.";
 
+#Administrator operations
+command getLogins( ):bat[:int,:str] 
+address CLTLogin
+comment "Pseudo bat of client login time.";
+
+command getUsers( ):bat[:int,:str] 
+address CLTusers
+comment "Pseudo bat of users logged in.";
+
+command setTrace(flag:bit):void
+address CLTtrace
+comment "Trace messages from all users.";
 
 @-
 @{
@@ -94,18 +86,13 @@ mal_export str CLTgetClientId(int *ret);
 mal_export str CLTgetScenario(str *ret);
 mal_export str CLTsetScenario(str *ret, str *nme);
 mal_export str CLTusers(int *ret);
-mal_export str CLTsetDebug(int *ret, int *flg);
 mal_export str CLTsetHistory(int *ret, str *fname);
-mal_export str CLTclearDebug(int *ret, int *flg);
 mal_export str CLTquit(int *ret);
 mal_export str CLTLogin(int *ret);
 mal_export str CLTInfo(int *ret);
 
-mal_export str CLTtrace2(int *ret, str *nme, int *flg);
 mal_export str CLTtrace(int *res, int *flg);
 mal_export str CLTstop(int *ret, str *nme);
-mal_export str CLTsuspend(int *ret, int *skey, int *timeout);
-mal_export str CLTresume(int *ret, int *skey);
 
 mal_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
 mal_export str CLTremoveUser(int *ret, str *usr);
@@ -184,48 +171,17 @@ local_itoa(int i)
 	return buf;
 }
 
-str
-CLTInfo(int *ret)
-{
-	Client c = MCgetClient();
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-
-	if (b == 0)
-		return throwMessage("catalog.clientInfo", "failed to create BAT");
-
-	BUNins(b, "user", local_itoa((int)c->user), FALSE);
-	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
-	BUNins(b, "permission", local_itoa(c->permission), FALSE);
-	BUNins(b, "scenario", c->scenario, FALSE);
-	BUNins(b, "timer", local_itoa((int) c->timer), FALSE);
-	BUNins(b, "trace", local_itoa(c->itrace), FALSE);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,info,)@
-	return MAL_SUCCEED;
-}
-
-str
-CLTLogin(int *ret)
-{
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
-	int i;
-	char s[26];
-
-	if (b == 0)
-		return throwMessage("catalog.clientLogin", "failed to create BAT");
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user) {
-			time_t logintime = (time_t) c->login;
+void
+CLTtimeConvert(time_t l, char *s){
 			struct tm localt;
 
 #ifdef HAVE_LOCALTIME_R
-			(void) localtime_r(&logintime, &localt);
+			(void) localtime_r(&l, &localt);
 #else
 			/* race condition: return value could be
 			 * overwritten in parallel thread before
 			 * assignment complete */
-			localt = *localtime(&logintime);
+			localt = *localtime(&l);
 #endif
 
 #ifdef HAVE_ASCTIME_R3
@@ -242,6 +198,49 @@ CLTLogin(int *ret)
 #endif
 #endif
 			s[24] = 0;
+}
+
+str
+CLTInfo(int *ret)
+{
+	Client c = MCgetClient();
+	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+	char s[26];
+
+	if (b == 0)
+		return throwMessage("catalog.clientInfo", "failed to create BAT");
+
+	BUNins(b, "user", local_itoa((int)c->user), FALSE);
+	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
+	BUNins(b, "permission", local_itoa(c->permission), FALSE);
+	BUNins(b, "scenario", c->scenario, FALSE);
+	BUNins(b, "timer", local_itoa((int) c->timer), FALSE);
+	BUNins(b, "trace", local_itoa(c->itrace), FALSE);
+	BUNins(b, "listing", local_itoa(c->listing), FALSE);
+	BUNins(b, "debug", local_itoa(c->debug), FALSE);
+	BUNins(b, "cwd", c->cwd, FALSE);
+	CLTtimeConvert((time_t) c->login,s);
+	BUNins(b, "login", s, FALSE);
+	CLTtimeConvert((time_t) c->delay,s);
+	BUNins(b, "delay", s, FALSE);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	@:Pseudo(client,info,)@
+	return MAL_SUCCEED;
+}
+
+str
+CLTLogin(int *ret)
+{
+	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	int i;
+	char s[26];
+
+	if (b == 0)
+		return throwMessage("catalog.clientLogin", "failed to create BAT");
+	for (i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients+i;
+		if (c->mode >= CLAIMED && c->user != oid_nil) {
+			CLTtimeConvert((time_t) c->login,s);
 			BUNins(b, &i, s, FALSE);
 		}
 	}
@@ -263,20 +262,12 @@ CLTusers(int *ret)
 		return throwMessage("clients.users", "failed to create BAT");
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= CLAIMED && c->user)
+		if (c->mode >= CLAIMED && c->user != oid_nil)
 			b = BUNins(b, &i, local_itoa((int)c->user), FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,users,)@
 	return MAL_SUCCEED;
-}
-
-str
-CLTsetDebug(int *ret, int *flg)
-{
-	(void) ret;
-	(void) flg;		/*fool compiler */
-	return throwMessage("clients.setDebug", "not yet implemented");
 }
 
 str
@@ -302,14 +293,6 @@ CLTsetHistory(int *ret, str *fname)
 }
 
 str
-CLTclearDebug(int *ret, int *flg)
-{
-	(void) ret;
-	(void) flg;		/*fool compiler */
-	return throwMessage("clients.clearDebug", "not yet implemented");
-}
-
-str
 CLTquit(int *ret)
 {
 	Client c = MCgetClient();
@@ -317,16 +300,6 @@ CLTquit(int *ret)
 	(void) ret;		/* fool compiler */
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
-}
-
-str
-CLTtrace2(int *ret, str *nme, int *flg)
-{
-    (void) ret;     /* fool compiler */
-	(void) nme;
-	(void) flg;
-/*    (void) traceClient(*nme, *flg); */
-    return MAL_SUCCEED;
 }
 
 str
@@ -345,21 +318,6 @@ CLTstop(int *ret, str *nme)
 /*    return stopClient(MCgetClient(), *nme);*/
 	return MAL_SUCCEED;
 }
-
-str
-CLTsuspend(int *ret, int *skey, int *timeout)
-{
-    (void) ret;     /* fool compiler */
-    return MCsuspendClient(MCgetClient(), *skey, *timeout);
-}
-
-str
-CLTresume(int *ret, int *skey)
-{
-    (void) ret;     /* fool compiler */
-    return MCresumeClient(MCgetClient(), *skey);
-}
-
 
 @+ User administration
 These commands (except changePassword, changeUsername and

@@ -17,34 +17,32 @@
 @f language
 @a Martin Kersten
 @v 1.0
-@* MAL language support
-@+ Scalar iterators
-Iterators are sometimes needed also at the MAL level.
-The barrier and control primitives are often sufficient
-to mimic them directly.
-For the common case:
-@example
-for( i=first; i<last; i+= step)
-@end example
-we use a few predefined functions, which reduces the
-number of MAL instructions otherwise needed.
+@+ Language Extensions
+Iterators over scalar ranges are often needed, also at the MAL level.
+The barrier and control primitives are sufficient to mimic them directly.
 
-e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
-call by recognizing that the control variable lies outside the intended
-collection.
+The modules located in the kernel directory should not
+rely on the MAL datastructures. That's why we have to deal with
+some bat operations here and delegate the signature to the
+proper module upon loading.
+
+Running a script is typically used to initialize a context. 
+Therefore we need access to the runtime context. 
+For the call variants we have
+to determine an easy way to exchange the parameter/return values.
 
 @mal
 module language;
 
-command newRange(v:oid)(:bit,:oid)
+command newRange(v:oid)(:bit,:oid) 
 address RNGnewRange_oid; 
-command newRange(v:sht)(:bit,:sht)
+command newRange(v:sht)(:bit,:sht) 
 address RNGnewRange_sht; 
-command newRange(v:int)(:bit,:int)
+command newRange(v:int)(:bit,:int) 
 address RNGnewRange_int; 
-command newRange(v:lng)(:bit,:lng)
+command newRange(v:lng)(:bit,:lng) 
 address RNGnewRange_lng; 
-command newRange(v:flt)(:bit,:flt)
+command newRange(v:flt)(:bit,:flt) 
 address RNGnewRange_flt; 
 command newRange(v:dbl)(:bit,:dbl)
 address RNGnewRange_dbl 
@@ -65,13 +63,7 @@ command nextElement(step:dbl,last:dbl)(:bit,:dbl)
 address RNGnextElement_dbl 
 comment "Advances the iterator with a fixed value
 	until it becomes >= last.";
-@-
-Note that the modules located in the kernel directory should not
-rely on the MAL datastructures. That's why we have to deal with
-some bat operations here.
 
-The routines below are linked with the kernel by default
-@mal
 command raise(msg:str) :str 
 address CMDraise
 comment "Raise an exception labeled 
@@ -92,12 +84,6 @@ pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
 address MALassertTriple
 comment "Assertion test";
 
-@+ Macro expansion
-Running a script stored in a file is interpreted as
-It is typically used to initialize a context, therefore we need
-to provide the runtime context. For the call variants we have
-to determine an easy way to exchange the parameter/return values.
-@mal
 command register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string and register it as a MAL function";
@@ -203,7 +189,7 @@ MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return throwMessage("mal.assert","Command not yet available");
 }
 
-@}
+
 @+ Printing
 The print commands are implemented as single instruction rules,
 because they need access to the calling context.
@@ -212,7 +198,7 @@ parsing the format string as part of the initialization phase.
 The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
-@{
+
 @- Input redirectionrs
 @c
 str
@@ -323,7 +309,6 @@ CMDsetCwd(str *ret, str *fnme)
 	return MAL_SUCCEED;
 }
 
-@}
 @+ MAL iterator code
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few parameters,
@@ -341,7 +326,6 @@ within the for-loop body is considered bad code and should be avoided
 to simplify data-flow analysis.
 
 We assume that the range boundaries comply with the underlying domain.
-@{
 @= newRange
 mal_export str RNGnewRange_@1(bit *res, @1 *i, @1 *first);
 str RNGnewRange_@1(bit *res, @1 *i, @1 *first){

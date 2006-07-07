@@ -77,6 +77,7 @@ include bbp;
 include box; 
 include pbm;
 include inspect;
+include manual;
 include language;
 include mserver;
 
