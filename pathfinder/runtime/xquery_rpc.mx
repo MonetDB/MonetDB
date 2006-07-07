@@ -252,78 +252,6 @@ This proc is used to retrieve the return values of RPC call(s), which are tempor
 3. fill in the value containers",
 "xquery_rpc");
 
-PROC doIterativeRPC(
-        int nr_iters,
-        str options,
-        str rpc_module,
-        str rpc_uri,
-        str rpc_method,
-        BAT[oid,bat] ws,
-        BAT[oid,str] rpc_dsts,
-        BAT[oid,oid] rpc_iter,
-        BAT[oid,oid] fun_vid,
-        BAT[oid,oid] fun_iter,
-        BAT[oid,oid] fun_item,
-        BAT[oid,int] fun_kind,
-        BAT[oid,lng] int_values,
-        BAT[oid,dbl] dbl_values,
-        BAT[oid,dbl] dec_values,
-        BAT[oid,str] str_values) : BAT[void,bat]
-{
-    var rpc_timing := str(nil);
-    if (options.search("rpctime") >= 0) {
-        rpc_timing := "rpctime";
-    } else {
-        rpc_timing := "";
-    }
-
-    var res_bats := nil;
-    rpc_iter@batloop(){
-        var dst := rpc_dsts.fetch(int($h)); # get iteration numbers for this destination
-
-        var fun_iter_1iter := fun_iter.select($t);
-        var fun_vid_1iter  := fun_vid.fetch(fun_iter_1iter.mirror()).tmark(0@0);
-        var fun_item_1iter := fun_item.fetch(fun_iter_1iter.mirror()).tmark(0@0);
-        var fun_kind_1iter := fun_kind.fetch(fun_iter_1iter.mirror()).tmark(0@0);
-            fun_iter_1iter := fun_iter_1iter.tmark(0@0);
-
-        var local_name := "rpc_res_00" + str(int($h)+1);
-        var rpc_oid := oid(nil);
-        var rpc_err := CATCH(
-        {
-            rpc_oid := rpc_client(local_name, rpc_timing, dst, 
-                        rpc_module, rpc_uri, rpc_method, ws,
-                        fun_vid_1iter, fun_iter_1iter, fun_item_1iter, fun_kind_1iter,
-                        int_values, dbl_values, dec_values, str_values);
-        });
-
-        var time_clntDeSeria := msec();
-        if (isnil(rpc_err)) {
-            var res := get_rpc_res(rpc_oid, local_name, nr_iters, ws,
-                                   int_values, dbl_values, str_values);
-            if (isnil(res_bats)){
-                res_bats := res;
-            } else {
-                # merge results of this iteration into existing results.
-                res_bats := merged_union(res_bats.fetch(0), res.fetch(0), 
-                                         res_bats.fetch(1), res.fetch(1), 
-                                         res_bats.fetch(2), res.fetch(2));
-            }
-        } else {
-            # layman's error handling simplifies debugging; better solution is more than welcome!
-            ERROR("RPC call: rpc_client:\n" + rpc_err);
-        }
-        time_clntDeSeria := msec() - time_clntDeSeria;
-        if (options.search("rpctime") >= 0) {
-            printf("Client_DeSerialisation: %lld msec\n", time_clntDeSeria);
-        }
-    }
-    return res_bats;
-}
-ADDHELP("doIterativeRPC", "zhang", "April 2006",
-"DESCRIPTION: make a separate RPC call for ever iteration",
-"xquery_rpc");
-
 PROC doLoopLiftedRPC(
         int nr_iters,
         str options,
@@ -492,7 +420,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
     str2buf(b, begin_tag);                                                              \
     len = b->len - b->pos;                                                              \
     strptr = b->buf + b->pos;                                                           \
-    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, off));                                \
+    i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, off));                                \
     b->pos += BATatoms[v_type].atomToStr(&strptr, &len, BUNptr(v_cont, i));             \
     str2buf(b, end_tag);                                                                \
     }
@@ -605,8 +533,9 @@ static void send_error(stream *out, bit p_body, char* http_err, char *soapcodev,
 
 /* Calculate the number of nodes which has the name "node_name", within
  * the range 'start_pre' and 'end_pre' (incl.). */
-static int count_node(char *node_name, int start_pre, int end_pre, oid* pre_prop, char* pre_kind, BAT* qn_loc){
-    int i, nr = 0;
+static int count_node(char *node_name, oid start_pre, oid end_pre, oid* pre_prop, char* pre_kind, BAT* qn_loc){
+    int nr = 0;
+    oid i;
 
     assert(start_pre > 0);
     for (i = start_pre; i <= end_pre; i++) {
@@ -623,8 +552,8 @@ static int count_node(char *node_name, int start_pre, int end_pre, oid* pre_prop
  * kind is 'ELEMENT'.
  * Return the 'pre' value of this node.
  * Return 0 if such node can not be found. */
-static oid get_elem_pre(int start_pre, int end_pre, char* pre_kind){
-    int i;
+static oid get_elem_pre(oid start_pre, oid end_pre, char* pre_kind){
+    oid i;
 
     assert(start_pre > 0 && end_pre >= start_pre);
     for (i = start_pre; i <= end_pre; i++) {
@@ -637,8 +566,8 @@ static oid get_elem_pre(int start_pre, int end_pre, char* pre_kind){
 /* Given a node name, find the 'pre' value of the node given within the range
  * 'start_pre' and 'end_pre' (incl.).
  * Return 0 if such node can not be found. */
-static oid get_node_pre(char *node_name, int start_pre, int end_pre, oid* pre_prop, char* pre_kind, BAT* qn_loc){
-    int i;
+static oid get_node_pre(char *node_name, oid start_pre, oid end_pre, oid* pre_prop, char* pre_kind, BAT* qn_loc){
+    oid i;
     char *qname;
 
     assert(start_pre > 0 && end_pre >= start_pre);
@@ -703,7 +632,8 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
     /* pointers to the temporarily shredded BATs and to the values in
      * shredBAT */
-    BAT *shredBAT = NULL, *ws_frag = NULL, *qn_loc = NULL, *qn_prefix = NULL, *prop_val = NULL;
+    BAT *shredBAT = NULL, *ws_frag = NULL;
+    BAT *qn_loc = NULL, *qn_prefix = NULL, *prop_val = NULL;
     int nattrs = 0, *pre_size = NULL;
     char *pre_level = NULL, *pre_kind = NULL, *text_base = NULL;
     oid *pre_prop = NULL;
@@ -715,9 +645,11 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     oid start_invalidate = 0;
 
     /* used for invalidation of the pre_level and the pre_size values */
-    unsigned int l = 0, level_diff = 0, total_size;
+    oid l = 0, total_size;
+    unsigned int level_diff = 0; /* FIXME: should this variable be 'char'? */
 
-    oid pre = 0, pnode_pre = 0, inode_pre = 0, tnode_pre = 0, vnode_pre = 0, next_frag = 0;
+    oid pre = 0, next_frag = 0;
+    oid pnode_pre = 0, inode_pre = 0, tnode_pre = 0, vnode_pre = 0;
 
     /* used to save the pre_sizes of some nodes, before the node's
      * pre_size value is overwritten. */
@@ -763,13 +695,13 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     }
 
     off       = BUNindex(shredBAT,BUNfirst(shredBAT));
-    pre_size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
-    pre_level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_LEVEL))));
-    pre_prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_PROP))));
-    pre_kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_KIND))));
+    pre_size  = (int*) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
+    pre_level = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_LEVEL))));
+    pre_prop  = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_PROP))));
+    pre_kind  = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_KIND))));
     prop_text = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_TEXT))));
-    prop_val = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_VAL)) );
-    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_LOC))   );
+    prop_val  = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_VAL)) );
+    qn_loc    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_LOC))   );
     qn_prefix = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_PREFIX)));
     text_base = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT, off+PROP_TEXT)))->theap->base;
     ws_frag   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+WS_FRAG)));
@@ -778,7 +710,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_OWN) )));
     attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_QN)  )));
     attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
-    nattrs = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
+    nattrs    = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
 
     /* There are at least two nodes before "XQueryRpcRequest", namely
      * "Envelope" and "Body" (a "Header" node is optional). There are at
@@ -818,7 +750,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
      *        of parameters, but this is not checked! */
     argc = count_node("param", (pre + 2), pre_size[0], pre_prop, pre_kind, qn_loc) / iterc;
 
-    argcnt = GDKmalloc(iterc * sizeof(int *));
+    argcnt = GDKmalloc(iterc * sizeof(int*));
     if (!argcnt) {
         snprintf(errstr, 1024, "Receiver internal error: not enough memory");
         send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
@@ -994,7 +926,7 @@ int CMDhttp_post(BAT **res,
                  BAT* dec_values,
                  BAT* str_values) {
 
-    int i, a, len, ret, sock = -1, port = HTTP_PORT, retval = GDK_FAIL;
+    int len, ret, sock = -1, port = HTTP_PORT, retval = GDK_FAIL;
     int type = 0; /* param type in C */
     buffer *b = NULL;
     str strptr = NULL;
@@ -1004,17 +936,16 @@ int CMDhttp_post(BAT **res,
     BUN p_vid, p_iter, p_item, p_kind; /* Pointers to the current BUNs of the BATs. */
     str str_val = NULL;
 
-    int argc = 0, argc_base = 0, my_argc = 0;
-    int iterc = 0, iter_base = 0, my_iter = 0;
-    int itemc = 0, arg_offset = 0;
-    int **argcnt = NULL;    /* #items eash [iter][param] contains */
-    int nr_args = 0;
-    int max_args = 0;
+    oid i, a, nr_args = 0, max_args = 0;
+    oid argc = 0, argc_base = 0, my_argc = 0;
+    oid iterc = 0, iter_base = 0, my_iter = 0;
+    oid itemc = 0, arg_offset = 0;
+    oid **argcnt = NULL;    /* #items eash [iter][param] contains */
 
     int time_clntSeria = 0;
     int time_clnt2Serv = 0;
     int time_clntDeSeria = 0;
-    int bytes_sent = 0, bytes_received = 0;
+    size_t bytes_sent = 0, bytes_received = 0;
 
     ERRORcheck(!BAThdense(ws),
                "http_post: head of BAT ws must be dense.\n");
@@ -1074,16 +1005,16 @@ int CMDhttp_post(BAT **res,
             rpc_module, rpc_uri, rpc_method);
 
     /* Find the number of parameters and iterations. */
-    argc  = *(int*)BUNtail(fun_vid, BUNprev(fun_vid, BUNlast(fun_vid)) ) - *(int*)BUNtail(fun_vid,BUNfirst(fun_vid)) + 1;
-    iterc = *(int*)BUNtail(fun_iter,BUNprev(fun_iter,BUNlast(fun_iter)));
+    argc  = *(oid*)BUNtail(fun_vid, BUNprev(fun_vid, BUNlast(fun_vid)) ) - *(oid*)BUNtail(fun_vid,BUNfirst(fun_vid)) + 1;
+    iterc = *(oid*)BUNtail(fun_iter,BUNprev(fun_iter,BUNlast(fun_iter)));
 
-    if (!(argcnt = GDKmalloc(iterc * sizeof(int *)))) {
+    if (!(argcnt = GDKmalloc(iterc * sizeof(oid*)))) {
         GDKerror("CMDhttp_post: failed to malloc argcnt\n");
         goto FINISH_HTTP_POST;
     }
     for (i = 0; i < iterc; i++) {
-        if (!(argcnt[i] = GDKmalloc(argc * sizeof(int)))) {
-            GDKerror("CMDhttp_post: failed to malloc argcnt[%d]\n", i);
+        if (!(argcnt[i] = GDKmalloc(argc * sizeof(oid)))) {
+            GDKerror("CMDhttp_post: failed to malloc argcnt[" OIDFMT "]\n", i);
             goto FINISH_HTTP_POST;
         }
         for (a = 0; a < argc; a++) {
@@ -1095,8 +1026,8 @@ int CMDhttp_post(BAT **res,
     /* Calculate the number of items contained by every parameter of
      * every iteration. */
     i = a = 0; /* i: iter counter; a: arg counter */
-    iter_base = *(int*) BUNtail(fun_iter, BUNfirst(fun_iter));
-    argc_base = *(int*) BUNtail(fun_vid, BUNfirst(fun_vid));
+    iter_base = *(oid*) BUNtail(fun_iter, BUNfirst(fun_iter));
+    argc_base = *(oid*) BUNtail(fun_vid, BUNfirst(fun_vid));
     for (p_vid  = BUNfirst(fun_vid),  p_iter = BUNfirst(fun_iter),
          p_item = BUNfirst(fun_item), p_kind = BUNfirst(fun_kind);
 
@@ -1113,8 +1044,8 @@ int CMDhttp_post(BAT **res,
             goto FINISH_HTTP_POST;
         }
 
-        i = *(int*) BUNtail(fun_iter, p_iter);
-        a = *(int*) BUNtail(fun_vid, p_vid);
+        i = *(oid*) BUNtail(fun_iter, p_iter);
+        a = *(oid*) BUNtail(fun_vid, p_vid);
         argcnt[i - iter_base][a - argc_base]++;
         nr_args++;
     }
@@ -1149,7 +1080,7 @@ int CMDhttp_post(BAT **res,
                     arg_offset += argcnt[i][my_argc];
                 }
                 /* now 'arg_offset' contains the index of the values and the
-                 * types of MY iter and My argc in argval and argtpe */
+                 * types of MY iter and MY argc in argval and argtpe */
 
                 for (itemc = 0; itemc < argcnt[my_iter][my_argc]; itemc++) {
                     /* index into fun_item|fun_kind */
@@ -1185,7 +1116,7 @@ int CMDhttp_post(BAT **res,
                     } else if (type == DBL) {
                         value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:double>", "</xs:double>\n");
                     } else if (type == STR || type == U_A) {
-                        i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                        i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
                         str_val = BUNtail(str_values, BUNptr(str_values, i));
                         b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                                 "<xs:string>\"%s\"</xs:string>\n", str_val);
@@ -1213,10 +1144,10 @@ int CMDhttp_post(BAT **res,
             "Accept: text/html, text/xml, application/soap+xml\r\n"
             "Accept-Language: en-uk en-us\r\n"
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
-            "Content-Length: %d\r\n\r\n"
+            "Content-Length: " SZFMT "\r\n\r\n"
             "%s",
             HTTPD_FUNC, location, b->pos, b->buf);
-    if (bytes_sent < (int)b->pos) {
+    if (bytes_sent < b->pos) {
         GDKerror("CMDhttp_post: failed to send XQuery RPC request.");
         goto FINISH_HTTP_POST;
     }
@@ -1243,7 +1174,7 @@ int CMDhttp_post(BAT **res,
         GDKerror("CMDhttp_post: failed to get response: %s\n",
                 errno?strerror(errno):"no errno available");
         if (b->pos < MIN_RESPONSE_SIZE)
-            GDKerror("#bytes received: %ld\n", b->pos);
+            GDKerror("#bytes received: " SZFMT "\n", b->pos);
         else if (!strstr((b->buf + b->pos - 16), "</env:Envelope>"))
             GDKerror("cannot find \"</env:Envelope>\" in buffer");
 
@@ -1275,7 +1206,6 @@ int CMDhttp_post(BAT **res,
     }
 
     *res = shredBAT;
-
     retval = GDK_SUCCEED;
     goto FINISH_HTTP_POST;
 
@@ -1297,8 +1227,8 @@ FINISH_HTTP_POST:
         printf("Network_Client_2_Server: %d msec\n", time_clnt2Serv);
         printf("Client_DeSerialisation: %d msec\n", time_clntDeSeria);
         printf("\n");
-        printf("Data_Sent: %d bytes\n", bytes_sent);
-        printf("Data_Received: %d bytes\n", bytes_received);
+        printf("Data_Sent: " SZFMT " bytes\n", bytes_sent);
+        printf("Data_Received: " SZFMT " bytes\n", bytes_received);
     }
 
     return retval;
