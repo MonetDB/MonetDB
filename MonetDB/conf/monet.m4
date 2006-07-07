@@ -999,6 +999,10 @@ esac
 
 AC_DEFUN([AM_MONETDB_OPTIONS],
 [
+dnl Defaults that differ between development trunk and release branch:
+dft_assert=yes
+dft_optimi=no
+
 dnl --with-translatepath
 translatepath=echo
 AC_ARG_WITH(translatepath,
@@ -1098,9 +1102,9 @@ fi
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AC_HELP_STRING([--enable-assert],
-		[enable assertions in the code [default=yes]]),
+		[enable assertions in the code [default=$dft_assert]]),
 	enable_assert=$enableval,
-	enable_assert=yes)
+	enable_assert=$dft_assert)
 if test "x$enable_assert" = xno; then
   AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
 fi
@@ -1108,8 +1112,8 @@ fi
 dnl --enable-optimize
 AC_ARG_ENABLE(optimize,
 	AC_HELP_STRING([--enable-optimize],
-		[enable extra optimization [default=no]]),
-	enable_optim=$enableval, enable_optim=no)
+		[enable extra optimization [default=$dft_optimi]]),
+	enable_optim=$enableval, enable_optim=$dft_optimi)
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -1296,6 +1300,9 @@ AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 AC_DEFUN([AM_MONETDB_LIBS],
 [
+dnl Defaults that differ between development trunk and release branch:
+dft_netcdf=auto
+
 dnl libpthread
 have_pthread=auto
 PTHREAD_LIBS=""
@@ -1542,7 +1549,7 @@ fi
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
-have_netcdf=auto
+have_netcdf=$dft_netcdf
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,
