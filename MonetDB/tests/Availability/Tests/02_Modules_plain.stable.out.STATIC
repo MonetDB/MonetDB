@@ -1336,12 +1336,12 @@ Module: "xtables"
 # function			type		signature									help																																						  # name
 # str			str		str										str																																						  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "CTderive",		  "COMMAND:   ",  "CTderive(BAT[oid,any], BAT[oid,any]) : grp",					  "Cross tabulation group extension step.\nReturned head values are identical as in 'ct'. Tail values are from\nthe same domain and indicate further refinement of the groups in 'ct',\ntaking into account also the tail-values in 'attr'."						  ]
-[ "CTderive",		  "PROC:      ",  "CTderive(grp, BAT[oid,any]) : grp",						  "not available"																																	  ]
+[ "CTderive",		  "COMMAND:   ",  "CTderive(grp, BAT[oid,any]) : grp",						  "Cross tabulation group extension step.\nReturned head values are identical as in 'ct'. Tail values are from\nthe same domain and indicate further refinement of the groups in 'ct',\ntaking into account also the tail-values in 'attr'."						  ]
+[ "CTderive",		  "PROC:      ",  "CTderive(BAT[oid,any], BAT[oid,any]) : grp",					  "not available"																																	  ]
 [ "CTextend",		  "COMMAND:   ",  "CTextend(grp) : BAT[oid,any]",						  "Return the group extend."																																  ]
 [ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any]) : grp",						  "Cross tabulation group initialization.\nReturned head values are identical as in 'attr'. Tail values are from\nthe same domain and indicate unique groups in 'attr' tail column."													  ]
-[ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any], BAT[oid,any]) : grp",					  "binary grouping; a synonym for CTderive(ct,attr)"																													  ]
-[ "CTgroup",		  "PROC:      ",  "CTgroup(grp, BAT[oid,any]) : grp",						  "not available"																																	  ]
+[ "CTgroup",		  "COMMAND:   ",  "CTgroup(grp, BAT[oid,any]) : grp",						  "binary grouping; a synonym for CTderive(ct,attr)"																													  ]
+[ "CTgroup",		  "PROC:      ",  "CTgroup(BAT[oid,any], BAT[oid,any]) : grp",					  "not available"																																	  ]
 [ "CThistogram",	  "COMMAND:   ",  "CThistogram(grp) : BAT[any,int]",						  "Return the groups histogram."																															  ]
 [ "CThistosum",		  "COMMAND:   ",  "CThistosum(BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "Produce sum over old histogram table"																																	  ]
 [ "CTmap",		  "COMMAND:   ",  "CTmap(grp) : BAT[oid,oid]",							  "Return the group map."																																  ]
