@@ -248,7 +248,9 @@ gdk_export void *dlopen(const char *file, int mode);
 gdk_export int dlclose(void *handle);
 gdk_export void *dlsym(void *handle, const char *name);
 gdk_export char *dlerror(void);
+#ifndef HAVE_GETTIMEOFDAY
 gdk_export int gettimeofday(struct timeval *tv, int *ignore_zone);
+#endif
 gdk_export int win_stat(const char *, struct stat *);
 gdk_export int win_rmdir(const char *);
 gdk_export int win_mkdir(const char *, const int mode);
@@ -1402,6 +1404,7 @@ closedir(DIR *dir)
 }
 #endif /* HAVE_OPENDIR */
 
+#ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 #define LEAPYEAR(y) ((((y)%4)==0 && ((y)%100)!=0) || ((y)%400)==0)
@@ -1427,6 +1430,7 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 	tv->tv_usec = 1000 * st.wMilliseconds;
 	return 0;
 }
+#endif
 
 void *
 dlopen(const char *file, int mode)
