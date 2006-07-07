@@ -184,6 +184,14 @@ as substring in the tail."
 				BAT[any::1, any::2] = CMDtsort_rev;
 "Returns copy of a BAT with the BUNs tsorted on descending head values."
 
+.COMMAND ssort(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDssort;
+"Returns copy of a BAT with the BUNs sorted on ascending head values.
+This is a stable sort."
+
+.COMMAND ssort_rev(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDssort_rev;
+"Returns copy of a BAT with the BUNs sorted on descending head values.
+This is a stable sort."
+
 @- vertical projection
 @m
 .COMMAND project ( BAT[any::1,any] b, any::2 val) :
@@ -1679,6 +1687,8 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(sort_rev,BATsort_rev)@
 @:unary(tsort,BATtsort)@
 @:unary(tsort_rev,BATtsort_rev)@
+@:unary(ssort,BATssort)@
+@:unary(ssort_rev,BATssort_rev)@
 @:unary(number,BATnumber)@
 @:unary(copy,BATwcopy)@
 @:unary(rcopy,BATrcopy)@

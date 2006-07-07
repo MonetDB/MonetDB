@@ -1546,6 +1546,136 @@ BATorder@3(BAT *b)
 
 	return b;
 }
+@c
+BAT *
+BATssort(BAT *b)
+{
+	BAT *bn;
+	int tt = b->ttype;
+
+	BATcheck(b, "BATssort: BAT");
+	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
+		/* b's head is void-nil, hence we return a read-only copy/view of b */
+		return BATcopy(b, b->htype, b->ttype, FALSE);
+	}
+	if (b->htype == TYPE_void || (b->htype != TYPE_void && BATordered(b))) {
+		/* b is already ordered as desired, hence we return a read-only copy/view of b */
+		return BATcopy(b, b->htype, b->ttype, FALSE);
+	}
+	if (BATcount(b) < 2) {
+		/* with less than 2 BUNs, b is ordered, hence we return a read-only copy/view of b */
+		b->hsorted = (bit) GDK_SORTED;
+		return BATcopy(b, b->htype, b->ttype, FALSE);
+	}
+	/* a void tail column 0,1,2,3,... must be materialized to oid before sorting */
+	if (tt == TYPE_void && b->tseqbase != oid_nil) {
+		tt = TYPE_oid;
+	}
+	bn = BATcopy(b, b->htype, tt, TRUE);
+	if (bn == NULL)
+		return bn;
+	return BATsorder(bn);
+}
+
+BAT *
+BATsorder(BAT *b)
+{
+	BAT *bn = b;
+
+	BATcheck(b, "BATsorder: BAT");
+	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
+		/* b's head is void-nil, hence we return b as is */
+		return BATcopy(b, b->htype, b->ttype, FALSE);
+	}
+	if (b->htype == TYPE_void || (b->htype != TYPE_void && BATordered(b))) {
+		/* b is already ordered as desired, hence we return b as is */
+		return b;
+	}
+	if (BATcount(b) < 2) {
+		/* with less than 2 BUNs, b is ordered, hence we return b as is */
+		b->hsorted = (bit) GDK_SORTED;
+		return b;
+	}
+	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+		/* materialize void-tail in-place */
+		b = BATmaterializet(b, BATcount(b));
+	}
+	if (GDKssort(BUNfirst(b), b->hheap ? b->hheap->base : NULL, BATcount(b), BUNsize(b), b->htype, b->hloc, 0) < 0)
+		bn = NULL;
+	HASHdestroy(b);
+	ALIGNdel(b, "BATsorder", FALSE);
+	b->tsorted = FALSE;
+	b->hdense = FALSE;
+	b->batDirtydesc = b->batDirtybuns = TRUE;
+	if (bn)			/* if it failed, the head may not be sorted */
+		b->hsorted = (bit) GDK_SORTED;
+
+	return bn;
+}
+
+BAT *
+BATssort_rev(BAT *b)
+{
+	BAT *bn;
+	int ht = b->htype;
+	int tt = b->ttype;
+
+	BATcheck(b, "BATssort: BAT");
+	if (ht == TYPE_void && b->hseqbase == oid_nil) {
+		/* b's head is void-nil, hence we return a read-only copy/view of b */
+		return BATcopy(b, ht, tt, FALSE);
+	}
+	if (BATcount(b) < 2) {
+		/* with less than 2 BUNs, b is ordered, hence we return a read-only copy/view of b */
+		b->hsorted = (bit) GDK_SORTED;
+		return BATcopy(b, ht, tt, FALSE);
+	}
+	/* a void column 0,1,2,3,... must be materialized to oid before sorting */
+	if (ht == TYPE_void)
+		ht = TYPE_oid;
+	if (tt == TYPE_void && b->tseqbase != oid_nil)
+		tt = TYPE_oid;
+	bn = BATcopy(b, ht, tt, TRUE);
+	if (bn == NULL)
+		return bn;
+	return BATsorder_rev(bn);
+}
+
+BAT *
+BATsorder_rev(BAT *b)
+{
+	BAT *bn = b;
+
+	BATcheck(b, "BATsorder: BAT");
+	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
+		/* b's head is void-nil, hence we return b as is */
+		return BATcopy(b, b->htype, b->ttype, FALSE);
+	}
+	if (BATcount(b) < 2) {
+		/* with less than 2 BUNs, b is ordered, hence we return b as is */
+		b->hsorted = (bit) GDK_SORTED;
+		return b;
+	}
+	if (b->htype == TYPE_void) {
+		/* head is sorted, we only need to revert */
+		return BATrevert(b);
+	}
+	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+		/* materialize void-tail in-place */
+		b = BATmaterializet(b, BATcount(b));
+	}
+	if (GDKssort(BUNfirst(b), b->hheap ? b->hheap->base : NULL, BATcount(b), BUNsize(b), b->htype, b->hloc, 1) < 0)
+		bn = NULL;
+	HASHdestroy(b);
+	ALIGNdel(b, "BATsorder", FALSE);
+	b->tsorted = FALSE;
+	b->hdense = FALSE;
+	b->batDirtydesc = b->batDirtybuns = TRUE;
+	if (bn)			/* if it failed, the head may not be sorted */
+		b->hsorted = (bit) GDK_SORTED_REV;
+
+	return bn;
+}
 @}
 @+ Reverse a BAT
 @%BATrevert@ rearranges a BAT in reverse order on head.
