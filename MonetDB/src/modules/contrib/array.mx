@@ -22,16 +22,19 @@
 @m
 .MODULE array;
 @= grid_mdefs
-   .COMMAND grid(@1,@1,@1,@1) : bat[void,@1] = grid_@1;
-      "Generates an index BAT, (grpcount,grpsize,clustersize,offset)"
+  .COMMAND grid(@1,@1,@1,@1) : bat[void,@1] = grid_@1;
+    "Generates an index BAT, (grpcount,grpsize,clustersize,offset)"
 @m
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
 
-   .COMMAND print_array(bat[any::1,any],...bat[any::1,int]...) : void = print_array;
-      "Prints an array, using 1 value bat and N aligned index bats"
+  .COMMAND print_array(bat[any::1,any],...bat[any::1,int]...) : void = print_array;
+    "Prints an array, using 1 value bat and N aligned index bats"
+  
+  .COMMAND ram(str,str,int,int,str) : str = ram_impl;
+    "Converts ram to mil/x100. Caution: this is just a temporary hack. Parameters: ram basedir, ram query, optimization1 level, optimization2 level, translator "
 
-.END example;
+.END array;
 
 @h
 /*============================================================================*/
@@ -292,6 +295,64 @@ exit_err_part:
 	GDKfree(lenvector);
 exit_err_none:
 	return GDK_FAIL;
+}
+
+
+/* Dirty hack to call RAM compiler from MIL/X100. This shouldn't be done at all. It's just used for preliminary tests */
+int
+ram_impl(str *output, str rampath, str ramquery, int *optlevel1, int *optlevel2, str translator)
+{
+  FILE *pin, *pout;
+  char cmd[BUFSIZ];
+  long size;
+  
+  if (strlen(ramquery) == 0) {
+    GDKerror("Empty RAM query\n");
+    return GDK_FAIL;
+  }
+  
+  /* launch cmd using popen and writing the result to a tmp file */
+  /* popen is not bidirectional, so we have to use a tmp file */ 
+  
+  if(strcmp(translator, "mil") == 0) {  
+    sprintf(cmd, "%s/ram2alg -f%s/functions.txt | %s/alg_opt -o%d | %s/alg2mil >| .popen.out", 
+                rampath, rampath, rampath, *optlevel1, rampath); 
+  }
+  else if(strcmp(translator, "x100") == 0) {  
+    sprintf(cmd, "%s/ram2alg -f%s/functions.txt | %s/alg_opt -o%d | %s/alg2ralg -o%d | %s/ralg2amdb >| .popen.out", 
+                rampath, rampath, rampath, *optlevel1, rampath, *optlevel2, rampath); 
+  }
+  pin = popen(cmd, "w");
+  if (pin == NULL) {
+    GDKerror("Command '%s' not executable\n", cmd);
+    return GDK_FAIL;
+  }
+  fwrite((void *)ramquery, strlen(ramquery), 1, pin);
+  pclose(pin);
+  
+  
+  /* read the result from the tmp file */
+  pout = fopen(".popen.out", "r");
+  if (pout == NULL) {
+    GDKerror("Error reading the output\n");
+    return GDK_FAIL;
+  }
+  
+  fseek(pout, 0L, SEEK_END);
+  size = ftell(pout)+1;
+  
+  *output = (str) GDKmalloc(sizeof(char) * (size+1));
+  memset((void *)*output, 0x00, size+1);
+  rewind(pout);
+  fread((void *)*output, size, 1, pout);
+  fclose(pout);
+  
+/*
+printf("size = %ld\n", size);
+printf("cmd = %s\n", cmd);
+*/
+  
+  return GDK_SUCCEED;
 }
 
 /*============================================================================*/
