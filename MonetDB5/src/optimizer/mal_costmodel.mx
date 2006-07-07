@@ -57,9 +57,9 @@ estimators.
 @{
 @+ Implementation section
 @mal
-pattern costModel():str
+pattern optimizer.costModel():str
 address QOTRMoptimizer;
-pattern costModel(mod:str, fcn:str):str
+pattern optimizer.costModel(mod:str, fcn:str):str
 address QOTRMoptimizer
 comment "Estimate the cost of a relational expression";
 @h
