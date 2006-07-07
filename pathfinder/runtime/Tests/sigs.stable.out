@@ -150,8 +150,7 @@ module 'xquery_rpc'
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # signature																						  # name
 # str																							  # type
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "doIterativeRPC(int, str, str, str, str, BAT[oid,BAT], BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "doLoopLiftedRPC(int, str, str, str, str, BAT[oid,BAT], BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"		  ]
 [ "get_rpc_res(oid, str, int, BAT[oid,BAT], BAT[oid,lng], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"															  ]
 [ "http_post(str, str, str, str, str, BAT[oid,BAT], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[oid,BAT]"	  ]

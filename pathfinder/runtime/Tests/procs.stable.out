@@ -103,7 +103,6 @@ procs();
 [ "dir(BAT[int,str]) : void"																  ]
 [ "dir(str) : void"																	  ]
 [ "dir_leaks() : void"																	  ]
-[ "doIterativeRPC(int, str, str, str, str, BAT[oid,BAT], BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"	  ]
 [ "doLoopLiftedRPC(int, str, str, str, str, BAT[oid,BAT], BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"		  ]
 [ "do_update_delete(BAT[BAT,BAT], BAT[void,BAT], BAT[void,oid], BAT[void,int]) : BAT[BAT,BAT]"								  ]
 [ "do_update_insert(BAT[BAT,BAT], BAT[void,BAT], BAT[void,lng], BAT[void,oid], BAT[void,int], BAT[void,oid], BAT[void,int]) : BAT[BAT,BAT]"										  ]
