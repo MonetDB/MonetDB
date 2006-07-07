@@ -18,8 +18,8 @@ procs();
 # str																			  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ADDHELP(str, str, str, str, str) : void"														  ]
-[ "CTderive(grp, BAT[oid,any]) : grp"															  ]
-[ "CTgroup(grp, BAT[oid,any]) : grp"															  ]
+[ "CTderive(BAT[oid,any], BAT[oid,any]) : grp"																				  ]
+[ "CTgroup(BAT[oid,any], BAT[oid,any]) : grp"																				  ]
 [ "CTgroup(oid, BAT[oid,any]) : BAT[oid,oid]"														  ]
 [ "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"												  ]
 [ "CTorderby_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"												  ]
