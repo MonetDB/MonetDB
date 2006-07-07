@@ -1,0 +1,22 @@
+@chapter The MAL Modules
+This section contains a synopsis of the modules being shipped
+and which use knowledge  of the MAL runtime context.
+They are sorted by module name and repeatative reading may
+be required to understand all details.
+@menu
+* Clients:: Client record inspection.
+* Inspect:: Inspect the runtime symbol table(s).
+* Language:: MAL language extension features.
+* Manual:: Inspect and produce manual material.
+@end menu
+
+@table @emph
+@item Clients
+Client record inspection.
+@item Inspect
+Inspect the runtime symbol table(s).
+@item Language
+MAL language extension features.
+@item Manual
+Online manual material.
+@end table
