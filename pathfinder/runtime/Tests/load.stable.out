@@ -12,7 +12,7 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 mods.insert(nil,"pf_standoff");
-mods.insert(nil,"xquery_rpc");
+mods.insert(nil,"xrpc");
 
 loaded();
 #---------------------------------#
@@ -147,7 +147,7 @@ dropping module 'pf_standoff'
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-loading module 'xquery_rpc'
+loading module 'xrpc'
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type
@@ -174,9 +174,9 @@ loading module 'xquery_rpc'
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
-[ "xquery_rpc",	  1		  ]
+[ "xrpc",	  1		  ]
 [ "xtables",	  2		  ]
-dropping module 'xquery_rpc'
+dropping module 'xrpc'
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type

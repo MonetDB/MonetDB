@@ -11,7 +11,7 @@ stdout of test 'procs` in directory 'runtime` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
 module(pf_standoff);
-module(xquery_rpc);
+module(xrpc);
 procs();
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # MIL Procedure																		  # name
@@ -408,9 +408,9 @@ procs();
 [ "replacementvalue(BAT[BAT,BAT], BAT[any::1,any::2], any::1) : any::2"											  ]
 [ "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]"											  ]
 [ "rpc_client(str, str, str, str, str, str, BAT[oid,BAT], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : oid"  ]
-[ "rpc_receiver_start() : void"                                                               ]
-[ "rpc_receiver_start(int) : void"                                                            ]
-[ "rpc_receiver_start(int, str) : void"                                                           ]
+[ "rpcd_start() : void"                                                               ]
+[ "rpcd_start(int) : void"                                                            ]
+[ "rpcd_start(int, str) : void"                                                           ]
 [ "rule(int, int, int, int, int) : rule"														  ]
 [ "rule(int, str, int, int) : rule"															  ]
 [ "rule(int, str, int, int, int) : rule"														  ]

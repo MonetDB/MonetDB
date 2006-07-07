@@ -2,7 +2,7 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 mods.insert(nil,"pf_standoff");
-mods.insert(nil,"xquery_rpc");
+mods.insert(nil,"xrpc");
 
 loaded();
 mods@batloop(){

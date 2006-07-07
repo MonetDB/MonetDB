@@ -1,2 +1,0 @@
-module(xquery_rpc);
-rpc_receiver_start();

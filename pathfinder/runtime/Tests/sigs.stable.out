@@ -12,7 +12,7 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 mods.insert(nil,"pf_standoff");
-mods.insert(nil,"xquery_rpc");
+mods.insert(nil,"xrpc");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -146,7 +146,7 @@ module 'pf_standoff'
 [ "select_wide(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,oid]) : BAT[oid,oid]"	  ]
 [ "select_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
 [ "select_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
-module 'xquery_rpc'
+module 'xrpc'
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # signature																						  # name
 # str																							  # type
@@ -156,9 +156,9 @@ module 'xquery_rpc'
 [ "http_post(str, str, str, str, str, BAT[oid,BAT], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[oid,BAT]"	  ]
 [ "httpd_start(int, str) : void"																				  ]
 [ "rpc_client(str, str, str, str, str, str, BAT[oid,BAT], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : oid"	  ]
-[ "rpc_receiver_start() : void"																				  ]
-[ "rpc_receiver_start(int) : void"																			  ]
-[ "rpc_receiver_start(int, str) : void"																			  ]
+[ "rpcd_start() : void"																				  ]
+[ "rpcd_start(int) : void"																			  ]
+[ "rpcd_start(int, str) : void"																			  ]
 
 quit();
 
