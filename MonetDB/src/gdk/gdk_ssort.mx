@@ -460,7 +460,7 @@ merge_lo(MergeState *ms, void *pa, ssize_t na, void *pb, ssize_t nb)
 	void *dest;
 	ssize_t min_gallop = ms->min_gallop;
 
-	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
+	assert(ms && pa && pb && na > 0 && nb > 0 && PTRADD(pa, na, ms->width) == pb);
 	if (MERGE_GETMEM(ms, na) < 0)
 		return -1;
 	memcpy(ms->a, pa, na * ms->width);
