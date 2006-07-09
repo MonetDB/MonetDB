@@ -17,7 +17,7 @@
 @f mat
 @a Martin Kersten
 @v 1
-@* Multiple association tables
+@+ Multiple association tables
 A MAT is a convenient way to deal with scaleability. 
 It combines the definitions of several, type compatible
 BATs under a single name. 

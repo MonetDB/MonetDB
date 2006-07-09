@@ -17,9 +17,9 @@
 @f factory
 @a Martin Kersten
 @v 1.0
-@* Factory management 
-The factory infrastructure can be inspected and steered with the
-commands provided here.
+@+ Factory management 
+The factory infrastructure can be inspected and steered with 
+the commands provided here.
 @mal
 module factory;
 

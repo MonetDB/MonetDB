@@ -51,6 +51,7 @@ include inet;
 
 # the kernel stuff to make it work
 include bat;
+include batExtensions;
 include pcre;
 include algebra;
 include calc;
@@ -76,6 +77,7 @@ include const;
 include bbp;
 include box; 
 include pbm;
+include mat;
 include inspect;
 include manual;
 include language;
@@ -84,7 +86,6 @@ include mserver;
 include profiler;
 include statistics;
 
-include mat;
 include optimizer;
 # here follows all the optimizer modules
 include mal_optimizer;

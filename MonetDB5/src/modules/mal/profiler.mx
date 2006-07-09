@@ -16,7 +16,7 @@
 
 @f profiler
 @a Martin Kersten
-@* Performance Monitor
+@+ Performance profiler
 A key issue in developing fast programs using the Monet database
 back-end requires a keen eye on where performance is lost.
 Although performance tracking and measurements are highly
@@ -32,7 +32,7 @@ i.e. all concurrent actions on the kernel are traced,
 but the events are only sent to the client initiated 
 the profiler thread.
 
-@+ Monet Event Logger
+@- Monet Event Logger
 The Monet Event Logger generates records of each event of
 interest indicated by a log filter, i.e. a pattern over
 module and function names. 
@@ -40,6 +40,11 @@ module and function names.
 The log record contents is derived from counters being
 (de-)activated. 
 A complete list of recognized counters is shown below.
+
+@- Execution tracing
+Tracing is a special kind of profiling, where the information
+gathered is not sent to a remote system, but stored in the database
+itself. Each profile event is given a separate BAT
 
 @verbatim
 # thread and time since start
@@ -122,11 +127,6 @@ command stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";
 
-@+ Execution tracing
-Tracing is a special kind of profiling, where the information
-gathered is not sent to a remote system, but stored in the database
-itself. Each profile event is given a separate BAT
-@mal
 command clearTrace():void
 address CMDclearTrace
 comment "Clear the profiler tables";

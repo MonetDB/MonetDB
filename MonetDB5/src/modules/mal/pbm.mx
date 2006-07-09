@@ -17,7 +17,7 @@
 @f pbm
 @v 0.1
 @a M.L.Kersten
-@* Partitioned BAT Manager
+@+ Partitioned BAT Manager
 In real-life database applications the BATs tend to grow beyond
 the memory size. Although in most situation this does not
 provide severe limitations, it helps to be able to work with
@@ -32,7 +32,7 @@ to produce the result incrementally.
 The code snippet below illustrates a sequence over time
 to build the partitioned BAT. BATs are incrementally
 added to a named PBAT @code{Sales}.
-@example
+@verbatim
     b1:= bat.new(:void,:int);
     bat.setPersistent(b1);
     pbm.deposit("Sales2005","06",b1);
@@ -42,28 +42,28 @@ added to a named PBAT @code{Sales}.
     b3:= bat.new(:void,:int);
     bat.setPersistent(b3);
     pbm.deposit("Sales2005","08",b3);
-	n:= pbm.getNames(); # get content of partitition catalogue.
-	io.print(n);
-@end example
+    n:= pbm.getNames(); # get content of partitition catalogue.
+    io.print(n);
+@end verbatim
 
 The components of a PBAT can be selectively retrieved by name or 
 using an iterator.
-@example
-	a:= pbm.take("Sales2005","06");
+@verbatim
+    a:= pbm.take("Sales2005","06");
 barrier c:= pbm.newIterator("Sales2005");
-	io.print(c);
-	redo c:= pbm.getNextComponent("Sales2005");
+    io.print(c);
+    redo c:= pbm.getNextComponent("Sales2005");
 exit c;
-@end example
+@end verbatim
 Alternatively, a static PBAT definition can be retrieved for manipulation
 by the MAT optimizer.
-@example
+@verbatim
 #	d:= mat.take("Sales2005");    replaced by mat.optimizer into
-	_21:= pbm.take("Sales2005","06");
-	_22:= pbm.take("Sales2005","07");
-	_23:= pbm.take("Sales2005","08");
-	d:= mat.new(_21,_22,_23);
-@end example
+    _21:= pbm.take("Sales2005","06");
+    _22:= pbm.take("Sales2005","07");
+    _23:= pbm.take("Sales2005","08");
+    d:= mat.new(_21,_22,_23);
+@end verbatim
 
 A related, but separate issues, are the BAT distribution and replication
 managers.
@@ -138,12 +138,7 @@ comment "Create an iterator over the partition box";
 command generator(s:str):bat[:any_1,:any_2]
 address PBMdummy
 comment "Place holder for generator optimizer";
-@-
-In most situations we would like to iterator over
-the components of a single PBAT. 
-Wherever possible skipping elements that don't qualify
-the bounds given for the head.
-@mal
+
 command newIterator(grp:str):bat[:any_1,:any_2]
 address PBMnewIterator
 comment "Create an iterator over the BAT partitions.";
@@ -172,10 +167,8 @@ comment "Obtain the oid range for a partition";
 command compress(grp:str):void
 address PBMcompress
 comment "Compress the group to remove oid holes";
-@-
-Some of the BAT operations are overloaded here, because their
-implementation in the code makes more sense.
-@mal
+
+
 command setWriteMode(nme:str):bat[:any_1,:any_2]
 address PBMdummy
 comment "Perform mode change for all components of the partitioned BAT";
@@ -186,6 +179,7 @@ comment "Perform mode change for all components of the partitioned BAT";
 command dump()
 address PBMdump;
 
+@{
 command prelude()
 address PBMprelude;
 
@@ -194,7 +188,6 @@ address PBMepilogue;
 
 pbm.prelude();
 @-
-@{
 
 @+ BAT Partition Manager Implementation
 The implementation is organized around a shared box, which should

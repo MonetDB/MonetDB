@@ -17,8 +17,8 @@
 @f chopper
 @v 2.0
 @a M.L.Kersten
-@* BAT Iterators
-In many low level algorithms an iterator is often used to break a
+@+ BAT Iterators
+Many low level algorithms rely on an iterator to break a
 collection into smaller pieces. Each piece is subsequently processed
 by a block.
 
@@ -40,9 +40,9 @@ lng variable, which also acts as a cursor for barrier statements.
 The larger chunks produced are currently static, i.e.
 their size is a parameter of the call. Dynamic chunk sizes
 are interesting for time-series query processing. (See another module)
-@+ BAT iterator
 
 @mal
+
 command bat.newIterator(b:bat[:any_1,:any_2], size:lng)
 	(:lng,:bat[:any_1,:any_2])
 address CHPnewChunkIterator

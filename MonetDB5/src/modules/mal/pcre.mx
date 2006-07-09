@@ -16,9 +16,7 @@
 
 @f pcre
 @a N. Nes
-@t PCRE - Perl-compatible regular expressions
-@v 0.1
-@T
+@+ PCRE library interface
 The  PCRE library is a set of functions that implement regular expres-
 sion pattern matching using the same syntax  and  semantics  as  Perl,
 with  just  a  few  differences.  The  current  implementation of PCRE
@@ -26,12 +24,6 @@ with  just  a  few  differences.  The  current  implementation of PCRE
 port  for  UTF-8  encoded  strings.   However,  this support has to be
 explicitly enabled; it is not the default.
 
-\begin{center}
-ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
-\end{center}
-@include prelude.mx
-
-@+ Module Definition
 @mal
 atom pcre:ptr;
 command tostr()   address pcre_tostr;
@@ -100,8 +92,14 @@ address pcre_init
 comment "Initialize pcre";
 
 pcre.prelude();
+@{
+@-
+\begin{center}
+ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
+\end{center}
 
 @+ Implementation
+@include prelude.mx
 @c
 #include "mal.h"
 #include "mal_exception.h"
@@ -951,4 +949,4 @@ PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
 		GDKfree(ppat);
 	return r;
 }  
-
+@}

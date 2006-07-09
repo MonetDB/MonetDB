@@ -3,7 +3,7 @@
 d:= clients.getId();
 io.print(d);
 i:= clients.getInfo();
-io.print(i);
+#io.print(i);
 
 #u:= clients.getUsers();
 #io.print(u);

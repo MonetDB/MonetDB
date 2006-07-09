@@ -16,7 +16,7 @@
 
 @f transaction
 @a M.L. Kersten, P. Boncz
-@* Transaction management
+@+ Transaction management
 In the philosophy of Monet, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
 implemented as a module.
@@ -24,7 +24,6 @@ This code base is largely absolute and should be re-considered when
 serious OLTP is being supported.
 Note, however, the SQL front-end obeys transaction semantics.
 
-@+ global transaction management
 @mal
 module transaction;
 
@@ -38,8 +37,6 @@ command abort()
 address TRNglobal_abort
 comment "Global abort on all BATs";
 
-@+ BAT specific transaction management
-@mal
 pattern commit(c:any...) 
 address TRNtrans_commit
 comment "Commit changes in certain BATs.";
@@ -49,8 +46,7 @@ comment "Abort changes in certain BATs.";
 pattern clean(c:any...) 
 address TRNtrans_clean
 comment "Declare a BAT clean without flushing to disk.";
-@+ Delta status
-@mal
+
 command alpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address TRNtrans_alpha
 comment	"List insertions since last commit.";

@@ -17,34 +17,25 @@
 @f const
 @a Martin Kersten
 @v 0.1
-@* Constant support box
-This module shows the behavior of a simple box of global variables.
-They are stored into the box using {\sc deposit} and taken
-out with {\sc take}. Once you are done, elements can be
-removed by name or reference using {\sc discard}.
-
-A box should be opened before being used. It is typically used
-to set-up the list of current users and to perform authorization.
+@+ Constants
+The const module provides a box abstraction store for global constants.
+Between sessions the value of the constants is saved on disk 
+in the form of a simple MAL program, which is scanned and made 
+available by opening the box.  A future implementation should 
+provide transaction support over the box, which would permit 
+multiple clients to exchange (scalar) information easily.
 
 The default constant box is initialized with session variables,
 such as 'user','dbname', 'dbfarm', and 'dbdir'.
 These actions are encapsulated in the prelude routine called.
 
+A box should be opened before being used. It is typically used
+to set-up the list of current users and to perform authorization.
 The constant box is protected with a simple authorization scheme,
 prohibiting all updates unless issued by the system administrator.
 
 @mal
-module const
-comment "The const module provides a box 
-abstraction store for global constants.
-Between sessions the value of the constants 
-is saved on disk in the form of a simple 
-mal program, which is scanned and made 
-available by opening the box.  A future 
-implementation should provide transaction 
-support over the box, which would permit 
-multiple clients to exchange (scalar) 
-information easily.";
+module const;
 
 pattern open():void
 address CSTopen

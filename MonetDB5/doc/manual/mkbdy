@@ -64,23 +64,28 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
+		cp $b.bdy.texi ${dir}/doc/share/tmp/$b.bdy.texi.bak
 		ex $b.bdy.texi <<!EOF
-		/^@example/+1a
-@table @code
-.
+		/^@example/s/.*/ @table @code/
 /^@end example/s//@end table/
-		g/^command/s//@item
+		g/^command/s//@item command
+		g/^pattern/s//@item pattern
+		g/^function/s//@item function
 		g/^address/d
 		g/^comment "/s///
 		g/^comment/s///
 		g/";/s///
 		/^@example/,/^@end example/d
 		/^@example/,/^module/-1d
-		/^module/s/.*/ @noindent @code{&}/
 		0i
-		@page
+@page
 .
 		f
+		w!
+!EOF
+ex $b.bdy.texi <<!EOF
+		/@table/+1s/module \(.*\);/ @noindent module @code{\1};/
+/@tabl/m/@tabl/+1
 		w!
 !EOF
 		mv $b.bdy.texi  ${dir}/doc/share/tmp

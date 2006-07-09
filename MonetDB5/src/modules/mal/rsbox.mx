@@ -16,8 +16,7 @@
 
 @f rsbox
 @a Fabian Groffen
-@v 1.0
-@* ResultSet support box
+@+ ResultSet support box
 This module acts as a simple box of ResultSet objects.
 A ResultSet is a thin wrapper around a number of BATs that allows
 serialising the values in the BATs to the MonetDB/Five MCL result
@@ -39,7 +38,7 @@ elements such as structs and an array.  As a result, we are NOT
 thread safe.
 [TODO: make it a thing associated to a user, with no global box stuff]
 
-@+ The ResultSet atom
+@- The ResultSet atom
 A ResultSet is a container for a set of BATs that form together
 a result of a user query.  The purpose of the ResultSet is to
 hand a uniform interface to both application and foreign client
@@ -55,8 +54,8 @@ A ResultSet requires all its associated BATs to be of equal
 length and :bat[:void,:any_1] typed, for this allows efficient
 serialisation.
 
-A new empty ResultSet can be obtained by calling the create()
-function of the rsbox.  During creation time, the number of
+A new empty ResultSet can be obtained by calling 
+the create() function of the rsbox.  During creation time, the number of
 columns the ResultSet is going to have must be specified.
 The state of such newly created ResultSet will be
 `uncomplete', which means that BATs can be attached to the
@@ -69,11 +68,10 @@ The function populateColumn() allows the user to attach a BAT
 to a ResultSet column, if and only if the BAT has the proper
 length, otherwise an exception will be thrown.
 If all columns are populated the ResultSet can be serialised
-using the writeNextPart(), writeHeader() and writeBlock()
-functions.
+using the writeNextPart(), writeHeader() and writeBlock() functions.
 
-Properties for columns can be set using the setProperty()
-function.  This function sets the given property value for
+Properties for columns can be set using the setProperty() function.
+This function sets the given property value for
 the given property name on the given column, where the
 column index starts at 1.  If the column index is out of
 bounds, the property name is not valid, or the value is
@@ -81,8 +79,8 @@ not allowed an exception will be thrown.
 The setProperty() function overwrites previous values,
 if set and returns whether it has replaced a value or not.
 
-Calling one of the writeNextPart(), writeHeader() or writeBlock()
-functions, causes the ResultSet to be closed for changes.
+Calling one of the writeNextPart(), writeHeader() or writeBlock() functions,
+causes the ResultSet to be closed for changes.
 This effectively means that any call to populateColumn() or
 setProperty() will result in an exception.  If a ResultSet
 cannot properly be closed because not all columns have a BAT
@@ -101,8 +99,8 @@ whether there is a next part to write using the function
 writeNextPart().  The size of the blocks can be set using the
 setBlockSize() function.
 
-To reuse a ResultSet, it should first be opened again.  The
-function dePopulate() releases all BATs attached to the columns
+To reuse a ResultSet, it should first be opened again.
+The function dePopulate() releases all BATs attached to the columns
 of the ResultSet and allows calls to populateColumn() and
 setProperty() again.
 

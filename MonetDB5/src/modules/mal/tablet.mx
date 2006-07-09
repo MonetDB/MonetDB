@@ -17,7 +17,7 @@
 @f tablet
 @a Niels Nes, Martin Kersten
 @d 29/07/2003
-@* The tablet module
+@+ The table interface
 
 A database cannot live without ASCII tabular print/dump/load operations. 
 It is needed to produce reasonable listings, to exchange answers
@@ -135,7 +135,7 @@ decorate the output.
 
 Another example involves printing a two column table in XML format.
 [Alternative, tablet.XMLformat(B1,B2) is a shorthand for the following:]
-@T
+
 @verbatim
 	tablet.setFormat(B1,B2);
 	tablet.setTableBracket("<rowset>","</rowset>");
@@ -144,7 +144,7 @@ Another example involves printing a two column table in XML format.
 	tablet.setBracket(1, "<age>", "</age>");
 	tablet.page();
 @end verbatim
-@+ Tablet properties
+@- Tablet properties
 More detailed header information can be obtained with the command 
 tablet.setProperties(S), where S
 is a comma separated list of properties of interest,
@@ -166,10 +166,10 @@ sorted, dense, key, base, min, max, card,....
 #--------------------------------------#
 @end verbatim
 
-@+ Scalar tablets
+@- Scalar tablets
 In line with the 10-year experience of Monet, printing scalar values
-follow the tuple layout structure. This means that the header() 
-command is also applicable.
+follow the tuple layout structure. This means that the header() command 
+is also applicable.
 For example, the sequence "i:=0.2;v:=sin(i); tablet.display(i,v);"
 produces the answer:
 @verbatim
@@ -184,7 +184,7 @@ produces the answer:
 All other formatted printing should be done with the printf() operations
 contained in the module io.
 
-@+ Tablet dump/restore
+@- Tablet dump/restore
 
 Dump and restore operations are abstractions over sequence of tablet commands.
 The command tablet.dump(stream,B1,...,Bn) is a contraction of the sequence
@@ -195,14 +195,14 @@ The result can be read by tablet.load(stream,B1,..,Bn) command.
 If loading is successful, e.g. no parsing
 errors occurred, the tuples are appended to the corresponding BATs.
 
-@+ Front-end extension
+@- Front-end extension
 A general bulk loading of foreign tables, e.g. CSV-files and fixed position 
 records, is not provided. Instead, we extend the list upon need. 
 Currently, the routines tablet.SQLload(stream,delim1,delim2, B1,..,Bn) 
 reads the files using the Oracle(?) storage. The counterpart for
 dumping is tablet.SQLdump(stream,delim1,delim2);
 
-@+ The commands
+@- The commands
 
 The load operation is for bulk loading a table, each column will be loaded
 into its own bat. The arguments are void-aligned bats describing the

@@ -34,28 +34,13 @@ function user.main():void;	# 0  (main:void)
     d := clients.getId();	# 2 CLTgetClientId (d:int)
     io.print(d);	# 3 IOprint_val (_3:int)<-(d:int)
     i := clients.getInfo();	# 4 CLTInfo (i:bat[:str,:str])
-    io.print(i);	# 5 IOprint_val (_5:int)<-(i:bat[:str,:str])
+#io.print(i); 	# 5  (_5:str)
 #u:= clients.getUsers(); 	# 6  (_6:str)
 #io.print(u); 	# 7  (_7:str)
 #l:= clients.getLogins(); 	# 8  (_8:str)
 #io.print(l); 	# 9  (_9:str)
 end main;	# 10  
 [ 0 ]
-#-----------------------------------------------------------------#
-# client		info	  # name
-# str		str	  # type
-#-------------------------#
-[ "user",	  "0"	  ]
-[ "password",	  ""	  ]
-[ "permission",	  "0"	  ]
-[ "scenario",	  "mal"	  ]
-[ "timer",	  "0"	  ]
-[ "trace",	  "0"	  ]
-[ "listing",	  "7"						  ]
-[ "debug",	  "0"						  ]
-[ "cwd",	  "/ufs/mk/monet5/Linux/mTests/src/modules/mal"	  ]
-[ "login",	  "Fri Jul  7 22:46:00 2006"			  ]
-[ "delay",	  "Thu Jan  1 01:05:00 1970"			  ]
 
 # 00:03:53 >  
 # 00:03:53 >  Done.

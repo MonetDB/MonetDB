@@ -17,7 +17,7 @@
 @f mdb
 @a Martin Kersten
 @v 1
-@* The debugger interface
+@+ MAL debugger interface
 This module provides access to the functionality offered
 by the MonetDB debugger and interpreter status.
 It is primarilly used in interactive sessions to activate
@@ -25,12 +25,25 @@ the debugger at a given point. Furthermore, the instructions
 provide the necessary handle to generate information
 for post-mortum analysis.
 
-@+ Primary debugging commands
 To enable ease of debugging and performance monitoring, the MAL interpreter
 comes with a hardwired gdb-like text-based debugger.
 A limited set of instructions can be included in the programs themselves,
 but beware that debugging has a global effect. Any concurrent user
 will be affected by breakpoints being set.
+
+The prime scheme to inspect the MAL interpreter status is to use
+the MAL debugger directly. However, in case of automatic exception handling
+it helps to be able to obtain BAT versions of the critical information,
+such as stack frame table, stack trace,
+and the instruction(s) where an exception occurred.
+The inspection typically occurs in the exception handling part of the
+MAL block.
+
+Beware, a large class of internal errors can not easily captured this way.
+For example, bus-errors and segmentation faults lead to premature
+termination of the process. Similar, creation of the post-mortum
+information may fail due to an inconsistent state or insufficient resources.
+
 @mal
 module mdb;
 
@@ -62,45 +75,28 @@ command setDebug(flg:int):void
 address MDBsetDebug
 comment "Set the kernel debugging bit-set.
 See the MonetDB configuration file for details";
-
-@+ Decoding exceptions
-The exception message produced by the modules
-adhere to the structure:
-<variable>:<context>:<reason>.
-These components can be extracted for further analysis.
-@mal
 command getException(s:str):str
 address MDBgetExceptionVariable
 comment "Extract the variable name from the exception message";
-
 command getReason(s:str):str
 address MDBgetExceptionReason
 comment "Extract the reason from the exception message";
-
 command getContext(s:str):str
 address MDBgetExceptionContext
 comment "Extract the context string from the exception message";
 
-@+ Display operation code
-Part of the debugger operations can also be used independently.
-A key tool for analysis of the MAL code is being able to dump
-any routine, module. For queries, it is also illustrative to display
-the flow graph. [TODO]
-@mal
 pattern list():void 
 address MDBlist
 comment "Dump the current routine on standard out.";
 pattern list(M:str,F:str):void 
 address MDBlist3
 comment "Dump the routine M.F on standard out.";
-
 pattern List():void 
 address MDBlistDetail
 comment "Dump the current routine on standard out.";
 pattern List(M:str,F:str):void 
 address MDBlist3Detail
 comment "Dump the routine M.F on standard out.";
-
 pattern var():void 
 address MDBvar
 comment "Dump the symboltable of current routine on standard out.";
@@ -108,20 +104,6 @@ pattern var(M:str,F:str):void
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
 
-@+ Interpreter runtime status
-The prime scheme to inspect the MAL interpreter status is to use
-the MAL debugger directly. However, in case of automatic exception handling
-it helps to be able to obtain BAT versions of the critical information,
-such as stack frame table, stack trace,
-and the instruction(s) where an exception occurred.
-The inspection typically occurs in the exception handling part of the
-MAL block.
-
-Beware, a large class of internal errors can not easily captured this way.
-For example, bus-errors and segmentation faults lead to premature
-termination of the process. Similar, creation of the post-mortum
-information may fail due to an inconsistent state or insufficient resources.
-@mal
 pattern getStackDepth():int 
 address MDBStkDepth
 comment "Return the depth of the calling stack.";

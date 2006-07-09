@@ -36,8 +36,22 @@ are heavily modified or are being destroyed.
 They disappear from the statistics box the first time 
 an invalid access is attempted or during system reboot.
 
+The staleness of the information can be controlled in several
+ways. The easiest, and most expensive, is to assure that
+the statistics are updated when you start the server.
+Alternative, you can set a expiration interval, which will
+update the information only when it is considered expired.
+This test will be triggered either at server restart or
+your explicit call to update the statistics tables.
+The statistics table is commited each time you change it.
+
 A forced update can be called upon when the front-end
 expects the situation to be changed drastically.
+
+The statistics table is mostly used internally, but
+once in a while you need a dump for closed inspection.
+in your MAL program for inspection. Just
+use the BBP bind operation to locate them in the buffer pool.
 @mal
 module statistics;
 
@@ -59,12 +73,7 @@ comment "Enter a new BAT into the statistics box";
 command deposit(name:bat[:any_1,:any_2]) :void
 address STATdeposit
 comment "Enter a new BAT into the statistics box";
-@-
-The Box can optimize its behaviour by e.g. keeping 
-often used histograms locked into memory or propagate
-updates quickly. This is only applicable for objects
-taken from the box and until it is released.
-@mal
+
 pattern releaseAll():void
 address STATreleaseAll
 comment "Release all variables in the box";
@@ -90,18 +99,6 @@ pattern hasMoreElements()(:lng,:str)
 address STAThasMoreElements
 comment "Locate next element in the box";
 
-@-
-The staleness of the information can be controlled in several
-ways. The easiest, and most expensive, is to assure that
-the statistics are updated when you start the server.
-Alternative, you can set a expiration interval, which will
-update the information only when it is considered expired.
-This test will be triggered either at server restart or
-your explicit call to update the statistics tables.
-
-The statistics table is commited each time you change it.
-
-@mal
 command update()
 address STATupdate
 comment "Check for stale information";
@@ -122,18 +119,6 @@ command epilogue()
 address STATepilogue
 comment "Release the resources of the statistics package";
 
-@-
-Although it is mostly used internally, the key operators
-for inspection are provided, such that it is possible to bake
-a query plan that changes course after checking the statistics
-table.
-
-The statistics table is mostly used internally, but
-once in a while you need a dump for closed inspection.
-in your MAL program for inspection. Just
-use the BBP bind operation to locate them in the buffer pool.
-
-@mal
 command dump()
 address STATdump
 comment "Display the statistics table";
@@ -166,8 +151,14 @@ comment "Return latest stored maximum information";
 command getHistogram(nme:str):bat[:any_1,:any_2]
 address STATgetHistogram
 comment "Return the latest histogram");
-
+@{
 @- Implementation
+
+The Box can optimize its behaviour by e.g. keeping 
+often used histograms locked into memory or propagate
+updates quickly. This is only applicable for objects
+taken from the box and until it is released.
+
 The implementation is based on the assumption that in
 most cases front-ends deal with BAT names as opposed to
 the internal index.
@@ -843,3 +834,4 @@ STATgetHistogram(int *ret, str *nme)
 	BBPincref(*ret = h->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }
+@}
