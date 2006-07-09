@@ -212,6 +212,15 @@ command sortTH( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGthsort
 comment "Returns a lexicographically sorted copy on tail,head.";
 
+command ssort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGssort
+comment "Returns copy of a BAT with the BUNs sorted on ascending head values.
+         This is a stable sort.";
+command ssort_rev( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGssort_rev
+comment "Returns copy of a BAT with the BUNs sorted on descending head values.
+         This is a stable sort.";
+
 command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGrevert
 comment "Returns a BAT copy with buns in reverse order";
@@ -1164,6 +1173,8 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(sort_rev,BATsort_rev)@
 @:unary(tsort,BATtsort)@
 @:unary(tsort_rev,BATtsort_rev)@
+@:unary(ssort,BATssort)@
+@:unary(ssort_rev,BATssort_rev)@
 @:unary(number,BATnumber)@
 @:unary(copy,BATwcopy)@
 @:unary(rcopy,BATrcopy)@
@@ -2426,7 +2437,7 @@ ALGtsort(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.tunique", "GDKerror");
+	return throwMessage("algebra.tsort", "GDKerror");
 }
 
 mal_export str ALGhsort(int *result, int *bid);
@@ -2446,69 +2457,70 @@ ALGhsort(int *result, int *bid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.tunique", "GDKerror");
+	return throwMessage("algebra.hsort", "GDKerror");
 }
 
 mal_export str ALGhtsort(int *result, int *lid);
 str
 ALGhtsort(int *result, int *lid)
 {
-	BAT *b, *bc, *bk, *bn = NULL, *bku;
-	size_t cnt;
-	ptr p, q;
+	BAT *b, *bm = NULL, *bn = NULL;
 
 	if ((b = BATdescriptor(*lid)) == NULL) {
 		return throwMessage("algebra.htsort", "Cannot access descriptor");
 	}
-	cnt = BATcount(b);
-	bn = BATnew(b->htype, b->ttype, cnt);
-	if (bn == 0)
-		return throwMessage("algebra.htsort", "GDKerror");
-	bk = BATsort(bku = BATkunique(b));
-	BBPunfix(bku->batCacheid);
-	BATloop(bk, p, q) {
-		b = (((b)->batCacheid < 0) ? (b) : BATmirror(b));
-		bc = BATselect(b, p, p);
-		bc = BATsort(bc);
-		bc = (((bc)->batCacheid < 0) ? (bc) : BATmirror(bc));
-		BATins(bn, bc, FALSE);
-		BBPunfix(bc->batCacheid);
-	}
+	CMDtsort(&bm, b);
 	BBPreleaseref(b->batCacheid);
-	BBPunfix(bk->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
+	if (bm) {
+		CMDssort(&bn, bm);
+		BBPunfix(bm->batCacheid);
+		if (bn) {
+			if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+			*result = bn->batCacheid;
+			BBPkeepref(*result);
+			return MAL_SUCCEED;
+		}
+		return throwMessage("algebra.htsort", "GDKerror: ssort failed");
 	}
-	return throwMessage("algebra.htsort", "GDKerror");
+	return throwMessage("algebra.htsort", "GDKerror: tsort failed");
 }
 
 mal_export str ALGthsort(int *result, int *lid);
 str
 ALGthsort(int *result, int *lid)
 {
-	BAT *b, *bc, *bk, *bn = NULL, *bku;
-	size_t cnt;
-	ptr p, q;
+	BAT *b, *bm = NULL, *bn = NULL;
 
 	if ((b = BATdescriptor(*lid)) == NULL) {
 		return throwMessage("algebra.thsort", "Cannot access descriptor");
 	}
-	cnt = BATcount(b);
-	bn = BATnew(b->htype, b->ttype, cnt);
-	if (bn == 0)
-		return throwMessage("algebra.thsort", "GDKerror");
-	b = (((b)->batCacheid < 0) ? (b) : BATmirror(b));
-	bk = BATsort(bku = BATkunique(b));
-	BBPunfix(bku->batCacheid);
-	BATloop(bk, p, q) {
-		bc = BATselect(b, p, p);
-		bc = BATsort(bc);
-		BATins(bn, bc, FALSE);
+	CMDtsort(&bm, BATmirror(b));
+	BBPreleaseref(b->batCacheid);
+	if (bm) {
+		CMDssort(&bn, bm);
+		BBPunfix(bm->batCacheid);
+		if (bn) {
+			bn = BATmirror(bn);
+			if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+			*result = bn->batCacheid;
+			BBPkeepref(*result);
+			return MAL_SUCCEED;
+		}
+		return throwMessage("algebra.thsort", "GDKerror: ssort failed");
 	}
-	BBPunfix(bk->batCacheid);
+	return throwMessage("algebra.thsort", "GDKerror: tsort failed");
+}
+
+mal_export str ALGssort(int *result, int *bid);
+str
+ALGssort(int *result, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("algebra.ssort", "Cannot access descriptor");
+	}
+	CMDssort(&bn, b);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2516,7 +2528,27 @@ ALGthsort(int *result, int *lid)
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("algebra.htsort", "GDKerror");
+	return throwMessage("algebra.ssort", "GDKerror");
+}
+
+mal_export str ALGssort_rev(int *result, int *bid);
+str
+ALGssort_rev(int *result, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("algebra.ssort_rev", "Cannot access descriptor");
+	}
+	CMDssort_rev(&bn, b);
+	BBPreleaseref(b->batCacheid);
+	if (bn) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.ssort_rev", "GDKerror");
 }
 
 mal_export str ALGrevert(int *result, int *bid);
