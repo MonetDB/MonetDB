@@ -2,7 +2,8 @@
 
 a:= inspect.getAtomNames();	io.print(a);
 m:= inspect.getModule();	mr:= bat.reverse(m);
-m1:= algebra.kunique(mr);   m1r:= bat.reverse(m1); io.print(m1r);
+m1:= algebra.kunique(mr);   
+z:= algebra.project(m1); io.print(z);
 stmt:= inspect.getDefinition("algebra","select");
 sig:= inspect.getSignature("algebra","select");
 

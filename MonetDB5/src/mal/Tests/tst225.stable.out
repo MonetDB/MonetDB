@@ -29,8 +29,8 @@ function user.main():void;	# 0  (main:void)
     b := algebra.copy(a);	# 4 ALGcopy (b:bat[:int,:int])<-(a:bat[:int,:int])
     z := batcalc.+(a,a,b);	# 5 CMDbataccumADD_int_int_int (z:void)<-(a:bat[:int,:int])(a:bat[:int,:int])(b:bat[:int,:int])
     io.print(a);	# 6 IOprint_val (_8:int)<-(a:bat[:int,:int])
-    bat.setGarbage(b);	# 7 CMDbbpgarbage (_9:void)<-(b:bat[:int,:int])
-    bat.setGarbage(a);	# 8 CMDbbpgarbage (_10:void)<-(a:bat[:int,:int])
+    bat.setGarbage(b);	# 7 CMDBATsetgarbage (_9:void)<-(b:bat[:int,:int])
+    bat.setGarbage(a);	# 8 CMDBATsetgarbage (_10:void)<-(a:bat[:int,:int])
     z := batcalc.+(a,a,b);	# 9 CMDbataccumADD_int_int_int (z:void)<-(a:bat[:int,:int])(a:bat[:int,:int])(b:bat[:int,:int])
 end main;	# 10  
 #-----------------#
