@@ -7,10 +7,10 @@ be required to understand all details.
 @menu
 * BAT extensions:: Extensions to the kernel/bat module.
 * BBP:: BAT buffer pool interface.
-* Box:: Box variable interface.
-* Chopper:: Break a collection into chunks.
-* Clients:: Client record inspection.
 * Constants:: Global system defined values.
+* Chopper:: Break a collection into chunks.
+* Box:: Box variable interface.
+* Clients:: Client record inspection.
 * Factory:: Factory management interface.
 * Inspect:: Inspect the runtime symbol table(s).
 * I/O:: The input/output interface.
@@ -20,12 +20,12 @@ be required to understand all details.
 * Mserver:: MonetDB server interface.
 * MAT :: Multiple association tables.
 * PBM:: Dealing with partitioned BATS.
-* Profiler:: Performance profiler.
+* profiler:: Performance profiler.
 * PCRE:: Regular expression handling over strings.
 * Result Sets:: Result set interface.
 * Statistics:: A server-side statistics catalog.
-* Table:: Table output interface.
-*Transactions:: Transaction interface.
+* Tablet:: Table output interface.
+* Transactions:: Transaction interface.
 @end menu
 
 @table @emph
