@@ -1,5 +1,5 @@
-The table below summarizes the first commentary line encountered in
-the system associated with a MAL operation.
+The table below summarizes the commentary lines encountered in
+the system associated with a MAL kernel modules.
 
 @multitable @columnfractions .33 .67 
 @item
@@ -509,94 +509,6 @@ BAT administration has indeed changed.
 @item batstr.unicodeAt
 @tab get a unicode character (as an int) from a string position.
 @item
-@item bbp.bind
-@tab Locate the BAT using its BBP index
-@item bbp.close
-@tab Close the bbp box.
-@item bbp.commit
-@tab Commit updates for this client
-@item bbp.deposit
-@tab Relate a logical name to a physical BAT in the buffer pool.
-@item bbp.destroy
-@tab Schedule a BAT for removal at session end or immediately
-@item bbp.discard
-@tab Remove the BAT from the box
-@item bbp.getCount
-@tab Create a BAT with the cardinalities of all known BATs
-@item bbp.getDirty
-@tab Create a BAT with the dirty/ diffs/clean status
-@item bbp.getHeadType
-@tab Map a BAT into its head type
-@item bbp.getHeat
-@tab Create a BAT with the heat values
-@item bbp.getKind
-@tab Create a BAT with the persistency status
-@item bbp.getLRefCount
-@tab Utility for debugging MAL interpreter
-@item bbp.getLocation
-@tab Create a BAT with their disk locations
-@item bbp.getName
-@tab Map a BAT into its internal name
-@item bbp.getNames
-@tab Map BAT into its bbp name
-@item bbp.getObjects
-@tab View of the box content.
-@item bbp.getRNames
-@tab Map a BAT into its bbp physical name
-@item bbp.getRefCount
-@tab Utility for debugging MAL interpreter
-@item bbp.getStatus
-@tab Create a BAT with the disk/load status
-@item bbp.getTailType
-@tab Map a BAT into its tail type
-@item bbp.iterator
-@tab Locates the next element in the box
-@item bbp.open
-@tab Locate the bbp box and open it.
-@item bbp.prelude
-@tab Initialize the bbp box
-@item bbp.release
-@tab Remove the BAT from further consideration
-@item bbp.releaseAll
-@tab Commit updates for this client
-@item bbp.take
-@tab Load a particular bat
-@item bbp.toString
-@tab Get the string representation of an element in the box
-@item
-@item blob.nitems
-@tab  get the number of bytes in this blob.
-@item blob.toblob
-@tab store a string as a blob.
-@item blob.tostring
-@tab get the bytes from blob as a string,
-	 starting at byte 'index' till the first 
-	0 byte or the end of the blob.
-@item
-@item box.close
-@tab Close the box 
-@item box.deposit
-@tab Enter a new value into the box
-@item box.destroy
-@tab Destroy the box 
-@item box.discard
-@tab Release the BAT from the client pool
-@item box.getBoxNames
-@tab Retrieve the names of all boxes
-@item box.iterator
-@tab Locates the next element in the box
-@item box.open
-@tab Locate the box and open it 
-@item box.release
-@tab Release the BAT from the client pool
-@item box.releaseAll
-@tab Release all objects for this client
-@item box.take
-@tab Locates the typed value in the box
-@item box.toString
-@tab Get the string representation of 
-	the i-th element in the box
-@item
 @item bstream.create
 @tab create a buffered stream
 @item bstream.destroy
@@ -668,48 +580,6 @@ BAT administration has indeed changed.
 @item calc.void
 @item calc.xor
 @item
-@item clients.addScenario
-@tab add the given scenario to the allowed scenarios for the given user
-@item clients.addUser
-@tab Allow user with password access to the given scenarios
-@item clients.changePassword
-@tab Change the password for the current user
-@item clients.changeUsername
-@tab Change the username of the user into the new string
-@item clients.checkPermission
-@tab Check permission for a user
-@item clients.getId
-@tab return a number that unique represents the current client
-@item clients.getInfo
-@tab Pseudo bat with client attributes
-@item clients.getLogins
-@tab Pseudo bat of client login time
-@item clients.getScenario
-@tab Retrieve current scenario name
-@item clients.getUsers
-@tab return a BAT with user id and name available in the system with access to the given scenario(s)
-@item clients.quit
-@tab Terminate the session for this client
-@item clients.removeScenario
-@tab remove the given scenario from the allowed scenarios for the given user
-@item clients.removeUser
-@tab Remove the given user from the system
-@item clients.setDebug
-@tab Set the debugging bitset. See configuration file and documentation
-@item clients.setHistory
-@tab Designate console history file
-@item clients.setListing
-@tab Turn on/off echo of MAL instructions:
-	2 - show mal instruction,
-	4 - show type resolutoin, 
-	8 - show binding information
-@item clients.setPassword
-@tab Set the password for the given user
-@item clients.setScenario
-@tab Switch to other scenario handler, return previous one
-@item clients.trace
-@tab Trace (on/off) receipt of messages for all users
-@item
 @item color.blue
 @tab Extracts blue component from a color atom
 @item color.cb
@@ -740,33 +610,6 @@ BAT administration has indeed changed.
 @tab Extracts value component from a color atom
 @item color.ycc
 @tab Converts an YCC triplets to a color atom
-@item
-@item const.close
-@tab Close the constant box 
-@item const.deposit
-@tab Enter a new variable into the box
-@item const.destroy
-@tab Destroy the box
-@item const.discard
-@tab Release the const from the box
-@item const.epiloque
-@tab Cleanup the const box
-@item const.hasMoreElements
-@tab Locate next element in the box
-@item const.newIterator
-@tab Locate next element in the box
-@item const.open
-@tab Locate and open the constant box
-@item const.prelude
-@tab Initialize the const box
-@item const.release
-@tab Release a new constant value
-@item const.releaseAll
-@tab Release all variables in the box
-@item const.take
-@tab Take a variable out of the box
-@item const.toString
-@tab Get the string representation of an element in the box
 @item
 @item date.!=
 @tab Equality of two dates
@@ -799,29 +642,6 @@ BAT administration has indeed changed.
 @tab Equality of two daytimes
 @item daytime.isnil
 @tab Nil test for daytime value
-@item
-@item factory.getCaller
-@tab Retrieve the unique identity
-        of the factory caller
-@item factory.getLocations
-@tab Retrieve the location of all
-        known plants
-@item factory.getOwners
-@tab Retrieve the factory owners table
-@item factory.getPlants
-@tab Retrieve the factory plant description
-        for all operational factories
-@item factory.getTimeIn
-@tab Retrieve the time stamp it was
-        received by the factory
-@item factory.getTimeOut
-@tab Retrieve the time stamp the answer
-        was returned to the client
-@item factory.setLocation
-@tab Set the location of the plant
-        manager.
-@item factory.shutdown
-@tab Close a factory
 @item
 @item group.avg
 @tab grouped tail average
@@ -900,85 +720,6 @@ BAT administration has indeed changed.
 @item inet.text
 @tab Extract IP address and netmask length as text
 @item
-@item inspect.getAddress
-@tab Returns the function signature(s)
-@item inspect.getAddresses
-@tab Obtain the function address
-@item inspect.getAtomNames
-@tab Collect a BAT with the atom names
-@item inspect.getAtomSizes
-@tab Collect a BAT with the atom sizes
-@item inspect.getAtomSuper
-@tab Collect a BAT with the atom names
-@item inspect.getComment
-@tab Returns the function help information.
-@item inspect.getDefinition
-@tab Returns a string representation of a specific function
-@item inspect.getEnvironment
-@tab Collect the environment variables
-@item inspect.getFunction
-@tab Obtain the function name
-@item inspect.getKind
-@tab Obtain the instruction kind
-@item inspect.getModule
-@tab Obtain the function name
-@item inspect.getSignature
-@tab Returns the function signature(s)
-@item inspect.getSignatures
-@tab Obtain the function signatures
-@item inspect.getSize
-@tab Return the storage size for a function (in bytes)
-@item inspect.getSource
-@tab Return the original input for a function
-@item inspect.getType
-@tab Return the type of a variable (expression)
-@item inspect.getTypeIndex
-@item inspect.getTypeName
-@item
-@item io.export
-@tab Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
- is put into the .../dbfarm/$DB directory. Success of failure is indicated.
-@item io.ftable
-@tab Print an n-ary table to a file.
-@item io.import
-@tab Import a BAT from an ASCII dump. The new tuples are *inserted* into the
- parameter BAT. You have to create it! Its signature must match the dump,
- else parsing errors will occur and FALSE is returned.
-@item io.print
-@tab Print a MAL value tuple .
-@item io.printf
-@item io.printft
-@tab Select default format 
-@item io.prompt
-@tab Print a MAL value without brackets.
-@item io.stderr
-@tab return the error stream for the database console
-@item io.stdin
-@tab return the input stream to the database client
-@item io.stdout
-@tab return the output stream for the database client
-@item io.table
-@tab Print an n-ary table.
-@item
-@item language.assert
-@tab Assertion test
-@item language.call
-@tab Evaluate a program stored in a BAT
-@item language.newRange
-@tab This routine introduces an iterator
-	over a scalar domain.
-@item language.nextElement
-@tab Advances the iterator with a fixed value
-	until it becomes >= last.
-@item language.raise
-@tab Raise an exception labeled 
-	with a specific message.
-@item language.register
-@tab Compile the code string and register it as a MAL function
-@item language.source
-@tab Merge the instructions stored in the 
-	file with the current program
-@item
 @item lock.create
 @tab Create an unset lock
 @item lock.destroy
@@ -991,64 +732,6 @@ BAT administration has indeed changed.
 @tab Try a lock. If free set it, if not return EBUSY
 @item lock.unset
 @tab Unset a lock
-@item
-@item manual.completion
-@tab Produces the wordcompletion table.
-@item manual.create
-@tab Produces a XML-formatted manual over all modules loaded.
-@item manual.createHelp
-@tab Produces a manual with help lines grouped by module.
-@item manual.createOverview
-@tab Produces an overview of all functions grouped by module.
-@item manual.help
-@tab Produces the help table for the pattern.
-@item manual.search
-@tab Search the manual for entries matching the keyword
-@item
-@item mat.expand
-@tab Replace the group by its components
-@item mat.info
-@tab retrieve the definition from the partition catalogue
-@item mat.iterator
-@tab Replace the group by its components
-@item mat.new
-@tab Define a Merge Association Table (MAT) 
-@item mat.pack
-@tab Materialize the MAT into a single BAT
-@item mat.print
-@item
-@item mdb.List
-@tab Dump the routine M.F on standard out.
-@item mdb.getDefinition
-@tab Returns a string representation of the current function 
-	with typing information attached
-@item mdb.getContext
-@tab extract the context string from the exception message
-@item mdb.getReason
-@tab extract the reason from the exception message
-@item mdb.getException
-@tab extract the variable name from the exception message
-@item mdb.getStackDepth
-@tab Return the depth of the calling stack.
-@item mdb.getStackFrame
-@tab Collect variable binding of current (n-th) stack frame.
-@item mdb.getStackTrace
-@item mdb.inspect
-@tab Run the debugger on a specific function
-@item mdb.list
-@tab Dump the routine M.F on standard out.
-@item mdb.setCatch
-@tab Turn on/off catching exceptions
-@item mdb.setTimer
-@tab Turn on/off performance timer for debugger
-@item mdb.setTrace
-@tab Turn on/off tracing of current routine
-@item mdb.start
-@tab Start interactive debugger
-@item mdb.stop
-@tab Stop the interactive debugger
-@item mdb.var
-@tab Dump the symboltable of routine M.F on standard out.
 @item
 @item mkey.bulk_rotate_xor_hash
 @tab pre:  h and b should be synced on head
@@ -1136,85 +819,6 @@ BAT administration has indeed changed.
 @tab The tanh() function returns the hyperbolic tangent of x, which is 
 	defined mathematically as sinh(x) / cosh(x).
 @item
-@item mserver.bind
-@tab Bind a remote variable to a local one
-@item mserver.connect
-@tab Establish connection with a remote mserver
-@item mserver.connect_ssl
-@tab Establish connection with a remote mserver using the
-secure socket layer
-@item mserver.destroy
-@tab Destroy the handle
-@item mserver.disconnect
-@tab Terminate the session
-@item mserver.epilogue
-@item mserver.error
-@tab Check for an error in the communication
-@item mserver.explain
-@tab Turn the error seen into a string
-@item mserver.fetch_all_rows
-@tab Retrieve all rows into the cache
-@item mserver.fetch_field
-@tab Retrieve a single chr field
-@item mserver.fetch_field_array
-@tab Retrieve all fields for a row
-@item mserver.fetch_line
-@tab Retrieve a complete line
-@item mserver.fetch_reset
-@tab Reset the cache read line.
-@item mserver.fetch_row
-@tab Retrieve the next row for analysis
-@item mserver.finish
-@tab Remove all remaining answers
-@item mserver.getError
-@tab Get error message
-@item mserver.get_field_count
-@tab Return number of fields
-@item mserver.get_row_count
-@tab Return number of rows
-@item mserver.listen
-@tab Start the Mapi listener on <port> for <maxusers>. 
-	For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out)
-	is called.If no <cmd> is specified a new client thread is forked.
-@item mserver.listen_ssl
-@tab Start the Mapi listener on <port> for <maxusers> using SSL. 
-	<keyfile> and <certfile> give the path names for files with the 
-	server key and certificates in PEM format. For a new client connection 
-	MAL procedure <cmd>(Stream s_in, Stream s_out) is called.
-	If no <cmd> is specified a new client thread is forked.
-@item mserver.lookup
-@tab Retrieve the connection identifier
-@item mserver.malclient
-@tab Start a Mapi client.
-@item mserver.next_result
-@tab Go to next result set
-@item mserver.ping
-@tab Test availability of server
-@item mserver.prelude
-@item mserver.prepare
-@tab Prepare a query for execution
-@item mserver.put
-@tab Prepare sending a value to a remote site
-@item mserver.query
-@tab Sent the query for execution
-@item mserver.query_array
-@tab Sent the query for execution replacing '?' by arguments
-@item mserver.query_handle
-@tab Sent the query for execution
-@item mserver.reconnect
-@tab Re-establish a connection
-@item mserver.resume
-@tab Resume connection listeners
-@item mserver.rpc
-@tab Sent a simple query for execution
-@item mserver.setAlias
-@tab Give the channel a logical name
-@item mserver.stop
-@tab Terminate connection listeners
-@item mserver.suspend
-@tab Suspend accepting connections
-@item mserver.trace
-@tab Toggle the Mapi library tracer
 @item
 @item mtime.add
 @tab returns the timestamp that comes 'msecs' 
@@ -1389,119 +993,6 @@ secure socket layer
 @item optimizer.strengthReduction
 @tab Move constant expressions out of the loop
 @item
-@item partitions.close
-@tab Save and close the partition box 
-@item partitions.compress
-@tab Compress the group to remove oid holes
-@item partitions.delete
-@tab Delete a BAT from the partition
-@item partitions.deposit
-@tab Enter a new BAT into the partition box
-@item partitions.destroy
-@tab Destroy the partition box
-@item partitions.discard
-@tab Release a BAT variable from the box
-@item partitions.dump
-@item partitions.epilogue
-@item partitions.getLastPartition
-@tab Obtain the last partition for update
-@item partitions.getRange
-@tab Obtain the oid range for a partition
-@item partitions.hasMoreElements
-@tab Localize the next partition for processing.
-@item partitions.insert
-@tab Add a BAT as a partition to the end of the list.
-@item partitions.newIterator
-@tab Create an iterator over the BAT partitions.
-@item partitions.open
-@tab Locate and open the partition box
-@item partitions.prelude
-@item partitions.release
-@tab Release a single BAT with its partitions from the  box
-@item partitions.releaseAll
-@tab Release all partitions in the box
-@item partitions.setCapacity
-@tab Limit the content of all remaining BATs
-@item partitions.take
-@tab Take a partition from the box
-@item partitions.toString
-@tab Get the string representation of an element in the box
-@item
-@item pbm.close
-@tab Save and close the partition box 
-@item pbm.compress
-@tab Compress the group to remove oid holes
-@item pbm.deposit
-@tab Add a BAT to a PBAT in the partition box
-@item pbm.destroy
-@tab Destroy the partition box
-@item pbm.discard
-@tab Release a single BAT from a PBAT
-@item pbm.dump
-@item pbm.epilogue
-@item pbm.generator
-@tab Place holder for generator optimizer
-@item pbm.getComponents
-@tab Retrieve the component names of a PBAT
-@item pbm.getLast
-@tab Obtain the last partition for update
-@item pbm.getNames
-@tab Retrieve the component names of all PBATs
-@item pbm.getNextElement
-@tab Localize the next partition for processing.
-@item pbm.getNextName
-@tab Locate next element in the partition box
-@item pbm.getRange
-@tab Obtain the oid range for a partition
-@item pbm.newIterator
-@tab Create an iterator over the BAT partitions.
-@item pbm.open
-@tab Locate and open the partition box
-@item pbm.prelude
-@item pbm.releaseAll
-@tab Release a PBAT definitions
-@item pbm.setReadMode
-@tab Perform mode change for all components of the partitioned BAT
-@item pbm.setWriteMode
-@tab Perform mode change for all components of the partitioned BAT
-@item pbm.take
-@tab Retrieve a single component of a PBAT by index
-@item
-@item pcre.compile
-@tab compile a pattern
-@item pcre.like
-@item pcre.match
-@tab POSIX pattern matching against a string
-@item pcre.prelude
-@tab Initialize pcre
-@item pcre.replace
-@tab Replace _all_ matches of "pattern" in "origin_str" with
-	   "replacement".
-
-	 Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.
-
-	   'e': if present, an empty string is considered to be a valid match
-	   'i': if present, the match operates in case-insensitive mode. Otherwise, in
-
-			case-sensitive mode.
-
-	 'm': if present, the match operates in multi-line mode.
-
-	   's': if present, the match operates in "dot-all"
-	   The specifications of the flags can be found in "man pcreapi"
-
-	   The flag letters may be repeated.
-
-	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".
-
-	   Returns the replaced string, or if no matches found, the original string.
-@item pcre.select
-@tab Select tuples based on the pattern
-@item pcre.sql2pcre
-@tab Convert a SQL like pattern with the given escape character into a PCRE pattern.
-@item pcre.uselect
-@tab Select tuples based on the pattern, only returning the head
-@item
 @item pqueue.dequeue_max
 @tab Removes top element of the max-pqueue and updates it
 @item pqueue.dequeue_min
@@ -1521,52 +1012,6 @@ secure socket layer
 @item pqueue.topreplace_min
 @tab Replaces top element with input and updates min-pqueue
 @item
-@item profiler.activate
-@tab Make the specified counter active.
-@item profiler.cleanup
-@tab Remove the temporary tables for profiling
-@item profiler.clearTrace
-@tab Clear the profiler tables
-@item profiler.closeStream
-@tab Stop sending the event records
-@item profiler.clrFilter
-@tab Clear the performance trace bit 
-	of the selected functions.
-@item profiler.deactivate
-@tab Deactivate the counter
-@item profiler.dumpTrace
-@tab List the events collected
-@item profiler.getTrace
-@tab Get the trace details of a specific event
-@item profiler.openStream
-@tab Send the log events to a file 
-@item profiler.setAll
-@tab Short cut for setFilter(*,*).
-@item profiler.setCachedProfiling
-@tab use cached events rather then online
-@item profiler.setEndPoint
-@tab End performance tracing after mod.fcn
-@item profiler.setFilter
-@tab Generate an event record for all 
-	function calls that satisfy the regular 
-	expression mod.fcn. A wildcard (*) can 
-	be used as name to identify all
-@item profiler.setNone
-@tab Short cut for clrFilter(*,*).
-@item profiler.setOfflineProfiling
-@tab Sent events over stream
-@item profiler.setOnlineProfiling
-@tab Sent events over stream
-@item profiler.setStartPoint
-@tab Start performance tracing at mod.fcn
-@item profiler.start
-@tab Start performance tracing
-@item profiler.startTrace
-@tab Prepare for online tracing using the profile filter
-@item profiler.stop
-@tab Stop performance tracing
-@item profiler.stopTrace
-@tab Stop online tracing
 @item
 @item sema.create
 @tab Create an unset sema, with an initial value
@@ -1577,54 +1022,6 @@ secure socket layer
 @item sema.up
 @tab Increment the semaphore
 @item
-@item
-@item statistics.close
-@tab Close the statistics box 
-@item statistics.deposit
-@tab Enter a new BAT into the statistics box
-@item statistics.destroy
-@tab Destroy the statistics box
-@item statistics.discard
-@tab Release a BAT variable from the box
-@item statistics.dump
-@tab Display the statistics table
-@item statistics.epilogue
-@tab Release the resources of the statistics package
-@item statistics.forceUpdate
-@tab Bring the statistics up to date for one BAT
-@item statistics.getCount
-@tab Return latest stored count information
-@item statistics.getHistogram
-@tab Return the latest histogram
-@item statistics.getHotset
-@tab Return a table with BAT names that have been touched
-since the start of the session
-@item statistics.getMax
-@tab Return latest stored maximum information
-@item statistics.getMin
-@tab Return latest stored minimum information
-@item statistics.getObjects
-@tab Return a table with BAT names managed
-@item statistics.getSize
-@tab Return latest stored count information
-@item statistics.hasMoreElements
-@tab Locate next element in the box
-@item statistics.newIterator
-@tab Locate next element in the box
-@item statistics.open
-@tab Locate and open the statistics box
-@item statistics.prelude
-@tab Initialize the statistics package
-@item statistics.release
-@tab Release a single BAT from the  box
-@item statistics.releaseAll
-@tab Release all variables in the box
-@item statistics.take
-@tab Take a variable out of the statistics box
-@item statistics.toString
-@tab Get the string representation of an element in the box
-@item statistics.update
-@tab Check for stale information
 @item
 @item status.batStatistics
 @tab Show distribution of bats by kind
@@ -1756,68 +1153,6 @@ since the start of the session
 @item streams.writeStr
 @tab write data on the stream
 @item
-@item tablet.display
-@tab Display a formatted table
-@item tablet.dump
-@tab Print all pages with header to a stream
-@item tablet.finish
-@tab Free the storage space of the report descriptor
-@item tablet.firstPage
-@tab Produce the first page of output
-@item tablet.getPage
-@tab Produce the i-th page of output
-@item tablet.getPageCnt
-@tab Return the size in number of pages
-@item tablet.header
-@tab Display the minimal header for the table
-@item tablet.input
-@tab Load a bat using specific format.
-@item tablet.lastPage
-@tab Produce the last page of output
-@item tablet.load
-@tab Load a bat using specific format.
-@item tablet.nextPage
-@tab Produce the next page of output
-@item tablet.output
-@tab Send the bat to an output stream.
-@item tablet.page
-@tab Display all pages at once without header
-@item tablet.prevPage
-@tab Produce the prev page of output
-@item tablet.setColumn
-@tab Bind i-th output column to a variable
-@item tablet.setColumnBracket
-@tab Format the brackets around a field
-@item tablet.setColumnDecimal
-@tab Set the scale and precision for numeric values
-@item tablet.setColumnName
-@tab Set the display name for a given column
-@item tablet.setColumnNull
-@tab Set the display format for a null value for a given column
-@item tablet.setColumnPosition
-@tab Set the character position to use for this field when loading according to 
-	fixed (punch-card) layout.
-@item tablet.setColumnWidth
-@tab Set the maximal display witdh for a given column. All values exceeding 
-	the length are simple shortened without any notice.
-@item tablet.setDelimiter
-@tab Set the column separator.
-@item tablet.setFormat
-@tab Initialize a new reporting structure.
-@item tablet.setPivot
-@tab The pivot bat identifies the tuples of interest. The only requirement 
-	    is that all keys mentioned in the pivot tail exist in all BAT parameters 
-	    of the print comment. The pivot also provides control over the order 
-	    in which the tuples are produced.
-@item tablet.setProperties
-@tab Define the set of properties
-@item tablet.setRowBracket
-@tab Format the brackets around a row
-@item tablet.setStream
-@tab Redirect the output to a stream.
-@item tablet.setTableBracket
-@tab Format the brackets around a table
-@item
 @item timestamp.!=
 @tab Equality of two timestamps
 @item timestamp.<
@@ -1840,19 +1175,6 @@ since the start of the session
 @item timezone.str
 @item timezone.timestamp
 @tab Utility function to create a timestamp from a number of seconds since the Unix epoch
-@item
-@item transaction.abort
-@tab Abort changes in certain BATs.
-@item transaction.alpha
-@tab List insertions since last commit.
-@item transaction.clean
-@tab Declare a BAT clean without flushing to disk.
-@item transaction.commit
-@tab Commit changes in certain BATs.
-@item transaction.delta
-@tab List deletions since last commit.
-@item transaction.sync
-@tab Save all persistent BATs
 @item
 @item unix.getenv
 @tab Get the environment variable string.
