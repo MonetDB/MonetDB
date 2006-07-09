@@ -72,20 +72,18 @@ do
 		g/^pattern/s//@item pattern
 		g/^function/s//@item function
 		g/^address/d
+		g/{unsafe}/s//@verb{ { } unsafe @verb{ } }/
 		g/^comment "/s///
 		g/^comment/s///
 		g/";/s///
 		/^@example/,/^@end example/d
 		/^@example/,/^module/-1d
+		/@table/+1s/module \(.*\);/ @noindent module @code{\1};/
+/@tabl/m/@tabl/+1
 		0i
 @page
 .
 		f
-		w!
-!EOF
-ex $b.bdy.texi <<!EOF
-		/@table/+1s/module \(.*\);/ @noindent module @code{\1};/
-/@tabl/m/@tabl/+1
 		w!
 !EOF
 		mv $b.bdy.texi  ${dir}/doc/share/tmp

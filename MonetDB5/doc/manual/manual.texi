@@ -7,7 +7,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED July 7, 2006
+@set UPDATED July 9, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -225,11 +225,9 @@ using the
 @node The MAL Profiler, Event Filtering, Runtime Inspection, Top
 @include mal_profiler.bdy.texi
 
-@node The Extension Modules , BAT extensions, Event Caching, Top
+@node The Extension Modules, BAT extensions, Event Caching, Top
 @include Assets/modules.texi
 
-@c @node ALG extensions, BAT extensions , The Extension Modules, The Extension Modules
-@c @include algExtensions.bdy.texi
 @node BAT extensions, BBP , The Extension Modules , The Extension Modules
 @include batExtensions.bdy.texi
 @node BBP, Constants , BAT extensions , The Extension Modules
@@ -256,19 +254,19 @@ using the
 @include manual.bdy.texi
 @node Mserver, MAT , Manual, The Extension Modules
 @include mserver.bdy.texi
-@node MAT, PBM , Manual, The Extension Modules
+@node MAT, PBM , Mserver, The Extension Modules
 @include mat.bdy.texi
 @node PBM, profiler, MAT, The Extension Modules
 @include pbm.bdy.texi
-@node profiler, Statistics , PBM, The Extension Modules
+@node profiler, PCRE , PBM, The Extension Modules
 @include profiler.bdy.texi
 @node PCRE, Result Sets , profiler, The Extension Modules
 @include pcre.bdy.texi
-@node Result Sets, Transactions, PCRE, The Extension Modules
+@node Result Sets, Statistics, PCRE, The Extension Modules
 @include rsbox.bdy.texi
 @node Statistics, Tablet, Result Sets, The Extension Modules
 @include statistics.bdy.texi
-@node Tablet, Transactions, Result Sets, The Extension Modules
+@node Tablet, Transactions, Statistics, The Extension Modules
 @include tablet.bdy.texi
 @node Transactions, MonetDB BAT Kernel, Tablet, The Extension Modules
 @include transaction.bdy.texi
