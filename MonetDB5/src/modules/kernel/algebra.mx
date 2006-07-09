@@ -498,6 +498,12 @@ comment "This is a join() for which the predicate is that two BUNs match
 		if the left-tail value is within the range [right-head - minus, 
 		right-head + plus]. Works only for the builtin numerical types, 
 		and their derivates.";
+@+ Projection operations
+@mal
+command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
+address ALGprojectNIL
+comment "Extract the head of a BAT.";
+
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
@@ -3061,6 +3067,25 @@ ALGindexjoin(int *result, int *lid, int *rid)
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.indexjoin", "can not perform a indexjoin");
+}
+
+str
+ALGprojectNIL(int *ret, int *bid)
+{
+    BAT *b, *bn;
+
+    if ((b = BATdescriptor(*bid)) == NULL) {
+        return throwMessage("algebra.project", "Cannot access descriptor");
+    }
+
+    bn = BATconst(b, TYPE_void, (ptr) &int_nil);
+    BBPunfix(b->batCacheid);
+    if (bn) {
+        *ret = bn->batCacheid;
+        BBPkeepref(bn->batCacheid);
+        return MAL_SUCCEED;
+    }
+    return throwMessage("algebra.project", "Cannot create the constant BAT");
 }
 
 @}
