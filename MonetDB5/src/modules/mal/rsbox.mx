@@ -23,12 +23,12 @@ serialising the values in the BATs to the MonetDB/Five MCL result
 format.  This box allows the user to create, retrieve and destroy
 ResultSets easily.
 
-Normally, objects are stored into a box using {\sc deposit}
-and taken out with {\sc take}.  This box however, only knows
-{\sc create} and {\sc take}.  ResultSets cannot
+Normally, objects are stored into a box using @code{deposit}
+and taken out with @code{take}.  This box however, only 
+knows @code{create} and @code{take}.  ResultSets cannot
 be stored, because the only way to create them is by using the
-{\sc create} function, which automatically deposits the newly
-created ResultSet in the box.  The {\sc release} function allows
+@code{create} function, which automatically deposits the newly
+created ResultSet in the box.  The @code{release} function allows
 to remove a ResultSet from the box.
 
 The existing functionality of mal_box allows to store and retrieve
@@ -45,7 +45,7 @@ hand a uniform interface to both application and foreign client
 by defining how to build a ResultSet from BATs and on the other
 hand serialising the given BATs in a predefined format.
 
-The ResultSet is {\em not} meant to be generic, instead it is
+The ResultSet is @code{not} meant to be generic, instead it is
 suitable only for MonetDB/Five MCL server/client communication.
 The exact specification of this protocol can be found in
 [ref:cvs:~fabian/repository:proefschrift/paper3] [(TODO)]
