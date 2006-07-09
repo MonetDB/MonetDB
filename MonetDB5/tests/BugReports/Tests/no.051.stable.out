@@ -81,7 +81,7 @@ function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (cre
 #	mil.line("        var a := new (oid,flt);"); 	# 1  (_2:str)
     a := bat.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-(_4:oid)(_5:flt)
 #	mil.line("        b@batloop(){"); 	# 3  (_6:str)
-barrier (aa_a,aa_aH,aa_aT):= chopper.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:oid)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 13
+barrier (aa_a,aa_aH,aa_aT):= bat.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:oid)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 13
 #	mil.line("                if (a.count() = 0)"); 	# 5  (_10:str)
     ba_a := aggr.count(a);	# 6 ALGcount_bat (ba_a:int)<-(a:bat[:oid,:flt])
 barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQintint (ca_a:bit)<-(ba_a:int)(_13:int) jump 11
@@ -89,7 +89,7 @@ barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQintint (ca_a:bit)<-(ba_a:int)(_13
     return da_a := a;	# 9  (da_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
 #	mil.line("        }"); 	# 10  (_16:str)
 exit ca_a;	# 11  (ca_a:bit)
-    redo (aa_a,aa_aH,aa_aT):= chopper.hasMoreElements(b);	# 12 CHPbunHasMoreElements (aa_a:lng)(aa_aH:oid)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 5
+    redo (aa_a,aa_aH,aa_aT):= bat.hasMoreElements(b);	# 12 CHPbunHasMoreElements (aa_a:lng)(aa_aH:oid)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 5
 exit (aa_a,aa_aH,aa_aT);	# 13  (aa_a:lng)(aa_aH:oid)(aa_aT:any)
 #	mil.line("        return a;"); 	# 14  (_17:str)
     return ea_a := a;	# 15  (ea_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
