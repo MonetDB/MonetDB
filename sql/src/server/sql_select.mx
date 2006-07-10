@@ -3508,7 +3508,7 @@ pull_refresh(mvc * sql, symbol *symb, stmt * ret)
 	char query[BUFSIZ + 1];
 	query[BUFSIZ] = '\0';
 
-	location = ret->location;
+	location = table_location(sql,qname_host(fl->h->data.sym->data.lval->h->data.sym));
 	if(location == 0){
 		sql_schema *schema ;
 		char *sname = qname_schema(fl->h->data.sym->data.lval->h->data.sym);
