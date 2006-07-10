@@ -133,7 +133,7 @@ const MINUS := 73;
 const MUST := 74;
 const MUST_NOT := 75;
 
-#default
+# Default score (0 or 1)
 var scoreBase := 0;
 
 const ENTITY_NUM := 10000;
@@ -141,6 +141,18 @@ const ENTITY_NUM := 10000;
 var collName := "PFX";
 var collHeight := 10;
 var retNum := 100;
+
+##
+# For retrieval models: 
+#   true:  return all elements from the context set
+#   false: return only elements from the context set that contain one or more query terms
+#
+# Setting this variable to false has the advantage of smaller intermediate region sets.
+# In theory, true has the advantage of better results, since it is possible that
+# elements that don't match any term at the beginning of a query, contain descendants
+# that do match terms.
+##
+var returnAllElements := true;
 
 if (view_bbp_name().reverse().exist("tj_collName")) {
 	if (bat("tj_collName").count() > 0) {
@@ -350,13 +362,27 @@ PROC terms( bat[oid,any] ctx ) : bat[oid,any] :=
 ##
 PROC select_root() : bat[oid,dbl] :=
 {
-    # Because TIJAH expects all documents in a collection to be contained by one 
-    # "virtual root" element, his behaviour should be emulated by the light index. 
-    # An element with preorder oid(0) will indicate that it is the collection root.
-    var root_reg := new(oid,dbl,1);
-    
-    root_reg.insert( virtRoot, dbl(scoreBase) );
-    return root_reg;
+    if ( not( isnil( startNodes ) ) ) {
+        # Start from a set of starting nodes if available. 
+        # It is assumed that the startNodes are [any, pre]
+        if ( count( startNodes ) > 0 ) {
+            var root_reg := startNodes.reverse().sort().project( dbl(scoreBase) );
+            return root_reg;
+        } else {
+            var root_reg := new(oid,dbl,1);
+            
+            root_reg.insert( virtRoot, dbl(scoreBase) );
+            return root_reg;
+        }
+    } else {
+        # Because TIJAH expects all documents in a collection to be contained by one 
+        # "virtual root" element, his behaviour should be emulated by the light index. 
+        # An element with preorder oid(0) will indicate that it is the collection root.
+        var root_reg := new(oid,dbl,1);
+        
+        root_reg.insert( virtRoot, dbl(scoreBase) );
+        return root_reg;
+    }
 }
 
 
@@ -517,10 +543,17 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     var start_time := time();
     
     # Check for the virtual root
-    if ( and((count( left ) = 1),(left.reverse().fetch(0) = virtRoot))) 
-            return new(oid,dbl);
-    if ( and((count( right ) = 1),(right.reverse().fetch(0) = virtRoot))) 
-            return left;
+    if ( not( bat("tj_"+collName+"_size").exist(0@0) ) ) {
+        # Exceptions for root in left or right argument. The case 
+        # of region sets containing the root is not handled
+        if ( count( left ) = 1 )
+            if ( left.reverse().fetch(0) = virtRoot ) 
+                return new(oid,dbl);
+        
+        if ( count( right ) = 1 )
+            if ( right.reverse().fetch(0) = virtRoot ) 
+                return left;
+    }
     
     var anc_desc := anc_desc( right, left );
     
@@ -542,9 +575,14 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 ##
 PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
-    if ( and((count( region ) = 1),(region.reverse().fetch(0) = virtRoot))) {
-        return select_node();
+    if ( not( bat("tj_"+collName+"_size").exist(0@0) ) ) {
+        # Exceptions for root in argument. The case 
+        # of region sets containing the root is not handled
+        if ( count( region ) = 1 ) 
+            if ( region.reverse().fetch(0) = virtRoot )
+                return select_node();
     }
+
 
     var ctx      := region;
     var pre_size := load( "tj_" + collName + "_size");    
@@ -573,11 +611,18 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     var start_time := time();
     
     # Check for the virtual root
-    if ( and((count( left ) = 1),(left.reverse().fetch(0) = virtRoot))) 
-            return right;
-    if ( and((count( right ) = 1),(right.reverse().fetch(0) = virtRoot))) 
-            return new(oid,dbl);
+    if ( not( bat("tj_"+collName+"_size").exist(0@0) ) ) {
+        # Exceptions for root in argument. The case 
+        # of region sets containing the root is not handled
+        if ( count( left ) = 1 )
+            if ( left.reverse().fetch(0) = virtRoot )
+                return right;
     
+        if ( count( right ) = 1 )
+            if ( right.reverse().fetch(0) = virtRoot )
+                return new(oid,dbl);
+    }
+        
     var anc_desc := anc_desc( left, right );
 
     # Attach the scores to the resulting nodes again:
@@ -801,9 +846,14 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
 	  tmp := [log](tmp);
 	  doc_prob.insert(tmp);
      }
+    
+    var elements := left.mark(0@0);
+    
+    if ( not( returnAllElements ) ) 
+        elements := elements.semijoin(elem_tid);
      
      # aggregate doc scores
-     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), left.mark(0@0).semijoin(elem_tid));
+     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
      
      res := res.[/](terms.count()).[+](left);
      return res;
@@ -1000,7 +1050,13 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     # We now have a table that lists [doc, term score] pairs. These need to be aggregated
     # into [doc, score] pairs: (this is the first aggregate product in the formula)
     #var res := {prod}(doc_termscore, ctx.mark(oid(0)));
-    var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), ctx.mark(0@0).semijoin(doc_tid));
+    
+    var elements := left.mark(0@0);
+    
+    if ( not( returnAllElements ) ) 
+        elements := elements.semijoin(doc_tid);
+        
+    var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), elements );
     
     # Now compute the final scores: multiply by the background score
     res := [*](res, prod_background);
@@ -1552,7 +1608,7 @@ PROC tj_coll_init(str collName, str stemmer) : void
 	new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_tid");
 	new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + collName + "_size"); # incomplete, should be void/int
 	new( oid,oid).persists(true).bbpname("tj_" + collName + "_pfpre");
-	
+    
 	var coll_oid;
 	if (bat("tj_collName").count() = 0) { coll_oid := 0@0; }
      	else { coll_oid := oid(int(bat("tj_collName").reverse().max()) + 1); }

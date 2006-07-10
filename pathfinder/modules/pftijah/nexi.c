@@ -104,6 +104,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   int rewrite_type;
   int language_type;
   int algebra_type;
+  int return_all;
   char ifile_name[FILENAME_SIZE];
   char res_table[FILENAME_SIZE];
   char rmt_fname[FILENAME_SIZE];
@@ -240,13 +241,16 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     rewrite_type        = BASIC;
     language_type       = ENGLISH;
     base_type           = ZERO;
+    return_all          = FALSE;
     
     /* startup of argument options */
+    MILPRINTF(MILOUT, "var startNodes := nil;\n");
     if ( use_startNodes ) {
-        MILPRINTF(MILOUT, "var startNodes := bat(\"%s\");\n", startNodes_name);
-        MILPRINTF(MILOUT, "bat(\"%s\").persists(false);\n", startNodes_name);
-    } else {
-    }
+        MILPRINTF(MILOUT, "if ( view_bbp_name().reverse().exist(\"%s\") ) {\n", startNodes_name );
+        MILPRINTF(MILOUT, "  startNodes := bat(\"%s\");\n", startNodes_name);
+        MILPRINTF(MILOUT, "  bat(\"%s\").persists(false);\n", startNodes_name);
+        MILPRINTF(MILOUT, "}\n" );
+    } 
 
     BUN p, q;
     BATloop(optbat, p, q) {
@@ -268,88 +272,88 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
             retNum = atoi( optVal );
             
         } else if ( strcmp(optName,"algebraType") == 0 ) {
-            if ( strcmp( optVal, "ASPECT" ) == 0 ) {
+            if ( strcasecmp( optVal, "ASPECT" ) == 0 ) {
                 algebra_type = ASPECT;
-            } else if ( strcmp( optVal, "COARSE" ) == 0 ) {
+            } else if ( strcasecmp( optVal, "COARSE" ) == 0 ) {
                 algebra_type = COARSE;
-            } else if ( strcmp( optVal, "COARSE2" ) == 0 ) {
+            } else if ( strcasecmp( optVal, "COARSE2" ) == 0 ) {
                 algebra_type = COARSE2;
             }
         
         } else if ( strcmp(optName,"txtmodel_model") == 0 ) {
-            if ( strcmp(optVal,"BOOL") == 0 ) {
+            if ( strcasecmp(optVal,"BOOL") == 0 ) {
                 txt_retr_model->model = MODEL_BOOL;
-            } else if ( strcmp(optVal,"LM") == 0 ) {
+            } else if ( strcasecmp(optVal,"LM") == 0 ) {
                 txt_retr_model->model = MODEL_LM;
-            } else if ( strcmp(optVal,"LMS") == 0 ) {
+            } else if ( strcasecmp(optVal,"LMS") == 0 ) {
                 txt_retr_model->model = MODEL_LMS;
-            } else if ( strcmp(optVal,"TFIDF") == 0 ) {
+            } else if ( strcasecmp(optVal,"TFIDF") == 0 ) {
                 txt_retr_model->model = MODEL_TFIDF;
-            } else if ( strcmp(optVal,"OKAPI") == 0 ) {
+            } else if ( strcasecmp(optVal,"OKAPI") == 0 ) {
                 txt_retr_model->model = MODEL_OKAPI;
-            } else if ( strcmp(optVal,"GPX") == 0 ) {
+            } else if ( strcasecmp(optVal,"GPX") == 0 ) {
                 txt_retr_model->model = MODEL_GPX;
-            } else if ( strcmp(optVal,"LMA") == 0 ) {
+            } else if ( strcasecmp(optVal,"LMA") == 0 ) {
                 txt_retr_model->model = MODEL_LMA;
-            } else if ( strcmp(optVal,"LMSE") == 0 ) {
+            } else if ( strcasecmp(optVal,"LMSE") == 0 ) {
                 txt_retr_model->model = MODEL_LMSE;
-            } else if ( strcmp(optVal,"LMVFLT") == 0 ) {
+            } else if ( strcasecmp(optVal,"LMVFLT") == 0 ) {
                 txt_retr_model->model = MODEL_LMVFLT;
-            } else if ( strcmp(optVal,"LMVFLT") == 0 ) {
+            } else if ( strcasecmp(optVal,"LMVFLT") == 0 ) {
                 txt_retr_model->model = MODEL_LMVLIN;
-            } else if ( strcmp(optVal,"NLLR") == 0 ) {
+            } else if ( strcasecmp(optVal,"NLLR") == 0 ) {
                 txt_retr_model->model = MODEL_NLLR;
             }
             
         } else if ( strcmp(optName,"txtmodel_orcomb") == 0 ) {
-            if ( strcmp(optVal,"SUM") == 0 ) {
+            if ( strcasecmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->or_comb = OR_SUM;
-            } else if ( strcmp(optVal,"MAX") == 0 ) {
+            } else if ( strcasecmp(optVal,"MAX") == 0 ) {
                 txt_retr_model->or_comb = OR_MAX;
-            } else if ( strcmp(optVal,"PROB") == 0 ) {
+            } else if ( strcasecmp(optVal,"PROB") == 0 ) {
                 txt_retr_model->or_comb = OR_PROB;
-            } else if ( strcmp(optVal,"EXP") == 0 ) {
+            } else if ( strcasecmp(optVal,"EXP") == 0 ) {
                 txt_retr_model->or_comb = OR_EXP;
-            } else if ( strcmp(optVal,"MIN") == 0 ) {
+            } else if ( strcasecmp(optVal,"MIN") == 0 ) {
                 txt_retr_model->or_comb = OR_MIN;
-            } else if ( strcmp(optVal,"PROD") == 0 ) {
+            } else if ( strcasecmp(optVal,"PROD") == 0 ) {
                 txt_retr_model->or_comb = OR_PROD;
             }
             orcomb_set = TRUE;
         } else if ( strcmp(optName,"txtmodel_andcomb") == 0 ) {
-            if ( strcmp(optVal,"SUM") == 0 ) {
+            if ( strcasecmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->and_comb = AND_SUM;
-            } else if ( strcmp(optVal,"MAX") == 0 ) {
+            } else if ( strcasecmp(optVal,"MAX") == 0 ) {
                 txt_retr_model->and_comb = AND_MAX;
-            } else if ( strcmp(optVal,"PROB") == 0 ) {
+            } else if ( strcasecmp(optVal,"PROB") == 0 ) {
                 txt_retr_model->and_comb = AND_PROB;
-            } else if ( strcmp(optVal,"EXP") == 0 ) {
+            } else if ( strcasecmp(optVal,"EXP") == 0 ) {
                 txt_retr_model->and_comb = AND_EXP;
-            } else if ( strcmp(optVal,"MIN") == 0 ) {
+            } else if ( strcasecmp(optVal,"MIN") == 0 ) {
                 txt_retr_model->and_comb = AND_MIN;
-            } else if ( strcmp(optVal,"PROD") == 0 ) {
+            } else if ( strcasecmp(optVal,"PROD") == 0 ) {
                 txt_retr_model->and_comb = AND_PROD;
             }
             andcomb_set = TRUE;
         } else if ( strcmp(optName,"txtmodel_upprop") == 0 ) {        
-            if ( strcmp(optVal,"SUM") == 0 ) {
+            if ( strcasecmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->up_prop = UP_SUM;
-            } else if ( strcmp(optVal,"AVG") == 0 ) {
+            } else if ( strcasecmp(optVal,"AVG") == 0 ) {
                 txt_retr_model->up_prop = UP_AVG;
-            } else if ( strcmp(optVal,"WSUMD") == 0 ) {
+            } else if ( strcasecmp(optVal,"WSUMD") == 0 ) {
                 txt_retr_model->up_prop = UP_WSUMD;
-            } else if ( strcmp(optVal,"WSUMA") == 0 ) {
+            } else if ( strcasecmp(optVal,"WSUMA") == 0 ) {
                 txt_retr_model->up_prop = UP_WSUMA;
             }
 
         } else if ( strcmp(optName,"txtmodel_downprop") == 0 ) {
-            if ( strcmp(optVal,"SUM") == 0 ) {
+            if ( strcasecmp(optVal,"SUM") == 0 ) {
                 txt_retr_model->down_prop = DOWN_SUM;
-            } else if ( strcmp(optVal,"AVG") == 0 ) {
+            } else if ( strcasecmp(optVal,"AVG") == 0 ) {
                 txt_retr_model->down_prop = DOWN_AVG;
-            } else if ( strcmp(optVal,"WSUMD") == 0 ) {
+            } else if ( strcasecmp(optVal,"WSUMD") == 0 ) {
                 txt_retr_model->down_prop = DOWN_WSUMD;
-            } else if ( strcmp(optVal,"WSUMA") == 0 ) {
+            } else if ( strcasecmp(optVal,"WSUMA") == 0 ) {
                 txt_retr_model->down_prop = DOWN_WSUMA;
             }
             
@@ -362,7 +366,13 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
             
         } else if ( strcmp(optName,"txtmodel_param3") == 0 ) {
             txt_retr_model->param3 = atof( optVal );
-            
+        
+        } else if ( strcmp(optName,"txtmodel_returnall") == 0 ) {
+            if ( strcasecmp(optVal,"TRUE") == 0 ) {
+                return_all = TRUE;
+            } else {
+                return_all = FALSE;
+            }
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
@@ -389,6 +399,11 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
     MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ collName +\"_param\").find(\"stemmer\");\n");
     
+    if ( return_all ) {
+        MILPRINTF(MILOUT, "returnAllElements := true;\n" );
+    } else {
+        MILPRINTF(MILOUT, "returnAllElements := false;\n" );
+    }
     
   /*
    * Original option handling code. Comment out cases that have been implemented above.
