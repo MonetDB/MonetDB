@@ -34,11 +34,11 @@ TijahParserContext* parserCtx = &parserCtxStruct;
 
 /* main */
 
-extern int old_main(int argc, char * const argv[], BAT* optbat);
+extern int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name);
 
 static char *dummy[] = {};
 
-char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
+char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF) {
   /* setup TijahParserContext structure */
   LOGPRINTF(LOGFILE,"- tijahParse([%s])\n",query);
   parserCtx->collection= "PFX";
@@ -55,7 +55,7 @@ char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
   MILPRINTF(MILOUT, "{\n");
   /* */
   parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
-  if ( !old_main(0,dummy,optbat) )  {
+  if ( !old_main(0,dummy,optbat,startNodes_name) )  {
       if ( errBUFF ) {
 	  if ( parserCtx->errBUFF[0] ) /* a nexi error message is generated */
               *errBUFF = &parserCtx->errBUFF[0];
@@ -68,10 +68,11 @@ char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
       return &parserCtx->milBUFF[0];
 }
 
-int old_main(int argc, char * const argv[], BAT* optbat)
+int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 {
   /* input argument options */
   int arg_opt;
+  bool use_startNodes = (startNodes_name != NULL);
   bool interact_set;
   bool pptype_set;
   bool ptype_set;
@@ -240,6 +241,13 @@ int old_main(int argc, char * const argv[], BAT* optbat)
     language_type       = ENGLISH;
     base_type           = ZERO;
     
+    /* startup of argument options */
+    if ( use_startNodes ) {
+        MILPRINTF(MILOUT, "var startNodes := bat(\"%s\");\n", startNodes_name);
+        MILPRINTF(MILOUT, "bat(\"%s\").persists(false);\n", startNodes_name);
+    } else {
+    }
+
     BUN p, q;
     BATloop(optbat, p, q) {
         str optName = (str)BUNhead(optbat,p);

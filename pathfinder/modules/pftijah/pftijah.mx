@@ -35,7 +35,7 @@
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
-.COMMAND run_tijah_query(BAT[str,str], str q) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND run_tijah_query(BAT[str,str], BAT[void,oid], str q) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -62,6 +62,16 @@
 		      BAT[void,str] str_values)
 		       : BAT[str,str] = serialize_pftijah_options_DRIVER;
  "C interface to pftijah option serialize"
+
+.COMMAND pf2tijah_node(
+                      BAT[void,str] doc_name,
+                      BAT[void,int] doc_firstpre,
+                      BAT[oid,oid] pfpre,
+                      BAT[void,oid] item,
+		      BAT[void,int] kind,
+                      BAT[void,str]  doc_loaded)
+		       : BAT[void,oid] = CMDpf2tijah_node;
+ "Translate Pathfinder node sequence to tijah node sequence"
 
 .COMMAND offsetindex( BAT[void,oid] offset_tid, int res_size)
 		: BAT[void,oid] = CMDoffsetindex;
@@ -1816,19 +1826,39 @@ int CMDtijah_command(bit* res, str command) {
 	return GDK_SUCCEED;
 }
 
-extern char* tijahParse(BAT* optbat, char* query, char** errBUFF);
+extern char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF);
 
-static int oldScoreCounter = 0;
+static int nexiTmpCounter = 0;
 
-int CMDtijah_query(BAT** res, BAT* optbat, str q) {
+int CMDtijah_query(BAT** res, BAT* optbat, BAT* startNodes, str query) {
 	char* err;
 	char* mil;
+	char  nameBUFF[32], *startNodes_name;
+	int   use_startNodes;
+
+	use_startNodes = BATcount(optbat); /* INCOMPLETE, redesign this */
+	if ( use_startNodes ) {
+	    BATmode(startNodes,PERSISTENT);
+	    sprintf(&nameBUFF[0],"%s%d","nexi_start",nexiTmpCounter++);
+	    /* make persistent, the generated script should undo this again */
+	    if ( BBPrename(startNodes->batCacheid,(str)&nameBUFF[0]) != 0) {
+                GDKerror("CMDtijah_query: fail to name startNode bat: \"%s\".\n", &nameBUFF[0]);
+	        return GDK_FAIL;
+	    }
+	    BATprintf(GDKout,startNodes);
+	    startNodes_name = &nameBUFF[0];
+	} else {
+	    startNodes_name = NULL;
+	}
 
 	if ( !optbat ) {
             GDKerror("CMDtijah_query: missing option bat.\n");
 	    return GDK_FAIL;
 	}
-	if ( !(mil=tijahParse(optbat,q,&err)) ) {
+	if ( startNodes ) {
+	    /* should do something with the startNodes here */
+	}
+	if ( !(mil=tijahParse(optbat,startNodes_name,query,&err)) ) {
             GDKerror("CMDtijah_query: %s.\n", err);
 	    return GDK_FAIL;
 	}
@@ -1842,10 +1872,9 @@ int CMDtijah_query(BAT** res, BAT* optbat, str q) {
             GDKerror("CMDtijah_query: fail to load score bat: \"%s\".\n", "nexi_result");
 	    return GDK_FAIL;
         }
-	char buff[32];
-	sprintf(&buff[0],"%s_del%d","nexi_result",oldScoreCounter++);
-	if ( BATrename(scoreBAT,(str)&buff[0]) == str_nil ) {
-            GDKerror("CMDtijah_query: fail to rename score bat: \"%s\".\n", &buff[0]);
+	sprintf(&nameBUFF[0],"%s_del%d","nexi_result",nexiTmpCounter++);
+	if ( BATrename(scoreBAT,(str)&nameBUFF[0]) == str_nil ) {
+            GDKerror("CMDtijah_query: fail to rename score bat: \"%s\".\n", &nameBUFF[0]);
 	    return GDK_FAIL;
 	}
 	BATmode(scoreBAT,TRANSIENT);
@@ -1865,6 +1894,123 @@ int CMDtijah_tokenize (str* res, str arg)
 	*res = tijah_tokenize_string(arg,sz,buf);
 
 	return GDK_SUCCEED;
+}
+
+int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre, BAT* item, BAT* kind, BAT* doc_loaded ) {
+        int debug = 0;
+
+	int nDocs = BATcount(doc_loaded);
+	BAT **rangeBAT = (BAT**)GDKmalloc(nDocs*sizeof(BAT*));
+	for(int i=0; i<nDocs; i++) {
+	    rangeBAT[i] = NULL;
+        }
+
+	*res = BATnew(TYPE_void, TYPE_oid, BATcount(item));
+
+
+	if ( 0 && debug ) {
+	    BATprintf(GDKout,item);
+	    BATprintf(GDKout,kind);
+	    BATprintf(GDKout,doc_loaded);
+	}
+	if ( 0 && debug ) {
+	    BATprintf(GDKout,doc_name);
+	    BATprintf(GDKout,doc_firstpre);
+	    BATprintf(GDKout,doc_pfpre);
+	}
+
+	int x;
+	BUN p,q;
+	BATloopFast(item, p, q, x) {
+	    oid idx      = *(oid*) BUNhead(item, p);
+	    ptr itemTAIL = BUNtail(item, p);
+	    oid pfpre    = *(oid*) itemTAIL;
+
+	    BUN kindBUN = BUNfnd(kind,&idx);
+	    if ( !kindBUN ) {
+	        stream_printf(GDKout,"READ KIND failed\n");
+		return GDK_FAIL;
+	    }
+	    ptr kindTAIL = BUNtail(kind, kindBUN);
+	    int kval = *(int*)kindTAIL;
+	    if ( XTRACT_KIND(kval) != ELEM ) {
+	        stream_printf(GDKout,"CMDpf2tijah_node: startNodes: no node\n");
+		return GDK_FAIL;
+            }
+	    oid container = (oid)XTRACT_CONT(kval);
+
+	    int myindex = container - 1;
+	    /* make it a switch */
+	    if ( rangeBAT[myindex] == NULL ) {
+	        oid doc_start;
+		oid doc_end;
+
+	        BUN xbun = BUNfnd(doc_loaded,&container);
+		if ( ! xbun ) {
+	    	    stream_printf(GDKout,"Cannot find cont %d.\n",container);
+		    return GDK_FAIL;
+		}
+		str docname = (str)BUNtail(doc_loaded,xbun);
+		BAT* b = BATmirror(doc_name);
+	        BUN yy = BUNfnd(b,docname);
+		if ( yy ) {
+		    oid tj_docIndex = *(oid*)BUNtail(b,yy);
+
+		    BUN r;
+		    r = BUNfnd(doc_firstpre,&tj_docIndex);
+		    if ( ! r ) {
+	    	        stream_printf(GDKout,"Cannot find tijah-firstpre @  %d.\n",tj_docIndex);
+		        return GDK_FAIL;
+		    }
+
+	            doc_start = *(oid*)BUNtail(doc_firstpre,r);
+		    oid tj_nextIndex = tj_docIndex +  1;
+		    if ( BATcount(doc_firstpre) > tj_nextIndex ) {
+		        r = BUNfnd(doc_firstpre,&tj_nextIndex);
+			if ( !r ) {
+	    	            stream_printf(GDKout,"Cannot do range for tijah-firstpre @  %d.\n",tj_docIndex);
+			    return GDK_FAIL;
+			}
+	                doc_end = *(oid*)BUNtail(doc_firstpre,r) - 1;
+		    } else {
+	                doc_end = oid_nil;
+		    }
+		    rangeBAT[myindex] = BATselect(BATmirror(doc_pfpre),(ptr)&doc_start,(ptr)&doc_end);
+		    if ( 0 && debug ) BATprintf(GDKout,rangeBAT[myindex]);
+		} {
+		    /* else skip */
+		}
+		if ( rangeBAT[myindex] ) {
+		    BUN range_bun = BUNfnd(rangeBAT[myindex],&pfpre);
+		    if ( range_bun ) {
+			/* found the tijah index value */
+		        oid tj_index = *(oid*)BUNtail(rangeBAT[myindex],range_bun);
+			BUNappend(*res,&tj_index,1);
+			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ doc(\"%s\") = tijah(%d@0).\n", pfpre, docname,tj_index);
+		    } else {
+		        if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ doc(\"%s\") = NOT INDEXED.\n", pfpre, docname);
+		    }
+		} else {
+			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ doc(\"%s\") = NOT INDEXED.\n", pfpre, docname);
+		}
+	    }
+	}
+	/* cleanup BAT's */
+	for(int i=0; i<nDocs; i++) {
+	    if ( rangeBAT[i] ) {
+	        BBPunfix(BBPcacheid(rangeBAT[i]));
+		rangeBAT[i] = NULL;
+	    }
+        }
+	GDKfree(rangeBAT);
+
+	*res = BATmirror(BATmark(BATmirror(*res), 0));
+
+	/* */
+	if ( debug ) 
+	    BATprintf(GDKout,*res);
+	/* */
+        return GDK_SUCCEED;
 }
 
 int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )

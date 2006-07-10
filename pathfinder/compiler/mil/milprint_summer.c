@@ -7702,9 +7702,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query-id")))
 	)
     {
-        int opt_counter = 0;
-	int str_counter = 0;
-	int ctx_counter = 0;
+        int opt_counter  = 0;
+        int node_counter = 0;
+	int str_counter  = 0;
+	int ctx_counter  = 0;
         char *item_ext = kind_str(STR);
 	
 	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query-id"));
@@ -7769,10 +7770,28 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	else  
           milprintf(f, 
                 "    var optbat := new(str,str,32);\n");
+
+	if ( 1 ) node_counter = ctx_counter;
+	if (node_counter)
+	  milprintf(f,
+	        "    iter := iter%03u.slice(int($h),int($h));\n"
+	        "    item := item%03u.slice(int($h),int($h));\n"
+		"    kind := constant2bat(kind%03u).slice(int($h),int($h)).seqbase(0@0);\n"
+		"    var coll := collName;\n"
+		"    if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
+		"    var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
+		"    var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
+		"    var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
+		"    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+                "    var startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
+		, node_counter, node_counter, node_counter);
+	else  
+          milprintf(f, 
+                "    var startNodes := new(void,oid);\n");
           
 	/* execute tijah query */
 	milprintf(f,
-                "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
+                "    var nexi_score := run_tijah_query(optbat,startNodes,item%s%03u.fetch(int($h)));\n"
 		, item_ext, str_counter);
 	
 	    /* translate tijah-pre to pf-pre */

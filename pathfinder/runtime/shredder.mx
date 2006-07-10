@@ -289,9 +289,6 @@ int xml_depth_max = XML_DEPTH_MAX;
 typedef struct node_t node_t;
 struct node_t {
     oid  pre;                   /**< preorder rank */
-#ifdef OLDSIZE
-    int  size;                  /**< size of subtree below node */
-#endif
     int  level;                 /**< tree level of parent 
                                   (0 if root, -1 if document node) */
     oid  prop;                  /**< property ID */
@@ -1047,17 +1044,11 @@ emitnode (shredCtxStruct* shredCtx, node_t* node)
 #else
     nat nidPre = NATNIL;
 #endif
-
-#ifdef OLDSIZE
-    int nodeSize = node.size;
-#else
     int nodeSize = shredCtx->nnode_pre-node->pre-1;
     if ( nodeSize > GDK_int_max ) {
             GDKerror("shredder.mx:overflow error: size(%d) >= GDK_int_max(%d)\n",nodeSize,GDK_int_max);
             return -1;
     }
-#endif
-
     return emitPreTuple(shredCtx,node->pre,nodeSize,node->level,node->prop,node->kind,nidPre);
 }
 
@@ -1106,9 +1097,6 @@ shred_start_document (void *xmlCtx)
     /* push document node */
     PUSH (shredCtx,((node_t) { 
                 .pre   = shredCtx->doc_pre,
-#ifdef OLDSIZE
-                .size  = 0, 
-#endif
                 .level = -1,
                 .prop  = oid_nil,
                 .kind  = DOCUMENT
@@ -1151,18 +1139,10 @@ emitString(shredCtxStruct* shredCtx, char* s)
     /* fill the node */
     node.pre   = shredCtx->nnode_pre;
     NEXT_PRE(shredCtx);
-#ifdef OLDSIZE
-    node.size  = 0;
-#endif
     node.level = shredCtx->level;
     node.kind  = PFTEXT;
     if ( (node.prop=append_str2bat(shredCtx,PROP_TEXT,s)) == oid_nil)
         return -1;
-
-#ifdef OLDSIZE
-    /* this text node contributes to the size of its parent */
-    TOP(shredCtx).size++;
-#endif
 
     /* enter text node into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,&node) < 0 )
@@ -1378,9 +1358,6 @@ shred_start_element(void *xmlCtx,
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = shredCtx->nnode_pre;
     NEXT_PRE(shredCtx);
-#ifdef OLDSIZE
-    node.size  = 0;
-#endif
     node.level = shredCtx->level;
     node.kind  = ELEMENT;
 
@@ -1489,9 +1466,6 @@ shred_start_element4SAX1(void *xmlCtx, const xmlChar *t, const xmlChar **atts)
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = shredCtx->nnode_pre;
     NEXT_PRE(shredCtx);
-#ifdef OLDSIZE
-    node.size  = 0;
-#endif
     node.level = shredCtx->level;
     node.kind  = ELEMENT;
 
@@ -1566,18 +1540,12 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     /* ascend up one level */
     shredCtx->level--;
 
-#ifdef OLDSIZE
-    /* the size of the subtree below this element and the element
-     * itself contributes to the size of its parent
-     */
-    TOP(shredCtx).size += node.size + 1;
-#endif
-
     /* enter element node into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
     }
     if ( shredCtx->serFun ) {
+	/* INCOMPLETE: check here for empty tag */
     	shredCtx->serFun->handle_endElement(shredCtx->serCtx,(str)"",(str)tag);
     }
 #ifdef DEBUG
@@ -1634,16 +1602,8 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
 
     node.pre   = shredCtx->nnode_pre;
     NEXT_PRE(shredCtx);
-#ifdef OLDSIZE
-    node.size  = 0;
-#endif
     node.level = shredCtx->level;
     node.kind  = PI;
-
-#ifdef OLDSIZE
-    /* this comment p-i contributes to the size of its parent */
-    TOP(shredCtx).size++;
-#endif
 
     node.prop = append_str2bat(shredCtx,PROP_TGT,(char*)tgt);
     if ( node.prop != append_str2bat(shredCtx,PROP_INS,(char*)ins) ) {
@@ -1671,16 +1631,8 @@ shred_comment (void *xmlCtx, const xmlChar *c)
 
     node.pre   = shredCtx->nnode_pre;
     NEXT_PRE(shredCtx);
-#ifdef OLDSIZE
-    node.size  = 0;
-#endif
     node.level = shredCtx->level;
     node.kind  = COMMENT;
-
-#ifdef OLDSIZE
-    /* this comment node contributes to the size of its parent */
-    TOP(shredCtx).size++;
-#endif
 
     node.prop = append_str2bat(shredCtx,PROP_COM,(char*)c);
 
