@@ -64,7 +64,7 @@ using the
 * The MAL Optimizer::
 * The MAL Debugger::
 * The MAL Profiler::
-* The Extension Modules ::
+* The MAL Modules ::
 * MonetDB BAT Kernel ::
 * Advanced Topics::
 * Appendices::
@@ -225,53 +225,57 @@ using the
 @node The MAL Profiler, Event Filtering, Runtime Inspection, Top
 @include mal_profiler.bdy.texi
 
-@node The Extension Modules, BAT extensions, Event Caching, Top
+@node The MAL Modules, BAT extensions, Event Caching, Top
 @include Assets/modules.texi
 
-@node BAT extensions, BBP , The Extension Modules , The Extension Modules
+@node BAT extensions, BBP , The MAL Modules , The MAL Modules
 @include batExtensions.bdy.texi
-@node BBP, Constants , BAT extensions , The Extension Modules
+@node BBP, Constants , BAT extensions , The MAL Modules
 @include bbp.bdy.texi
-@node Constants, Chopper , BBP, The Extension Modules
+@node Constants, Chopper , BBP, The MAL Modules
 @include const.bdy.texi
-@node Chopper, Box , Constants, The Extension Modules
+@node Chopper, Box , Constants, The MAL Modules
 @include chopper.bdy.texi
-@node Box, Clients , Chopper, The Extension Modules
+@node Box, Clients , Chopper, The MAL Modules
 @include box.bdy.texi
-@node Clients, Factory , Box, The Extension Modules
+@node Clients, Factory , Box, The MAL Modules
 @include clients.bdy.texi
-@node Factory, Inspect , Clients, The Extension Modules
+@node Factory, Inspect , Clients, The MAL Modules
 @include factory.bdy.texi
-@node Inspect, I/O, Factory, The Extension Modules
+@node Inspect, I/O, Factory, The MAL Modules
 @include inspect.bdy.texi
-@node I/O, Language, Inspect, The Extension Modules
+@node I/O, Language, Inspect, The MAL Modules
 @include mal_io.bdy.texi
-@node Language, MDB, I/O, The Extension Modules
+@node Language, MDB, I/O, The MAL Modules
 @include language.bdy.texi
-@node MDB, Manual, Language, The Extension Modules
+@node MDB, Manual, Language, The MAL Modules
 @include mdb.bdy.texi
-@node Manual, Mserver , MDB, The Extension Modules
+@node Manual, Mserver , MDB, The MAL Modules
 @include manual.bdy.texi
-@node Mserver, MAT , Manual, The Extension Modules
+@node Mserver, MAT , Manual, The MAL Modules
 @include mserver.bdy.texi
-@node MAT, PBM , Mserver, The Extension Modules
+@node MAT, PBM , Mserver, The MAL Modules
 @include mat.bdy.texi
-@node PBM, profiler, MAT, The Extension Modules
+@node PBM, profiler, MAT, The MAL Modules
 @include pbm.bdy.texi
-@node profiler, PCRE , PBM, The Extension Modules
+@node profiler, PCRE , PBM, The MAL Modules
 @include profiler.bdy.texi
-@node PCRE, Result Sets , profiler, The Extension Modules
+@node PCRE, Result Sets , profiler, The MAL Modules
 @include pcre.bdy.texi
-@node Result Sets, Statistics, PCRE, The Extension Modules
+@node Result Sets, Statistics, PCRE, The MAL Modules
 @include rsbox.bdy.texi
-@node Statistics, Tablet, Result Sets, The Extension Modules
+@node Statistics, Tablet, Result Sets, The MAL Modules
 @include statistics.bdy.texi
-@node Tablet, Transactions, Statistics, The Extension Modules
+@node Tablet, Transactions, Statistics, The MAL Modules
 @include tablet.bdy.texi
-@node Transactions, MonetDB BAT Kernel, Tablet, The Extension Modules
+@node Transactions, MonetDB BAT Kernel, Tablet, The MAL Modules
 @include transaction.bdy.texi
 
 @node MonetDB BAT Kernel , Advanced Topics, Transactions , Top
+@section The MonetDB BAT Kernel
+This section should be filled with the information currently
+held in the MonetDB Version 4 GDK layer.
+
 @node Advanced Topics , Appendices, MonetDB BAT Kernel , Top
 @node Appendices, SQL 1999 Features , Advanced Topics, Top
 @menu
