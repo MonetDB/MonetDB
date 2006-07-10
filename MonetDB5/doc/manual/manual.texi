@@ -71,7 +71,7 @@ using the
 @menu
 * MAL Syntax ::
 * MIL Programs ::
-* MAL Instruction Overview::
+* MAL Instructions::
 * MAL Instruction Help::
 @end menu
 @end menu
@@ -282,7 +282,7 @@ held in the MonetDB Version 4 GDK layer.
 * SQL 1999 Features::
 * MAL Syntax ::
 * MIL Programs::
-* MAL Instruction Overview::
+* MAL Instructions::
 * MAL Instruction Help::
 @end menu
 
@@ -293,15 +293,15 @@ held in the MonetDB Version 4 GDK layer.
 @include mal_syntax.bdy.texi
 @end ifnottex
 
-@node MIL Programs, MAL Instruction Overview , MAL Syntax, Appendices
+@node MIL Programs, MAL Instructions , MAL Syntax, Appendices
 @appendix Conversion of MIL programs
 @include mil_parser.bdy.texi
 
-@node MAL Instruction Overview, MAL Instruction Help, MIL Programs, Appendices
-@appendix MAL Instruction Overview
+@node MAL Instructions, MAL Instruction Help, MIL Programs, Appendices
+@appendix MAL Instructions
 @include Assets/MALinstructions.texi
 
-@node MAL Instruction Help, , MAL Instruction Overview, Appendices
+@node MAL Instruction Help, , MAL Instructions, Appendices
 @appendix MAL Instruction Help
 @include Assets/MALhelp.texi
 
