@@ -245,7 +245,13 @@ using the
 @node Inspect, I/O, Factory, The Extension Modules
 @include inspect.bdy.texi
 @node I/O, Language, Inspect, The Extension Modules
+@iftex
 @include mal_io.bdy.texi
+@end iftex
+@ifnottex
+@include mal_io.2.bdy.texi
+@end ifnottex
+
 @node Language, MDB, I/O, The Extension Modules
 @include language.bdy.texi
 @node MDB, Manual, Language, The Extension Modules
