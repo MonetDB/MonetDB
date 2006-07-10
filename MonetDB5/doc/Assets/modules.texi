@@ -28,6 +28,7 @@ be required to understand all details.
 * Transactions:: Transaction interface.
 @end menu
 
+@iftex
 @table @emph
 @c @item algExtensions 
 @c Extensions to the kernel/algebra module.
@@ -74,3 +75,4 @@ Table output interface.
 @item Transactions
 Transaction interface
 @end table
+@end iftex
