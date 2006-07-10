@@ -7774,9 +7774,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	if ( 1 ) node_counter = ctx_counter;
 	if (node_counter)
 	  milprintf(f,
-	        "    iter := iter%03u.slice(int($h),int($h));\n"
-	        "    item := item%03u.slice(int($h),int($h));\n"
-		"    kind := constant2bat(kind%03u).slice(int($h),int($h)).seqbase(0@0);\n"
+		"    var iteration := iter%03u.fetch(int($h));\n"  
+	        "    iter := iter%03u.select(iteration);\n"
+		"    iteration := nil;\n"
+	        "    item := item%03u.semijoin(iter);\n"
+             	"    kind := constant2bat(kind%03u);\n"
+		"    if (kind.count() < item.count()) { kind := item.project(kind.fetch(0));}\n"
+		"    kind := kind.semijoin(iter);\n"
+	        "    iter := iter.tmark(0@0);\n"
+	        "    item := item.tmark(0@0);\n"
+	        "    kind := kind.tmark(0@0);\n"
+		"    kind.print();\n"
 		"    var coll := collName;\n"
 		"    if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
 		"    var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
@@ -7784,7 +7792,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
 		"    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
                 "    var startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
-		, node_counter, node_counter, node_counter);
+		, str_counter, node_counter, node_counter, node_counter);
 	else  
           milprintf(f, 
                 "    var startNodes := new(void,oid);\n");
@@ -7805,11 +7813,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
 		"    [add_doc](const ws, docs_to_load);\n"
-/*		"    needed_docs@batloop()\n"
-                "    {\n"
-                "          if (not(loaded_docs.exist($t))) {\n"
-                "                  ws.add_doc($t); }\n"
-                "    }\n" */
 		"    docs_to_load := nil;\n"
 		"    loaded_docs := nil;\n"
                 "    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
