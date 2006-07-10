@@ -8,6 +8,8 @@
 # generated.  The first is provided by the html output of makeinfo, the
 # latter has to be derived, which takes a fair amount of CPU cycles.
 #
+# Fabian Groffen <fabian@cwi.nl> - 2006-07-10
+#  hardcode top level node name to be called "Documentation"
 # Fabian Groffen <fabian@cwi.nl> - 2006-07-03
 #  menu generation is now based on a "template" file which should
 #  contain _M5_MANUAL_HOOK_START_ and _M5_MANUAL_HOOK_END_ markers.
@@ -48,6 +50,7 @@ create_index_scan() {
 			sed -e 's:^<title>::' \
 				-e 's: - MonetDB Reference Manual</title>$::' \
 				-e 's:</title>$::'`
+		[ "$tmp" = "MonetDB Reference Manual" ] && tmp="Documentation"
 		echo "`basename "${file}"`:title=${tmp}" >> ${indexfile}.scan
 	done
 }
