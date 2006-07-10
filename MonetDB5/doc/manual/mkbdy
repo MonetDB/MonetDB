@@ -65,7 +65,6 @@ do
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
 		cp $b.bdy.texi ${dir}/doc/share/tmp/$b.bdy.texi.bak
-		cp $b.bdy.texi $b.2.bdy.texi
 		ex $b.bdy.texi <<!EOF
 		/^@example/s/.*/ @table @code/
 /^@end example/s//@end table/
@@ -75,7 +74,7 @@ do
 		g/^address/d
 		g/^comment "/s///
 		g/^comment/s///
-		g/{unsafe}/s//\\\\{unsafe\\\\}/
+		g/{unsafe}/s//@{unsafe@}/
 		g/";/s///
 		/^@example/,/^@end example/d
 		/^@example/,/^module/-1d
@@ -87,11 +86,7 @@ do
 		f
 		w!
 !EOF
-		ex $b.2.bdy.texi <<!EOF2
-		g/{unsafe}/s//@verb{ { }unsafe@verb{ } }/
-		w!
-!EOF2
-		mv $b.2.bdy.texi $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
 cp *gif *eps *pdf ${dir}/doc/share/tmp
 cd ${dir}/src/mil
