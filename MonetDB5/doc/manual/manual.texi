@@ -65,8 +65,7 @@ using the
 * The MAL Debugger::
 * The MAL Profiler::
 * The MAL Modules ::
-* MonetDB BAT Kernel ::
-* Advanced Topics::
+* The MonetDB Kernel ::
 * Appendices::
 @menu
 * MAL Syntax ::
@@ -268,16 +267,15 @@ using the
 @include statistics.bdy.texi
 @node Tablet, Transactions, Statistics, The MAL Modules
 @include tablet.bdy.texi
-@node Transactions, MonetDB BAT Kernel, Tablet, The MAL Modules
+@node Transactions, The MonetDB Kernel, Tablet, The MAL Modules
 @include transaction.bdy.texi
 
-@node MonetDB BAT Kernel , Advanced Topics, Transactions , Top
-@section The MonetDB BAT Kernel
+@node The MonetDB Kernel , Appendices, Transactions , Top
+@section The The MonetDB Kernel
 This section should be filled with the information currently
 held in the MonetDB Version 4 GDK layer.
 
-@node Advanced Topics , Appendices, MonetDB BAT Kernel , Top
-@node Appendices, SQL 1999 Features , Advanced Topics, Top
+@node Appendices, SQL 1999 Features , The MonetDB Kernel, Top
 @menu
 * SQL 1999 Features::
 * MAL Syntax ::
