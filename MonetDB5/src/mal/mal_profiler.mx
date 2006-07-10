@@ -103,7 +103,7 @@ of a code block with the pair @code{profiler.setOfflineProfiling()}.
 The default is tuple format, which can be requested
 explicitly using @code{profiler.setOnlineProfiling()}.
 
-@node Event Caching, The Extension Modules, Event Filtering, The MAL Profiler
+@node Event Caching, The MAL Modules, Event Filtering, The MAL Profiler
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
 can keep the events in a local @code{BAT} group, 
