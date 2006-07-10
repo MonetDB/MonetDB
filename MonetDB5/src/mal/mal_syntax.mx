@@ -45,8 +45,6 @@ Lexical tokens are illustrated in small capitals.
 @item
 @tab |  @code{ FUNCTION } header statement* @code{ END } identifier
 @item
-@tab |  @code{ MACRO } header statement* @code{ END } identifier
-@item
 @tab |  @code{ FACTORY } header statement* @code{ END } identifier
 @item helpinfo	
 @tab : @code{ COMMENT} string_literal 
