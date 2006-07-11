@@ -1660,7 +1660,8 @@ gdk_export BAT *BATsorder_rev(BAT *b);
 
 gdk_export void GDKqsort(void *a, void *base, size_t n, int width, int tpe, int loc);
 gdk_export void GDKqsort_rev(void *a, void *base, size_t n, int width, int tpe, int loc);
-gdk_export int GDKssort(void *a, void *base, size_t n, int width, int tpe, int loc, int reverse);
+gdk_export int GDKssort(void *a, void *base, size_t n, int width, int tpe, int loc);
+gdk_export int GDKssort_rev(void *a, void *base, size_t n, int width, int tpe, int loc);
 
 #define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
 #define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
