@@ -1051,7 +1051,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     # into [doc, score] pairs: (this is the first aggregate product in the formula)
     #var res := {prod}(doc_termscore, ctx.mark(oid(0)));
     
-    var elements := left.mark(0@0);
+    var elements := ctx.mark(0@0);
     
     if ( not( returnAllElements ) ) 
         elements := elements.semijoin(doc_tid);
