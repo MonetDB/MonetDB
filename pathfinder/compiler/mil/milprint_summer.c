@@ -7772,14 +7772,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
 	  milprintf(f,
 		"    var startNodes;\n"
-		"    if (iter%03u.count() > 0) {\n"  
+	        "    iter := iter%03u.materialize(ipik%03u);\n"
+		"    if (iter.count() > 0) {\n"  
 		"        var iteration := iter%03u.fetch(int($h));\n"  
-	        "        iter := iter%03u.select(iteration);\n"
+	        "        iter := iter.select(iteration);\n"
 		"        iteration := nil;\n"
-	        "        item := item%03u.semijoin(iter);\n"
-             	"        kind := constant2bat(kind%03u);\n"
-		"        if (kind.count() < item.count()) { kind := item.project(kind.fetch(0));}\n"
-		"        kind := kind.semijoin(iter);\n"
+	        "        item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
+	        "        kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
 	        "        iter := iter.tmark(0@0);\n"
 	        "        item := item.tmark(0@0);\n"
 	        "        kind := kind.tmark(0@0);\n"
@@ -7792,7 +7791,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "        startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
 	        "    } else {\n"
                 "    startNodes := new(void,oid); }\n"
-		, ctx_counter, str_counter, ctx_counter, ctx_counter, ctx_counter);
+		, ctx_counter, ctx_counter, str_counter, ctx_counter, ctx_counter, ctx_counter, ctx_counter);
           
 	/* execute tijah query */
 	milprintf(f,
