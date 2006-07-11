@@ -7703,7 +7703,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	)
     {
         int opt_counter  = 0;
-        int node_counter = 0;
 	int str_counter  = 0;
 	int ctx_counter  = 0;
         char *item_ext = kind_str(STR);
@@ -7771,30 +7770,29 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           milprintf(f, 
                 "    var optbat := new(str,str,32);\n");
 
-	if ( 1 ) node_counter = ctx_counter;
-	if (node_counter)
 	  milprintf(f,
-		"    var iteration := iter%03u.fetch(int($h));\n"  
-	        "    iter := iter%03u.select(iteration);\n"
-		"    iteration := nil;\n"
-	        "    item := item%03u.semijoin(iter);\n"
-             	"    kind := constant2bat(kind%03u);\n"
-		"    if (kind.count() < item.count()) { kind := item.project(kind.fetch(0));}\n"
-		"    kind := kind.semijoin(iter);\n"
-	        "    iter := iter.tmark(0@0);\n"
-	        "    item := item.tmark(0@0);\n"
-	        "    kind := kind.tmark(0@0);\n"
-		"    var coll := collName;\n"
-		"    if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
-		"    var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
-		"    var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
-		"    var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
-		"    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
-                "    var startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
-		, str_counter, node_counter, node_counter, node_counter);
-	else  
-          milprintf(f, 
-                "    var startNodes := new(void,oid);\n");
+		"    var startNodes;\n"
+		"    if (iter%03u.count() > 0) {\n"  
+		"        var iteration := iter%03u.fetch(int($h));\n"  
+	        "        iter := iter%03u.select(iteration);\n"
+		"        iteration := nil;\n"
+	        "        item := item%03u.semijoin(iter);\n"
+             	"        kind := constant2bat(kind%03u);\n"
+		"        if (kind.count() < item.count()) { kind := item.project(kind.fetch(0));}\n"
+		"        kind := kind.semijoin(iter);\n"
+	        "        iter := iter.tmark(0@0);\n"
+	        "        item := item.tmark(0@0);\n"
+	        "        kind := kind.tmark(0@0);\n"
+		"        var coll := collName;\n"
+		"        if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
+		"        var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
+		"        var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
+		"        var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
+		"        var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+                "        startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
+	        "    } else {\n"
+                "    startNodes := new(void,oid); }\n"
+		, ctx_counter, str_counter, ctx_counter, ctx_counter, ctx_counter);
           
 	/* execute tijah query */
 	milprintf(f,
