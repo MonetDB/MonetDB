@@ -7784,7 +7784,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	        "    iter := iter.tmark(0@0);\n"
 	        "    item := item.tmark(0@0);\n"
 	        "    kind := kind.tmark(0@0);\n"
-		"    kind.print();\n"
 		"    var coll := collName;\n"
 		"    if ( optbat.exist(\"collection\") ) { coll := optbat.find(\"collection\"); }\n"
 		"    var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"

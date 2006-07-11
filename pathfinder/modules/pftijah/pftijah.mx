@@ -1901,7 +1901,6 @@ int CMDtijah_query(BAT** res, BAT* optbat, BAT* startNodes, str query) {
                 GDKerror("CMDtijah_query: fail to name startNode bat: \"%s\".\n", &nameBUFF[0]);
 	        return GDK_FAIL;
 	    }
-	    BATprintf(GDKout,startNodes);
 	    startNodes_name = &nameBUFF[0];
 	} else {
 	    startNodes_name = NULL;
@@ -1963,8 +1962,8 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
 	*res = BATnew(TYPE_void, TYPE_oid, BATcount(item));
 
-
-	if ( 0 && debug ) {
+        if ( debug ) stream_printf(GDKout,"* Start of CMDpf2tijah_node():\n");
+	if ( 1 && debug ) {
 	    BATprintf(GDKout,item);
 	    BATprintf(GDKout,kind);
 	    BATprintf(GDKout,doc_loaded);
@@ -2035,21 +2034,21 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		    if ( 0 && debug ) BATprintf(GDKout,rangeBAT[myindex]);
 		} {
 		    /* else skip */
-		}
-		if ( rangeBAT[myindex] ) {
+		} }
+	        if ( rangeBAT[myindex] ) {
 		    BUN range_bun = BUNfnd(rangeBAT[myindex],&pfpre);
 		    if ( range_bun ) {
 			/* found the tijah index value */
 		        oid tj_index = *(oid*)BUNtail(rangeBAT[myindex],range_bun);
 			BUNappend(*res,&tj_index,1);
-			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ doc(\"%s\") = tijah(%d@0).\n", pfpre, docname,tj_index);
+			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = tijah(%d@0).\n", pfpre, container,tj_index);
 		    } else {
-		        if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ doc(\"%s\") = NOT INDEXED.\n", pfpre, docname);
+		        if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
 		    }
+		    
 		} else {
-			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ doc(\"%s\") = NOT INDEXED.\n", pfpre, docname);
+			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
 		}
-	    }
 	}
 	/* cleanup BAT's */
 	for(int i=0; i<nDocs; i++) {
