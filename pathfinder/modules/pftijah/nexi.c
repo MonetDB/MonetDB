@@ -117,7 +117,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   /* char log_fname[FILENAME_SIZE]; */
   char *log_fname = NULL;
   char mil_fname[FILENAME_SIZE];
-
+  char background_collection[20] = "";
   /* pointer to SRA command tree structure */
   command_tree **p_command_array, **CAS_plan_gen();
 
@@ -266,6 +266,9 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
         if ( strcmp(optName,"collection") == 0 ) {
             parserCtx->collection = optVal;
             
+	} else if ( strcmp(optName,"background_collection") == 0 ) {
+            strcpy(background_collection, optVal);
+            
         } else if ( strcmp(optName,"returnNumber") == 0 || 
                     strcmp(optName,"retNum") == 0 || 
                     strcmp(optName,"top") == 0 ) {
@@ -398,6 +401,8 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection);
     MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
     MILPRINTF(MILOUT, "var stemmer := bat(\"tj_\"+ collName +\"_param\").find(\"stemmer\");\n");
+    if (strcmp(background_collection,""))
+    { MILPRINTF(MILOUT, "tj_setBackgroundCollName(\"%s\");\n", background_collection); }
     
     if ( return_all ) {
         MILPRINTF(MILOUT, "returnAllElements := true;\n" );

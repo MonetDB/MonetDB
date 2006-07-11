@@ -139,6 +139,7 @@ var scoreBase := 0;
 const ENTITY_NUM := 10000;
 
 var collName := "PFX";
+var background_collName := "PFX";
 var collHeight := 10;
 var retNum := 100;
 
@@ -172,7 +173,25 @@ PROC tj_setCollName(str name) : void :=
 		quit(); 
 	}
 	collName := name;
+	background_collName := name;
 	collHeight := bat("tj_" + collName + "_param").find("height").int();
+	if ( DEBUG ) { 
+        	printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
+        	fflush(stdout());
+        } 
+}
+
+PROC tj_setBackgroundCollName(str name) : void := 
+{
+	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
+		tj_global_init();
+	}
+	if (not(bat("tj_collName").reverse().exist(name))) {
+		printf("Error: Selected collection does not exist. Collection name is not changed.\n");
+		fflush(stdout());
+		quit(); 
+	}
+	background_collName := name;
 	if ( DEBUG ) { 
         	printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
         	fflush(stdout());
@@ -321,7 +340,7 @@ PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
     var stemmed := [tj_normalizeTerm]( Qterms, stemmer );
     
-    var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
+    var tids := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
     return tids;
 }
 
@@ -799,34 +818,46 @@ PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
      return elem_tid;
 }
 
+PROC collTermCount(str col, bat[void,oid] terms) : bat[oid,int] :=
+{
+     var tids := terms.reverse().mirror();
+     var offsets1 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
+     tids := tids.[int]().[+](1).[oid]();
+     var offsets2 := tids.leftfetchjoin(bat("tj_" + col + "_TermIndex"));
+     var res := [-](offsets2.[int](),offsets1.[int]()).select(1,int(nil));
+     return res;
+}
 
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
-     # fetch term occurrences
+     # fetch term occurrences and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms );
+     var tid_frq := collTermCount(background_collName, terms);
+     terms := terms.reverse().semijoin(tid_frq).hmark(0@0);
      if (terms.count() = 0) {return new(oid,dbl);}
+     
      var tid_pre := indexfetchjoin(terms, 
                                    bat("tj_" + collName + "_TermIndex"), 
                                    bat("tj_" + collName + "_Terms") );
+     if (tid_pre.count() = 0) {return new(oid,dbl);}
      tid_pre := tid_pre.tsort();
      
      # compute constant factor in score computation
      var _lmbd := (1.0 - lmbd) / lmbd;
-     var collFrq := bat("tj_" + collName + "_Terms").count();
+     var collFrq := bat("tj_" + background_collName + "_Terms").count();
      _lmbd :*= collFrq;
 
      # compute collection terms frequencies 
-     var tid_frq := histogram(tid_pre.reverse());
      var _tid_frq := [/](_lmbd, tid_frq);
      tid_frq := nil;
 
      # get evaluate doc/term (anc/desc) relationship
      # including rule-of-thumb optimization
      var elem_tid;
-     if ((tid_pre.count() * 50000) > collFrq)
+     #if ((tid_pre.count() * 50000) > collFrq)
           elem_tid := _containing_desc(left.mark(0@0), tid_pre);
-     else
-          elem_tid := _containing_anc(left.mark(0@0), tid_pre);
+     #else
+     #     elem_tid := _containing_anc(left.mark(0@0), tid_pre);
      tid_pre := nil;
 
      # compute document sizes
