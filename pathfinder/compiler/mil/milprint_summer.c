@@ -7929,6 +7929,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"var tijah_fragpre := [+](tmp, [lng](tijah_pre));\n"
 		"tmp := nil;\n"
 		"var item1_unique := item%s%03u.tunique();\n"
+		"item := item.materialize(ipik);"
+		"kind := kind.materialize(ipik);"
                 "item1_unique@batloop() { # begin query batloop\n"
 		"    var item_part := item.semijoin(item%s%03u.uselect($h));\n"
 		"    var frag_part := kind.semijoin(item_part).get_container();\n"
@@ -7941,6 +7943,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"    tmp := tmp.join(fragpre_part.reverse());\n"
 		"    score.insert(tmp.reverse().leftfetchjoin(tijah_score));\n"
 		"} # end query batloop\n"
+		"var xitem := kdiff(item,score).project(dbl(0));\n"
+		"score.insert(xitem);\n"
+		"xitem := nil;\n"
 		"score := score.sort().tmark(0@0);\n"
 		, item_int, counter, item_int, counter);
 	
