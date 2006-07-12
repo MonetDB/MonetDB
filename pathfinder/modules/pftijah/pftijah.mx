@@ -1023,38 +1023,50 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat[oid,dbl]
 {   
     # To follow the naming in the formula above, context regions are named "documents".
-    
-    # First, we need to know where query terms are in the collection
-    var tid_pre := Qterms_to_tid_pre( Qterms );
-
     # For each term we need:
     #  - foreground probability (first term). This depends on the context region
     #  - background probability (second term). This is the same for every context region
     
-    # Foreground probability: we create a bat of [doc, term-id]:
-    # TODO: add anc/desc optimization: left out for now for readability
+    # Convert the query terms from [void,str] to [void,tid]
+    var terms := Qterms_to_void_tid( Qterms );
+
+    ### Background probability:
+    # For each term: collection term frequency tc(tm_i, col):
+    #var col_term_frq := tid_pre.reverse().histogram();
+    var col_term_frq := collTermCount(background_collName, terms);
+
+    # Collection size len(col): int
+    var col_len := bat("tj_" + background_collName + "_Terms").count();
+
+    # Take only the terms that occur in the collection
+    terms := terms.reverse().semijoin(col_term_frq).hmark(0@0);
+
+    if (terms.count() = 0) { return new(oid,dbl); }
+    
+    ###
+    
+    ### Foreground probability: 
+    # Find out the document positions of the terms for foreground probability
+    var tid_pre := indexfetchjoin(terms, 
+                                   bat("tj_" + collName + "_TermIndex"), 
+                                   bat("tj_" + collName + "_Terms") );
+    
+    if (tid_pre.count() = 0) { return new(oid,dbl); }
+    tid_pre := tid_pre.tsort();
+    
+    # See which document contain the query terms we create a bat of [doc, term-id]:
     var doc_tid := _containing_desc(ctx.mark(0@0), tid_pre);
     
     # len(doc): [doc, size]
     var doc_len := [dbl](bat("tj_" + collName + "_size").semijoin(doc_tid));
     
-    # Background probability:
-    # For each term: collection term frequency tc(tm_i, col):
-    var col_term_frq := tid_pre.reverse().histogram();
-    
-    # Collection size len(col): int
-    var col_len := bat("tj_" + collName + "_Terms").count();
+    ###
     
     # Now, we need to compute the probability for each document->term pair
     var doc_termscore   := new(oid,dbl);
     var prod_background := dbl(1);
     
-    # TODO: Qterms_to_void_tid is now called twice (also to compute tid_pre)!
-    var terms := Qterms_to_void_tid( Qterms );
-    
     # Iterate over all terms.
-    # TODO: some computation (lamda) can be done beforehand
-    
     terms@batloop() {
         # Compute the first factor
         # $t contains the term id 
@@ -1090,7 +1102,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
     var res := {prod}(doc_termscore.tmark(0@0), doc_termscore.hmark(0@0), elements );
     
     # Now compute the final scores: multiply by the background score
-    res := [*](res, prod_background);
+    res := [*](res, (1.0 - lambda) * prod_background);
 
     if ( scoreBase = 0 ) {
         # Add the scores to the context set (this should have scores 0, so adding is OK)
