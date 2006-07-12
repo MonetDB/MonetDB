@@ -168,9 +168,12 @@ using the
 @node Appendices, SQL 1999 Features , Embedded Limitations, Top
 @menu
 * SQL 1999 Features::
+* VOC History::
 @end menu
 
-@node SQL 1999 Features, , Appendices, Appendices
+@node SQL 1999 Features, VOC History, Appendices, Appendices
 @include Assets/SQL1999.texi
+@node VOC History,  , SQL 1999 Features, Appendices
+@include Assets/VOChistory.texi
 
 @bye

@@ -291,8 +291,11 @@ held in the MonetDB Version 4 GDK layer.
 * MAL Instruction Help::
 @end menu
 
-@node SQL 1999 Features, MAL Syntax, Appendices, Appendices
+@node SQL 1999 Features, VOC History, Appendices, Appendices
 @include Assets/SQL1999.texi
+@node VOC History , MAL Syntax, SQL 1999 Features, Appendices
+@include Assets/VOChistory.texi
+
 @node MAL Syntax, MIL Programs, SQL 1999 Features, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
