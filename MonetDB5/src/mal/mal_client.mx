@@ -183,7 +183,7 @@ type information
 @-
 The MAL debugger uses the client record to keep track of
 any pervasive debugger command. For detailed information
-on the debugger features see @ref{Program Debugging}.
+on the debugger features.
 @{
 @h
 	bitset debug;
