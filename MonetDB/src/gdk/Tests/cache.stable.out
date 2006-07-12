@@ -54,109 +54,31 @@ proc test_batcache(int n, int r) : void {
   }
 }
 debugmask(0);
-dir();
+dir("tmp");
 #-----------------------------------------------------------------------------------------------------------------#
 # name			htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str			str	str	lng	int	str		str	str	int	int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MMO_location",	  "oid",  "str",  4,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1945,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_cnt",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_dep",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_drop",	  "oid",  "int",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_nme",	  "oid",  "str",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_proc",	  "str",  "oid",  98,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_use",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_var",	  "str",  "ptr",  52,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 test_batcache(100,300);
 
 var t := time();
 test_batcache(100,300);
 var t1 := time() - t;
-dir();
+dir("tmp");
 #-----------------------------------------------------------------------------------------------------------------#
 # name			htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str			str	str	lng	int	str		str	str	int	int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MMO_location",	  "oid",  "str",  4,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1945,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_cnt",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_dep",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_drop",	  "oid",  "int",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_nme",	  "oid",  "str",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_proc",	  "str",  "oid",  98,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_use",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_var",	  "str",  "ptr",  52,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 
 bbp_batcache_minsize(0LL);
 t := time();
 test_batcache(100,300);
 var t2 := time() - t;
-dir();
+dir("tmp");
 #-----------------------------------------------------------------------------------------------------------------#
 # name			htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str			str	str	lng	int	str		str	str	int	int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MMO_location",	  "oid",  "str",  4,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  712,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1945,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  770,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_cnt",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_dep",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_drop",	  "oid",  "int",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_nme",	  "oid",  "str",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_proc",	  "str",  "oid",  98,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_use",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_var",	  "str",  "ptr",  52,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 print(t1 < t2);
 [ true ]
 quit();
