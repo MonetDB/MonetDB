@@ -1631,6 +1631,9 @@ PROC tj_coll_init(str collName, str stemmer) : void
 	if (not(view_bbp_name().reverse().exist("tj_collName"))) {
 		tj_global_init();
 	}
+	if (bat("tj_collName").reverse().exist(collName)) {
+		ERROR("tj_coll_init, pftijah collection already exists: %s\n",collName);
+	}
 
 	new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_name");
 	new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + collName + "_doc_firstpre");
@@ -1897,11 +1900,40 @@ PROC align_frag() : void :=
 
 @h
 
+#define ENABLE_TDEBUG
+
+#ifdef ENABLE_TDEBUG
+extern int pftijah_debug;
+#define SET_TDEBUG(V) pftijah_debug = V
+#define TDEBUG(V) (pftijah_debug && (((V<=pftijah_debug)&&(pftijah_debug<100)) || ((V==pftijah_debug)&&(pftijah_debug>=100))) )
+#else
+#define SET_TDEBUG(V)
+#define TDEBUG(V) 0
+#endif
+
 @c
 #include <monet.h>
 #include <gdk.h>
 
 #include <pathfinder.h>
+
+#include "pftijah.h"
+
+#ifdef ENABLE_TDEBUG
+/* 
+ * The main pftijah variable, settable from the command line by the
+ * <TijahOptions debug=number ..... from the query env.
+ * Current strategy is not to reset the debug variable after the query
+ * finished and to make it a global for ease of use.
+ * The number has three possiblilities:
+ * 0             : no debug
+ * 1   - 99      : leveled debug
+ * 100 - INT_MAX : debug a specific event 
+ *
+ * usage: if (TDEBUG ) expression
+ */
+int pftijah_debug = 0;
+#endif
 
 int executeMIL(char* str) {
     return monet_exec(str);
@@ -1923,6 +1955,7 @@ int CMDtijah_query(BAT** res, BAT* optbat, BAT* startNodes, str query) {
 	char  nameBUFF[32], *startNodes_name;
 	int   use_startNodes;
 
+	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: start, query=\"%s\".\n",query);
 	use_startNodes = BATcount(optbat); /* INCOMPLETE, redesign this */
 	if ( use_startNodes ) {
 	    BATmode(startNodes,PERSISTENT);
@@ -1941,18 +1974,31 @@ int CMDtijah_query(BAT** res, BAT* optbat, BAT* startNodes, str query) {
             GDKerror("CMDtijah_query: missing option bat.\n");
 	    return GDK_FAIL;
 	}
-	if ( startNodes ) {
-	    /* should do something with the startNodes here */
-	}
+	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: call tijahParse.\n");
 	if ( !(mil=tijahParse(optbat,startNodes_name,query,&err)) ) {
             GDKerror("CMDtijah_query: %s.\n", err);
 	    return GDK_FAIL;
 	}
+	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish tijahParse.\n");
+	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: start MIL script.\n");
+	if (TDEBUG(9)) {
+		stream_printf(GDKout,"# CMDtijah_query: generated MIL script:\n");
+		stream_printf(GDKout,"%s",mil);
+		stream_printf(GDKout,"# CMDtijah_query: end of MIL script:\n");
+	}
+	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: start executing MIL script.\n");
         if ( executeMIL(mil)<0 ) {
             GDKerror("CMDtijah_query: execute MIL failed.\n");
 	    return GDK_FAIL;
 	}
+	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish MIL script.\n");
 	BAT* scoreBAT = BATdescriptor( BBPindex("nexi_result") );
+
+	if (TDEBUG(3)) stream_printf(GDKout,"# CMDtijah_query: sizeof scoreBAT = %d.\n",BATcount(scoreBAT));
+	if (TDEBUG(9)) {
+	    stream_printf(GDKout,"# CMDtijah_query: scoreBAT:\n");
+	    BATprintf(GDKout,scoreBAT);
+	}
 
 	if ( ! scoreBAT ) {
             GDKerror("CMDtijah_query: fail to load score bat: \"%s\".\n", "nexi_result");
@@ -1966,6 +2012,8 @@ int CMDtijah_query(BAT** res, BAT* optbat, BAT* startNodes, str query) {
 	BATmode(scoreBAT,TRANSIENT);
 
 	*res = scoreBAT;
+
+	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: finish.\n");
         return GDK_SUCCEED;
 }
 

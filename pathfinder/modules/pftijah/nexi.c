@@ -263,7 +263,14 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
             fclose(xx);
         }
         
-        if ( strcmp(optName,"collection") == 0 ) {
+        if ( strcmp(optName,"debug") == 0 ) {
+	    if ( 0 ) {
+	        /* set in serialize options for now, is earlier */
+	        int v = atoi(optVal);
+	        SET_TDEBUG(v);
+	        if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
+	    }
+	} else if ( strcmp(optName,"collection") == 0 ) {
             parserCtx->collection = optVal;
             
 	} else if ( strcmp(optName,"background_collection") == 0 ) {

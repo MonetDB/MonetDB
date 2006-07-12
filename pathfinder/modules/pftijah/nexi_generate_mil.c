@@ -17,6 +17,7 @@
 #include <strings.h>
 #include <assert.h>
 
+#include "pftijah.h"
 #include "nexi.h"
 #include "nexi_generate_mil.h"
 
@@ -226,6 +227,9 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
   MILPRINTF(MILOUT, "var terms;\nvar modifiers;\nvar tid;\n\n");
   MILPRINTF(MILOUT, "\n");
   
+  if ( TDEBUG(5) ) {
+       MILPRINTF(MILOUT,"printf(\"# tijah-mil-exec: start computation.\\n\");\n");
+  }
   while (p1_command != NULL) {
 
     p2_command = p1_command;
@@ -1003,9 +1007,14 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
       }
       op_newnum[com_num] = op_number[p_com->number];
       p_com->number = com_num;
+
+      if ( TDEBUG(5) ) {
+          MILPRINTF(MILOUT,"printf(\"# tijah-mil-exec: computed R%d.\\n\");\n",com_num);
+      }
       
       POP_COMMAND();
       com_sp++;
+
 
     }
     
@@ -1019,6 +1028,9 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
   
     txt_retr_model = txt_retr_model->next;
 
+    if ( TDEBUG(5) ) {
+       MILPRINTF(MILOUT,"printf(\"# tijah-mil-exec: finish computation result in R%d.\\n\");\n",com_num);
+    }
     /* printf("%d\n",p_com_array); */
     /* printf("%d\n",p1_command);   */
 
