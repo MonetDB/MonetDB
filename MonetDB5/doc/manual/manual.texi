@@ -1,5 +1,8 @@
 \input texinfo
 @c %**start of header
+
+@set M5manual
+
 @setfilename MonetDB
 @setcontentsaftertitlepage
 @settitle MonetDB Reference Manual
@@ -148,6 +151,8 @@ using the
 
 @node MonetDB/SQL Features, Session Variables, SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
+@node Overlaying the BAT storage, XQuery, Optimizer Control,  MonetDB/SQL Features
+@include Assets/SQLoverlay.texi
 
 @node XQuery, Programming Interfaces, Overlaying the BAT storage, Top
 @include Assets/XQueryOverview.texi
@@ -174,6 +179,8 @@ using the
 
 @node Embedded MonetDB, A Simple Example, The ODBC Library , Top
 @include Assets/Mbedded.texi
+@node Embedded Limitations , MAL , Configuration Parameters, Embedded MonetDB
+@include Assets/MbeddedLimits.texi
 
 @node MAL, MAL variables, Embedded Limitations , Top
 @include mal_instruction.bdy.texi

@@ -1,0 +1,176 @@
+\input texinfo
+@c %**start of header
+@c this file is meant for the SQL line
+
+@set SQLmanual ok
+
+@setfilename MonetDB
+@setcontentsaftertitlepage
+@settitle MonetDB/SQL Reference Manual
+@c %**end of header
+
+@c environment
+@set VERSION 5.0
+@set UPDATED July 12, 2006
+
+@copying
+     This file documents the MonetDB Version @value{VERSION} Reference Manual
+     
+Last updated: @value{UPDATED}
+
+     Copyright (C) 2000-2006 CWI
+     
+     Permission is granted to make and distribute verbatim
+     copies of this manual provided the copyright notice and
+     this permission notice are preserved on all copies.
+     
+@emph{Disclaimer} The reference manual and underlying source
+code base are still under development.
+This may lead to incomplete and inconsistencies descriptions,
+for which we apologize in advance. You can help improving the manual
+using the 
+@url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}.
+
+@end copying
+
+@titlepage
+@title MonetDB/SQL Reference Manual
+@subtitle Version @value{VERSION}
+@author @emph{The MonetDB Development Team}
+@page
+@vskip 0pt plus 1fill
+@c the following start the copy right page
+@insertcopying
+@end titlepage
+
+@iftex
+@c output the table of contents
+@contents
+@c make sure you run pdftex twice 
+@end iftex
+
+@ifnottex
+@node Top
+@top MonetDB/SQL Reference Manual
+@insertcopying
+@end ifnottex
+
+@menu
+* General Introduction::
+* Client Interfaces::
+* Data Management Tools::
+* SQL ::
+* Development Roadmap::
+* Backward Compatibility::
+* Programming Interfaces::
+* Embedded MonetDB::
+* Appendices::
+* SQL 1999 Features::
+@end menu
+
+@node General Introduction, Intended audience, Top , Top
+@include Assets/About-this-manual.texi
+
+@node Features and Limitations, MonetDB Pro's, How to read this manual, General Introduction
+@include Assets/Features.texi
+
+@node A Brief History , Manual Generation, Size Limitations, General Introduction
+@include Assets/History.texi
+
+@node Manual Generation, Conventions , A Brief History , General Introduction
+@include Assets/Conventions.texi
+
+@node Download and Installation, Software Versions, Additional Resources, General Introduction
+@include Assets/Downloadintro.texi
+
+@node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
+@include Assets/Setup.texi
+
+@node Start and Stop the Server, Database Configuration ,Daily Builds, General Introduction
+@include Assets/StartStop.texi
+
+@node Database Configuration , Checkpoint and Recovery, Start and Stop the Server, General Introduction
+@include Assets/DatabaseConfiguration.texi
+
+@node Checkpoint and Recovery, Database Dumps, Database Configuration, General Introduction
+@include Assets/Checkpoints.texi
+
+@node Database Dumps, Client Interfaces , Checkpoint and Recovery, General Introduction
+@include Assets/Databasedump.texi
+
+@node Client Interfaces, Data Management Tools, Database Dumps, Top
+@include mal_client.bdy.texi
+@include Assets/MapiClient.texi
+@include Assets/JdbcClient.texi
+
+@subsection Console Interaction
+@include mal_readline.bdy.texi
+
+@node Data Management Tools, Aqua Data Studio, Client Interfaces , Top
+@include Assets/DBA-GUIs.texi
+
+@node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
+@include Assets/AquaDataStudio.texi
+
+@node DbVisualizer, iSQL-Viewer, Aqua Data Studio, Data Management Tools
+@include Assets/DbVisualiser.texi
+
+@node iSQL-Viewer, Development Roadmap, DbVisualizer, Data Management Tools
+@include Assets/iSQL-Viewer.texi
+
+@node Development Roadmap, SQL Roadmap, iSQL-Viewer, Top
+@include Assets/Roadmap.texi
+
+@node Backward Compatibility, SQL , Server Roadmap, Top
+@include Assets/Compatability.texi
+
+@node SQL, Getting Started with SQL, Backward Compatibility, Top
+@include Assets/SQLoverview.texi
+
+@node The VOC Tutorial, SQL Language, Getting Started with SQL, SQL
+@include Assets/VOCtutorial.texi
+
+@node SQL Language, SQL Preface, The VOC Tutorial, SQL
+@include Assets/SQLlanguage.texi
+
+@node MonetDB/SQL Features, Session Variables , SQL Transactions, SQL
+@include Assets/SQLfeatures.texi
+@node Overlaying the BAT storage, Programming Interfaces, Optimizer Control,  MonetDB/SQL Features
+@include Assets/SQLoverlay.texi
+
+@node Programming Interfaces, The Mapi Library, Overlaying the BAT storage, Top
+@include Assets/APIs.texi
+@node The Mapi Library, An Example, Programming Interfaces, Programming Interfaces
+@include Assets/mapimanual.texi
+
+@node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
+@include Assets/perlmanual.texi
+
+@node The PHP Library, The Python Library, The Perl Library , Programming Interfaces
+@include Assets/phpmanual.texi
+
+@node The Python Library, The JDBC Library , The PHP Library, Programming Interfaces
+@include Assets/pythonmanual.texi
+
+@node The JDBC Library, The ODBC Library , The Python Library, Programming Interfaces
+@include Assets/jdbcmanual.texi
+
+@node The ODBC Library, Embedded MonetDB , The JDBC Library, Programming Interfaces
+@include Assets/odbcmanual.texi
+
+@node Embedded MonetDB, A Simple Example, The ODBC Library , Top
+@include Assets/Mbedded.texi
+
+@node Embedded Limitations , Appendices , Configuration Parameters, Embedded MonetDB
+@include Assets/MbeddedLimits.texi
+
+
+@node Appendices, SQL 1999 Features , Embedded Limitations, Top
+@menu
+* SQL 1999 Features::
+@end menu
+
+@node SQL 1999 Features, , Appendices, Appendices
+@include Assets/SQL1999.texi
+
+@bye
