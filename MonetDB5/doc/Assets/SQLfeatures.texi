@@ -94,9 +94,16 @@ visible using the @code{explain} statement modifier.
 It gives a detailed description of the actions taken to produce the
 answer. The example below illustrates what you can expect when a
 simple query is pre-pended by the @code{explain} modifier.
+@ifset SQLmanual
+Although the details of this program are better understood
+when you have read the MonetDB Version 5 Reference Manual,
+the global structure is easy to explain.
+@end ifset
+@ifset M5manual
 Although the details of this program are better understood
 when you have read the Chapter on @ref{MAL}, 
 the global structure is easy to explain.
+@end ifset
 
 @verbatim
 >select count(*) from tables;
@@ -164,9 +171,11 @@ The query cache disappears when the server is brought to a halt.
 The SQL statements are translated into MAL programs, which
 are optimized and stored away in an @code{sql_cache} module.
 The generated code can be debugged with the MAL debugger.
+@ifset M5manual
 It provides a simple mechanism to trace the execution, hunting
 for possible errors and detect performance bottlenecks
 (@ref{Runtime Inspection}).
+@end ifset
 
 The example below illustrates the start of such a session:
 @verbatim
@@ -277,57 +286,3 @@ The final result of the optimizer steps become visible using the @code{explain}
 statement modifier.  Alternatively, the @code{debug} statement modifier
 in combination with the 'o' command provides access to the intermediate
 optimizer results.
-
-@node Overlaying the BAT storage,XQuery, Optimizer Control,  MonetDB/SQL Features
-@section Overlaying the BAT storage
-The SQL implementation exploits many facilities of the underlying
-MonetDB kernel. Most notably, its efficient column-wise storage
-scheme with associated algebraic primitives.
-However, this kernel can also be programmed directly using the
-MonetDB Assembler Language (MAL), which provides a much richer
-set of operators than the ones strictly necessary for a correct implementation
-and execution of SQL
-
-Although the BATs used for SQL storage can be manipulated directly
-at the MAL layer, it is strongly discouraged because SQL uses a
-rather complex administration to realise transaction safety.
-Working at the MAL layer directly could easily compromise
-the integrity of the system as a whole.
-
-However, there are cases where access to a collection of BATs from
-the SQL environment can be handy. For example, to inspect some
-of the system tables maintained in the kernel.
-This functionality is realised using a variation of the @code{view
-statement}. It is best illustrated with a short example.
-
-First, create in MonetDB the BATs of interest. Only void-BATs are allowed
-and the user should guarantee that they are aligned.
-@example
-a:=bat.new(:void,:int);
-b:=bat.new(:void,:str);
-bat.setSequenceBase(a,0@@0);
-bat.setSequenceBase(b,0@@0);
-bat.setPersistent(a);
-bat.setPersistent(b);
-bat.setName(a,"age");
-bat.setName(b,"name");
-@end example
-These BATs can be filled with attribute values, but make sure
-that all BATs are given an equal number of tuples.
-To conclude, commit the database to disk, whereafter the BATs
-become available to SQL, once you restart Mserver/SQL.
-@example
-bat.append(a, 32);
-bat.append(b, "John");
-bat.append(a, 31);
-bat.append(b, "Mary");
-transaction.commit(a,b);
-@end example
-The BATs are made visible for read-only access using the a column
-specification. As it normally expects identifiers, we have to use
-double quotes instead.
-@example
-CREATE VIEW friends ("age","name") AS BATS;
-@end example
-At this point the content of the BATs can be queried
-using ordinary SQL queries. Updates are prohibited.
