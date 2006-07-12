@@ -36,7 +36,8 @@ which is covered in many text books e.g.
 Relational Language Components, ISBN 1558604561.
 
 The architecture is based on a separate compiler module, which translates
-SQL statements into MAL. In this process common optimization heuristics,
+SQL statements into the MonetDB Assembler Language (MAL).
+In this process common optimization heuristics,
 specific to the relational algebra are performed.
 There are bindings for SQL with e.g. JDBC, PHP and C,
 (see @ref{Programming Interfaces}) to integrate seamlessly in existing

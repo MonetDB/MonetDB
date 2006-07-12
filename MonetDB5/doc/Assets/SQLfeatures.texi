@@ -22,6 +22,7 @@ supported in the released version.
 @menu
 * Session Variables ::
 * EXPLAIN Statement::
+* PROFILE Statement::
 * DEBUG Statement::
 * TRACE Statement::
 * Optimizer Control::
@@ -87,7 +88,7 @@ The @code{optimizer} variable takes a string. It controls the
 query optimizers, see @ref{SQL}.
 @end itemize
 
-@node EXPLAIN Statement, DEBUG Statement, Session Variables, MonetDB/SQL Features
+@node EXPLAIN Statement, PROFILE Statement, Session Variables, MonetDB/SQL Features
 @subsection EXPLAIN Statement
 The intermediate code produced by the SQL Implementation compiler can be made 
 visible using the @code{explain} statement modifier. 
@@ -165,7 +166,37 @@ The call to the cached function is included in the function @code{main},
 which is the only piece of code produced if the query is used more than once.
 The query cache disappears when the server is brought to a halt. 
 
-@node DEBUG Statement, TRACE Statement, EXPLAIN Statement, MonetDB/SQL Features
+@node PROFILE Statement, DEBUG Statement, EXPLAIN Statement, MonetDB/SQL Features
+@subsection PROFILE Statement
+The SQL implementation comes with a simple profiler to learn about
+the expensive queries.
+The profiler is controlled by the boolean session variable @code{profiler}.
+[to do, now it is a set explain='profiler']
+The snippet below illustrates its use:
+@verbatim
+> set profiler= true;
+  ...
+> select * from profiler
+&1 0 3 7 3
+# tmp.profile,  tmp.profile,    tmp.profile,    tmp.profile,    tmp.profile,
+tmp.profile,    tmp.profile # table_name
+# start,    query,  parse,  optimize,   exec,   total,  user # name
+# timestamp,    varchar,    int,    int,    int,    int,    varchar # type
+# 26,   28, 3,  3,  3,  3,  7 # length
+[ 2006-07-12 21:52:49.000000,   "select count(*) from tables;", 596,    159,
+200,    955,    "monetdb"   ]
+[ 2006-07-12 21:52:51.000000,   "select 2;",    114,    57, 17, 188,    "monetdb
+"   ]
+[ 2006-07-12 21:53:00.000000,   "select sum(id) from tables;",  522,    176,
+137,    835,    "monetdb"   ]
+>
+@end verbatim
+It illustrates the wall clock time the quer was started, the
+query itself, followed by the timing of the parser,
+optimizer, execution phase and total execution time (in microseconds).
+The final column indicates the user responsible for this request.
+
+@node DEBUG Statement, TRACE Statement, PROFILE Statement, MonetDB/SQL Features
 @subsection DEBUG Statement
 
 The SQL statements are translated into MAL programs, which
