@@ -1012,6 +1012,9 @@ that for the moment are defined as procs.
 
     PROC sort_ht (bat[any::1,any::2] B) : bat[any::1,any::2]
     {
+	if (and(key(B),ordered(B))) {
+		return B;
+	}
 	var R := new(htype(B),ttype(B),count(B));
 	B.kunique().sort()@batloop() {
 	    B.reverse().select($h).sort()@batloop() {
