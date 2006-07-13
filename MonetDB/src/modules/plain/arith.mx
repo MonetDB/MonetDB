@@ -431,20 +431,20 @@ flt2int(int *r, flt *v)
 @:arith_macrobinop(_MIN,arith_min,dbl)@
 @:arith_macrobinop(_MIN,arith_min,lng)@
 
-@:check_binop(_MOD,%,chr,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,sht,sht,sht,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,sht,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,int,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,lng,lng,lng,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,lng,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,int,chr,chr,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,int,sht,sht,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,chr,int,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,sht,sht,sht,sht,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,sht,int,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,int,int,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,lng,lng,lng,lng,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,lng,int,int,lng,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,int,chr,chr,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,int,sht,sht,int,"Modulo zero is not possible")@
 /* a % b when a and/or b are float (double) doesn't exist, so provide
    an alternative way of calculating the result */
 #undef OP
 #define OP(l,op,r)	((l) - (dbl) ((lng) ((l) / (r))) * (r))
-@:check_binop(_MOD,%,dbl,dbl,dbl,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,flt,flt,flt,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,dbl,dbl,dbl,dbl,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,flt,flt,flt,flt,"Modulo zero is not possible")@
 
 @:c_bitwise_ops(chr)@
 @:c_bitwise_ops(sht)@
@@ -741,7 +741,7 @@ result type.
 @:arith_binop(_ADD,+,@1,@2,@3)@
 @:arith_binop(_SUB,-,@1,@2,@3)@
 @:arith_binop(_MUL,*,@1,@2,@3)@
-@:check_binop(_DIV,/,@1,@2,@3,"Division by zero")@
+@:check_binop(_DIV,/,@1,@2,@3,@3,"Division by zero")@
 @
 
 @= arith_unop
@@ -792,6 +792,15 @@ int @3@4_binary@1(@5 *res, @3 *a, @4 *b)
 }
 @
 
+/*
+	1: function name suffix (_MOD,_DIV etc)
+	2: operator (%,/ etc)
+	3: type argument 1
+	4: type argument 2
+	5: result type 
+	6: intermediate type (sometimes the result is a smaller type (%))
+	7: Error message when something goes wrong.
+*/
 @= check_binop
 int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b)
 {
@@ -799,12 +808,12 @@ int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b)
 	printf( "@3_binary@1\n");
 #endif
 	if (*b == 0) {
-		GDKerror(@6);
+		GDKerror(@7);
 		return GDK_FAIL;
 	} else if (*a == @3_nil || *b == @4_nil) {
 		*res = @5_nil;
 	} else {
-		*res = (@5) OP((@5)*a,@2,(@5)*b);
+		*res = (@5) OP((@6)*a,@2,(@6)*b);
 	}
 	return(GDK_SUCCEED);
 }
