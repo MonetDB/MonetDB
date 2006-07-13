@@ -1020,6 +1020,9 @@ that for the moment are defined as procs.
 
     PROC sort_ht (bat[any::1,any::2] B) : bat[any::1,any::2]
     {
+	if (and(key(B),ordered(B))) {
+		return B;
+	}
 	return B.tsort().ssort();
     }
     ADDHELP("sort_ht", "manegold", "Jul 7 2006",

@@ -38,7 +38,10 @@ m.info().find("hsorted").print();
 [ "65" ]
 m.info().find("tsorted").print();
 [ "65" ]
+var dbgmsk := debugmask();
+debugmask(or(dbgmsk,10));
 var s:=m.split();
+debugmask(dbgmsk);
 s.print();
 #-----------------#
 # h	t	  # name

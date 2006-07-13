@@ -15,7 +15,10 @@ x.insert(21@0,0);
 x.print();
 x.info().find("hkey").print();
 
+var dbgmsk := debugmask();
+debugmask(or(dbgmsk,10));
 var z:=[int](x.slice(0,1));
+debugmask(dbgmsk);
 z.print();
 z.info().find("hkey").print();
 var y:={min}(z);

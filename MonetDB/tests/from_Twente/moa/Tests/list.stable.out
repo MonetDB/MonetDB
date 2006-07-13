@@ -2487,13 +2487,13 @@ var _MMcastnil_7 := _MMkunion_6.mark(0@0);
 _MMjoin_8 := join(indexA,_MMcastnil_7);
 _MMreverse_9 := reverse(_MMcastnil_7);
 _MMjoin_10 := join(_MMreverse_9,valuesA);
-_MMjoin_8.print();
+_MMjoin_8.sort_ht().print();
 #-------------------------#
 # BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
-[ 1@0,	  1@0		  ]
 [ 0@0,	  0@0		  ]
+[ 1@0,	  1@0		  ]
 _MMjoin_10.find(1@0).print();
 [ 20 ]
 _MMjoin_10.find(0@0).print();

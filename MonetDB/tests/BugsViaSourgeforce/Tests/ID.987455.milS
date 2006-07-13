@@ -13,5 +13,5 @@ var e:=x.join(c);
 var f:=x.join(d);
 e.count().print();
 f.count().print();
-e.print();
-f.print();
+e.sort_ht().print();
+f.sort_ht().print();
