@@ -1436,6 +1436,7 @@ moved to module code base.
 @= round
 str @1_round_wrap( @1 *res, @1 *v, @1 *r )
 {
+/* round(dec d, 100) = (d + 100/2)/100 */
 	@1 val = *v;
 	@1 add = *r;
 

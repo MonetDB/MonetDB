@@ -28,3 +28,4 @@ multivalue_insert.SF-1509864
 sequence_not_stored_1.SF-1509894
 sequence_not_stored_2.SF-1509894
 sequence_not_stored_3.SF-1509894
+groupby_with_alias.SF-1520575

@@ -537,21 +537,19 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				case cmp_notlike:{
 					int e = backend_dumpstmt_(s->op3.stval, nr, sql);
 
-					(void) (*nr)++;
 #ifdef HAVE_LIBPCRE
-					len = snprintf(buf, BUFSIZ, "var s%d := like_uselect_pcre(s%d, s%d, s%d);\n", *nr, l, r, e);
+					len = snprintf(buf, BUFSIZ, "var sn%d := like_uselect_pcre(s%d, s%d, s%d);\n", -s->nr, l, r, e);
 #else
-					len = snprintf(buf, BUFSIZ, "var s%d := like_uselect(s%d, s%d, s%d);\n", *nr, l, r, e);
+					len = snprintf(buf, BUFSIZ, "var sn%d := like_uselect(s%d, s%d, s%d);\n", -s->nr, l, r, e);
 #endif
-					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr);
+					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.kdiff(sn%d);\n", -s->nr, l, -s->nr);
 				} break;
 				case cmp_equal:
 					len = snprintf(buf, BUFSIZ, "var s%d := s%d.%s(s%d);\n", -s->nr, l, cmd, r);
 					break;
 				case cmp_notequal:
-					(void) (*nr)++;
-					len = snprintf(buf, BUFSIZ, "var s%d := s%d.uselect(s%d);\n", *nr, l, r);
-					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr);
+					len = snprintf(buf, BUFSIZ, "var ns%d := s%d.uselect(s%d);\n", -s->nr, l, r);
+					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.kdiff(ns%d);\n", -s->nr, l, -s->nr);
 					break;
 				case cmp_lt:
 					len = snprintf(buf, BUFSIZ, "var s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", -s->nr, l, cmd, tail_type(s)->type->base.name, r);

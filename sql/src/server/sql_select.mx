@@ -482,7 +482,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		} else if (token == SQL_COALESCE) {
 			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f);
 
-			if (cond && subset->nrcols && cond->nrcols == 0)
+			if (cond && subset && subset->nrcols && cond->nrcols == 0)
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
 				result = stmt_dup(cond);
@@ -518,7 +518,8 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		list_destroy(results);
 		return sql_error(sql, 02, "CASE: result type missing");
 	}
-	for (; dn; dn = dn->next) {
+	/* for COALESCE we skip the last (else part) */
+	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
 		stmt *cond = NULL, *result = NULL;
 
 		if (token == SQL_COALESCE) {
@@ -2874,23 +2875,61 @@ query_groupby_inner(mvc *sql, scope *scp, stmt *c, stmt *subset, group *cur)
 	return cur;
 }
 
+/* some users like to use aliases allready in the groupby */
+stmt *
+sql_selection_ref(mvc *sql, scope *scp, symbol *grp, dlist *selection, stmt *subset)
+{
+	dnode *n;
+	dlist *gl = grp->data.lval;
+	char *name = NULL;
+
+	if (dlist_length(gl) > 1)
+		return NULL;
+	if (!selection)
+		return NULL;
+
+	name = gl->h->data.sval;
+	for (n = selection->h; n; n = n->next) {
+		/* we only look for columns */
+		if (n->data.sym->token == SQL_COLUMN) {
+			dlist *l = n->data.sym->data.lval;
+			/* AS name */ 
+			if (l->h->next->data.sval &&
+			    strcmp(l->h->next->data.sval, name) == 0){
+				return sql_value_exp(sql, scp, l->h->data.sym, NULL, subset, sql_sel);
+			}
+		}
+	}
+	return NULL;
+}
+
 static group *
-query_groupby(mvc *sql, scope *scp, symbol *groupby, stmt *subset)
+query_groupby(mvc *sql, scope *scp, symbol *groupby, stmt *subset, dlist *selection)
 {
 	group *cur = NULL;
 	dnode *o = groupby->data.lval->h;
 
-	while (o) {
+	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
 		stmt *c = sql_column_ref(sql, scp, grp);
 
+		if (!c) {
+			/* reset error */
+			sql->errstr[0] = '\0';
+			sql->session->status = 0;
+
+			c = sql_selection_ref(sql, scp, grp, selection, subset);
+			if (c) {
+				cur = grp_create(c, cur, NULL);
+				continue;
+			}
+		} 
 		if (!c) {
 			if (cur)
 				grp_destroy(cur);
 			return NULL;
 		}
 		cur = query_groupby_inner(sql, scp, c, subset, cur);
-		o = o->next;
 	}
 	return cur;
 }
@@ -3217,7 +3256,8 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 	if (s) {
 		s = stmt2pivot(scp, s);
 		if (s && sn->groupby) {
-			grp = query_groupby(sql, scp, sn->groupby, s);
+			/* pass selection */
+			grp = query_groupby(sql, scp, sn->groupby, s, sn->selection);
 			if (!grp) {
 				sql_select_cleanup(sql, s, subset, grp);
 				return sql_error(sql, 02, "SELECT: subquery result missing");

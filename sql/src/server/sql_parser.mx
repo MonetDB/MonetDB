@@ -1368,6 +1368,7 @@ generated_column:
 		/* ultra dirty: inline 'integer' type generation */
 		sql_find_subtype(&it, "int", 32, 0);
 		append_type(l, &it);
+
 		/* finally all the options */
 		append_list(l, $5);
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
@@ -1424,11 +1425,17 @@ generated_column:
 serial_opt_params:
 	/* empty: return the defaults */
 	{ dlist *l = L();
-	  append_int(l, -1); /* start */
+	  dlist *p = L();
+	/* create list with int 2 int 1 to indicate start from 1 */
+	  append_int(p, 2);
+	  append_int(p, 1);
+	/* finally all the options (no defaults here) */
+	  append_list(l, p); /* start */
 	  append_int(l, -1); /* increment */
 	  append_int(l, -1); /* min */
 	  append_int(l, -1); /* max */
-	  append_int(l, 0); /* cycle */
+	  append_int(l, -1); /* cache */
+	  append_int(l, 0);  /* cycle */
 	  $$ = l;
 	}
   |	'(' opt_seq_params ')'	{ $$ = $2; }
