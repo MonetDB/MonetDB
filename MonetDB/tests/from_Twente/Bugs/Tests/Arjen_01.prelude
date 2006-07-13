@@ -1,0 +1,3 @@
+var dbgmsk := debugmask();
+dbgmsk := or(dbgmsk,10);
+debugmask(dbgmsk);

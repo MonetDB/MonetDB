@@ -55,7 +55,10 @@ x.print();
 x.info().find("hkey").print();
 [ "0" ]
 
+var dbgmsk := debugmask();
+debugmask(or(dbgmsk,10));
 var z:=[int](x.slice(0,1));
+debugmask(dbgmsk);
 z.print();
 #-----------------#
 # h	t	  # name

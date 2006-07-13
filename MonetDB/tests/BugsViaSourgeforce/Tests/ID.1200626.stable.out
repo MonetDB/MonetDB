@@ -20,7 +20,10 @@ a.info().find("hsorted").print();
 var b:=a.reverse();
 b.info().find("tsorted").print();
 [ "65" ]
+var dbgmsk := debugmask();
+debugmask(or(dbgmsk,10));
 var c:=[+](b,1);
+debugmask(dbgmsk);
 c.info().find("tsorted").print();
 [ "65" ]
 

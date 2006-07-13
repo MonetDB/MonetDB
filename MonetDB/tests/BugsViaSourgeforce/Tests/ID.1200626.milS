@@ -7,7 +7,10 @@ a.info().find("hsorted").print();
 # b is a bat sorted on tail:
 var b:=a.reverse();
 b.info().find("tsorted").print();
+var dbgmsk := debugmask();
+debugmask(or(dbgmsk,10));
 var c:=[+](b,1);
+debugmask(dbgmsk);
 c.info().find("tsorted").print();
 
 module(bat_arith);

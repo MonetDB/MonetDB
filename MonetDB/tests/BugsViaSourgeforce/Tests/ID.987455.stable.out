@@ -47,14 +47,14 @@ e.count().print();
 [ 2 ]
 f.count().print();
 [ 2 ]
-e.print();
+e.sort_ht().print();
 #-----------------#
 # t	tmp_33	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
 [ 0,	  0	  ]
-f.print();
+[ 1,	  1	  ]
+f.sort_ht().print();
 #-----------------#
 # t	tmp_34	  # name
 # int	int	  # type
