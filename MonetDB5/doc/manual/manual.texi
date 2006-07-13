@@ -10,7 +10,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED July 9, 2006
+@set UPDATED July 13, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -22,6 +22,11 @@ Last updated: @value{UPDATED}
      Permission is granted to make and distribute verbatim
      copies of this manual provided the copyright notice and
      this permission notice are preserved on all copies.
+@ifhtml
+The latest documentation can be downloaded as a single file for printing
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual.pdf,single page manual} or
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual-2x1.pdf,double page manual}.
+@end ifhtml
      
 @emph{Disclaimer} The reference manual and underlying source
 code base are still under development.
@@ -285,6 +290,7 @@ held in the MonetDB Version 4 GDK layer.
 @node Appendices, SQL 1999 Features , The MonetDB Kernel, Top
 @menu
 * SQL 1999 Features::
+* VOC History::
 * MAL Syntax ::
 * MIL Programs::
 * MAL Instructions::
@@ -296,7 +302,7 @@ held in the MonetDB Version 4 GDK layer.
 @node VOC History , MAL Syntax, SQL 1999 Features, Appendices
 @include Assets/VOChistory.texi
 
-@node MAL Syntax, MIL Programs, SQL 1999 Features, Appendices
+@node MAL Syntax, MIL Programs, VOC History, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex

@@ -11,7 +11,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED July 12, 2006
+@set UPDATED July 13, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -23,6 +23,12 @@ Last updated: @value{UPDATED}
      Permission is granted to make and distribute verbatim
      copies of this manual provided the copyright notice and
      this permission notice are preserved on all copies.
+@ifhtml
+The latest documentation can be downloaded as a single file for printing
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual.pdf,single page manual} or
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual-2x1.pdf,double page manual}.
+@end ifhtml
+@ifhtml
      
 @emph{Disclaimer} The reference manual and underlying source
 code base are still under development.
