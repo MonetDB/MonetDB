@@ -1,4 +1,3 @@
-set DEBUG=4096;
 START TRANSACTION;
 
 create table test(a int);
