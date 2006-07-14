@@ -36,13 +36,11 @@
 /* PFqname_t */
 #include "qname.h"    
 
+/* PFns_map_t */
+#include "ns.h"
+
 /* PFvar_t */
 #include "variable.h"    
-
-/* PFfun_t */
-/*
-#include "functions.h"
-*/
 
 /* PFapply_t */
 #include "apply.h"
@@ -252,30 +250,34 @@ typedef struct PFpnode_t PFpnode_t;
 typedef union PFpsem_t PFpsem_t;
 
 union PFpsem_t {
-  long long int  num;        /**< integer value */
-  double     dec;        /**< decimal value */
-  double     dbl;        /**< double value */
-  bool       tru;        /**< truth value (boolean) */
-  char      *str;        /**< string value */
-  char       chr;        /**< character value */
-  PFqname_t  qname;      /**< qualified name */
-  PFpaxis_t  axis;       /**< XPath axis */
-  PFpkind_t  kind;       /**< node kind */
-  PFsort_t   mode;       /**< sort modifier */
-  PFpoci_t   oci;        /**< occurrence indicator */
-  struct {
-      bool   preserve;   /**< copy-namespace preserve/no-preserve */
-      bool   inherit;    /**< copy-namespace inherit/no-inherit */
-  } copy_ns;             /**< "declare copy-namespaces" setting */
-  PFempty_order_t empty; /**< empty ordering declaration */
+    long long int    num;        /**< integer value */
+    double           dec;        /**< decimal value */
+    double           dbl;        /**< double value */
+    bool             tru;        /**< truth value (boolean) */
+    char            *str;        /**< string value */
+    char             chr;        /**< character value */
+    PFqname_t        qname;      /**< qualified name */
+    PFpaxis_t        axis;       /**< XPath axis */
+    PFpkind_t        kind;       /**< node kind */
+    PFsort_t         mode;       /**< sort modifier */
+    PFpoci_t         oci;        /**< occurrence indicator */
+    struct {
+        bool   preserve;   /**< copy-namespace preserve/no-preserve */
+        bool   inherit;    /**< copy-namespace inherit/no-inherit */
+    } copy_ns;             /**< "declare copy-namespaces" setting */
+    PFempty_order_t  empty; /**< empty ordering declaration */
 
-  PFvar_t   *var;        /**< variable information (used after var scoping) */
+    PFvar_t         *var;        /**< variable information
+                                      (used after var scoping) */
 
-  PFapply_t  apply;      /**< function application information
-                              (used after fun checks) */
-  PFpragma_t pragma;     /**< information given in a pragma (# qn cont #) */
-  PFrevalidation_t revalid; /**< revalidation declaration (XQ Update Facil.) */
-  PFinsertmod_t insert;  /**< insertion target for "do insert" (XQ Updt) */
+    PFapply_t        apply;      /**< function application information
+                                      (used after fun checks) */
+    PFpragma_t       pragma;     /**< information given in a pragma
+                                      (# qn cont #) */
+    PFrevalidation_t revalid;    /**< revalidation declaration
+                                      (XQ Update Facility) */
+    PFinsertmod_t    insert;     /**< insertion target for "do insert"
+                                      (XQ Update Facility) */
 }; 
 
 

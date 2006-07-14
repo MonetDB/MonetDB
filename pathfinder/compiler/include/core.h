@@ -166,23 +166,24 @@ typedef enum PFctype_t PFctype_t;
 
 /** Semantic node content of core tree node */
 union PFcsem_t {
-  long long int num;        /**< integer value */
-  double     dec;        /**< decimal value */
-  double     dbl;        /**< double value */
-  bool       tru;        /**< truth value (boolean) */
-  char      *str;        /**< string value */
-  char       chr;        /**< character value */
-  PFqname_t  qname;      /**< qualified name */
-  PFvar_t   *var;        /**< variable information */
-  PFty_t     type;       /**< used with c_type */
-  PFsort_t   mode;       /**< sort modifier */
-  PFapply_t  apply;   /**< function application */
-  /* semantic content for flwr subexpressions (let/for) */
-  struct {
-      PFty_t (*quantifier) (PFty_t); 
-                         /**< quantifier for flwor return expression */
-      int    fid;        /**< for loop id (used in milprint_summer.c) */
-  } flwr;
+    long long int  num;        /**< integer value */
+    double         dec;        /**< decimal value */
+    double         dbl;        /**< double value */
+    bool           tru;        /**< truth value (boolean) */
+    char          *str;        /**< string value */
+    char           chr;        /**< character value */
+    PFqname_t      qname;      /**< qualified name */
+    PFvar_t       *var;        /**< variable information */
+    PFty_t         type;       /**< used with c_type */
+    PFsort_t       mode;       /**< sort modifier */
+    PFapply_t      apply;      /**< function application */
+
+    /* semantic content for flwr subexpressions (let/for) */
+    struct {
+        PFty_t (*quantifier) (PFty_t); 
+                           /**< quantifier for flwor return expression */
+        int    fid;        /**< for loop id (used in milprint_summer.c) */
+    } flwr;
 };
 
 /** Semantic node content of core tree node */
