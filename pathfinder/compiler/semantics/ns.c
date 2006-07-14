@@ -79,42 +79,63 @@
 #include "nsres.h"
 #include "oops.h"
 
+/* PFstrdup() */
+#include "mem.h"
+
+/* short-hands for tree navigation */
+#define L(p) (p)->child[0]
+#define R(p) (p)->child[1]
+#define LL(p) L(L(p))
+#define LR(p) R(L(p))
+#define RL(p) L(R(p))
+#define RR(p) R(R(p))
+
+/**
+ * When we encounter a p_req_name node, this describes the QName of
+ * an XPath name test.  QNames need to be handled differently, depending
+ * on the principal node kind of the axis.  When we pass a p_node_ty
+ * node (located above the p_req_name node), we record the principal
+ * node kind of the step (actually, of the sequence type) here and have
+ * it available when we later see the p_req_name node.
+ */
+static enum { element, attribute } principal;
+
 /*
  * XML NS that are predefined for any query (may be used without
  * prior declaration) in XQuery, see W3C XQuery, 4.12
  */
 /** Predefined namespace `xml' for any query */
 PFns_t PFns_xml = 
-    { .ns  = "xml", 
-      .uri = "http://www.w3.org/XML/1998/namespace" };
+    { .prefix = "xml", 
+      .uri    = "http://www.w3.org/XML/1998/namespace" };
 /** Predefined namespace `xs' (XML Schema) for any query */
 PFns_t PFns_xs  = 
-    { .ns  = "xs",  
-      .uri = "http://www.w3.org/2001/XMLSchema" };
+    { .prefix = "xs",  
+      .uri    = "http://www.w3.org/2001/XMLSchema" };
 /** Predefined namespace `xsi' (XML Schema Instance) for any query */
 PFns_t PFns_xsi = 
-    { .ns  = "xsi", 
-      .uri = "http://www.w3.org/2001/XMLSchema-instance" };
+    { .prefix = "xsi", 
+      .uri    = "http://www.w3.org/2001/XMLSchema-instance" };
 /** XQuery default function namespace (fn:...). */
 PFns_t PFns_fn  =
-    { .ns  = "fn",  
-      .uri = "http://www.w3.org/2002/11/xquery-functions" };
+    { .prefix = "fn",  
+      .uri    = "http://www.w3.org/2002/11/xquery-functions" };
 /** Predefined namespace `xdt' (XPath Data Types) for any query */
 PFns_t PFns_xdt = 
-    { .ns  = "xdt",
-      .uri = "http://www.w3.org/2003/11/xpath-datatypes" };
+    { .prefix = "xdt",
+      .uri    = "http://www.w3.org/2003/11/xpath-datatypes" };
 /** Predefined namespace `local' (XQuery Local Functions) for any query */
 PFns_t PFns_local = 
-    { .ns  = "local",
-      .uri = "http://www.w3.org/2003/11/xquery-local-functions" };
+    { .prefix = "local",
+      .uri    = "http://www.w3.org/2003/11/xquery-local-functions" };
 /**
  * XQuery Update Facility.
  * There's no URI in the specs.  Teggy suggested to use http://www.kicker.de/.
  * Namespace is not accessible to the user.
  */
 PFns_t PFns_upd =
-    { .ns  = "upd",
-      .uri = "http://www.kicker.de/" };
+    { .prefix = "upd",
+      .uri    = "http://www.kicker.de/" };
 
 
 /**
@@ -124,8 +145,8 @@ PFns_t PFns_upd =
  * This namespace is not accessible for the user 
  * (see W3C XQuery F&O, 1.5).
  */
-PFns_t PFns_op  = { .ns  = "op",  
-                    .uri = "http://www.w3.org/2002/08/xquery-operators" };
+PFns_t PFns_op  = { .prefix = "op",  
+                    .uri    = "http://www.w3.org/2002/08/xquery-operators" };
 
 
 /** 
@@ -135,21 +156,14 @@ PFns_t PFns_op  = { .ns  = "op",
  *
  * This namespace is not accessible for the user.
  */ 
-PFns_t PFns_pf  = { .ns  = "#pf",  
-                    .uri = "http://www.pathfinder-xquery.org/" };
+PFns_t PFns_pf  = { .prefix = "#pf",  
+                    .uri    = "http://www.pathfinder-xquery.org/" };
 
 /**
  * Wildcard namespace.
  * Used in QNames of the form *:loc.
  */
-PFns_t PFns_wild = { .ns = "*", .uri = "*" };
-
-/**
- * XQuery default element NS.  Intially the default element NS is
- * undefined (see W3C XQuery, 4.1) but this may be overridden via
- * `default element namespace = "..."' in the query prolog)
- */
-static PFns_t ens;
+PFns_t PFns_wild = { .prefix= NULL, .uri = NULL };
 
 /**
  * XQuery default function NS.  Intially the default function NS is
@@ -170,7 +184,7 @@ static PFns_t target_ns;
 /**
  * Does QName @a qn actually have a NS prefix?
  */
-#define NS_QUAL(qn) ((qn).ns.ns)
+#define NS_QUAL(qn) ((qn).ns.prefix && *((qn).ns.prefix))
 
 /**
  * NS prefix of XML NS declaration attributes `xmlns:...'
@@ -179,15 +193,18 @@ static PFns_t target_ns;
 #define XMLNS "xmlns"
 
 /**
- * The in-scope NS environment (W3C XQuery, 4.1).  During NS
+ * Statically known namespaces (W3C XQuery 2.1.1).  During NS
  * resolution, all NS currently in scope are to be found in this
- * environment.  When NS resolution starts, the four NS xml:...,
- * xs:..., xsd:..., and xsi:... are in scope.
+ * environment.  When NS resolution starts, the predefined
+ * namespaces xml:..., xs:..., xsd:..., and xsi:..., ... are
+ * loaded into this list.  Note that we can only collect
+ * *statically known* namespaces here.  This list may be different
+ * from in-scope namespaces (see W3C XQuery 2.1.1).
+ *
+ * The default element namespace is represented in this list in
+ * terms of a zero-length string for the NS prefix.
  */
-static PFarray_t *namespace = NULL;
-
-/** current # of NS in scope */
-static unsigned ns_num = 0;
+static PFns_map_t *stat_known_ns = NULL;
 
 /**
  * Add NS @a ns to the environment of in-scope NS
@@ -198,7 +215,7 @@ static unsigned ns_num = 0;
 static void
 ns_add (PFns_t ns)
 {
-    *((PFns_t *) PFarray_at (namespace, ns_num++)) = ns;
+    *((PFns_t *) PFarray_add (stat_known_ns)) = ns;
 }
 
 /**
@@ -209,20 +226,33 @@ ns_add (PFns_t ns)
  *   in-scope environment (will be replaced on success)
  * @return indicates if lookup has been successful
  */
-static bool
-ns_lookup (PFns_t *ns)
+static char *
+ns_lookup (const char *prefix)
 {
-    unsigned nsi = ns_num;
+    assert (prefix);
 
-    assert (ns && ns->ns);
+    for (unsigned int i = PFarray_last (stat_known_ns); i; i--)
+        if (! strcmp (prefix,
+                      ((PFns_t *) PFarray_at (stat_known_ns, i-1))->prefix))
+            return PFstrdup (((PFns_t *) PFarray_at (stat_known_ns, i-1))->uri);
 
-    while (nsi--)
-        if (! strcmp (ns->ns, ((PFns_t *) PFarray_at (namespace, nsi))->ns)) {
-            *ns = *((PFns_t *) PFarray_at (namespace, nsi));
-            return true;
-        }
+    return NULL;
+}
 
-    return false;
+/**
+ * Create a copy of a namespace environment (typically the statically
+ * known namespaces, #stat_known_ns).
+ */
+static PFns_map_t *
+copy_ns_env (const PFns_map_t *src)
+{
+    PFns_map_t *dest = PFarray (sizeof (PFns_t));
+
+    for (unsigned int i = 0; i < PFarray_last (src); i++)
+        *((PFns_t *) PFarray_add (dest))
+            = *((PFns_t *) PFarray_at ((PFns_map_t *) src, i));
+
+    return dest;
 }
 
 
@@ -255,14 +285,14 @@ PFns_eq (PFns_t ns1, PFns_t ns2)
     /* two unbound (URI-less) NS are deliberately assumed to be equal 
      * if their prefixes coincide:
      */
-    if (ns1.ns) {
-        if (ns2.ns)
-            return strcmp (ns1.ns, ns2.ns);
+    if (ns1.prefix) {
+        if (ns2.prefix)
+            return strcmp (ns1.prefix, ns2.prefix);
         else
             return -1;
     }
     else {
-        if (ns2.ns)
+        if (ns2.prefix)
             return 1;
         else
             return 0;
@@ -290,7 +320,7 @@ PFns_eq (PFns_t ns1, PFns_t ns2)
  * @param cc parent of owning element content node
  */
 static void
-apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
+collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
 {
     PFpnode_t *a;
 
@@ -298,123 +328,125 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
   
     switch (c->kind) {
 
-    case p_contseq:
-    case p_exprseq:
-        assert (c->child[0]);
-        if (c->child[0]->kind == p_attr) {
-            /* abstract syntax tree layout:
-             *
-             *           attr 
-             *           /  \
-             *  tag-ns:loc   v
-             */
-            a = c->child[0];
-      
-            /* if attribute comes with a literal name resolve NS usage,
-             * for computed attribute names skip ahead
-             */
-            assert (a->child[0]);
-            if (a->child[0]->kind == p_tag) {
-                if (NS_QUAL (a->child[0]->sem.qname) &&
-                    ! strcmp (a->child[0]->sem.qname.ns.ns, XMLNS)) {
-                    /*
-                     * this is a NS declaration attribute of the form
-                     * `xmlns:foo=ns': bring `foo:...' |-> ns into scope
-                     * (ns is required to be a non-empty literal string),
-                     * W3C XQuery, 4.1
-                     *
-                     * abstract syntax tree layout:
-                     *
-                     *           attr (a)
-                     *          /        \
-                     *  "xmlns":loc     exprseq
-                     *                 /       \
-                     *             lit_str     empty_seq
-                     *          
-                     */     
-                    if ((a->child[1]->kind    == p_exprseq
-                         || a->child[1]->kind == p_contseq) &&
-                        a->child[1]->child[0]->kind == p_lit_str &&
-                        a->child[1]->child[1]->kind == p_empty_seq) {
-                        ns_add ((PFns_t) { .ns  = a->child[0]->sem.qname.loc,
-                                           .uri = a->child[1]
-                                                      ->child[0]->sem.str });
+        case p_contseq:
+        case p_exprseq:
+            assert (L(c));
+            if (L(c)->kind == p_attr) {
+                /* abstract syntax tree layout:
+                 *
+                 *           attr 
+                 *           /  \
+                 *  tag-ns:loc   v
+                 */
+                a = L(c);
 
-                        /* finally remove this NS declaration attribute */
-                        assert (cc);
-                        *cc = c->child[1];
-                    }
-                    else
-                        PFoops_loc (OOPS_BADNS, a->child[0]->loc,
+                /* if attribute comes with a literal name resolve NS usage,
+                 * for computed attribute names skip ahead
+                 */
+                assert (L(a));
+                if (L(a)->kind == p_tag) {
+                    if (NS_QUAL (L(a)->sem.qname) &&
+                        ! strcmp (L(a)->sem.qname.ns.prefix, XMLNS)) {
+                        /*
+                         * this is a NS declaration attribute of the form
+                         * `xmlns:foo=ns': bring `foo:...' |-> ns into scope
+                         * (ns is required to be a non-empty literal string),
+                         * W3C XQuery, 4.1
+                         *
+                         * abstract syntax tree layout:
+                         *
+                         *           attr (a)
+                         *          /        \
+                         *  "xmlns":loc     exprseq
+                         *                 /       \
+                         *             lit_str     empty_seq
+                         *          
+                         */     
+                        if ((R(a)->kind == p_exprseq
+                             || R(a)->kind == p_contseq) &&
+                            RL(a)->kind == p_lit_str &&
+                            RR(a)->kind == p_empty_seq) {
+                            ns_add ((PFns_t) { .prefix = L(a)->sem.qname.loc,
+                                               .uri    = RL(a)->sem.str });
+
+                            /* finally remove this NS declaration attribute */
+                            assert (cc);
+                            *cc = R(c);
+                        }
+                        else
+                            PFoops_loc (OOPS_BADNS, L(a)->loc,
                                     "namespace declaration attribute %s is "
                                     "required to have non-empty literal "
                                     "string value",
-                                    PFqname_str (a->child[0]->sem.qname));
-          
-                }
-                else {
-                    if (! strcmp (a->child[0]->sem.qname.loc, XMLNS)) {
-                        /* this is a NS declaration attribute of the form
-                         * `xmlns=ns': re-define the default element NS to be ns
-                         * (ns is required to be a literal string which may
-                         * optionally be empty; in the latter case the default
-                         * element NS is undefined, W3C Namespaces, 5.2), W3C
-                         * XQuery, 4.1
-                         *
-                         * abstract syntax tree layout:
-                         *          
-                         *           attr (a)
-                         *          /        \
-                         *     "xmlns"      exprseq
-                         *                 /       \
-                         *              lit_str   empty_seq
-                         *
-                         *           content                
-                         *             / \          or        nil
-                         *  "ns"-lit_str  nil           
-                         */     
-                        switch (a->child[1]->kind) {
-                        case p_empty_seq:
-                            /*
-                             * empty NS declaration attribute:
-                             * undefine default element NS
-                             */
-                            ens = (PFns_t) { .ns = 0, .uri = 0 };
-                            break;
+                                    PFqname_str (L(a)->sem.qname));
 
-                        case p_exprseq:
-                        case p_contseq:
-                            if (a->child[1]->child[0]->kind == p_lit_str &&
-                                a->child[1]->child[1]->kind == p_empty_seq) {
-                                /* non-empty NS declaration attribute */
-                                ens = (PFns_t) { .ns  =  0,
-                                                 .uri = a->child[1]
-                                                            ->child[0]->sem.str
-                                               };
-                                break;
+                    }
+                    else {
+                        if (! strcmp (L(a)->sem.qname.loc, XMLNS)) {
+
+                            /*
+                             * this is a NS declaration attribute of the form
+                             * `xmlns=ns': re-define the default element NS to
+                             * be ns (ns is required to be a literal string
+                             * which may optionally be empty; in the latter
+                             * case the default element NS is undefined, W3C
+                             * Namespaces, 5.2), W3C XQuery, 4.1
+                             *
+                             * abstract syntax tree layout:
+                             *          
+                             *           attr (a)
+                             *          /        \
+                             *     "xmlns"      exprseq
+                             *                 /       \
+                             *              lit_str   empty_seq
+                             *
+                             *           content                
+                             *             / \          or        nil
+                             *  "ns"-lit_str  nil           
+                             */     
+                            switch (R(a)->kind) {
+                                case p_empty_seq:
+                                    /*
+                                     * empty NS declaration attribute:
+                                     * undefine default element NS
+                                     */
+                                    ns_add ((PFns_t) { .prefix = "",
+                                                       .uri = "" });
+                                    break;
+
+                                case p_exprseq:
+                                case p_contseq:
+                                    if (RL(a)->kind == p_lit_str &&
+                                        RR(a)->kind == p_empty_seq) {
+                                        /* non-empty NS declaration attribute */
+                                        ns_add ((PFns_t) {
+                                                .prefix = "",
+                                                .uri    = RL(a)->sem.str });
+                                        break;
+                                    }
+
+                                default:
+                                    PFoops_loc (OOPS_BADNS, L(a)->loc,
+                                            "namespace declaration attribute "
+                                            "%s is required to have literal "
+                                            "string value",
+                                            PFqname_str (L(a)->sem.qname));
                             }
 
-                        default:
-                            PFoops_loc (OOPS_BADNS, a->child[0]->loc,
-                                        "namespace declaration attribute %s is "
-                                        "required to have literal string value",
-                                        PFqname_str (a->child[0]->sem.qname));
+                            /* finally remove this NS declaration attribute */
+                            assert (cc);
+                            *cc = R(c);
                         }
-            
-                        /* finally remove this NS declaration attribute */
-                        assert (cc);
-                        *cc = c->child[1];          
                     }
                 }
             }
-        }
-        break;
+            break;
 
-    default: /* p_nil */
-        return;
+        default: /* p_nil */
+            return;
     }
 
-    apply_xmlns (c->child[1], &(c->child[1]));
+    collect_xmlns (R(c), &(R(c)));
 }
 
 /**
@@ -427,389 +459,425 @@ ns_resolve (PFpnode_t *n)
 {
     unsigned c = 0;    /* iterates over children of this node */
 
-    PFns_t ens_;       /* used to save default element NS
-                        * (elements may have local default element NS)
-                        */
-    unsigned ns_num_;  /* used to save state of in-scope NS environment
-                        * (elements may use NS declaration attribute to
-                        * define local NS)
-                        */
     assert (n);
 
     switch (n->kind) {
 
         /* handle query prolog */
 
-    case p_lib_mod:
-    {   /*
-         * Isolate namespaces in module definitions from main query
-         * (and between modules).
-         *
-         * Thus,
-         *
-         *  -- clear the namespace environment (after saving the old one)
-         *
-         *  -- bring default namespaces into scope
-         *
-         *  -- process module body
-         *
-         *  -- restore old environment
-         *
-         * Parse tree situation:
-         *
-         *          lib_mod           module namespace foo = "http://foo.bar/";
-         *         /       \
-         *  mod_ns(foo)     e
-         *    |
-         * lit_str(http://...)
-         */
-        PFarray_t     *old_namespace = namespace;
-        unsigned int   old_ns_num    = ns_num;
-        PFns_t         old_ens       = ens;
-        PFns_t         old_fns       = fns;
-        PFns_t         old_target_ns = target_ns;
-
-        namespace = PFarray (sizeof (PFns_t));
-        ns_num = 0;
-
-        /* bring the default NS into scope */
-        ns_add (PFns_xml);
-        ns_add (PFns_xs);
-        ns_add (PFns_xsi);
-        ns_add (PFns_pf);
-        ns_add (PFns_xdt);
-        ns_add (PFns_local);
-        ns_add (PFns_wild);
-        ns_add (PFns_fn);
-
-        fns = PFns_fn;
-
-        /* ``undefine'' the default element NS */
-        ens = (PFns_t) { .ns = 0, .uri = 0 };
-
-        /* set the target namespace as given in the module declaration */
-        target_ns = (PFns_t) { .ns = n->child[0]->sem.str,
-                               .uri = n->child[0]->child[0]->sem.str };
-
-        ns_add (target_ns);
-
-        /* perform NS resolution in module */
-        ns_resolve (n->child[1]);
-
-        /* restore anything */
-        target_ns = old_target_ns;
-        fns       = old_fns;
-        ens       = old_ens;
-        ns_num    = old_ns_num;
-        namespace = old_namespace;
-
-    } break;
-
-
-    case p_fns_decl:
-        /* default function namespace = "foo" 
-         *
-         * abstract syntax tree layout:
-         *
-         *           fns_decl
-         *              |
-         *           lit_str-"foo"
-         */
-        fns = (PFns_t) { .ns = NULL, .uri = n->child[0]->sem.str };
-
-        break;
-
-    case p_ens_decl:
-        /* default element namespace = "foo" 
-         *
-         * abstract syntax tree layout:
-         *
-         *           ens_decl
-         *              |
-         *           lit_str-"foo"
-         */
-        ens = (PFns_t) { .ns = NULL, .uri = n->child[0]->sem.str };
-
-        break;
-
-    case p_ns_decl:
-        /* declare namespace ns = "foo" 
-         * import schema namespace ns = "foo" [at "url"]
-         *
-         * abstract syntax tree layout:
-         *
-         *           ns_decl-"ns"
-         *              |
-         *           lit_str-"foo"
-         */
-        ns_add ((PFns_t) { .ns = n->sem.str, .uri = n->child[0]->sem.str });
-
-        break;
-
-    case p_fun_decl:
-        /* define function ns:loc (parm) [returns t] { body }
-         *
-         * abstract syntax tree layout:
-         *
-         *           fun_decl-ns:loc
-         *            /           \
-         *         fun_sig       body
-         *          /   \
-         *       param   t
-         *
-         *           /  |  \
-         *        parm  t  body
-         */
-        if (! NS_QUAL (n->sem.qname))
-            /* function name unqualfied, attach default function NS,
-             * see W3C XQuery, 4.1
+        case p_lib_mod:
+        {   /*
+             * Isolate namespaces in module definitions from main query
+             * (and between modules).
+             *
+             * Thus,
+             *
+             *  -- clear namespace environment (after saving the old one)
+             *
+             *  -- bring default namespaces into scope
+             *
+             *  -- process module body
+             *
+             *  -- restore old environment
+             *
+             * Parse tree situation:
+             *
+             *          lib_mod         module namespace foo = "http://...";
+             *         /       \
+             *  mod_ns(foo)     e
+             *    |
+             * lit_str(http://...)
              */
-            n->sem.qname.ns = fns;
-        else 
-            /* function name qualified, make sure the NS is in scope */
-            if (! ns_lookup (&(n->sem.qname.ns)))
-                PFoops_loc (OOPS_BADNS, n->loc,
+            PFns_map_t    *old_ns        = stat_known_ns;
+            PFns_t         old_fns       = fns;
+            PFns_t         old_target_ns = target_ns;
+
+            stat_known_ns = PFarray (sizeof (PFns_t));
+
+            /* bring the default NS into scope */
+            ns_add (PFns_xml);
+            ns_add (PFns_xs);
+            ns_add (PFns_xsi);
+            ns_add (PFns_pf);
+            ns_add (PFns_xdt);
+            ns_add (PFns_local);
+            ns_add (PFns_wild);
+            ns_add (PFns_fn);
+
+            fns = PFns_fn;
+
+            /* ``undefine'' the default element NS */
+            ns_add ((PFns_t) { .prefix = "", .uri = "" });
+
+            /* set the target NS as given in the module declaration */
+            target_ns = (PFns_t) { .prefix = L(n)->sem.str,
+                                   .uri    = LL(n)->sem.str };
+
+            ns_add (target_ns);
+
+            /* perform NS resolution in module */
+            ns_resolve (R(n));
+
+            /* restore everything */
+            target_ns     = old_target_ns;
+            fns           = old_fns;
+            stat_known_ns = old_ns;
+
+        } break;
+
+
+        case p_fns_decl:
+            /*
+             * default function namespace = "foo" 
+             *
+             * abstract syntax tree layout:
+             *
+             *           fns_decl
+             *              |
+             *           lit_str-"foo"
+             */
+            fns = (PFns_t) { .prefix = "", .uri = L(n)->sem.str };
+
+            break;
+
+        case p_ens_decl:
+            /*
+             * default element namespace = "foo" 
+             *
+             * abstract syntax tree layout:
+             *
+             *           ens_decl
+             *              |
+             *           lit_str-"foo"
+             */
+            ns_add ((PFns_t) { .prefix = "", .uri = L(n)->sem.str });
+
+            break;
+
+        case p_ns_decl:
+            /*
+             * declare namespace ns = "foo" 
+             * import schema namespace ns = "foo" [at "url"]
+             *
+             * abstract syntax tree layout:
+             *
+             *           ns_decl-"ns"
+             *              |
+             *           lit_str-"foo"
+             */
+            ns_add ((PFns_t) { .prefix = n->sem.str, .uri = L(n)->sem.str });
+
+            break;
+
+        case p_fun_decl:
+            /*
+             * define function ns:loc (parm) [as t] { body }
+             *
+             * abstract syntax tree layout:
+             *
+             *           fun_decl-ns:loc
+             *            /           \
+             *         fun_sig       body
+             *          /   \
+             *       param   t
+             *             / | \
+             *            /  |  \
+             *         parm  t  body
+             */
+            if (! NS_QUAL (n->sem.qname))
+                /*
+                 * function name unqualfied, attach default function NS,
+                 * see W3C XQuery, 4.1
+                 */
+                n->sem.qname.ns = fns;
+            else {
+                /* function name qualified, make sure the NS is in scope */
+                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
+                if (! n->sem.qname.ns.uri)
+                    PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified function name %s", 
                             PFqname_str (n->sem.qname));
+            }
 
-        /*
-         * If we are within a module, the function declaration must be
-         * within the module's target namespace.
-         */
-        if (PFns_eq (target_ns, PFns_wild)
-            && PFns_eq (n->sem.qname.ns, target_ns))
-            PFoops_loc (OOPS_BADNS, n->loc,
+            /*
+             * If we are within a module, the function declaration must be
+             * within the module's target namespace.
+             */
+            if (PFns_eq (target_ns, PFns_wild)
+                    && PFns_eq (n->sem.qname.ns, target_ns))
+                PFoops_loc (OOPS_BADNS, n->loc,
                         "function %s must be declared within the module's "
                         "target namespace (%s = \"%s\")",
                         PFqname_str (n->sem.qname),
-                        target_ns.ns, target_ns.uri);
+                        target_ns.prefix, target_ns.uri);
 
-        /* NS resolution in function parameters, return type, and body */
-        assert (n->child[0] && n->child[0]->child[0]);
-        ns_resolve (n->child[0]->child[0]);
+            /* NS resolution in function parameters, return type, and body */
+            assert (L(n) && LL(n));
+            ns_resolve (LL(n));
 
-        assert (n->child[0]->child[1]);
-        ns_resolve (n->child[0]->child[1]);
+            assert (LR(n));
+            ns_resolve (LR(n));
 
-        assert (n->child[1]);
-        ns_resolve (n->child[1]);
+            assert (R(n));
+            ns_resolve (R(n));
 
-        break;
+            break;
 
 
-        /* handle named types and schema references */
+            /* handle named types and schema references */
 
-    case p_atom_ty:
-    case p_named_ty:
-        if (NS_QUAL (n->sem.qname))
-            if (! ns_lookup (&(n->sem.qname.ns)))
+        case p_atom_ty:
+        case p_named_ty:
+            n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
+            if (! n->sem.qname.ns.uri)
                 PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified name %s",
                             PFqname_str (n->sem.qname));
-        break;
+            break;
 
-    case p_req_name:
-        /*
-         * This is the QName specification in an XPath location step. 
-         * 
-         * The spec says: ``An unprefixed QName, when used as a name
-         * test on an axis whose principal node kind is element, has
-         * the namespace URI of the default element/type namespace in
-         * the expression context; otherwise, it has no namespace URI.''
-         *
-         * BUG: We cannot check for the principale node kind here. (In
-         *      other words: We don't know if this happens to be the
-         *      attribute axis.)
-         *
-         * Furthermore: ``A node test * is true for any node of the
-         * principal node kind of the step axis.''
-         */
-        if (! NS_QUAL (n->sem.qname)) {
+        case p_node_ty:
+            /*
+             * Set the `principal' flag to the requested principal node
+             * kind.  This will infer the correct namespaces for
+             * name tests with unqualified QNames.
+             *
+             * Parse tree situation:
+             *
+             *         step
+             *          |
+             *       node_ty
+             *          |
+             *       req_ty
+             *       /    \
+             * req_name   ...
+             */
+            if (n->sem.kind == p_kind_attr)
+                principal = attribute;
+            else
+                principal = element;
 
-            if (PFQNAME_LOC_WILDCARD (n->sem.qname))
+            assert (L(n));
+            ns_resolve (L(n));
+
+            break;
+
+        case p_req_name:
+            /*
+             * This is the QName specification in an XPath location step. 
+             * 
+             * The spec says: ``An unprefixed QName, when used as a name
+             * test on an axis whose principal node kind is element, has
+             * the namespace URI of the default element/type namespace in
+             * the expression context; otherwise, it has no namespace URI.''
+             */
+            /* A NULL prefix means this is a wildcard namespace */
+            if (! n->sem.qname.ns.prefix)
                 n->sem.qname.ns = PFns_wild;
-            else if (ens.uri) {
-                n->sem.qname.ns = ens;
-            }
-
-        } 
-        else {
-            if (! ns_lookup (&(n->sem.qname.ns)))
-                PFoops_loc (OOPS_BADNS, n->loc,
-                            "unknown namespace in qualified name %s",
+            /*
+             * Unqualified attribute names (recognizable by a zero-length
+             * prefix) shall not get the default element namespace (in
+             * the environment of staticall-known namespaces listed with
+             * a zero-length prefix), but "no namespace" (the zero-length
+             * URI).
+             */
+            else if (principal == attribute && !*(n->sem.qname.ns.prefix))
+                n->sem.qname.ns.uri = PFstrdup ("");
+            else {
+                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
+                if (! n->sem.qname.ns.uri)
+                    PFoops_loc (OOPS_BADNS, n->loc,
+                            "unknown namespace in QName %s",
                             PFqname_str (n->sem.qname));
-        }
-        break;
+            }
+            break;
 
-    case p_var_decl:
-        /*
-         * parse tree situation:
-         *
-         *          var_decl
-         *         /        \
-         *      var_type     expr
-         *     /       \
-         *  varref    type
-         */
-        ns_resolve (n->child[0]);
-        ns_resolve (n->child[1]);
+        case p_var_decl:
+            /*
+             * parse tree situation:
+             *
+             *          var_decl
+             *         /        \
+             *      var_type     expr
+             *     /       \
+             *  varref    type
+             */
+            ns_resolve (L(n));
+            ns_resolve (R(n));
 
-        /*
-         * If we are within a module, the function declaration must be
-         * within the module's target namespace.
-         */
-        if (PFns_eq (target_ns, PFns_wild)
-            && PFns_eq (n->child[0]->child[0]->sem.qname.ns, target_ns))
-            PFoops_loc (OOPS_BADNS, n->loc,
+            /*
+             * If we are within a module, the function declaration must be
+             * within the module's target namespace.
+             */
+            if (PFns_eq (target_ns, PFns_wild)
+                && PFns_eq (LL(n)->sem.qname.ns, target_ns))
+                PFoops_loc (OOPS_BADNS, n->loc,
                         "variable %s must be declared within the module's "
                         "target namespace (%s = \"%s\")",
-                        PFqname_str (n->child[0]->child[0]->sem.qname),
-                        target_ns.ns, target_ns.uri);
+                        PFqname_str (LL(n)->sem.qname),
+                        target_ns.prefix, target_ns.uri);
 
-        break;
+            break;
 
 
-        /* handle query body */
+            /* handle query body */
 
-    case p_varref:
-        /* $ns:loc                       (variable)
-         */
-        if (NS_QUAL (n->sem.qname))
-            if (! ns_lookup (&(n->sem.qname.ns)))
-                PFoops_loc (OOPS_BADNS, n->loc,
+        case p_varref:
+            /* $ns:loc                       (variable)    */
+
+            assert (n->sem.qname.ns.prefix);
+
+            /*
+             * An unprefixed variable reference is in no namespace
+             * (W3C XQuery 3.1.2)
+             */
+            if (! *(n->sem.qname.ns.prefix))
+                n->sem.qname.ns.uri = PFstrdup ("");
+            else {
+                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
+                if (! n->sem.qname.ns.uri)
+                    PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified variable name $%s",
                             PFqname_str (n->sem.qname));
+            }
+            break;
 
-        break;
-
-    case p_fun_ref:
-        /* ns:loc (args)                 (function application)
-         *
-         * abstract syntax tree layout:
-         *
-         *           apply-ns:loc
-         *             |
-         *           args
-         */
-        if (! NS_QUAL (n->sem.qname))
-            /* function name unqualfied, attach default function NS,
-             * see W3C XQuery, 4.1
+        case p_fun_ref:
+            /* ns:loc (args)                 (function application)
+             *
+             * abstract syntax tree layout:
+             *
+             *           apply-ns:loc
+             *             |
+             *           args
              */
-            n->sem.qname.ns = fns;
-        else 
-            /* function name qualified, make sure the NS is in scope */
-            if (! ns_lookup (&(n->sem.qname.ns)))
-                PFoops_loc (OOPS_BADNS, n->loc,
+            if (! NS_QUAL (n->sem.qname))
+                /* function name unqualfied, attach default function NS,
+                 * see W3C XQuery, 4.1
+                 */
+                n->sem.qname.ns = fns;
+            else  {
+                /* function name qualified, make sure the NS is in scope */
+                n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
+                if (! n->sem.qname.ns.uri)
+                    PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified function name %s", 
                             PFqname_str (n->sem.qname));
+            }
 
-        /* NS resolution in function arguments */
-        assert (n->child[0]);
-        ns_resolve (n->child[0]);
+            /* NS resolution in function arguments */
+            assert (L(n));
+            ns_resolve (L(n));
 
-        break;
+            break;
 
-    case p_elem:
-        /* <ns:loc>c</ns:loc>          (element construction)
-         *
-         * abstract syntax tree layout:
-         *
-         *           elem
-         *           /   \
-         *  tag-ns:loc    c
-         */
+        case p_elem:
+        {   /* <ns:loc>c</ns:loc>          (element construction)
+             *
+             * abstract syntax tree layout:
+             *
+             *           elem
+             *           /   \
+             *  tag-ns:loc    c
+             */
 
-        /* collect and apply namespace declaration attribute of the
-         * form `xmlns:loc="..."' or `xmlns="..."' found in element content c
-         */
+            /*
+             * collect and apply namespace declaration attribute of the
+             * form `xmlns:loc="..."' or `xmlns="..."' found in element
+             * content c
+             */
 
-        /* remember original default element NS and in-scope NS environment */
-        ens_    = ens;
-        ns_num_ = ns_num;
+            /*
+             * Remember original default element NS and in-scope NS env.
+             *
+             * We create a copy of this environment here, so namespaces
+             * defined in the current element node cannot affect the
+             * surrounding.  It should be safe to copy stat_known_ns
+             * by reference afterwards.
+             */
+            PFns_map_t *old_ns = copy_ns_env (stat_known_ns);
 
-        assert (n->child[1]);
-        apply_xmlns (n->child[1], &(n->child[1]));
+            assert (R(n));
+            collect_xmlns (R(n), &(R(n)));
 
-        /* if element comes with a literal tag name resolve NS usage,
-         * for computed tags skip ahead 
-         */
-        assert (n->child[0]);
-        if (n->child[0]->kind == p_tag) {
-            if (! NS_QUAL (n->child[0]->sem.qname)) {
-                /* element tag name is unqualified: if a default element NS
-                 * has been defined, attach the default NS, otherwise the tag
-                 * name remains unqualified, W3C XQuery, 4.1
-                 */
-                if (ens.uri)
-                    n->child[0]->sem.qname.ns = ens;
+            /*
+             * if element comes with a literal tag name resolve NS usage,
+             * for computed tags skip ahead 
+             */
+            assert (L(n));
+            if (L(n)->kind == p_tag) {
+                L(n)->sem.qname.ns.uri = ns_lookup (L(n)->sem.qname.ns.prefix);
+                if (! L(n)->sem.qname.ns.uri)
+                    PFoops_loc (OOPS_BADNS, L(n)->loc,
+                                "unknown namespace in qualified tag name %s",
+                                PFqname_str (L(n)->sem.qname));
             }
             else 
-                /* element tag name is qualified, make sure NS is in scope */
-                if (! ns_lookup (&(n->child[0]->sem.qname.ns)))
-                    PFoops_loc (OOPS_BADNS, n->child[0]->loc,
-                                "unknown namespace in qualified tag name %s",
-                                PFqname_str (n->child[0]->sem.qname));
-        }
-        else 
-            ns_resolve (n->child[0]);
+                ns_resolve (L(n));
 
-        /* NS resolution in element content c */
-        assert (n->child[1]);
-        ns_resolve (n->child[1]);
-    
-        /* restore old default element NS and in-scope NS environment */
-        ens    = ens_;
-        ns_num = ns_num_;
+            /* NS resolution in element content c */
+            assert (R(n));
+            ns_resolve (R(n));
 
-        break;
+            /* restore old default element NS and in-scope NS environment */
+            stat_known_ns = old_ns;
 
-    case p_attr:
-        /* <... ns:loc=v ...>        (attribute)
-         *
-         * abstract syntax tree layout:
-         *
-         *           attr
-         *           /  \
-         * tag-ns:loc    v 
-         */
-    
-        /* if attribute comes with a literal tag name resolve NS usage,
-         * for computed attribute names skip ahead
-         */
-        assert (n->child[0]);
-        if (n->child[0]->kind == p_tag) {
-            if (NS_QUAL (n->child[0]->sem.qname)) {
-                /* qualified attribute name, check that NS is in scope */
-                if (! ns_lookup (&(n->child[0]->sem.qname.ns)))
-                    PFoops_loc (OOPS_BADNS, n->child[0]->loc,
+        } break;
+
+        case p_attr:
+            /* <... ns:loc=v ...>        (attribute)
+             *
+             * abstract syntax tree layout:
+             *
+             *           attr
+             *           /  \
+             * tag-ns:loc    v 
+             */
+
+            /*
+             * if attribute comes with a literal tag name resolve NS usage,
+             * for computed attribute names skip ahead
+             */
+            assert (L(n));
+            if (L(n)->kind == p_tag) {
+                if (NS_QUAL (L(n)->sem.qname)) {
+                    /* qualified attribute name, check that NS is in scope */
+                    L(n)->sem.qname.ns.uri
+                        = ns_lookup (L(n)->sem.qname.ns.prefix);
+                    if (! L(n)->sem.qname.ns.uri)
+                        PFoops_loc (OOPS_BADNS, L(n)->loc,
                                 "unknown namespace in qualified attribute "
-                                "name %s",
-                                PFqname_str (n->child[0]->sem.qname));
+                                "name %s", PFqname_str (L(n)->sem.qname));
+                }
+                else {
+                    /*
+                     * unqualified attributes are in no namespace
+                     * (NOT in the default element namespace!)
+                     */
+                    L(n)->sem.qname.ns.uri = PFstrdup ("");
+                }
             }
-        }
-    
-        /* NS resolution in attribute value v */
-        assert (n->child[1]);
-        ns_resolve (n->child[1]);
 
-        break;
+            /* NS resolution in attribute value v */
+            assert (R(n));
+            ns_resolve (R(n));
 
-    case p_pragma:
-        /* (# ns:loc ... #) { ... }      (pragma)
-         */
-        if (NS_QUAL (n->sem.pragma.qname))
-            if (! ns_lookup (&(n->sem.pragma.qname.ns)))
+            break;
+
+        case p_pragma:
+            /* (# ns:loc ... #) { ... }      (pragma)   */
+            n->sem.pragma.qname.ns.uri
+                = ns_lookup (n->sem.pragma.qname.ns.prefix);
+            if (! n->sem.pragma.qname.ns.uri)
                 PFoops_loc (OOPS_BADNS, n->loc,
-                            "unknown namespace in pragma %s",
+                            "unknown namespace in pragma $%s",
                             PFqname_str (n->sem.pragma.qname));
+            break;
 
-        break;
+        default:
+            for (c = 0; c < PFPNODE_MAXCHILD && n->child[c]; c++)
+                ns_resolve (n->child[c]);
 
-    default:
-        for (c = 0; c < PFPNODE_MAXCHILD && n->child[c]; c++)
-            ns_resolve (n->child[c]);
-
-        break;
+            break;
     }
 }
 
@@ -822,8 +890,7 @@ ns_resolve (PFpnode_t *n)
 void
 PFns_resolve (PFpnode_t *root)
 {
-    namespace = PFarray (sizeof (PFns_t));
-    ns_num = 0;
+    stat_known_ns = PFarray (sizeof (PFns_t));
 
     /* bring the default NS into scope */
     ns_add (PFns_xml);
@@ -832,7 +899,6 @@ PFns_resolve (PFpnode_t *root)
     ns_add (PFns_pf);
     ns_add (PFns_xdt);
     ns_add (PFns_local);
-    ns_add (PFns_wild);
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS
@@ -842,7 +908,7 @@ PFns_resolve (PFpnode_t *root)
     fns = PFns_fn;
 
     /* ``undefine'' the default element NS */
-    ens = (PFns_t) { .ns = 0, .uri = 0 };
+    ns_add ((PFns_t) { .prefix = "", .uri = "" });
 
     /* allow any namespace for declarations in queries */
     target_ns = PFns_wild;

@@ -1232,7 +1232,7 @@ FunctionDecl              : "declare function" QName_LParen
                                *   This is not the parser's job!
                                *   Do this during function resolution!
                                */
-                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.ns);
+                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.prefix);
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
@@ -1273,7 +1273,7 @@ FunctionDecl              : "declare function" QName_LParen
                                *   This is not the parser's job!
                                *   Do this during function resolution!
                                */
-                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.ns);
+                              c->rpc_uri = get_rpc_uri(c->sem.qname.ns.prefix);
                               $$ = c;
 
 #ifdef ENABLE_MILPRINT_SUMMER
@@ -2086,7 +2086,7 @@ FunctionCall              : QName_LParen OptFuncArgList_ ")"
                                *   Do this during function resolution!
                                */
                               c->sem.qname = $1;
-                              c->rpc_uri = get_rpc_uri (c->sem.qname.ns.ns);
+                              c->rpc_uri = get_rpc_uri (c->sem.qname.ns.prefix);
                               $$ = c;
                             }
                           ;

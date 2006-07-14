@@ -35,6 +35,8 @@
 #ifndef NS_H
 #define NS_H
 
+#include "array.h"
+
 /** representation of an XML Namespace */
 typedef struct PFns_t PFns_t;
 
@@ -56,8 +58,8 @@ typedef struct PFns_t PFns_t;
  *                    "xs" |-> "http://www.w3.org/2001/XMLSchema"
  */
 struct PFns_t {
-  char *ns;    /**< namespace prefix */
-  char *uri;   /**< URI this namespace has been mapped to */
+  char *prefix;  /**< namespace prefix */
+  char *uri;     /**< URI this namespace has been mapped to */
 };
 
 /*
@@ -99,6 +101,9 @@ extern PFns_t PFns_pf;
  * Wildcard namespace (used in QNames of the form *:loc)
  */
 extern PFns_t PFns_wild;
+
+/** A prefix -> URI mapping table (implemented as PFarray_t */
+typedef PFarray_t PFns_map_t;
 
 /** 
  * NS equality (URI-based, then prefix-based)

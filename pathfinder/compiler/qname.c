@@ -7,6 +7,46 @@
  * a specific module or processing phase assignment. Declarations
  * for this file go into include/pathfinder.h
  *
+ * @section Pathfinder's Namespace Handling/Representation
+ *
+ * We represent QNames using the struct #PFqname_t, where
+ *
+ *  - the field @c loc holds the local part of the QName (as a regular
+ *    C string) and
+ *  - the field @c ns is a #PFns_t that combines prefix and URI of
+ *    the QName's namespace.
+ *
+ * The @c loc field of this struct is the local part of this QName and
+ * will usually be filled with a sensible value (never the empty string).
+ * We indicate a @b wildcard local name (for name tests and in the type
+ * system) with a @c NULL pointer.
+ *
+ * The struct #PFns_t contains a prefix/URI pair.  Not always do we have
+ * all the information at hand right away that we need to fill both fields:
+ * During query parsing, we only have the prefix available, the URI part
+ * will not be filled before we do namespace resolution (ns.c).  On the
+ * other hand, there may be situations, where we only have a URI, but
+ * don't have a prefix for it (e.g., if namespace resolution has assigned
+ * the default element namespace to an unqualified QName).
+ *
+ * We use the following conventions:
+ *
+ *  - If the QName does not have a prefix, we set the empty string as
+ *    the prefix.  This will be the case for all unqualified QNames
+ *    before and after namespace resolution.
+ *  - If the QName does <b>not have</b> any namespace URI (i.e., it is
+ *    in no namespace), we use the empty string as its URI.  This will
+ *    not be the case before namespace resolution has been completed.
+ *  - If we do <b>not yet know</b> the URI of a namespace, we set the
+ *    @c uri field to @c NULL.  Such a namespace field will be filled
+ *    up during namespace resolution.
+ *  - For the prefix part, such a "don't know" situation cannot arise,
+ *    but we use a @c NULL prefix to indicate a @b wildcard namespace.
+ *    Wildcard namespaces only apply to name tests with wildcards, and
+ *    to element/attribute types with undefined name in the type
+ *    system.
+ *
+ *
  * Copyright Notice:
  * -----------------
  *
@@ -42,6 +82,7 @@
 
 /* PFns_t */
 #include "ns.h"
+
 #include "mem.h"
 
 /** 
@@ -98,21 +139,26 @@ PFqname_str (PFqname_t qn)
     return PFqname_uri_str (qn);
 #endif
 
-    /* if we have a prefix, print it */
-    if (qn.ns.ns)
+    /* NULL prefix indicates wildcard ns -> print a star */
+    if (! qn.ns.prefix) {
+        ns = PFstrdup ("*:");
+        fprintf (stderr, "uri: %s, loc: %s\n", qn.ns.uri, qn.loc);
+    }
 
-        sprintf (ns = (char *) PFmalloc (strlen (qn.ns.ns) + 2),
-                 "%s:", qn.ns.ns);
-
-    /* if there's no prefix, but an URI (e.g. default ens), print the URI */
-    else if (qn.ns.uri)
-
-        sprintf (ns = (char *) PFmalloc (strlen (qn.ns.uri) + 4),
-                 "\"%s\":", qn.ns.uri);
-
-    /* otherwise no prefix to print */
     else
-        ns = "";
+        /* if we have a prefix, print it */
+        if (*(qn.ns.prefix))
+            sprintf (ns = (char *) PFmalloc (strlen (qn.ns.prefix) + 2),
+                     "%s:", qn.ns.prefix);
+
+        else if (qn.ns.uri && *(qn.ns.uri))
+            /* if there's no prefix, but an URI (e.g. default ens),
+             * print the URI */
+            sprintf (ns = (char *) PFmalloc (strlen (qn.ns.uri) + 4),
+                     "\"%s\":", qn.ns.uri);
+        else
+            /* otherwise no prefix to print */
+            ns = PFstrdup ("");
     
     s = (char *) PFmalloc (strlen (ns) + (qn.loc ? strlen (qn.loc) : 1) + 1);
 
@@ -149,12 +195,7 @@ PFqname_uri_str (PFqname_t qn)
 char *
 PFqname_ns (PFqname_t qn)
 {
-    /* is there an prefix attached to this QName? */
-    if (qn.ns.ns)                
-        return PFstrdup (qn.ns.ns);
-    
-    /* otherwise return the empty string */
-    return PFstrdup ("");
+    return qn.ns.prefix ? PFstrdup (qn.ns.prefix) : NULL;
 }
 
 
@@ -166,12 +207,7 @@ PFqname_ns (PFqname_t qn)
 char *
 PFqname_uri (PFqname_t qn)
 {
-    /* is there an URI attached to this QName? */
-    if (qn.ns.uri)                
-        return PFstrdup (qn.ns.uri);
-    
-    /* otherwise return the empty string */
-    return PFstrdup ("");
+    return qn.ns.uri ? PFstrdup (qn.ns.uri) : NULL;
 }
 
 
@@ -183,14 +219,14 @@ PFqname_uri (PFqname_t qn)
 char *
 PFqname_loc (PFqname_t qn)
 {
-    return PFstrdup (qn.loc);
+    return qn.loc ? PFstrdup (qn.loc) : NULL;
 }
 
 
 /**
  * Construct a QName from a string of the form `ns:loc' or `loc'.
- * In the latter case, the @a ns field of the return QName is 0
- * (this is different from a `*' ns).
+ * In the latter case, the @a prefix field of the return QName is "".
+ * A wildcard prefix `*:loc' will lead to prefix = NULL.
  *
  * @warning Do not use this function after namespace resolution has
  *   been done! In the namespace resolution phase (see semantics/ns.c),
@@ -218,24 +254,27 @@ PFstr_qname (char *n)
     if ((colon = strchr (nsloc, ':'))) {
         /* QName = ns:loc */
         *colon = '\0';
-        qn.ns.ns   = nsloc;
-        qn.ns.uri  = 0;
-        qn.loc     = colon + 1;
+        qn.ns.prefix = nsloc;
+        qn.ns.uri    = NULL;
+        qn.loc       = colon + 1;
     }
     else {
         /* QName = loc */
-        qn.ns.ns   = 0;
-        qn.ns.uri  = 0;
-        qn.loc     = nsloc; 
+        qn.ns.prefix = PFstrdup ("");
+        qn.ns.uri    = NULL;
+        qn.loc       = nsloc; 
     }
 
     /*
-     * We rather represent wildcard local names (`*') by a
-     * NULL pointer instead of the textual "*". (This is also
-     * consistent with types.c
+     * We represents wildcards (prefix as well as local name)
+     * by a NULL pointer.  The above procedure will make them
+     * the string "*".
      */
     if (!strcmp (qn.loc, "*"))
         qn.loc = NULL;
+
+    if (!strcmp (qn.ns.prefix, "*"))
+        qn.ns.prefix = NULL;
 
     return qn;
 }

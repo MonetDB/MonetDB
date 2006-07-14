@@ -2158,16 +2158,9 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         ns = (PFty_name (in_ty)).ns.uri;
         loc = (PFty_name (in_ty)).loc;
 
-        /* translate wildcard '*' as 0 and missing ns as "" */
-        if (!ns)
-            ns = "";
-        else if (!strcmp (ns,"*"))
-            ns = 0;
-
-        /* translate wildcard '*' as 0 */
-        if (loc && (!strcmp(loc,"*")))
-            loc = 0;
-
+        /*
+         * wildcard ns/local part is represented as a NULL pointer
+         */
         if (!ns && !loc)
         {
             loop_liftedSCJ (f, axis, "ELEMENT", 0, 0, rev_in, rev_out);
@@ -2203,15 +2196,9 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         ns = (PFty_name (in_ty)).ns.uri;
         loc = (PFty_name (in_ty)).loc;
 
-        /* translate wildcard '*' as 0 and missing ns as "" */
-        if (!ns)
-            ns = "";
-        else if (!strcmp (ns,"*"))
-            ns = 0;
-
-        /* translate wildcard '*' as 0 */
-        if (loc && (!strcmp(loc,"*")))
-            loc = 0;
+        /*
+         * wildcard ns/local part is represented as a NULL pointer
+         */
 
         loop_liftedSCJ (f, axis, 0, ns, loc, rev_in, rev_out); 
 
@@ -8328,15 +8315,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             break;
         case c_tag:
             {
-            char *prefix = c->sem.qname.ns.ns;
+            char *prefix = c->sem.qname.ns.prefix;
             char *uri = c->sem.qname.ns.uri;
             char *loc = c->sem.qname.loc;
-
-            /* translate missing ns as "" */
-            if (!prefix)
-                prefix = "";
-            if (!uri)
-                uri = "";
 
             milprintf(f,
                     "{ # tagname-translation\n"
@@ -10494,7 +10475,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* ==================================== */
 
         char sig[1024], *p = c->sem.apply.fun->qname.loc, *q = c->sem.apply.fun->qname.ns.uri;
-        char *r = c->sem.apply.fun->qname.ns.ns;
+        char *r = c->sem.apply.fun->qname.ns.prefix;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
 

@@ -42,9 +42,9 @@
 /** XML namespace qualified name */
 typedef struct PFqname_t PFqname_t;
 
-/** This represents a QName `ns:loc'
- *  (a QName `loc' with no namespace has ns.ns = 0 and ns.uri = 0,
- *   see semantics/ns.h).
+/**
+ * This represents a QName `ns:loc'
+ * See top of qname.c for detailed semantics of this field.
  */
 struct PFqname_t {
   PFns_t ns;       /**< namespace part */
@@ -52,11 +52,10 @@ struct PFqname_t {
 };
 
 /* is namespace the wildcard namespace? */
-#define PFQNAME_NS_WILDCARD(qn) \
-    ((qn).ns.ns == PFns_wild.ns && (qn).ns.uri == PFns_wild.uri)
+#define PFQNAME_NS_WILDCARD(qn) ((qn).ns.prefix == NULL)
 
 /* is local name a wildcard (ns:*)? */
-#define PFQNAME_LOC_WILDCARD(qn) ((qn).loc == 0)
+#define PFQNAME_LOC_WILDCARD(qn) ((qn).loc == NULL)
 
 /* is QName the wildcard *:* ? */
 #define PFQNAME_WILDCARD(qn) \

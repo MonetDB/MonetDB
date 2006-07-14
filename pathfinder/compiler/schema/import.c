@@ -342,11 +342,11 @@ lookup_ns (char *prefix)
 
         if (ns) {
             /* lookup for default namespace */
-            if (prefix == 0 && ns->ns == 0)
+            if (prefix == 0 && ns->prefix == 0)
                 return ns;
 
             /* lookup for regular namespace */
-            if (prefix && ns->ns && strcmp (ns->ns, prefix) == 0)
+            if (prefix && ns->prefix && strcmp (ns->prefix, prefix) == 0)
                 return ns;
         }
     }
@@ -368,7 +368,7 @@ new_ns (char *ns, char *uri)
 
     assert (uri);
 
-    new_ns->ns = ns;
+    new_ns->prefix = ns;
     new_ns->uri = uri;
 
     return new_ns;
@@ -394,7 +394,7 @@ imported_qname (char *nsloc)
 
     qn = PFstr_qname (nsloc);
 
-    if (qn.ns.ns)
+    if (qn.ns.prefix)
         PFinfo (OOPS_SCHEMAIMPORT,
                 "namespace of `%s' replaced by target namespace `%s'",
                 PFqname_str (qn),
@@ -424,8 +424,8 @@ ref_qname (char *nsloc)
 
     qn = PFstr_qname (nsloc);
 
-    if (qn.ns.ns) {
-        if ((ns = lookup_ns (qn.ns.ns))) {
+    if (qn.ns.prefix) {
+        if ((ns = lookup_ns (qn.ns.prefix))) {
             qn.ns = *ns;
 
             return qn;
@@ -433,7 +433,7 @@ ref_qname (char *nsloc)
         else
             PFoops (OOPS_BADNS,
                     "(XML Schema import) prefix `%s' unknown",
-                    qn.ns.ns);
+                    qn.ns.prefix);
     }
 
     qn.ns = target_ns;
@@ -478,7 +478,7 @@ map_open_tag (void *ctx, char *nsloc)
      * lookup_ns () call will try to lookup the default element
      * namespace which is the right thing to do
      */
-    if ((ns = lookup_ns (qn.ns.ns))) {
+    if ((ns = lookup_ns (qn.ns.prefix))) {
         /* is this the XML Schema namespace? */
         if (strcmp (ns->uri, PFns_xs.uri)) {
             PFinfo (OOPS_SCHEMAIMPORT, "non-XML Schema element seen");
@@ -488,7 +488,7 @@ map_open_tag (void *ctx, char *nsloc)
     }
     else {
         PFinfo (OOPS_BADNS,
-                "(XML Schema import) prefix `%s' unknown", qn.ns.ns);
+                "(XML Schema import) prefix `%s' unknown", qn.ns.prefix);
         xmlParserError (ctx, "\n");
         PFoops (OOPS_SCHEMAIMPORT, "check schema validity");
     }
@@ -553,8 +553,8 @@ attributes (void *ctx, const xmlChar **atts)
         while (*atts) {
             qn = PFstr_qname ((char *) *atts);
 
-            if (qn.ns.ns) {
-                if (strcmp (qn.ns.ns, XMLNS) == 0) {
+            if (qn.ns.prefix) {
+                if (strcmp (qn.ns.prefix, XMLNS) == 0) {
                     /* `xmlns:loc="uri"' NS declaration attribute */
                     atts++;
 
@@ -2436,7 +2436,7 @@ schema_imports (PFpnode_t *di)
             uri = imp->child[0]->sem.str;
 
             /* construct target namespace */
-            ns = (PFns_t) { .ns = 0, .uri = PFstrdup (uri) };
+            ns = (PFns_t) { .prefix = 0, .uri = PFstrdup (uri) };
 
             /* import the schema */
             schema_import (ns, loc);
