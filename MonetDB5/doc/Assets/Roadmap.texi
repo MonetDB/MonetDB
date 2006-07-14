@@ -30,7 +30,7 @@ a relational table. This index is built using well-known
 Information Retrieval techniques, such as stemming, keyword
 recognition, and stop-word reduction.
 Several IR projects are underway, which enhance MonetDB with
-IR capabilities, e.g. see @url{http://monetdb.cwi.nl/projects/trecvid/MN5/index.php/PFTijah_Wiki,Tijah}.
+IR capabilities.
 @item @emph{Stored SQL procedures}
 Stored procedures are a powerful scheme to offload operational
 abstractions to the server. The MonetDB server comes with its own programming

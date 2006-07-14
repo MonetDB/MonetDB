@@ -116,8 +116,7 @@ provides a basis for developing your own language front-end.
 The second track, The Inner Core describes the datastructures
 and operations exploited in the abstract machine layer. This part
 is essential for developers to aid in bug fixing and to
-extend the kernel with new functionality. Its information covers
-also the ground for MonetDB Version 4.
+extend the kernel with new functionality. 
 For most readers, however, it can be skipped without causing
 problems to develop efficient applications.
 @end ifset

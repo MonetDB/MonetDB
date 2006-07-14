@@ -13,9 +13,10 @@ Click the third button in toolbar and select
 'Local Service' to define a service 
 Immediately select the tab named 'Resource' and add the location of
 the MonetDB JDBC driver, installed by default in
-C:\Program Files\MonetDB\share\MonetDB\lib\MonetDB_JDBC.jar.
+or
+@code{C:\Program Files\CWI\MonetDB\share\MonetDB\lib\monetdb-1.4-jdbc.jar}
 under Windows and and in
-/usr/share/MonetDB/lib/MonetDB_JDBC.jar
+@code{/usr/share/MonetDB/lib/monetdb-1.4-jdbc.jar }
 under Linux and OSX
 
 Go back to tab 'General' and enter the following items:
@@ -37,7 +38,7 @@ the user and password fields.
 
 In the @code{Tools>Service Manager>Resource} panel enter the
 location of the MonetDB JDBC driver
-@code{C:\Program Files\MonetDB\share\MonetDB\lib\MonetDB_JDBC.jar}.
+@code{C:\Program Files\CWI\MonetDB\share\MonetDB\lib\monetdb-1.4-jdbc.jar}
 
 Documentation and tutorial on iSQL-Viewer are available on their
 @url{ http://isqlviewer.com,website}.

@@ -28,12 +28,40 @@ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb co buildtools Mone
 This will create the directories buildtools, MonetDB5, monet5 and SQL in 
 your current working directory, which hold the sources for all three
 project packages. 
-See the readme file to install the buildtools first.
+
 MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
 @verbatim
 cvs -d :ext:<username>@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools MonetDB5 sql
 @end verbatim
 Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using @code{cvs}.
+
+@subsubsection Preparation
+The first package to install is @code{buildtools}, which contains
+supportive tools needed to build (parts of) the MonetDB suite.
+
+@verbatim
+Mx - The tool to extract sources and documentation from .mx files.
+mel - The MonetDB Extension Language tool.
+autogen - A tool to create Makefiles from Makefile.ag.
+burg - A tool to help produce parsers (only used in pathfinder).
+@end verbatim
+
+Mx is needed by many other packages and doesn't itself depend on
+anything else, so build Mx first.
+
+To build the various tools in one go (not on Windows with the
+Micorsoft tools, see below), simply first run the script
+@verbatim
+        ./bootstrap
+        ./configure [--prefix=<install-dir-prefix>]
+        make
+        make install
+@end verbatim
+
+The argument @code{<install-dir-prefix>} should be replaced
+by the path to the directory where you want the code to recide.
+The tool directories all have a file README with instructions for that
+tool, including how to compile on Windows.
 
 @menu
 * Linux Installation ::

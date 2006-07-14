@@ -7,7 +7,7 @@ on the schema and foreign keys.
 Free, personal use versions are available from their
 @url{http://www.minq.se/,website}.
 Download and install the software.
-The following scheme works for version 4.3.6 and version 5.0.
+The following scheme works for their versions 4.3.6 and 5.0.
 
 After starting DbVisualizer for the first time, it will load its
 default welcome screen.

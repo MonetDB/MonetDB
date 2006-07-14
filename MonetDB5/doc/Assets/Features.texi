@@ -157,6 +157,7 @@ It supports user defined functions in C.
 It supports triggers.
 @end itemize
 
+@ifset M5manual
 For the XQuery front-end:
 @itemize @bullet
 @item
@@ -164,6 +165,7 @@ The W3C XQuery standard is fully implemented.
 @item
 The XUpdate draft standard is being implemented.
 @end itemize
+@endif M5manual
 
 The software characteristics for the MonetDB packages are:
 @itemize @bullet
