@@ -28,7 +28,6 @@ The latest documentation can be downloaded as a single file for printing
 @url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual.pdf,single page manual} or
 @url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual-2x1.pdf,double page manual}.
 @end ifhtml
-@ifhtml
      
 @emph{Disclaimer} The reference manual and underlying source
 code base are still under development.
