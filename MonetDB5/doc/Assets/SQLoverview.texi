@@ -76,8 +76,7 @@ Under Windows, this client is already configured to directly contact
 the running server using @code{mjclient}.
 For Linux users we illustrate the actions taken behind the scene.
 
-The first action on Linux is to start the database server as described
-in @ref{Start and Stop the Server}.
+The first action on Linux is to start the database server:
 
 @example
 shell> monetdb --start --dbname=voc

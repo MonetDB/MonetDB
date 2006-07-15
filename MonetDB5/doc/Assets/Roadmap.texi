@@ -65,12 +65,13 @@ provided using table level locks.
 @node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Development Roadmap
 @subsection XQuery Roadmap
 The XQuery compiler is currently only available on MonetDB Version 4.
-It is based on the @url{http://pathfinder-xquery.org,Pathfinder} compiler project.
+It is based on the @url{http://pathfinder-xquery.org,Pathfinder} 
+compiler project.
 
 @node Embedded Server Roadmap, Server Roadmap, XQuery Roadmap, Development Roadmap
 @subsection Embedded MonetDB Roadmap
 The embedded MonetDB software family provides support for both
-SQL and Xquery (Version 4 only). The software has been tuned to
+SQL and XQuery (Version 4 only). The software has been tuned to
 run on small scale hardware platforms.
 
 A broader deployment of the embedded technology requires both 

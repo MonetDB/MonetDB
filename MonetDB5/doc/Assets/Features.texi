@@ -165,7 +165,7 @@ The W3C XQuery standard is fully implemented.
 @item
 The XUpdate draft standard is being implemented.
 @end itemize
-@endif M5manual
+@end ifset
 
 The software characteristics for the MonetDB packages are:
 @itemize @bullet
