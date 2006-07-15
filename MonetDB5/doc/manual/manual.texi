@@ -215,7 +215,8 @@ using the
 @node The MAL Optimizer, Optimizer Landscape, The MAL Interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_macro.bdy.texi
-@include mal_commonExpressions.bdy.texi
+@include mal_commonTerms.bdy.texi
+@include mal_constantExpression.bdy.texi
 @include mal_emptyset.bdy.texi
 @include mal_singleton.bdy.texi
 @include mal_peephole.bdy.texi
