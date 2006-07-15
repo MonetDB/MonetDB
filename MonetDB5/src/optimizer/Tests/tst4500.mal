@@ -1,6 +1,6 @@
 # Beware this is not the correct TPC-1, but a merely a test
 optimizer.setDebug();
-optimizer.commonExpressionRemoval();
+optimizer.commonTerms();
 optimizer.aliasRemoval();
 optimizer.deadCodeRemoval();
 #don;t depend on SQL library

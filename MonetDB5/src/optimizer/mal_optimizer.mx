@@ -64,7 +64,7 @@ should have done their work already. For example, it doesn;t make sense
 to perform a static evaluation unless you have already propagated the
 constants using Alias Removal.
 
-@emph{Scalar expressions (SXoptimizer)}
+@emph{Constant expressions (CSTXoptimizer)}
 Goal: to remove scalar expressions which need be evaluated once during the
 query lifetime.
 Rationale: static expressions appear 
@@ -77,7 +77,7 @@ Whether they should be removed depends on the expected re-use,
 which in most cases call for an explicit request upon query registration 
 to do so. The result of a static evaluation provides a ground for AR.
 Impact: relevant for stored queries (MAL functions)
-Prereq: AR, CX
+Prereq: AR, CT
 
 @emph{Relational Expression Optimizer (RXoptimizer)}
 Goal: to evaluate a relational plan using properties of BATs,
@@ -100,7 +100,7 @@ replaced by a single variable.
 Impact: medium
 
 
-@emph{Common Expression Optimizer (CXoptimizer)}
+@emph{Common Term Optimizer (CToptimizer)}
 Goal: to reduce the amount of work by avoiding calculation of the same
 operation twice.
 Rationale: to simplify code generation for front-ends, they do not have
@@ -272,7 +272,7 @@ Approach: Operator rewriting depends on properties. No general technique.
 The first implementation looks at calculator expressions such as they
 appear frequently in the RAM compiler.
 Impact: high
-Prerequisite: should be called after CXoptimizer to avoid clashes.
+Prerequisite: should be called after CToptimizer to avoid clashes.
 
 @emph{Code Inliner (CIoptimizer)}
 Goal: to reduce the calling depth of the interpreter and to obtain
@@ -322,14 +322,14 @@ them in a preferred order of deployment.
 @item Group A:
 @tab    Code Inliner (CIoptimizer)
 @item 
-@tab    Static expression evaluator. (SXoptimizer)
+@tab    Constant Expression Evaluator. (CSTXoptimizer)
 @item 
 @tab    Relational Expression Evaluator. (RXoptimizer)
 @item 
 @tab    Strength Reduction (SRoptimizer)
 
 @item Group B:
-@tab    Common Expression Optimizer (CXoptimizer)
+@tab    Common Term Optimizer (CToptimizer)
 @item 
 @tab    Query Evaluation Maps (QMoptimizer)
 
@@ -496,7 +496,7 @@ opt_export void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias
 opt_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -539,7 +539,7 @@ The optimizer terminates when no optimizer transformer call remains.
 Note, all optimizer instructions are executed only once. This means that the
 instruction can be removed from further consideration. However, in the case
 that a designated function is selected for optimization (e.g. 
-CXoptimizer(user,qry)) the pc is assumed 0. The first instruction always
+CToptimizer(user,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
 
 To safeguard against incomplete optimizer implementations it
@@ -1097,7 +1097,8 @@ of simple SQL rewrites using the module name as the discriminator.
 * Accumulator Evaluations::
 * Heuristic Rewrite Rules::
 * Macro Processing::
-* Common Sub-Expressions::
+* Common Terms::
+* Constant Expressions::
 * Empty Set Reduction::
 * Singleton Sets ::
 * Peephole Optimization::

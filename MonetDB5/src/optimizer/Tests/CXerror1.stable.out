@@ -61,30 +61,7 @@ end f1;	# 21
 #optimizer.commonExpressionRemoval("user", "f1");
 #
 !ERROR: 'a' may not be used before being set in f1[17]
-Optimizer mal.commonExpressions failed
-function user.f1():void;	# 0  (f1:void)
-# create bat 	# 1  (_1:str)
-    xxx := bat.new(:void,:dbl);	# 2 CMDBATnew (xxx:bat[:void,:dbl])<-(_3:void)(_4:dbl)
-    bat.setName(xxx,"xxx");	# 3 BKCsetName (_5:void)<-(xxx:bat[:void,:dbl])(_6:str)
-    bat.setPersistent(xxx,true);	# 4 BKCpersists (_7:void)<-(xxx:bat[:void,:dbl])(_8:bit)
-    transaction.commit();	# 5 TRNglobal_commit (_9:void)
-# check existance 	# 6  (_10:str)
-    xxx_1 := bbp.getNames();	# 7 CMDbbpNames (xxx_1:bat[:int,:str])
-    xxx_2 := bat.reverse(xxx_1);	# 8 BKCreverse (xxx_2:bat[:str,:int])<-(xxx_1:bat[:int,:str])
-    xxx_3 := algebra.exist(xxx_2,"xxx");	# 9 ALGexist (xxx_3:bit)<-(xxx_2:bat[:str,:int])(_6:str)
-# if it exists, print it 	# 10  (_14:str)
-barrier ifb := xxx_3;	# 11  (ifb:bit)<-(xxx_3:bit) jump 14
-    a := bbp.bind("xxx");	# 12 CMDbbpbind (a:bat[:any,:any])<-(_6:str)
-    io.print(a);	# 13 IOprint_val (_17:int)<-(a:bat[:any,:any])
-exit ifb;	# 14  (ifb:bit)
-# remove it 	# 15  (_18:str)
-## here, it becomes b := a; 	# 16  (_20:str)
-    bat.setPersistent(a,false);	# 17 BKCpersists (_21:void)<-(a:bat[:any,:any])(_22:bit)
-## but a might be not defined 	# 18  (_23:str)
-    transaction.commit();	# 19 TRNglobal_commit (_24:void)
-end f1;	# 20  
-!ERROR: 'a' may not be used before being set in f1[17]
-Optimizer commonExpressionRemoval failed
+Optimizer mal.commonTerms failed
 function user.f1():void;	# 0  (f1:void)
 # create bat 	# 1  (_1:str)
     xxx := bat.new(:void,:dbl);	# 2 CMDBATnew (xxx:bat[:void,:dbl])<-(_3:void)(_4:dbl)

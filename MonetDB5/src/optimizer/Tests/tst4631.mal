@@ -113,5 +113,5 @@ end qry1;
 
 optimizer.setDebug();
 optimizer.aliasRemoval("user","qry1");
-optimizer.commonExpressionRemoval("user","qry1");
+optimizer.commonTerms("user","qry1");
 mdb.list("user","qry1");

@@ -159,6 +159,8 @@ str QOTCRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		/* setLifespan(mb); they should do it themselves*/
 		optimizerInit();
 		CRKoptimizer(mb, stk, p);
+		optimizerCheck(mb,"crack",1,GDKusec()-clk);
+		removeInstruction(mb, p);
 		return MAL_SUCCEED;
 	}
 	if( stk != 0){

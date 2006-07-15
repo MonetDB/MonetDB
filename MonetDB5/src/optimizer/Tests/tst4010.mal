@@ -1,7 +1,7 @@
 # testing the library for unsafe instructions
 # bat C can still be shared with B
 optimizer.setDebug();
-optimizer.commonExpressionRemoval();
+optimizer.commonTerms();
 optimizer.aliasRemoval();
 b:= bat.new(:int,:int);
 c:= bat.new(:int,:int);

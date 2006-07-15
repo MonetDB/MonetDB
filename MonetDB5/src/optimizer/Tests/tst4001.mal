@@ -11,7 +11,7 @@ function qry(i:dbl):dbl;
 end qry;
 t0:= alarm.usec();
 optimizer.aliasRemoval("user","qry");
-optimizer.commonExpressionRemoval("user","qry");
+optimizer.commonTerms("user","qry");
 t1:= alarm.usec();
 t2:= t1-t0;
 io.print("execute");

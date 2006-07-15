@@ -22,4 +22,4 @@ function user.f1();
   bat.setPersistent(b,false);  ## but a might be not defined
   transaction.commit();
 end f1;
-optimizer.commonExpressionRemoval("user", "f1");
+optimizer.commonTerms("user", "f1");

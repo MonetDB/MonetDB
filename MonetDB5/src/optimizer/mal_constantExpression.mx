@@ -1,0 +1,182 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mal_constantExpression
+@a M. Kersten
+@-
+@node Constant Expressions, Empty Set Reduction, Common Terms, Optimizer Toolkit
+@- Constant Expression Evaluation
+Expressions produced by compilers involving only constant
+arguments can be evaluated once. It is particular relevant
+in functions that are repeatably called. One time queries
+would not benefit from this extra step.
+
+Consider the following snippet, which contains recursive
+use of constant arguments
+@verbatim
+a:= 1+1;        io.print(a);
+b:=2;           io.print(b);
+c:= 3*b;        io.print(c);
+d:= calc.flt(c);io.print(d);
+e:= mmath.sin(d);io.print(e);
+optimizer.aliasRemoval();
+optimizer.constantExpression();
+@end verbatim
+The code produced by the optimizer would be
+@verbatim
+    io.print(2);
+    io.print(2);
+    io.print(6);
+    io.print(6);
+    io.print(-0.279415488);
+@end verbatim
+@{
+@mal
+pattern optimizer.constantExpression():str
+address QOTCXoptimizer;
+pattern optimizer.constantExpression(mod:str, fcn:str):str
+address QOTCXoptimizer
+comment "Evaluate constant expressions once.";
+
+@h
+#ifndef _MAL_CX_
+#define _MAL_CX_
+#include "mal_optimizer.h"
+
+/* #define DEBUG_MAL_CX  */
+
+opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#endif
+
+
+@c  
+#include "mal_constantExpression.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_prelude.h"
+
+#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
+	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+
+#define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
+	getModuleId(X) && getModuleId(X)==M)
+
+/* find all algebra select structions in a mal block mb and change them to the corresponding crackers command
+    */
+static int
+CXallConstant(MalBlkPtr mb, InstrPtr p){
+	int i;
+
+	for( i= p->retc; i < p->argc; i++)
+		if( isConstant(mb, getArg(p,i)) == FALSE)
+			return FALSE;
+	return ( getModuleId(p) == calcRef || getModuleId(p) == mmathRef);
+}
+str
+CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr p;
+	int i, j, limit, done=0, again=0;
+	lng clk = GDKusec();
+	Client c= MCgetClient();
+	MalStkPtr env;
+
+	(void) stk;
+	(void) pci;
+
+	if( mb->errors) 
+		return MAL_SUCCEED;
+
+#ifdef DEBUG_MAL_CX
+	stream_printf(GDKout,"Constant expression optimizer started\n");
+#endif
+	limit = mb->stop;
+	
+	do{
+		again = 0;
+		env= prepareMALstack(mb);
+		env->keepAlive= TRUE;
+		for (i = 0; i < limit; i++) {
+			p = getInstrPtr(mb,i);
+			if( p->argc - p->retc > 0 )
+				j = CXallConstant(mb,p);
+			else j = 0;
+#ifdef DEBUG_MAL_CX
+			stream_printf(GDKout,"Constants:%d\n",j);
+			printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
+#endif
+			if( j && p->retc== 1 && p->barrier == 0 &&
+				reenterMAL(c,mb,i,i+1,env,0,0) == MAL_SUCCEED){
+				j= defConstant(mb,getArgType(mb,p,0), &env->stk[getArg(p,0)]);
+				p->token= ASSIGNsymbol;
+				getFunctionId(p)=0;
+				getModuleId(p)=0;
+				getArg(p,1)= j;
+				p->argc = 2;
+#ifdef DEBUG_MAL_CX
+				stream_printf(GDKout,"Evaluated new constant=%d\n",j);
+#endif
+				done++;
+				again++;
+			}
+		}
+		if( again )
+			ARoptimizer(mb,0,0);
+	} while( again );
+	clearStack(env);	/* garbage collect */
+	freeStack(env);
+	optimizerCheck(mb, "optimizer.constantExpression", 1, GDKusec() - clk);	
+	return MAL_SUCCEED;
+}
+@- Optimizer code wrapper
+A template approach to call the optimizer with or without
+arguments and to administer the result.
+@c
+mal_export str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+
+	optimizerInit();
+	removeInstruction(mb, p);
+	if( p->argc > 1){
+		if( stk != 0){
+			modnme= (str)getArgValue(stk,p,1);
+			fcnnme= (str)getArgValue(stk,p,2);
+		} else {
+			modnme= getArgDefault(mb,p,1);
+			fcnnme= getArgDefault(mb,p,2);
+		}
+		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
+		if( scope)
+			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+		if( s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+			return throwMessage("optimizer.constantExpression",buf);
+		}
+		if( s->def->errors == 0)
+			CXoptimizer(s->def,0,0);
+	} else 
+			CXoptimizer(mb,0,0);
+	
+	return MAL_SUCCEED;
+}
+@}

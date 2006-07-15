@@ -14,15 +14,15 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_commonExpressions
+@f mal_commonTerms
 @a M. Kersten
 @{
 @mal
-pattern optimizer.commonExpressionRemoval():str
-address QOTCXoptimizer;
-pattern optimizer.commonExpressionRemoval(mod:any_1, fcn:any_2):str
-address QOTCXoptimizer
-comment "Common subexpression optimizer"
+pattern optimizer.commonTerms():str
+address QOTCToptimizer;
+pattern optimizer.commonTerms(mod:any_1, fcn:any_2):str
+address QOTCToptimizer
+comment "Common sub-expression optimizer"
 @h
 #ifndef _MAL_STRENGTHREDUCTION_
 #define _MAL_STRENGTHREDUCTION_
@@ -30,23 +30,23 @@ comment "Common subexpression optimizer"
 
 /* #define DEBUG_MAL_OPTIMIZER     show partial result */
 
-opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
-#include "mal_commonExpressions.h"
+#include "mal_commonTerms.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_prelude.h"
 @}
 @-
-@node Common Sub-Expressions ,Empty Set Reduction, Macro Processing,   Optimizer Toolkit
+@node Common Terms, Constant Expressions, Macro Processing,   Optimizer Toolkit
 @- Common Subexpression Elimination
 Common subexpression elimination merely involves a scan through the 
 program block to detect re-curring statements.
 The key problem to be addressed is to make sure that the parameters involved
 in the repeatative instruction are invariant. 
 
-The analysis of @code{optimizer.commonExpressionRemoval()}
+The analysis of @code{optimizer.commonTerms()}
 is rather crude. All functions with possible side-effects on
 their arguments should have been marked as 'unsafe'.
 Their use within a MAL block breaks the dataflow graph for all 
@@ -68,7 +68,7 @@ we haven;t passed a safety barrier.
     l:= k1+k2;
     l2:= k1+k2;
     l3:= l2+k1;
-    optimizer.commonExpressionRemoval();
+    optimizer.commonTerms();
 @end verbatim
 is translated into the code block where the first two instructions 
 are not common, because they have side effects.
@@ -95,7 +95,7 @@ Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
 @c
 str
-CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k;
 	InstrPtr p, q;
@@ -104,7 +104,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	if( mb->errors) {
-		/* remove the CXoptimizer request */
+		/* remove the CToptimizer request */
 		if (pci)
 			removeInstruction(mb, pci);
 		return MAL_SUCCEED;
@@ -161,29 +161,28 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 	      nxtCommonSubExpression:;
 	}
-	/* remove the CXoptimizer request */
+	/* remove the CToptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "mal.commonExpressions", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.commonTerms", actions, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
 
 @- Optimizer code wrapper
 @c
-mal_export str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+mal_export str QOTCToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTCToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str	modnme;
 	str	fcnnme;
 	Module  scope=NULL;
 	Symbol s= NULL;
 	Client c= MCgetClient();
-	lng clk= GDKusec();
 
 	/* handle the empty argument list */
 	if( p->argc== 1){
 		/* setLifespan(mb); they should do it themselves*/
 		optimizerInit();
-		CXoptimizer(mb, stk, p);
+		CToptimizer(mb, stk, p);
 		return MAL_SUCCEED;
 	}
 	if( stk != 0){
@@ -200,15 +199,15 @@ str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( s == NULL) {
 		char buf[1024];
 		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("commonExpressionRemoval.optimizer",buf);
+		return throwMessage("commonTerms.optimizer",buf);
 	}
 	
 	if( s->def->errors == 0){
 		optimizerInit();
-		CXoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"commonExpressionRemoval",1,GDKusec()-clk);
+		CToptimizer(s->def,0,0);
 	}
-	removeInstruction(mb, p);
+	if( p) 
+		removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
 @}
