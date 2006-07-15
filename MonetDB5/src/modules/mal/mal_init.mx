@@ -54,6 +54,7 @@ include bat;
 include batExtensions;
 include pcre;
 include algebra;
+include algebraExtensions;
 include calc;
 include status;
 include group;
@@ -89,7 +90,8 @@ include statistics;
 include optimizer;
 # here follows all the optimizer modules
 include mal_optimizer;
-include mal_commonExpressions;
+include mal_commonTerms;
+include mal_constantExpression;
 include mal_costmodel;
 include mal_emptyset;
 include mal_factorize;
