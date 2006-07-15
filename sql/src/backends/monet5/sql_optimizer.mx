@@ -109,6 +109,7 @@ factory structures.
 #include "mal_debugger.h"
 #include "mal_namespace.h"
 #include "mal_reduce.h"
+#include "mal_crack.h"
 #include "mal_multiplex.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
@@ -311,9 +312,10 @@ care of.
 			optimizerCheck(mb,"sql.baseline",-1,0);
 		COoptimizer(mb,0,0);	/* coercions */
 		ARoptimizer(mb, 0, 0);	/* alias removal */
-		CXoptimizer(mb,0,0);	/* common expressions */
+		CToptimizer(mb,0,0);	/* common terms */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		MRoptimizer(mb,0,0);	/* reduce stack space */
+		CRKoptimizer(mb,0,0);
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
 		/* no optimization needed */
 	} else if( optimizer ){
