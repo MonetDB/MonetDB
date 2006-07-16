@@ -156,10 +156,12 @@ using the
 
 @node MonetDB/SQL Features, Session Variables, SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
-@node Overlaying the BAT storage, XQuery, Optimizer Control,  MonetDB/SQL Features
+@node Overlaying the BAT storage, SQL Dump and Restore, Optimizer Control,  MonetDB/SQL Features
 @include Assets/SQLoverlay.texi
+@node  SQL Dump and Restore, XQuery, Overlaying the BAT storage, SQL
+@include Assets/SQLdump.texi
 
-@node XQuery, Programming Interfaces, Overlaying the BAT storage, Top
+@node XQuery, Programming Interfaces, SQL Dump and Restore, Top
 @include Assets/XQueryOverview.texi
 
 @node Programming Interfaces, The Mapi Library, XQuery, Top

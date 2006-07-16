@@ -100,7 +100,7 @@ using the
 @node Checkpoint and Recovery, Database Dumps, Database Configuration, General Introduction
 @include Assets/Checkpoints.texi
 
-@node Database Dumps, Client Interfaces , Checkpoint and Recovery, General Introduction
+@node Database Dumps, Client Interfaces, Checkpoint and Recovery, General Introduction
 @include Assets/Databasedump.texi
 
 @node Client Interfaces, Data Management Tools, Database Dumps, Top
@@ -140,10 +140,12 @@ using the
 
 @node MonetDB/SQL Features, Session Variables , SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
-@node Overlaying the BAT storage, Programming Interfaces, Optimizer Control,  MonetDB/SQL Features
+@node Overlaying the BAT storage, SQL Dump and Restore , Optimizer Control,  MonetDB/SQL Features
 @include Assets/SQLoverlay.texi
+@node SQL Dump and Restore, Programming Interfaces, Overlaying the BAT storage, SQL
+@include Assets/SQLdump.texi
 
-@node Programming Interfaces, The Mapi Library, Overlaying the BAT storage, Top
+@node Programming Interfaces, The Mapi Library, SQL Dump and Restore, Top
 @include Assets/APIs.texi
 @node The Mapi Library, An Example, Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
