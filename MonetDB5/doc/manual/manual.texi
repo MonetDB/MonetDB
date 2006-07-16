@@ -148,10 +148,10 @@ using the
 @node SQL, Getting Started with SQL, Backward Compatibility, Top
 @include Assets/SQLoverview.texi
 
-@node The VOC Tutorial, SQL Language, Getting Started with SQL, SQL
+@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL
 @include Assets/VOCtutorial.texi
 
-@node SQL Language, SQL Preface, The VOC Tutorial, SQL
+@node Language Overview, Preface, The VOC Tutorial, SQL
 @include Assets/SQLlanguage.texi
 
 @node MonetDB/SQL Features, Session Variables, SQL Transactions, SQL
