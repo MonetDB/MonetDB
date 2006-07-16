@@ -134,7 +134,7 @@ CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					!isUpdated(mb, i) && 
 					!hasCommonResults(p, q) && 
 					!hasSideEffects(p, TRUE) &&
-					allArgumentsVisible(mb,j,i)
+					allTargetsVisible(mb,j,i) 
 					) {
 #ifdef DEBUG_MAL_OPTIMIZER
 					if (MCgetClient()->debugOptimizer) {

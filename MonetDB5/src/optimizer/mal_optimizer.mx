@@ -515,6 +515,7 @@ opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
+opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
 
 @}
 @-
@@ -732,17 +733,51 @@ isDependent(InstrPtr p, InstrPtr q){
 }
 @-
 See is all arguments mentioned in the instruction at point pc
-are still visible at instruction qc.
+are still visible at instruction qc and have not been updated
+in the mean time.
+Take into account that variables may be declared inside
+a block. This can be calculated using the BARRIER/CATCH
+and EXIT pairs.
 @c
+int
+countBlocks(MalBlkPtr mb, int start, int stop){
+	int i,cnt =0;
+	InstrPtr p;
+	for(i= start; i< stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( p->barrier == BARRIERsymbol || p->token== CATCHsymbol)
+			cnt++;
+		if ( p->barrier == EXITsymbol )
+			cnt--;
+	}
+	return cnt;
+}
 int
 allArgumentsVisible(MalBlkPtr mb, int pc,int qc){
 	int i;
 	InstrPtr p;
 
+	if( countBlocks(mb,pc,qc) )
+		return FALSE;
 	p= getInstrPtr(mb,pc);
 	for(i=p->retc; i< p->argc; i++){
 		VarPtr v = getVar(mb, getArg(p,i));
-		if( ! (v->beginLifespan <= qc && qc<=v->endLifespan))
+		if( v->lastUpdate > v->beginLifespan && qc > v->lastUpdate)
+			return FALSE;
+	}
+	return TRUE;
+}
+int
+allTargetsVisible(MalBlkPtr mb, int pc,int qc){
+	int i;
+	InstrPtr p;
+
+	if( countBlocks(mb,pc,qc) )
+		return FALSE;
+	p= getInstrPtr(mb,pc);
+	for(i=0; i < p->retc; i++){
+		VarPtr v = getVar(mb, getArg(p,i));
+		if( v->lastUpdate > v->beginLifespan && qc > v->lastUpdate)
 			return FALSE;
 	}
 	return TRUE;
