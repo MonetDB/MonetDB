@@ -35,6 +35,7 @@ The number of clients permitted concurrent access is
 a compile time option. The console is the first and is always present.
 It reads from standard input and writes to standard output.
 
+@{
 Client records are linked into a hierarchy, where the top record
 denotes the context of the Monet administrator. The next layer
 is formed by a database administrator and the third layer contains
@@ -43,6 +44,7 @@ This hierachy is used to share and constrain resources, such
 as global variables or references to catalogue information.
 During parallel execution additional layers may be constructed.
 [This feature needs more implementation support]
+@}
 
 @{
 The routines defined below provide management of the client

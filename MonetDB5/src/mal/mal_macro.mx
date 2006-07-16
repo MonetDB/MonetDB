@@ -17,7 +17,7 @@
 @f mal_macro
 @a M. L. Kersten
 @-
-@node Macro Processing, Common Sub-Expressions, Heuristic Rewrite Rules, Optimizer Toolkit
+@node Macro Processing, Common Terms, Heuristic Rewrite Rules, Optimizer Toolkit
 @- Macro Processing
 Two optimizers are based on MAL macro expansion and contraction.
 The former involves replacing individual instructions by a block of

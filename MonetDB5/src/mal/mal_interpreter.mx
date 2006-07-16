@@ -46,6 +46,7 @@ typedef struct{
 /*#define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
 mal_export void showErrors(void);
+mal_export MalStkPtr prepareMALstack(MalBlkPtr mb);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
 	    MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
@@ -63,6 +64,8 @@ mal_export ptr getArgValue(MalStkPtr stk,
 mal_export ptr getArgReference(MalStkPtr stk, 
 	    InstrPtr pci, int k);
 mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
+
+#define VALcopy2(lhs,rhs) if( (rhs)->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
@@ -73,7 +76,6 @@ mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
 @c
-#define VALcopy2(lhs,rhs) if( rhs->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 
 ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	int j=0;
@@ -162,6 +164,30 @@ void showErrors() {
 	}
 }
 
+MalStkPtr
+prepareMALstack(MalBlkPtr mb){
+	MalStkPtr stk= NULL;
+	int i;
+	ValPtr lhs,rhs;
+
+	stk= newGlobalStack(mb->vsize);
+	memset((char *) stk, 0, stackSize(mb->vtop));
+	stk->stktop= mb->vtop; 
+	stk->stksize= mb->vsize;
+	stk->blk= mb;
+
+	for(i= 1; i< mb->vtop; i++)
+	if( isConstant(mb,i) > 0 ){
+	    lhs = &stk->stk[i];
+	    rhs = &getVarConstant(mb,i);
+	    VALcopy2(lhs,rhs);
+	} else {
+	    lhs = &stk->stk[i];
+		lhs->vtype = getVarGDKType(mb,i);
+	}
+	return stk;
+}
+
 str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, 
 	   MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
@@ -202,7 +228,7 @@ being called.
 	    }
 	    pci= pcicaller;
 	} else {
-	    newStack(stk,mb->vsize);
+		newStack(stk,mb->vsize);
 		memset((char *) stk, 0, stackSize(mb->vtop));
 		stk->stktop= mb->vtop; 
 		stk->stksize= mb->vsize;

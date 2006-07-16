@@ -15,12 +15,13 @@
 @' All Rights Reserved.
 @-
 The textual interface to the MonetDB server also supports a limited
-form of online help commands and the readline key-binding '<TAB><TAB>'. 
+form of online help commands.
+ @c and the readline key-binding '<TAB><TAB>'. 
 The argument is a (partial) operator call,
 which is looked up in the symbol table.
 If the pattern includes a '(' it also
 displays the signature for each match.
-The @code{address} and @code{address} attributes
+The @code{argument types} and @code{address} attributes
 are also shown if the call contains the closing bracket ')'.
 @example
 >manual.completion("bat.is");
@@ -37,21 +38,12 @@ command bat.isSorted(b:bat[:any_1,:any_2]):bit
 >manual.help("bat.isSorted()");
 command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
 Returns whether a BAT is ordered on head or not.
->manual.search("isSorted()");
-command bat.isSortedReverse(b:bat[:any_1,:any_2]):bit address BKCisSortedReverse;
-Returns whether a BAT is ordered on head or not.
-command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
-Returns whether a BAT is ordered on head or not.
 @end example
-
-Keyword based lookup is supported by the operation @code{manual.search};
-Additional routines are available in the @code{inspect}
-module to built reflexive code.
 
 The module and function names can be replaced by the 
 wildcard character '*'. General regulat pattern matching is not supported.
 @example
-> *.print(<TAB><TAB>
+> manual.completion("*.print()");
 command color.print(c:color):void
 pattern array.print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...):void
 pattern io.print(b1:bat[:any_1,:any]...):int
@@ -60,6 +52,10 @@ pattern io.print(val:any_1):int
 pattern io.print(val:any_1,lst:any...):int
 pattern io.print(val:bat[:any_1,:any_2]):int
 @end example
+
+Keyword based lookup is supported by the operation @code{manual.search};
+Additional routines are available in the @code{inspect}
+module to built reflexive code.
 
 @{
 For console input the @code{readline} library linked with
