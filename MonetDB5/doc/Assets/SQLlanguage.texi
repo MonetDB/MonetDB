@@ -1,21 +1,21 @@
-@section SQL Language 
+@section Language Overview
 The MonetDB/SQL language follows the SQL-2003 specification. This section
 introduces the language components supported in the current and upcoming
 releases.
 
 @menu
-* SQL Preface::
-* SQL Comments ::
-* SQL Data Definition ::
-* SQL Data Types::
-* SQL Data Manipulation ::
-* SQL Schema Definition::
-* SQL Users:: 
+* Preface::
+* Comments ::
+* Data Definition ::
+* Data Types::
+* Data Manipulation ::
+* Schema Definition::
+* Users:: 
 * SQL Transactions::
 @end menu
 
-@node SQL Preface, SQL Comments, SQL Language , SQL Language
-@subsection SQL Preface
+@node Preface, Comments, Language Overview ,  Language Overview
+@subsection Preface
 We use the following notation to explain the supported variation SQL.
 The SQL syntax is summarized in extended BNF. Alternative constructs 
 are separated by | and grouped by parentheses. Optional parts are 
@@ -50,9 +50,9 @@ Character sets
 SQL User Defined Types 
 @end itemize
 
-@node SQL Comments, SQL Data Definition, SQL Preface, SQL Language
+@node Comments, Data Definition, Preface, Language Overview
 
-@subsection SQL Comments
+@subsection Comments
 Comments can be added to query scripts for documentation purposes.
 MonetDB/SQL supports two forms of comments. Any text beginning with '- -'
 and up to the end of line is ignored. Furthermore, C-style comments
@@ -67,8 +67,8 @@ sql>select /* ignore this */ 3;
 [ 3     ]
 @end example
 
-@node SQL Data Definition, SQL Data Types, SQL Comments, SQL Language
-@subsection SQL Data Definition
+@node Data Definition, Data Types, Comments, Language Overview
+@subsection Data Definition
 @subsubsection Create Table
 
 The parser currently supports the full <table scope> specifier, but the 
@@ -369,8 +369,8 @@ the system it is only open to the ADMIN_ROLE.
 
 @end verbatim
 
-@node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
-@subsection SQL Data Types
+@node Data Types, Data Manipulation, Data Definition, Language Overview
+@subsection Data Types
 MonetDB/SQL supports the following list of types. 
 
 @multitable {VARCHAR (L) | CHARACTER VARYING (L) :} {special 64 bit integer (sequence generator)}
@@ -406,14 +406,14 @@ MonetDB/SQL supports the following list of types.
 @c @item MULTISET
 @end multitable
 
-@node SQL Data Manipulation, SQL Schema Definition, SQL Data Types, SQL Language
-@subsection SQL Data Manipulation
+@node Data Manipulation, Schema Definition, Data Types, Language Overview
+@subsection Data Manipulation
 
-@node SQL Schema Definition, SQL Users, SQL Data Manipulation, SQL Language
-@subsection SQL Schema Definition
+@node Schema Definition, Users, Data Manipulation, Language Overview
+@subsection Schema Definition
 
-@node SQL Users, SQL Transactions, SQL Schema Definition, SQL Language
-@subsection SQL Users
+@node Users, SQL Transactions, Schema Definition, Language Overview
+@subsection Users
 
-@node SQL Transactions, MonetDB/SQL Features, SQL Users, SQL Language
+@node SQL Transactions, MonetDB/SQL Features, Users, Language Overview
 @subsection SQL Transactions
