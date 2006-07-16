@@ -1,4 +1,5 @@
-This section helps you to install MonetDB on a native Windows system (NT, 2000, XP).
+This section helps you to install and compile MonetDB on a Windows system 
+using the Microsoft Visual compiler.
 
 @subsubsection Prerequisites
 @itemize
@@ -40,7 +41,8 @@ This section helps you to install MonetDB on a native Windows system (NT, 2000, 
     does not find its own "bison.simple" file, which it expects to
     be in "/usr/share/bison/bison.simple"
     (aka. "\usr\share\bison\bison.simple").
-    Beside some tools used by Mtest.py for testing MonetDB (see
+    
+	In addition to some tools used by Mtest.py for testing MonetDB (see
     below), UnxUtils provide the lexical analyzer generator "flex"
     and the parser generator "bison", which are required to compile
     MonetDB.
@@ -67,6 +69,69 @@ This section helps you to install MonetDB on a native Windows system (NT, 2000, 
 	the installation about 20 MB (not including any databases).
 @end itemize
 
+@subsubsection Optional Software
+
+@itemize
+@item PHP
+Download the Windows binaries in a zip package (i.e. not the
+Windows installer) and the source package of PHP 5 from
+http://www.php.net/.  Unzip the binaries into
+e.g. ``C:\php-5`` (for PHP-5, the zip file does not contain a
+top-level directory, so create a new directory,
+e.g. ``C:\php-5``, and unzip the files there--for PHP-4, the
+zip file does contain a top-level directory, so you can unzip
+directly into ``C:\``).  In any case, make sure there are no
+spaces in the path chosen.  Also extract the sources
+somewhere, e.g. in a directory parallel to MonetDB.  If you
+don't use ``C:\php-5`` for the binaries or you don't extract
+the sources into ``php-5.1.4`` in the same directory where
+MonetDB is extracted, you will have to edit MonetDB's
+``NT\rules.msc`` to change the cariables ``PHP_SRCDIR`` and
+``PHP_INSTDIR`` to reflect this.  Make sure there are no
+spaces in these two path names.  Also note that the paths are
+only used from inside the ``NT\src\mapi\clients\php`` folder,
+so if they are relative, they have to be relative from there.
+In order to get MonetDB to compile with these sources, it was
+necessary to remove the line ``#include "arpa/inet.h"`` from
+the file ``main\php_network.h``.  When compiling MonetDB, add
+the flag ``HAVE_PHP=1`` to the ``nmake`` command line.  Note
+that only PHP version 5.1.4 has been tried recently.
+
+@item Pear:
+Pear is the PHP Extension and Application Repository.  At the
+MonetDB side of things, nothing more than what is described
+for PHP needs to be done.  PEAR support is automatically
+enabled.
+
+@item Java:
+The Java SDK (JDK) can be found at http://java.sun.com/.
+After installing, make sure that the directory with java.exe
+and javac.exe are in your ``PATH`` environment variable, and
+then compile MonetDB with the additional flag ``HAVE_JAVA=1``
+on the ``nmake`` command line.
+@end itemize
+
+@subsubsection Getting the Software
+This command should be done once.  It records a password on the local
+machine to be used for all subsequent CVS accesses with this
+repository.
+
+@example
+cvs -d:pserver:anonymous@@monetdb.cvs.sourceforge.net:/cvsroot/monetdb login
+@end example
+
+Just type RETURN when asked for the password.  The actual steps depend
+on your CVS tool, e.g. in WinCVS you have to set the Admin
+preferences.  Then get the software by using the command::
+
+@example
+ cvs -d:pserver:anonymous@@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
+@end example
+
+This will create a directory MonetDB in your current working directory.
+
+Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using @code{cvs}.
+
 @subsubsection Compiling
 Open a Windows command shell or a UnxUtils shell and go to the
 top-level directory of MonetDB.
@@ -78,9 +143,13 @@ Pthreads), and \usr\local\wbin are in the PATH of your command shell.
 When all prerequisites have been satisfied, you type
 @example
 cd NT
-nmake
+nmake NEED_MX=1
 @end example
-to compile the source code.  
+to compile the source code.  If you want to compile with Java and PHP
+support, the command is
+@example
+nmake HAVE_JAVA=1 HAVE_PHP=1
+@end example
 If nmake went successfully, you can try
 @example
 nmake check
@@ -93,9 +162,20 @@ shows the test results.  An explanation of the test results can be found
 in XXX--to be filled in.
 Testing takes about 46 MB of disk space in the build directory.
 
+@subsubsection Installing
+Give the command
+
+@example
+nmake install
+@end example
+
+By default this will install MonetDB to ``<sourcedir>\NT\`` where
+``<sourcedir>`` is the top-level directory of MonetDB source tree.  The
+current version does not provide any means to change this default.
+
 @subsubsection Testing the Installation
-Make sure that ...\NT\bin, ...\NT\lib, and
-...\NT\lib\MonetDB are in your PATH.
+Make sure that @code{<sourcedir>\NT\bin},  @code{<sourcedir>\NT\lib}, and
+@code{<sourcedir>\NT\lib\MonetDB} are in your PATH.
 In the MonetDB top-level directory issue the command
 @example
 Mtest.py -r
@@ -106,13 +186,75 @@ was filled by the nmake install command.)
 This should produce much the same output as nmake check above, but uses
 the installed version of MonetDB.
 
-@subsubsection Documentation
+@subsubsection Usage
 
-The documentation starts in ...\NT\doc\MonetDB.html
-NOTE: the current 'nmake install' does not yet generate this
-documentation automatically. 
-To do this manually, 
-in the top-level directory of the MonetDB build tree call
+There are two alternatives to use MonetDB interactively.  In both
+cases, you first need to make sure, that your environment is set as
+described above.
+
+If you're "in a hurry", you can then simply start
+
+@ifset M5manual
 @example
-nmake html
+mserver5
 @end example
+and you get the "server console", where you can type you commands.
+The server console is mainly meant for administrative use, hence there
+are no conveniences such as commandline editing or command history.
+
+For a more convenient interface, you should use the @code{mclient}.
+To do so, start the server  and
+then, in a second shell, set up the same environment and start 
+@code{mclient}
+
+You now have a text-based MAL interface that supports
+commandline editing and a commandline history.  The latter can even be
+stored persistently to be re-used after stopping and restarting
+mclient; see
+
+@example
+ mclient --help
+@end example
+for details.
+@end ifset
+
+@ifclear M5manual
+@example
+Mserver
+@end example
+
+and you get the "server console", where you can type you commands.
+The server console is mainly meant for administrative use, hence there
+are no conveniences such as commandline editing or command history.
+
+For a more convenient interface, you should use the ``MapiClient``
+with the Mserver. To do so, first start an Mserver with MAPI (MonetDB
+Application Programmer's Interfaces) support as follows::
+
+@example
+Mserver --dbinit="module(mapi); mapi_start();"
+@end example
+
+
+Then, in a second shell, set up the same environment and start the
+MapiClient::
+@example
+ MapiClient
+@end example
+
+With MapiClient, you get a text-based MIL interface that supports
+commandline editing and a commandline history.  The latter can even be
+stored persistently to be re-used after stopping and restarting
+MapiClient; see
+
+@example
+ MapiClient --help
+@end example
+
+for details.
+@end ifclear
+
+@subsubsection Alternative builds
+It is also possible to compile MonetDB using MinGW (Minimalist GNU for
+Windows) on Windows.  See the documentation in the source distribution.
+

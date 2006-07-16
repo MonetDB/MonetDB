@@ -58,6 +58,7 @@ features to analyse your SQL code.
 * The VOC Tutorial::
 * SQL Language ::
 * MonetDB/SQL Features::
+* SQL Dump and Restore::
 @end menu
 
 @node Getting Started with SQL, The VOC Tutorial, SQL, SQL

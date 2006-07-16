@@ -10,59 +10,6 @@ Older versions are not actively maintained by the development team.
 
 Set up of a fully functional system requires downloading
 a MonetDB server package and either/both the SQL and XQuery packages.
-The steps to be taken are described for installing the server
-only, because installing the other packages largely follow
-the same steps. The deviances are explained at the end of this section.
-
-The development version can be obtained from the CVS repository at SourceForge.
-You have to login to the CVS server first:
-@verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
-@end verbatim
-Just type RETURN when asked for the password.
-Then get the buildtools, MonetDB and SQL module sources using the command:
-@verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb co buildtools MonetDB monet5 sql
-@end verbatim
-
-This will create the directories buildtools, MonetDB5, monet5 and SQL in 
-your current working directory, which hold the sources for all three
-project packages. 
-
-MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
-@verbatim
-cvs -d :ext:<username>@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools MonetDB5 sql
-@end verbatim
-Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using @code{cvs}.
-
-@subsubsection Preparation
-The first package to install is @code{buildtools}, which contains
-supportive tools needed to build (parts of) the MonetDB suite.
-
-@verbatim
-Mx - The tool to extract sources and documentation from .mx files.
-mel - The MonetDB Extension Language tool.
-autogen - A tool to create Makefiles from Makefile.ag.
-burg - A tool to help produce parsers (only used in pathfinder).
-@end verbatim
-
-Mx is needed by many other packages and doesn't itself depend on
-anything else, so build Mx first.
-
-To build the various tools in one go (not on Windows with the
-Micorsoft tools, see below), simply first run the script
-@verbatim
-        ./bootstrap
-        ./configure [--prefix=<install-dir-prefix>]
-        make
-        make install
-@end verbatim
-
-The argument @code{<install-dir-prefix>} should be replaced
-by the path to the directory where you want the code to recide.
-The tool directories all have a file README with instructions for that
-tool, including how to compile on Windows.
-
 @menu
 * Linux Installation ::
 * Windows Installation ::

@@ -30,12 +30,14 @@ for common errors and some advice on how to proceed.
 @node Software Versions, Standard Distribution, Download and Installation, Download and Installation
 @subsection Software Versions
 The MonetDB product family consists of several related packages.
-The version identities and their dependencies is kept
+The versions and their dependencies is described at the
+download site kept
 at @url{http://sourceforge.net/projects/monetdb,SourceForge}.
 
-This manual, however, is written in the context of preparing the
-launch of MonetDB Version 5. It works with the SQL version 2.10, but
-there is currently no XQuery front-end available.
+These packages should be installed in the proper order, 
+starting with the @code{buildtools}, followed by the MonetDB Version 4
+kernel, the Version 5 kernel wrapper (@emph{optional!}), and then the
+front-end compilers SQL and XQuery.
 
 @c software portability issues
 From its inception, the MonetDB software has been designed to
