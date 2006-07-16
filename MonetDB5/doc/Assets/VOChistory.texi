@@ -1,4 +1,4 @@
-@subsection Historical Background on the VOC
+@section Historical Background on the VOC
 For your convenience,
 we give here a short histororical background and interpretation of what
 to find in this database.
