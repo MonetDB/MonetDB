@@ -176,19 +176,19 @@ The operators @{ +, -, *, /, % @} are handled here.
 The macro expects three parameters, two input atomic types and a result type. 
 @mal
 command %(left:chr, right:int) :int 
-address CALCbinaryMODchrint;
+address CALCbinarycheckMODchrint;
 command %(left:sht, right:int) :int 
-address CALCbinaryMODshtint;
+address CALCbinarycheckMODshtint;
 command %(left:int, right:int) :int 
-address CALCbinaryMODintint;
+address CALCbinarycheckMODintint;
 command %(left:lng, right:int) :int 
-address CALCbinaryMODlngint;
+address CALCbinarycheckMODlngint;
 command %(left:lng, right:lng) :lng 
-address CALCbinaryMODlnglng;
+address CALCbinarycheckMODlnglng;
 command %(left:int, right:chr) :chr 
-address CALCbinaryMODintchr;
+address CALCbinarycheckMODintchr;
 command %(left:int, right:sht) :sht 
-address CALCbinaryMODintsht;
+address CALCbinarycheckMODintsht;
 
 command +(l:str,r:str):str
 address CALCstrConcat
