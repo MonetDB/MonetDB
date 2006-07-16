@@ -65,6 +65,7 @@ opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @c  
 #include "mal_constantExpression.h"
+#include "mal_stack.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_prelude.h"
