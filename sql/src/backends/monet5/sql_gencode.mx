@@ -1136,7 +1136,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q,0)= e;
 			q->argc= q->retc=1;
 			q->barrier= EXITsymbol;
+			break;
 
+		case st_return:
+			int c;
+			c= _dumpstmt(sql,mb, s->op1.stval);
+			q= newAssignment(mb);
+			pushArgument(mb,q,c);
+			q->barrier= RETURNsymbol;
+			break;
 that's it */
 case st_Nop:{
 node *n;
