@@ -102,15 +102,15 @@ address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
 		user provided #bits in hashmask and #distinct values in range.";
 
-command derive(map:bat[:any_1,:oid], histo:bat[:any_1,:int], attr:bat[:any_1,:any_2])
+command derive(hist:bat[:any_1,:int], map:bat[:any_1,:oid], attr:bat[:any_1,:any_2])
 	(histo:bat[:any_1,:int],grp:bat[:any_1,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
 		identical as in 'ct'. Tail values are from the same domain and 
 		indicate further refinement of the groups in 'ct', taking into 
 		account also the tail-values in 'attr'.";
-command derive(map:bat[:void,:oid], hist:bat[:void,:int], attr:bat[:oid,:any_2])
-	(histo:bat[:oid,:int],grp:bat[:oid,:oid]) 
+command derive(histo:bat[:void,:int], map:bat[:void,:oid], attr:bat[:oid,:any_2])
+	(hist:bat[:oid,:int],grp:bat[:oid,:oid]) 
 address GRPderive;
 
 command refine(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
@@ -226,7 +226,7 @@ macros identical to file names.
 #define _GROUP_H_
 #include "gdk.h"
 
-extern int CTderive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b);
+extern int CTderive(BAT **B, BAT **H, BAT *ct_hist, BAT *ct_map, BAT *b);
 extern int CTgroup(BAT **B, BAT **H, BAT *b);
 
 #endif /* _GROUP_H_ */
@@ -628,7 +628,7 @@ bits(int i)
 
 @= derive
 BAT *
-CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
+CTderive_@1_@2_@5(BAT* ct_histo, BAT *ct_map, BAT *b, BAT *bn, map_T *m)
 {
 	oid *dst = (oid*) BUNfirst(bn);
 	size_t yy = BUNsize(ct_map), zz, mapsize;
@@ -721,24 +721,24 @@ bunins_failed:
 	/* Choose appropriate (@1 && @2) CTderive implementation */
 	switch(tt) {
 	case TYPE_chr:
-		histo = CTderive_@1_chr_@2(ct_map,ct_histo,b,bn,m);
+		histo = CTderive_@1_chr_@2(ct_histo,ct_map,b,bn,m);
 		break;
 	case TYPE_sht:
-		histo = CTderive_@1_sht_@2(ct_map,ct_histo,b,bn,m);
+		histo = CTderive_@1_sht_@2(ct_histo,ct_map,b,bn,m);
 		break;
 	case TYPE_int:
-		histo = CTderive_@1_int_@2(ct_map,ct_histo,b,bn,m);
+		histo = CTderive_@1_int_@2(ct_histo,ct_map,b,bn,m);
 		break;
 	case TYPE_lng:
-		histo = CTderive_@1_lng_@2(ct_map,ct_histo,b,bn,m);
+		histo = CTderive_@1_lng_@2(ct_histo,ct_map,b,bn,m);
 		break;
 	default:
-		histo = CTderive_@1_any_@2(ct_map,ct_histo,b,bn,m);
+		histo = CTderive_@1_any_@2(ct_histo,ct_map,b,bn,m);
 		break;
 	}
 @c
 int
-derive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b, int tt, map_T *m)
+derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 {
 	BAT *histo = NULL, *bn = NULL;
 	int synced = ALIGNsynced(ct_map, b);
@@ -792,17 +792,17 @@ derive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b, int tt, map_T *m)
 			BBPfix(ct_histo->batCacheid);
 		}
 	}
-	*B = bn;
+	*M = bn;
 	*H = histo;
 	return grp_new(bn, histo);
 }
 
 int
-CTderive(BAT **B, BAT **H, BAT *ct_map, BAT *ct_histo, BAT *b)
+CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 {
 	int ret;
 
-	ret = derive(B, H, ct_map, ct_histo, b, tailtype(b, TRUE), NULL);
+	ret = derive(H, M, ct_histo, ct_map, b, tailtype(b, TRUE), NULL);
 	return ret;
 }
 
@@ -1217,9 +1217,9 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	return MAL_SUCCEED;
 }
 
-mal_export str GRPderive(int *hid, int *mid, int *ct_mapid, int *ct_histoid, int *bid);
+mal_export str GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid);
 str
-GRPderive(int *hid, int *mid, int *ct_mapid, int *ct_histoid, int *bid)
+GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 {
 	BAT *ct_map, *ct_histo, *b;
 	BAT *bn = NULL, *histo = NULL;
@@ -1239,7 +1239,7 @@ GRPderive(int *hid, int *mid, int *ct_mapid, int *ct_histoid, int *bid)
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPderive)@
-	if( derive(&bn, &histo, ct_map, ct_histo, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
+	if( derive(&histo, &bn, ct_histo, ct_map, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(ct_map->batCacheid);
 		BBPreleaseref(ct_histo->batCacheid);

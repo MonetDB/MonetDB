@@ -37,7 +37,7 @@ end bind;
 #s19 := s11.join(s20);
 	s19 := algebra.join(s11,s20);
 #s8 := s9.group(s19);
-	(h2,s8) := group.derive(s9,s19);
+	(h2,s8) := group.derive(h,s9,s19);
 #s7 := s8.tunique().mirror();
 	ea_a := algebra.tunique(s8,);
 	s7 := bat.mirror(ea_a,);
