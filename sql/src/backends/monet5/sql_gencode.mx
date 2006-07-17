@@ -1131,15 +1131,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q= newStatement(mb,"calc","not");
 			q->barrier= BARRIERsymbol;
 			e= getArg(q,0);
-            _dumpstmt(sql,mb,s->op2.stval);
-            q= newAssignment(mb);
+			_dumpstmt(sql,mb,s->op3.stval);
+			q= newAssignment(mb);
 			getArg(q,0)= e;
-            q->argc= q->retc=1;
-            q->barrier= EXITsymbol;
+			q->argc= q->retc=1;
+			q->barrier= EXITsymbol;
 
 that's it */
-		case st_Nop:{
-			node *n;
+case st_Nop:{
+node *n;
 
 			/* dump operands */
 			_dumpstmt(sql, mb, s->op1.stval);	
