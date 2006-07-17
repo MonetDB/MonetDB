@@ -102,7 +102,7 @@ function user.main():void;	# 0  (main:void)
     io.print(b1);	# 40 IOprint_val (_72:int)<-(b1:bat[:oid,:oid])
     io.print("zb1 becomes");	# 41 IOprint_val (_73:int)<-(_74:str)
     io.print(zb1);	# 42 IOprint_val (_75:int)<-(zb1:bat[:oid,:int])
-    (zb2,b2):= group.derive(b1,y);	# 43 GRPderive (zb2:bat[:oid,:oid])(b2:bat[:oid,:oid])<-(b1:bat[:oid,:oid])(y:bat[:oid,:dbl])
+    (zb2,b2):= group.derive(zb1,b1,y);	# 43 GRPderive (zb2:bat[:oid,:int])(b2:bat[:oid,:oid])<-(zb1:bat[:oid,:int])(b1:bat[:oid,:oid])(y:bat[:oid,:dbl])
     io.print("b2 becomes");	# 44 IOprint_val (_78:int)<-(_79:str)
     io.print(b2);	# 45 IOprint_val (_80:int)<-(b2:bat[:oid,:oid])
 end main;	# 46  
