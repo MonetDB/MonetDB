@@ -931,9 +931,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 			grp = getArg(q, 1);
-			q = pushArgument(mb, q, g);
 			(void) snprintf(buf, 32, "ext%d", g);
 			q = pushArgumentId(mb, q, _strdup(buf));
+			q = pushArgument(mb, q, g);
 			q = pushArgument(mb, q, l);
 
 			q = newAssignment(mb);
