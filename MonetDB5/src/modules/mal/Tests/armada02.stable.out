@@ -5,12 +5,9 @@ stdout of test 'armada02` in directory 'src/modules/mal` itself:
 # 11:47:00 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/log" --set mapi_port=32199 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  armada02.mal < /dev/null
 # 11:47:00 >  
 
-
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
 # dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm
 # dbname:mTests_src_modules_mal
@@ -51,7 +48,7 @@ end main;	# 18
 [ 1 ]
 [ "[func2, 127.0.0.0/24]" ]
 [ 2 ]
-!ERROR: ArmadaException:getStep: 372 step id out of range: 2
+!ERROR: ArmadaException:getStep:step id out of range: 2
 
 
 # 11:47:00 >  
