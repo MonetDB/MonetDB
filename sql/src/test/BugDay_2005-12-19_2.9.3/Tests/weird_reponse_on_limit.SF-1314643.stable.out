@@ -25,13 +25,13 @@ Over..
 # id,	name,	schema_id,	query,	istable,	system,	commit_action,	temporary # name
 # int,	varchar,	int,	varchar,	boolean,	boolean,	smallint,	smallint # type
 # 4,	7,	4,	1,	5,	5,	1,	1 # length
-[ 4458,	"modules",	4457,	NULL,	true,	true,	0,	0	]
+[ 4458,	"schemas",	4457,	NULL,	true,	true,	0,	0	]
 # sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 # id,	name,	schema_id,	query,	istable,	system,	commit_action,	temporary # name
 # int,	varchar,	int,	varchar,	boolean,	boolean,	smallint,	smallint # type
 # 4,	7,	4,	1,	5,	5,	1,	1 # length
-[ 4458,	"modules",	4457,	NULL,	true,	true,	0,	0	]
-[ 4462,	"schemas",	4457,	NULL,	true,	true,	0,	0	]
+[ 4458,	"schemas",	4457,	NULL,	true,	true,	0,	0	]
+[ 4463,	"types",	4457,	NULL,	true,	true,	0,	0	]
 
 # 08:04:03 >  
 # 08:04:03 >  Done.

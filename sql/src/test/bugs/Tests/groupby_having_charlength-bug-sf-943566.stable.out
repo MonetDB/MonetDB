@@ -5,17 +5,10 @@ stdout of test 'groupby_having_charlength-bug-sf-943566` in directory 'src/test/
 # 21:22:45 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=36667 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="include sql;" ; echo ; echo Over..
 # 21:22:45 >  
 
-
-
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
-# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm
-# dbname:mTests_src_test_bugs
-# Visit http://monetdb.cwi.nl/ for further information
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -27,8 +20,8 @@ Over..
 # name,	char_length_name,	count_name # name
 # varchar,	int,	int # type
 # 3,	1,	2 # length
-[ "sys",	3,	11	]
-[ "tmp",	3,	11	]
+[ "sys",	3,	10	]
+[ "tmp",	3,	10	]
 
 # 12:48:35 >  
 # 12:48:35 >  Done.
