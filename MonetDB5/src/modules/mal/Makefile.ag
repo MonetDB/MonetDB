@@ -11,7 +11,7 @@ LIBS = {
 	SOURCES = \
 		chopper.mx language.mx box.mx \
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
-		inspect.mx manual.mx crackers.mx \
+		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx mat.mx \
 		mserver.mx
@@ -29,6 +29,16 @@ lib_armada = {
 	SOURCES = armada.mx 
 	HEADERS = h 
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream ../atoms/lib_inet \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+  
+lib_crackers = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = crackers.mx 
+	HEADERS = h 
+	LIBS = ../../mal/libmal ../kernel/lib_bat $(MONETDB_LIBS) -lbat -lstream ../atoms/lib_mtime \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

@@ -29,8 +29,6 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-# less important stuff
-include crackers; # not in alpha5
 
 #include pcl;
 include mdb;
@@ -114,6 +112,9 @@ include chopper;
 #include logger;
 include transaction;
 include partitions;
+
+# less important stuff
+include crackers; # not in alpha5
 @-
 In practice, we have to introduce different startup for each
 client group or database.
