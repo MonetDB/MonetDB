@@ -3774,11 +3774,13 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
+|  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 |  MATCH	{ $$ = sa_strdup(SA, "match"); }
 |  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
 |  ROW		{ $$ = sa_strdup(SA, "row"); }
 |  KEY		{ $$ = sa_strdup(SA, "key"); }
 |  LANGUAGE	{ $$ = sa_strdup(SA, "language"); }
+|  SQL		{ $$ = sa_strdup(SA, "sql"); }
 |  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
 |  sqlDATE	{ $$ = sa_strdup(SA, "date"); }
 |  TIME 	{ $$ = sa_strdup(SA, "time"); }
