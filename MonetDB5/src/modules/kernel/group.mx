@@ -546,11 +546,12 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 	@:CTgroupbody(CUSTOM)@
 }
 
-static int 
+static unsigned int 
 bits(int i)
 {
 	int sh;
 
+	assert(i>0);
         for (sh = 0; i != 0; sh++) {
                 i >>= 1;
         }
@@ -1173,19 +1174,20 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		return throwMessage("group.group", "Cannot access descriptor");
 	}
 	if (BATcount(b) > 1024*1024 &&
-	    (b->ttype == TYPE_int || b->ttype == TYPE_int)) { 
+	    (b->ttype == TYPE_int || b->ttype == TYPE_lng)) { 
 		int N = BATcount(b), one = 1;
+		assert(N);
 		if (b->ttype == TYPE_int) {
 			int h, l;
 			BATmax(b,&h);
 			BATmin(b,&l);
-			if (h != int_nil && l != int_nil && h-l < N) 
+			if (h != int_nil && l != int_nil && h-l < N && h-l > 0) 
 				N = h-l;
 		} else if (b->ttype == TYPE_lng) {
 			lng h, l;
 			BATmax(b,&h);
 			BATmin(b,&l);
-			if (h != lng_nil && l != lng_nil && (int)(h-l) < N) 
+			if (h != lng_nil && l != lng_nil && (int)(h-l) < N && (int)(h-l) > 0) 
 				N = (int)(h-l);
 		}
 		N = bits(N);
