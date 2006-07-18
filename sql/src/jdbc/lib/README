@@ -1,6 +1,6 @@
 In order to be able to compile the MonetDB XML:DB driver, this directory
 needs to contain the xmldb jar-file, which cannot be included here by
-default for license issues.
+default for licence issues.
 
 In order to get the xmldb.jar file from the eXist project SF CVS server
 type:

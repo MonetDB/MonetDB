@@ -46,6 +46,8 @@ All Rights Reserved.
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbcclient-jar"
     value="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
+  <property name="xmldb-jar"
+    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-xmldb.jar" />
 
   <!-- full target -->
   <target name="all">
@@ -71,7 +73,7 @@ All Rights Reserved.
   </target>
 
   <target name="jar_xmldb" depends="compile_xmldb">
-    <jar jarfile="${jardir}/monetdb-xmldb.jar">
+    <jar jarfile="${xmldb-jar}">
       <fileset dir="${builddir}">
         <include name="${xmldb-package}/**/*.class" />
       </fileset>
