@@ -5,6 +5,8 @@ stdout of test 'armada02` in directory 'src/modules/mal` itself:
 # 11:47:00 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/log" --set mapi_port=32199 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  armada02.mal < /dev/null
 # 11:47:00 >  
 
+
+
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -25,28 +27,30 @@ stdout of test 'armada02` in directory 'src/modules/mal` itself:
 #io.print(p);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:str,:inet);	# 1 CMDBATnew (b:bat[:str,:inet])<-(_2:str)(_3:inet)
-    bat.insert(b,"func1",127.0.0.8:inet);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:str,:inet])(_5:str)(_6:inet)
-# tricky one... should probably bail out on this one later 	# 3  (_7:str)
-    bat.insert(b,"func2",127.0.0.0/24:inet);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:str,:inet])(_9:str)(_10:inet)
-    armada.addTrail(b);	# 5 ARMADAaddTrailBAT (_11:int)<-(b:bat[:str,:inet])
-    s := armada.findStep("func1",127.0.0.8:inet);	# 6 ARMADAfindStep (s:int)<-(_5:str)(_13:inet)
-    io.print(s);	# 7 IOprint_val (_14:int)<-(s:int)
-    p := armada.getStep(s);	# 8 ARMADAgetStep (p:str)<-(s:int)
-    io.print(p);	# 9 IOprint_val (_16:int)<-(p:str)
-    s := calc.+(s,1);	# 10 CALCbinaryADDintint (s:int)<-(s:int)(_17:int)
-    io.print(s);	# 11 IOprint_val (_18:int)<-(s:int)
-    p := armada.getStep(s);	# 12 ARMADAgetStep (p:str)<-(s:int)
-    io.print(p);	# 13 IOprint_val (_19:int)<-(p:str)
-    s := calc.+(s,1);	# 14 CALCbinaryADDintint (s:int)<-(s:int)(_17:int)
-    io.print(s);	# 15 IOprint_val (_20:int)<-(s:int)
-    p := armada.getStep(s);	# 16 ARMADAgetStep (p:str)<-(s:int)
-    io.print(p);	# 17 IOprint_val (_21:int)<-(p:str)
-end main;	# 18  
+    s1 := armada.addSite(127.0.0.8:inet,50000:int,"chain":str,"key":str);	# 1 ARMADAaddSite (s1:oid)<-(_2:inet)(_3:int)(_4:str)(_5:str)
+    b := bat.new(:str,:oid);	# 2 CMDBATnew (b:bat[:str,:oid])<-(_7:str)(_8:oid)
+    bat.insert(b,"func1",s1);	# 3 BKCinsert_bun (_9:void)<-(b:bat[:str,:oid])(_10:str)(s1:oid)
+# tricky one... should probably bail out on this one later 	# 4  (_11:str)
+    s2 := armada.addSite(127.0.0.0/24:inet,50000:int,"chain":str,"key":str);	# 5 ARMADAaddSite (s2:oid)<-(_13:inet)(_3:int)(_4:str)(_5:str)
+    bat.insert(b,"func2",s2);	# 6 BKCinsert_bun (_14:void)<-(b:bat[:str,:oid])(_15:str)(s2:oid)
+    armada.addTrail(b);	# 7 ARMADAaddTrailBAT (_16:int)<-(b:bat[:str,:oid])
+    s := armada.findStep("func1",s1);	# 8 ARMADAfindStep (s:int)<-(_10:str)(s1:oid)
+    io.print(s);	# 9 IOprint_val (_18:int)<-(s:int)
+    p := armada.getStep(s);	# 10 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 11 IOprint_val (_20:int)<-(p:str)
+    s := calc.+(s,1);	# 12 CALCbinaryADDintint (s:int)<-(s:int)(_21:int)
+    io.print(s);	# 13 IOprint_val (_22:int)<-(s:int)
+    p := armada.getStep(s);	# 14 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 15 IOprint_val (_23:int)<-(p:str)
+    s := calc.+(s,1);	# 16 CALCbinaryADDintint (s:int)<-(s:int)(_21:int)
+    io.print(s);	# 17 IOprint_val (_24:int)<-(s:int)
+    p := armada.getStep(s);	# 18 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 19 IOprint_val (_25:int)<-(p:str)
+end main;	# 20  
 [ 0 ]
-[ "[func1, 127.0.0.8]" ]
+[ "[func1, 0]" ]
 [ 1 ]
-[ "[func2, 127.0.0.0/24]" ]
+[ "[func2, 1]" ]
 [ 2 ]
 !ERROR: ArmadaException:getStep:step id out of range: 2
 

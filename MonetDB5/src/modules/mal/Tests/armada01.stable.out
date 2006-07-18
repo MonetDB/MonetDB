@@ -22,21 +22,23 @@ stdout of test 'armada01` in directory 'src/modules/mal` itself:
 #armada.addTrail(b);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:str,:inet);	# 1 CMDBATnew (b:bat[:str,:inet])<-(_2:str)(_3:inet)
-    bat.insert(b,"func1",127.0.0.1:inet);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:str,:inet])(_5:str)(_6:inet)
-    bat.insert(b,"func2",10.0.0.10:inet);	# 3 BKCinsert_bun (_7:void)<-(b:bat[:str,:inet])(_8:str)(_9:inet)
-    armada.addTrail(b);	# 4 ARMADAaddTrailBAT (_10:int)<-(b:bat[:str,:inet])
-    f := bbp.bind("armada_func_site");	# 5 CMDbbpbind (f:bat[:any,:any])<-(_12:str)
-    s := bbp.bind("armada_step_pre");	# 6 CMDbbpbind (s:bat[:any,:any])<-(_14:str)
-    io.print(f);	# 7 IOprint_val (_15:int)<-(f:bat[:any,:any])
-    io.print(s);	# 8 IOprint_val (_16:int)<-(s:bat[:any,:any])
-end main;	# 9  
-#---------------------------------#
+    s1 := armada.addSite(127.0.0.1:inet,50000:int,"chain":str,"key":str);	# 1 ARMADAaddSite (s1:oid)<-(_2:inet)(_3:int)(_4:str)(_5:str)
+    s2 := armada.addSite(10.0.0.10:inet,50000:int,"chain":str,"key":str);	# 2 ARMADAaddSite (s2:oid)<-(_7:inet)(_3:int)(_4:str)(_5:str)
+    b := bat.new(:str,:oid);	# 3 CMDBATnew (b:bat[:str,:oid])<-(_9:str)(_10:oid)
+    bat.insert(b,"func1",s1);	# 4 BKCinsert_bun (_11:void)<-(b:bat[:str,:oid])(_12:str)(s1:oid)
+    bat.insert(b,"func2",s2);	# 5 BKCinsert_bun (_13:void)<-(b:bat[:str,:oid])(_14:str)(s2:oid)
+    armada.addTrail(b);	# 6 ARMADAaddTrailBAT (_15:int)<-(b:bat[:str,:oid])
+    f := bbp.bind("armada_func_site");	# 7 CMDbbpbind (f:bat[:any,:any])<-(_17:str)
+    s := bbp.bind("armada_step_pre");	# 8 CMDbbpbind (s:bat[:any,:any])<-(_19:str)
+    io.print(f);	# 9 IOprint_val (_20:int)<-(f:bat[:any,:any])
+    io.print(s);	# 10 IOprint_val (_21:int)<-(s:bat[:any,:any])
+end main;	# 11  
+#-------------------------#
 # h		t		  # name
-# str		str		  # type
-#---------------------------------#
-[ "func1",	  127.0.0.1	  ]
-[ "func2",	  10.0.0.10	  ]
+# str		oid	  # type
+#-------------------------#
+[ "func1",	  0@0	  ]
+[ "func2",	  1@0	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type

@@ -5,11 +5,9 @@ stdout of test 'armada03` in directory 'src/modules/mal` itself:
 # 13:04:37 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/log" --set mapi_port=35858 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  armada03.mal < /dev/null
 # 13:04:37 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
 # dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm
 # dbname:mTests_src_modules_mal
@@ -25,14 +23,16 @@ stdout of test 'armada03` in directory 'src/modules/mal` itself:
 #io.print(p);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:str,:inet);	# 1 CMDBATnew (b:bat[:str,:inet])<-(_2:str)(_3:inet)
-    bat.insert(b,nil:str,127.0.0.2:inet);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:str,:inet])(_5:str)(_6:inet)
-    bat.insert(b,"func2",127.0.0.3:inet);	# 3 BKCinsert_bun (_7:void)<-(b:bat[:str,:inet])(_8:str)(_9:inet)
-    t := armada.addTrail(b);	# 4 ARMADAaddTrailBAT (t:int)<-(b:bat[:str,:inet])
-    p := armada.getTrail(t);	# 5 ARMADAgetTrail (p:str)<-(t:int)
-    io.print(p);	# 6 IOprint_val (_12:int)<-(p:str)
-end main;	# 7  
-[ "[%, 127.0.0.2].[func2, 127.0.0.3]" ]
+    b := bat.new(:str,:oid);	# 1 CMDBATnew (b:bat[:str,:oid])<-(_2:str)(_3:oid)
+    s := armada.addSite(127.0.0.2:inet,50000:int,"chain":str,"key":str);	# 2 ARMADAaddSite (s:oid)<-(_5:inet)(_6:int)(_7:str)(_8:str)
+    bat.insert(b,nil:str,s);	# 3 BKCinsert_bun (_9:void)<-(b:bat[:str,:oid])(_10:str)(s:oid)
+    s := armada.addSite(127.0.0.3:inet,50000:int,"chain":str,"key":str);	# 4 ARMADAaddSite (s:oid)<-(_11:inet)(_6:int)(_7:str)(_8:str)
+    bat.insert(b,"func2",s);	# 5 BKCinsert_bun (_12:void)<-(b:bat[:str,:oid])(_13:str)(s:oid)
+    t := armada.addTrail(b);	# 6 ARMADAaddTrailBAT (t:int)<-(b:bat[:str,:oid])
+    p := armada.getTrail(t);	# 7 ARMADAgetTrail (p:str)<-(t:int)
+    io.print(p);	# 8 IOprint_val (_16:int)<-(p:str)
+end main;	# 9  
+[ "[#, 0].[func2, 1]" ]
 
 # 13:04:37 >  
 # 13:04:37 >  Done.
