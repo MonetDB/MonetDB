@@ -5,6 +5,6 @@ default for license issues.
 In order to get the xmldb.jar file from the eXist project SF CVS server
 type:
 
-cvs -d:pserver:anonymous@cvs.sf.net:/cvsroot/exist co -r1.3 exist/eXist-1.0/lib/core/xmldb.jar
+cvs -d:pserver:anonymous@exist.cvs.sourceforge.net:/cvsroot/exist co -r1.3 eXist-1.0/lib/core/xmldb.jar
 mv eXist-1.0/lib/core/xmldb.jar .
 rm -R eXist-1.0
