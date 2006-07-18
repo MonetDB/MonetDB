@@ -1045,10 +1045,10 @@ opt_alt_seq_params:
 ;
 
 /*
- * opt_start and opt_restart return a list consisting of:
+ * opt_start returns a list consisting of:
  * - int: indicating the type of symbol
  *   * -1  absent/empty
- *   *  0  no argument (only for RESTART)
+ *   *  0  no argument (only for restart)
  *   *  1  argument is a subquery
  *   *  2  argument is simple int
  * - symbol: the symbol
@@ -1079,6 +1079,15 @@ opt_start:
 							}
   ;
 
+/*
+ * opt_restart returns a list consisting of:
+ * - int: indicating the type of symbol
+ *   * -1  absent/empty
+ *   *  0  no argument (only for RESTART)
+ *   *  1  argument is a subquery
+ *   *  2  argument is simple int
+ * - symbol: the symbol
+ */
 opt_restart:
 	/* empty */				{
 								dlist *l = L();
@@ -1110,28 +1119,60 @@ opt_restart:
 							}
   ;
 
+/*
+ * opt_increment returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   * else the value
+ */
 opt_increment:
 	/* empty */				{ $$ = -1; }
   |	INCREMENT BY nonzero	{ $$ = $3; }
   ;
 
+/*
+ * opt_min returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   *  0  NOMINVALUE
+ *   * else the MINVALUE value
+ */
 opt_min:
 	/* empty */ 			{ $$ = -1; }
   |	MINVALUE nonzero		{ $$ = $2; }
   |	NOMINVALUE				{ $$ =  0; }
   ;
 
+/*
+ * opt_max returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   *  0  NOMAXVALUE
+ *   * else the MAXVALUE value
+ */
 opt_max:
 	/* empty */				{ $$ = -1; }
   |	MAXVALUE nonzero		{ $$ = $2; }
   |	NOMAXVALUE				{ $$ =  0; }
   ;
 
+/*
+ * opt_cache returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   * else the value
+ */
 opt_cache:
 	/* empty */				{ $$ = -1; }
   |	CACHE nonzero			{ $$ = $2; }
   ;
 
+/*
+ * opt_cycle returns a list consisting of:
+ * - int: indicating the value
+ *   *  0  NOCYCLE (default)
+ *   *  1  CYCLE
+ */
 opt_cycle:
 	/* empty */				{ $$ = 0; }
   |	CYCLE					{ $$ = 1; }
@@ -1426,10 +1467,10 @@ serial_opt_params:
 	/* empty: return the defaults */
 	{ dlist *l = L();
 	  dlist *p = L();
-	/* create list with int 2 int 1 to indicate start from 1 */
+	  /* create list with int 2 int 1 to indicate start from 1 */
 	  append_int(p, 2);
 	  append_int(p, 1);
-	/* finally all the options (no defaults here) */
+	  /* finally all the options (no defaults here) */
 	  append_list(l, p); /* start */
 	  append_int(l, -1); /* increment */
 	  append_int(l, -1); /* min */
