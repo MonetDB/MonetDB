@@ -53,7 +53,7 @@ extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
 extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *sqlparse_intern(mvc *m, char *query);
+extern stmt *sqlparse_intern(mvc *m, char *query, modes_t mode);
 extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query);
 
 extern stmt *first_subset(stmt *subset);
@@ -96,6 +96,7 @@ extern char * toUpper(char *dest, const char *src);
 #include "sql_env.h"
 #include "sql_sequence.h"
 #include "sql_privileges.h"
+#include "sql_psm.h"
 #include "sql_string.h"
 
 #include <unistd.h>
@@ -294,7 +295,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 }
 
 stmt *
-sqlparse_intern(mvc *m, char *query)
+sqlparse_intern(mvc *m, char *query, modes_t mode)
 {
 	mvc o = *m;
 	stmt *sq = NULL;
@@ -306,6 +307,7 @@ sqlparse_intern(mvc *m, char *query)
 	m->qc = NULL;
 
 	m->cache = 0;
+	m->mode = mode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -328,19 +330,29 @@ sqlparse_intern(mvc *m, char *query)
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
+	/* create private allocator */
+	m->sa = sa_create();
+
 	if (sqlparse(m) || !m->sym) {
 		/* oops an error */
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
 				"internal query: %s", query);
 	} else {
-		sq = scope_subquery(m, NULL, m->sym);
+		/* should use scope_subquery, but that doesn't handle
+		   psm (so for mode m_prepare) we use semantic
+		*/
+		if (mode == m_prepare)
+			sq = semantic(m, NULL, m->sym);
+		else
+			sq = scope_subquery(m, NULL, m->sym);
 	}
 
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	stream_destroy(buf);
-
+	if (m->sa)
+		sa_destroy(m->sa);
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
@@ -364,7 +376,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 
 	if (!t->table && t->query[0] != ';') {
 
-		stmt *sq = sqlparse_intern(sql, t->query);
+		stmt *sq = sqlparse_intern(sql, t->query, sql->mode);
 
 		if (!sq)
 			return NULL;
@@ -503,9 +515,9 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 			if (scale_diff < 0) {
 				if (!both)
 					return s;
-				c = sql_bind_func(sql->session->module, "scale_down", st, it);
+				c = sql_bind_func(sql->session->schema, "scale_down", st, it);
 			} else {
-				c = sql_bind_func(sql->session->module, "scale_up", st, it);
+				c = sql_bind_func(sql->session->schema, "scale_up", st, it);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
@@ -518,7 +530,7 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 	} else if (always && st->scale) {	/* scale down */
 		int scale_diff = -(int) st->scale;
 		sql_subtype *it = sql_bind_localtype(st->type->base.name);
-		sql_subfunc *c = sql_bind_func(sql->session->module, "scale_down", st, it);
+		sql_subfunc *c = sql_bind_func(sql->session->schema, "scale_down", st, it);
 
 		if (c) {
 			lng val = scale2value(scale_diff);
@@ -544,7 +556,8 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 {
 	sql_subtype *st = tail_type(s);
 
-	if (s->type != st_var || s->ref.refcnt > 1 || ct->scale)
+				 /* exclude named variables */
+	if (s->type != st_var || s->op1.sval || s->ref.refcnt > 1 || ct->scale)
 		return s;
 
 	if (ct->digits == 0 || ct->type->radix == 2 || 
@@ -953,7 +966,6 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_CREATE_MODULE:
 	case SQL_DROP_MODULE:
 	case SQL_CREATE_TYPE:
-	case SQL_CREATE_FUNC:
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
 		return schemas(sql, s);
@@ -969,10 +981,6 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_DELETE:
 		return updates(sql, scp, s);
 
-	case SQL_DECLARE:
-	case SQL_SET:
-		return env(sql, s);
-
 	case SQL_SELECT:
 	case SQL_JOIN:
 	case SQL_CROSS:
@@ -980,6 +988,14 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
 		return selects(sql, scp, s);
+
+	case SQL_CREATE_FUNC:
+		return psm(sql, s);
+
+	/* these will move also to psm */
+	case SQL_DECLARE:
+	case SQL_SET:
+		return env(sql, s);
 
 	case SQL_PREP:
 	case SQL_MULSTMT:

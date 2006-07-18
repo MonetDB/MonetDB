@@ -857,12 +857,6 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
-
-	/* we need to be able to switch back from explain and profile modes 
-	if ((c->mode == m_explain || c->mode == m_profile) && 
-	    m->sym->token == SQL_SET)
-		c->mode = m_normal;
-	*/
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
@@ -906,7 +900,7 @@ produce code.
 			SQLsetTrace(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
-		if (m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
+		if (m->mode != m_inplace && m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
 			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */

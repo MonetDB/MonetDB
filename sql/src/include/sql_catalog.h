@@ -107,12 +107,19 @@ extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, char *name);
 extern node *cs_first_node(changeset * cs);
 
-typedef struct sql_module {
+typedef struct sql_schema {
 	sql_base base;
+	int auth_id;
+
+	changeset tables;
 	changeset types;
 	changeset funcs;
+	list *keys;		/* Names for keys, idxs and triggers are */
+	list *idxs;		/* global, but these objects are only */
+	list *triggers;		/* useful within a table */
+
 	char *internal; 	/* optional internal module name */
-} sql_module;
+} sql_schema;
 
 typedef struct sql_type {
 	sql_base base;
@@ -124,7 +131,7 @@ typedef struct sql_type {
 	unsigned char radix;
 	unsigned int bits;
 	unsigned char eclass; 	/* type are grouped into equivalence classes */ 
-	sql_module *m;
+	sql_schema *s;
 } sql_type;
 
 typedef struct sql_alias {
@@ -145,7 +152,7 @@ typedef struct sql_aggr {
 	sql_subtype tpe;
 	sql_subtype res;
 	int nr;
-	sql_module *m;
+	sql_schema *s;
 } sql_aggr;
 
 typedef struct sql_subaggr {
@@ -183,9 +190,12 @@ typedef struct sql_func {
 	   example string concat
 	 */
 	int nr;
-	int sql;		/* simple sql or native implementation */
+	int sql;		/* 0 native implementation
+				   1 sql 
+				   2 sql instantiated proc 
+				*/
 	int aggr;
-	sql_module *m;
+	sql_schema *s;
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -352,16 +362,6 @@ typedef struct sql_table {
 	struct sql_schema *s;
 } sql_table;
 
-typedef struct sql_schema {
-	sql_base base;
-	int auth_id;
-
-	changeset tables;
-	list *keys;		/* Names for keys, idxs and triggers are */
-	list *idxs;		/* global, but these objects are only */
-	list *triggers;		/* useful within a table */
-} sql_schema;
-
 typedef struct res_col {
 	char *tn;
 	char *name;
@@ -394,7 +394,6 @@ typedef struct sql_trans {
 	int status;		/* status of the last query */
 
 	changeset schemas;
-	changeset modules;
 
 	struct sql_trans *parent;	/* multilevel transaction support */
 	backend_stack stk;		
@@ -405,8 +404,6 @@ typedef struct sql_session {
 
 	char *schema_name;
 	sql_schema *schema;
-	sql_module *module; 	/* also need a current module, normaly 
-			       main but during create module different */
 
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
 	                       commit, rollback, etc. */
@@ -417,7 +414,6 @@ typedef struct sql_session {
 	backend_stack stk;
 } sql_session;
 
-extern void module_destroy(sql_module * m);
 extern void schema_destroy(sql_schema *s);
 extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);
@@ -442,15 +438,12 @@ extern sql_table *find_sql_table(sql_schema *s, char *tname);
 extern node *find_sql_schema_node(sql_trans *t, char *sname);
 extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
 
-extern node *find_sql_module_node(sql_trans *t, char *mname);
-extern sql_module *find_sql_module(sql_trans *t, char *mname);
-
-extern node *find_sql_type_node(sql_module * s, char *tname);
-extern sql_type *find_sql_type(sql_module * s, char *tname);
+extern node *find_sql_type_node(sql_schema * s, char *tname);
+extern sql_type *find_sql_type(sql_schema * s, char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, char *name);
 
-extern node *find_sql_func_node(sql_module * s, char *tname);
-extern sql_func *find_sql_func(sql_module * s, char *tname);
+extern node *find_sql_func_node(sql_schema * s, char *tname);
+extern sql_func *find_sql_func(sql_schema * s, char *tname);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
 #endif /* SQL_CATALOG_H */

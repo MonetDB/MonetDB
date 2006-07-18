@@ -37,10 +37,12 @@ for the duration of a session.
 
 #include "sql_mem.h"
 #include "sql_catalog.h"
+#include "sql_types.h"
 
 typedef void (*freestack_fptr) (backend_stack stk);
 typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr, char *name);
 typedef void (*interpret_fptr) (backend_stack stk, char *code);
+
 typedef char *(*create_user_fptr) (list *l, char *user, char *passwd, char *fullname, sqlid schema_id, sqlid grantor_id);
 typedef char *(*drop_user_fptr) (char *user);
 typedef int  (*find_user_fptr) (ptr m, char *user);
@@ -65,6 +67,7 @@ extern void backend_init(backend_functions *funcs);
 extern void backend_freestack(backend_stack stk);
 extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
 extern void backend_interpret(backend_stack stk, char *code);
+
 extern char *backend_create_user(list *l, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor);
 extern char *backend_drop_user(char *user);
 extern int  backend_find_user(ptr mp, char *user);

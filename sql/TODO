@@ -25,10 +25,14 @@
   idea is to have some piece of MAL code that is just inserted before
   the actual bind.  This would solve problems for the authorisation
   system in M5 and can solve SEQUENCES which now have sneaky inplace
-  transactions.
+  transactions. (isview -> table_type, table 0, view 1, viewasbats 2, 
+	sqlgenerated 3, mgenerated 4)
 
   01 Jun 2006; Fabian Groffen <mr-meltdown>; OPEN
   Mapi speed-up.  The tuples in Mapi output can (and should) be sent in
   a more effective way.  This requires some big changes, but should
   bring us closer to MySQL and friends by lowering our protocol
   overhead.
+
+* more on the wish front
+  Change symbol/list into tree with dynamic number of children 

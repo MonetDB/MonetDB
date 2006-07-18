@@ -646,6 +646,7 @@ typedef struct backend {
 	mvc *mvc;
 	buffer *outbuf;
 	stream *out;
+	Client client;
 	sql_schema *currSchema;
 	sql_table *currTable;
 	sql_column *currColumn;
@@ -697,6 +698,7 @@ backend_create(mvc *m, Client c)
 	b->out = c->fdout;
 	b->language = 0;
 	b->mvc = m;
+	b->client = c;
 
 	b->currSchema = NULL;
 	b->currTable = NULL;
