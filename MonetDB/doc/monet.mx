@@ -743,17 +743,16 @@ mode of the BAT (only {\tt BAT\_WRITE} leads to privately mapped files).\\
 
 @+ Memory Tuning
 @T
-In MonetDB, which materializes all BATs, it is possible to crash the server by asking for too much memory:
+In MonetDB, which materializes all BATs, it is possible that MIL commands fail due to lack of memory:
 \begin{verbatim}
-# crash any 32-bit system (or a 64-bit system with available RAM+swap-file less than 4GB)
+# fails on any 32-bit system (or a 64-bit system with available RAM+swap-file less than 4GB)
 var b1 := bat(void,chr,2000000000); 
 var b2 := bat(void,chr,2000000000); 
 \end{verbatim}
 
-In the future, we will fix this behavior by reporting an error instead of a crash. Confronted with
-such a problem, however, one should first determine the cause of the lack of memory. On well-equipped 
-32-bit systems, the problem tends to be the 2-4GB address space limit, whereas any lack of memory on 
-a 64-bit system is due to lack of resources. \\
+Confronted with such a problem, however, one should first determine the cause of the lack of memory. 
+On well-equipped 32-bit systems, the problem tends to be the 2-4GB address space limit, whereas any 
+lack of memory on a 64-bit system is due to lack of resources. \\
 
 Most memory resource problems in MonetDB are easily avoidable by minimizing your open BAT
 references (as discussed above) and making your access patterns cache friendly (see the 
