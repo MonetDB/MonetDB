@@ -104,6 +104,7 @@ using the
 @include Assets/Databasedump.texi
 
 @node Client Interfaces, Data Management Tools, Database Dumps, Top
+@include Assets/warning.texi
 @include mal_client.bdy.texi
 @include Assets/MapiClient.texi
 @include Assets/JdbcClient.texi
@@ -136,13 +137,12 @@ using the
 
 @node Embedded Server Roadmap, Server Roadmap, SQL Roadmap, Development Roadmap
 @include Assets/EmbeddedRoadmap.texi
-@node Server Roadmap, Backward Compatibility, Embedded Server Roadmap, Development Roadmap
+@node Server Roadmap, SQL, Embedded Server Roadmap, Development Roadmap
 @include Assets/ServerRoadmap.texi
 
-@node Backward Compatibility, SQL , Server Roadmap, Top
-@include Assets/Compatability.texi
 
-@node SQL, Getting Started with SQL, Backward Compatibility, Top
+@node SQL, Getting Started with SQL, Server Roadmap , Top
+@include Assets/warning.texi
 @include Assets/SQLoverview.texi
 
 @node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL
@@ -185,13 +185,17 @@ using the
 @include Assets/MbeddedLimits.texi
 
 
-@node Appendices, SQL 1999 Features , Embedded Limitations, Top
+@node Appendices, Version 4 , Embedded Limitations, Top
 @menu
+* Version 4::
 * SQL 1999 Features::
 * VOC History::
 @end menu
 
-@node SQL 1999 Features, VOC History, Appendices, Appendices
+@node Version 4, SQL 1999 Features, Appendices, Appendices
+@include Assets/Compatability.texi
+@include Assets/SQLversion4.texi
+@node SQL 1999 Features, VOC History, Version 4, Appendices
 @include Assets/SQL1999.texi
 @node VOC History,  , SQL 1999 Features, Appendices
 @include Assets/VOChistory.texi
