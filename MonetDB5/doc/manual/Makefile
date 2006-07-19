@@ -4,8 +4,9 @@
 
 # FIXME / WARNING: this is not "portable" and probably not the best
 #                  solution either.  Actually, it will not work.
-#M5DIR=/ufs/mk/monet5/
-#M4DIR=/ufs/mk/opensource/MonetDB
+M5DIR=/ufs/mk/monet5/
+M4DIR=/ufs/mk/opensource/MonetDB
+MANUAL=manual
 
 all:
 	mkdir -p $(M5DIR)/doc/share/doc
@@ -14,13 +15,16 @@ all:
 	make xml
 	make clean
 
+both: 
+	make MANUAL=manual pdf
+	make MANUAL=sqlmanual pdf
 pdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(M5DIR) $(M4DIR); cp manual.texi $(M5DIR)/doc/share/tmp
-	cp -r ../Assets $(M5DIR)/doc/share/tmp
-	(cd $(M5DIR)/doc/share/tmp/; pdftex manual.texi; pdftex manual.texi )
-	cp $(M5DIR)/doc/share/tmp/manual.pdf $(M5DIR)/doc/share
-	(cd $(M5DIR)/doc/share/; pdfnup manual.pdf)
+	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
+	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp
+	(cd $(M5DIR)/doc/share/tmp/; pdftex $(MANUAL).texi; pdftex $(MANUAL).texi )
+	cp $(M5DIR)/doc/share/tmp/$(MANUAL).pdf $(M5DIR)/doc/share
+	(cd $(M5DIR)/doc/share/; pdfnup $(MANUAL).pdf)
 	echo "Manual created" 
 
 web:
@@ -28,31 +32,31 @@ web:
 	echo "using:" $(M4DIR)
 	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(M5DIR) $(M4DIR)
-	cp manual.texi $(M5DIR)/doc/share/tmp
+	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp manual.css $(M5DIR)/doc/share/tmp
-	cp -r ../Assets $(M5DIR)/doc/share/tmp
+	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
-	makeinfo --force --html manual.texi --css-include=manual.css \
+	makeinfo --force --html $(MANUAL).texi --css-include=manual.css \
 	)
 	cp -r $(M5DIR)/doc/share/tmp/MonetDB $(M5DIR)/doc/share
 	echo "Web version created"
 
 web2:
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(M5DIR) $(M4DIR); cp manual.texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp manual.css $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
-	texi2html --split=node  --css-include=manual.css manual.texi; )
+	texi2html --split=node  --css-include=manual.css $(MANUAL).texi; )
 	cp -r $(M5DIR)/doc/share/tmp/manual $(M5DIR)/doc/share/MonetDB2
 	echo "Web created"
 
 xml:
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(M5DIR) $(M4DIR); cp manual.texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
-	makeinfo --force --xml manual.texi \
+	makeinfo --force --xml $(MANUAL).texi \
 	)
 	sed -i -e "s/&bullet;/<bullet\/>/g" \
 		-e "s/&ndash;/<ndash\/>/g" \
@@ -66,10 +70,10 @@ xml:
 
 gdkpdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(M5DIR) $(M4DIR); cp gdkmanual.texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp gdk$(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
-	pdftex gdkmanual.texi \
+	pdftex gdk$(MANUAL).texi \
 	)
 	cp $(M5DIR)/doc/share/tmp/gdkmanual.pdf $(M5DIR)/doc/share
 	(cd $(M5DIR)/doc/share/doc; pdfnup gdkmanual.pdf)
@@ -77,11 +81,11 @@ gdkpdf:
 
 modpdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(M5DIR) $(M4DIR); cp modulesmanual.texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp modules$(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
-	pdftex modulesmanual.texi \
-	makeinfo --force --html modulesmanual.texi \
+	pdftex modules$(MANUAL).texi \
+	makeinfo --force --html modules$(MANUAL).texi \
 	)
 	cp $(M5DIR)/doc/share/tmp/modulesmanual.pdf $(M5DIR)/doc/share
 	(cd $(M5DIR)/doc/share; pdfnup modules.pdf)

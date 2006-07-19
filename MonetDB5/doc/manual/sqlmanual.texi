@@ -140,9 +140,9 @@ using the
 
 @node MonetDB/SQL Features, Session Variables , SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
-@node Overlaying the BAT storage, SQL Dump and Restore , Optimizer Control,  MonetDB/SQL Features
+@node Overlaying BATs, SQL Dump and Restore , Optimizer Control,  MonetDB/SQL Features
 @include Assets/SQLoverlay.texi
-@node SQL Dump and Restore, Programming Interfaces, Overlaying the BAT storage, SQL
+@node SQL Dump and Restore, Programming Interfaces, Overlaying BATs, SQL
 @include Assets/SQLdump.texi
 
 @node Programming Interfaces, The Mapi Library, SQL Dump and Restore, Top

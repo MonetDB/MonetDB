@@ -24,8 +24,8 @@ Last updated: @value{UPDATED}
      this permission notice are preserved on all copies.
 @ifhtml
 The latest documentation can be downloaded as a single file for printing
-@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual.pdf,single page manual} or
-@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual-2x1.pdf,double page manual}.
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/m5server.pdf,single page manual} or
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/m5server-2x1.pdf,double page manual}.
 @end ifhtml
      
 @emph{Disclaimer} The reference manual and underlying source
@@ -63,8 +63,6 @@ using the
 @menu
 * General Introduction::
 * MonetDB Overview ::
-* SQL ::
-* XQuery ::
 * Programming Interfaces::
 * Embedded MonetDB::
 * MAL::
@@ -119,7 +117,7 @@ using the
 @node Session Scenarios , Scenario Management , Execution Engine, MonetDB Overview
 @include mal_scenario.bdy.texi
 
-@node Client Interfaces, Data Management Tools, Scenario Management, MonetDB Overview
+@node Client Interfaces, Development Roadmap, Scenario Management, MonetDB Overview
 @include mal_client.bdy.texi
 @include Assets/MapiClient.texi
 @include Assets/JdbcClient.texi
@@ -127,26 +125,9 @@ using the
 @subsection Console Interaction
 @include mal_readline.bdy.texi
 
-@node Data Management Tools, Aqua Data Studio, Client Interfaces , MonetDB Overview
-@include Assets/DBA-GUIs.texi
+@node Development Roadmap, Embedded Roadmap, Client Interfaces, MonetDB Overview
 
-@node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
-@include Assets/AquaDataStudio.texi
-
-@node DbVisualizer, iSQL-Viewer, Aqua Data Studio, Data Management Tools
-@include Assets/DbVisualiser.texi
-
-@node iSQL-Viewer, Development Roadmap, DbVisualizer, Data Management Tools
-@include Assets/iSQL-Viewer.texi
-
-@node Development Roadmap, SQL Roadmap, iSQL-Viewer, MonetDB Overview
-@include Assets/Roadmap.texi
-@node SQL Roadmap, XQuery Roadmap, Development Roadmap, Development Roadmap
-@include Assets/SQLRoadmap.texi
-@node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Development Roadmap
-@include Assets/XQueryRoadmap.texi
-
-@node Embedded Server Roadmap, Server Roadmap, XQuery Roadmap, Development Roadmap
+@node Embedded Server Roadmap, Server Roadmap, Development Roadmap, Development Roadmap
 @include Assets/EmbeddedRoadmap.texi
 @node Server Roadmap, Backward Compatibility, Embedded Server Roadmap, Development Roadmap
 @include Assets/ServerRoadmap.texi
@@ -156,22 +137,6 @@ using the
 
 @node SQL, Getting Started with SQL, Backward Compatibility, Top
 @include Assets/SQLoverview.texi
-
-@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL
-@include Assets/VOCtutorial.texi
-
-@node Language Overview, Preface, The VOC Tutorial, SQL
-@include Assets/SQLlanguage.texi
-
-@node MonetDB/SQL Features, Session Variables, SQL Transactions, SQL
-@include Assets/SQLfeatures.texi
-@node Overlaying BATs, SQL Dump and Restore, Optimizer Control,  MonetDB/SQL Features
-@include Assets/SQLoverlay.texi
-@node  SQL Dump and Restore, XQuery, Overlaying BATs, SQL
-@include Assets/SQLdump.texi
-
-@node XQuery, Programming Interfaces, SQL Dump and Restore, Top
-@include Assets/XQueryOverview.texi
 
 @node Programming Interfaces, The Mapi Library, XQuery, Top
 @include Assets/APIs.texi
