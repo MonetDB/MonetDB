@@ -4,8 +4,8 @@
 
 # FIXME / WARNING: this is not "portable" and probably not the best
 #                  solution either.  Actually, it will not work.
-M5DIR=/ufs/mk/monet5/
-M4DIR=/ufs/mk/opensource/MonetDB
+#M5DIR=/ufs/mk/monet5/
+#M4DIR=/ufs/mk/opensource/MonetDB
 MANUAL=manual
 
 all:
@@ -15,9 +15,10 @@ all:
 	make xml
 	make clean
 
-both: 
+pdfs: 
 	make MANUAL=manual pdf
 	make MANUAL=sqlmanual pdf
+	make MANUAL=m5server pdf
 pdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
