@@ -273,6 +273,7 @@ on the expensive components of the query plan.
 
 @node Optimizer Control, Overlaying BATs, TRACE Statement,  MonetDB/SQL Features
 @section Optimizer Control
+@include Assets/warning.texi
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
 However, for development purposes and the rare case that more control

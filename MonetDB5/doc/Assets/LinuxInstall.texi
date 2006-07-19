@@ -23,7 +23,8 @@ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb co buildtools Mone
 
 This will create the directories buildtools, MonetDB5, monet5 and SQL in 
 your current working directory, which hold the sources for all three
-project packages. 
+project packages. These packages should be installed according
+to the general scheme described below in this order.
 
 MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
 @verbatim

@@ -5,6 +5,8 @@ program list and start it.
 After the server has been started, you can activate a textual client interface.
 Close the window of the server and/or client and it ceases to exist. 
 
+@include Assets/warning.texi
+
 Once downloaded and installed MonetDB on your Linux system,
 it is adviceable to check its functionality with the following actions:
 @example
