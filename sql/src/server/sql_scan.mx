@@ -257,6 +257,8 @@ scanner_init_keywords(void)
 	keywords_insert("COALESCE", COALESCE);
 	keywords_insert("ELSEIF", ELSEIF);
 	keywords_insert("IF", IF);
+	keywords_insert("WHILE", WHILE);
+	keywords_insert("DO", DO);
 
 	keywords_insert("COMMIT", COMMIT);
 	keywords_insert("ROLLBACK", ROLLBACK);

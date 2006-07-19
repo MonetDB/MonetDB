@@ -1541,6 +1541,41 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 
 		/* flow control statements */
+		case st_while: {
+			int c,bvar;
+
+			/* loop barrier */
+			q = newAssignment(mb);
+			q->barrier= BARRIERsymbol;
+			bvar = getArg(q,0);
+			q = pushBit(mb, q, TRUE);
+
+			/* leave barrier */
+			c = _dumpstmt(sql,mb, s->op1.stval);
+			q = newStmt1(mb, calcRef, "not");
+			q = pushArgument(mb, q, c);
+			c = getArg(q,0);
+
+			q = newAssignment(mb);
+			getArg(q,0) = bvar;
+			q->barrier= LEAVEsymbol;
+			pushArgument(mb,q,c);
+			
+			_dumpstmt(sql,mb,s->op2.stval);
+
+			/* redo barrier, start again at the loop barrier */
+			q = newAssignment(mb);
+			q->barrier= REDOsymbol;
+			getArg(q,0) = bvar;
+			q->argc = q->retc = 1;
+			q = pushBit(mb, q, TRUE);
+
+			/* exit barrier */
+			q = newAssignment(mb);
+			getArg(q,0) = bvar;
+			q->argc = q->retc = 1;
+			q->barrier= EXITsymbol;
+		} 	break;
 		case st_if: {
 			int c,t,e;
 			c= _dumpstmt(sql,mb, s->op1.stval);
@@ -1570,27 +1605,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			pushArgument(mb,q,c);
 			q->barrier= RETURNsymbol;
 		}	break;
-/*
-		case st_while:
-			int c,t;
-			c= _dumpstmt(sql,mb, s->opt1.stval);
-			q= newAssignment(mb);
-			t= getArg(q,0);
-			pushArgument(mb,q,c);
-			q->barrier= BARRIERsymbol;
-			_dumpstmt(sql,mb,s->op2.stval);
+		case st_assign: {
+			int r = _dumpstmt(sql,mb, s->op2.stval);
+			q = newInstruction(mb,ASSIGNsymbol);
+			q->argc = q->retc = 0;
+                        q = pushArgumentId(mb, q, _strdup(s->op1.sval));
+			pushInstruction(mb, q);
+			q->retc++;
+			q = pushArgument(mb, q, r);
+		} 	break;
 
-			c= _dumpstmt(sql,mb, s->opt1.stval);
-			q= newAssignment(mb);
-			t= getArg(q,0);
-			pushArgument(mb,q,c);
-			q->barrier= REDOsymbol;
-
-			q= newAssignment(mb);
-			getArg(q,0)= t;
-			q->argc= q->retc=1;
-			q->barrier= EXITsymbol;
-that's it */
 			/* todo */
 		case st_basetable:
 		case st_ptable:

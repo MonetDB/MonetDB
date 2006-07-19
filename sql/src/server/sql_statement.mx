@@ -122,8 +122,10 @@ typedef enum stmt_type {
 	st_list,
 
 	/* flow control statements */
+	st_while,
 	st_if,
-	st_return
+	st_return,
+	st_assign
 } st_type;
 
 typedef enum comp_type {
@@ -274,8 +276,10 @@ extern stmt *stmt_output(stmt *l);
 extern stmt *stmt_affected_rows(stmt *l);
 
 /* flow control statements */
+extern stmt *stmt_while(stmt *cond, stmt *whilestmts );
 extern stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts);
 extern stmt *stmt_return(stmt *val);
+extern stmt *stmt_assign(char *varname, stmt *val);
 
 extern sql_subtype *head_type(stmt *st);
 extern sql_subtype *tail_type(stmt *st);
@@ -385,8 +389,10 @@ st_type2string(st_type type)
 		ST(groupby);
 		ST(list);
 	
+		ST(while);
 		ST(if);
 		ST(return);
+		ST(assign);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
@@ -600,6 +606,7 @@ stmt_destroy(stmt *s)
 		case st_update_var:
 		case st_seq_next:
 
+		case st_while:
 		case st_if:
 		case st_return:
 
@@ -609,6 +616,13 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
+			break;
+
+		case st_assign:
+			if (s->op1.sval)
+				_DELETE(s->op1.sval);
+			if (s->op2.stval)
+				stmt_destroy(s->op2.stval);
 			break;
 
 		case st_exception:
@@ -2205,6 +2219,15 @@ grp_find_groupby_col(group *g, stmt *s)
 	return NULL;
 }
 
+stmt *stmt_while(stmt *cond, stmt *whilestmts )
+{
+	stmt *s = stmt_create(st_while);
+
+	s->op1.stval = cond;
+	s->op2.stval = whilestmts;
+	return s;
+}
+
 stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts)
 {
 	stmt *s = stmt_create(st_if);
@@ -2220,6 +2243,15 @@ stmt *stmt_return(stmt *val)
 	stmt *s = stmt_create(st_return);
 
 	s->op1.stval = val;
+	return s;
+}
+
+stmt *stmt_assign(char *varname, stmt *val)
+{
+	stmt *s = stmt_create(st_assign);
+
+	s->op1.sval = _strdup(varname);
+	s->op2.stval = val;
 	return s;
 }
 

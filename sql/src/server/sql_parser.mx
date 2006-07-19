@@ -75,6 +75,7 @@ typedef enum tokens {
 	SQL_RETURN,
 	SQL_IF,
 	SQL_ELSE,
+	SQL_WHILE,
 	SQL_COLUMN,
 	SQL_COLUMN_OPTIONS,
 	SQL_COALESCE,
@@ -241,7 +242,7 @@ int yydebug=1;
 	assignment
 	create_statement
 	drop_statement
-	declare
+	declare_statement
 	set_statement
 	sql
 	sqlstmt
@@ -287,6 +288,7 @@ int yydebug=1;
 	return_statement
 	return_value
 	if_statement
+	while_statement
 	select_stmt
 	select_with_parens
 	select_no_parens
@@ -380,6 +382,8 @@ int yydebug=1;
 	blob
 	opt_external_name
 	external_name
+	opt_begin_label
+	opt_end_label
 
 %type <l>
 	object_privileges
@@ -581,7 +585,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
 
-%token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF
+%token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN
 %token INDEX
@@ -665,6 +669,11 @@ set:
 			  if (m->mode == m_normal)
 		  	  	m->mode = m_inplace; }
 
+declare:
+    DECLARE 		{ mvc *m = (mvc*)parm;
+			  if (m->mode == m_normal)
+		  	  	m->mode = m_inplace; }
+
 	/* schema definition language */
 sql:
     schema
@@ -673,12 +682,12 @@ sql:
  |  create_statement
  |  drop_statement
  |  alter_statement
- |  declare
+ |  declare_statement
  |  set_statement
  ;
 
-declare:
-	DECLARE ident data_type
+declare_statement:
+	declare ident data_type
 			{ dlist *l = L();
 			append_string(l, $2 );
 			append_type(l, &$3 );
@@ -1711,7 +1720,7 @@ opt_temporary_table_declarations:
 invoked_routines:
 	func_def SCOLON
 		{ $$ = L(); append_symbol($$, $1); }
-    |   DECLARE func_def SCOLON
+    |   declare func_def SCOLON
 		{ $$ = L(); append_symbol($$, $2); }
     |	invoked_routines func_def SCOLON 	
 		{ $$ = $1; append_symbol($$, $2); }
@@ -1787,7 +1796,7 @@ procedure_statement:
     | 	create_statement
     |	drop_statement
     |	alter_statement
-    |   declare
+    |   declare_statement
     |   set_statement
     |	control_statement
     ;
@@ -1796,11 +1805,11 @@ control_statement:
 	call_statement
     |	return_statement
     |   if_statement
+    |   while_statement
 /*
     |   case_statement
     |   loop_statement
     |   leave_statement
-    |   while_statement
     |   repeat_statement
     |   for_statement
     |   iterate_statement
@@ -1865,6 +1874,39 @@ if_opt_else:
 		  { $$ = _symbol_create_list(SQL_IF, l); }
 		}
 	;
+
+while_statement:
+	opt_begin_label
+	WHILE search_condition DO
+	procedure_statement_list
+	END WHILE opt_end_label
+
+		{ dlist *l;
+		  char *label = $1?$1:$8;
+		  if ($1 && $8 && strcmp($1, $8) != 0) {
+			$$ = NULL;
+			yyerror("Labels of while should match");
+			YYABORT;
+			YYERROR; /* just to silence intel compiler */
+		  }
+ 		  l = L();
+		  append_symbol(l, $3); /* condition */
+		  append_list(l, $5);	/* statements */
+		  append_string(l, label);
+		  $$ = _symbol_create_list(SQL_WHILE, l);
+		}
+ ;
+
+opt_begin_label:
+	/* empty */ 	{ $$ = NULL; }
+ |	ident ':'
+ ;
+
+opt_end_label:
+	/* empty */ 	{ $$ = NULL; }
+ |	ident 
+ ;
+	
 	
 func_data_type:
     TABLE		{ sql_find_subtype(&$$, "table", 0, 0); }
