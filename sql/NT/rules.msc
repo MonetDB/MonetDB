@@ -57,6 +57,7 @@ NATIVE_WIN32 = 1
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
 SOCKET_LIBS = wsock32.lib
+ODBC_LIBS = odbccp32.lib user32.lib
 
 MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
 MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
