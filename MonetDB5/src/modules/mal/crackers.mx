@@ -2828,7 +2828,7 @@ CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit 
 
 		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, TRUE);
 	else 
-		//CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+		/*CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);*/
 		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
 
 	return MAL_SUCCEED;
@@ -2843,7 +2843,7 @@ CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
 		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, FALSE);
 	else 
-		//CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+		/*CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);*/
 		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
 
 	return MAL_SUCCEED;
