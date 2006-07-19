@@ -302,6 +302,17 @@ exit_err_none:
 int
 ram_impl(str *output, str rampath, str ramquery, int *optlevel1, int *optlevel2, str translator)
 {
+#ifdef WIN32
+	(void) output;
+	(void) rampath;
+	(void) ramquery;
+	(void) optlevel1;
+	(void) optlevel2;
+	(void) translator;
+
+	GDKerror("ram_impl() not available on Windows.\n");
+	return GDK_FAIL;
+#else
   FILE *pin, *pout;
   char cmd[BUFSIZ];
   long size;
@@ -353,6 +364,7 @@ printf("cmd = %s\n", cmd);
 */
   
   return GDK_SUCCEED;
+#endif
 }
 
 /*============================================================================*/
