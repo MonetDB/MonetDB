@@ -4041,23 +4041,28 @@ merged_union( BAT** res, int nbats, BAT **b)
 			return GDK_FAIL;
 		}
 		if (ATOMtype(b[i]->ttype) != ATOMtype(b[j]->ttype)) {
-			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i+1, j+1);
+			GDKerror("merged_union: BATs %d (ttype=%d) & %d (ttype=%d) must have the same tail types.\n", 
+					i+1, b[i]->ttype, j+1, ATOMtype(b[j]->ttype));
 			return GDK_FAIL;
 		}
 		if (ci && b0 >= 0 && b[i]->hseqbase != b[b0]->hseqbase) {
-			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT %d.\n", i+1, b0+1);
+			GDKerror("merged_union: BAT %d (hseqbase="OIDFMT") must have the same hseqbase as BAT %d (hseqbase="OIDFMT").\n", 
+					i+1, b[i]->hseqbase, b0+1, b[b0]->hseqbase);
 			return GDK_FAIL;
 		}
 		if (cj && b1 >= 0 && b[j]->hseqbase != b[b1]->hseqbase) {
-			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT %d.\n", j+1, b1+1);
+			GDKerror("merged_union: BAT %d (hseqbase="OIDFMT") must have the same hseqbase as BAT %d (hseqbase="OIDFMT").\n", 
+					j+1, b[j]->hseqbase, b1+1, b[b1]->hseqbase);
 			return GDK_FAIL;
 		}
 		if (ci && b0 >= 0 && BATcount(b[i]) != BATcount(b[b0])) {
-			GDKerror("merged_union: BAT %d must have the same size as BAT %d.\n", i+1, b0+1);
+			GDKerror("merged_union: BAT %d ("SZFMT" BUNs) must have the same size as BAT %d ("SZFMT" BUNs).\n", 
+					i+1, BATcount(b[i]), b0+1, BATcount(b[b0]));
 			return GDK_FAIL;
 		}
 		if (cj && b1 >= 0 && BATcount(b[j]) != BATcount(b[b1])) {
-			GDKerror("merged_union: BAT %d must have the same size as BAT %d.\n", j+1, b1+1);
+			GDKerror("merged_union: BAT %d ("SZFMT" BUNs) must have the same size as BAT %d ("SZFMT" BUNs).\n", 
+					j+1, BATcount(b[j]), b1+1, BATcount(b[b1]));
 			return GDK_FAIL;
 		}
 	}
