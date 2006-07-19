@@ -177,7 +177,9 @@ transform_files() {
 		BEGIN { doprint = 1; }
 		/<div class="header">/,/<\/div>/ { doprint = 0; }
 		{
-			gsub(/_SUBMENU_/, menu, $0);
+			if (match($0, "_SUBMENU_")) {
+				$0 = substr($0, 1, RSTART - 1) menu substr($0, RSTART + RLENGTH);
+			}
 			gsub(/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/title.shtml" -->/,
 				title, $0);
 			gsub(/<!--#include virtual="_ROOTDIR_\/_TOPMENU_\/topmenu.shtml" -->/,
@@ -204,7 +206,9 @@ transform_files() {
 			'
 		/<div class="header">/,/<\/div>/ { doprint = 0; }
 		/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/content.shtml" -->/,EOF {
-			gsub(/_SUBMENU_/, menu, $0);
+			if (match($0, "_SUBMENU_")) {
+				$0 = substr($0, 1, RSTART - 1) menu substr($0, RSTART + RLENGTH);
+			}
 			gsub(/<!--#include virtual="_ROOTDIR_\/_SUBDIR_\/title.shtml" -->/,
 				title, $0);
 			gsub(/<!--#include virtual="_ROOTDIR_\/_TOPMENU_\/topmenu.shtml" -->/,
