@@ -334,6 +334,7 @@ Height(struct Node * x){
 struct Node *
 SingleRotateLeft(int m, struct Node * node){
         struct Node * l;
+	int nodeLh,nodeRh,lh;
 
         l = node->left;
         node->left = l->right;
@@ -345,9 +346,9 @@ SingleRotateLeft(int m, struct Node * node){
 		TreeIndex[m].Tree = l;
 	}
 
-	int nodeLh = Height(node->left);
-	int nodeRh = Height(node->right);
-	int lh = Height(l->left);
+	nodeLh = Height(node->left);
+	nodeRh = Height(node->right);
+	lh = Height(l->left);
      
 	node->height = (nodeLh > nodeRh ? nodeLh : nodeRh) + 1;
         l->height = (lh > node->height ? lh : node->height) + 1;
@@ -358,6 +359,7 @@ SingleRotateLeft(int m, struct Node * node){
 struct Node *
 SingleRotateRight(int m, struct Node * node){
         struct Node * r;
+	int nodeLh,nodeRh,rh;
 
         r = node->right;
         node->right = r->left;
@@ -369,9 +371,9 @@ SingleRotateRight(int m, struct Node * node){
 		TreeIndex[m].Tree = r;
 	}
 
-	int nodeLh = Height(node->left);
-	int nodeRh = Height(node->right);
-	int rh = Height(r->right);
+	nodeLh = Height(node->left);
+	nodeRh = Height(node->right);
+	rh = Height(r->right);
      
 	node->height = (nodeLh > nodeRh ? nodeLh : nodeRh) + 1;
         r->height = (rh > node->height ? rh : node->height) + 1;
@@ -391,17 +393,17 @@ DoubleRotateRight(int m, struct Node * node){
             return SingleRotateRight(m, node);
 }
 
-
-
 @= TreeOperations
 
 lng
 getNext_@1(struct Node * current, BAT *b, BUN base, int xx, lng next){
 
+	struct Node * temp;
+
 	if (current->right == NULL)
 		return next;
 
-	struct Node * temp = current->right;
+	temp = current->right;
 	while(temp->left != NULL)
 		temp = temp->left;
 	
@@ -411,8 +413,10 @@ getNext_@1(struct Node * current, BAT *b, BUN base, int xx, lng next){
 bit
 GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next){
 
-	BUN cur = base + ((current->position) * xx);
-	BUN curValue = BUNtloc(b, cur);
+	BUN cur,curValue,Lchild,LchildValue,Rchild,RchildValue;
+ 
+	cur = base + ((current->position) * xx);
+	curValue = BUNtloc(b, cur);
 
 	/* For the case where the head is the needed value. Maybe could be done outside to avoid one function call*/
 	if ( @2_EQ(&x,curValue,@3@1) && inclusive == current->inclusive){
@@ -434,8 +438,8 @@ GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 	
 	}
 
-	BUN Lchild = base + ((current->left->position) * xx);
-	BUN LchildValue = BUNtloc(b, Lchild);
+	Lchild = base + ((current->left->position) * xx);
+	LchildValue = BUNtloc(b, Lchild);
 
 	/*An exact match*/
 	if (@2_EQ(&x,LchildValue,@3@1) && inclusive == current->left->inclusive){ 
@@ -456,8 +460,8 @@ GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 		return 0;
 	}	
 
-	BUN Rchild = base + ((current->right->position) * xx);
-	BUN RchildValue = BUNtloc(b, Rchild);
+	Rchild = base + ((current->right->position) * xx);
+	RchildValue = BUNtloc(b, Rchild);
        
 	/*An exact match*/
 	if (@2_EQ(&x,RchildValue,@3@1) && inclusive == current->right->inclusive){ 
@@ -474,10 +478,12 @@ GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 lng
 getPrevious_@1(struct Node * current, BAT *b, BUN base, int xx, lng previous){
 
+	struct Node * temp;
+
 	if (current->left == NULL)
 		return previous;
 
-	struct Node * temp = current->left;
+	temp = current->left;
 	while(temp->right != NULL)
 		temp = temp->right;
 	
@@ -486,9 +492,11 @@ getPrevious_@1(struct Node * current, BAT *b, BUN base, int xx, lng previous){
 
 bit
 GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, lng *p1, lng *p2, lng previous, lng next){
-	
-	BUN cur = base + ((current->position) * xx);
-	BUN curValue = BUNtloc(b, cur);
+
+        BUN cur,curValue,Lchild,LchildValue,Rchild,RchildValue;	
+
+	cur = base + ((current->position) * xx);
+	curValue = BUNtloc(b, cur);
 
 	/* For the case where the head is the needed value. Maybe could be done outside to avoid one function call*/
 	if ( @2_EQ(&x,curValue,@3@1) && inclusive == current->inclusive){
@@ -510,8 +518,8 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 
 	}
 
-	BUN Rchild = base + ((current->right->position) * xx);
-	BUN RchildValue = BUNtloc(b, Rchild);
+	Rchild = base + ((current->right->position) * xx);
+	RchildValue = BUNtloc(b, Rchild);
 
 	/*An exact match*/
 	if (@2_EQ(&x,RchildValue,@3@1) && inclusive == current->right->inclusive){ 
@@ -531,8 +539,8 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 		return 0;
 	}
 		
-	BUN Lchild = base + ((current->left->position) * xx);
-        BUN LchildValue = BUNtloc(b, Lchild);
+	Lchild = base + ((current->left->position) * xx);
+        LchildValue = BUNtloc(b, Lchild);
 
 	/*An exact match*/
 	if (@2_EQ(&x,LchildValue,@3@1) && inclusive == current->left->inclusive){ 
@@ -549,6 +557,9 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 struct Node *
 InsertTree_@1(int m, int position, @1 value, bit inclusive, struct Node * current, BAT * b, BUN base, int xx){
 	
+	BUN cur,curValue,Lchild,LchildValue,Rchild,RchildValue;
+	int lh,rh;
+
 	if (current == NULL){
         	current = (struct Node *)GDKmalloc(sizeof(struct Node));
                 current->position = position; 
@@ -560,16 +571,16 @@ InsertTree_@1(int m, int position, @1 value, bit inclusive, struct Node * curren
 		goto end;
         }
         
-	BUN cur = base + ((current->position) * xx);
-        BUN curValue = BUNtloc(b, cur);
+	cur = base + ((current->position) * xx);
+        curValue = BUNtloc(b, cur);
 	
         if ( @2_LT(&value,curValue,@3@1) || (@2_EQ(&value,curValue,@3@1) && inclusive == TRUE && current->inclusive == FALSE) ){
 
                 current->left = InsertTree_@1(m, position, value, inclusive, current->left, b, base, xx);
 
                 if ( Height(current->left) - Height(current->right) == 2 ){
-		        BUN Lchild = base + ((current->left->position) * xx);
-        		BUN LchildValue = BUNtloc(b, Lchild);
+		        Lchild = base + ((current->left->position) * xx);
+        		LchildValue = BUNtloc(b, Lchild);
 
                     	if ( @2_LT(&value,LchildValue,@3@1) || (@2_EQ(&value,LchildValue,@3@1) && inclusive == TRUE && current->left->inclusive == FALSE) )
                         	current = SingleRotateLeft(m, current);
@@ -583,8 +594,8 @@ InsertTree_@1(int m, int position, @1 value, bit inclusive, struct Node * curren
                 current->right = InsertTree_@1(m, position, value, inclusive, current->right, b, base, xx);
 
                 if ( Height(current->right) - Height(current->left) == 2 ){
-			BUN Rchild = base + ((current->right->position) * xx);
-                        BUN RchildValue = BUNtloc(b, Rchild);
+			Rchild = base + ((current->right->position) * xx);
+                        RchildValue = BUNtloc(b, Rchild);
 
                         if ( @2_GT(&value,RchildValue,@3@1) || (@2_EQ(&value,RchildValue,@3@1) && inclusive == FALSE && current->right->inclusive == TRUE) )
                         	current = SingleRotateRight(m, current);
@@ -594,8 +605,8 @@ InsertTree_@1(int m, int position, @1 value, bit inclusive, struct Node * curren
         }
 
 	end:;
-	int lh = Height(current->left);
-	int rh = Height(current->right);
+	lh = Height(current->left);
+	rh = Height(current->right);
 		
         current->height = (lh > rh? lh : rh) + 1;
         return current;
@@ -784,6 +795,7 @@ removeTreeIndex(int *k, int *bid){
 str
 appendCrackerBAT(int *k, int * bid, int * new){
 	(void)k;
+        BAT *i, *u;
 	int position = -1;
 	for (int i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
@@ -791,15 +803,16 @@ appendCrackerBAT(int *k, int * bid, int * new){
 			break;	
 		}
 
-        BAT *i, *u;
 
         if ((i = BATdescriptor(TreeIndex[position].cbid)) == NULL) {
                 return throwMessage("bat.append", "Cannot access descriptor");
         }
+
         if ((u = BATdescriptor(*new)) == NULL) {
                 BBPreleaseref(i->batCacheid);
                 return throwMessage("bat.append", "Cannot access descriptor");
         }
+
         BATappend(i, u, TRUE);
        
 	printf("\n index size of bat is "SZFMT" \n", BATcount(i));
@@ -840,9 +853,10 @@ CRKprintIndex(int *k, int *bid)
 void            
 addTreeIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b)
 {       
+	BUN ph,pt,base;
         int xx = BUNsize(b);
-	BUN ph = BUNhloc(b, BUNlast(b));
-	BUN pt = BUNtloc(b, BUNlast(b));
+	ph = BUNhloc(b, BUNlast(b));
+	pt = BUNtloc(b, BUNlast(b));
 
         if (BATcount(b) == 0){
 
@@ -860,7 +874,7 @@ addTreeIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b)
 
 	@:insertIndexElement(@1, ph, pt, index, *value)@
 	
-	BUN base = BUNhloc(b, BUNfirst(b));
+	base = BUNhloc(b, BUNfirst(b));
         InsertTree_@1(m, BATcount(b)-1, *value, inclusive, TreeIndex[m].Tree, b, base, xx);
 }
 
@@ -2290,7 +2304,9 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		the other indices as it is shown */
 	int xx;
 	int _vl;
-	bit HBound;
+	bit HBound,foundLow,foundHgh;
+	int gapL = 1;
+	int gapH = 1;
 	
 	if (@2_GT(low,hgh,@3@1))
 		return throwMessage("crackers.crack", "illegal range");
@@ -2384,10 +2400,10 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 
 	/* find out where in the index the low falls */
 	
-	bit foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+	foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
 
 	/* find out where in the index the high falls */
-	bit foundHgh = GetHgh_@1(*hgh, HBound, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+	foundHgh = GetHgh_@1(*hgh, HBound, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
 
 	/*need to increase one position for the low bound only since we always store the previous position in the index*/
 	if (cl1 != 0) cl1++;
@@ -2400,8 +2416,6 @@ printf("\n found Low=%d, found Hgh=%d \n",foundLow,foundHgh);
 */
 
 
-	int gapL = 1;
-	int gapH = 1;
 	/* If one or both of the result view bounds were not found using the 
 	index then we have to crack */
 	if (foundLow == 0 || foundHgh == 0){
