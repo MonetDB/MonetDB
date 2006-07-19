@@ -2,7 +2,7 @@
 
 echo "create bdy files"
 
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ];
+if [ -z "$3" ];
 then
 	echo "usage $0 subtarget m5prefix m4prefix" > /dev/stderr
 	exit -1
