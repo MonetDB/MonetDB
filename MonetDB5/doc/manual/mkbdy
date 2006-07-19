@@ -11,19 +11,20 @@ fi
 # extract the texi files from the source trees
 # leave them behind in a temporary directory
 
-dir=$1
-m4dir=$2
+MANUAL=$1
+dir=$2
+m4dir=$3
 
-mkdir ${dir}/doc/share/tmp
+mkdir ${dir}/doc/share/tmp/${MANUAL}
 cd ${dir}/src/mal
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
 
 cd ${dir}/src/optimizer
 for f in  `ls *.mx`
@@ -31,9 +32,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
 
 cd ${m4dir}/src/gdk
 for f in  `ls *.mx`
@@ -41,12 +42,12 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
-cp *pdf ${dir}/doc/share/tmp
-cp *feps *pdf ${dir}/doc/share/tmp
-sed -i -e "/@t/,/@contents/d" ${dir}/doc/share/tmp/gdk.bdy.texi
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
+cp *pdf ${dir}/doc/share/tmp/${MANUAL}
+cp *feps *pdf ${dir}/doc/share/tmp/${MANUAL}
+sed -i -e "/@t/,/@contents/d" ${dir}/doc/share/tmp/${MANUAL}/gdk.bdy.texi
 
 cd ${m4dir}/src/mapi/clients/C
 for f in  `ls *.mx`
@@ -54,9 +55,9 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
 
 cd ${dir}/src/modules/mal
 for f in  `ls *.mx`
@@ -64,7 +65,7 @@ do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		cp $b.bdy.texi ${dir}/doc/share/tmp/$b.bdy.texi.bak
+		cp $b.bdy.texi ${dir}/doc/share/tmp/${MANUAL}/$b.bdy.texi.bak
 		ex $b.bdy.texi <<!EOF
 		/^@example/s/.*/ @table @code/
 /^@end example/s//@end table/
@@ -86,32 +87,32 @@ do
 		f
 		w!
 !EOF
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
 cd ${dir}/src/mil
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
 cd ${dir}/src/modules/atoms
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
+cp *gif *eps *pdf ${dir}/doc/share/tmp/${MANUAL}
 cd ${dir}/src/modules/kernel
 for f in  `ls *.mx`
 do
 	b=`basename $f .mx`
 	echo "---->" $f $b.bdy.texi 
         Mx -i -B -H1 $f
-		mv $b.bdy.texi  ${dir}/doc/share/tmp
+		mv $b.bdy.texi  ${dir}/doc/share/tmp/${MANUAL}
 done
