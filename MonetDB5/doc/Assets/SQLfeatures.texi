@@ -26,7 +26,7 @@ supported in the released version.
 * DEBUG Statement::
 * TRACE Statement::
 * Optimizer Control::
-* Overlaying the BAT storage::
+* Overlaying BATs::
 @end menu
 
 @node Session Variables, EXPLAIN Statement, MonetDB/SQL Features, MonetDB/SQL Features
@@ -271,7 +271,7 @@ on the expensive components of the query plan.
 #   911 usec#    sql_cache.s0_0()
 @end verbatim
 
-@node Optimizer Control, Overlaying the BAT storage, TRACE Statement,  MonetDB/SQL Features
+@node Optimizer Control, Overlaying BATs, TRACE Statement,  MonetDB/SQL Features
 @section Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.

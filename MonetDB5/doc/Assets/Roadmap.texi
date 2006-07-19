@@ -4,96 +4,11 @@ The information is organized around the major system components.
 A precise timeline can not be given. It depends too much on the
 available resources and urgency (= pressure) by our research needs and
 clients.
+@ifset XQRYmanual
 @menu
-* SQL Roadmap ::
 * XQuery Roadmap ::
 * Embedded Server Roadmap ::
 * Server Roadmap ::
 @end menu
+@end ifset
 
-@node SQL Roadmap, XQuery Roadmap, Development Roadmap, Development Roadmap
-@subsection SQL Roadmap
-The long term objective for the SQL front-end is to provide all features
-available in SQL:2003. The priority for individual features
-is determined in an ad hoq way.
-The SQL features scheduled for implementation
-and those that won't be supported in the foreseeable future
-are shown below.
-
-Our current assessment of the features planned for upcoming releases,
-in order of priority, are:
-@itemize @bullet
-@item @emph{Full text retrieval }
-A full text retrieval support function consists of a special
-constructed index over text appearing in multiple columns of
-a relational table. This index is built using well-known
-Information Retrieval techniques, such as stemming, keyword
-recognition, and stop-word reduction.
-Several IR projects are underway, which enhance MonetDB with
-IR capabilities.
-@item @emph{Stored SQL procedures}
-Stored procedures are a powerful scheme to offload operational
-abstractions to the server. The MonetDB server comes with its own programming
-language MAL to encode critical functions. 
-Linking with the SQL compiler is readily
-available, leaving a MonetDB specific implementation of stored SQL
-procedures less important.
-@item @emph{Support for multi-media objects}
-MonetDB has been used in several multi-media projects, but mostly
-to store and manipulate derived features. Multimedia objects can
-be stored as unprotected URLs, i.e. there is no guarantee the
-object referred to exists upon answering a query. The functionality
-should be extended with image, audio, and video types.
-@item @emph{General column and table constraint enforcement}
-@item @emph{Internationalization of the character sets}
-@item @emph{Full outer-join queries}
-@end itemize
-The database backend architecture prohibits easy implementation of
-several SQL-99 features. Those on the list below are not expected to
-be supported.
-@itemize @bullet
-@item
-Cursor based processing, because the execution engine is not based
-on the iterator model deployed in other engines. A simulation of the
-cursor based scheme would be utterly expensive from a performance
-point of view.
-@item
-Multi-level transaction isolation levels. Coarse grain isolation is
-provided using table level locks.
-@end itemize
-
-@node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Development Roadmap
-@subsection XQuery Roadmap
-The XQuery compiler is currently only available on MonetDB Version 4.
-It is based on the @url{http://pathfinder-xquery.org,Pathfinder} 
-compiler project.
-
-@node Embedded Server Roadmap, Server Roadmap, XQuery Roadmap, Development Roadmap
-@subsection Embedded MonetDB Roadmap
-The embedded MonetDB software family provides support for both
-SQL and XQuery (Version 4 only). The software has been tuned to
-run on small scale hardware platforms.
-
-A broader deployment of the embedded technology requires both 
-extensions in the distributed MonetDB versions and its replication
-services. Continual attention is given to the memory footprint and cpu/io
-resource consumptions on embedded devices.
-
-A separate project, called the Datacell, is underway and geared at
-providing a streaming environment for embedded applications.
-The supportive modules are scheduled for release in 2006.
-
-@node Server Roadmap, Backward Compatibility, Embedded Server Roadmap, Development Roadmap
-@subsection Server Roadmap
-The MonetDB server code base is continously being improved. 
-Major areas under developement are:
-@itemize @bullet
-@item @emph{Replication Service}
-A single-write multiple-read distributed replication service is
-prepared for release mid 2006.  It will provide both the concept
-of merge tables and selective replication of tuples to different
-servers.
-@item @emph{GIS support}
-Support for geographical application is underway. It consists of
-a concise library for managing geometric types.
-@end itemize

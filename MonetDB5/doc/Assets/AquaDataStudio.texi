@@ -3,7 +3,7 @@
 Aqua Data Studio is a graphical user interface to interact with MonetDB/SQL.
 It is available on Windows, Linux, and MacOS platforms from  the
 @url{http://www.aquafold.com, distribution} site.
-Download the Version 4.5  executable and install the software.
+Download the Version 4.7  executable and install the software.
 
 The first step to make Aqua Data Studio aware of MonetDB is to register 
 the database server .

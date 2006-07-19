@@ -6,7 +6,7 @@ system architecture, services, and best practices on using its components.
 @ifset M5manual
 The manual is focussed on the features available in Version 5.
 Users of previous versions may benefit from the sections
-on e.g. @ref{SQL} and the Inner Core of the system, because these
+on e.g. SQL and the Inner Core of the system, because these
 components are shared with Version 4.
 @end ifset
 
@@ -83,7 +83,11 @@ direction for additional information.
 @end ifset
 
 First time users of MonetDB should read @ref{Download
-and Installation} and @ref{SQL}. It prepares the ground to develop
+and Installation} 
+@ifset SQLmanual
+and @ref{SQL}
+@end ifset
+. It prepares the ground to develop
 applications.
 Advanced topics for application builders are covered in @ref{Programming
 Interfaces}.
