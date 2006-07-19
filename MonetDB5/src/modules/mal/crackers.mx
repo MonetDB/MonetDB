@@ -1922,7 +1922,7 @@ the appropriate pieces, update the index and return the result.
 	if (vl != -1 && vh != -1){
 		if (vl>0) _vl=vl-1; else _vl=vl;		
 		addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
-		addTreeIndex_@1(m,hgh,*inclusiveHgh,vh,c);
+		addTreeIndex_@1(m,hgh,HBound,vh,c);
 	}
 
 @= crkThree
@@ -2290,10 +2290,14 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		the other indices as it is shown */
 	int xx;
 	int _vl;
+	bit HBound;
 	
 	if (@2_GT(low,hgh,@3@1))
 		return throwMessage("crackers.crack", "illegal range");
-        
+	
+	if (*inclusiveHgh == TRUE) HBound = FALSE;
+	else	HBound = TRUE; 				        
+
 	m = existsTreeIndex(*bid);
 
 	/* if this is the first time we select something from this bat, 
@@ -2383,15 +2387,19 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	bit foundLow = GetLow_@1(*low, *inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
 
 	/* find out where in the index the high falls */
-	bit foundHgh = GetHgh_@1(*hgh, *inclusiveHgh, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+	bit foundHgh = GetHgh_@1(*hgh, HBound, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
 
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
 	if (cl1 != 0) cl1++;
 	if (cl2 != 0) cl2++;
 /*	
 printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
 printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
 printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("\n found Low=%d, found Hgh=%d \n",foundLow,foundHgh);
 */
+
+
 	int gapL = 1;
 	int gapH = 1;
 	/* If one or both of the result view bounds were not found using the 
@@ -2418,7 +2426,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 				if (IndexSize <IndexStop){
 					if (vl>0) _vl=vl-1; else _vl=vl;		
 					if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,_vl,c);
-					if (gapH>0) addTreeIndex_@1(m,hgh,*inclusiveHgh,vh,c);
+					if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
 				}
 			}
 		}else
@@ -2437,7 +2445,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 			@:crkTwoRTree(@1)@
 			/*printf(" %lld \n",(ch2-cl2));*/
 			if (IndexSize <IndexStop)
-				if (gapH>0) addTreeIndex_@1(m,hgh,*inclusiveHgh,vh,c);
+				if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
 			vl = cl1;
 		} 	
 	}
@@ -2806,8 +2814,8 @@ CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit 
 
 		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, TRUE);
 	else 
-		/*CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);*/
-		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+		CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+		/*CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);*/
 
 	return MAL_SUCCEED;
 }
@@ -2821,8 +2829,8 @@ CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
 		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, FALSE);
 	else 
-		/*CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);*/
-		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+		CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+		/*CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);*/
 
 	return MAL_SUCCEED;
 }
