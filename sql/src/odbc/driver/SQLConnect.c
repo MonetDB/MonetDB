@@ -90,7 +90,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 	if (nUIDLength > 0) {
 		if (nUIDLength >= sizeof(uid))
 			nUIDLength = sizeof(uid) - 1;
-		strncpy(uid, szUID, nUIDLength);
+		strncpy(uid, (char *) szUID, nUIDLength);
 		uid[nUIDLength] = 0;
 	}
 	n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb", pwd, sizeof(pwd), "odbc.ini");
@@ -104,7 +104,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 	if (nPWDLength > 0) {
 		if (nPWDLength >= sizeof(pwd))
 			nPWDLength = sizeof(pwd) - 1;
-		strncpy(pwd, szPWD, nPWDLength);
+		strncpy(pwd, (char *) szPWD, nPWDLength);
 		pwd[nPWDLength] = 0;
 	}
 
