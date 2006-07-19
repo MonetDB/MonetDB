@@ -39,18 +39,6 @@ In the remainder of this section we shortly introduce the
 MonetDB Version 5 design considerations and
 a quick overview of its architecture.
 
-@menu
-* Design Considerations::
-* Architecture Overview::
-* MAL Synopsis::
-* Execution Engine::
-* Backward Compatibility::
-* Session Scenarios::
-* Scenario Management::
-* Client Interfaces::
-* Data Management Tools::
-* Development Roadmap::
-@end menu
 @node  Design Considerations, Architecture Overview, MonetDB Overview ,MonetDB Overview
 @+ Design Considerations
 Redesign of the MonetDB software stack was driven by the need to
