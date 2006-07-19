@@ -1,0 +1,4 @@
+let $doc := doc("$TSTSRCDIR/where-clause.SF-1524344.xml")
+for $event in $doc//event
+where $event/@rel = "not"
+return <event>{$event/@rel}{$event/s}</event>
