@@ -28,18 +28,21 @@ pdf:
 	(cd $(M5DIR)/doc/share/; pdfnup $(MANUAL).pdf)
 	echo "Manual created" 
 
+webs: 
+	make MANUAL=manual web
+	make MANUAL=sqlmanual web
+	make MANUAL=m5server web
 web:
-	echo "Create tmp:" $(M5DIR)/doc/share/tmp
+	echo "Create tmp:" $(M5DIR)/doc/share/tmp/$(MANUAL)
 	echo "using:" $(M4DIR)
-	mkdir -p $(M5DIR)/doc/share/tmp
+	mkdir -p $(M5DIR)/doc/share/tmp/$(MANUAL)
 	mkbdy $(M5DIR) $(M4DIR)
-	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
-	cp manual.css $(M5DIR)/doc/share/tmp
-	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp
-	(cd $(M5DIR)/doc/share/tmp/; \
+	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/$(MANUAL)
+	cp manual.css $(M5DIR)/doc/share/tmp/$(MANUAL)
+	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp/$(MANUAL)
+	(cd $(M5DIR)/doc/share/tmp/$(MANUAL)/; \
 	makeinfo --force --html $(MANUAL).texi --css-include=manual.css \
 	)
-	cp -r $(M5DIR)/doc/share/tmp/MonetDB $(M5DIR)/doc/share
 	echo "Web version created"
 
 web2:
