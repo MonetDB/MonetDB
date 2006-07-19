@@ -271,6 +271,17 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 	return q;
 }
 
+InstrPtr
+multiplexN(MalBlkPtr mb, char *name)
+{
+	InstrPtr q = NULL;
+
+	if (strcmp(name,"calc.rotate_xor_hash") == 0) {
+		q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
+	} 
+	return q;
+}
+
 @-
 The intermediate results of this translation are mostly readonly.
 Set this property to reduce copying.
@@ -1137,10 +1148,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->nrcols) {
-				q = newStmt(mb, "optimizer","multiplex");
-				setVarType(mb,getArg(q,0), 
-					newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
-				q = pushStr(mb, q, convertCalcOperator(fimp));
+				fimp = convertCalcOperator(fimp);
+				q = multiplexN(mb,fimp);
+				if (!q) {
+					q = newStmt(mb, "optimizer","multiplex");
+					setVarType(mb,getArg(q,0), 
+						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
+					q = pushStr(mb, q, fimp);
+				} else {
+					setVarType(mb,getArg(q,0), 
+						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
+					_DELETE(fimp);
+				}
 			} else {
 				if (is_sqlfunc(s->op4.funcval->func))
 					q = newStmt1(mb, sql_cacheRef, fimp);
