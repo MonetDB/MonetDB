@@ -114,6 +114,18 @@ using the
 @include Assets/Databasedump.texi
 
 @node MonetDB Overview, Design Considerations, Database Dumps, Top
+@menu
+* Design Considerations::
+* Architecture Overview::
+* MAL Synopsis::
+* Execution Engine::
+* Backward Compatibility::
+* Session Scenarios::
+* Scenario Management::
+* Client Interfaces::
+* Data Management Tools::
+* Development Roadmap::
+@end menu
 @include mal.bdy.texi
 
 @node Session Scenarios , Scenario Management , Execution Engine, MonetDB Overview
@@ -141,6 +153,13 @@ using the
 
 @node Development Roadmap, SQL Roadmap, iSQL-Viewer, MonetDB Overview
 @include Assets/Roadmap.texi
+@menu
+* SQL Roadmap ::
+* XQuery Roadmap ::
+* Embedded Server Roadmap ::
+* Server Roadmap ::
+@end menu
+
 @node SQL Roadmap, XQuery Roadmap, Development Roadmap, Development Roadmap
 @include Assets/SQLRoadmap.texi
 @node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Development Roadmap
