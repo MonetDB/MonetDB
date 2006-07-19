@@ -39,7 +39,6 @@
 
 #include "variable.h"
 #include "algebra.h"
-#include "mil.h"
 
 #include "ordering.h"
 
