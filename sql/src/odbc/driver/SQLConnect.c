@@ -35,6 +35,7 @@
  *
  **********************************************************************/
 
+#include <sql_config.h>
 #include <monet_options.h>
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
@@ -43,10 +44,10 @@
 #include <strings.h>
 #endif
 
-#ifdef NATIVE_WIN32
+#ifdef HAVE_ODBCINST_H
 #include <odbcinst.h>
-#define HAVE_SQLGETPRIVATEPROFILESTRING 1
 #endif
+
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	(strncpy(buffer,default,bufferlen), buffer[bufferlen-1]=0, strlen(buffer))
 #endif

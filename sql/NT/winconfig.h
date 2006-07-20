@@ -223,6 +223,9 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
 
+/* Define to 1 if you have the <odbcinst.h> header file. */
+#define HAVE_ODBCINST_H 1
+
 /* Define to 1 if you have the <perfmon.h> header file. */
 /* #undef HAVE_PERFMON_H */
 
@@ -272,6 +275,9 @@
 
 /* Define to 1 if the system has the type `socklen_t'. */
 /* #undef HAVE_SOCKLEN_T */
+
+/* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
+#define HAVE_SQLGETPRIVATEPROFILESTRING 1
 
 /* Define to 1 if the system has the type `ssize_t'. */
 #define HAVE_SSIZE_T 1
