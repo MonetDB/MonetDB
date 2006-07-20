@@ -356,7 +356,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				size_t buflen = strlen(s->op1.sval) + 32;
 				buf = NEW_ARRAY(char, buflen + 1);
 
-				len = snprintf(buf, buflen, "var s%d := %s;\n", -s->nr, s->op1.sval);
+				if (s->flag) /* declare */
+					len = snprintf(buf, buflen, "var %s;\n", s->op1.sval);
+				else
+					len = snprintf(buf, buflen, "var s%d := %s;\n", -s->nr, s->op1.sval);
 				assert(len <= buflen);
 			} else {
 				size_t buflen = 32;

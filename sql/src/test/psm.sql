@@ -19,3 +19,25 @@ begin
 end;
 
 select my_while(105);
+
+create function my_declare(v int) returns int as 
+begin
+	declare x int;
+	set x = v;
+	return x;
+end;
+
+select my_declare(105);
+
+create function my_case(v int) returns int as
+begin
+	case v
+	when 1 then return 100;
+	when 2 then return 200;
+	else return -1;
+	end case;
+end;
+
+select my_case(1);
+select my_case(2);
+select my_case(3);

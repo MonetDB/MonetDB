@@ -122,7 +122,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			atom *a = e->l;
 			s = stmt_atom(atom_dup(a));
 		} else if (e->r) { 		/* parameters */
-			s = stmt_var(e->r, e->f);
+			s = stmt_var(e->r, e->f, 0);
 		} else { 			/* arguments */
 			s = stmt_varnr(e->flag, e->f);
 		}

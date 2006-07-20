@@ -34,7 +34,7 @@ extern stmt *psm(mvc *sql, symbol *sym);
 #include "sql_select.h"
 #include "sql_semantic.h"
 
-static stmt * sequential_block (mvc *sql, scope *scp, dlist *blk);
+static stmt * sequential_block (mvc *sql, scope *scp, dlist *blk, char *opt_name);
 
 /* SET variable = value */
 
@@ -43,23 +43,44 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 {
 	char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
-	stmt *r = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
+	stmt *v = NULL, *r = NULL;
 
 	/* name can be 
 		'global variable' currently ignored 
 		'parameter of the function' (ie in the param list)
 		or local variable, declared earlier
 	*/
-	sql_arg *a = sql_bind_param(sql, name);
 
+	/* check if variable is known from the stack */
+	if ((v = stack_find_var(sql, name)) == NULL) {
+		sql_arg *a = sql_bind_param(sql, name);
+
+		if (!a) /* not parameter, ie local var ? */
+			return sql_error(sql, 01, "Variable %s unknown", name);
+	}
+
+	r = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
 	if (!r)
-		return NULL;
-
-	if (!a) /* not parameter, ie local var ? */
 		return NULL;
 
 	/* TODO type checking */
 	return stmt_assign(name, r);
+}
+
+static stmt *
+psm_declare(mvc *sql, scope *scp, dnode *n)
+{
+	char *name = n->data.sval;
+	sql_subtype *ctype = &n->next->data.typeval;
+	stmt *r = NULL;
+
+	(void)scp;
+	/* check if we overwrite a scope local variable declare x; declare x; */
+	if (frame_find_var(sql, name)) 
+		return sql_error(sql, 01, "Variable %s allready declared", name);
+	r = stmt_var(_strdup(name), ctype, 1);
+	stack_push_var(sql, name, r);
+	return r;
 }
 
 /* [ label: ]
@@ -81,9 +102,7 @@ psm_while_do( mvc *sql, scope *scp, dnode *w )
 
 		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
 		n = n->next;
-		whilestmts = sequential_block(sql, scp, n->data.lval);
-		n = n->next;
-		/* optional label */
+		whilestmts = sequential_block(sql, scp, n->data.lval, n->next->data.sval);
 
 		if (sql->session->status || !cond || !whilestmts) {
 			cond_stmt_destroy(cond);
@@ -112,7 +131,7 @@ psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
 
 		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
 		n = n->next;
-		ifstmts = sequential_block(sql, scp, n->data.lval);
+		ifstmts = sequential_block(sql, scp, n->data.lval, NULL);
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, scp, n);
 
@@ -128,8 +147,78 @@ psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
 
 		if (e->token != SQL_ELSE)
 			return NULL;
-		return sequential_block( sql, scp, e->data.lval);
+		return sequential_block( sql, scp, e->data.lval, NULL);
 	}
+}
+
+/* 	1
+	CASE
+	WHEN search_condition THEN statements
+	[ WHEN search_condition THEN statements ]
+	[ ELSE statements ]
+	END CASE
+
+	2
+	CASE case_value
+	WHEN when_value THEN statements
+	[ WHEN when_value THEN statements ]
+	[ ELSE statements ]
+	END CASE
+ */
+static stmt * 
+psm_case( mvc *sql, scope *scp, dnode *case_when )
+{
+	if (!case_when)
+		return NULL;
+
+	/* case 1 */
+	if (case_when->type == type_symbol) {
+		dnode *n = case_when;
+		symbol *case_value = n->data.sym;
+		dlist *when_statements = n->next->data.lval;
+		dlist *else_statements = n->next->next->data.lval;
+		stmt *else_stmt = NULL, *v = sql_value_exp(sql, scp, case_value, NULL, NULL, sql_sel);
+		stmt *cur_if = NULL, *top = NULL;
+
+		n = when_statements->h;
+		if (!v)
+			return NULL;
+		if (else_statements) {
+			else_stmt = sequential_block( sql, scp, else_statements, NULL);
+			if (!else_stmt) {
+				stmt_destroy(v);
+				return NULL;
+			}
+		}
+		while(n) {
+			dnode *m = n->data.sym->data.lval->h;
+			stmt *cond, *when_value = sql_value_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
+			stmt *if_stmts = NULL;
+			stmt *case_stmt = NULL;
+
+			if (!when_value || 
+			   (cond = sql_compare(sql, stmt_dup(v), when_value, "=", sql_sel)) == NULL || 
+			   (if_stmts = sequential_block( sql, scp, m->next->data.lval, NULL)) == NULL ) {
+				stmt_destroy(v);
+				cond_stmt_destroy(else_stmt);
+				cond_stmt_destroy(cond);
+				return NULL;
+			}
+			case_stmt = stmt_if(cond, if_stmts, NULL);
+			if (cur_if)
+				cur_if->op3.stval = case_stmt;
+			cur_if = case_stmt;
+			if (!top)
+				top = case_stmt;
+			n = n->next;
+		}
+		if (cur_if)
+			cur_if->op3.stval = else_stmt;
+		return top;
+	} else { 
+		/* case 2 */
+	}
+	return NULL;
 }
 
 /* return val;
@@ -144,7 +233,7 @@ psm_return( mvc *sql, scope *scp, symbol *return_sym )
 }
 
 static stmt *
-sequential_block (mvc *sql, scope *scp, dlist *blk) 
+sequential_block (mvc *sql, scope *scp, dlist *blk, char *opt_label) 
 {
 	list *l;
 	stmt *res = NULL;
@@ -152,6 +241,7 @@ sequential_block (mvc *sql, scope *scp, dlist *blk)
 
 	if (blk->h)
  		l = create_stmt_list();
+	stack_push_frame(sql, opt_label);
 	for (n = blk->h; n; n = n->next ) {
 		symbol *s = n->data.sym;
 		switch (s->token) {
@@ -159,13 +249,16 @@ sequential_block (mvc *sql, scope *scp, dlist *blk)
 			res = psm_set(sql, scp, s->data.lval->h);
 			break;
 		case SQL_DECLARE:
-			printf("declare\n");
+			res = psm_declare(sql, scp, s->data.lval->h);
 			break;
 		case SQL_WHILE:
 			res = psm_while_do(sql, scp, s->data.lval->h);
 			break;
 		case SQL_IF:
 			res = psm_if_then_else(sql, scp, s->data.lval->h);
+			break;
+		case SQL_CASE:
+			res = psm_case(sql, scp, s->data.lval->h);
 			break;
 		case SQL_RETURN:
 			res = psm_return(sql, scp, s->data.sym);
@@ -175,10 +268,12 @@ sequential_block (mvc *sql, scope *scp, dlist *blk)
 		}
 		if (!res) {
 			list_destroy(l);
-			return NULL;
+			l = NULL;
+			break;
 		}
 		list_append(l, res);
 	}
+	stack_pop_frame(sql);
 	if (l)
 		return stmt_list(l);
 	return NULL;
@@ -200,7 +295,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 	if (body) {		/* sql func */
 		char *q = QUERY(sql->scanner);
 		stmt *b = NULL;
-		if (!(b = sequential_block(sql, NULL, body ))) {
+
+		if (!(b = sequential_block(sql, NULL, body, NULL ))) {
 			return NULL;
 		}
 		
