@@ -1,4 +1,4 @@
-stderr of test 'where-clause.SF-1524344a` in directory 'tests/BugTracker` itself:
+stderr of test 'where-clause.SF-1524344d` in directory 'tests/BugTracker` itself:
 
 
 # 23:24:25 >  
@@ -58,7 +58,7 @@ stderr of test 'where-clause.SF-1524344a` in directory 'tests/BugTracker` itself
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
 # 23:24:25 >  
-# 23:24:25 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=34667 where-clause.SF-1524344a.xq
+# 23:24:25 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -umonetdb -Pmonetdb --host=localhost --port=34667 where-clause.SF-1524344d.xq
 # 23:24:25 >  
 
 
