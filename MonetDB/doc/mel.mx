@@ -23,7 +23,7 @@
 @* Introduction
 The primary interface
 of MonetDB is called MIL, the MonetDB Interpreter Language (see the
-@[<a href="../../FrontEnds/mil/index.html">MIL Reference Manual</a>@ for an exhaustive
+@[<a href="../mil/index.html">MIL Reference Manual</a>@ for an exhaustive
 description).
 @-
 MIL is an interpreted scripting language, designed as an intermediate 
@@ -884,7 +884,7 @@ range of memory. You can use the
 macro to inquire for the length of the region. For fixed-size
 atoms, this will always yield the same value, that can be
 statically looked up with the 
-@[<a href="../../../gdk_atoms/index.html#mod_1_2_2">ATOMsize(tpe): int</a>@
+@[<a href="../gdk_atoms/index.html#mod_1_2_2">ATOMsize(tpe): int</a>@
 macro as well.
 
 The following example MEL definition:
