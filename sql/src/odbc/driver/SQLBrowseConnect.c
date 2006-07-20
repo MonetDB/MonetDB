@@ -35,11 +35,20 @@
  *
  **********************************************************************/
 
+#include <sql_config.h>
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
+#endif
+
+#ifdef HAVE_ODBCINST_H
+#include <odbcinst.h>
+#endif
+
+#ifndef HAVE_SQLGETPRIVATEPROFILESTRING
+#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	(strncpy(buffer,default,bufferlen), buffer[bufferlen-1]=0, strlen(buffer))
 #endif
 
 
@@ -50,6 +59,10 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 	char *dsn, *uid, *pwd, *host;
 	int port;
 	SQLSMALLINT len = 0;
+	char buf[256];
+	int n;
+	int allocated = 0;
+	SQLRETURN rc;
 
 	fixODBCstring(szConnStrIn, cbConnStrIn, addDbcError, dbc);
 
@@ -71,15 +84,19 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 	port = dbc->port;
 
 	while (ODBCGetKeyAttr(&szConnStrIn, &cbConnStrIn, &key, &attr)) {
-		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
+		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
 			dsn = attr;
-		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
+			allocated |= 1;
+		} else if (strcasecmp(key, "uid") == 0 && uid == NULL) {
 			uid = attr;
-		else if (strcasecmp(key, "pwd") == 0 && pwd == NULL)
+			allocated |= 2;
+		} else if (strcasecmp(key, "pwd") == 0 && pwd == NULL) {
 			pwd = attr;
-		else if (strcasecmp(key, "host") == 0 && host == NULL)
+			allocated |= 4;
+		} else if (strcasecmp(key, "host") == 0 && host == NULL) {
 			host = attr;
-		else if (strcasecmp(key, "port") == 0 && port == 0) {
+			allocated |= 8;
+		} else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
 		} else
@@ -87,50 +104,90 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 		free(key);
 	}
 
+	if (dsn) {
+		if (uid == NULL) {
+			n = SQLGetPrivateProfileString(dsn, "uid", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0]) {
+				uid = strdup(buf);
+				allocated |= 2;
+			}
+		}
+		if (pwd == NULL) {
+			n = SQLGetPrivateProfileString(dsn, "pwd", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0]) {
+				pwd = strdup(buf);
+				allocated |= 4;
+			}
+		}
+		if (host == NULL) {
+			n = SQLGetPrivateProfileString(dsn, "host", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0]) {
+				host = strdup(buf);
+				allocated |= 8;
+			}
+		}
+		if (port == 0) {
+			n = SQLGetPrivateProfileString(dsn, "port", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0]) {
+				port = atoi(buf);
+			}
+		}
+	}
+
 	if (dsn != NULL && uid != NULL && pwd != NULL) {
-		return SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port);
+		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port);
+	} else {
+		if (dsn == NULL) {
+			if (cbConnStrOutMax > 0)
+				strncpy((char *) szConnStrOut, "DSN={MonetDB};", cbConnStrOutMax);
+			len += 14;
+			szConnStrOut += 14;
+			cbConnStrOutMax -= 14;
+		}
+		if (uid == NULL) {
+			if (cbConnStrOutMax > 0)
+				strncpy((char *) szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
+			len += 15;
+			szConnStrOut += 15;
+			cbConnStrOutMax -= 15;
+		}
+		if (pwd == NULL) {
+			if (cbConnStrOutMax > 0)
+				strncpy((char *) szConnStrOut, "PWD:Password=?;", cbConnStrOutMax);
+			len += 15;
+			szConnStrOut += 15;
+			cbConnStrOutMax -= 15;
+		}
+		if (host == NULL) {
+			if (cbConnStrOutMax > 0)
+				strncpy((char *) szConnStrOut, "*HOST:Server=?;", cbConnStrOutMax);
+			len += 15;
+			szConnStrOut += 15;
+			cbConnStrOutMax -= 15;
+		}
+		if (port == 0) {
+			if (cbConnStrOutMax > 0)
+				strncpy((char *) szConnStrOut, "*PORT:Port=?;", cbConnStrOutMax);
+			len += 13;
+			szConnStrOut += 13;
+			cbConnStrOutMax -= 13;
+		}
+
+		if (pcbConnStrOut)
+			*pcbConnStrOut = len;
+
+		rc = SQL_NEED_DATA;
 	}
 
-	if (dsn == NULL) {
-		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "DSN={MonetDB};", cbConnStrOutMax);
-		len += 14;
-		szConnStrOut += 14;
-		cbConnStrOutMax -= 14;
-	}
-	if (uid == NULL) {
-		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
-		len += 15;
-		szConnStrOut += 15;
-		cbConnStrOutMax -= 15;
-	}
-	if (pwd == NULL) {
-		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "PWD:Password=?;", cbConnStrOutMax);
-		len += 15;
-		szConnStrOut += 15;
-		cbConnStrOutMax -= 15;
-	}
-	if (host == NULL) {
-		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "*HOST:Server=?;", cbConnStrOutMax);
-		len += 15;
-		szConnStrOut += 15;
-		cbConnStrOutMax -= 15;
-	}
-	if (port == 0) {
-		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "*PORT:Port=?;", cbConnStrOutMax);
-		len += 13;
-		szConnStrOut += 13;
-		cbConnStrOutMax -= 13;
-	}
-
-	if (pcbConnStrOut)
-		*pcbConnStrOut = len;
-
-	return SQL_NEED_DATA;
+	if (allocated & 1)
+		free(dsn);
+	if (allocated & 2)
+		free(uid);
+	if (allocated & 4)
+		free(pwd);
+	if (allocated & 8)
+		free(host);
+	return rc;
 }
 
 SQLRETURN SQL_API
