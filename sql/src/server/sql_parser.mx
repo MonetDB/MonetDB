@@ -240,12 +240,8 @@ int yydebug=1;
 
 	/* symbolic tokens */
 %type <sym>
-! <<<<<<< sql_parser.mx !
-	qname
-	alter
-! ======= !
 	alter_statement
-! >>>>>>> 1.192 !
+	qname
 	assignment
 	create_statement
 	drop_statement
@@ -289,17 +285,14 @@ int yydebug=1;
 	search_condition
 	update_statement
 	update_stmt
-! <<<<<<< sql_parser.mx !
-	refresh_stmt
-! ======= !
 	control_statement
 	call_statement
 	routine_invocation
 	return_statement
 	return_value
 	if_statement
+	refresh_stmt
 	while_statement
-! >>>>>>> 1.192 !
 	select_stmt
 	select_with_parens
 	select_no_parens
@@ -411,11 +404,7 @@ int yydebug=1;
 	column_ref
 	atom_commalist
 	row_commalist
-! <<<<<<< sql_parser.mx !
-! ======= !
-	qname
 	routine_name
-! >>>>>>> 1.192 !
 	ordering_spec_commalist
 	opt_schema_element_list
 	schema_element_list
@@ -453,17 +442,14 @@ int yydebug=1;
 	old_or_new_values_alias
 	triggered_statement
 	procedure_statement_list
-! <<<<<<< sql_parser.mx !
-	opt_replication_using_list
-	opt_with_check_option_data
-! ======= !
 	argument_list
 	opt_module_character_set_specification
 	character_set_specification
 	opt_temporary_table_declarations
+	opt_replication_using_list
+	opt_with_check_option_data
 	invoked_routines
 	routine_body
-! >>>>>>> 1.192 !
 
 %type <ival>
 	drop_action

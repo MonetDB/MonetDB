@@ -549,53 +549,7 @@ create_type(mvc *sql, symbol *symb, char *impl)
 {
 	char *tname = qname_table(symb);
 
-! <<<<<<< sql_schema.mx !
-	mvc_create_type(sql, sql->session->module, tname, 0, 0, 0, impl);
-	return stmt_none();
-}
-
-static stmt *
-create_func(mvc *sql, symbol *symb, dlist *params, sql_subtype *res, char *impl, symbol *body)
-{
-	char *fname = qname_table(symb);
-	dnode *n;
-	list *l = list_create((fdestroy) &arg_destroy);
-
-	for (n = params->h; n; n = n->next) {
-		dnode *an = n->data.lval->h;
-
-		list_append(l, sql_create_arg(_strdup(an->data.sval), &an->next->data.typeval));
-	}
-	if (body) {		/* sql func */
-		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
-		stmt *b = NULL;
-
-		for (n = params->h; n; n = n->next) {
-			dnode *m = n->data.lval->h;
-			char *name = _strdup(m->data.sval);
-			sql_subtype *t = &m->next->data.typeval;
-
-			sql_add_param(sql, name, t);
-		}
-		if (!(b = scope_subquery(sql, NULL, body))) {
-			sql_destroy_params(sql);
-			return NULL;
-		}
-		sql_destroy_params(sql);
-		stmt_destroy(b);
-
-		sql_create_sqlfunc(fname, subquery, l, res);
-	} else {
-		sql_arg *r = NEW(sql_arg);
-
-		r->name = _strdup("result");
-		r->type = *res;
-		list_prepend(l, r);
-		mvc_create_func(sql, sql->session->module, fname, l, FALSE, FALSE, impl);
-	}
-! ======= !
 	mvc_create_type(sql, sql->session->schema, tname, 0, 0, 0, impl);
-! >>>>>>> 1.83 !
 	return stmt_none();
 }
 
@@ -2129,18 +2083,6 @@ schemas(mvc *sql, symbol *s)
 	}
 		break;
 
-! <<<<<<< sql_schema.mx !
-	case SQL_CREATE_FUNC:
-	{
-		dlist *l = s->data.lval;
-
-		ret = create_func(sql, l->h->data.sym, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.sym);
-		sql->type = Q_SCHEMA;
-	}
-		break;
-
-! ======= !
-! >>>>>>> 1.83 !
 	case SQL_CREATE_TRIGGER:
 	{
 		dlist *l = s->data.lval;

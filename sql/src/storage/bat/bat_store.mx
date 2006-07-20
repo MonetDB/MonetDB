@@ -2272,16 +2272,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		first = 1;
 
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN);
-! <<<<<<< bat_store.mx !
-		t = bootstrap_create_table(tr, s, "modules", LOCATION);
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "internal", "varchar", 1024);
-
-		t = bootstrap_create_table(tr, s, "schemas", LOCATION);
-! ======= !
-		t = bootstrap_create_table(tr, s, "schemas");
-! >>>>>>> 1.85 !
+		t = bootstrap_create_table(tr, s, "schemas",LOCATION);
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "authorization", "int", 32);
@@ -4362,49 +4353,6 @@ sys_drop_tables(sql_trans *tr, sql_schema *s)
 		}
 }
 
-! <<<<<<< bat_store.mx !
-sql_module *
-sql_trans_create_module(sql_trans *tr, char *name, char *opt_mod)
-{
-	sql_module *m = NEW(sql_module);
-	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules", LOCATION);
-
-	base_init(&m->base, next_oid(), TR_NEW, name);
-	cs_init(&m->types, (fdestroy) &type_destroy);
-	cs_init(&m->funcs, (fdestroy) &func_destroy);
-	m->internal = NULL;
-	if (opt_mod)
-		m->internal = _strdup(opt_mod);
-
-	cs_add(&tr->modules, m, TR_NEW);
-
-	table_insert(tr, sysmodule, &m->base.id, m->base.name, m->internal);
-
-	if (opt_mod) 
-		do_load_module(tr, opt_mod);
-	m->base.wtime = tr->wtime = tr->stime;
-	tr->schema_updates ++;
-	return m;
-}
-
-void
-sql_trans_drop_module(sql_trans *tr, char *name)
-{
-	node *n = find_sql_module_node(tr, name);
-	sql_module *m = n->data;
-
-	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules", LOCATION);
-	oid rid = column_find_row(tr, find_sql_column(sysmodule, "id"), &m->base.id, NULL);
-
-	assert(rid != -1);
-	table_delete(tr, sysmodule, rid);
-	m->base.wtime = tr->wtime = tr->stime;
-	tr->schema_updates ++;
-	cs_del(&tr->modules, n, m->base.flag);
-}
-
-! ======= !
-! >>>>>>> 1.85 !
 sql_type *
 sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, int scale, int radix, char *impl)
 {

@@ -185,7 +185,7 @@ sequential_block (mvc *sql, scope *scp, dlist *blk)
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl, dlist *body)
+create_func(mvc *sql, symbol *qname, dlist *params, sql_subtype *res, char *impl, dlist *body)
 {
 	char *fname = qname_table(qname);
 	dnode *n;
@@ -230,7 +230,7 @@ psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
+		ret = create_func(sql, l->h->data.sym, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
