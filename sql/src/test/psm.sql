@@ -41,3 +41,16 @@ end;
 select my_case(1);
 select my_case(2);
 select my_case(3);
+
+create function my_searchcase(v int) returns int as
+begin
+	case 
+	when v=1 then return 100;
+	when v=2 then return 200;
+	else return -1;
+	end case;
+end;
+
+select my_searchcase(1);
+select my_searchcase(2);
+select my_searchcase(3);

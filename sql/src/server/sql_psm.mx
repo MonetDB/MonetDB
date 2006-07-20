@@ -180,7 +180,6 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 		stmt *else_stmt = NULL, *v = sql_value_exp(sql, scp, case_value, NULL, NULL, sql_sel);
 		stmt *cur_if = NULL, *top = NULL;
 
-		n = when_statements->h;
 		if (!v)
 			return NULL;
 		if (else_statements) {
@@ -190,6 +189,7 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 				return NULL;
 			}
 		}
+		n = when_statements->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
 			stmt *cond, *when_value = sql_value_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
@@ -217,6 +217,40 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 		return top;
 	} else { 
 		/* case 2 */
+		dnode *n = case_when;
+		dlist *whenlist = n->data.lval;
+		dlist *else_statements = n->next->data.lval;
+		stmt *else_stmt = NULL, *cur_if = NULL, *top = NULL;
+
+		if (else_statements) {
+			else_stmt = sequential_block( sql, scp, else_statements, NULL);
+			if (!else_stmt) 
+				return NULL;
+		}
+		n = whenlist->h;
+		while(n) {
+			dnode *m = n->data.sym->data.lval->h;
+			stmt *cond = sql_logical_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
+			stmt *if_stmts = NULL;
+			stmt *case_stmt = NULL;
+
+			if (!cond || 
+			   (if_stmts = sequential_block( sql, scp, m->next->data.lval, NULL)) == NULL ) {
+				cond_stmt_destroy(else_stmt);
+				cond_stmt_destroy(cond);
+				return NULL;
+			}
+			case_stmt = stmt_if(cond, if_stmts, NULL);
+			if (cur_if)
+				cur_if->op3.stval = case_stmt;
+			cur_if = case_stmt;
+			if (!top)
+				top = case_stmt;
+			n = n->next;
+		}
+		if (cur_if)
+			cur_if->op3.stval = else_stmt;
+		return top;
 	}
 	return NULL;
 }
