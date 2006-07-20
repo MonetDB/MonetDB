@@ -46,9 +46,8 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 	stmt *v = NULL, *r = NULL;
 
 	/* name can be 
-		'global variable' currently ignored 
 		'parameter of the function' (ie in the param list)
-		or local variable, declared earlier
+		or a local or global variable, declared earlier
 	*/
 
 	/* check if variable is known from the stack */
@@ -70,17 +69,31 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 static stmt *
 psm_declare(mvc *sql, scope *scp, dnode *n)
 {
-	char *name = n->data.sval;
-	sql_subtype *ctype = &n->next->data.typeval;
-	stmt *r = NULL;
+	list *l;
 
 	(void)scp;
-	/* check if we overwrite a scope local variable declare x; declare x; */
-	if (frame_find_var(sql, name)) 
-		return sql_error(sql, 01, "Variable %s allready declared", name);
-	r = stmt_var(_strdup(name), ctype, 1);
-	stack_push_var(sql, name, r);
-	return r;
+	l = create_stmt_list();
+	while(n) { /* list of  'identfiers with type' */
+		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
+		sql_subtype *ctype = &n->data.sym->data.lval->h->next->data.typeval;
+		while(ids) {
+			char *name = ids->data.sval;
+			stmt *r = NULL;
+
+			/* check if we overwrite a scope local variable declare x; declare x; */
+			if (frame_find_var(sql, name)) {
+				list_destroy(l);
+				return sql_error(sql, 01, 
+					"Variable %s allready declared", name);
+			}
+			r = stmt_var(_strdup(name), ctype, 1);
+			stack_push_var(sql, name, r);
+			list_append(l, r);
+			ids = ids->next;
+		}
+		n = n->next;
+	}
+	return stmt_list(l);
 }
 
 /* [ label: ]

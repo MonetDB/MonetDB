@@ -29,6 +29,16 @@ end;
 
 select my_declare(105);
 
+create function my_complex_declare(v int) returns int as 
+begin
+	declare x, y, z int;
+	declare a int, b, c varchar(10);
+	set x = v;
+	return x;
+end;
+
+select my_complex_declare(1);
+
 create function my_case(v int) returns int as
 begin
 	case v
