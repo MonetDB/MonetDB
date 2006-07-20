@@ -254,6 +254,10 @@ scanner_init_keywords(void)
 	keywords_insert("END", END);
 	keywords_insert("NULLIF", NULLIF);
 	keywords_insert("COALESCE", COALESCE);
+	keywords_insert("ELSEIF", ELSEIF);
+	keywords_insert("IF", IF);
+	keywords_insert("WHILE", WHILE);
+	keywords_insert("DO", DO);
 
 	keywords_insert("COMMIT", COMMIT);
 	keywords_insert("ROLLBACK", ROLLBACK);
@@ -278,14 +282,26 @@ scanner_init_keywords(void)
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
 
+	keywords_insert("COLLATION", COLLATION);
+
 	keywords_insert("MODULE", MODULE);
+	keywords_insert("ARE", ARE);
+	keywords_insert("NAMES", NAMES);
+	keywords_insert("STATIC", STATIC);
+	keywords_insert("DYNAMIC", DYNAMIC);
+	keywords_insert("LOCATOR", LOCATOR);
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);
 	keywords_insert("RETURNS", RETURNS);
 	keywords_insert("EXTERNAL", EXTERNAL);
 	keywords_insert("NAME", sqlNAME);
+	keywords_insert("RETURN", RETURN);
+	keywords_insert("CALL", CALL);
+	keywords_insert("LANGUAGE", LANGUAGE);
+	keywords_insert("SQL", SQL);
 
+	keywords_insert("SQLSTATE", SQLSTATE);
 	keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	keywords_insert("PROFILE", SQL_PROFILE);
 	keywords_insert("DEBUG", SQL_DEBUG);
@@ -849,7 +865,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	if (token == KW_TYPE)
 		token = aTYPE;
 
-	if (token == IDENT || token == COMPARISON || token == AGGR || token == aTYPE || token == ALIAS || token == aMODULE)
+	if (token == IDENT || token == COMPARISON || token == AGGR || token == aTYPE || token == ALIAS)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	if (token == STRING) {
 		char quote = *yylval->sval;

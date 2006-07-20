@@ -41,7 +41,6 @@ typedef struct backend {
 	stream *out;
 } backend;
 
-extern int sqlstatement(char *cmd, Cntxt stk);
 extern int mvc_sql(mvc *c, str query);
 extern char *mvc_login(mvc *c, char *user, char *passwd);
 extern ptr sql_frontend(void);
@@ -86,30 +85,6 @@ sql_trace()
 	}
 }
 @c
-
-static backend *
-backend_create(mvc *c, int console)
-{
-	backend *b = NEW(backend);
-
-	b->mvc = c;
-
-	b->outbuf = buffer_create(BUFSIZ);
-	b->out = buffer_wastream(b->outbuf, "SQLserver");
-	b->console = console;
-	return b;
-}
-
-static void
-backend_destroy(backend *b)
-{
-	if (b->out) {
-		buffer_destroy(b->outbuf);
-		stream_close(b->out);
-		stream_destroy(b->out);
-	}
-	_DELETE(b);
-}
 
 static int
 error(stream *out, char *str)
@@ -289,9 +264,6 @@ sqlexecute(backend *be, stream *out)
 
 	if (c->mode == m_profile)
 		Tparse = GDKusec();
-	if ((c->mode == m_explain || c->mode == m_profile) && 
-	    c->sym->token == SQL_SET)
-		c->mode = m_normal;
 
 	if (c->mode == m_execute) {
 		q = qc_find(c->qc, c->sym->data.lval->h->data.ival);
@@ -303,7 +275,7 @@ sqlexecute(backend *be, stream *out)
 		}
 		if (err)
 			return sqlcleanup(c, err);
-	} else if (c->mode == m_explain || !c->cache || 
+	} else if (c->mode == m_inplace || c->mode == m_explain || !c->cache || 
 	           !(q = qc_match(c->qc, c->sym, c->args, c->argc, c->scanner.key))) {
 		stmt *s = sql_symbol2stmt(c);
 
@@ -523,59 +495,6 @@ query string with "M".
 }
 
 int
-sqlstatement(char *cmd, Cntxt stk)
-{
-	int err = 0;
-	mvc *m;
-	backend *sql;
-	Variable v;
-	bstream *rs;
-	buffer *b;
-	char *n;
-	int len = strlen(cmd);
-
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	n = GDKmalloc(len + 1 + 1);
-	strncpy(n, cmd, len);
-	cmd = n;
-	cmd[len] = '\n';
-	cmd[len+1] = 0;
-	len++;
-
-	buffer_init(b, cmd, len);
-	rs = bstream_create(buffer_rastream(b, "sqlstatement"), b->len);
-	m = mvc_create(0, (backend_stack) stk, rs, GDKout);
-	mvc_trans(m);		/* start transaction */
-	m->user_id = m->role_id = USER_MONETDB;
-	m->user = _strdup("monetdb");
-	m->session->schema = mvc_bind_schema(m, "sys");
-	m->scanner.mode = LINE_1; 
-	bstream_next(m->scanner.rs);
-	sql = backend_create(m, 1);
-
-	/* add myc and Output, Input to the stack */
-	v = VARnew(stk, "myc");
-	v->binding.vtype = TYPE_mvc;
-	v->binding.val.pval = m;
-
-	err = sqlexecute(sql, GDKout);
-	if (err)
-		GDKerror(m->errstr);
-	backend_destroy(sql);
-	GDKfree(cmd);
-	GDKfree(b);
-
-	mvc_commit(m, 0, NULL);
-	res_tables_destroy(m->results);
-	mvc_destroy(m);
-	VARdel(stk, v);
-	if (err)
-		return GDK_FAIL;
-	else
-		return GDK_SUCCEED;
-}
-
-int
 mvc_sql(mvc *m, char *cmd)
 {
 	Cntxt stk = (Cntxt) m->session->stk;
@@ -628,7 +547,7 @@ mvc_sql(mvc *m, char *cmd)
 	len++;
 	buffer_init(b, cmd, len);
 	scanner_init( &m->scanner, 
-		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		bstream_create(buffer_rastream(b, "mvc_sql"), b->len),
 		NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);

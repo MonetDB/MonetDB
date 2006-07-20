@@ -528,7 +528,10 @@ create_module(mvc *sql, symbol *symb, char *opt_internal_name)
 {
 	char *mname = qname_table(symb);
 
-	sql->session->module = mvc_create_module(sql, mname, opt_internal_name);
+	/* TODO parse and use authorization, now modules are owned by
+	   USER_MONETDB 
+	 */
+	mvc_create_schema(sql, mname, USER_MONETDB, opt_internal_name);
 	return stmt_none();
 }
 
@@ -537,7 +540,7 @@ drop_module(mvc *sql, symbol *symb)
 {
 	char *mname = qname_table(symb);
 
-	mvc_drop_module(sql, mname);
+	mvc_drop_schema(sql, mname);
 	return stmt_none();
 }
 
@@ -546,6 +549,7 @@ create_type(mvc *sql, symbol *symb, char *impl)
 {
 	char *tname = qname_table(symb);
 
+! <<<<<<< sql_schema.mx !
 	mvc_create_type(sql, sql->session->module, tname, 0, 0, 0, impl);
 	return stmt_none();
 }
@@ -589,6 +593,9 @@ create_func(mvc *sql, symbol *symb, dlist *params, sql_subtype *res, char *impl,
 		list_prepend(l, r);
 		mvc_create_func(sql, sql->session->module, fname, l, FALSE, FALSE, impl);
 	}
+! ======= !
+	mvc_create_type(sql, sql->session->schema, tname, 0, 0, 0, impl);
+! >>>>>>> 1.83 !
 	return stmt_none();
 }
 
@@ -1858,7 +1865,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		return sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
 	} else {
 		list *table_elements = create_stmt_list();
-		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
+		sql_schema *ss = mvc_create_schema(sql, name, auth_id, NULL);
 
 		dnode *n = schema_elements->h;
 
@@ -2122,6 +2129,7 @@ schemas(mvc *sql, symbol *s)
 	}
 		break;
 
+! <<<<<<< sql_schema.mx !
 	case SQL_CREATE_FUNC:
 	{
 		dlist *l = s->data.lval;
@@ -2131,6 +2139,8 @@ schemas(mvc *sql, symbol *s)
 	}
 		break;
 
+! ======= !
+! >>>>>>> 1.83 !
 	case SQL_CREATE_TRIGGER:
 	{
 		dlist *l = s->data.lval;

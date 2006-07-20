@@ -50,6 +50,8 @@ typedef enum modes_t {
 	m_inplace = 7
 } modes_t;
 
+#define CACHE_MODE(m) (m==m_normal||m==m_profile||m==m_debug||m==m_trace)
+
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
@@ -109,11 +111,10 @@ extern int mvc_commit(mvc *c, int chain, char *name);
 extern int mvc_rollback(mvc *c, int chain, char *name);
 extern int mvc_release(mvc *c, char *name);
 
-extern sql_module *mvc_bind_module(mvc *c, char *mname);
 extern sql_type *mvc_bind_type(mvc *sql, char *name);
-extern sql_type *mod_bind_type(mvc *sql, sql_module * m, char *name);
+extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, char *name);
 extern sql_func *mvc_bind_func(mvc *sql, char *name);
-extern sql_func *mod_bind_func(mvc *sql, sql_module * m, char *name);
+extern sql_func *schema_bind_func(mvc *sql, sql_schema * s, char *name);
 
 extern sql_schema *mvc_bind_schema(mvc *c, char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname,int location);
@@ -124,13 +125,11 @@ extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, char *kname);
 extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
-extern void mvc_drop_module(mvc *c, char *name);
-extern sql_module *mvc_create_module(mvc *c, char *name, char *opt_iname);
-extern sql_type *mvc_create_type(mvc *sql, sql_module * m, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_module * m, char *name, list *args, bit issql, bit aggr, char *impl);
+extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
+extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *impl);
 
 extern void mvc_drop_schema(mvc *c, char *name);
-extern sql_schema *mvc_create_schema(mvc *c, char *name, int auth_id);
+extern sql_schema *mvc_create_schema(mvc *c, char *name, int auth_id, char *opt_mod);
 extern void mvc_drop_table(mvc *c, sql_schema *s, char *name, int cascade);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, char *sql, bit system, int location);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, char * sql, bit system, int persistence, int commit_action, int sz, int location);
@@ -602,20 +601,6 @@ mvc_destroy(mvc *m)
 	_DELETE(m);
 }
 
-sql_module *
-mvc_bind_module(mvc *m, char *mname)
-{
-	sql_trans *tr = m->session->tr;
-	sql_module *s = find_sql_module(tr, mname);
-
-	if (!s)
-		return NULL;
-
-	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_module %s\n", mname);
-	return s;
-}
-
 sql_type *
 mvc_bind_type(mvc *sql, char *name)
 {
@@ -627,15 +612,15 @@ mvc_bind_type(mvc *sql, char *name)
 }
 
 sql_type *
-mod_bind_type(mvc *sql, sql_module * m, char *name)
+schema_bind_type(mvc *sql, sql_schema *s, char *name)
 {
-	sql_type *t = find_sql_type(m, name);
+	sql_type *t = find_sql_type(s, name);
 
 	(void) sql;
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mod_bind_type %s\n", name);
+		fprintf(stderr, "schema_bind_type %s\n", name);
 	return t;
 }
 
@@ -650,15 +635,15 @@ mvc_bind_func(mvc *sql, char *name)
 }
 
 sql_func *
-mod_bind_func(mvc *sql, sql_module * m, char *name)
+schema_bind_func(mvc *sql, sql_schema * s, char *name)
 {
-	sql_func *t = find_sql_func(m, name);
+	sql_func *t = find_sql_func(s, name);
 
 	(void) sql;
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mod_bind_func %s\n", name);
+		fprintf(stderr, "schema_bind_func %s\n", name);
 	return t;
 }
 
@@ -820,64 +805,42 @@ mvc_bind_trigger(mvc *m, sql_schema *s, char *tname)
 	return trigger;
 }
 
-sql_module *
-mvc_create_module(mvc *m, char *name, char *opt_internal_name)
-{
-	sql_module *mod = NULL;
-
-	if (mvc_debug)
-		fprintf(stderr, "mvc_create_module %s, %s\n", name, opt_internal_name);
-
-	mod = sql_trans_create_module(m->session->tr, name, opt_internal_name);
-	m->type = Q_SCHEMA;
-	return mod;
-}
-
-void
-mvc_drop_module(mvc *m, char *name)
-{
-	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_module %s\n", name);
-	sql_trans_drop_module(m->session->tr, name);
-	m->type = Q_SCHEMA;
-}
-
 sql_type *
-mvc_create_type(mvc *sql, sql_module * m, char *name, int digits, int scale, int radix, char *impl)
+mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int radix, char *impl)
 {
 	sql_type *t = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_type %s\n", name);
 
-	t = sql_trans_create_type(sql->session->tr, m, name, digits, scale, radix, impl);
+	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 	sql->type = Q_SCHEMA;
 	return t;
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_module * m, char *name, list *args, bit issql, bit aggr, char *impl)
+mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *impl)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_func %s\n", name);
 
-	f = sql_trans_create_func(sql->session->tr, m, name, args, issql, aggr, impl);
+	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, impl);
 	sql->type = Q_SCHEMA;
 	return f;
 }
 
 
 sql_schema *
-mvc_create_schema(mvc *m, char *name, int auth_id)
+mvc_create_schema(mvc *m, char *name, int auth_id, char *opt_mod)
 {
 	sql_schema *s = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_schema %s %d\n", name, auth_id);
 
-	s = sql_trans_create_schema(m->session->tr, name, auth_id);
+	s = sql_trans_create_schema(m->session->tr, name, auth_id, opt_mod);
 	m->type = Q_SCHEMA;
 	return s;
 }

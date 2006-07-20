@@ -120,7 +120,13 @@ typedef enum stmt_type {
 	st_groupby,		/* (R, groupby columns) */
 
 	/* used internally only */
-	st_list
+	st_list,
+
+	/* flow control statements */
+	st_while,
+	st_if,
+	st_return,
+	st_assign
 } st_type;
 
 typedef enum comp_type {
@@ -274,6 +280,12 @@ extern stmt *stmt_ordered(stmt *order, stmt *res);
 extern stmt *stmt_output(stmt *l);
 extern stmt *stmt_affected_rows(stmt *l);
 
+/* flow control statements */
+extern stmt *stmt_while(stmt *cond, stmt *whilestmts );
+extern stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts);
+extern stmt *stmt_return(stmt *val);
+extern stmt *stmt_assign(char *varname, stmt *val);
+
 extern sql_subtype *head_type(stmt *st);
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null( stmt *s );
@@ -285,6 +297,7 @@ extern char *column_name(stmt *st);
 extern char *table_name(stmt *st);
 extern char *schema_name(stmt *st);
 
+extern void cond_stmt_destroy(stmt *s);
 extern void stmt_destroy(stmt *s);
 extern stmt *stmt_dup(stmt *s);
 
@@ -334,6 +347,7 @@ st_type2string(st_type type)
 
 		ST(ordered);
 		ST(output);
+		ST(affected_rows);
 
 		ST(atom);
 
@@ -380,10 +394,11 @@ st_type2string(st_type type)
 		ST(pivot);
 		ST(groupby);
 		ST(list);
-
-	default:
-		assert(0);
-		return "st_?";
+	
+		ST(while);
+		ST(if);
+		ST(return);
+		ST(assign);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
@@ -562,6 +577,13 @@ grp_semijoin(group *og, stmt *s)
 }
 
 void
+cond_stmt_destroy(stmt *s)
+{
+	if (s)
+		stmt_destroy(s);
+}
+
+void
 stmt_destroy(stmt *s)
 {
 	if (sql_ref_dec(&s->ref) == 0) {
@@ -592,12 +614,23 @@ stmt_destroy(stmt *s)
 		case st_update_var:
 		case st_seq_next:
 
+		case st_while:
+		case st_if:
+		case st_return:
+
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
 			if (s->op2.stval)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
+			break;
+
+		case st_assign:
+			if (s->op1.sval)
+				_DELETE(s->op1.sval);
+			if (s->op2.stval)
+				stmt_destroy(s->op2.stval);
 			break;
 
 		case st_exception:
@@ -2208,6 +2241,42 @@ grp_find_groupby_col(group *g, stmt *s)
 			return s;
 	}
 	return NULL;
+}
+
+stmt *stmt_while(stmt *cond, stmt *whilestmts )
+{
+	stmt *s = stmt_create(st_while);
+
+	s->op1.stval = cond;
+	s->op2.stval = whilestmts;
+	return s;
+}
+
+stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts)
+{
+	stmt *s = stmt_create(st_if);
+
+	s->op1.stval = cond;
+	s->op2.stval = ifstmts;
+	s->op3.stval = elsestmts;
+	return s;
+}
+
+stmt *stmt_return(stmt *val)
+{
+	stmt *s = stmt_create(st_return);
+
+	s->op1.stval = val;
+	return s;
+}
+
+stmt *stmt_assign(char *varname, stmt *val)
+{
+	stmt *s = stmt_create(st_assign);
+
+	s->op1.sval = _strdup(varname);
+	s->op2.stval = val;
+	return s;
 }
 
 int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)

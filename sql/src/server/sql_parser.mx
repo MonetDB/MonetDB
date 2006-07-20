@@ -73,6 +73,10 @@ typedef enum tokens {
 	SQL_TABLE,
 	SQL_CASE,
 	SQL_CAST,
+	SQL_RETURN,
+	SQL_IF,
+	SQL_ELSE,
+	SQL_WHILE,
 	SQL_COLUMN,
 	SQL_COLUMN_OPTIONS,
 	SQL_COALESCE,
@@ -236,18 +240,23 @@ int yydebug=1;
 
 	/* symbolic tokens */
 %type <sym>
+! <<<<<<< sql_parser.mx !
 	qname
 	alter
+! ======= !
+	alter_statement
+! >>>>>>> 1.192 !
 	assignment
-	create
-	drop
-	declare
-	set
+	create_statement
+	drop_statement
+	declare_statement
+	set_statement
 	sql
 	sqlstmt
 	schema
 	opt_schema_default_char_set
-	opt_schema_path
+	opt_path_specification
+	path_specification
 	schema_element
 	delete_stmt
 	copyfrom_stmt
@@ -268,7 +277,7 @@ int yydebug=1;
 	existence_test
 	in_predicate
 	insert_stmt
-	transaction_stmt
+	transaction_statement
 	_transaction_stmt
 	like_predicate
 	opt_where_clause
@@ -278,8 +287,19 @@ int yydebug=1;
 	joined_table
 	join_spec
 	search_condition
+	update_statement
 	update_stmt
+! <<<<<<< sql_parser.mx !
 	refresh_stmt
+! ======= !
+	control_statement
+	call_statement
+	routine_invocation
+	return_statement
+	return_value
+	if_statement
+	while_statement
+! >>>>>>> 1.192 !
 	select_stmt
 	select_with_parens
 	select_no_parens
@@ -333,7 +353,7 @@ int yydebug=1;
 	cast_exp
 	when_value
 	when_search
-	opt_else
+	case_opt_else
 	table_name
 	object_name
 	exec
@@ -342,6 +362,7 @@ int yydebug=1;
 	trigger_event
 	opt_when
 	procedure_statement
+	if_opt_else
 
 %type <type>
 	data_type
@@ -354,6 +375,7 @@ int yydebug=1;
 	any_all_some
 	non_reserved_word
 	ident
+	authorization_identifier
 	func_ident
 	restricted_ident
 	column
@@ -371,11 +393,13 @@ int yydebug=1;
 	blob
 	opt_external_name
 	external_name
+	opt_begin_label
+	opt_end_label
 
 %type <l>
 	object_privileges
 	privileges
-	schema_name
+	schema_name_clause
 	assignment_commalist
 	opt_column_commalist
 	column_commalist_parens
@@ -383,9 +407,15 @@ int yydebug=1;
 	opt_corresponding
 	column_ref_commalist
 	name_commalist
+	schema_name_list
 	column_ref
 	atom_commalist
 	row_commalist
+! <<<<<<< sql_parser.mx !
+! ======= !
+	qname
+	routine_name
+! >>>>>>> 1.192 !
 	ordering_spec_commalist
 	opt_schema_element_list
 	schema_element_list
@@ -423,8 +453,17 @@ int yydebug=1;
 	old_or_new_values_alias
 	triggered_statement
 	procedure_statement_list
+! <<<<<<< sql_parser.mx !
 	opt_replication_using_list
 	opt_with_check_option_data
+! ======= !
+	argument_list
+	opt_module_character_set_specification
+	character_set_specification
+	opt_temporary_table_declarations
+	invoked_routines
+	routine_body
+! >>>>>>> 1.192 !
 
 %type <ival>
 	drop_action
@@ -488,7 +527,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
+	IDENT aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
@@ -548,6 +587,9 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> AS ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
+%token ARE NAMES STATIC DYNAMIC LOCATOR CALL LANGUAGE SQL
+%token COLLATION 
+%token SQLSTATE 
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -555,13 +597,14 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
+%token RETURN 
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
 
-%token CASE WHEN THEN ELSE NULLIF COALESCE 
+%token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN
 %token INDEX
@@ -583,7 +626,8 @@ sqlstmt:
 		}
 		YYACCEPT;
 	}
-| PREPARE 		{ mvc *m = (mvc*)parm;
+
+ | PREPARE 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
@@ -635,33 +679,48 @@ sqlstmt:
 			  m->sym = $$ = NULL; YYACCEPT; }
  ;
 
+
+create:
+    CREATE 		{ mvc *m = (mvc*)parm;
+			  if (m->mode == m_normal)
+		  	  	m->mode = m_inplace; }
+set:
+    SET 		{ mvc *m = (mvc*)parm;
+			  if (m->mode == m_normal)
+		  	  	m->mode = m_inplace; }
+
+declare:
+    DECLARE 		{ mvc *m = (mvc*)parm;
+			  if (m->mode == m_normal)
+		  	  	m->mode = m_inplace; }
+
 	/* schema definition language */
 sql:
     schema
  |  grant
  |  revoke
- |  create
- |  drop
- |  alter
- |  declare
- |  set
+ |  create_statement
+ |  drop_statement
+ |  alter_statement
+ |  declare_statement
+ |  set_statement
  ;
 
-declare:
-	DECLARE ident data_type
+declare_statement:
+	declare ident data_type
 			{ dlist *l = L();
 			append_string(l, $2 );
 			append_type(l, &$3 );
 			$$ = _symbol_create_list( SQL_DECLARE, l); }
 	;
 
-set:
-	SET ident '=' scalar_exp
+set_statement:
+	set ident '=' scalar_exp
 		{ dlist *l = L();
 		append_string(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET sqlSESSION AUTHORIZATION ident
+  |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
 	        sql_find_subtype(&t, "char", strlen($4), 0 );
@@ -669,7 +728,7 @@ set:
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET SCHEMA ident
+  |	set SCHEMA ident
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", strlen($3), 0 );
@@ -677,7 +736,7 @@ set:
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET user '=' ident
+  |	set user '=' ident
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", strlen($4), 0 );
@@ -685,7 +744,7 @@ set:
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET ROLE ident
+  |	set ROLE ident
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", strlen($3), 0);
@@ -693,14 +752,14 @@ set:
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET TIME ZONE LOCAL
+  |	set TIME ZONE LOCAL
 		{ dlist *l = L();
 		append_string(l, sa_strdup(SA, "current_timezone"));
 		append_symbol(l, _symbol_create_list( SQL_OP,
 			append_string( L(),
 				sa_strdup(SA, "local_timezone"))));
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET TIME ZONE interval_expression
+  |	set TIME ZONE interval_expression
 		{ dlist *l = L();
 		append_string(l, sa_strdup(SA, "current_timezone"));
 		append_symbol(l, $4 );
@@ -708,8 +767,8 @@ set:
   ;
 
 schema:
-	CREATE SCHEMA schema_name opt_schema_default_char_set
-			opt_schema_path	opt_schema_element_list
+	create SCHEMA schema_name_clause opt_schema_default_char_set
+			opt_path_specification	opt_schema_element_list
 		{ dlist *l = L();
 		append_list(l, $3);
 		append_symbol(l, $4);
@@ -723,29 +782,27 @@ schema:
 		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
 
-schema_name:
+schema_name_clause:
     ident
 	{ $$ = L();
 	  append_string($$, $1 );
 	  append_string($$, NULL ); }
- |  AUTHORIZATION ident
+ |  AUTHORIZATION authorization_identifier
 	{ $$ = L();
 	  append_string($$, NULL );
 	  append_string($$, $2 ); }
- |  ident AUTHORIZATION ident
+ |  ident AUTHORIZATION authorization_identifier
 	{ $$ = L();
 	  append_string($$, $1 );
 	  append_string($$, $3 ); }
  ;
 
+authorization_identifier:
+	ident	/* role name | user identifier */
+
 opt_schema_default_char_set:
     /* empty */			{ $$ = NULL; }
  |  DEFAULT CHARACTER SET ident { $$ = _symbol_create( SQL_CHARSET, $4 ); }
- ;
-
-opt_schema_path:
-    /* empty */			{ $$ = NULL; }
- |  PATH name_commalist		{ $$ = _symbol_create_list( SQL_PATH, $2 ); }
  ;
 
 opt_schema_element_list:
@@ -759,7 +816,7 @@ schema_element_list:
 			{ $$ = append_symbol( $1, $2 ); }
  ;
 
-schema_element: grant | revoke | create | drop | alter ;
+schema_element: grant | revoke | create_statement | drop_statement | alter_statement ;
 /* | add */
 
 
@@ -897,7 +954,7 @@ grantee:
 
 /* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */
 
-alter:
+alter_statement:
    ALTER TABLE qname ADD opt_column add_table_element
 
 	{ dlist *l = L();
@@ -961,7 +1018,17 @@ opt_column:
  |   /* empty */ { $$ = 0; }
  ;
 
-create:	role_def | table_def | view_def | module_def | type_def | func_def | index_def | seq_def | trigger_def;
+create_statement:	
+   role_def 
+ | table_def 
+ | view_def
+ | module_def
+ | type_def
+ | func_def
+ | index_def
+ | seq_def
+ | trigger_def
+ ;
 
 /*=== BEGIN SEQUENCES ===*/
 seq_def:
@@ -975,7 +1042,7 @@ seq_def:
  * 	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-    CREATE SEQUENCE qname
+    create SEQUENCE qname
     AS data_type
     opt_seq_params
 	{
@@ -1051,10 +1118,10 @@ opt_alt_seq_params:
 ;
 
 /*
- * opt_start and opt_restart return a list consisting of:
+ * opt_start returns a list consisting of:
  * - int: indicating the type of symbol
  *   * -1  absent/empty
- *   *  0  no argument (only for RESTART)
+ *   *  0  no argument (only for restart)
  *   *  1  argument is a subquery
  *   *  2  argument is simple int
  * - symbol: the symbol
@@ -1085,6 +1152,15 @@ opt_start:
 							}
   ;
 
+/*
+ * opt_restart returns a list consisting of:
+ * - int: indicating the type of symbol
+ *   * -1  absent/empty
+ *   *  0  no argument (only for RESTART)
+ *   *  1  argument is a subquery
+ *   *  2  argument is simple int
+ * - symbol: the symbol
+ */
 opt_restart:
 	/* empty */				{
 								dlist *l = L();
@@ -1116,28 +1192,60 @@ opt_restart:
 							}
   ;
 
+/*
+ * opt_increment returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   * else the value
+ */
 opt_increment:
 	/* empty */				{ $$ = -1; }
   |	INCREMENT BY nonzero	{ $$ = $3; }
   ;
 
+/*
+ * opt_min returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   *  0  NOMINVALUE
+ *   * else the MINVALUE value
+ */
 opt_min:
 	/* empty */ 			{ $$ = -1; }
   |	MINVALUE nonzero		{ $$ = $2; }
   |	NOMINVALUE				{ $$ =  0; }
   ;
 
+/*
+ * opt_max returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   *  0  NOMAXVALUE
+ *   * else the MAXVALUE value
+ */
 opt_max:
 	/* empty */				{ $$ = -1; }
   |	MAXVALUE nonzero		{ $$ = $2; }
   |	NOMAXVALUE				{ $$ =  0; }
   ;
 
+/*
+ * opt_cache returns a list consisting of:
+ * - int: indicating the value
+ *   * -1  absent/empty
+ *   * else the value
+ */
 opt_cache:
 	/* empty */				{ $$ = -1; }
   |	CACHE nonzero			{ $$ = $2; }
   ;
 
+/*
+ * opt_cycle returns a list consisting of:
+ * - int: indicating the value
+ *   *  0  NOCYCLE (default)
+ *   *  1  CYCLE
+ */
 opt_cycle:
 	/* empty */				{ $$ = 0; }
   |	CYCLE					{ $$ = 1; }
@@ -1147,7 +1255,7 @@ opt_cycle:
 
 
 index_def:
-    CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')'
+    create opt_index_type INDEX ident ON qname '(' column_commalist ')'
 	{ dlist *l = L();
 	  append_string(l, $4);
 	  append_int(l, $2);
@@ -1178,12 +1286,12 @@ CREATE [ UNIQUE ] [ CLUSTERED | NONCLUSTERED ] INDEX index_name
 */
 
 role_def:
-    CREATE ROLE qname opt_grantor
+    create ROLE qname opt_grantor
 	{ dlist *l = L();
 	  append_symbol(l, $3);
 	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  CREATE USER ident WITH PASSWORD string sqlNAME string SCHEMA ident
+ |  create USER ident WITH PASSWORD string sqlNAME string SCHEMA ident
 	{ dlist *l = L();
 	  append_string(l, $3);
 	  append_string(l, $6);
@@ -1193,7 +1301,7 @@ role_def:
  ;
 
 table_def:
-    CREATE opt_temp TABLE qname table_content_source opt_on_commit 
+    create opt_temp TABLE qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 	  append_int(l, $2);
@@ -1432,10 +1540,10 @@ serial_opt_params:
 	/* empty: return the defaults */
 	{ dlist *l = L();
 	  dlist *p = L();
-	/* create list with int 2 int 1 to indicate start from 1 */
+	  /* create list with int 2 int 1 to indicate start from 1 */
 	  append_int(p, 2);
 	  append_int(p, 1);
-	/* finally all the options (no defaults here) */
+	  /* finally all the options (no defaults here) */
 	  append_list(l, p); /* start */
 	  append_int(l, -1); /* increment */
 	  append_int(l, -1); /* min */
@@ -1546,7 +1654,7 @@ like_table:
  ;
 
 view_def:
-    CREATE VIEW qname opt_column_commalist
+    create VIEW qname opt_column_commalist
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
     view_as
@@ -1606,15 +1714,25 @@ column_commalist_parens:
  ;
 
 module_def:
-    CREATE MODULE qname opt_external_name
+    create MODULE qname 
+	opt_external_name /* MONETDB extension */
+	opt_module_character_set_specification
+	opt_path_specification
+	opt_temporary_table_declarations
+	invoked_routines 
+    END MODULE
 			{ dlist *l = L();
 				append_symbol(l, $3);
 				append_string(l, $4);
+				append_list(l, $5);
+				append_symbol(l, $6);
+				append_list(l, $7);
+				append_list(l, $8);
 			  $$ = _symbol_create_list( SQL_CREATE_MODULE, l ); }
  ;
 
 type_def:
-    CREATE TYPE qname external_name
+    create TYPE qname external_name
 			{ dlist *l = L();
 				append_symbol(l, $3);
 				append_string(l, $4);
@@ -1630,8 +1748,32 @@ external_name:
     EXTERNAL sqlNAME ident 	{ $$ = $3; }
  ;
 
+opt_module_character_set_specification: 
+	/* empty */	{ $$ = NULL; }
+   |    NAMES ARE character_set_specification
+			{ $$ = $3; }
+   ;
+
+character_set_specification: qname ;
+
+opt_temporary_table_declarations:
+	table_def		
+		{ $$ = L(); append_symbol($$, $1); }
+    |   opt_temporary_table_declarations table_def
+		{ $$ = $1; append_symbol($$, $2); }
+    ;
+
+invoked_routines:
+	func_def SCOLON
+		{ $$ = L(); append_symbol($$, $1); }
+    |   declare func_def SCOLON
+		{ $$ = L(); append_symbol($$, $2); }
+    |	invoked_routines func_def SCOLON 	
+		{ $$ = $1; append_symbol($$, $2); }
+    ;
+
 func_def:
-    CREATE FUNCTION qname
+    create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS data_type
     EXTERNAL sqlNAME string
@@ -1640,37 +1782,178 @@ func_def:
 				append_list(f, $5);
 				append_type(f, &$8);
 				append_string(f, $11);
-				append_symbol(f, NULL);
+				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |
-    CREATE FUNCTION qname
+    create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
-    select_stmt
+    routine_body
 			{ dlist *f = L();
 				append_symbol(f, $3);
 				append_list(f, $5);
 				append_type(f, &$8);
 				append_string(f, NULL);
-				append_symbol(f, $11);
+				append_list(f, $11);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
-    CREATE PROCEDURE qname
+    create PROCEDURE qname
 	'(' opt_paramlist ')'
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
-    select_stmt		/* todo stmt set BEGIN/END */
+    routine_body
 			{ dlist *f = L();
 				append_symbol(f, $3);
 				append_list(f, $5);
 				append_type(f, NULL);   /* no result */
 				append_string(f, NULL); /* no mil-impl */
-				append_symbol(f, $9);
+				append_list(f, $9);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 
+routine_body:
+	procedure_statement 
+		{ $$ = L(); append_symbol( $$, $1); }
+ |  BEGIN
+	procedure_statement_list
+    END
+		{ $$ = $2; }
+ |  BEGIN ATOMIC
+	procedure_statement_list
+    END
+		{ $$ = $3; }
+ ;
+
+procedure_statement_list:
+    procedure_statement SCOLON 	{ $$ = append_symbol(L(), $1); }
+ |  procedure_statement_list 
+    procedure_statement SCOLON 	{ $$ = append_symbol($1, $2); }
+ ;
+
+procedure_statement:
+	transaction_statement
+    |	update_statement
+    |   select_stmt
+    |	schema
+    | 	grant
+    | 	revoke
+    | 	create_statement
+    |	drop_statement
+    |	alter_statement
+    |   declare_statement
+    |   set_statement
+    |	control_statement
+    ;
+
+control_statement:
+	call_statement
+    |	return_statement
+    |   if_statement
+    |   while_statement
+/*
+    |   case_statement
+    |   loop_statement
+    |   leave_statement
+    |   repeat_statement
+    |   for_statement
+    |   iterate_statement
+*/
+    ;
+
+call_statement:
+	CALL routine_invocation 	{ $$ = $2; }
+    ;
+
+routine_invocation: 
+	routine_name '(' argument_list ')'
+		{ dlist *l = L(); 
+		  append_list( l, $1);
+		  append_list( l, $3);
+		  $$ = _symbol_create_list( SQL_FUNC, l);
+		}
+    ;
+
+routine_name: qname ;
+
+argument_list:
+    scalar_exp 		{ $$ = append_symbol( L(), $1); }
+ |  argument_list ',' scalar_exp
+			{ $$ = append_symbol( $1, $3); }
+ ;
+
+
+return_statement:
+        RETURN return_value { $$ = _symbol_create_symbol(SQL_RETURN, $2); }
+   ;
+
+return_value:
+      scalar_exp
+   |  NULLX 	{ $$ = _newAtomNode( NULL);  }
+   ;
+
+if_statement:
+	IF search_condition THEN procedure_statement_list 
+	if_opt_else
+	END IF
+		{ dlist *l = L();
+		  append_symbol(l, $2);
+		  append_list(l, $4);
+		  append_symbol(l, $5);
+		  $$ = _symbol_create_list(SQL_IF, l);
+		}
+		  
+	;
+
+if_opt_else:
+	/* empty */ 	
+		{ $$ = NULL; }
+   |	ELSE procedure_statement_list 
+	  	{ $$ = _symbol_create_list(SQL_ELSE, $2); }
+   |	ELSEIF search_condition THEN procedure_statement_list 
+	if_opt_else
+		{ dlist *l = L();
+		  append_symbol(l, $2);
+		  append_list(l, $4);
+		  append_symbol(l, $5);
+		  { $$ = _symbol_create_list(SQL_IF, l); }
+		}
+	;
+
+while_statement:
+	opt_begin_label
+	WHILE search_condition DO
+	procedure_statement_list
+	END WHILE opt_end_label
+
+		{ dlist *l;
+		  char *label = $1?$1:$8;
+		  if ($1 && $8 && strcmp($1, $8) != 0) {
+			$$ = NULL;
+			yyerror("Labels of while should match");
+			YYABORT;
+			YYERROR; /* just to silence intel compiler */
+		  }
+ 		  l = L();
+		  append_symbol(l, $3); /* condition */
+		  append_list(l, $5);	/* statements */
+		  append_string(l, label);
+		  $$ = _symbol_create_list(SQL_WHILE, l);
+		}
+ ;
+
+opt_begin_label:
+	/* empty */ 	{ $$ = NULL; }
+ |	ident ':'
+ ;
+
+opt_end_label:
+	/* empty */ 	{ $$ = NULL; }
+ |	ident 
+ ;
+	
+	
 func_data_type:
     TABLE		{ sql_find_subtype(&$$, "table", 0, 0); }
  |  data_type
@@ -1736,7 +2019,7 @@ Define triggered SQL-statements.
 */
 
 trigger_def:
-    CREATE TRIGGER qname trigger_action_time trigger_event
+    create TRIGGER qname trigger_action_time trigger_event
     ON ident opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_symbol(l, $3);
@@ -1822,19 +2105,7 @@ triggered_statement:
     END 			{ $$ = $3; }
  ;
 
-procedure_statement_list:
-    procedure_statement ';' 	{ $$ = append_symbol(L(), $1); }
- |  procedure_statement_list 
-    procedure_statement ';' 	{ $$ = append_symbol($1, $2); }
- ;
-
-procedure_statement:
-   delete_stmt
- | insert_stmt
- | update_stmt
- ;
-
-drop:
+drop_statement:
     DROP TABLE qname drop_action
 
 	{ dlist *l = L();
@@ -1858,15 +2129,20 @@ drop_action:
 	/* data manipulative stmts */
 
 sql:
-   transaction_stmt
- | delete_stmt
+   transaction_statement
+ | update_statement
+ ;
+
+update_statement: 
+/* todo merge statement */
+   delete_stmt
  | insert_stmt
  | update_stmt
  | copyfrom_stmt
  | refresh_stmt
  ;
 
-transaction_stmt:
+transaction_statement:
    _transaction_stmt
 	{ mvc *m = (mvc*)parm;
 	  $$ = $1;
@@ -2009,6 +2285,37 @@ refresh_stmt:
     REFRESH VIEW qname {$$ = _symbol_create_symbol( SQL_REFRESH, $3 ); }
 ;
 
+/* todo merge statment 
+--p 
+Conditionally update rows of a table, or insert new rows into a table, or both.
+--/p
+
+<merge statement> ::=
+		MERGE INTO <target table> [ [ AS ] <merge correlation name> ]
+		USING <table reference> ON <search condition> <merge operation specification>
+
+<merge correlation name> ::= <correlation name>
+
+<merge operation specification> ::= <merge when clause>...
+
+<merge when clause> ::= <merge when matched clause> | <merge when not matched clause>
+
+<merge when matched clause> ::= WHEN MATCHED THEN <merge update specification>
+
+<merge when not matched clause> ::= WHEN NOT MATCHED THEN <merge insert specification>
+
+<merge update specification> ::= UPDATE SET <set clause list>
+
+<merge insert specification> ::=
+		INSERT [ <left paren> <insert column list> <right paren> ]
+		[ <override clause> ] VALUES <merge insert value list>
+
+<merge insert value list> ::=
+		<left paren> <merge insert value element> [ { <comma> <merge insert value element> }... ] <right paren>
+
+<merge insert value element> ::= <value expression> | <contextually typed value specification>
+*/
+
 insert_stmt:
     INSERT INTO qname values_or_query_spec
 
@@ -2054,7 +2361,7 @@ simple_atom:
 	 { 
 	   mvc *m = (mvc*)parm;
 
-	   if (m -> mode != m_prepare && m->argc < MAXPARAMS-2 && m->cache){
+	   if (CACHE_MODE(m->mode) && m->argc < MAXPARAMS-2 && m->cache){
 		/* replace by argument */
 		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
 
@@ -2811,7 +3118,7 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (m -> mode != m_prepare && m->argc < MAXPARAMS-2 && m->cache){
+	  if (CACHE_MODE(m->mode) && m->argc < MAXPARAMS-2 && m->cache){
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
@@ -3280,13 +3587,13 @@ case_exp:
 		     L(), $3), $5)); }
  |   COALESCE '(' scalar_exp_list2 ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
- |   CASE scalar_exp when_value_list opt_else END
+ |   CASE scalar_exp when_value_list case_opt_else END
 		{ $$ = _symbol_create_list(SQL_CASE,
 		   append_symbol(
 		    append_list(
 		     append_symbol(
 		      L(),$2),$3),$4)); }
- |   CASE when_search_list opt_else END
+ |   CASE when_search_list case_opt_else END
 		 { $$ = _symbol_create_list(SQL_CASE,
 		   append_symbol(
 		    append_list(
@@ -3333,7 +3640,7 @@ when_search_list:
 			{ $$ = append_symbol( $1, $2); }
  ;
 
-opt_else:
+case_opt_else:
     /* empty */	        { $$ = NULL; }
  |  ELSE scalar_exp	{ $$ = $2; }
  |  ELSE NULLX	 	{ $$ = _newAtomNode(NULL); }
@@ -3538,7 +3845,6 @@ restricted_ident:
     IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
- |  aMODULE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  ;
 
@@ -3546,7 +3852,6 @@ ident:
     IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
- |  aMODULE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  non_reserved_word
  ;
@@ -3565,11 +3870,18 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
+| WHEN		{ $$ = sa_strdup(SA, "when"); }		/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
+|  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
+|  MATCH	{ $$ = sa_strdup(SA, "match"); }
 |  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
+|  ROW		{ $$ = sa_strdup(SA, "row"); }
+|  KEY		{ $$ = sa_strdup(SA, "key"); }
+|  LANGUAGE	{ $$ = sa_strdup(SA, "language"); }
+|  SQL		{ $$ = sa_strdup(SA, "sql"); }
 |  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
 |  sqlDATE	{ $$ = sa_strdup(SA, "date"); }
 |  TIME 	{ $$ = sa_strdup(SA, "time"); }
@@ -3653,6 +3965,23 @@ exec_ref:
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
+/* path specification> 
+
+Specify an order for searching for an SQL-invoked routine.
+
+CURRENTLY only parsed 
+*/
+
+opt_path_specification: 
+	/* empty */ 	{ $$ = NULL; }
+   |	path_specification
+   ;
+
+path_specification: 
+        PATH schema_name_list 	{ $$ = _symbol_create_list( SQL_PATH, $2); }
+   ;
+
+schema_name_list: name_commalist ;
 
 %%
 char *token2string(int token)
@@ -3833,15 +4162,21 @@ char *token2string(int token)
 	case SQL_ESCAPE:
 		return "Escape";
 	case SQL_CAST:
-		return "Cast";
+		return "CAST";
+	case SQL_RETURN:
+		return "RETURN";
+	case SQL_IF:
+		return "IF";
+	case SQL_ELSE:
+		return "ELSE";
 	case SQL_CASE:
-		return "Case";
+		return "CASE";
 	case SQL_WHEN:
-		return "When";
+		return "WHEN";
 	case SQL_COALESCE:
 		return "Coalesce";
 	case SQL_NULLIF:
-		return "Nullif";
+		return "NULLIF";
 	case SQL_JOIN:
 		return "Join";
 	case SQL_CROSS:

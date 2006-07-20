@@ -1672,9 +1672,9 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 			if (scale_diff < 0) {
 				if (!both)
 					return e;
-				c = sql_bind_func(sql->session->module, "scale_down", et, it);
+				c = sql_bind_func(sql->session->schema, "scale_down", et, it);
 			} else {
-				c = sql_bind_func(sql->session->module, "scale_up", et, it);
+				c = sql_bind_func(sql->session->schema, "scale_up", et, it);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
@@ -1687,7 +1687,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 	} else if (always && et->scale) {	/* scale down */
 		int scale_diff = -(int) et->scale;
 		sql_subtype *it = sql_bind_localtype(et->type->base.name);
-		sql_subfunc *c = sql_bind_func(sql->session->module, "scale_down", et, it);
+		sql_subfunc *c = sql_bind_func(sql->session->schema, "scale_down", et, it);
 
 		if (c) {
 			lng val = scale2value(scale_diff);
@@ -2290,8 +2290,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		if (symmetric) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->session->module, "min", exp_subtype(re1), exp_subtype(re2));
-			sql_subfunc *max = sql_bind_func(sql->session->module, "max", exp_subtype(re1), exp_subtype(re2));
+			sql_subfunc *min = sql_bind_func(sql->session->schema, "min", exp_subtype(re1), exp_subtype(re2));
+			sql_subfunc *max = sql_bind_func(sql->session->schema, "max", exp_subtype(re1), exp_subtype(re2));
 
 			if (!min || !max) {
 				return sql_error(sql, 02, "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
@@ -2537,7 +2537,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			append(exps, exp_dup(rexps->h->data) );
 			list_destroy(rexps);
 		}
-		a = sql_bind_aggr(sql->session->module, "count", NULL);
+		a = sql_bind_aggr(sql->session->schema, "count", NULL);
 		cnt = exp_aggr(exps, a, 0, no_nil, rel->card);
 		cnt = rel_groupby_add_aggr(sql, rel, cnt);
 		re = exp_atom_int(0);
@@ -2613,8 +2613,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (symmetric) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->session->module, "min", exp_subtype(re1), exp_subtype(re2));
-			sql_subfunc *max = sql_bind_func(sql->session->module, "max", exp_subtype(re1), exp_subtype(re2));
+			sql_subfunc *min = sql_bind_func(sql->session->schema, "min", exp_subtype(re1), exp_subtype(re2));
+			sql_subfunc *max = sql_bind_func(sql->session->schema, "max", exp_subtype(re1), exp_subtype(re2));
 
 			if (!min || !max) {
 				return sql_error(sql, 02, "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
@@ -2672,7 +2672,7 @@ rel_op(mvc *sql, symbol *se )
 	sql_subfunc *f = NULL;
 	char *fname = l->data.sval;
 
-	f = sql_bind_func(sql->session->module, fname, NULL, NULL);
+	f = sql_bind_func(sql->session->schema, fname, NULL, NULL);
 	if (f) {
 		return exp_op(NULL, f);
 	} else {
@@ -2689,11 +2689,11 @@ rel_unop_(mvc *sql, sql_exp *e, char *fname)
 	sql_subtype *t = NULL;
 
 	t = exp_subtype(e);
-	f = sql_bind_func(sql->session->module, fname, t, NULL);
+	f = sql_bind_func(sql->session->schema, fname, t, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->session->module, fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(sql->session->schema, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		e = rel_check_type(sql, &a->type, e, type_equal);
@@ -2753,9 +2753,9 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	t1 = exp_subtype(l);
 	t2 = exp_subtype(r);
 
-	f = sql_bind_func(sql->session->module, fname, t1, t2);
+	f = sql_bind_func(sql->session->schema, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(sql->session->module, fname, t2, t1);
+		f = sql_bind_func(sql->session->schema, fname, t2, t1);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -2780,7 +2780,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	} else {
 		int digits = t1->digits + t2->digits;
 
-		if ((f = sql_bind_member(sql->session->module, fname, t1, 2)) != NULL) {
+		if ((f = sql_bind_member(sql->session->schema, fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
@@ -2792,7 +2792,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 			/* try operators */
 			t1 = exp_subtype(l);
 			t2 = exp_subtype(r);
-			f = sql_bind_func(sql->session->module, fname, t1, t2);
+			f = sql_bind_func(sql->session->schema, fname, t1, t2);
 			if (f) {
 				if (f->func->res.scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
@@ -2854,7 +2854,7 @@ rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, char *fname)
 	append(tl, exp_subtype(a2));
 	append(tl, exp_subtype(a3));
 
-	f = sql_bind_func_(sql->session->module, fname, tl);
+	f = sql_bind_func_(sql->session->schema, fname, tl);
 	list_destroy(tl);
 	if (f)
 		return exp_op3(a1,a2,a3,f);
@@ -2880,11 +2880,11 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 		append(exps, e);
 		append(tl, exp_subtype(e));
 	}
-	f = sql_bind_func_(sql->session->module, l->data.sval, tl);
+	f = sql_bind_func_(sql->session->schema, l->data.sval, tl);
 	list_destroy(tl);
 	if (f) {
 		return exp_op(exps, f);
-	} else if ((f = sql_bind_member(sql->session->module, l->data.sval, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
+	} else if ((f = sql_bind_member(sql->session->schema, l->data.sval, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
 		node *n, *m;
 		list *nexps = new_exp_list();
 
@@ -2951,7 +2951,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if (strcmp(aggrstr, "count") != 0) {
 			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), l->h->data.sval);
 		}
-		a = sql_bind_aggr(sql->session->module, aggrstr, NULL);
+		a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a 
 			column expression */
 		e = exp_aggr(NULL, a, distinct, 0, groupby->card);
@@ -2969,7 +2969,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (!e)
 		return NULL;
-	a = sql_bind_aggr(sql->session->module, aggrstr, exp_subtype(e));
+	a = sql_bind_aggr(sql->session->schema, aggrstr, exp_subtype(e));
 	if (a) {
 		/* type may have changed, ie. need to fix_scale */
 		sql_subtype *t = exp_subtype(e);
@@ -3214,7 +3214,7 @@ rel_cast(mvc *sql, sql_rel *rel, symbol *se, int f)
 		if (tpe->digits > 0) {
 			sql_subtype *et = exp_subtype(e);
 			sql_subtype *it = sql_bind_localtype("int");
-			sql_subfunc *c = sql_bind_func(sql->session->module, "truncate", et, it);
+			sql_subfunc *c = sql_bind_func(sql->session->schema, "truncate", et, it);
 			if (c)
 				e = exp_binop(e, exp_atom_int(tpe->digits), c);
 		}

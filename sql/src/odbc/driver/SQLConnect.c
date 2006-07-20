@@ -43,15 +43,25 @@
 #include <strings.h>
 #endif
 
+#ifdef NATIVE_WIN32
+#include <odbcinst.h>
+#define HAVE_SQLGETPRIVATEPROFILESTRING 1
+#endif
+#ifndef HAVE_SQLGETPRIVATEPROFILESTRING
+#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	(strncpy(buffer,default,bufferlen), buffer[bufferlen-1]=0, strlen(buffer))
+#endif
+
 SQLRETURN
 SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
-	char *uid = NULL;
-	char *pwd = NULL;
+	char uid[32];
+	char pwd[32];
+	char buf[256];
 	char *schema = NULL;
 	char *s;
+	int n;
 	Mapi mid;
 
 	/* check connection state, should not be connected */
@@ -68,41 +78,52 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		nDataSourceLength = strlen((char *) szDataSource);
 	}
 	dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
-	/* for now we only allow the MonetDB data source */
-	if (strcasecmp(dsn, "monetdb") != 0) {
+
+	n = SQLGetPrivateProfileString(dsn, "uid", "monetdb", uid, sizeof(uid), "odbc.ini");
+	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
+	if (n == 0 && nUIDLength == 0) {
 		free(dsn);
-		/* Data source name not found and no default driver
-		   specified */
-		addDbcError(dbc, "IM002", NULL, 0);
+		/* Invalid authorization specification */
+		addDbcError(dbc, "28000", NULL, 0);
 		return SQL_ERROR;
 	}
-
-	/* we need NULL-terminated strings for uid and password, so we
-	   need to make copies */
-	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
-	if (nUIDLength == 0) {
-		uid = strdup("monetdb");
-	} else {
-		uid = dupODBCstring(szUID, (size_t) nUIDLength);
+	if (nUIDLength > 0) {
+		if (nUIDLength >= sizeof(uid))
+			nUIDLength = sizeof(uid) - 1;
+		strncpy(uid, (char *) szUID, nUIDLength);
+		uid[nUIDLength] = 0;
 	}
+	n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb", pwd, sizeof(pwd), "odbc.ini");
 	fixODBCstring(szPWD, nPWDLength, addDbcError, dbc);
-	if (nPWDLength == 0) {
-		pwd = strdup("monetdb");
-	} else {
-		pwd = dupODBCstring(szPWD, (size_t) nPWDLength);
+	if (n == 0 && nPWDLength == 0) {
+		free(dsn);
+		/* Invalid authorization specification */
+		addDbcError(dbc, "28000", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (nPWDLength > 0) {
+		if (nPWDLength >= sizeof(pwd))
+			nPWDLength = sizeof(pwd) - 1;
+		strncpy(pwd, (char *) szPWD, nPWDLength);
+		pwd[nPWDLength] = 0;
 	}
 
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
+	if (port == 0) {
+		n = SQLGetPrivateProfileString(dsn, "port", "50000", buf, sizeof(buf), "odbc.ini");
+		port = atoi(buf);
+	}
 	if (port == 0)
 		port = 50000;
 
-	/* TODO: get and use a database name */
-
-	/* Retrieved and checked the arguments.
-	   Now try to open a connection with the server */
-	if (host == NULL || *host == 0)
-		host = "localhost";
+	if (host == NULL || *host == 0) {
+		n = SQLGetPrivateProfileString(dsn, "host", "localhost", buf, sizeof(buf), "odbc.ini");
+		if (n > 0)
+			host = buf;
+		else
+			host = "localhost";
+	}
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d\n", dsn, uid, pwd, host, port);
@@ -117,10 +138,6 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		/* clean up */
 		if (mid)
 			mapi_destroy(mid);
-		if (uid != NULL)
-			free(uid);
-		if (pwd != NULL)
-			free(pwd);
 		if (dsn != NULL)
 			free(dsn);
 	} else {
@@ -132,10 +149,10 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		dbc->dsn = dsn;
 		if (dbc->uid != NULL)
 			free(dbc->uid);
-		dbc->uid = uid;
+		dbc->uid = strdup(uid);
 		if (dbc->pwd != NULL)
 			free(dbc->pwd);
-		dbc->pwd = pwd;
+		dbc->pwd = strdup(pwd);
 		if (dbc->host)
 			free(dbc->host);
 		dbc->host = strdup(host);

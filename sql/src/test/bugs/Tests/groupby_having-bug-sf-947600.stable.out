@@ -5,17 +5,10 @@ stdout of test 'groupby_having-bug-sf-947600` in directory 'src/test/bugs` itsel
 # 21:44:47 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=31921 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="include sql;" ; echo ; echo Over..
 # 21:44:47 >  
 
-
-
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
-# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm
-# dbname:mTests_src_test_bugs
-# Visit http://monetdb.cwi.nl/ for further information
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -53,18 +46,10 @@ Over..
 [ "keys",	"keycolumns",	3	]
 [ "keys",	"keys",	5	]
 [ "keys",	"sequences",	2	]
-[ "modules",	"args",	2	]
-[ "modules",	"columns",	2	]
-[ "modules",	"functions",	2	]
-[ "modules",	"idxs",	4	]
-[ "modules",	"keycolumns",	2	]
-[ "modules",	"keys",	4	]
-[ "modules",	"sequences",	1	]
 # sys.tables # table_name
 # name # name
 # varchar # type
 # 10 # length
-[ "modules"	]
 [ "functions"	]
 [ "args"	]
 [ "keys"	]
@@ -82,7 +67,6 @@ Over..
 # name # name
 # varchar # type
 # 10 # length
-[ "modules"	]
 [ "functions"	]
 [ "args"	]
 [ "keys"	]

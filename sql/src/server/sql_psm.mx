@@ -1,0 +1,242 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f sql_psm
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _SQL_PSM_H_
+#define _SQL_PSM_H_
+
+#include <sql_list.h>
+#include "sql_symbol.h"
+#include "sql_statement.h"
+
+extern stmt *psm(mvc *sql, symbol *sym);
+
+#endif /* _SQL_PSM_H_ */
+@c
+#include "sql_psm.h"
+#include "sql_select.h"
+#include "sql_semantic.h"
+
+static stmt * sequential_block (mvc *sql, scope *scp, dlist *blk);
+
+/* SET variable = value */
+
+static stmt *
+psm_set(mvc *sql, scope *scp, dnode *n)
+{
+	char *name = n->data.sval;
+	symbol *val = n->next->data.sym;
+	stmt *r = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
+
+	/* name can be 
+		'global variable' currently ignored 
+		'parameter of the function' (ie in the param list)
+		or local variable, declared earlier
+	*/
+	sql_arg *a = sql_bind_param(sql, name);
+
+	if (!r)
+		return NULL;
+
+	if (!a) /* not parameter, ie local var ? */
+		return NULL;
+
+	/* TODO type checking */
+	return stmt_assign(name, r);
+}
+
+/* [ label: ]
+   while (cond) do 
+	statement_list
+   end [ label ]
+   currently we only parse the labels, they cannot be used as there is no
+
+   support for LEAVE and ITERATE (sql multi-level break and continue)
+ */
+static stmt * 
+psm_while_do( mvc *sql, scope *scp, dnode *w )
+{
+	if (!w)
+		return NULL;
+	if (w->type == type_symbol) { 
+		stmt *cond, *whilestmts;
+		dnode *n = w;
+
+		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
+		n = n->next;
+		whilestmts = sequential_block(sql, scp, n->data.lval);
+		n = n->next;
+		/* optional label */
+
+		if (sql->session->status || !cond || !whilestmts) {
+			cond_stmt_destroy(cond);
+			cond_stmt_destroy(whilestmts);
+			return NULL;
+		}
+		return stmt_while( cond, whilestmts );
+	}
+	return NULL;
+}
+
+
+/* if (cond) then statement_list
+   [ elseif (cond) then statement_list ]*
+   [ else statement_list ]
+   end if
+ */
+static stmt * 
+psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
+{
+	if (!elseif)
+		return NULL;
+	if (elseif->next && elseif->type == type_symbol) { /* if or elseif */
+		stmt *cond, *ifstmts, *elsestmts;
+		dnode *n = elseif;
+
+		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
+		n = n->next;
+		ifstmts = sequential_block(sql, scp, n->data.lval);
+		n = n->next;
+		elsestmts = psm_if_then_else( sql, scp, n);
+
+		if (sql->session->status || !cond || !ifstmts) {
+			cond_stmt_destroy(cond);
+			cond_stmt_destroy(ifstmts);
+			cond_stmt_destroy(elsestmts);
+			return NULL;
+		}
+		return stmt_if( cond, ifstmts, elsestmts);
+	} else { /* else */
+		symbol *e = elseif->data.sym;
+
+		if (e->token != SQL_ELSE)
+			return NULL;
+		return sequential_block( sql, scp, e->data.lval);
+	}
+}
+
+/* return val;
+ */
+static stmt * 
+psm_return( mvc *sql, scope *scp, symbol *return_sym )
+{
+	stmt *res = sql_value_exp(sql, scp, return_sym, NULL, NULL, sql_sel);
+	if (!res)
+		return NULL;
+	return stmt_return(res);
+}
+
+static stmt *
+sequential_block (mvc *sql, scope *scp, dlist *blk) 
+{
+	list *l;
+	stmt *res = NULL;
+	dnode *n;
+
+	if (blk->h)
+ 		l = create_stmt_list();
+	for (n = blk->h; n; n = n->next ) {
+		symbol *s = n->data.sym;
+		switch (s->token) {
+		case SQL_SET:
+			res = psm_set(sql, scp, s->data.lval->h);
+			break;
+		case SQL_DECLARE:
+			printf("declare\n");
+			break;
+		case SQL_WHILE:
+			res = psm_while_do(sql, scp, s->data.lval->h);
+			break;
+		case SQL_IF:
+			res = psm_if_then_else(sql, scp, s->data.lval->h);
+			break;
+		case SQL_RETURN:
+			res = psm_return(sql, scp, s->data.sym);
+			break;
+		default:
+			printf("default \n");
+		}
+		if (!res) {
+			list_destroy(l);
+			return NULL;
+		}
+		list_append(l, res);
+	}
+	if (l)
+		return stmt_list(l);
+	return NULL;
+}
+
+static stmt *
+create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl, dlist *body)
+{
+	char *fname = qname_table(qname);
+	dnode *n;
+	list *l = list_create((fdestroy) &arg_destroy);
+
+	for (n = params->h; n; n = n->next) {
+		dnode *an = n->data.lval->h;
+
+		list_append(l, sql_create_arg(_strdup(an->data.sval), &an->next->data.typeval));
+		sql_add_param(sql, an->data.sval, &an->next->data.typeval);
+	}
+	if (body) {		/* sql func */
+		char *q = QUERY(sql->scanner);
+		stmt *b = NULL;
+		if (!(b = sequential_block(sql, NULL, body ))) {
+			return NULL;
+		}
+		
+		/* in prepare mode we instanciate the function */
+		if (sql->mode == m_prepare) {
+			return b;
+		} else {
+			stmt_destroy(b);
+			sql_destroy_params(sql);
+			mvc_create_func(sql, sql->session->schema, fname, l, res, TRUE, FALSE, q);
+		}
+	} else {
+		mvc_create_func(sql, sql->session->schema, fname, l, res, FALSE, FALSE, impl);
+	}
+	return stmt_none();
+}
+
+
+stmt *
+psm(mvc *sql, symbol *s)
+{
+	stmt *ret = NULL;
+
+	switch (s->token) {
+
+	case SQL_CREATE_FUNC:
+	{
+		dlist *l = s->data.lval;
+
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
+		sql->type = Q_SCHEMA;
+	}
+		break;
+
+	default:
+		return sql_error(sql, 01, "schema statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
+	}
+	return ret;
+}

@@ -96,22 +96,22 @@ extern sql_arg *sql_create_arg(char *name, sql_subtype *t);
 extern sql_arg *arg_dup(sql_arg *a);
 extern void arg_destroy(sql_arg *a);
 
-extern sql_subaggr *sql_bind_aggr(sql_module *m, char *name, sql_subtype *type);
+extern sql_subaggr *sql_bind_aggr(sql_schema *s, char *name, sql_subtype *type);
 extern sql_aggr *sql_create_aggr(char *name, char *imp, sql_type *tpe, sql_type *res);
 extern sql_subaggr *sql_dup_aggr(sql_subaggr *a);
 extern void sql_subaggr_destroy(sql_subaggr *f);
 
-extern sql_subfunc *sql_find_func(sql_module *m, char *name, int nrargs);
-extern sql_subfunc *sql_bind_member(sql_module *m, char *name, sql_subtype *tp, int nrargs);
-extern sql_subfunc *sql_bind_func(sql_module *m, char *name, sql_subtype *tp1, sql_subtype *tp2);
-extern sql_subfunc *sql_bind_func_result(sql_module *m, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
-extern sql_subfunc *sql_bind_func_result3(sql_module *m, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
+extern sql_subfunc *sql_find_func(sql_schema *s, char *name, int nrargs);
+extern sql_subfunc *sql_bind_member(sql_schema *s, char *name, sql_subtype *tp, int nrargs);
+extern sql_subfunc *sql_bind_func(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2);
+extern sql_subfunc *sql_bind_func_result(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
+extern sql_subfunc *sql_bind_func_result3(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
 
-extern sql_subfunc *sql_bind_func_(sql_module *m, char *name, list *ops);
-extern sql_subfunc *sql_bind_func_result_(sql_module *m, char *name, list *ops, sql_subtype *res);
+extern sql_subfunc *sql_bind_func_(sql_schema *s, char *name, list *ops);
+extern sql_subfunc *sql_bind_func_result_(sql_schema *s, char *name, list *ops, sql_subtype *res);
 extern sql_subfunc *sql_dup_func(sql_subfunc *f);
 extern void sql_subfunc_destroy(sql_subfunc *f);
-extern sql_subfunc *sql_bind_proc(sql_module *m, char *name, list *ops);
+extern sql_subfunc *sql_bind_proc(sql_schema *s, char *name, list *ops);
 
 extern void func_destroy(sql_func *t);
 extern sql_func *sql_create_func(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
@@ -121,6 +121,9 @@ extern sql_func *sql_create_func4(char *name, char *imp, sql_type *tpe1, sql_typ
 extern sql_func *sql_create_func_(char *name, char *imp, list *ops, sql_subtype *res);
 
 extern sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res);
+
+extern char *sql_func_imp(sql_func *f);
+extern int is_sqlfunc(sql_func *f);
 
 extern void types_init(int debug);
 extern void types_exit(void);
@@ -488,12 +491,12 @@ subtype2string(sql_subtype *t)
 }
 
 sql_subaggr *
-sql_bind_aggr(sql_module *m, char *sqlaname, sql_subtype *type)
+sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 {
 	char *name = toLower(sqlaname);
 	node *n = aggrs->h;
 
-	(void)m;
+	(void)s;
 	while (n) {
 		sql_aggr *a = n->data;
 
@@ -552,6 +555,20 @@ sql_subaggr_destroy(sql_subaggr *a)
 	}
 }
 
+char *
+sql_func_imp(sql_func *f)
+{
+	if (f->sql)
+		return f->base.name;
+	else
+		return f->imp;
+}
+
+int
+is_sqlfunc(sql_func *f)
+{
+	return f->sql;
+}
 
 static sql_subfunc *
 func_cmp(sql_func *f, char *name, int nrargs) 
@@ -572,7 +589,7 @@ func_cmp(sql_func *f, char *name, int nrargs)
 }
 
 sql_subfunc *
-sql_find_func(sql_module *m, char *sqlfname, int nrargs)
+sql_find_func(sql_schema *s, char *sqlfname, int nrargs)
 {
 	char *name = toLower(sqlfname);
 	node *n = funcs->h;
@@ -587,10 +604,10 @@ sql_find_func(sql_module *m, char *sqlfname, int nrargs)
 		if ((fres = func_cmp(f, name, nrargs )) != NULL) 
 			return fres;
 	}
-	if (m) {
+	if (s) {
 		node *n;
 
-		if (m->funcs.set) for (n=m->funcs.set->h; n; n = n->next) {
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *f = n->data;
 
 			if (f->aggr)
@@ -606,12 +623,12 @@ sql_find_func(sql_module *m, char *sqlfname, int nrargs)
 
 /* find function based on first argument */
 sql_subfunc *
-sql_bind_member(sql_module *m, char *sqlfname, sql_subtype *tp, int nrargs)
+sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 {
 	char *name = toLower(sqlfname);
 	node *n;
 
-	(void)m;
+	(void)s;
 	assert(nrargs);
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
@@ -645,7 +662,7 @@ sql_bind_member(sql_module *m, char *sqlfname, sql_subtype *tp, int nrargs)
 }
 
 sql_subfunc *
-sql_bind_func(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2)
+sql_bind_func(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2)
 {
 	list *l = list_create((fdestroy)NULL);
 	sql_subfunc *fres;
@@ -655,7 +672,7 @@ sql_bind_func(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2)
 	if (tp2)
 		list_append(l, tp2);
 
-	fres = sql_bind_func_(m, sqlfname, l);
+	fres = sql_bind_func_(s, sqlfname, l);
 	list_destroy(l);
 	return fres;
 }
@@ -667,12 +684,12 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 }
 
 sql_subfunc *
-sql_bind_func_(sql_module *m, char *sqlfname, list *ops)
+sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 {
 	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 
-	(void)m;
+	(void)s;
 	while (n) {
 		sql_func *f = n->data;
 
@@ -704,7 +721,7 @@ sql_bind_func_(sql_module *m, char *sqlfname, list *ops)
 }
 
 sql_subfunc *
-sql_bind_func_result(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res)
+sql_bind_func_result(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res)
 {
 	list *l = list_create((fdestroy) NULL);
 	sql_subfunc *fres;
@@ -714,13 +731,13 @@ sql_bind_func_result(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtyp
 	if (tp2)
 		list_append(l, tp2);
 
-	fres = sql_bind_func_result_(m, sqlfname, l, res);
+	fres = sql_bind_func_result_(s, sqlfname, l, res);
 	list_destroy(l);
 	return fres;
 }
 
 sql_subfunc *
-sql_bind_func_result3(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res)
+sql_bind_func_result3(sql_schema *s, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res)
 {
 	list *l = list_create((fdestroy) NULL);
 	sql_subfunc *fres;
@@ -732,19 +749,19 @@ sql_bind_func_result3(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subty
 	if (tp3)
 		list_append(l, tp3);
 
-	fres = sql_bind_func_result_(m, sqlfname, l, res);
+	fres = sql_bind_func_result_(s, sqlfname, l, res);
 	list_destroy(l);
 	return fres;
 }
 
 
 sql_subfunc *
-sql_bind_func_result_(sql_module *m, char *sqlfname, list *ops, sql_subtype *res)
+sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res)
 {
 	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 
-	(void)m;
+	(void)s;
 	while (n) {
 		sql_func *f = n->data;
 
@@ -774,12 +791,12 @@ sql_bind_func_result_(sql_module *m, char *sqlfname, list *ops, sql_subtype *res
 }
 
 sql_subfunc *
-sql_bind_proc(sql_module *m, char *sqlfname, list *ops)
+sql_bind_proc(sql_schema *s, char *sqlfname, list *ops)
 {
 	char *name = toLower(sqlfname);
 	node *n = funcs->h;
 
-	(void)m;
+	(void)s;
 	while (n) {
 		sql_func *f = n->data;
 
