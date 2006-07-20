@@ -205,7 +205,7 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 		n = when_statements->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			stmt *cond, *when_value = sql_value_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
+			stmt *cond=0, *when_value = sql_value_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
 			stmt *if_stmts = NULL;
 			stmt *case_stmt = NULL;
 
@@ -282,7 +282,7 @@ psm_return( mvc *sql, scope *scp, symbol *return_sym )
 static stmt *
 sequential_block (mvc *sql, scope *scp, dlist *blk, char *opt_label) 
 {
-	list *l;
+	list *l=0;
 	stmt *res = NULL;
 	dnode *n;
 

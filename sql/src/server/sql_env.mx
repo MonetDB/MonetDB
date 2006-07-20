@@ -420,6 +420,11 @@ sql_sessions(mvc *m)
 
 /* M5 default session variables */
 	table_insert(tr, s, "optimizer", "on", "varchar(1024)", &rw, NULL);
+	if (m->explain == m_profile)
+		table_insert(tr, s, "profile", "true", "boolean", &rw, NULL);
+	else
+		table_insert(tr, s, "profile", "false", "boolean", &rw, NULL);
+	table_insert(tr, s, "trace", "false", "boolean", &rw, NULL);
 /* Actually 'factory' and 'cache' are optimizer decisions too */
 	return 0;
 }
