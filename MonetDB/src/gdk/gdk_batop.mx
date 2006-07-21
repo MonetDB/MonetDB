@@ -1494,7 +1494,8 @@ BAT@6sort@3(BAT *b)
 	if (tt == TYPE_void && b->tseqbase != oid_nil) {
 		tt = TYPE_oid;
 	}
-	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@4(b))) {
+	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || 
+	    (b->htype != TYPE_void && (b->hkey || '@7' != 's') && BATordered@4(b))) {
 		/* b is ordered in the opposite direction, hence we return a reverted copy of b */
 		/* a void head column must be materialized to oid before reverting */
 		int ht = b->htype;
@@ -1535,7 +1536,8 @@ BAT@6order@3(BAT *b)
 		/* materialize void-tail in-place */
 		b = BATmaterializet(b, BATcount(b));
 	}
-	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@4(b))) {
+	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || 
+	    (b->htype != TYPE_void && (b->hkey || '@7' != 's') && BATordered@4(b))) {
 		/* b is ordered in the opposite direction, hence we revert b */
 		b = BATrevert(b);
 		return b;
