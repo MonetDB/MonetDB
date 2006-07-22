@@ -1,4 +1,4 @@
-@section Overlaying the BAT storage
+@subsection Overlaying the BAT storage
 The SQL implementation exploits many facilities of the underlying
 MonetDB kernel. Most notably, its efficient column-wise storage
 scheme with associated algebraic primitives.

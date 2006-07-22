@@ -1,2 +1,2 @@
 @chapter XQuery
-Give a 3 page introduction on how to use XQuery
+XQuery and XUpdate are not yet supported in Version 5.
