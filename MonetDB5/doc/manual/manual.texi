@@ -132,12 +132,12 @@ using the
 @include mal_scenario.bdy.texi
 
 @node Client Interfaces, Data Management Tools, Scenario Management, MonetDB Overview
-@include mal_client.bdy.texi
+@include manual/mal_client.bdy.texi
 @include Assets/MapiClient.texi
 @include Assets/JdbcClient.texi
 
 @subsection Console Interaction
-@include mal_readline.bdy.texi
+@include manual/mal_readline.bdy.texi
 
 @node Data Management Tools, Aqua Data Studio, Client Interfaces , MonetDB Overview
 @include Assets/DBA-GUIs.texi

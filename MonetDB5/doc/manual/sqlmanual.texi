@@ -104,13 +104,12 @@ using the
 @include Assets/Databasedump.texi
 
 @node Client Interfaces, Data Management Tools, Database Dumps, Top
-@include Assets/warning.texi
-@include mal_client.bdy.texi
+@include sqlmanual/mal_client.bdy.texi
 @include Assets/MapiClient.texi
 @include Assets/JdbcClient.texi
 
 @subsection Console Interaction
-@include mal_readline.bdy.texi
+@include sqlmanual/mal_readline.bdy.texi
 
 @node Data Management Tools, Aqua Data Studio, Client Interfaces , Top
 @include Assets/DBA-GUIs.texi
