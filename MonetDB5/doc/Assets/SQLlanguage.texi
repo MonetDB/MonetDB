@@ -1,7 +1,22 @@
 @section Language Overview
-The MonetDB/SQL language follows the SQL-2003 specification. This section
-introduces the language components supported in the current and upcoming
-releases.
+The SQL implementation is based on the SQL-99 standard and a keen
+eye on the SQL-2003 specifications.
+It is built incrementally over time to cope with the effort
+required to realize all features. Priority is given to those
+features relevant to our research and upon request from our valued
+partners.
+
+The plethora of SQL implementations also show that the standard
+alone is hardly sufficient. All database systems have extended
+or twisted the language definition to satisfy the needs of their
+customers, to support legacy, and to better tap into the functionality
+offered by their kernel implementations.
+MonetDB/SQL is bound to follow this path too. The kernel imposes
+limitations on the features that can and cannot be realized.
+They are summarized in @ref{Development Roadmap}.
+
+This section introduces the language components supported 
+in the current and upcoming releases.
 
 @menu
 * Preface::

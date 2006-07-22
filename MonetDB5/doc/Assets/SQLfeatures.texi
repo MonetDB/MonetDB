@@ -1,23 +1,7 @@
 @section MonetDB/SQL Features 
-The SQL Implementation is based on the SQL-99 standard. 
-It is built incrementally over time to cope with the effort
-required to realize all features. Priority is given to those
-features relevant to our research and upon request from our valued
-partners.
-
-The plethora of SQL implementations also show that the standard
-alone is hardly sufficient. All database systems have extended
-or twisted the language definition to satisfy the needs of their
-customers, to support legacy, and to better tap into the functionality
-offered by their kernel implementations. 
-MonetDB/SQL is bound to follow this path too. The kernel imposes
-limitations on the features that can and cannot be realized.
-The are summarized in @ref{Development Roadmap}.
-
-In the context of programming support, we provide a few
-primitives to simplify debugging of SQL programs. They are described
-separately. The list below provides a synopsis of the SQL features
-supported in the released version.
+The MonetDB SQL implementation provides a few
+primitives to simplify profiling and debugging of SQL queries.
+They are described separately. 
 
 @menu
 * Session Variables ::
@@ -66,7 +50,6 @@ The initial state is something like:
 [ "optimizer",            "on",               "varchar",      0       ]
 [ "trace",                "false",            "boolean",      0       ]
 @end example
-The table is shared? private?
 
 @itemize @bullet
 @item
@@ -90,7 +73,7 @@ query optimizers, see @ref{SQL}.
 
 @node EXPLAIN Statement, PROFILE Statement, Session Variables, MonetDB/SQL Features
 @subsection EXPLAIN Statement
-The intermediate code produced by the SQL Implementation compiler can be made 
+The intermediate code produced by the SQL compiler can be made 
 visible using the @code{explain} statement modifier. 
 It gives a detailed description of the actions taken to produce the
 answer. The example below illustrates what you can expect when a
@@ -99,6 +82,7 @@ simple query is pre-pended by the @code{explain} modifier.
 Although the details of this program are better understood
 when you have read the MonetDB Version 5 Reference Manual,
 the global structure is easy to explain.
+@include Assets/warning.texi
 @end ifset
 @ifset M5manual
 Although the details of this program are better understood
@@ -170,13 +154,12 @@ The query cache disappears when the server is brought to a halt.
 @subsection PROFILE Statement
 The SQL implementation comes with a simple profiler to learn about
 the expensive queries.
-The profiler is controlled by the boolean session variable @code{profiler}.
-[to do, now it is a set explain='profiler']
+The profiler is controlled by the boolean session variable @code{profile}.
 The snippet below illustrates its use:
 @verbatim
-> set profiler= true;
+> set profile= true;
   ...
-> select * from profiler
+> select * from profile
 &1 0 3 7 3
 # tmp.profile,  tmp.profile,    tmp.profile,    tmp.profile,    tmp.profile,
 tmp.profile,    tmp.profile # table_name
@@ -191,14 +174,15 @@ tmp.profile,    tmp.profile # table_name
 137,    835,    "monetdb"   ]
 >
 @end verbatim
-It illustrates the wall clock time the quer was started, the
-query itself, followed by the timing of the parser,
-optimizer, execution phase and total execution time (in microseconds).
+It illustrates the wall clock time the query was started, the
+query itself, followed by the timing obtained for the parser, the
+optimizer, the execution phase and the total execution time (in microseconds).
 The final column indicates the user responsible for this request.
 
 @node DEBUG Statement, TRACE Statement, PROFILE Statement, MonetDB/SQL Features
 @subsection DEBUG Statement
 
+@include Assets/warning.texi
 The SQL statements are translated into MAL programs, which
 are optimized and stored away in an @code{sql_cache} module.
 The generated code can be debugged with the MAL debugger.
@@ -228,6 +212,7 @@ facilities to time each request. The example below illustrates
 the @code{trace} statement modifier to obtain a first glimpse
 on the expensive components of the query plan.
 
+@include Assets/warning.texi
 @verbatim
 >trace select count(*) from tables;
 #     7 usec#    mdb.setTimer(_2=true)
@@ -273,13 +258,13 @@ on the expensive components of the query plan.
 
 @node Optimizer Control, Overlaying BATs, TRACE Statement,  MonetDB/SQL Features
 @section Optimizer Control
-@include Assets/warning.texi
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
 However, for development purposes and the rare case that more control
 is needed, the SQL session variable @code{optimizer} can be set
 to a list of optimizers to identify the steps needed. 
 
+@include Assets/warning.texi
 @example
 >set optimizer='commonExpressionRemoval,garbageCollector';
 >select optimizer;
