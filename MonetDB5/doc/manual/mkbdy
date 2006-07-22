@@ -43,10 +43,11 @@ do
         Mx -i -B -H1 $f
 		mv $b.bdy.texi  ${dir}/doc/share/tmp
 done
-cp *gif *eps *pdf ${dir}/doc/share/tmp
-cp *pdf ${dir}/doc/share/tmp
-cp *feps *pdf ${dir}/doc/share/tmp
-sed -i -e "/@t/,/@contents/d" ${dir}/doc/share/tmp/gdk.bdy.texi
+cp *feps *png *gif *eps *pdf ${dir}/doc/share/tmp
+ex ${dir}/doc/share/tmp/gdk.bdy.texi <<!EOD
+0,/@chapter/-1d
+w!
+!EOD
 
 cd ${m4dir}/src/mapi/clients/C
 for f in  `ls *.mx`
