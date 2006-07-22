@@ -430,5 +430,5 @@ MonetDB/SQL supports the following list of types.
 @node Users, SQL Transactions, Schema Definition, Language Overview
 @subsection Users
 
-@node SQL Transactions, MonetDB/SQL Features, Users, Language Overview
+@node SQL Transactions, Runtime Features, Users, Language Overview
 @subsection SQL Transactions

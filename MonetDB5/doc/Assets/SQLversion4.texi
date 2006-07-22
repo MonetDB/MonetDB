@@ -1,6 +1,10 @@
 @appendix Version 4 Differences
-@section Start and Stop the Server
+Many of the differences with Version 4 stem from its
+different intermediate language, called MIL. 
+It has become obsolete and is replaced by a simplier
+to analyse and execute language, called MAL.
 
+@section Start and Stop the Server
 The Version 4 server does not come with a guardian process.
 The server is an executable program called @code{Mserver},
 whose permissible arguments can be obtained running
@@ -31,9 +35,10 @@ and the examples are based. Furthermore, the
 results produced by the SQL statement modifiers
 are focussed on MIL, rather then MAL.
 
-@section Optimizer
-The SQL compiler for version 4 does not provide
-access to back-end specific optimizers.
+@section Runtime features
+The SQL compiler and runtime system for Version 4 does not support
+debugging and tracing. It also lacks a controllable optimizer.
 
-@section Overlaying BATs
-Version 4 only understands MIL.
+Instead, the session variable @code{explain} can be set to
+'profile' or 'plan' to capture the performance profile and
+intermediate MIL plan.

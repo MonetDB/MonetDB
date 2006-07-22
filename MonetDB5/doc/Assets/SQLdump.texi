@@ -1,7 +1,7 @@
 @subsection Dump and restore
 Before you upgrade your database server you should backup the data.
-Start the server and textual client as usual.
 
+Start the server and textual client as usual.
 In client, type the following three commands. Type them without any extra white space:
 
 	  sql>>path/to/dump.sql

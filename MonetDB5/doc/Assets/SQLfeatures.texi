@@ -1,4 +1,4 @@
-@section MonetDB/SQL Features 
+@section Runtime Features 
 The MonetDB SQL implementation provides a few
 primitives to simplify profiling and debugging of SQL queries.
 They are described separately. 
@@ -13,7 +13,7 @@ They are described separately.
 * Overlaying BATs::
 @end menu
 
-@node Session Variables, EXPLAIN Statement, MonetDB/SQL Features, MonetDB/SQL Features
+@node Session Variables, EXPLAIN Statement, Runtime Features, Runtime Features
 @subsection Session Variables 
 MonetDB/SQL supports session variables declared by the user. 
 They are indistinguishable from table and column names
@@ -71,7 +71,7 @@ The @code{optimizer} variable takes a string. It controls the
 query optimizers, see @ref{SQL}.
 @end itemize
 
-@node EXPLAIN Statement, PROFILE Statement, Session Variables, MonetDB/SQL Features
+@node EXPLAIN Statement, PROFILE Statement, Session Variables, Runtime Features
 @subsection EXPLAIN Statement
 The intermediate code produced by the SQL compiler can be made 
 visible using the @code{explain} statement modifier. 
@@ -150,7 +150,7 @@ The call to the cached function is included in the function @code{main},
 which is the only piece of code produced if the query is used more than once.
 The query cache disappears when the server is brought to a halt. 
 
-@node PROFILE Statement, DEBUG Statement, EXPLAIN Statement, MonetDB/SQL Features
+@node PROFILE Statement, DEBUG Statement, EXPLAIN Statement, Runtime Features
 @subsection PROFILE Statement
 The SQL implementation comes with a simple profiler to learn about
 the expensive queries.
@@ -179,7 +179,7 @@ query itself, followed by the timing obtained for the parser, the
 optimizer, the execution phase and the total execution time (in microseconds).
 The final column indicates the user responsible for this request.
 
-@node DEBUG Statement, TRACE Statement, PROFILE Statement, MonetDB/SQL Features
+@node DEBUG Statement, TRACE Statement, PROFILE Statement, Runtime Features
 @subsection DEBUG Statement
 
 @include Assets/warning.texi
@@ -205,7 +205,7 @@ mdb>next
 mdb> ...
 @end verbatim
 
-@node TRACE Statement, Optimizer Control, DEBUG Statement, MonetDB/SQL Features
+@node TRACE Statement, Optimizer Control, DEBUG Statement, Runtime Features
 @subsection TRACE Statement
 Inspection of the execution time of the query plan uses the debugger
 facilities to time each request. The example below illustrates
@@ -256,8 +256,8 @@ on the expensive components of the query plan.
 #   911 usec#    sql_cache.s0_0()
 @end verbatim
 
-@node Optimizer Control, Overlaying BATs, TRACE Statement,  MonetDB/SQL Features
-@section Optimizer Control
+@node Optimizer Control, Overlaying BATs, TRACE Statement,  Runtime Features
+@subsection Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
 However, for development purposes and the rare case that more control
