@@ -1,0 +1,113 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mal_inliners
+@a M. Kersten
+@-
+@node Function Inliners, Heuristic Rewrite Rules, Macro Processing, Optimizer Toolkit
+
+@- Function Inliners
+The routine @code{optimizer.inliners()} searches MAL function calls whose
+property @{ inliner @}  is set.
+The code is expanded inline using the macro processor.
+
+@{
+@mal
+pattern optimizer.inliners():str
+address QOTIXoptimizer;
+pattern optimizer.inliners(mod:str, fcn:str):str
+address QOTIXoptimizer
+comment "Expand inline functions";
+
+@h
+#ifndef _MAL_INLINE_
+#define _MAL_INLINE_
+#include "mal_prelude.h"
+#include "mal_macro.h"
+#include "mal_optimizer.h"
+
+opt_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+/* #define DEBUG_MAL_INLINE     show partial result */
+
+#endif
+@c
+#include "mal_inliners.h"
+#include "mal_macro.h"
+#include "mal_interpreter.h"
+
+str
+IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int cnt = 0, i;
+	InstrPtr q;
+	int actions = 0;
+	lng clk = GDKusec();
+
+#ifdef DEBUG_MAL_INLINE
+	stream_printf(GDKout, "Inliners %d -> %d\n", mb->vtop, cnt);
+#endif
+
+	for (i = 1; i < mb->stop; i++) {
+		q = getInstrPtr(mb, i);
+		if( q->blk && isPropertyDefined(q->blk->props,"inline") ){
+			printf("expand %s.%s\n",getModuleId(q),getFunctionId(q));
+			replaceMALblock(mb,i,q->blk);
+		}
+	}
+	mb->vtop = cnt;
+	(void)stk;
+	if(p)
+		removeInstruction(mb,p); 
+	optimizerCheck(mb, "mal.reduce", actions, GDKusec() - clk);
+	return MAL_SUCCEED;
+}
+
+@- Optimizer code wrapper
+@c
+mal_export str QOTIXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTIXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    str modnme;
+    str fcnnme;
+    Module  scope=NULL;
+    Symbol s= NULL;
+
+    optimizerInit();
+    removeInstruction(mb, p);
+    if( p->argc > 1){
+        if( stk != 0){
+            modnme= (str)getArgValue(stk,p,1);
+            fcnnme= (str)getArgValue(stk,p,2);
+        } else {
+            modnme= getArgDefault(mb,p,1);
+            fcnnme= getArgDefault(mb,p,2);
+        }
+        scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
+        if( scope)
+            s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+        if( s == NULL) {
+            char buf[1024];
+            snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+            return throwMessage("optimizer.constantExpression",buf);
+        }
+        if( s->def->errors == 0)
+            IXoptimizer(s->def,0,0);
+    } else
+            IXoptimizer(mb,0,0);
+    return MAL_SUCCEED;
+}
+@}

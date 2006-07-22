@@ -39,7 +39,7 @@ opt_export str CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_prelude.h"
 @}
 @-
-@node Common Terms, Constant Expressions, Macro Processing,   Optimizer Toolkit
+@node Common Terms, Constant Expressions, Function Inliners,   Optimizer Toolkit
 @- Common Subexpression Elimination
 Common subexpression elimination merely involves a scan through the 
 program block to detect re-curring statements.

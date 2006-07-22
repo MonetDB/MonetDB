@@ -1132,6 +1132,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Accumulator Evaluations::
 * Heuristic Rewrite Rules::
 * Macro Processing::
+* Function Inliners::
 * Common Terms::
 * Constant Expressions::
 * Empty Set Reduction::
