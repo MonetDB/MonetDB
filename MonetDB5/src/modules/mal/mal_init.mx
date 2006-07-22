@@ -95,6 +95,7 @@ include mal_emptyset;
 include mal_factorize;
 include mal_garbageCollector;
 include mal_generators;
+include mal_inliners;
 include mal_multiplex;
 include mal_multitable;
 include mal_partitionedQuery;
