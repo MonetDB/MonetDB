@@ -2220,6 +2220,8 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	str t, tpe, pstring;
 	PropertySet ps = 0;
 
+	ps = getVar(mb, getArg(p, 0))->props;
+	pstring = propertySet2str(ps);
 	t = s;
 	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
 
@@ -2229,7 +2231,9 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	else
 		sprintf(t, "user.");
 	advance(t);
-	sprintf(t, "%s(", getFunctionId(p));
+	if( pstring )
+		sprintf(t, "%s%s(", getFunctionId(p),pstring);
+	else sprintf(t, "%s(", getFunctionId(p));
 	for (i = p->retc; i < p->argc; i++) {
 	@:showParam(argc)@}
 	advance(t);

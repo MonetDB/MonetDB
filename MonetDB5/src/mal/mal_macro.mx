@@ -17,7 +17,7 @@
 @f mal_macro
 @a M. L. Kersten
 @-
-@node Macro Processing, Common Terms, Heuristic Rewrite Rules, Optimizer Toolkit
+@node Macro Processing, Function Inliners, Heuristic Rewrite Rules, Optimizer Toolkit
 @- Macro Processing
 Two optimizers are based on MAL macro expansion and contraction.
 The former involves replacing individual instructions by a block of
@@ -102,6 +102,7 @@ It would often require a rewrite of several other statements as well.
 
 mal_export int malMatch(InstrPtr p1, InstrPtr p2);
 mal_export int malFcnMatch(MalBlkPtr m1, MalBlkPtr mb, int pc);
+mal_export int replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 mal_export str ORCAMprocessor(MalBlkPtr mb, Symbol t);
 mal_export str MACROprocessor(MalBlkPtr mb, Symbol t);
 mal_export str MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn);
