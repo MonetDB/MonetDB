@@ -132,12 +132,12 @@ using the
 @include mal_scenario.bdy.texi
 
 @node Client Interfaces, Data Management Tools, Scenario Management, MonetDB Overview
-@include manual/mal_client.bdy.texi
+@include mal_client.bdy.texi
 @include Assets/MapiClient.texi
 @include Assets/JdbcClient.texi
 
 @subsection Console Interaction
-@include manual/mal_readline.bdy.texi
+@include mal_readline.bdy.texi
 
 @node Data Management Tools, Aqua Data Studio, Client Interfaces , MonetDB Overview
 @include Assets/DBA-GUIs.texi
@@ -182,14 +182,12 @@ using the
 @node Language Overview, Preface, The VOC Tutorial, SQL
 @include Assets/SQLlanguage.texi
 
-@node MonetDB/SQL Features, Session Variables, SQL Transactions, SQL
+@node Runtime Features, Session Variables, SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
-@node Overlaying BATs, SQL Dump and Restore, Optimizer Control,  MonetDB/SQL Features
+@node Overlaying BATs, XQuery, Optimizer Control,  Runtime Features
 @include Assets/SQLoverlay.texi
-@node  SQL Dump and Restore, XQuery, Overlaying BATs, SQL
-@include Assets/SQLdump.texi
 
-@node XQuery, Programming Interfaces, SQL Dump and Restore, Top
+@node XQuery, Programming Interfaces, Overlaying BATs, Top
 @include Assets/XQueryOverview.texi
 
 @node Programming Interfaces, The Mapi Library, XQuery, Top

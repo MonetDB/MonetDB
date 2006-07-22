@@ -130,12 +130,12 @@ using the
 @include mal_scenario.bdy.texi
 
 @node Client Interfaces, Development Roadmap, Scenario Management, MonetDB Overview
-@include m5server/mal_client.bdy.texi
+@include mal_client.bdy.texi
 @include Assets/MapiClient.texi
 @include Assets/JdbcClient.texi
 
 @subsection Console Interaction
-@include m5server/mal_readline.bdy.texi
+@include mal_readline.bdy.texi
 
 @node Development Roadmap, Embedded Server Roadmap, Client Interfaces, MonetDB Overview
 @include Assets/Roadmap.texi
