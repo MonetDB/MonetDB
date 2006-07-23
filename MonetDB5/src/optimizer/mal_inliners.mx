@@ -17,9 +17,9 @@
 @f mal_inliners
 @a M. Kersten
 @-
-@node Function Inliners, Heuristic Rewrite Rules, Macro Processing, Optimizer Toolkit
+@node Function Inliners, Common Terms , Macro Processing, Optimizer Toolkit
 
-@- Function Inliners
+@subsection Function Inliners
 The routine @code{optimizer.inliners()} searches MAL function calls whose
 property @{ inliner @}  is set.
 The code is expanded inline using the macro processor.
