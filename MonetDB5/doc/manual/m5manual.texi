@@ -198,12 +198,12 @@ using the
 @node Property Management,  The MAL Interpreter, Boxed variables, MAL Introduction
 @include mal_properties.bdy.texi
 
-@node The MAL Interpreter, The MAL Optimizer, Property Management, Top
+@node The MAL Interpreter, MAL API, Property Management, Top
 @include mal_interpreter.bdy.texi
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node The MAL Optimizer, Optimizer Landscape, The MAL Interpreter, Top
+@node The MAL Optimizer, Optimizer Landscape, Stack Management, Top
 @include mal_optimizer.bdy.texi
 @include mal_macro.bdy.texi
 @include mal_inliners.bdy.texi
