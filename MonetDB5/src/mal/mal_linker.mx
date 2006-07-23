@@ -16,7 +16,9 @@
 
 @a M. Kersten
 @v 0.0
-@+ Bootstrap and module load
+@-
+@node Module Loading, Stack Management, Garbage Collection, The MAL Interpreter
+@+ Module Loading
 The server is bootstrapped by processing a MAL script with
 module definitions. For each module encountered, the object library 
 lib_<modulename>.so is searched for in @dots{}/lib/MonetDB.

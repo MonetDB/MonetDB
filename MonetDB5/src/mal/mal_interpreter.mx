@@ -19,6 +19,14 @@
 @* The MAL Interpreter
 The MAL interpreter always works in the context of a single user session,
 which provides for storage access to global variables and modules.
+@menu
+* MAL API::
+* Exception Handling::
+* Garbage Collection::
+* Module Loading::
+* Stack Management::
+@end menu
+
 @{
 @h
 #ifndef _MAL_INTERPRET_H
@@ -322,6 +330,7 @@ pattern operators to deal with it.
 	return ret;
 }
 @-
+
 @+ Single instruction
 It is possible to re-enter the interpreter at a specific place.
 This is used in the area where we need to support co-routines.
@@ -752,8 +761,10 @@ cause errors in multi-assignment statements.
 	@:restoreTarget@
 	ret = 0;
 }
-@-
 @}
+@-
+@node MAL API, Exception Handling, The MAL Interpreter, The MAL Interpreter
+
 @+ MAL API
 The linkage between MAL interpreter and compiled C-routines
 is kept as simple as possible.
@@ -1035,6 +1046,8 @@ the beginning or ensure that during chkProgram the barrier/redo/leave/catch
 jumps are re-established.
 
 @}
+@-
+@node Exception Handling, Garbage Collection, MAL API, The MAL Interpreter
 @+ Exception handling
 Calling a built-in or user-defined routine may lead to an error, a
 cached status message to be dealt with in MAL, or as an error status in Mapi.
@@ -1173,9 +1186,15 @@ str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 	return raiseException(mb,pc, "typeException",buf);
 }
 
-@-
 @}
-@+ BAT reference counting
+@-
+@node Garbage Collection, Module Loading, Exception Handling, The MAL Interpreter
+@+ Garbage collection
+Garbage collection is relatively straightforward, because most values are
+retained on the stackframe of an interpreter call. However, two storage
+types and possibly user-defined type garbage collector definitions
+require attention: BATs and strings. [TAKE CARE OF fixable atoms !!]
+
 A key issue is to deal with temporary BATs in an efficient way.
 References to bats in the buffer pool may cause dangling references
 at the language level. This appears as soons as your share
@@ -1194,12 +1213,6 @@ underlying BAT.
 @{
 Look further in mal_instruction.mx for the before/after calls.
 @}
-
-@+ Garbage collection
-Garbage collection is relatively straightforward, because most values are
-retained on the stackframe of an interpreter call. However, two storage
-types and possibly user-defined type garbage collector definitions
-require attention. [TAKE CARE OF fixable atoms !!]
 
 All string values are private to the VALrecord, which means they
 have to be freed explicitly before a MAL function returns. 
@@ -1325,7 +1338,6 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 }
 
 @-
-@}
 @+ Performance section
 The interpreter has a built-in performance monitor hook, which is
 activated using the compile option MALprofiler. Activation can lead to
@@ -1333,7 +1345,6 @@ a significant performance degradation, because for all traced functions
 we have to keep track of essential system counter information.
 See @url{The MAL Profiler} for more details.
 
-@{
 @= performanceVariables
 #ifdef MALprofiler
 	lng newclk=0;
