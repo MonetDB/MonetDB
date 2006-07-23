@@ -65,7 +65,7 @@ using the
 * MonetDB Overview ::
 * Programming Interfaces::
 * Embedded MonetDB::
-* MAL::
+* MAL Introduction::
 * The MAL Interpreter::
 * The MAL Optimizer::
 * The MAL Debugger::
@@ -175,27 +175,27 @@ using the
 
 @node Embedded MonetDB, A Simple Example, The ODBC Library , Top
 @include Assets/Mbedded.texi
-@node Embedded Limitations , MAL , Configuration Parameters, Embedded MonetDB
+@node Embedded Limitations , MAL Introduction , Configuration Parameters, Embedded MonetDB
 @include Assets/MbeddedLimits.texi
 
-@node MAL, MAL variables, Embedded Limitations , Top
+@node MAL Introduction, MAL variables, Embedded Limitations , Top
 @include mal_instruction.bdy.texi
 
-@node Function definitions, Polymorphic Functions ,Flow of control , MAL
+@node Function definitions, Polymorphic Functions ,Flow of control , MAL Introduction
 @include mal_function.bdy.texi
 
-@node Factory definitions, Type resolution , Commands and Patterns, MAL
+@node Factory definitions, Type resolution , Commands and Patterns, MAL Introduction
 @include mal_factory.bdy.texi
 
-@node Type resolution, Atomary types, Factory definitions, MAL
+@node Type resolution, Atomary types, Factory definitions, MAL Introduction
 @include mal_resolve.bdy.texi
-@node Atomary types, Boxed variables, Type resolution, MAL
+@node Atomary types, Boxed variables, Type resolution, MAL Introduction
 @include mal_atom.bdy.texi
 
-@node Boxed variables, Property Management , Atomary types, MAL
+@node Boxed variables, Property Management , Atomary types, MAL Introduction
 @include mal_box.bdy.texi
 
-@node Property Management,  The MAL Interpreter, Boxed variables, MAL
+@node Property Management,  The MAL Interpreter, Boxed variables, MAL Introduction
 @include mal_properties.bdy.texi
 
 @node The MAL Interpreter, The MAL Optimizer, Property Management, Top
@@ -206,6 +206,7 @@ using the
 @node The MAL Optimizer, Optimizer Landscape, The MAL Interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_macro.bdy.texi
+@include mal_inliners.bdy.texi
 @include mal_commonTerms.bdy.texi
 @include mal_constantExpression.bdy.texi
 @include mal_emptyset.bdy.texi

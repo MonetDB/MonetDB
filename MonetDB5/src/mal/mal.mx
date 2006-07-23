@@ -181,7 +181,7 @@ ease of optimization and scheduling.
 function modules. 
 @end itemize
 
-A more indepth description of the MAL language is given in @ref{MAL}
+A more indepth description of the MAL language is given in @ref{MAL Introduction}
 @-
 @{
 @+ Critical sections and semaphores
