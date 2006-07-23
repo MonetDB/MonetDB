@@ -31,19 +31,19 @@ pdf:
 webs: 
 	make MANUAL=manual web
 	make MANUAL=sqlmanual web
-	make MANUAL=m5server web
+	make MANUAL=m5manual web
 web:
-	echo "Create tmp:" $(M5DIR)/doc/share/tmp/$(MANUAL)
-	echo "using:" $(M4DIR)
-	mkdir -p $(M5DIR)/doc/share/tmp/$(MANUAL)
+	@echo "Create tmp:" $(M5DIR)/doc/share/tmp/$(MANUAL)/
+	@echo "using:" $(M4DIR)
+	mkdir -p $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR)
-	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/$(MANUAL)
-	cp manual.css $(M5DIR)/doc/share/tmp/$(MANUAL)
-	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp/$(MANUAL)
+	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/$(MANUAL)/
+	cp manual.css $(M5DIR)/doc/share/tmp/$(MANUAL)/
+	cp  -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/$(MANUAL)/; \
 	makeinfo --force --html $(MANUAL).texi --css-include=manual.css \
 	)
-	echo "Web version created"
+	@echo "Web version created"
 
 web2:
 	mkdir -p $(M5DIR)/doc/share/tmp
