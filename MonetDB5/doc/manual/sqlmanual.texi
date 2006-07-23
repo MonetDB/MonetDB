@@ -64,7 +64,7 @@ using the
 * General Introduction::
 * Client Interfaces::
 * Data Management Tools::
-* SQL ::
+* SQL Introduction::
 * Development Roadmap::
 * Programming Interfaces::
 * Embedded MonetDB::
@@ -135,21 +135,21 @@ using the
 
 @node Embedded Server Roadmap, Server Roadmap, SQL Roadmap, Development Roadmap
 @include Assets/EmbeddedRoadmap.texi
-@node Server Roadmap, SQL, Embedded Server Roadmap, Development Roadmap
+@node Server Roadmap, SQL Introduction, Embedded Server Roadmap, Development Roadmap
 @include Assets/ServerRoadmap.texi
 
 
-@node SQL, Getting Started with SQL, Server Roadmap , Top
+@node SQL Introduction, Getting Started with SQL, Server Roadmap , Top
 @include Assets/warning.texi
 @include Assets/SQLoverview.texi
 
-@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL
+@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL Introduction
 @include Assets/VOCtutorial.texi
 
-@node Language Overview, Preface, The VOC Tutorial, SQL
+@node Language Overview, Preface, The VOC Tutorial, SQL Introduction
 @include Assets/SQLlanguage.texi
 
-@node Runtime Features, Session Variables , SQL Transactions, SQL
+@node Runtime Features, Session Variables , SQL Transactions, SQL Introduction
 @include Assets/SQLfeatures.texi
 @node Overlaying BATs, Programming Interfaces , Optimizer Control,  Runtime Features
 @include Assets/SQLoverlay.texi

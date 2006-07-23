@@ -63,7 +63,7 @@ using the
 @menu
 * General Introduction::
 * MonetDB Overview ::
-* SQL ::
+* SQL Introduction ::
 * XQuery ::
 * Programming Interfaces::
 * Embedded MonetDB::
@@ -170,19 +170,19 @@ using the
 @node Server Roadmap, Backward Compatibility, Embedded Server Roadmap, Development Roadmap
 @include Assets/ServerRoadmap.texi
 
-@node Backward Compatibility, SQL ,Server Roadmap, MonetDB Overview
+@node Backward Compatibility, SQL Introduction ,Server Roadmap, MonetDB Overview
 @include Assets/Compatability.texi
 
-@node SQL, Getting Started with SQL, Backward Compatibility, Top
+@node SQL Introduction, Getting Started with SQL, Backward Compatibility, Top
 @include Assets/SQLoverview.texi
 
-@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL
+@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL Introduction
 @include Assets/VOCtutorial.texi
 
-@node Language Overview, Preface, The VOC Tutorial, SQL
+@node Language Overview, Preface, The VOC Tutorial, SQL Introduction
 @include Assets/SQLlanguage.texi
 
-@node Runtime Features, Session Variables, SQL Transactions, SQL
+@node Runtime Features, Session Variables, SQL Transactions, SQL Introduction
 @include Assets/SQLfeatures.texi
 @node Overlaying BATs, XQuery, Optimizer Control,  Runtime Features
 @include Assets/SQLoverlay.texi
@@ -243,6 +243,7 @@ using the
 @node The MAL Optimizer, Optimizer Landscape, The MAL Interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_macro.bdy.texi
+@include mal_inliners.bdy.texi
 @include mal_commonTerms.bdy.texi
 @include mal_constantExpression.bdy.texi
 @include mal_emptyset.bdy.texi

@@ -275,26 +275,17 @@ using the
 @include transaction.bdy.texi
 
 @node The MonetDB Kernel , Appendices, Transactions , Top
-@section The The MonetDB Kernel
-This section should be filled with the information currently
-held in the MonetDB Version 4 GDK layer.
+@include gdk.bdy.texi
 
-@node Appendices, SQL 1999 Features , The MonetDB Kernel, Top
+@node Appendices, MAL Syntax, The MonetDB Kernel, Top
 @menu
-* SQL 1999 Features::
-* VOC History::
 * MAL Syntax ::
 * MIL Programs::
 * MAL Instructions::
 * MAL Instruction Help::
 @end menu
 
-@node SQL 1999 Features, VOC History, Appendices, Appendices
-@include Assets/SQL1999.texi
-@node VOC History , MAL Syntax, SQL 1999 Features, Appendices
-@include Assets/VOChistory.texi
-
-@node MAL Syntax, MIL Programs, VOC History, Appendices
+@node MAL Syntax, MIL Programs, Appendices, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
