@@ -300,6 +300,8 @@ The MAL language uses a few defaults, recognizable as properties
 The code base supports multiple property sets.
 Not used right now.
 @h
+#ifndef _MAL_PROPERTIES_
+#define _MAL_PROPERTIES_
 #include "mal.h"
 #include "mal_namespace.h"
 
@@ -329,6 +331,8 @@ mal_export ptr getPropertyValue(PropertySet ps, str nme);
 mal_export int getPropertyType(PropertySet ps, str nme);
 mal_export str propertySet2str(PropertySet ps);
 mal_export int isPropertyDefined(PropertySet ps, str nme);
+
+#endif
 @c
 #include "mal_properties.h"
 #include "mal_type.h"		/* for idcmp() */

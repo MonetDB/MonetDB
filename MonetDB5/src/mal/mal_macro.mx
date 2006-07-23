@@ -103,6 +103,7 @@ It would often require a rewrite of several other statements as well.
 mal_export int malMatch(InstrPtr p1, InstrPtr p2);
 mal_export int malFcnMatch(MalBlkPtr m1, MalBlkPtr mb, int pc);
 mal_export int replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
+mal_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 mal_export str ORCAMprocessor(MalBlkPtr mb, Symbol t);
 mal_export str MACROprocessor(MalBlkPtr mb, Symbol t);
 mal_export str MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn);
@@ -206,15 +207,22 @@ int
 inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 {
 	int i, k, l, n, v;
-	InstrPtr *ns, p;
+	InstrPtr *ns, p,q;
 	int *nv;
 
+#ifdef DEBUG_MAL_MACRO
+	printf("inlineMALblock\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+	printFunction(GDKout,mc,LIST_MAL_ALL);
+#endif
 	ns = GDKmalloc((l = (mb->ssize + mc->ssize - 3)) * sizeof(InstrPtr));
 	nv = alloca(mc->vtop * sizeof(int));
 	p = getInstrPtr(mb, pc);
+	q = getInstrPtr(mc, 0);
 	v = p->argc - p->retc;
 	k = 0;
 
+	/* add variables to target */
 	for (n = 0; n < mc->vtop; n++) {
 		if (mc->var[n]->isaconstant ){
 			nv[n] = cpyConstant(mb,getVar(mc,n));
@@ -222,52 +230,42 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		k++;
 	}
-	for (n = 1; n < p->argc; n++)
-		nv[n] = getArg(p, n);
-#ifdef DEBUG_MAL_MACRO
-	for (n = 1; n < mc->vtop; n++)
-		printf("variable %d %d\n", n, nv[n]);
-#endif
+
+	/* keep track of the actual arguments */
+	for (n = 0; n < p->argc; n++)
+		nv[getArg(q,n)] = getArg(p, n);
 	k = 0;
+
+	/* copy the stable part */
 	for (i = 0; i < pc; i++)
 		ns[k++] = mb->stmt[i];
 
 	/* copying stops at the first return statement */
 	for (i = 1; i < mc->stop - 1; i++) {
-		/* copy the instruction and fix variable references */
 		p = mc->stmt[i];
 
+		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(p);
+		for (n = 0; n < p->argc; n++) 
+			getArg(ns[k], n) = nv[getArg(p, n)];
+
 		if (p->barrier == RETURNsymbol || p->barrier == YIELDsymbol) {
 			ns[k]->barrier = 0;
 			if (p->token == RETURNsymbol || p->token == YIELDsymbol)
 				ns[k]->token = ASSIGNsymbol;
-			if (p->retc == p->argc)
-				for (n = 0; n < p->retc; n++)
-					pushArgument(mb, ns[k], nv[getArg(p, n)]);
-			/* assign the result to variables */
-			for (n = 0; n < p->retc; n++)
-				getArg(ns[k], n) = getArg(mb->stmt[pc], n);
-
+			/* fix returns that do not evaluate an expression */
+			if( p->retc == p->argc){
+				for (n =0; n < p->retc; n++) {
+					pushArgument(mb,ns[k], nv[getArg(p,n)]);
+					getArg(ns[k],n)= getArg(getInstrPtr(mb,pc),n);
+				}
+			} 
 			k++;
 			break;
 		}
-		for (n = 0; n < p->argc; n++) {
-			/* fix the variable */
-#ifdef DEBUG_MAL_MACRO
-			printf("map %d  (%d) ", getArg(p, n), v);
-#endif
-			if (getArg(p, n) >= v) {
-				getArg(ns[k], n) = nv[getArg(p, n)];
-			} else {
-				getArg(ns[k], n) = getArg(mb->stmt[pc], n);
-			}
-		}
-#ifdef DEBUG_MAL_MACRO
-		printf("\n");
-#endif
 		k++;
 	}
+	/* copy the stable part */
 	for (i = pc + 1; i < mb->stop; i++)
 		ns[k++] = mb->stmt[i];
 	GDKfree(mb->stmt);
