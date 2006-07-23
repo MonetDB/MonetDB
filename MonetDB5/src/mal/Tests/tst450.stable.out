@@ -175,7 +175,7 @@ command bat.setKey(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] address BKC
 #function does not automatically eliminate duplicates. 
 #Use b := b.kunique;
 
-command io.import(b:bat[:any_1,:any_2],filepath:str):bit address IOimport;
+command io.import{unsafe}(b:bat[:any_1,:any_2],filepath:str):bit address IOimport;
 #Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #parameter BAT. You have to create it! Its signature must match the dump,
 #else parsing errors will occur and FALSE is returned.

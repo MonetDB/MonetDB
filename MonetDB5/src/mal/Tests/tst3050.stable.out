@@ -16,12 +16,12 @@ stdout of test 'tst3050` in directory 'src/mal` itself:
 #function dummy(a:int{unsafe,sorted},b:int{sequence}):int{dense};
 #	return dummy;
 #end dummy;
-function user.dummy(a:int{sorted=true,unsafe=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
+function user.dummy{dense=true}(a:int{sorted=true,unsafe=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
     return dummy{dense=true} := 1;	# 1  (dummy:int)<-(_3:int)
 end dummy;	# 2  
 #function myprint{unsafe,optimizer}():void;
 #end myprint;
-function user.myprint():void;	# 0  (myprint:void)
+function user.myprint{optimizer,unsafe}():void;	# 0  (myprint:void)
 end myprint;	# 1  
 #
 #a:= 0;
