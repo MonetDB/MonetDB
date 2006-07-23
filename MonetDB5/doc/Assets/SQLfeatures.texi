@@ -68,7 +68,7 @@ SQL uses a query cache to speed up subsequent calls to identical
 (up to constants) queries.
 @item
 The @code{optimizer} variable takes a string. It controls the
-query optimizers, see @ref{SQL}.
+query optimizers, see @ref{SQL Introduction}.
 @end itemize
 
 @node EXPLAIN Statement, PROFILE Statement, Session Variables, Runtime Features

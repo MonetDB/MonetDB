@@ -60,7 +60,7 @@ features to analyse your SQL code.
 * Runtime Features::
 @end menu
 
-@node Getting Started with SQL, The VOC Tutorial, SQL, SQL
+@node Getting Started with SQL, The VOC Tutorial, SQL Introduction, SQL Introduction
 @section Getting Started with MonetDB/SQL
 Working with SQL requires installation of the MonetDB server
 and SQL compiler module.  It can be downloaded from the
