@@ -1,13 +1,14 @@
-# TODO for MonetDB/SQL
+# TODO for MonetDB Server 5
 # This file is provided AS-IS, no claims can be made based upon this
 # file.
 # Please don't remove entries from this file.  It functions as base for
 # a Changelog.  It's format is like a Changelog, and the newest items
 # are on top.  Please keep the status of items up-to-date, e.g. OPEN,
 # DONE, PARTIAL.
-# The date reflects the last state change.
+# Please append the date at each state change.
 
 *MonetDB 5.8 (Jan 2008)
+
   23 Jul 2006; Martin Kersten <mlkersten>; OPEN
   The X100 subsystem with its buffer manager and
   compression scheme is integrated in the software stack.
@@ -39,7 +40,7 @@
   directory of the user. Readline commands can be
   used to browse and re-use it.
 
-  23 Jul 2006; Fabian Groffen <mr-meltdown>; OPEN
+  23 Jul 2006; Fabian Groffen <mr-meltdown>; DONE
   Client programs can access any MonetDB server at
   the target site and will be re-directed to the
   server in charge of managing the database of interest.
@@ -47,17 +48,15 @@
   23 Jul 2006; Martin Kersten <mlkersten>; OPEN
   Miscellaneous stuff, to be sorted out.
   We limit BAT* operation as much as possible to :void headed versions
-  All unsafe signatures should be tagged to facilitate flow analysis
-  BBP should become a fully serialized module, encapsulation with a single lock
-  (this calls for check for IO triggered activities inside BBP)
-  All BATs should be considered private unless otherwise marked (add BATshared())
-  ATOMcmp should not walk the storage field, this should be
+  All unsafe signatures should be tagged to facilitate flow analysis BBP
+  should become a fully serialized module, encapsulation with a single
+  lock (this calls for check for IO triggered activities inside BBP) All
+  BATs should be considered private unless otherwise marked (add
+  BATshared()) ATOMcmp should not walk the storage field, this should be
   made explicit if needed.
   Make sure BAT producing operations leave them as readonly behind
-
   Naming conventions get/set properties
   [ht]operation convention or operation[ht]_[ht]
-
   BATs entered into a box should become persistent? (tst1004,1005,1014)
   Use a process buffer pool to avoid expensive client starts.
   Let modules define theire throwable exceptions, which
