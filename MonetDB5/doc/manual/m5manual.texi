@@ -24,8 +24,8 @@ Last updated: @value{UPDATED}
      this permission notice are preserved on all copies.
 @ifhtml
 The latest documentation can be downloaded as a single file for printing
-@url{http://monetdb.cwi.nl/projects/monetdb/Assets/m5server.pdf,single page manual} or
-@url{http://monetdb.cwi.nl/projects/monetdb/Assets/m5server-2x1.pdf,double page manual}.
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/m5manual.pdf,single page manual} or
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/m5manual-2x1.pdf,double page manual}.
 @end ifhtml
      
 @emph{Disclaimer} The reference manual and underlying source
