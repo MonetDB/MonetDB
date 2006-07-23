@@ -13,4 +13,5 @@ optimizer.macroExpansion("user","welcome");
 
 io.print("test expansion");
 a:=user.welcome(2);
+io.print(a);
 mdb.list();

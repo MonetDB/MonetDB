@@ -36,43 +36,45 @@ comment "Expand inline functions";
 #ifndef _MAL_INLINE_
 #define _MAL_INLINE_
 #include "mal_prelude.h"
+#include "mal_interpreter.h"
 #include "mal_macro.h"
 #include "mal_optimizer.h"
 
 opt_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-/* #define DEBUG_MAL_INLINE     show partial result */
+#define DEBUG_MAL_INLINE     /* show partial result */
 
 #endif
 @c
 #include "mal_inliners.h"
-#include "mal_macro.h"
-#include "mal_interpreter.h"
 
 str
 IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int cnt = 0, i;
-	InstrPtr q;
+	int i;
+	InstrPtr q,sig;
 	int actions = 0;
 	lng clk = GDKusec();
+	PropertySet ps;
 
-#ifdef DEBUG_MAL_INLINE
-	stream_printf(GDKout, "Inliners %d -> %d\n", mb->vtop, cnt);
-#endif
-
-	for (i = 1; i < mb->stop; i++) {
-		q = getInstrPtr(mb, i);
-		if( q->blk && isPropertyDefined(q->blk->props,"inline") ){
-			printf("expand %s.%s\n",getModuleId(q),getFunctionId(q));
-			replaceMALblock(mb,i,q->blk);
-		}
-	}
-	mb->vtop = cnt;
-	(void)stk;
 	if(p)
 		removeInstruction(mb,p); 
-	optimizerCheck(mb, "mal.reduce", actions, GDKusec() - clk);
+	for (i = 1; i < mb->stop; i++) {
+		q = getInstrPtr(mb, i);
+		if( q->blk){
+			sig= getInstrPtr(q->blk,0);
+			ps= getVar(q->blk, getArg(sig,0))->props;
+			if( isPropertyDefined(ps,"inline") ){
+				inlineMALblock(mb,i,q->blk);
+				actions++;
+#ifdef DEBUG_MAL_INLINE
+				printFunction(GDKout, mb, LIST_MAL_ALL);
+#endif
+			}
+		}
+	}
+	(void)stk;
+	optimizerCheck(mb, "mal.inliner", actions, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
 
@@ -102,7 +104,7 @@ str QOTIXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         if( s == NULL) {
             char buf[1024];
             snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-            return throwMessage("optimizer.constantExpression",buf);
+            return throwMessage("optimizer.inliner",buf);
         }
         if( s->def->errors == 0)
             IXoptimizer(s->def,0,0);
