@@ -2,7 +2,7 @@
 k:= inspect.getKind();
 m:= inspect.getModule();
 f:= inspect.getFunction();
-algebra.sort(f);
+fs:= algebra.sort(f);
 s:= inspect.getSignatures();
 a:= inspect.getAddresses();
-io.table(f,k,m,s,a);
+io.table(fs,k,m,s,a);
