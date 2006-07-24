@@ -5,7 +5,7 @@ use sigtrap;
 use DBI();
 use MonetDB::CLI();
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our $drh = undef;
 
 require DBD::monetdb::GetInfo;
