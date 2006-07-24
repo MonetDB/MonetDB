@@ -1292,6 +1292,6 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 char* myfileName(char* dirName, char* fileName) {
     static char buff[FILENAME_SIZE];
     char * userName = getenv( "USER" );
-    sprintf(buff,"%s/%s_%s",dirName,userName,fileName);
+    sprintf(buff,"%s/%s_%d_%s",dirName,userName,getpid(),fileName);
     return &buff[0];
 }
