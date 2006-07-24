@@ -43,6 +43,7 @@ web:
 	(cd $(M5DIR)/doc/share/tmp/; \
 	makeinfo --force --html $(MANUAL).texi --css-include=manual.css \
 	)
+	cp -r $(M5DIR)/doc/share/tmp/MonetDB $(M5DIR)/doc/share/$(MANUAL)
 	echo "Web version created"
 
 web2:
