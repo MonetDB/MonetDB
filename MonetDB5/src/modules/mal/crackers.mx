@@ -3166,12 +3166,20 @@ JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
 		BBPunfix(l->batCacheid);
 	}
 	else{
+		while(lt <= llast){
+			rt = rbase + (*(oid*)lt)*zz;
+			if (!( @6_@4(rt,low,@7@1) && @6_@5( rt,hgh,@7@1 ) ))
+				break;
+			lt += xx;
+		}
+
 		dt = lt;
+		lt += xx;
+
 		while(lt <= llast){
 			rt = rbase + (*(oid*)lt)*zz;
 			if (@6_@4(rt,low,@7@1) && @6_@5( rt,hgh,@7@1 )){
-				if(dt != lt) 
-					*(oid*)dt = *(oid*)lt; 
+				*(oid*)dt = *(oid*)lt; 
 				dt += xx;
 			}		
 			lt += xx;
@@ -3242,12 +3250,20 @@ JoinSelectSingle_@2_@1(int *res, int *left, int *right, @1 *mid)
 		BBPunfix(l->batCacheid);
 	}
 	else{
+		while(lt <= llast){
+			rt = rbase + (*(oid*)lt)*zz;
+			if (!@4_@3( rt,mid,@5@1 ))
+				break;
+			lt += xx;
+		}
+
 		dt = lt;
+		lt += xx;
+
 		while(lt <= llast){
 			rt = rbase + (*(oid*)lt)*zz;
 			if (@4_@3( rt,mid,@5@1 )){
-				if(dt != lt) 
-					*(oid*)dt = *(oid*)lt; 
+				*(oid*)dt = *(oid*)lt; 
 				dt += xx;
 			}		
 			lt += xx;
