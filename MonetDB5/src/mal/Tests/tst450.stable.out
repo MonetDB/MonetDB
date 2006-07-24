@@ -31,14 +31,15 @@ function user.main():void;	# 0  (main:void)
     mr := bat.reverse(m);	# 5 BKCreverse (mr:bat[:str,:void])<-(m:bat[:void,:str])
     m1 := algebra.kunique(mr);	# 6 ALGkunique (m1:bat[:str,:void])<-(mr:bat[:str,:void])
     z := algebra.project(m1);	# 7 ALGprojectNIL (z:bat[:str,:void])<-(m1:bat[:str,:void])
-    io.print(z);	# 8 IOprint_val (_8:int)<-(z:bat[:str,:void])
-    stmt := inspect.getDefinition("algebra","select");	# 9 INSPECTgetDefinition (stmt:bat[:str,:str])<-(_10:str)(_11:str)
-    sig := inspect.getSignature("algebra","select");	# 10 INSPECTgetSignature (sig:bat[:str,:str])<-(_10:str)(_11:str)
-    n := manual.search("insert");	# 11 MANUALsearch (n:void)<-(_14:str)
-    io.print(n);	# 12 IOprint_val (_15:int)<-(n:void)
-    d := inspect.getDefinition("inspect","dir");	# 13 INSPECTgetDefinition (d:bat[:str,:str])<-(_17:str)(_18:str)
-    io.print(d);	# 14 IOprint_val (_19:int)<-(d:bat[:str,:str])
-end main;	# 15  
+    zs := algebra.sortHT(z);	# 8 ALGhtsort (zs:bat[:str,:void])<-(z:bat[:str,:void])
+    io.print(zs);	# 9 IOprint_val (_9:int)<-(zs:bat[:str,:void])
+    stmt := inspect.getDefinition("algebra","select");	# 10 INSPECTgetDefinition (stmt:bat[:str,:str])<-(_11:str)(_12:str)
+    sig := inspect.getSignature("algebra","select");	# 11 INSPECTgetSignature (sig:bat[:str,:str])<-(_11:str)(_12:str)
+    n := manual.search("insert");	# 12 MANUALsearch (n:void)<-(_15:str)
+    io.print(n);	# 13 IOprint_val (_16:int)<-(n:void)
+    d := inspect.getDefinition("inspect","dir");	# 14 INSPECTgetDefinition (d:bat[:str,:str])<-(_18:str)(_19:str)
+    io.print(d);	# 15 IOprint_val (_20:int)<-(d:bat[:str,:str])
+end main;	# 16  
 #-------------------------#
 # view	atom		  # name
 # int	str		  # type
@@ -76,60 +77,60 @@ end main;	# 15
 # t	h		  # name
 # oid	str		  # type
 #-------------------------#
-[ "user",	  nil	  ]
-[ "partitions",	  nil	  ]
-[ "transaction",  nil	  ]
-[ "optimizer",	  nil	  ]
-[ "statistics",	  nil	  ]
-[ "profiler",	  nil	  ]
-[ "mserver",	  nil	  ]
-[ "language",	  nil	  ]
-[ "manual",	  nil	  ]
-[ "inspect",	  nil	  ]
-[ "mat",	  nil	  ]
-[ "pbm",	  nil	  ]
-[ "box",	  nil	  ]
-[ "bbp",	  nil	  ]
-[ "const",	  nil	  ]
-[ "factory",	  nil	  ]
-[ "io",		  nil	  ]
-[ "tablet",	  nil	  ]
-[ "clients",	  nil	  ]
-[ "batcolor",	  nil	  ]
-[ "batstr",	  nil	  ]
-[ "batcalc",	  nil	  ]
-[ "batmath",	  nil	  ]
-[ "mkey",	  nil	  ]
-[ "pqueue",	  nil	  ]
-[ "array",	  nil	  ]
-[ "group",	  nil	  ]
-[ "status",	  nil	  ]
-[ "calc",	  nil	  ]
-[ "algebra",	  nil	  ]
 [ "aggr",	  nil	  ]
-[ "pcre",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "algebra",	  nil	  ]
+[ "array",	  nil	  ]
 [ "bat",	  nil	  ]
-[ "inet",	  nil	  ]
+[ "batcalc",	  nil	  ]
+[ "batcolor",	  nil	  ]
+[ "batmath",	  nil	  ]
+[ "batstr",	  nil	  ]
+[ "bbp",	  nil	  ]
+[ "blob",	  nil	  ]
+[ "box",	  nil	  ]
+[ "bstream",	  nil	  ]
+[ "calc",	  nil	  ]
+[ "clients",	  nil	  ]
+[ "color",	  nil	  ]
+[ "const",	  nil	  ]
+[ "crackers",	  nil	  ]
 [ "date",	  nil	  ]
 [ "daytime",	  nil	  ]
+[ "factory",	  nil	  ]
+[ "group",	  nil	  ]
+[ "inet",	  nil	  ]
+[ "inspect",	  nil	  ]
+[ "io",		  nil	  ]
+[ "language",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "manual",	  nil	  ]
+[ "mat",	  nil	  ]
+[ "mdb",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "mserver",	  nil	  ]
+[ "mtime",	  nil	  ]
+[ "optimizer",	  nil	  ]
+[ "partitions",	  nil	  ]
+[ "pbm",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "pqueue",	  nil	  ]
+[ "profiler",	  nil	  ]
+[ "sema",	  nil	  ]
+[ "sqlblob",	  nil	  ]
+[ "statistics",	  nil	  ]
+[ "status",	  nil	  ]
+[ "str",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "tablet",	  nil	  ]
 [ "timestamp",	  nil	  ]
 [ "timezone",	  nil	  ]
-[ "zrule",	  nil	  ]
-[ "mtime",	  nil	  ]
-[ "url",	  nil	  ]
-[ "str",	  nil	  ]
-[ "color",	  nil	  ]
-[ "blob",	  nil	  ]
-[ "sqlblob",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "bstream",	  nil	  ]
-[ "mmath",	  nil	  ]
-[ "alarm",	  nil	  ]
-[ "sema",	  nil	  ]
-[ "lock",	  nil	  ]
+[ "transaction",  nil	  ]
 [ "unix",	  nil	  ]
-[ "mdb",	  nil	  ]
-[ "crackers",	  nil	  ]
+[ "url",	  nil	  ]
+[ "user",	  nil	  ]
+[ "zrule",	  nil	  ]
 command bat.insert(b:bat[:void,:any_2],h:oid,t:any_2,force:bit):void address BKCinsert_bun_force;
 command bat.insert(b:bat[:oid,:any_2],h:oid,t:any_2,force:bit):void address BKCinsert_bun_force;
 command bat.insert(b:bat[:void,:any_2],h:oid,t:any_2):void address BKCinsert_bun;
