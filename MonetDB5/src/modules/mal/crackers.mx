@@ -2474,6 +2474,230 @@ printf("\n found Low=%d, found Hgh=%d \n",foundLow,foundHgh);
 }       
 
 str
+CRKRangeLeftNilTree_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
+{
+	BAT *b,*c,*bo;
+	BAT *view;
+	int  m;
+	lng vl=-1, vh=-1; 
+	lng cl2, ch2; 
+	int xx;
+	bit HBound,foundHgh=0;
+	int gapH = 1;
+	
+	if (*inclusiveHgh == TRUE) HBound = FALSE;
+	else	HBound = TRUE; 				        
+
+	m = existsTreeIndex(*bid);
+
+	/* if this is the first time we select something from this bat, 
+		we have to create the crack indx for it and 
+	   if necessary materialize the head of the bat */
+	if (m == -1){
+		if ((bo = BATdescriptor(*bid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE; 
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+
+		m = newTreeIndex_@1(*bid,b->batCacheid);
+
+		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+		cl2 = BUNindex(b,BUNfirst(b));
+		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		/*printf(" %lld \n ",ch2-cl2);*/
+		@:crkTwoRTree(@1)@
+		if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+		vl = BUNindex(b,BUNfirst(b));
+		
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
+		goto createView;
+	}
+	
+	if (TreeIndex[m].cid == -1){
+
+		reCreateMap_@1(m);
+	
+		/* Take the index of the bat */
+		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+		/* Take the copy of the bat for which we maintain the index */
+		if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access crack index");
+	
+		cl2 = BUNindex(b,BUNfirst(b));
+		ch2 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		/*printf(" %lld \n ",ch2-cl2);*/
+		@:crkTwoRTree(@1)@
+		if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+		vl = BUNindex(b,BUNfirst(b));
+
+		goto createView;
+	}
+
+
+	/* Take the index of the bat */
+	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	xx = BUNsize(c);
+
+	vl = BUNindex(b,BUNfirst(b));
+
+	/* find out where in the index the high falls */
+	foundHgh = GetHgh_@1(*hgh, HBound, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl2, &ch2, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+	if (cl2 != 0) cl2++;
+/*	
+printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("\n  found Hgh=%d \n",foundHgh);
+*/
+
+
+	if (foundHgh == 0){
+		/*printf("crack %lld %lld",cl2,ch2);*/	
+		@:crkTwoRTree(@1)@
+		/*printf(" %lld \n",(ch2-cl2));*/
+		if (IndexSize <IndexStop)
+			if (gapH>0) addTreeIndex_@1(m,hgh,HBound,vh,c);
+	} 	
+	else
+		vh = ch2;
+		
+	@:CreateResult()@
+	return MAL_SUCCEED;
+}       
+
+str
+CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
+{
+	BAT *b,*c,*bo;
+	BAT *view;
+	int  m;
+	lng vl=-1, vh=-1; 
+	lng cl1, ch1; 
+	int xx;
+	bit foundLow=0;
+	int gapL = 1;
+	
+	m = existsTreeIndex(*bid);
+
+	/* if this is the first time we select something from this bat, 
+		we have to create the crack indx for it and 
+	   if necessary materialize the head of the bat */
+	if (m == -1){
+		if ((bo = BATdescriptor(*bid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE; 
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+
+		m = newTreeIndex_@1(*bid,b->batCacheid);
+
+		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+		cl1 = BUNindex(b,BUNfirst(b));
+		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		/*printf(" %lld \n ",ch1-cl1);*/
+		@:crkTwoLTree(@1)@
+		if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,vl,c);
+		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+		
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
+		goto createView;
+	}
+	
+	if (TreeIndex[m].cid == -1){
+
+		reCreateMap_@1(m);
+	
+		/* Take the index of the bat */
+		if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+		/* Take the copy of the bat for which we maintain the index */
+		if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access crack index");
+	
+		cl1 = BUNindex(b,BUNfirst(b));
+		ch1 = BUNindex(b,BUNlast(b)-BUNsize(b));
+		/*printf(" %lld \n ",ch2-cl2);*/
+		@:crkTwoLTree(@1)@
+		if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,vl,c);
+		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+		goto createView;
+	}
+
+
+	/* Take the index of the bat */
+	if ((c = BATdescriptor(TreeIndex[m].cid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(TreeIndex[m].cbid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	xx = BUNsize(c);
+
+	vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+
+
+	/* find out where in the index the low falls */
+	foundLow = GetLow_@1(*low,*inclusiveLow, TreeIndex[m].Tree, c, BUNhloc(c, BUNfirst(c)), xx, &cl1, &ch1, 0, BUNindex(b, BUNlast(b)-BUNsize(b)));
+
+	/*need to increase one position for the low bound only since we always store the previous position in the index*/
+	if (cl1 != 0) cl1++;
+/*	
+printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+printf("\n  found Low=%d \n",foundLow);
+*/
+
+
+	if (foundLow == 0){
+		/*printf("crack %lld %lld",cl1,ch1);*/	
+		@:crkTwoLTree(@1)@
+		/*printf(" %lld \n",(ch1-cl1));*/
+		if (IndexSize <IndexStop)
+			if (gapL>0) addTreeIndex_@1(m,low,*inclusiveLow,vl,c);
+	} 	
+	else
+		vl = cl1;
+		
+	@:CreateResult()@
+	return MAL_SUCCEED;
+}       
+
+str
 CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail)
 {
 	BAT *b,*c,*bo;
