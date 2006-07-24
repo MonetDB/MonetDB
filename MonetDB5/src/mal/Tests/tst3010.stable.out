@@ -1,39 +1,39 @@
 stdout of test 'tst3010` in directory 'src/mal` itself:
 
 
-# 08:01:14 >  
-# 08:01:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst3010.mal </dev/null
-# 08:01:14 >  
+# 07:49:49 >  
+# 07:49:49 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=34850 --set monet_prompt= --trace --dbname=mTests_src_mal  tst3010.mal < /dev/null
+# 07:49:49 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ##Parsing properties and keeping them around
-#function add(i:int{read},j:int{read}):int{write,safe};
+#function add(i:int{readonly},j:int{readonly}):int{writeable,safe};
 #	j:= j+i;
-#	return j{freeze};
+#	return j;
 #end add;
 function user.add{safe,writeable}(i:int{readonly},j:int{readonly}):int;	# 0  (add:int)<-(i:int)(j:int)
     j{readonly} := calc.+(j,i);	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
     return j{readonly};	# 2  (j:int)
 end add;	# 3  
 #
-#function add2(i:int,j:int{read}):int{write,safe};
+#function add2(i:int,j:int):int{safe};
 #	k:= j+i;
-#	return k{freeze};
+#	return k;
 #end ;
 function user.add2{safe}(i:int,j:int):int;	# 0  (add2:int)<-(i:int)(j:int)
     k := calc.+(j,i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
     return k;	# 2  (k:int)
 end add2;	# 3  
 #
-#i{cost}:= 23;
-#z:= add(i,i);
-#kk:= add2(i,i);
+#i{cost=23}:= 23;
+#z:= user.add(i,i); #violates properties
+#kk:= user.add2(i,i);
 #
 function user.main():void;	# 0  (main:void)
 #Parsing properties and keeping them around 	# 1  (_1:str)
@@ -43,7 +43,7 @@ function user.main():void;	# 0  (main:void)
     kk := user.add2(i,i);	# 5  (kk:int)<-(i:int)(i:int)
 end main;	# 6  
 
-# 08:01:14 >  
-# 08:01:14 >  Done.
-# 08:01:14 >  
+# 07:49:49 >  
+# 07:49:49 >  Done.
+# 07:49:49 >  
 
