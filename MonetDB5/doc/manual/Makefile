@@ -18,10 +18,10 @@ all:
 pdfs: 
 	make MANUAL=manual pdf
 	make MANUAL=sqlmanual pdf
-	make MANUAL=m5server pdf
+	make MANUAL=m5manual pdf
 pdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; pdftex $(MANUAL).texi; pdftex $(MANUAL).texi )
 	cp $(M5DIR)/doc/share/tmp/$(MANUAL).pdf $(M5DIR)/doc/share
@@ -33,21 +33,21 @@ webs:
 	make MANUAL=sqlmanual web
 	make MANUAL=m5manual web
 web:
-	@echo "Create tmp:" $(M5DIR)/doc/share/tmp/$(MANUAL)/
-	@echo "using:" $(M4DIR)
-	mkdir -p $(M5DIR)/doc/share/tmp/$(MANUAL)/
-	mkbdy $(MANUAL) $(M5DIR) $(M4DIR)
-	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/$(MANUAL)/
-	cp manual.css $(M5DIR)/doc/share/tmp/$(MANUAL)/
-	cp  -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp/$(MANUAL)/
-	(cd $(M5DIR)/doc/share/tmp/$(MANUAL)/; \
+	echo "Create tmp:" $(M5DIR)/doc/share/tmp/
+	echo "using:" $(M4DIR)
+	mkdir -p $(M5DIR)/doc/share/tmp/
+	mkbdy $(M5DIR) $(M4DIR)
+	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/
+	cp manual.css $(M5DIR)/doc/share/tmp/
+	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp/
+	(cd $(M5DIR)/doc/share/tmp/; \
 	makeinfo --force --html $(MANUAL).texi --css-include=manual.css \
 	)
-	@echo "Web version created"
+	echo "Web version created"
 
 web2:
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp manual.css $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
@@ -57,7 +57,7 @@ web2:
 
 xml:
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
 	makeinfo --force --xml $(MANUAL).texi \
@@ -74,7 +74,7 @@ xml:
 
 gdkpdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp gdk$(MANUAL).texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp gdk$(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
 	pdftex gdk$(MANUAL).texi \
@@ -85,7 +85,7 @@ gdkpdf:
 
 modpdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp
-	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp modules$(MANUAL).texi $(M5DIR)/doc/share/tmp
+	mkbdy $(M5DIR) $(M4DIR); cp modules$(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
 	(cd $(M5DIR)/doc/share/tmp/; \
 	pdftex modules$(MANUAL).texi \
