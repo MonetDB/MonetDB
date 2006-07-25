@@ -2646,23 +2646,21 @@ str
 ALGmarkHead(int *result, int *bid, oid *base)
 {
 	BAT *b, *bn = NULL;
-	ptr p, q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.markH", "Cannot access descriptor");
 	}
-	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
-	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) 
-		BATseqbase(BATmirror(bn), 0);
-	BATseqbase(bn, *base);
-	BATloop(b, p, q) {
-		BUNappend(bn, BUNtail(b, p), FALSE);
+	/* M5's markH is semantically identical with M4/GDK's tmark */
+	/* (Don't ask me why; wasn't my decision. Stefan.) */
+	if (CMDtmark(&bn, b, base) == GDK_SUCCEED) {
+		BBPreleaseref(b->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
 	}
-
-	*result = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	return throwMessage("algebra.markT", "marking group failed");
 }
 
 mal_export str ALGmarkHead_default(int *result, int *bid);
