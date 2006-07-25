@@ -2619,7 +2619,7 @@ ALGtmark(int *result, int *bid, oid *base)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.tmark", "Cannot access descriptor");
+		return throwMessage("algebra.markT", "Cannot access descriptor");
 	}
 	if (CMDmark(&bn, b, base) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
@@ -2629,7 +2629,7 @@ ALGtmark(int *result, int *bid, oid *base)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.mark", "marking group failed");
+	return throwMessage("algebra.markT", "marking group failed");
 }
 
 mal_export str ALGtmark_default(int *result, int *bid);
