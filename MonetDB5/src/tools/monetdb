@@ -239,13 +239,13 @@ function stop_mserver()
 		stopped=`expr $stopped + 1 `
 		# disable the guardian first
 		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
-		$MONET5_PREFIX/bin/mguardian --stop $1
+		$MONET5_PREFIX/bin/mguardian --stop $DBFARM/$1
 		kill -TERM $pid
 		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
 		if [ "`ps -p $pid -o comm=`" == "mserver5" ];
 		then
 			# give it some time to wrap up
-			echo -n "Stopping database server '$1'... "
+			echo -n "Stopping database server '$DBFARM/$1'... "
 			sleep 5
 			if [ "`ps -p $pid -o comm=`" == "mserver5" ];
 			then
@@ -254,7 +254,7 @@ function stop_mserver()
 				echo "ok"
 			fi
 		else
-			echo "Stopping database server '$1'... ok"
+			echo "Stopping database server '$DBFARM/$1'... ok"
 		fi
 	fi
 }
@@ -407,7 +407,6 @@ case "$ACTION" in
 	do
 		if [ -d $i ]
 		then
-			echo "check status of " $DBFARM/$i
 			show_status  $DBFARM/$i 
 			header=1
 		fi
