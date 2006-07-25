@@ -1218,9 +1218,9 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 	mal_unset_lock(mal_contextLock,"SERVERconnect");
 
 	if( ssl)
-	mid= mapi_connect_ssl(*host, *port, *username, *password, *lang);
+	mid= mapi_connect_ssl(*host, *port, *username, *password, *lang, NULL);
 	else
-	mid= mapi_connect(*host, *port, *username, *password, *lang);
+	mid= mapi_connect(*host, *port, *username, *password, *lang, NULL);
 	if( mapi_error(mid) ){
 		SERVERsessions[i].c = NULL;
 		throwMalf("mserver.connect","Could not connect: %s", mapi_error_str(mid));
