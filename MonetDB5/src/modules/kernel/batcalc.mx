@@ -383,10 +383,10 @@ command int(b:bat[:any_1,:oid]):bat[:any_1,:int]
 address CMDconvertoid_int
 comment "Coerce an oid tail to a bat with int tail.";
 command lng(b:bat[:any_1,:oid]):bat[:any_1,:lng] 
-address CMDconvertlng_int
+address CMDconvertoid_lng
 comment "Coerce an oid tail to a bat with lng tail.";
 command sht(b:bat[:any_1,:oid]):bat[:any_1,:sht] 
-address CMDconvertsht_int
+address CMDconvertoid_sht
 comment "Coerce an oid tail to a bat with sht tail.";
 
 command oid(b:bat[:any_1,:int]):bat[:any_1,:oid] 
