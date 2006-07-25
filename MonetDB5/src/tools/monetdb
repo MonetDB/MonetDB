@@ -50,15 +50,7 @@ then
 	echo "It should point to where you have installed the build directory"
 	exit
 fi
-if [ ! -d $DBFARM ]
-then
-	echo "Creation of missing database storage area '$DBFARM'"
-	mkdir -p $DBFARM
-fi
-if [ ! -d $DBFARM ]
-then
-	echo "Database storage area '$DBFARM' is in accessible"
-fi
+
 
 ACTION="--status"
 
@@ -103,6 +95,9 @@ do
 	"--ascii="* )
 		ASCII="$1"
 		;;
+	"--dbfarm="* )
+		DBFARM="${1#--dbfarm=}"
+		;;
 	"--dbname="* )
 		DBNAME="${1#--dbname=}"
 		;;
@@ -122,6 +117,17 @@ do
 	shift
 done
 #echo "ARGS $ARGS"
+
+# check if the database farm exists
+if [ ! -d $DBFARM ]
+then
+	echo "Creation of missing database storage area '$DBFARM'"
+	mkdir -p $DBFARM
+fi
+if [ ! -d $DBFARM ]
+then
+	echo "Database storage area '$DBFARM' is in accessible"
+fi
 
 function getPID ()
 {
@@ -193,7 +199,7 @@ function start_mserver()
 		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
 		# make sure you can find strange errors
 		echo "START" `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
-		$MONET5_PREFIX/bin/mserver5 --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP 2>&1 >> $DBFARM/$DBNAME/mserver5.log &
+		$MONET5_PREFIX/bin/mserver5 --dbfarm=$DBFARM --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP 2>&1 >> $DBFARM/$DBNAME/mserver5.log &
 		pid="$!"
 		if [ -z "$pid" ]
 		then
@@ -208,7 +214,7 @@ function start_mserver()
 		then
 			echo $DELAY >$1/.mguardian.delay
 		fi
-		$MONET5_PREFIX/bin/mguardian --start --dbname=$1
+		$MONET5_PREFIX/bin/mguardian --start --dbfarm=$DBFARM --dbname=$1
 	else
 		if [ -n "$DELAY" ]
 		then

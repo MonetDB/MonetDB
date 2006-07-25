@@ -43,8 +43,15 @@ function get() {
 	done
 }
 
-DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
-DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
+tmp="$(get "--dbfarm" $*)"
+if [ ! -z "$tmp" ]
+then
+	DBFARM="$tmp"
+	DBLOGS=$DBFARM/../dblogs
+else
+	DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
+	DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
+fi
 DELAY=300
 ACTION=start
 
