@@ -1291,7 +1291,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:eil:u::p:P::d::qHh:s:DtT?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:eil:u::p:P::d:qHh:s:DtT?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
