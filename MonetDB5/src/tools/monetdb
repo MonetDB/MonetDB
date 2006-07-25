@@ -407,7 +407,9 @@ case "$ACTION" in
 	do
 		if [ -d $i ]
 		then
-			show_status  $i 
+			echo "check status of " $DBFARM/$i
+			show_status  $DBFARM/$i 
+			header=1
 		fi
 	done
 	if [ $header = 0 ]
