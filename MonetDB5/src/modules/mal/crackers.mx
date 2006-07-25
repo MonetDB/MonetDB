@@ -3121,10 +3121,10 @@ The result is a [oid,void] bat.
 	oid rmin, rmax;
 	bit d_hdense = FALSE;
 
-	rbase = BUNtloc(r, BUNfirst(r));
-	zz = BUNsize(r);
-	rmin = *(oid*)BUNtail(r, BUNfirst(r));
+	rmin = *(oid*)BUNhead(r, BUNfirst(r));
 	rmax = rmin + (BATcount(r) - 1);
+	zz = BUNsize(r);
+	rbase = BUNtloc(r, BUNfirst(r)) - rmin*zz;
 
 	if (l->batParentid != 0 || l->htype == TYPE_void){
 		d = BATnew(TYPE_oid, TYPE_void, MIN(BATcount(l), BATcount(r)));
@@ -3141,7 +3141,7 @@ The result is a [oid,void] bat.
 		oid llast = MIN(rmax, lv + (BATcount(l) - 1));
 		oid l0 = lv;
 		BUN d0 = dt;
-		rt = rbase + (lv-rmin)*zz;
+		rt = rbase + lv*zz;
 		while(lv <= llast){
 			if (@1){
 				*(oid*)dt = lv; 
@@ -3151,14 +3151,30 @@ The result is a [oid,void] bat.
 			rt += zz;
 		}
 		d_hdense = ((dt - d0)/dd == (lv - l0));
-	} else /* !BAThdense(l) */ {
+	} else if (BAThordered(l)&1) {
+		int xx = BUNsize(l);
+		BUN llast = BUNhloc(l, BUNlast(l));
+		BUN lt = BUNhloc(l, BUNfirst(l));
+		oid lv = oid_nil;
+		while(lt < llast && (lv = *(oid*)lt) < rmin){
+			lt += xx;
+		}
+		while(lt < llast && (lv = *(oid*)lt) <= rmax){
+			rt = rbase + lv*zz;
+			if (@1){
+				*(oid*)dt = lv; 
+				dt += dd;	
+			}	
+			lt += xx;
+		}
+	} else /* !BAThdense(l) && !(BAThordered(l)&1) */ {
 		int xx = BUNsize(l);
 		BUN llast = BUNhloc(l, BUNlast(l));
 		BUN lt = BUNhloc(l, BUNfirst(l));
 		while(lt < llast){
 		    oid lv = *(oid*)lt;
 		    if (lv >= rmin && lv <= rmax) {
-			rt = rbase + (lv-rmin)*zz;
+			rt = rbase + lv*zz;
 			if (@1){
 				*(oid*)dt = lv; 
 				dt += dd;	
@@ -3249,7 +3265,7 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 	}
 
 	if (BATcount(l) == 0 || BATcount(r) == 0){
-		BAT *d = BATnew(TYPE_oid, TYPE_void, BATcount(l));
+		BAT *d = BATnew(TYPE_oid, TYPE_void, 0);
 		d->batBuns->free = 0;
 		BATsetcount(d, 0);
 		d->hsorted = GDK_SORTED;
