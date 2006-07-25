@@ -51,7 +51,7 @@ main(int argc, char **argv)
 
 	port = atol(argv[1]);
 
-	dbh = mapi_mapi("localhost", port, "monetdb", "monetdb", sql ? "sql" : 0);
+	dbh = mapi_mapi("localhost", port, "monetdb", "monetdb", sql ? "sql" : 0, NULL);
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i); */
 		mapi_reconnect(dbh);

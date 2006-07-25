@@ -39,19 +39,20 @@ MapiClient [options] [inputfile+]
 The following options are supported:
 
 \begin{tabular} {l l l}
- -b t/f      & --blocked=true/false& blocked mode \\
- -D          & --dump           & dump sql database \\
- -e          & --error          & exit on error \\
- -h hostname & --host=hostname  & host to connect to \\
- -l language & --language=lang  & {mal,sql,mil} \\
- -P passwd   & --passwd=passwd  & password \\
- -p portnr   & --port=portnr    & port to connect to \\
- -s stmt     & --statement=stmt & run single statement \\
- -t          & --trace          & trace Monet interaction \\
- -T          & --time           & time commands \\
- -u user     & --user=user      & user id \\
- -H          & --history        & load/save cmdline history (default off) \\
- -?          & --help           & show this usage message \\
+ -b t/f      & --blocked=true/false & blocked mode \\
+ -D          & --dump               & dump sql database \\
+ -e          & --error              & exit on error \\
+ -h hostname & --host=hostname      & host to connect to \\
+ -l language & --language=lang      & {mal,sql,mil,xquery} \\
+ -P passwd   & --passwd=passwd      & password \\
+ -p portnr   & --port=portnr        & port to connect to \\
+ -d database & --database=database  & database to connect to \\
+ -s stmt     & --statement=stmt     & run single statement \\
+ -t          & --trace              & trace Monet interaction \\
+ -T          & --time               & time commands \\
+ -u user     & --user=user          & user id \\
+ -H          & --history            & load/save cmdline history (default off) \\
+ -?          & --help               & show this usage message \\
 \end{tabular}
 
 Calling "MapiClient -l sql" establishes a SQL connection with an
@@ -1227,6 +1228,7 @@ usage(const char *prog)
 	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil,xquery} */\n");
 	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
 	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
+	fprintf(stderr, " -d database | --database=database /* database to connect to */\n");
 	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
@@ -1249,6 +1251,7 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *passwd = NULL;
 	char *host = NULL;
+	char *dbname = NULL;
 	int dodump = 0;
 	int trace = 0;
 	int guest = 1;
@@ -1269,6 +1272,7 @@ main(int argc, char **argv)
 		{"language", 1, 0, 'l'},
 		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
+		{"database", 1, 0, 'd'},
 		{"set", 1, 0, 'S'},
 		{"statement", 1, 0, 's'},
 		{"time", 0, 0, 'T'},
@@ -1287,7 +1291,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:eil:u::p:P::qHh:s:DtT?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:eil:u::p:P::d::qHh:s:DtT?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
@@ -1344,6 +1348,9 @@ main(int argc, char **argv)
 		case 'p':
 			port = atoi(optarg);
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "port", optarg);
+			break;
+		case 'd':
+			dbname = optarg;
 			break;
 		case 's':
 			command = optarg;
@@ -1415,7 +1422,7 @@ main(int argc, char **argv)
 			passwd = simple_prompt("Password", BUFSIZ, 0, NULL);
 	}
 
-	mid = mapi_connect(host, port, user, passwd, language);
+	mid = mapi_connect(host, port, user, passwd, language, dbname);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);

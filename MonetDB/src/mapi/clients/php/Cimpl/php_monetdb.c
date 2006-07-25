@@ -461,7 +461,7 @@ PHP_MINFO_FUNCTION(monetdb)
 	char buf[256];
 	/* make new Mapi struct with nonsense values in order to obtain the
 	 * Mapi version */
-	Mapi m = mapi_mapi("localhost", 0, "user", "pass", "lang");
+	Mapi m = mapi_mapi("localhost", 0, "user", "pass", "lang", NULL);
 
 	php_info_print_table_start();
 	php_info_print_table_header(2, "MonetDB Support", "enabled");
@@ -490,6 +490,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 	char *username = MG(default_username);
 	char *password = MG(default_password);
 	char *language = MG(default_language);
+	char *database = NULL;
 	int port = MG(default_port);
 
 	zval **args[5];
@@ -499,14 +500,18 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 	Mconn *monetdb;
 
 	argc = ZEND_NUM_ARGS();
-	if (argc > 6 ||
+	if (argc > 7 ||
 		zend_get_parameters_array_ex(argc, args) != SUCCESS)
 		WRONG_PARAM_COUNT;
 
 	switch (argc) {
-		case 6:		/* connect type */
-			convert_to_long_ex(args[5]);
-			connect_type = Z_LVAL_PP(args[5]);
+		case 7:		/* connect type */
+			convert_to_long_ex(args[6]);
+			connect_type = Z_LVAL_PP(args[6]);
+			/* fall through */
+		case 6:		/* database */
+			convert_to_string_ex(args[5]);
+			database = Z_STRVAL_PP(args[5]);
 			/* fall through */
 		case 5:		/* password */
 			convert_to_string_ex(args[4]);
@@ -560,7 +565,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 			}
 
 			/* create the link */
-			monetdb = mapi_connect(hostname, port, username, password, language);
+			monetdb = mapi_connect(hostname, port, username, password, language, database);
 			if (mapi_error(monetdb) != 0) {
 				PHP_MONETDB_ERROR("Unable to connect to MonetDB server: %s", monetdb);
 				mapi_disconnect(monetdb);
@@ -633,7 +638,7 @@ static void php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot create new link. Too many open links (%ld)", MG(num_links));
 			goto err;
 		}
-		monetdb = mapi_connect(hostname, port, username, password, language);
+		monetdb = mapi_connect(hostname, port, username, password, language, database);
 		if (mapi_error(monetdb) != 0) {
 			PHP_MONETDB_ERROR("Unable to connect to MonetDB server: %s", monetdb);
 			mapi_disconnect(monetdb);
@@ -668,7 +673,7 @@ err:
 }
 /* }}} */
 
-/* {{{ proto resource monetdb_connect([string host [, string port [, string username [, string password [, string language]]]]])
+/* {{{ proto resource monetdb_connect([string language [, string host [, string port [, string username [, string port [, string database [, int connect_type]]]]]]])
    Open a MonetDB connection */
 PHP_FUNCTION(monetdb_connect)
 {
@@ -676,7 +681,7 @@ PHP_FUNCTION(monetdb_connect)
 }
 /* }}} */
 
-/* {{{ proto resource monetdb_pconnect([string host [, string port [, string username [, string password [, string language]]]]])
+/* {{{ proto resource monetdb_pconnect([string language [, string host [, string port [, string username [, string port [, string database [, int connect_type]]]]]]])
    Open a persistent MonetDB connection */
 PHP_FUNCTION(monetdb_pconnect)
 {

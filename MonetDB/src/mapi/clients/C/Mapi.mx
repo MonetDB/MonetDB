@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     Mapi dbh;
     MapiHdl hdl = NULL;
 
-    dbh = mapi_connect("localhost", 50000, "monetdb", "monetdb", "sql");
+    dbh = mapi_connect("localhost", 50000, "monetdb", "monetdb", "sql", NULL);
     if (mapi_error(dbh))
         die(dbh, hdl);
 
@@ -102,10 +102,9 @@ int main(int argc, char **argv)
 @end example
 
 The @code{mapi_connect()} operation establishes a communication channel with
-a running server on the local machine. The user name is "monetdb" with
-password "monetdb".
-The query language interface is either "sql", "mil" or "xquery".  Future
-versions are expected to recognize also "ram" and "mal".
+a running server.
+The query language interface is either "sql", "mil", "mal" or "xquery".
+Future versions are expected to recognize also "ram".
 
 Errors on the interaction can be captured using @code{mapi_error()},
 possibly followed by a request to dump a short error message
@@ -289,7 +288,7 @@ do {
 @+ Mapi Function Reference
 @- Connecting and Disconnecting
 @itemize
-@item Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
+@item Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
 
 Setup a connection with a Mserver at a @emph{host}:@emph{port} and login
 with @emph{username} and @emph{password}. If host == NULL, the local
@@ -302,7 +301,7 @@ is omitted.  The preferred query language is any of
 @verb{ { }sql,mil,mal,xquery @verb{ } }.  On success, the function returns a
 pointer to a structure with administration about the connection.
 
-@item Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang)
+@item Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
 
 Setup a connection with a Mserver at a @emph{host}:@emph{port} and login
 with @emph{username} and @emph{password}. The connection is made using
@@ -853,6 +852,7 @@ struct MapiStruct {
 	MapiHdl active;		/* set when not all rows have been received */
 
 	int cachelimit;		/* default maximum number of rows to cache */
+	int redircnt;		/* redirection count */
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
@@ -984,11 +984,11 @@ typedef struct {		/* used by MAPI_DATETIME */
 } MapiDateTime;
 
 /* connection-oriented functions */
-mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang);
+mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
-mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang);
-mapi_export Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang);
+mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
+mapi_export Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export stream **mapi_embedded_init(Mapi *midp, char *lang);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
@@ -1719,6 +1719,7 @@ mapi_new(void)
 	mid->password = NULL;
 
 	mid->cachelimit = 100;
+	mid->redircnt = 0;
 	mid->tracelog = NULL;
 	mid->blk.eos = 0;
 	mid->blk.buf = malloc(BLOCK + 1);
@@ -1735,7 +1736,7 @@ mapi_new(void)
 /* Allocate a new connection handle and fill in the information needed
    to connect to a server, but don't connect yet. */
 Mapi
-mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang)
+mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
 {
 	Mapi mid;
 
@@ -1793,6 +1794,9 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 		mid->languageId = LANG_XCORE;
 	else if (strcmp(lang, "xquery") == 0)
 		mid->languageId = LANG_XQUERY;
+
+	if (mid->database) free(mid->database);
+	mid->database = dbname ? strdup(dbname) : NULL;
 
 	return mid;
 }
@@ -2074,10 +2078,13 @@ mapi_start_talking(Mapi mid)
 	pversion = atoi(protover);
 
 	if (pversion == 5) {
-		/* note, database can be appended here (:database), but since
-		MapiClient doesn't have a switch for it, we omit it so we get
-		the default (and don't have to implement redirect support) */
-		snprintf(buf, BLOCK, "%s:%s:%s:%s\n", mid->username, mid->password, mid->language, (mid->blocked ? "blocked" : "linemode"));
+		/* proto 5 has technically support for database, but it was
+		 * never really used in Mserver itself. */
+		snprintf(buf, BLOCK, "%s:%s:%s:%s\n",
+				mid->username,
+				mid->password,
+				mid->language,
+				(mid->blocked ? "blocked" : "linemode"));
 	} else if (pversion == 6) {
 		/* the database has sent a list of supported hashes to us, it's
 		 * in the form of a comma separated list and in the variable
@@ -2088,8 +2095,25 @@ mapi_start_talking(Mapi mid)
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
-		/* so, we send a plain text password response */
-		snprintf(buf, BLOCK, "%s:{plain}%s%s:%s:%s\n", mid->username, mid->password, chal, mid->language, (mid->blocked ? "blocked" : "linemode"));
+		/* so, we send a plain text password response
+		 * note, database can be appended here (:database).  If we omit
+		 * it we get the default (and don't get redirects) */
+		if (mid->database != NULL) {
+			snprintf(buf, BLOCK, "%s:{plain}%s%s:%s:%s:%s\n",
+					mid->username,
+					mid->password,
+					chal,
+					mid->language,
+					(mid->blocked ? "blocked" : "linemode"),
+					mid->database);
+		} else {
+			snprintf(buf, BLOCK, "%s:{plain}%s%s:%s:%s\n",
+					mid->username,
+					mid->password,
+					chal,
+					mid->language,
+					(mid->blocked ? "blocked" : "linemode"));
+		}
 	} else {
 		snprintf(buf, BLOCK, "unsupported protocol version: %d", pversion);
 		close_connection(mid);
@@ -2142,9 +2166,93 @@ mapi_start_talking(Mapi mid)
 		size_t motdlen = 0;
 		struct MapiResultSet *result = hdl->result;
 
-		for (i = 0; i < result->cache.writer; i++)
-			if (result->cache.line[i].rows && result->cache.line[i].rows[0] == '#')
-				motdlen += strlen(result->cache.line[i].rows) + 1;
+		for (i = 0; i < result->cache.writer; i++) {
+			if (result->cache.line[i].rows) {
+				switch (result->cache.line[i].rows[0]) {
+					case '#':
+						motdlen += strlen(result->cache.line[i].rows) + 1;
+						break;
+					case '^': { /* FIXME: there may be multiple redirects */
+						char *tmp = result->cache.line[i].rows;
+						char *tmp2 = "";
+
+						/* redirect, looks like:
+						 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb */
+
+						/* first see if we reached our redirection limit */
+						if (mid->redircnt > 10) {
+							mapi_close_handle(hdl);
+							mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
+							return(mid->error);
+						}
+						/* see if we can possibly handle the redirect */
+						tmp++;
+						if (strncmp("mapi:monetdb", tmp, 12) != 0) goto err;
+						/* parse components (we store the args
+						 * immediately in the mid... ok, that's dirty */
+						tmp += strlen("mapi:monetdb://");
+						mid->hostname = tmp;
+						if ((tmp = strchr(tmp, ':')) != NULL) {
+							*tmp++ = '\0';
+							tmp2 = tmp;
+						} else {
+							tmp = mid->hostname;
+						}
+						if ((tmp = strchr(tmp, '/')) != NULL) {
+							*tmp++ = '\0';
+							mid->port = atoi(tmp2);
+							if (mid->port == 0) goto err;
+							mid->database = tmp;
+						} else {
+							tmp = mid->hostname;
+							goto err;
+						}
+						if ((tmp = strchr(tmp, '?')) != NULL) {
+							char *tmp3;
+							*tmp++ = '\0';
+							tmp2 = tmp;
+							while ((tmp = strchr(tmp, '&')) != NULL) {
+								*tmp++ = '\0';
+								if ((tmp3 = strchr(tmp2, '=')) != NULL) {
+									*tmp3++ = '\0';
+									/* tmp2 = key, tmp3 = val */
+									if (strcmp("user", tmp2) == 0) {
+										free(mid->username);
+										mid->username = strdup(tmp3);
+									} else if (strcmp("lang", tmp2) == 0) {
+										free(mid->language);
+										mid->language = strdup(tmp3);
+									} else goto err;
+								} else goto err;
+								tmp2 = tmp;
+							}
+							tmp = tmp2;
+							if ((tmp3 = strchr(tmp2, '=')) != NULL) {
+								*tmp3++ = '\0';
+								/* tmp2 = key, tmp3 = val */
+								if (strcmp("user", tmp2) == 0) {
+									free(mid->username);
+									mid->username = strdup(tmp3);
+								} else if (strcmp("lang", tmp2) == 0) {
+									free(mid->language);
+									mid->language = strdup(tmp3);
+								} else goto err;
+							} else goto err;
+						} /* no optional arguments (weird) */
+						mid->redircnt++;
+						mapi_close_handle(hdl);
+						/* reconnect using the new values */
+						return(mapi_reconnect(mid));
+err:
+						tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
+						sprintf(tmp2, "error while parsing redirect: %s", tmp);
+						mapi_close_handle(hdl);
+						mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
+						return(mid->error);
+					}
+				}
+			}
+		}
 		if (motdlen > 0) {
 			mid->motd = malloc(motdlen + 1);
 			*mid->motd = 0;
@@ -2182,11 +2290,11 @@ mapi_reconnect(Mapi mid)
 /* Create a connection handle and connect to the server using the
    specified parameters. */
 Mapi
-mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
+mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
 {
 	Mapi mid;
 
-	mid = mapi_mapi(host, port, username, password, lang);
+	mid = mapi_mapi(host, port, username, password, lang, dbname);
 	if (mid && mid->error == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 	return mid;
@@ -2196,9 +2304,9 @@ mapi_connect(const char *host, int port, const char *username, const char *passw
    specified parameters.  Use SSL (Secure Socket Layer) to encrypt all
    data transfers with the server. */
 Mapi
-mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang)
+mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
 {
-	Mapi mid = mapi_mapi(host, port, username, password, lang);
+	Mapi mid = mapi_mapi(host, port, username, password, lang, dbname);
 
 #ifdef HAVE_OPENSSL
 	mid->secure = 1;
@@ -2216,7 +2324,7 @@ mapi_embedded_init(Mapi *midp, char *lang)
 	Mapi mid;
 	stream **streams;
 
-	mid = mapi_mapi(NULL, -1, "monetdb", "monetdb", lang);
+	mid = mapi_mapi(NULL, -1, "monetdb", "monetdb", lang, NULL);
 	if (mid == NULL)
 		return NULL;
 	streams = malloc(2 * sizeof(*streams));

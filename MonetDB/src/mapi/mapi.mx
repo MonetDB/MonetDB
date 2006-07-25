@@ -648,14 +648,6 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		prompt(fdout, blocked);
 		return NULL;
 	}
-/* TODO
-	if (db) {
-		stream_printf(fdout,
-		 "!ERROR: xchange_challenge: TODO database redirect\n");
-		prompt(fdout, blocked);
-		return NULL;
-	}
-*/
 
 	if (new_client)
 		fc = mapi_client_find(f);
