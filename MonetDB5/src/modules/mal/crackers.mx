@@ -88,13 +88,9 @@ command printIndex(b:bat[:oid,:@1]):void
 address CRKprintIndex
 comment "Print the index for a cracked table.";
 
-command removeIndex(b:bat[:any_1,:@1]):void
-address removeTreeIndex 
-comment "Remove the crack index for this bat";
-
-command append(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
-address appendCrackerBAT
-comment "Append c to the cracked bat of b";
+command mergeInsForget(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+address mergeInsertions_Forget 
+comment "Append c to the cracked bat of b and completelly forget the cracker index";
 @
 
 @mal
@@ -284,7 +280,7 @@ ultra fast.
 
 typedef struct {
 	int bid;   /* the cracked bat */
-	int cbid;   /* the copy on which we actually crack */
+	int cbid;  /* the copy on which we actually crack */
 	int cid;   /* the index for this cracked bat */
 } CrackIndex;
 
@@ -298,10 +294,14 @@ struct Node{
 };
 
 typedef struct {
-	int bid;   /* the cracked bat */
-	int cbid;   /* the copy on which we actually crack */
-	int cid;   /* the index for this cracked bat */
-	struct Node *Tree; 
+	int 		bid;   		/* the cracked bat */
+	int 		cbid;   	/* the copy on which we actually crack */
+	int 		cid;   		/* the index for this cracked bat */
+	struct Node 	*Tree; 		/* the AVL tree */
+	lng 		startInsertions;/* position in cbid where insertions start*/
+	lng 		endInsertions; 	/* position in cbid where insertions end*/
+	lng 		startDeletions; /* position in cbid where deletions start*/
+	lng 		endDeletions; 	/* position in cbid where deletions end*/
 } CrackTreeIndex;
 
 mal_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
@@ -310,8 +310,7 @@ mal_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
 mal_export str CRKuselectValue(int *vid, int *bid, int *value);
 
 mal_export str CRKprintIndex(int *k, int *bid);
-mal_export str removeTreeIndex(int *k, int *bid);
-mal_export str appendCrackerBAT(int *k, int *bid, int *new);
+mal_export str mergeInsertions_Forget(int *k, int *bid, int *new);
 #endif /* _CRACKERS_H */
 
 @c
@@ -327,7 +326,7 @@ static int maxCrackMap = 0;
 
 static CrackIndex *Index;
 static CrackTreeIndex *TreeIndex;
-
+bit IndexType = 1; /* 1 used for tree index, 0 used for bat index */
 int IndexSize = 0;
 int IndexStop = 250000;
 
@@ -707,6 +706,10 @@ newTreeIndex_@1(int bid, int cbid)
 	BBPkeepref(b->batCacheid);
 	TreeIndex[i].cid = b->batCacheid; 
 	TreeIndex[i].Tree = NULL;
+	TreeIndex[i].startInsertions = -1;
+	TreeIndex[i].endInsertions = -1;
+	TreeIndex[i].startDeletions = -1;
+	TreeIndex[i].endDeletions = -1;
 	return i;
 }
 
@@ -770,68 +773,6 @@ newIndex_@1(int bid, int cbid)
 @:CreateNewIndex(date)@
 
 
-str
-removeTreeIndex(int *k, int *bid){
-	(void) k;
-	BAT *c;
-	int position = -1;
-	for (int i = 0; i < maxCrackMap; i++)
-        	if (TreeIndex[i].bid == *bid){
-                	position = i;	
-			break;
-		}
-	/*if (position == -1) return; Trying to erase an index that does not exist*/
-
-	/*Delete index BAT*/
-        if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL) {
-                fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
-		return "FAILED";
-        }
-
-	BATdelete(c);
-	TreeIndex[position].cid = -1;
-	BBPunfix(c->batCacheid);
-
-	/*Delete Tree*/
-	FreeAVLTree(TreeIndex[position].Tree);
-
-	TreeIndex[position].Tree = NULL;
-	
-	return MAL_SUCCEED;
-}
-
-str
-appendCrackerBAT(int *k, int * bid, int * new){
-	(void)k;
-        BAT *i, *u;
-	int position = -1;
-	for (int i = 0; i < maxCrackMap; i++)
-                if (TreeIndex[i].bid == *bid){
-                        position = i;
-			break;	
-		}
-
-
-        if ((i = BATdescriptor(TreeIndex[position].cbid)) == NULL) {
-                return throwMessage("bat.append", "Cannot access descriptor");
-        }
-
-        if ((u = BATdescriptor(*new)) == NULL) {
-                BBPreleaseref(i->batCacheid);
-                return throwMessage("bat.append", "Cannot access descriptor");
-        }
-
-        BATappend(i, u, TRUE);
-       
-	printf("\n index size of bat is "SZFMT" \n", BATcount(i));
-	printf("\n update size of bat is "SZFMT" \n", BATcount(u));
-	BBPunfix(i->batCacheid);
-	BBPunfix(u->batCacheid);
-
-	removeTreeIndex(k,bid);
-
-	return MAL_SUCCEED;
-}
 
 void
 printCrackIndex(int bid)
@@ -3053,32 +2994,46 @@ mal_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inc
 str
 CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
 {		
-	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
-		CRKRange_LeftNil_@1(vid, bid, hgh, inclusiveHgh, TRUE);
-	
-	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+	if (IndexType == 1){	
+		if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, TRUE);
+		else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, TRUE);
+		else 
+			return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+	} else {
+		if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRange_LeftNil_@1(vid, bid, hgh, inclusiveHgh, TRUE);
+		else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, TRUE);
+		else 
+			return CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+	}
 
-		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, TRUE);
-	else 
-		/*CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);*/
-		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
-
-	return MAL_SUCCEED;
+        return throwMessage("crackers.CRKselectBounds_@1", "case not handled");
 }
 
 mal_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 str
 CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
-{		
-	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
-		CRKRange_LeftNil_@1(vid, bid, hgh, inclusiveHgh, FALSE);
-	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
-		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, FALSE);
-	else 
-		/*CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);*/
-		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+{
+	if (IndexType == 1){	
+		if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRangeLeftNilTree_@1(vid, bid, hgh, inclusiveHgh, FALSE);
+		else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, FALSE);
+		else 
+			return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+	} else {
+		if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRange_LeftNil_@1(vid, bid, hgh, inclusiveHgh, FALSE);
+		else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+			return CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, FALSE);
+		else 
+			return CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
+	}
 
-	return MAL_SUCCEED;
+        return throwMessage("crackers.CRKuselectBounds_@1", "case not handled");
 }
 
 str                             
@@ -3345,3 +3300,92 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 @:JoinSelectFunctions(flt,simple,)@
 @:JoinSelectFunctions(dbl,simple,)@
 @:JoinSelectFunctions(date,atom,TYPE_)@
+
+
+str
+removeTreeIndex(int *bid){
+	BAT *c;
+	int position = -1;
+	for (int i = 0; i < maxCrackMap; i++)
+        	if (TreeIndex[i].bid == *bid){
+                	position = i;	
+			break;
+		}
+	/*if (position == -1) return; Trying to erase an index that does not exist*/
+
+	/*Delete index BAT*/
+        if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL) {
+                fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
+		return "FAILED";
+        }
+
+	BATdelete(c);
+	TreeIndex[position].cid = -1;
+	BBPunfix(c->batCacheid);
+
+	/*Delete Tree*/
+	FreeAVLTree(TreeIndex[position].Tree);
+	TreeIndex[position].Tree = NULL;
+	TreeIndex[position].startInsertions = -1;
+	TreeIndex[position].endInsertions = -1;
+	TreeIndex[position].startDeletions = -1;
+	TreeIndex[position].endDeletions = -1;
+	
+	return MAL_SUCCEED;
+}
+
+str
+appendCrackerBAT(int * bid, int * new, bit type){ /* type should be 0 for insertions or 1 for deletions*/
+        BAT *c, *u;
+	int position = -1;
+	int startPos;
+	int endPos;
+
+	for (int i = 0; i < maxCrackMap; i++)
+                if (TreeIndex[i].bid == *bid){
+                        position = i;
+			break;	
+		}
+
+
+        if ((c = BATdescriptor(TreeIndex[position].cbid)) == NULL) 
+                return throwMessage("bat.append", "Cannot access descriptor");
+
+        if ((u = BATdescriptor(*new)) == NULL) {
+                BBPreleaseref(c->batCacheid);
+                return throwMessage("bat.append", "Cannot access descriptor");
+        }
+	
+	if (BATcount(u) == 0) return MAL_SUCCEED;
+
+	startPos = BATcount(c);	
+        BATappend(c, u, TRUE);
+	endPos = BATcount(c)-1;	
+       
+/* printf("\n index size of bat is "SZFMT" \n", BATcount(c));
+   printf("\n update size of bat is "SZFMT" \n", BATcount(u));
+*/
+
+	/*mark positions in the index*/
+	
+	if (type == 0){
+		TreeIndex[position].startInsertions = startPos;
+		TreeIndex[position].endInsertions = endPos;
+	} else {
+		TreeIndex[position].startDeletions = startPos;
+		TreeIndex[position].endDeletions = endPos;
+	}
+
+	BBPunfix(c->batCacheid);
+	BBPunfix(u->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+mergeInsertions_Forget(int *k, int * bid, int * new){
+	(void) k;
+	appendCrackerBAT(bid,new,0);
+	removeTreeIndex(bid);
+	return MAL_SUCCEED;
+}
