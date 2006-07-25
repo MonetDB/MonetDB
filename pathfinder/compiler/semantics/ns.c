@@ -219,6 +219,31 @@ ns_add (PFns_t ns)
 }
 
 /**
+ * Namespaces may be (re-)declared in the query code, but not the
+ * two special namespace prefixes `xml' and `xmlns' (see
+ * http://www.w3.org/TR/2004/REC-xml-names11-20040204/#xmlReserved).
+ * This is a wrapper for ns_add() that checks for this situation.
+ * Whenever we add the built-in namespaces, we call ns_add() directly.
+ * For namespace declarations in the query, call user_ns_add() which
+ * checks for the two special prefixes.
+ *
+ * @param loc  Location in the input query.  Error messages will contain
+ *             this location information.
+ * @param ns   Namespace that shall be added to the statically-known
+ *             namespaces.
+ */
+static void
+user_ns_add (PFloc_t loc, PFns_t ns)
+{
+    if ((! strcmp (ns.prefix, "xml")) || (! strcmp (ns.prefix, "xmlns")))
+        PFoops_loc (OOPS_BADNS, loc,
+                    "it is illegal to override the `%s' namespace prefix",
+                    ns.prefix);
+
+    ns_add (ns);
+}
+
+/**
  * Test to see if a NS with the same prefix as NS @a ns is in-scope
  * (if so, update @a ns to be that NS).
  *
@@ -366,7 +391,9 @@ collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
                              || R(a)->kind == p_contseq) &&
                             RL(a)->kind == p_lit_str &&
                             RR(a)->kind == p_empty_seq) {
-                            ns_add ((PFns_t) { .prefix = L(a)->sem.qname.loc,
+                            user_ns_add (
+                                    a->loc,
+                                    (PFns_t) { .prefix = L(a)->sem.qname.loc,
                                                .uri    = RL(a)->sem.str });
 
                             /* finally remove this NS declaration attribute */
@@ -410,8 +437,9 @@ collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
                                      * empty NS declaration attribute:
                                      * undefine default element NS
                                      */
-                                    ns_add ((PFns_t) { .prefix = "",
-                                                       .uri = "" });
+                                    user_ns_add (a->loc,
+                                                 (PFns_t) { .prefix = "",
+                                                            .uri = "" });
                                     break;
 
                                 case p_exprseq:
@@ -419,7 +447,8 @@ collect_xmlns (PFpnode_t *c, PFpnode_t **cc)
                                     if (RL(a)->kind == p_lit_str &&
                                         RR(a)->kind == p_empty_seq) {
                                         /* non-empty NS declaration attribute */
-                                        ns_add ((PFns_t) {
+                                        user_ns_add (a->loc,
+                                                     (PFns_t) {
                                                 .prefix = "",
                                                 .uri    = RL(a)->sem.str });
                                         break;
@@ -513,7 +542,7 @@ ns_resolve (PFpnode_t *n)
             target_ns = (PFns_t) { .prefix = L(n)->sem.str,
                                    .uri    = LL(n)->sem.str };
 
-            ns_add (target_ns);
+            user_ns_add (n->loc, target_ns);
 
             /* perform NS resolution in module */
             ns_resolve (R(n));
@@ -565,7 +594,9 @@ ns_resolve (PFpnode_t *n)
              *              |
              *           lit_str-"foo"
              */
-            ns_add ((PFns_t) { .prefix = n->sem.str, .uri = L(n)->sem.str });
+            user_ns_add (n->loc,
+                         (PFns_t) { .prefix = n->sem.str,
+                                    .uri = L(n)->sem.str });
 
             break;
 
@@ -686,7 +717,7 @@ ns_resolve (PFpnode_t *n)
                 n->sem.qname.ns.uri = ns_lookup (n->sem.qname.ns.prefix);
                 if (! n->sem.qname.ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
-                            "unknown namespace in QName %s",
+                            "unknown namespace in qualified name %s",
                             PFqname_str (n->sem.qname));
             }
             break;
