@@ -132,9 +132,9 @@ fi
 function getPID ()
 {
 	active=""
-	if [ -f $1/.gdk_lock ]
+	if [ -f $DBFARM/$1/.gdk_lock ]
 	then
-		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $1/.gdk_lock`
+		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $DBFARM/$1/.gdk_lock`
 		if [ "$pid" != "" ]
 		then
 			active=`ps --no-heading --format pid -p $pid`
@@ -147,7 +147,7 @@ function getTIME ()
 {
 	if [ -z "$DELAY"  ]
 	then
-		echo `sed -e "s/.*TIME=//" -e "s/\@.*//" -e 2q $1/.gdk_lock`
+		echo `sed -e "s/.*TIME=//" -e "s/\@.*//" -e 2q $DBFARM/$1/.gdk_lock`
 	else
 		echo 300
 	fi

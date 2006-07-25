@@ -48,6 +48,7 @@ if [ ! -z "$tmp" ]
 then
 	DBFARM="$tmp"
 	DBLOGS=$DBFARM/../dblogs
+	echo "mguardian working on " $DBFARM
 else
 	DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 	DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
@@ -240,10 +241,12 @@ function check_mserver()
 function stop_guardian()
 {
 	pid=`getPID $1`
-	if [ -f $1/.mguardian.pid ]
+	if [ -f $DBFARM/$1/.mguardian.pid ]
 	then
-		pid=`cat $1/.mguardian.pid`
+		pid=`cat $DBFARM/$1/.mguardian.pid`
+		echo -n "stop mguardian for " $DBFARM/$1 "..."
 		kill -TERM $pid
+		echo "ok"
 		echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
 		rm $1/.mguardian.pid
 	fi
