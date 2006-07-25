@@ -146,11 +146,19 @@ address CRKuselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command joinuselect(right:bat[:any_1,:@1], l:any_2, h:any_3, li:any_4, hi:any_5, left:bat[:any_6,:void]):bat[:any_7,:void]
+@:joinuselect(@1,v,v)@
+@:joinuselect(@1,v,)@
+@:joinuselect(@1,,v)@
+@:joinuselect(@1,,)@
+@
+@= joinuselect
+command joinuselect( right:bat[:@2oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:@3oid,:void] ):bat[:oid,:void]
 address CRKjoinSelectBounds_@1
-comment "Join left and right on oids. From right only bun that satisfy the 
-	restriction qualify. Result is a new bat.";
-@-
+comment "Join left and right on head-OIDs.
+	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
+	Overwrites and returns left, in case left has an OID head and is not a BAT-view.
+	Otherwise, the result is a new [:oid,:void] BAT.";
+@
 @mal
 @:crackAlgebra(chr)@
 @:crackAlgebra(sht)@
@@ -3101,183 +3109,109 @@ CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
 }
 
-@= checkIfEmpty
-	if (BATcount(@1) == 0 ){
-		*res = *@2;
-		BBPunfix(*@2);
-		@3
-		return MAL_SUCCEED;
-	}	
-@
-
-@= JoinSelectR
-/* joins a left=[oid,void] bat with a right=[void, any_type] bat on oids. 
-From the right bat only BUNs that pass the range restriction qualify. 
-The result is a [oid,void] bat */
-str
-JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
-{
-	BAT *l, *r, *d;
-	BUN lt, rt, rbase, dt;
-	BUN llast;
-	int xx, zz, dd;
-
-	if ((l = BATdescriptor(*left)) == NULL)
-        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
-	@:checkIfEmpty(l, left,)@
-
-	if ((r = BATdescriptor(*right)) == NULL)
-        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
-	@:checkIfEmpty(r, right,BBPunfix(*left);)@
-
-
-	xx = BUNsize(l);
-	lt = BUNhloc(l, BUNfirst(l));
-	llast = BUNhloc(l, BUNlast(l)-xx);
+@= JoinSelectBody
+/* 
+Joins a left=[oid,void] bat with a right=[void, any_type] bat on head-OIDs. 
+From the right bat, only BUNs that pass the range-restriction on the tail qualify. 
+The result is a [oid,void] bat.
+*/
+	BAT *d;
+	BUN rt, rbase, dt;
+	int zz, dd;
+	oid rmin, rmax;
+	bit d_hdense = FALSE;
 
 	rbase = BUNtloc(r, BUNfirst(r));
 	zz = BUNsize(r);
+	rmin = *(oid*)BUNtail(r, BUNfirst(r));
+	rmax = rmin + (BATcount(r) - 1);
 
-	if (l->batParentid != 0){
-		d = BATnew(TYPE_oid, TYPE_void, BATcount(l));
-		d->hsorted = FALSE;
-		d->tsorted = FALSE;
-		d->hdense = FALSE; 
-		d->tdense = FALSE;
-		d->batRestricted= BAT_READ;
-		dt = BUNhloc(d, BUNfirst(d));
-		dd = BUNsize(d);
+	if (l->batParentid != 0 || l->htype == TYPE_void){
+		d = BATnew(TYPE_oid, TYPE_void, MIN(BATcount(l), BATcount(r)));
+	} else {
+		d = l;
+	}
+	dt = BUNhloc(d, BUNfirst(d));
+	dd = BUNsize(d);
 
-		/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
-		   If yes the respective oid is added to the result */
-		while(lt <= llast){
-			rt = rbase + (*(oid*)lt)*zz;
-			if (@6_@4(rt,low,@7@1) && @6_@5( rt,hgh,@7@1 )){
-				*(oid*)dt = *(oid*)lt; 
+	/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
+	   If yes the respective oid is added to the result */
+	if (BAThdense(l)) {
+		oid lv = MAX(rmin, *(oid*)BUNhead(l, BUNfirst(l)));
+		oid llast = MIN(rmax, lv + (BATcount(l) - 1));
+		oid l0 = lv;
+		BUN d0 = dt;
+		rt = rbase + (lv-rmin)*zz;
+		while(lv <= llast){
+			if (@1){
+				*(oid*)dt = lv; 
 				dt += dd;	
 			}		
-			lt += xx;
+			lv++;
+			rt += zz;
 		}
+		d_hdense = ((dt - d0)/dd == (lv - l0));
+	} else /* !BAThdense(l) */ {
+		int xx = BUNsize(l);
+		BUN llast = BUNhloc(l, BUNlast(l));
+		BUN lt = BUNhloc(l, BUNfirst(l));
+		while(lt < llast){
+		    oid lv = *(oid*)lt;
+		    if (lv >= rmin && lv <= rmax) {
+			rt = rbase + (lv-rmin)*zz;
+			if (@1){
+				*(oid*)dt = lv; 
+				dt += dd;	
+			}	
+		    }
+		    lt += xx;
+		}
+	}
 
-		d->batBuns->free = dt - d->batBuns->base;
-    		BATsetcount(d, d->batBuns->free/dd);
-		*res=d->batCacheid;
-		BBPkeepref(d->batCacheid);
+	d->batBuns->free = dt - d->batBuns->base;
+    	BATsetcount(d, d->batBuns->free/dd);
+	d->hsorted = (BATcount(d)<2 || BAThordered(l)&1) ? GDK_SORTED : 0;
+	d->hdense = BATcount(d)<2 || d_hdense;
+	if (d->hdense) {
+		if (BATcount(d)==0) {
+			/* does not really matter */
+			BATseqbase(d, (oid)0);
+		} else {
+			BATseqbase(d, *(oid*)BUNhloc(d,BUNfirst(d)));
+		}
+	} else {
+		BATseqbase(d, oid_nil);
+	}
+	BATkey(d, BATcount(d)<2 || l->hkey);
+	d->tsorted = FALSE;
+	d->tdense = FALSE;
+	BATseqbase(BATmirror(d), oid_nil);
+	BATkey(BATmirror(d), FALSE);
+	d->batRestricted= BAT_READ;
+	BBPkeepref(d->batCacheid);
+	*res=d->batCacheid;
+
+	if (d != l) {
 		BBPunfix(l->batCacheid);
 	}
-	else{
-		while(lt <= llast){
-			rt = rbase + (*(oid*)lt)*zz;
-			if (!( @6_@4(rt,low,@7@1) && @6_@5( rt,hgh,@7@1 ) ))
-				break;
-			lt += xx;
-		}
-
-		dt = lt;
-		lt += xx;
-
-		while(lt <= llast){
-			rt = rbase + (*(oid*)lt)*zz;
-			if (@6_@4(rt,low,@7@1) && @6_@5( rt,hgh,@7@1 )){
-				*(oid*)dt = *(oid*)lt; 
-				dt += xx;
-			}		
-			lt += xx;
-		}
-
-		l->batBuns->free = dt - l->batBuns->base;
-    		BATsetcount(l, l->batBuns->free/xx);
-		*res=l->batCacheid;
-		BBPkeepref(l->batCacheid);
-
-	}
-
 	BBPunfix(r->batCacheid);
 	
 	return MAL_SUCCEED;
+@
+
+@= JoinSelectR
+str
+JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh)
+{
+	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1))@
 } 
 @
         
 @= JoinSelectS
 str
-JoinSelectSingle_@2_@1(int *res, int *left, int *right, @1 *mid)
+JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid)
 {
-	BAT *l, *r, *d;
-	BUN lt, rt, rbase, dt;
-	BUN llast;
-	int xx, zz, dd;
-
-	if ((l = BATdescriptor(*left)) == NULL)
-        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
-	@:checkIfEmpty(l, left,)@
-
-	if ((r = BATdescriptor(*right)) == NULL)
-        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
-	@:checkIfEmpty(r, right,BBPunfix(*left);)@
-
-	xx = BUNsize(l);
-	lt = BUNhloc(l, BUNfirst(l));
-	llast = BUNhloc(l, BUNlast(l)-xx);
-
-	rbase = BUNtloc(r, BUNfirst(r));
-	zz = BUNsize(r);
-
-	if (l->batParentid != 0){
-		d = BATnew(TYPE_oid, TYPE_void, BATcount(l));
-		d->hsorted = FALSE;
-		d->tsorted = FALSE;
-		d->hdense = FALSE; 
-		d->tdense = FALSE;
-		d->batRestricted= BAT_READ;
-		dt = BUNhloc(d, BUNfirst(d));
-		dd = BUNsize(d);
-
-		/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
-		   If yes the respective oid is added to the result */
-		while(lt <= llast){
-			rt = rbase + (*(oid*)lt)*zz;
-			if (@4_@3( rt,mid,@5@1 )){
-				*(oid*)dt = *(oid*)lt; 
-				dt += dd;	
-			}		
-			lt += xx;
-		}
-
-		d->batBuns->free = dt - d->batBuns->base;
-        	BATsetcount(d, d->batBuns->free/dd);
-		*res=d->batCacheid;
-		BBPkeepref(d->batCacheid);
-		BBPunfix(l->batCacheid);
-	}
-	else{
-		while(lt <= llast){
-			rt = rbase + (*(oid*)lt)*zz;
-			if (!@4_@3( rt,mid,@5@1 ))
-				break;
-			lt += xx;
-		}
-
-		dt = lt;
-		lt += xx;
-
-		while(lt <= llast){
-			rt = rbase + (*(oid*)lt)*zz;
-			if (@4_@3( rt,mid,@5@1 )){
-				*(oid*)dt = *(oid*)lt; 
-				dt += xx;
-			}		
-			lt += xx;
-		}
-
-		l->batBuns->free = dt - l->batBuns->base;
-    		BATsetcount(l, l->batBuns->free/xx);
-		*res=l->batCacheid;
-		BBPkeepref(l->batCacheid);
-	}
-
-	BBPunfix(r->batCacheid);
-	
-	return MAL_SUCCEED;
+	@:JoinSelectBody(@4_@3(rt,mid,@5@1))@
 }         
 @
 
@@ -3297,31 +3231,68 @@ mal_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bi
 str
 CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left)
 {
+	BAT *l, *r;
+
+	if ((l = BATdescriptor(*left)) == NULL) {
+        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+        }
+
+	if ((r = BATdescriptor(*right)) == NULL) {
+		BBPunfix(*left);
+        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+        }
+
+	if (!BAThdense(r)) {
+		BBPunfix(*left);
+		BBPunfix(*right);
+		return throwMessage("crackers.crackJoinSelect", "right BAT must have a dense head");
+	}
+
+	if (BATcount(l) == 0 || BATcount(r) == 0){
+		BAT *d = BATnew(TYPE_oid, TYPE_void, BATcount(l));
+		d->batBuns->free = 0;
+		BATsetcount(d, 0);
+		d->hsorted = GDK_SORTED;
+		d->hdense = TRUE;
+		BATseqbase(d, (oid)0);
+		BATkey(d, TRUE);
+		d->tsorted = FALSE;
+		d->tdense = FALSE;
+		BATseqbase(BATmirror(d), oid_nil);
+		BATkey(BATmirror(d), FALSE);
+		d->batRestricted= BAT_READ;
+		BBPkeepref(d->batCacheid);
+		*res = d->batCacheid;
+		BBPunfix(*left);
+		BBPunfix(*right);
+		return MAL_SUCCEED;
+	}	
+
         if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1)){
 		if (*inclusiveHgh==TRUE)
-                	JoinSelectSingle_RE_@1(res, left, right, hgh);
+                	return JoinSelectSingle_RE_@1(res, l, r, hgh);
 		else 
-                	JoinSelectSingle_RO_@1(res, left, right, hgh);
+                	return JoinSelectSingle_RO_@1(res, l, r, hgh);
 	}
         else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
 		if (*inclusiveLow==TRUE)
-                	JoinSelectSingle_LE_@1(res, left, right, low);
+                	return JoinSelectSingle_LE_@1(res, l, r, low);
 		else 
-                	JoinSelectSingle_LO_@1(res, left, right, low);
+                	return JoinSelectSingle_LO_@1(res, l, r, low);
         else{
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	JoinSelectRange_LE_RE_@1(res, left, right, low, hgh);
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh);
 		else 
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
-                	JoinSelectRange_LE_RO_@1(res, left, right, low, hgh);
+                	return JoinSelectRange_LE_RO_@1(res, l, r, low, hgh);
 		else 
 		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
-                	JoinSelectRange_LO_RO_@1(res, left, right, low, hgh);
+                	return JoinSelectRange_LO_RO_@1(res, l, r, low, hgh);
 		else 
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	JoinSelectRange_LE_RE_@1(res, left, right, low, hgh);
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh);
 	}
-        return MAL_SUCCEED;
+        return throwMessage("crackers.crackJoinSelect", "case not handled");
 }
 
 @
