@@ -131,7 +131,8 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 #endif
 
 	/* connect to a server on host via port */
-	mid = mapi_connect(host, port, uid, pwd, "sql");
+	/* FIXME: use dbname/catalog from ODBC connect string/options here */
+	mid = mapi_connect(host, port, uid, pwd, "sql", NULL);
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
