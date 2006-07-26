@@ -315,7 +315,7 @@ care of.
 		CToptimizer(mb,0,0);	/* common terms */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		MRoptimizer(mb,0,0);	/* reduce stack space */
-		CRKoptimizer(mb,0,0);
+		/* CRKoptimizer(mb,0,0); too early !!*/
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
 		/* no optimization needed */
 	} else if( optimizer ){
