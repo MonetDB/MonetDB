@@ -887,6 +887,10 @@ ns_resolve (PFpnode_t *n)
                     L(n)->sem.qname.ns.uri = PFstrdup ("");
                 }
             }
+            else {
+                /* computed attribute name */
+                ns_resolve (L(n));
+            }
 
             /* NS resolution in attribute value v */
             assert (R(n));
