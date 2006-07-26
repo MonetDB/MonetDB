@@ -56,7 +56,7 @@ static SQLRETURN
 SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
 {
 	char *key, *attr;
-	char *dsn, *uid, *pwd, *host;
+	char *dsn, *uid, *pwd, *host, *dbname;
 	int port;
 	SQLSMALLINT len = 0;
 	char buf[256];
@@ -82,6 +82,7 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 	pwd = dbc->pwd;
 	host = dbc->host;
 	port = dbc->port;
+	dbname = dbc->dbname;
 
 	while (ODBCGetKeyAttr(&szConnStrIn, &cbConnStrIn, &key, &attr)) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
@@ -99,6 +100,9 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 		} else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
+		} else if (strcasecmp(key, "database") == 0 && dbname == NULL) {
+			dbname = attr;
+			allocated |= 16;
 		} else
 			free(attr);
 		free(key);
@@ -132,18 +136,18 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 				port = atoi(buf);
 			}
 		}
+		if (dbname == NULL) {
+			n = SQLGetPrivateProfileString(dsn, "database", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0]) {
+				dbname = strdup(buf);
+				allocated |= 16;
+			}
+		}
 	}
 
-	if (dsn != NULL && uid != NULL && pwd != NULL) {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port);
+	if (uid != NULL && pwd != NULL) {
+		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
 	} else {
-		if (dsn == NULL) {
-			if (cbConnStrOutMax > 0)
-				strncpy((char *) szConnStrOut, "DSN={MonetDB};", cbConnStrOutMax);
-			len += 14;
-			szConnStrOut += 14;
-			cbConnStrOutMax -= 14;
-		}
 		if (uid == NULL) {
 			if (cbConnStrOutMax > 0)
 				strncpy((char *) szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
@@ -172,6 +176,13 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 			szConnStrOut += 13;
 			cbConnStrOutMax -= 13;
 		}
+		if (dbname == NULL) {
+			if (cbConnStrOutMax > 0)
+				strncpy((char *) szConnStrOut, "*DATABASE:Database=?;", cbConnStrOutMax);
+			len += 21;
+			szConnStrOut += 21;
+			cbConnStrOutMax -= 21;
+		}
 
 		if (pcbConnStrOut)
 			*pcbConnStrOut = len;
@@ -187,6 +198,8 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 		free(pwd);
 	if (allocated & 8)
 		free(host);
+	if (allocated & 16)
+		free(dbname);
 	return rc;
 }
 

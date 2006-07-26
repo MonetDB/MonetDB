@@ -62,7 +62,7 @@ typedef struct tODBCDRIVERDBC {
 	char *pwd;		/* Password for User ID or NULL */
 	char *host;		/* Server host */
 	int port;		/* Server port */
-	char *DBNAME;		/* Database Name or NULL */
+	char *dbname;		/* Database Name or NULL */
 	int Connected;		/* 1 is Yes, 0 is No */
 	SQLUINTEGER sql_attr_autocommit;
 

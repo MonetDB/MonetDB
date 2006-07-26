@@ -105,7 +105,7 @@ static SQLRETURN
 SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
 {
 	char *key, *attr;
-	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0;
+	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0, *database = 0;
 	int port = 0;
 	SQLRETURN rc;
 
@@ -147,6 +147,8 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 			pwd = attr;
 		else if (strcasecmp(key, "host") == 0 && host == NULL)
 			host = attr;
+		else if (strcasecmp(key, "database") == 0 && database == NULL)
+			database = attr;
 		else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
@@ -160,7 +162,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
 	} else {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port);
+		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, database);
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
@@ -225,11 +227,22 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 			}
 			port = snprintf(portbuf, sizeof(portbuf), "%d", port);
 		}
+		if (database) {
+			if (cbConnStrOutMax > 0) {
+				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "DATABASE=%s;", database);
+				if (n < 0)
+					n = cbConnStrOutMax + 1;
+				cbConnStrOutMax -= n;
+				szConnStrOut += n;
+			} else {
+				cbConnStrOutMax = -1;
+			}
+		}
 
 		/* calculate how much space was needed */
 		if (pnConnStrOut)
 			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT")
-			    + 5 + (uid ? strlen(uid) + 5 : 0) + (pwd ? strlen(pwd) + 5 : 0) + (host ? strlen(host) + 6 : 0) + (port ? port + 6 : 0);
+			    + 5 + (uid ? strlen(uid) + 5 : 0) + (pwd ? strlen(pwd) + 5 : 0) + (host ? strlen(host) + 6 : 0) + (port ? port + 6 : 0) + (database ? strlen(database) + 10 : 0);
 
 		/* if it didn't fit, say so */
 		if (cbConnStrOutMax < 0) {
@@ -246,6 +259,8 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 		free(pwd);
 	if (host)
 		free(host);
+	if (database)
+		free(database);
 	return rc;
 }
 
