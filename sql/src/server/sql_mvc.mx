@@ -1069,7 +1069,7 @@ stack_push_var(mvc *sql, char *name, stmt *var)
 {
 	if (sql->topvars == sql->sizevars) {
 		sql->sizevars <<= 1;
-		RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	sql->vars[sql->topvars].s = stmt_dup(var);
 	sql->vars[sql->topvars].name = _strdup(name);
@@ -1081,7 +1081,7 @@ stack_push_frame(mvc *sql, char *name)
 {
 	if (sql->topvars == sql->sizevars) {
 		sql->sizevars <<= 1;
-		RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	sql->vars[sql->topvars].s = NULL;
 	sql->vars[sql->topvars].name = NULL;
