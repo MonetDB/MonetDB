@@ -644,10 +644,17 @@ main (int argc, char *argv[])
                    "\n        (will not read XQuery input then)\n",
                    long_option (opt_buf, ", --%s", 'H'));
                 */
-                printf ("  -A%s: turn on internal algebra code.\n"
-                        "        Don't use this, it WILL break.\n",
+                printf ("  -A%s: turn on internal algebra code"
+#if ALGEBRA_IS_DEFAULT
+                        " (default)"
+#endif
+                        "\n",
                         long_option (opt_buf, ", --%s", 'A'));
-                printf ("  -M%s: print MIL code (summer version) (default)\n",
+                printf ("  -M%s: print MIL code (summer version)"
+#if MILPRINT_SUMMER_IS_DEFAULT
+                        " (default)"
+#endif
+                        "\n",
                         long_option (opt_buf, ", --%s", 'M'));
                 printf ("  -P%s: print internal tree structure human-readable\n",
                         long_option (opt_buf, ", --%s", 'P'));

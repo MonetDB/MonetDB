@@ -118,7 +118,11 @@ PFstate_t PFstate = {
     .print_core_tree     = false,
     .print_la_tree       = false,
     .print_pa_tree       = false,
+#if MILPRINT_SUMMER_IS_DEFAULT
     .summer_branch       = true,
+#else
+    .summer_branch       = false,
+#endif
     .dead_code_el        = true,
 
     .standoff_axis_steps = false,
@@ -593,6 +597,12 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         int num_fun;
         long timing;
         int module_base;
+#if ALGEBRA_IS_DEFAULT
+        PFla_op_t  *laroot = NULL;
+        PFpa_op_t  *paroot = NULL;
+        PFmil_t    *mroot  = NULL;
+        PFarray_t  *serialized_mil_code = NULL;
+#endif
 
         *prologue = NULL;
         *query = NULL;
@@ -602,7 +612,11 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
 
         PFstate.invocation = invoke_monetdb;
 
+#if MILPRINT_SUMMER_IS_DEFAULT
         PFstate.summer_branch = true;
+#else
+        PFstate.summer_branch = false;
+#endif
 
         /* the state of the standoff_axis_steps support should be 
          * passed through the function-arguments.
@@ -629,8 +643,40 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
+#if MILPRINT_SUMMER_IS_DEFAULT
         (void)  PFprintMILtemp (croot, 1, module_base, num_fun, PFstate.genType, timing, 
                                 prologue, query, epilogue, PFstate.standoff_axis_steps);
+#else
+
+        /* compile into logical algebra */
+        laroot = PFcore2alg (croot);
+        /* optimize logical algebra */
+        laroot = PFalgopt (laroot, false /* no timing output */);
+        /* common subexpression elimination on logical algebra */
+        laroot = PFla_cse (laroot);
+        /* compile logical into a physical plan */
+        paroot = PFplan (laroot);
+        /* generate internal MIL representation */
+        mroot = PFmilgen (paroot);
+        /* some dead-code elimination */
+        mroot = PFmil_dce (mroot);
+        /* and serialize our internal representation into actual MIL code */
+        serialized_mil_code = PFmil_serialize (mroot);
+
+        /*
+         * copy generated MIL code into a string buffer that is allocated
+         * via malloc.  MonetDB will take care of freeing it.
+         */
+        *query = malloc (strlen ((char *) serialized_mil_code->base) + 1);
+        if (! *query)
+            PFoops (OOPS_OUTOFMEM, "problem allocating memory");
+        strcpy (*query, (char *) serialized_mil_code->base);
+
+        /* we don't actually need a prolog or epilogue */
+        *prologue = malloc (1); **prologue = '\0';
+        *epilogue = malloc (1); **epilogue = '\0';
+
+#endif
         pa_destroy(pf_alloc);
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }

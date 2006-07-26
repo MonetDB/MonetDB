@@ -22,7 +22,6 @@ Usage: pf [OPTION] [FILE]
 = -q, --quiet: do not print informational messages to log file
 = -d[N], --debug: print debug information (default level=1)
 = -A, --enable-algebra: turn on internal algebra code.
-        Don't use this, it WILL break.
 = -M, --print-mil_summer: print MIL code (summer version) (default)
 = -P, --print-human-readable: print internal tree structure human-readable
 = -D, --print-att-dot: print internal tree structure in AT&T dot notation
