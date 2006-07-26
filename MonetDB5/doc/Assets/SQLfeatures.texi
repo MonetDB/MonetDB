@@ -86,7 +86,7 @@ the global structure is easy to explain.
 @end ifset
 @ifset M5manual
 Although the details of this program are better understood
-when you have read the Chapter on @ref{MAL}, 
+when you have read the Chapter on @ref{MAL Introduction}, 
 the global structure is easy to explain.
 @end ifset
 
@@ -166,16 +166,13 @@ tmp.profile,    tmp.profile # table_name
 # start,    query,  parse,  optimize,   exec,   total,  user # name
 # timestamp,    varchar,    int,    int,    int,    int,    varchar # type
 # 26,   28, 3,  3,  3,  3,  7 # length
-[ 2006-07-12 21:52:49.000000,   "select count(*) from tables;", 596,    159,
-200,    955,    "monetdb"   ]
-[ 2006-07-12 21:52:51.000000,   "select 2;",    114,    57, 17, 188,    "monetdb
-"   ]
-[ 2006-07-12 21:53:00.000000,   "select sum(id) from tables;",  522,    176,
-137,    835,    "monetdb"   ]
+[ 2006-07-12 21:52:49.000000,   "select count(*) from tables;", 596,    159, 200,    955,    "monetdb"   ]
+[ 2006-07-12 21:52:51.000000,   "select 2;",    114,    57, 17, 188,    "monetdb "   ]
+[ 2006-07-12 21:53:00.000000,   "select sum(id) from tables;",  522,    176, 137,    835,    "monetdb"   ]
 >
 @end verbatim
-It illustrates the wall clock time the query was started, the
-query itself, followed by the timing obtained for the parser, the
+It illustrates the wall-clock time the query was started, the
+query itself, followed by the wall-clock timing obtained for the parser, the
 optimizer, the execution phase and the total execution time (in microseconds).
 The final column indicates the user responsible for this request.
 

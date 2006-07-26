@@ -1,21 +1,39 @@
-@section MonetDB JDBC Driver
-The most obvious way to connect to a data source from the Java
-programming language is using the JDBC framework.
-The complete definition of JDBC API is available
-on Sun's web site @code{http://java.sun.com/}.
+@section The MonetDB JDBC Driver
+The most obvious way to connect to a data source using the Java
+programming language is by making use of the in Java defined JDBC
+framework.
 
-MonetDB has a native Java JDBC driver type 4, which allows use of the
-MonetDB database in a Java savvy way.
+MonetDB has a native Java JDBC driver type 4 which allows use of the
+MonetDB database in a Java alike way.
+
 It is quite difficult to have a fully complete JDBC implementation.
-Also our driver isn't complete in that sense.  However, it is believed
+Also this driver isn't complete in that sense.  However, it is believed
 that the most prominent parts of the JDBC interface are implemented, and
 in such a way that they adhere to the specifications.  If you make
 extensive use of JDBC semantics and rely on many of its features, please
 read the release notes which are to be found in the @code{src/jdbc}
 directory of the sql CVS tree.
 
+This document will give a short description how to use the MonetDB JDBC
+driver in Java applications.  A familiarity with the Java JDBC API is
+required to fully understand this document.  Please note that you can
+find the complete JDBC API on Sun's web site @code{http://java.sun.com/}.
+
+@subsection Requirements
+In order to use the MonetDB JDBC driver in Java applications you need
+(of course) a running MonetDB instance with the SQL module loaded.\\
+The SQL module is a separate module in the CVS tree, and should be
+installed separately, since it is not included in the main MonetDB
+module.
+
+You should be able to issue the following command on the MonetDB prompt
+without errors:
+@example
+@code{module(sql\_server);}
+@end example
+
 @subsection Getting the driver Jar
-If you (compiled and) installed MonetDB/SQL the regular
+If you (compiled and) installed MonetDB and the SQL module the regular
 way, you can find a two jar-archives in the directory
 @code{share/MonetDB/lib} called @code{monetdb-X.Y-jdbc.jar} and
 @code{jdbcclient-X.Y.jar} in the installation root (chosen during the
@@ -24,10 +42,12 @@ driver, the first jar-file is sufficient.  When the JdbcClient utility
 is required, the second is required.  Applications that require the JDBC
 driver will, however, work with both jar-files.  The @code{X} and
 @code{Y} in the names represent the major and minor version numbers of
-the JDBC driver.
+the JDBC driver.\\
+@emph{Note:} there may also exists a file named @code{mapi.jar} in
+the mentioned directory, this jar does NOT contain the JDBC driver.
 
 @subsection Compiling the driver (using ant, optional)
-The directory @code{src/jdbc} of the sql CVS tree contains the 
+The directory @code{src/jdbc} of the sql CVS tree contains all the
 files to build the driver using Apache's Ant tool.  Simply issuing the
 command @code{ant} should be sufficient to build the driver
 jar-archive in the subdirectory @code{jars}. See the ant web site for
@@ -38,12 +58,14 @@ Java 2 platform 1.4 compatible compiler.
 @subsection Testing the driver using the JdbcClient utility
 Before you start developing your programs which use the MonetDB JDBC
 driver it is generally a good idea to check if the driver actually works
-in your environment.
+in your environment.\\
 Follow the steps below to assure your setup is complete:
 @enumerate
 @item start MonetDB
+@item load the SQL module using @code{module(sql\_server);
+sql\_server\_start();}
 @item run the JdbcClient utility using @code{java -jar
-path/to/jdbcclient-X.Y.jar -umonetdb} (with
+@{path/to/jdbcclient-X.Y.jar@} -umonetdb} (with
  password monetdb)
 @end enumerate
 The last step should give you something like this:
