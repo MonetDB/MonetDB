@@ -2369,10 +2369,10 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	}
 	return throwMessage("algebra.@1", "GDKerror");
 }
-mal_export str ALG@1(int *result, int* bid, int *param);
-str ALG@1(int *result, int* bid, int *param) {
+mal_export str ALG@1(int *result, int* lid, int *rid);
+str ALG@1(int *result, int* lid, int *rid) {
 	lng estimate= lng_nil;
-	return ALG@1estimate(result,bid,param,&estimate);
+	return ALG@1estimate(result,lid,rid,&estimate);
 }
 @c
 @:ALGunary(histogram)@
@@ -2660,7 +2660,7 @@ ALGmarkHead(int *result, int *bid, oid *base)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("algebra.markT", "marking group failed");
+	return throwMessage("algebra.markH", "marking group failed");
 }
 
 mal_export str ALGmarkHead_default(int *result, int *bid);
