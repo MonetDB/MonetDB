@@ -102,6 +102,10 @@ MergeFromProfileString(const char *dsn, char **datap, const char *entry, const c
 
 	if (*datap != NULL)
 		return;
+	if (dsn == NULL || *dsn == 0) {
+		*datap = strdup(defval);
+		return;
+	}
 	if (SQLGetPrivateProfileString(dsn, entry, defval, buf, sizeof(buf), "odbc.ini") == 0)
 		return;
 	*datap = strdup(buf);
@@ -143,6 +147,13 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDOK:
 			if (datap->request != ODBC_ADD_DSN || datap->dsn == NULL || *datap->dsn == 0) {
 				GetDlgItemText(hwndDlg, IDC_EDIT_DSN, buf, sizeof(buf));
+				if (!SQLValidDSN(buf)) {
+					MessageBox(hwndDlg,
+						   "Invalid Datasource Name",
+						   NULL,
+						   MB_ICONERROR);
+					return TRUE;
+				}
 				if (datap->dsn)
 					free(datap->dsn);
 				datap->dsn = strdup(buf);
@@ -255,8 +266,59 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 
 	if (rc) {
 		if (request == ODBC_ADD_DSN || strcmp(dsn, data.dsn) != 0) {
-			SQLRemoveDSNFromIni(dsn);
-			SQLWriteDSNToIni(data.dsn, driver);
+			if (!SQLValidDSN(data.dsn)) {
+				rc = FALSE;
+				if (parent)
+					MessageBox(parent,
+						   "Invalid Datasource Name",
+						   NULL,
+						   MB_ICONERROR);
+				goto finish;
+			}
+			if (dsn == NULL || strcmp(dsn, data.dsn) != 0) {
+				char *drv = NULL;
+
+				/* figure out whether the new dsn already exists */
+				MergeFromProfileString(data.dsn, &drv, "driver", "");
+				if (drv && *drv) {
+					free(drv);
+					if (parent &&
+					    MessageBox(parent,
+						       "Replace existing Datasource Name?",
+						       NULL,
+						       MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
+						rc = FALSE;
+						goto finish;
+					}
+					if (!SQLRemoveDSNFromIni(data.dsn)) {
+						rc = FALSE;
+						MessageBox(parent,
+							   "Failed to remove old Datasource Name",
+							   NULL,
+							   MB_ICONERROR);
+						goto finish;
+					}
+				} else if (drv)
+					free(drv);
+			}
+			if (dsn && !SQLRemoveDSNFromIni(dsn)) {
+				rc = FALSE;
+				if (parent)
+					MessageBox(parent,
+						   "Failed to remove old Datasource Name",
+						   NULL,
+						   MB_ICONERROR);
+				goto finish;
+			}
+			if (!SQLWriteDSNToIni(data.dsn, driver)) {
+				rc = FALSE;
+				if (parent)
+					MessageBox(parent,
+						   "Failed to add new Datasource Name",
+						   NULL,
+						   MB_ICONERROR);
+				goto finish;
+			}
 		}
 		SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini");
 		SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini");
