@@ -131,15 +131,23 @@ using the
 @node Session Scenarios , Scenario Management , Execution Engine, MonetDB Overview
 @include mal_scenario.bdy.texi
 
-@node Client Interfaces, Data Management Tools, Scenario Management, MonetDB Overview
+@node Client Interfaces, MAPI Client, Scenario Management, MonetDB Overview
 @include mal_client.bdy.texi
+@menu
+* MAPI Client::
+* JDBC Client::
+* Console Interface::
+@end menu
+@node MAPI Client, JDBC Client, Client Interfaces, Client Interfaces
 @include Assets/MapiClient.texi
+@node JDBC Client, Console Interface, MAPI Client, Client Interfaces
 @include Assets/JdbcClient.texi
 
-@subsection Console Interaction
+@node Console Interface, Data Management Tools, JDBC Client, Client Interfaces
+@subsection Console Interface
 @include mal_readline.bdy.texi
 
-@node Data Management Tools, Aqua Data Studio, Client Interfaces , MonetDB Overview
+@node Data Management Tools, Aqua Data Studio, Console Interface , MonetDB Overview
 @include Assets/DBA-GUIs.texi
 
 @node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
@@ -192,7 +200,7 @@ using the
 
 @node Programming Interfaces, The Mapi Library, XQuery, Top
 @include Assets/APIs.texi
-@node The Mapi Library, An Example, Programming Interfaces, Programming Interfaces
+@node The Mapi Library, Sample Application, Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
@@ -240,7 +248,7 @@ using the
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node The MAL Optimizer, Optimizer Landscape, Stack Management, Top
+@node The MAL Optimizer, Landscape, Stack Management, Top
 @include mal_optimizer.bdy.texi
 @include mal_macro.bdy.texi
 @include mal_inliners.bdy.texi
@@ -257,7 +265,7 @@ using the
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
 @include mal_reduce.bdy.texi
-@node Query Execution Plans, The MAL Debugger, Variable Stack Reduction,  Optimizer Toolkit
+@node Query Execution Plans, The MAL Debugger, Variable Stack Reduction,  Toolkit
 @include mal_qep.bdy.texi
 
 @node The MAL Debugger, Program Debugging, Query Execution Plans, Top

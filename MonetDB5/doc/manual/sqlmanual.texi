@@ -2,7 +2,7 @@
 @c %**start of header
 @c this file is meant for the SQL line
 
-@set SQLmanual ok
+@set SQLmanual
 
 @setfilename MonetDB
 @setcontentsaftertitlepage
@@ -102,15 +102,23 @@ using the
 @node Database Dumps, Client Interfaces, Checkpoint and Recovery, General Introduction
 @include Assets/Databasedump.texi
 
-@node Client Interfaces, Data Management Tools, Database Dumps, Top
+@node Client Interfaces, MAPI Client, Database Dumps, Top
 @include mal_client.bdy.texi
+@menu
+* MAPI Client::
+* JDBC Client::
+* Console Interface::
+@end menu
+@node MAPI Client, JDBC Client, Client Interfaces, Client Interfaces
 @include Assets/MapiClient.texi
+@node JDBC Client, Console Interface, MAPI Client, Client Interfaces
 @include Assets/JdbcClient.texi
 
-@subsection Console Interaction
+@node Console Interface, Data Management Tools, JDBC Client, Client Interfaces
+@subsection Console Interface
 @include mal_readline.bdy.texi
 
-@node Data Management Tools, Aqua Data Studio, Client Interfaces , Top
+@node Data Management Tools, Aqua Data Studio, Console Interface, Top
 @include Assets/DBA-GUIs.texi
 
 @node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
@@ -156,7 +164,7 @@ using the
 
 @node Programming Interfaces, The Mapi Library, Overlaying BATs, Top
 @include Assets/APIs.texi
-@node The Mapi Library, An Example, Programming Interfaces, Programming Interfaces
+@node The Mapi Library,Sample Application , Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
