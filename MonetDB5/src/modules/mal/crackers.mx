@@ -149,11 +149,20 @@ comment "Retrieve the subset using a cracker
 @
 @= joinuselect
 command joinuselect( right:bat[:@2oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:@3oid,:void] ):bat[:oid,:void]
+address CRKjoinSelectDefault_@1
+comment "Join left and right on head-OIDs.
+	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
+	The result is a new [:oid,:void] BAT.";
+
+command joinuselect( right:bat[:@2oid,:@1], l:@1, h:@1, li:bit, hi:bit, left:bat[:@3oid,:void], inPlace:bit , isForeignKey:bit):bat[:oid,:void]
 address CRKjoinSelectBounds_@1
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
-	Overwrites and returns left, in case left has an OID head and is not a BAT-view.
-	Otherwise, the result is a new [:oid,:void] BAT.";
+	If inPlace is TRUE (and left has an OID head and is not a BAT-view), we operate in-place,
+	overwriting left and returning it as result. Otherwise, the result is a new [:oid,:void] BAT.
+	If isForeignKey is TRUE, we assume that each tuple from left finds a match in right,
+	and hence skip the respective check. 
+	(NOTE: This may lead to CRASHES, if isForeignKey is incorrectly passed as TRUE!)";
 @
 @mal
 @:crackAlgebra(chr)@
@@ -3081,7 +3090,7 @@ The result is a [oid,void] bat.
 	zz = BUNsize(r);
 	rbase = BUNtloc(r, BUNfirst(r)) - rmin*zz;
 
-	if (l->batParentid != 0 || l->htype == TYPE_void){
+	if (!inPlace || l->batParentid != 0 || l->htype == TYPE_void) {
 		d = BATnew(TYPE_oid, TYPE_void, MIN(BATcount(l), BATcount(r)));
 	} else {
 		d = l;
@@ -3097,8 +3106,8 @@ The result is a [oid,void] bat.
 		oid l0 = lv;
 		BUN d0 = dt;
 		rt = rbase + lv*zz;
-		while(lv <= llast){
-			if (@1){
+		while (lv <= llast) {
+			if (@1) {
 				*(oid*)dt = lv; 
 				dt += dd;	
 			}		
@@ -3106,36 +3115,46 @@ The result is a [oid,void] bat.
 			rt += zz;
 		}
 		d_hdense = ((dt - d0)/dd == (lv - l0));
-	} else if (BAThordered(l)&1) {
+	} else {
 		int xx = BUNsize(l);
 		BUN llast = BUNhloc(l, BUNlast(l));
 		BUN lt = BUNhloc(l, BUNfirst(l));
 		oid lv = oid_nil;
-		while(lt < llast && (lv = *(oid*)lt) < rmin){
-			lt += xx;
-		}
-		while(lt < llast && (lv = *(oid*)lt) <= rmax){
-			rt = rbase + lv*zz;
-			if (@1){
-				*(oid*)dt = lv; 
-				dt += dd;	
-			}	
-			lt += xx;
-		}
-	} else /* !BAThdense(l) && !(BAThordered(l)&1) */ {
-		int xx = BUNsize(l);
-		BUN llast = BUNhloc(l, BUNlast(l));
-		BUN lt = BUNhloc(l, BUNfirst(l));
-		while(lt < llast){
-		    oid lv = *(oid*)lt;
-		    if (lv >= rmin && lv <= rmax) {
-			rt = rbase + lv*zz;
-			if (@1){
-				*(oid*)dt = lv; 
-				dt += dd;	
-			}	
-		    }
-		    lt += xx;
+
+		if (isForeignKey) {
+			while (lt < llast) {
+				lv = *(oid*)lt;
+				rt = rbase + lv*zz;
+				if (@1) {
+					*(oid*)dt = lv; 
+					dt += dd;	
+				}	
+				lt += xx;
+			}
+		} else if (BAThordered(l)&1) {
+			while(lt < llast && (lv = *(oid*)lt) < rmin) {
+				lt += xx;
+			}
+			while(lt < llast && (lv = *(oid*)lt) <= rmax) {
+				rt = rbase + lv*zz;
+				if (@1) {
+					*(oid*)dt = lv; 
+					dt += dd;	
+				}	
+				lt += xx;
+			}
+		} else {
+			while(lt < llast){
+			    lv = *(oid*)lt;
+			    if (lv >= rmin && lv <= rmax) {
+				rt = rbase + lv*zz;
+				if (@1){
+					*(oid*)dt = lv; 
+					dt += dd;	
+				}	
+			    }
+			    lt += xx;
+			}
 		}
 	}
 
@@ -3172,7 +3191,7 @@ The result is a [oid,void] bat.
 
 @= JoinSelectR
 str
-JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh)
+JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh, bit inPlace, bit isForeignKey)
 {
 	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1))@
 } 
@@ -3180,7 +3199,7 @@ JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh)
         
 @= JoinSelectS
 str
-JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid)
+JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isForeignKey)
 {
 	@:JoinSelectBody(@4_@3(rt,mid,@5@1))@
 }         
@@ -3198,9 +3217,19 @@ JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid)
 @
 
 @= JoinSelectFunctions
-mal_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
+mal_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
+mal_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
+
 str
-CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left)
+CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left)
+{
+	bit inPlace = FALSE;
+	bit isForeignKey = FALSE;
+	return CRKjoinSelectBounds_@1( res, right, low, hgh, inclusiveLow, inclusiveHgh, left, &inPlace, &isForeignKey);
+}
+
+str
+CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey)
 {
 	BAT *l, *r;
 
@@ -3241,31 +3270,30 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 
         if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1)){
 		if (*inclusiveHgh==TRUE)
-                	return JoinSelectSingle_RE_@1(res, l, r, hgh);
+                	return JoinSelectSingle_RE_@1(res, l, r, hgh, *inPlace, *isForeignKey);
 		else 
-                	return JoinSelectSingle_RO_@1(res, l, r, hgh);
+                	return JoinSelectSingle_RO_@1(res, l, r, hgh, *inPlace, *isForeignKey);
 	}
         else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
 		if (*inclusiveLow==TRUE)
-                	return JoinSelectSingle_LE_@1(res, l, r, low);
+                	return JoinSelectSingle_LE_@1(res, l, r, low, *inPlace, *isForeignKey);
 		else 
-                	return JoinSelectSingle_LO_@1(res, l, r, low);
+                	return JoinSelectSingle_LO_@1(res, l, r, low, *inPlace, *isForeignKey);
         else{
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh);
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
 		else 
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRange_LE_RO_@1(res, l, r, low, hgh);
+                	return JoinSelectRange_LE_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
 		else 
 		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
-                	return JoinSelectRange_LO_RO_@1(res, l, r, low, hgh);
+                	return JoinSelectRange_LO_RO_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
 		else 
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
-                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh);
+                	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
 	}
         return throwMessage("crackers.crackJoinSelect", "case not handled");
 }
-
 @
          
 @c
