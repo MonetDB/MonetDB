@@ -17,7 +17,7 @@
 @f mal_singleton
 @a M. Kersten
 @-
-@node Singleton Sets, Peephole Optimization, Empty Set Reduction,  Optimizer Toolkit
+@node Singleton Sets, Peephole Optimization, Empty Set Reduction,  Toolkit
 @- Singleton Set Reduction
 Application semantics and precise cost analysis may
 identify the result of an operation to produce a BAT with

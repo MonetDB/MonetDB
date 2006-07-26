@@ -17,11 +17,13 @@
 @f mal_inliners
 @a M. Kersten
 @-
-@node Function Inliners, Common Terms , Macro Processing, Optimizer Toolkit
+@node Function Inliners, Common Terms , Macro Processing, Toolkit
 
 @subsection Function Inliners
-The routine @code{optimizer.inliners()} searches MAL function calls whose
-property @{ inliner @}  is set.
+The routine @code{optimizer.inliners()} searches MAL function definitions
+property @{inline@}  is set. In addition, all MAL function calls
+whose primary target variable carry the @{inline} property are inlined
+as well.
 The code is expanded inline using the macro processor.
 
 @{
@@ -70,6 +72,15 @@ IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef DEBUG_MAL_INLINE
 				printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
+			} else {
+				ps= getVar(mb, getArg(q,0))->props;
+				if( isPropertyDefined(ps,"inline") ){
+					inlineMALblock(mb,i,q->blk);
+					actions++;
+#ifdef DEBUG_MAL_INLINE
+					printFunction(GDKout, mb, LIST_MAL_ALL);
+#endif
+				}
 			}
 		}
 	}

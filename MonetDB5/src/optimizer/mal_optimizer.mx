@@ -31,14 +31,16 @@ alternative evaluation plans. This exploration may take place up front,
 but can also be ran at runtime for query fragments.
 
 @menu
-* Optimizer Landscape::
-* Optimizer Toolkit::
-* Optimizer Dependencies::
-* Optimizer Building Blocks::
-* Optimizer Framework::
+* Landscape::
+* Toolkit::
+* Dependencies::
+* Building Blocks::
+* Framework::
+* Lifespan Analysis::
+* Flow Analysis::
 @end menu
 
-@node Optimizer Landscape, Optimizer Dependencies ,The MAL Optimizer, The MAL Optimizer
+@node Landscape, Dependencies ,The MAL Optimizer, The MAL Optimizer
 @+ The Optimizer Landscape
 A query optimizer is often a large and complex piece of code, which
 enumerates alternative evaluation plans from which 'the best' plan
@@ -309,7 +311,7 @@ Rationale: the code produced by the SQL frontend involves foreign key
 constraints, which provides many opportunities for speedy code.
 Impact: large
 
-@node Optimizer Dependencies, Optimizer Building Blocks, Optimizer Landscape, The MAL Optimizer
+@node Dependencies, Building Blocks, Landscape, The MAL Optimizer
 @subsection Optimizer Dependencies
 The optimizers are highly targeted to a particular problem.
 Aside from the resources available to invest in plan optimization,
@@ -377,7 +379,7 @@ them in a preferred order of deployment.
 @end multitable
 @-
 Alias removal can be applied after each other optimization step.
-@node Optimizer Building Blocks, Optimizer Framework, Optimizer Dependencies, The MAL Optimizer
+@node Building Blocks, Framework, Dependencies, The MAL Optimizer
 @- Optimizer Building Blocks
 
 Some instructions are independent of the execution context. In particular,
@@ -519,7 +521,7 @@ opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
 
 @}
 @-
-@node Optimizer Framework, Optimizer Toolkit, Optimizer Building Blocks, The MAL Optimizer
+@node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
 @subsection Optimizer framework
 The large number of query transformers calls for a flexible scheme for
 the deploy them. The approach taken is to make all optimizers visible
@@ -550,6 +552,8 @@ and the total cpu time spent.
 The body performs a full flow and type check and re-initializes
 the lifespan administration. In debugging mode also a copy
 of the new block is retained for inspection.
+
+@node Lifespan Analysis, Flow Analysis, Framework, The MAL Optimizer
 @subsection Lifespan analysis
 Optimizers may be interested in the characteristic of the
 barrier blocks for making a decision.
@@ -949,6 +953,7 @@ isTouched(MalBlkPtr mb, int varid, int p1, int p2)
 
 @}
 @-
+@node Flow Analysis, Toolkit, Lifespan Analysis, The MAL Optimizer
 @subsection Flow analysis
 In many optimization rules, the data flow dependency between statements is
 of crucial importance. The MAL language encodes a multi-source, multi-sink
@@ -1113,7 +1118,7 @@ It suffice to respect the flow graph.
 [unclear as what we need]
 @}
 @-
-@node Optimizer Toolkit, Alias Removal, Optimizer Framework , The MAL Optimizer
+@node Toolkit, Alias Removal, Flow Analysis , The MAL Optimizer
 @+ The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
@@ -1149,7 +1154,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Query Execution Plans::
 @end menu
 
-@node Alias Removal, Dead Code Removal, Optimizer Toolkit, Optimizer Toolkit
+@node Alias Removal, Dead Code Removal, Toolkit, Toolkit
 @- Alias Removal
 The routine @code{optimizer.aliasRemoval()}
 walks through the program looking for simple
@@ -1326,7 +1331,7 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @}
 @-
-@node Dead Code Removal, Accumulator Evaluations, Alias Removal, Optimizer Toolkit
+@node Dead Code Removal, Accumulator Evaluations, Alias Removal, Toolkit
 @- Dead Code Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. 
@@ -1496,7 +1501,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @}
 
 @-
-@node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Optimizer Toolkit
+@node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Toolkit
 @- Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
 because new @code{BAT}s are created for each expression. 
@@ -1783,7 +1788,7 @@ at the end of the optimization attempt.
 
 @}
 @-
-@node Heuristic Rewrite Rules, Macro Processing, Accumulator Evaluations,  Optimizer Toolkit
+@node Heuristic Rewrite Rules, Macro Processing, Accumulator Evaluations,  Toolkit
 @- Heuristic rewrites rules
 One of the oldest optimizer tricks in relational query processing is
 to apply heuristic rules to reduce the processing cost. For example,

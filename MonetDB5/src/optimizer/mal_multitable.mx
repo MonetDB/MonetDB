@@ -17,7 +17,7 @@
 @f mal_multitable
 @a M. Kersten
 @-
-@node Multi-Association Tables , Partitioned Databases, Code Factorization, Optimizer Toolkit
+@node Multi-Association Tables , Partitioned Databases, Code Factorization, Toolkit
 
 @- Multiple Association Tables 
 A Multi Association Table descriptor (MAT) defines an ordered collection 

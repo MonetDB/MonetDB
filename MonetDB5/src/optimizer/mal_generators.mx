@@ -18,7 +18,7 @@
 @f mal_generators
 @a M. Kersten
 @-
-@node Partitioned Databases, Strength Reduction, Multi-Association Tables, Optimizer Toolkit
+@node Partitioned Databases, Strength Reduction, Multi-Association Tables, Toolkit
 @- Iterator query processing
 Limitations on the addressing space in older PCs and the need
 for distributed storage makes that BATs ideally should be 
