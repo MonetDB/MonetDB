@@ -43,7 +43,7 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 {
 	char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
-	stmt *v = NULL, *r = NULL;
+	stmt *r = NULL;
 
 	/* name can be 
 		'parameter of the function' (ie in the param list)
@@ -51,7 +51,7 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 	*/
 
 	/* check if variable is known from the stack */
-	if ((v = stack_find_var(sql, name)) == NULL) {
+	if (stack_find_var(sql, name) == NULL) {
 		sql_arg *a = sql_bind_param(sql, name);
 
 		if (!a) /* not parameter, ie local var ? */
