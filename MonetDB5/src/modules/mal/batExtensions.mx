@@ -182,12 +182,22 @@ CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int ht, tt;
 	int cap = 0;
 	int *res;
+	int bid;
+	BAT *b;
 
+	res = (int *) getArgReference(s, p, 0);
+
+	bid = *(int *) getArgReference(s, p, 0);
+	if ((b = BATdescriptor(bid)) ) {
+		/* garbage collect the old one */
+		BBPreleaselref(b->batCacheid);
+		BBPunfix(b->batCacheid);
+		*res = 0;
+	}
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	if (p->argc > 3)
 		cap = *(int *) getArgReference(s, p, 3);
-	res = (int *) getArgReference(s, p, 0);
 
 	if (ht == TYPE_any || tt == TYPE_any)
 		return throwMessage("bbp.new", "Explicit type required");
@@ -209,6 +219,15 @@ CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	oid o;
 
 	(void) m;
+	res = (int *) getArgReference(s, p, 0);
+
+	bid = *(int *) getArgReference(s, p, 0);
+	if ((b = BATdescriptor(bid)) ) {
+		/* garbage collect the old one */
+		BBPreleaselref(b->batCacheid);
+		BBPunfix(b->batCacheid);
+		*res = 0;
+	}
 
 	bid = *(int *) getArgReference(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
@@ -261,6 +280,18 @@ CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int ht, tt;
 	int cap = 0;
 	int *res;
+	int bid;
+	BAT *b;
+
+	res = (int *) getArgReference(s, p, 0);
+
+	bid = *(int *) getArgReference(s, p, 0);
+	if ((b = BATdescriptor(bid)) ) {
+		/* garbage collect the old one */
+		BBPreleaselref(b->batCacheid);
+		BBPunfix(b->batCacheid);
+		*res = 0;
+	}
 
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
