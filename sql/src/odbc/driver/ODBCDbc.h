@@ -62,7 +62,7 @@ typedef struct tODBCDRIVERDBC {
 	char *pwd;		/* Password for User ID or NULL */
 	char *host;		/* Server host */
 	int port;		/* Server port */
-	char *DBNAME;		/* Database Name or NULL */
+	char *dbname;		/* Database Name or NULL */
 	int Connected;		/* 1 is Yes, 0 is No */
 	SQLUINTEGER sql_attr_autocommit;
 
@@ -145,7 +145,7 @@ SQLRETURN ODBCFreeDbc_(ODBCDbc *dbc);
 int ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr);
 SQLRETURN SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
-SQLRETURN SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port);
+SQLRETURN SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port, char *schema);
 SQLRETURN SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 

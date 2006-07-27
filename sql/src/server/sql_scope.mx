@@ -91,6 +91,11 @@ extern tvar *scope_add_table(scope *scp, stmt *table, char *name, sql_table *t);
  * */
 extern var_ *scope_add_alias(scope *scp, stmt *s, char *alias);
 
+/* 
+ * scope_add_var adds a local declared variable.
+ * */
+#define scope_add_var(scp,s,name) scope_add_alias(scp, s, name)
+
 
 /* 
  * scope_bind_table finds a table in the scp with the given name, only needed

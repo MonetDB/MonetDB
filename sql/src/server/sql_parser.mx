@@ -290,6 +290,9 @@ int yydebug=1;
 	routine_invocation
 	return_statement
 	return_value
+	case_statement
+	when_statement
+	when_search_statement
 	if_statement
 	refresh_stmt
 	while_statement
@@ -396,7 +399,7 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_commalist
 	column_commalist_parens
-	column_commalist
+	ident_commalist
 	opt_corresponding
 	column_ref_commalist
 	name_commalist
@@ -443,6 +446,10 @@ int yydebug=1;
 	triggered_statement
 	procedure_statement_list
 	argument_list
+	when_statements
+	when_search_statements
+	case_opt_else_statement
+	variable_list
 	opt_module_character_set_specification
 	character_set_specification
 	opt_temporary_table_declarations
@@ -517,7 +524,7 @@ int yydebug=1;
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
-	SMALLINT MEDIUMINT BIGINT sqlINTEGER
+	SMALLINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
@@ -573,9 +580,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> AS ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
-%token ARE NAMES STATIC DYNAMIC LOCATOR CALL LANGUAGE SQL
-%token COLLATION 
-%token SQLSTATE 
+%token ARE NAMES CALL LANGUAGE SQL
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -693,12 +698,22 @@ sql:
  ;
 
 declare_statement:
-	declare ident data_type
-			{ dlist *l = L();
-			append_string(l, $2 );
-			append_type(l, &$3 );
-			$$ = _symbol_create_list( SQL_DECLARE, l); }
-	;
+	declare variable_list
+		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
+    ;
+
+variable_list:
+	ident_commalist data_type
+		{ dlist *l = L();
+		append_list(l, $1 );
+		append_type(l, &$2 );
+		$$ = append_symbol(L(), _symbol_create_list( SQL_DECLARE, l)); }
+    |	variable_list ',' ident_commalist data_type
+		{ dlist *l = L();
+		append_list(l, $3 );
+		append_type(l, &$4 );
+		$$ = append_symbol($1, _symbol_create_list( SQL_DECLARE, l)); }
+    ;
 
 set_statement:
 	set ident '=' scalar_exp
@@ -803,8 +818,6 @@ schema_element_list:
  ;
 
 schema_element: grant | revoke | create_statement | drop_statement | alter_statement ;
-/* | add */
-
 
 opt_grantor:
      /* empty */	 { $$ = cur_user; }
@@ -1241,7 +1254,7 @@ opt_cycle:
 
 
 index_def:
-    create opt_index_type INDEX ident ON qname '(' column_commalist ')'
+    create opt_index_type INDEX ident ON qname '(' ident_commalist ')'
 	{ dlist *l = L();
 	  append_string(l, $4);
 	  append_int(l, $2);
@@ -1628,10 +1641,10 @@ domain_constraint_type:
     CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
-column_commalist:
-    column
+ident_commalist:
+    ident
 			{ $$ = append_string(L(), $1); }
- |  column_commalist ',' column
+ |  ident_commalist ',' ident
 			{ $$ = append_string( $1, $3 ); }
  ;
 
@@ -1696,7 +1709,7 @@ opt_column_commalist:
  ;
 
 column_commalist_parens:
-   '(' column_commalist ')'	{ $$ = $2; }
+   '(' ident_commalist ')'	{ $$ = $2; }
  ;
 
 module_def:
@@ -1835,16 +1848,18 @@ procedure_statement:
 
 control_statement:
 	call_statement
-    |	return_statement
-    |   if_statement
     |   while_statement
-/*
+    |   if_statement
     |   case_statement
-    |   loop_statement
-    |   leave_statement
-    |   repeat_statement
-    |   for_statement
-    |   iterate_statement
+    |	return_statement
+/*
+    |   for_statement		fetch tuples, not supported because of cursors 
+
+    |   loop_statement		while (true) 
+    |   repeat_statement	do while 
+
+    |   leave_statement 	multilevel break 
+    |   iterate_statement	multilevel continue 
 */
     ;
 
@@ -1878,6 +1893,58 @@ return_value:
       scalar_exp
    |  NULLX 	{ $$ = _newAtomNode( NULL);  }
    ;
+
+case_statement:
+     CASE scalar_exp when_statements case_opt_else_statement END CASE
+		{ $$ = _symbol_create_list(SQL_CASE,
+		   append_list(
+		    append_list(
+		     append_symbol(
+		      L(),$2),$3),$4)); }
+ |   CASE when_search_statements case_opt_else_statement END CASE
+		 { $$ = _symbol_create_list(SQL_CASE,
+		   append_list(
+		    append_list(
+		     L(),$2),$3)); }
+ ;
+
+when_statement:
+    WHEN scalar_exp THEN procedure_statement_list
+			{ $$ = _symbol_create_list( SQL_WHEN,
+			   append_list(
+			    append_symbol(
+			     L(), $2),$4)); }
+ ;
+
+when_statements:
+    when_statement
+			{ $$ = append_symbol( L(), $1);}
+ |  when_statements when_statement
+			{ $$ = append_symbol( $1, $2); }
+ ;
+
+when_search_statement:
+    WHEN search_condition THEN procedure_statement_list
+			{ $$ = _symbol_create_list( SQL_WHEN,
+			   append_list(
+			    append_symbol(
+			     L(), $2),$4)); }
+ ;
+
+when_search_statements:
+    when_search_statement
+			{ $$ = append_symbol( L(), $1); }
+ |  when_search_statements when_search_statement
+			{ $$ = append_symbol( $1, $2); }
+ ;
+
+case_opt_else_statement:
+    /* empty */	        		{ $$ = NULL; }
+ |  ELSE procedure_statement_list	{ $$ = $2; }
+ ;
+
+		/* data types, more types to come */
+
 
 if_statement:
 	IF search_condition THEN procedure_statement_list 
@@ -2027,7 +2094,7 @@ trigger_event:
     INSERT 			{ $$ = _symbol_create_list(SQL_INSERT, NULL); }
  |  sqlDELETE 			{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
  |  UPDATE 			{ $$ = _symbol_create_list(SQL_UPDATE, NULL); }
- |  UPDATE OF column_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
+ |  UPDATE OF ident_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
  ;
 
 opt_referencing_list:
@@ -3856,7 +3923,6 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
-| WHEN		{ $$ = sa_strdup(SA, "when"); }		/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }

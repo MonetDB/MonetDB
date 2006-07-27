@@ -35,6 +35,7 @@
  *
  **********************************************************************/
 
+#include <sql_config.h>
 #include <monet_options.h>
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
@@ -43,23 +44,23 @@
 #include <strings.h>
 #endif
 
-#ifdef NATIVE_WIN32
+#ifdef HAVE_ODBCINST_H
 #include <odbcinst.h>
-#define HAVE_SQLGETPRIVATEPROFILESTRING 1
 #endif
+
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	(strncpy(buffer,default,bufferlen), buffer[bufferlen-1]=0, strlen(buffer))
 #endif
 
 SQLRETURN
-SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port)
+SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port, char *schema)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
 	char uid[32];
 	char pwd[32];
 	char buf[256];
-	char *schema = NULL;
+	char db[32];
 	char *s;
 	int n;
 	Mapi mid;
@@ -73,16 +74,17 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength, addDbcError, dbc);
-	if (nDataSourceLength == 0) {
-		szDataSource = (SQLCHAR *) "MonetDB";
-		nDataSourceLength = strlen((char *) szDataSource);
-	}
-	dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
+	if (nDataSourceLength > 0)
+		dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
 
-	n = SQLGetPrivateProfileString(dsn, "uid", "monetdb", uid, sizeof(uid), "odbc.ini");
+	if (dsn && *dsn)
+		n = SQLGetPrivateProfileString(dsn, "uid", "monetdb", uid, sizeof(uid), "odbc.ini");
+	else
+		n = 0;
 	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
 	if (n == 0 && nUIDLength == 0) {
-		free(dsn);
+		if (dsn)
+			free(dsn);
 		/* Invalid authorization specification */
 		addDbcError(dbc, "28000", NULL, 0);
 		return SQL_ERROR;
@@ -93,10 +95,14 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		strncpy(uid, (char *) szUID, nUIDLength);
 		uid[nUIDLength] = 0;
 	}
-	n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb", pwd, sizeof(pwd), "odbc.ini");
+	if (dsn && *dsn)
+		n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb", pwd, sizeof(pwd), "odbc.ini");
+	else
+		n = 0;
 	fixODBCstring(szPWD, nPWDLength, addDbcError, dbc);
 	if (n == 0 && nPWDLength == 0) {
-		free(dsn);
+		if (dsn)
+			free(dsn);
 		/* Invalid authorization specification */
 		addDbcError(dbc, "28000", NULL, 0);
 		return SQL_ERROR;
@@ -108,29 +114,42 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		pwd[nPWDLength] = 0;
 	}
 
+	if (schema == NULL || *schema == 0) {
+		if (dsn && *dsn) {
+			n = SQLGetPrivateProfileString(dsn, "database", "", db, sizeof(db), "odbc.ini");
+			if (n > 0)
+				schema = db;
+		}
+	}
+	if (schema && !*schema)
+		schema = NULL;
+
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
-	if (port == 0) {
+	if (port == 0 && dsn && *dsn) {
 		n = SQLGetPrivateProfileString(dsn, "port", "50000", buf, sizeof(buf), "odbc.ini");
-		port = atoi(buf);
+		if (n > 0)
+			port = atoi(buf);
 	}
 	if (port == 0)
 		port = 50000;
 
 	if (host == NULL || *host == 0) {
-		n = SQLGetPrivateProfileString(dsn, "host", "localhost", buf, sizeof(buf), "odbc.ini");
-		if (n > 0)
-			host = buf;
-		else
-			host = "localhost";
+		host = "localhost";
+		if (dsn && *dsn) {
+			n = SQLGetPrivateProfileString(dsn, "host", "localhost", buf, sizeof(buf), "odbc.ini");
+			if (n > 0)
+				host = buf;
+		}
 	}
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d\n", dsn, uid, pwd, host, port);
+	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d database=%s\n", dsn ? dsn : "(null)", uid, pwd, host, port, schema ? schema : "(null)");
 #endif
 
 	/* connect to a server on host via port */
-	mid = mapi_connect(host, port, uid, pwd, "sql");
+	/* FIXME: use dbname/catalog from ODBC connect string/options here */
+	mid = mapi_connect(host, port, uid, pwd, "sql", schema);
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
@@ -156,9 +175,9 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		if (dbc->host)
 			free(dbc->host);
 		dbc->host = strdup(host);
-		if (dbc->DBNAME != NULL)
-			free(dbc->DBNAME);
-		dbc->DBNAME = schema;
+		if (dbc->dbname != NULL)
+			free(dbc->dbname);
+		dbc->dbname = schema ? strdup(schema) : NULL;
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 	}
 
@@ -177,7 +196,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, S
 
 	clearDbcErrors((ODBCDbc *) hDbc);
 
-	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength, NULL, 0);
+	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength, NULL, 0, NULL);
 }
 
 #ifdef WITH_WCHAR
@@ -207,7 +226,7 @@ SQLConnectW(SQLHDBC hDbc, SQLWCHAR * szDataSource, SQLSMALLINT nDataSourceLength
 	fixWcharIn(szUID, nUIDLength, SQLCHAR, uid, addDbcError, dbc, goto exit);
 	fixWcharIn(szPWD, nPWDLength, SQLCHAR, pwd, addDbcError, dbc, goto exit);
 
-	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS, NULL, 0);
+	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS, NULL, 0, NULL);
 
       exit:
 	if (ds)

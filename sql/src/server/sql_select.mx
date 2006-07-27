@@ -239,29 +239,33 @@ flat_subquery(mvc *sql, symbol *sq)
  * A special column reference is 'rowid'.
  */
 static stmt *
-sql_var_ref(mvc *sql, scope *scp, char *name, int at)
+sql_var_ref(mvc *sql, char *name, int at)
 {
-	char *tpe = sql_get_type(sql, name);
-
-	(void)scp;
-	if (tpe) {
-		stmt *res;
-		char buf[BUFSIZ];
-
-		int i = snprintf(buf, BUFSIZ, "select CAST(value AS %s) from sessions where name = '%s';\n", tpe, name);
-		if (i<0)
-			return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
-		res = sqlparse_intern(sql, buf, sql->mode);
-		if (!res)
-			return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
-		_DELETE(tpe);
-		return res;
-	} else {
-		if (at) {
-			return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
-		} else {
+	stmt *s = NULL;;
+	if ((s = stack_find_var(sql, name)) != NULL) {
+		return stmt_var(_strdup(name), tail_type(s), 0);
+	} else { /* global var ? */
+		char *tpe = sql_get_type(sql, name);
 	
-			return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
+		if (tpe) {
+			stmt *res;
+			char buf[BUFSIZ];
+
+			int i = snprintf(buf, BUFSIZ, "select CAST(value AS %s) from sessions where name = '%s';\n", tpe, name);
+			if (i<0)
+				return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+			res = sqlparse_intern(sql, buf, sql->mode);
+			if (!res)
+				return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+			_DELETE(tpe);
+			return res;
+		} else {
+			if (at) {
+				return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+			} else {
+	
+				return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
+			}
 		}
 	}
 }
@@ -290,9 +294,9 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			/* maybe simple param */
 			sql_arg *a = sql_bind_param(sql, name);
 			if (!a) {
-				return sql_var_ref(sql, scp, name, 0);
+				return sql_var_ref(sql, name, 0);
 			} else {
-				cs = stmt_var(_strdup(a->name), &a->type);
+				cs = stmt_var(_strdup(a->name), &a->type, 0);
 			}
 		}
 	} else if (dlist_length(l) == 2) {
@@ -1158,7 +1162,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	case SQL_COLUMN:
 		return sql_column_value(sql, scp, se, grp, subset, f);
 	case SQL_NAME:
-		return sql_var_ref(sql, scp, se->data.sval, 1);
+		return sql_var_ref(sql, se->data.sval, 1);
 	case SQL_SELECT:{
 		stmt *s = scope_subquery(sql, scp, se);
 
@@ -1179,7 +1183,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		snprintf(n, BUFSIZ, "A%d", 
 			(sql->params)?list_length(sql->params):0);
 		sql_add_param(sql, n, NULL);
-		return stmt_var(_strdup(n), NULL);
+		return stmt_var(_strdup(n), NULL, 0);
 	}
 	case SQL_NULL:
 		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));

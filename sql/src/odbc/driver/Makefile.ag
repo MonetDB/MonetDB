@@ -17,7 +17,8 @@
 INCLUDES = \
 	../include \
 	../../include \
-	$(MONETDB_INCS) 
+	$(MONETDB_INCS) \
+	$(ODBC_INCS)
 
 DEFS = @DEFS@
 
@@ -115,6 +116,6 @@ lib_MonetODBC = {
 	SQLTransact.c \
 	driver.rc \
 	ODBC.def
-	WINLIBS = $(SOCKET_LIBS) $(ODBC_LIBS)
-	LIBS = $(MONETDB_LIBS) -lMapi -lstream $(ICONV_LIBS)
+	WINLIBS = $(SOCKET_LIBS)
+	LIBS = $(MONETDB_LIBS) -lMapi -lstream $(ICONV_LIBS) $(ODBC_LIBS)
 }

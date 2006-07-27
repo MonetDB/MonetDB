@@ -1,0 +1,5 @@
+LIBRARY libMonetODBCs.dll
+EXPORTS
+DllMain
+ConfigDSN
+ConfigDriver

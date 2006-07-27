@@ -52,6 +52,11 @@ typedef enum modes_t {
 
 #define CACHE_MODE(m) (m==m_normal||m==m_profile||m==m_debug||m==m_trace)
 
+typedef struct sql_var {
+	struct stmt *s;
+	char *name;
+} sql_var;
+
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
@@ -61,6 +66,11 @@ typedef struct mvc {
 	struct scanner scanner;
 
 	list *params;
+	sql_var *vars; 		/* stack of variables, frames are simply a
+				   NULL in the var stack 
+					(sometimes with name (label) )*/ 
+	int topvars; 
+	int sizevars;
 	atom *args[MAXPARAMS];
 	int argc;
 	struct symbol *sym;
@@ -153,6 +163,15 @@ extern void mvc_drop_idx(mvc *c, sql_schema *s, char *iname);
 extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
+
+/* variable management */
+extern void stack_push_var(mvc *sql, char *name, struct stmt *var);
+extern void stack_push_frame(mvc *sql, char *name);
+extern void stack_pop_frame(mvc *sql);
+extern struct stmt *stack_find_var(mvc *sql, char *name);
+/* find var in current frame */
+extern int frame_find_var(mvc *sql, char *name);
+extern int stack_find_frame(mvc *sql, char *name);
 
 #endif /*_SQL_MVC_H*/
 @c
@@ -482,6 +501,9 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->sa = sa_create();
 
 	m->params = NULL;
+	m->vars = NEW_ARRAY(sql_var,MAXPARAMS);
+	m->topvars = 0;
+	m->sizevars = MAXPARAMS;
 	m->argc = 0;
 	m->sym = NULL;
 
@@ -543,6 +565,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 	m->errstr[0] = '\0';
 
 	m->params = NULL;
+	m->topvars = 0;
 	m->argc = 0;
 	m->sym = NULL;
 
@@ -1040,3 +1063,80 @@ mvc_default(mvc *m, sql_column *col, char *val)
 	m->type = Q_SCHEMA;
 	return sql_trans_alter_default(m->session->tr, col, val);
 }
+
+/* variable management */
+void 
+stack_push_var(mvc *sql, char *name, stmt *var)
+{
+	if (sql->topvars == sql->sizevars) {
+		sql->sizevars <<= 1;
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	}
+	sql->vars[sql->topvars].s = stmt_dup(var);
+	sql->vars[sql->topvars].name = _strdup(name);
+	sql->topvars++;
+}
+
+void 
+stack_push_frame(mvc *sql, char *name)
+{
+	if (sql->topvars == sql->sizevars) {
+		sql->sizevars <<= 1;
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	}
+	sql->vars[sql->topvars].s = NULL;
+	sql->vars[sql->topvars].name = NULL;
+	if (name)
+		sql->vars[sql->topvars].name = _strdup(name);
+	sql->topvars++;
+}
+
+void 
+stack_pop_frame(mvc *sql)
+{
+	while(sql->vars[--sql->topvars].s) {
+		stmt_destroy(sql->vars[sql->topvars].s);
+		_DELETE(sql->vars[sql->topvars].name);
+	}
+	if (sql->topvars && sql->vars[sql->topvars].name)
+		_DELETE(sql->vars[sql->topvars].name);
+}
+
+stmt *
+stack_find_var(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0)
+			return sql->vars[i].s;
+	}
+	return NULL;
+}
+
+int 
+frame_find_var(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0 && sql->vars[i].s; i--) {
+		if (strcmp(sql->vars[i].name, name)==0)
+			return 1;
+	}
+	return 0;
+}
+
+int
+stack_find_stack(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		/* frame has no statement and only sometimes a name */
+		if (!sql->vars[i].s && sql->vars[i].name &&
+		    strcmp(sql->vars[i].name, name)==0)
+			return 1;
+	}
+	return 0;
+}
+

@@ -183,7 +183,7 @@ extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
 extern stmt *stmt_none(void);
 extern stmt *stmt_sql(char *query);
 extern stmt *stmt_remote(char *query,int location,stmt* st);
-extern stmt *stmt_var(char *varname, sql_subtype *t);
+extern stmt *stmt_var(char *varname, sql_subtype *t, int declare);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_update_var(char *varname);
 extern stmt *stmt_seq_next(char *seqname);
@@ -821,7 +821,7 @@ stmt_remote(char *query, int location, stmt* st)
 }
 
 stmt *
-stmt_var(char *varname, sql_subtype *t)
+stmt_var(char *varname, sql_subtype *t, int declare)
 {
 	stmt *s = stmt_create(st_var);
 
@@ -830,6 +830,7 @@ stmt_var(char *varname, sql_subtype *t)
 		s->op2.typeval = *t;
 	else
 		s->op2.typeval.type = NULL;
+	s->flag = declare;
 	s->key = 1;
 	return s;
 }

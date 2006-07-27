@@ -52,6 +52,60 @@ SQL_BACKEND=$backend
 AC_SUBST(SQL_BACKEND)
 AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
 
+dnl unixODBC
+dnl this is only used by the ODBC driver
+have_unixodbc=auto
+UNIXODBC_PATH="$PATH"
+UNIXODBC_CONFIG=''
+ODBC_INCS=''
+ODBC_LIBS=''
+AC_ARG_WITH(unixodbc,
+	AC_HELP_STRING([--with-unixodbc=DIR],
+		[unixODBC library is installed in DIR]),
+	have_unixodbc="$withval")
+case "$have_unixodbc" in
+yes|no|auto)
+	;;
+*)
+	UNIXODBC_PATH="$withval/bin:$PATH"
+	;;
+esac
+if test "x$have_unixodbc" != xno; then
+	AC_PATH_PROG(UNIXODBC_CONFIG,odbc_config,,$UNIXODBC_PATH)
+	if test "x$UNIXODBC_CONFIG" = x; then
+		if test "x$have_unixodbc" = xyes; then
+			AC_MSG_ERROR([odbc_config not found; use --with-unixodbc=<path>])
+		fi
+		have_unixodbc=no
+	fi
+fi
+if test "x$have_unixodbc" != xno; then
+	case "$have_unixodbc" in
+	yes|auto)
+		;;
+	*)
+		ODBC_INCS="-I$have_unixodbc/include"
+		ODBC_LIBS="-L$have_unixodbc/lib"
+		;;
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $ODBC_INCS"
+	AC_CHECK_HEADER(odbcinst.h, AC_DEFINE(HAVE_ODBCINST_H, 1, [Define to 1 if you have the <odbcinst.h> header file.]), [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi; have_unixodbc=no])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_unixodbc" != xno; then
+	save_LIBS="$LIBS"
+    	LIBS="$LIBS $ODBC_LIBS"
+    	AC_CHECK_LIB(odbcinst, SQLGetPrivateProfileString, :, [if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
+    	LIBS="$save_LIBS"
+fi
+if test "x$have_unixodbc" != xno; then
+	ODBC_LIBS="$ODBC_LIBS -lodbcinst"
+	AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
+fi
+AC_SUBST(ODBC_INCS)
+AC_SUBST(ODBC_LIBS)
+
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.

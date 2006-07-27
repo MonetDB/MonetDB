@@ -74,7 +74,7 @@ newODBCDbc(ODBCEnv *env)
 	dbc->pwd = NULL;
 	dbc->host = NULL;
 	dbc->port = 0;
-	dbc->DBNAME = NULL;
+	dbc->dbname = NULL;
 
 	dbc->Connected = 0;
 	dbc->sql_attr_autocommit = SQL_AUTOCOMMIT_ON;	/* default is autocommit */
@@ -205,8 +205,8 @@ destroyODBCDbc(ODBCDbc *dbc)
 		free(dbc->pwd);
 	if (dbc->host)
 		free(dbc->host);
-	if (dbc->DBNAME)
-		free(dbc->DBNAME);
+	if (dbc->dbname)
+		free(dbc->dbname);
 
 	free(dbc);
 }

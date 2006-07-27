@@ -148,7 +148,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$1 = tempbuf;
 }
 %typemap(argout,fragment="t_output_helper") SQLCHAR *Sqlstate {
-	PyObject *o = PyString_FromStringAndSize($1, 5);
+	PyObject *o = PyString_FromStringAndSize((char *) $1, 5);
 	$result = t_output_helper($result, o);
 }
 // SQLErrorA, SQLGetDiagRecA
@@ -174,7 +174,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$3 = &msglen;
 }
 %typemap(argout,fragment="t_output_helper") (char *OUTBUF, int BUFSIZE, int *OUTSIZE) {
-	PyObject *o = PyString_FromStringAndSize($1, *$3 >= $2 ? $2 - 1 : *$3);
+	PyObject *o = PyString_FromStringAndSize((char *) $1, *$3 >= $2 ? $2 - 1 : *$3);
 	$result = t_output_helper($result, o);
 }
 %typemap(in, numinputs=0) (SQLWCHAR *OUTBUF, int BUFSIZE, int *OUTSIZE) (SQLWCHAR msgbuf[BUFLEN], $*3_type msglen) {
@@ -735,7 +735,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 }
 %typemap(argout,fragment="t_output_helper") (SQLSMALLINT TargetType, SQLPOINTER TargetValue, SQLLEN BufferLength, SQLLEN *StrLen_or_Ind) {
 	PyObject *o;
-	if (*$4 == SQL_NULL_DATA || *$4 == SQL_NO_DATA) {
+	if (*$4 == SQL_NULL_DATA || *$4 == SQL_NO_TOTAL) {
 		o = Py_None;
 		Py_INCREF(Py_None);
 	} else
@@ -823,13 +823,14 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_C_INTERVAL_DAY:
 	case SQL_C_INTERVAL_HOUR:
 	case SQL_C_INTERVAL_MINUTE:
+	case SQL_C_INTERVAL_SECOND:
 	case SQL_C_INTERVAL_DAY_TO_HOUR:
 	case SQL_C_INTERVAL_DAY_TO_MINUTE:
 	case SQL_C_INTERVAL_DAY_TO_SECOND:
 	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-		o = Py_BuildValue("(ii(iiid))", ((SQL_INTERVAL_STRUCT *) $2)->interval_type, ((SQL_INTERVAL_STRUCT *) $2)->interval_sign, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.day, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.hour, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.minute, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.second + ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.fraction / 1000000000.);
+		o = Py_BuildValue("(ii(iiiii))", ((SQL_INTERVAL_STRUCT *) $2)->interval_type, ((SQL_INTERVAL_STRUCT *) $2)->interval_sign, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.day, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.hour, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.minute, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.second, ((SQL_INTERVAL_STRUCT *) $2)->intval.day_second.fraction);
 		break;
 	default:
 		o = Py_None;
@@ -1701,11 +1702,11 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 %{
 #define CheckResult(res,tpe,hnd)					\
 	if (res == SQL_ERROR) {				  		\
-		char msg[256], state[6];				\
+		SQLCHAR msg[256], state[6];				\
 		SQLSMALLINT len;					\
 		PyObject *errobj;					\
 		SQLGetDiagRec(tpe, hnd, 1, state, NULL, msg, 256, &len); \
-		errobj = Py_BuildValue("ss", msg, state);		\
+		errobj = Py_BuildValue("ss", (char *) msg, (char *) state); \
 		PyErr_SetObject(ErrorObject, errobj);			\
 		Py_XDECREF(errobj);					\
 		return NULL;						\
@@ -1722,11 +1723,11 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 		return NULL;
 	}
 	if (result == SQL_ERROR) {
-		char msg[256], state[6];
+		SQLCHAR msg[256], state[6];
 		SQLSMALLINT len;
 		PyObject *errobj;
 		SQLGetDiagRec(arg1==SQL_HANDLE_DBC?SQL_HANDLE_ENV:SQL_HANDLE_DBC, arg2, 1, state, NULL, msg, 256, &len);
-		errobj = Py_BuildValue("ss", msg, state);
+		errobj = Py_BuildValue("ss", (char *) msg, (char *) state);
 		PyErr_SetObject(ErrorObject, errobj);
 		Py_XDECREF(errobj);
 		return NULL;
@@ -1786,6 +1787,10 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 %exception SQLDataSources {
 	$action
 	CheckResult(result, SQL_HANDLE_ENV, arg1)
+	if (result == SQL_NO_DATA) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
 }
 %exception SQLDescribeCol {
 	$action

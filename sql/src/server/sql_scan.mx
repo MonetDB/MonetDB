@@ -282,14 +282,9 @@ scanner_init_keywords(void)
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
 
-	keywords_insert("COLLATION", COLLATION);
-
 	keywords_insert("MODULE", MODULE);
 	keywords_insert("ARE", ARE);
 	keywords_insert("NAMES", NAMES);
-	keywords_insert("STATIC", STATIC);
-	keywords_insert("DYNAMIC", DYNAMIC);
-	keywords_insert("LOCATOR", LOCATOR);
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);
@@ -301,7 +296,6 @@ scanner_init_keywords(void)
 	keywords_insert("LANGUAGE", LANGUAGE);
 	keywords_insert("SQL", SQL);
 
-	keywords_insert("SQLSTATE", SQLSTATE);
 	keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	keywords_insert("PROFILE", SQL_PROFILE);
 	keywords_insert("DEBUG", SQL_DEBUG);

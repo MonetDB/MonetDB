@@ -65,7 +65,7 @@ Follow the steps below to assure your setup is complete:
 @item load the SQL module using @code{module(sql\_server);
 sql\_server\_start();}
 @item run the JdbcClient utility using @code{java -jar
-\{path/to/jdbcclient-X.Y.jar\} -umonetdb} (with
+@{path/to/jdbcclient-X.Y.jar@} -umonetdb} (with
  password monetdb)
 @end enumerate
 The last step should give you something like this:

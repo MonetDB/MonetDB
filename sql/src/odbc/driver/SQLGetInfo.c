@@ -307,7 +307,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 		sValue = "N";
 		break;
 	case SQL_DATABASE_NAME:
-		sValue = dbc->DBNAME ? dbc->DBNAME : "";
+		sValue = dbc->dbname ? dbc->dbname : "";
 		break;
 	case SQL_ODBC_INTERFACE_CONFORMANCE:
 		nValue = SQL_OIC_CORE;

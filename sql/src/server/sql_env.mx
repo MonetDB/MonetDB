@@ -350,7 +350,13 @@ sql_update_var(mvc *m, char *name)
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = sql_get_bit_var(m, "cache");
-	} 
+	}  else if (strcmp(name,"profile") == 0){
+		int flag = sql_get_bit_var(m, "profile");
+		m->explain= flag? m_profile:m_normal;
+	}  else if (strcmp(name,"trace") == 0){
+		int flag = sql_get_bit_var(m, "trace");
+		m->explain= flag? m_trace:m_normal;
+	}
 	return GDK_SUCCEED;
 }
 
@@ -420,6 +426,11 @@ sql_sessions(mvc *m)
 
 /* M5 default session variables */
 	table_insert(tr, s, "optimizer", "on", "varchar(1024)", &rw, NULL);
+	if (m->explain == m_profile)
+		table_insert(tr, s, "profile", "true", "boolean", &rw, NULL);
+	else
+		table_insert(tr, s, "profile", "false", "boolean", &rw, NULL);
+	table_insert(tr, s, "trace", "false", "boolean", &rw, NULL);
 /* Actually 'factory' and 'cache' are optimizer decisions too */
 	return 0;
 }
