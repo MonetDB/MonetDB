@@ -802,6 +802,10 @@ The policy implemented here is to make pin/unpin decisions part of
 the bind(namespace, batname, mode) operation. [todo]
 
 @= safeTarget
+#ifdef STACKTRACE
+	printf("safeTarget %d\n", needsCleanup(pci));
+	printInstruction(GDKout,mb,pci, LIST_MAL_ALL);
+#endif
 	if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++) {
 			sbackup[i]= 0;  
@@ -815,6 +819,9 @@ the bind(namespace, batname, mode) operation. [todo]
 		}
 	} 
 @= restoreTarget
+#ifdef STACKTRACE
+	printf("restoreTarget %d\n", needsCleanup(pci));
+#endif
 	if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){

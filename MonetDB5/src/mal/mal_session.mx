@@ -391,8 +391,9 @@ MSresetInstructions(MalBlkPtr mb, int start)
 
 static int unknownType(int tpe){
 	return tpe == TYPE_any || 
-		getHeadType(tpe) == TYPE_any || 
-		getTailType(tpe) == TYPE_any;
+		(isaBatType(tpe) && (
+			getHeadType(tpe) == TYPE_any || 
+			getTailType(tpe) == TYPE_any ));
 }
 void
 MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
@@ -628,9 +629,15 @@ MALengine(Client c)
 
 	if (c->listing)
 		printFunction(c->fdout, c->curprg->def, c->listing);
-
-	if (c->glb)
+@-
+In interactive mode we should avoid early garbage collection of values.
+This can be controlled by the clean up control at the instruction level
+and marking all non-temporary variables as being (potentially) used.
+@c
+	if (c->glb){
 		c->glb->pcup = 0;
+		c->glb->keepAlive= TRUE; /* no garbage collection */
+	}
 	if (prg->def->errors == 0)
 		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
 	else
