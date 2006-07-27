@@ -1795,7 +1795,7 @@ strPut(Heap *h, var_t *dst, str v)
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
-		if (HEAPextend(h, newsize) < 0) {
+		if (HEAPextend(h, h->storage, newsize) < 0) {
 			return 0;
 		}
 	}

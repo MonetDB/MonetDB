@@ -162,7 +162,7 @@ The other way is to just save the mmap-ed heap, free it and reload it.
 @{
 @c
 int
-HEAPextend(Heap *h, size_t size)
+HEAPextend(Heap *h, int newmode, size_t size)
 {
 	char nme[PATHLENGTH], *ext = NULL;
 
@@ -184,28 +184,30 @@ HEAPextend(Heap *h, size_t size)
 	} else {
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
-
+		int can_mmap = (h->filename && size >= GDK_mem_bigsize);
+		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (newmode & STORE_MMAP));
 		h->size = size;
-		if (size <= GDK_mem_bigsize) {
-			h->maxsize = size; /* for normal GDKmalloc, maxsize = size */
-		} else {
+
+		if (can_mmap) {
 			/* in anonymous vm, if have to realloc anyway, we reserve some extra space */
 			if (size > h->maxsize) {
 				h->maxsize = (size_t) ((double) size * BATMARGIN);
 			}
 			/* when using anonymous vm we malloc we need 64K chunks */
 			h->maxsize = (1 + ((h->maxsize-1) >> 16)) << 16;
+		} else {
+			h->maxsize = size; /* for normal GDKmalloc, maxsize = size */
 		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
-		if (h->filename == NULL || (size < GDK_vm_minsize)) {
+		if (!must_mmap) {
 			h->storage = STORE_MEM;
 			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
 			if (h->base)
 				return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
-		if (h->filename && size >= GDK_vm_minsize) {
+		if (can_mmap) {
 			char privext[PATHLENGTH], *of = h->filename;
 			FILE *fp;
 
@@ -687,7 +689,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		   // Double the size of the heap.
 		   // TUNE: increase heap by diffent amount.
 		 */
-		if (HEAPextend(heap, newsize) < 0)
+		if (HEAPextend(heap, heap->storage, newsize) < 0)
 			return 0;
 		heap->free = newsize;
 		hheader = HEAP_index(heap, 0, HEADER);

@@ -1008,7 +1008,7 @@ they can either be stored on disk, loaded into memory, or memory mapped.
  HEAPfree (Heap *h);
 @item int
 @tab
- HEAPextend (Heap *h, size_t size);
+ HEAPextend (Heap *h, int newmode, size_t size);
 @item int
 @tab
  HEAPload (Heap *h, str nme,ext, int trunc);
@@ -1030,7 +1030,7 @@ they isolate you from the different ways heaps can be accessed.
 @h
 gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 gdk_export int HEAPfree(Heap *h);
-gdk_export int HEAPextend(Heap *h, size_t size);
+gdk_export int HEAPextend(Heap *h, int newmode, size_t size);
 gdk_export int HEAPload(Heap *h, str nme, str ext, int trunc);
 gdk_export int HEAPsave(Heap *h, str nme, str ext);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);

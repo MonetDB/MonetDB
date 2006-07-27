@@ -374,7 +374,7 @@ malloc.
 	heap_size = BUNsize(b) * newcap; 
 
 	DELTAsave(b);
-	ret = HEAPextend(b->batBuns, heap_size);
+	ret = HEAPextend(b->batBuns, b->batMapdirty?b->batMapbuns:b->batBuns->storage, heap_size);
 	DELTAload(b);
 	if (ret < 0)
 		return NULL;
