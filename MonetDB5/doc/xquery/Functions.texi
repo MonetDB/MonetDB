@@ -1,985 +1,880 @@
 MonetDB/XQuery supports a wide range of the built-in functions described in
-the <a href='http://www.w3.org/'>W3C</a> specifications. This section provides
+the @url{http://www.w3.org/,W3C} specifications. This section provides
 an overview is  of functions that MonetDB/XQuery currently supports. 
 
 The function library has been organized as follows:
-<dl>
-<dt><a href="#Aggregation">Aggregation</a> functions (<tt>min,max, ..</tt>).  </dt>
-<dd><b>supported: 6/8</b> Missing functions are all collation specific.</dd>
+@table @code
+@item @ref{Aggregation} functions (@code{min,max, ..}).  
+@strong{supported: 6/8} Missing functions are all collation specific.
 
-<dt><a href="#Numeric">Numeric</a> computation functions (<tt>+ -, ..</tt>). </dt>
-<dd><b>supported: 18/20</b> No support yet of <tt>round-half-to-even</tt>.  </dd>
+@item @ref{Numeric} computation functions (@code{+ -, ..}). 
+@strong{supported: 18/20} No support yet of @code{round-half-to-even}.  
 
-<dt><a href="#Boolean">Boolean</a> logic or comparison functions (<tt>and, &gt;, ..</tt>). </dt>
-<dd><b>supported: 9/13</b> We miss <tt>deep-equal</tt> and <tt>binaryEqual</tt> variants.</dd>
+@item @ref{Boolean} logic or comparison functions (@code{and, &gt;, ..}). 
+@strong{supported: 9/13} We miss @code{deep-equal} and @code{binaryEqual} variants.
 
-<dt><a href="#String">String</a> functions (<tt>substring, ..</tt>). </dt>
-<dd><b>supported: 21/32</b> We miss collation-speific versions as well as <tt>normalize-unicode</tt> and <tt>tokenize</tt>.  </dd>
+@item @ref{String} functions (@code{substring, ..}). 
+@strong{supported: 21/32} We miss collation-speific versions as well as @code{normalize-unicode} and @code{tokenize}.  
 
-<dt><a href="#Node">Node</a> functions (<tt>root, doc, ..</tt>).</dt>
-<dd><b>supported: 17/23</b> </dd>
+@item @ref{Node} functions (@code{root, doc, ..}).
+@strong{supported: 17/23} 
 
-<dt><a href="#Sequence">Sequence</a> functions (<tt>first, last, ..</tt>). </dt>
-<dd><b>supported: 11/19</b> No support for <tt>collection</tt> yet!  </dd>
+@item @ref{Sequence} functions (@code{first, last, ..}). 
+@strong{supported: 11/19} No support for @code{collection} yet!  
 
-<dt><a href="#URI">URI</a> functions (<tt>base-uri, escape-uri, ..</tt>). </dt>
-<dd><b>supported: 2/10</b> We only have <tt>namespace-uri</tt>.  </dd>
+@item @ref{URI} functions (@code{base-uri, escape-uri, ..}). 
+@strong{supported: 2/10} We only have @code{namespace-uri}.  
 
-<dt><a href="#QName">QName</a> functions (<tt>node-name, resolve-QName, ..</tt>).</dt> 
-<dd><b>supported: 0/6</b> Not supported yet.  </dd>
+@item @ref{QName} functions (@code{node-name, resolve-QName, ..}). 
+@strong{supported: 0/6} Not supported yet.  
 
-<dt><a href="#Runtime">Runtime</a> functions(<tt>error, trace ..</tt>). </dt>
-<dd><b>supported: 0/5</b> Not supported yet.  </dd>
+@item @ref{Runtime} functions(@code{error, trace ..}). 
+@strong{supported: 0/5} Not supported yet.  
 
-<dt><a href="#Time">Date/Time</a> functions(<tt>date-equal, time-less-than, ..</tt>).</dt> 
-<dd><b>supported: 0/75</b> Not supported yet.  </dd>
-</dl>
+@item @ref{Date/Time} functions(@code{date-equal, time-less-than, ..}). 
+<dd>@strong{supported: 0/75} Not supported yet.  </dd>
+@end table
 
-We encourage new <a href="_ROOTURL_/Development">Developers</a> to volunteer and
+We encourage new @url{_ROOTURL_/Development,Developers} to volunteer and
 help fill in these blanks. Work has started on adding date/time functions
 but help is surely welcome.
 
-<h3 id="Aggregation">Aggregation</h3>
-
-<table> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-count"><code>fn:count</code></a></td>
-  <td>($srcval as item*) as xs:integer</td> <td style="color: green;">yes</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-avg"><code>fn:avg</code></a></td>
-
-    <td>($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType?</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-max"><code>fn:max</code></a></td>
-  <td>($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType?</td> <td
-  style="color: green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-max"><code>fn:max</code></a></td>
-  <td>($srcval as xdt:anyAtomicType*, $collationLiteral as string) as
-  xdt:anyAtomicType?</td> <td style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-min"><code>fn:min</code></a></td>
-  <td>($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType?</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-min"><code>fn:min</code></a></td>
-  <td>($srcval as xdt:anyAtomicType*, $collationLiteral as string) as
-  xdt:anyAtomicType?</td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-sum"><code>fn:sum</code></a></td>
-  <td>($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType?</td> <td
-  style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-href="http://www.w3.org/TR/xquery-operators/#func-sum"><code>fn:sum</code></a></td>
-<td>($arg as xdt:anyAtomicType*, $zero as xdt:anyAtomicType?) as
-xdt:anyAtomicType?</td> <td style="color: green;">yes</td> </tr> </table>
-
-
-<h3 id="Numeric">Numeric</h3> 
-
-<table>
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-number"><code>fn:number</code></a></td>
-  <td>() as xs:double</td> <td style="color: green;">yes</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-number"><code>fn:number</code></a></td>
-
-    <td>($srcval as item?) as xs:double</td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-abs"><code>fn:abs</code></a></td>
-  <td>($srcval as numeric?) as numeric?</td> <td style="color:
-  green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-ceiling"><code>fn:ceiling</code></a></td>
-  <td>($srcval as numeric?) as numeric?</td> <td style="color:
-  green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-floor"><code>fn:floor</code></a></td>
-  <td>($srcval as numeric?) as numeric?</td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-add"><code>op:numeric-add</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as numeric</td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-divide"><code>op:numeric-divide</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as numeric</td> <td
-  style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-equal"><code>op:numeric-equal</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as xs:boolean</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-greater-than"><code>op:numeric-greater-than</code></a></td>
-
-    <td>($operand1 as numeric, $operand2 as numeric) as xs:boolean</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-integer-divide"><code>op:numeric-integer-divide</code></a></td>
-  <td>($operand1 as xs:integer, $operand2 as xs:integer) as xs:integer</td> <td
-  style="color: green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-less-than"><code>op:numeric-less-than</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as xs:boolean</td> <td
-  style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-mod"><code>op:numeric-mod</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as numeric</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-multiply"><code>op:numeric-multiply</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as numeric</td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-subtract"><code>op:numeric-subtract</code></a></td>
-  <td>($operand1 as numeric, $operand2 as numeric) as numeric</td> <td
-  style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-unary-minus"><code>op:numeric-unary-minus</code></a></td>
-  <td>($operand as numeric) as numeric</td> <td style="color: green;">yes</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-numeric-unary-plus"><code>op:numeric-unary-plus</code></a></td>
-
-    <td>($operand as numeric) as numeric</td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-round"><code>fn:round</code></a></td>
-  <td>($srcval as numeric?) as numeric?</td> <td style="color:
-  green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-round-half-to-even"><code>fn:round-half-to-even</code></a></td>
-  <td>($srcval as numeric?) as numeric?</td> <td style="color: red;">
-  no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-round-half-to-even"><code>fn:round-half-to-even</code></a></td>
-  <td>($srcval as numeric?, $precision as integer) as numeric?</td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-to"><code>op:to</code></a></td>
-  <td>($firstval as xs:integer, $lastval as xs:integer) as xs:integer+</td>
-
-    <td style="color: green;">yes</td> </tr> </table> 
-
-
-<h3 id="Boolean">Boolean</h3> 
-
-<table>
-<tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-boolean"><code>fn:boolean</code></a></td>
-<td>($srcval as item*) as xs:boolean</td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-false"><code>fn:false</code></a></td>
-  <td>() as xs:boolean</td> <td style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-not"><code>fn:not</code></a></td>
-  <td>($srcval as item*) as xs:boolean</td> <td style="color: green;">yes</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-true"><code>fn:true</code></a></td>
-
-    <td>() as xs:boolean</td> <td style="color: green;">yes</td> </tr>
-
-<tr> <td><a href="http://www.w3.org/TR/xpath-functions/#func-base64Binary-equal"><code>op:base64Binary-equal</code></a></td>
-
-    <td>($value1 as xs:base64Binary, $value2 as xs:base64Binary) as
-  xs:boolean</td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-deep-equal"><code>fn:deep-equal</code></a></td>
-  <td>($parameter1 as item*, $parameter2 as item*) as xs:boolean</td> <td
-  style="color: brown;">will</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-deep-equal"><code>fn:deep-equal</code></a></td>
-  <td>($parameter1 as item*, $parameter2 as item*, $collationLiteral as string)
-  as xs:boolean</td> <td style="color: brown;">will</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-compare"><code>fn:compare</code></a></td>
-  <td>($comparand1 as xs:string?, $comparand2 as xs:string?) as
-  xs:integer?</td> <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-compare"><code>fn:compare</code></a></td>
-  <td>($comparand1 as xs:string?, $comparand2 as xs:string?, $collationLiteral
-  as xs:string) as xs:integer?</td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-boolean-equal"><code>op:boolean-equal</code></a></td>
-  <td>($value1 as xs:boolean, $value2 as xs:boolean) as xs:boolean</td> <td
-  style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-boolean-greater-than"><code>op:boolean-greater-than</code></a></td>
-  <td>($srcval1 as xs:boolean, $srcval2 as xs:boolean) as xs:boolean</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-boolean-less-than"><code>op:boolean-less-than</code></a></td>
-
-    <td>($srcval1 as xs:boolean, $srcval2 as xs:boolean) as xs:boolean</td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-hexBinary-equal"><code>op:hexBinary-equal</code></a></td>
-  <td>($value1 as xs:hexBinary, $value2 as xs:hexBinary) as xs:boolean</td> <td
-  style="color: red;">no</td>
-
-  </tr> </table> 
-
-
-<h3 id="String">String</h3> 
-<table> <!-- old specs <tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-concat"><code>fn:concat</code></a></td>
-<td>() as xs:string </td> <td style="color: green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-concat"><code>fn:concat</code></a></td>
-  <td>($op1 as xs:string?) as xs:string </td> <td style="color:
-  green;">yes</td> </tr> --> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-concat"><code>fn:concat</code></a></td>
-  <td>($op1 as xs:string?, $op2 as xs:string?, ...) as xs:string </td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-contains"><code>fn:contains</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?) as xs:boolean? </td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-contains"><code>fn:contains</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
-  xs:string) as xs:boolean? </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-default-collation"><code>fn:default-collation</code></a></td>
-  <td>() as xs:anyURI? </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-ends-with"><code>fn:ends-with</code></a></td>
-
-    <td>($operand1 as xs:string?, $operand2 as xs:string?) as xs:boolean? </td>
-  <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-ends-with"><code>fn:ends-with</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
-  xs:string) as xs:boolean? </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-lower-case"><code>fn:lower-case</code></a></td>
-  <td>($srcval as xs:string?) as xs:string? </td> <td style="color:
-  green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-matches"><code>fn:matches</code></a></td>
-  <td>($input as xs:string?, $pattern as xs:string) as xs:boolean? </td> <td
-  style="color:green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-matches"><code>fn:matches</code></a></td>
-  <td>($input as xs:string?, $pattern as xs:string, $flags as xs:string) as
-  xs:boolean? </td>
-
-    <td style="color:green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-normalize-space"><code>fn:normalize-space</code></a></td>
-  <td>() as xs:string? </td> <td style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-normalize-space"><code>fn:normalize-space</code></a></td>
-  <td>($srcval as xs:string?) as xs:string? </td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-normalize-unicode"><code>fn:normalize-unicode</code></a></td>
-
-    <td>($srcval as xs:string?) as xs:string? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-normalize-unicode"><code>fn:normalize-unicode</code></a></td>
-  <td>($srcval as xs:string?, $normalizationForm as xs:string) as xs:string?
-  </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-starts-with"><code>fn:starts-with</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?) as xs:boolean? </td>
-  <td style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-starts-with"><code>fn:starts-with</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
-  xs:string) as xs:boolean? </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string"><code>fn:string</code></a></td>
-  <td>() as xs:string </td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string"><code>fn:string</code></a></td>
-  <td>($srcval as item?) as xs:string </td> <td style="color: green;">yes</td>
-  </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string-join"><code>fn:string-join</code></a></td>
-  <td>($operand1 as xs:string*, $operand2 as xs:string) as xs:string </td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string-length"><code>fn:string-length</code></a></td>
-
-    <td>() as xs:integer? </td> <td style="color: green;">yes</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string-length"><code>fn:string-length</code></a></td>
-  <td>($srcval as xs:string?) as xs:integer? </td> <td style="color:
-  green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string-pad"><code>fn:string-pad</code></a></td>
-  <td>($padString as xs:string?, $padCount as xs:integer) as xs:string? </td>
-  <td style="color:brown;">will</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-replace"><code>fn:replace</code></a></td>
-  <td>($input as xs:string?, $pattern as xs:string, $replacement as xs:string)
-  as xs:string? </td> <td style="color:green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-replace"><code>fn:replace</code></a></td>
-  <td>($input as xs:string?, $pattern as xs:string, $replacement as xs:string,
-  $flags as xs:string) as xs:string? </td>
-
-    <td style="color:green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-substring"><code>fn:substring</code></a></td>
-  <td>($sourceString as xs:string?, $startingLoc as xs:double) as xs:string?
-  </td> <td style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-substring"><code>fn:substring</code></a></td>
-  <td>($sourceString as xs:string?, $startingLoc as xs:double, $length as
-  xs:double) as xs:string? </td> <td style="color: green;">yes</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-substring-after"><code>fn:substring-after</code></a></td>
-
-    <td>($operand1 as xs:string?, $operand2 as xs:string?) as xs:string? </td>
-  <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-substring-after"><code>fn:substring-after</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
-  xs:string) as xs:string? </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-substring-before"><code>fn:substring-before</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?) as xs:string? </td>
-  <td style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-substring-before"><code>fn:substring-before</code></a></td>
-  <td>($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
-  xs:string) as xs:string? </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-tokenize"><code>fn:tokenize</code></a></td>
-  <td>($input as xs:string?, $pattern as xs:string) as xs:string* </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-tokenize"><code>fn:tokenize</code></a></td>
-  <td>($input as xs:string?, $pattern as xs:string, $flags as xs:string) as
-  xs:string* </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-upper-case"><code>fn:upper-case</code></a></td>
-<td>($srcval as xs:string?) as xs:string? </td> <td style="color:
-green;">yes</td> </tr> 
-
-<tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-translate"><code>fn:translate</code></a></td>
-
-    <td>($srcval as xs:string?, $mapString as xs:string?, $transString as
-xs:string?) as xs:string? </td> <td style="color: green;">yes</td> </tr>
-</table> 
-
-
-<h3 id="Node">Nodes</h3> 
-<table>
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-context-item"><code>fn:context-item</code></a><sup
-  class="footnote"><a href="#fn1">1</a></sup></td>
-  <td>() as item? </td> <td style="color: brown;">will</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-data"><code>fn:data</code></a></td>
-
-    <td>($srcval as item*) as xdt:anyAtomicType* </td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-distinct-nodes"><code>fn:distinct-nodes</code></a></td>
-  <td>($srcval as node*) as node* </td> <td style="color: green;">yes</td>
-
-  </tr> 
-
-<tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-doc"><code>fn:doc</code></a></td>
-  <td>($uri as xs:string?) as document? </td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-except"><code>op:except</code></a></td>
-  <td>($parameter1 as node*, $parameter2 as node*) as node* </td> <td
-  style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-id"><code>fn:id</code></a></td>
-  <td>($srcval as xs:string*) as element* </td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-idref"><code>fn:idref</code></a></td>
-
-    <td>($srcval as xs:string*) as node* </td> <td style="color:
-  green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-input"><code>fn:input</code></a></td>
-  <td>() as node* </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-intersect"><code>op:intersect</code></a></td>
-  <td>($parameter1 as node*, $parameter2 as node*) as node* </td> <td
-  style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-local-name"><code>fn:local-name</code></a></td>
-  <td>() as xs:string </td> <td style="color: green;">yes</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-local-name"><code>fn:local-name</code></a></td>
-  <td>($srcval as node?) as xs:string </td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-name"><code>fn:name</code></a></td>
-  <td>() as xs:string </td> <td style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-name"><code>fn:name</code></a></td>
-  <td>($srcval as node?) as xs:string </td> <td style="color: green;">yes</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-node-after"><code>op:node-after</code></a></td>
-
-    <td>($parameter1 as node, $parameter2 as node) as xs:boolean </td> <td
-  style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-node-before"><code>op:node-before</code></a></td>
-  <td>($parameter1 as node, $parameter2 as node) as xs:boolean </td> <td
-  style="color: green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-node-equal"><code>op:is-same-node</code></a></td>
-  <td>($parameter1 as node, $parameter2 as node) as xs:boolean </td> <td
-  style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-node-kind"><code>fn:node-kind</code></a><sup
-  class="footnote"><a href="#fn1">1</a></sup></td>
-  <td>($srcval as node) as xs:string </td> <td style="color: brown;">must</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-NOTATION-equal"><code>op:NOTATION-equal</code></a></td>
-
-    <td>($srcval1 as xs:NOTATION, $srcval2 as xs:NOTATION) as xs:boolean </td>
-  <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-root"><code>fn:root</code></a></td>
-  <td>() as node </td> <td style="color: green;">yes</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-root"><code>fn:root</code></a></td>
-  <td>($srcval as node) as node </td> <td style="color: green;">yes</td> </tr>
-  <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-sequence-node-identical"><code>fn:sequence-node-identical</code></a><sup
-  class="footnote"><a href="#fn1">1</a></sup></td>
-  <td>($parameter1 as node*, $parameter2 as node*) as xs:boolean? </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-union"><code>op:union</code></a></td>
-
-    <td>($parameter1 as node*, $parameter2 as node*) as node* </td> <td
-style="color: green;">yes</td> </tr> 
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-lang"><code>fn:lang</code></a></td>
-  <td>($testlang as xs:string) as xs:boolean </td> <td style="color:
-  brown;">will</td> </tr> 
-</table> 
-
-
-<h3 id="Sequence">Sequence</h3> <table> <tr>
-<td><a
-href="http://www.w3.org/TR/xpath-functions/#func-collection"><code>fn:collection</code></a></td>
-
-    <td>($srcval as xs:string) as node* </td> <td style="color:
-  brown;">will</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-concatenate"><code>op:concatenate</code></a></td>
-  <td>($seq1 as item*, $seq2 as item*) as item* </td> <td style="color:
-  brown;">will</td> </tr> 
-
-<tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-distinct-values"><code>fn:distinct-values</code></a></td>
-  <td>($srcval as xs:anyAtomicType*) as xs:anyAtomicType* </td> <td
-  style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-distinct-values"><code>fn:distinct-values</code></a></td>
-  <td>($srcval as xs:anyAtomicType*, $collationLiteral as xs:string) as
-  xs:anyAtomicType* </td> <td style="color: red;">no</td> </tr> 
-
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-empty"><code>fn:empty</code></a></td>
-  <td>($srcval as item*) as xs:boolean </td> <td style="color:
-  green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-exactly-one"><code>fn:exactly-one</code></a></td>
-  <td>($srcval as item*) as item </td> <td style="color: green;">yes</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-exists"><code>fn:exists</code></a></td>
-  <td>($srcval as item*) as xs:boolean </td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-index-of"><code>fn:index-of</code></a></td>
-  <td>($seqParam as xs:anyAtomicType*, $srchParam as xs:anyAtomicType) as
-  xs:integer* </td> <td style="color: brown;">will</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-index-of"><code>fn:index-of</code></a></td>
-  <td>($seqParam as xs:anyAtomicType*, $srchParam as xs:anyAtomicType,
-  $collationLiteral as xs:string) as xs:integer* </td> <td style="color:
-  brown;">will</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-insert-before"><code>fn:insert-before</code></a></td>
-
-    <td>($target as item*, $position as xs:integer, $inserts as item*) as item*
-  </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-item-at"><code>fn:item-at</code></a></td>
-  <td>($seqParam as item*, $posParam as integer) as item? </td> <td
-  style="color: brown;">will</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-last"><code>fn:last</code></a></td>
-  <td>() as xs:integer? </td> <td style="color: green;">yes</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-one-or-more"><code>fn:one-or-more</code></a></td>
-  <td>($srcval as item*) as item+ </td> <td style="color: green;">yes</td>
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-position"><code>fn:position</code></a></td>
-  <td>() as xs:integer? </td>
-
-    <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subsequence"><code>fn:subsequence</code></a></td>
-  <td>($sourceSeq as item*, $startingLoc as xs:double) as item* </td> <td
-  style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subsequence"><code>fn:subsequence</code></a></td>
-  <td>($sourceSeq as item*, $startingLoc as xs:double, $length as xs:double) as
-  item* </td> <td style="color: green;">yes</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-remove"><code>fn:remove</code></a></td>
-
-    <td>($target as item*, $position as xs:integer) as item* </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-zero-or-one"><code>fn:zero-or-one</code></a></td>
-  <td>($srcval as item*) as item? </td> <td style="color: green;">yes</td>
-
-  </tr> <tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-unordered"><code>fn:unordered</code></a></td>
-<td>($sourceSeq as item*) as item* </td> <td style="color: green;">yes</td>
-</tr> </table> 
-
-
-<h3 id="QName">QName</h3>
-
-<table> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-local-name-from-QName"><code>fn:get-local-name-from-QName</code></a></td>
-  <td>($srcval as xs:QName?) as xs:string? </td> <td style="color: red;">
-  no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-namespace-from-QName"><code>fn:get-namespace-from-QName</code></a></td>
-
-    <td>($srcval as xs:QName?) as xs:string? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-expanded-QName"><code>fn:expanded-QName</code></a></td>
-  <td>($paramURI as xs:string, $paramLocal as xs:string) as xs:QName </td> <td
-  style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-node-name"><code>fn:node-name</code></a></td>
-  <td>($srcval as node) as xs:QName? </td> <td style="color: red;">
-  no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-QName-equal"><code>op:QName-equal</code></a></td>
-  <td>($srcval1 as xs:QName, $srcval2 as xs:QName) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-resolve-QName"><code>fn:resolve-QName</code></a></td>
-  <td>($qname as xs:string, $element as element) as xs:QName </td>
-
-    <td style="color: red;">no</td> </tr> </table> 
-
-<h3 id="URI">URI</h3> 
-<table>
-<tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-anyURI-equal"><code>op:anyURI-equal</code></a></td>
-<td>($srcval1 as xs:anyURI, $srcval2 as xs:anyURI) as xs:boolean </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-base-uri"><code>fn:base-uri</code></a></td>
-  <td>($srcval as node) as xs:string? </td> <td style="color: red;">
-  no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-base-uri"><code>fn:base-uri</code></a></td>
-  <td>() as xs:string? </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-document-uri"><code>fn:document-uri</code></a></td>
-
-    <td>($srcval as node) as xs:string? </td> <td style="color: red;">no
-  </td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-escape-uri"><code>fn:escape-uri</code></a></td>
-  <td>($uri-part as string, $escape-reserved as xs:boolean) as xs:string </td>
-  <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-namespace-uri-for-prefix"><code>fn:get-namespace-uri-for-prefix</code></a></td>
-  <td>($element as element, $prefix as xs:string) as xs:string? </td> <td
-  style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-resolve-uri"><code>fn:resolve-uri</code></a></td>
-  <td>($relative as xs:string) as xs:string </td> <td style="color: red;">no
-  </td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-resolve-uri"><code>fn:resolve-uri</code></a></td>
-  <td>($relative as xs:string, $base as anyURI) as xs:string </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-namespace-uri"><code>fn:namespace-uri</code></a></td>
-  <td>() as xs:string </td> <td style="color: green;">yes</td> </tr>
-
-  <tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-namespace-uri"><code>fn:namespace-uri</code></a></td>
-<td>($srcval as node?) as xs:string </td> <td style="color: green;">yes</td>
-</tr> </table> 
-
-
-
-
-
-<h3 id="Runtime">Runtime</h3> 
-<table> <tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-error"><code>fn:error</code></a></td>
-
-    <td>() as none </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-error"><code>fn:error</code></a></td>
-  <td>($srcval as item?) as none </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-trace"><code>fn:trace</code></a></td>
-  <td>($value as item*, $label as xs:string) as item* </td> <td style="color:
-  red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-codepoints-to-string"><code>fn:codepoints-to-string</code></a></td>
-  <td>($srcval as xs:integer*) as xs:string </td> <td style="color: red;">
-  no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-string-to-codepoints"><code>fn:string-to-codepoints</code></a></td>
-  <td>($srcval as xs:string) as xs:integer* </td>
-
-    <td style="color: red;">no</td> 
-</tr> 
-</table> 
-
-<h3 id="Time">Time</h3> 
-
-<table>
-<tr> <td><a
-href="http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDuration-to-date"><code>op:add-dayTimeDuration-to-date</code></a></td>
-<td>($srcval1 as xs:date, $srcval2 as xdt:dayTimeDuration) as xs:date </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDuration-to-dateTime"><code>op:add-dayTimeDuration-to-dateTime</code></a></td>
-  <td>($srcval1 as xs:dateTime, $srcval2 as xdt:dayTimeDuration) as xs:dateTime
-  </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDuration-to-time"><code>op:add-dayTimeDuration-to-time</code></a></td>
-  <td>($srcval1 as xs:time, $srcval2 as xdt:dayTimeDuration) as xs:time </td>
-  <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDurations"><code>op:add-dayTimeDurations</code></a></td>
-
-    <td>($srcval1 as xdt:dayTimeDuration, $srcval2 as xdt:dayTimeDuration) as
-  xdt:dayTimeDuration </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-add-yearMonthDuration-to-date"><code>op:add-yearMonthDuration-to-date</code></a></td>
-  <td>($srcval1 as xs:date, $srcval2 as xdt:yearMonthDuration) as xs:date </td>
-  <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-add-yearMonthDuration-to-dateTime"><code>op:add-yearMonthDuration-to-dateTime</code></a></td>
-  <td>($srcval1 as xs:dateTime, $srcval2 as xdt:yearMonthDuration) as
-  xs:dateTime </td> <td style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-add-yearMonthDurations"><code>op:add-yearMonthDurations</code></a></td>
-  <td>($srcval1 as xdt:yearMonthDuration, $srcval2 as xdt:yearMonthDuration) as
-  xdt:yearMonthDuration </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-adjust-date-to-timezone"><code>fn:adjust-date-to-timezone</code></a></td>
-  <td>($srcval as xs:date?) as xs:date? </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-adjust-date-to-timezone"><code>fn:adjust-date-to-timezone</code></a></td>
-  <td>($srcval as xs:date?, $timezone as xdt:dayTimeDuration?) as xs:date?
-  </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-adjust-dateTime-to-timezone"><code>fn:adjust-dateTime-to-timezone</code></a></td>
-  <td>($srcval as xs:dateTime?) as xs:dateTime? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-adjust-dateTime-to-timezone"><code>fn:adjust-dateTime-to-timezone</code></a></td>
-
-    <td>($srcval as xs:dateTime?, $timezone as xdt:dayTimeDuration?) as
-  xs:dateTime? </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-adjust-time-to-timezone"><code>fn:adjust-time-to-timezone</code></a></td>
-  <td>($srcval as xs:time?) as xs:dateTime? </td> <td style="color:
-  red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-current-date"><code>fn:current-date</code></a></td>
-  <td>() as date </td> <td style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-current-dateTime"><code>fn:current-dateTime</code></a></td>
-  <td>() as dateTime </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-current-time"><code>fn:current-time</code></a></td>
-  <td>() as time </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-adjust-time-to-timezone"><code>fn:adjust-time-to-timezone</code></a></td>
-  <td>($srcval as xs:time?, $timezone as xdt:dayTimeDuration?) as xs:time?
-  </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-date-equal"><code>op:date-equal</code></a></td>
-  <td>($operand1 as xs:date, $operand2 as xs:date) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-date-greater-than"><code>op:date-greater-than</code></a></td>
-
-    <td>($operand1 as xs:date, $operand2 as xs:date) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-date-less-than"><code>op:date-less-than</code></a></td>
-  <td>($operand1 as xs:date, $operand2 as xs:date) as xs:boolean </td> <td
-  style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-dateTime-equal"><code>op:dateTime-equal</code></a></td>
-  <td>($operand1 as xs:dateTime, $operand2 as xs:dateTime) as xs:boolean </td>
-  <td style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-dateTime-greater-than"><code>op:dateTime-greater-than</code></a></td>
-  <td>($operand1 as xs:dateTime, $operand2 as xs:dateTime) as xs:boolean </td>
-  <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-dateTime-less-than"><code>op:dateTime-less-than</code></a></td>
-  <td>($operand1 as xs:dateTime, $operand2 as xs:dateTime) as xs:boolean </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-dayTimeDuration-equal"><code>op:dayTimeDuration-equal</code></a></td>
-  <td>($operand1 as xdt:dayTimeDuration, $operand2 as xdt:dayTimeDuration) as
-  xs:boolean </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-dayTimeDuration-greater-than"><code>op:dayTimeDuration-greater-than</code></a></td>
-  <td>($operand1 as xdt:dayTimeDuration, $operand2 as xdt:dayTimeDuration) as
-  xs:boolean </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-dayTimeDuration-less-than"><code>op:dayTimeDuration-less-than</code></a></td>
-
-    <td>($operand1 as xdt:dayTimeDuration, $operand2 as xdt:dayTimeDuration) as
-  xs:boolean </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-divide-dayTimeDuration"><code>op:divide-dayTimeDuration</code></a></td>
-  <td>($srcval1 as xdt:dayTimeDuration, $srcval2 as xs:decimal) as
-  xdt:dayTimeDuration </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-divide-yearMonthDuration"><code>op:divide-yearMonthDuration</code></a></td>
-  <td>($srcval1 as xdt:yearMonthDuration, $srcval2 as xs:decimal) as
-  xdt:yearMonthDuration </td> <td style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-gDay-equal"><code>op:gDay-equal</code></a></td>
-  <td>($operand1 as xs:gDay, $operand2 as xs:gDay) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-day-from-date"><code>fn:get-day-from-date</code></a></td>
-  <td>($srcval as xs:date?) as xs:integer? </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-day-from-dateTime"><code>fn:get-day-from-dateTime</code></a></td>
-  <td>($srcval as xs:dateTime?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-days-from-dayTimeDuration"><code>fn:get-days-from-dayTimeDuration</code></a></td>
-  <td>($srcval as xdt:dayTimeDuration?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-hours-from-dateTime"><code>fn:get-hours-from-dateTime</code></a></td>
-
-    <td>($srcval as xs:dateTime?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-hours-from-dayTimeDuration"><code>fn:get-hours-from-dayTimeDuration</code></a></td>
-  <td>($srcval as xdt:dayTimeDuration?) as xs:integer? </td> <td style="color:
-  red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-hours-from-time"><code>fn:get-hours-from-time</code></a></td>
-  <td>($srcval as xs:time?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-in-scope-namespaces"><code>fn:get-in-scope-namespaces</code></a></td>
-  <td>($element as element) as xs:string* </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-minutes-from-dateTime"><code>fn:get-minutes-from-dateTime</code></a></td>
-  <td>($srcval as xs:dateTime?) as xs:integer? </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-minutes-from-dayTimeDuration"><code>fn:get-minutes-from-dayTimeDuration</code></a></td>
-  <td>($srcval as xdt:dayTimeDuration?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-minutes-from-time"><code>fn:get-minutes-from-time</code></a></td>
-  <td>($srcval as xs:time?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-month-from-date"><code>fn:get-month-from-date</code></a></td>
-
-    <td>($srcval as xs:date?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-month-from-dateTime"><code>fn:get-month-from-dateTime</code></a></td>
-  <td>($srcval as xs:dateTime?) as xs:integer? </td> <td style="color:
-  red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-months-from-yearMonthDuration"><code>fn:get-months-from-yearMonthDuration</code></a></td>
-  <td>($srcval as xdt:yearMonthDuration?) as xs:integer? </td> <td
-  style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-seconds-from-dateTime"><code>fn:get-seconds-from-dateTime</code></a></td>
-  <td>($srcval as xs:dateTime?) as xs:decimal? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-seconds-from-dayTimeDuration"><code>fn:get-seconds-from-dayTimeDuration</code></a></td>
-  <td>($srcval as xdt:dayTimeDuration?) as xs:decimal? </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-seconds-from-time"><code>fn:get-seconds-from-time</code></a></td>
-  <td>($srcval as xs:time?) as xs:decimal? </td> <td style="color:
-  red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-timezone-from-date"><code>fn:get-timezone-from-date</code></a></td>
-  <td>($srcval as xs:date?) as xdt:dayTimeDuration? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-timezone-from-dateTime"><code>fn:get-timezone-from-dateTime</code></a></td>
-
-    <td>($srcval as xs:dateTime?) as xdt:dayTimeDuration? </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-timezone-from-time"><code>fn:get-timezone-from-time</code></a></td>
-  <td>($srcval as xs:time?) as xdt:dayTimeDuration? </td> <td style="color:
-  red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-year-from-date"><code>fn:get-year-from-date</code></a></td>
-  <td>($srcval as xs:date?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-year-from-dateTime"><code>fn:get-year-from-dateTime</code></a></td>
-  <td>($srcval as xs:dateTime?) as xs:integer? </td> <td style="color:
-  red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-get-years-from-yearMonthDuration"><code>fn:get-years-from-yearMonthDuration</code></a></td>
-  <td>($srcval as xdt:yearMonthDuration?) as xs:integer? </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-gMonth-equal"><code>op:gMonth-equal</code></a></td>
-  <td>($operand1 as xs:gMonth, $operand2 as xs:gMonth) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-gMonthDay-equal"><code>op:gMonthDay-equal</code></a></td>
-  <td>($operand1 as xs:gMonthDay, $operand2 as xs:gMonthDay) as xs:boolean
-  </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-gYear-equal"><code>op:gYear-equal</code></a></td>
-
-    <td>($operand1 as xs:gYear, $operand2 as xs:gYear) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-gYearMonth-equal"><code>op:gYearMonth-equal</code></a></td>
-  <td>($operand1 as xs:gYearMonth, $operand2 as xs:gYearMonth) as xs:boolean
-  </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-implicit-timezone"><code>fn:implicit-timezone</code></a></td>
-  <td>() as xs:dayTimeDuration? </td> <td style="color: red;">no</td> </tr>
-  <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-multiply-dayTimeDuration"><code>op:multiply-dayTimeDuration</code></a></td>
-  <td>($srcval1 as xdt:dayTimeDuration, $srcval2 as xs:decimal) as
-  xdt:dayTimeDuration </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-multiply-yearMonthDuration"><code>op:multiply-yearMonthDuration</code></a></td>
-  <td>($srcval1 as xdt:yearMonthDuration, $srcval2 as xs:decimal) as
-  xdt:yearMonthDuration </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dates"><code>op:subtract-dates</code></a></td>
-  <td>($srcval1 as xs:date, $srcval2 as xs:date) as xdt:dayTimeDuration </td>
-  <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dateTimes-yielding-dayTimeDuration"><code>fn:subtract-dateTimes-yielding-dayTimeDuration</code></a></td>
-  <td>($srcval1 as xs:dateTime, $srcval2 as xs:dateTime) as xdt:dayTimeDuration
-  </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dateTimes-yielding-yearMonthDuration"><code>fn:subtract-dateTimes-yielding-yearMonthDuration</code></a></td>
-
-    <td>($srcval1 as xs:dateTime, $srcval2 as xs:dateTime) as
-  xdt:yearMonthDuration </td> <td style="color: red;">no</td> </tr> <tr>
-  <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDuration-from-date"><code>op:subtract-dayTimeDuration-from-date</code></a></td>
-  <td>($srcval1 as xs:date, $srcval2 as xdt:dayTimeDuration) as xs:date </td>
-  <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDuration-from-dateTime"><code>op:subtract-dayTimeDuration-from-dateTime</code></a></td>
-  <td>($srcval1 as xs:dateTime, $srcval2 as xs:dayTimeDuration) as xs:dateTime
-  </td> <td style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDuration-from-time"><code>op:subtract-dayTimeDuration-from-time</code></a></td>
-  <td>($srcval1 as xs:time, $srcval2 as xs:dayTimeDuration) as xs:time </td>
-  <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDurations"><code>op:subtract-dayTimeDurations</code></a></td>
-  <td>($srcval1 as xdt:dayTimeDuration, $srcval2 as xdt:dayTimeDuration) as
-  xdt:dayTimeDuration </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-times"><code>op:subtract-times</code></a></td>
-  <td>($srcval1 as xs:time, $srcval2 as xs:time) as xdt:dayTimeDuration </td>
-  <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-yearMonthDuration-from-date"><code>op:subtract-yearMonthDuration-from-date</code></a></td>
-  <td>($srcval1 as xs:date, $srcval2 as xdt:yearMonthDuration) as xs:date </td>
-  <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-yearMonthDuration-from-dateTime"><code>op:subtract-yearMonthDuration-from-dateTime</code></a></td>
-
-    <td>($srcval1 as xs:dateTime, $srcval2 as xdt:yearMonthDuration) as
-  xs:dateTime </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-subtract-yearMonthDurations"><code>op:subtract-yearMonthDurations</code></a></td>
-  <td>($srcval1 as xdt:yearMonthDuration, $srcval2 as xdt:yearMonthDuration) as
-  xdt:yearMonthDuration </td> <td style="color: red;">no</td>
-
-  </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-time-equal"><code>op:time-equal</code></a></td>
-  <td>($operand1 as xs:time, $operand2 as xs:time) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr>
-
-    <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-time-greater-than"><code>op:time-greater-than</code></a></td>
-  <td>($operand1 as xs:time, $operand2 as xs:time) as xs:boolean </td> <td
-  style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-time-less-than"><code>op:time-less-than</code></a></td>
-  <td>($operand1 as xs:time, $operand2 as xs:time) as xs:boolean </td>
-
-    <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-yearMonthDuration-equal"><code>op:yearMonthDuration-equal</code></a></td>
-  <td>($operand1 as xdt:yearMonthDuration, $operand2 as xdt:yearMonthDuration)
-  as xs:boolean </td> <td style="color: red;">no</td> </tr>
-
-  <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-yearMonthDuration-greater-than"><code>op:yearMonthDuration-greater-than</code></a></td>
-  <td>($operand1 as xdt:yearMonthDuration, $operand2 as xdt:yearMonthDuration)
-  as xs:boolean </td> <td style="color: red;">no</td> </tr> <tr> <td><a
-  href="http://www.w3.org/TR/xpath-functions/#func-yearMonthDuration-less-than"><code>op:yearMonthDuration-less-than</code></a></td>
-
-    <td>($operand1 as xdt:yearMonthDuration, $operand2 as
-xdt:yearMonthDuration) as xs:boolean </td> <td style="color: red;">no</td>
-</tr> </table> <p><sup class="footnote"><a
-name="#fn1">1</a></sup> This function is not
+@node Aggregation, Numeric,
+@subsection Aggregation
+
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-count,@code{fn:count}}
+@tab ($srcval as item*) as xs:integer <td style="color: green;,yes
+@item @url{http://www.w3.org/TR/xpath-functions/#func-avg,@code{fn:avg}}
+
+@tab ($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType? <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-max,@code{fn:max}}
+@tab ($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType? <td
+style="color: green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-max,@code{fn:max}}
+@tab ($srcval as xdt:anyAtomicType*, $collationLiteral as string) as
+xdt:anyAtomicType? <td style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-min,@code{fn:min}}
+@tab ($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType? <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-min,@code{fn:min}}
+@tab ($srcval as xdt:anyAtomicType*, $collationLiteral as string) as
+xdt:anyAtomicType?
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-sum,@code{fn:sum}}
+@tab ($srcval as xdt:anyAtomicType*) as xdt:anyAtomicType? <td
+style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xquery-operators/#func-sum,@code{fn:sum}}
+@tab ($arg as xdt:anyAtomicType*, $zero as xdt:anyAtomicType?) as
+xdt:anyAtomicType? <td style="color: green;,yes  
+@end multitable
+
+
+@subsection Numeric
+
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-number,@code{fn:number}}
+@tab () as xs:double <td style="color: green;,yes  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-number,@code{fn:number}}
+
+@tab ($srcval as item?) as xs:double <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-abs,@code{fn:abs}}
+@tab ($srcval as numeric?) as numeric? <td style="color:
+green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-ceiling,@code{fn:ceiling}}
+@tab ($srcval as numeric?) as numeric? <td style="color:
+green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-floor,@code{fn:floor}}
+@tab ($srcval as numeric?) as numeric? <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-add,@code{op:numeric-add}}
+@tab ($operand1 as numeric, $operand2 as numeric) as numeric
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-divide,@code{op:numeric-divide}}
+@tab ($operand1 as numeric, $operand2 as numeric) as numeric <td
+style="color: green;,yes  
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-equal,@code{op:numeric-equal}}
+@tab ($operand1 as numeric, $operand2 as numeric) as xs:boolean <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-greater-than,@code{op:numeric-greater-than}}
+
+@tab ($operand1 as numeric, $operand2 as numeric) as xs:boolean <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-integer-divide,@code{op:numeric-integer-divide}}
+@tab ($operand1 as xs:integer, $operand2 as xs:integer) as xs:integer <td
+style="color: green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-less-than,@code{op:numeric-less-than}}
+@tab ($operand1 as numeric, $operand2 as numeric) as xs:boolean <td
+style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-numeric-mod,@code{op:numeric-mod}}
+@tab ($operand1 as numeric, $operand2 as numeric) as numeric <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-multiply,@code{op:numeric-multiply}}
+@tab ($operand1 as numeric, $operand2 as numeric) as numeric
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-subtract,@code{op:numeric-subtract}}
+@tab ($operand1 as numeric, $operand2 as numeric) as numeric <td
+style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-unary-minus,@code{op:numeric-unary-minus}}
+@tab ($operand as numeric) as numeric <td style="color: green;,yes
+@item @url{http://www.w3.org/TR/xpath-functions/#func-numeric-unary-plus,@code{op:numeric-unary-plus}}
+
+@tab ($operand as numeric) as numeric <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-round,@code{fn:round}}
+@tab ($srcval as numeric?) as numeric? <td style="color:
+green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-round-half-to-even,@code{fn:round-half-to-even}}
+@tab ($srcval as numeric?) as numeric? <td style="color: red;,
+no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-round-half-to-even,@code{fn:round-half-to-even}}
+@tab ($srcval as numeric?, $precision as integer) as numeric? <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-to,@code{op:to}}
+@tab ($firstval as xs:integer, $lastval as xs:integer) as xs:integer+
+
+<td style="color: green;,yes  
+@end multitable
+
+
+@subsection Boolean
+
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-boolean,@code{fn:boolean}}
+@tab ($srcval as item*) as xs:boolean
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-false,@code{fn:false}}
+@tab () as xs:boolean <td style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-not,@code{fn:not}}
+@tab ($srcval as item*) as xs:boolean <td style="color: green;,yes
+@item @url{http://www.w3.org/TR/xpath-functions/#func-true,@code{fn:true}}
+
+@tab () as xs:boolean <td style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-base64Binary-equal,@code{op:base64Binary-equal}}
+
+@tab ($value1 as xs:base64Binary, $value2 as xs:base64Binary) as
+xs:boolean <td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-deep-equal,@code{fn:deep-equal}}
+@tab ($parameter1 as item*, $parameter2 as item*) as xs:boolean <td
+style="color: brown;,will
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-deep-equal,@code{fn:deep-equal}}
+@tab ($parameter1 as item*, $parameter2 as item*, $collationLiteral as string)
+as xs:boolean <td style="color: brown;,will  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-compare,@code{fn:compare}}
+@tab ($comparand1 as xs:string?, $comparand2 as xs:string?) as
+xs:integer? <td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-compare,@code{fn:compare}}
+@tab ($comparand1 as xs:string?, $comparand2 as xs:string?, $collationLiteral
+as xs:string) as xs:integer?
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-boolean-equal,@code{op:boolean-equal}}
+@tab ($value1 as xs:boolean, $value2 as xs:boolean) as xs:boolean <td
+style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-boolean-greater-than,@code{op:boolean-greater-than}}
+@tab ($srcval1 as xs:boolean, $srcval2 as xs:boolean) as xs:boolean <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-boolean-less-than,@code{op:boolean-less-than}}
+
+@tab ($srcval1 as xs:boolean, $srcval2 as xs:boolean) as xs:boolean <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-hexBinary-equal,@code{op:hexBinary-equal}}
+@tab ($value1 as xs:hexBinary, $value2 as xs:hexBinary) as xs:boolean <td
+style="color: red;,no
+
+
+@end multitable
+
+
+@subsection String
+@multitable
+<!-- old specs
+@item @url{http://www.w3.org/TR/xpath-functions/#func-concat,@code{fn:concat}}
+@tab () as xs:string  <td style="color: green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-concat,@code{fn:concat}}
+@tab ($op1 as xs:string?) as xs:string  <td style="color:
+green;,yes  --> <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-concat,@code{fn:concat}}
+@tab ($op1 as xs:string?, $op2 as xs:string?, ...) as xs:string  <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-contains,@code{fn:contains}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?) as xs:boolean? 
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-contains,@code{fn:contains}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
+xs:string) as xs:boolean?  <td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-default-collation,@code{fn:default-collation}}
+@tab () as xs:anyURI?  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-ends-with,@code{fn:ends-with}} 
+@tab ($operand1 as xs:string?, $operand2 as xs:string?) as xs:boolean? 
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-ends-with,@code{fn:ends-with}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
+xs:string) as xs:boolean?  <td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-lower-case,@code{fn:lower-case}}
+@tab ($srcval as xs:string?) as xs:string?  <td style="color:
+green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-matches,@code{fn:matches}}
+@tab ($input as xs:string?, $pattern as xs:string) as xs:boolean?  <td
+style="color:green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-matches,@code{fn:matches}}
+@tab ($input as xs:string?, $pattern as xs:string, $flags as xs:string) as
+xs:boolean? 
+
+<td style="color:green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-normalize-space,@code{fn:normalize-space}}
+@tab () as xs:string?  <td style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-normalize-space,@code{fn:normalize-space}}
+@tab ($srcval as xs:string?) as xs:string?  <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-normalize-unicode,@code{fn:normalize-unicode}}
+
+@tab ($srcval as xs:string?) as xs:string?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-normalize-unicode,@code{fn:normalize-unicode}}
+@tab ($srcval as xs:string?, $normalizationForm as xs:string) as xs:string?
+<td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-starts-with,@code{fn:starts-with}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?) as xs:boolean? 
+<td style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-starts-with,@code{fn:starts-with}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
+xs:string) as xs:boolean?  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-string,@code{fn:string}}
+@tab () as xs:string 
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-string,@code{fn:string}}
+@tab ($srcval as item?) as xs:string  <td style="color: green;,yes
+
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-string-join,@code{fn:string-join}}
+@tab ($operand1 as xs:string*, $operand2 as xs:string) as xs:string  <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-string-length,@code{fn:string-length}}
+
+@tab () as xs:integer?  <td style="color: green;,yes  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-string-length,@code{fn:string-length}}
+@tab ($srcval as xs:string?) as xs:integer?  <td style="color:
+green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-string-pad,@code{fn:string-pad}}
+@tab ($padString as xs:string?, $padCount as xs:integer) as xs:string? 
+<td style="color:brown;,will  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-replace,@code{fn:replace}}
+@tab ($input as xs:string?, $pattern as xs:string, $replacement as xs:string)
+as xs:string?  <td style="color:green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-replace,@code{fn:replace}}
+@tab ($input as xs:string?, $pattern as xs:string, $replacement as xs:string,
+$flags as xs:string) as xs:string? 
+
+<td style="color:green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-substring,@code{fn:substring}}
+@tab ($sourceString as xs:string?, $startingLoc as xs:double) as xs:string?
+<td style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-substring,@code{fn:substring}}
+@tab ($sourceString as xs:string?, $startingLoc as xs:double, $length as
+xs:double) as xs:string?  <td style="color: green;,yes  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-substring-after,@code{fn:substring-after}}
+
+@tab ($operand1 as xs:string?, $operand2 as xs:string?) as xs:string? 
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-substring-after,@code{fn:substring-after}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
+xs:string) as xs:string?  <td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-substring-before,@code{fn:substring-before}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?) as xs:string? 
+<td style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-substring-before,@code{fn:substring-before}}
+@tab ($operand1 as xs:string?, $operand2 as xs:string?, $collationLiteral as
+xs:string) as xs:string?  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-tokenize,@code{fn:tokenize}}
+@tab ($input as xs:string?, $pattern as xs:string) as xs:string* 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-tokenize,@code{fn:tokenize}}
+@tab ($input as xs:string?, $pattern as xs:string, $flags as xs:string) as
+xs:string*  <td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-upper-case,@code{fn:upper-case}}
+@tab ($srcval as xs:string?) as xs:string?  <td style="color:
+green;,yes  
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-translate,@code{fn:translate}}
+
+@tab ($srcval as xs:string?, $mapString as xs:string?, $transString as
+xs:string?) as xs:string?  <td style="color: green;,yes 
+
+@end multitable
+
+
+@subsection Nodes
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-context-item,@code{fn:context-item}}<sup
+class="footnote,@ref{fn1,1}</sup>
+@tab () as item?  <td style="color: brown;,will 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-data,@code{fn:data}}
+
+@tab ($srcval as item*) as xdt:anyAtomicType*  <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-distinct-nodes,@code{fn:distinct-nodes}}
+@tab ($srcval as node*) as node*  <td style="color: green;,yes
+
+
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-doc,@code{fn:doc}}
+@tab ($uri as xs:string?) as document? 
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-except,@code{op:except}}
+@tab ($parameter1 as node*, $parameter2 as node*) as node*  <td
+style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-id,@code{fn:id}}
+@tab ($srcval as xs:string*) as element*  <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-idref,@code{fn:idref}}
+
+@tab ($srcval as xs:string*) as node*  <td style="color:
+green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-input,@code{fn:input}}
+@tab () as node*  <td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-intersect,@code{op:intersect}}
+@tab ($parameter1 as node*, $parameter2 as node*) as node*  <td
+style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-local-name,@code{fn:local-name}}
+@tab () as xs:string  <td style="color: green;,yes  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-local-name,@code{fn:local-name}}
+@tab ($srcval as node?) as xs:string 
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-name,@code{fn:name}}
+@tab () as xs:string  <td style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-name,@code{fn:name}}
+@tab ($srcval as node?) as xs:string  <td style="color: green;,yes
+@item @url{http://www.w3.org/TR/xpath-functions/#func-node-after,@code{op:node-after}}
+
+@tab ($parameter1 as node, $parameter2 as node) as xs:boolean  <td
+style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-node-before,@code{op:node-before}}
+@tab ($parameter1 as node, $parameter2 as node) as xs:boolean  <td
+style="color: green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-node-equal,@code{op:is-same-node}}
+@tab ($parameter1 as node, $parameter2 as node) as xs:boolean  <td
+style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-node-kind,@code{fn:node-kind}}<sup
+class="footnote,@ref{fn1,1}</sup>
+@tab ($srcval as node) as xs:string  <td style="color: brown;,must
+@item @url{http://www.w3.org/TR/xpath-functions/#func-NOTATION-equal,@code{op:NOTATION-equal}}
+
+@tab ($srcval1 as xs:NOTATION, $srcval2 as xs:NOTATION) as xs:boolean 
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-root,@code{fn:root}}
+@tab () as node  <td style="color: green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-root,@code{fn:root}}
+@tab ($srcval as node) as node  <td style="color: green;,yes 
+<tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-sequence-node-identical,@code{fn:sequence-node-identical}}<sup
+class="footnote,@ref{fn1,1}</sup>
+@tab ($parameter1 as node*, $parameter2 as node*) as xs:boolean?  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-union,@code{op:union}}
+
+@tab ($parameter1 as node*, $parameter2 as node*) as node*  <td
+style="color: green;,yes  
+@item @url{http://www.w3.org/TR/xpath-functions/#func-lang,@code{fn:lang}}
+@tab ($testlang as xs:string) as xs:boolean  <td style="color:
+brown;,will  
+
+@end multitable
+
+
+@subsection Sequence
+@multitable
+<tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-collection,@code{fn:collection}}
+
+@tab ($srcval as xs:string) as node*  <td style="color:
+brown;,will 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-concatenate,@code{op:concatenate}}
+@tab ($seq1 as item*, $seq2 as item*) as item*  <td style="color:
+brown;,will  
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-distinct-values,@code{fn:distinct-values}}
+@tab ($srcval as xs:anyAtomicType*) as xs:anyAtomicType*  <td
+style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-distinct-values,@code{fn:distinct-values}}
+@tab ($srcval as xs:anyAtomicType*, $collationLiteral as xs:string) as
+xs:anyAtomicType*  <td style="color: red;,no  
+
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-empty,@code{fn:empty}}
+@tab ($srcval as item*) as xs:boolean  <td style="color:
+green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-exactly-one,@code{fn:exactly-one}}
+@tab ($srcval as item*) as item  <td style="color: green;,yes
+@item @url{http://www.w3.org/TR/xpath-functions/#func-exists,@code{fn:exists}}
+@tab ($srcval as item*) as xs:boolean 
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-index-of,@code{fn:index-of}}
+@tab ($seqParam as xs:anyAtomicType*, $srchParam as xs:anyAtomicType) as
+xs:integer*  <td style="color: brown;,will 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-index-of,@code{fn:index-of}}
+@tab ($seqParam as xs:anyAtomicType*, $srchParam as xs:anyAtomicType,
+$collationLiteral as xs:string) as xs:integer*  <td style="color:
+brown;,will 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-insert-before,@code{fn:insert-before}}
+
+@tab ($target as item*, $position as xs:integer, $inserts as item*) as item*
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-item-at,@code{fn:item-at}}
+@tab ($seqParam as item*, $posParam as integer) as item?  <td
+style="color: brown;,will
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-last,@code{fn:last}}
+@tab () as xs:integer?  <td style="color: green;,yes  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-one-or-more,@code{fn:one-or-more}}
+@tab ($srcval as item*) as item+  <td style="color: green;,yes
+@item @url{http://www.w3.org/TR/xpath-functions/#func-position,@code{fn:position}}
+@tab () as xs:integer? 
+
+<td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subsequence,@code{fn:subsequence}}
+@tab ($sourceSeq as item*, $startingLoc as xs:double) as item*  <td
+style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subsequence,@code{fn:subsequence}}
+@tab ($sourceSeq as item*, $startingLoc as xs:double, $length as xs:double) as
+item*  <td style="color: green;,yes 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-remove,@code{fn:remove}}
+
+@tab ($target as item*, $position as xs:integer) as item*  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-zero-or-one,@code{fn:zero-or-one}}
+@tab ($srcval as item*) as item?  <td style="color: green;,yes
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-unordered,@code{fn:unordered}}
+@tab ($sourceSeq as item*) as item*  <td style="color: green;,yes
+
+@end multitable
+
+
+@subsection QName
+
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-local-name-from-QName,@code{fn:get-local-name-from-QName}}
+@tab ($srcval as xs:QName?) as xs:string?  <td style="color: red;,
+no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-namespace-from-QName,@code{fn:get-namespace-from-QName}}
+
+@tab ($srcval as xs:QName?) as xs:string?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-expanded-QName,@code{fn:expanded-QName}}
+@tab ($paramURI as xs:string, $paramLocal as xs:string) as xs:QName  <td
+style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-node-name,@code{fn:node-name}}
+@tab ($srcval as node) as xs:QName?  <td style="color: red;,
+no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-QName-equal,@code{op:QName-equal}}
+@tab ($srcval1 as xs:QName, $srcval2 as xs:QName) as xs:boolean  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-resolve-QName,@code{fn:resolve-QName}}
+@tab ($qname as xs:string, $element as element) as xs:QName 
+
+<td style="color: red;,no  
+@end multitable
+
+@subsection URI
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-anyURI-equal,@code{op:anyURI-equal}}
+@tab ($srcval1 as xs:anyURI, $srcval2 as xs:anyURI) as xs:boolean 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-base-uri,@code{fn:base-uri}}
+@tab ($srcval as node) as xs:string?  <td style="color: red;,
+no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-base-uri,@code{fn:base-uri}}
+@tab () as xs:string?  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-document-uri,@code{fn:document-uri}}
+
+@tab ($srcval as node) as xs:string?  <td style="color: red;,no
+@item @url{http://www.w3.org/TR/xpath-functions/#func-escape-uri,@code{fn:escape-uri}}
+@tab ($uri-part as string, $escape-reserved as xs:boolean) as xs:string 
+<td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-namespace-uri-for-prefix,@code{fn:get-namespace-uri-for-prefix}}
+@tab ($element as element, $prefix as xs:string) as xs:string?  <td
+style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-resolve-uri,@code{fn:resolve-uri}}
+@tab ($relative as xs:string) as xs:string  <td style="color: red;,no
+@item @url{http://www.w3.org/TR/xpath-functions/#func-resolve-uri,@code{fn:resolve-uri}}
+@tab ($relative as xs:string, $base as anyURI) as xs:string 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-namespace-uri,@code{fn:namespace-uri}}
+@tab () as xs:string  <td style="color: green;,yes 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-namespace-uri,@code{fn:namespace-uri}}
+@tab ($srcval as node?) as xs:string  <td style="color: green;,yes
+
+@end multitable
+
+
+
+
+
+@subsection Runtime
+
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-error,@code{fn:error}}
+
+@tab () as none  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-error,@code{fn:error}}
+@tab ($srcval as item?) as none  <td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-trace,@code{fn:trace}}
+@tab ($value as item*, $label as xs:string) as item*  <td style="color:
+red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-codepoints-to-string,@code{fn:codepoints-to-string}}
+@tab ($srcval as xs:integer*) as xs:string  <td style="color: red;,
+no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-string-to-codepoints,@code{fn:string-to-codepoints}}
+@tab ($srcval as xs:string) as xs:integer* 
+
+<td style="color: red;,no 
+
+
+@end multitable
+
+@subsection Date/Time
+
+@multitable
+@item @url{http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDuration-to-date,@code{op:add-dayTimeDuration-to-date}}
+@tab ($srcval1 as xs:date, $srcval2 as xdt:dayTimeDuration) as xs:date 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDuration-to-dateTime,@code{op:add-dayTimeDuration-to-dateTime}}
+@tab ($srcval1 as xs:dateTime, $srcval2 as xdt:dayTimeDuration) as xs:dateTime
+<td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDuration-to-time,@code{op:add-dayTimeDuration-to-time}}
+@tab ($srcval1 as xs:time, $srcval2 as xdt:dayTimeDuration) as xs:time 
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-add-dayTimeDurations,@code{op:add-dayTimeDurations}}
+
+@tab ($srcval1 as xdt:dayTimeDuration, $srcval2 as xdt:dayTimeDuration) as
+xdt:dayTimeDuration  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-add-yearMonthDuration-to-date,@code{op:add-yearMonthDuration-to-date}}
+@tab ($srcval1 as xs:date, $srcval2 as xdt:yearMonthDuration) as xs:date 
+<td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-add-yearMonthDuration-to-dateTime,@code{op:add-yearMonthDuration-to-dateTime}}
+@tab ($srcval1 as xs:dateTime, $srcval2 as xdt:yearMonthDuration) as
+xs:dateTime  <td style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-add-yearMonthDurations,@code{op:add-yearMonthDurations}}
+@tab ($srcval1 as xdt:yearMonthDuration, $srcval2 as xdt:yearMonthDuration) as
+xdt:yearMonthDuration  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-adjust-date-to-timezone,@code{fn:adjust-date-to-timezone}}
+@tab ($srcval as xs:date?) as xs:date? 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-adjust-date-to-timezone,@code{fn:adjust-date-to-timezone}}
+@tab ($srcval as xs:date?, $timezone as xdt:dayTimeDuration?) as xs:date?
+<td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-adjust-dateTime-to-timezone,@code{fn:adjust-dateTime-to-timezone}}
+@tab ($srcval as xs:dateTime?) as xs:dateTime?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-adjust-dateTime-to-timezone,@code{fn:adjust-dateTime-to-timezone}}
+
+@tab ($srcval as xs:dateTime?, $timezone as xdt:dayTimeDuration?) as
+xs:dateTime?  <td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-adjust-time-to-timezone,@code{fn:adjust-time-to-timezone}}
+@tab ($srcval as xs:time?) as xs:dateTime?  <td style="color:
+red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-current-date,@code{fn:current-date}}
+@tab () as date  <td style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-current-dateTime,@code{fn:current-dateTime}}
+@tab () as dateTime  <td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-current-time,@code{fn:current-time}}
+@tab () as time 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-adjust-time-to-timezone,@code{fn:adjust-time-to-timezone}}
+@tab ($srcval as xs:time?, $timezone as xdt:dayTimeDuration?) as xs:time?
+<td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-date-equal,@code{op:date-equal}}
+@tab ($operand1 as xs:date, $operand2 as xs:date) as xs:boolean  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-date-greater-than,@code{op:date-greater-than}}
+
+@tab ($operand1 as xs:date, $operand2 as xs:date) as xs:boolean  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-date-less-than,@code{op:date-less-than}}
+@tab ($operand1 as xs:date, $operand2 as xs:date) as xs:boolean  <td
+style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-dateTime-equal,@code{op:dateTime-equal}}
+@tab ($operand1 as xs:dateTime, $operand2 as xs:dateTime) as xs:boolean 
+<td style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-dateTime-greater-than,@code{op:dateTime-greater-than}}
+@tab ($operand1 as xs:dateTime, $operand2 as xs:dateTime) as xs:boolean 
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-dateTime-less-than,@code{op:dateTime-less-than}}
+@tab ($operand1 as xs:dateTime, $operand2 as xs:dateTime) as xs:boolean 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-dayTimeDuration-equal,@code{op:dayTimeDuration-equal}}
+@tab ($operand1 as xdt:dayTimeDuration, $operand2 as xdt:dayTimeDuration) as
+xs:boolean  <td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-dayTimeDuration-greater-than,@code{op:dayTimeDuration-greater-than}}
+@tab ($operand1 as xdt:dayTimeDuration, $operand2 as xdt:dayTimeDuration) as
+xs:boolean  <td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-dayTimeDuration-less-than,@code{op:dayTimeDuration-less-than}}
+
+@tab ($operand1 as xdt:dayTimeDuration, $operand2 as xdt:dayTimeDuration) as
+xs:boolean  <td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-divide-dayTimeDuration,@code{op:divide-dayTimeDuration}}
+@tab ($srcval1 as xdt:dayTimeDuration, $srcval2 as xs:decimal) as
+xdt:dayTimeDuration  <td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-divide-yearMonthDuration,@code{op:divide-yearMonthDuration}}
+@tab ($srcval1 as xdt:yearMonthDuration, $srcval2 as xs:decimal) as
+xdt:yearMonthDuration  <td style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-gDay-equal,@code{op:gDay-equal}}
+@tab ($operand1 as xs:gDay, $operand2 as xs:gDay) as xs:boolean  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-day-from-date,@code{fn:get-day-from-date}}
+@tab ($srcval as xs:date?) as xs:integer? 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-day-from-dateTime,@code{fn:get-day-from-dateTime}}
+@tab ($srcval as xs:dateTime?) as xs:integer?  <td style="color:
+red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-days-from-dayTimeDuration,@code{fn:get-days-from-dayTimeDuration}}
+@tab ($srcval as xdt:dayTimeDuration?) as xs:integer?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-hours-from-dateTime,@code{fn:get-hours-from-dateTime}}
+
+@tab ($srcval as xs:dateTime?) as xs:integer?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-hours-from-dayTimeDuration,@code{fn:get-hours-from-dayTimeDuration}}
+@tab ($srcval as xdt:dayTimeDuration?) as xs:integer?  <td style="color:
+red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-hours-from-time,@code{fn:get-hours-from-time}}
+@tab ($srcval as xs:time?) as xs:integer?  <td style="color:
+red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-get-in-scope-namespaces,@code{fn:get-in-scope-namespaces}}
+@tab ($element as element) as xs:string*  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-minutes-from-dateTime,@code{fn:get-minutes-from-dateTime}}
+@tab ($srcval as xs:dateTime?) as xs:integer? 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-minutes-from-dayTimeDuration,@code{fn:get-minutes-from-dayTimeDuration}}
+@tab ($srcval as xdt:dayTimeDuration?) as xs:integer?  <td style="color:
+red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-minutes-from-time,@code{fn:get-minutes-from-time}}
+@tab ($srcval as xs:time?) as xs:integer?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-month-from-date,@code{fn:get-month-from-date}}
+
+@tab ($srcval as xs:date?) as xs:integer?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-month-from-dateTime,@code{fn:get-month-from-dateTime}}
+@tab ($srcval as xs:dateTime?) as xs:integer?  <td style="color:
+red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-months-from-yearMonthDuration,@code{fn:get-months-from-yearMonthDuration}}
+@tab ($srcval as xdt:yearMonthDuration?) as xs:integer?  <td
+style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-get-seconds-from-dateTime,@code{fn:get-seconds-from-dateTime}}
+@tab ($srcval as xs:dateTime?) as xs:decimal?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-seconds-from-dayTimeDuration,@code{fn:get-seconds-from-dayTimeDuration}}
+@tab ($srcval as xdt:dayTimeDuration?) as xs:decimal? 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-seconds-from-time,@code{fn:get-seconds-from-time}}
+@tab ($srcval as xs:time?) as xs:decimal?  <td style="color:
+red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-timezone-from-date,@code{fn:get-timezone-from-date}}
+@tab ($srcval as xs:date?) as xdt:dayTimeDuration?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-timezone-from-dateTime,@code{fn:get-timezone-from-dateTime}}
+
+@tab ($srcval as xs:dateTime?) as xdt:dayTimeDuration?  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-timezone-from-time,@code{fn:get-timezone-from-time}}
+@tab ($srcval as xs:time?) as xdt:dayTimeDuration?  <td style="color:
+red;,no
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-year-from-date,@code{fn:get-year-from-date}}
+@tab ($srcval as xs:date?) as xs:integer?  <td style="color:
+red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-get-year-from-dateTime,@code{fn:get-year-from-dateTime}}
+@tab ($srcval as xs:dateTime?) as xs:integer?  <td style="color:
+red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-get-years-from-yearMonthDuration,@code{fn:get-years-from-yearMonthDuration}}
+@tab ($srcval as xdt:yearMonthDuration?) as xs:integer? 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-gMonth-equal,@code{op:gMonth-equal}}
+@tab ($operand1 as xs:gMonth, $operand2 as xs:gMonth) as xs:boolean  <td
+style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-gMonthDay-equal,@code{op:gMonthDay-equal}}
+@tab ($operand1 as xs:gMonthDay, $operand2 as xs:gMonthDay) as xs:boolean
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-gYear-equal,@code{op:gYear-equal}}
+
+@tab ($operand1 as xs:gYear, $operand2 as xs:gYear) as xs:boolean  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-gYearMonth-equal,@code{op:gYearMonth-equal}}
+@tab ($operand1 as xs:gYearMonth, $operand2 as xs:gYearMonth) as xs:boolean
+<td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-implicit-timezone,@code{fn:implicit-timezone}}
+@tab () as xs:dayTimeDuration?  <td style="color: red;,no 
+<tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-multiply-dayTimeDuration,@code{op:multiply-dayTimeDuration}}
+@tab ($srcval1 as xdt:dayTimeDuration, $srcval2 as xs:decimal) as
+xdt:dayTimeDuration  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-multiply-yearMonthDuration,@code{op:multiply-yearMonthDuration}}
+@tab ($srcval1 as xdt:yearMonthDuration, $srcval2 as xs:decimal) as
+xdt:yearMonthDuration 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dates,@code{op:subtract-dates}}
+@tab ($srcval1 as xs:date, $srcval2 as xs:date) as xdt:dayTimeDuration 
+<td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dateTimes-yielding-dayTimeDuration,@code{fn:subtract-dateTimes-yielding-dayTimeDuration}}
+@tab ($srcval1 as xs:dateTime, $srcval2 as xs:dateTime) as xdt:dayTimeDuration
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dateTimes-yielding-yearMonthDuration,@code{fn:subtract-dateTimes-yielding-yearMonthDuration}}
+
+@tab ($srcval1 as xs:dateTime, $srcval2 as xs:dateTime) as
+xdt:yearMonthDuration  <td style="color: red;,no  <tr>
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDuration-from-date,@code{op:subtract-dayTimeDuration-from-date}}
+@tab ($srcval1 as xs:date, $srcval2 as xdt:dayTimeDuration) as xs:date 
+<td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDuration-from-dateTime,@code{op:subtract-dayTimeDuration-from-dateTime}}
+@tab ($srcval1 as xs:dateTime, $srcval2 as xs:dayTimeDuration) as xs:dateTime
+<td style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDuration-from-time,@code{op:subtract-dayTimeDuration-from-time}}
+@tab ($srcval1 as xs:time, $srcval2 as xs:dayTimeDuration) as xs:time 
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-dayTimeDurations,@code{op:subtract-dayTimeDurations}}
+@tab ($srcval1 as xdt:dayTimeDuration, $srcval2 as xdt:dayTimeDuration) as
+xdt:dayTimeDuration 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-times,@code{op:subtract-times}}
+@tab ($srcval1 as xs:time, $srcval2 as xs:time) as xdt:dayTimeDuration 
+<td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-yearMonthDuration-from-date,@code{op:subtract-yearMonthDuration-from-date}}
+@tab ($srcval1 as xs:date, $srcval2 as xdt:yearMonthDuration) as xs:date 
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-yearMonthDuration-from-dateTime,@code{op:subtract-yearMonthDuration-from-dateTime}}
+
+@tab ($srcval1 as xs:dateTime, $srcval2 as xdt:yearMonthDuration) as
+xs:dateTime  <td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-subtract-yearMonthDurations,@code{op:subtract-yearMonthDurations}}
+@tab ($srcval1 as xdt:yearMonthDuration, $srcval2 as xdt:yearMonthDuration) as
+xdt:yearMonthDuration  <td style="color: red;,no
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-time-equal,@code{op:time-equal}}
+@tab ($operand1 as xs:time, $operand2 as xs:time) as xs:boolean  <td
+style="color: red;,no  <tr>
+
+@tab @url{http://www.w3.org/TR/xpath-functions/#func-time-greater-than,@code{op:time-greater-than}}
+@tab ($operand1 as xs:time, $operand2 as xs:time) as xs:boolean  <td
+style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-time-less-than,@code{op:time-less-than}}
+@tab ($operand1 as xs:time, $operand2 as xs:time) as xs:boolean 
+
+<td style="color: red;,no 
+@item @url{http://www.w3.org/TR/xpath-functions/#func-yearMonthDuration-equal,@code{op:yearMonthDuration-equal}}
+@tab ($operand1 as xdt:yearMonthDuration, $operand2 as xdt:yearMonthDuration)
+as xs:boolean  <td style="color: red;,no 
+
+@item @url{http://www.w3.org/TR/xpath-functions/#func-yearMonthDuration-greater-than,@code{op:yearMonthDuration-greater-than}}
+@tab ($operand1 as xdt:yearMonthDuration, $operand2 as xdt:yearMonthDuration)
+as xs:boolean  <td style="color: red;,no 
+
+item @url{http://www.w3.org/TR/xpath-functions/#func-yearMonthDuration-less-than,@code{op:yearMonthDuration-less-than}}
+
+@tab ($operand1 as xdt:yearMonthDuration, $operand2 as
+xdt:yearMonthDuration) as xs:boolean  <td style="color: red;,no
+@end multitable
+
+<sup class="footnote,<a name="#fn1,1}</sup> This function is not
 available in the current XQuery drafts.</p>
