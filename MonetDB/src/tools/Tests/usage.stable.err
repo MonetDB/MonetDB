@@ -10,7 +10,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-Usage: /var/tmp/monet.GNU_32-d.12493/MonetDB/Fedora3/src/tools/.libs/lt-Mserver [ options ] [ script+ ]                   
+Usage: Mserver [ options ] [ script+ ]                   
 Options are:                                        
  -c <config_file>    | --config=<config_file>       
                        --dbname=<database_name>     
@@ -24,7 +24,7 @@ Options are:
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
 # 16:36:12 >  
 
-Usage: /var/tmp/monet.GNU_32-d.12493/MonetDB/Fedora3/src/mapi/clients/C/.libs/lt-MapiClient [ options ]
+Usage: MapiClient [ options ]
 Options are:
  -b t/f      | --blocked=true/false /* blocked mode */
  -D          | --dump           /* dump sql database */
@@ -35,6 +35,7 @@ Options are:
  -l language | --language=lang  /* {mal,sql,mil,xquery} */
  -P passwd   | --passwd=passwd  /* password */
  -p portnr   | --port=portnr    /* port to connect to */
+ -d database | --database=database /* database to connect to */
  -q          | --quiet          /* don't print welcome message */
  -s stmt     | --statement=stmt /* run single statement */
  -T          | --time           /* time commands */
