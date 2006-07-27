@@ -208,7 +208,7 @@ CLTInfo(int *ret)
 	char s[26];
 
 	if (b == 0)
-		return throwMessage("catalog.clientInfo", "failed to create BAT");
+		return throwMessage("clients.info", "failed to create BAT");
 
 	BUNins(b, "user", local_itoa((int)c->user), FALSE);
 	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
@@ -236,7 +236,7 @@ CLTLogin(int *ret)
 	char s[26];
 
 	if (b == 0)
-		return throwMessage("catalog.clientLogin", "failed to create BAT");
+		return throwMessage("clients.getLogins", "failed to create BAT");
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
@@ -299,7 +299,14 @@ CLTquit(int *ret)
 
 	(void) ret;		/* fool compiler */
 	c->mode = FINISHING;
-	return MAL_SUCCEED;
+	/* this is unsafe !! because it may create a signal
+	   in the middle of a MAL execution, this leaves
+	   the system in an undetermined state behind
+	SO, only use the soft termination
+	stream_flush(c->fdout);
+	stream_close(c->fdout);
+	*/
+	return throwMessage("client.quit", "Finalize session");
 }
 
 str
