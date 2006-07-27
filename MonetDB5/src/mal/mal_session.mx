@@ -389,13 +389,18 @@ MSresetInstructions(MalBlkPtr mb, int start)
 	mb->stop = start;
 }
 
+static int unknownType(int tpe){
+	return tpe == TYPE_any || 
+		getHeadType(tpe) == TYPE_any || 
+		getTailType(tpe) == TYPE_any;
+}
 void
 MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, j;
 
 	for (i = j = start; i < mb->vtop;) {
-		if (isTmpVar(mb, i)) {
+		if (isTmpVar(mb, i) || unknownType(getVarType(mb,i)) ) {
 			clearVariable(mb, i);
 
 			if (glb) {
