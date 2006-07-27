@@ -1388,6 +1388,7 @@ and conversion to and from string is always possible.
 #define trivial_cast(dst,src)	\
 	((dst) == (src) || \
 	 (ATOMstorage(dst) == ATOMstorage(src) && \
+	  ((dst) != TYPE_oid) /* oid is unsigned, while int & lng are signed! */ && \
 	  ((dst) != TYPE_str || BATatoms[src].atomToStr == BATatoms[TYPE_str].atomToStr) && \
 	  ((src) != TYPE_str || BATatoms[dst].atomFromStr == BATatoms[TYPE_str].atomFromStr)))
 
@@ -1462,7 +1463,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 	(void) argc;
 
 	if (trivial_cast(tpe, b->ttype)) {
-		/* trivial conversion, e.g. int => int or oid => int */
+		/* trivial conversion, e.g. int => int */
 		int dense_bak = b->T->dense;
 
 		b->T->dense = FALSE;
@@ -1495,8 +1496,10 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			   || (b->ttype == TYPE_lng && tpe >= TYPE_flt && tpe <= TYPE_dbl)
 #if SIZEOF_OID == SIZEOF_INT
 			   || (b->ttype == TYPE_void && tpe >= TYPE_int)
+			   || (b->ttype == TYPE_oid  && tpe == TYPE_int) /* not covered by b->ttype < tpe */
 #else
 			   || (b->ttype == TYPE_void && tpe >= TYPE_oid)
+			   || (b->ttype == TYPE_lng  && tpe == TYPE_oid) /* not covered by b->ttype < tpe */
 #endif
 			   || (b->ttype <= TYPE_oid && tpe == TYPE_void)) {
 			/* casts with target domain larger than source domain, i.e.,
@@ -1531,8 +1534,9 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			bit overflow = FALSE;
 
 			assert(b->ttype != TYPE_void && tpe != TYPE_void);
+			assert(b->ttype != TYPE_oid);
 #if SIZEOF_OID != SIZEOF_INT
-			assert(b->ttype != TYPE_oid && tpe != TYPE_oid);
+			assert(tpe != TYPE_oid);
 #endif
 			/* assert(b->ttype > tpe && ... ); */
 @= interpret_batcast_source_switch

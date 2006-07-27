@@ -13,6 +13,7 @@ binsemijoin3
 binsearchmultijoin
 void
 casts
+batcasts
 qsort
 cross
 cache
