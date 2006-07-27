@@ -877,6 +877,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				for (i = 1; i < BBPsize; i++)
 					if (BBP_logical(i) && BBP_cache(i)) {
 						stream_printf(out, "[%d] %s lref = %d ref= %d ", i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
+						if( *BBP_logical(i) =='.')
+							stream_printf(out, " zombie ");
 						stream_printf(out, " dirty=%d \n", BATdirty(BBP_cache(i)));
 					}
 				continue;
