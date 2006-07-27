@@ -41,6 +41,7 @@ mal_export void MSscheduleClient(str command, str challenge, bstream *fin, strea
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
+mal_export str MALexitSession(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void MSresetInstructions(MalBlkPtr mb, int start);
@@ -507,6 +508,12 @@ table may have grown in size.
 */
 	MSresetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
+str
+MALexitSession(Client c)
+{
+	(void) c;
+	return 0;
+}
 str
 MALexitClient(Client c)
 {
