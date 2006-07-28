@@ -14,9 +14,8 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 @-
-The textual interface to the MonetDB server also supports a limited
+The textual interface @value{mclient} supports a limited
 form of online help commands.
- @c and the readline key-binding '<TAB><TAB>'. 
 The argument is a (partial) operator call,
 which is looked up in the symbol table.
 If the pattern includes a '(' it also
@@ -24,7 +23,7 @@ displays the signature for each match.
 The @code{argument types} and @code{address} attributes
 are also shown if the call contains the closing bracket ')'.
 @example
->manual.completion("bat.is");
+>?bat.is
 bat.isSynced
 bat.isCached
 bat.isPersistent
@@ -33,9 +32,9 @@ bat.isSortedReverse
 bat.isSorted
 bat.isaSet
 bat.isaKey
->manual.help("bat.isSorted(");
+>?bat.isSorted(
 command bat.isSorted(b:bat[:any_1,:any_2]):bit
->manual.help("bat.isSorted()");
+>?bat.isSorted()
 command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
 Returns whether a BAT is ordered on head or not.
 @end example
@@ -43,7 +42,7 @@ Returns whether a BAT is ordered on head or not.
 The module and function names can be replaced by the 
 wildcard character '*'. General regulat pattern matching is not supported.
 @example
-> manual.completion("*.print()");
+>?*.print()
 command color.print(c:color):void
 pattern array.print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...):void
 pattern io.print(b1:bat[:any_1,:any]...):int
@@ -53,6 +52,8 @@ pattern io.print(val:any_1,lst:any...):int
 pattern io.print(val:bat[:any_1,:any_2]):int
 @end example
 
+The result of the help command can also be obtained in a BAT,
+using the commands @code{manual.help}.
 Keyword based lookup is supported by the operation @code{manual.search};
 Additional routines are available in the @code{inspect}
 module to built reflexive code.

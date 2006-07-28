@@ -733,7 +733,7 @@ loadBox(str name)
 		Client child= MCforkClient(MCgetClient());
 		defaultScenario(child);
 		malInclude(child, boxfile, 0, 0);
-		MCkillClient(child);
+		MCkillClient(child,2);
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
 #endif
