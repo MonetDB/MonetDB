@@ -14,7 +14,7 @@ lib_optimizer = {
 		mal_singleton.mx mal_costmodel.mx mal_reduce.mx \
 		mal_qep.mx mal_multitable.mx mal_prelude.mx \
 		mal_generators.mx mal_remoteQueries.mx mal_joinselect.mx \
-		mal_constantExpression.mx mal_inliners.mx
+		mal_constantExpression.mx mal_inliners.mx mal_cascade.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
@@ -31,5 +31,6 @@ scripts_mal = {
 	mal_garbageCollector.mx mal_generators.mx mal_multiplex.mx \
 	mal_multitable.mx mal_partitionedQuery.mx mal_peephole.mx mal_qep.mx \
 	mal_reduce.mx mal_remoteQueries.mx mal_singleton.mx mal_strengthReduction.mx \
-	mal_crack.mx mal_joinselect.mx mal_constantExpression.mx mal_inliners.mx
+	mal_crack.mx mal_joinselect.mx mal_constantExpression.mx mal_inliners.mx \
+	mal_cascade.mx
 }

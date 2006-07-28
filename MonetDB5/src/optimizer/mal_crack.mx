@@ -140,7 +140,7 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			removeInstruction(mb, p);
 
 	}
-	optimizerCheck(mb, "mal.crack", 1, GDKusec() - clk);	
+	optimizerCheck(mb, "optimizer.crack", 1, GDKusec() - clk);	
 	return MAL_SUCCEED;
 }
 @- Optimizer code wrapper

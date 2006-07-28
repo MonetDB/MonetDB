@@ -1,0 +1,7 @@
+b := bat.new(:void,:int);
+s1:= algebra.select(b,1,100);
+s2:= algebra.select(s1,5,95);
+s3:= algebra.select(s2,50,nil);
+s4:= algebra.select(s3,nil,75);
+optimizer.cascade();
+mdb.list();

@@ -1,0 +1,172 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mal_cascade
+@a M. Kersten
+@- Cascaded Ranges Conditions
+Almost all queries are interested in a few slices
+of the table. If applied to a view, the query plans
+often contain multiple selections over the same column.
+They may also have fixed range arguments.
+
+The purpose of the @code{cascade} optimizer is to
+minimize the number of table scans by cascading the
+range terms as much as possible.
+
+@example
+b := bat.new(:void,:int);
+s1:= algebra.select(b,1,100);
+s2:= algebra.select(s1,5,95);
+s3:= algebra.select(s2,50,nil);
+s4:= algebra.select(s3,nil,75);
+optimizer.cascade();
+@end example
+
+This lengthy sequence can be compressed into a single one.
+@example
+b := bat.new(:void,:int);
+s1:= algebra.select(b,50,75);
+@end example
+Cascading range information is not limited to conjunctive
+selections. The result of unions and the sub-set relationship
+between OID sets can also be the target for cascading.
+@{
+The implementation is limited to the select operations
+for the time being.
+A temporary range descriptor for each variable is used.
+
+The cascades should be limited to simple blocks.
+
+The aliasRemoval and constantExpression optimizers should
+have done their work. Empty results are marked as such,
+and it is up to the emptySet optimizer to take care.
+@mal
+pattern optimizer.cascade():str
+address QOTCRoptimizer;
+pattern optimizer.cascade(mod:str, fcn:str):str
+address QOTCRoptimizer
+comment "Cascade constant range selections";
+
+@h
+#ifndef _MAL_CASCADE_
+#define _MAL_CASCADE_
+#include "mal_optimizer.h"
+
+/* #define DEBUG_MAL_CASCADE */
+
+opt_export str CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#endif
+
+
+@c  
+#include "mal_crack.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_prelude.h"
+
+typedef struct RANGE{
+	int lcst, rcst, srcvar;
+	int lincl, rincl;
+	ValRecord lval,hval;
+}RangeRec, *Range;
+
+static void 
+printRange(Range rng){
+	(void) rng;
+}
+
+#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
+	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+
+#define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
+	getModuleId(X) && getModuleId(X)==M)
+
+str
+CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr p, *old;
+	int i, j, limit,actions=0;
+	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
+	lng clk = GDKusec();
+
+	(void) j;
+	(void) range;
+	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
+	if( mb->errors) 
+		return MAL_SUCCEED;
+
+#ifdef DEBUG_MAL_CASCADE
+	printf("Cascade optimizer started\n");
+#endif
+	(void) stk;
+	(void) pci;
+	
+	limit = mb->stop;
+	old = mb->stmt;
+	
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+#ifdef DEBUG_MAL_CASCADE
+		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
+#endif
+		/* find and replace algebra select commands with crack select ones*/
+		actions++;
+#ifdef DEBUG_MAL_CASCADE
+		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
+		for(j=0; j< p->retc; j++)
+			prRange(range+j);
+#endif
+	}
+	if (pci) 
+		removeInstruction(mb, pci);
+	optimizerCheck(mb, "optimizer.cascade", actions, GDKusec() - clk);	
+	return MAL_SUCCEED;
+}
+@- Optimizer code wrapper
+@c
+mal_export str QOTCRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTCRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str modnme;
+	str fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+
+	optimizerInit();
+	removeInstruction(mb, p);
+	if( p->argc > 1){
+		if( stk != 0){
+			modnme= (str)getArgValue(stk,p,1);
+			fcnnme= (str)getArgValue(stk,p,2);
+		} else {
+			modnme= getArgDefault(mb,p,1);
+			fcnnme= getArgDefault(mb,p,2);
+		}
+		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
+		if( scope)
+			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+		if( s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+			return throwMessage("optimizer.cascade",buf);
+		}
+		if( s->def->errors == 0)
+			CRoptimizer(s->def,0,0);
+	} else
+			CRoptimizer(mb,0,0);
+	return MAL_SUCCEED;
+}

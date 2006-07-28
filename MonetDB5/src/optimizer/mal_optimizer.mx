@@ -66,7 +66,7 @@ should have done their work already. For example, it doesn;t make sense
 to perform a static evaluation unless you have already propagated the
 constants using Alias Removal.
 
-@emph{Constant expressions (CSTXoptimizer)}
+@emph{Constant expressions (CXoptimizer)}
 Goal: to remove scalar expressions which need be evaluated once during the
 query lifetime.
 Rationale: static expressions appear 
@@ -164,6 +164,15 @@ Rationale: Singleton sets can be represented by value pairs in the
 MAL program, which reduces to a scalar expression.
 Approach: Identify a set variable for replacement.
 Impact:
+
+@emph{Cascade Range Propagation (CRoptimizer)}
+Goal: look for constant ranges in select statements and
+propagate them through the code.
+Rationale: partitioned tables and views may give rise to
+expressions that contain multiple selections over the
+same BAT. If their arguments are constant, the result
+of such selects can sometimes be predicted, or the
+multiple selections can be cascaded into a single operation.
 
 @emph{Result Cacher (RCoptimizer)}
 Goal: to reduce the processing cost by keeping track of expensive to
@@ -266,7 +275,7 @@ work needed.
 Approach: inspect the flowgraph for each iterator and move instructions around.
 Impact: low
 
-@emph{Accumulator Evaliations (AEoptimizer)}
+@emph{Accumulator Evaluation (AEoptimizer)}
 Goal: to replace operators with cheaper ones.
 Rationale: based on the actual state of the computation and the richness of
 the supporting libraries there may exists alternative routes to solve a query.
@@ -324,7 +333,7 @@ them in a preferred order of deployment.
 @item Group A:
 @tab    Code Inliner (CIoptimizer)
 @item 
-@tab    Constant Expression Evaluator. (CSTXoptimizer)
+@tab    Constant Expression Evaluator. (CXoptimizer)
 @item 
 @tab    Relational Expression Evaluator. (RXoptimizer)
 @item 
@@ -337,6 +346,8 @@ them in a preferred order of deployment.
 
 @item Group C:
 @tab    Join Path Optimizer (JPoptimizer)
+@item 
+@tab    Cascade Ranges (CRoptimizer)
 @item 
 @tab    Operator Cost Reduction (OCoptimizer)
 @item 
