@@ -18,8 +18,8 @@
 @a M. L. Kersten
 @v 3.0
 @+ MIL compilation
-MonetDB comes with its programming language called MIL
-(Monet Interface Language). A large collection of MIL programs exists,
+The MonetDB Version 4 line comes with its programming language 
+MIL Monet Interface Language). A large collection of MIL programs exists,
 which ideally should run without problems on the MonetDB version 5 Kernel.
 Unfortunately, life isn;t that easy. 
 MIL was designed as a half-backed scripting language with
@@ -31,19 +31,19 @@ against the modules being loaded and variables known within the prevaling
 scope.
 This was necessary to resolve their context dependent interpretation.
 
-In MonetDB Version 4 a cleanup of MIL has already taken place which strikes
-a balance between forcing users to migrate to MAL and
-to continue using their MIL code base. 
+A MIL to MAL translator has been constructed to ease migration
+to the new software line.
 It is realized with a minimalistic compiler, which produces
 MAL code for a large fragment of the MIL language. 
 There is, however, no information on the runtime status. 
 In particular, it means there is no knowledge on pre-existing 
 variables, type names, procedures, etc..
 
-With a little care many MIL programs can be compiled
-and run against the new kernel.
+With a little care many MIL programs can be compiled and run.
 The MonetDB test suites and predefined MIL proc's
 have been used to define the language boundary to be supported.
+In general, the output of the compiler requires manual finetuning to
+benefit from the new setting.
 
 In writing MIL code, the following rules should be kept obeyed:
 @itemize
@@ -52,8 +52,7 @@ do not change the type of variables within their scope.
 @item 
 do not use type identifiers as ordinary variables
 @item 
-properly type a new variable when it is initialized with nil,
-e.g.  nil:int
+properly type a new variable when it is initialized with nil.
 @end itemize
 
 Consider the following old MIL program stored in the file @emph{my.mil}
@@ -80,13 +79,11 @@ silently replace them with a type identifier. Likewise, an procedure
 identifier mapping table is used to ease migration to the new setting.
 
 @}
-@+ Conversion Pitfalls
-In this section we summarize the pitfalls and limitations encountered
-in using the MIL to MAL compiler.
+
+Several pitfalls and limitations exist for using the MIL to MAL compiler.
 
 @strong{Name spaces}.
-The naming of functions has undergone a clean up action. Part of this
-name re-casting is dealt with in a transparent way for the user.
+The naming of functions has undergone a clean up action. 
 
 @strong{Multiplex operations}.
 One of the old key features dropped is the generic multiplex operation.

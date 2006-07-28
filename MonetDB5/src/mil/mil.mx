@@ -116,7 +116,7 @@ MILinit(Client cntxt)
 	malInclude(cn, "mil_algebra_procs", "mil_algebra_procs", 0);
 	malInclude(cn, "mil_system_procs", "mil_system_procs", 0);
 	(void) cntxt;
-	MCkillClient(cn);
+	MCkillClient(cn,1);
 	return MAL_SUCCEED;
 }
 
