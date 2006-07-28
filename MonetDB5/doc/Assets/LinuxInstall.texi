@@ -236,44 +236,24 @@ Mserver
 and you'll get the "server console", where you can type your commands.
 The server console is mainly meant for administrative use.
 
-For a more convenient interface, you should use the 
+For a more convenient interface, you should use the @value{mclient} program.
 @ifset M5manual
-@code{mclient}.
 To do so, first start the server.
 Then, in a second shell, set up the same environment and start 
 the text-based client.
 
 @example
-mclient -lsql
+@value{mclient} -lsql
 @end example
 
-With @code{mclient}, you get a text-based interface that supports command-line 
+With @value{mclient}, you get a text-based interface that supports command-line 
 editing and a command-line history. The latter can even be stored 
-persistently to be re-used after stopping and restarting @code{mclient};
+persistently to be re-used after stopping and restarting @value{mclient};
 for details type:
 @example
-mclient --help
+@value{mclient} --help
 @end example
 @end ifset
-
-@ifclear M5manual
-@code{MapiClient}.
-To do so, first start the server.
-Then, in a second shell, set up the same environment and start 
-the text-based client.
-
-@example
-MapiClient -lsql
-@end example
-
-With @code{MapiClient}, you get a text-based interface that supports command-line 
-editing and a command-line history. The latter can even be stored 
-persistently to be re-used after stopping and restarting @code{MapiClient};
-for details type:
-@example
-MapiClient --help
-@end example
-@end ifclear
 
 @subsubsection Troubleshooting
 Bootstrap fails if any of the requisite programs can not be found or

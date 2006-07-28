@@ -19,17 +19,9 @@ and therefore using an absolute path name is highly recommended.]
 It is also possible to dump from the command line.
 Start a server, and then issue the following command:
 
-@ifset SQLmanual
 @example
-MapiClient -lsql -umonetdb -Pmonetdb --dump > dump.sql
+@mclient{} -lsql -umonetdb -Pmonetdb --dump > dump.sql
 @end example
-@end ifset
-    
-@ifset Mmanual
-@example
-mclient -lsql -umonetdb -Pmonetdb --dump > dump.sql
-@end example
-@end ifset
     
 This command will connect to the SQL Server and dump the database 
 into the file dump.sql in the current directory.
@@ -48,15 +40,7 @@ That is, a less than symbol followed by the absolute (!) path name of the dump f
 
 It is also possible to restore from the command line. Start a SQL Server, and then issue the command:
 
-@ifset SQLmanual
 @example
-MapiClient -lsql -umonetdb -Pmonetdb < dump.sql
+@mclient{} -lsql -umonetdb -Pmonetdb < dump.sql
 @end example
-@end ifset
-    
-@ifset Mmanual
-@example
-mclient -lsql -umonetdb -Pmonetdb < dump.sql
-@end example
-@end ifset
     

@@ -1,21 +1,26 @@
 @subsection Mapi Client Calling Arguments
 
-The @code{mclient} program provides a textual interface to a
-MonetDB server. On a Linux platform it provides readline
+The @value{mclient} program is the universal command-line tool that implements the MAPI protocol for client-server interaction
+with MonetDB.
+On a Linux platform it provides readline
 functionality, which greatly improves user interaction.
 A history can be maintained to ease interaction over multiple
 sessions.
 
-A @code{mclient} requires minimally a language and host or 
+A @value{mclient} requires minimally a language and host or 
 port argument. The default setting is geared
-at establing a guest connection to a SQL database at a default
+at establing a guest connection to a SQL or XQuery database at a default
 server running on the localhost.
+The @code{ -h hostname} specifies on which machine the MonetDB server 
+is running.  If you communicate with a MonetDB server on the same 
+machine, it can be omitted.
+
 
 The timer switch reports on the round-about time for
 queries sent to the server. It provides a first impression
 on the execution cost.
 @example
-mclient [ options ]
+@value{mclient} [ options ]
 @end example
 Options are:
 @verbatim
@@ -33,4 +38,17 @@ Options are:
  -t          | --trace          /* trace Monet interaction */
  -u<user>    | --user=user      /* user id [default=monetdb] */
  -?          | --help           /* show this usage message */
+ -s xqmode     /*xquery serialization mode {xml,dm} */
 @end verbatim
+
+@ifset XQmanual
+Thus, passing @code{-l xquery} (or shorter: @code{-lxq}) will cause
+the query @code{script} to be executed as an XQuery.
+@end ifset
+
+The default @code{mapi_port} TCP port used is @code{50000}. If this port
+happens to be in use on the server machine (which generally is only the 
+case if you run two MonetDB servers on it), you will have 
+to use the @code{ -p port} switch. Otherwise, it may also be omitted.
+Note that the default port (and other default options) can be set in the
+server configuration file.

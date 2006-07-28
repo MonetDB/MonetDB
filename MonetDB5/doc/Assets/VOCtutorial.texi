@@ -43,7 +43,8 @@ Make sure the MonetDB server has been started, then start the SQL client.
 Under Linux you will see something like this:
 
 @example
-shell> mjclient --database=voc -umonetdb 
+shell> MapiClient --database=voc -umonetdb 
+@end ifset
 password: ******
 Welcome to the MonetDB interactive JDBC terminal!
 Database: MonetDB 4.99.19
@@ -66,19 +67,19 @@ as a gzipped file with SQL statements.
 After the zipfile has been extracted, the file should be loaded into MonetDB
 via the @ref{Client Interfaces}.
 Alternatively, the URL to the VOC data file can be supplied to the
-@code{mjclient} utility, which then directly reads from the URL.
+@value{mjclient} utility, which then directly reads from the URL.
 
-The tutorial database can be initialized using either @code{mjclient} and
-@code{mclient} as follows, provided the sql-dump file has already been
+The tutorial database can be initialized using either @value{mjclient} and
+@value{mclient} as follows, provided the sql-dump file has already been
 downloaded:
 @example
-shell> mjclient --database=voc -uvoc -f voc_dump.sql -Xbatching
+shell> @value{mjclient} --database=voc -umonetdb -f voc_dump.sql -Xbatching
 password: ***
-shell>mclient -lsql -uvoc <voc_dump.sql
+shell>@value{mclient} -lsql -uvoc <voc_dump.sql
 @end example
 Alternatively, a remotely living dump file can be used:
 @example
-shell> mjclient -uvoc -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching
+shell> value{mjclient} --database=voc -umonetdb -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching
 password:***
 @end example
 The argument @code{Xbatching} instructs the JDBC client to batch instructions
@@ -86,10 +87,10 @@ before shipping them to the server. Loading the database takes a few
 seconds on a state-of-the-art machine.
 
 @subsection Exploring the VOC data set
-The @code{mjclient} contains a @emph{describe} operator, 
+The @value{mjclient} contains a @emph{describe} operator, 
 denoted by @code{\d} to inspect the
 definition of the database schema and its tables.
-This functionality is not available in @code{mclient}. 
+This functionality is not available in @value{mclient}. 
 @example
 voc-> \d
 TABLE   voc.craftsmen

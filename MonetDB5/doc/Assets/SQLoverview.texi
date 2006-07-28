@@ -40,7 +40,7 @@ SQL statements into the MonetDB Assembler Language (MAL).
 In this process common optimization heuristics,
 specific to the relational algebra are performed.
 There are bindings for SQL with e.g. JDBC, PHP and C,
-(see @ref{Programming Interfaces}) to integrate seamlessly in existing
+to integrate seamlessly in existing
 developments environments.
 Client utilities like @ref{Aqua Data Studio},
 @ref{DbVisualizer} and @ref{iSQL-Viewer}
@@ -73,7 +73,7 @@ Once it runs, you can choose between a textual interface or
 one of the graphical user interfaces.
 The easiest to start with is a textual SQL client.
 Under Windows, this client is already configured to directly contact
-the running server using @code{mjclient}.
+the running server using @value{mjclient}.
 For Linux users we illustrate the actions taken behind the scene.
 
 The first action on Linux is to start the database server:
@@ -90,18 +90,19 @@ monetdb --log
 monetdb --log --dbname=voc
 @end example
 The next step is to connect to the server with a textual client.
-Two such clients are included in the distribution: @code{mclient} and
-@code{mjclient}.
+Two such clients are included in the distribution: @value{mclient} and
+@value{mjclient}.
 
 The former is the native, C-implementation of the MonetDB client interface.
 It is a no-frills and fast interface geared at developers.
-The @code{mjclient} is a Java implementation and it
+The @value{mjclient} is a Java implementation and it
 uses a standardized database interaction protocol.
 If you are familiar with JDBC-based applications, or intend to
 build those, this interface may be your prime choice.
-The @code{mjclient} utility is illustrated:
+The @value{mjclient} utility is illustrated:
+
 @example
-shell> mjclient --database=voc --user=monetdb
+shell> @value{mclient} --database=voc --user=monetdb
 password: *******
 Welcome to the MonetDB interactive JDBC terminal!
 Database: MonetDB 4.99.19
@@ -110,9 +111,10 @@ Type \q to quit, \h for a list of available commands
 auto commit mode: on
 monetdb->
 @end example
+
 The default password for the user @emph{monetdb} is @emph{monetdb}.
 The location of the jar file is taken from the MonetDB
-installation directory.  @code{mjclient} reads settings from
+installation directory.  @value{mjclient} reads settings from
 the @code{~/.monetdb} file (in property=value format) for ease of use.
 
 The world of SQL is now available to the user:
@@ -127,9 +129,9 @@ monetdb-> SELECT 'Hello SQL, here I come' AS "message";
 monetdb->
 @end example
 
-The alternative interface is @code{mclient} with its Spartan rendering scheme:
+The alternative interface is @value{mclient} with its Spartan rendering scheme:
 @example
-shell> mclient -lsql
+shell> @value{mclient} -lsql
 sql>SELECT 'Hello SQL, here I come' AS "message";
 # . # table_name
 # message # name

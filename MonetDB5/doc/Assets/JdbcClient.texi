@@ -4,10 +4,11 @@ comes with several options to fine-tune the
 interaction with the database server. A synopsis of the calling
 arguments is given below
 @example
-mjclient [-h host[:port]] [-p port] \
+@value{mclient} [-h host[:port]] [-p port] \
 		[-f file] [-u user] [-l language] [-b [database]] \
 		[-d [table]] [-e] [-X<opt>]
 @end example
+
 but also using long option equivalents --host --port --file --user --language
 --dump --echo --database are allowed.
 Arguments may be written directly after the option like -p45123.
@@ -15,7 +16,7 @@ Arguments may be written directly after the option like -p45123.
 If no host and port are given, localhost and 45123 (=sql_port default)
 are assumed.  An @code{.monetdb}
 file may exist in the user's home directory.  This file can contain
-preferences to use each time mjclient is started.  Options given on the
+preferences to use each time @value{mjclient} is started.  Options given on the
 command line override the preferences file.  The @code{.monetdb} file syntax is
 <option>=<value> where option is one of the options host, port, file, mode
 debug, or password.  Note that the last one is perilous and therefore not

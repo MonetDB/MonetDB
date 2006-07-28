@@ -1,7 +1,6 @@
-@ifset SQLmanual
+@ifset XQmanual
 @cartouche
 The functionally and results shown on this page depend on
-the MonetDB Version 5 server. 
-See the Version 4 compatibility documentation for further details.
+the MonetDB Version 4 server. 
 @end cartouche
 @end ifset
