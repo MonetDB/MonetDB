@@ -144,7 +144,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("printf(\"problem signalled before \\\"\n\");"); 	# 61  (_81:str)
     ua_a := io.printf("problem signalled before \\\"\n");	# 62 IOprint_str (ua_a:int)<-(_83:str)
 #	mil.line("quit();"); 	# 63  (_84:str)
-    va_a := clients.quit();	# 64 CLTquit (va_a:void)
+    va_a := clients.quit();	# 64 CLTquitDefault (va_a:void)
 end main;	# 65  
 [ "got single quote ' ." ]
 ## remove superfluous escapes

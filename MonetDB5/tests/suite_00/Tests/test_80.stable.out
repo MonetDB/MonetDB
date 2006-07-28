@@ -118,7 +118,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("print(c);"); 	# 48  (_45:str)
     ra_a := io.print(c);	# 49 IOprint_val (ra_a:int)<-(c:bat[:int,:int])
 #	mil.line("quit();"); 	# 50  (_51:str)
-    sa_a := clients.quit();	# 51 CLTquit (sa_a:void)
+    sa_a := clients.quit();	# 51 CLTquitDefault (sa_a:void)
 #Identifer 'key' mapped to 'bat.setKey' 	# 52  (_53:str)
 #Identifer 'set' mapped to 'bat.setSet' 	# 53  (_54:str)
 end main;	# 54  

@@ -302,7 +302,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("var bn := tst(b1);  "); 	# 124  (_90:str)
     ha_a := io.print(bn);	# 125 IOprint_val (ha_a:int)<-(bn:bat[:int,:int])
 #	mil.line(""); 	# 126  (_77:str)
-    ia_a := clients.quit();	# 127 CLTquit (ia_a:void)
+    ia_a := clients.quit();	# 127 CLTquitDefault (ia_a:void)
 end main;	# 128  
 #-----------------#
 # h	t	  # name

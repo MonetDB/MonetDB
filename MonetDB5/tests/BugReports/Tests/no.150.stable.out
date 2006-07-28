@@ -96,7 +96,7 @@ function user.main():void;	# 0  (main:void)
     aa_a := calc.oid(20000000);	# 38 CALCint2oid (aa_a:oid)<-(_38:int)
     ba_a := calc.setoid(aa_a);	# 39 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
 #	mil.line("quit();"); 	# 40  (_40:str)
-    ca_a := clients.quit();	# 41 CLTquit (ca_a:void)
+    ca_a := clients.quit();	# 41 CLTquitDefault (ca_a:void)
 end main;	# 42  
 
 # 07:27:15 >  

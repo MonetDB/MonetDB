@@ -181,7 +181,7 @@ function user.main():void;	# 0  (main:void)
     va_a := algebra.copy(ua_a);	# 76  unknown (va_a:any)<-(ua_a:any)
     wa_a := io.print(va_a);	# 77 IOprint_val (wa_a:int)<-(va_a:any)
 #	mil.line("quit();"); 	# 78  (_80:str)
-    xa_a := clients.quit();	# 79 CLTquit (xa_a:void)
+    xa_a := clients.quit();	# 79 CLTquitDefault (xa_a:void)
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase' 	# 80  (_82:str)
 end main;	# 81  
 

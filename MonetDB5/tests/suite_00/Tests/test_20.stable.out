@@ -108,7 +108,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("b.print();"); 	# 44  (_41:str)
     ta_a := io.print(b);	# 45 IOprint_val (ta_a:int)<-(b:bat[:void,:int])
 #	mil.line("quit();"); 	# 46  (_51:str)
-    ua_a := clients.quit();	# 47 CLTquit (ua_a:void)
+    ua_a := clients.quit();	# 47 CLTquitDefault (ua_a:void)
 end main;	# 48  
 #-----------------#
 # h	t	  # name

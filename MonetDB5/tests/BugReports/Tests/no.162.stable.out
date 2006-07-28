@@ -188,7 +188,7 @@ function user.main():void;	# 0  (main:void)
     ka_a := algebra.join(left,right);	# 84 ALGjoin (ka_a:bat[:int,:str])<-(left:bat[:int,:int])(right:bat[:int,:str])
     la_a := io.print(ka_a);	# 85 IOprint_val (la_a:int)<-(ka_a:bat[:int,:str])
 #	mil.line("quit();"); 	# 86  (_95:str)
-    ma_a := clients.quit();	# 87 CLTquit (ma_a:void)
+    ma_a := clients.quit();	# 87 CLTquitDefault (ma_a:void)
 end main;	# 88  
 #-----------------#
 # h	t	  # name

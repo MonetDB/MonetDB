@@ -60,7 +60,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("c.print();"); 	# 20  (_24:str)
     ca_a := io.print(c);	# 21 IOprint_val (ca_a:int)<-(c:str)
 #	mil.line("quit();"); 	# 22  (_26:str)
-    da_a := clients.quit();	# 23 CLTquit (da_a:void)
+    da_a := clients.quit();	# 23 CLTquitDefault (da_a:void)
 end main;	# 24  
 [ "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789" ]
 #quit();

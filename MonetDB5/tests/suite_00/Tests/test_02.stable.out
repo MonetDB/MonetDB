@@ -138,7 +138,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("print(x);"); 	# 59  (_80:str)
     ya_a := io.print(x);	# 60 IOprint_val (ya_a:int)<-(x:bat[:str,:str])
 #	mil.line("quit();"); 	# 61  (_82:str)
-    ab_a := clients.quit();	# 62 CLTquit (ab_a:void)
+    ab_a := clients.quit();	# 62 CLTquitDefault (ab_a:void)
 end main;	# 63  
 [ 1 ]
 #insert(s,\"bello\",2);

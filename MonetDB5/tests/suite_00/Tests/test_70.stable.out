@@ -190,7 +190,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("c.print();"); 	# 85  (_119:str)
     jb_a := io.print(c);	# 86 IOprint_val (jb_a:int)<-(c:bat[:int,:int])
 #	mil.line("quit();"); 	# 87  (_121:str)
-    nb_a := clients.quit();	# 88 CLTquit (nb_a:void)
+    nb_a := clients.quit();	# 88 CLTquitDefault (nb_a:void)
 end main;	# 89  
 [ 30 ]
 #b.insert(3,int(nil));

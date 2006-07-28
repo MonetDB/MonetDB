@@ -114,7 +114,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("z.print();"); 	# 46  (_57:str)
     na_a := io.print(z);	# 47 IOprint_val (na_a:int)<-(z:bat[:int,:int])
 #	mil.line("quit();"); 	# 48  (_63:str)
-    oa_a := clients.quit();	# 49 CLTquit (oa_a:void)
+    oa_a := clients.quit();	# 49 CLTquitDefault (oa_a:void)
 end main;	# 50  
 #-----------------#
 # h	t	  # name

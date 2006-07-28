@@ -164,7 +164,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("test_outer(\"chr\");"); 	# 60  (_53:str)
     ia_a := user.test_outer("chr");	# 61  (ia_a:void)<-(_55:str)
 #	mil.line("quit();"); 	# 62  (_57:str)
-    ja_a := clients.quit();	# 63 CLTquit (ja_a:void)
+    ja_a := clients.quit();	# 63 CLTquitDefault (ja_a:void)
 end main;	# 64  
 test_outer.in: chr
 test_inner.in: chr

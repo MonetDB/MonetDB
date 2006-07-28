@@ -161,7 +161,7 @@ function user.main():void;	# 0  (main:void)
     ib_a := algebra.slice(b,8,5);	# 70 ALGslice_int (ib_a:bat[:int,:int])<-(b:bat[:int,:int])(_96:int)(_78:int)
     jb_a := io.print(ib_a);	# 71 IOprint_val (jb_a:int)<-(ib_a:bat[:int,:int])
 #	mil.line("quit();"); 	# 72  (_98:str)
-    kb_a := clients.quit();	# 73 CLTquit (kb_a:void)
+    kb_a := clients.quit();	# 73 CLTquitDefault (kb_a:void)
 #Identifer 'rename' mapped to 'bat.setName' 	# 74  (_100:str)
 end main;	# 75  
 [ 3 ]

@@ -112,7 +112,7 @@ function user.main():void;	# 0  (main:void)
     eb_a := io.print(db_a);	# 46 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
     fb_a := io.printf("#~EndVariableOutput~#\n");	# 47 IOprint_str (fb_a:int)<-(_22:str)
 #	mil.line("quit();"); 	# 48  (_51:str)
-    gb_a := clients.quit();	# 49 CLTquit (gb_a:void)
+    gb_a := clients.quit();	# 49 CLTquitDefault (gb_a:void)
 end main;	# 50  
 #~BeginVariableOutput~#
 #-------------------------#
@@ -120,13 +120,13 @@ end main;	# 50
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2280	  ]
+[ "minflt",	  2336	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  4	  ]
-[ "ninvcsw",	  3	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  17	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -138,13 +138,13 @@ end main;	# 50
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2287	  ]
+[ "minflt",	  2343	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  4	  ]
-[ "ninvcsw",	  4	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  17	  ]
 #~EndVariableOutput~#
 #quit();
 

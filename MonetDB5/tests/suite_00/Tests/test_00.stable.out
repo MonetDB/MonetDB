@@ -310,7 +310,7 @@ function user.main():void;	# 0  (main:void)
     ed_a := algebra.thetajoin(b,c,LT,dd_a);	# 144 ALGthetajoinEstimate (ed_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(LT:int)(dd_a:lng)
     fd_a := io.print(ed_a);	# 145 IOprint_val (fd_a:int)<-(ed_a:bat[:int,:int])
 #	mil.line("quit();"); 	# 146  (_179:str)
-    gd_a := clients.quit();	# 147 CLTquit (gd_a:void)
+    gd_a := clients.quit();	# 147 CLTquitDefault (gd_a:void)
 end main;	# 148  
 #~BeginVariableOutput~#
 #-----------------------------------------#
