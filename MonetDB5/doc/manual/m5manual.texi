@@ -2,6 +2,8 @@
 @c %**start of header
 
 @set M5manual
+@set mclient mclient
+@set mjclient mjclient
 
 @setfilename MonetDB
 @setcontentsaftertitlepage

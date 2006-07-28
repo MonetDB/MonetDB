@@ -2,18 +2,18 @@
 @c %**start of header
 @c this file is meant for the SQL line
 
-@set SQLmanual
-@set mclient mclient
-@set mjclient mjclient
+@set XQmanual
+@set mclient= MapiClient
+@set mjclient= MapiClient
 
 @setfilename MonetDB
 @setcontentsaftertitlepage
-@settitle MonetDB/SQL Reference Manual
+@settitle MonetDB/XQuery Reference Manual
 @c %**end of header
 
 @c environment
 @set VERSION 5.0
-@set UPDATED July 13, 2006
+@set UPDATED July 30, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -27,8 +27,8 @@ Last updated: @value{UPDATED}
      this permission notice are preserved on all copies.
 @ifhtml
 The latest documentation can be downloaded as a single file for printing
-@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual.pdf,single page manual} or
-@url{http://monetdb.cwi.nl/projects/monetdb/Assets/manual-2x1.pdf,double page manual}.
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/xqmanual.pdf,single page manual} or
+@url{http://monetdb.cwi.nl/projects/monetdb/Assets/xqmanual-2x1.pdf,double page manual}.
 @end ifhtml
      
 @emph{Disclaimer} The reference manual and underlying source
@@ -41,7 +41,7 @@ using the
 @end copying
 
 @titlepage
-@title MonetDB/SQL Reference Manual
+@title MonetDB/XQuery Reference Manual
 @subtitle Version @value{VERSION}
 @author @emph{The MonetDB Development Team}
 @page
@@ -58,7 +58,7 @@ using the
 
 @ifnottex
 @node Top
-@top MonetDB/SQL Reference Manual
+@top MonetDB/XQuery Reference Manual
 @insertcopying
 @end ifnottex
 
@@ -66,15 +66,14 @@ using the
 * General Introduction::
 * Client Interfaces::
 * Data Management Tools::
-* SQL Introduction::
+* XQuery Introduction::
 * Development Roadmap::
 * Programming Interfaces::
-* Embedded MonetDB::
 * Appendices::
-* SQL 1999 Features::
 @end menu
 
 @node General Introduction, Intended audience, Top , Top
+@include xquery/warning.texi
 @include Assets/About-this-manual.texi
 
 @node Features and Limitations, MonetDB Pro's, How to read this manual, General Introduction
@@ -113,6 +112,8 @@ using the
 @end menu
 @node MAPI Client, JDBC Client, Client Interfaces, Client Interfaces
 @include Assets/MapiClient.texi
+@include xquery/MapiClient.texi
+
 @node JDBC Client, Console Interface, MAPI Client, Client Interfaces
 @include Assets/JdbcClient.texi
 
@@ -120,52 +121,43 @@ using the
 @subsection Console Interface
 @include mal_readline.bdy.texi
 
-@node Data Management Tools, Aqua Data Studio, Console Interface, Top
-@include Assets/DBA-GUIs.texi
-
-@node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
-@include Assets/AquaDataStudio.texi
-
-@node DbVisualizer, iSQL-Viewer, Aqua Data Studio, Data Management Tools
-@include Assets/DbVisualiser.texi
-
-@node iSQL-Viewer, Development Roadmap, DbVisualizer, Data Management Tools
-@include Assets/iSQL-Viewer.texi
-
-@node Development Roadmap, SQL Roadmap, iSQL-Viewer, Top
+@node Development Roadmap, XQuery Roadmap, iSQL-Viewer, Top
 @include Assets/Roadmap.texi
 @menu
-* SQL Roadmap ::
+* XQuery Roadmap ::
 * Embedded Server Roadmap ::
 * Server Roadmap ::
 @end menu
 
-@node SQL Roadmap, Embedded Server Roadmap, Development Roadmap, Development Roadmap
-@include Assets/SQLRoadmap.texi
+@node XQuery Roadmap, Embedded Server Roadmap, Development Roadmap, Development Roadmap
 
-@node Embedded Server Roadmap, Server Roadmap, SQL Roadmap, Development Roadmap
-@include Assets/EmbeddedRoadmap.texi
-@node Server Roadmap, SQL Introduction, Embedded Server Roadmap, Development Roadmap
+@node Server Roadmap, SQL Introduction, XQuery Roadmap, Development Roadmap
 @include Assets/ServerRoadmap.texi
 
+@c The XQuery specific part
 
-@node SQL Introduction, Getting Started with SQL, Server Roadmap , Top
+@node XQuery Introduction, XQuery QuickTours, Server Roadmap , Top
 @include Assets/warning.texi
-@include Assets/SQLoverview.texi
+@menu
+* XQuery QuickTours::
+* Supported Features ::
+* Document Management::
+* XQuery APIs::
+* Prepared Queries::
+* Standoff Extensions::
+@end menu
+@c @include xquery/intro.texi
 
-@node The VOC Tutorial, Language Overview, Getting Started with SQL, SQL Introduction
-@include Assets/VOCtutorial.texi
-
-@node Language Overview, Preface, The VOC Tutorial, SQL Introduction
-@include Assets/SQLlanguage.texi
-
-@node Runtime Features, Session Variables , SQL Transactions, SQL Introduction
-@include Assets/SQLfeatures.texi
-@node Overlaying BATs, Programming Interfaces , Optimizer Control,  Runtime Features
-@include Assets/SQLoverlay.texi
+@node XQuery QuickTours, Supported Features, XQuery Introduction , XQuery Introduction
+@node Supported Features, Document Management , Server Roadmap , XQuery Introduction
+@node Document Management, Prepared Queries , Supported Features,XQuery Introduction
+@node Prepared Queries, Standoff Extensions , Document Management ,XQuery Introduction
+@node Standoff Extensions, Programming Interfaces ,Prepared Queries ,XQuery Introduction
 
 @node Programming Interfaces, The Mapi Library, Overlaying BATs, Top
-@include Assets/APIs.texi
+@c @include xquery/API.texi
+
+@c End of XQuery specific part
 @node The Mapi Library,Sample Application , Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
 
