@@ -1,35 +1,3 @@
-The @url{_ROOTURL_/MonetDB/Version4/Documentation/Tools/MapiClient,MapiClient} 
-is the universal command-line tool that implements the MAPI protocol for client-server interaction
-with MonetDB, and it is also used for XQuery (with the @code{-lx} switch).
-
-The relevant MapiClient options for XQuery interaction are:
-
-@verbatim
-$ MapiClient -?
-Usage: MapiClient [ options ] script
-Options are:
- -h hostname /* host to connect to */
- -l language /* {mal,sql,mil,xquery} */
- -p portnr   /* port to connect to */
- -s mode     /* xquery serialization mode {xml,dm} */
- -T          /* timing info */
- -?          /* show this usage message */
-@end verbatim
-
-Thus, passing @code{-l xquery} (or shorter: @code{-lxq}) will cause
-the query @code{script} to be executed as an XQuery.
-
-The @code{ -h hostname} specifies on which machine the MonetDB server is running.
-If you communicate with a MonetDB server on the same machine, it can be omitted.
-
-The default @code{mapi_port} TCP port used is @code{50000}. If this port 
-happens to be in use on the server machine (which generally is only the case if you run two MonetDB 
-XQuery servers on it), you will have to use the @code{ -p port} switch. Otherwise, it may also 
-be omitted.  Note that the default port (and other default options) can be set in the 
-@code{MonetDB.conf} file.
-
-@url{../../QuickTour,Link to examples using MapiClient}
-
 @subsection Timing
 The -T option causes timing info to be printed, after the query has been executed:
 @verbatim
@@ -48,7 +16,7 @@ Total     131.000 msec
   MIL algebra.
 @item @code{Fetch} time it took to retrieve/read XML documents that were 
   used by @code{fn:doc(url)} statements in the query. Note that MonetDB 
-  has a <a href='../DocMgmt'>document cache}, so a document may 
+  has a document cache, so a document may 
   already be cached in the database (in this case, no time is spent fetching 
   nor shredding it).
 @item @code{Shred} time it took to shred (import) those XML documents into 
@@ -63,10 +31,10 @@ Total     131.000 msec
 @end itemize
 
 @subsection Output Modes
-The result of an XQuery is a value sequence; where the values may be nodes (i.e. 
-snippets of XML) or simple values (such as integers or strings). Such sequences 
-may be printed in different ways. This can be controlled with the @code{-s mode} 
-switch.
+The result of an XQuery is a value sequence; where the values may 
+be nodes (i.e.  snippets of XML) or simple values (such as integers 
+or strings). Such sequences may be printed in different ways. 
+This can be controlled with the @code{-s mode} switch.
 
 @itemize
 @item 
@@ -80,8 +48,8 @@ switch.
 
 Let us consider the example XQuery @code{test.xq}:
 @verbatim
-(1, 42.0, "Hello World", <node attr="value,test</node>)
-@end varbatim
+(1, 42.0, "Hello World", <node attr="value">test</node>)
+@end verbatim
 When executing the query in default mode, we get: 
 @verbatim
 $ MapiClient -lx test.xq
@@ -90,7 +58,7 @@ $ MapiClient -lx test.xq
 "Hello World",
 <node attr="value,test</node>
 $
-@end varbatim
+@end verbatim
 however, in XML mode we get:
 @verbatim
 $ MapiClient -lx -s xml test.xq
@@ -98,7 +66,7 @@ $ MapiClient -lx -s xml test.xq
 <XQueryResult>
 1 42.000000 "Hello World" <node attr="value,test</node>
 </XQueryResult>
-@end varbatim
+@end verbatim
 
 A new variant on XML mode is the submode @code{-soap}
 that encloses atomic values in an element with the name of the 
@@ -112,17 +80,16 @@ $ MapiClient -lx -s xml-soap test.xq
 <xs:string>Hello World</xs:string>
 <xs:anyNode><node attr="value,test</node></xs:anyNode>
 </XQueryResult>
-@end varbatim
+@end verbatim
 The @code{soap} mode will be part of the upcoming support
-for @url{..,SOAP} RPC interface for MonetDB/XQuery. 
+for @ref{SOAP} RPC interface for MonetDB/XQuery. 
 
 Thus:
 @itemize
 @item results are printed in UTF-8, as speficied by the first line of
   XML (the <em>header</em>). This header may be omitted if desired, by 
-  appending @code{-noheader} to the mode (thus: @code{-s 
-  xml-noheader}).
-@itemBy default MonetDB/XQuery generates an artificial XML root element 
+  appending @code{-noheader} to the mode (thus: @code{-s xml-noheader}).
+@item By default MonetDB/XQuery generates an artificial XML root element 
   with tag @code{XQueryResult}.
   This is desirable to ensure the output to be valid XML (in case of multiple 
   result values). If you know that your query yields a single XML node, or
@@ -150,7 +117,7 @@ $ MapiClient -lx -s xml-typed test.xq
      <result:atomic-value xsi:type="xs:string,Hello World</result:atomic-value>
      <result:element><node attr="value,test</node></result:element>
 </result:sequence>
-@end varbatim
+@end verbatim
 
 The default mode for MonetDB/XQuery is @code{dm} but can be set
 using the @code{xquery_output} variable in the @code{MonetDB.conf} file.

@@ -5,31 +5,32 @@ to execute XQuery requests on it and get answers back.
 
 
 @strong{BEWARE}: take note of the 
-current @strong{severe @url{Security,Security}
-shortcomings} of MonetDB/XQuery before deploying it.
+current @strong{severe @ref{Security shortcomings}}
+of MonetDB/XQuery before deploying it.
 
 In the next release (0.14), we will add SOAP RPC as an XQuery interaction mechanism.
 
 @subsection executing .xq scripts
 @itemize
 @item
-invoking the @url{MapiClient,MapiClient Utility} with the @code{-lx} flag
+invoking the @value{mclient} utility with the @code{-lx} flag
 from your command shell (interactively) or from a shell script (Windows: .bat script).
 @item
-The Windows installer also associates the @code{.xq} file extension with @code{MapiClient -lx},
+The Windows installer also associates the @code{.xq} file extension 
+with @code{@value{mclient} -lx},
 so double-clicking executes the script (on a Mserver that must already be running on the same machine).
 @end itemize
 
 @subsection from a website:
 @itemize
 @item
-The @url{Apache,Apache} page explains how one can put @code{.xq} files
+The @ref{Apache} page explains how one can put @code{.xq} files
 in the contents of a website, as a dynamic page. Each time such a page is shown, 
 the query gets executed. You typically render the resulting XML (XHTML) using
 css.
 
 @item
-The @url{PHP,PHP} page explains how MonetDB/XQuery can be called from within PHP scripts.
+The @ref{PHP} page explains how MonetDB/XQuery can be called from within PHP scripts.
 
 @item
 Other server-side website program code written in various programming languages can 
