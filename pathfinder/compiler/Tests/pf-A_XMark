@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 for i in $RELSRCDIR/../../tests/XMark/Tests/*.xq; do
+    # temporary HACK: skip q03.xq on SunOS
+    if [ "`uname`" != "SunOS"  -o  "${i%/q03.xq}" == "$i" ] ; then
 	j=${i##*/}
 	test -L $j || ln -s $i $j
 	echo "\"pf -A $j >/dev/null\""
 	echo "\"pf -A $j >/dev/null\"" >&2
 	      pf -A $j >/dev/null
+    fi
 done
