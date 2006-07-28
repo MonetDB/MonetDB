@@ -27,15 +27,19 @@ tools to massage it further for presentation.
 @mal
 module manual;
 
-command completion(text:str)
-address MANUALcompletion
-comment "Produces the wordcompletion table.";
+#command completion(text:str)
+#address MANUALcompletion
+#comment "Produces the wordcompletion table.";
 command help(text:str)
 address MANUALhelp
-comment "Produces the help table for the text pattern.";
+comment "Produces a list of all <module>.<function> that match 
+	the text pattern. The wildcard '*' can be used for <module> 
+and <function>. Using the '(' asks for signature information and
+using ')' asks for the complete help record.";
 command search(text:str)
 address MANUALsearch
-comment "Search the manual for entries matching the keyword";
+comment "Search the manual for command descriptions that match the 
+regular expression 'text'";
 
 command createXML(mod:str):void
 address MANUALcreate1
