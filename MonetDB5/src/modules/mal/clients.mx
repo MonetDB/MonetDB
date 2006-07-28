@@ -52,9 +52,16 @@ command setScenario(msg:str):str
 address CLTsetScenario
 comment "Switch to other scenario handler, return previous one.";
 
+command quit(timeout:int):void
+address CLTquit;
 command quit():void
-address CLTquit
-comment "Terminate the session.";
+address CLTquitDefault
+comment "Terminate the server by (soft/hard) forcing all clients to terminate.
+	This command can only be initiated from the console.";
+
+command exit():void
+address CLTexit
+comment "Terminate the session for a single client using a soft error.";
 
 #Administrator operations
 command getLogins( ):bat[:int,:str] 
@@ -87,7 +94,9 @@ mal_export str CLTgetScenario(str *ret);
 mal_export str CLTsetScenario(str *ret, str *nme);
 mal_export str CLTusers(int *ret);
 mal_export str CLTsetHistory(int *ret, str *fname);
-mal_export str CLTquit(int *ret);
+mal_export str CLTexit(int *ret);
+mal_export str CLTquit(int *ret, int *timeout);
+mal_export str CLTquitDefault(int *ret);
 mal_export str CLTLogin(int *ret);
 mal_export str CLTInfo(int *ret);
 
@@ -293,23 +302,30 @@ CLTsetHistory(int *ret, str *fname)
 }
 
 str
-CLTquit(int *ret)
+CLTexit(int *ret)
 {
 	Client c = MCgetClient();
 
 	(void) ret;		/* fool compiler */
 	c->mode = FINISHING;
-	/* this is unsafe !! because it may create a signal
-	   in the middle of a MAL execution, this leaves
-	   the system in an undetermined state behind
-	SO, only use the soft termination
-	stream_flush(c->fdout);
-	stream_close(c->fdout);
-	*/
-/* Mtest will fail
-	return throwMessage("client.quit", "Finalize session");
-*/
+	return throwMessage("client.exit", "Exit session with soft error");
+}
+str
+CLTquit(int *ret, int *timeout)
+{
+	Client c = MCgetClient();
+
+	(void) ret;		/* fool compiler */
+	if( c != mal_clients )
+		return throwMessage("client.quit", 
+			"Server not stopped from console.");
+	MCshutdown(c, *timeout);
 	return MAL_SUCCEED;
+}
+str
+CLTquitDefault(int *ret){
+	int timeout = 0;
+	return CLTquit(ret,&timeout);
 }
 
 str
