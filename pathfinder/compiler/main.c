@@ -711,7 +711,7 @@ main (int argc, char *argv[])
                 printf ("         C  apply optimization using multiple "
                                             "properties (complex)\n");
                 printf ("            - icols based optimization will be "
-                                            "applied afterwards.\n");
+                                            "applied afterwards\n");
                 printf ("         G  apply general optimization (without "
                                             "properties)\n");
                 printf ("         V  apply optimization based on required "

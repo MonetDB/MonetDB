@@ -21,7 +21,7 @@ Usage: pf [OPTION] [FILE]
 = -H, --fullhelp: print this help message for advanced options
 = -q, --quiet: do not print informational messages to log file
 = -d[N], --debug: print debug information (default level=1)
-= -A, --enable-algebra: turn on internal algebra code.
+= -A, --enable-algebra: turn on internal algebra code
 = -M, --print-mil_summer: print MIL code (summer version) (default)
 = -P, --print-human-readable: print internal tree structure human-readable
 = -D, --print-att-dot: print internal tree structure in AT&T dot notation
@@ -66,7 +66,7 @@ Usage: pf [OPTION] [FILE]
          K  apply optimization based on key property
          D  apply optimization based on domain property
          C  apply optimization using multiple properties (complex)
-            - icols based optimization will be applied afterwards.
+            - icols based optimization will be applied afterwards
          G  apply general optimization (without properties)
          V  apply optimization based on required values property
          [  map column names to unique column names
