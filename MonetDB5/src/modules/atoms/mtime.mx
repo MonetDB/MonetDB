@@ -2700,16 +2700,23 @@ CMDmsec(lng *r)
 	return GDK_SUCCEED;
 }
 
+union lng_tzone {
+	lng lval;
+	tzone tzval;
+};
+
 @- Wrapper
 The Monet V5 API interface is defined here
 @= TIMEZONES
-	ticks= @2;
-	tzone_create((tzone*) &vr.val.lval, &ticks);
-	tz= BUNins(tz,@1,&vr.val.lval,FALSE);
+	ticks = @2;
+	ltz.lval = vr.val.lval;
+	tzone_create(&(ltz.tzval), &ticks);
+	tz = BUNins(tz,@1,&vr.val.lval,FALSE);
 @= TIMEZONES2
-	ticks =@2;
-	tzone_create_dst((tzone*) &vr.val.lval, &ticks,&@3,&@4);
-	tz= BUNins(tz,@1,&vr.val.lval,FALSE);
+	ticks = @2;
+	ltz.lval = vr.val.lval;
+	tzone_create_dst(&(ltz.tzval), &ticks,&@3,&@4);
+	tz = BUNins(tz,@1,&vr.val.lval,FALSE);
 @-
 Include BAT macros
 @c
@@ -2788,6 +2795,7 @@ MTIMEprelude()
 	Box box;
 	ValRecord vr;
 	int ticks;
+	union lng_tzone ltz;
 	rule RULE_MAR, RULE_OCT;
 	str s1 = "first sunday from end of march@02:00";
 	str s2 = "first sunday from end of october@02:00";
