@@ -1637,13 +1637,12 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					reduce = 1; /* strings might only differ by (ignored) whitespace */
 				} else if (b->ttype == TYPE_chr) {
 					/* chr => str: do this efficiently */
-					char s[4];
+					char s[2];
 
-					s[0] = s[2] = '\'';
-					s[3] = 0;
+					s[1] = 0;
 					BATloopFast(b, p, q, xx) {
 						/* accidentally works well on NILs */
-						s[1] = *(char *) BUNtloc(b, p);
+						s[0] = *(char *) BUNtloc(b, p);
 						bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
 						r += yy;
 					}
