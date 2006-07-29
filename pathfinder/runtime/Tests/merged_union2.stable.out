@@ -832,16 +832,16 @@ print(res_mu.fetch(0), res_mu.fetch(1), res_mu.fetch(2));
 
 
 res_mu := merged_union (a1, a5, b5, b1); # wrong length
-!ERROR: merged_union: BAT 3 must have the same hseqbase as BAT 1.
+!ERROR: merged_union: BAT 3 (hseqbase=2) must have the same hseqbase as BAT 1 (hseqbase=0).
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (a1, a5, e, a5); # wrong seqbase
 
 res_mu := merged_union (b1, b2); # string, string
 res_mu := merged_union (a1, b2); # oid, string
-!ERROR: merged_union: BATs 1 & 2 must have the same tail types.
+!ERROR: merged_union: BATs 1 (ttype=6) & 2 (ttype=11) must have the same tail types.
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (c1, a2); # int, oid
-!ERROR: merged_union: BATs 1 & 2 must have the same tail types.
+!ERROR: merged_union: BATs 1 (ttype=5) & 2 (ttype=6) must have the same tail types.
 !ERROR: CMDmerged_union: operation failed.
 
 var z1 := a1.copy();
