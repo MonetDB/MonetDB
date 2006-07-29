@@ -35,7 +35,8 @@ s4:= algebra.select(s3,nil,75);
 optimizer.cascade();
 @end example
 
-This lengthy sequence can be compressed into a single one.
+This lengthly sequence can be compressed into a single one
+using the cascade optimizer followed by empty set reduction.
 @example
 b := bat.new(:void,:int);
 s1:= algebra.select(b,50,75);
@@ -65,7 +66,7 @@ comment "Cascade constant range selections";
 #define _MAL_CASCADE_
 #include "mal_optimizer.h"
 
-/* #define DEBUG_MAL_CASCADE */
+#define DEBUG_MAL_CASCADE
 
 opt_export str CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -73,23 +74,27 @@ opt_export str CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 
 @c  
-#include "mal_crack.h"
+#include "mal_cascade.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_prelude.h"
 
 typedef struct RANGE{
-	int lcst, rcst, srcvar;
-	int lincl, rincl;
+	int used;		/* how often it has been used */
+	int lcst, hcst; /* variables holding a constant */
+	int  srcvar;	/* BAT variable on which the range depends */
+	int lincl, hincl;/* copied boundary conditions */
 	ValRecord lval,hval;
 }RangeRec, *Range;
 
-#ifdef DEBUG_MAL_CASCADE
 static void 
-printRange(Range rng){
+printRange(Range rng, int idx){
 	(void) rng;
+	stream_printf(GDKout,"[%d] used=%d lcst=%d rcst=%d srcvar=%d ", 
+		idx, rng[idx].used,
+		rng[idx].lcst, rng[idx].hcst, rng[idx].srcvar);
+	stream_printf(GDKout,"\n");
 }
-#endif
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
@@ -100,15 +105,13 @@ printRange(Range rng){
 str
 CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit,actions=0;
+	int i,j, limit,actions=0;
 	lng clk = GDKusec();
-#ifdef DEBUG_MAL_CASCADE
 	InstrPtr p, *old;
-	int j;
+	int x,y;
 	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
 
 	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
-#endif
 	if( mb->errors) 
 		return MAL_SUCCEED;
 
@@ -119,21 +122,67 @@ CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	limit = mb->stop;
-#ifdef DEBUG_MAL_CASCADE
 	old = mb->stmt;
-#endif
-	
+@-
+In phase I we collect constant information
+@c
 	for (i = 0; i < limit; i++) {
-#ifdef DEBUG_MAL_CASCADE
 		p = old[i];
+		if( p->barrier) 
+			break; /* end of optimizer */
+		for(j=p->retc; j< p->argc; j++)
+			range[getArg(p,j)].used++;
+		if( getModuleId(p)== algebraRef && 
+			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
+@-
+The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed in two
+directions. First, we attempt to propagate the range known for Y
+onto the requested range of X. This may lead to smaller range of
+even the conclusion that X is necessarily empty.
+Of course, only under the condition that Y has not be changed by a
+side-effect since it was bound to X.
+@c
+			x= getArg(p,1);
+			y= getArg(p,2);
+			if( range[x].lcst && isConstant(mb,y) ){
+				/* merge lowerbound */
+				if( ATOMcmp(getVarType(mb,y), 
+					VALptr(&getVarConstant(mb,range[x].lcst)), 
+					VALptr(&getVarConstant(mb,y)) ) > 0){
+					getArg(p,2)= range[x].lcst;
+				}
+			}
+@-
+The second step is to assign the result of this exercise to the
+result variable.
+@c
+			x= getArg(p,0);
+			if( isConstant(mb, getArg(p,2)) ){
+				range[x].lcst = getArg(p,2);
+			}
+		}
+	}
+#ifdef DEBUG_MAL_CASCADE
+		for(j=0; j< mb->vtop; j++)
+		if( range[j].used )
+			printRange(range,j);
+#endif
+@-
+During phase II we decide on reducing the program
+using knowledge about possible re-use.
+@c
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if( p->barrier) 
+			break; /* end of optimizer */
+#ifdef DEBUG_MAL_CASCADE
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
-		/* find and replace algebra select commands with crack select ones*/
+		for(j=p->retc; j< p->argc; j++)
+			range[getArg(p,j)].used++;
 		actions++;
 #ifdef DEBUG_MAL_CASCADE
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
-		for(j=0; j< p->retc; j++)
-			printRange(range+j);
 #endif
 	}
 	if (pci) 
