@@ -1520,146 +1520,17 @@ convertConstant(malType type, ValPtr vr)
 {
 	switch (type) {
 	case TYPE_bit:
-		if( vr->vtype == TYPE_int)
-			vr->val.cval[0] = vr->val.ival != 0;
-		else
-		if( vr->vtype == TYPE_lng)
-			vr->val.cval[0] = vr->val.lval != 0;
-		else
-		if( vr->vtype == TYPE_sht)
-			vr->val.cval[0] = vr->val.shval != 0;
-		else
-			vr->val.cval[0] = bit_nil;
-		vr->val.cval[1] = 0;
-		vr->val.cval[2] = 0;
-		vr->val.cval[3] = 0;
-		vr->vtype= TYPE_bit;
-		return  0;
 	case TYPE_chr:
-		if (vr->vtype == TYPE_void) {
-			vr->val.cval[0] = chr_nil;
-			vr->val.cval[1] = 0;
-			vr->val.cval[2] = 0;
-			vr->val.cval[3] = 0;
-			vr->vtype = TYPE_chr;
-		} else
-		if( vr->vtype== TYPE_int || 
-			vr->vtype== TYPE_sht || 
-			vr->vtype== TYPE_lng)
-			vr->vtype= TYPE_chr;
-		return vr->vtype != TYPE_chr;
 	case TYPE_sht:
-		if (vr->vtype == TYPE_void) {
-			vr->val.shval = sht_nil;
-			vr->vtype = TYPE_sht;
-			return 0;
-		}
-		if (vr->vtype == TYPE_int && vr->val.ival > -(1 << 16) && vr->val.ival < (1 << 16)) {
-			vr->vtype = TYPE_sht;
-			vr->val.shval = vr->val.ival;
-			return 0;
-		}
-		if (vr->vtype == TYPE_lng && vr->val.lval > -(1 << 16) && vr->val.lval < (1 << 16)) {
-			vr->vtype = TYPE_sht;
-			vr->val.shval = vr->val.lval;
-		}
-		return type != vr->vtype;
 	case TYPE_int:
-		if (vr->vtype == TYPE_void) {
-			vr->vtype = type;
-			vr->val.ival = int_nil;
-			vr->len = sizeof(int);
-			return 0;
-		}
-		if (vr->vtype == TYPE_lng && vr->val.lval >= INT_MIN && vr->val.lval < INT_MAX) {
-			vr->vtype = TYPE_int;
-			vr->val.ival = vr->val.lval;
-			vr->len = sizeof(int);
-		}
-		return type != vr->vtype;
 	case TYPE_void:
-		vr->vtype = type;
-		vr->val.oval = void_nil;
-		return vr->vtype != type;
 	case TYPE_oid:
-		if (vr->vtype == TYPE_void) {
-			vr->vtype = type;
-			vr->val.oval = oid_nil;
-			vr->len = sizeof(oid);
-			return 0;
-		}
-		if (vr->vtype == TYPE_int && vr->val.ival >= 0 && vr->val.ival <= GDK_oid_max) {
-			vr->vtype = type;
-			vr->val.oval = vr->val.ival;
-			vr->len = sizeof(oid);
-		}
-		if (vr->vtype == TYPE_lng && vr->val.lval >= 0 && vr->val.lval <= GDK_oid_max) {
-			vr->vtype = type;
-			vr->val.oval = vr->val.ival;
-			vr->len = sizeof(oid);
-		}
-		return vr->vtype != type;
 	case TYPE_flt:
-		if (vr->vtype == TYPE_void) {
-			vr->vtype = type;
-			vr->val.fval = flt_nil;
-			vr->len = sizeof(flt);
-			return 0;
-		}
-		if (vr->vtype == TYPE_dbl) {
-			vr->val.fval = (float) vr->val.dval;
-			vr->vtype = type;
-		}
-		if (vr->vtype == TYPE_sht) {
-			vr->val.fval = vr->val.shval;
-			vr->vtype = type;
-		}
-		if (vr->vtype == TYPE_int) {
-			vr->val.fval = vr->val.ival;
-			vr->vtype = type;
-		}
-		if (vr->vtype == TYPE_lng) {
-			vr->val.fval = vr->val.lval;
-			vr->vtype = type;
-		}
-		return vr->vtype != type;
 	case TYPE_dbl:
-		if (vr->vtype == TYPE_void) {
-			vr->val.dval = dbl_nil;
-			vr->vtype = TYPE_dbl;
-			vr->len = sizeof(dbl);
-			return 0;
-		}
-		if (vr->vtype == TYPE_flt) {
-			vr->val.dval = vr->val.fval;
-			vr->vtype = type;
-		}
-		if (vr->vtype == TYPE_sht) {
-			vr->val.dval = vr->val.shval;
-			vr->vtype = type;
-		}
-		if (vr->vtype == TYPE_int) {
-			vr->val.dval = vr->val.ival;
-			vr->vtype = type;
-		}
-		if (vr->vtype == TYPE_lng) {
-			vr->val.dval = vr->val.lval;
-			vr->vtype = type;
-		}
-		return type != vr->vtype;
 	case TYPE_lng:
-		if (vr->vtype == TYPE_void) {
-			vr->val.lval = lng_nil;
-			vr->vtype = type;
-			vr->len = sizeof(lng);
-			return 0;
-		}
-		if (vr->vtype == TYPE_int) {
-			vr->vtype = TYPE_lng;
-			vr->val.lval = vr->val.ival;
-			vr->len = sizeof(lng);
-		}
-		return type != vr->vtype;
+	case TYPE_str:
+		VALconvert(type,vr);
+		return vr->vtype != type;
 	case TYPE_bat:
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
@@ -1685,18 +1556,6 @@ convertConstant(malType type, ValPtr vr)
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0 )
 				GDKfree(d);
-		}
-		return vr->vtype != type;
-	case TYPE_str:
-		if (vr->vtype == TYPE_void) {
-			vr->vtype = type;
-			vr->val.sval = GDKstrdup(str_nil);
-			return 0;
-		}
-		if (vr->vtype == TYPE_str) {
-			vr->val.sval = GDKstrdup(str_nil);
-			vr->vtype = type;
-			vr->len = strlen(vr->val.sval);
 		}
 		return vr->vtype != type;
 @-
