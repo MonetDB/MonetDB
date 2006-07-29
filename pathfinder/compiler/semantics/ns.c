@@ -256,10 +256,14 @@ ns_lookup (const char *prefix)
 {
     assert (prefix);
 
-    for (unsigned int i = PFarray_last (stat_known_ns); i; i--)
+    for (unsigned int i = PFarray_last (stat_known_ns); i; i--) {
+        assert(((PFns_t *) PFarray_at (stat_known_ns, i-1))->prefix);
         if (! strcmp (prefix,
-                      ((PFns_t *) PFarray_at (stat_known_ns, i-1))->prefix))
+                      ((PFns_t *) PFarray_at (stat_known_ns, i-1))->prefix)) {
+            assert(((PFns_t *) PFarray_at (stat_known_ns, i-1))->uri);
             return PFstrdup (((PFns_t *) PFarray_at (stat_known_ns, i-1))->uri);
+        }
+    }
 
     return NULL;
 }
