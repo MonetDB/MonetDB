@@ -20,8 +20,8 @@ bi:= false:int; io.print(bi);
 io.print('a':int);
 
 # from sht
-sh:= 1:sht: si:= calc.int(sh); io.print(si);
-sh:= 32767:sht: si:= calc.int(sh); io.print(si);
+sh:= 1:sht; si:= calc.int(sh); io.print(si);
+sh:= 32767:sht; si:= calc.int(sh); io.print(si);
 
 # from int
 io.print(1:int);
@@ -116,10 +116,10 @@ b:= c:bit;
 io.print(b);
 
 # from sht
-j:= 0:sht; b:= j:bit; io.print(b);
-j:= 1:sht; b:= j:bit; io.print(b);
-j:= -1:sht; b:= j:bit; io.print(b);
-j:= 4096:sht; b:= j:bit; io.print(b);
+j:= 0:sht; b:= calc.bit(j); io.print(b);
+j:= 1:sht; b:= calc.bit(j); io.print(b);
+j:= -1:sht; b:= calc.bit(j); io.print(b);
+j:= 4096:sht; b:= calc.bit(j); io.print(b);
 
 # from int
 io.print(0:bit);
@@ -172,7 +172,7 @@ io.print(false:sht);
 
 # from chr
 io.print('a':sht);
-io.print(chr(0):sht);
+c:= 0:chr; cs:= calc.sht(c); io.print(cs);
 
 # from int
 io.print(0:sht);
@@ -555,19 +555,18 @@ io.print(32767:dbl);
 io.print(32768:dbl);
 io.print(2147483647:dbl);
 io.print(-2147483647:dbl);
-z:= 2147483647:dbl + 1:dbl;
-d:= z:dbl;
-io.print(d);
-z:= -2147483647 - 1;
-d:= z:dbl;
-io.print(d);
-# should this produce nil (overflow)?
-z:= 2147483647 + 2;
-d:= z:dbl;
+zd:= 2147483647:dbl + 1:dbl;
+io.print(zd);
+zl:= -2147483647 - 1l;
+d:= calc.dbl(zl);
 io.print(d);
 # should this produce nil (overflow)?
-z:= -2147483647 - 2;
-d:= z:dbl;
+z:= 2147483647 + 2l;
+d:= calc.dbl(zl);
+io.print(d);
+# should this produce nil (overflow)?
+zl:= -2147483647 - 2l;
+d:= calc.dbl(zl);
 io.print(d);
 
 # from lng
@@ -820,12 +819,12 @@ io.print(32767:str);
 io.print(32768:str);
 io.print(2147483647:str);
 io.print(-2147483647:str);
-sv:= 2147483647:str +1:str; io.print(sv);
-sv:= -2147483647:str -1:str; io.print(sv);
+wd:= 2147483647:int +1; sv:= calc.str(wd); io.print(sv);
+wc:= -2147483647 -1; sv:= calc.str(wc); io.print(sv);
 # should this produce nil (overflow)?
-sv:= 2147483647:str +2:str; io.print(sv);
+we:= 2147483647:int +2; sv:= calc.str(we); io.print(sv);
 # should this produce nil (overflow)?
-sv:= -2147483647:str -2:str; io.print(sv);
+wb:= -2147483647 -2; sv:= calc.str(wb); io.print(sv);
 
 # from lng
 io.print(1LL:str);
