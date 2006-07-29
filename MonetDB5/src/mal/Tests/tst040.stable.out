@@ -23,7 +23,6 @@ stdout of test 'tst040` in directory 'src/mal` itself:
 #
 #
 !ERROR: parser:constant coercion error from str to int
-!ERROR: parser:constant coercion error from flt to int
 !ERROR: parser:constant coercion error from int to str
 function user.main():void;	# 0  unknown (main:void)
 # Variables names may be identical to type names, but 	# 1  unknown (_1:str)
@@ -35,7 +34,7 @@ function user.main():void;	# 0  unknown (main:void)
 # test for coercion errors 	# 7  unknown (_11:str)
     x0 := "1":int;	# 8  unknown (x0:any)<-(_13:int)
     io.print(x0);	# 9  unknown (_14:any)<-(x0:any)
-    x1 := 3.20000005:int;	# 10  unknown (x1:any)<-(_16:int)
+    x1 := 3:int;	# 10  unknown (x1:any)<-(_16:int)
     io.print(x1);	# 11  unknown (_17:any)<-(x1:any)
     x2 := 3:str;	# 12  unknown (x2:any)<-(_19:str)
     io.print(x2);	# 13  unknown (_20:any)<-(x2:any)
