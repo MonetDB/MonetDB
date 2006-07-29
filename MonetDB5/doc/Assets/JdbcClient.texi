@@ -4,16 +4,15 @@ comes with several options to fine-tune the
 interaction with the database server. A synopsis of the calling
 arguments is given below
 @example
-@value{mclient} [-h host[:port]] [-p port] \
+@value{mjclient} [-h host[:port]] [-p port] \
 		[-f file] [-u user] [-l language] [-b [database]] \
 		[-d [table]] [-e] [-X<opt>]
 @end example
+or using long option equivalents --host --port --file --user --language
+--dump --echo --database.
+Arguments may be written directly after the option like -p50000.
 
-but also using long option equivalents --host --port --file --user --language
---dump --echo --database are allowed.
-Arguments may be written directly after the option like -p45123.
-
-If no host and port are given, localhost and 45123 (=sql_port default)
+If no host and port are given, localhost and 50000 
 are assumed.  An @code{.monetdb}
 file may exist in the user's home directory.  This file can contain
 preferences to use each time @value{mjclient} is started.  Options given on the
@@ -38,17 +37,21 @@ In read mode, the file can also be an URL pointing to a plain
 text file that is optionally gzip compressed.
 @item -u --user  
 The username to use when connecting to the database.
+@item -d --database 
+Try to connect to the given database (only makes sense if
+connecting to a DatabasePool, M5 or equivalent process).
 @item -l --language  
 Use the given language, for example 'xquery'.
-@item -d --dump  
-Dumps the given table(s), or the complete database if none given.
 @item --help     
 This screen.
+@item --version
+Display driver version and exit.
 @item -e --echo  
 Also outputs the contents of the input file, if any.
-@item -b --database  
-Try to connect to the given database (only makes sense
-if connecting to a DatabasePool or equivalent process).
+@item -q --quiet
+Suppress printing the welcome header.
+@item -D --dump  
+Dumps the given table(s), or the complete database if none given.
 @end table
 
 EXTRA OPTIONS
@@ -58,6 +61,12 @@ Writes a transmission log to disk for debugging purposes.  If a
 file name is given, it is used, otherwise a file called
 monet<timestamp>.log is created.  A given file will never be
 overwritten; instead a unique variation of the file is used.
+@item -Xembedded
+Uses an "embedded" server instance.  The argument to this option
+should be in the form of path/to/mserver:dbname[:dbfarm[:dbinit]].
+@item -Xhash
+Use the given hash algorithm during challenge response.  Supported
+algorithm names: SHA1, MD5, plain.
 @item -Xoutput   
 The output mode when dumping.  Default is sql, xml may be used for
 an experimental XML output.
