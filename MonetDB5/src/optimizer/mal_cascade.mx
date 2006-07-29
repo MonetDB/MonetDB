@@ -84,10 +84,12 @@ typedef struct RANGE{
 	ValRecord lval,hval;
 }RangeRec, *Range;
 
+#ifdef DEBUG_MAL_CASCADE
 static void 
 printRange(Range rng){
 	(void) rng;
 }
+#endif
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
@@ -98,14 +100,15 @@ printRange(Range rng){
 str
 CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, *old;
-	int i, j, limit,actions=0;
-	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
+	int i, limit,actions=0;
 	lng clk = GDKusec();
+#ifdef DEBUG_MAL_CASCADE
+	InstrPtr p, *old;
+	int j;
+	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
 
-	(void) j;
-	(void) range;
 	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
+#endif
 	if( mb->errors) 
 		return MAL_SUCCEED;
 
@@ -116,11 +119,13 @@ CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	limit = mb->stop;
+#ifdef DEBUG_MAL_CASCADE
 	old = mb->stmt;
+#endif
 	
 	for (i = 0; i < limit; i++) {
-		p = old[i];
 #ifdef DEBUG_MAL_CASCADE
+		p = old[i];
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
 		/* find and replace algebra select commands with crack select ones*/
@@ -128,7 +133,7 @@ CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_MAL_CASCADE
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 		for(j=0; j< p->retc; j++)
-			prRange(range+j);
+			printRange(range+j);
 #endif
 	}
 	if (pci) 
