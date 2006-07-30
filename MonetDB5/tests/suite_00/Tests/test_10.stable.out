@@ -104,7 +104,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("printf(\"#~BeginVariableOutput~#\\n\");"); 	# 26  (_33:str)
     ja_a := io.printf("#~BeginVariableOutput~#\n");	# 27 IOprint_str (ja_a:int)<-(_35:str)
 #	mil.line("sort(s).print();"); 	# 28  (_36:str)
-    ka_a := algebra.sort(s);	# 29 ALGtsort (ka_a:bat[:int,:int])<-(s:bat[:int,:int])
+    ka_a := algebra.sort(s);	# 29 ALGhsort (ka_a:bat[:int,:int])<-(s:bat[:int,:int])
     la_a := io.print(ka_a);	# 30 IOprint_val (la_a:int)<-(ka_a:bat[:int,:int])
 #	mil.line("printf(\"#~EndVariableOutput~#\\n\");"); 	# 31  (_39:str)
     ma_a := io.printf("#~EndVariableOutput~#\n");	# 32 IOprint_str (ma_a:int)<-(_41:str)
@@ -128,7 +128,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("printf(\"#~BeginVariableOutput~#\\n\");"); 	# 50  (_33:str)
     wa_a := io.printf("#~BeginVariableOutput~#\n");	# 51 IOprint_str (wa_a:int)<-(_35:str)
 #	mil.line("sort(s).print();"); 	# 52  (_36:str)
-    xa_a := algebra.sort(s);	# 53 ALGtsort (xa_a:bat[:int,:int])<-(s:bat[:int,:int])
+    xa_a := algebra.sort(s);	# 53 ALGhsort (xa_a:bat[:int,:int])<-(s:bat[:int,:int])
     ya_a := io.print(xa_a);	# 54 IOprint_val (ya_a:int)<-(xa_a:bat[:int,:int])
 #	mil.line("printf(\"#~EndVariableOutput~#\\n\");"); 	# 55  (_39:str)
     ab_a := io.printf("#~EndVariableOutput~#\n");	# 56 IOprint_str (ab_a:int)<-(_41:str)
@@ -143,12 +143,12 @@ end main;	# 62
 # t	h	  # name
 # int	int	  # type
 #-----------------#
-[ 2,	  1	  ]
 [ 1,	  1	  ]
-[ 4,	  2	  ]
-[ 4,	  2	  ]
+[ 2,	  1	  ]
 [ 3,	  3	  ]
 [ 4,	  3	  ]
+[ 4,	  2	  ]
+[ 4,	  2	  ]
 [ 5,	  5	  ]
 #~EndVariableOutput~#
 #-----------------#
@@ -178,13 +178,13 @@ end main;	# 62
 # t	h	  # name
 # int	int	  # type
 #-----------------#
-[ 5,	  1	  ]
-[ 4,	  1	  ]
-[ 3,	  1	  ]
-[ 2,	  1	  ]
-[ 6,	  1	  ]
 [ 1,	  1	  ]
+[ 2,	  1	  ]
+[ 3,	  1	  ]
+[ 4,	  1	  ]
 [ 4,	  2	  ]
+[ 5,	  1	  ]
+[ 6,	  1	  ]
 #~EndVariableOutput~#
 #-----------------#
 # h	t	  # name
