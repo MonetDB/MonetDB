@@ -1,0 +1,139 @@
+stdout of test 'binsemijoin2` in directory 'tests/gdkTests` itself:
+
+
+# 09:01:02 >  
+# 09:01:02 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=31140 --set monet_prompt= --trace --dbname=mTests_tests_gdkTests  binsemijoin2.mal < /dev/null
+# 09:01:02 >  
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_gdkTests
+# Visit http://monetdb.cwi.nl/ for further information
+## Test provided as bug-report by 
+## Maurice van Keulen <keulen@fmi.uni-konstanz.de>
+## Torsten Grust <grust@fmi.uni-konstanz.de>
+#
+#left:=bat.new(:void,:oid);
+#bat.setSequenceBase(left,0@0);
+#right:=bat.new(:oid,:void);
+#
+#i:=0;
+#barrier go:= i<12;
+#	o:= calc.oid(i);
+#	bat.append(left,o);
+#	i:= i+1;
+#	redo go:= i<12;
+#exit go;
+#i:=0;
+#barrier go:= i<12;
+#	j:= i*2;
+#	oj:= calc.oid(j);
+#	bat.insert(right,oj,nil);
+#	i:= i+1;
+#	redo go:= i<12;
+#exit go;
+#
+#io.print(left);
+#io.print(right);
+#
+#bat.order(right);
+#io.print(right);
+#
+#z:= algebra.semijoin(left,right);
+#io.print(z);
+#
+function user.main():void;	# 0  (main:void)
+# Test provided as bug-report by  	# 1  (_1:str)
+# Maurice van Keulen <keulen@fmi.uni-konstanz.de> 	# 2  (_2:str)
+# Torsten Grust <grust@fmi.uni-konstanz.de> 	# 3  (_3:str)
+    left := bat.new(:void,:oid);	# 4 CMDBATnew (left:bat[:void,:oid])<-(_5:void)(_6:oid)
+    bat.setSequenceBase(left,0@0);	# 5 BKCsetSequenceBase (_7:bat[:void,:oid])<-(left:bat[:void,:oid])(_8:oid)
+    right := bat.new(:oid,:void);	# 6 CMDBATnew (right:bat[:oid,:void])<-(_6:oid)(_5:void)
+    i := 0;	# 7  (i:int)<-(_11:int)
+barrier go := calc.<(i,12);	# 8 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 13
+    o := calc.oid(i);	# 9 CALCint2oid (o:oid)<-(i:int)
+    bat.append(left,o);	# 10 BKCappend_val_wrap (_15:void)<-(left:bat[:void,:oid])(o:oid)
+    i := calc.+(i,1);	# 11 CALCbinaryADDintint (i:int)<-(i:int)(_16:int)
+    redo go := calc.<(i,12);	# 12 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 9
+exit go;	# 13  (go:bit)
+    i := 0;	# 14  (i:int)<-(_11:int)
+barrier go := calc.<(i,12);	# 15 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 21
+    j := calc.*(i,2);	# 16 CALCbinaryMULintint (j:int)<-(i:int)(_18:int)
+    oj := calc.oid(j);	# 17 CALCint2oid (oj:oid)<-(j:int)
+    bat.insert(right,oj,nil:void);	# 18 BKCinsert_bun (_20:void)<-(right:bat[:oid,:void])(oj:oid)(_21:void)
+    i := calc.+(i,1);	# 19 CALCbinaryADDintint (i:int)<-(i:int)(_16:int)
+    redo go := calc.<(i,12);	# 20 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 16
+exit go;	# 21  (go:bit)
+    io.print(left);	# 22 IOprint_val (_22:int)<-(left:bat[:void,:oid])
+    io.print(right);	# 23 IOprint_val (_23:int)<-(right:bat[:oid,:void])
+    bat.order(right);	# 24 BKCorder (_24:bat[:oid,:void])<-(right:bat[:oid,:void])
+    io.print(right);	# 25 IOprint_val (_25:int)<-(right:bat[:oid,:void])
+    z := algebra.semijoin(left,right);	# 26 ALGsemijoin (z:bat[:oid,:oid])<-(left:bat[:void,:oid])(right:bat[:oid,:void])
+    io.print(z);	# 27 IOprint_val (_27:int)<-(z:bat[:oid,:oid])
+end main;	# 28  
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+[ 4@0,	  4@0	  ]
+[ 5@0,	  5@0	  ]
+[ 6@0,	  6@0	  ]
+[ 7@0,	  7@0	  ]
+[ 8@0,	  8@0	  ]
+[ 9@0,	  9@0	  ]
+[ 10@0,	  10@0	  ]
+[ 11@0,	  11@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+[ 4@0,	  nil	  ]
+[ 6@0,	  nil	  ]
+[ 8@0,	  nil	  ]
+[ 10@0,	  nil	  ]
+[ 12@0,	  nil	  ]
+[ 14@0,	  nil	  ]
+[ 16@0,	  nil	  ]
+[ 18@0,	  nil	  ]
+[ 20@0,	  nil	  ]
+[ 22@0,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 2@0,	  nil	  ]
+[ 4@0,	  nil	  ]
+[ 6@0,	  nil	  ]
+[ 8@0,	  nil	  ]
+[ 10@0,	  nil	  ]
+[ 12@0,	  nil	  ]
+[ 14@0,	  nil	  ]
+[ 16@0,	  nil	  ]
+[ 18@0,	  nil	  ]
+[ 20@0,	  nil	  ]
+[ 22@0,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 2@0,	  2@0	  ]
+[ 4@0,	  4@0	  ]
+[ 6@0,	  6@0	  ]
+[ 8@0,	  8@0	  ]
+[ 10@0,	  10@0	  ]
+
+# 09:01:02 >  
+# 09:01:02 >  Done.
+# 09:01:02 >  
+

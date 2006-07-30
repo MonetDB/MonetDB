@@ -1,2 +1,6 @@
 casts
 qsort
+append_dense_tail.mal
+cross
+binsemijoin
+binsemijoin2
