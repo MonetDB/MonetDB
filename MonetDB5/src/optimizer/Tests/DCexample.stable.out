@@ -26,8 +26,13 @@ stdout of test 'DCexample` in directory 'src/optimizer` itself:
 #
 function user.main():void;	# 0  (main:void)
     io.print("done");	# 1 IOprint_val (_11:int)<-(_12:str)
-end main;	# 2  
+    mdb.list();	# 2 MDBlist (_14:void)
+end main;	# 3  
 [ "done" ]
+function user.main():void;
+    io.print("done");
+    mdb.list();
+end main;
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

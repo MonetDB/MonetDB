@@ -5,4 +5,5 @@ s3:= algebra.select(s2,50,nil:int);
 s4:= algebra.select(s3,nil:int,75);
 io.print(s4);
 optimizer.cascade();
+optimizer.deadCodeRemoval();
 mdb.list();

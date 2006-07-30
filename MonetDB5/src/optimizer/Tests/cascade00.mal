@@ -4,4 +4,5 @@ s1:= algebra.select(b,1,80);
 s2:= algebra.select(s1,nil:int,75);
 io.print(s2);
 optimizer.cascade();
+optimizer.deadCodeRemoval();
 mdb.list();
