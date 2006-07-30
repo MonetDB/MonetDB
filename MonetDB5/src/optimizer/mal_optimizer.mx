@@ -173,6 +173,7 @@ expressions that contain multiple selections over the
 same BAT. If their arguments are constant, the result
 of such selects can sometimes be predicted, or the
 multiple selections can be cascaded into a single operation.
+Impact: high, should be followed by AR and DC 
 
 @emph{Result Cacher (RCoptimizer)}
 Goal: to reduce the processing cost by keeping track of expensive to
@@ -1376,6 +1377,19 @@ The dead code removal trims this program to the following short block:
 	io.print("done");
 @end verbatim
 
+A refinement of the dead code comes from using arguments
+that cease to exist due to actions taken by an optimizer.
+For example, in the snippet below the @code{cascade} optimizer
+may conclude that variable V31 becomes empty and simply
+injects a 'dead' variable by dropping the assignment statement.
+This makes other code dead as well.
+@example
+	V30 := algebra.select( V7, 10,100);
+	V31 := algebra.select(V30,-1,5);
+	V32 := aggr.sum(V31);
+	io.print(V32);
+@end example
+[implementation pending]
 @{
 The dead code remover should not be used for testing, 
 because it will trim most programs to an empty list.
@@ -1404,6 +1418,8 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p)== rpcRef)
 			return TRUE;
 	}
+	if (idcmp("mdb", getModuleId(p)) == 0)
+		return TRUE;
 	if (idcmp("destroy", getFunctionId(p)) == 0)
 		return TRUE;
 	if (idcmp("prelude", getFunctionId(p)) == 0)
@@ -1462,7 +1478,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		default:
 			se = 0;
-			for (k = 0; k < p->argc; k++)
+			for (k = 0; k < p->retc; k++)
 				if (varused[p->argv[k]])
 					se++;
 			/* do not deal with dead barrier blocks */

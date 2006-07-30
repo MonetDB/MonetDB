@@ -45,7 +45,7 @@ For example, consider the following MAL test
 	optimizer.emptySet();
 @end verbatim
 @end example
-Calling the optimizer optimize.emptySet("user","test") replaces this program
+Calling the emptySet optimizer replaces this program
 by the following code snippet.
 @example
      V1 := bat.new(:void,:int);

@@ -20,11 +20,13 @@
 Almost all queries are interested in a few slices
 of the table. If applied to a view, the query plans
 often contain multiple selections over the same column.
-They may also have fixed range arguments.
+They may also have fixed range arguments comming from
+fragmentation criteria.
 
 The purpose of the @code{cascade} optimizer is to
 minimize the number of table scans by cascading the
-range terms as much as possible.
+range terms as much as possible. Useless instructions
+are removed from the plan.
 
 @example
 b := bat.new(:void,:int);
@@ -35,8 +37,7 @@ s4:= algebra.select(s3,nil,75);
 optimizer.cascade();
 @end example
 
-This lengthly sequence can be compressed into a single one
-using the cascade optimizer followed by empty set reduction.
+This lengthly sequence can be compressed into a single one:
 @example
 b := bat.new(:void,:int);
 s1:= algebra.select(b,50,75);
@@ -44,16 +45,20 @@ s1:= algebra.select(b,50,75);
 Cascading range information is not limited to conjunctive
 selections. The result of unions and the sub-set relationship
 between OID sets can also be the target for cascading.
+However, the semantic analysis is slightly more complicated.
 @{
 The implementation is limited to the select operations
 for the time being.
 A temporary range descriptor for each variable is used.
 
 The cascades should be limited to simple blocks.
+Furthermore, we should ensure that variables are not re-used
+other then in side-effect functions.
 
 The aliasRemoval and constantExpression optimizers should
-have done their work. Empty results are marked as such,
-and it is up to the emptySet optimizer to take care.
+have done their work. Empty scans are simply dropped,
+which leads to a planned cleand by the dead code optimizer.
+
 @mal
 pattern optimizer.cascade():str
 address QOTCRoptimizer;
@@ -66,7 +71,7 @@ comment "Cascade constant range selections";
 #define _MAL_CASCADE_
 #include "mal_optimizer.h"
 
-#define DEBUG_MAL_CASCADE
+/* #define DEBUG_MAL_CASCADE */
 
 opt_export str CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -81,18 +86,23 @@ opt_export str CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 typedef struct RANGE{
 	int used;		/* how often it has been used */
-	int lcst, hcst; /* variables holding a constant */
+	int lcst, hcst; /* constant variables holding the range bounds */
 	int  srcvar;	/* BAT variable on which the range depends */
 	int lincl, hincl;/* copied boundary conditions */
+	int lastupdate, lastrange;
 	ValRecord lval,hval;
 }RangeRec, *Range;
 
 static void 
-printRange(Range rng, int idx){
+printRange(MalBlkPtr mb, Range rng, int idx){
 	(void) rng;
-	stream_printf(GDKout,"[%d] used=%d lcst=%d rcst=%d srcvar=%d ", 
-		idx, rng[idx].used,
-		rng[idx].lcst, rng[idx].hcst, rng[idx].srcvar);
+	stream_printf(GDKout,"[%3d] %5s used=%d\tlcst=%s\t ", 
+		idx, getVarName(mb,idx), rng[idx].used,
+		(rng[idx].lcst? getVarName(mb,rng[idx].lcst):""));
+	stream_printf(GDKout,"hcst=%s\tsource %s ", 
+		(rng[idx].hcst? getVarName(mb,rng[idx].hcst):""), 
+		(rng[idx].srcvar?getVarName(mb,rng[idx].srcvar):""));
+	stream_printf(GDKout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
 	stream_printf(GDKout,"\n");
 }
 
@@ -108,7 +118,7 @@ CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,j, limit,actions=0;
 	lng clk = GDKusec();
 	InstrPtr p, *old;
-	int x,y;
+	int x,y,z;
 	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
 
 	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
@@ -124,7 +134,7 @@ CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	old = mb->stmt;
 @-
-In phase I we collect constant information
+In phase I we collect information about constants
 @c
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -132,6 +142,11 @@ In phase I we collect constant information
 			break; /* end of optimizer */
 		for(j=p->retc; j< p->argc; j++)
 			range[getArg(p,j)].used++;
+		for(j=0; j<p->retc; j++){
+			range[getArg(p,j)].lastupdate= i;
+			if( range[getArg(p,j)].lastrange == 0)
+				range[getArg(p,j)].lastrange= i;
+		}
 		if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
 @-
@@ -146,10 +161,30 @@ side-effect since it was bound to X.
 			y= getArg(p,2);
 			if( range[x].lcst && isConstant(mb,y) ){
 				/* merge lowerbound */
-				if( ATOMcmp(getVarType(mb,y), 
-					VALptr(&getVarConstant(mb,range[x].lcst)), 
-					VALptr(&getVarConstant(mb,y)) ) > 0){
+				if( ATOMcmp( getVarType(mb,y), 
+						VALptr( &getVarConstant(mb,range[x].lcst)), 
+						VALptr( &getVarConstant(mb,y)) ) > 0){
 					getArg(p,2)= range[x].lcst;
+					z= range[x].srcvar;
+					if( getArg(p,1) == x && range[z].lastupdate == range[z].lastrange){
+						getArg(p,1) = z;
+						actions++;
+					}
+				}
+				y= getArg(p,3);
+				/* merge higherbound */
+				if( ATOMcmp( getVarType(mb,y), 
+						VALptr( &getVarConstant(mb,range[x].hcst)), 
+						VALptr( &getVarConstant(mb,y)) ) < 0 ||
+					ATOMcmp( getVarType(mb,y),
+						VALptr( &getVarConstant(mb,y)),
+						 ATOMnilptr(getVarType(mb,y)) ) == 0){
+					getArg(p,3)= range[x].hcst;
+					z= range[x].srcvar;
+					if( getArg(p,1) == x && range[z].lastupdate == range[z].lastrange){
+						getArg(p,1) = z;
+						actions++;
+					}
 				}
 			}
 @-
@@ -159,35 +194,29 @@ result variable.
 			x= getArg(p,0);
 			if( isConstant(mb, getArg(p,2)) ){
 				range[x].lcst = getArg(p,2);
+				range[x].srcvar= getArg(p,1);
+				range[x].lastupdate= range[x].lastrange = i;
+			}
+			if( isConstant(mb, getArg(p,3)) ){
+				range[x].hcst = getArg(p,3);
+				range[x].srcvar= getArg(p,1);
+				range[x].lastupdate= range[x].lastrange = i;
 			}
 		}
 	}
 #ifdef DEBUG_MAL_CASCADE
 		for(j=0; j< mb->vtop; j++)
 		if( range[j].used )
-			printRange(range,j);
+			printRange(mb,range,j);
 #endif
-@-
-During phase II we decide on reducing the program
-using knowledge about possible re-use.
-@c
-	for (i = 0; i < limit; i++) {
-		p = old[i];
-		if( p->barrier) 
-			break; /* end of optimizer */
-#ifdef DEBUG_MAL_CASCADE
-		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
-#endif
-		for(j=p->retc; j< p->argc; j++)
-			range[getArg(p,j)].used++;
-		actions++;
-#ifdef DEBUG_MAL_CASCADE
-		printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
-#endif
-	}
 	if (pci) 
 		removeInstruction(mb, pci);
 	optimizerCheck(mb, "optimizer.cascade", actions, GDKusec() - clk);	
+@-
+Phase II, if we succeeded in pushing constants around and
+changing instructions, we might as well try once more to perform
+aliasRemoval, constantExpression, and cascade.
+@c
 	return MAL_SUCCEED;
 }
 @- Optimizer code wrapper
