@@ -120,7 +120,7 @@ using the
 @include xquery/JDBC-XQ.texi
 @include xquery/XML-DB.texi
 
-@node Console Interface, Development Roadmap, JDBC Client, Client Interfaces
+@node Console Interface, Apache Configuration, JDBC Client, Client Interfaces
 @subsection Console Interface
 @include mal_readline.bdy.texi
 
@@ -181,7 +181,7 @@ using the
 @include xquery/AddDoc.texi
 @node Remove Document, Cache Policy, Add Document, Document Management
 @include xquery/DelDoc.texi
-@node Cache Policy, Prepared Queries, Remove Document, Document Management
+@node Cache Policy, Miscellaneous, Remove Document, Document Management
 @include xquery/Cache.texi
 @node Miscellaneous, Prepared Queries, Cache Policy, Document Management
 @include xquery/DocOther.texi

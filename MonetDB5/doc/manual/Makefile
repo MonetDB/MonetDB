@@ -4,8 +4,8 @@
 
 # FIXME / WARNING: this is not "portable" and probably not the best
 #                  solution either.  Actually, it will not work.
-#M5DIR=/ufs/mk/monet5/
-#M4DIR=/ufs/mk/opensource/MonetDB
+M5DIR=/ufs/mk/monet5/
+M4DIR=/ufs/mk/opensource/MonetDB
 MANUAL=manual
 
 all:
@@ -24,6 +24,7 @@ pdf:
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR)
 	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	cp  -r $(M5DIR)/doc/Assets/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
+	cp  -r $(M5DIR)/doc/xquery/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/$(MANUAL); \
 	pdftex $(MANUAL).texi && pdftex $(MANUAL).texi )
 	cp $(M5DIR)/doc/share/tmp/$(MANUAL)/$(MANUAL).pdf $(M5DIR)/doc/share
@@ -42,6 +43,7 @@ web:
 	cp $(MANUAL).texi $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	cp manual.css $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	cp  -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp/$(MANUAL)/
+	cp  -r $(M5DIR)/doc/xquery/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/$(MANUAL)/; \
 	makeinfo --force --html $(MANUAL).texi --css-include=manual.css \
 	)
@@ -52,15 +54,17 @@ web2:
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp manual.css $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
+	cp  -r $(M5DIR)/doc/xquery/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/; \
 	texi2html --split=node  --css-include=manual.css $(MANUAL).texi; )
-	cp -r $(M5DIR)/doc/share/tmp/manual $(M5DIR)/doc/share/MonetDB2
+	cp -r $(M5DIR)/doc/share/tmp/manual $(M5DIR)/doc/share/$(MANUAL)2
 	echo "Web created"
 
 xml:
 	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp $(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
+	cp  -r $(M5DIR)/doc/xquery/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/; \
 	makeinfo --force --xml $(MANUAL).texi \
 	)
@@ -78,6 +82,7 @@ gdkpdf:
 	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp gdk$(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
+	cp  -r $(M5DIR)/doc/xquery/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/; \
 	pdftex gdk$(MANUAL).texi \
 	)
@@ -89,6 +94,7 @@ modpdf:
 	mkdir -p $(M5DIR)/doc/share/tmp
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR); cp modules$(MANUAL).texi $(M5DIR)/doc/share/tmp
 	cp -r $(M5DIR)/doc/Assets $(M5DIR)/doc/share/tmp
+	cp  -r $(M5DIR)/doc/xquery/ $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	(cd $(M5DIR)/doc/share/tmp/; \
 	pdftex modules$(MANUAL).texi \
 	makeinfo --force --html modules$(MANUAL).texi \
