@@ -1,3 +1,15 @@
+stdout of test 'casts` in directory 'tests/gdkTests` itself:
+
+
+# 14:56:01 >  
+# 14:56:01 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52524 --set sql_port=56156 --set monet_prompt= --trace --dbname=mTests_src_gdk  < casts.milM
+# 14:56:01 >  
+
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# casting to int
+
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -9,11 +21,19 @@
 [ -2147483647 ]
 [ -2147483648 ]
 [ -2147483649 ]
+
+# from bit
 [ 1 ]
 [ 0 ]
+
+# from chr
 [ 97 ]
+
+# from sht
 [ 1 ]
 [ 32767 ]
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -21,8 +41,12 @@
 [ -2147483647 ]
 [ nil ]
 [ nil ]
+# should this produce nil (overflow)?
 [ -2147483647 ]
+# should this produce nil (overflow)?
 [ 2147483647 ]
+
+# from lng
 [ 1 ]
 [ 2147483647 ]
 [ nil ]
@@ -30,21 +54,8 @@
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-[ 0 ]
-[ 0 ]
-[ 0 ]
-[ 0 ]
-[ 1 ]
-[ 0 ]
-[ 0 ]
-[ 0 ]
-[ -1 ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
+
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -54,17 +65,38 @@
 [ 0 ]
 [ 0 ]
 [ -1 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
 [ -2147483647 ]
 [ nil ]
 [ nil ]
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -75,49 +107,77 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# to bit
+
+# from bit
 [ true ]
 [ false ]
+
+# from chr
 [ true ]
 [ false ]
-[ false ]
-[ true ]
-[ true ]
-[ true ]
-[ false ]
-[ true ]
-[ true ]
-[ true ]
-[ false ]
-[ true ]
-[ true ]
-[ true ]
+
+# from sht
 [ false ]
 [ true ]
 [ true ]
 [ true ]
+
+# from int
+[ false ]
 [ true ]
 [ true ]
+[ true ]
+
+# from lng
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+
+# from flt
 [ false ]
 [ true ]
 [ true ]
 [ true ]
 [ true ]
 [ true ]
+
+# from dbl
 [ false ]
 [ true ]
 [ true ]
 [ true ]
 [ true ]
+[ true ]
+
+# from oid
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from str
 [ true ]
 [ false ]
 [ false ]
 [ true ]
 [ nil ]
 [ nil ]
+
+# to sht
+
+# from bit
 [ 1 ]
 [ 0 ]
+
+# from chr
 [ 97 ]
 [ 0 ]
+
+# from int
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -126,6 +186,8 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# from lng
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -134,6 +196,8 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -149,6 +213,8 @@
 [ -32767 ]
 [ nil ]
 [ nil ]
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -164,11 +230,15 @@
 [ -32767 ]
 [ nil ]
 [ nil ]
+
+# from oid
 [ 0 ]
 [ 1 ]
 [ 4096 ]
 [ nil ]
 [ nil ]
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -178,6 +248,9 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# to long
+
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -195,11 +268,19 @@
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
+
+# from bit
 [ 1 ]
 [ 0 ]
+
+# from chr
 [ 97 ]
+
+# from sht
 [ 1 ]
 [ 32767 ]
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -207,8 +288,13 @@
 [ -2147483647 ]
 [ nil ]
 [ nil ]
+# should this produce nil (overflow)?
 [ -2147483647 ]
+# should this produce nil (overflow)?
 [ 2147483647 ]
+
+# from lng
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -230,6 +316,8 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -251,6 +339,8 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
@@ -259,6 +349,8 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -275,11 +367,21 @@
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
+
+# to flt
+
+# from bit
 [ 1 ]
 [ 0 ]
+
+# from chr
 [ 97 ]
+
+# from sht
 [ 1 ]
 [ 32767 ]
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -287,8 +389,12 @@
 [ -2.14748365e+09 ]
 [ nil ]
 [ nil ]
+# should this produce nil (overflow)?
 [ -2.14748365e+09 ]
+# should this produce nil (overflow)?
 [ 2.14748365e+09 ]
+
+# from lng
 [ 1 ]
 [ 2.14748365e+09 ]
 [ 2.14748365e+09 ]
@@ -302,6 +408,8 @@
 [ -9.22337204e+18 ]
 [ nil ]
 [ nil ]
+
+# from dbl
 [ 0 ]
 [ 0.100000001 ]
 [ 0.5 ]
@@ -317,11 +425,15 @@
 [ -2.14748365e+09 ]
 [ -2.14748365e+09 ]
 [ -2.14748365e+09 ]
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2.14748365e+09 ]
 [ nil ]
 [ nil ]
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2.14748365e+09 ]
@@ -396,6 +508,8 @@
 [ -1e+10 ]
 [ -1e+10 ]
 [ -1.00000001e-10 ]
+# flt range is -3.402823466E+38F to 3.402823466E+38F which is
+# -3.4028234663852886e+38 to 3.4028234663852886e+38 in double
 # precission
 [ 3.40282347e+38 ]
 [ 3.40282347e+38 ]
@@ -412,11 +526,21 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# to dbl
+
+# from bit
 [ 1 ]
 [ 0 ]
+
+# from chr
 [ 97 ]
+
+# from sht
 [ 1 ]
 [ 32767 ]
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -424,8 +548,12 @@
 [ -2147483647 ]
 [ nil ]
 [ nil ]
+# should this produce nil (overflow)?
 [ -2147483647 ]
+# should this produce nil (overflow)?
 [ 2147483647 ]
+
+# from lng
 [ 1 ]
 [ 2147483647 ]
 [ 2147483648 ]
@@ -439,6 +567,8 @@
 [ -9.2233720368547758e+18 ]
 [ nil ]
 [ nil ]
+
+# from flt
 [ 0 ]
 [ 0.10000000149011612 ]
 [ 0.5 ]
@@ -454,11 +584,15 @@
 [ -2147483648 ]
 [ -2147483648 ]
 [ -2147483648 ]
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -545,6 +679,7 @@
 [ -3.4028234670000002e+38 ]
 [ -3.4028234660000002e+38 ]
 [ -3.4028234660000002e+38 ]
+# dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.
 [ 1.7976931348623157e+308 ]
 [ 1.7976931348623157e+308 ]
 [ nil ]
@@ -559,11 +694,21 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+# to oid
+
+# from bit
 [ 1@0 ]
 [ 0@0 ]
+
+# from chr
 [ 97@0 ]
+
+# from sht
 [ 1@0 ]
 [ 32767@0 ]
+
+# from int
 [ 1@0 ]
 [ 32767@0 ]
 [ 32768@0 ]
@@ -571,8 +716,12 @@
 [ nil ]
 [ nil ]
 [ nil ]
+# should this produce nil (overflow)?
 [ nil ]
+# should this produce nil (overflow)?
 [ 2147483647@0 ]
+
+# from lng
 [ 1@0 ]
 [ 2147483647@0 ]
 [ nil ]
@@ -580,21 +729,8 @@
 [ nil ]
 [ nil ]
 [ nil ]
-[ 0@0 ]
-[ 0@0 ]
-[ 0@0 ]
-[ 0@0 ]
-[ 1@0 ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
+
+# from flt
 [ 0@0 ]
 [ 0@0 ]
 [ 0@0 ]
@@ -604,17 +740,38 @@
 [ nil ]
 [ nil ]
 [ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0@0 ]
+[ 0@0 ]
+[ 0@0 ]
+[ 0@0 ]
+[ 1@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
 [ 2147483647@0 ]
 [ nil ]
 [ nil ]
 [ nil ]
 [ nil ]
 [ nil ]
+
+# from oid
 [ 2@0 ]
 [ 2@0 ]
 [ 2147483647@0 ]
 [ nil ]
 [ nil ]
+
+# from str
 [ 0@0 ]
 [ 32767@0 ]
 [ 2147483647@0 ]
@@ -625,11 +782,22 @@
 [ nil ]
 [ nil ]
 [ nil ]
+
+
+# to str
+
+# from bit
 [ "true" ]
 [ "false" ]
+
+# from chr
 [ "a" ]
+
+# from sht
 [ "1" ]
 [ "32767" ]
+
+# from int
 [ "1" ]
 [ "32767" ]
 [ "32768" ]
@@ -637,8 +805,12 @@
 [ "-2147483647" ]
 [ nil ]
 [ nil ]
+# should this produce nil (overflow)?
 [ "-2147483647" ]
+# should this produce nil (overflow)?
 [ "2147483647" ]
+
+# from lng
 [ "1" ]
 [ "2147483647" ]
 [ "2147483648" ]
@@ -646,6 +818,8 @@
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
+
+# from flt
 [ "0" ]
 [ "0.100000001" ]
 [ "0.5" ]
@@ -661,6 +835,8 @@
 [ "-2.14748365e+09" ]
 [ "-2.14748365e+09" ]
 [ "-2.14748365e+09" ]
+
+# from dbl
 [ "0" ]
 [ "0.10000000000000001" ]
 [ "0.5" ]
@@ -676,11 +852,15 @@
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
+
+# from oid
 [ "2@0" ]
 [ "2@0" ]
 [ "2147483647@0" ]
 [ nil ]
 [ nil ]
+
+# from str
 [ "0" ]
 [ "32767" ]
 [ "2147483647" ]
@@ -691,3 +871,8 @@
 [ "-2147483649" ]
 [ "" ]
 [ "random string" ]
+
+# 14:56:01 >  
+# 14:56:01 >  Done.
+# 14:56:01 >  
+
