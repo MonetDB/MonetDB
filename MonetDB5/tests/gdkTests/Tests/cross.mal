@@ -45,6 +45,9 @@ io.print(ba);
 
 bat.append(a,2);
 ar:= bat.reverse(a);
+io.print(ar);
+
+ar:= bat.reverse(a);
 c:= algebra.crossproduct(ar,ar);
 io.print(c);
 bb:= algebra.crossproduct(b,b);

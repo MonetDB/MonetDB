@@ -14,12 +14,12 @@ barrier go:= i<12;
 	redo go:= i<12;
 exit go;
 i:=0;
-barrier go:= i<12;
+barrier go:= i<200;
 	j:= i*2;
 	oj:= calc.oid(j);
 	bat.insert(right,oj,nil);
 	i:= i+1;
-	redo go:= i<12;
+	redo go:= i<200;
 exit go;
 
 io.print(left);

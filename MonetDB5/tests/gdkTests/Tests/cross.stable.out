@@ -123,26 +123,28 @@ function user.main():void;	# 0  (main:void)
     io.print(ba);	# 39 IOprint_val (_32:int)<-(ba:bat[:void,:void])
     bat.append(a,2);	# 40 BKCappend_val_wrap (_33:void)<-(a:bat[:void,:int])(_34:int)
     ar := bat.reverse(a);	# 41 BKCreverse (ar:bat[:int,:void])<-(a:bat[:void,:int])
-    c := algebra.crossproduct(ar,ar);	# 42 ALGcross (c:bat[:int,:void])<-(ar:bat[:int,:void])(ar:bat[:int,:void])
-    io.print(c);	# 43 IOprint_val (_35:int)<-(c:bat[:int,:void])
-    bb := algebra.crossproduct(b,b);	# 44 ALGcross (bb:bat[:void,:int])<-(b:bat[:void,:int])(b:bat[:void,:int])
-    io.print(bb);	# 45 IOprint_val (_36:int)<-(bb:bat[:void,:int])
-    ab := algebra.crossproduct(ar,b);	# 46 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:void])(b:bat[:void,:int])
-    io.print(ab);	# 47 IOprint_val (_37:int)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 48 ALGcross (ba:bat[:void,:void])<-(b:bat[:void,:int])(ar:bat[:int,:void])
-    io.print(ba);	# 49 IOprint_val (_38:int)<-(ba:bat[:void,:void])
-    bat.append(b,22);	# 50 BKCappend_val_wrap (_39:void)<-(b:bat[:void,:int])(_40:int)
-    io.print(b);	# 51 IOprint_val (_41:int)<-(b:bat[:void,:int])
-    ar := bat.reverse(a);	# 52 BKCreverse (ar:bat[:int,:void])<-(a:bat[:void,:int])
-    c := algebra.crossproduct(ar,ar);	# 53 ALGcross (c:bat[:int,:void])<-(ar:bat[:int,:void])(ar:bat[:int,:void])
-    io.print(c);	# 54 IOprint_val (_42:int)<-(c:bat[:int,:void])
-    bb := algebra.crossproduct(b,b);	# 55 ALGcross (bb:bat[:void,:int])<-(b:bat[:void,:int])(b:bat[:void,:int])
-    io.print(bb);	# 56 IOprint_val (_43:int)<-(bb:bat[:void,:int])
-    ab := algebra.crossproduct(ar,b);	# 57 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:void])(b:bat[:void,:int])
-    io.print(ab);	# 58 IOprint_val (_44:int)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 59 ALGcross (ba:bat[:void,:void])<-(b:bat[:void,:int])(ar:bat[:int,:void])
-    io.print(ba);	# 60 IOprint_val (_45:int)<-(ba:bat[:void,:void])
-end main;	# 61  
+    io.print(ar);	# 42 IOprint_val (_35:int)<-(ar:bat[:int,:void])
+    ar := bat.reverse(a);	# 43 BKCreverse (ar:bat[:int,:void])<-(a:bat[:void,:int])
+    c := algebra.crossproduct(ar,ar);	# 44 ALGcross (c:bat[:int,:void])<-(ar:bat[:int,:void])(ar:bat[:int,:void])
+    io.print(c);	# 45 IOprint_val (_36:int)<-(c:bat[:int,:void])
+    bb := algebra.crossproduct(b,b);	# 46 ALGcross (bb:bat[:void,:int])<-(b:bat[:void,:int])(b:bat[:void,:int])
+    io.print(bb);	# 47 IOprint_val (_37:int)<-(bb:bat[:void,:int])
+    ab := algebra.crossproduct(ar,b);	# 48 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:void])(b:bat[:void,:int])
+    io.print(ab);	# 49 IOprint_val (_38:int)<-(ab:bat[:int,:int])
+    ba := algebra.crossproduct(b,ar);	# 50 ALGcross (ba:bat[:void,:void])<-(b:bat[:void,:int])(ar:bat[:int,:void])
+    io.print(ba);	# 51 IOprint_val (_39:int)<-(ba:bat[:void,:void])
+    bat.append(b,22);	# 52 BKCappend_val_wrap (_40:void)<-(b:bat[:void,:int])(_41:int)
+    io.print(b);	# 53 IOprint_val (_42:int)<-(b:bat[:void,:int])
+    ar := bat.reverse(a);	# 54 BKCreverse (ar:bat[:int,:void])<-(a:bat[:void,:int])
+    c := algebra.crossproduct(ar,ar);	# 55 ALGcross (c:bat[:int,:void])<-(ar:bat[:int,:void])(ar:bat[:int,:void])
+    io.print(c);	# 56 IOprint_val (_43:int)<-(c:bat[:int,:void])
+    bb := algebra.crossproduct(b,b);	# 57 ALGcross (bb:bat[:void,:int])<-(b:bat[:void,:int])(b:bat[:void,:int])
+    io.print(bb);	# 58 IOprint_val (_44:int)<-(bb:bat[:void,:int])
+    ab := algebra.crossproduct(ar,b);	# 59 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:void])(b:bat[:void,:int])
+    io.print(ab);	# 60 IOprint_val (_45:int)<-(ab:bat[:int,:int])
+    ba := algebra.crossproduct(b,ar);	# 61 ALGcross (ba:bat[:void,:void])<-(b:bat[:void,:int])(ar:bat[:int,:void])
+    io.print(ba);	# 62 IOprint_val (_46:int)<-(ba:bat[:void,:void])
+end main;	# 63  
 #-----------------#
 # t	h	  # name
 # int	void	  # type
@@ -214,6 +216,12 @@ end main;	# 61
 # void	oid	  # type
 #-----------------#
 [ 0@0,	  0@0	  ]
+#-----------------#
+# h	t	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  0@0	  ]
+[ 2,	  1@0	  ]
 #-----------------#
 # h	t	  # name
 # int	oid	  # type
