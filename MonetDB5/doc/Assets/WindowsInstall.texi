@@ -202,18 +202,18 @@ and you get the "server console", where you can type you commands.
 The server console is mainly meant for administrative use, hence there
 are no conveniences such as commandline editing or command history.
 
-For a more convenient interface, you should use the @mclient{}.
+For a more convenient interface, you should use the @value{mclient}.
 To do so, start the server  and
 then, in a second shell, set up the same environment and start 
-@mclient{}
+@value{mclient}
 
 You now have a text-based MAL interface that supports
 commandline editing and a commandline history.  The latter can even be
 stored persistently to be re-used after stopping and restarting
-@mclient{}; see
+@value{mclient}; see
 
 @example
- @mclient{} --help
+ @value{mclient} --help
 @end example
 for details.
 @end ifset

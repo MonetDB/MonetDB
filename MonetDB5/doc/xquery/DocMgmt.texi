@@ -1,9 +1,10 @@
-The MonetDB/XQuery database system manages a @url{ListDoc,document collection}.
-Users can @url{AddDoc,add documents} and @url{DelDoc,remove documents}
+@section Document Management
+The MonetDB/XQuery database system manages a Document Collection.
+Users can Add Documents and Remove Documents
 to this collection by hand, giving them a logical name. Even without this, MonetDB/XQuery
 can query any XML document on the web for which you know a working URL.
 In that case, the document is automatically imported at query-time, and 
-a @url{Cache,caching policy} determines whether and how long it stays in 
+a @url{Cache Policy} determines whether and how long it stays in 
 the database.
 
 This page describes the interface for managing the document

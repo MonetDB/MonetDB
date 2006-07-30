@@ -93,7 +93,7 @@ Advanced topics for application builders are covered in @ref{Programming
 Interfaces}.
 
 @ifset M5manual
-The query language @ref{XQuery Introduction} is intended for users
+The query language @ref{XQuery} is intended for users
 living at the edge of technology. It provides a functional
 complete implementation of the XQuery and XUpdate standard.
 Unfortunately, the XQuery compiler is currently only
@@ -109,7 +109,7 @@ reference manual.
 @ifset M5manual
 If you are interested in technical details
 of the MonetDB system, you should start reading @ref{MonetDB Overview}.
-Two reading  tracks are possible. The @ref{MAL } language
+Two reading  tracks are possible. The @ref{MAL Introduction } language
 and subsequent sections describe the abstract machine and MAL
 optimizers to improve execution speed.
 It is relevant for a better understanding of the query processing

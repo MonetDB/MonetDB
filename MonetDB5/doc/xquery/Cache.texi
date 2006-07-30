@@ -1,3 +1,4 @@
+@section Cache Policy
 The @strong{document cache} holds recently accessed XML documents. It
 is persistent accross Mserver sessions.
 There is a @strong{caching policy} that determines whether and until when
@@ -24,7 +25,7 @@ not modify) these settings using:
   [ "xquery_output", "dm"                                         ]
   [ "xquery_cacheMB","100"                                        ]
   mil>
-@end verbatim>
+@end verbatim
 To modify the settings, edit the @code{MonetDB.conf} file. Its exact
 filepath location is listed under @code{"config"} in the same table.
 
@@ -51,14 +52,14 @@ The currently active set of lifetime rules can be inspected with:
   # str           lng               # type
   #---------------------------------#
   mil>
-@end verbatim>
+@end verbatim
 no rules, currently!
 
 Below an example of how to add two lifetime rules:
 @itemize
 @item cache all HTTP URIs for 5 minutes.
 @item cache all documents from @code{http://www.cwi.nl} for a month.
-@end itemize>
+@end itemize
 @verbatim
   mil> xmlcache_add_rule("http://", 300);
   mil> xmlcache_add_rule("http://www.cwi.nl", 30*24*60*60);
@@ -70,4 +71,4 @@ Below an example of how to add two lifetime rules:
   [ "http://",              300             ]
   [ "http://www.cwi.nl",    2592000         ]
   mil>
-@end verbatim>
+@end verbatim

@@ -1,10 +1,6 @@
 \input texinfo
 @c %**start of header
 
-@set M5manual
-@set mclient mclient
-@set mjclient mjclient
-
 @setfilename MonetDB
 @setcontentsaftertitlepage
 @settitle MonetDB Reference Manual
@@ -82,6 +78,10 @@ using the
 * MAL Instruction Help::
 @end menu
 @end menu
+
+@set M5manual
+@set mclient @code{mclient}
+@set mjclient @code{mjclient}
 
 @node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
@@ -165,7 +165,7 @@ using the
 @node Programming Interfaces, The Mapi Library, Backward Compatibility, Top
 @include Assets/APIs.texi
 
-@node The Mapi Library, Sample Application, Programming Interfaces, Programming Interfaces
+@node The Mapi Library, An Example , Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces

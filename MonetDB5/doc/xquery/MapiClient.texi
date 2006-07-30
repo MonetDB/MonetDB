@@ -82,7 +82,7 @@ $ MapiClient -lx -s xml-soap test.xq
 </XQueryResult>
 @end verbatim
 The @code{soap} mode will be part of the upcoming support
-for @ref{SOAP} RPC interface for MonetDB/XQuery. 
+for SOAP RPC interface for MonetDB/XQuery. 
 
 Thus:
 @itemize

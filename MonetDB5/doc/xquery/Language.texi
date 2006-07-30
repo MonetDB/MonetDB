@@ -1,9 +1,10 @@
+@subsection XQuery Implementation
 MonetDB/XQuery is an implementation of the XQuery standard as it is set by
 the World Wide Web Consortium (W3C).  It is also the source for the XQuery
 language documentation, and, therefore, not reproduced here. 
 
 The following W3C material is recommended:
-@itemize>
+@itemize
 @item
 @url{http://www.w3c.org/TR/xquery,W3C XQuery 1.0} now full standard recommendation.
 @item
@@ -17,7 +18,7 @@ is a proposal in-the-works for updating XML documents.
 @end itemize
 
 Additional W3C reference material:
-@itemize>
+@itemize
 @url{http://www.w3c.org/TR/xmlschema-2,W3C XML Schema 2.0} note that
 schema support in MonetDB/XQuery is untested at this point.
 @item

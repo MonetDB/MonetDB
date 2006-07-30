@@ -1,3 +1,4 @@
+@subsection Apache Configuration
 Here are the instructions to make @code{.xq} files directly executable from 
 the @url{http://www.apache.org,Apache web server}.
 
@@ -44,7 +45,7 @@ chmod 755 xquery.cgi
 Beware! You must potentially adapt:
 @itemize @bullet
  @item the location of bash
- @item @code{WWWDIR} (the <code>htdocs} directory where Apache stores its 
+ @item @code{WWWDIR} (the @code{htdocs} directory where Apache stores its 
   content)
  @item @code{MONETDIR} (the installation dir of MonetDB/XQuery)
 @end itemize
@@ -80,7 +81,7 @@ in the @code{htdocs}-folder):
  } 
 @end verbatim
 
-The @code{table} and <code>max} have been parametrized. 
+The @code{table} and @code{max} have been parametrized. 
 Parameters take the form: @code{ %name% }
 
 The parameters can be used in the usual URL convention:

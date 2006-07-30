@@ -27,9 +27,14 @@ installed separately, since it is not included in the main MonetDB
 module.
 
 You should be able to issue the following command on the MonetDB prompt
-without errors:
+without errors on MonetDB 4 series:
 @example
 @code{module(sql\_server);}
+@code{sql\_server\_start();}
+@end example
+or on MonetDB 5 series:
+@example
+@code{include sql;}
 @end example
 
 @subsection Getting the driver Jar
@@ -62,8 +67,7 @@ in your environment.\\
 Follow the steps below to assure your setup is complete:
 @enumerate
 @item start MonetDB
-@item load the SQL module using @code{module(sql\_server);
-sql\_server\_start();}
+@item load the SQL module
 @item run the JdbcClient utility using @code{java -jar
 @{path/to/jdbcclient-X.Y.jar@} -umonetdb} (with
  password monetdb)
@@ -216,7 +220,7 @@ Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 // request a Connection to a MonetDB/XQuery server running on
 // 'localhost' using the explicit xquery language
 Connection con = DriverManager.getConnection(
-    "jdbc:monetdb://localhost:45789/database?language=xquery",
+    "jdbc:monetdb://localhost/database?language=xquery",
     "monetdb",
     "monetdb"
 );
@@ -228,11 +232,9 @@ while (rs.next()) {
 }
 rs.close();
 @end verbatim
-In the above example, two things are different then for a normal SQL
-connection: 1) the port number to connect to is given explicitly, and 2)
-the language to use is specified.  Normally, the MonetDB/XQuery server
-runs on port @code{45789}.  If this is not the case, the JDBC
-connection URL has to reflect this.  The MonetDB JDBC driver supports
+In the above example, there is one thing different then for a normal SQL
+connection: the language to use is specified in the connection URL.
+The MonetDB JDBC driver supports
 additional settings and/or hints through arguments in the connection
 URL.  For a list of supported options, use the
 @code{java.sql.Driver}'s capabilities to report about this.  The

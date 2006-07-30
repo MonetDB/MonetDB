@@ -43,8 +43,7 @@ Make sure the MonetDB server has been started, then start the SQL client.
 Under Linux you will see something like this:
 
 @example
-shell> MapiClient --database=voc -umonetdb 
-@end ifset
+shell> @value{mjclient} --database=voc -umonetdb 
 password: ******
 Welcome to the MonetDB interactive JDBC terminal!
 Database: MonetDB 4.99.19
@@ -79,7 +78,7 @@ shell>@value{mclient} -lsql -uvoc <voc_dump.sql
 @end example
 Alternatively, a remotely living dump file can be used:
 @example
-shell> value{mjclient} --database=voc -umonetdb -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching
+shell> @value{mjclient} --database=voc -umonetdb -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching
 password:***
 @end example
 The argument @code{Xbatching} instructs the JDBC client to batch instructions

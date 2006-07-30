@@ -1,3 +1,4 @@
+@section Remove Document
 You can delete the "HelloWorld.xml" document from the collection
 using its logical name.
 @verbatim
@@ -8,20 +9,20 @@ using its logical name.
   # Visit http://monetdb.cwi.nl/ for further information.
   mil>delete_doc("HelloWorld.xml");
   mil>\q
-@end verbatimm
+@end verbatim
 
-The query Wcode{doc("HelloWorld.xml")} won't work anymore and 
+The query Wcode@{doc("HelloWorld.xml")@} won't work anymore and 
 returns an error message accordingly.
 
 If you wish to delete all documents from the collection, type:
 @verbatim
   mil> delete_all_docs(true);
   mil>
-@end verbatimm
+@end verbatim
 to delete only the (implicitely) cached documents, or
 @verbatim
   mil> delete_all_docs(false);
   mil>
-@end verbatimm
+@end verbatim
 to delete also the (explicitely) shredded documents.
 

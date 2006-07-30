@@ -2,10 +2,6 @@
 @c %**start of header
 @c this file is meant for the SQL line
 
-@set XQmanual
-@set mclient= MapiClient
-@set mjclient= MapiClient
-
 @setfilename MonetDB
 @setcontentsaftertitlepage
 @settitle MonetDB/XQuery Reference Manual
@@ -65,12 +61,16 @@ using the
 @menu
 * General Introduction::
 * Client Interfaces::
-* Data Management Tools::
 * XQuery Introduction::
 * Development Roadmap::
 * Programming Interfaces::
+* Embedded MonetDB::
 * Appendices::
 @end menu
+
+@set XQmanual
+@set mclient @code{MapiClient}
+@set mjclient @code{MapiClient}
 
 @node General Introduction, Intended audience, Top , Top
 @include xquery/warning.texi
@@ -109,6 +109,7 @@ using the
 * MAPI Client::
 * JDBC Client::
 * Console Interface::
+* Apache Configuration::
 @end menu
 @node MAPI Client, JDBC Client, Client Interfaces, Client Interfaces
 @include Assets/MapiClient.texi
@@ -117,48 +118,91 @@ using the
 @node JDBC Client, Console Interface, MAPI Client, Client Interfaces
 @include Assets/JdbcClient.texi
 
-@node Console Interface, Data Management Tools, JDBC Client, Client Interfaces
+@node Console Interface, Development Roadmap, JDBC Client, Client Interfaces
 @subsection Console Interface
 @include mal_readline.bdy.texi
 
-@node Development Roadmap, XQuery Roadmap, iSQL-Viewer, Top
+@node Apache Configuration, Development Roadmap, Console Interface, Client Interfaces
+@include xquery/Apache.texi
+
+@node Development Roadmap, XQuery Roadmap, Apache Configuration, Top
 @include Assets/Roadmap.texi
 @menu
 * XQuery Roadmap ::
-* Embedded Server Roadmap ::
 * Server Roadmap ::
 @end menu
 
-@node XQuery Roadmap, Embedded Server Roadmap, Development Roadmap, Development Roadmap
+@node XQuery Roadmap, Server Roadmap, Development Roadmap, Development Roadmap
 
-@node Server Roadmap, SQL Introduction, XQuery Roadmap, Development Roadmap
+@node Server Roadmap, XQuery Introduction, XQuery Roadmap, Development Roadmap
 @include Assets/ServerRoadmap.texi
 
 @c The XQuery specific part
 
 @node XQuery Introduction, XQuery QuickTours, Server Roadmap , Top
-@include Assets/warning.texi
+@include xquery/warning.texi
 @menu
 * XQuery QuickTours::
 * Supported Features ::
 * Document Management::
-* XQuery APIs::
 * Prepared Queries::
-* Standoff Extensions::
+* StandOff Extensions::
 @end menu
-@c @include xquery/intro.texi
+@include xquery/intro.texi
+@include xquery/Language.texi
 
 @node XQuery QuickTours, Supported Features, XQuery Introduction , XQuery Introduction
-@node Supported Features, Document Management , Server Roadmap , XQuery Introduction
-@node Document Management, Prepared Queries , Supported Features,XQuery Introduction
-@node Prepared Queries, Standoff Extensions , Document Management ,XQuery Introduction
-@node Standoff Extensions, Programming Interfaces ,Prepared Queries ,XQuery Introduction
+@include xquery/warning.texi
 
-@node Programming Interfaces, The Mapi Library, Overlaying BATs, Top
+@node Supported Features, Document Management , XQuery QuickTours , XQuery Introduction
+@section Supported Features
+@include xquery/warning.texi
+@include xquery/Functions.texi
+
+@node Document Management, Document Collection, Supported Features,XQuery Introduction
+@menu
+* Document Collection::
+* Add Document::
+* Remove Document::
+* Cache Policy::
+* Miscellaneous::
+@end menu
+@include xquery/warning.texi
+@include xquery/DocMgmt.texi
+
+@node Document Collection , Add Document, Document Management, Document Management
+@include xquery/ListDoc.texi
+@node Add Document, Remove Document, Document Collection, Document Management
+@include xquery/AddDoc.texi
+@node Remove Document, Cache Policy, Add Document, Document Management
+@include xquery/DelDoc.texi
+@node Cache Policy, Prepared Queries, Remove Document, Document Management
+@include xquery/Cache.texi
+@node Miscellaneous, Prepared Queries, Cache Policy, Document Management
+@include xquery/DocOther.texi
+
+@node Prepared Queries, StandOff Extensions , Miscellaneous ,XQuery Introduction
+@section Prepared Queries
+@include xquery/warning.texi
+
+@node StandOff Extensions, Extended XPath Steps ,Prepared Queries ,XQuery Introduction
+@section StandOff Extensions
+@include xquery/warning.texi
+@include xquery/Standoff.texi
+
+@node Programming Interfaces, The Mapi Library, Why StandOff Extensions?, Top
+@menu
+* The Mapi Library ::
+* The Perl Library::
+* The PHP Library::
+* The Python Library::
+* The JDBC Library::
+* The ODBC Library::
+@end menu
 @c @include xquery/API.texi
 
 @c End of XQuery specific part
-@node The Mapi Library,Sample Application , Programming Interfaces, Programming Interfaces
+@node The Mapi Library,An Example, Programming Interfaces, Programming Interfaces
 @include Assets/mapimanual.texi
 
 @node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
@@ -183,19 +227,19 @@ using the
 @include Assets/MbeddedLimits.texi
 
 
-@node Appendices, Version 4 , Embedded Limitations, Top
+@node Appendices, XQuery Functions, Embedded Limitations, Top
 @menu
-* Version 4::
-* SQL 1999 Features::
+* XQuery Functions::
+* Troubleshooting::
 * VOC History::
 @end menu
 
-@node Version 4, SQL 1999 Features, Appendices, Appendices
-@include Assets/Compatability.texi
-@include Assets/SQLversion4.texi
-@node SQL 1999 Features, VOC History, Version 4, Appendices
-@include Assets/SQL1999.texi
-@node VOC History,  , SQL 1999 Features, Appendices
+@node XQuery Functions, XQuery Aggregation  , Appendices, Appendices
+@include xquery/FunctionsList.texi
+
+@node Troubleshooting, VOC History, XQuery Date/Time, Appendices
+@include xquery/trouble.texi
+@node VOC History,  , Troubleshooting, Appendices
 @include Assets/VOChistory.texi
 
 @bye

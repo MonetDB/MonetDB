@@ -1,3 +1,4 @@
+@section Document Collection
 we can print the current document collection by:
 @verbatim
   mil> xmldb_print();
@@ -19,7 +20,7 @@ Documents are shredded either
 @item  explicitly (as explained at the start), using the MIL command 
      @url{../AddDoc,@code{shred_doc("URI","alias");}}
 @item  or because a query executed the XQuery function @code{fn:doc("uri")}
-     and the @url{../Cache,<b>caching policy</b>} of MonetDB/XQuery determined
+     and the @ref{Cache Policy} of MonetDB/XQuery determined
      that this document should stay in the cache; so it stayed there
      even after query execution ended (for automatically cached documents, 
      the alias is identical to the URI).
