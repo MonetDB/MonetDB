@@ -198,12 +198,19 @@ address ALGcopy
 comment "Returns physical copy of a BAT.";
 @- Sorted copy
 @mal
-command sortHead( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
-command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command sortReverse( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+address ALGhsort_rev
+comment "Returns a BAT copy reversely sorted on the tail column.";
+
+command sortTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGtsort
 comment "Returns a BAT copy sorted on the tail column.";
+command sortReverseTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+address ALGtsort_rev
+comment "Returns a BAT copy reversely sorted on the tail column.";
 
 command sortHT( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhtsort
@@ -2439,6 +2446,26 @@ ALGtsort(int *result, int *bid)
 	}
 	return throwMessage("algebra.tsort", "GDKerror");
 }
+mal_export str ALGtsort_rev(int *result, int *bid);
+str
+ALGtsort_rev(int *result, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("algebra.tsort", "Cannot access descriptor");
+	}
+	CMDsort_rev(&bn, BATmirror(b));
+	BBPreleaseref(b->batCacheid);
+	if (bn) {
+		bn = BATmirror(bn);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.tsort", "GDKerror");
+}
 
 mal_export str ALGhsort(int *result, int *bid);
 str
@@ -2460,6 +2487,25 @@ ALGhsort(int *result, int *bid)
 	return throwMessage("algebra.hsort", "GDKerror");
 }
 
+mal_export str ALGhsort_rev(int *result, int *bid);
+str
+ALGhsort_rev(int *result, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("algebra.tsort", "Cannot access descriptor");
+	}
+	CMDsort_rev(&bn, b);
+	BBPreleaseref(b->batCacheid);
+	if (bn) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.tsort", "GDKerror");
+}
 mal_export str ALGhtsort(int *result, int *lid);
 str
 ALGhtsort(int *result, int *lid)

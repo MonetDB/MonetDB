@@ -83,6 +83,9 @@ comment "Returns the head-mirror image of a BAT (two head columns).";
 command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCorder
 comment "Sorts the BAT itself on the head, in place. ";
+command orderReverse(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+address BKCorder_rev
+comment "Reverse sorts the BAT itself on the head, in place. ";
 
 command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCrevert
