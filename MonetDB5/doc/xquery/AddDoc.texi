@@ -1,4 +1,4 @@
-@section Add Document
+@subsection Add Document
 For example, to add the document @url{../../../files/HelloWorld.xml,HelloWorld.xml},
 to the database try the following:
 

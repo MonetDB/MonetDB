@@ -1,4 +1,4 @@
-@subsection Timing
+@subsubsection Timing
 The -T option causes timing info to be printed, after the query has been executed:
 @verbatim
 $ MapiClient -T -lx test.xq
@@ -30,7 +30,7 @@ Total     131.000 msec
   at the client.
 @end itemize
 
-@subsection Output Modes
+@subsubsection Output Modes
 The result of an XQuery is a value sequence; where the values may 
 be nodes (i.e.  snippets of XML) or simple values (such as integers 
 or strings). Such sequences may be printed in different ways. 

@@ -1,4 +1,4 @@
-@section Remove Document
+@subsection Remove Document
 You can delete the "HelloWorld.xml" document from the collection
 using its logical name.
 @verbatim

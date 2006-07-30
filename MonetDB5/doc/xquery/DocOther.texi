@@ -1,4 +1,4 @@
-@section Miscellaneous
+@subsection Miscellaneous
 MonetDB/XQuery offers a few other functions that might turn out to
 be useful.
 The function signatures are shown using @code{sigs("pathfinder");}.

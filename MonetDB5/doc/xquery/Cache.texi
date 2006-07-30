@@ -1,4 +1,4 @@
-@section Cache Policy
+@subsection Cache Policy
 The @strong{document cache} holds recently accessed XML documents. It
 is persistent accross Mserver sessions.
 There is a @strong{caching policy} that determines whether and until when

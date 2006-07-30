@@ -1,4 +1,4 @@
-@section Document Collection
+@subsection Document Collection
 we can print the current document collection by:
 @verbatim
   mil> xmldb_print();

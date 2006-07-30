@@ -1,13 +1,12 @@
 MonetDB/XQuery supports a wide range of the built-in functions described in
-the <a href='http://www.w3.org/'>W3C</a> specifications. Here is a list of
+the @url{http://www.w3.org/,W3C} specifications. Here is a list of
 functions that MonetDB/XQuery currently supports. Some functions are not yet
 implemented, while others probably won't be implemented in the near future.</p>
 
 
 @multitable @columnfractions 0.2 0.8
 @item yes
-@tab @strong{Order
-Awareness}<br/>MonetDB/XQuery correctly implements document and sequence
+@tab @strong{Order Awareness} MonetDB/XQuery correctly implements document and sequence
 orders, as well as node identity. 
 @item yes
 @tab @strong{XPath Location Steps}
@@ -19,11 +18,11 @@ however, that we do not support node tests on @emph{type annotations} as
 introduced with newer XQuery drafts.
 
 @item yes
-@tab @strong{FLWOR clauses}<br/>We support
-FLWOR clauses with full generality and arbitrary nesting, including positional
-variables. @item yes
-@tab @strong{Arithmetics,
-Logics, Conditionals}
+@tab @strong{FLWOR clauses}
+We support FLWOR clauses with full generality and arbitrary nesting, including positional
+variables.
+@item yes
+@tab @strong{Arithmetics, Logics, Conditionals}
 We support arithmetics, logics (@code{and},
 @code{or}), and conditionals (@code{some}/@code{every},
 @code{if-then-else}).

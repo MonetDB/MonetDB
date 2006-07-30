@@ -1,3 +1,4 @@
+@subsection Web Service Security
 When starting the MonetDB Server, this will open a network 
 port on your system (the @code{mapi_port}, configurable in 
 @code{MonetDB.conf}, by default 50000).

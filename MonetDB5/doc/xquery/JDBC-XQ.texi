@@ -5,39 +5,39 @@ JDBC can "speak" with pathfinder, JdbcClient can do it interactively
 @end itemize
 
 
-@subsection Executing queries (Using JdbcClient - XQuery)
+@subsubsection Executing queries (Using JdbcClient - XQuery)
 
-Even though JDBC is designed for SQL, the @code{JdbcClient} utility
+Even though JDBC is designed for SQL, the @value{mjclient} utility
 can be used to query an MonetDB/XQuery server interactively.  Because it
 is geared towards SQL usage, all queries have to be terminated with a
-'@code{;}' at the end of a line.  While @code{JdbcClient} doesn't
-support the rich timing functions of @code{MapiClient}, it does on the
+'@code{;}' at the end of a line.  While @value{mjclient} doesn't
+support the rich timing functions of @value{mclient}, it does on the
 other hand allow true interactive querying.  For instance the contents
 of the @code{test.xq} file can be interactively be queried:
 
 @verbatim
-% JdbcClient -lxquery -p45789
+% @value{mjclient} -lxquery -p45789
 Connection warning: database specifier not supported on this server (mserver_xquery), protocol version 4
 Welcome to the MonetDB interactive JDBC terminal!
 Type \q to quit, \h for a list of available commands
 auto commit mode: on
 monetdb-> 1 + 1;
-+--------------------------------------------------------------+
-| xml                                                          |
-+==============================================================+
-| 2                                                            |
-+--------------------------------------------------------------+
++-----------------------------------------------+
+| xml                                           |
++===============================================+
+| 2                                             |
++-----------------------------------------------+
 1 row
 
 monetdb-> (1, 42.0, "Hello World", <node attr="value">test</node>);
-+--------------------------------------------------------------+
++-----------------------------------------------+
 | xml                                                          |
-+==============================================================+
-| 1                                                            |
-| 42.000000                                                    |
-| "Hello World"                                                |
-| <node attr="value">test</node>                               |
-+--------------------------------------------------------------+
++===============================================+
+| 1                           
+| 42.000000                                     |
+| "Hello World"                                 |
+| <node attr="value">test</node>                |
++-----------------------------------------------+
 4 rows
 
 monetdb-> 

@@ -62,26 +62,26 @@ concurrent such region really easy.</p>
 @end itemize
 
 
-@subsubsection >context/select-narrow::nodename
+@subsubsection context/select-narrow::nodename
 From the set of nodes with nodename 'nodename', say: @{n1, n2...@}, 
 return only the nodes contained in the context nodes (e.g. 
 return n if there is a context node for which holds: context_start 
 <= n_start and n_end <= context_end)
 
 
-@subsubsection >context/select-wide::nodename
+@subsubsection context/select-wide::nodename
 From the set of nodes with nodename 'nodename', say: @{n1, n2...@},
 return only the nodes overlapping with the context nodes (e.g. 
 return n if there is a context node for which holds: context_start 
 <= n_end and n_start <= context_end)
 
-@subsubsection >context/reject-narrow::nodename
+@subsubsection context/reject-narrow::nodename
 From the set of nodes with nodename 'nodename', say: @{n1, n2...@}, 
 return all BUT the nodes contained in the context nodes (e.g. 
 return n if there is NOT a context node for which holds: context_start 
 <= n_start and n_end <= context_end)
 
-@subsubsection >context/reject-wide::nodename
+@subsubsection context/reject-wide::nodename
 From the set of nodes with nodename 'nodename', say: @{n1, n2...@}, 
 return all BUT the nodes overlapping with the context nodes (e.g. 
 return n if there is NOT a context node for which holds: context_start 

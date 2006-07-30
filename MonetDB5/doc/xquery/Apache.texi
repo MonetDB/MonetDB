@@ -1,3 +1,4 @@
+@section Web Services
 @subsection Apache Configuration
 Here are the instructions to make @code{.xq} files directly executable from 
 the @url{http://www.apache.org,Apache web server}.
