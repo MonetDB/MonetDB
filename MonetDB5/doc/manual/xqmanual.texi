@@ -117,6 +117,8 @@ using the
 
 @node JDBC Client, Console Interface, MAPI Client, Client Interfaces
 @include Assets/JdbcClient.texi
+@include xquery/JDBC-XQ.texi
+@include xquery/XML-DB.texi
 
 @node Console Interface, Development Roadmap, JDBC Client, Client Interfaces
 @subsection Console Interface
@@ -124,6 +126,7 @@ using the
 
 @node Apache Configuration, Development Roadmap, Console Interface, Client Interfaces
 @include xquery/Apache.texi
+@include xquery/Security.texi
 
 @node Development Roadmap, XQuery Roadmap, Apache Configuration, Top
 @include Assets/Roadmap.texi
@@ -149,6 +152,8 @@ using the
 * StandOff Extensions::
 @end menu
 @include xquery/intro.texi
+@include xquery/Xpath.texi
+@include xquery/Xquery.texi
 @include xquery/Language.texi
 
 @node XQuery QuickTours, Supported Features, XQuery Introduction , XQuery Introduction
@@ -182,7 +187,7 @@ using the
 @include xquery/DocOther.texi
 
 @node Prepared Queries, StandOff Extensions , Miscellaneous ,XQuery Introduction
-@section Prepared Queries
+@include xquery/PreparedQueries.texi
 @include xquery/warning.texi
 
 @node StandOff Extensions, Extended XPath Steps ,Prepared Queries ,XQuery Introduction
