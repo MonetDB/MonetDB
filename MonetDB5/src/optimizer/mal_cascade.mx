@@ -29,35 +29,40 @@ range terms as much as possible. Useless instructions
 are removed from the plan.
 
 @example
-b := bat.new(:void,:int);
-s1:= algebra.select(b,1,100);
-s2:= algebra.select(s1,5,95);
-s3:= algebra.select(s2,50,nil);
-s4:= algebra.select(s3,nil,75);
+    b := bat.new(:void,:int);
+    s1:= algebra.select(b,1,100);
+    s2:= algebra.select(s1,5,95);
+    s3:= algebra.select(s2,50,nil);
+    s4:= algebra.select(s3,nil,75);
 optimizer.cascade();
 @end example
 
 This lengthly sequence can be compressed into a single one:
 @example
-b := bat.new(:void,:int);
-s1:= algebra.select(b,50,75);
+    b := bat.new(:void,:int);
+    s1:= algebra.select(b,50,75);
 @end example
 Cascading range information is not limited to conjunctive
-selections. The result of unions and the sub-set relationship
-between OID sets can also be the target for cascading.
-However, the semantic analysis is slightly more complicated.
-@{
-The implementation is limited to the select operations
-for the time being.
-A temporary range descriptor for each variable is used.
+selections. A union over two range selections from a single
+source could also be a target.
+@example
+    t1:= algebra.select(b,1,10);
+    t2:= algebra.select(b,0,5);
+    t3:= algebra.union(t1,t2);
+@end example
+would become
+@example
+   t3:= algebra.select(0,10);
+@end example
 
+@{
 The cascades should be limited to simple blocks.
 Furthermore, we should ensure that variables are not re-used
 other then in side-effect functions.
 
 The aliasRemoval and constantExpression optimizers should
 have done their work. Empty scans are simply dropped,
-which leads to a planned cleaned by the dead code optimizer.
+which leads to a planned cleaning by the dead code optimizer.
 
 @mal
 pattern optimizer.cascade():str
@@ -88,9 +93,7 @@ typedef struct RANGE{
 	int used;		/* how often it has been used */
 	int lcst, hcst; /* constant variables holding the range bounds */
 	int  srcvar;	/* BAT variable on which the range depends */
-	int lincl, hincl;/* copied boundary conditions */
 	int lastupdate, lastrange;
-	ValRecord lval,hval;
 }RangeRec, *Range;
 
 #ifdef DEBUG_MAL_CASCADE
@@ -146,11 +149,11 @@ In phase I we collect information about constants
 		if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
 @-
-The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed in two
-directions. First, we attempt to propagate the range known for Y
-onto the requested range of X. This may lead to smaller range of
+The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed.
+First, we attempt to propagate the range known for Y onto the 
+requested range of X. This may lead to smaller range of
 even the conclusion that X is necessarily empty.
-Of course, only under the condition that Y has not be changed by a
+Of course, only under the condition that Y has not been changed by a
 side-effect since it was bound to X.
 @c
 			x= getArg(p,1);
@@ -220,6 +223,14 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 						mb->var[getArg(p,0)]->props= newPropertySet();
 					setProperty(mb->var[getArg(p,0)]->props,
 							"empty","=",TYPE_bit,&b);
+					/* create an empty replacement */
+					x= getArgType(mb, p, 1);
+					p->argc=1;
+					getModuleId(p)= batRef;
+					getFunctionId(p)= newRef;
+					pushArgument(mb,p, newTypeVariable(mb, getHeadType(x)));
+					pushArgument(mb,p, newTypeVariable(mb, getTailType(x)));
+					actions++;
 				}
 			}
 		}
