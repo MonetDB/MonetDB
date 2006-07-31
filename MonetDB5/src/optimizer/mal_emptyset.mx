@@ -75,7 +75,7 @@ comment "Move constant expressions out of the blocks";
 #include "mal_prelude.h"
 #include "mal_optimizer.h"
 
-#define DEBUG_MAL_EMPTYSET	/* show partial result */
+#define DEBUG_MAL_EMPTYSET	 /* show partial result */
 
 opt_export str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str ESevaluate(MalBlkPtr mb, int cnt, int *vars);
@@ -110,6 +110,8 @@ ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+#define propagate(X) p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
+	p->argc = 2; p->fcn = 0; getFunctionId(p)= getModuleId(p)=NULL;
 str
 ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
@@ -175,7 +177,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 				} else if (getName("algebra", 7) == getModuleId(p)) {
 					if (getName("markH", 5) == getFunctionId(p) || 
 						getName("markT", 5) == getFunctionId(p)) {
-						p->token = IGNOREsymbol;
+						propagate(1);
 						doAR++;
 						empty[getArg(p, 0)] = 1;
 						break;
@@ -205,7 +207,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 								getName("fragment", 8) == getFunctionId(p)) {
 
 								/* result is empty */
-								p->token = IGNOREsymbol;
+								propagate(1);
 								if (getLastUpdate(mb, getArg(p, 0)) == i)
 									empty[getArg(p, 0)] = 1;
 					} else if (getName("difference", 10) == getFunctionId(p) || 
@@ -244,7 +246,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 								getName("hashjoin", 8) == getFunctionId(p) || 
 								getName("cartesianproduct", 16) == getFunctionId(p)
 								) {
-						/* always identity */
+						/* incomplete, should produce an empty bat */
 						setModuleId(p, NULL);
 						setFunctionId(p, NULL);
 						p->argc = 2;
@@ -287,43 +289,34 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 @c
 mal_export str QOTESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOTESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
+	str modnme;
+	str fcnnme;
 	Module  scope=NULL;
 	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
 
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		ESoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.emptySet",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		ESoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"emptySet",1,GDKusec()-clk);
-	}
+	optimizerInit();
 	removeInstruction(mb, p);
+	if( p->argc > 1){
+		if( stk != 0){
+			modnme= (str)getArgValue(stk,p,1);
+			fcnnme= (str)getArgValue(stk,p,2);
+		} else {
+			modnme= getArgDefault(mb,p,1);
+			fcnnme= getArgDefault(mb,p,2);
+		}
+		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
+		if( scope)
+			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+		if( s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+			return throwMessage("optimizer.emptySet",buf);
+		}
+		if( s->def->errors == 0)
+			ESoptimizer(s->def,0,0);
+	} else
+			ESoptimizer(mb,0,0);
 	return MAL_SUCCEED;
 }
 @}
