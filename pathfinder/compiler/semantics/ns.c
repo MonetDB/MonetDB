@@ -215,6 +215,8 @@ static PFns_map_t *stat_known_ns = NULL;
 static void
 ns_add (PFns_t ns)
 {
+    assert (ns.prefix && ns.uri);
+
     *((PFns_t *) PFarray_add (stat_known_ns)) = ns;
 }
 
@@ -534,7 +536,6 @@ ns_resolve (PFpnode_t *n)
             ns_add (PFns_pf);
             ns_add (PFns_xdt);
             ns_add (PFns_local);
-            ns_add (PFns_wild);
             ns_add (PFns_fn);
 
             fns = PFns_fn;
