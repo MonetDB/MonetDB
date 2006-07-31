@@ -93,6 +93,7 @@ typedef struct RANGE{
 	ValRecord lval,hval;
 }RangeRec, *Range;
 
+#ifdef DEBUG_MAL_CASCADE
 static void 
 printRange(MalBlkPtr mb, Range rng, int idx){
 	(void) rng;
@@ -105,12 +106,7 @@ printRange(MalBlkPtr mb, Range rng, int idx){
 	stream_printf(GDKout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
 	stream_printf(GDKout,"\n");
 }
-
-#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
-	getModuleId(X) && strcmp(getModuleId(X),M)==0)
-
-#define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
-	getModuleId(X) && getModuleId(X)==M)
+#endif
 
 str
 CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
