@@ -59,6 +59,14 @@ command assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 
+#command startQuery(s:str):void
+#address SQLstartQuery
+#comment "Initialize tracing query performance";
+
+#command exitQuery(s:str):void
+#address SQLexitQuery
+#comment "Finalize tracing query performance";
+
 @- The SQL multi-version catalog
 This module also contains the definitions for managing an SQL database schema in
 version 5.  It is an adaptation of the original V4.3 code base. 

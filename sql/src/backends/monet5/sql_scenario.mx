@@ -36,6 +36,8 @@ phase of the scenario.
 sql_export str SQLsession(str *ret);
 sql_export str SQLprelude(void);
 sql_export str SQLepilogue(void);
+sql_export str SQLstartQuery(int *ret, str *qry);
+sql_export str SQLexitQuery(int *ret);
 
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
@@ -210,6 +212,16 @@ SQLtrace(int *ret)
 	return MAL_SUCCEED;
 }
 
+str
+SQLstartQuery(int *ret, str *qry){
+	(void) ret; (void) qry;
+	return MAL_SUCCEED;
+}
+str
+SQLexitQuery(int *ret){
+	(void) ret; 
+	return MAL_SUCCEED;
+}
 @-
 It should become possible to initialize the SQL
 from a MAL program to setup an environment to

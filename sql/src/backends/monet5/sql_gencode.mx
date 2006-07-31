@@ -1696,6 +1696,10 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	int argc = 0;
 	char arg[32];
 	node *n;
+/*
+	InstrPtr q;
+	str msg, profile;
+*/
 
 	c->backup = c->curprg;
 
@@ -1736,6 +1740,16 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			setVarType(curBlk, varid, type);
 		}
 	}
+	/* keep the query for tracing and inspection */
+/* not yet used
+	profile = sql_get_var(be->mvc,"profile");
+	if(profile  && strcmp(profile ,"true")==0){
+		q= newStmt(curBlk,sqlRef,putName("startQuery",10));
+		pushStr(curBlk,q, msg=sql_escape_str(QUERY(m->scanner)));
+		GDKfree(msg);
+	}
+*/
+
 	backend_dumpstmt(be, curBlk, s);
 
 	if (cq){
@@ -1743,6 +1757,13 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		addQueryToCache(c);
 		be->Toptimize = GDKusec()- be->Toptimize;
 	}
+	
+/* not yet used
+	if(profile  && strcmp(profile ,"true")==0){
+		newStmt(curBlk,sqlRef,putName("exitQuery",9));
+	}
+*/
+
 	pushEndInstruction(curBlk);
 	curPrg = c->curprg;
 	if (c->backup) {
