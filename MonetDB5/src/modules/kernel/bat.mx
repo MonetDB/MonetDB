@@ -2730,11 +2730,9 @@ BKCinfo(int *retval, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.getInfo", "Cannot access descriptor");
 	}
-	if (b == 0)
-		return throwMessage("BKCinfo", "no such bat.\n");
 	if (CMDinfo(&bn, b) == GDK_SUCCEED) {
 		*retval = bn->batCacheid;
-		BBPincref(bn->batCacheid, TRUE);
+		BBPkeepref(bn->batCacheid);
 		BBPreleaseref(*bid);
 		return MAL_SUCCEED;
 	}
@@ -2894,7 +2892,7 @@ BKCload(int *res, str *input)
 
 	*res = bid;
 	if (bid) {
-		BBPincref(bid, TRUE);
+		BBPkeepref(bid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("bat.unload", " file name missing");
