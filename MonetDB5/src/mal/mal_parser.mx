@@ -481,6 +481,10 @@ int cstToken(Client cntxt, ValPtr cst)
 	}
 	if( cst->vtype == TYPE_dbl){
 		cst->val.dval = (dbl) strtod(CURRENT(cntxt),NULL);
+		if( cst->val.dval>= FLT_MIN && cst->val.dval<= FLT_MAX ){
+			cst->vtype= TYPE_flt;
+			cst->val.fval = (flt) cst->val.dval;
+		}
 	}
 	if (*s == '@') {
 		i++;
@@ -514,16 +518,13 @@ int cstToken(Client cntxt, ValPtr cst)
 handleInts:
 	if( cst->vtype == TYPE_int || cst->vtype == TYPE_lng){
 		l = strtoll(CURRENT(cntxt),NULL,0);
-		if( l> INT_MIN && l< INT_MAX ){
+		if( l>= INT_MIN && l<= INT_MAX ){
 			cst->vtype= TYPE_int;
 			cst->val.ival = (int)l;
 		} else {
 			cst->vtype= TYPE_lng;
 			cst->val.lval = l;
 		}
-	}
-	if( cst->vtype == TYPE_lng){
-		cst->val.lval = strtoll(CURRENT(cntxt),NULL,0);
 	}
 	return i;
 

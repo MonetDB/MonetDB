@@ -1518,6 +1518,28 @@ nil value is set.
 int
 convertConstant(malType type, ValPtr vr)
 {
+	if( vr->vtype == type)
+		return 0;
+	if( vr->vtype == TYPE_str){
+#ifdef STRUCT_ALIGNED
+		int ll = 0;
+		ptr d = NULL;
+
+		ATOMfromstr(type, &d, &ll, vr->val.sval);
+		if (d == NULL) {
+			GDKerror("newConstant:Parse error in '%s'", vr->val.sval);
+			VALset(vr, type, ATOMnilptr(type));
+			return 1;
+		}
+		VALset(vr, type, d);
+		if (ATOMextern(type) == 0)
+			GDKfree(d);
+#else
+		GDKerror("newConstants:missing implementation\n");
+#endif
+		return vr->vtype != type;
+	}
+	
 	switch (type) {
 	case TYPE_bit:
 	case TYPE_chr:
@@ -1528,9 +1550,24 @@ convertConstant(malType type, ValPtr vr)
 	case TYPE_flt:
 	case TYPE_dbl:
 	case TYPE_lng:
-	case TYPE_str:
 		VALconvert(type,vr);
 		return vr->vtype != type;
+	case TYPE_str:
+		{ str w=0;
+		  if( vr->vtype == TYPE_void){
+			vr->vtype = type;
+			vr->val.sval = GDKstrdup(str_nil);
+			return 0;
+		  } 
+		  if( vr->vtype == TYPE_chr){
+			w= GDKstrdup("a");
+			*w = vr->val.cval[0];
+		  } else 
+			ATOMformat(vr->vtype, VALptr(vr), &w);
+		  VALset(vr, type, w);
+		}
+		return vr->vtype != type;
+
 	case TYPE_bat:
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
@@ -1538,6 +1575,11 @@ convertConstant(malType type, ValPtr vr)
 		return 0;
 	case TYPE_ptr:
 		if (vr->vtype == TYPE_void) {
+			vr->vtype = type;
+			vr->val.pval = 0;
+			return 0;
+		}
+		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
 			vr->vtype = type;
 			vr->val.pval = 0;
 			return 0;
