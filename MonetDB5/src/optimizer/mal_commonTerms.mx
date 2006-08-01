@@ -77,29 +77,60 @@ are not common, because they have side effects.
     c := bat.new(:int,:int);
     d := algebra.select(b,0,100);
     e := d;
-    k1 := 24;
-    k2 := 27;
-    l := calc.+(k1,k2);
-    l3 := calc.+(l,k1);
+    l := calc.+(24,27);
+    l3 := calc.+(l,24);
 @end verbatim
+@{
 The current implementation is rather expensive nested-loop algorithm,
 which does not perform well for large MAL blocks.
-Furthermore, after each hit we apply alias removal.
-This potentially generates more common expressions.
-The search can be improved significantly when a dataflow graph
-is maintained for all variables. For, equality of instruction implies that
+The search can be improved significantly by prefiltering.
+For, equality of instruction implies that
 all variables have been used before in a similar context.
 
-@{
 Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
+
+Before we look for common terms, we had to be assured
+that all constants are already aligned.
 @c
+static 
+void CTconstant(MalBlkPtr mb){
+	int i,j;
+	int *cst,*alias,top=0;
+	InstrPtr p;
+
+	cst= (int*) alloca(mb->vtop *sizeof(int));
+	alias= (int*) alloca(mb->vtop *sizeof(int));
+
+	for(i = 0; i< mb->vtop; i++)
+	if( isConstant(mb,i) ){
+		alias[i]= i;
+		for(j=0; j<top; j++)
+		if( getVarType(mb,i) == getVarType(mb,cst[j]) &&
+			ATOMcmp(getVarType(mb,i),
+				 VALget(&getVar(mb,i)->value),
+				 VALget(&getVar(mb,cst[j])->value)) == 0){
+			/* printf("found %d == %d\n",i, cst[j]);*/
+			alias[i]= cst[j];
+			break;
+		}
+		cst[top++]= i;
+	}
+	for( i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j=p->retc; j < p->argc; j++)
+		if( isConstant(mb, getArg(p,j)) )
+			getArg(p,j) = alias[getArg(p,j)];
+	}
+}
 str
 CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k;
+	int i, j, k, last;
 	InstrPtr p, q;
 	int actions = 0;
+	int filter[1024];
+	lng c;
 	lng clk = GDKusec();
 
 	(void) stk;
@@ -109,11 +140,24 @@ CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			removeInstruction(mb, pci);
 		return MAL_SUCCEED;
 	}
+	CTconstant(mb);
+	memset((void*) filter, 0, 1024 * sizeof(int));
 	setLifespan(mb);
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
-		if (p->retc != p->argc)
-			for (j = i - 1; j >= 1; j--) {
+		c = p->argc;
+		for(j=p->retc; j<p->argc; j++){
+			c *= 4;
+			if( !isConstant(mb,getArg(p,j)) )
+				c += getArg(p,j);
+		}
+		
+		if (filter[c & 1023] && p->retc != p->argc){
+			last=1;
+			for( j = p->retc; j<p->argc; j++)
+			if( getVar(mb,getArg(p,j))->beginLifespan > last )
+				last =getVar(mb,getArg(p,j))->beginLifespan;
+			for (j = i - 1; j >= last; j--) {
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					goto nxtCommonSubExpression;
 #ifdef DEBUG_MAL_OPTIMIZER
@@ -154,12 +198,14 @@ CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 					}
 #endif
-					i = ARoptimizerStep(mb, i);
+					i = ARoptimizerStep(mb,i);
 					actions++;
 					goto nxtCommonSubExpression;
 				}
 			}
-	      nxtCommonSubExpression:;
+		}
+		nxtCommonSubExpression:
+			filter[c & 1023]= 1;
 	}
 	/* remove the CToptimizer request */
 	if (pci)
