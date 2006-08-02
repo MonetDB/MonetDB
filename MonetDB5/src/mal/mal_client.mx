@@ -638,6 +638,7 @@ and authorized remote admin calls.
 @c
 void MCshutdown(Client c, int timeout){
 	Client k;
+
 	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
 		if ((k->mode > FINISHING) && (k != c)) 
 			MCkillClient(k,timeout);
@@ -673,7 +674,10 @@ void MCkillClient(Client c, int timeout) {
 		/* the process may hang upon gaining access to the file descriptors */ 
 		c->mode = FINISHING;
 		MPresetProfiler(c->fdout);
-		if( c->mythread){
+		if (c == mal_clients) {
+			/* die the hard way */
+			c->curprg->def->stop = 0;
+		} else if (c->mythread) {
 			(void) stream_close(c->fdout);
 			(void) stream_destroy(c->fdout);
 			c->fdout = NULL;
