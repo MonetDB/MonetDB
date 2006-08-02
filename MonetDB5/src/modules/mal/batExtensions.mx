@@ -133,6 +133,12 @@ CMDBATsetgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	b->batDirty= FALSE;
+	if( BBP_lrefs(*bid) ){
+		/* use less drastic approach, simply rely on garbage collector */
+		BBPunfix(b->batCacheid);
+		*bid = 0;
+		return MAL_SUCCEED;
+	}
 	if (BBP_lrefs(*bid) == 0) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("bbp.garbage", "Bat already gone");

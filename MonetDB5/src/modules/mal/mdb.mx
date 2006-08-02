@@ -71,9 +71,10 @@ pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
-command setDebug(flg:int):void
+command setDebug(flg:int):int
 address MDBsetDebug
-comment "Set the kernel debugging bit-set.
+comment "Set the kernel debugging bit-set and return
+its previous value.
 See the MonetDB configuration file for details";
 command getException(s:str):str
 address MDBgetExceptionVariable
@@ -267,6 +268,7 @@ MDBsetDebug(int *ret, int *flg)
 {
     (void) ret;
     GDKdebug= *flg;
+	*ret = GDKdebug;
     return MAL_SUCCEED;
 }
 
