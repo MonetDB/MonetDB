@@ -9,6 +9,9 @@
 
 *sql-2.14 (15 Aug 2006)
 
+  02 Aug 2006; Fabian Groffen <mr-meltdown>; OPEN
+  Add SSL support in JDBC.
+
   18 Jul 2006; Niels Nes <nielsnes>; OPEN
   Change symbol/list into tree with dynamic number of children.
 
