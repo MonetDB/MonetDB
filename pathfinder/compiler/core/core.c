@@ -671,15 +671,22 @@ PFcore_letbind (const PFcnode_t *var, const PFcnode_t *expr)
 /**
  * Create a core `orderby' node
  *
+ * @param stable true if we want `stable order by'.
  * @param crits  order criterions
  * @param expr   expression to order
  */
 PFcnode_t *
-PFcore_orderby (const PFcnode_t *crits, const PFcnode_t *expr)
+PFcore_orderby (bool stable, const PFcnode_t *crits, const PFcnode_t *expr)
 {
+    PFcnode_t *ret;
+
     assert (crits); assert (crits->kind == c_orderspecs); assert (expr);
 
-    return PFcore_wire2 (c_orderby, crits, expr);
+    ret = PFcore_wire2 (c_orderby, crits, expr);
+
+    ret->sem.tru = stable;
+
+    return ret;
 }
 
 /**

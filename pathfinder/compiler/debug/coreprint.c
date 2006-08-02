@@ -186,7 +186,11 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
     case c_seqtype:      
         L2 (c_id[n->kind], PFty_str (n->sem.type));
         break;
-        
+
+    case c_orderby:
+        L2 (c_id[n->kind], n->sem.tru ? "stable" : "");
+        break;
+
     default:          
         L (c_id[n->kind]);
         break;

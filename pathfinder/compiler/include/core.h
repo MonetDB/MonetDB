@@ -264,7 +264,7 @@ PFcnode_t *PFcore_forvars (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_let (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_letbind (const PFcnode_t *, const PFcnode_t *);
 
-PFcnode_t *PFcore_orderby (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_orderby (bool, const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_orderspecs (PFsort_t, const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_seq (const PFcnode_t *, const PFcnode_t *);

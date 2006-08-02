@@ -315,7 +315,8 @@ FLWORExpr:              flwr (OptBindExpr,
 
 FLWORExpr:              flwr (OptBindExpr,
                               where (OptWhereClause_,
-                                     ord_ret (OrderByClause,
+                                     ord_ret (orderby (
+                                                 OrderSpecList),
                                               OptExpr)))            =  59 (10);
 
 OptBindExpr:            nil                                         =  60 (10);
@@ -346,35 +347,33 @@ TypeDeclaration:        SequenceType                                =  68 (10);
 OptWhereClause_:        nil                                         =  69 (10);
 OptWhereClause_:        OptExpr                                     =  70 (10);
 
-OrderByClause:          orderby (OrderSpecList)                     =  71 (10);
-
-OrderSpecList:          nil                                         =  72 (10);
-OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  73 (10);
+OrderSpecList:          nil                                         =  71 (10);
+OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  72 (10);
 
 QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                            nil),
                                                  nil),
                                            OptExpr),
                                      nil),
-                              OptExpr)                              =  74 (10);
+                              OptExpr)                              =  73 (10);
 QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                            TypeDeclaration),
                                                  nil),
                                            OptExpr),
                                      nil),
-                              OptExpr)                              =  75 (10);
+                              OptExpr)                              =  74 (10);
 QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                             nil),
                                                   nil),
                                             OptExpr),
                                       nil),
-                               OptExpr)                             =  76 (10);
+                               OptExpr)                             =  75 (10);
 QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                             TypeDeclaration),
                                                   nil),
                                             OptExpr),
                                       nil),
-                               OptExpr)                             =  77 (10);
+                               OptExpr)                             =  76 (10);
 
 TypeswitchExpr:         typeswitch (
                             OptExpr,
@@ -383,226 +382,226 @@ TypeswitchExpr:         typeswitch (
                                           OptExpr),
                                    cases (default_ (OptCaseVar,
                                                     OptExpr),
-                                          nil)))                    =  78 (10);
+                                          nil)))                    =  77 (10);
 
-OptCaseVar:             nil                                         =  79 (10);
-OptCaseVar:             Var                                         =  80 (10);
+OptCaseVar:             nil                                         =  78 (10);
+OptCaseVar:             Var                                         =  79 (10);
 
-SequenceType:           seq_ty (ItemType)                           =  81 (10);
+SequenceType:           seq_ty (ItemType)                           =  80 (10);
 
-SingleType:             seq_ty (AtomType)                           =  82 (10);
+SingleType:             seq_ty (AtomType)                           =  81 (10);
 
-ItemType:               empty_ty                                    =  83 (10);
-ItemType:               NodeTest                                    =  84 (10);
-ItemType:               item_ty (nil)                               =  85 (10);
-ItemType:               atom_ty (nil)                               =  86 (10);
-ItemType:               schm_elem                                   =  87 (10);
-ItemType:               schm_attr                                   =  88 (10);
+ItemType:               empty_ty                                    =  82 (10);
+ItemType:               NodeTest                                    =  83 (10);
+ItemType:               item_ty (nil)                               =  84 (10);
+ItemType:               atom_ty (nil)                               =  85 (10);
+ItemType:               schm_elem                                   =  86 (10);
+ItemType:               schm_attr                                   =  87 (10);
 
-AtomType:               atom_ty (nil)                               =  89 (10);
+AtomType:               atom_ty (nil)                               =  88 (10);
 
-NodeTest:               node_ty (nil)                               =  90 (10);
-NodeTest:               node_ty (ElemOrAttrType)                    =  91 (10);
-NodeTest:               node_ty (node_ty (nil))                     =  92 (10);
-NodeTest:               node_ty (node_ty (ElemOrAttrType))          =  93 (10);
-NodeTest:               node_ty (lit_str)                           =  94 (10);
+NodeTest:               node_ty (nil)                               =  89 (10);
+NodeTest:               node_ty (ElemOrAttrType)                    =  90 (10);
+NodeTest:               node_ty (node_ty (nil))                     =  91 (10);
+NodeTest:               node_ty (node_ty (ElemOrAttrType))          =  92 (10);
+NodeTest:               node_ty (lit_str)                           =  93 (10);
 
-ElemOrAttrType:         req_ty (nil, nil)                           =  95 (10);
-ElemOrAttrType:         req_ty (nil, SchemaType)                    =  96 (10);
-ElemOrAttrType:         req_ty (req_name, nil)                      =  97 (10);
-ElemOrAttrType:         req_ty (req_name, SchemaType)               =  98 (10);
+ElemOrAttrType:         req_ty (nil, nil)                           =  94 (10);
+ElemOrAttrType:         req_ty (nil, SchemaType)                    =  95 (10);
+ElemOrAttrType:         req_ty (req_name, nil)                      =  96 (10);
+ElemOrAttrType:         req_ty (req_name, SchemaType)               =  97 (10);
 
-SchemaType:             named_ty                                    =  99 (10);
+SchemaType:             named_ty                                    =  98 (10);
 
 IfExpr:                 if_ (OptExpr,
-                             then_else (OptExpr, OptExpr))          = 100 (10);
+                             then_else (OptExpr, OptExpr))          =  99 (10);
 
-OrExpr:                 AndExpr                                     = 101 (10);
-OrExpr:                 or (AndExpr, OrExpr)                        = 102 (10);
+OrExpr:                 AndExpr                                     = 100 (10);
+OrExpr:                 or (AndExpr, OrExpr)                        = 101 (10);
 
-AndExpr:                ComparisonExpr                              = 103 (10);
-AndExpr:                and (ComparisonExpr, AndExpr)               = 104 (10);
+AndExpr:                ComparisonExpr                              = 102 (10);
+AndExpr:                and (ComparisonExpr, AndExpr)               = 103 (10);
 
-ComparisonExpr:         RangeExpr                                   = 105 (10);
-ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 106 (10);
-ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 107 (10);
-ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 108 (10);
-ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 109 (10);
-ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 110 (10);
-ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 111 (10);
-ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 112 (10);
-ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 113 (10);
-ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 114 (10);
-ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 115 (10);
-ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 116 (10);
-ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 117 (10);
-ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 118 (10);
-ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 120 (10);
-ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 121 (10);
+ComparisonExpr:         RangeExpr                                   = 104 (10);
+ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 105 (10);
+ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 106 (10);
+ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 107 (10);
+ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 108 (10);
+ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 109 (10);
+ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 110 (10);
+ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 111 (10);
+ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 112 (10);
+ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 113 (10);
+ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 114 (10);
+ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 115 (10);
+ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 116 (10);
+ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 117 (10);
+ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 119 (10);
+ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 120 (10);
 
-RangeExpr:              AdditiveExpr                                = 122 (10);
-RangeExpr:              range (RangeExpr, RangeExpr)                = 123 (10);
+RangeExpr:              AdditiveExpr                                = 121 (10);
+RangeExpr:              range (RangeExpr, RangeExpr)                = 122 (10);
 
-AdditiveExpr:           MultiplicativeExpr                          = 124 (10);
-AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)     = 125 (10);
-AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)    = 126 (10);
+AdditiveExpr:           MultiplicativeExpr                          = 123 (10);
+AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)     = 124 (10);
+AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)    = 125 (10);
 
-MultiplicativeExpr:     UnionExpr                                   = 127 (10);
-MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr)        = 128 (10);
-MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr)         = 129 (10);
-MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr)        = 130 (10);
-MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr)         = 131 (10);
+MultiplicativeExpr:     UnionExpr                                   = 126 (10);
+MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr)        = 127 (10);
+MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr)         = 128 (10);
+MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr)        = 129 (10);
+MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr)         = 130 (10);
 
-UnionExpr:              IntersectExceptExpr                         = 132 (10);
-UnionExpr:              union_ (IntersectExceptExpr, UnionExpr)     = 133 (10);
+UnionExpr:              IntersectExceptExpr                         = 131 (10);
+UnionExpr:              union_ (IntersectExceptExpr, UnionExpr)     = 132 (10);
 
-IntersectExceptExpr:    InstanceofExpr                              = 134 (10);
+IntersectExceptExpr:    InstanceofExpr                              = 133 (10);
 IntersectExceptExpr:    intersect (InstanceofExpr,
-                                   IntersectExceptExpr)             = 135 (10);
+                                   IntersectExceptExpr)             = 134 (10);
 IntersectExceptExpr:    except (InstanceofExpr,
-                                IntersectExceptExpr)                = 136 (10);
+                                IntersectExceptExpr)                = 135 (10);
 
-InstanceofExpr:         TreatExpr                                   = 137 (10);
-InstanceofExpr:         instof (TreatExpr, SequenceType)            = 138 (10);
+InstanceofExpr:         TreatExpr                                   = 136 (10);
+InstanceofExpr:         instof (TreatExpr, SequenceType)            = 137 (10);
 
-TreatExpr:              CastableExpr                                = 139 (10);
-TreatExpr:              treat (CastableExpr, SequenceType)          = 140 (10);
+TreatExpr:              CastableExpr                                = 138 (10);
+TreatExpr:              treat (CastableExpr, SequenceType)          = 139 (10);
 
-CastableExpr:           CastExpr                                    = 141 (10);
-CastableExpr:           castable (CastExpr, SingleType)             = 142 (10);
+CastableExpr:           CastExpr                                    = 140 (10);
+CastableExpr:           castable (CastExpr, SingleType)             = 141 (10);
 
-CastExpr:               UnaryExpr                                   = 143 (10);
-CastExpr:               cast (UnaryExpr, SingleType)                = 144 (10);
+CastExpr:               UnaryExpr                                   = 142 (10);
+CastExpr:               cast (UnaryExpr, SingleType)                = 143 (10);
 
-UnaryExpr:              ValueExpr                                   = 145 (10);
-UnaryExpr:              uminus (ValueExpr)                          = 146 (10);
-UnaryExpr:              uplus (ValueExpr)                           = 147 (10);
+UnaryExpr:              ValueExpr                                   = 144 (10);
+UnaryExpr:              uminus (ValueExpr)                          = 145 (10);
+UnaryExpr:              uplus (ValueExpr)                           = 146 (10);
 
-ValueExpr:              ValidateExpr                                = 148 (10);
-ValueExpr:              PathExpr                                    = 149 (10);
-ValueExpr:              ExtensionExpr                               = 150 (10);
+ValueExpr:              ValidateExpr                                = 147 (10);
+ValueExpr:              PathExpr                                    = 148 (10);
+ValueExpr:              ExtensionExpr                               = 149 (10);
 
-ValidateExpr:           validate (OptExpr)                          = 151 (10);
+ValidateExpr:           validate (OptExpr)                          = 150 (10);
 
-PathExpr:               StepExpr                                    = 152 (10);
-PathExpr:               LocationPath                                = 153 (10);
+PathExpr:               StepExpr                                    = 151 (10);
+PathExpr:               LocationPath                                = 152 (10);
 
-LocationPath:           root_                                       = 154 (10);
-LocationPath:           locpath (StepExpr, StepExpr)                = 155 (10);
-LocationPath:           locpath (LocationStep, StepExpr)            = 156 (10);
+LocationPath:           root_                                       = 153 (10);
+LocationPath:           locpath (StepExpr, StepExpr)                = 154 (10);
+LocationPath:           locpath (LocationStep, StepExpr)            = 155 (10);
 
-StepExpr:               LocationStep                                = 157 (10);
-StepExpr:               FilterExpr                                  = 158 (10);
+StepExpr:               LocationStep                                = 156 (10);
+StepExpr:               FilterExpr                                  = 157 (10);
 
-FilterExpr:             PrimaryExpr                                 = 159 (10);
-FilterExpr:             pred (StepExpr, OptExpr)                    = 160 (10);
+FilterExpr:             PrimaryExpr                                 = 158 (10);
+FilterExpr:             pred (StepExpr, OptExpr)                    = 159 (10);
 
-LocationStep:           step (NodeTest)                             = 161 (10);
+LocationStep:           step (NodeTest)                             = 160 (10);
 
-PrimaryExpr:            Literal                                     = 162 (10);
-PrimaryExpr:            Var                                         = 163 (10);
-PrimaryExpr:            ParenthesizedExpr                           = 164 (10);
-PrimaryExpr:            ContextItemExpr                             = 165 (10);
-PrimaryExpr:            FunctionCall                                = 166 (10);
-PrimaryExpr:            Constructor                                 = 167 (10);
-PrimaryExpr:            OrderedExpr                                 = 168 (10);
-PrimaryExpr:            UnorderedExpr                               = 169 (10);
+PrimaryExpr:            Literal                                     = 161 (10);
+PrimaryExpr:            Var                                         = 162 (10);
+PrimaryExpr:            ParenthesizedExpr                           = 163 (10);
+PrimaryExpr:            ContextItemExpr                             = 164 (10);
+PrimaryExpr:            FunctionCall                                = 165 (10);
+PrimaryExpr:            Constructor                                 = 166 (10);
+PrimaryExpr:            OrderedExpr                                 = 167 (10);
+PrimaryExpr:            UnorderedExpr                               = 168 (10);
 
-Literal:                NumericLiteral                              = 170 (10);
-Literal:                StringLiteral                               = 171 (10);
+Literal:                NumericLiteral                              = 169 (10);
+Literal:                StringLiteral                               = 170 (10);
 
-NumericLiteral:         IntegerLiteral                              = 172 (10);
-NumericLiteral:         DecimalLiteral                              = 173 (10);
-NumericLiteral:         DoubleLiteral                               = 174 (10);
+NumericLiteral:         IntegerLiteral                              = 171 (10);
+NumericLiteral:         DecimalLiteral                              = 172 (10);
+NumericLiteral:         DoubleLiteral                               = 173 (10);
 
-IntegerLiteral:         lit_int                                     = 175 (10);
-DecimalLiteral:         lit_dec                                     = 176 (10);
-DoubleLiteral:          lit_dbl                                     = 177 (10);
+IntegerLiteral:         lit_int                                     = 174 (10);
+DecimalLiteral:         lit_dec                                     = 175 (10);
+DoubleLiteral:          lit_dbl                                     = 176 (10);
 
-StringLiteral:          lit_str                                     = 178 (10);
+StringLiteral:          lit_str                                     = 177 (10);
 
-Var:                    var                                         = 179 (10);
+Var:                    var                                         = 178 (10);
 
-ParenthesizedExpr:      OptExpr                                     = 180 (10);
+ParenthesizedExpr:      OptExpr                                     = 179 (10);
 
-ContextItemExpr:        dot                                         = 181 (10);
+ContextItemExpr:        dot                                         = 180 (10);
 
-FunctionCall:           apply (nil)                                 = 182 (10);
-FunctionCall:           apply (FuncArgList)                         = 183 (10);
+FunctionCall:           apply (nil)                                 = 181 (10);
+FunctionCall:           apply (FuncArgList)                         = 182 (10);
 
-FuncArgList:            nil                                         = 184 (10);
-FuncArgList:            args (OptExpr, FuncArgList)                 = 185 (10);
+FuncArgList:            nil                                         = 183 (10);
+FuncArgList:            args (OptExpr, FuncArgList)                 = 184 (10);
 
-OrderedExpr:            ordered (OptExpr)                           = 186 (10);
-UnorderedExpr:          unordered (OptExpr)                         = 187 (10);
+OrderedExpr:            ordered (OptExpr)                           = 185 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 186 (10);
 
-Constructor:            ElementConstructor                          = 188 (10);
-Constructor:            AttributeConstructor                        = 189 (10);
-Constructor:            TextConstructor                             = 190 (10);
-Constructor:            CommentConstructor                          = 191 (10);
-Constructor:            PIConstructor                               = 192 (10);
-Constructor:            DocumentConstructor                         = 193 (10);
+Constructor:            ElementConstructor                          = 187 (10);
+Constructor:            AttributeConstructor                        = 188 (10);
+Constructor:            TextConstructor                             = 189 (10);
+Constructor:            CommentConstructor                          = 190 (10);
+Constructor:            PIConstructor                               = 191 (10);
+Constructor:            DocumentConstructor                         = 192 (10);
 
-ElementConstructor:     elem (TagName, OptContentExpr)              = 194 (10);
+ElementConstructor:     elem (TagName, OptContentExpr)              = 193 (10);
 
-AttributeConstructor:   attr (TagName, AttributeValue)              = 195 (10);
+AttributeConstructor:   attr (TagName, AttributeValue)              = 194 (10);
 
-TextConstructor:        text (OptExpr)                              = 196 (10);
+TextConstructor:        text (OptExpr)                              = 195 (10);
 
-CommentConstructor:     comment (OptExpr)                           = 197 (10);
+CommentConstructor:     comment (OptExpr)                           = 196 (10);
 
-PIConstructor:          pi (OptExpr, OptContentExpr)                = 198 (10);
+PIConstructor:          pi (OptExpr, OptContentExpr)                = 197 (10);
 
-DocumentConstructor:    doc (OptExpr)                               = 199 (10);
+DocumentConstructor:    doc (OptExpr)                               = 198 (10);
 
-TagName:                tag                                         = 200 (10);
-TagName:                OptExpr                                     = 201 (10);
+TagName:                tag                                         = 199 (10);
+TagName:                OptExpr                                     = 200 (10);
 
-OptContentExpr:         Expr                                        = 202 (10);
-OptContentExpr:         empty_seq                                   = 203 (10);
-OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 204 (10);
+OptContentExpr:         Expr                                        = 201 (10);
+OptContentExpr:         empty_seq                                   = 202 (10);
+OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 203 (10);
 
-AttributeValue:         Expr                                        = 205 (10);
-AttributeValue:         empty_seq                                   = 206 (10);
-AttributeValue:         contseq (AttributeValue, AttributeValue)    = 207 (10);
+AttributeValue:         Expr                                        = 204 (10);
+AttributeValue:         empty_seq                                   = 205 (10);
+AttributeValue:         contseq (AttributeValue, AttributeValue)    = 206 (10);
 
-ExtensionExpr:          ext_expr (Pragmas, nil)                     = 208 (10);
-ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 209 (10);
+ExtensionExpr:          ext_expr (Pragmas, nil)                     = 207 (10);
+ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 208 (10);
 
-Pragmas:                nil                                         = 210 (10);
-Pragmas:                pragmas (pragma, Pragmas)                   = 211 (10);
+Pragmas:                nil                                         = 209 (10);
+Pragmas:                pragmas (pragma, Pragmas)                   = 210 (10);
 
 /* --- XQuery Update Facility below --- */
-DeclImport:             RevalidationDecl                            = 212 (10);
+DeclImport:             RevalidationDecl                            = 211 (10);
 
-RevalidationDecl:       revalid                                     = 213 (10);
+RevalidationDecl:       revalid                                     = 212 (10);
 
-ExprSingle:             InsertExpr                                  = 214 (10);
-ExprSingle:             DeleteExpr                                  = 215 (10);
-ExprSingle:             RenameExpr                                  = 216 (10);
-ExprSingle:             ReplaceExpr                                 = 217 (10);
-ExprSingle:             TransformExpr                               = 218 (10);
+ExprSingle:             InsertExpr                                  = 213 (10);
+ExprSingle:             DeleteExpr                                  = 214 (10);
+ExprSingle:             RenameExpr                                  = 215 (10);
+ExprSingle:             ReplaceExpr                                 = 216 (10);
+ExprSingle:             TransformExpr                               = 217 (10);
 
-InsertExpr:             insert (SourceExpr, TargetExpr)             = 219 (10);
-DeleteExpr:             delete (SourceExpr)                         = 220 (10);
-ReplaceExpr:            replace (TargetExpr, ExprSingle)            = 221 (10);
-RenameExpr:             rename (SourceExpr, NewNameExpr)            = 222 (10);
+InsertExpr:             insert (SourceExpr, TargetExpr)             = 218 (10);
+DeleteExpr:             delete (SourceExpr)                         = 219 (10);
+ReplaceExpr:            replace (TargetExpr, ExprSingle)            = 220 (10);
+RenameExpr:             rename (SourceExpr, NewNameExpr)            = 221 (10);
 
 TransformExpr:          transform (TransformBindings,
-                                   modify (ExprSingle, ExprSingle)) = 223 (10);
+                                   modify (ExprSingle, ExprSingle)) = 222 (10);
 
-TransformBindings:      nil                                         = 224 (10);
+TransformBindings:      nil                                         = 223 (10);
 TransformBindings:      transbinds (TransformBinding,
-                                    TransformBindings)              = 225 (10);
+                                    TransformBindings)              = 224 (10);
 
-TransformBinding:       let (var_type (Var, nil), OptExpr)          = 226 (10);
+TransformBinding:       let (var_type (Var, nil), OptExpr)          = 225 (10);
 
-SourceExpr:             ExprSingle                                  = 227 (10);
-TargetExpr:             ExprSingle                                  = 228 (10);
-NewNameExpr:            ExprSingle                                  = 229 (10);
+SourceExpr:             ExprSingle                                  = 226 (10);
+TargetExpr:             ExprSingle                                  = 227 (10);
+NewNameExpr:            ExprSingle                                  = 228 (10);
 
 /* statement type for updating functions */
-SequenceType:           seq_ty (stmt_ty (nil))                      = 230 (10);
+SequenceType:           seq_ty (stmt_ty (nil))                      = 229 (10);
 
 %%
 
@@ -884,19 +883,19 @@ reduce (PFpnode_t * p, int goalnt)
                                                DeclsImports) */
         case 10:
         /* NodeTest:               node_ty (ElemOrAttrType) */
-        case 91:
+        case 90:
         /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
-        case 93:
+        case 92:
         /* LocationPath:           locpath (StepExpr, StepExpr) */
-        case 155:
+        case 154:
         /* FilterExpr:             pred (StepExpr, Expr) */
-        case 160:
+        case 159:
         /* FunctionCall:           apply (nil) */
-        case 182:
+        case 181:
         /* FunctionCall:           apply (FuncArgList) */
-        case 183:
+        case 182:
         /* FuncArgList:            args (Expr, FuncArgList) */
-        case 185:
+        case 184:
             topdown = true;
             break;
 
@@ -1394,14 +1393,16 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* FLWORExpr:              flwr (OptBindExpr,
                                          where (OptWhereClause_,
-                                                ord_ret (OrderByClause,
-                                                         OptExpr))) */
+                                                ord_ret (orderby (
+                                                            OrderSpecList),
+                                                    OptExpr))) */
         case 59:
         {
             PFvar_t *v = new_var (NULL);
 
             C(p) = flwr (C(L(p)),
-                         orderby (C(RRL(p)),
+                         orderby (RRL(p)->sem.tru,    /* stable or not? */
+                                  C(RRLL(p)),
                                   flwr (let (letbind (var (v),
                                                       C(RL(p))),
                                              nil ()),
@@ -1502,18 +1503,13 @@ reduce (PFpnode_t * p, int goalnt)
             C(p) = ebv (C(p));
             break;
 
-        /* OrderByClause:          orderby (OrderSpecList) */
-        case 71:
-            C(p) = C(L(p));
-            break;
-
         /* OrderSpecList:          nil */
-        case 72:
+        case 71:
             C(p) = nil ();
             break;
 
         /* OrderSpecList:          orderspecs (OptExpr, OrderSpecList) */
-        case 73:
+        case 72:
             C(p) = orderspecs (p->sem.mode, 
                                fs_convert_op_by_type (fn_data (C(L(p))), 
                                                       PFty_string ()),
@@ -1526,7 +1522,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                       OptExpr),
                                                 nil),
                                          OptExpr) */
-        case 74:
+        case 73:
             C(p) = some (C(LLLLL(p)), C(LLR(p)), C(R(p)));
             break;
 
@@ -1536,7 +1532,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                       OptExpr),
                                                 nil),
                                          OptExpr) */
-        case 75:
+        case 74:
         {
             PFvar_t *v1 = new_var (NULL);
 
@@ -1558,7 +1554,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                        OptExpr),
                                                  nil),
                                           OptExpr) */
-        case 76:
+        case 75:
         {
             /* every $a in e1 satisfies e2
              *  ==
@@ -1593,7 +1589,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                        OptExpr),
                                                  nil),
                                           OptExpr) */
-        case 77:
+        case 76:
         {
             /* every $a as t in e1 satisfies e2
              *  ==
@@ -1644,7 +1640,7 @@ reduce (PFpnode_t * p, int goalnt)
                                               cases (default_ (OptCaseVar,
                                                                OptExpr),
                                                      nil))) */
-        case 78:
+        case 77:
         {
             PFvar_t *v = new_var (NULL);
 
@@ -1667,7 +1663,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OptCaseVar:             nil */
-        case 79:
+        case 78:
             /*
              * Generate new variable in case no variable has been
              * specified for case/default branch of typeswitch.
@@ -1676,16 +1672,16 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* OptCaseVar:             Var */
-        case 80:
+        case 79:
             assert (C(p));
             break;
 
         /* SequenceType:           seq_ty (ItemType) */
-        case 81:
+        case 80:
             /* fall through */
 
         /* SingleType:             seq_ty (AtomType) */
-        case 82:
+        case 81:
             switch (p->sem.oci) {
                 case p_one:
                     C(p) = C(L(p));
@@ -1707,22 +1703,22 @@ reduce (PFpnode_t * p, int goalnt)
             } break;
             
         /* ItemType:               empty_ty */
-        case 83:
+        case 82:
             C(p) = seqtype (PFty_empty ());
             break;
 
         /* ItemType:               NodeTest */
-        case 84:
+        case 83:
             assert (C(p));
             break;
 
         /* ItemType:               item_ty (nil) */
-        case 85:
+        case 84:
             C(p) = seqtype (PFty_xs_anyItem ());
             break;
 
         /* ItemType:               atom_ty (nil) */
-        case 86:
+        case 85:
             /* is the referenced type a known schema type? */
             if (! PFty_schema (PFty_named (p->sem.qname)))
                 PFoops_loc (OOPS_TYPENOTDEF, p->loc,
@@ -1733,21 +1729,21 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* ItemType:               schm_elem */
-        case 87:
+        case 86:
             /* FIXME: This probably requires work in the type system */
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
                         "schema-element types are not supported");
             break;
 
         /* ItemType:               schm_attr */
-        case 88:
+        case 87:
             /* FIXME: This probably requires work in the type system */
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
                         "schema-attribute types are not supported");
             break;
 
         /* AtomType:               atom_ty (nil) */
-        case 89:
+        case 88:
             /* is the referenced type a known schema type? */
             if (! PFty_schema (PFty_named (p->sem.qname)))
                 PFoops_loc (OOPS_TYPENOTDEF, p->loc,
@@ -1758,7 +1754,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (nil) */
-        case 90:
+        case 89:
             switch (p->sem.kind) {
                 case p_kind_node:
                     /* node */
@@ -1797,7 +1793,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (ElemOrAttrType) */
-        case 91:
+        case 90:
             /* TOPDOWN */
 
             switch (p->sem.kind) {
@@ -1820,7 +1816,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (node_ty (nil)) */
-        case 92:
+        case 91:
             assert (p->sem.kind == p_kind_doc);
             assert (L(p)->sem.kind == p_kind_elem);
 
@@ -1828,7 +1824,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
-        case 93:
+        case 92:
             /* TOPDOWN */
 
             assert (p->sem.kind == p_kind_doc);
@@ -1843,7 +1839,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (lit_str) */
-        case 94:
+        case 93:
             /*
              * processing-instruction tests may have a string
              * argument (restricting the pi target)
@@ -1853,33 +1849,33 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* ElemOrAttrType:         req_ty (nil, nil) */
-        case 95:
+        case 94:
             /* element/attribute: any name, any type */
             C(p) = seqtype (elem_attr (PFqname (PFns_wild, NULL), any));
             break;
      
         /* ElemOrAttrType:         req_ty (nil, SchemaType) */
-        case 96:
+        case 95:
             /* element/attribute: any name, given type */
             C(p) = seqtype (elem_attr (PFqname (PFns_wild, NULL),
                                        C(R(p))->sem.type));
             break;
 
         /* ElemOrAttrType:         req_ty (req_name, nil) */
-        case 97:
+        case 96:
             /* element/attribute: given name, any type */
             C(p) = seqtype (elem_attr (L(p)->sem.qname, any));
             break;
 
 
         /* ElemOrAttrType:         req_ty (req_name, SchemaType) */
-        case 98:
+        case 97:
             /* element/attribute: given name, given type */
             C(p) = seqtype (elem_attr (L(p)->sem.qname, C(R(p))->sem.type));
             break;
 
         /* SchemaType:             named_ty */
-        case 99:
+        case 98:
             /* is the referenced type a known schema type definition? */
             if (! PFty_schema (PFty_named (p->sem.qname)))
                 PFoops_loc (OOPS_TYPENOTDEF, p->loc,
@@ -1891,7 +1887,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* IfExpr:                 if_ (Expr,
                                         then_else (OptExpr, OptExpr)) */
-        case 100:
+        case 99:
         {
             PFvar_t *v = new_var (NULL);
 
@@ -1901,11 +1897,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OrExpr:                 AndExpr */
-        case 101:
+        case 100:
             break;
 
         /* OrExpr:                 or (AndExpr, OrExpr) */
-        case 102:
+        case 101:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
@@ -1917,11 +1913,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AndExpr:                ComparisonExpr */
-        case 103:
+        case 102:
             break;
 
         /* AndExpr:                and (ComparisonExpr, AndExpr) */
-        case 104:
+        case 103:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
@@ -1933,11 +1929,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         RangeExpr */
-        case 105:
+        case 104:
             break;
 
         /* ComparisonExpr:         eq (RangeExpr, RangeExpr) */
-        case 106:
+        case 105:
         {
             PFfun_t *op_eq = function (PFqname (PFns_op, "eq"));
             comparison_worker (p, op_eq);
@@ -1945,7 +1941,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         ne (RangeExpr, RangeExpr) */
-        case 107:
+        case 106:
         {
             PFfun_t *op_ne = function (PFqname (PFns_op, "ne"));
             comparison_worker (p, op_ne);
@@ -1953,7 +1949,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         lt (RangeExpr, RangeExpr) */
-        case 108:
+        case 107:
         {
             PFfun_t *op_lt = function (PFqname (PFns_op, "lt"));
             comparison_worker (p, op_lt);
@@ -1961,7 +1957,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         le (RangeExpr, RangeExpr) */
-        case 109:
+        case 108:
         {
             PFfun_t *op_le = function (PFqname (PFns_op, "le"));
             comparison_worker (p, op_le);
@@ -1969,7 +1965,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         gt (RangeExpr, RangeExpr) */
-        case 110:
+        case 109:
         {
             PFfun_t *op_gt = function (PFqname (PFns_op, "gt"));
             comparison_worker (p, op_gt);
@@ -1977,7 +1973,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         ge (RangeExpr, RangeExpr) */
-        case 111:
+        case 110:
         {
             PFfun_t *op_ge = function (PFqname (PFns_op, "ge"));
             comparison_worker (p, op_ge);
@@ -1985,7 +1981,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         val_eq (RangeExpr, RangeExpr) */
-        case 112:
+        case 111:
         {
             PFfun_t *op_eq = function (PFqname (PFns_op, "eq"));
             val_comparison_worker (p, op_eq);
@@ -1993,7 +1989,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         val_ne (RangeExpr, RangeExpr) */
-        case 113:
+        case 112:
         {
             PFfun_t *op_ne = function (PFqname (PFns_op, "ne"));
             val_comparison_worker (p, op_ne);
@@ -2001,7 +1997,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         val_lt (RangeExpr, RangeExpr) */
-        case 114:
+        case 113:
         {
             PFfun_t *op_lt = function (PFqname (PFns_op, "lt"));
             val_comparison_worker (p, op_lt);
@@ -2009,7 +2005,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         val_le (RangeExpr, RangeExpr) */
-        case 115:
+        case 114:
         {
             PFfun_t *op_le = function (PFqname (PFns_op, "le"));
             val_comparison_worker (p, op_le);
@@ -2017,7 +2013,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         val_gt (RangeExpr, RangeExpr) */
-        case 116:
+        case 115:
         {
             PFfun_t *op_gt = function (PFqname (PFns_op, "gt"));
             val_comparison_worker (p, op_gt);
@@ -2025,7 +2021,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         val_ge (RangeExpr, RangeExpr) */
-        case 117:
+        case 116:
         {
             PFfun_t *op_ge = function (PFqname (PFns_op, "ge"));
             val_comparison_worker (p, op_ge);
@@ -2033,7 +2029,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         is (RangeExpr, RangeExpr) */
-        case 118:
+        case 117:
         {
             PFfun_t *op_is = function (PFqname (PFns_op, "is-same-node"));
             two_arg_fun_worker (p, op_is);
@@ -2041,7 +2037,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         ltlt (RangeExpr, RangeExpr) */
-        case 120:
+        case 119:
         {
             PFfun_t *op_ltlt = function (PFqname (PFns_op, "node-before"));
             two_arg_fun_worker (p, op_ltlt);
@@ -2049,7 +2045,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ComparisonExpr:         gtgt (RangeExpr, RangeExpr) */
-        case 121:
+        case 120:
         {
             PFfun_t *op_gtgt = function (PFqname (PFns_op, "node-after"));
             two_arg_fun_worker (p, op_gtgt);
@@ -2057,11 +2053,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* RangeExpr:              AdditiveExpr */
-        case 122:
+        case 121:
             break;
 
         /* RangeExpr:              range (RangeExpr, RangeExpr) */
-        case 123:
+        case 122:
         {
             PFfun_t *op_to = function (PFqname (PFns_op, "to"));
             two_arg_fun_worker (p, op_to);
@@ -2069,11 +2065,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AdditiveExpr:           MultiplicativeExpr */
-        case 124:
+        case 123:
             break;
 
         /* AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr) */
-        case 125:
+        case 124:
         {
             PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
             calculation_worker (p, op_plus);
@@ -2081,7 +2077,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr) */
-        case 126:
+        case 125:
         {
             PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
             calculation_worker (p, op_minus);
@@ -2089,11 +2085,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* MultiplicativeExpr:     UnionExpr */
-        case 127:
+        case 126:
             break;
 
         /* MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr) */
-        case 128:
+        case 127:
         {
             PFfun_t *op_times = function (PFqname (PFns_op, "times"));
             calculation_worker (p, op_times);
@@ -2101,7 +2097,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr) */
-        case 129:
+        case 128:
         {
             PFfun_t *op_div = function (PFqname (PFns_op, "div"));
             calculation_worker (p, op_div);
@@ -2109,7 +2105,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr) */
-        case 130:
+        case 129:
         {
             PFfun_t *op_idiv = function (PFqname (PFns_op, "idiv"));
             calculation_worker (p, op_idiv);
@@ -2117,7 +2113,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr) */
-        case 131:
+        case 130:
         {
             PFfun_t *op_mod = function (PFqname (PFns_op, "mod"));
             calculation_worker (p, op_mod);
@@ -2125,11 +2121,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* UnionExpr:              IntersectExceptExpr */
-        case 132:
+        case 131:
             break;
 
         /* UnionExpr:              union_ (IntersectExceptExpr, UnionExpr) */
-        case 133:
+        case 132:
         {
             PFfun_t *op_union = function (PFqname (PFns_op, "union"));
             two_arg_fun_worker (p, op_union);
@@ -2137,12 +2133,12 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* IntersectExceptExpr:    InstanceofExpr */
-        case 134:
+        case 133:
             break;
 
         /* IntersectExceptExpr:    intersect (InstanceofExpr,
                                               IntersectExceptExpr) */
-        case 135:
+        case 134:
         {
             PFfun_t *op_intersect = function (PFqname (PFns_op, "intersect"));
             two_arg_fun_worker (p, op_intersect);
@@ -2151,7 +2147,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* IntersectExceptExpr:    except (InstanceofExpr,
                                            IntersectExceptExpr) */
-        case 136:
+        case 135:
         {
             PFfun_t *op_except = function (PFqname (PFns_op, "except"));
             two_arg_fun_worker (p, op_except);
@@ -2159,11 +2155,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* InstanceofExpr:         TreatExpr */
-        case 137:
+        case 136:
             break;
 
         /* InstanceofExpr:         instof (TreatExpr, SequenceType) */
-        case 138:
+        case 137:
         {
             PFvar_t *v = new_var (NULL);
 
@@ -2176,11 +2172,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* TreatExpr:              CastableExpr */
-        case 139:
+        case 138:
             break;
 
         /* TreatExpr:              treat (CastableExpr, SequenceType) */
-        case 140:
+        case 139:
         {
             PFvar_t *v1 = new_var (NULL);
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
@@ -2194,21 +2190,21 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* CastableExpr:           CastExpr */
-        case 141:
+        case 140:
             break;
 
         /* CastableExpr:           castable (CastExpr, SingleType) */
-        case 142:
+        case 141:
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
                         "`castable' keyword is not supported");
             break;
 
         /* CastExpr:               UnaryExpr */
-        case 143:
+        case 142:
             break;
 
         /* CastExpr:               cast (UnaryExpr, SingleType) */
-        case 144:
+        case 143:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
@@ -2220,11 +2216,11 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* UnaryExpr:              ValueExpr */
-        case 145:
+        case 144:
             break;
 
         /* UnaryExpr:              uminus (ValueExpr) */
-        case 146:
+        case 145:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
@@ -2238,7 +2234,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* UnaryExpr:              uplus (ValueExpr) */
-        case 147:
+        case 146:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
@@ -2252,34 +2248,34 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ValueExpr:              ValidateExpr */
-        case 148:
+        case 147:
             break;
 
         /* ValueExpr:              PathExpr */
-        case 149:
+        case 148:
             break;
 
         /* ValueExpr:              ExtensionExpr */
-        case 150:
+        case 149:
             break;
 
         /* ValidateExpr:           validate (Expr) */
-        case 151:
+        case 150:
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc, "validation not supported");
             break;
 
         /* PathExpr:               StepExpr */
-        case 152:
+        case 151:
             assert (C(p));
             break;
 
         /* PathExpr:               LocationPath */
-        case 153:
+        case 152:
             assert (C(p));
             break;
 
         /* LocationPath:           root_ */
-        case 154:
+        case 153:
         {
             PFfun_t *_root = function (PFqname (PFns_fn, "root"));
 
@@ -2326,7 +2322,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationPath:           locpath (StepExpr, StepExpr) */
-        case 155:
+        case 154:
         {
             /* TOPDOWN */
 
@@ -2462,7 +2458,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationPath:           locpath (LocationStep, StepExpr) */
-        case 156:
+        case 155:
         {   /*
              * For regular location steps, we don't actually need the
              * complicated stuff in the above rule.
@@ -2497,22 +2493,22 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* StepExpr:               LocationStep */
-        case 157:
+        case 156:
             assert (C(p));
             break;
 
         /* StepExpr:               FilterExpr */
-        case 158:
+        case 157:
             assert (C(p));
             break;
 
         /* FilterExpr:             PrimaryExpr */
-        case 159:
+        case 158:
             assert (C(p));
             break;
 
         /* FilterExpr:             pred (StepExpr, Expr) */
-        case 160:
+        case 159:
         {   /* TOPDOWN */
 
             /*
@@ -2663,103 +2659,103 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationStep:           step (NodeTest) */
-        case 161:
+        case 160:
             assert (C(L(p)));
             C(p) = step (p->sem.axis, C(L(p)));
             break;
 
         /* PrimaryExpr:            Literal */
-        case 162:
+        case 161:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            Var */
-        case 163:
+        case 162:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            ParenthesizedExpr */
-        case 164:
+        case 163:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            ContextItemExpr */
-        case 165:
+        case 164:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            FunctionCall */
-        case 166:
+        case 165:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            Constructor */
-        case 167:
+        case 166:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            OrderedExpr */
-        case 168:
+        case 167:
             assert (C(p));
             break;
 
         /* PrimaryExpr:            UnorderedExpr */
-        case 169:
+        case 168:
             assert (C(p));
             break;
             
         /* Literal:                NumericLiteral */
-        case 170:
+        case 169:
             break;
 
         /* Literal:                StringLiteral */
-        case 171:
+        case 170:
             break;
 
         /* NumericLiteral:         IntegerLiteral */
-        case 172:
+        case 171:
             break;
 
         /* NumericLiteral:         DecimalLiteral */
-        case 173:
+        case 172:
             break;
 
         /* NumericLiteral:         DoubleLiteral */
-        case 174:
+        case 173:
             break;
 
         /* IntegerLiteral:         lit_int */
-        case 175:
+        case 174:
             C(p) = num (p->sem.num);
             break;
 
         /* DecimalLiteral:         lit_dec */
-        case 176:
+        case 175:
             C(p) = dec (p->sem.dec);
             break;
 
         /* DoubleLiteral:          lit_dbl */
-        case 177:
+        case 176:
             C(p) = dbl (p->sem.dbl);
             break;
 
         /* StringLiteral:          lit_str */
-        case 178:
+        case 177:
             C(p) = str (p->sem.str);
             break;
 
         /* Var:                    var */
-        case 179:
+        case 178:
             C(p) = var (p->sem.var);
             break;
 
         /* ParenthesizedExpr:      Expr */
-        case 180:
+        case 179:
             assert (C(p));
             break;
 
         /* ContextItemExpr:        dot */
-        case 181:
+        case 180:
             if (fs_dot)
                 C(p) = var (fs_dot);
             else
@@ -2767,7 +2763,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FunctionCall:           apply (nil) */
-        case 182:
+        case 181:
             /*
              * There are some built-in functions with special
              * implicit semantics.
@@ -2856,7 +2852,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FunctionCall:           apply (FuncArgList) */
-        case 183:
+        case 182:
             /* TOPDOWN */
 
             assert (PFqname_eq (p->sem.apply.fun->qname,
@@ -2896,7 +2892,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FuncArgList:            nil */
-        case 184:
+        case 183:
         {
             PFapply_t *fun = *(PFapply_t **) PFarray_top (funs);
 
@@ -2905,7 +2901,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* FuncArgList:            args (Expr, FuncArgList) */
-        case 185:
+        case 184:
         {   /* TOPDOWN */
             
             /*
@@ -2999,7 +2995,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OrderedExpr:            ordered (Expr) */
-        case 186:
+        case 185:
             /* FIXME: Better treatment of `ordered' information?
              *         - Make this rule TOPDOWN
              *         - Keep a state variable during compilation
@@ -3008,36 +3004,36 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* UnorderedExpr:          unordered (Expr) */
-        case 187:
+        case 186:
             C(p) = unordered (C(L(p)));
             break;
 
         /* Constructor:            ElementConstructor */
-        case 188:
+        case 187:
             break;
 
         /* Constructor:            AttributeConstructor */
-        case 189:
+        case 188:
             break;
 
         /* Constructor:            TextConstructor */
-        case 190:
+        case 189:
             break;
 
         /* Constructor:            CommentConstructor */
-        case 191:
+        case 190:
             break;
 
         /* Constructor:            PIConstructor */
-        case 192:
+        case 191:
             break;
 
         /* Constructor:            DocumentConstructor */
-        case 193:
+        case 192:
             break;
 
         /* ElementConstructor:     elem (TagName, OptContentExpr) */
-        case 194:
+        case 193:
         {
             PFfun_t *pf_matn
                 = function (PFqname (PFns_pf, "merge-adjacent-text-nodes"));
@@ -3047,7 +3043,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeConstructor:   attr (TagName, AttributeValue) */
-        case 195:
+        case 194:
             /*
              * The translation rules rooted at AttributeValue compile
              * the attribute value into a single string.
@@ -3056,7 +3052,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* TextConstructor:        text (Expr) */
-        case 196:
+        case 195:
         {
             /*
              * FIXME:
@@ -3074,7 +3070,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* CommentConstructor:     comment (Expr) */
-        case 197:
+        case 196:
         {
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
@@ -3084,7 +3080,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* PIConstructor:          pi (OptExpr, OptContentExpr) */
-        case 198:
+        case 197:
         {
             PFvar_t *target  = new_var (NULL);
             PFvar_t *content = new_var (NULL);
@@ -3103,7 +3099,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* DocumentConstructor:    doc (Expr) */
-        case 199:
+        case 198:
         {
             PFfun_t *is2ns =
                 function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
@@ -3112,12 +3108,12 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* TagName:                tag */
-        case 200:
+        case 199:
             C(p) = constr_tag (p->sem.qname);
             break;
 
         /* TagName:                Expr */
-        case 201:
+        case 200:
         {
             /*
              * FIXME:
@@ -3152,13 +3148,13 @@ reduce (PFpnode_t * p, int goalnt)
                          flwr (let (letbind (
                                      var (v2),
                                      fs_convert_op_by_type (var (v1),
-                                                            PFty_string ())),
+                                                            PFty_xs_string ())),
                                     nil ()),
                                APPLY (resolve_qname, var (v2))));
         } break;
 
         /* OptContentExpr:         OptExpr */
-        case 202:
+        case 201:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *is2ns =
@@ -3170,12 +3166,12 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OptContentExpr:         empty_seq */
-        case 203:
+        case 202:
             C(p) = empty ();
             break;
 
         /* OptContentExpr:         contseq (OptContentExpr, OptContentExpr) */
-        case 204:
+        case 203:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
@@ -3187,7 +3183,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeValue:         Expr */
-        case 205:
+        case 204:
         {
             /*
              * Convert enclosed expression in attribute values as described in
@@ -3222,7 +3218,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeValue:         empty_seq */
-        case 206:
+        case 205:
             /*
              * An empty attribute value shall result in an empty string.
              */
@@ -3230,7 +3226,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* AttributeValue:         contseq (AttributeValue, AttributeValue) */
-        case 207:
+        case 206:
         {
             /*
              * Both arguments have type xs:string after they had been
@@ -3252,7 +3248,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* ExtensionExpr:          ext_expr (Pragmas, nil) */
-        case 208:
+        case 207:
             /*
              * If an extension expression has an empty body we shall
              * raise a static error (W3C XQuery 3.14) if we don't
@@ -3264,56 +3260,56 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* ExtensionExpr:          ext_expr (Pragmas, Expr) */
-        case 209:
+        case 208:
             /* Just ignore the pragma.  We don't understand it anyway. */
             C(p) = C(R(p));
             break;
 
         /* Pragmas:                nil */
-        case 210:
+        case 209:
             /* We don't understand pragmas anyway */
             break;
 
         /* Pragmas:                pragmas (pragma, Pragmas) */
-        case 211:
+        case 210:
             /* We don't understand pragmas anyway */
             break;
 
         /* DeclImport:             RevalidationDecl */
-        case 212:
+        case 211:
             break;
 
         /* RevalidationDecl:       revalid */
-        case 213:
+        case 212:
             break;
 
         /* ExprSingle:             InsertExpr */
-        case 214:
+        case 213:
             assert (C(p));
             break;
 
         /* ExprSingle:             DeleteExpr */
-        case 215:
+        case 214:
             assert (C(p));
             break;
 
         /* ExprSingle:             RenameExpr */
-        case 216:
+        case 215:
             assert (C(p));
             break;
 
         /* ExprSingle:             ReplaceExpr */
-        case 217:
+        case 216:
             assert (C(p));
             break;
 
         /* ExprSingle:             TransformExpr */
-        case 218:
+        case 217:
             assert (C(p));
             break;
 
         /* InsertExpr:             insert (SourceExpr, TargetExpr) */
-        case 219:
+        case 218:
         {
             PFvar_t *target = new_var (NULL);
             PFvar_t *v1     = new_var (NULL);
@@ -3420,7 +3416,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* DeleteExpr:             delete (SourceExpr) */
-        case 220:
+        case 219:
         {   /*
              * [[ do delete <TargetExpr> ]]
              *  ==
@@ -3441,7 +3437,7 @@ reduce (PFpnode_t * p, int goalnt)
 
 
         /* ReplaceExpr:            replace (TargetExpr, ExprSingle) */
-        case 221:
+        case 220:
             if (p->sem.tru) {  
                 /*
                  * The semantics of the expression
@@ -3786,7 +3782,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* RenameExpr:             rename (SourceExpr, NewNameExpr) */
-        case 222:
+        case 221:
         {
             /*
              * [[ do rename <TargetExpr> as <NewNameExpr> ]]
@@ -3808,42 +3804,42 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* TransformExpr:          transform (TransformBindings,
                                              modify (ExprSingle, ExprSingle)) */
-        case 223:
+        case 222:
             PFoops (OOPS_NOTSUPPORTED,
                     "`transform' expressions are not supported in Pathfinder");
             break;
 
 
         /* TransformBindings:      nil */
-        case 224:
+        case 223:
             /* we do not support transform expressions anyway */
             break;
 
         /* TransformBindings:      transbinds (TransformBinding,
                                     TransformBindings) */
-        case 225:
+        case 224:
             /* we do not support transform expressions anyway */
             break;
 
 
         /* TransformBinding:       let (var_type (Var, nil), OptExpr) */
-        case 226:
+        case 225:
             /* we do not support transform expressions anyway */
             break;
 
 
         /* SourceExpr:             ExprSingle */
-        case 227:
+        case 226:
             assert (C(p));
             break;
 
         /* TargetExpr:             ExprSingle */
-        case 228:
+        case 227:
             assert (C(p));
             break;
 
         /* NewNameExpr:            ExprSingle */
-        case 229:
+        case 228:
         {
             /*
              * XQuery Update Facility (May 8, 2006, Sect. 2.3.4):
@@ -3861,13 +3857,13 @@ reduce (PFpnode_t * p, int goalnt)
                          flwr (let (letbind (
                                      var (v2),
                                      fs_convert_op_by_type (var (v1),
-                                                            PFty_string ())),
+                                                            PFty_xs_string ())),
                                     nil ()),
                                APPLY (resolve_qname, var (v2))));
         } break;
 
         /* SequenceType:           seq_ty (stmt_ty (nil)) */
-        case 230:
+        case 229:
             /*
              * statement type for updating user-defined functions.
              */
