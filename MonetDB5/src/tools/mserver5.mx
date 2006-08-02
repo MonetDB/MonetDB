@@ -451,8 +451,7 @@ faster system start.
 	if (mal_init())
 		return 0;
 	/* make sure the authorisation BATs are loaded */
-	err = AUTHinitTables();
-	if (err != MAL_SUCCEED)
+	if ((err = AUTHinitTables()) != MAL_SUCCEED)
 		GDKfatal(err);
 
 @-
@@ -461,8 +460,8 @@ Start with the init command[todo], which may be defined in
 the configuration file.
 @c
 	MSinitClientPrg(mal_clients, "main");
-	if ( dbinit== NULL)
-		dbinit= GDKgetenv("dbinit");
+	if (dbinit == NULL)
+		dbinit = GDKgetenv("dbinit");
 	if (dbinit) {
 		str input = GDKstrdup(dbinit);
 
@@ -478,11 +477,19 @@ the configuration file.
 		monet_script[i] = 0;
 	}
 	GDKfree(monet_script);
-	if( monet_daemon){
+	if (monet_daemon) {
 		while(1) 
 			MT_sleep_ms(5000);
 	} else
 		MSserveClient(mal_clients);
+
+	/* MSserverClient frees the MalBlk of the stack in such a way that
+	 * we cannot reinit main, or reuse it.  Hence, we have to create a
+	 * new function to terminate properly here. */
+	MSinitClientPrg(mal_clients, "terminate");
+	/* no matter what, we suppress a listing of this command, because it
+	 * makes no sense */
+	callString(mal_clients, "sabaoth.wildRetreat();", 0);
 	mal_exit();
 	return 0;
 }

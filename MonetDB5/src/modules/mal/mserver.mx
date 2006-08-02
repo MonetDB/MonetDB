@@ -48,7 +48,7 @@ comment "Start a Mapi server on the given port";
 #comment "Start a Mapi server on the default port global bound or not";
 command listen(port:int, maxusers:int):int
 address SERVERlisten2
-comment "Start a Mapi server.";
+comment "Start a Mapi server";
 
 command listen(port:int, maxusers:int, cmd:str):int
 address SERVERlisten3
@@ -213,7 +213,7 @@ comment "Go to next result set";
 
 command error(mid:int):int
 address SERVERerror
-comment "Check for an error in the communication");
+comment "Check for an error in the communication";
 
 command getError(mid:int):str
 address SERVERgetError
@@ -579,6 +579,36 @@ error:
 	return throwMessage("mserver.listen", msg);
 }
 
+/**
+ * Small utility function to call the sabaoth marchConnection function
+ * with the right arguments.  If the socket is bound to 0.0.0.0 the
+ * hostname address is used, to make the info usable for servers outside
+ * localhost.
+ */
+void SERVERannounce(struct in_addr addr, int port, int ssl) {
+	str buf = alloca(sizeof(char) * 1024);
+	str host = NULL;
+
+	if (addr.s_addr == INADDR_ANY) {
+		host = alloca(sizeof(char) * (HOST_NAME_MAX + 1));
+		gethostname(host, HOST_NAME_MAX);
+		host[HOST_NAME_MAX] = '\0';
+	} else {
+		/* avoid doing this, it requires some includes that probably
+		 * give trouble on windowz
+		host = inet_ntoa(addr);
+		 */
+		host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
+		sprintf(host, "%d.%d.%d.%d",
+				((ntohl(addr.s_addr) >> 24) & 0xff),
+				((ntohl(addr.s_addr) >> 16) & 0xff),
+				((ntohl(addr.s_addr) >> 8) & 0xff),
+				(ntohl(addr.s_addr) & 0xff));
+	}
+	snprintf(buf, 1023, "sabaoth.marchConnection(\"%s\":str, %d:int, %d:bit);",
+			host, port, ssl != 0 ? 1 : 0);
+	callString(mal_clients, buf, 0);
+}
 
 str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
@@ -683,6 +713,7 @@ Get the new information for the server socket and start listening.
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
 	stream_printf(GDKout, "%s", msg);
 #endif
+	SERVERannounce(server.sin_addr, port, 0);
 	return MAL_SUCCEED;
 }
 
@@ -796,7 +827,9 @@ SERVERepilogue(void)
 		GDKfree(mutex_buf);
 		mutex_buf = NULL;
 	}
+	/* callString(mal_clients, "sabaoth.retreatConnection(...);", 0); */
 #endif /* HAVE_OPENSSL */
+	/* callString(mal_clients, "sabaoth.retreatConnection(...);", 0); */
 }
 
 str
@@ -955,8 +988,9 @@ end_loop:;
 	close(sock);
 	if (cmd)
 		GDKfree(cmd);
+	SERVERannounce(server.sin_addr, port, 1);
 	return MAL_SUCCEED;
-	  fail:;
+fail:;
 	if (sock >= 0)
 		close(sock);
 	if (ctx)
@@ -1009,21 +1043,11 @@ stream_read_until(str *res, stream *S, str stop)
 }
 
 @- Wrappers
-The Monet Version 5 wrappers are collected here
+The MonetDB Version 5 wrappers are collected here
 The latest port known to gain access is stored
 in the database, so that others can more easily
 be notified.
 @c
-void SERVERannounce(str lang, int port){
-	FILE *f;
-	char buf[PATHLENGTH];
-	snprintf(buf,PATHLENGTH,".%s.port",lang);
-	f= fopen(buf,"w");
-	if( f) {
-		fprintf(f,"%d",port);
-		(void)fclose(f);	
-	}
-}
 str
 SERVERlisten_default(int *ret)
 {
@@ -1037,7 +1061,6 @@ SERVERlisten_default(int *ret)
 		port = (int) strtol(p,NULL,10);
 	if( port == 0)
 		return throwMessage("mserver.listen","Illegal port");
-	SERVERannounce("mal",port);
 	return SERVERlisten(&port, 0, &maxusers, 0);
 }
 
@@ -1045,7 +1068,6 @@ str
 SERVERlisten2(int *ret, int *port, int *maxusers)
 {
 	(void) ret;
-	SERVERannounce("mal",*port);
 	return SERVERlisten(port, 0, maxusers, 0);
 }
 
@@ -1053,7 +1075,6 @@ str
 SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd)
 {
 	(void) ret;
-	SERVERannounce("mal",*port);
 	return SERVERlisten(port, 0, maxusers, cmd);
 }
 
@@ -1064,7 +1085,6 @@ SERVERlisten_port(int *ret, int *pid)
 	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
-	SERVERannounce("mal",port);
 	return SERVERlisten(&port, 0, &maxusers, 0);
 }
 @-
@@ -1117,6 +1137,9 @@ SERVERclient(int *res, stream **In, stream **Out)
 	(void) res;
 	assert(name);
 	memset(name, 0, BLOCK);
+
+	/* is this routine used?  Where? */
+	assert(0);
 
 	/* write challenge string, the challenge is currently empty (disabled) */
 	challenge = "::mserver_mal:4\n";

@@ -406,7 +406,6 @@ void mal_exit(void){
 		(void) stream_close(cntxt->fdout);
 		(void) stream_destroy(cntxt->fdout);
 	}
-	system("rm -f .*.port");
 /*	GDKexit(0);  */
 	MT_global_exit(0);
 }

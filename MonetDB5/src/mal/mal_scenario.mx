@@ -169,7 +169,6 @@ mal_export void showScenarioByName(stream *f, str s);
 mal_export void showScenario(stream *f, Scenario s);
 mal_export void showAllScenarios(stream *f);
 mal_export void resetScenario(Client c);
-mal_export str setScenario(Client c, str nme);
 
 mal_export Scenario findScenario(str nme);
 mal_export void updateScenario(str nme, MALfcn fcn);
@@ -207,7 +206,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 };
 
 @-
-Currently each user can define a new scenario, provide we have a free slot.
+Currently each user can define a new scenario, provided we have a free slot.
 Scenarios not hardwired can always be dropped.
 @c
 Scenario
@@ -220,10 +219,11 @@ getFreeScenario()
 	for (i = 0; i < MAXSCEN && scenarioRec[i].name; i++)
 		;
 
-	if (i == MAXSCEN)
-		GDKerror("freeScenario:no scenario space left; adjust & recompile \n");
-	else
+	if (i == MAXSCEN) {
+		GDKerror("freeScenario:no scenario space left; adjust & recompile");
+	} else {
 		scen = scenarioRec + i;
+	}
 	mal_unset_lock(mal_contextLock, "Scenario");
 
 	return scen;
@@ -262,6 +262,7 @@ initScenario(Client c, Scenario s)
 			msg = throwMessage(buf,"Scenario not initialized"); 
 		}
 	}
+	/* does the return below unset the lock? */
 	if (msg)
 		return msg;
 	@:initScen(s, exitSystem,s->language)@

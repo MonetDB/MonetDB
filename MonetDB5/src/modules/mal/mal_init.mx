@@ -67,6 +67,10 @@ include batcalc;
 include batstr;
 include batcolor;
 
+# awareness support (and start with a clean record)
+include sabaoth;
+sabaoth.wildRetreat();
+
 # MAL related extensions
 include clients;
 include tablet;
@@ -117,6 +121,9 @@ include partitions;
 
 # less important stuff
 include crackers; # not in alpha5
+
+# publish mal existence
+sabaoth.marchScenario("mal":str);
 @-
 In practice, we have to introduce different startup for each
 client group or database.

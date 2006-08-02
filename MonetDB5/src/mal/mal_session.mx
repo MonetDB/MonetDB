@@ -59,11 +59,7 @@ mal_export int MALcommentsOnly(MalBlkPtr mb);
 #include "mal_namespace.h"
 #include "mal_readline.h"
 #include "mal_authorize.h"
-/* FIXME: doesn't work unfortunately
-#include <status.h> */	/* for SYSgetDatabases(), SYSgetPorts() */
-
-mal_export str SYSgetDatabases(int *ret);
-mal_export str SYSgetPorts(int *ret, str *lang);
+#include <dirent.h>	/* for opendir and friends */
 
 int
 malBootstrap()
@@ -228,85 +224,90 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	}
 
 	if (database && strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
-		BAT *b = NULL;
-		BUN p, q;
-		int bid = 0;
-		str err = NULL, db = NULL, state = NULL;
+		DIR *d;
+		struct dirent *e;
 		int found = 0;
-		
-		if ((err = SYSgetDatabases(&bid)) != NULL) {
-			GDKerror(err);
-			return;
-		}
+		str buf = alloca(sizeof(char) * (PATHLENGTH + 1));
+		str p;
+		int len;
+		FILE *f;
+		str err = NULL;
+		str redir;
 
-		if ((b = BATdescriptor(bid)) == NULL) {
-			GDKerror("Cannot access BAT descriptor");
-			return;
-		}
+		buf[PATHLENGTH] = '\0';
+		/* scan the parent for directories */
+		d = opendir("..");
+		while ((e = readdir(d)) != NULL) {
+			/* skip if not the database we're looking for */
+			if (strcmp(e->d_name, database) != 0)
+				continue;
 
-		/* tell the BBP to leave this BAT alone: it's ours! */
-		BBPfix(b->batCacheid);
-
-		BATloop(b, p, q) {
-			db    = BUNhead(b, p);
-			state = BUNtail(b, p);
-
-			/* match name of database */
-			if (db && strcmp(db, database) == 0) {
-				found = 1;
+			/* ok, look for some files we're interested in, start
+			 * checking if the server is connectable */
+			snprintf(buf, PATHLENGTH, "../%s/.conn", e->d_name);
+			if ((f = fopen(buf, "r")) == NULL) {
+				err = "database not available or cannot be connected to";
+				break;	/* we don't have to look further any more */
+			}
+			if ((len = fread(buf, 1, PATHLENGTH, f)) <= 0) {
+				/* ok, won't work */
+				fclose(f);
+				err = "database cannot be connected to";
 				break;
 			}
-		}
-
-		if (!found) {
-			stream_printf(fout, "!database '%s' does not exist\n", database);
-		} else if (found && strcmp(state, "running") != 0) {
-			stream_printf(fout, "!database '%s' currently unavailable\n", database);
-		} else {
-			/* ok, it appears to be running, now let's see if it also is
-			   serving on a port */
-			int port = 0;
-			/* the BBP can have the database BAT back, we don't want it
-			   any more */
-			BBPunfix(b->batCacheid);
-
-			/* take default language (mal), as language doesn't really
-			   make sense with M5 anyway */
-			if ((err = SYSgetPorts(&bid, NULL)) != NULL) {
-				GDKerror(err);
-				return;
+			/* note: in theory, multiple addresses can be in this file.
+			 * We ignore this for now, and just connect to the first one */
+			if ((p = strchr(buf, '\n')) == NULL) {
+				/* somehow doesn't work */
+				fclose(f);
+				err = "database cannot be connected to";
+				break;
 			}
+			*p = '\0';
+			fclose(f);
 
-			if ((b = BATdescriptor(bid)) == NULL) {
-				GDKerror("Cannot access BAT descriptor");
-				return;
+			/* alloc some space */
+			redir = alloca(sizeof(char) * (strlen(buf) + 2));
+			sprintf(redir, "^%s", buf);
+
+			/* see if the server supports the language we're asking for */
+			snprintf(buf, PATHLENGTH, "../%s/.scen", e->d_name);
+			if ((f = fopen(buf, "r")) == NULL) {
+				err = "language not supported";
+				break;
 			}
-
-			/* tell the BBP to leave this BAT alone: it's ours! */
-			BBPfix(b->batCacheid);
-
-			/* get the port number */
-			BATloop(b, p, q) {
-				db   = BUNhead(b, p);
-				port = *(int *)BUNtail(b, p);
-
-				/* match name of database */
-				if (db && strcmp(db, database) == 0) {
+			if ((len = fread(buf, 1, PATHLENGTH, f)) <= 0) {
+				/* ok, won't work */
+				fclose(f);
+				err = "database cannot be connected to";
+				break;
+			}
+			while ((p = strchr(buf, '\n')) != NULL) {
+				*p = '\0';
+				if (strcmp(buf, lang) == 0) {
 					found = 1;
 					break;
 				}
+				buf = p + 1;
 			}
-			if (port != int_nil) {
-				/* hostname currently hardcoded... */
-				stream_printf(fout, "^mapi:monetdb://%s:%d/%s?lang=%s&user=%s\n", "localhost", port, database, lang, user);
+			fclose(f);
+
+			if (found == 1) {
+				stream_printf(fout, "%s%s?lang=%s&user=%s\n",
+						redir, database, buf, user);
+				/* flush redirect and return */
+				stream_flush(fout);
+				closedir(d);
+				GDKfree(command);
+				return;
 			} else {
-				stream_printf(fout, "!database '%s' appears not to be ready\n", database);
+				err = "language not supported";
+				break;
 			}
-		}
-
-		/* the BBP can have it back, we don't want it any more */
-		BBPunfix(b->batCacheid);
-
+		}	
+		(void) closedir(d);
+		if (err == NULL) err = "database does not exist";
+		stream_printf(fout, "!redirect to database '%s': %s\n", database, err);
 		/* flush the error to the client, and abort further execution */
 		stream_flush(fout);
 		GDKfree(command);
@@ -474,7 +475,7 @@ The scenarios are run until we finally close the last one.
 At this stage we should clean out the MAL block
 @c
 	freeMalBlk(c->curprg->def);
-	c->curprg->def= 0;
+	c->curprg->def = 0;
 
 	if (c->mode > FINISHING) {
 		if (isAdministrator(c)) {
@@ -669,77 +670,4 @@ and marking all non-temporary variables as being (potentially) used.
         BATmode(b,TRANSIENT);
         BATfakeCommit(b);
         *ret = b->batCacheid;
-@c
-#include <dirent.h>
-str SYSgetDatabases(int *ret)
-{
-	BAT *b;
-	DIR *d, *db;
-	struct dirent *e;
-	char buf[PATHLENGTH];
-	FILE *f;
-	int uid,pid;
-	
-	b = BATnew(TYPE_str, TYPE_str, 50);
-	/* scan the parent for directories */
-	d= opendir("..");
-	while ( (e=readdir(d)) != NULL){
-		if( *e->d_name == '.') continue;
-		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
-		db= opendir(buf);
-		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"../%s/.gdk_lock",e->d_name);
-			f= fopen(buf,"r");
-			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
-				sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
-				/* w00t! for platform independence! (NOT!) */
-				snprintf(buf,PATHLENGTH,"/proc/%d",pid);
-				fclose(f);
-			} else
-				snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
-			/* not water-proof, PID can exist, and be alive, but not an
-			   mserver, need to check process name */
-			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"), FALSE);
-			closedir(db);
-		} 
-	}
-	(void) closedir(d);
-	@:Pseudo(databases,mode)@
-	return MAL_SUCCEED;
-}
-
-str SYSgetPorts(int *ret, str *lang)
-{
-	BAT *b;
-	DIR *d, *db;
-	struct dirent *e;
-	char buf[PATHLENGTH];
-	FILE *f;
-	int port;
-	str llang;
-	
-	/* if lang is NULL, default to "mal" */
-	llang = (lang == NULL ? "mal" : *lang);
-	b = BATnew(TYPE_str, TYPE_int, 50);
-	/* scan the parent for directories */
-	d= opendir("..");
-	while ( (e=readdir(d)) != NULL){
-		if( *e->d_name == '.') continue;
-		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
-		db= opendir(buf);
-		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"../%s/.%s.port",e->d_name,llang);
-			f= fopen(buf,"r");
-			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
-				port= (int) strtol(buf,NULL,10);
-				fclose(f);
-			} else port = 0;
-			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port), FALSE);
-			closedir(db);
-		} 
-	}
-	(void) closedir(d);
-	@:Pseudo(databases,port)@
-	return MAL_SUCCEED;
-}
 @}
