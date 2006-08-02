@@ -557,7 +557,7 @@ void freeClient(Client c)
 	/* forked client also */
 
 	/* scope list and curprg can not be removed, 
-	   because the client may recide in a
+	   because the client may reside in a
 	   quit() command. Therefore the scopelist is re-used.
 	if( c->curprg ) {
 		freeSymbol(c->curprg); 
