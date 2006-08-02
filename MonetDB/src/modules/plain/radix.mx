@@ -601,7 +601,7 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 .MODULE radix;
 
 .COMMAND radix_cluster(bat[any::1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-		bat[any::1,any::2] = radix_cluster;
+	 bat[any::1,any::2] = M4_RDX_radix_cluster;
 "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses
  the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower
  significant bits) can be indicated by passing a negative number of bits as first parameter.
@@ -616,51 +616,173 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  If you pass a non-empty but writable limits bat, it will be used as above for resume,
  and will also be overwritten with the new cluster boundaries"
 
-.COMMAND radix_bits(bat[any,any] b) : int = radix_bits;
+.COMMAND radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ...int...) :
+	 bat[any::1,any::2] = M4_RDX_radix_cluster_l;
+"shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc, radix1, ... );"
+
+.COMMAND radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ...int...) :
+	 bat[any::1,any::2] = M4_RDX_radix_cluster_p;
+"shortcut for:  radix_cluster( b, limits, perc=1.0, radix1, ... );"
+
+.COMMAND radix_cluster(bat[any::1,any::2] b, int radix1, ...int... ) :
+	 bat[any::1,any::2] = M4_RDX_radix_cluster_lp;
+"shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc=1.0, radix1, ... );"
+
+.COMMAND radix_cluster2(BAT[any::1,any::2] b, int p, int r, int i) : 
+	 BAT[any::1,any::2] = M4_RDX_radix_cluster2;
+"(Partially) radix-cluster b in p (<=4) passes on r in total (r/p bits per pass),
+ ignoring the lower i bits."
+
+
+.COMMAND radix_bits(bat[any,any] b) : int = M4_RDX_radix_bits;
 "return the number of bits on which the head column is radix clustered."
 
-.COMMAND radix_count(bat[oid,oid] b, int shift, int radix) : bat[int,int] = radix_count;
+
+.COMMAND radix_count(bat[oid,oid] b, int shift, int radix) : bat[int,int] = M4_RDX_radix_count;
 "return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.
  the first int holds the number of radix bits, the second how many lower bits to ignore.
  notice that the bat b maybe partially radix-clustered (or not at all). the radix_count
  command just detects consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending"
 
-.COMMAND radix_count2(bat[any,oid] b, int shift, int radix) : bat[int,int] = radix_count2;
+.COMMAND radix_count2(bat[any,oid] b, int shift, int radix) : bat[int,int] = M4_RDX_radix_count2;
 "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail
 the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
 
+
 .COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = radix_decluster;
+	 bat[void,any::1] = M4_RDX_radix_decluster;
 "merge a (partially) radix-clustered dense collection of oids back to their original void
  position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier
  that tells how many times the number of chunks the matching-window-size should be."
 
+.COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) :
+	 bat[void,any::1] = M4_RDX_radix_decluster_m;
+"shortcut for:  radix_decluster( b, radix_cnt, multiplier=4 );"
+
+
 .COMMAND radix_decluster2(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = radix_decluster2; ""
+	 bat[void,any::1] = M4_RDX_radix_decluster2;
+""
 
 .COMMAND radix_decluster3(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = radix_decluster3; ""
+	 bat[void,any::1] = M4_RDX_radix_decluster3;
+""
 
 .COMMAND radix_decluster4(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = radix_decluster4; ""
+	 bat[void,any::1] = M4_RDX_radix_decluster4;
+""
+
 
 .COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) :
-	bat[any,any] = radix_join;
+	 bat[any,any] = M4_RDX_radix_join;
 "nested-loop join on radix clustered inputs"
 
+.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix) :
+	 bat[any,any] = M4_RDX_radix_join_h;
+"shortcut for:  radix_join( l, r, radix, hitrate=1 );"
+
+.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r) :
+	 bat[any,any] = M4_RDX_radix_join_xh;
+"shortcut for:  radix_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1 );"
+
+
 .COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) :
-	bat[any,any] = phash_join;
+	 bat[any,any] = M4_RDX_phash_join;
 "partitioned hash-join on radix clustered inputs"
 
-.COMMAND jivejoin0(BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin0;
+.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) :
+	 bat[any,any] = M4_RDX_phash_join_c;
+"shortcut for:  phash_join( l, r, radix, hitrate, cutoff=key(r) );"
+
+.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, bit cutoff) :
+	 bat[any,any] = M4_RDX_phash_join_h;
+"shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff );"
+
+.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix) :
+	 bat[any,any] = M4_RDX_phash_join_hc;
+"shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff=key(r) );"
+
+.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, bit cutoff) :
+	 bat[any,any] = M4_RDX_phash_join_xh;
+"shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff );"
+
+.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r) :
+	 bat[any,any] = M4_RDX_phash_join_xhc;
+"shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff=key(r) );"
+
+
+.COMMAND jivejoin0(BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) :
+	 BAT[void,any::1] = M4_RDX_jivejoin0;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin1;
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) :
+	 BAT[void,any::1] = M4_RDX_jivejoin1;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,any::1] attr) : BAT[void,any::1] = jivejoin2;
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,any::1] attr) :
+	 BAT[void,any::1] = M4_RDX_jivejoin2;
 "positional join that creates a void head by inserting the join result positionally"
+
+
+.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v, int radix_bits, int stride, int vector_size) :
+	 BAT[void,any::1] = M4_RDX_posjoin_clustered;
+"perform a positional join that exploits radix-clusteredness for prefetching"
+
+.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v, int radix_bits, int stride) :
+	 BAT[void,any::1] = M4_RDX_posjoin_clustered_v;
+"shortcut for:  posjoin( c, v, radix_bits, stride, vector_size=512 );"
+
+.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v, int radix_bits) :
+	 BAT[void,any::1] = M4_RDX_posjoin_clustered_sv;
+"shortcut for:  posjoin( c, v, radix_bits, stride=128, vector_size=512 );"
+
+
+.COMMAND cache_join(BAT[void,oid] l, BAT[void,any::1] r, int cache_size, int cache_line_size) :
+	 BAT[oid,any::1] = M4_RDX_cache_join;
+"cache-conscious positional (\"fetch-\") join with given cache_size & cache_line_size"
+
+.COMMAND cache_join(BAT[void,oid] l, BAT[void,any::1] r) :
+	 BAT[oid,any::1] = M4_RDX_cache_join_256k_32;
+"shortcut for:  cache_join( l, r, cache_size=256*1024, cache_line_size=32 );"
+
+
+.COMMAND uniform(oid base, int size, int domain) : bat[oid,int] = M4_RDX_BATuniform;
+"create a random bat of certain size, head values starting from base, unique, dense and ordered,
+ tail values perfect uniform from a certain domain ((domain >= size)  =>  unique tails)."
+
+.COMMAND uniform(int size, int domain) : bat[oid,int] = M4_RDX_BATuniform_b;
+"shortcut for:  uniform( base=0@0, size, domain);"
+
+.COMMAND uniform(int size) : bat[oid,int] = M4_RDX_BATuniform_bd;
+"shortcut for:  uniform( base=0@0, size, domain=size);"
+
+
+.COMMAND normal(oid base, int size, int domain, int stddev, int mean) : bat[oid,int] = M4_RDX_BATnormal;
+"create a random bat of certain size, head values starting from base, unique, dense and ordered,
+ tail values from a normal distribution between [0..domain] with given stddev & mean."
+
+.COMMAND normal(int size, int domain, int stddev, int mean) : bat[oid,int] = M4_RDX_BATnormal_b;
+"shortcut for:  normal( base=0@0, size, domain, stddev, mean);"
+
+.COMMAND normal(oid base, int size, int domain, int stddev) : bat[oid,int] = M4_RDX_BATnormal_m;
+"shortcut for:  normal( base, size, domain, stddev, mean=domain/2);"
+
+.COMMAND normal(int size, int domain, int stddev) : bat[oid,int] = M4_RDX_BATnormal_bm;
+"shortcut for:  normal( base=0@0, size, domain, stddev, mean=domain/2);"
+
+.COMMAND normal(oid base, int size, int domain) : bat[oid,int] = M4_RDX_BATnormal_vm;
+"shortcut for:  normal( base, size, domain, stddev=domain/10, mean=domain/2);"
+
+.COMMAND normal(int size, int domain) : bat[oid,int] = M4_RDX_BATnormal_bvm;
+"shortcut for:  normal( base=0@0, size, domain, stddev=domain/10, mean=domain/2);"
+
+.COMMAND normal(oid base, int size) : bat[oid,int] = M4_RDX_BATnormal_dvm;
+"shortcut for:  normal( base, size, domain=size, stddev=domain/10, mean=domain/2);"
+
+.COMMAND normal(int size) : bat[oid,int] = M4_RDX_BATnormal_bdvm;
+"shortcut for:  normal( base=0@0, size, domain=size, stddev=domain/10, mean=domain/2);"
+
 
 @= integer
 .ATOM integer@1[@2,4];
@@ -674,41 +796,44 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .ATOM pax@1 = integer@1;
 .END;
 
-.COMMAND [pax](BAT[any::1,integer@1] b) : BAT[any::1,pax@1] = BATpax;
+.COMMAND [pax](BAT[any::1,integer@1] b) : BAT[any::1,pax@1] = M4_RDX_BATpax;
 "convert an integer@1 to pax@1"
 
-.COMMAND [integer](BAT[any::1,integer@1] b, int width) : BAT[any::1,any] = BATinteger;
+.COMMAND [integer](BAT[any::1,integer@1] b, int width) : BAT[any::1,any] = M4_RDX_BATinteger;
 "create a view that makes tail column appear as an integerX column for some width=X"
 
 @= int
 .ATOM Int@1 = integer@1;
 .END;
 
-.COMMAND [IntX](BAT[any::1,integer@1] b) : BAT[any::1,Int@1] = BATintX;
+.COMMAND [IntX](BAT[any::1,integer@1] b) : BAT[any::1,Int@1] = M4_RDX_BATintX;
 "convert an integer@1 to Int@1"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1;
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = M4_RDX_jivejoin1;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1;
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = M4_RDX_jivejoin1;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = jivejoin2;
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = M4_RDX_jivejoin2;
 "positional join that creates a void head by inserting the join result positionally"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = jivejoin2;
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = M4_RDX_jivejoin2;
 "positional join that creates a void head by inserting the join result positionally"
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = posjoin_tuple;
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = M4_RDX_posjoin_tuple;
 "positional join with built-in NSM projection"
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = posjoin_tuple;
+.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = M4_RDX_posjoin_tuple;
 "positional join with built-in PAX projection"
 
 .COMMAND radix_cluster(bat[integer@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-		bat[Int@1,any::2] = radix_cluster; ""
+	 bat[Int@1,any::2] = M4_RDX_radix_cluster;
+""
 .COMMAND radix_cluster(bat[pax@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-		bat[Int@1,any::2] = radix_cluster; ""
+	 bat[Int@1,any::2] = M4_RDX_radix_cluster;
+""
+
 @= tpe
 @:@1(1,4)@
 @:@1(2,8)@
@@ -723,124 +848,19 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 @:tpe(integer)@
 @:tpe(int)@
 
-.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v,
-		 int radix_bits, int stride, int vector_size) : BAT[void,any::1] = posjoin_clustered;
-"perform a positional join that exploits radix-clusteredness for prefetching"
-
-
-.COMMAND pax_blocksize(int) : int = pax_blocksize; "get/set the pax blocksize"
-
-.COMMAND uniform(oid base, int size, int domain) : bat[oid,int] = BATuniform;
-"create a random bat of certain size, head values unique, tail values
- perfect uniform from a certain domain (domain>size => unique tails)."
-
-.COMMAND normal(oid base, int size, int domain, int stddev, int mean) : bat[oid,int] = BATnormal;
-"create a random bat of certain size, head values unique, tail values
- from a normal distribution between [0..domain].
- default values: base = 0@0, mean = size/2, stddev = size/10, domain=size."
-
-.COMMAND [integer](BAT[any::1,int] b, int width) : BAT[any::1,any] = BATinteger;
+.COMMAND [integer](BAT[any::1,int] b, int width) : BAT[any::1,any] = M4_RDX_BATinteger;
 "create a view that makes tail column appear as an integerX column for some width=X"
 
+.COMMAND [integer](BAT[any::1,int] b) : BAT[any::1,integer1] = M4_RDX_BATinteger1;
+"shortcut for:  [integer]( b, width=1 );"
+
+
+.COMMAND pax_blocksize(int) : int = M4_RDX_pax_blocksize;  "set the pax blocksize"
+
+.COMMAND pax_blocksize() : int = M4_RDX_pax_blocksize_get; "get the pax blocksize"
+
+
 .END radix;
-
-@mil
-
-proc uniform(int s, int d) : bat[oid,int] { return uniform(0@0,s,d); }
-proc uniform(int s) : bat[oid,int] { return uniform(s,s); }
-proc normal(int s, int d, int v, int m) : bat[oid,int] { return normal(0@0,s,d,v,m); }
-proc normal(oid base, int s, int d, int v) : bat[oid,int] { return normal(base,s,d,v,d/2); }
-proc normal(int s, int d, int v) : bat[oid,int] { return normal(0@0,s,d,v); }
-proc normal(oid base, int s, int d) : bat[oid,int] { return normal(0@0,s,d,d/10); }
-proc normal(int s, int d) : bat[oid,int] { return normal(0@0,s,d); }
-proc normal(int s) : bat[oid,int] {return normal(s,s); }
-proc radix_cluster(bat[any::1,any::2] b, int radix1, ..int..) :
-	bat[any::1,any::2] { return radix_cluster(b, "tmp_0", 1.0, $(2..)); }
-proc radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ..int..) :
-	bat[any::1,any::2] { return radix_cluster(b, limits, 1.0, $(3..)); }
-proc radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ..int..) :
-	bat[any::1,any::2] { return radix_cluster(b, "tmp_0", perc, $(3..)); }
-proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
-	{return radix_join(l,r, min(l.reverse().radix_bits(), r.radix_bits()), 1);}
-proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int b) : bat[any::1,any::3]
-	{return radix_join(l,r, b, 1);}
-proc phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
-	{ return phash_join(l,r, min(l.reverse().radix_bits(), r.radix_bits()), 1, r.key());}
-proc radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) : bat[void,any::1] {
-	return radix_decluster(b,radix_cnt,4);
-}
-proc "[integer]"(bat[any::1,int] b) : bat[any::1,integer1]{
-	return [integer](b, 1);
-}
-proc pax_blocksize() : int {
-	return pax_blocksize(int(nil));
-}
-
-proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int nbits) : bat[any::1,any::3] { return phash_join_new(l,r,nbits,1,false);}
-
-proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) : bat[any::1,any::3] { return phash_join(l, r, radix, hitrate, cutoff);}
-
-var CACHE_SIZE := 256*1024;
-proc CACHE_LINES() : int { return CACHE_SIZE/32; }
-
-proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits, int stride) : BAT[void,any::1] {
-	return posjoin(c, v, radixbits, stride, 512);
-}
-proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits) : BAT[void,any::1] {
-	return posjoin(c, v, radixbits, 128);
-}
-
-proc log2(int i) : int {
-  var n := 0;
-  while(i > 1)	{
-     i >>= 1;
-     n :+= 1;
-  }
-  return n;
-}
-
-proc radix_cluster2(BAT[void,oid] b, int npasses, int nbits, int nignore) : BAT[oid,oid] {
-  var maxpasses := min(4, nbits);
-  if (npasses > maxpasses) npasses := maxpasses;
-  var quota := nbits / npasses;
-  var rest := nbits - (quota * (npasses - 1));
-  if (nignore = 0) {
-    nignore := rest;
-    rest := quota;
-  } else {
-    nignore := -(nignore);
-    npasses :+= 1;
-  }
-  if (npasses = 5) {
-      return radix_cluster(b, nignore, rest, quota, quota, quota);
-  } else if (npasses = 4) {
-      return radix_cluster(b, nignore, rest, quota, quota);
-  } else if (npasses = 3) {
-      return radix_cluster(b, nignore, rest, quota);
-  } else if (npasses = 2) {
-      return radix_cluster(b, nignore, rest);
-  }
-  return radix_cluster(b, nignore);
-}
-
-proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
-  var right_batsize := right.batsize();
-
-  if (not(left.reverse().ordered()) and right_batsize > CACHE_SIZE) {
-    var nbits := 1 + log2(right_batsize/CACHE_SIZE);
-    var nignore := max(0, (1 + log2(right.count())) - nbits);
-    var npasses := 1 + (nbits + 1) / log2(CACHE_LINES);
-
-    var cluster := left.radix_cluster2(npasses, nbits, nignore);
-    var borders := cluster.radix_count(nignore, nbits);
-    var cluster_values := cluster.reverse().mark(0@0).reverse();
-    var cluster_ids := cluster.mark(0@0).reverse();
-    cluster_values := cluster_values.join(right);
-    var ret := radix_decluster2(cluster_ids, cluster_values, borders, 8);
-    return ret;
-  }
-  return join(left, right);
-}
 
 
 @(
@@ -1070,6 +1090,7 @@ b4.info().find("tsorted").print();
 radix_cluster(attr_int,
 @)
 
+
 @-
 @{
 @f radix
@@ -1110,7 +1131,7 @@ radix_cluster(attr_int,
 @c
 
 int
-BATuniform(BAT **bn, oid *base, int *size, int *domain)
+M4_RDX_BATuniform(BAT **bn, oid *base, int *size, int *domain)
 {
 	size_t n = (size_t) * size, i, r;
 	BAT *b = NULL;
@@ -1170,9 +1191,22 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	return GDK_SUCCEED;
 }
 
+int
+M4_RDX_BATuniform_b(BAT **bn, int *size, int *domain)
+{
+	oid base = 0;
+	return M4_RDX_BATuniform(bn, &base, size, domain);
+}
 
 int
-BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
+M4_RDX_BATuniform_bd(BAT **bn, int *size)
+{
+	oid base = 0;
+	return M4_RDX_BATuniform(bn, &base, size, size);
+}
+
+int
+M4_RDX_BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 {
 	size_t n = (size_t) * size, i;
 	unsigned int r = (unsigned int) n;
@@ -1258,10 +1292,69 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	return GDK_SUCCEED;
 }
 
+int
+M4_RDX_BATnormal_b(BAT **bn, int *size, int *domain, int *stddev, int *mean)
+{
+	oid base = 0;
+	return M4_RDX_BATnormal(bn, &base, size, domain, stddev, mean);
+}
+
+int
+M4_RDX_BATnormal_m(BAT **bn, oid *base, int *size, int *domain, int *stddev)
+{
+	int mean = *domain / 2;
+	return M4_RDX_BATnormal(bn, base, size, domain, stddev, &mean);
+}
+
+int
+M4_RDX_BATnormal_bm(BAT **bn, int *size, int *domain, int *stddev)
+{
+	oid base = 0;
+	int mean = *domain / 2;
+	return M4_RDX_BATnormal(bn, &base, size, domain, stddev, &mean);
+}
+
+int
+M4_RDX_BATnormal_vm(BAT **bn, oid *base, int *size, int *domain)
+{
+	int stddev = *domain / 10;
+	int mean = *domain / 2;
+	return M4_RDX_BATnormal(bn, base, size, domain, &stddev, &mean);
+}
+
+int
+M4_RDX_BATnormal_bvm(BAT **bn, int *size, int *domain)
+{
+	oid base = 0;
+	int stddev = *domain / 10;
+	int mean = *domain / 2;
+	return M4_RDX_BATnormal(bn, &base, size, domain, &stddev, &mean);
+}
+
+int
+M4_RDX_BATnormal_dvm(BAT **bn, oid *base, int *size)
+{
+	int domain = *size;
+	int stddev = domain / 10;
+	int mean = domain / 2;
+	return M4_RDX_BATnormal(bn, base, size, &domain, &stddev, &mean);
+}
+
+int
+M4_RDX_BATnormal_bdvm(BAT **bn, int *size)
+{
+	oid base = 0;
+	int domain = *size;
+	int stddev = domain / 10;
+	int mean = domain / 2;
+	return M4_RDX_BATnormal(bn, &base, size, &domain, &stddev, &mean);
+}
+
+
 @- data types for relational simulation
 @= integerdef
 #define integer@1 int
-size_t
+static size_t
 integer@1Copy(void *dst, void *src, size_t size)
 {
 	(void) size;
@@ -1272,6 +1365,7 @@ int* integer@1Null(void) { integer_nil[0] = int_nil; return integer_nil; }
 hash_t integer@1Hash(int*i) { return int_HUSSLE(*i); }
 int  integer@1ToStr(str* dst, int* len, int* src) { return intToStr(dst,len,src); }
 int  integer@1FromStr(str src, int* len, int** dst) { return intFromStr(src,len,dst); }
+static
 int  integer@1Dummy(int i, int p) { S256; return i; } /* create some distance in the binary between fcns */
 int  integer@1Cmp(int* l, int* r) { return *l - *r; }
 @c
@@ -1311,7 +1405,7 @@ atom_t atomtbl[8] = {		/* a simulated ADT lookup table */
 
 int PAX_INT_PER_BLOCK = 1024;
 
-int
+static int
 int_type(char *src)
 {
 	char dst[32];
@@ -1322,7 +1416,7 @@ int_type(char *src)
 	return ATOMindex(dst);
 }
 
-void
+static void
 integerCopy(int *dst, BAT *b, BUN p, int width, int distance)
 {
 	int *src = (int *) BUNhloc(b, p);
@@ -1359,7 +1453,7 @@ integerCopy(int *dst, BAT *b, BUN p, int width, int distance)
 }
 
 int
-BATinteger(BAT **ret, BAT *b, int *width)
+M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 {
 	BAT *bn, *m;
 	int tpe, log = 0;
@@ -1417,7 +1511,14 @@ BATinteger(BAT **ret, BAT *b, int *width)
 }
 
 int
-BATpax(BAT **ret, BAT *b)
+M4_RDX_BATinteger1(BAT **ret, BAT *b)
+{
+	int width = 1;
+	return M4_RDX_BATinteger(ret, b, &width);
+}
+
+int
+M4_RDX_BATpax(BAT **ret, BAT *b)
 {
 	BAT *bn = *ret = VIEWcreate(b);
 
@@ -1428,7 +1529,7 @@ BATpax(BAT **ret, BAT *b)
 }
 
 int
-BATintX(BAT **ret, BAT *b)
+M4_RDX_BATintX(BAT **ret, BAT *b)
 {
 	BAT *bn = *ret = VIEWcreate(b);
 	int tpe = int_type(ATOMname(b->ttype));
@@ -1440,13 +1541,21 @@ BATintX(BAT **ret, BAT *b)
 }
 
 int
-pax_blocksize(int *ret, int *size)
+M4_RDX_pax_blocksize(int *ret, int *size)
 {
 	if (*size != int_nil)
 		PAX_INT_PER_BLOCK = *size;
 	*ret = PAX_INT_PER_BLOCK;
 	return GDK_SUCCEED;
 }
+
+int
+M4_RDX_pax_blocksize_get(int *ret)
+{
+	int size = int_nil;
+	return M4_RDX_pax_blocksize(ret, &size);
+}
+
 
 @+ Radix Cluster
 @T
@@ -1505,7 +1614,7 @@ typedef struct {
 #define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(ATOMname(b->htype)):BAThtype(b))
 #define TTYPE(b) HTYPE(BATmirror(b))
 
-BAT *
+static BAT *
 quickbat(BAT *b, size_t cap)
 {
 	BAT *bn = BATnew(HTYPE(b), BATttype(b), cap);
@@ -1523,7 +1632,7 @@ quickbat(BAT *b, size_t cap)
 /* take care: block sequences that are copied to the right should be done from
  *	      right to left; and vice versa! Otherwise you overwrite blocks.
  */
-void
+static void
 move_chunks(move_t *mov, BUN base, size_t from, size_t end)
 {
 	assert(((ssize_t) end) >= 0);	/* make sure that cop=(ssize_t)from does not overflow */
@@ -1542,7 +1651,7 @@ move_chunks(move_t *mov, BUN base, size_t from, size_t end)
 	}
 }
 
-void
+static void
 rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, size_t * dst, size_t * lim, size_t * cnt, size_t n)
 {
 	size_t i, cur = 0, start = 0;
@@ -1610,7 +1719,7 @@ rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, size_t * dst, size_
 	move_chunks(mov, base, 0, n);
 }
 
-void
+static void
 sample_buns(BAT *bn, BAT *b, BUN src, BUN cur, BUN end, size_t * dst, size_t * lim, size_t * cnt, size_t n)
 {
 	size_t ntuples = (end - src) / BUNsize(b);
@@ -1636,7 +1745,7 @@ sample_buns(BAT *bn, BAT *b, BUN src, BUN cur, BUN end, size_t * dst, size_t * l
 
 
 @= radix_buns
-BUN
+static BUN
 radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
 	      size_t* cur, size_t* lim, size_t mask, int shift, oid *maxbits)
 {
@@ -1700,7 +1809,7 @@ radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
 @:radix_buns(int)@
 @:radix_buns(lng)@
 
-BUN
+static BUN
 radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t * lim, size_t mask, int shift, oid *maxbits)
 {
 	int dst_bunsize = BUNsize(bn);
@@ -1747,7 +1856,7 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 }
 
 @= cnt_buns
-void
+static void
 cnt_buns_@1(BAT *bn, BAT *b, BUN src, BUN end, size_t *cnt,
 	    size_t mask, int shift)
 {
@@ -1765,7 +1874,7 @@ cnt_buns_@1(BAT *bn, BAT *b, BUN src, BUN end, size_t *cnt,
 @:cnt_buns(int)@
 @:cnt_buns(lng)@
 
-void
+static void
 cnt_buns_any(BAT *bn, BAT *b, BUN src, BUN end, size_t * cnt, size_t mask, int shift)
 {
 	int dst_bunsize = BUNsize(bn);
@@ -1781,7 +1890,7 @@ cnt_buns_any(BAT *bn, BAT *b, BUN src, BUN end, size_t * cnt, size_t mask, int s
 }
 
 @= radix_chunk
-int
+static int
 radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN out,
 	       size_t *lim, int nbits, int shift, size_t *dst, size_t *cnt, oid *maxbits)
 {
@@ -1841,8 +1950,8 @@ radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN o
 @:radix_chunk(lng)@
 @:radix_chunk(any)@
 
-int
-radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
+static int
+radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 {
 	int shift = ABS(*nbits), total_shift, res = 0;
 	size_t n;
@@ -1853,7 +1962,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 	bat limitid = BBPindex(nme);
 	BAT *bn = b, *limits = NULL;
 	flt prc = *perc;
-	va_list ap;
+	/*va_list ap;*/
 
 	if (limitid) {
 		limits = BATdescriptor(limitid);
@@ -1876,7 +1985,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 	ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", BATgetId(b), (int) b->batCacheid, BATtordered(b), nme, *perc, *nbits);
 
 	radix[0] = *nbits;
-	va_start(ap, nbits);
+	/*va_start(ap, nbits);*/
 	while ((p = va_arg(ap, int *)) != NULL) {
 		ALGODEBUG THRprintf(GDKout, ",%d", *p);
 
@@ -1884,7 +1993,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 		shift += ABS(radix[argc]);
 		argc++;
 	}
-	va_end(ap);
+	/*va_end(ap);*/
 	total_shift = shift;
 	ALGODEBUG THRprintf(GDKout, ") -> ");
 
@@ -2022,12 +2131,106 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 	return GDK_SUCCEED;
 }
 
+int
+M4_RDX_radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
+{
+	int rtrn = 0;
+	va_list ap;
+
+	va_start(ap, nbits);
+	rtrn = radix_cluster_va(ret, b, nme, perc, nbits, ap);
+	va_end(ap);
+
+	return rtrn;
+}
+
+int
+M4_RDX_radix_cluster_l(BAT **ret, BAT *b, flt *perc, int *nbits, ...)
+{
+	str nme = "tmp_0";
+	int rtrn = 0;
+	va_list ap;
+
+	va_start(ap, nbits);
+	rtrn = radix_cluster_va(ret, b, nme, perc, nbits, ap);
+	va_end(ap);
+
+	return rtrn;
+}
+
+int
+M4_RDX_radix_cluster_p(BAT **ret, BAT *b, str nme, int *nbits, ...)
+{
+	flt perc = 1.0;
+	int rtrn = 0;
+	va_list ap;
+
+	va_start(ap, nbits);
+	rtrn = radix_cluster_va(ret, b, nme, &perc, nbits, ap);
+	va_end(ap);
+
+	return rtrn;
+}
+
+int
+M4_RDX_radix_cluster_lp(BAT **ret, BAT *b, int *nbits, ...)
+{
+	str nme = "tmp_0";
+	flt perc = 1.0;
+	int rtrn = 0;
+	va_list ap;
+
+	va_start(ap, nbits);
+	rtrn = radix_cluster_va(ret, b, nme, &perc, nbits, ap);
+	va_end(ap);
+
+	return rtrn;
+}
+
+int
+M4_RDX_radix_cluster2(BAT **ret, BAT *b, int *p, int *r, int *i)
+{
+	int npasses = *p, nbits = *r, nignore = abs(*i);
+	int maxpasses = MIN(4, nbits), quota, rest;
+	
+	if (npasses < 1) {
+		GDKerror("radix_cluster2: number of passes must be > 0");
+		return GDK_FAIL;
+	}
+	if (nbits < 1) {
+		GDKerror("radix_cluster2: number of radix bits must be > 0");
+		return GDK_FAIL;
+	}
+
+	npasses = MIN(maxpasses, *p);
+	quota = nbits / npasses;
+	rest = nbits - (quota * (npasses - 1));
+
+	if (nignore == 0) {
+		nignore = rest;
+		rest = quota;
+	} else {
+		nignore = -1 * nignore;
+		npasses += 1;
+	}
+	switch (npasses) {
+	case 5:	return M4_RDX_radix_cluster_lp(ret, b, &nignore, &rest, &quota, &quota, &quota, NULL);
+	case 4:	return M4_RDX_radix_cluster_lp(ret, b, &nignore, &rest, &quota, &quota, NULL);
+	case 3:	return M4_RDX_radix_cluster_lp(ret, b, &nignore, &rest, &quota, NULL);
+	case 2: return M4_RDX_radix_cluster_lp(ret, b, &nignore, &rest, NULL);
+	case 1: return M4_RDX_radix_cluster_lp(ret, b, &nignore, NULL);
+	default:
+		assert(1 <= npasses && npasses <= 5);
+	}
+	return GDK_FAIL;
+}
+
 @+ Radix Statistics
 
 @- radix bits
 @c
 int
-radix_bits(int *nbits, BAT *b)
+M4_RDX_radix_bits(int *nbits, BAT *b)
 {
 	int radix_bits = (BAThordered(b) >> 1);
 
@@ -2051,7 +2254,7 @@ radix setting for a certain BAT dataset (tail column).
 #define RADIX_COUNT_MASK 65535
 
 int
-radix_count(BAT **res, BAT *b, int *shift, int *radix)
+M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 {
 	size_t mask = 1 << *radix;
 	int off = *shift;
@@ -2101,7 +2304,7 @@ radix_count(BAT **res, BAT *b, int *shift, int *radix)
 }
 
 int
-radix_count2(BAT **res, BAT *b, int *shift, int *radix)
+M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 {
 	size_t mask = 1 << *radix;
 	int off = *shift;
@@ -2179,7 +2382,7 @@ as the mask and link list for all phash invocations.
 	    integerCopy((int*) BUNtloc(b,_p), BATmirror(tb), tp, width2, distance2);\
 	}
 
-int
+static int
 hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, int rd, int cutoff)
 {
 	int xx;
@@ -2281,7 +2484,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 	}
 @c
 int
-phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
+M4_RDX_phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 {
 	ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ",
 		BATgetId(l), (int) l->batCacheid, BATtordered(l), 
@@ -2356,6 +2559,71 @@ phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 	}
 }
 
+int
+M4_RDX_phash_join_c(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
+{
+	if (l && r) {
+		bit cutoff = r->hkey;
+		return M4_RDX_phash_join(res, l, r, radix, hitrate, &cutoff);
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int
+M4_RDX_phash_join_h(BAT **res, BAT *l, BAT *r, int *radix, bit *cutoff)
+{
+	if (l && r) {
+		int hitrate = 1;
+		return M4_RDX_phash_join(res, l, r, radix, &hitrate, cutoff);
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int
+M4_RDX_phash_join_hc(BAT **res, BAT *l, BAT *r, int *radix)
+{
+	if (l && r) {
+		int hitrate = 1;
+		bit cutoff = r->hkey;
+		return M4_RDX_phash_join(res, l, r, radix, &hitrate, &cutoff);
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int
+M4_RDX_phash_join_xh(BAT **res, BAT *l, BAT *r, bit *cutoff)
+{
+	int rblt, rbrh;
+	if (l && r &&
+	    M4_RDX_radix_bits(&rblt, BATmirror(l)) == GDK_SUCCEED &&
+	    M4_RDX_radix_bits(&rbrh, r) == GDK_SUCCEED) {
+		int radix = MIN(rblt, rbrh);
+		int hitrate = 1;
+		return M4_RDX_phash_join(res, l, r, &radix, &hitrate, cutoff);
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int
+M4_RDX_phash_join_xhc(BAT **res, BAT *l, BAT *r)
+{
+	int rblt, rbrh;
+	if (l && r &&
+	    M4_RDX_radix_bits(&rblt, BATmirror(l)) == GDK_SUCCEED &&
+	    M4_RDX_radix_bits(&rbrh, r) == GDK_SUCCEED) {
+		int radix = MIN(rblt, rbrh);
+		int hitrate = 1;
+		bit cutoff = r->hkey;
+		return M4_RDX_phash_join(res, l, r, &radix, &hitrate, &cutoff);
+	} else {
+		return GDK_FAIL;
+	}
+}
+
 
 @= hash_merge
 	if (rd == 0) {
@@ -2409,7 +2677,7 @@ phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 this is a nested-loop join on the matching clusters (inputs should be radix clustered)
 @c
 int
-radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
+M4_RDX_radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 {
 	size_t estimate = MIN(BATcount(r), BATcount(l)) * (*hitrate);
 	BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
@@ -2488,6 +2756,28 @@ radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
       bunins_failed:
 	BBPreclaim(bn);
 	return GDK_FAIL;
+}
+
+int
+M4_RDX_radix_join_h(BAT **res, BAT *l, BAT *r, int *radix)
+{
+	int hitrate = 1;
+	return M4_RDX_radix_join(res, l, r, radix, &hitrate);
+}
+
+int
+M4_RDX_radix_join_xh(BAT **res, BAT *l, BAT *r)
+{
+	int rblt, rbrh;
+	if (l && r &&
+	    M4_RDX_radix_bits(&rblt, BATmirror(l)) == GDK_SUCCEED &&
+	    M4_RDX_radix_bits(&rbrh, r) == GDK_SUCCEED) {
+		int radix = MIN(rblt, rbrh);
+		int hitrate = 1;
+		return M4_RDX_radix_join(res, l, r, &radix, &hitrate);
+	} else {
+		return GDK_FAIL;
+	}
 }
 
 @= radix_join
@@ -2583,7 +2873,7 @@ typedef struct {
 } cnk_t;
 
 int
-radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
+M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 {
 	size_t cnt = BATcount(cnts);
 	int tpe = b->ttype;
@@ -2709,6 +2999,13 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
+}
+
+int
+M4_RDX_radix_decluster_m(BAT **res, BAT *b, BAT *cnts)
+{
+	int multiplier = 4;
+	return M4_RDX_radix_decluster(res, b, cnts, &multiplier);
 }
 
 @- radix_decluster
@@ -2837,7 +3134,7 @@ typedef struct {
 } cnk4_t;
 
 int
-radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
+M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 {
 	size_t cnt = BATcount(cnts);
 	int tpe = a->ttype;
@@ -2977,7 +3274,7 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 }
 
 int
-radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
+M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 {
 	size_t cnt = BATcount(cnts);
 	int tpe = a->ttype;
@@ -3116,7 +3413,7 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 }
 
 int
-radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
+M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 {
 	size_t cnt = BATcount(cnts), cntX = 0;
 	int tpe = a->ttype;
@@ -3238,7 +3535,7 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 }
 
 int
-posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
+M4_RDX_posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 {
 	BAT *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	BAT *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
@@ -3304,7 +3601,7 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
 int
-jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
+M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
 {
 	int any = attr->ttype;
 	BAT *bn = BATnew(proj->htype, any, BATcount(proj));
@@ -3399,7 +3696,7 @@ jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nb
 	}
 @c
 int
-jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
+M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
 {
 	BAT *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	int any = attr->ttype;
@@ -3522,7 +3819,7 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 	}
 @c
 int
-jivejoin2(BAT **res, BAT *proj, BAT *attr)
+M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 {
 	BAT *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	int any = attr->ttype;
@@ -3779,7 +4076,7 @@ posjoin_@1(int pf, @1*__r p1, int oidhead, ssize_t n, @1*__r res, oid*__r pos, @
 @:posjoin(dbl)@
 
 int
-posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
+M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 {
 	ssize_t n, c_cnt = BATcount(c), v_cnt = BATcount(v);
 	size_t prev_bits = ~(size_t) 0;
@@ -3870,6 +4167,108 @@ posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	BATseqbase(bn, c->hseqbase);
 	bn->tsorted = 0;
 	return GDK_SUCCEED;
+}
+
+int
+M4_RDX_posjoin_clustered_v(BAT **r, BAT *c, BAT *v, int *rb, int *st)
+{
+	int vs = 512;
+	return M4_RDX_posjoin_clustered(r, c, v, rb, st, &vs);
+}
+
+int
+M4_RDX_posjoin_clustered_sv(BAT **r, BAT *c, BAT *v, int *rb)
+{
+	int st = 128;
+	int vs = 512;
+	return M4_RDX_posjoin_clustered(r, c, v, rb, &st, &vs);
+}
+
+
+static int 
+log_2(int i)
+{
+	int n = 0;
+	while (i > 1)	{
+		i >>= 1;
+		n += 1;
+	}
+	return n;
+}
+
+int
+M4_RDX_cache_join(BAT **ret, BAT *left, BAT *right, int *_cache_size, int *_cache_line_size)
+{
+	int cache_size = *_cache_size, cache_line_size = *_cache_line_size, cache_lines;
+	size_t right_batsize = BATcount(right) * BUNsize(right);
+	size_t estimate = MIN(BATcount(left), BATcount(right));
+
+	if (cache_size < 1) {
+		GDKerror("cache_join: cache_size must be > 0");
+		return GDK_FAIL;
+	}
+	if (cache_line_size < 1) {
+		GDKerror("cache_join: cache_line_size must be > 0");
+		return GDK_FAIL;
+	}
+	
+	cache_lines = cache_size / cache_line_size;
+
+	if (!(BATtordered(left)&1) && right_batsize > (size_t)cache_size) {
+		int multiplier = 8;
+		int nbits = 1 + log_2(right_batsize / cache_size);
+		int nignore = MAX(0, (1 + log_2(BATcount(right))) - nbits);
+		int npasses = 1 + (nbits + 1) / log_2(cache_lines);
+
+		BAT *cluster=NULL, *borders=NULL, *cluster_values=NULL, *cluster_ids=NULL;
+		if (M4_RDX_radix_cluster2(&cluster, left, &npasses, &nbits, &nignore) != GDK_SUCCEED) {
+			GDKerror("cache_join: radix_cluster2() failed");
+@= cache_join_end
+			if (cluster)		BBPreclaim(cluster);
+			if (borders)		BBPreclaim(borders);
+			if (cluster_values)	BBPreclaim(cluster_values);
+			if (cluster_ids)	BBPreclaim(cluster_ids);
+			return @1;
+@c
+			@:cache_join_end(GDK_FAIL)@
+		}
+		if (M4_RDX_radix_count(&borders, cluster, &nignore, &nbits) != GDK_SUCCEED) {
+			GDKerror("cache_join: radix_count() failed");
+			@:cache_join_end(GDK_FAIL)@
+		}
+		if ((cluster_values = BATmirror(BATmark(BATmirror(cluster),(oid)0))) == NULL) {
+			GDKerror("cache_join: BATmirror(BATmark(BATmirror())) failed");
+			@:cache_join_end(GDK_FAIL)@
+		}
+		if ((cluster_ids = BATmirror(BATmark(cluster,(oid)0))) == NULL) {
+			GDKerror("cache_join: BATmirror(BATmark()) failed");
+			@:cache_join_end(GDK_FAIL)@
+		}
+		BBPreclaim(cluster); cluster=NULL;
+		if ((cluster = BATjoin(cluster_values, right, estimate)) == NULL) {
+			GDKerror("cache_join: BATjoin() failed");
+			@:cache_join_end(GDK_FAIL)@
+		}
+		BBPreclaim(cluster_values); cluster_values=NULL;
+		if (M4_RDX_radix_decluster2(ret, cluster_ids, cluster, borders, &multiplier) != GDK_SUCCEED) {
+			GDKerror("cache_join: radix_decluster2() failed");
+			@:cache_join_end(GDK_FAIL)@
+		}
+		@:cache_join_end(GDK_SUCCEED)@
+	}
+	if ((*ret = BATjoin(left, right, estimate)) == NULL) {
+		GDKerror("cache_join: BATjoin() failed");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+M4_RDX_cache_join_256k_32(BAT **ret, BAT *left, BAT *right)
+{
+	int cache_size = 256*1024;
+	int cache_line_size = 32;
+	return M4_RDX_cache_join(ret, left, right, &cache_size, &cache_line_size);
 }
 
 @}
