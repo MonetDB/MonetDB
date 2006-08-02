@@ -2892,7 +2892,7 @@ BKCload(int *res, str *input)
 
 	*res = bid;
 	if (bid) {
-		BBPkeepref(bid);
+		BBPincref(bid,TRUE);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("bat.unload", " file name missing");
