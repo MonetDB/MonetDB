@@ -30,16 +30,16 @@ SUBDIRS =
 INCLUDES = ../../include $(MONETDB_INCS)
 
 lib_prop = {
-	NOINST
-	DIR = libdir
-	SOURCES = \
-		prop_card.c \
-		prop_const.c \
-		prop_dom.c \
-		prop_icol.c \
-		prop_key.c \
-		prop_ocol.c \
-		prop_reqval.c \
-		prop_ori_names.c \
-		prop_unq_names.c
+        NOINST
+        DIR = libdir
+        SOURCES = \
+                prop_card.c \
+                prop_const.c \
+                prop_dom.c \
+                prop_icol.c \
+                prop_key.c \
+                prop_ocol.c \
+                prop_reqval.c \
+                prop_ori_names.c \
+                prop_unq_names.c
 }

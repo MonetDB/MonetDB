@@ -51,7 +51,7 @@
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
 #define LL(p) (L(L(p)))
-#define LLL(p) (L(LL(p)))
+#define LLL(p) (LL(L(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -111,8 +111,7 @@ opt_complex (PFla_op_t *p)
                     proj[i] = PFalg_proj (p->schema.items[i].name,
                                           p->sem.attach.attname);
                                           
-                res = PFla_project_ (res, p->schema.count, proj);
-                *p = *res;
+                *p = *PFla_project_ (res, p->schema.count, proj);
             }
             /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
@@ -120,7 +119,8 @@ opt_complex (PFla_op_t *p)
                 LL(p)->kind == la_scjoin &&
                 p->sem.attach.attname == LL(p)->sem.scjoin.iter &&
                 L(p)->sem.proj.items[0].new == LL(p)->sem.scjoin.item_res) {
-                *p = *(LL(p));
+                *p = *LL(p);
+                p->prop = PFprop ();
                 break;
             }
             if (L(p)->kind == la_project &&
@@ -129,7 +129,8 @@ opt_complex (PFla_op_t *p)
                 LLL(p)->kind == la_doc_tbl &&
                 p->sem.attach.attname == LLL(p)->sem.doc_tbl.iter &&
                 L(p)->sem.proj.items[0].new == LLL(p)->sem.doc_tbl.item_res) {
-                *p = *(LL(p));
+                *p = *LL(p);
+                p->prop = PFprop ();
                 break;
             }
 
@@ -143,94 +144,98 @@ opt_complex (PFla_op_t *p)
              * are not required (icol property) we can skip the join
              * completely.
              */
-            if (PFprop_key (p->prop, p->sem.eqjoin.att1) &&
-                PFprop_key (p->prop, p->sem.eqjoin.att2)) {
-                /* we can use the schema information of the children
-                   as no rewrite adds more columns to that subtree. */
-                bool left_arg_req = false;
-                bool right_arg_req = false;
+        {
+            /* we can use the schema information of the children
+               as no rewrite adds more columns to that subtree. */
+            bool left_arg_req = false;
+            bool right_arg_req = false;
 
-                /* discard join attributes as one of them always remains */
-                for (unsigned int i = 0; i < L(p)->schema.count; i++) {
-                    left_arg_req = left_arg_req ||
-                                   (L(p)->schema.items[i].name !=
-                                    p->sem.eqjoin.att1 &&
-                                    PFprop_icol (
-                                       p->prop, 
-                                       L(p)->schema.items[i].name));
-                }
-                if (PFprop_subdom (p->prop, 
-                                   PFprop_dom_right (p->prop,
-                                                     p->sem.eqjoin.att2),
-                                   PFprop_dom_left (p->prop,
-                                                    p->sem.eqjoin.att1)) &&
-                    !left_arg_req) {
-                    /* Every column of the left argument will point
-                       to the join argument of the right argument to
-                       avoid missing references. (Columns that are not
-                       required may be still referenced by the following
-                       operators.) */
-                    PFla_op_t *ret;
-                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
-                                                   sizeof (PFalg_proj_t));
-                    unsigned int count = 0;
-
-                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                        proj[count++] = PFalg_proj (
-                                            L(p)->schema.items[i].name,
-                                            p->sem.eqjoin.att2);
-
-                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
-                        proj[count++] = PFalg_proj (
-                                            R(p)->schema.items[i].name,
-                                            R(p)->schema.items[i].name);
-
-                    ret = PFla_project_ (R(p), count, proj);
-                    *p = *ret;
-                    break;
-                }
-                
-                /* discard join attributes as one of them always remains */
-                for (unsigned int i = 0; i < R(p)->schema.count; i++) {
-                    right_arg_req = right_arg_req ||
-                                    (R(p)->schema.items[i].name !=
-                                     p->sem.eqjoin.att2 &&
-                                     PFprop_icol (
-                                         p->prop, 
-                                         R(p)->schema.items[i].name));
-                }
-                if (PFprop_subdom (p->prop, 
-                                   PFprop_dom_left (p->prop,
-                                                    p->sem.eqjoin.att1),
-                                   PFprop_dom_right (p->prop,
-                                                     p->sem.eqjoin.att2)) &&
-                    !right_arg_req) {
-                    /* Every column of the right argument will point
-                       to the join argument of the left argument to
-                       avoid missing references. (Columns that are not
-                       required may be still referenced by the following
-                       operators.) */
-                    PFla_op_t *ret;
-                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
-                                                   sizeof (PFalg_proj_t));
-                    unsigned int count = 0;
-
-                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                        proj[count++] = PFalg_proj (
-                                            L(p)->schema.items[i].name,
-                                            L(p)->schema.items[i].name);
-
-                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
-                        proj[count++] = PFalg_proj (
-                                            R(p)->schema.items[i].name,
-                                            p->sem.eqjoin.att1);
-
-                    ret = PFla_project_ (L(p), count, proj);
-                    *p = *ret;
-                    break;
-                }
+            /* discard join attributes as one of them always remains */
+            for (unsigned int i = 0; i < L(p)->schema.count; i++) {
+                left_arg_req = left_arg_req ||
+                               (PFprop_unq_name (
+                                    L(p)->prop, 
+                                    L(p)->schema.items[i].name) !=
+                                PFprop_unq_name (
+                                    p->prop, 
+                                    p->sem.eqjoin.att1) &&
+                                PFprop_icol (
+                                   p->prop, 
+                                   L(p)->schema.items[i].name));
             }
-            break;
+            if (PFprop_key_left (p->prop, p->sem.eqjoin.att1) &&
+                PFprop_subdom (p->prop, 
+                               PFprop_dom_right (p->prop,
+                                                 p->sem.eqjoin.att2),
+                               PFprop_dom_left (p->prop,
+                                                p->sem.eqjoin.att1)) &&
+                !left_arg_req) {
+                /* Every column of the left argument will point
+                   to the join argument of the right argument to
+                   avoid missing references. (Columns that are not
+                   required may be still referenced by the following
+                   operators.) */
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+                unsigned int count = 0;
+
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        L(p)->schema.items[i].name,
+                                        p->sem.eqjoin.att2);
+
+                for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        R(p)->schema.items[i].name,
+                                        R(p)->schema.items[i].name);
+
+                *p = *PFla_project_ (R(p), count, proj);
+                break;
+            }
+            
+            /* discard join attributes as one of them always remains */
+            for (unsigned int i = 0; i < R(p)->schema.count; i++) {
+                right_arg_req = right_arg_req ||
+                                (PFprop_unq_name (
+                                     R(p)->prop,
+                                     R(p)->schema.items[i].name) !=
+                                 PFprop_unq_name (
+                                     p->prop,
+                                     p->sem.eqjoin.att2) &&
+                                 PFprop_icol (
+                                     p->prop, 
+                                     R(p)->schema.items[i].name));
+            }
+            if (PFprop_key_right (p->prop, p->sem.eqjoin.att2) &&
+                PFprop_subdom (p->prop, 
+                               PFprop_dom_left (p->prop,
+                                                p->sem.eqjoin.att1),
+                               PFprop_dom_right (p->prop,
+                                                 p->sem.eqjoin.att2)) &&
+                !right_arg_req) {
+                /* Every column of the right argument will point
+                   to the join argument of the left argument to
+                   avoid missing references. (Columns that are not
+                   required may be still referenced by the following
+                   operators.) */
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+                unsigned int count = 0;
+
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        L(p)->schema.items[i].name,
+                                        L(p)->schema.items[i].name);
+
+                for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                    proj[count++] = PFalg_proj (
+                                        R(p)->schema.items[i].name,
+                                        p->sem.eqjoin.att1);
+
+                *p = *PFla_project_ (L(p), count, proj);
+                break;
+            }
+        }   break;
 
         case la_cross:
             /* PFprop_icols_count () == 0 is also true 
@@ -240,16 +245,152 @@ opt_complex (PFla_op_t *p)
                properties are available. */
             if (PFprop_card (L(p)->prop) == 1 &&
                 PFprop_icols_count (L(p)->prop) == 0) {
-                *p = *(R(p));
+                *p = *R(p);
+                p->prop = PFprop ();
                 break;
             }
             if (PFprop_card (R(p)->prop) == 1 &&
                 PFprop_icols_count (R(p)->prop) == 0) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
             
+        case la_rownum:
+            /* match the pattern rownum - (project -) rownum and
+               try to merge both row number operators if the nested
+               one only prepares some columns for the outer rownum.
+                 As most operators are separated by a projection
+               we also support projections that do not rename. */
+        {
+            PFla_op_t *rownum;
+            bool proj = false, renamed = false;
+            unsigned int i;
+            
+            /* check for a projection */
+            if (L(p)->kind == la_project) {
+                proj = true;
+                for (i = 0; i < L(p)->sem.proj.count; i++)
+                    renamed = renamed || (L(p)->sem.proj.items[i].new !=
+                                          L(p)->sem.proj.items[i].old);
+                rownum = LL(p);
+            }
+            else
+                rownum = L(p);
+            
+            /* don't handle patterns with renaming projections */
+            if (renamed) break;
+
+            /* check the remaining part of the pattern (nested rownum)
+               and ensure that the column generated by the nested
+               row number operator is not used above the outer rownum. */
+            if (rownum->kind == la_rownum &&
+                !PFprop_icol (p->prop, rownum->sem.rownum.attname)) {
+                
+                PFalg_attlist_t sortby;
+                PFalg_proj_t *proj_list;
+                PFalg_att_t inner_att = rownum->sem.rownum.attname;
+                PFalg_att_t inner_part = rownum->sem.rownum.part;
+                unsigned int pos_part = 0, pos_att = 0, count = 0;
+
+                /* if the inner rownum has a partitioning column
+                   this column has to occur in the outer rownum as
+                   partitioning attribute or as a sort criterion
+                   preceding the new column generated by the nested
+                   rownum. */
+                if (inner_part) {
+                    /* get the position of the inner partition attribute
+                       in the sort criteria of the outer rownum */
+                    for (i = 0; i < p->sem.rownum.sortby.count; i++)
+                        if (p->sem.rownum.sortby.atts[i] == inner_part) {
+                            pos_part = i;
+                            break;
+                        }
+                    /* don't handle patterns where the inner partition
+                       column does not occur in the outer rownum */
+                    if (i == p->sem.rownum.sortby.count)
+                        if (!p->sem.rownum.part ||
+                            p->sem.rownum.part != inner_part)
+                            break;
+                }
+                
+                /* lookup position of the inner rownum column in
+                   the list of sort criteria of the outer rownum */
+                for (i = 0; i < p->sem.rownum.sortby.count; i++)
+                    if (p->sem.rownum.sortby.atts[i] == inner_att) {
+                        pos_att = i;
+                        break;
+                    }
+                    
+                /* inner rownum column is not used in the outer rownum
+                   (thus the inner rownum is probably superfluous
+                    -- let the icols optimization remove the operator)
+                   or the inner partition column does not occur as
+                   sort criterion before the inner rownum column */
+                if (i == p->sem.rownum.sortby.count ||
+                    pos_part > pos_att)
+                    break;
+                
+                sortby.count = p->sem.rownum.sortby.count + 
+                               rownum->sem.rownum.sortby.count - 1;
+                sortby.atts = PFmalloc (sortby.count *
+                                        sizeof (PFalg_attlist_t));
+
+                /* create new sort list where the sort criteria of the
+                   inner rownum substitute the inner rownum column */
+                for (i = 0; i < pos_att; i++)
+                    sortby.atts[count++] = p->sem.rownum.sortby.atts[i];
+                    
+                for (i = 0; i < rownum->sem.rownum.sortby.count; i++)
+                    sortby.atts[count++] = rownum->sem.rownum.sortby.atts[i];
+
+                for (i = pos_att + 1; i < p->sem.rownum.sortby.count; i++)
+                    sortby.atts[count++] = p->sem.rownum.sortby.atts[i];
+
+                assert (count == sortby.count);
+                    
+                if (proj) {
+                    /* Introduce the projection above the new rownum
+                       operator to maintain the correct result schema.
+                       As the result column name of the old outer rownum
+                       may collide with the attribute name of one of the
+                       inner rownums sort criteria, we use the column name
+                       of the inner rownum as resulting attribute name
+                       and adjust the name in the new projection. */
+                       
+                    count = 0;
+
+                    /* create projection list */
+                    proj_list = PFmalloc (p->schema.count *
+                                          sizeof (*(proj_list)));
+                                          
+                    /* adjust column name of the rownum operator */
+                    proj_list[count++] = PFalg_proj (
+                                             p->sem.rownum.attname,
+                                             rownum->sem.rownum.attname);
+                                             
+                    for (i = 0; i < p->schema.count; i++)
+                        if (p->schema.items[i].name != 
+                            p->sem.rownum.attname)
+                            proj_list[count++] = PFalg_proj (
+                                                     p->schema.items[i].name,
+                                                     p->schema.items[i].name);
+                                                   
+                    *p = *PFla_project_ (PFla_rownum (L(rownum),
+                                                      rownum->sem.rownum.attname,
+                                                      sortby,
+                                                      p->sem.rownum.part),
+                                         count, proj_list);
+                }
+                else
+                    *p = *PFla_rownum (rownum,
+                                       p->sem.rownum.attname,
+                                       sortby,
+                                       p->sem.rownum.part);
+            }
+        }   break;
+
         default:
             break;
     }
@@ -261,16 +402,20 @@ opt_complex (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_complex (PFla_op_t *root)
 {
-    /* Infer key, icols, and domain properties first */
+    /* Infer key, icols, domain, and unique names
+       properties first */
     PFprop_infer_key (root);
     PFprop_infer_icol (root);
+    /* key property inference already requires 
+       the domain property inference. Thus we can
+       skip it:
     PFprop_infer_dom (root);
+    */
+    PFprop_infer_unq_names (root);
 
     /* Optimize algebra tree */
     opt_complex (root);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     /* In addition optimize the resulting DAG using the icols property 
        to remove inconsistencies introduced by changing the types 

@@ -752,6 +752,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
             bulk_add_dom (n->prop, L(n));
             break;
 
+        case la_proxy:
+        case la_proxy_base:
+            bulk_add_dom (n->prop, L(n));
+            break;
+
         case la_string_join:
             /* retain domain for attribute iter */
             add_dom (n->prop, 
@@ -790,10 +795,23 @@ prop_infer (PFla_op_t *n, PFarray_t *subdoms, PFarray_t *disjdoms,
     n->prop->subdoms   = subdoms;
     n->prop->disjdoms  = disjdoms;
 
-    /* reset the domain information */
-    n->prop->domains   = PFarray (sizeof (dom_pair_t));
-    n->prop->l_domains = PFarray (sizeof (dom_pair_t));
-    n->prop->r_domains = PFarray (sizeof (dom_pair_t));
+    /* reset the domain information 
+       (reuse already existing lists if already available
+        as this increases the performance of the compiler a lot) */
+    if (n->prop->domains)
+        PFarray_last (n->prop->domains) = 0;
+    else
+        n->prop->domains   = PFarray (sizeof (dom_pair_t));
+
+    if (n->prop->l_domains)
+        PFarray_last (n->prop->l_domains) = 0;
+    else
+        n->prop->l_domains = PFarray (sizeof (dom_pair_t));
+
+    if (n->prop->r_domains)
+        PFarray_last (n->prop->r_domains) = 0;
+    else
+        n->prop->r_domains = PFarray (sizeof (dom_pair_t));
     
     /* copy all children domains */
     copy_child_domains (n);

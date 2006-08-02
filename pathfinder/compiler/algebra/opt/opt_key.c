@@ -74,7 +74,8 @@ opt_key (PFla_op_t *p)
         case la_distinct:
             for (unsigned int i = 0; i < p->schema.count; i++)
                 if (PFprop_key_left (p->prop, p->schema.items[i].name)) {
-                    *p = *(L(p));
+                    *p = *L(p);
+                    p->prop = PFprop ();
                     break;
                 }
             break;
@@ -88,14 +89,12 @@ opt_key (PFla_op_t *p)
             /* if part is key we already have our aggregate */
             if (p->sem.aggr.part &&
                 PFprop_key_left (p->prop, p->sem.aggr.part)) {
-                PFla_op_t *ret;
-                ret = PFla_project (
+                *p = *PFla_project (
                           L(p), 
                           PFalg_proj (p->sem.aggr.res,
                                       p->sem.aggr.att),
                           PFalg_proj (p->sem.aggr.part,
                                       p->sem.aggr.part));
-                *p = *ret;
                 SEEN(p) = true;                   
             }
             break;
@@ -104,15 +103,13 @@ opt_key (PFla_op_t *p)
             /* if part is key we already have our aggregate */
             if (p->sem.aggr.part &&
                 PFprop_key_left (p->prop, p->sem.aggr.part)) {
-                PFla_op_t *ret;
-                ret = PFla_attach (
+                *p = *PFla_attach (
                           PFla_project (
                               L(p),
                               PFalg_proj (p->sem.aggr.part,
                                           p->sem.aggr.part)),
                           p->sem.aggr.res,
                           PFalg_lit_int (1));
-                *p = *ret;
                 SEEN(p) = true;                   
             }
             break;
@@ -120,11 +117,10 @@ opt_key (PFla_op_t *p)
         case la_rownum:
             if (PFprop_key_left (p->prop, p->sem.rownum.part)) {
                 /* replace rownum by attach if part is key */
-                PFla_op_t *ret = PFla_attach (
-                                     L(p),
-                                     p->sem.rownum.attname,
-                                     PFalg_lit_nat (1));
-                *p = *ret;
+                *p = *PFla_attach (
+                          L(p),
+                          p->sem.rownum.attname,
+                          PFalg_lit_nat (1));
                 SEEN(p) = true;                   
             } else {
                 /* discard all sort criterions after a key attribute */
@@ -146,13 +142,20 @@ opt_key (PFla_op_t *p)
         case la_number:
             if (PFprop_key_left (p->prop, p->sem.number.part)) {
                 /* replace number by attach if part is key */
-                PFla_op_t *ret = PFla_attach (
-                                     L(p),
-                                     p->sem.number.attname,
-                                     PFalg_lit_nat (1));
-                *p = *ret;
+                *p = *PFla_attach (
+                          L(p),
+                          p->sem.number.attname,
+                          PFalg_lit_nat (1));
                 SEEN(p) = true;                   
-            } else if (!p->sem.number.part)
+            } else if (p->sem.number.part)
+                break;
+
+            /* FIXME: We discard the following optimization as it
+               replaces number operators by rownum operators. These
+               are more difficult to cope with in the proxy generation
+               phase. */
+            break;
+
             /* if there already exists a key column with the
                same type we can replace the number operator
                by a projection. */
@@ -160,7 +163,6 @@ opt_key (PFla_op_t *p)
                 if (PFprop_key_left (p->prop, p->schema.items[i].name) &&
                     p->sem.number.attname != p->schema.items[i].name &&
                     p->schema.items[i].type == aat_nat) {
-                    PFla_op_t *ret;
                     PFalg_proj_t *proj = PFmalloc (
                                              p->schema.count
                                              * sizeof (PFalg_proj_t));
@@ -173,8 +175,7 @@ opt_key (PFla_op_t *p)
                             proj[j] = PFalg_proj (p->schema.items[j].name,
                                                   p->schema.items[j].name);
                                                   
-                    ret = PFla_project_ (L(p), p->schema.count, proj);
-                    *p = *ret;
+                    *p = *PFla_project_ (L(p), p->schema.count, proj);
                     SEEN(p) = true;
                     break;
                 }
@@ -197,8 +198,6 @@ PFalgopt_key (PFla_op_t *root)
     /* Optimize algebra tree */
     opt_key (root);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

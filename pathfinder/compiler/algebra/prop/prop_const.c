@@ -216,97 +216,12 @@ PFprop_mark_const (PFprop_t *prop, PFalg_att_t attr, PFalg_atom_t value)
         = (const_t) { .attr = attr, .value = value };
 }
 
-/* copy the constant columns of the childs of node @a n
-   into its property container */
 static void
-copy_child_constants (PFla_op_t *n)
+copy (PFarray_t *base, PFarray_t *content)
 {
-    switch (n->kind) {
-        /* do not copy constant property
-           of the children as we either have
-           base relations or fragments */
-        case la_lit_tbl:
-        case la_empty_tbl:
-        case la_fragment:
-        case la_frag_union:
-        case la_empty_frag:
-            break;
-
-        /* copy constant properties of
-           both children */
-        case la_cross:
-        case la_eqjoin:
-        case la_eqjoin_unq:
-        case la_disjunion:
-        case la_intersect:
-        case la_difference:
-        case la_element_tag:
-        case la_cond_err:
-        case la_string_join:
-            assert(L(n));
-            assert(R(n));
-            n->prop->l_constants = PFarray_copy (L(n)->prop->constants);
-            n->prop->r_constants = PFarray_copy (R(n)->prop->constants);
-            break;
-
-        /* copy constant properties of
-           left child */
-        case la_attach:
-        case la_project:
-        case la_select:
-        case la_distinct:
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
-        case la_num_eq:
-        case la_num_gt:
-        case la_num_neg:
-        case la_bool_and:
-        case la_bool_or:
-        case la_bool_not:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_count:
-        case la_rownum:
-        case la_number:
-        case la_type:
-        case la_type_assert:
-        case la_cast:
-        case la_seqty1:
-        case la_all:
-        case la_doc_tbl:
-        case la_attribute:
-        case la_textnode:
-        case la_docnode:
-        case la_comment:
-        case la_processi:
-        case la_roots:
-        case la_concat:
-        case la_contains:
-            assert(L(n));
-            n->prop->l_constants = PFarray_copy (L(n)->prop->constants);
-            break;
-
-        /* copy constant properties of
-           right child */
-        case la_serialize:
-        case la_scjoin:
-        case la_doc_access:
-        case la_element:
-        case la_merge_adjacent:
-            assert(R(n));
-            n->prop->r_constants = PFarray_copy (R(n)->prop->constants);
-            break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
-    }
+    for (unsigned int i = 0; i < PFarray_last (content); i++)
+        *(const_t *) PFarray_add (base) = 
+            *(const_t *) PFarray_at (content, i);
 }
 
 /**
@@ -316,7 +231,8 @@ static void
 infer_const (PFla_op_t *n)
 {
     /* first get the properties of the children */
-    copy_child_constants (n);
+    if (L(n)) copy (n->prop->l_constants, L(n)->prop->constants);
+    if (R(n)) copy (n->prop->r_constants, R(n)->prop->constants);
 
     /*
      * Several operates (at least) propagate constant columns
@@ -648,6 +564,11 @@ infer_const (PFla_op_t *n)
                         PFprop_const_val (RL(n)->prop, n->sem.elem.iter_qn));
             break;
 
+        case la_proxy:
+        case la_proxy_base:
+            copy (n->prop->constants, L(n)->prop->constants);
+            break;
+
         case la_string_join:
             if (PFprop_const (L(n)->prop, n->sem.string_join.iter))
                 PFprop_mark_const (
@@ -714,10 +635,23 @@ prop_infer (PFla_op_t *n)
 
     n->bit_dag = true;
 
-    /* create new constant property */
-    n->prop->constants = PFarray (sizeof (const_t));
-    n->prop->l_constants = NULL;
-    n->prop->r_constants = NULL;
+    /* reset constant property
+       (reuse already existing lists if already available
+        as this increases the performance of the compiler a lot) */
+    if (n->prop->constants)
+        PFarray_last (n->prop->constants) = 0;
+    else
+        n->prop->constants   = PFarray (sizeof (const_t));
+
+    if (n->prop->l_constants)
+        PFarray_last (n->prop->l_constants) = 0;
+    else
+        n->prop->l_constants = PFarray (sizeof (const_t));
+
+    if (n->prop->r_constants)
+        PFarray_last (n->prop->r_constants) = 0;
+    else
+        n->prop->r_constants = PFarray (sizeof (const_t));
 
     /* infer information on constant columns */
     infer_const (n);

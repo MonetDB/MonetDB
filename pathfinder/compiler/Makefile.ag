@@ -25,40 +25,41 @@ EXTRA_DIST_DIR = Tests
 INCLUDES = include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
 lib_compiler1 = {
-	NOINST
-	DIR = libdir
-	SOURCES = \
-	     compile.c
+        NOINST
+        DIR = libdir
+        SOURCES = \
+             compile.c
 }
 lib_compiler2 = {
-	NOINST
-	DIR = libdir
-	SOURCES = \
-	     env.c \
-	     oops.c \
-	     pfstrings.c \
-	     qname.c \
-	     scope.c \
-	     timer.c \
-	     variable.c
+        NOINST
+        DIR = libdir
+        SOURCES = \
+             env.c \
+             oops.c \
+             pfstrings.c \
+             qname.c \
+             scope.c \
+             timer.c \
+             variable.c
 }
 bin_pf = {
-	LIBS = \
-		libcompiler1 \
-		schema/libschema \
-		debug/libdebug \
-		parser/libparser \
-		semantics/libsemantics \
-		core/libcore \
-		algebra/libalgebra \
-		algebra/opt/libopt \
-		algebra/prop/libprop \
-		mil/libmil \
-		libcompiler2 \
-		mem/libmem \
-		$(LIBXML2_LDADD) $(LIBXML2_LIBS) \
-		$(SOCKET_LIBS) $(DL_LIBS)
-		
-	SOURCES = \
-	     main.c
+        LIBS = \
+                libcompiler1 \
+                schema/libschema \
+                debug/libdebug \
+                parser/libparser \
+                semantics/libsemantics \
+                core/libcore \
+                algebra/libalgebra \
+                algebra/map/libmap \
+                algebra/opt/libopt \
+                algebra/prop/libprop \
+                mil/libmil \
+                libcompiler2 \
+                mem/libmem \
+                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
+                $(SOCKET_LIBS) $(DL_LIBS)
+                
+        SOURCES = \
+             main.c
 }

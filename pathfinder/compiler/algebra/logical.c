@@ -107,6 +107,9 @@ la_op_leaf (PFla_op_kind_t kind)
     /* bits required to allow DAG traversals */
     ret->bit_reset     = 0;
     ret->bit_dag       = 0;
+    /* bits required to look up proxy nodes */
+    ret->bit_in        = 0;
+    ret->bit_out       = 0;
 
     return ret;
 }
@@ -2363,6 +2366,86 @@ PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
     
+    return ret;
+}
+
+
+/**
+ * Constructor for a proxy operator with a single child
+ */
+PFla_op_t *PFla_proxy (const PFla_op_t *n, unsigned int kind,
+                       PFla_op_t *ref, PFla_op_t *base,
+                       PFalg_attlist_t new_cols, PFalg_attlist_t req_cols)
+{
+    return PFla_proxy2 (n, kind, ref, base, NULL, new_cols, req_cols);
+}
+
+
+/**
+ * Constructor for a proxy operator with a two children
+ */
+PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
+                       PFla_op_t *ref, PFla_op_t *base1, PFla_op_t *base2,
+                       PFalg_attlist_t new_cols, PFalg_attlist_t req_cols)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
+
+    assert (n);
+    assert (ref);
+    assert (base1);
+
+    /* create new proxy node */
+    ret = la_op_wire1 (la_proxy, n);
+
+    /*
+     * insert semantic value (kind, ref and base operator, new columns
+     * and required columns into the result
+     */
+    ret->sem.proxy.kind     = kind;
+    ret->sem.proxy.ref      = ref;
+    ret->sem.proxy.base1    = base1;
+    ret->sem.proxy.base2    = base2;
+    ret->sem.proxy.new_cols = (PFalg_attlist_t) {
+        .count = new_cols.count,
+        .atts = memcpy (PFmalloc (new_cols.count * sizeof (PFalg_att_t)), 
+                        new_cols.atts,
+                        new_cols.count * sizeof (PFalg_att_t)) };
+    ret->sem.proxy.req_cols = (PFalg_attlist_t) {
+        .count = req_cols.count,
+        .atts = memcpy (PFmalloc (req_cols.count * sizeof (PFalg_att_t)), 
+                        req_cols.atts,
+                        req_cols.count * sizeof (PFalg_att_t)) };
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = n->schema.count;
+
+    ret->schema.items
+        = PFmalloc (n->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for a proxy base operator
+ */
+PFla_op_t *PFla_proxy_base (const PFla_op_t *n)
+{
+    PFla_op_t *ret = la_op_wire1 (la_proxy_base, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
     return ret;
 }
 

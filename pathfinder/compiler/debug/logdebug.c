@@ -100,6 +100,8 @@ static char *a_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
+    , [la_proxy]            = "PROXY"
+    , [la_proxy_base]       = "PROXY_BASE"
     , [la_concat]           = "fn:concat"
     , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
@@ -158,6 +160,8 @@ static char *xml_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
+    , [la_proxy]            = "PROXY"
+    , [la_proxy_base]       = "PROXY_BASE"
     , [la_concat]           = "fn:concat"
     , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
@@ -243,6 +247,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_frag_union]     = "\"#E0E0E0\""
         , [la_empty_frag]     = "\"#E0E0E0\""
         , [la_cond_err]       = "\"#C0C0C0\""
+        , [la_proxy]          = "\"#DFFFFF\""
+        , [la_proxy_base]     = "\"#DFFFFF\""
         , [la_concat]         = "\"#C0C0C0\""
         , [la_contains]       = "\"#C0C0C0\""
         , [la_string_join]    = "\"#C0C0C0\""
@@ -634,6 +640,28 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFstrndup (n->sem.err.str, 16));
             break;
 
+        case la_proxy:
+            PFarray_printf (dot, "%s %i (", a_id[n->kind], n->sem.proxy.kind);
+
+            if (n->sem.proxy.new_cols.count)
+                PFarray_printf (dot, "%s", 
+                                PFatt_str (n->sem.proxy.new_cols.atts[0]));
+
+            for (c = 1; c < n->sem.proxy.new_cols.count; c++)
+                PFarray_printf (dot, ", %s", 
+                                PFatt_str (n->sem.proxy.new_cols.atts[c]));
+
+            if (n->sem.proxy.req_cols.count)
+                PFarray_printf (dot, ")\\n(req cols: %s", 
+                                PFatt_str (n->sem.proxy.req_cols.atts[0]));
+
+            for (c = 1; c < n->sem.proxy.req_cols.count; c++)
+                PFarray_printf (dot, ", %s", 
+                                PFatt_str (n->sem.proxy.req_cols.atts[c]));
+
+            PFarray_printf (dot, ")");
+            break;
+
         case la_serialize:
         case la_cross:
         case la_disjunion:
@@ -650,6 +678,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        case la_proxy_base:
         case la_string_join:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
@@ -806,11 +835,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         if (n->child[c]->node_id == 0)
             n->child[c]->node_id =  node_id++;
 
-        /* FIXME: the next line is only used to make
-           the printed graph more readable. */
-        if (n->child[c]->kind == la_frag_union ||
-            n->child[c]->kind == la_empty_frag) continue;
-
         PFarray_printf (dot, "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
     }
@@ -819,14 +843,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     n->bit_dag = true;
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
-        /* FIXME: the next line is only used to make
-           the printed graph more readable. */
-        if (n->child[c]->kind == la_frag_union ||
-            n->child[c]->kind == la_empty_frag) continue;
-
         if (!n->child[c]->bit_dag)
             node_id = la_dot (dot, n->child[c], node_id);
     }
+
     return node_id;
 }
 
@@ -1424,9 +1444,24 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                         "unknown XPath axis in dot output");
             }
 
-            PFarray_printf (xml, "\" type=\"%s\"/>\n    </content>\n",
-                            PFty_str (n->sem.scjoin.ty));
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
 
+        case la_doc_tbl:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.doc_tbl.iter),
+                            PFatt_str (n->sem.doc_tbl.item));
             break;
 
         case la_doc_access:
@@ -1469,6 +1504,18 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "    </content>\n");
             break;
 
+        case la_element:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"pos\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.elem.iter_val),
+                            PFatt_str (n->sem.elem.pos_val),
+                            PFatt_str (n->sem.elem.item_val));
+            break;
+        
         case la_attribute:
             PFarray_printf (xml,
                             "    <content>\n"
@@ -1476,11 +1523,13 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             "        <annotation>result of the attribute "
                                     "construction</annotation>\n"
                             "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
+                            "      <column name=\"%s\" function=\"qname item\""
+                                    " new=\"false\">\n"
                             "        <annotation>qname argument"
                                     "</annotation>\n"
                             "      </column>\n"
-                            "      <column name=\"%s\" new=\"false\">\n"
+                            "      <column name=\"%s\" function=\"content item"
+                                    "\" new=\"false\">\n"
                             "        <annotation>value argument"
                                     "</annotation>\n"
                             "      </column>\n"
@@ -1506,6 +1555,18 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.textnode.item));
             break;
 
+        case la_merge_adjacent:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"pos\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.merge_adjacent.iter_res),
+                            PFatt_str (n->sem.merge_adjacent.pos_res),
+                            PFatt_str (n->sem.merge_adjacent.item_res));
+            break;
+        
         case la_cond_err:
             PFarray_printf (xml,
                             "    <content>\n"
@@ -1519,6 +1580,18 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                             PFstrdup (n->sem.err.str));
             break;
 
+        case la_string_join:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"pos\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.string_join.iter),
+                            PFatt_str (n->sem.string_join.pos),
+                            PFatt_str (n->sem.string_join.item));
+            break;
+        
         default:
             break;
     }

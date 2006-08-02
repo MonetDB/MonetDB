@@ -170,15 +170,19 @@ Rel:    sum (Rel)                                 =  44 (10);
 Rel:    count (Rel)                               =  45 (10);
 Rel:    rownum (Rel)                              =  50 (10);
 Rel:    number (Rel)                              =  51 (10);
-Rel:    type (Rel)                                =  53 (10);
-Rel:    type_assert (Rel)                         =  54 (10);
-Rel:    cast (Rel)                                =  55 (10);
-Rel:    seqty1 (Rel)                              =  56 (10);
-Rel:    all (Rel)                                 =  57 (10);
-Rel:    scjoin (Frag, Rel)                        =  60 (10);
-Rel:    scjoin (Frag, distinct (Rel))             =  61 (10);
-Rel:    scjoin (Frag, scjoin (Frag, Rel))         =  62 (10);
-Rel:    doc_access (Frag, Rel)                    =  63 (10);
+Rel:    number (number (Rel))                     =  52 (10);
+Rel:    number (project (number (Rel)))           =  53 (10);
+Rel:    type (Rel)                                =  54 (10);
+Rel:    type_assert (Rel)                         =  55 (10);
+Rel:    cast (cast (Rel))                         =  56 (10);
+Rel:    cast (project (cast (Rel)))               =  57 (10);
+Rel:    cast (Rel)                                =  58 (10);
+Rel:    seqty1 (Rel)                              =  59 (10);
+Rel:    all (Rel)                                 =  60 (10);
+Rel:    scjoin (Frag, Rel)                        =  61 (10);
+Rel:    scjoin (Frag, distinct (Rel))             =  62 (10);
+Rel:    scjoin (Frag, scjoin (Frag, Rel))         =  63 (10);
+Rel:    doc_access (Frag, Rel)                    =  64 (10);
 
 Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
 Rel:    roots_ (element (Frag,                       
@@ -280,6 +284,10 @@ EmptyRel:    string_join (EmptyRel, Rel)          = 201 (10);
 #define LL(p) L(L(p))
 /** starting from p, make two steps right */
 #define RR(p) R(R(p))
+/** and so on... */
+#define RL(p) (L(R(p)))
+#define LLL(p) (LL(L(p)))
+#define RLL(p) (LL(R(p)))
 
 #define MAX_KIDS 10
 
@@ -428,7 +436,8 @@ reduce (PFla_op_t *p, int goalnt)
                            p->sem.proj.items[i].old);
 
             if (!renamed && L(p)->schema.count == p->schema.count) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
         }   break;
@@ -449,7 +458,6 @@ reduce (PFla_op_t *p, int goalnt)
                 /* if the projection neither discards nor renames
                    the attach result we can switch both operands  */
                 if (found && rewrite) {
-                    PFla_op_t *ret;
                     PFalg_proj_t *proj = PFmalloc ((p->schema.count - 1) *
                                                    sizeof (PFalg_proj_t));
                     unsigned int count = 0;
@@ -459,10 +467,9 @@ reduce (PFla_op_t *p, int goalnt)
                             != p->sem.proj.items[j].old)
                             proj[count++] = p->sem.proj.items[j];
 
-                    ret = PFla_attach (PFla_project_ (LL(p), count, proj),
+                    *p = *PFla_attach (PFla_project_ (LL(p), count, proj),
                                        L(p)->sem.attach.attname,
                                        L(p)->sem.attach.value);
-                    *p = *ret;
                     SEEN(L(p)) = false;
                     SEEN(p) = false;
                     relabel (p, kids);
@@ -474,7 +481,6 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    project (project (Rel)) */
         case 13:
         {   /* combine two projections */            
-            PFla_op_t *ret;
             PFalg_proj_t *proj = PFmalloc (p->schema.count *
 	                                       sizeof (PFalg_proj_t));
 
@@ -500,17 +506,188 @@ reduce (PFla_op_t *p, int goalnt)
                         break;
                     }
 
-            ret = PFla_project_ (L(L(p)), count, proj);
+            *p = *PFla_project_ (L(L(p)), count, proj);
 
-            *p = *ret;
             SEEN(p) = false;
             relabel (p, kids);
         } break;
 
+        /* Rel:    select_ (Rel) */
+        case 19:
+        {
+            /**
+             *  introduce thetajoin based on 
+             *  one of the following patterns:
+             *    
+             *    sel (res)    sel (res)   sel (res)   sel (res)
+             *     |            |           |           |
+             *   eq,gt       project      eq,gt      project
+             *     |            |           |           |
+             *     X          eq,gt      project      eq,gt 
+             *    / \           |           |           |
+               rel1 rel2     project        X           X
+             *                  |          / \         / \   
+             *                  X       rel1 rel2   rel1 rel2
+             *                 / \
+             *              rel1 rel2
+             *    
+             * The result will be either:
+             *    
+             *     @ (res, true)
+             *     |
+             *    |X| (eq|gt, rel.att1, rel.att2)
+             *    / \
+             * rel1 rel2
+             *    
+             * or:
+             *    
+             *     @ (res, true)
+             *     |
+             *  project
+             *     |
+             *    |X| (eq|gt, rel.att1, rel.att2)
+             *    / \
+             * rel1 rel2
+             *   
+             */
+            PFla_op_t *node;
+            PFla_op_t *left = NULL;
+            PFla_op_t *right = NULL;
+            PFla_op_t *proj = NULL;
+            PFla_op_t *proj2 = NULL;
+
+            PFalg_att_t sel = p->sem.select.att;
+            PFalg_att_t item1, item2;
+            unsigned int i;
+
+            node = L(p);
+
+            if (node->kind == la_project) {
+                proj = node;
+                /* update the name of the selection */
+                for (i = 0; i < node->sem.proj.count; i++)
+                    if (sel == node->sem.proj.items[i].new) {
+                        sel = node->sem.proj.items[i].old;
+                        break;
+                    }
+                node = L(node);
+            }
+            
+            /* the selection column has to match the
+               result column of the comparison operator */
+            if (node->kind != la_num_eq ||
+                node->sem.binary.res != sel)
+                break;
+
+            item1 = node->sem.binary.att1;
+            item2 = node->sem.binary.att2;
+            node = L(node);
+
+            if (node->kind == la_project) {
+                proj2 = node;
+                /* update the names of the comparison input */
+                for (i = 0; i < node->sem.proj.count; i++) {
+                    if (item1 == node->sem.proj.items[i].new)
+                        item1 = node->sem.proj.items[i].old;
+                    if (item2 == node->sem.proj.items[i].new)
+                        item2 = node->sem.proj.items[i].old;
+                }
+                node = L(node);
+            }
+
+            /* match the pattern */
+            if (node->kind != la_cross)
+                break;
+
+            /* lookup the corresponding subtrees for the
+               comparison inputs */
+            for (i = 0; i < L(node)->schema.count; i++)
+                if (L(node)->schema.items[i].name == item1)
+                    left = L(node);
+                else if (L(node)->schema.items[i].name == item2)
+                    right = L(node);
+
+            for (i = 0; i < R(node)->schema.count; i++)
+                if (R(node)->schema.items[i].name == item1)
+                    left = R(node);
+                else if (R(node)->schema.items[i].name == item2)
+                    right = R(node);
+
+            /* the two comparison inputs are from the same relation
+               -- multi-value dependency analysis will thus move the
+               cross product up */
+            if (!left || !right || left == right)
+                break;
+
+            /* Now all constraints are checked and the pattern 
+               can be replaced by an theta-join and an attach operator
+               that adds the missing res column */
+            if (!proj && !proj2) {
+                *p = *PFla_attach (
+                          PFla_eqjoin (left, right, item1, item2),
+                          p->sem.select.att, PFalg_lit_bln (true));
+                SEEN(p) = false;
+                SEEN(L(p)) = false;
+                relabel (p, kids);
+                break;
+            } else {
+                /* if at least one projection was in between we
+                   have to apply the projection between theta-join
+                   and attach operator */
+                PFalg_proj_t *proj_list;
+                unsigned int j, count = 0;
+                
+                /* create projection list */
+                proj_list = PFmalloc ((p->schema.count - 1)*
+                                      sizeof (*(proj_list)));
+                
+                for (i = 0; i < p->schema.count; i++) {
+                    /* use current schema as starting point
+                       (discarding the result column of the comparison) */
+                    if (p->schema.items[i].name != p->sem.select.att)
+                        proj_list[count] = PFalg_proj (
+                                               p->schema.items[i].name,
+                                               p->schema.items[i].name);
+
+                    /* apply the renaming of the first projection */
+                    if (proj)
+                        for (j = 0; j < proj->sem.proj.count; j++)
+                            if (proj->sem.proj.items[j].new ==
+                                proj_list[count].old)
+                                proj_list[count].old
+                                    = proj->sem.proj.items[j].old;
+
+                    /* apply the renaming of the second projection */
+                    if (proj2)
+                        for (j = 0; j < proj2->sem.proj.count; j++)
+                            if (proj2->sem.proj.items[j].new ==
+                                proj_list[count].old)
+                                proj_list[count].old
+                                    = proj2->sem.proj.items[j].old;
+                    
+                    /* increase the counter analogously */
+                    if (p->schema.items[i].name != p->sem.select.att)
+                        count++;
+                }
+                                                   
+                *p = *PFla_attach (
+                          PFla_project_ (
+                              PFla_eqjoin (left, right, item1, item2),
+                              p->schema.count - 1, proj_list),
+                          p->sem.select.att, PFalg_lit_bln (true));
+                SEEN(p) = false;
+                SEEN(L(p)) = false;
+                SEEN(LL(p)) = false;
+                relabel (p, kids);
+                break;
+            }
+        }   break;
+
         /* Rel:    disjunion (EmptyRel, Rel) */
         case 21:
             /* return right child */
-            *p = *(R(p));
+            *p = *R(p);
+            p->prop = PFprop ();
             break;
 
         /* Rel:    disjunion (Rel, EmptyRel) */
@@ -518,17 +695,218 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    difference (Rel, EmptyRel) */
         case 25:
             /* return left child */
-            *p = *(L(p));
+            *p = *L(p);
+            p->prop = PFprop ();
             break;
+
+        /* Rel:    distinct (Rel) */
+        case 26:
+        /* Remove unnecessary nested distinct operations.
+           Because of the many versions of this pattern
+           we do not check it with burg. */
+        {
+            PFla_op_t *proj = NULL, *lp = NULL, *rp = NULL,
+                      *op, *res = NULL;
+            PFalg_att_t latt, ratt;                
+
+            op = L(p);
+            if (op->kind == la_project) {
+                proj = op;
+                op = L(op);
+            }
+            if (op->kind == la_distinct)
+                res = L(op);
+            else if (op->kind == la_eqjoin) {
+                if (L(op)->kind == la_distinct &&
+                    L(op)->schema.count == 1) {
+                    rp = LL(op);
+                    lp = R(op);
+                    latt = op->sem.eqjoin.att2;
+                    ratt = op->sem.eqjoin.att1;
+                }
+                else if (L(op)->kind == la_project &&
+                    LL(op)->kind == la_distinct &&
+                    LL(op)->schema.count == 1 &&
+                    L(op)->schema.count == 1) {
+                    rp = PFla_project_ (LLL(op), 1, L(op)->sem.proj.items);
+                    SEEN(rp) = false;
+                    lp = R(op);
+                    latt = op->sem.eqjoin.att2;
+                    ratt = op->sem.eqjoin.att1;
+                }
+                else if (R(op)->kind == la_distinct &&
+                    R(op)->schema.count == 1) {
+                    rp = RL(op);
+                    lp = L(op);
+                    latt = op->sem.eqjoin.att1;
+                    ratt = op->sem.eqjoin.att2;
+                }
+                else if (R(op)->kind == la_project &&
+                    RL(op)->kind == la_distinct &&
+                    RL(op)->schema.count == 1 &&
+                    R(op)->schema.count == 1) {
+                    rp = PFla_project_ (RLL(op), 1, R(op)->sem.proj.items);
+                    SEEN(rp) = false;
+                    lp = L(op);
+                    latt = op->sem.eqjoin.att1;
+                    ratt = op->sem.eqjoin.att2;
+                }
+                
+                if (lp) {
+                    res = PFla_eqjoin (lp, rp, latt, ratt);
+                    SEEN(res) = false;
+                }
+            }
+                
+            if (res) {
+                if (proj) {
+                    res = PFla_project_ (res, 
+                                         proj->sem.proj.count,
+                                         proj->sem.proj.items);
+                    SEEN(res) = false;
+                }
+            
+                *p = *PFla_distinct (res);
+                SEEN(p) = false;
+                relabel (p, kids);
+                break;
+            }
+        } break;
 
         /* Rel:    distinct (scjoin (Frag, Rel)) */
         case 27:
             /* return left child */
-            *p = *(L(p));
+            *p = *L(p);
+            p->prop = PFprop ();
             break;
 
+        /* Rel:    number (number (Rel)) */
+        case 52:
+            if (! p->sem.number.part && 
+                ! L(p)->sem.number.part) {
+                PFalg_proj_t *proj = PFmalloc (
+                                         p->schema.count
+                                         * sizeof (PFalg_proj_t));
+                /* copy property list */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->sem.number.attname == p->schema.items[i].name)
+                        proj[i] = PFalg_proj (p->sem.number.attname,
+                                              L(p)->sem.number.attname);
+                    else
+                        proj[i] = PFalg_proj (p->schema.items[i].name,
+                                              p->schema.items[i].name);
+                                              
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+                SEEN(p) = false;
+                relabel (p, kids);
+                break;
+            }
+            break;
+
+        /* Rel:    number (project (number (Rel))) */
+        case 53:
+            if (! p->sem.number.part && 
+                ! LL(p)->sem.number.part) {
+                unsigned int count = L(p)->sem.proj.count;
+                PFalg_proj_t *proj = PFmalloc (
+                                         (count + 1)
+                                         * sizeof (PFalg_proj_t));
+                /* copy property list */
+                for (unsigned int i = 0; i < count; i++)
+                    proj[i] = L(p)->sem.proj.items[i];
+
+                proj[count] = PFalg_proj (p->sem.number.attname,
+                                          LL(p)->sem.number.attname);
+
+                *p = *PFla_project_ (LL(p), count + 1, proj);
+                SEEN(p) = false;
+                relabel (p, kids);
+                break;
+            }
+            break;
+
+        /* Rel:    cast (cast (Rel)) */
+        case 56:
+        /* Rel:    cast (project (cast (Rel))) */
+        case 57:
+            /* Discard the casts if the cast maps from string
+               to untypedAtomic and back to string. */
+        {
+            PFla_op_t *cast;
+            bool proj = false, found = false;
+            unsigned int i;
+            PFalg_att_t att = p->sem.type.att;
+            
+            /* check for a projection in between and update
+               the name of the outer cast input */
+            if (L(p)->kind == la_project) {
+                proj = true;
+                for (i = 0; i < L(p)->sem.proj.count; i++)
+                    if (att == L(p)->sem.proj.items[i].new) {
+                        att = L(p)->sem.proj.items[i].old;
+                        break;
+                    }
+                cast = LL(p);
+            }
+            else
+                cast = L(p);
+
+            /* make sure the input of the first cast 
+               is of type string */
+            for (i = 0; i < cast->schema.count; i++)
+                if (cast->schema.items[i].name == cast->sem.type.att &&
+                    cast->schema.items[i].type == aat_str) {
+                    found = true;
+                    break;
+                }
+            
+            /* enforce the constraints: child node is a cast,
+               the output of the nested cast and the input of
+               the outer cast match, the inner cast applies a
+               cast to untypedAtomic, and the outer to string */
+            if (found &&
+                att == cast->sem.type.res &&
+                cast->sem.type.ty == aat_uA &&
+                p->sem.type.ty == aat_str) {
+            
+                PFalg_proj_t *proj_list;
+                /* create projection list */
+                proj_list = PFmalloc (p->schema.count *
+                                      sizeof (*(proj_list)));
+                                      
+                if (proj) {
+                    /* if there was already a projection keep that
+                       one and extend it with the result column of the
+                       outer cast that refers to the orginal input column */
+                    for (i = 0; i < L(p)->sem.proj.count; i++)
+                        proj_list[i] = L(p)->sem.proj.items[i];
+                        
+                    proj_list[i] = PFalg_proj (p->sem.type.res,
+                                               cast->sem.type.att);
+                }
+                else
+                    /* keep all column and link the result column of the
+                       outer cast to the input column of the nested cast */
+                    for (i = 0; i < p->schema.count; i++)
+                        if (p->schema.items[i].name == p->sem.type.res)
+                            proj_list[i] = PFalg_proj (p->sem.type.res,
+                                                       cast->sem.type.att);
+                        else
+                            proj_list[i] = PFalg_proj (p->schema.items[i].name,
+                                                       p->schema.items[i].name);
+                                                       
+                /* Replace the outer cast (and the project) by a new project
+                   that avoids the unnecessary casts. (The second cast will
+                   be removed by an icols optimization phase.) */
+                *p = *PFla_project_ (cast, p->schema.count, proj_list);
+                SEEN(p) = false;
+                relabel (p, kids);
+                break;
+            }
+        } /* fall trough otherwise */
+                
         /* Rel:    cast (Rel) */
-        case 55:
+        case 58:
         {
             /*
              * If an algebra expression already has the requested
@@ -543,7 +921,6 @@ reduce (PFla_op_t *p, int goalnt)
                 }
 
             if (!cast_req) { 
-                PFla_op_t *ret;
                 PFalg_proj_t *proj = PFmalloc (p->schema.count
                                                * sizeof (PFalg_proj_t));
 
@@ -556,8 +933,7 @@ reduce (PFla_op_t *p, int goalnt)
                                               p->sem.type.att);
                     }
 
-                ret = PFla_project_ (L(p), p->schema.count, proj);
-                *p = *(ret);
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
                 SEEN(p) = false;
                 relabel (p, kids);
                 break;
@@ -565,14 +941,14 @@ reduce (PFla_op_t *p, int goalnt)
         } break;
 
         /* Rel:    scjoin (Frag, distinct (Rel)) */
-        case 61:
+        case 62:
             R(p) = L(R(p));
             SEEN(p) = false;
             relabel (p, kids);
             break;
 
         /* Rel:    scjoin (Frag, scjoin (Frag, Rel) */
-        case 62:
+        case 63:
             /* combine scjoins if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
             if (R(p)->sem.scjoin.axis == alg_desc_s &&
@@ -580,11 +956,9 @@ reduce (PFla_op_t *p, int goalnt)
                 p->sem.scjoin.axis == alg_chld) {
                 /* rewrite child into descendant
                    and discard descendant-or-self step */
-                PFla_op_t *ret;
-                ret = PFla_scjoin (L(p), RR(p), alg_desc, p->sem.scjoin.ty,
+                *p = *PFla_scjoin (L(p), RR(p), alg_desc, p->sem.scjoin.ty,
                                    p->sem.scjoin.iter, R(p)->sem.scjoin.item,
                                    p->sem.scjoin.item_res);
-                *p = *(ret);
                 SEEN(p) = false;
                 relabel (p, kids);
                 break;
@@ -850,8 +1224,6 @@ PFalgopt_general (PFla_op_t *root)
     /* Optimize algebra tree */
     while (reduce (root, 1));
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

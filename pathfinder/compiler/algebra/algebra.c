@@ -815,7 +815,7 @@ PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
     }
 
     PFoops (OOPS_FATAL,
-            "Mapping variable to an original name failed.");
+            "Mapping unique name to an original name failed.");
 
     return 0; /* in case a compiler does not understand PFoops */
 }

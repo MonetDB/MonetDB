@@ -83,8 +83,6 @@ opt_icol (PFla_op_t *p)
             /* prune columns that are not required as long as
                at least one column remains. */
             if (count && count < p->schema.count) {
-                PFla_op_t *res;
-
                 /* create new list of attributes */
                 PFalg_att_t   *atts = PFmalloc (count * sizeof (PFalg_att_t));
 
@@ -109,14 +107,12 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++)
                     tuples[i].count = count;
 
-                res = PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
+                *p = *PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
                                      p->sem.lit_tbl.count,
                                      tuples);
-                *p = *res;
                 SEEN(p) = true;
             } else if (!count && p->schema.count > 1) {
                 /* prune everything except one column */
-                PFla_op_t *res;
 
                 /* create new list of attributes */
                 PFalg_att_t   *atts = PFmalloc (1 * sizeof (PFalg_att_t));
@@ -135,8 +131,7 @@ opt_icol (PFla_op_t *p)
                     tuples[j].count = 1;
                 }
 
-                res = PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
-                *p = *res;
+                *p = *PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
                 SEEN(p) = true;
             }
         } break;
@@ -180,7 +175,8 @@ opt_icol (PFla_op_t *p)
         case la_attach:
             /* prune attach if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.attach.attname)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -191,7 +187,6 @@ opt_icol (PFla_op_t *p)
                list with the icols columns. */
             unsigned int count = PFprop_icols_count (p->prop);
             if (count < p->schema.count) {
-                PFla_op_t *ret;
                 PFalg_proj_t *proj;
 
                 /* ensure that at least one column remains! */
@@ -212,9 +207,8 @@ opt_icol (PFla_op_t *p)
                     proj[count++] = PFalg_proj (p->sem.proj.items[0].new,
                                                 L(p)->schema.items[0].name);
 
-                ret = PFla_project_ (L(p), count, proj);
+                *p = *PFla_project_ (L(p), count, proj);
 
-                *p = *ret;
                 SEEN(p) = true;
                 break;
             }
@@ -237,11 +231,9 @@ opt_icol (PFla_op_t *p)
                         atts[i] = PFalg_proj (icols.atts[i], icols.atts[i]);
 
                     ret = PFla_project_ (L(p), icols.count, atts);
-                    PFprop_update_ocol (ret);
                     L(p) = ret;
 
                     ret = PFla_project_ (R(p), icols.count, atts);
-                    PFprop_update_ocol (ret);
                     R(p) = ret;
 
                     break;
@@ -259,11 +251,9 @@ opt_icol (PFla_op_t *p)
                                                   p->schema.items[i].name);
 
                             ret = PFla_project_ (L(p), 1, atts);
-                            PFprop_update_ocol (ret);
                             L(p) = ret;
 
                             ret = PFla_project_ (R(p), 1, atts);
-                            PFprop_update_ocol (ret);
                             R(p) = ret;
 
                             break;
@@ -286,7 +276,8 @@ opt_icol (PFla_op_t *p)
         case la_contains:
             /* prune binary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.binary.res)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -295,7 +286,8 @@ opt_icol (PFla_op_t *p)
         case la_bool_not:
             /* prune unary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.unary.res)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -318,7 +310,6 @@ opt_icol (PFla_op_t *p)
                     PFalg_proj_t *proj = PFmalloc (sizeof (PFalg_proj_t));
                     proj[0] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
                     ret = PFla_distinct (PFla_project_ (L(p), 1, proj));
-                    PFprop_update_ocol (L(ret));
                 } else {
                     ret = PFla_lit_tbl (PFalg_attlist (p->sem.aggr.res),
                                         PFalg_tuple (PFalg_lit_nat (42)));
@@ -332,7 +323,8 @@ opt_icol (PFla_op_t *p)
         case la_rownum:
             /* prune rownum if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.rownum.attname)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -340,7 +332,8 @@ opt_icol (PFla_op_t *p)
         case la_number:
             /* prune number if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.number.attname)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -350,7 +343,8 @@ opt_icol (PFla_op_t *p)
         case la_cast:
             /* prune cast if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.type.res)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -359,7 +353,8 @@ opt_icol (PFla_op_t *p)
             /* prune type assertion if restricted column is not
                used afterwards */
             if (!PFprop_icol (p->prop, p->sem.type.att)) {
-                *p = *(L(p));
+                *p = *L(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -370,7 +365,8 @@ opt_icol (PFla_op_t *p)
         case la_doc_access:
             /* prune doc_access if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.doc_access.res)) {
-                *p = *(R(p));
+                *p = *R(p);
+                p->prop = PFprop ();
                 break;
             }
             break;
@@ -379,18 +375,24 @@ opt_icol (PFla_op_t *p)
             switch (L(p)->kind) {
                 case la_element:
                     /* prune element if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res))
-                        *p = *(LRL(p));
+                    if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res)) {
+                        *p = *LRL(p);
+                        p->prop = PFprop ();
+                    }
                     break;
                 case la_attribute:
                     /* prune attribute if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.attr.res))
-                        *p = *(LL(p));
+                    if (!PFprop_icol (p->prop, L(p)->sem.attr.res)) {
+                        *p = *LL(p);
+                        p->prop = PFprop ();
+                    }
                     break;
                 case la_textnode:
                     /* prune textnode if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.textnode.res))
-                        *p = *(LL(p));
+                    if (!PFprop_icol (p->prop, L(p)->sem.textnode.res)) {
+                        *p = *LL(p);
+                        p->prop = PFprop ();
+                    }
                     break;
                 default:
                     break;
@@ -403,20 +405,28 @@ opt_icol (PFla_op_t *p)
                     case la_element:
                         /* prune reference to element
                            if result column is not required */
-                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.elem.item_res))
+                        if (!PFprop_icol (LL(p)->prop, 
+                                          LL(p)->sem.elem.item_res)) {
                             *p = *R(p);
+                            p->prop = PFprop ();
+                        }
                         break;
                     case la_attribute:
                         /* prune reference to attribute
                            if result column is not required */
-                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.attr.res))
+                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.attr.res)) {
                             *p = *R(p);
+                            p->prop = PFprop ();
+                        }
                         break;
                     case la_textnode:
                         /* prune reference to textnode 
                            if result column is not required */
-                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.textnode.res))
+                        if (!PFprop_icol (LL(p)->prop,
+                                          LL(p)->sem.textnode.res)) {
                             *p = *R(p);
+                            p->prop = PFprop ();
+                        }
                         break;
                     default:
                         break;
@@ -427,20 +437,28 @@ opt_icol (PFla_op_t *p)
                     case la_element:
                         /* prune reference to element
                            if result column is not required */
-                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.elem.item_res))
+                        if (!PFprop_icol (RL(p)->prop,
+                                          RL(p)->sem.elem.item_res)) {
                             *p = *L(p);
+                            p->prop = PFprop ();
+                        }
                         break;
                     case la_attribute:
                         /* prune reference to attribute
                            if result column is not required */
-                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.attr.res))
+                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.attr.res)) {
                             *p = *L(p);
+                            p->prop = PFprop ();
+                        }
                         break;
                     case la_textnode:
                         /* prune reference to textnode 
                            if result column is not required */
-                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.textnode.res))
+                        if (!PFprop_icol (RL(p)->prop,
+                                          RL(p)->sem.textnode.res)) {
                             *p = *L(p);
+                            p->prop = PFprop ();
+                        }
                         break;
                     default:
                         break;
@@ -468,8 +486,6 @@ PFalgopt_icol (PFla_op_t *root)
     /* Optimize algebra tree */
     opt_icol (root);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

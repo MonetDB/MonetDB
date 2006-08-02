@@ -108,6 +108,8 @@ infer_card (PFla_op_t *n)
         case la_attribute:
         case la_textnode:
         case la_roots:
+        case la_proxy:
+        case la_proxy_base:
         case la_concat:
         case la_contains:
             /* cardinality stays the same */

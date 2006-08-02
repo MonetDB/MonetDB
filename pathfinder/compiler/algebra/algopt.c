@@ -39,15 +39,46 @@
 #include "map_names.h"
 #include "oops.h"
 #include "timer.h"
+#include "algebra_cse.h"
+#include "la_proxy.h"
 
-static PFla_op_t *
-magic_map_ori_names (PFla_op_t *root, char *phase)
-{
-    PFinfo (OOPS_WARNING,
-            "%s requires original names - "
-            "automatical mapping added", phase);
-    return PFmap_ori_names (root);
-}
+#define MAP_ORI_NAMES(phase)                                                \
+        if (unq_names) {                                                    \
+            PFinfo (OOPS_WARNING,                                           \
+                    "%s requires original names - "                         \
+                    "automatical mapping added", phase);                    \
+                                                                            \
+            tm = PFtimer_start ();                                          \
+                                                                            \
+            root = PFmap_ori_names (root);                                  \
+                                                                            \
+            tm = PFtimer_stop (tm);                                         \
+                                                                            \
+            if (timing)                                                     \
+                PFlog ("\tmap to original attribute names: %s",             \
+                       PFtimer_str (tm));                                   \
+                                                                            \
+            unq_names = false;                                              \
+        }
+
+#define REMOVE_PROXIES(phase)                                               \
+        if (proxies_involved) {                                             \
+            PFinfo (OOPS_WARNING,                                           \
+                    "%s does not cope with proxy nodes - "                  \
+                    "proxy nodes are automatical removed", phase);          \
+                                                                            \
+            tm = PFtimer_start ();                                          \
+                                                                            \
+            root = PFresolve_proxies (root);                                \
+                                                                            \
+            tm = PFtimer_stop (tm);                                         \
+                                                                            \
+            if (timing)                                                     \
+                PFlog ("\tresolve proxy operators:\t %s",                   \
+                       PFtimer_str (tm));                                   \
+                                                                            \
+            proxies_involved = false;                                       \
+        }
 
 /**
  * Invoke algebra optimization.
@@ -60,6 +91,7 @@ PFalgopt (PFla_op_t *root, bool timing)
     long tm;
     bool const_no_attach = false;
     bool unq_names = false;
+    bool proxies_involved = false;
     char *args = PFstate.opt_alg;
 
     while (*args) {
@@ -78,10 +110,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'C':
-                if (unq_names) {
-                    root = magic_map_ori_names (root, "complex optimization");
-                    unq_names = false;
-                }
+                MAP_ORI_NAMES("complex optimization")
+                REMOVE_PROXIES("complex optimization")
 
                 tm = PFtimer_start ();
                 
@@ -94,6 +124,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'O':
+                REMOVE_PROXIES("constant optimization")
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_const (root, const_no_attach);
@@ -108,6 +140,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'D':
+                REMOVE_PROXIES("domain optimization")
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_dom (root);
@@ -119,6 +153,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'G':
+                REMOVE_PROXIES("general optimization")
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_general (root);
@@ -130,10 +166,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'I':
-                if (unq_names) {
-                    root = magic_map_ori_names (root, "icol optimization");
-                    unq_names = false;
-                }
+                MAP_ORI_NAMES("icol optimization")
 
                 tm = PFtimer_start ();
                 
@@ -153,6 +186,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                     root = PFmap_unq_names (root);
                     unq_names = true;
                 }
+                REMOVE_PROXIES("equi-join pushdown")
 
                 tm = PFtimer_start ();
                 
@@ -165,10 +199,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'K':
-                if (unq_names) {
-                    root = magic_map_ori_names (root, "key optimization");
-                    unq_names = false;
-                }
+                MAP_ORI_NAMES("key optimization")
+                REMOVE_PROXIES("key optimization")
 
                 tm = PFtimer_start ();
                 
@@ -181,10 +213,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'M':
-                if (unq_names) {
-                    root = magic_map_ori_names (root, "mvd optimization");
-                    unq_names = false;
-                }
+                MAP_ORI_NAMES("mvd optimization")
 
                 tm = PFtimer_start ();
 
@@ -199,11 +228,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'V':
-                if (unq_names) {
-                    root = magic_map_ori_names (root,
-                                                "required value optimization");
-                    unq_names = false;
-                }
+                MAP_ORI_NAMES("required value optimization")
+                REMOVE_PROXIES("required value optimization")
 
                 tm = PFtimer_start ();
                 
@@ -254,6 +280,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                             "already using unique attribute names");
                     break;
                 }
+                REMOVE_PROXIES("variable name mapping")
 
                 tm = PFtimer_start ();
                 
@@ -273,6 +300,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                             "already using original attribute names");
                     break;
                 }
+                REMOVE_PROXIES("variable name mapping")
 
                 tm = PFtimer_start ();
                 
@@ -286,6 +314,34 @@ PFalgopt (PFla_op_t *root, bool timing)
                 unq_names = false;
                 break;
 
+            case '}':
+                MAP_ORI_NAMES("proxy introduction")
+
+                proxies_involved = true;
+
+                tm = PFtimer_start ();
+                
+                root = PFintro_proxies (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tintroduce proxy operators:\t %s",
+                           PFtimer_str (tm));
+                break;
+
+            case '{':
+                proxies_involved = false;
+
+                tm = PFtimer_start ();
+                
+                root = PFresolve_proxies (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tresolve proxy operators:\t %s",
+                           PFtimer_str (tm));
+                break;
+
             case ' ':
             case '_':
                 break;
@@ -297,6 +353,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
         }
         args++;
+        root = PFla_cse (root);
     }
 
     if (unq_names)

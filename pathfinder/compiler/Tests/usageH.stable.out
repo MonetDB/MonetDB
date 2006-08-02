@@ -73,10 +73,12 @@ Usage: pf [OPTION] [FILE]
          J  push down equi-joins (requires unique column names)
          ]  map column names back (from unique names to original names)
          M  apply optimization based on multi-value dependencies
+         }  introduce proxy operators that representoperator groups
+         {  remove proxy operators
          P  infer all properties
             (used for debug output and physical algebra
          _  does nothing (used for structuring the options)
-         (default is: '-o OIKDCG_VOIG_[J]_MOIGC_KDCGP')
+         (default is: '-o OIKDCG_VGO_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCGCGP')
 = -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
          0 disable dead code elimination
          1 enable dead code elimination (default)

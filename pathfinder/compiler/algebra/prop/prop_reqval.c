@@ -207,6 +207,8 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_number: /* and therefore never needs to be removed */
         case la_type_assert:
         case la_roots:
+        case la_proxy:
+        case la_proxy_base:
             /* propagate required values list to left subtree */
             prop_infer_reqvals (L(n), rv);
             break;

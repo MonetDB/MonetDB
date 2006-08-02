@@ -285,7 +285,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                     unq = att2;
 
                 /* add the missing attribute to the name pair list */
-                ori = PFalg_ori_name (unq, FREE(n));; 
+                ori = PFalg_ori_name (unq, FREE(n)); 
                 FREE(n) = diff (FREE(n), ori);
                 add_name_pair (np_list, ori, unq);
             }
@@ -548,6 +548,11 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             add_name_pair (n->prop->r_name_pairs, 
                            PFalg_ori_name (n->sem.err.att, ALL),
                            n->sem.err.att);
+            break;
+
+        case la_proxy:
+        case la_proxy_base:
+            n->prop->l_name_pairs = PFarray_copy (np_list);
             break;
 
         case la_string_join:

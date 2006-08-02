@@ -52,17 +52,64 @@ prepare_reset (PFla_op_t *n)
 /* helper function that reset the DAG bit
    to allow another DAG traversal */
 static void
-bit_reset (PFla_op_t *n)
+dag_bit_reset (PFla_op_t *n)
 {
     assert (n);
     if (!n->bit_reset)
         return;
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        bit_reset (n->child[i]);
+        dag_bit_reset (n->child[i]);
 
     n->bit_reset = false;
     n->bit_dag = false;
+}
+
+/* helper function that reset the IN bit
+   to allow another proxy search */
+static void
+in_out_bit_reset (PFla_op_t *n)
+{
+    assert (n);
+    if (!n->bit_reset)
+        return;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        in_out_bit_reset (n->child[i]);
+
+    n->bit_reset = false;
+    n->bit_in = false;
+    n->bit_out = false;
+}
+
+/* helper function that resets only the IN bit */
+static void
+in_bit_reset (PFla_op_t *n)
+{
+    assert (n);
+    if (!n->bit_reset)
+        return;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        in_bit_reset (n->child[i]);
+
+    n->bit_reset = false;
+    n->bit_in = false;
+}
+
+/* helper function that resets only the OUT bit */
+static void
+out_bit_reset (PFla_op_t *n)
+{
+    assert (n);
+    if (!n->bit_reset)
+        return;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        out_bit_reset (n->child[i]);
+
+    n->bit_reset = false;
+    n->bit_out = false;
 }
 
 /*
@@ -73,7 +120,40 @@ bit_reset (PFla_op_t *n)
 void
 PFla_dag_reset (PFla_op_t *n) {
     prepare_reset (n);
-    bit_reset (n);
+    dag_bit_reset (n);
+}
+
+/*
+ * Reset the IN and OUT bits of the logical algebra tree.
+ * (it requires a clean reset bit to traverse
+ *  the logical tree as DAG.)
+ */
+void
+PFla_in_out_reset (PFla_op_t *n) {
+    prepare_reset (n);
+    in_out_bit_reset (n);
+}
+
+/*
+ * Reset the IN bit of the logical algebra tree.
+ * (it requires a clean reset bit to traverse
+ *  the logical tree as DAG.)
+ */
+void
+PFla_in_reset (PFla_op_t *n) {
+    prepare_reset (n);
+    in_bit_reset (n);
+}
+
+/*
+ * Reset the OUT bit of the logical algebra tree.
+ * (it requires a clean reset bit to traverse
+ *  the logical tree as DAG.)
+ */
+void
+PFla_out_reset (PFla_op_t *n) {
+    prepare_reset (n);
+    out_bit_reset (n);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

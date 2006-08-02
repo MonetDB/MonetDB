@@ -308,6 +308,12 @@ unsigned int PFprop_icols_count (const PFprop_t *prop);
  */
 PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
 
+/**
+ * Infer icols property for a DAG rooted in @a root starting
+ * with the icols collected in @a icols.
+ */
+void PFprop_infer_icol_specific (PFla_op_t *root, PFalg_att_t icols);
+
 /* ------------------------- key property accessors ------------------------ */
 
 /**

@@ -465,6 +465,11 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             bulk_add_name_pairs (np_list, L(n));
             break;
 
+        case la_proxy:
+        case la_proxy_base:
+            bulk_add_name_pairs (np_list, L(n));
+            break;
+
         case la_string_join:
             add_name_pair (np_list,
                            n->sem.string_join.iter_res,

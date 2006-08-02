@@ -49,6 +49,7 @@
 #include "properties.h"
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
+#include "oops.h"
 
 /* apply cse before rewriting */
 #include "algebra_cse.h"
@@ -669,9 +670,11 @@ opt_mvd (PFla_op_t *p)
            column. */ 
         if (is_cross (L(p)) &&
             p->sem.rownum.part) {
-            bool part = false, sortby = false;
+            bool part, sortby;
 
             /* first check the dependencies of the left cross product input */
+            part = false;
+            sortby = false;
             for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
                 if (LL(p)->schema.items[i].name == p->sem.rownum.part)
                     part = true;
@@ -695,6 +698,8 @@ opt_mvd (PFla_op_t *p)
             }
 
             /* then check the dependencies of the right cross product input */
+            part = false;
+            sortby = false;
             for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
                 if (LR(p)->schema.items[i].name == p->sem.rownum.part)
                     part = true;
@@ -1085,6 +1090,250 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
+    case la_proxy:
+        /**
+         * ATTENTION: The proxies (especially the kind=1 version) are 
+         * generated in such a way, that the following rewrite does not
+         * introduce inconsistencies. 
+         * The following rewrite would break if the proxy contains operators
+         * that are themselves not allowed to be rewritten by the multi-value
+         * dependency optimization phase. We may not transform expressions that
+         * rely on the cardinality of their inputs.
+         *
+         * In the current situation these operators are:
+         * - aggregates (sum and count)
+         * - rownum and number operators
+         * - constructors (element, attribute, and textnode)
+         * - fn:string-join
+         *
+         * By exploiting the semantics of our generated plans (at the creation
+         * date of this rule) we ensure that none of the problematic operators
+         * appear in the plans. 
+         *
+         *               !!! BEWARE THIS IS NOT CHECKED !!!
+         *
+         * (A future redefinition of the translation scheme might break it.)
+         *
+         * Here are the reasons why it currently works without problems:
+         * - aggregates (sum and count):
+         *    The aggregates are only a problem if used without partitioning
+         *    or if the partition criterion is not inferred from the number
+         *    operator at the proxy exit. As an aggregate always uses the
+         *    current scope (ensured during generation) and all scopes are
+         *    properly nested, we have a functional dependency between the
+         *    partitioning attribute of an aggregate inside this proxy 
+         *    (which is also equivalent to a scope) and the proxy exit number
+         *    operator.
+         *
+         * - rownum and number operators:
+         *    With a similar explanation as the one for aggregates we can be
+         *    sure that every rownum and number operator inside the proxy is
+         *    not used outside the proxy pattern. The generation process
+         *    ensures that these are not used outside the scope or if used
+         *    outside are partitioned by the number of the number operator at
+         *    theproxy exit.
+         *
+         * - constructors (element, attribute, and textnode):
+         *    Constructors are never allowed inside the proxy of kind=1.
+         *    This is ensured by the fragment information that introduces
+         *    conflicting references at the constructors -- they are linked
+         *    from outside (via la_fragment) and inside (via la_roots) the
+         *    proxy -- which cannot be resolved. This leads to the abortion
+         *    of the proxy generation whenever a constructor appears inside
+         *    the proxy.
+         *
+         * - fn:string-join
+         *    The same scope arguments as for the aggregates apply.
+         *
+         */
+
+        /**
+         * We are looking for a proxy (of kind 1) followed by a cross product.
+         * Thus we first ensure that the proxy still has the correct shape
+         * (see Figure (1)) and then check whether the proxy is independent
+         * of tree t1. If that's the case we rewrite the DAG in Figure (1)
+         * into the one of Figure (2). 
+         *
+         *                proxy (kind=1)                 X
+         *      __________/ |  \___                     / \
+         *     /(sem.base1) pi_1   \ (sem.ref)        t1   proxy (kind=1)                     
+         *     |            |       |            __________/ |  \___
+         *     |           |X|      |           /(sem.base1) pi_1'  \ (sem.ref)
+         *     |          /   \     |           |            |       |
+         *     |         |     pi_2 |           |           |X|      |
+         *     |         |     |    |           |          /   \     |
+         *     |         |    |X|   |           |         |     pi_2 |
+         *     |        pi_3  / \   |           |         |     |    |
+         *     |         |   /___\  |           |         |    |X|   |
+         *     |         |     | __/            |        pi_3' / \   |
+         *     |         |     |/               |         |   /___\  |
+         *     |         |     pi_4             |         |     | __/ 
+         *     |         |     |                |         |     |/    
+         *     |          \   /                 |         |     pi_4' 
+         *     |           \ /                  |         |     |     
+         *     \______      #                   |          \   /      
+         *            \    /                    |           \ /       
+         *          proxy_base                  \______      #        
+         *              |                              \    /         
+         *              X                            proxy_base       
+         *             / \                               |            
+         *           t1   t2                             t2              
+         *                                                            
+         *            ( 1 )                             ( 2 )
+         *                                                            
+         *
+         * The changes happen at the 3 projections: pi_1, pi_3, and pi_4.
+         * - All columns of t1 in pi_1 are projected out (resulting in pi_1').
+         * - All columns of t1 in pi_3 and pi_4 are replaced by a dummy
+         *   column (the first column of t2) thus resulting in the modified
+         *   projections pi_3' and pi_4', respectively. We don't throw out
+         *   the columns of t1 in the proxy as this would require a bigger
+         *   rewrite, which is done eventually by the following icols
+         *   optimization.
+         */
+        if (is_cross (L(p->sem.proxy.base1)) &&
+            p->sem.proxy.kind == 1 &&
+            /* check consistency */
+            L(p)->kind == la_project &&
+            LL(p)->kind == la_eqjoin &&
+            L(LL(p))->kind == la_project &&
+            R(LL(p))->kind == la_project &&
+            RL(LL(p))->kind == la_eqjoin &&
+            LL(LL(p))->kind == la_number &&
+            L(LL(LL(p))) == p->sem.proxy.base1 &&
+            p->sem.proxy.ref->kind == la_project &&
+            L(p->sem.proxy.ref) == LL(LL(p)) &&
+            !LL(LL(p))->sem.number.part) {
+
+            PFla_op_t *cross = L(p->sem.proxy.base1);
+            PFla_op_t *lcross, *rcross;
+            PFla_op_t *ref = p->sem.proxy.ref;
+            unsigned int i, j, count = 0;
+            bool rewrite = false;
+
+            /* first check the dependencies of the left cross product input */
+            for (i = 0; i < L(cross)->schema.count; i++) 
+                for (j = 0; j < p->sem.proxy.req_cols.count; j++)
+                    if (L(cross)->schema.items[i].name 
+                        == p->sem.proxy.req_cols.atts[j]) {
+                        count++;
+                        break;
+                    }
+            if (p->sem.proxy.req_cols.count == count) {
+                lcross = L(cross);
+                rcross = R(cross);
+                rewrite = true;
+            }
+            else {
+                count = 0;
+                /* then check the dependencies of the right cross product
+                   input */
+                for (i = 0; i < R(cross)->schema.count; i++)
+                    for (j = 0; j < p->sem.proxy.req_cols.count; j++)
+                        if (R(cross)->schema.items[i].name 
+                            == p->sem.proxy.req_cols.atts[j]) {
+                            count++;
+                            break;
+                        }
+                if (p->sem.proxy.req_cols.count == count) {
+                    lcross = R(cross);
+                    rcross = L(cross);
+                    rewrite = true;
+                }
+            }
+
+            if (rewrite) {
+                PFalg_att_t dummy_col = lcross->schema.items[0].name;
+                /* pi_1' */
+                PFalg_proj_t *proj_proxy = PFmalloc (L(p)->schema.count *
+                                                     sizeof (PFalg_proj_t));
+                /* pi_3' */
+                PFalg_proj_t *proj_left = PFmalloc (L(LL(p))->schema.count *
+                                                    sizeof (PFalg_proj_t));
+                /* pi_4' */
+                PFalg_proj_t *proj_exit = PFmalloc (ref->schema.count *
+                                                    sizeof (PFalg_proj_t));
+
+                /* prune the columns of the right argument 
+                   of the Cartesian product */
+                count = 0;
+                for (i = 0; i < L(p)->sem.proj.count; i++) {
+                    for (j = 0; j < rcross->schema.count; j++) 
+                        if (L(p)->sem.proj.items[i].new == 
+                            rcross->schema.items[j].name)
+                            break;
+                    if (j == rcross->schema.count)
+                        proj_proxy[count++] = L(p)->sem.proj.items[i];
+                }
+                
+                /* replace the columns of the right argument
+                   of the Cartesian product by a dummy column
+                   of the left argument */
+                for (i = 0; i < L(LL(p))->sem.proj.count; i++) {
+                    for (j = 0; j < rcross->schema.count; j++) 
+                        if (L(LL(p))->sem.proj.items[i].old == 
+                            rcross->schema.items[j].name)
+                            break;
+                    if (j == rcross->schema.count)
+                        proj_left[i] = L(LL(p))->sem.proj.items[i];
+                    else
+                        proj_left[i] = PFalg_proj (
+                                           L(LL(p))->sem.proj.items[i].new,
+                                           dummy_col);
+                }
+                /* replace the columns of the right argument
+                   of the Cartesian product by a dummy column
+                   of the left argument */
+                for (i = 0; i < ref->sem.proj.count; i++) {
+                    for (j = 0; j < rcross->schema.count; j++) 
+                        if (ref->sem.proj.items[i].old == 
+                            rcross->schema.items[j].name)
+                            break;
+                    if (j == rcross->schema.count)
+                        proj_exit[i] = ref->sem.proj.items[i];
+                    else
+                        proj_exit[i] = PFalg_proj (
+                                           ref->sem.proj.items[i].new,
+                                           dummy_col);
+                }
+
+                PFla_op_t *new_number = PFla_number (
+                                            PFla_proxy_base (lcross),
+                                            L(ref)->sem.number.attname,
+                                            att_NULL);
+
+                *ref = *PFla_project_ (new_number, 
+                                       ref->schema.count,
+                                       proj_exit);
+
+                *p = *(cross_can (
+                          rcross,
+                          PFla_proxy (
+                              PFla_project_ (
+                                  PFla_eqjoin (
+                                      PFla_project_ (
+                                          new_number,
+                                          L(LL(p))->schema.count,
+                                          proj_left),
+                                      R(LL(p)),
+                                      LL(p)->sem.eqjoin.att1,
+                                      LL(p)->sem.eqjoin.att2),
+                                  count, proj_proxy),
+                              1,
+                              ref,
+                              L(new_number),
+                              p->sem.proxy.new_cols,
+                              p->sem.proxy.req_cols)));
+
+                modified = true;
+                break;
+            }
+        }
+        break;
+
+    case la_proxy_base:
+        break;
+
     case la_concat:
         modified = modify_binary_op (p, PFla_fn_concat);
         break;
@@ -1099,9 +1348,10 @@ opt_mvd (PFla_op_t *p)
 
     /* update cross_changes counter if
        cross product couldn't be propagated up the tree */
-    if (cross_cross && !is_cross (p))
+    if (cross_cross && !is_cross (p)) {
         cross_changes++;
-    else if (cross_cross)
+        modified = true;
+    } else if (cross_cross)
         cross_changes = 0;
         
     /* discard the subtree with directly following cross products */
@@ -1154,7 +1404,10 @@ clean_up_cross (PFla_op_t *p)
                 proj_list[count++] = proj (L(p)->schema.items[i].name,
                                            L(p)->schema.items[i].name);
         }
-        
+
+        /* ensure that we do not generate empty projection lists */
+        assert(count);
+
         if (dup_count)
             *p = *(cross (PFla_project_ (L(p), count, proj_list), R(p)));
         else

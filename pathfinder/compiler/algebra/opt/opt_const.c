@@ -267,7 +267,7 @@ opt_const (PFla_op_t *p, bool no_attach)
              *                 Rel2
              */
             else if (PFprop_const_left (p->prop, att1)) {
-                PFla_op_t *ret, *right;
+                PFla_op_t *right;
                 PFalg_proj_t *right_atts;
                 PFalg_att_t res;
 
@@ -297,13 +297,12 @@ opt_const (PFla_op_t *p, bool no_attach)
                             right_atts);
 
                 /* combine both subtrees */
-                ret = PFla_cross (L(p), right);
+                *p = *PFla_cross (L(p), right);
 
-                *p = *ret;
                 SEEN(p) = true;
             }
             else if (PFprop_const_right (p->prop, att2)) {
-                PFla_op_t *ret, *left;
+                PFla_op_t *left;
                 PFalg_proj_t *left_atts;
                 PFalg_att_t res;
 
@@ -333,9 +332,8 @@ opt_const (PFla_op_t *p, bool no_attach)
                            left_atts);
 
                 /* combine both subtrees */
-                ret = PFla_cross (left, R(p));
+                *p = *PFla_cross (left, R(p));
 
-                *p = *ret;
                 SEEN(p) = true;
             }
         }   break;
@@ -349,7 +347,8 @@ opt_const (PFla_op_t *p, bool no_attach)
             if (PFprop_const_left (p->prop, p->sem.select.att)) {
                 if (PFprop_const_val_left (p->prop, 
                                            p->sem.select.att).val.bln) {
-                    *p = *(L(p));
+                    *p = *L(p);
+                    p->prop = PFprop ();
                     break;
                 } else {
                     *p = *PFla_empty_tbl_ (p->schema);
@@ -405,7 +404,8 @@ opt_const (PFla_op_t *p, bool no_attach)
                 } else {
                     /* we have no matches -- thus the left argument
                        remains unchanged and the difference is superfluous */
-                    *p = *(L(p));
+                    *p = *L(p);
+                    p->prop = PFprop ();
                 }
             }
         }   break;
@@ -455,7 +455,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                 /* as all columns are constant, the distinct operator
                    can be replaced by lit_tbl of the current schema
                    whose single row contains the constant values */
-                PFla_op_t *ret;
                 PFalg_att_t *atts = PFmalloc (p->schema.count *
                                               sizeof (PFalg_att_t));
                 PFalg_atom_t *atoms = PFmalloc (p->schema.count *
@@ -466,10 +465,9 @@ opt_const (PFla_op_t *p, bool no_attach)
                     atoms[i] = PFprop_const_val (p->prop,
                                                  p->schema.items[i].name);
                 }
-                ret = PFla_lit_tbl (PFalg_attlist_ (i, atts),
+                *p = *PFla_lit_tbl (PFalg_attlist_ (i, atts),
                                     PFalg_tuple_ (i, atoms));
 
-                *p = *ret;
                 SEEN(p) = true;
 #endif
             }
@@ -619,11 +617,9 @@ opt_const (PFla_op_t *p, bool no_attach)
             /* replace rownum by number operator
                if no sort criterions remain */
             if (!p->sem.rownum.sortby.count) {
-                PFla_op_t *ret;
-                ret = PFla_number (L(p),
+                *p = *PFla_number (L(p),
                                    p->sem.rownum.attname,
                                    p->sem.rownum.part);
-                *p = *ret;
                 SEEN(p) = true;
             }
         }   break;
@@ -697,8 +693,6 @@ PFalgopt_const (PFla_op_t *root, bool no_attach)
     /* Optimize algebra tree */
     opt_const (root, no_attach);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

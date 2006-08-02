@@ -1,8 +1,7 @@
 /**
  * @file
  *
- * Functions related to algebra tree optimization.
- * (Generic stuff for logical algebra.)
+ * Resolve proxy operators.
  *
  * Copyright Notice:
  * -----------------
@@ -30,39 +29,48 @@
  * $Id$
  */
 
-#ifndef ALG_DAG_H
-#define ALG_DAG_H
+/* always include pathfinder.h first! */
+#include "pathfinder.h"
+#include <assert.h>
+#include <stdio.h>
 
-#include <logical.h>
+#include "la_proxy.h"
+#include "alg_dag.h"
+#include "properties.h"
 
-/*
- * Reset the DAG bit of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
+#define SEEN(p) ((p)->bit_dag)
+
+static void
+resolve_proxies (PFla_op_t *p)
+{
+    assert (p);
+
+    /* look at each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    /* traverse children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        resolve_proxies (p->child[i]);
+
+    if (p->kind == la_proxy || p->kind == la_proxy_base)
+        *p = *p->child[0];
+}
+
+/**
+ * Resolve proxy operators.
  */
-void PFla_dag_reset (PFla_op_t *n);
+PFla_op_t *
+PFresolve_proxies (PFla_op_t *root)
+{
+    resolve_proxies (root);
+    PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
-/*
- * Reset the IN and OUT bits of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_in_out_reset (PFla_op_t *n);
+    return root;
+}
 
-/*
- * Reset the IN bit of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_in_reset (PFla_op_t *n);
-
-/*
- * Reset the OUT bit of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_out_reset (PFla_op_t *n);
-
-#endif  /* ALG_DAG_H */
-
-/* vim:set shiftwidth=4 expandtab: */
+/* vim:set shiftwidth=4 expandtab filetype=c: */

@@ -283,6 +283,8 @@ PFarray_concat (PFarray_t *a1, PFarray_t *a2)
 PFarray_t *
 PFarray_copy (PFarray_t *input)
 {
+    assert (input);
+
     unsigned size = PFarray_last (input);
     PFarray_t *output = PFarray (input->esize);
 

@@ -127,7 +127,7 @@ PFstate_t PFstate = {
 
     .standoff_axis_steps = false,
 
-    .opt_alg             = "OIKDCG_VOIG_[J]_MOIGC_KDCGP",
+    .opt_alg             = "OIKDCG_VGO_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCGCGP",
     .format              = NULL,
 
     .genType             = "xml"

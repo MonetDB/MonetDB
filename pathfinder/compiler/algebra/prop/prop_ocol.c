@@ -520,6 +520,11 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
+        case la_proxy:
+        case la_proxy_base:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            break;
+
         case la_string_join:
             new_ocols (n, 2);
 

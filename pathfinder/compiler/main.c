@@ -724,13 +724,20 @@ main (int argc, char *argv[])
                                             "names to original names)\n");
                 printf ("         M  apply optimization based on multi-value "
                                             "dependencies\n");
+                printf ("         }  introduce proxy operators that represent"
+                                            "operator groups\n");
+                printf ("         {  remove proxy operators\n");
                 printf ("         P  infer all properties\n");
                 printf ("            (used for debug output and physical "
                                             "algebra\n");
                 printf ("         _  does nothing (used for structuring "
                                             "the options)\n");
                 printf ("         (default is: "
-                                  "'-o OIKDCG_VOIG_[J]_MOIGC_KDCGP')\n");
+                                  "'-o OIKDCG_VGO_[J]OKCG"
+                                            "}IM{_[J]OKCG"
+                                            "}IM{_[J]OKCG"
+                                            "}IM{_[J]OKCG"
+                                            "}IM{_[J]OKCGCGP')\n");
 
                 printf ("  -e[0|1]%s: dead code elimination:\n"
                         "         0 disable dead code elimination\n"

@@ -32,74 +32,75 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 CFLAGS = -DEMBEDDED -DMT -DNO_CGI -DNO_AUTH -DIO_MAX=10240
 
 lib__pf_support = {
-	DIR = libdir/MonetDB
-	SOURCES = \
-		pf_support.mx \
-		staircasejoin.mx \
-		ll_staircasejoin.mx \
-		ll_upwards.mx \
-		prec_foll.mx \
-		levelsteps.mx \
-		shredder.mx \
-		serialize.mx \
-		serialize_null.mx \
-		serialize_dflt.mx \
-		serialize_sax.mx 
+        DIR = libdir/MonetDB
+        SOURCES = \
+                pf_support.mx \
+                staircasejoin.mx \
+                ll_staircasejoin.mx \
+                ll_upwards.mx \
+                prec_foll.mx \
+                levelsteps.mx \
+                shredder.mx \
+                serialize.mx \
+                serialize_null.mx \
+                serialize_dflt.mx \
+                serialize_sax.mx 
 
-	LIBS = \
-		$(PF_LIBS) $(MONETDB_LIBS) \
-		-lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+        LIBS = \
+                $(PF_LIBS) $(MONETDB_LIBS) \
+                -lbat -lmonet -lstream \
+                -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
 lib__pf_standoff = {
-	DIR = libdir/MonetDB
-	SOURCES = \
-		pf_standoff.mx 
+        DIR = libdir/MonetDB
+        SOURCES = \
+                pf_standoff.mx 
 
-	LIBS = \
-		$(PF_LIBS) $(MONETDB_LIBS) \
-		-lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
+        LIBS = \
+                $(PF_LIBS) $(MONETDB_LIBS) \
+                -lbat -lmonet -lstream \
+                -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
 }
 
 lib__pathfinder = {
-	DIR = libdir/MonetDB
-	SOURCES = \
-		pathfinder.mx
+        DIR = libdir/MonetDB
+        SOURCES = \
+                pathfinder.mx
 
-	LIBS = \
-		../compiler/libcompiler1 \
-		../compiler/schema/libschema \
-		../compiler/debug/libdebug \
-		../compiler/parser/libparser \
-		../compiler/semantics/libsemantics \
-		../compiler/core/libcore \
-		../compiler/algebra/libalgebra \
-		../compiler/algebra/prop/libprop \
-		../compiler/algebra/opt/libopt \
-		../compiler/mil/libmil \
-		../compiler/mem/libmem \
-		../compiler/libcompiler2 \
-		$(PF_LIBS) $(MONETDB_LIBS) \
-		-lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
+        LIBS = \
+                ../compiler/libcompiler1 \
+                ../compiler/schema/libschema \
+                ../compiler/debug/libdebug \
+                ../compiler/parser/libparser \
+                ../compiler/semantics/libsemantics \
+                ../compiler/core/libcore \
+                ../compiler/algebra/libalgebra \
+                ../compiler/algebra/map/libmap \
+                ../compiler/algebra/prop/libprop \
+                ../compiler/algebra/opt/libopt \
+                ../compiler/mil/libmil \
+                ../compiler/mem/libmem \
+                ../compiler/libcompiler2 \
+                $(PF_LIBS) $(MONETDB_LIBS) \
+                -lbat -lmonet -lstream \
+                -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
 lib__xrpc = {
-	DIR = libdir/MonetDB
-	SOURCES = \
-		shttpd.c shttpd.h \
-		xrpc.mx
+        DIR = libdir/MonetDB
+        SOURCES = \
+                shttpd.c shttpd.h \
+                xrpc.mx
 
-	LIBS = \
-		   $(MONETDB_LIBS) $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-		   -lbat -lmonet -lstream -lpthread \
-		   -l_streams -l_builtin -l_ascii_io
+        LIBS = \
+                   $(MONETDB_LIBS) $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
+                   -lbat -lmonet -lstream -lpthread \
+                   -l_streams -l_builtin -l_ascii_io
 }
 
 scripts_mil = {
-	DIR = libdir/MonetDB
-	SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc.mx
+        DIR = libdir/MonetDB
+        SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xrpc.mx
 }
 

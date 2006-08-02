@@ -376,6 +376,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return false;
             break;
 
+        case la_proxy:
+        case la_proxy_base:
+            /* we assume that we do not split up proxy nodes */
+            /* references would be screwed up by the rewriting */
+            return false;
+            break;
+
         case la_cross_mvd:
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "

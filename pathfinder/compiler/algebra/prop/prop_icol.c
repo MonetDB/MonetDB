@@ -397,8 +397,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = n->prop->icols;
             break;
 
-            n->prop->l_icols = n->prop->icols;
-
         case la_scjoin:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
@@ -521,6 +519,12 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = n->sem.err.att;
             break;
 
+        case la_proxy:
+        case la_proxy_base:
+            /* infer incoming icols for input relation */
+            n->prop->l_icols = n->prop->icols;
+            break;
+
         case la_string_join:
             /* infer iter|pos|item schema for first input relation */
             n->prop->l_icols = union_ (union_ (n->sem.string_join.iter,
@@ -575,16 +579,25 @@ prop_infer (PFla_op_t *n)
 }
 
 /**
- * Infer icols property for a DAG rooted in root
+ * Infer icols property for a DAG rooted in @a root starting
+ * with the icols collected in @a icols.
  */
 void
-PFprop_infer_icol (PFla_op_t *root) {
+PFprop_infer_icol_specific (PFla_op_t *root, PFalg_att_t icols) {
     /* collect number of incoming edges (parents) */
     prop_infer (root);
     PFla_dag_reset (root);
 
     /* second run infers icols property */
-    prop_infer_icols (root, 0);
+    prop_infer_icols (root, icols);
+}
+
+/**
+ * Infer icols property for a DAG rooted in @a root
+ */
+void
+PFprop_infer_icol (PFla_op_t *root) {
+    PFprop_infer_icol_specific (root, 0);
 }
 
 

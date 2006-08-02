@@ -545,6 +545,12 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                             p->sem.err.str);
             break;
         
+        case la_proxy:
+        case la_proxy_base:
+            PFoops (OOPS_FATAL,
+                    "PROXY EXPANSION MISSING");
+            break;
+
         case la_concat:
             res = binary_op (PFla_fn_concat, p, map);
             break;

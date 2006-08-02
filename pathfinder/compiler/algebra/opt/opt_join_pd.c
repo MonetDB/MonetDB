@@ -116,6 +116,37 @@ is_join_att (PFla_op_t *p, PFalg_att_t att)
             p->sem.eqjoin_unq.att2 == (att));
 }
 
+/* worker for node containment test */
+static bool
+contains_node_worker (PFla_op_t *n, PFla_op_t *m)
+{
+    if (n == m)
+        return true;
+
+    if (n->bit_in)
+        return false;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        if (contains_node_worker (n->child[i], m))
+            return true;
+
+    n->bit_in = true;
+
+    return false;
+}
+
+/* check if a node @a m appears in the sub-DAG of node @a n */
+static bool
+contains_node (PFla_op_t *n, PFla_op_t *m)
+{
+    bool cons = contains_node_worker (n, m);
+    /* use IN bit to avoid a tree traversal
+       as the DAG bit is already in use */
+    PFla_in_reset (n);
+
+    return cons;
+}
+
 /* worker for binary operators */
 static bool
 modify_binary_op (PFla_op_t *p,
@@ -357,52 +388,109 @@ join_pushdown (PFla_op_t *p)
                         "only allowed with original attribute names!");
                     
             case la_eqjoin_unq:
-                /* rewriting joins is only effective if we push
+                /* Rewriting joins is only effective if we push
                    joins further down that have different join columns.
                    The correct choice of the branch is however not
-                   directly clear. As with the current examples multiple
-                   invocations of this optimization phase have a similar
-                   effect we discard any rewriting of equi-joins.
-                   
-                   If we discover a query that may benefit from equi-join
-                   rewriting we may fill in some code here. */
-                break;
-            {
-                /* special case: join attribute is join attribute column
-                   in the nested equi-join as well */ 
-                if (latt == lp->sem.eqjoin_unq.res) {
-                    /* choose the join column with a smaller id value as
-                       new join partner of the current outer equi-join */
-                    if (lp->sem.eqjoin_unq.att1 < lp->sem.eqjoin_unq.att2) {
-                        PFalg_att_t min = ratt < lp->sem.eqjoin_unq.att1
-                                          ? ratt
-                                          : lp->sem.eqjoin_unq.att1;
-                                          
-                        *p = *(eqjoin_unq (eqjoin_unq (L(lp), rp,
-                                                       lp->sem.eqjoin_unq.att1,
-                                                       ratt, min),
-                                           R(lp),
-                                           min,
-                                           lp->sem.eqjoin_unq.att2,
-                                           p->sem.eqjoin_unq.res));
-                    } else {
-                        PFalg_att_t min = ratt < lp->sem.eqjoin_unq.att2
-                                          ? ratt
-                                          : lp->sem.eqjoin_unq.att2;
-                                          
-                        *p = *(eqjoin_unq (eqjoin_unq (R(lp), rp,
-                                                       lp->sem.eqjoin_unq.att2,
-                                                       ratt, min),
-                                           L(lp),
-                                           min,
-                                           lp->sem.eqjoin_unq.att1,
-                                           p->sem.eqjoin_unq.res));
-                    }
+                   directly clear. 
+
+                   We thus only optimze only the patterns
+                         |X|_1          |X|_1           |X|   
+                        /   \          /   \           /   \
+                       |X|   1        |X|   1         #     2
+                      /   \    and   /   \     into   |
+                      #    2        #     2          |X|_1 
+                      |             |               /   \
+                      3             3              3     1
+    
+                   whenever possible (e.g., only if no columns references
+                   are missing). For all other directly following equi-joins
+                   we discard any rewriting. */
+                if (PFprop_subdom (lp->prop,
+                                   PFprop_dom (lp->prop, latt),
+                                   PFprop_dom (lp->prop, 
+                                               lp->sem.eqjoin_unq.res))
+                    ||
+                    PFprop_subdom (lp->prop,
+                                   PFprop_dom (lp->prop,
+                                               lp->sem.eqjoin_unq.res),
+                                   PFprop_dom (lp->prop, latt)))
                     break;
-                    /* Don't set the modified flag as this would
-                       result in an infinite loop. */
+
+                if (L(lp)->kind == la_number &&
+                    L(lp)->sem.number.attname == lp->sem.eqjoin_unq.att1 &&
+                    !contains_node (rp, L(lp))) {
+                    /* ensure that column of upper eqjoin is not created on the
+                       other side */
+                    unsigned int i;
+                    PFla_op_t *new_number;
+                    PFalg_proj_t *proj = PFmalloc (L(lp)->schema.count *
+                                                   sizeof (PFalg_proj_t));
+
+                    for (i = 0; i < L(lp)->schema.count; i++)
+                        if (L(lp)->schema.items[i].name == latt)
+                            break;
+                    if (i == L(lp)->schema.count)
+                        break;
+
+                    for (i = 0; i < L(lp)->schema.count; i++)
+                        proj[i] = PFalg_proj (L(lp)->schema.items[i].name,
+                                              L(lp)->schema.items[i].name);
+
+                    new_number = number (
+                                     eqjoin_unq (LL(lp), rp,
+                                                 latt, ratt,
+                                                 p->sem.eqjoin_unq.res),
+                                     L(lp)->sem.number.attname,
+                                     L(lp)->sem.number.part);
+
+                    *L(lp) = *PFla_project_ (new_number, 
+                                             L(lp)->schema.count,
+                                             proj);
+
+                    *p = *eqjoin_unq (new_number, R(lp),
+                                      lp->sem.eqjoin_unq.att1,
+                                      lp->sem.eqjoin_unq.att2,
+                                      lp->sem.eqjoin_unq.res);
+                    break;    
                 }
-            }   break;
+                if (R(lp)->kind == la_number &&
+                    R(lp)->sem.number.attname == lp->sem.eqjoin_unq.att2 &&
+                    !contains_node (rp, R(lp))) {
+                    /* ensure that column of upper eqjoin is not created on the
+                       other side */
+                    unsigned int i;
+                    PFla_op_t *new_number;
+                    PFalg_proj_t *proj = PFmalloc (R(lp)->schema.count *
+                                                   sizeof (PFalg_proj_t));
+
+                    for (i = 0; i < R(lp)->schema.count; i++)
+                        if (R(lp)->schema.items[i].name == latt)
+                            break;
+                    if (i == R(lp)->schema.count)
+                        break;
+
+                    for (i = 0; i < R(lp)->schema.count; i++)
+                        proj[i] = PFalg_proj (R(lp)->schema.items[i].name,
+                                              R(lp)->schema.items[i].name);
+
+                    new_number = number (
+                                     eqjoin_unq (RL(lp), rp,
+                                                 latt, ratt,
+                                                 p->sem.eqjoin_unq.res),
+                                     R(lp)->sem.number.attname,
+                                     R(lp)->sem.number.part);
+
+                    *R(lp) = *PFla_project_ (new_number,
+                                             R(lp)->schema.count,
+                                             proj);
+
+                    *p = *eqjoin_unq (new_number, L(lp),
+                                      lp->sem.eqjoin_unq.att2,
+                                      lp->sem.eqjoin_unq.att1,
+                                      lp->sem.eqjoin_unq.res);
+                    break;    
+                }
+                break;
 
             case la_project:
                 /* Here we apply transformations in two different cases.
@@ -609,7 +697,8 @@ join_pushdown (PFla_op_t *p)
                        rownum operator stays stable. */
                     break;
 
-                if (!is_join_att (p, lp->sem.rownum.attname)) {
+                if (!is_join_att (p, lp->sem.rownum.attname) &&
+                    !contains_node (rp, lp)) {
                     PFalg_proj_t *proj_list;
                     PFalg_attlist_t sortby;
                     PFalg_att_t cur;
@@ -678,7 +767,8 @@ join_pushdown (PFla_op_t *p)
                        number operator stays stable. */
                     break;
 
-                if (!is_join_att (p, lp->sem.number.attname)) {
+                if (!is_join_att (p, lp->sem.number.attname) &&
+                    !contains_node (rp, lp)) {
                     PFalg_proj_t *proj_list;
                     PFalg_att_t cur;
                     unsigned int count = 0;
@@ -783,7 +873,10 @@ join_pushdown (PFla_op_t *p)
 
                 /* attributes */
                 if (L(lp)->kind == la_attribute &&
-                    !is_join_att (p, L(lp)->sem.attr.res)) {
+                    !is_join_att (p, L(lp)->sem.attr.res) &&
+                    !contains_node (rp, lp) &&
+                    !contains_node (rp, L(lp))) {
+
                     PFalg_proj_t *proj_list;
                     PFalg_att_t cur;
                     unsigned int count = 0;
@@ -824,7 +917,10 @@ join_pushdown (PFla_op_t *p)
                 
                 /* textnodes */
                 if (L(lp)->kind == la_textnode &&
-                    !is_join_att (p, L(lp)->sem.textnode.res)) {
+                    !is_join_att (p, L(lp)->sem.textnode.res) &&
+                    !contains_node (rp, lp) &&
+                    !contains_node (rp, L(lp))) {
+
                     PFalg_proj_t *proj_list;
                     PFalg_att_t cur;
                     unsigned int count = 0;
@@ -863,14 +959,24 @@ join_pushdown (PFla_op_t *p)
                 break;
                 
             case la_cond_err:
+                /* this breaks proxy generation - thus don't 
+                   rewrite conditional errors */
+                /* 
                 *p = *(cond_err (eqjoin_unq (L(lp), rp, latt, ratt,
                                              p->sem.eqjoin_unq.res),
                                  R(lp),
                                  lp->sem.err.att,
                                  lp->sem.err.str));
                 modified = true;
+                */
                 break;
                 
+            case la_proxy:
+            case la_proxy_base:
+                PFoops (OOPS_FATAL,
+                        "cannot cope with proxy nodes");
+                break;
+
             case la_concat:
                 modified = modify_binary_op (p, lp, rp, PFla_fn_concat);
                 break;
@@ -1026,8 +1132,12 @@ PFalgopt_join_pd (PFla_op_t *root)
     
     /* Optimize algebra tree */
     while (modified || tries < max_tries) {
-        PFprop_infer_dom (root);
         PFprop_infer_key (root);
+        /* key property inference already requires 
+           the domain property inference. Thus we can
+           skip it:
+        PFprop_infer_dom (root);
+        */
 
         modified = join_pushdown (root);
         PFla_dag_reset (root);

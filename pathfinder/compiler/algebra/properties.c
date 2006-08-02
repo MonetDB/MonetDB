@@ -144,7 +144,10 @@ create_prop (PFla_op_t *n)
 }
 
 /**
- * Create new property fields for a DAG rooted in @a root
+ * Create new property fields for a DAG rooted in @a root.
+ * 
+ * This is required if the property of copied nodes
+ * is not copied in place (e.g. '*p = *L(p);').
  */
 void
 PFprop_create_prop (PFla_op_t *root)

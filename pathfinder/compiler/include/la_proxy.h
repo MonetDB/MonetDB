@@ -1,8 +1,7 @@
 /**
  * @file
  *
- * Functions related to algebra tree optimization.
- * (Generic stuff for logical algebra.)
+ * Introduce/Resolve proxy operators
  *
  * Copyright Notice:
  * -----------------
@@ -30,39 +29,14 @@
  * $Id$
  */
 
-#ifndef ALG_DAG_H
-#define ALG_DAG_H
+#ifndef LA_PROXY_H
+#define LA_PROXY_H
 
-#include <logical.h>
+#include "logical.h"
 
-/*
- * Reset the DAG bit of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_dag_reset (PFla_op_t *n);
+PFla_op_t * PFintro_proxies (PFla_op_t *root);
+PFla_op_t * PFresolve_proxies (PFla_op_t *root);
 
-/*
- * Reset the IN and OUT bits of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_in_out_reset (PFla_op_t *n);
-
-/*
- * Reset the IN bit of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_in_reset (PFla_op_t *n);
-
-/*
- * Reset the OUT bit of the logical algebra tree.
- * (it requires a clean reset bit to traverse
- *  the logical tree as DAG.)
- */
-void PFla_out_reset (PFla_op_t *n);
-
-#endif  /* ALG_DAG_H */
+#endif  /* LA_PROXY_H */
 
 /* vim:set shiftwidth=4 expandtab: */

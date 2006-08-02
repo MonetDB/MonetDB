@@ -113,6 +113,10 @@ enum PFla_op_kind_t {
     , la_empty_frag     = 73 /**< representation of an empty fragment */
                             
     , la_cond_err       = 80 /**< facility to trigger runtime errors */
+    , la_proxy          = 96 /**< proxy operator that represents a group
+                                  of operators */
+    , la_proxy_base     = 97 /**< completes the content of the proxy 
+                                  (a virtual base table) */
     , la_cross_mvd      = 98 /**< clone column aware cross product */
     , la_eqjoin_unq     = 99 /**< clone column aware equi-join */                            
     /* builtin support for XQuery functions */
@@ -282,6 +286,18 @@ union PFla_op_sem_t {
         char *          str;     /**< error message */
     } err;
 
+    /* semantic content for proxy nodes */
+    struct {
+        unsigned int    kind;      /**< proxy kind */
+        PFla_op_t      *ref;       /**< reference a certain operator in the
+                                        proxy body */
+        PFla_op_t      *base1;     /**< the leafs first child */
+        PFla_op_t      *base2;     /**< the leafs second child */
+        PFalg_attlist_t req_cols;  /**< list of columns required
+                                        to evaluate proxy */
+        PFalg_attlist_t new_cols;  /**< list of new generated columns */
+    } proxy;
+
     /* reference columns of string_join operator */
     struct {
         PFalg_att_t     iter;     /**< iter column of string relation */
@@ -314,6 +330,10 @@ struct PFla_op_t {
     unsigned           bit_reset:1;/**< used to reset the dag bit
                                              in a DAG traversal */
     unsigned           bit_dag:1;  /**< enables DAG traversal */
+    unsigned           bit_in:1;   /**< indicates that node is part
+                                        of a proxy node */
+    unsigned           bit_out:1;  /**< indicates that node is not part
+                                        of a proxy node */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */
@@ -724,6 +744,27 @@ PFla_op_t * PFla_empty_frag (void);
  */
 PFla_op_t * PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
                            PFalg_att_t att, char *err_string);
+
+/****************************************************************/
+
+/**
+ * Constructor for a proxy operator with a single child
+ */
+PFla_op_t *PFla_proxy (const PFla_op_t *n, unsigned int kind,
+                       PFla_op_t *ref, PFla_op_t *base,
+                       PFalg_attlist_t new_cols, PFalg_attlist_t req_cols);
+
+/**
+ * Constructor for a proxy operator with a two children
+ */
+PFla_op_t *PFla_proxy2 (const PFla_op_t *n, unsigned int kind,
+                       PFla_op_t *ref, PFla_op_t *base1, PFla_op_t *base2,
+                       PFalg_attlist_t new_cols, PFalg_attlist_t req_cols);
+
+/**
+ * Constructor for a proxy base operator
+ */
+PFla_op_t *PFla_proxy_base (const PFla_op_t *n);
 
 /****************** built-in functions **************************/
 

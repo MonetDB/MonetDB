@@ -26,7 +26,7 @@
 
 
 #SUBDIRS = hskparser
-SUBDIRS = opt prop
+SUBDIRS = opt prop map
 
 #YFLAGS = -d -p pf
 #LFLAGS = -Ppf -olex.yy.c
@@ -37,20 +37,20 @@ INCLUDES = ../include $(MONETDB_INCS)
 #X_CFLAGS = "-pedantic"
 
 lib_algebra = {
-	NOINST
-	DIR = libdir
-	SOURCES = \
-		core2alg.brg \
-        alg_dag.c \
-		algebra.c \
-		properties.c \
-		algopt.c \
-		algebra_cse.c \
-		logical.c \
-		planner.c \
-		physical.c \
-		ordering.c \
-		builtins.c
+        NOINST
+        DIR = libdir
+        SOURCES = \
+                core2alg.brg \
+                alg_dag.c \
+                algebra.c \
+                properties.c \
+                algopt.c \
+                algebra_cse.c \
+                logical.c \
+                planner.c \
+                physical.c \
+                ordering.c \
+                builtins.c
 }
 
 #EXTRA_DIST =
