@@ -103,7 +103,7 @@ sql_create_seq(
 	} else if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", sql->user, ss->base.name);
+				"for '%s' in schema '%s'", backend_get_string(sql, "user"), ss->base.name);
 	}
 
 	/* generate defaults */
@@ -193,7 +193,7 @@ sql_alter_seq(
 	if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02,
 				"ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", sql->user, ss->base.name);
+				"for '%s' in schema '%s'", backend_get_string(sql, "user"), ss->base.name);
 	}
 
 	/* make sure the in memory sequence structure is flushed */
@@ -320,7 +320,7 @@ sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 	if (!sql_find_seq(sql, name)) {
 		return sql_error(sql, 02, "DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", sql->user,  ss->base.name);
+		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", backend_get_string(sql, "user"),  ss->base.name);
 	}
 	/* make sure the in memory sequence structure is flushed */
 	ok = sequence_exit(name);

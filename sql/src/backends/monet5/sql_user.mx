@@ -264,9 +264,6 @@ monet5_user_get_def_schema(mvc *m, oid user)
 		_DELETE(p);
 
 		m->user_id = m->role_id = id;
-
-		m->user = _strdup(username);
-		m->role = _strdup(username);
 	} else {
 		schema = NULL;
 	}
@@ -276,8 +273,10 @@ monet5_user_get_def_schema(mvc *m, oid user)
 			mvc_rollback(m, 0, NULL);
 		return NULL;
 	}
-	/* only now we can initialize the sessions table */
-	sql_sessions(m);
+	/* reset the user and schema names */
+	backend_set_string(m, "current_schema", schema);
+	backend_set_string(m, "current_user", username);
+	backend_set_string(m, "current_role", username);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }

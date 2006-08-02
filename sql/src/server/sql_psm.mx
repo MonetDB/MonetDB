@@ -34,7 +34,7 @@ extern stmt *psm(mvc *sql, symbol *sym);
 #include "sql_select.h"
 #include "sql_semantic.h"
 
-static stmt * sequential_block (mvc *sql, scope *scp, dlist *blk, char *opt_name);
+static stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *blk, char *opt_name);
 
 /* SET variable = value */
 
@@ -43,7 +43,9 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 {
 	char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
-	stmt *r = NULL;
+	stmt *var, *r = NULL;
+	int level = 0;
+	sql_subtype *tpe = NULL;
 
 	/* name can be 
 		'parameter of the function' (ie in the param list)
@@ -51,19 +53,25 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 	*/
 
 	/* check if variable is known from the stack */
-	if (stack_find_var(sql, name) == NULL) {
+	if ((var=stack_find_var(sql, name)) == NULL) {
 		sql_arg *a = sql_bind_param(sql, name);
 
 		if (!a) /* not parameter, ie local var ? */
 			return sql_error(sql, 01, "Variable %s unknown", name);
+		tpe = &a->type;
+	} else { 
+		tpe = tail_type(var);
 	}
 
 	r = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
 	if (!r)
 		return NULL;
 
-	/* TODO type checking */
-	return stmt_assign(name, r);
+	level = stack_find_frame(sql, name);
+	r = check_types(sql, tpe, r, type_equal); 
+	if (!r)
+		return NULL;
+	return stmt_assign(name, r, level);
 }
 
 static stmt *
@@ -86,7 +94,7 @@ psm_declare(mvc *sql, scope *scp, dnode *n)
 				return sql_error(sql, 01, 
 					"Variable %s allready declared", name);
 			}
-			r = stmt_var(_strdup(name), ctype, 1);
+			r = stmt_var(_strdup(name), ctype, 1, sql->frame );
 			stack_push_var(sql, name, r);
 			list_append(l, r);
 			ids = ids->next;
@@ -105,7 +113,7 @@ psm_declare(mvc *sql, scope *scp, dnode *n)
    support for LEAVE and ITERATE (sql multi-level break and continue)
  */
 static stmt * 
-psm_while_do( mvc *sql, scope *scp, dnode *w )
+psm_while_do( mvc *sql, scope *scp, sql_subtype *res, dnode *w )
 {
 	if (!w)
 		return NULL;
@@ -115,7 +123,7 @@ psm_while_do( mvc *sql, scope *scp, dnode *w )
 
 		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
 		n = n->next;
-		whilestmts = sequential_block(sql, scp, n->data.lval, n->next->data.sval);
+		whilestmts = sequential_block(sql, scp, res, n->data.lval, n->next->data.sval);
 
 		if (sql->session->status || !cond || !whilestmts) {
 			cond_stmt_destroy(cond);
@@ -134,7 +142,7 @@ psm_while_do( mvc *sql, scope *scp, dnode *w )
    end if
  */
 static stmt * 
-psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
+psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 {
 	if (!elseif)
 		return NULL;
@@ -144,9 +152,9 @@ psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
 
 		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
 		n = n->next;
-		ifstmts = sequential_block(sql, scp, n->data.lval, NULL);
+		ifstmts = sequential_block(sql, scp, res, n->data.lval, NULL);
 		n = n->next;
-		elsestmts = psm_if_then_else( sql, scp, n);
+		elsestmts = psm_if_then_else( sql, scp, res, n);
 
 		if (sql->session->status || !cond || !ifstmts) {
 			cond_stmt_destroy(cond);
@@ -160,7 +168,7 @@ psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
 
 		if (e->token != SQL_ELSE)
 			return NULL;
-		return sequential_block( sql, scp, e->data.lval, NULL);
+		return sequential_block( sql, scp, res, e->data.lval, NULL);
 	}
 }
 
@@ -179,7 +187,7 @@ psm_if_then_else( mvc *sql, scope *scp, dnode *elseif )
 	END CASE
  */
 static stmt * 
-psm_case( mvc *sql, scope *scp, dnode *case_when )
+psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 {
 	if (!case_when)
 		return NULL;
@@ -196,7 +204,7 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 		if (!v)
 			return NULL;
 		if (else_statements) {
-			else_stmt = sequential_block( sql, scp, else_statements, NULL);
+			else_stmt = sequential_block( sql, scp, res, else_statements, NULL);
 			if (!else_stmt) {
 				stmt_destroy(v);
 				return NULL;
@@ -211,7 +219,7 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 
 			if (!when_value || 
 			   (cond = sql_compare(sql, stmt_dup(v), when_value, "=", sql_sel)) == NULL || 
-			   (if_stmts = sequential_block( sql, scp, m->next->data.lval, NULL)) == NULL ) {
+			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL)) == NULL ) {
 				stmt_destroy(v);
 				cond_stmt_destroy(else_stmt);
 				cond_stmt_destroy(cond);
@@ -236,7 +244,7 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 		stmt *else_stmt = NULL, *cur_if = NULL, *top = NULL;
 
 		if (else_statements) {
-			else_stmt = sequential_block( sql, scp, else_statements, NULL);
+			else_stmt = sequential_block( sql, scp, res, else_statements, NULL);
 			if (!else_stmt) 
 				return NULL;
 		}
@@ -248,7 +256,7 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 			stmt *case_stmt = NULL;
 
 			if (!cond || 
-			   (if_stmts = sequential_block( sql, scp, m->next->data.lval, NULL)) == NULL ) {
+			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL)) == NULL ) {
 				cond_stmt_destroy(else_stmt);
 				cond_stmt_destroy(cond);
 				return NULL;
@@ -271,16 +279,16 @@ psm_case( mvc *sql, scope *scp, dnode *case_when )
 /* return val;
  */
 static stmt * 
-psm_return( mvc *sql, scope *scp, symbol *return_sym )
+psm_return( mvc *sql, scope *scp, sql_subtype *restype, symbol *return_sym )
 {
 	stmt *res = sql_value_exp(sql, scp, return_sym, NULL, NULL, sql_sel);
-	if (!res)
+	if (!res || (res = check_types(sql, restype, res, type_equal)) == NULL)
 		return NULL;
 	return stmt_return(res);
 }
 
 static stmt *
-sequential_block (mvc *sql, scope *scp, dlist *blk, char *opt_label) 
+sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *opt_label) 
 {
 	list *l=0;
 	stmt *res = NULL;
@@ -299,16 +307,16 @@ sequential_block (mvc *sql, scope *scp, dlist *blk, char *opt_label)
 			res = psm_declare(sql, scp, s->data.lval->h);
 			break;
 		case SQL_WHILE:
-			res = psm_while_do(sql, scp, s->data.lval->h);
+			res = psm_while_do(sql, scp, restype, s->data.lval->h);
 			break;
 		case SQL_IF:
-			res = psm_if_then_else(sql, scp, s->data.lval->h);
+			res = psm_if_then_else(sql, scp, restype, s->data.lval->h);
 			break;
 		case SQL_CASE:
-			res = psm_case(sql, scp, s->data.lval->h);
+			res = psm_case(sql, scp, restype, s->data.lval->h);
 			break;
 		case SQL_RETURN:
-			res = psm_return(sql, scp, s->data.sym);
+			res = psm_return(sql, scp, restype, s->data.sym);
 			break;
 		default:
 			printf("default \n");
@@ -343,7 +351,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 		char *q = QUERY(sql->scanner);
 		stmt *b = NULL;
 
-		if (!(b = sequential_block(sql, NULL, body, NULL ))) {
+		if (!(b = sequential_block(sql, NULL, res, body, NULL ))) {
 			return NULL;
 		}
 		
@@ -375,9 +383,15 @@ psm(mvc *sql, symbol *s)
 
 		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
-	}
+	} 	break;
+	case SQL_SET:
+		ret = psm_set(sql, NULL, s->data.lval->h);
+		sql->type = Q_UPDATE;
 		break;
-
+	case SQL_DECLARE:
+		ret = psm_declare(sql, NULL, s->data.lval->h);
+		sql->type = Q_UPDATE;
+		break;
 	default:
 		return sql_error(sql, 01, "schema statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}

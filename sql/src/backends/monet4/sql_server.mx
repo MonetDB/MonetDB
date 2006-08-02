@@ -303,6 +303,10 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	be_funcs->fstack = &monet4_freestack;
 	be_funcs->fcode = &monet4_freecode;
 	be_funcs->finterpret = &monet4_parse;
+	be_funcs->fget_string = (get_string_fptr)&monet4_get_string;
+	be_funcs->fget_number = (get_number_fptr)&monet4_get_number;
+	be_funcs->fset_string = (set_string_fptr)&monet4_set_string;
+	be_funcs->fset_number = (set_number_fptr)&monet4_set_number;
 	monet4_user_init(be_funcs);
 	backend_init(be_funcs);	/* we probably leak be_funcs here */
 	CNTXTclient(stk, &father);

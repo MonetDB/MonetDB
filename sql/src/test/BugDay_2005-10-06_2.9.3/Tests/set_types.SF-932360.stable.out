@@ -17,15 +17,12 @@ quit();
 
 Over..
 
-# 12:39:52 >  
-# 12:39:52 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < set_types.SF-932360.sql
-# 12:39:52 >  
+# 11:07:22 >  
+# 11:07:22 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33775  < set_types.SF-932360.sql
+# 11:07:22 >  
 
-[ 1	]
-[ 1	]
-[ 1	]
 
-# 12:39:52 >  
-# 12:39:52 >  Done.
-# 12:39:52 >  
+# 11:07:22 >  
+# 11:07:22 >  Done.
+# 11:07:22 >  
 

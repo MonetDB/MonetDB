@@ -100,7 +100,6 @@ tail_column(stmt *st)
 		/* some statements have no column coming from any basetable */
 	case st_atom:
 	case st_var:
-	case st_update_var:
 	case st_mark:
 	case st_gen_group:
 	case st_derive:
@@ -187,7 +186,6 @@ head_column(stmt *st)
 		/* st_temp has no head column coming from any basetable */
 	case st_atom:
 	case st_var:
-	case st_update_var:
 	case st_seq_next:
 	case st_basetable:
 	case st_temp:
@@ -775,7 +773,7 @@ stmt_hash( mvc *sql, list *l )
 }
 
 static stmt *
-stmt_reljoin_( mvc *sql, list *l1, list *l2 )
+reljoin( mvc *sql, list *l1, list *l2 )
 {
 	node *n1, *n2;
 	stmt *l, *r, *res;
@@ -948,9 +946,13 @@ rel2bin(mvc *c, stmt *s)
 	case st_find:
 	case st_bulkinsert:
 	case st_var:
-	case st_update_var:
 	case st_seq_next:
 	case st_table_clear:
+
+	case st_while:
+	case st_if:
+	case st_return:
+	case st_assign:
 
 		s->optimized = 2;
 		return stmt_dup(s);
@@ -966,8 +968,7 @@ rel2bin(mvc *c, stmt *s)
 			list_append(l1, rel2bin(c, n1->data));
 			list_append(l2, rel2bin(c, n2->data));
 		}
-		/*res = stmt_reljoin2(l1, l2); */
-		res = stmt_reljoin_(c, l1, l2);
+		res = reljoin(c, l1, l2);
 		list_destroy(l1);
 		list_destroy(l2);
 		s->optimized = res->optimized = 2;

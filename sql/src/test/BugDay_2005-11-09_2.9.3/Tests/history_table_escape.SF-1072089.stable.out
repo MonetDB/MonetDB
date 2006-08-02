@@ -21,7 +21,6 @@ Over..
 # 15:49:19 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44105  < history_table_escape.SF-1072089.sql
 # 15:49:19 >  
 
-[ 1	]
 [ 0	]
 #  # table_name
 # single_value # name

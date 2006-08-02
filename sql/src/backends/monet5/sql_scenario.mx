@@ -176,6 +176,10 @@ SQLinit(Client c)
 	be_funcs->fstack		= &monet5_freestack;
 	be_funcs->fcode			= &monet5_freecode;
 	be_funcs->finterpret	= &monet5_parse;
+	be_funcs->fget_string = (get_string_fptr)&monet5_get_string;
+	be_funcs->fget_number = (get_number_fptr)&monet5_get_number;
+	be_funcs->fset_string = (set_string_fptr)&monet5_set_string;
+	be_funcs->fset_number = (set_number_fptr)&monet5_set_number;
 	monet5_user_init(be_funcs);
 	backend_init(be_funcs); /* be_funcs probably leaks */
 
@@ -212,6 +216,100 @@ SQLtrace(int *ret)
 	return MAL_SUCCEED;
 }
 
+/* initialize the global variable, ie make mvc point to these */
+static int
+global_variables(mvc *sql, Client c, char *user, char *schema)
+{
+	VarRecord *v;
+	sql_subtype ctype;
+	char *typename;
+	char *name;
+	stmt *r = NULL;
+	MalBlkPtr mb = newMalBlk(32,1024);
+
+	c->state[ENGINE] = mb; /* save global variable mal block */
+ 	typename = "int";
+	sql_find_subtype(&ctype, typename, 0, 0);
+ 	name = "debug";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.ival = 0;
+
+	typename = "varchar";
+	sql_find_subtype(&ctype, typename, 8, 0);
+	name = "explain";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.sval = _strdup("");
+
+	sql_find_subtype(&ctype, typename, 1024, 0);
+	name = "current_schema";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.sval = _strdup(schema);
+
+	name = "current_user";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.sval = _strdup(user);
+
+	name = "current_role";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.sval = _strdup(user);
+
+	name = "optimizer";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.sval = "on";
+
+	typename = "sec_interval";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	name = "current_timezone";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.ival = 0;
+
+	typename = "boolean";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	name = "cache";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.cval[0] = 1;
+
+	name = "profile";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.cval[0] = 0;
+
+	name = "trace";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.val.cval[0] = 0;
+
+	return 0;
+}
+
 str
 SQLstartQuery(int *ret, str *qry){
 	(void) ret; (void) qry;
@@ -222,6 +320,7 @@ SQLexitQuery(int *ret){
 	(void) ret; 
 	return MAL_SUCCEED;
 }
+
 @-
 It should become possible to initialize the SQL
 from a MAL program to setup an environment to
@@ -240,8 +339,8 @@ SQLinitAdmin(Client c)
 	
 	if ((backend *) c->state[PARSER] == 0) {
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
-		m->cache = 1;
 		/* replace user name with client record setting later on */
+		global_variables(m, c, "monetdb", "sys");
 		schema = monet5_user_get_def_schema(m, (oid)0);
 		if (!schema) {
 			_DELETE(schema);
@@ -253,6 +352,7 @@ SQLinitAdmin(Client c)
 		c->state[OPTIMIZE] = m;
 	} else {
 		m = c->state[OPTIMIZE];
+		/* TODO reset global variables */
 	}
 	return MAL_SUCCEED;
 }
@@ -273,8 +373,8 @@ SQLinitClient(Client c)
 	
 	if ((backend *) c->state[PARSER] == 0) {
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
-		m->cache = 1;
 
+		global_variables(m, c, "monetdb", "sys");
 		/* pass through credentials of the user if not console */
 		schema = monet5_user_get_def_schema(m, c->user);
 		if (!schema) {
@@ -294,6 +394,7 @@ SQLinitClient(Client c)
 		c->state[OPTIMIZE] = m;
 	} else {
 		m = c->state[OPTIMIZE];
+		/* TODO reset global variables */
 	}
 
 	c->yycur = 0;		/* make sure we don't reuse the used input */

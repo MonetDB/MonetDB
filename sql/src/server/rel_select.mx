@@ -1604,14 +1604,16 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		
 		exp = rel_bind_column(sql, rel, name);
 		if (!exp) {
-			char *v, *t;
+			char *v;
 			sql_subtype tpe;
 
-			if (!(v = sql_get_var(sql, name)))
+			/* TODO need exp_atom with a var name */
+			/*if (!(v = sql_get_var(sql, name)))
 				return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
 			t = sql_get_type(sql, name);
 			if (!sql_find_subtype(&tpe, t, 0, 0))
 				return sql_error(sql, 02, "SELECT: no such type '%s'", t);
+			*/
 			exp = exp_atom(atom_general(&tpe, _strdup(v), 1));
 		}
 		if (!exp) 

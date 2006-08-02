@@ -1261,9 +1261,13 @@ optimize(mvc *c, stmt *s)
 	case st_find:
 	case st_bulkinsert:
 	case st_var:
-	case st_update_var:
 	case st_seq_next:
 	case st_table_clear:
+
+	case st_while:
+	case st_if:
+	case st_return:
+	case st_assign:
 
 		s->optimized = 1;
 		return stmt_dup(s);

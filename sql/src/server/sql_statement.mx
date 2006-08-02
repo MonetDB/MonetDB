@@ -50,8 +50,7 @@ typedef union stmtdata {
 typedef enum stmt_type {
 	st_none,
 	st_sql,			/* sometimes a query rewrite is easier */
-	st_var,			/* still needs work */
-	st_update_var,
+	st_var,			
 	st_seq_next,		
 
 	st_basetable,
@@ -178,9 +177,11 @@ extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
 
 extern stmt *stmt_none(void);
 extern stmt *stmt_sql(char *query);
-extern stmt *stmt_var(char *varname, sql_subtype *t, int declare);
+
+#define VAR_DECLARE 1
+#define VAR_GLOBAL(f) ((f>>1)==1)
+extern stmt *stmt_var(char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
-extern stmt *stmt_update_var(char *varname);
 extern stmt *stmt_seq_next(char *seqname);
 extern stmt *stmt_internal(int st, list *ops);
 
@@ -279,7 +280,7 @@ extern stmt *stmt_affected_rows(stmt *l);
 extern stmt *stmt_while(stmt *cond, stmt *whilestmts );
 extern stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts);
 extern stmt *stmt_return(stmt *val);
-extern stmt *stmt_assign(char *varname, stmt *val);
+extern stmt *stmt_assign(char *varname, stmt *val, int level);
 
 extern sql_subtype *head_type(stmt *st);
 extern sql_subtype *tail_type(stmt *st);
@@ -317,7 +318,6 @@ st_type2string(st_type type)
 		ST(none);
 		ST(sql);
 		ST(var);
-		ST(update_var);
 		ST(seq_next);
 
 		ST(basetable);
@@ -603,7 +603,6 @@ stmt_destroy(stmt *s)
 		case st_pivot:
 		case st_find:
 		case st_sql:
-		case st_update_var:
 		case st_seq_next:
 
 		case st_while:
@@ -797,7 +796,7 @@ stmt_sql(char *query)
 }
 
 stmt *
-stmt_var(char *varname, sql_subtype *t, int declare)
+stmt_var(char *varname, sql_subtype *t, int declare, int level)
 {
 	stmt *s = stmt_create(st_var);
 
@@ -806,7 +805,7 @@ stmt_var(char *varname, sql_subtype *t, int declare)
 		s->op2.typeval = *t;
 	else
 		s->op2.typeval.type = NULL;
-	s->flag = declare;
+	s->flag = declare + (level<<1);
 	s->key = 1;
 	return s;
 }
@@ -821,21 +820,11 @@ stmt_varnr(int nr, sql_subtype *t)
 		s->op2.typeval = *t;
 	else
 		s->op2.typeval.type = NULL;
-	s->key = 1;
 	s->flag = nr;
-	return s;
-}
-
-
-stmt *
-stmt_update_var(char *varname)
-{
-	stmt *s = stmt_create(st_update_var);
-
-	s->op1.stval = stmt_atom_string(varname);
 	s->key = 1;
 	return s;
 }
+
 
 stmt *
 stmt_seq_next(char *seqname)
@@ -2247,12 +2236,13 @@ stmt *stmt_return(stmt *val)
 	return s;
 }
 
-stmt *stmt_assign(char *varname, stmt *val)
+stmt *stmt_assign(char *varname, stmt *val, int level)
 {
 	stmt *s = stmt_create(st_assign);
 
 	s->op1.sval = _strdup(varname);
 	s->op2.stval = val;
+	s->flag = (level<<1);
 	return s;
 }
 

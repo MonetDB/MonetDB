@@ -524,8 +524,8 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR
-%token	USER CURRENT_USER sqlSESSION SESSION_USER LOCAL CURRENT_ROLE 
-
+%token	USER CURRENT_USER SESSION_USER LOCAL 
+%token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
@@ -2975,6 +2975,10 @@ scalar_exp:
 
 value_exp:
     atom
+ |  user		{ $$ = _symbol_create_list( SQL_COLUMN, 
+			  append_string(L(), sa_strdup(SA, "current_user"))); }
+ |  CURRENT_ROLE	{ $$ = _symbol_create_list( SQL_COLUMN, 
+			  append_string(L(), sa_strdup(SA, "current_role"))); }
  |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  var_ref		
  |  aggr_ref
@@ -3314,14 +3318,6 @@ literal:
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
- |  user
-		{ mvc *m = (mvc*)parm;
-		  sql_subtype t;
-
-		  sql_find_subtype(&t, "char", strlen(m->user),0);
-		  $$ = _newAtomNode( 
-			_atom_string(&t,sql2str(sa_strdup(SA, m->user))));
-		}
  |  sqlINT
 		{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value;
@@ -3873,7 +3869,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | PATH		{ $$ = sa_strdup(SA, "path"); }		/* sloppy: officially reserved */
 | PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
 | PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }	/* sloppy: officially reserved */
-| ROLE		{ $$ = sa_strdup(SA, "role"); }		/* neither reserved nor non-reserv. */
+| ROLE		{ $$ = sa_strdup(SA, "role"); }	 	/* neither reserved nor non-reserv. */
 | sqlSIZE	{ $$ = sa_strdup(SA, "size"); }		/* sloppy: officially reserved */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
@@ -3914,10 +3910,10 @@ intval:
 	sqlINT	{ $$ = strtol($1,&$1,10); }
  |	IDENT	{ mvc *m = (mvc*)parm;
 		  char *name = $1;
-		  char *v, *t;
-		  sql_subtype tpe;
+		  sql_subtype *tpe;
+		  stmt *var;
 
-		  if (!(v = sql_get_var(m, name))) {
+		  if (!(var = stack_find_var(m, name))) {
 			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "constant (%s) unknown", $1);
@@ -3925,12 +3921,11 @@ intval:
 			$$ = 0;
 			YYABORT;
 		  }
-		  t = sql_get_type(m, name);
-		  sql_find_subtype(&tpe, t, 0, 0);
-		  if (tpe.type->localtype == TYPE_lng ||
-		      tpe.type->localtype == TYPE_int ||
-		      tpe.type->localtype == TYPE_sht ) {
-			$$ = strtol(v,&v,10);
+		  tpe = tail_type(var);
+		  if (tpe->type->localtype == TYPE_lng ||
+		      tpe->type->localtype == TYPE_int ||
+		      tpe->type->localtype == TYPE_sht ) {
+			$$ = backend_get_number(m, name);
 		  } else {
 			char buf[BUFSIZ];
 

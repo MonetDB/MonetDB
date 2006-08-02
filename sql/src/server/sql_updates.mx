@@ -941,7 +941,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", sql->user, tname);
+		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", backend_get_string(sql, "user"), tname);
 	}
 	if (columns) {
 		dnode *n;
@@ -1468,7 +1468,7 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_DELETE)) {
-		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sql->user, tname);
+		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", backend_get_string(sql, "user"), tname);
 	} else {
 		tvar *tv = NULL;
 		stmt *s = NULL;

@@ -71,6 +71,7 @@ typedef struct mvc {
 					(sometimes with name (label) )*/ 
 	int topvars; 
 	int sizevars;
+	int frame;
 	atom *args[MAXPARAMS];
 	int argc;
 	struct symbol *sym;
@@ -79,9 +80,6 @@ typedef struct mvc {
 	int role_id;
 
 	/* current session variables */
-	/* TODO move into the session part */
-	char *user;
-	char *role;
 	int timezone;		/* minutes west of UTC */
 	int cache;		/* some queries should not be cached ! */
 	int reply_size;		/* reply size */ 
@@ -105,7 +103,7 @@ extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws);
-extern void mvc_reset(mvc *m, bstream *rs, stream *ws);
+extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -216,6 +214,8 @@ mvc_init(int debug, backend_stack stk)
 		sql_table *t;
 		mvc *m = mvc_create(0, stk, NULL, NULL);
 
+		/* disable caching */
+		m->cache = 0;
 		mvc_trans(m);
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
@@ -248,7 +248,6 @@ mvc_init(int debug, backend_stack stk)
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
 		sql_create_profile(m, s);
-		sql_create_sessions(m, s);
 
 		if (mvc_commit(m, 0, NULL) < 0) {
 			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
@@ -504,19 +503,20 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->vars = NEW_ARRAY(sql_var,MAXPARAMS);
 	m->topvars = 0;
 	m->sizevars = MAXPARAMS;
+	m->frame = 1;
 	m->argc = 0;
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
-	m->role = m->user = NULL;
 	m->timezone = 0;
 	m->clientid = clientid;
-	m->cache = 0;
 
 	m->mode = m_normal;
 	m->explain = m_normal;
 	m->reply_size = 100;
 	m->debug = 0;
+	m->cache = 1;
+
 	m->depth = 0;
 	m->label = 0;
 
@@ -534,7 +534,7 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 }
 
 void
-mvc_reset(mvc *m, bstream *rs, stream *ws)
+mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars)
 {
 	sql_trans *tr;
 
@@ -551,12 +551,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 	if (tr)
 		sql_session_reset(m->session, 1 /*autocommit on*/);
 
-	if (m->user)
-		_DELETE(m->user);
-	if (m->role)
-		_DELETE(m->role);
-	m->role = m->user = NULL;
-
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
 	else 
@@ -565,20 +559,32 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 	m->errstr[0] = '\0';
 
 	m->params = NULL;
-	m->topvars = 0;
+	/* reset topvars to the set of global variables */
+	m->topvars = globalvars;
+	m->frame = 1;
 	m->argc = 0;
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
-	m->timezone = 0;
-
 	m->mode = m_normal;
+	if (m->explain != m_normal)
+		backend_set_number(m, "explain", m_normal);
 	m->explain = m_normal;
+	if (m->reply_size != 100)
+		backend_set_number(m, "reply_size", 100);
 	m->reply_size = 100;
+	if (m->timezone != 0)
+		backend_set_number(m, "current_timezone", 0);
+	m->timezone = 0;
+	if (m->debug != 0)
+		backend_set_number(m, "debug", 0);
 	m->debug = 0;
+	if (m->cache != 1)
+		backend_set_number(m, "cache", 1);
+	m->cache = 1;
+
 	m->depth = 0;
 	m->label = 0;
-
 	m->type = Q_PARSE;
 
 	m->result_id = 0;
@@ -608,11 +614,6 @@ mvc_destroy(mvc *m)
 
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
-
-	if (m->user)
-		_DELETE(m->user);
-	if (m->role)
-		_DELETE(m->role);
 
 	if (m->sa)
 		sa_destroy(m->sa);
@@ -1088,6 +1089,7 @@ stack_push_frame(mvc *sql, char *name)
 	if (name)
 		sql->vars[sql->topvars].name = _strdup(name);
 	sql->topvars++;
+	sql->frame++;
 }
 
 void 
@@ -1099,6 +1101,7 @@ stack_pop_frame(mvc *sql)
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)
 		_DELETE(sql->vars[sql->topvars].name);
+	sql->frame--;
 }
 
 stmt *
@@ -1126,15 +1129,17 @@ frame_find_var(mvc *sql, char *name)
 }
 
 int
-stack_find_stack(mvc *sql, char *name)
+stack_find_frame(mvc *sql, char *name)
 {
-	int i;
+	int i, frame = sql->frame;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		/* frame has no statement and only sometimes a name */
-		if (!sql->vars[i].s && sql->vars[i].name &&
+		if (!sql->vars[i].s) 
+			frame--;
+		else if ( sql->vars[i].name &&
 		    strcmp(sql->vars[i].name, name)==0)
-			return 1;
+			return frame;
 	}
 	return 0;
 }

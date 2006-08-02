@@ -81,9 +81,13 @@ The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
 
-command setVariable( varname:str ):void
-address mvc_update_var_wrap
-comment "Update a session variable";
+pattern setVariable( varname:str, value:any_1 ):void
+address mvc_set_var_wrap
+comment "Set the value of a session variable";
+
+pattern getVariable( varname:str ):any_1
+address mvc_get_var_wrap
+comment "Get the value of a session variable";
 
 command nextValue( sequence:str ):lng
 address mvc_next_value
@@ -195,6 +199,7 @@ ease code generation.
 @mal
 pattern calc.rotate_xor_hash(h:int, nbits:int, v:any_1) :int address MKEYrotate_xor_hash;
 command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
+command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:void,:int] address MKEYbulk_rotate_xor_hash;
 
 pattern calc.hash( v:any ) :int address MKEYhash; 
 command calc.hash( v:chr ) :int address MKEYhash_chr; 
@@ -660,7 +665,6 @@ typedef struct backend {
 	sql_column *currColumn;
 	sql_key *currKey;
 	sql_idx *currIndex;
-	MalBlkPtr code;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq *q;			/* pointer to the cached query */
 @-
@@ -713,7 +717,7 @@ backend_create(mvc *m, Client c)
 	b->currColumn = NULL;
 	b->currKey = NULL;
 	b->currIndex = NULL;
-	b->code = NULL;
+	//b->code = NULL;
 	b->vtop = 0;
 	b->Tparse = b->Toptimize = b->Tschedule = b->Texec = 0;
 	b->qry = NULL;
@@ -864,17 +868,64 @@ SQLrollback_wrap(int *ret){
 	mvc_rollback(m, 0, NULL); /* keep the changes */
 	return MAL_SUCCEED;
 }
+
+/* mvc_set_var_wrap(int *ret, str *name, any value) */
 str
-mvc_update_var_wrap(int *ret, str *varname)
+mvc_set_var_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m;
+	int mtype = getArgType(mb, pci, 2);
+	str name   = *(str *) getArgReference(stk, pci, 1);
+	MalBlkPtr gmb = MCgetClient()->state[ENGINE]; 
 	str msg = getContext(&m, NULL);
+	int varid;
+	VarRecord *dst;
+	ValRecord *src;
 
 	if (msg)
 		return msg;
-	(void) ret;
-	if (sql_update_var(m, *varname) != GDK_SUCCEED)
+
+	if (mtype < 0 || mtype >= 255)
+		return throwMessage("sql.setVariable", "failed");
+	varid = findVariable(gmb, name);
+	if (varid < 0) 
+		return throwMessage("sql.setVariable", "not found");
+	if (getVarType(gmb, varid) != mtype)
+		return throwMessage("sql.setVariable", "type mismatch");
+	dst = getVar(gmb, varid);
+	src = &stk->stk[getArg(pci, 2)];
+	VALcopy(&dst->value,src);
+	if (sql_update_var(m, name) != GDK_SUCCEED)
 		return throwException(MALEXCEPTION, "sql.setVariable", "error");
+	return MAL_SUCCEED;
+}
+
+/* mvc_get_var_wrap(int *ret, str *name) */
+str
+mvc_get_var_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m;
+	int mtype = getArgType(mb, pci, 0);
+	str name   = *(str *) getArgReference(stk, pci, 1);
+	MalBlkPtr gmb = MCgetClient()->state[ENGINE]; 
+	str msg = getContext(&m, NULL);
+	int varid;
+	ValRecord *dst;
+	VarRecord *src;
+
+	if (msg)
+		return msg;
+
+	if (mtype < 0 || mtype >= 255)
+		return throwMessage("sql.getVariable", "failed");
+	varid = findVariable(gmb, name);
+	if (varid < 0) 
+		return throwMessage("sql.getVariable", "not found");
+	if (getVarType(gmb, varid) != mtype)
+		return throwMessage("sql.getVariable", "type mismatch");
+	dst = &stk->stk[getArg(pci, 0)];
+	src = getVar(gmb, varid);
+	VALcopy(dst,&src->value);
 	return MAL_SUCCEED;
 }
 

@@ -990,12 +990,9 @@ semantic(mvc *sql, scope *scp, symbol *s)
 		return selects(sql, scp, s);
 
 	case SQL_CREATE_FUNC:
-		return psm(sql, s);
-
-	/* these will move also to psm */
 	case SQL_DECLARE:
 	case SQL_SET:
-		return env(sql, s);
+		return psm(sql, s);
 
 	case SQL_PREP:
 	case SQL_MULSTMT:

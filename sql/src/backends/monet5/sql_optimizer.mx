@@ -293,8 +293,7 @@ to allow inspection.
 			runMALDebugger(c->curprg);
 		return;
 	}
-	(void)be;
-	optimizer = sql_get_var(be->mvc,"optimizer");
+	optimizer = backend_get_string(be->mvc, "optimizer");
 #ifdef _SQL_OPTIMIZER_DEBUG
 	if( optimizer)
 		stream_printf(c->fdout,"optimizer=%s\n",optimizer);
