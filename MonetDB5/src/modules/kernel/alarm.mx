@@ -103,6 +103,7 @@ The timer is awakened by a clock interrupt. The interrupt granularity
 is OS-dependent. The timer should be initialized as long as there
 are outstanding timer events.
 @c
+#ifdef SIGALRM
 void
 CLKinitTimer(int sec, int usec)
 {
@@ -111,10 +112,9 @@ CLKinitTimer(int sec, int usec)
 	(void) usec;
 	TRGDEBUG THRprintf(GDKerr, "CLKinitTimer: set timer to %d secs \n", i);
 
-#ifdef SIGALRM
 	alarm(i);
-#endif
 }
+#endif
 @-
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
@@ -126,7 +126,7 @@ CLKalarm(time_t t, str action)
 	int j;
 	int k;
 
-	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push %d \n", t);
+	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push " LLFMT "\n", (lng) t);
 
 	if (timerTop == MAXtimer) {
 		GDKerror("CLKalarm: timer stack overflow\n");
@@ -234,7 +234,15 @@ CMDsleep(int *secs)
 		GDKerror("CMDsleep: negative delay\n");
 		return GDK_FAIL;
 	} else {
+#ifdef __CYGWIN__
+		/* CYGWIN cannot handle SIGALRM with sleep */
+		lng t = GDKusec() + (*secs)*1000000;
+		
+		while (GDKusec() < t)
+			;
+#else
 		MT_sleep_ms(*secs * 1000);
+#endif
 	}
 	return GDK_SUCCEED;
 }
@@ -267,7 +275,7 @@ ctime is actually thread-safe.
 int
 CMDtimers(BAT **retval)
 {
-	char buf[26];
+	char buf[27];
 	int k;
 
 	*retval = BATnew(TYPE_str, TYPE_str, timerTop);

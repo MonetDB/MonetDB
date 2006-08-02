@@ -1326,7 +1326,7 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	strcpy(p, "maxsize");
 	BUNins(bn, buf, local_utoa(hp->maxsize),FALSE);
 	strcpy(p, "storage");
-	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced",FALSE);
+	BUNins(bn, buf, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage & STORE_PRIV) ? "private map" : "malloced",FALSE);
 	strcpy(p, "filename");
 	BUNins(bn, buf, hp->filename ? hp->filename : "no file",FALSE);
 }
@@ -1529,7 +1529,7 @@ CMDrename(bit *retval, BAT *b, str s)
 	}
 
 	ret = BATname(b, s);
-	*retval =FALSE;
+	*retval = FALSE;
 	if (ret == 1) {
 		GDKerror("CMDrename: identifier expected: %s\n", s);
 		return GDK_FAIL;
@@ -1557,7 +1557,7 @@ CMDunload(bit *res, str input)
 {
 	bat bid = ABS(BBPindex(input));
 
-	*res =FALSE;
+	*res = FALSE;
 	if (bid > 0) {
 		BAT *b;
 
@@ -1604,7 +1604,7 @@ CMDsave(bit *res, str input)
 	bat bid = BBPindex(input);
 	BAT *b;
 
-	*res =FALSE;
+	*res = FALSE;
 	if (bid) {
 		BBPfix(bid);
 		b = BBP_cache(bid);
