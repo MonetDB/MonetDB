@@ -241,7 +241,7 @@ end qry1;	# 101
 function user.main():void;	# 0  (main:void)
 # TPCH Q1 non-optimized 	# 1  (_1:str)
 #don;t depend on SQL library 	# 2  (_2:str)
-    mdb.list("user","qry1");	# 3 MDBlist3 (_8:void)<-(_5:str)(_6:str)
+    mdb.list("user","qry1");	# 3 MDBlist3 (_9:void)<-(_5:str)(_6:str)
 end main;	# 4  
 function user.qry1():void;
     V3:bat[:void,:date]  := user.bind("sys","lineitem","l_shipdate",0);
