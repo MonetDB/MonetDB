@@ -134,6 +134,14 @@ C qualifier and the operands
 	@:calcGrp(xor,sht,XOR,sht,sht)@
 	@:calcGrp(xor,int,XOR,int,int)@
 	@:calcGrp(xor,lng,XOR,lng,lng)@
+	@:calcGrp(and,oid,AND,oid,oid)@
+	@:calcGrp(and,sht,AND,sht,sht)@
+	@:calcGrp(and,int,AND,int,int)@
+	@:calcGrp(and,lng,AND,lng,lng)@
+	@:calcGrp(or,oid,OR,oid,oid)@
+	@:calcGrp(or,sht,OR,sht,sht)@
+	@:calcGrp(or,int,OR,int,int)@
+	@:calcGrp(or,lng,OR,lng,lng)@
 
 	@:calcGrp(/,dbl,DIV,dbl,dbl)@
 	@:calcGrp(/,flt,DIV,flt,flt)@
@@ -1181,6 +1189,14 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 @:numeric_funcs(XOR,^,int,int,int)@
 @:numeric_funcs(XOR,^,lng,lng,lng)@
 @:numeric_funcs(XOR,^,sht,sht,sht)@
+@:numeric_funcs(AND,&,oid,oid,oid)@
+@:numeric_funcs(AND,&,int,int,int)@
+@:numeric_funcs(AND,&,lng,lng,lng)@
+@:numeric_funcs(AND,&,sht,sht,sht)@
+@:numeric_funcs(OR,|,oid,oid,oid)@
+@:numeric_funcs(OR,|,int,int,int)@
+@:numeric_funcs(OR,|,lng,lng,lng)@
+@:numeric_funcs(OR,|,sht,sht,sht)@
 
 @- Implementation of unary operations
 @= accumUnary
