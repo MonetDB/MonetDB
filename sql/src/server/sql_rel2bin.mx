@@ -242,7 +242,7 @@ basecolumn(stmt *st)
 	case st_bat:
 		return st->op1.cval;
 
-		/* relational column (result of view etc) has no direct base column */
+	/* relational column (result of view etc) has no direct base column */
 	case st_column:
 		return NULL;
 
@@ -697,7 +697,7 @@ eliminate_semijoin(stmt *s)
 			s1 = s2;
 			s2 = os;
 		}
-		if (match2) {
+		if (match2 && 0) {
 			/* semijoin( f(x), select(x,..) )  =>  select( f(x), .. ) */
 			stmt *ns = NULL;
 
