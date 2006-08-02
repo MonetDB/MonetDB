@@ -14,6 +14,7 @@ LIBS = {
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx mat.mx \
+		radix.mx
 		mserver.mx
 		#datacell.mx 
 
@@ -141,7 +142,8 @@ scripts_mal = {
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx \
-		partitions.mx pbm.mx armada.mx mserver.mx
+		partitions.mx pbm.mx armada.mx mserver.mx \
+		radix.mx
 	#datacell.mx 
 }
 

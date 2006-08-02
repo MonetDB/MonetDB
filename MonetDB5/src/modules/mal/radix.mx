@@ -597,12 +597,12 @@ In either way, we expect a relational performance to be a factor 10 slower than 
 on big sizes of both the "smaller" and "larger" tables with hit rates such that the result table is big.
 
 @* Module Definition
-@m
-.MODULE radix;
+@mal
+module radix;
 
-.COMMAND radix_cluster(bat[any::1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-	 bat[any::1,any::2] = M4_RDX_radix_cluster;
-"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses
+pattern radix_cluster( b:bat[:any_1,:any_2], limits:str, perc:flt, radix1:int ... ):bat[:any_1,:any_2]
+address M5_RDX_radix_cluster
+comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses
  the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower
  significant bits) can be indicated by passing a negative number of bits as first parameter.
 
@@ -614,177 +614,191 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  the cluster sizes.
 
  If you pass a non-empty but writable limits bat, it will be used as above for resume,
- and will also be overwritten with the new cluster boundaries"
+ and will also be overwritten with the new cluster boundaries";
 
-.COMMAND radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ...int...) :
-	 bat[any::1,any::2] = M4_RDX_radix_cluster_l;
-"shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc, radix1, ... );"
+pattern radix_cluster( b:bat[:any_1,:any_2], perc:flt, radix1:int ... ):bat[:any_1,:any_2]
+address M5_RDX_radix_cluster_l
+comment "shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc, radix1, ... );";
 
-.COMMAND radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ...int...) :
-	 bat[any::1,any::2] = M4_RDX_radix_cluster_p;
-"shortcut for:  radix_cluster( b, limits, perc=1.0, radix1, ... );"
+pattern radix_cluster( b:bat[:any_1,:any_2], limits:str, radix1:int ... ):bat[:any_1,:any_2]
+address M5_RDX_radix_cluster_p
+comment "shortcut for:  radix_cluster( b, limits, perc=1.0, radix1, ... );";
 
-.COMMAND radix_cluster(bat[any::1,any::2] b, int radix1, ...int... ) :
-	 bat[any::1,any::2] = M4_RDX_radix_cluster_lp;
-"shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc=1.0, radix1, ... );"
+pattern radix_cluster( b:bat[:any_1,:any_2], radix1:int ... ):bat[:any_1,:any_2]
+address M5_RDX_radix_cluster_lp
+comment "shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc=1.0, radix1, ... );";
 
-.COMMAND radix_cluster2(BAT[any::1,any::2] b, int p, int r, int i) : 
-	 BAT[any::1,any::2] = M4_RDX_radix_cluster2;
-"(Partially) radix-cluster b in p (<=4) passes on r in total (r/p bits per pass),
- ignoring the lower i bits."
-
-
-.COMMAND radix_bits(bat[any,any] b) : int = M4_RDX_radix_bits;
-"return the number of bits on which the head column is radix clustered."
+command radix_cluster2( b:bat[:any_1,:any_2], p:int, r:int, i:int ):bat[:any_1,:any_2]
+address M5_RDX_radix_cluster2
+comment "(Partially) radix-cluster b in p (<=4) passes on r in total (r/p bits per pass),
+ ignoring the lower i bits.";
 
 
-.COMMAND radix_count(bat[oid,oid] b, int shift, int radix) : bat[int,int] = M4_RDX_radix_count;
-"return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.
+command radix_bits( b:bat[:any_1,:any_2] ):int
+address M5_RDX_radix_bits
+comment "return the number of bits on which the head column is radix clustered.";
+
+
+command radix_count( b:bat[:oid,:oid], shift:int, radix:int ):bat[:int,:int]
+address M5_RDX_radix_count
+comment "return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.
  the first int holds the number of radix bits, the second how many lower bits to ignore.
  notice that the bat b maybe partially radix-clustered (or not at all). the radix_count
- command just detects consecutive chunks where (1) the tail values have the same specified
- radix-bits and (2) the head values are ascending"
+ command just detects consecutive chunks where ( 1 ) the tail values have the same specified
+ radix-bits and (2) the head values are ascending";
 
-.COMMAND radix_count2(bat[any,oid] b, int shift, int radix) : bat[int,int] = M4_RDX_radix_count2;
-"generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail
-the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
+command radix_count2( b:bat[:any_1,:oid], shift:int, radix:int ):bat[:int,:int]
+address M5_RDX_radix_count2
+comment "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail
+the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift";
 
 
-.COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = M4_RDX_radix_decluster;
-"merge a (partially) radix-clustered dense collection of oids back to their original void
+command radix_decluster( b:bat[:oid,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
+address M5_RDX_radix_decluster
+comment "merge a (partially) radix-clustered dense collection of oids back to their original void
  position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier
- that tells how many times the number of chunks the matching-window-size should be."
+ that tells how many times the number of chunks the matching-window-size should be.";
 
-.COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) :
-	 bat[void,any::1] = M4_RDX_radix_decluster_m;
-"shortcut for:  radix_decluster( b, radix_cnt, multiplier=4 );"
-
-
-.COMMAND radix_decluster2(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = M4_RDX_radix_decluster2;
-""
-
-.COMMAND radix_decluster3(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = M4_RDX_radix_decluster3;
-""
-
-.COMMAND radix_decluster4(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
-	 bat[void,any::1] = M4_RDX_radix_decluster4;
-""
+command radix_decluster( b:bat[:oid,:any_1], radix_cnt:bat[:int,:int] ):bat[:void,:any_1]
+address M5_RDX_radix_decluster_m
+comment "shortcut for:  radix_decluster( b, radix_cnt, multiplier=4 );";
 
 
-.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) :
-	 bat[any,any] = M4_RDX_radix_join;
-"nested-loop join on radix clustered inputs"
+command radix_decluster2( b:bat[:any_2,:oid], a:bat[:any_2,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
+address M5_RDX_radix_decluster2
+comment "";
 
-.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix) :
-	 bat[any,any] = M4_RDX_radix_join_h;
-"shortcut for:  radix_join( l, r, radix, hitrate=1 );"
+command radix_decluster3( b:bat[:any_2,:oid], a:bat[:any_2,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
+address M5_RDX_radix_decluster3
+comment "";
 
-.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r) :
-	 bat[any,any] = M4_RDX_radix_join_xh;
-"shortcut for:  radix_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1 );"
-
-
-.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) :
-	 bat[any,any] = M4_RDX_phash_join;
-"partitioned hash-join on radix clustered inputs"
-
-.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) :
-	 bat[any,any] = M4_RDX_phash_join_c;
-"shortcut for:  phash_join( l, r, radix, hitrate, cutoff=key(r) );"
-
-.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, bit cutoff) :
-	 bat[any,any] = M4_RDX_phash_join_h;
-"shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff );"
-
-.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix) :
-	 bat[any,any] = M4_RDX_phash_join_hc;
-"shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff=key(r) );"
-
-.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, bit cutoff) :
-	 bat[any,any] = M4_RDX_phash_join_xh;
-"shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff );"
-
-.COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r) :
-	 bat[any,any] = M4_RDX_phash_join_xhc;
-"shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff=key(r) );"
+command radix_decluster4( b:bat[:any_2,:oid], a:bat[:any_2,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
+address M5_RDX_radix_decluster4
+comment "";
 
 
-.COMMAND jivejoin0(BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) :
-	 BAT[void,any::1] = M4_RDX_jivejoin0;
-"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+command radix_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, hitrate:int ):bat[:any_1,:any_3]
+address M5_RDX_radix_join
+comment "nested-loop join on radix clustered inputs";
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) :
-	 BAT[void,any::1] = M4_RDX_jivejoin1;
-"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+command radix_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int ):bat[:any_1,:any_3]
+address M5_RDX_radix_join_h
+comment "shortcut for:  radix_join( l, r, radix, hitrate=1 );";
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,any::1] attr) :
-	 BAT[void,any::1] = M4_RDX_jivejoin2;
-"positional join that creates a void head by inserting the join result positionally"
-
-
-.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v, int radix_bits, int stride, int vector_size) :
-	 BAT[void,any::1] = M4_RDX_posjoin_clustered;
-"perform a positional join that exploits radix-clusteredness for prefetching"
-
-.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v, int radix_bits, int stride) :
-	 BAT[void,any::1] = M4_RDX_posjoin_clustered_v;
-"shortcut for:  posjoin( c, v, radix_bits, stride, vector_size=512 );"
-
-.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v, int radix_bits) :
-	 BAT[void,any::1] = M4_RDX_posjoin_clustered_sv;
-"shortcut for:  posjoin( c, v, radix_bits, stride=128, vector_size=512 );"
+command radix_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3] ):bat[:any_1,:any_3]
+address M5_RDX_radix_join_xh
+comment "shortcut for:  radix_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1 );";
 
 
-.COMMAND cache_join(BAT[void,oid] l, BAT[void,any::1] r, int cache_size, int cache_line_size) :
-	 BAT[oid,any::1] = M4_RDX_cache_join;
-"cache-conscious positional (\"fetch-\") join with given cache_size & cache_line_size"
+command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, hitrate:int, cutoff:bit ):bat[:any_1,:any_3]
+address M5_RDX_phash_join
+comment "partitioned hash-join on radix clustered inputs";
 
-.COMMAND cache_join(BAT[void,oid] l, BAT[void,any::1] r) :
-	 BAT[oid,any::1] = M4_RDX_cache_join_256k_32;
-"shortcut for:  cache_join( l, r, cache_size=256*1024, cache_line_size=32 );"
+command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, hitrate:int ):bat[:any_1,:any_3]
+address M5_RDX_phash_join_c
+comment "shortcut for:  phash_join( l, r, radix, hitrate, cutoff=key(r) );";
 
+command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, cutoff:bit ):bat[:any_1,:any_3]
+address M5_RDX_phash_join_h
+comment "shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff );";
 
-.COMMAND uniform(oid base, int size, int domain) : bat[oid,int] = M4_RDX_BATuniform;
-"create a random bat of certain size, head values starting from base, unique, dense and ordered,
- tail values perfect uniform from a certain domain ((domain >= size)  =>  unique tails)."
+command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int ):bat[:any_1,:any_3]
+address M5_RDX_phash_join_hc
+comment "shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff=key(r) );";
 
-.COMMAND uniform(int size, int domain) : bat[oid,int] = M4_RDX_BATuniform_b;
-"shortcut for:  uniform( base=0@0, size, domain);"
+command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], cutoff:bit ):bat[:any_1,:any_3]
+address M5_RDX_phash_join_xh
+comment "shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff );";
 
-.COMMAND uniform(int size) : bat[oid,int] = M4_RDX_BATuniform_bd;
-"shortcut for:  uniform( base=0@0, size, domain=size);"
-
-
-.COMMAND normal(oid base, int size, int domain, int stddev, int mean) : bat[oid,int] = M4_RDX_BATnormal;
-"create a random bat of certain size, head values starting from base, unique, dense and ordered,
- tail values from a normal distribution between [0..domain] with given stddev & mean."
-
-.COMMAND normal(int size, int domain, int stddev, int mean) : bat[oid,int] = M4_RDX_BATnormal_b;
-"shortcut for:  normal( base=0@0, size, domain, stddev, mean);"
-
-.COMMAND normal(oid base, int size, int domain, int stddev) : bat[oid,int] = M4_RDX_BATnormal_m;
-"shortcut for:  normal( base, size, domain, stddev, mean=domain/2);"
-
-.COMMAND normal(int size, int domain, int stddev) : bat[oid,int] = M4_RDX_BATnormal_bm;
-"shortcut for:  normal( base=0@0, size, domain, stddev, mean=domain/2);"
-
-.COMMAND normal(oid base, int size, int domain) : bat[oid,int] = M4_RDX_BATnormal_vm;
-"shortcut for:  normal( base, size, domain, stddev=domain/10, mean=domain/2);"
-
-.COMMAND normal(int size, int domain) : bat[oid,int] = M4_RDX_BATnormal_bvm;
-"shortcut for:  normal( base=0@0, size, domain, stddev=domain/10, mean=domain/2);"
-
-.COMMAND normal(oid base, int size) : bat[oid,int] = M4_RDX_BATnormal_dvm;
-"shortcut for:  normal( base, size, domain=size, stddev=domain/10, mean=domain/2);"
-
-.COMMAND normal(int size) : bat[oid,int] = M4_RDX_BATnormal_bdvm;
-"shortcut for:  normal( base=0@0, size, domain=size, stddev=domain/10, mean=domain/2);"
+command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3] ):bat[:any_1,:any_3]
+address M5_RDX_phash_join_xhc
+comment "shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff=key(r) );";
 
 
-@= integer
+command jivejoin0( proj:bat[:oid,:oid], attr:bat[:void,:any_1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:any_1]
+address M5_RDX_jivejoin0
+comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
+
+command jivejoin1( preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:any_1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:any_1]
+address M5_RDX_jivejoin1
+comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
+
+command jivejoin2( proj:bat[:oid,:oid], attr:bat[:void,:any_1] ):bat[:void,:any_1]
+address M5_RDX_jivejoin2
+comment "positional join that creates a void head by inserting the join result positionally";
+
+
+command posjoin( c:bat[:void,:oid], v:bat[:void,:any_1], radix_bits:int, stride:int, vector_size:int ):bat[:void,:any_1]
+address M5_RDX_posjoin_clustered
+comment "perform a positional join that exploits radix-clusteredness for prefetching";
+
+command posjoin( c:bat[:void,:oid], v:bat[:void,:any_1], radix_bits:int, stride:int ):bat[:void,:any_1]
+address M5_RDX_posjoin_clustered_v
+comment "shortcut for:  posjoin( c, v, radix_bits, stride, vector_size=512 );";
+
+command posjoin( c:bat[:void,:oid], v:bat[:void,:any_1], radix_bits:int ):bat[:void,:any_1]
+address M5_RDX_posjoin_clustered_sv
+comment "shortcut for:  posjoin( c, v, radix_bits, stride=128, vector_size=512 );";
+
+
+command cache_join( l:bat[:void,:oid], r:bat[:void,:any_1], cache_size:int, cache_line_size:int ):bat[:oid,:any_1]
+address M5_RDX_cache_join
+comment "cache-conscious positional (\"fetch-\") join with given cache_size & cache_line_size";
+
+command cache_join( l:bat[:void,:oid], r:bat[:void,:any_1] ):bat[:oid,:any_1]
+address M5_RDX_cache_join_256k_32
+comment "shortcut for:  cache_join( l, r, cache_size=256*1024, cache_line_size=32 );";
+
+
+command uniform( base:oid, size:int, domain:int ):bat[:oid,:int]
+address M5_RDX_BATuniform
+comment "create a random bat of certain size, head values starting from base, unique, dense and ordered,
+ tail values perfect uniform from a certain domain ((domain >= size)  =>  unique tails).";
+
+command uniform( size:int, domain:int ):bat[:oid,:int]
+address M5_RDX_BATuniform_b
+comment "shortcut for:  uniform( base=0@0, size, domain);";
+
+command uniform( size:int ):bat[:oid,:int]
+address M5_RDX_BATuniform_bd
+comment "shortcut for:  uniform( base=0@0, size, domain=size);";
+
+
+command normal( base:oid, size:int, domain:int, stddev:int, mean:int ):bat[:oid,:int]
+address M5_RDX_BATnormal
+comment "create a random bat of certain size, head values starting from base, unique, dense and ordered,
+ tail values from a normal distribution between [0..domain] with given stddev & mean.";
+
+command normal( size:int, domain:int, stddev:int, mean:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_b
+comment "shortcut for:  normal( base=0@0, size, domain, stddev, mean);";
+
+command normal( base:oid, size:int, domain:int, stddev:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_m
+comment "shortcut for:  normal( base, size, domain, stddev, mean=domain/2);";
+
+command normal( size:int, domain:int, stddev:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_bm
+comment "shortcut for:  normal( base=0@0, size, domain, stddev, mean=domain/2);";
+
+command normal( base:oid, size:int, domain:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_vm
+comment "shortcut for:  normal( base, size, domain, stddev=domain/10, mean=domain/2);";
+
+command normal( size:int, domain:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_bvm
+comment "shortcut for:  normal( base=0@0, size, domain, stddev=domain/10, mean=domain/2);";
+
+command normal( base:oid, size:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_dvm
+comment "shortcut for:  normal( base, size, domain=size, stddev=domain/10, mean=domain/2);";
+
+command normal( size:int ):bat[:oid,:int]
+address M5_RDX_BATnormal_bdvm
+comment "shortcut for:  normal( base=0@0, size, domain=size, stddev=domain/10, mean=domain/2);";
+
+@(
+ @= integer
 .ATOM integer@1[@2,4];
       .COMP    = integer@1Cmp;
       .TOSTR   = integer@1ToStr;
@@ -796,72 +810,84 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .ATOM pax@1 = integer@1;
 .END;
 
-.COMMAND [pax](BAT[any::1,integer@1] b) : BAT[any::1,pax@1] = M4_RDX_BATpax;
-"convert an integer@1 to pax@1"
+command [pax]( b:bat[:any_1,:integer@1] ):bat[:any_1,:pax@1]
+address M5_RDX_BATpax
+comment "convert an integer@1 to pax@1";
 
-.COMMAND [integer](BAT[any::1,integer@1] b, int width) : BAT[any::1,any] = M4_RDX_BATinteger;
-"create a view that makes tail column appear as an integerX column for some width=X"
+command [integer]( b:bat[:any_1,:integer@1], width:int ):bat[:any_1,:any]
+address M5_RDX_BATinteger
+comment "create a view that makes tail column appear as an integerX column for some width=X";
 
-@= int
+ @= int
 .ATOM Int@1 = integer@1;
 .END;
 
-.COMMAND [IntX](BAT[any::1,integer@1] b) : BAT[any::1,Int@1] = M4_RDX_BATintX;
-"convert an integer@1 to Int@1"
+command [IntX]( b:bat[:any_1,:integer@1] ):bat[:any_1,:Int@1]
+address M5_RDX_BATintX
+comment "convert an integer@1 to Int@1";
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = M4_RDX_jivejoin1;
-"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+command jivejoin1( preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:integer@1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:Int@1]
+address M5_RDX_jivejoin1
+comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = M4_RDX_jivejoin1;
-"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+command jivejoin1( preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:pax@1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:Int@1]
+address M5_RDX_jivejoin1
+comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = M4_RDX_jivejoin2;
-"positional join that creates a void head by inserting the join result positionally"
+command jivejoin2( proj:bat[:oid,:oid], attr:bat[:void,:integer@1] ):bat[:void,:Int@1]
+address M5_RDX_jivejoin2
+comment "positional join that creates a void head by inserting the join result positionally";
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = M4_RDX_jivejoin2;
-"positional join that creates a void head by inserting the join result positionally"
+command jivejoin2( proj:bat[:oid,:oid], attr:bat[:void,:pax@1] ):bat[:void,:Int@1]
+address M5_RDX_jivejoin2
+comment "positional join that creates a void head by inserting the join result positionally";
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = M4_RDX_posjoin_tuple;
-"positional join with built-in NSM projection"
+command posjoin( proj:bat[:void,:oid], attr:bat[:void,:integer@1] ):bat[:void,:Int@1]
+address M5_RDX_posjoin_tuple
+comment "positional join with built-in NSM projection";
 
-.COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = M4_RDX_posjoin_tuple;
-"positional join with built-in PAX projection"
+command posjoin( proj:bat[:void,:oid], attr:bat[:void,:pax@1] ):bat[:void,:Int@1]
+address M5_RDX_posjoin_tuple
+comment "positional join with built-in PAX projection";
 
-.COMMAND radix_cluster(bat[integer@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-	 bat[Int@1,any::2] = M4_RDX_radix_cluster;
-""
-.COMMAND radix_cluster(bat[pax@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
-	 bat[Int@1,any::2] = M4_RDX_radix_cluster;
-""
+pattern radix_cluster( b:bat[:integer@1,:any_2], limits:str, perc:flt, radix1:int ... ):bat[:Int@1,:any_2]
+address M5_RDX_radix_cluster
+comment "";
+pattern radix_cluster( b:bat[:pax@1,:any_2], limits:str, perc:flt, radix1:int ... ):bat[:Int@1,:any_2]
+address M5_RDX_radix_cluster
+comment "";
 
-@= tpe
-@:@1(1,4)@
-@:@1(2,8)@
-@:@1(4,16)@
-@:@1(8,32)@
-@:@1(16,64)@
-@:@1(32,128)@
-@:@1(64,256)@
-@:@1(128,512)@
-@:@1(256,1024)@
-@m
-@:tpe(integer)@
-@:tpe(int)@
+ @= tpe
+ @:@1(1,4)@
+ @:@1(2,8)@
+ @:@1(4,16)@
+ @:@1(8,32)@
+ @:@1(16,64)@
+ @:@1(32,128)@
+ @:@1(64,256)@
+ @:@1(128,512)@
+ @:@1(256,1024)@
+ @mal
+ @:tpe(integer)@
+ @:tpe(int)@
 
-.COMMAND [integer](BAT[any::1,int] b, int width) : BAT[any::1,any] = M4_RDX_BATinteger;
-"create a view that makes tail column appear as an integerX column for some width=X"
+command [integer]( b:bat[:any_1,:int], width:int ):bat[:any_1,:any]
+address M5_RDX_BATinteger
+comment "create a view that makes tail column appear as an integerX column for some width=X";
 
-.COMMAND [integer](BAT[any::1,int] b) : BAT[any::1,integer1] = M4_RDX_BATinteger1;
-"shortcut for:  [integer]( b, width=1 );"
-
-
-.COMMAND pax_blocksize(int) : int = M4_RDX_pax_blocksize;  "set the pax blocksize"
-
-.COMMAND pax_blocksize() : int = M4_RDX_pax_blocksize_get; "get the pax blocksize"
+command [integer]( b:bat[:any_1,:int] ):bat[:any_1,:integer1]
+address M5_RDX_BATinteger1
+comment "shortcut for:  [integer]( b, width=1 );";
 
 
-.END radix;
+command pax_blocksize( int ):int
+address M5_RDX_pax_blocksize
+comment "set the pax blocksize";
 
+command pax_blocksize(  ):int
+address M5_RDX_pax_blocksize_get
+comment "get the pax blocksize";
+@)
 
 @(
  @f radix_examples
@@ -1095,10 +1121,75 @@ radix_cluster(attr_int,
 @{
 @f radix
 @* Implementation
+@h
+#ifndef _M5_RDX_H
+#define _M5_RDX_H
+
+#ifdef _MSC_VER
+#ifndef LIBRADIX
+#define radix_export extern __declspec(dllimport)
+#else
+#define radix_export extern __declspec(dllexport)
+#endif
+#else
+#define radix_export extern
+#endif
+
+radix_export str M5_RDX_BATuniform(int *M5res, oid *base, int *size, int *domain);
+radix_export str M5_RDX_BATuniform_b(int *M5res, int *size, int *domain);
+radix_export str M5_RDX_BATuniform_bd(int *M5res, int *size);
+radix_export str M5_RDX_BATnormal(int *M5res, oid *base, int *size, int *domain, int *stddev, int *mean);
+radix_export str M5_RDX_BATnormal_b(int *M5res, int *size, int *domain, int *stddev, int *mean);
+radix_export str M5_RDX_BATnormal_m(int *M5res, oid *base, int *size, int *domain, int *stddev);
+radix_export str M5_RDX_BATnormal_bm(int *M5res, int *size, int *domain, int *stddev);
+radix_export str M5_RDX_BATnormal_vm(int *M5res, oid *base, int *size, int *domain);
+radix_export str M5_RDX_BATnormal_bvm(int *M5res, int *size, int *domain);
+radix_export str M5_RDX_BATnormal_dvm(int *M5res, oid *base, int *size);
+radix_export str M5_RDX_BATnormal_bdvm(int *M5res, int *size);
+radix_export str M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+radix_export str M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+radix_export str M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+radix_export str M5_RDX_radix_cluster_lp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+radix_export str M5_RDX_radix_cluster2(int *M5res, int *M5b, int *p, int *r, int *i);
+radix_export str M5_RDX_radix_bits(int *M5res, int *M5b);
+radix_export str M5_RDX_radix_count(int *M5res, int *M5b, int *shift, int *radix);
+radix_export str M5_RDX_radix_count2(int *M5res, int *M5b, int *shift, int *radix);
+radix_export str M5_RDX_phash_join(int *M5res, int *M5l, int *M5r, int *radix, int *hitrate, bit *cutoff);
+radix_export str M5_RDX_phash_join_c(int *M5res, int *M5l, int *M5r, int *radix, int *hitrate);
+radix_export str M5_RDX_phash_join_h(int *M5res, int *M5l, int *M5r, int *radix, bit *cutoff);
+radix_export str M5_RDX_phash_join_hc(int *M5res, int *M5l, int *M5r, int *radix);
+radix_export str M5_RDX_phash_join_xh(int *M5res, int *M5l, int *M5r, bit *cutoff);
+radix_export str M5_RDX_phash_join_xhc(int *M5res, int *M5l, int *M5r);
+radix_export str M5_RDX_radix_join(int *M5res, int *M5l, int *M5r, int *radix, int *hitrate);
+radix_export str M5_RDX_radix_join_h(int *M5res, int *M5l, int *M5r, int *radix);
+radix_export str M5_RDX_radix_join_xh(int *M5res, int *M5l, int *M5r);
+radix_export str M5_RDX_radix_decluster(int *M5res, int *M5b, int *M5cnts, int *multiplier);
+radix_export str M5_RDX_radix_decluster_m(int *M5res, int *M5b, int *M5cnts);
+radix_export str M5_RDX_radix_decluster2(int *M5res, int *M5b, int *M5a, int *M5cnts, int *multiplier);
+radix_export str M5_RDX_radix_decluster3(int *M5res, int *M5b, int *M5a, int *M5cnts, int *multiplier);
+radix_export str M5_RDX_radix_decluster4(int *M5res, int *M5b, int *M5a, int *M5cnts, int *multiplier);
+@(
+radix_export str M5_RDX_posjoin_tuple(int *M5res, int *M5proj, int *M5attr);
+@)
+radix_export str M5_RDX_jivejoin0(int *M5res, int *M5proj, int *M5attr, int *M5radix_count, int *shift, int *nbits);
+radix_export str M5_RDX_jivejoin1(int *M5res, int *M5bo, int *M5proj, int *M5attr, int *M5radix_count, int *shift, int *nbits);
+radix_export str M5_RDX_jivejoin2(int *M5res, int *M5proj, int *M5attr);
+radix_export str M5_RDX_posjoin_clustered(int *M5res, int *M5c, int *M5v, int *rb, int *st, int *vs);
+radix_export str M5_RDX_posjoin_clustered_v(int *M5res, int *M5c, int *M5v, int *rb, int *st);
+radix_export str M5_RDX_posjoin_clustered_sv(int *M5res, int *M5c, int *M5v, int *rb);
+radix_export str M5_RDX_cache_join(int *M5res, int *M5left, int *M5right, int *_cache_size, int *_cache_line_size);
+radix_export str M5_RDX_cache_join_256k_32(int *M5res, int *M5left, int *M5right);
+
+#endif /* _M5_RDX_H */
 @c
-#include "monet.h"
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"  /* for getArgReference() */
 #include <math.h>
 
+#include "radix.h"
+
+@(
 #define integer1 int
 #define integer2 int
 #define integer4 int
@@ -1108,8 +1199,7 @@ radix_cluster(attr_int,
 #define integer64 int
 #define integer128 int
 #define integer256 int
-
-#include "radix.proto.h"
+@)
 
 #ifdef HAVE_XMMINTRIN_H 
 /* constants for use with _mm_prefetch */
@@ -1351,8 +1441,9 @@ M4_RDX_BATnormal_bdvm(BAT **bn, int *size)
 }
 
 
-@- data types for relational simulation
-@= integerdef
+@(
+ @- data types for relational simulation
+ @= integerdef
 #define integer@1 int
 static size_t
 integer@1Copy(void *dst, void *src, size_t size)
@@ -1368,22 +1459,22 @@ int  integer@1FromStr(str src, int* len, int** dst) { return intFromStr(src,len,
 static
 int  integer@1Dummy(int i, int p) { S256; return i; } /* create some distance in the binary between fcns */
 int  integer@1Cmp(int* l, int* r) { return *l - *r; }
-@c
+ @c
 #define S004 i=(i&255)*p; i=(i&255)*p; i=(i&255)*p; i=(i&255)*p;
 #define S016 S004 S004 S004 S004
 #define S256 S016 S016 S016 S016
 
 int integer_nil[256];
 
-@:integerdef(1)@
-@:integerdef(2)@
-@:integerdef(4)@
-@:integerdef(8)@
-@:integerdef(16)@
-@:integerdef(32)@
-@:integerdef(64)@
-@:integerdef(128)@
-@:integerdef(256)@
+ @:integerdef(1)@
+ @:integerdef(2)@
+ @:integerdef(4)@
+ @:integerdef(8)@
+ @:integerdef(16)@
+ @:integerdef(32)@
+ @:integerdef(64)@
+ @:integerdef(128)@
+ @:integerdef(256)@
 
 typedef struct {
 	size_t(*cpy) (void *dst, void *src, size_t size);
@@ -1555,6 +1646,7 @@ M4_RDX_pax_blocksize_get(int *ret)
 	int size = int_nil;
 	return M4_RDX_pax_blocksize(ret, &size);
 }
+@)
 
 
 @+ Radix Cluster
@@ -1611,7 +1703,10 @@ typedef struct {
 	size_t size;		/* size of chunk (in bytes) */
 } move_t;
 
+@(
 #define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(ATOMname(b->htype)):BAThtype(b))
+@)
+#define HTYPE(b) BAThtype(b)
 #define TTYPE(b) HTYPE(BATmirror(b))
 
 static BAT *
@@ -1818,6 +1913,7 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 	int ttpe = BATttype(b);
 	int any = ttpe;
 
+@(
 /* PETER start experimentation hack; must emulate relational projection cost  */
 	if (htpe >= TYPE_integer1 && htpe <= TYPE_pax256) {
 		BAT *p = VIEWparent(b) ? BBP_cache(VIEWparent(b)) : b;
@@ -1837,6 +1933,7 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 		}
 	} else
 /* PETER end experimentation hack */
+@)
 
 		while (src < end) {
 			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
@@ -2398,6 +2495,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 	}
 	memset(h->hash, ~0, (h->mask + 1) * sizeof(hash_t));
 
+@(
 /* PETER start experimentation hack */
 	if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 && r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) {
 		BAT *p1 = VIEWparent(l) ? BBP_cache(VIEWparent(l)) : l;
@@ -2416,6 +2514,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 		}
 	} else
 /* PETER end experimentation hack */
+@)
 
 	if (ATOMstorage(r->htype) < TYPE_int || ATOMstorage(r->htype) > TYPE_dbl || ATOMstorage(l->htype) != TYPE_int || ATOMstorage(r->ttype) != TYPE_int) {
 		int any = ATOMstorage(r->htype);
@@ -2713,6 +2812,7 @@ M4_RDX_radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 	if (BATcount(r) == 0)
 		return GDK_SUCCEED;
 
+@(
 /* PETER start experimentation hack */
 	if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 && r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) {
 		BAT *p1 = VIEWparent(l) ? BBP_cache(VIEWparent(l)) : l;
@@ -2725,6 +2825,7 @@ M4_RDX_radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 		@:radix_join(any,tail,head,atom,NOTSO,hloc,tloc)@
 	} else
 /* PETER end experimentation hack */
+@)
 
 	if (ATOMstorage(l->htype) == TYPE_int && ATOMstorage(r->ttype) == TYPE_int) {
 		int *_dst = (int *) (bn->batBuns->base + bn->batBuns->free);
@@ -3534,6 +3635,7 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	return GDK_SUCCEED;
 }
 
+@(
 int
 M4_RDX_posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 {
@@ -3565,6 +3667,7 @@ M4_RDX_posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 		BATkey(BATmirror(bn), TRUE);
 	return GDK_SUCCEED;
 }
+@)
 
 @+ jivejoin
 
@@ -3698,7 +3801,9 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 int
 M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
 {
+@(
 	BAT *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
+@)
 	int any = attr->ttype;
 	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	size_t xx = bo->batBuns->free, yy = 1 << *nbits, cnt = bo->batCount;
@@ -3750,6 +3855,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 	bobak = bo->batBuns->base;
 	bo->batBuns->base += BUNsize(bo) * (BUNindex(bo, BUNfirst(bo)) - cluster[0]);
 
+@(
 /* PETER start experimentation hack; must emulate relational projection cost  */
 	if (any >=TYPE_integer1 && any <=TYPE_pax256) {
 		BAT *bm = BATmirror(attr);
@@ -3768,6 +3874,8 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 		}
 	} else
 /* PETER end experimentation hack */
+@)
+
 		switch (any = ATOMstorage(any)) {
 		case TYPE_chr:
 			@:jivejoin1(chr,SIMPLE,hloc,tloc,r,0)@
@@ -3821,7 +3929,9 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 int
 M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 {
+@(
 	BAT *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
+@)
 	int any = attr->ttype;
 	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	BUN p, q, r, bnbak;
@@ -3835,6 +3945,7 @@ M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 	bnbak = bn->batBuns->base;
 	bn->batBuns->base = BUNfirst(bn);
 
+@(
 /* PETER start experimentation hack; must emulate relational projection cost  */
 	if (any >=TYPE_integer1 && any <=TYPE_pax256) {
 		BAT *bm = BATmirror(attr);
@@ -3847,6 +3958,8 @@ M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 		}
 	} else
 /* PETER end experimentation hack */
+@)
+
 		switch (any = ATOMstorage(any)) {
 		case TYPE_chr:
 			@:jivejoin2(chr,SIMPLE,hloc,tloc,r,0)@
@@ -4269,6 +4382,525 @@ M4_RDX_cache_join_256k_32(BAT **ret, BAT *left, BAT *right)
 	int cache_size = 256*1024;
 	int cache_line_size = 32;
 	return M4_RDX_cache_join(ret, left, right, &cache_size, &cache_line_size);
+}
+
+
+@+ M5/MAL Wrappers
+
+@= M5_RDX_init
+	int rtrn = GDK_FAIL;
+	@1 M4res;
+@
+@= M5_RDX_get_BATdesc
+	if ((M4@2 = BATdescriptor(*M5@2)) == NULL) {
+		@3
+		return throwMessage("radix.@1", "Cannot access descriptor of @2");
+	}
+@
+@= M5_RDX_get_BATdesc_1
+	BAT *M4@2;
+	@:M5_RDX_get_BATdesc(@1,@2,)@
+@
+@= M5_RDX_get_BATdesc_2
+	BAT *M4@2, *M4@3;
+	@:M5_RDX_get_BATdesc(@1,@2,)@
+	@:M5_RDX_get_BATdesc(@1,@3,BBPreleaseref(*M5@2);)@
+@
+@= M5_RDX_get_BATdesc_3
+	BAT *M4@2, *M4@3, *M4@4;
+	@:M5_RDX_get_BATdesc(@1,@2,)@
+	@:M5_RDX_get_BATdesc(@1,@3,BBPreleaseref(*M5@2);)@
+	@:M5_RDX_get_BATdesc(@1,@4,BBPreleaseref(*M5@2); BBPreleaseref(*M5@3);)@
+@
+@= M5_RDX_get_BATdesc_4
+	BAT *M4@2, *M4@3, *M4@4, *M4@5;
+	@:M5_RDX_get_BATdesc(@1,@2,)@
+	@:M5_RDX_get_BATdesc(@1,@3,BBPreleaseref(*M5@2);)@
+	@:M5_RDX_get_BATdesc(@1,@4,BBPreleaseref(*M5@2); BBPreleaseref(*M5@3);)@
+	@:M5_RDX_get_BATdesc(@1,@5,BBPreleaseref(*M5@2); BBPreleaseref(*M5@3); BBPreleaseref(*M5@4);)@
+@
+@= M5_RDX_finish
+	if (rtrn != GDK_SUCCEED) {
+		return throwMessage("radix.@1", "M4_RDX_@1 failed");
+	}
+	*M5res = M4res;
+	return MAL_SUCCEED;
+@
+@= M5_RDX_finish_BAT
+	if (rtrn != GDK_SUCCEED) {
+		return throwMessage("radix.@1", "M4_RDX_@1 failed");
+	}
+	if (!(M4res->batDirty&2)) {
+		/*M4res->batRestricted = BAT_READ;*/
+		M4res = BATsetaccess(M4res, BAT_READ);
+	}
+	*M5res = M4res->batCacheid;
+	BBPkeepref(*M5res);
+	return MAL_SUCCEED;
+@
+@c
+
+str
+M5_RDX_BATuniform(int *M5res, oid *base, int *size, int *domain)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATuniform( &M4res, base, size, domain);
+	@:M5_RDX_finish_BAT(BATuniform)@
+}
+
+str
+M5_RDX_BATuniform_b(int *M5res, int *size, int *domain)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATuniform_b( &M4res, size, domain);
+	@:M5_RDX_finish_BAT(BATuniform_b)@
+}
+
+str
+M5_RDX_BATuniform_bd(int *M5res, int *size)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATuniform_bd( &M4res, size);
+	@:M5_RDX_finish_BAT(BATuniform_bd)@
+}
+
+str
+M5_RDX_BATnormal(int *M5res, oid *base, int *size, int *domain, int *stddev, int *mean)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal( &M4res, base, size, domain, stddev, mean);
+	@:M5_RDX_finish_BAT(BATnormal)@
+}
+
+str
+M5_RDX_BATnormal_b(int *M5res, int *size, int *domain, int *stddev, int *mean)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_b( &M4res, size, domain, stddev, mean);
+	@:M5_RDX_finish_BAT(BATnormal_b)@
+}
+
+str
+M5_RDX_BATnormal_m(int *M5res, oid *base, int *size, int *domain, int *stddev)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_m( &M4res, base, size, domain, stddev);
+	@:M5_RDX_finish_BAT(BATnormal_m)@
+}
+
+str
+M5_RDX_BATnormal_bm(int *M5res, int *size, int *domain, int *stddev)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_bm( &M4res, size, domain, stddev);
+	@:M5_RDX_finish_BAT(BATnormal_bm)@
+}
+
+str
+M5_RDX_BATnormal_vm(int *M5res, oid *base, int *size, int *domain)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_vm( &M4res, base, size, domain);
+	@:M5_RDX_finish_BAT(BATnormal_vm)@
+}
+
+str
+M5_RDX_BATnormal_bvm(int *M5res, int *size, int *domain)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_bvm( &M4res, size, domain);
+	@:M5_RDX_finish_BAT(BATnormal_bvm)@
+}
+
+str
+M5_RDX_BATnormal_dvm(int *M5res, oid *base, int *size)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_dvm( &M4res, base, size);
+	@:M5_RDX_finish_BAT(BATnormal_dvm)@
+}
+
+str
+M5_RDX_BATnormal_bdvm(int *M5res, int *size)
+{
+	@:M5_RDX_init(BAT*)@
+	rtrn = M4_RDX_BATnormal_bdvm( &M4res, size);
+	@:M5_RDX_finish_BAT(BATnormal_bdvm)@
+}
+
+#define M5_RDX_radix_cluster_MAX_PASSES 9
+
+str
+M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* (int *M5res, int *M5b, str nme, flt *perc, int *nbits, ... ) */
+{
+	int j = 0;
+	int *M5res = (int*)getArgReference(stk, pci, j++);
+	int *M5b   = (int*)getArgReference(stk, pci, j++);
+	str nme    = (str )getArgReference(stk, pci, j++);
+	flt *perc  = (flt*)getArgReference(stk, pci, j++);
+	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
+	int passes = pci->argc - j;
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_cluster,b)@
+	assert(passes > 0);
+	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
+	(void) mb;
+	for (int i = 0; i < passes; i++) {
+		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
+	}
+	switch(passes) {
+	case 1: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, NULL ); break;
+	case 2: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, NULL ); break;
+	case 3: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, NULL ); break;
+	case 4: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, nbits+3, NULL ); break;
+	case 5: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, NULL ); break;
+	case 6: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, NULL ); break;
+	case 7: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, NULL ); break;
+	case 8: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, NULL ); break;
+	case 9: rtrn = M4_RDX_radix_cluster( &M4res, M4b, nme, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, nbits+8, NULL ); break;
+	}
+	@:M5_RDX_finish_BAT(radix_cluster)@
+}
+
+str
+M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* (int *M5res, int *M5b, flt *perc, int *nbits, ... ) */
+{
+	int j = 0;
+	int *M5res = (int*)getArgReference(stk, pci, j++);
+	int *M5b   = (int*)getArgReference(stk, pci, j++);
+	flt *perc  = (flt*)getArgReference(stk, pci, j++);
+	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
+	int passes = pci->argc - j;
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_cluster_l,b)@
+	assert(passes > 0);
+	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
+	(void) mb;
+	for (int i = 0; i < passes; i++) {
+		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
+	}
+	switch(passes) {
+	case 1: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, NULL ); break;
+	case 2: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, NULL ); break;
+	case 3: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, NULL ); break;
+	case 4: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, nbits+3, NULL ); break;
+	case 5: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, NULL ); break;
+	case 6: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, NULL ); break;
+	case 7: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, NULL ); break;
+	case 8: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, NULL ); break;
+	case 9: rtrn = M4_RDX_radix_cluster_l( &M4res, M4b, perc, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, nbits+8, NULL ); break;
+	}
+	@:M5_RDX_finish_BAT(radix_cluster_l)@
+}
+
+str
+M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* (int *M5res, int *M5b, str nme, int *nbits, ... ) */
+{
+	int j = 0;
+	int *M5res = (int*)getArgReference(stk, pci, j++);
+	int *M5b   = (int*)getArgReference(stk, pci, j++);
+	str nme    = (str )getArgReference(stk, pci, j++);
+	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
+	int passes = pci->argc - j;
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_cluster_p,b)@
+	assert(passes > 0);
+	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
+	(void) mb;
+	for (int i = 0; i < passes; i++) {
+		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
+	}
+	switch(passes) {
+	case 1: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, NULL ); break;
+	case 2: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, NULL ); break;
+	case 3: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, NULL ); break;
+	case 4: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, nbits+3, NULL ); break;
+	case 5: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, nbits+3, nbits+4, NULL ); break;
+	case 6: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, NULL ); break;
+	case 7: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, NULL ); break;
+	case 8: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, NULL ); break;
+	case 9: rtrn = M4_RDX_radix_cluster_p( &M4res, M4b, nme, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, nbits+8, NULL ); break;
+	}
+	@:M5_RDX_finish_BAT(radix_cluster_p)@
+}
+
+str
+M5_RDX_radix_cluster_lp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* (int *M5res, int *M5b, int *nbits, ... ) */
+{
+	int j = 0;
+	int *M5res = (int*)getArgReference(stk, pci, j++);
+	int *M5b   = (int*)getArgReference(stk, pci, j++);
+	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
+	int passes = pci->argc - j;
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_cluster_lp,b)@
+	assert(passes > 0);
+	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
+	(void) mb;
+	for (int i = 0; i < passes; i++) {
+		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
+	}
+	switch(passes) {
+	case 1: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, NULL ); break;
+	case 2: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, NULL ); break;
+	case 3: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, NULL ); break;
+	case 4: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, nbits+3, NULL ); break;
+	case 5: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, nbits+3, nbits+4, NULL ); break;
+	case 6: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, NULL ); break;
+	case 7: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, NULL ); break;
+	case 8: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, NULL ); break;
+	case 9: rtrn = M4_RDX_radix_cluster_lp( &M4res, M4b, nbits, nbits+1, nbits+2, nbits+3, nbits+4, nbits+5, nbits+6, nbits+7, nbits+8, NULL ); break;
+	}
+	@:M5_RDX_finish_BAT(radix_cluster_lp)@
+}
+
+str
+M5_RDX_radix_cluster2(int *M5res, int *M5b, int *p, int *r, int *i)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_cluster2,b)@
+	rtrn = M4_RDX_radix_cluster2( &M4res, M4b, p, r, i);
+	@:M5_RDX_finish_BAT(radix_cluster2)@
+}
+
+str
+M5_RDX_radix_bits(int *M5res, int *M5b)
+{
+	@:M5_RDX_init(int)@
+	@:M5_RDX_get_BATdesc_1(radix_bits,b)@
+	rtrn = M4_RDX_radix_bits( &M4res, M4b);
+	@:M5_RDX_finish(radix_bits)@
+}
+
+str
+M5_RDX_radix_count(int *M5res, int *M5b, int *shift, int *radix)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_count,b)@
+	rtrn = M4_RDX_radix_count( &M4res, M4b, shift, radix);
+	@:M5_RDX_finish_BAT(radix_count)@
+}
+
+str
+M5_RDX_radix_count2(int *M5res, int *M5b, int *shift, int *radix)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_1(radix_count2,b)@
+	rtrn = M4_RDX_radix_count2( &M4res, M4b, shift, radix);
+	@:M5_RDX_finish_BAT(radix_count2)@
+}
+
+str
+M5_RDX_phash_join(int *M5res, int *M5l, int *M5r, int *radix, int *hitrate, bit *cutoff)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(phash_join,l,r)@
+	rtrn = M4_RDX_phash_join( &M4res, M4l, M4r, radix, hitrate, cutoff);
+	@:M5_RDX_finish_BAT(phash_join)@
+}
+
+str
+M5_RDX_phash_join_c(int *M5res, int *M5l, int *M5r, int *radix, int *hitrate)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(phash_join_c,l,r)@
+	rtrn = M4_RDX_phash_join_c( &M4res, M4l, M4r, radix, hitrate);
+	@:M5_RDX_finish_BAT(phash_join_c)@
+}
+
+str
+M5_RDX_phash_join_h(int *M5res, int *M5l, int *M5r, int *radix, bit *cutoff)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(phash_join_h,l,r)@
+	rtrn = M4_RDX_phash_join_h( &M4res, M4l, M4r, radix, cutoff);
+	@:M5_RDX_finish_BAT(phash_join_h)@
+}
+
+str
+M5_RDX_phash_join_hc(int *M5res, int *M5l, int *M5r, int *radix)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(phash_join_hc,l,r)@
+	rtrn = M4_RDX_phash_join_hc( &M4res, M4l, M4r, radix);
+	@:M5_RDX_finish_BAT(phash_join_hc)@
+}
+
+str
+M5_RDX_phash_join_xh(int *M5res, int *M5l, int *M5r, bit *cutoff)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(phash_join_xh,l,r)@
+	rtrn = M4_RDX_phash_join_xh( &M4res, M4l, M4r, cutoff);
+	@:M5_RDX_finish_BAT(phash_join_xh)@
+}
+
+str
+M5_RDX_phash_join_xhc(int *M5res, int *M5l, int *M5r)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(phash_join_xhc,l,r)@
+	rtrn = M4_RDX_phash_join_xhc( &M4res, M4l, M4r);
+	@:M5_RDX_finish_BAT(phash_join_xhc)@
+}
+
+str
+M5_RDX_radix_join(int *M5res, int *M5l, int *M5r, int *radix, int *hitrate)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(radix_join,l,r)@
+	rtrn = M4_RDX_radix_join( &M4res, M4l, M4r, radix, hitrate);
+	@:M5_RDX_finish_BAT(radix_join)@
+}
+
+str
+M5_RDX_radix_join_h(int *M5res, int *M5l, int *M5r, int *radix)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(radix_join_h,l,r)@
+	rtrn = M4_RDX_radix_join_h( &M4res, M4l, M4r, radix);
+	@:M5_RDX_finish_BAT(radix_join_h)@
+}
+
+str
+M5_RDX_radix_join_xh(int *M5res, int *M5l, int *M5r)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(radix_join_xh,l,r)@
+	rtrn = M4_RDX_radix_join_xh( &M4res, M4l, M4r);
+	@:M5_RDX_finish_BAT(radix_join_xh)@
+}
+
+str
+M5_RDX_radix_decluster(int *M5res, int *M5b, int *M5cnts, int *multiplier)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(radix_decluster,b,cnts)@
+	rtrn = M4_RDX_radix_decluster( &M4res, M4b, M4cnts, multiplier);
+	@:M5_RDX_finish_BAT(radix_decluster)@
+}
+
+str
+M5_RDX_radix_decluster_m(int *M5res, int *M5b, int *M5cnts)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(radix_decluster_m,b,cnts)@
+	rtrn = M4_RDX_radix_decluster_m( &M4res, M4b, M4cnts);
+	@:M5_RDX_finish_BAT(radix_decluster_m)@
+}
+
+str
+M5_RDX_radix_decluster2(int *M5res, int *M5b, int *M5a, int *M5cnts, int *multiplier)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_3(radix_decluster2,b,a,cnts)@
+	rtrn = M4_RDX_radix_decluster2( &M4res, M4b, M4a, M4cnts, multiplier);
+	@:M5_RDX_finish_BAT(radix_decluster2)@
+}
+
+str
+M5_RDX_radix_decluster3(int *M5res, int *M5b, int *M5a, int *M5cnts, int *multiplier)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_3(radix_decluster3,b,a,cnts)@
+	rtrn = M4_RDX_radix_decluster3( &M4res, M4b, M4a, M4cnts, multiplier);
+	@:M5_RDX_finish_BAT(radix_decluster3)@
+}
+
+str
+M5_RDX_radix_decluster4(int *M5res, int *M5b, int *M5a, int *M5cnts, int *multiplier)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_3(radix_decluster4,b,a,cnts)@
+	rtrn = M4_RDX_radix_decluster4( &M4res, M4b, M4a, M4cnts, multiplier);
+	@:M5_RDX_finish_BAT(radix_decluster4)@
+}
+
+@(
+str
+M5_RDX_posjoin_tuple(int *M5res, int *M5proj, int *M5attr)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(posjoin_tuple,proj,attr)@
+	rtrn = M4_RDX_posjoin_tuple( &M4res, M4proj, M4attr);
+	@:M5_RDX_finish_BAT(posjoin_tuple)@
+}
+@)
+
+str
+M5_RDX_jivejoin0(int *M5res, int *M5proj, int *M5attr, int *M5radix_count, int *shift, int *nbits)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_3(jivejoin0,proj,attr,radix_count)@
+	rtrn = M4_RDX_jivejoin0( &M4res, M4proj, M4attr, M4radix_count, shift, nbits);
+	@:M5_RDX_finish_BAT(jivejoin0)@
+}
+
+str
+M5_RDX_jivejoin1(int *M5res, int *M5bo, int *M5proj, int *M5attr, int *M5radix_count, int *shift, int *nbits)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_4(jivejoin1,bo,proj,attr,radix_count)@
+	rtrn = M4_RDX_jivejoin1( &M4res, M4bo, M4proj, M4attr, M4radix_count, shift, nbits);
+	@:M5_RDX_finish_BAT(jivejoin1)@
+}
+
+str
+M5_RDX_jivejoin2(int *M5res, int *M5proj, int *M5attr)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(jivejoin2,proj,attr)@
+	rtrn = M4_RDX_jivejoin2( &M4res, M4proj, M4attr);
+	@:M5_RDX_finish_BAT(jivejoin2)@
+}
+
+str
+M5_RDX_posjoin_clustered(int *M5res, int *M5c, int *M5v, int *rb, int *st, int *vs)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(posjoin_clustered,c,v)@
+	rtrn = M4_RDX_posjoin_clustered( &M4res, M4c, M4v, rb, st, vs);
+	@:M5_RDX_finish_BAT(posjoin_clustered)@
+}
+
+str
+M5_RDX_posjoin_clustered_v(int *M5res, int *M5c, int *M5v, int *rb, int *st)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(posjoin_clustered_v,c,v)@
+	rtrn = M4_RDX_posjoin_clustered_v( &M4res, M4c, M4v, rb, st);
+	@:M5_RDX_finish_BAT(posjoin_clustered_v)@
+}
+
+str
+M5_RDX_posjoin_clustered_sv(int *M5res, int *M5c, int *M5v, int *rb)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(posjoin_clustered_sv,c,v)@
+	rtrn = M4_RDX_posjoin_clustered_sv( &M4res, M4c, M4v, rb);
+	@:M5_RDX_finish_BAT(posjoin_clustered_sv)@
+}
+
+str
+M5_RDX_cache_join(int *M5res, int *M5left, int *M5right, int *_cache_size, int *_cache_line_size)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(cache_join,left,right)@
+	rtrn = M4_RDX_cache_join( &M4res, M4left, M4right, _cache_size, _cache_line_size);
+	@:M5_RDX_finish_BAT(cache_join)@
+}
+
+str
+M5_RDX_cache_join_256k_32(int *M5res, int *M5left, int *M5right)
+{
+	@:M5_RDX_init(BAT*)@
+	@:M5_RDX_get_BATdesc_2(cache_join_256k_32,left,right)@
+	rtrn = M4_RDX_cache_join_256k_32( &M4res, M4left, M4right);
+	@:M5_RDX_finish_BAT(cache_join_256k_32)@
 }
 
 @}

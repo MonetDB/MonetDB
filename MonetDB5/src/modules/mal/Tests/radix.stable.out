@@ -1,19 +1,232 @@
-stdout of test 'radix` in directory 'src/modules/plain` itself:
+stdout of test 'radix` in directory 'src/modules/mal` itself:
 
 
-# 12:59:51 >  
-# 12:59:51 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_stable_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_stable_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_stable_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_stable_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=52214 --set sql_port=56683 --set monet_prompt= --trace --dbname=mTests_src_modules_plain  < radix.milM
-# 12:59:51 >  
+# 09:11:31 >  
+# 09:11:31 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/lib/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dblogs" --set mapi_port=31198 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  radix.mal < /dev/null
+# 09:11:31 >  
 
-# Monet Database Server V4.3.10
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module("radix");
-var Bu := uniform(99);
-Bu.project(nil).print();
+
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/etc/MonetDB5.conf
+# dbfarm:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dbfarm
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information
+#include radix;
+#Bu := radix.uniform(99);
+#Bu0 := algebra.project(Bu,nil);
+#io.print(Bu0);
+#Bu1 := bat.reverse(Bu);
+#Bu2 := algebra.project(Bu1,nil);
+#Bu3 := algebra.sort(Bu2);
+#Bu4 := bat.reverse(Bu3);
+#io.print(Bu4);
+#Bn := radix.normal(99);
+#Bn0 := algebra.project(Bn,nil);
+#io.print(Bn0);
+#Bn1 := bat.reverse(Bn);
+#Bn2 := algebra.project(Bn1,nil);
+#Bn3 := algebra.sort(Bn2);
+#Bn4 := bat.reverse(Bn3);
+#io.print(Bn4);
+#
+#b := radix.uniform(16); a := algebra.markH(b,0@0);
+#
+#a0 := radix.radix_cluster(b,1);      b0 := algebra.markH(a0,0@0); c0 := batcalc.and(b0, 1);
+#a1 := radix.radix_cluster(b,2);      b1 := algebra.markH(a1,0@0); c1 := batcalc.and(b1, 3);
+#a2 := radix.radix_cluster(b,3);      b2 := algebra.markH(a2,0@0); c2 := batcalc.and(b2, 7);
+#a3 := radix.radix_cluster(b,2,1);    b3 := algebra.markH(a3,0@0); c3 := batcalc.and(b3, 7);
+#a4 := radix.radix_cluster(b,1,2);    b4 := algebra.markH(a4,0@0); c4 := batcalc.and(b4, 7);
+#a5 := radix.radix_cluster(b,1,1,1);  b5 := algebra.markH(a5,0@0); c5 := batcalc.and(b5, 7);
+#a6 := radix.radix_cluster(b,4);      b6 := algebra.markH(a6,0@0); c6 := batcalc.and(b6,15);
+#a7 := radix.radix_cluster(b,-3,1);   b7 := algebra.markH(a7,0@0); c7 := batcalc.and(b7, 8);
+#a8 := radix.radix_cluster(b,-2,2);   b8 := algebra.markH(a8,0@0); c8 := batcalc.and(b8,12);
+#a9 := radix.radix_cluster(b,-1,1,1); b9 := algebra.markH(a9,0@0); c9 := batcalc.and(b9, 6);
+#
+#io.print(a,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);
+#io.print(a,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9);
+#
+#a0 := radix.radix_cluster2(b,1,1,0); b0 := algebra.markH(a0,0@0); c0 := batcalc.and(b0, 1);
+#a1 := radix.radix_cluster2(b,1,2,0); b1 := algebra.markH(a1,0@0); c1 := batcalc.and(b1, 3);
+#a2 := radix.radix_cluster2(b,1,3,0); b2 := algebra.markH(a2,0@0); c2 := batcalc.and(b2, 7);
+#a3 := radix.radix_cluster2(b,2,3,0); b3 := algebra.markH(a3,0@0); c3 := batcalc.and(b3, 7);
+#a4 := radix.radix_cluster2(b,2,3,0); b4 := algebra.markH(a4,0@0); c4 := batcalc.and(b4, 7);
+#a5 := radix.radix_cluster2(b,3,3,0); b5 := algebra.markH(a5,0@0); c5 := batcalc.and(b5, 7);
+#a6 := radix.radix_cluster2(b,1,4,0); b6 := algebra.markH(a6,0@0); c6 := batcalc.and(b6,15);
+#a7 := radix.radix_cluster2(b,1,1,3); b7 := algebra.markH(a7,0@0); c7 := batcalc.and(b7, 8);
+#a8 := radix.radix_cluster2(b,1,2,2); b8 := algebra.markH(a8,0@0); c8 := batcalc.and(b8,12);
+#a9 := radix.radix_cluster2(b,2,2,1); b9 := algebra.markH(a9,0@0); c9 := batcalc.and(b9, 6);
+#
+#io.print(a,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);
+#io.print(a,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9);
+#
+#d0 := bat.reverse(b0); e0 := radix.radix_bits(d0); io.print(e0);
+#d1 := bat.reverse(b1); e1 := radix.radix_bits(d1); io.print(e1);
+#d2 := bat.reverse(b2); e2 := radix.radix_bits(d2); io.print(e2);
+#d3 := bat.reverse(b3); e3 := radix.radix_bits(d3); io.print(e3);
+#d4 := bat.reverse(b4); e4 := radix.radix_bits(d4); io.print(e4);
+#d5 := bat.reverse(b5); e5 := radix.radix_bits(d5); io.print(e5);
+#d6 := bat.reverse(b6); e6 := radix.radix_bits(d6); io.print(e6);
+#d7 := bat.reverse(b7); e7 := radix.radix_bits(d7); io.print(e7);
+#d8 := bat.reverse(b8); e8 := radix.radix_bits(d8); io.print(e8);
+#d9 := bat.reverse(b9); e9 := radix.radix_bits(d9); io.print(e9);
+#
+#rb3d4 := radix.radix_join(b3,d4);
+#rb2d5 := radix.radix_join(b2,d5);
+#pb3d4 := radix.phash_join(b3,d4);
+#pb2d5 := radix.phash_join(b2,d5);
+#
+#io.print(rb3d4,rb2d5,pb3d4,pb2d5);
+#
+#l0 := radix.uniform(15); l1 := radix.radix_cluster(l0,2); l := algebra.markH(l1,0@0);
+#r0 := radix.uniform(17); r1 := radix.radix_cluster(r0,2); r2 := algebra.markH(r1,0@0); r := bat.reverse(r2);
+#
+#jlr := algebra.join(l,r);
+#rlr := radix.radix_join(l,r);
+#rlr2 := radix.radix_join(l,r,2);
+#plr := radix.phash_join(l,r);
+#plr2 := radix.phash_join(l,r,2);
+#
+#io.print(jlr,rlr,rlr2,plr,plr2);
+#
+#
+function user.main():void;	# 0  (main:void)
+    Bu := radix.uniform(99);	# 1 M5_RDX_BATuniform_bd (Bu:bat[:oid,:int])<-(_2:int)
+    Bu0 := algebra.project(Bu,nil:void);	# 2 CMDBBPproject (Bu0:bat[:oid,:void])<-(Bu:bat[:oid,:int])(_4:void)
+    io.print(Bu0);	# 3 IOprint_val (_5:int)<-(Bu0:bat[:oid,:void])
+    Bu1 := bat.reverse(Bu);	# 4 BKCreverse (Bu1:bat[:int,:oid])<-(Bu:bat[:oid,:int])
+    Bu2 := algebra.project(Bu1,nil:void);	# 5 CMDBBPproject (Bu2:bat[:int,:void])<-(Bu1:bat[:int,:oid])(_4:void)
+    Bu3 := algebra.sort(Bu2);	# 6 ALGhsort (Bu3:bat[:int,:void])<-(Bu2:bat[:int,:void])
+    Bu4 := bat.reverse(Bu3);	# 7 BKCreverse (Bu4:bat[:void,:int])<-(Bu3:bat[:int,:void])
+    io.print(Bu4);	# 8 IOprint_val (_10:int)<-(Bu4:bat[:void,:int])
+    Bn := radix.normal(99);	# 9 M5_RDX_BATnormal_bdvm (Bn:bat[:oid,:int])<-(_2:int)
+    Bn0 := algebra.project(Bn,nil:void);	# 10 CMDBBPproject (Bn0:bat[:oid,:void])<-(Bn:bat[:oid,:int])(_4:void)
+    io.print(Bn0);	# 11 IOprint_val (_13:int)<-(Bn0:bat[:oid,:void])
+    Bn1 := bat.reverse(Bn);	# 12 BKCreverse (Bn1:bat[:int,:oid])<-(Bn:bat[:oid,:int])
+    Bn2 := algebra.project(Bn1,nil:void);	# 13 CMDBBPproject (Bn2:bat[:int,:void])<-(Bn1:bat[:int,:oid])(_4:void)
+    Bn3 := algebra.sort(Bn2);	# 14 ALGhsort (Bn3:bat[:int,:void])<-(Bn2:bat[:int,:void])
+    Bn4 := bat.reverse(Bn3);	# 15 BKCreverse (Bn4:bat[:void,:int])<-(Bn3:bat[:int,:void])
+    io.print(Bn4);	# 16 IOprint_val (_18:int)<-(Bn4:bat[:void,:int])
+    b := radix.uniform(16);	# 17 M5_RDX_BATuniform_bd (b:bat[:oid,:int])<-(_20:int)
+    a := algebra.markH(b,0@0);	# 18 ALGmarkHead (a:bat[:void,:int])<-(b:bat[:oid,:int])(_22:oid)
+    a0 := radix.radix_cluster(b,1);	# 19 M5_RDX_radix_cluster_lp (a0:bat[:oid,:int])<-(b:bat[:oid,:int])(_24:int)
+    b0 := algebra.markH(a0,0@0);	# 20 ALGmarkHead (b0:bat[:void,:int])<-(a0:bat[:oid,:int])(_22:oid)
+    c0 := batcalc.and(b0,1);	# 21 CMDbatANDcst_int_int_int (c0:bat[:void,:int])<-(b0:bat[:void,:int])(_24:int)
+    a1 := radix.radix_cluster(b,2);	# 22 M5_RDX_radix_cluster_lp (a1:bat[:oid,:int])<-(b:bat[:oid,:int])(_28:int)
+    b1 := algebra.markH(a1,0@0);	# 23 ALGmarkHead (b1:bat[:void,:int])<-(a1:bat[:oid,:int])(_22:oid)
+    c1 := batcalc.and(b1,3);	# 24 CMDbatANDcst_int_int_int (c1:bat[:void,:int])<-(b1:bat[:void,:int])(_31:int)
+    a2 := radix.radix_cluster(b,3);	# 25 M5_RDX_radix_cluster_lp (a2:bat[:oid,:int])<-(b:bat[:oid,:int])(_31:int)
+    b2 := algebra.markH(a2,0@0);	# 26 ALGmarkHead (b2:bat[:void,:int])<-(a2:bat[:oid,:int])(_22:oid)
+    c2 := batcalc.and(b2,7);	# 27 CMDbatANDcst_int_int_int (c2:bat[:void,:int])<-(b2:bat[:void,:int])(_35:int)
+    a3 := radix.radix_cluster(b,2,1);	# 28 M5_RDX_radix_cluster_lp (a3:bat[:oid,:int])<-(b:bat[:oid,:int])(_28:int)(_24:int)
+    b3 := algebra.markH(a3,0@0);	# 29 ALGmarkHead (b3:bat[:void,:int])<-(a3:bat[:oid,:int])(_22:oid)
+    c3 := batcalc.and(b3,7);	# 30 CMDbatANDcst_int_int_int (c3:bat[:void,:int])<-(b3:bat[:void,:int])(_35:int)
+    a4 := radix.radix_cluster(b,1,2);	# 31 M5_RDX_radix_cluster_lp (a4:bat[:oid,:int])<-(b:bat[:oid,:int])(_24:int)(_28:int)
+    b4 := algebra.markH(a4,0@0);	# 32 ALGmarkHead (b4:bat[:void,:int])<-(a4:bat[:oid,:int])(_22:oid)
+    c4 := batcalc.and(b4,7);	# 33 CMDbatANDcst_int_int_int (c4:bat[:void,:int])<-(b4:bat[:void,:int])(_35:int)
+    a5 := radix.radix_cluster(b,1,1,1);	# 34 M5_RDX_radix_cluster_lp (a5:bat[:oid,:int])<-(b:bat[:oid,:int])(_24:int)(_24:int)(_24:int)
+    b5 := algebra.markH(a5,0@0);	# 35 ALGmarkHead (b5:bat[:void,:int])<-(a5:bat[:oid,:int])(_22:oid)
+    c5 := batcalc.and(b5,7);	# 36 CMDbatANDcst_int_int_int (c5:bat[:void,:int])<-(b5:bat[:void,:int])(_35:int)
+    a6 := radix.radix_cluster(b,4);	# 37 M5_RDX_radix_cluster_lp (a6:bat[:oid,:int])<-(b:bat[:oid,:int])(_46:int)
+    b6 := algebra.markH(a6,0@0);	# 38 ALGmarkHead (b6:bat[:void,:int])<-(a6:bat[:oid,:int])(_22:oid)
+    c6 := batcalc.and(b6,15);	# 39 CMDbatANDcst_int_int_int (c6:bat[:void,:int])<-(b6:bat[:void,:int])(_49:int)
+    a7 := radix.radix_cluster(b,-3,1);	# 40 M5_RDX_radix_cluster_lp (a7:bat[:oid,:int])<-(b:bat[:oid,:int])(_51:int)(_24:int)
+    b7 := algebra.markH(a7,0@0);	# 41 ALGmarkHead (b7:bat[:void,:int])<-(a7:bat[:oid,:int])(_22:oid)
+    c7 := batcalc.and(b7,8);	# 42 CMDbatANDcst_int_int_int (c7:bat[:void,:int])<-(b7:bat[:void,:int])(_54:int)
+    a8 := radix.radix_cluster(b,-2,2);	# 43 M5_RDX_radix_cluster_lp (a8:bat[:oid,:int])<-(b:bat[:oid,:int])(_56:int)(_28:int)
+    b8 := algebra.markH(a8,0@0);	# 44 ALGmarkHead (b8:bat[:void,:int])<-(a8:bat[:oid,:int])(_22:oid)
+    c8 := batcalc.and(b8,12);	# 45 CMDbatANDcst_int_int_int (c8:bat[:void,:int])<-(b8:bat[:void,:int])(_59:int)
+    a9 := radix.radix_cluster(b,-1,1,1);	# 46 M5_RDX_radix_cluster_lp (a9:bat[:oid,:int])<-(b:bat[:oid,:int])(_61:int)(_62:int)(_62:int)
+    b9 := algebra.markH(a9,0@0);	# 47 ALGmarkHead (b9:bat[:void,:int])<-(a9:bat[:oid,:int])(_64:oid)
+    c9 := batcalc.and(b9,6);	# 48 CMDbatANDcst_int_int_int (c9:bat[:void,:int])<-(b9:bat[:void,:int])(_66:int)
+    io.print(a,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);	# 49 IOtable (_67:int)<-(a:bat[:void,:int])(b0:bat[:void,:int])(b1:bat[:void,:int])(b2:bat[:void,:int])(b3:bat[:void,:int])(b4:bat[:void,:int])(b5:bat[:void,:int])(b6:bat[:void,:int])(b7:bat[:void,:int])(b8:bat[:void,:int])(b9:bat[:void,:int])
+    io.print(a,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9);	# 50 IOtable (_68:int)<-(a:bat[:void,:int])(c0:bat[:void,:int])(c1:bat[:void,:int])(c2:bat[:void,:int])(c3:bat[:void,:int])(c4:bat[:void,:int])(c5:bat[:void,:int])(c6:bat[:void,:int])(c7:bat[:void,:int])(c8:bat[:void,:int])(c9:bat[:void,:int])
+    a0 := radix.radix_cluster2(b,1,1,0);	# 51 M5_RDX_radix_cluster2 (a0:bat[:oid,:int])<-(b:bat[:oid,:int])(_62:int)(_62:int)(_69:int)
+    b0 := algebra.markH(a0,0@0);	# 52 ALGmarkHead (b0:bat[:void,:int])<-(a0:bat[:oid,:int])(_64:oid)
+    c0 := batcalc.and(b0,1);	# 53 CMDbatANDcst_int_int_int (c0:bat[:void,:int])<-(b0:bat[:void,:int])(_62:int)
+    a1 := radix.radix_cluster2(b,1,2,0);	# 54 M5_RDX_radix_cluster2 (a1:bat[:oid,:int])<-(b:bat[:oid,:int])(_62:int)(_70:int)(_69:int)
+    b1 := algebra.markH(a1,0@0);	# 55 ALGmarkHead (b1:bat[:void,:int])<-(a1:bat[:oid,:int])(_64:oid)
+    c1 := batcalc.and(b1,3);	# 56 CMDbatANDcst_int_int_int (c1:bat[:void,:int])<-(b1:bat[:void,:int])(_71:int)
+    a2 := radix.radix_cluster2(b,1,3,0);	# 57 M5_RDX_radix_cluster2 (a2:bat[:oid,:int])<-(b:bat[:oid,:int])(_62:int)(_71:int)(_69:int)
+    b2 := algebra.markH(a2,0@0);	# 58 ALGmarkHead (b2:bat[:void,:int])<-(a2:bat[:oid,:int])(_64:oid)
+    c2 := batcalc.and(b2,7);	# 59 CMDbatANDcst_int_int_int (c2:bat[:void,:int])<-(b2:bat[:void,:int])(_72:int)
+    a3 := radix.radix_cluster2(b,2,3,0);	# 60 M5_RDX_radix_cluster2 (a3:bat[:oid,:int])<-(b:bat[:oid,:int])(_70:int)(_71:int)(_69:int)
+    b3 := algebra.markH(a3,0@0);	# 61 ALGmarkHead (b3:bat[:void,:int])<-(a3:bat[:oid,:int])(_64:oid)
+    c3 := batcalc.and(b3,7);	# 62 CMDbatANDcst_int_int_int (c3:bat[:void,:int])<-(b3:bat[:void,:int])(_72:int)
+    a4 := radix.radix_cluster2(b,2,3,0);	# 63 M5_RDX_radix_cluster2 (a4:bat[:oid,:int])<-(b:bat[:oid,:int])(_70:int)(_71:int)(_69:int)
+    b4 := algebra.markH(a4,0@0);	# 64 ALGmarkHead (b4:bat[:void,:int])<-(a4:bat[:oid,:int])(_64:oid)
+    c4 := batcalc.and(b4,7);	# 65 CMDbatANDcst_int_int_int (c4:bat[:void,:int])<-(b4:bat[:void,:int])(_72:int)
+    a5 := radix.radix_cluster2(b,3,3,0);	# 66 M5_RDX_radix_cluster2 (a5:bat[:oid,:int])<-(b:bat[:oid,:int])(_71:int)(_71:int)(_69:int)
+    b5 := algebra.markH(a5,0@0);	# 67 ALGmarkHead (b5:bat[:void,:int])<-(a5:bat[:oid,:int])(_64:oid)
+    c5 := batcalc.and(b5,7);	# 68 CMDbatANDcst_int_int_int (c5:bat[:void,:int])<-(b5:bat[:void,:int])(_72:int)
+    a6 := radix.radix_cluster2(b,1,4,0);	# 69 M5_RDX_radix_cluster2 (a6:bat[:oid,:int])<-(b:bat[:oid,:int])(_62:int)(_46:int)(_69:int)
+    b6 := algebra.markH(a6,0@0);	# 70 ALGmarkHead (b6:bat[:void,:int])<-(a6:bat[:oid,:int])(_64:oid)
+    c6 := batcalc.and(b6,15);	# 71 CMDbatANDcst_int_int_int (c6:bat[:void,:int])<-(b6:bat[:void,:int])(_49:int)
+    a7 := radix.radix_cluster2(b,1,1,3);	# 72 M5_RDX_radix_cluster2 (a7:bat[:oid,:int])<-(b:bat[:oid,:int])(_62:int)(_62:int)(_71:int)
+    b7 := algebra.markH(a7,0@0);	# 73 ALGmarkHead (b7:bat[:void,:int])<-(a7:bat[:oid,:int])(_64:oid)
+    c7 := batcalc.and(b7,8);	# 74 CMDbatANDcst_int_int_int (c7:bat[:void,:int])<-(b7:bat[:void,:int])(_54:int)
+    a8 := radix.radix_cluster2(b,1,2,2);	# 75 M5_RDX_radix_cluster2 (a8:bat[:oid,:int])<-(b:bat[:oid,:int])(_62:int)(_70:int)(_70:int)
+    b8 := algebra.markH(a8,0@0);	# 76 ALGmarkHead (b8:bat[:void,:int])<-(a8:bat[:oid,:int])(_64:oid)
+    c8 := batcalc.and(b8,12);	# 77 CMDbatANDcst_int_int_int (c8:bat[:void,:int])<-(b8:bat[:void,:int])(_59:int)
+    a9 := radix.radix_cluster2(b,2,2,1);	# 78 M5_RDX_radix_cluster2 (a9:bat[:oid,:int])<-(b:bat[:oid,:int])(_70:int)(_70:int)(_62:int)
+    b9 := algebra.markH(a9,0@0);	# 79 ALGmarkHead (b9:bat[:void,:int])<-(a9:bat[:oid,:int])(_64:oid)
+    c9 := batcalc.and(b9,6);	# 80 CMDbatANDcst_int_int_int (c9:bat[:void,:int])<-(b9:bat[:void,:int])(_66:int)
+    io.print(a,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);	# 81 IOtable (_73:int)<-(a:bat[:void,:int])(b0:bat[:void,:int])(b1:bat[:void,:int])(b2:bat[:void,:int])(b3:bat[:void,:int])(b4:bat[:void,:int])(b5:bat[:void,:int])(b6:bat[:void,:int])(b7:bat[:void,:int])(b8:bat[:void,:int])(b9:bat[:void,:int])
+    io.print(a,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9);	# 82 IOtable (_74:int)<-(a:bat[:void,:int])(c0:bat[:void,:int])(c1:bat[:void,:int])(c2:bat[:void,:int])(c3:bat[:void,:int])(c4:bat[:void,:int])(c5:bat[:void,:int])(c6:bat[:void,:int])(c7:bat[:void,:int])(c8:bat[:void,:int])(c9:bat[:void,:int])
+    d0 := bat.reverse(b0);	# 83 BKCreverse (d0:bat[:int,:void])<-(b0:bat[:void,:int])
+    e0 := radix.radix_bits(d0);	# 84 M5_RDX_radix_bits (e0:int)<-(d0:bat[:int,:void])
+    io.print(e0);	# 85 IOprint_val (_77:int)<-(e0:int)
+    d1 := bat.reverse(b1);	# 86 BKCreverse (d1:bat[:int,:void])<-(b1:bat[:void,:int])
+    e1 := radix.radix_bits(d1);	# 87 M5_RDX_radix_bits (e1:int)<-(d1:bat[:int,:void])
+    io.print(e1);	# 88 IOprint_val (_80:int)<-(e1:int)
+    d2 := bat.reverse(b2);	# 89 BKCreverse (d2:bat[:int,:void])<-(b2:bat[:void,:int])
+    e2 := radix.radix_bits(d2);	# 90 M5_RDX_radix_bits (e2:int)<-(d2:bat[:int,:void])
+    io.print(e2);	# 91 IOprint_val (_83:int)<-(e2:int)
+    d3 := bat.reverse(b3);	# 92 BKCreverse (d3:bat[:int,:void])<-(b3:bat[:void,:int])
+    e3 := radix.radix_bits(d3);	# 93 M5_RDX_radix_bits (e3:int)<-(d3:bat[:int,:void])
+    io.print(e3);	# 94 IOprint_val (_86:int)<-(e3:int)
+    d4 := bat.reverse(b4);	# 95 BKCreverse (d4:bat[:int,:void])<-(b4:bat[:void,:int])
+    e4 := radix.radix_bits(d4);	# 96 M5_RDX_radix_bits (e4:int)<-(d4:bat[:int,:void])
+    io.print(e4);	# 97 IOprint_val (_89:int)<-(e4:int)
+    d5 := bat.reverse(b5);	# 98 BKCreverse (d5:bat[:int,:void])<-(b5:bat[:void,:int])
+    e5 := radix.radix_bits(d5);	# 99 M5_RDX_radix_bits (e5:int)<-(d5:bat[:int,:void])
+    io.print(e5);	# 100 IOprint_val (_92:int)<-(e5:int)
+    d6 := bat.reverse(b6);	# 101 BKCreverse (d6:bat[:int,:void])<-(b6:bat[:void,:int])
+    e6 := radix.radix_bits(d6);	# 102 M5_RDX_radix_bits (e6:int)<-(d6:bat[:int,:void])
+    io.print(e6);	# 103 IOprint_val (_95:int)<-(e6:int)
+    d7 := bat.reverse(b7);	# 104 BKCreverse (d7:bat[:int,:void])<-(b7:bat[:void,:int])
+    e7 := radix.radix_bits(d7);	# 105 M5_RDX_radix_bits (e7:int)<-(d7:bat[:int,:void])
+    io.print(e7);	# 106 IOprint_val (_98:int)<-(e7:int)
+    d8 := bat.reverse(b8);	# 107 BKCreverse (d8:bat[:int,:void])<-(b8:bat[:void,:int])
+    e8 := radix.radix_bits(d8);	# 108 M5_RDX_radix_bits (e8:int)<-(d8:bat[:int,:void])
+    io.print(e8);	# 109 IOprint_val (_101:int)<-(e8:int)
+    d9 := bat.reverse(b9);	# 110 BKCreverse (d9:bat[:int,:void])<-(b9:bat[:void,:int])
+    e9 := radix.radix_bits(d9);	# 111 M5_RDX_radix_bits (e9:int)<-(d9:bat[:int,:void])
+    io.print(e9);	# 112 IOprint_val (_104:int)<-(e9:int)
+    rb3d4 := radix.radix_join(b3,d4);	# 113 M5_RDX_radix_join_xh (rb3d4:bat[:void,:void])<-(b3:bat[:void,:int])(d4:bat[:int,:void])
+    rb2d5 := radix.radix_join(b2,d5);	# 114 M5_RDX_radix_join_xh (rb2d5:bat[:void,:void])<-(b2:bat[:void,:int])(d5:bat[:int,:void])
+    pb3d4 := radix.phash_join(b3,d4);	# 115 M5_RDX_phash_join_xhc (pb3d4:bat[:void,:void])<-(b3:bat[:void,:int])(d4:bat[:int,:void])
+    pb2d5 := radix.phash_join(b2,d5);	# 116 M5_RDX_phash_join_xhc (pb2d5:bat[:void,:void])<-(b2:bat[:void,:int])(d5:bat[:int,:void])
+    io.print(rb3d4,rb2d5,pb3d4,pb2d5);	# 117 IOtable (_109:int)<-(rb3d4:bat[:void,:void])(rb2d5:bat[:void,:void])(pb3d4:bat[:void,:void])(pb2d5:bat[:void,:void])
+    l0 := radix.uniform(15);	# 118 M5_RDX_BATuniform_bd (l0:bat[:oid,:int])<-(_111:int)
+    l1 := radix.radix_cluster(l0,2);	# 119 M5_RDX_radix_cluster_lp (l1:bat[:oid,:int])<-(l0:bat[:oid,:int])(_113:int)
+    l := algebra.markH(l1,0@0);	# 120 ALGmarkHead (l:bat[:void,:int])<-(l1:bat[:oid,:int])(_115:oid)
+    r0 := radix.uniform(17);	# 121 M5_RDX_BATuniform_bd (r0:bat[:oid,:int])<-(_117:int)
+    r1 := radix.radix_cluster(r0,2);	# 122 M5_RDX_radix_cluster_lp (r1:bat[:oid,:int])<-(r0:bat[:oid,:int])(_113:int)
+    r2 := algebra.markH(r1,0@0);	# 123 ALGmarkHead (r2:bat[:void,:int])<-(r1:bat[:oid,:int])(_115:oid)
+    r := bat.reverse(r2);	# 124 BKCreverse (r:bat[:int,:void])<-(r2:bat[:void,:int])
+    jlr := algebra.join(l,r);	# 125 ALGjoin (jlr:bat[:void,:oid])<-(l:bat[:void,:int])(r:bat[:int,:void])
+    rlr := radix.radix_join(l,r);	# 126 M5_RDX_radix_join_xh (rlr:bat[:void,:void])<-(l:bat[:void,:int])(r:bat[:int,:void])
+    rlr2 := radix.radix_join(l,r,2);	# 127 M5_RDX_radix_join_h (rlr2:bat[:void,:void])<-(l:bat[:void,:int])(r:bat[:int,:void])(_113:int)
+    plr := radix.phash_join(l,r);	# 128 M5_RDX_phash_join_xhc (plr:bat[:void,:void])<-(l:bat[:void,:int])(r:bat[:int,:void])
+    plr2 := radix.phash_join(l,r,2);	# 129 M5_RDX_phash_join_hc (plr2:bat[:void,:void])<-(l:bat[:void,:int])(r:bat[:int,:void])(_113:int)
+    io.print(jlr,rlr,rlr2,plr,plr2);	# 130 IOtable (_126:int)<-(jlr:bat[:void,:oid])(rlr:bat[:void,:void])(rlr2:bat[:void,:void])(plr:bat[:void,:void])(plr2:bat[:void,:void])
+end main;	# 131  
 #-----------------#
-# BAT:	  tmp_26  #
-# (oid)	  (void)  #
+# h	t	  # name
+# oid	void	  # type
 #-----------------#
 [ 0@0,	  nil	  ]
 [ 1@0,	  nil	  ]
@@ -114,10 +327,9 @@ Bu.project(nil).print();
 [ 96@0,	  nil	  ]
 [ 97@0,	  nil	  ]
 [ 98@0,	  nil	  ]
-Bu.reverse().project(nil).sort().reverse().print();
 #-----------------#
-# BAT:	  tmp_26  #
-# (oid)	  (int)	  #
+# t	h	  # name
+# void	int	  # type
 #-----------------#
 [ nil,	  0	  ]
 [ nil,	  1	  ]
@@ -218,11 +430,9 @@ Bu.reverse().project(nil).sort().reverse().print();
 [ nil,	  96	  ]
 [ nil,	  97	  ]
 [ nil,	  98	  ]
-var Bn := normal(99);
-Bn.project(nil).print();
 #-----------------#
-# BAT:	  tmp_26  #
-# (oid)	  (int)	  #
+# h	t	  # name
+# oid	void	  # type
 #-----------------#
 [ 0@0,	  nil	  ]
 [ 1@0,	  nil	  ]
@@ -323,10 +533,9 @@ Bn.project(nil).print();
 [ 96@0,	  nil	  ]
 [ 97@0,	  nil	  ]
 [ 98@0,	  nil	  ]
-Bn.reverse().project(nil).sort().reverse().print();
 #-----------------#
-# BAT:	  tmp_26  #
-# (oid)	  (int)	  #
+# t	h	  # name
+# void	int	  # type
 #-----------------#
 [ nil,	  34	  ]
 [ nil,	  35	  ]
@@ -427,21 +636,6 @@ Bn.reverse().project(nil).sort().reverse().print();
 [ nil,	  62	  ]
 [ nil,	  63	  ]
 [ nil,	  64	  ]
-
-var b:=uniform(16).tmark(0@0);
-
-var b0 := radix_cluster(b,1).tmark(0@0);
-var b1 := radix_cluster(b,2).tmark(0@0);
-var b2 := radix_cluster(b,3).tmark(0@0);
-var b3 := radix_cluster(b,2,1).tmark(0@0);
-var b4 := radix_cluster(b,1,2).tmark(0@0);
-var b5 := radix_cluster(b,1,1,1).tmark(0@0);
-var b6 := radix_cluster(b,4).tmark(0@0);
-var b7 := radix_cluster(b,-3,1).tmark(0@0);
-var b8 := radix_cluster(b,-2,2).tmark(0@0);
-var b9 := radix_cluster(b,-1,1,1).tmark(0@0);
-
-print(b,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);
 #-------------------------------------------------------------------------------------------------#
 # t	h	h	h	h	h	h	h	h	h	h	h	  # name
 # void	int	int	int	int	int	int	int	int	int	int	int	  # type
@@ -462,7 +656,6 @@ print(b,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);
 [ 13@0,	  15,	  15,	  7,	  14,	  14,	  14,	  14,	  13,	  10,	  12,	  14	  ]
 [ 14@0,	  11,	  11,	  15,	  7,	  7,	  7,	  7,	  14,	  15,	  14,	  7	  ]
 [ 15@0,	  5,	  5,	  11,	  15,	  15,	  15,	  15,	  15,	  11,	  15,	  15	  ]
-print(b,b0.[and](1),b1.[and](3),b2.[and](7),b3.[and](7),b4.[and](7),b5.[and](7),b6.[and](15),b7.[and](8),b8.[and](12),b9.[and](6));
 #-------------------------------------------------------------------------------------------------#
 # t	h	t	t	t	t	t	t	t	t	t	t	  # name
 # void	int	int	int	int	int	int	int	int	int	int	int	  # type
@@ -483,19 +676,6 @@ print(b,b0.[and](1),b1.[and](3),b2.[and](7),b3.[and](7),b4.[and](7),b5.[and](7),
 [ 13@0,	  15,	  1,	  3,	  6,	  6,	  6,	  6,	  13,	  8,	  12,	  6	  ]
 [ 14@0,	  11,	  1,	  3,	  7,	  7,	  7,	  7,	  14,	  8,	  12,	  6	  ]
 [ 15@0,	  5,	  1,	  3,	  7,	  7,	  7,	  7,	  15,	  8,	  12,	  6	  ]
-
-var b0 := radix_cluster2(b,1,1,0).tmark(0@0);
-var b1 := radix_cluster2(b,1,2,0).tmark(0@0);
-var b2 := radix_cluster2(b,1,3,0).tmark(0@0);
-var b3 := radix_cluster2(b,2,3,0).tmark(0@0);
-var b4 := radix_cluster2(b,2,3,0).tmark(0@0);
-var b5 := radix_cluster2(b,3,3,0).tmark(0@0);
-var b6 := radix_cluster2(b,1,4,0).tmark(0@0);
-var b7 := radix_cluster2(b,1,1,3).tmark(0@0);
-var b8 := radix_cluster2(b,1,2,2).tmark(0@0);
-var b9 := radix_cluster2(b,2,2,1).tmark(0@0);
-
-print(b,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);
 #-------------------------------------------------------------------------------------------------#
 # t	h	h	h	h	h	h	h	h	h	h	h	  # name
 # void	int	int	int	int	int	int	int	int	int	int	int	  # type
@@ -516,7 +696,6 @@ print(b,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9);
 [ 13@0,	  15,	  15,	  7,	  14,	  14,	  14,	  14,	  13,	  10,	  12,	  14	  ]
 [ 14@0,	  11,	  11,	  15,	  7,	  7,	  7,	  7,	  14,	  15,	  14,	  7	  ]
 [ 15@0,	  5,	  5,	  11,	  15,	  15,	  15,	  15,	  15,	  11,	  15,	  15	  ]
-print(b,b0.[and](1),b1.[and](3),b2.[and](7),b3.[and](7),b4.[and](7),b5.[and](7),b6.[and](15),b7.[and](8),b8.[and](12),b9.[and](6));
 #-------------------------------------------------------------------------------------------------#
 # t	h	t	t	t	t	t	t	t	t	t	t	  # name
 # void	int	int	int	int	int	int	int	int	int	int	int	  # type
@@ -537,34 +716,16 @@ print(b,b0.[and](1),b1.[and](3),b2.[and](7),b3.[and](7),b4.[and](7),b5.[and](7),
 [ 13@0,	  15,	  1,	  3,	  6,	  6,	  6,	  6,	  13,	  8,	  12,	  6	  ]
 [ 14@0,	  11,	  1,	  3,	  7,	  7,	  7,	  7,	  14,	  8,	  12,	  6	  ]
 [ 15@0,	  5,	  1,	  3,	  7,	  7,	  7,	  7,	  15,	  8,	  12,	  6	  ]
-
-print(radix_bits(reverse(b0)));
 [ 1 ]
-print(radix_bits(reverse(b1)));
 [ 2 ]
-print(radix_bits(reverse(b2)));
 [ 3 ]
-print(radix_bits(reverse(b3)));
 [ 3 ]
-print(radix_bits(reverse(b4)));
 [ 3 ]
-print(radix_bits(reverse(b5)));
 [ 3 ]
-print(radix_bits(reverse(b6)));
 [ 32 ]
-print(radix_bits(reverse(b7)));
 [ 0 ]
-print(radix_bits(reverse(b8)));
 [ 0 ]
-print(radix_bits(reverse(b9)));
 [ 0 ]
-
-print(
- radix_join(b3,reverse(b4))
-,radix_join(b2,reverse(b5),3)
-,phash_join(b3,reverse(b4))
-,phash_join(b2,reverse(b5),3)
-);
 #-----------------------------------------#
 # h	t	t	t	t	  # name
 # oid	oid	oid	oid	oid	  # type
@@ -585,17 +746,6 @@ print(
 [ 13@0,	  13@0,	  13@0,	  13@0,	  13@0	  ]
 [ 14@0,	  14@0,	  14@0,	  14@0,	  14@0	  ]
 [ 15@0,	  15@0,	  15@0,	  15@0,	  15@0	  ]
-
-var l := uniform(15).radix_cluster(2).tmark(0@0);
-var r := uniform(17).radix_cluster(2).tmark(0@0).reverse();
-
-print(
- join(l,r)
-,radix_join(l,r)
-,radix_join(l,r,2)
-,phash_join(l,r)
-,phash_join(l,r,2)
-);
 #-------------------------------------------------#
 # h	t	t	t	t	t	  # name
 # oid	oid	oid	oid	oid	oid	  # type
@@ -616,9 +766,7 @@ print(
 [ 13@0,	  15@0,	  15@0,	  15@0,	  15@0,	  15@0	  ]
 [ 14@0,	  16@0,	  16@0,	  16@0,	  16@0,	  16@0	  ]
 
-quit();
-
-# 12:59:51 >  
-# 12:59:51 >  Done.
-# 12:59:51 >  
+# 09:11:32 >  
+# 09:11:32 >  Done.
+# 09:11:32 >  
 
