@@ -117,6 +117,7 @@ end main;	# 16
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
+[ "sabaoth",	  nil	  ]
 [ "sema",	  nil	  ]
 [ "sqlblob",	  nil	  ]
 [ "statistics",	  nil	  ]
