@@ -64,6 +64,7 @@ continue   -- Continue program being debugged
 break      -- set breakpoint on current instruction
 break <var>    -- break on assignment to <var>
 delete <var>   -- remove break point <var>
+debug <mask>   -- set the runtime debugging mask
 step       -- advance to next MAL instruction
 module     -- display the module signatures
 finish     -- finish current call
@@ -876,11 +877,20 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 				for (i = 1; i < BBPsize; i++)
 					if (BBP_logical(i) && BBP_cache(i)) {
-						stream_printf(out, "[%d] %s lref = %d ref= %d ", i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
+						stream_printf(out, "[%d] %s lref = %d ref= %d ", 
+							i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
 						if( *BBP_logical(i) =='.')
 							stream_printf(out, " zombie ");
 						stream_printf(out, " dirty=%d \n", BATdirty(BBP_cache(i)));
 					}
+				stream_printf(out,"BBP cache\n");
+/*
+				for(i=0; i<BATCACHE_SIZE; i++)
+					stream_printf(out, "[%d] bid %d next %d prev = %d ", i,
+					batcache_t[i].bid,
+					batcache_t[i].bin_next,
+					batcache_t[i].bin_prev);
+*/
 				continue;
 			}
 			if (strncmp(b, "breakpoints",11) == 0) {
@@ -901,6 +911,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			}
 			continue;
 		case 'd':
+			if( strncmp(b, "debug", 5) == 0){
+				skipWord(cntxt, b);
+				GDKdebug = atol(b);
+				stream_printf(out,"Set debug mask to %d\n",GDKdebug);
+				break;
+			}
 			if (strncmp(b, "down", 2) == 0 && stk->down != NULL) {
 				stream_printf(out, "%sgo down the stack\n", "#mdb ");
 				stk = stk->down;
@@ -1096,6 +1112,7 @@ static int mdbSessionActive;
 int mdbSession(){
 	return mdbSessionActive;
 }
+
 void
 mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
@@ -1193,6 +1210,10 @@ printBATelm(stream *f, int i, size_t cnt, size_t first)
 				i, nme, tpe, 
 				BATcount(b), BBP_lrefs(ABS(b->batCacheid)), 
 				BBP_refs(ABS(b->batCacheid)) - 1);
+		/* perform property checking */
+		if( b->H != b->T)
+			BATpropcheck(BATmirror(b),BATPROPS_QUICK);
+		BATpropcheck(b,BATPROPS_QUICK);
 		if( cnt){
 			if (cnt < BATcount(b)) {
 				stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
@@ -1467,6 +1488,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "break      -- set breakpoint on current instruction\n");
 	stream_printf(f, "break <var>    -- break on assignment to <var>\n");
 	stream_printf(f, "delete <var>   -- remove break/trace point <var>\n");
+	stream_printf(f, "debug <int>    -- set kernel debugging mask\n");
 	stream_printf(f, "step       -- advance to next MAL instruction\n");
 	stream_printf(f, "modules    -- show module list\n");
 	stream_printf(f, "module     -- display a module signatures\n");

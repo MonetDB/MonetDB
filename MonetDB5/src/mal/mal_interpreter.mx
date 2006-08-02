@@ -844,6 +844,39 @@ the bind(namespace, batname, mode) operation. [todo]
 			} 
 		} 
 	}
+	if( GDKdebug & 10 ){
+		BAT *b;
+		str oldmsg =0, msg;
+
+		for( i=0; i< pci->retc; i++)
+		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
+		    stk->stk[getArg(pci,i)].val.br.id ){
+			b= BATdescriptor(stk->stk[getArg(pci,i)].val.br.id);
+			if( b == NULL)
+				continue;
+			if( cntxt->errbuf && cntxt->errbuf[0]){
+				oldmsg= GDKstrdup(cntxt->errbuf);
+				*cntxt->errbuf= 0;
+			}
+			if (b->H != b->T) {
+				BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+			}
+			BATpropcheck(b, BATPROPS_QUICK);
+			BBPunfix(b->batCacheid);
+			if( cntxt->errbuf && cntxt->errbuf[0]) {
+	            msg= GDKstrdup(cntxt->errbuf);
+				if( oldmsg){
+					strcpy(cntxt->errbuf,oldmsg);
+					GDKfree(oldmsg);
+				}
+				return throwMessage("mal.propertyCheck",msg);
+			}
+			if( oldmsg){
+				*cntxt->errbuf = *oldmsg;
+				GDKfree(oldmsg);
+			}
+		}
+	}
 @-
 @= commandcall
 {	
