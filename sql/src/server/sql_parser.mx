@@ -443,6 +443,7 @@ int yydebug=1;
 	triggered_statement
 	procedure_statement_list
 	argument_list
+	table_function_column_list
 	when_statements
 	when_search_statements
 	case_opt_else_statement
@@ -1755,28 +1756,24 @@ func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    AS			{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
     routine_body
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
 				append_type(f, &$8);
 				append_string(f, NULL);
-				append_list(f, $11);
+				append_list(f, $9);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
     create PROCEDURE qname
 	'(' opt_paramlist ')'
-    AS			{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
     routine_body
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
 				append_type(f, NULL);   /* no result */
 				append_string(f, NULL); /* no mil-impl */
-				append_list(f, $9);
+				append_list(f, $7);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 
@@ -1792,6 +1789,17 @@ routine_body:
     END
 		{ $$ = $3; }
  ;
+
+/* change into compound statement 
+<compound statement> ::=
+                [ <beginning label> <colon> ] BEGIN [ [ NOT ] ATOMIC ]
+                [ <local declaration list> ] [ <local cursor declaration list> ] [ <local handler declaration list> ]
+                [ <SQL statement list> ] END [ <ending label> ]
+
+<beginning label> ::= <statement label>
+
+<statement label> ::= <identifier>
+*/
 
 procedure_statement_list:
     procedure_statement SCOLON 	{ $$ = append_symbol(L(), $1); }
@@ -1975,8 +1983,15 @@ opt_end_label:
  ;
 	
 	
+table_function_column_list:
+	column data_type	{ $$ = NULL; }
+  |     table_function_column_list ',' column data_type
+				{ $$ = NULL; }
+  ;
+
 func_data_type:
-    TABLE		{ sql_find_subtype(&$$, "table", 0, 0); }
+    TABLE '(' table_function_column_list ')'	
+		{ sql_find_subtype(&$$, "table", 0, 0); }
  |  data_type
  ;
 
@@ -2971,6 +2986,7 @@ simple_scalar_exp:
 scalar_exp:
     simple_scalar_exp 	{ $$ = $1; }
  |  subquery	%prec UMINUS
+ |  TABLE select_with_parens	{ $$ = $2; }
  ;
 
 value_exp:
