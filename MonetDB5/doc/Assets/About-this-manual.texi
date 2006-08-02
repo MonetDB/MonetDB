@@ -93,7 +93,7 @@ Advanced topics for application builders are covered in @ref{Programming
 Interfaces}.
 
 @ifset M5manual
-The query language @ref{XQuery} is intended for users
+The query language XQuery is intended for users
 living at the edge of technology. It provides a functional
 complete implementation of the XQuery and XUpdate standard.
 Unfortunately, the XQuery compiler is currently only
