@@ -6,7 +6,7 @@ class Popen:
 		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
 
 def server_start(x,dbname,mapi_port):
-    srvcmd = '%s --dbname "%s"' % (re.sub('mapi_port=.* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
+    srvcmd = '%s --debug=10 --dbname "%s"' % (re.sub('mapi_port=.* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
     print(srvcmd)
     return Popen(srvcmd);
 
@@ -30,8 +30,8 @@ env := inspect.getEnvironment();
 mapi_port := algebra.find(env, "mapi_port");
 io.print(mapi_port);
 mid:= mserver.reconnect("s0_0","localhost",%d,"monetdb","monetdb","mal");
-mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);bat.insert(rb,2,7);");
-
+io.print(mid);
+mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\\\"rbat\\\"); bat.insert(rb,1,1); bat.insert(rb,2,7);");
 b:bat[:int,:int] := mserver.bind(mid,"rbat");
 c:=algebra.select(b,0,12);
 io.print(c);
