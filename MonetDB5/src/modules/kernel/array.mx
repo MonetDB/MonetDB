@@ -331,6 +331,9 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 		}
 		s -= x2;
 	}
+	/* not sorted at best we have some fixed offset partial sorting */
+	bn->hsorted = 0;
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);

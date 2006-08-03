@@ -421,6 +421,9 @@ comment "Returns all BUNs, consisting of a head-value from 'left' and
 		and 'right' with equal tail- resp. head-value (i.e. the join
 	columns are projected out).";
 
+command fetchjoin( left:bat[:void,:any_2], right:bat[:any_2,:any_3]) :bat[:void,:any_3] 
+address ALGjoin;
+
 command join( left:bat[:void,:any_1], right:bat[:any_1,:void])
 		:bat[:void,:oid] 
 address ALGjoin;

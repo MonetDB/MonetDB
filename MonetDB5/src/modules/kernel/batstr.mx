@@ -613,6 +613,7 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 	BAT *b, *bn;
 	int tpe, xx;
 	BUN p, q;
+	bit bnil = bit_nil;
 	ptr nilptr;
 	int error = regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
 
@@ -629,7 +630,7 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 		ptr t = BUNtail(b, p);
 
 		if (ATOMcmp(tpe, t, nilptr) == 0) {
-			bunfastins(bn, h, t);
+			bunfastins(bn, h, &bnil);
 		} else {
 			bit match = regexec(&prg, t, 0, 0, 0) == 0;
 
@@ -637,6 +638,8 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 		}
 	}
 bunins_failed:
+	bn->hsorted = b->hsorted;
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);

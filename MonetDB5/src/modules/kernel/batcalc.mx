@@ -520,7 +520,7 @@ collected in bataccum<operator>. Initialization of the
 two primary command structures are dealt with in the CMD* alternatives.
 The similar code base is produced for dealing with a constant argument. 
 @= loopImpl
-{	int s1,s2,s3;
+{	size_t s1,s2,s3;
 	ptr p1,p2,p3, hend;
 
 	@:batinit(1,dst)@
@@ -628,7 +628,7 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 mal_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	char *res = MAL_SUCCEED;
 
@@ -662,7 +662,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 mal_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	char *res = MAL_SUCCEED;
 
@@ -693,7 +693,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 mal_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	char *res = MAL_SUCCEED;
 
@@ -734,7 +734,7 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 mal_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
 str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	char *res = MAL_SUCCEED;
 
@@ -770,7 +770,7 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 }
 @= initImpl
 void bat@1filler(BAT *dst, @1 cst, size_t cap){
-	int s1;
+	size_t s1;
 	ptr p1, hend;
 	dst->batBuns->free = cap * BUNsize(dst);
 	BATsetcount(dst, cap);
@@ -874,7 +874,7 @@ copyHead(BAT *dst, BAT *org)
 		BATseqbase(dst, org->hseqbase);
 	} else { /* works for fixed size only now, need to use a VIEW of the
 		    original in case of varsized atoms */
-		int s1,s2;
+		size_t s1,s2;
 		ptr p1,p2,hend;
 		int atomsize = ATOMsize(dst->htype);
 
@@ -962,7 +962,7 @@ the arithmeticImpl block and removing elements not required.
 @= numeric_funcs
 mal_export str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right);
 str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right)
-{	int s1,s2,s3;
+{	size_t s1,s2,s3;
 	ptr p1,p2,p3, hend;
 
 	@:batinit(1,dst)@
@@ -1044,7 +1044,7 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 mal_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 
 	if( (dst= BATdescriptor(*r)) == NULL ){
@@ -1076,7 +1076,7 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 mal_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 
 	if( (dst= BATdescriptor(*r)) == NULL ){
@@ -1107,7 +1107,7 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 mal_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	char *res = MAL_SUCCEED;
 
@@ -1147,7 +1147,7 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 mal_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
 str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	char *res = MAL_SUCCEED;
 
@@ -1218,7 +1218,7 @@ always be defined without signature clashes, eg. -(batA,batC).
 mal_export str CMDunaryAccum@1(int *ret,int *did, int *bid);
 str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	BAT *b,*dst;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 	
 	if( (dst= BATdescriptor(*did)) == NULL ){
@@ -1299,7 +1299,7 @@ The structure of this code is copied from the arithmetic scheme.
 @= compareImpl
 mal_export str compareaccum@1(BAT *dst, BAT *left, BAT *right);
 str compareaccum@1(BAT *dst, BAT *left, BAT *right){
-	int s1,s2,s3;
+	size_t s1,s2,s3;
 	ptr p1,p2,p3, hend;
 
 	@:batinit(1,dst)@
@@ -1322,7 +1322,7 @@ str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 mal_export str CMDcmp@1(int *ret, int *l, int *r);
 str CMDcmp@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
-	int s1,xx;
+	size_t s1,xx;
 	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
@@ -1350,8 +1350,7 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
-	/* StM: left & right tail sorted _ascending_  ==>  dst tail sorted _descending_ ??? */
-	dst->tsorted= (BATtordered(left)&BATtordered(right)&1)?GDK_SORTED_REV:0;
+	dst->tsorted= 0;
 	msg = compareaccum@1(dst,left,right);
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
@@ -1383,6 +1382,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,right,CMDcompareaccum@1)@
 
 	msg= compareaccum@1(dst,left,right);
+	dst->tsorted= 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
@@ -1394,7 +1394,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 mal_export str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst);
 str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,s2;
+	size_t s1,s2;
 	ptr p1,p2, hend;
 
 	if( (dst= BATdescriptor(*r)) == NULL ){
@@ -1419,6 +1419,7 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	case TYPE_lng: @:cmpLoopCst(lng,@2)@ break;
 	default :return throwMessage("batcalc.@1","unexpected type");
 	}
+	dst->tsorted= 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
@@ -1429,7 +1430,7 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 mal_export str CMDcmp@1cst(int *ret, int *l, void *cst);
 str CMDcmp@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,xx;
+	size_t s1,xx;
 	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
@@ -1451,6 +1452,7 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
+	dst->tsorted= 0;
 	msg= CMDcmpaccum@1cst(ret,&dst->batCacheid,l,cst);
 	BBPreleaseref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1487,7 +1489,7 @@ str
 CMDbitbataccumNOT(int *ret, int *d, int *l)
 {
 	BAT *dst, *left;
-	int s1, s2;
+	size_t s1, s2;
 	ptr p1, p2, hend;
 
 	if ((dst = BATdescriptor(*d)) == NULL) {
@@ -1513,6 +1515,7 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	}
 
 	*ret = dst->batCacheid;
+	dst->tsorted = 0;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
 	return MAL_SUCCEED;
@@ -1524,7 +1527,8 @@ CMDbitbatNOT(int *ret, int *l)
 {
 	str res;
 	BAT *dst, *left;
-	int s1, xx, d;
+	size_t s1, xx;
+	int d;
 	ptr p1;
 	bit bn = bit_nil;
 	BUN p, q;
@@ -1546,6 +1550,7 @@ CMDbitbatNOT(int *ret, int *l)
 	}
 	  bunins_failed:
 	dst->hsorted = BAThordered(left);
+	dst->tsorted = 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	d = dst->batCacheid;
 	BBPreleaseref(left->batCacheid);
@@ -1867,8 +1872,9 @@ CMDifThen(int *ret, int *iid, int *tid)
 {
 	BAT *ib, *tb, *bn;
 	int xx;
-	BUN p, q;
-	bit bnil = bit_nil;
+	BUN p, q, p1;
+	ptr nilptr;
+	size_t s1;
 
 	if ((ib = BATdescriptor(*iid)) == NULL) {
 		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
@@ -1879,22 +1885,29 @@ CMDifThen(int *ret, int *iid, int *tid)
 	}
 	@:chkSize(ib,tb,CMDifThen)@
 
+	nilptr = ATOMnilptr(BATttype(tb));
 	bn = BATnew(BAThtype(ib), BATttype(tb), BATcount(ib));
+	s1= BUNsize(bn);
+	p1= BUNfirst(bn);
 	@:tstBat(CMDifThen)@
 
 	BATloopFast(ib, p, q, xx) {
 		ptr h = BUNhead(ib, p);
 		ptr t = BUNtail(ib, p);
-		int idx = BUNindex(ib, p);
 
 		if (*(bit *) t == bit_nil) {
-			bunfastins(bn, h, &bnil);
+			t = nilptr;
 		} else if (*(bit *) t) {
+			int idx = BUNindex(ib, p);
 			t = BUNtail(tb, BUNptr(tb, idx));
-			bunfastins(bn, h, t);
+		} else {
+			continue;
 		}
+		bunfastins_nocheck(bn, p1, h, t, s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 	  bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -1910,27 +1923,35 @@ mal_export str CMDifThenCst_@1(int *ret, int *iid, ptr *eid);
 str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 	BAT *ib, *bn;
 	int xx;
-	BUN p,q;
-	@1 bnil= (@1)@1_nil;
+	BUN p,q, p1;
+	ptr nilptr;
+	size_t s1;
 
 	if( (ib= BATdescriptor(*iid)) == NULL ){
 		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
 	}
 
+	nilptr = ATOMnilptr(TYPE_@1);
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	s1= BUNsize(bn);
+	p1= BUNfirst(bn);
 	@:tstBat(CMDifThenCst_@1)@
 	BATloopFast(ib, p, q, xx) {
 		ptr h = BUNhead(ib,p);
 		ptr t = BUNtail(ib,p);
 
 		if( *(bit*) t== bit_nil) {
-			bunfastins(bn, h, &bnil);
-		} else
-		if( *(bit*) t ) {
-			bunfastins(bn, h, eid);
+			t = nilptr;
+		} else if( *(bit*) t ) {
+			t = eid;
+		} else {
+			continue;
 		} 
+		bunfastins_nocheck(bn, p1, h, t, s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -1941,29 +1962,34 @@ mal_export str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid);
 str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 	BAT *ib, *bn;
 	int xx;
-	BUN p,q;
-	@1 bnil= (@1)@1_nil;
+	BUN p,q, p1;
+	@1 nilval = (@1)@1_nil;
+	size_t s1;
 
 	if( (ib= BATdescriptor(*iid)) == NULL ){
 		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
 	}
 
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	s1= BUNsize(bn);
+	p1= BUNfirst(bn);
 	@:tstBat(CMDifThenElseCst_@1)@
 	BATloopFast(ib, p, q, xx) {
 		ptr h = BUNhead(ib,p);
 		ptr t = BUNtail(ib,p);
 
 		if( *(bit*) t== bit_nil) {
-			bunfastins(bn, h, &bnil);
-		} else
-		if( *(bit*) t ) {
-			bunfastins(bn, h, tid);
+			t = &nilval;
+		} else if( *(bit*) t ) {
+			t = tid;
 		} else {
-			bunfastins(bn, h, eid);
+			t = eid;
 		} 
+		bunfastins_nocheck(bn, p1, h, t, s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -2035,8 +2061,9 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 {
 	BAT *ib, *tb, *eb, *bn;
 	int xx;
-	BUN p, q;
-	bit bnil = bit_nil;
+	BUN p, q, p1;
+	ptr nilptr;
+	size_t s1;
 
 	if ((ib = BATdescriptor(*iid)) == NULL) {
 		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
@@ -2053,7 +2080,10 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 	@:chkSize(ib,tb,CMDifThenElse)@
 	@:chkSize(ib,eb,CMDifThenElse)@
 
+	nilptr = ATOMnilptr(BATttype(tb));
 	bn = BATnew(BAThtype(ib), BATttype(tb), BATcount(ib));
+	s1= BUNsize(bn);
+	p1= BUNfirst(bn);
 	@:tstBat(ifThenElse)@
 	BATloopFast(ib, p, q, xx) {
 		ptr h = BUNhead(ib, p);
@@ -2061,16 +2091,17 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 		int idx = BUNindex(ib, p);
 
 		if (*(bit *) t == bit_nil) {
-			bunfastins(bn, h, &bnil);
+			t = nilptr;
 		} else if (*(bit *) t) {
 			t = BUNtail(tb, BUNptr(tb, idx));
-			bunfastins(bn, h, t);
 		} else {
 			t = BUNtail(eb, BUNptr(eb, idx));
-			bunfastins(bn, h, t);
 		}
+		bunfastins_nocheck(bn, p1, h, t, s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 	  bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -2086,9 +2117,10 @@ CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 {
 	BAT *ib, *eb, *bn;
 	int xx;
-	BUN p, q;
+	BUN p, q, p1;
 	ptr nilptr;
 	int tpe;
+	size_t s1;
 
 	if ((ib = BATdescriptor(*iid)) == NULL) {
 		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
@@ -2102,22 +2134,26 @@ CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 	tpe = BATttype(eb);
 	nilptr = ATOMnilptr(tpe);
 	bn = BATnew(BAThtype(ib), tpe, BATcount(ib));
+	s1= BUNsize(bn);
+	p1= BUNfirst(bn);
 	@:tstBat(CMDifThenElseCst1)@
 	BATloopFast(ib, p, q, xx) {
 		ptr h = BUNhead(ib, p);
 		ptr t = BUNtail(ib, p);
-		int idx = BUNindex(ib, p);
 
-		if (ATOMcmp(tpe, t, nilptr) == 0) {
-			bunfastins(bn, h, t);
+		if (*(bit *) t == bit_nil) {
+			t = nilptr;
 		} else if (*(bit *) t) {
-			bunfastins(bn, h, val);
+			t = val;
 		} else {
+			int idx = BUNindex(ib, p);
 			t = BUNtail(eb, BUNptr(eb, idx));
-			bunfastins(bn, h, t);
 		}
+		bunfastins_nocheck(bn, p1, h, t, s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 	  bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -2132,9 +2168,10 @@ CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 {
 	BAT *ib, *tb, *bn;
 	int xx;
-	BUN p, q;
+	BUN p, q, p1;
 	ptr nilptr;
 	int tpe;
+	size_t s1;
 
 	if ((ib = BATdescriptor(*iid)) == NULL) {
 		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
@@ -2148,22 +2185,26 @@ CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 	tpe = BATttype(tb);
 	nilptr = ATOMnilptr(tpe);
 	bn = BATnew(BAThtype(ib), tpe, BATcount(ib));
+	s1= BUNsize(bn);
+	p1= BUNfirst(bn);
 	@:tstBat(CMDifThenElseCst2)@
 	BATloopFast(ib, p, q, xx) {
 		ptr h = BUNhead(ib, p);
 		ptr t = BUNtail(ib, p);
-		int idx = BUNindex(ib, p);
 
-		if (ATOMcmp(tpe, t, nilptr) == 0) {
-			bunfastins(bn, h, t);
+		if (*(bit *) t == bit_nil) {
+			t = nilptr;
 		} else if (*(bit *) t) {
+			int idx = BUNindex(ib, p);
 			t = BUNtail(tb, BUNptr(tb, idx));
-			bunfastins(bn, h, t);
 		} else {
-			bunfastins(bn, h, val);
+			t = val;
 		}
+		bunfastins_nocheck(bn, p1, h, t, s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 	  bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
