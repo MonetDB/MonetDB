@@ -108,7 +108,7 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 #
 #
 function user.main():void;	# 0  (main:void)
-    int_1M := bat.new(:void,:lng,1000000);	# 1 CMDBATnew (int_1M:bat[:void,:lng])<-(_2:void)(_3:lng)(_4:int)
+    int_1M := bat.new(:void,:lng,1000000);	# 1 CMDBATnewint (int_1M:bat[:void,:lng])<-(_2:void)(_3:lng)(_4:int)
     bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase (_5:bat[:void,:lng])<-(int_1M:bat[:void,:lng])(_6:oid)
     i := 1000000:lng;	# 3  (i:lng)<-(_8:lng)
 barrier sj_a := true;	# 4  (sj_a:bit)<-(_10:bit) jump 12

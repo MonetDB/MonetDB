@@ -142,9 +142,9 @@ end main;	# 12
 [ 1,	  "monet_environment",	  "str",  "str",	  32,	  156,	  "dirty",	  "load", "transient",	  1		  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  157,	  "dirty",	  "load", "transient",	  1		  ]
 [ 3,	  "timezones",		  "str",  "timezone",	  24,	  158,	  "dirty",	  "load", "transient",	  1		  ]
-[ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  53,	  "clean",	  "load", "persistent",	  1		  ]
-[ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  54,	  "clean",	  "load", "persistent",	  1		  ]
-[ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  55,	  "clean",	  "load", "persistent",	  1		  ]
+[ 4,	  "M5system_auth_user",	  "oid",  "str",	  1,	  81,	  "clean",	  "load", "persistent",	  1		  ]
+[ 5,	  "M5system_auth_passwd", "oid",  "str",	  1,	  82,	  "clean",	  "load", "persistent",	  1		  ]
+[ 6,	  "M5system_auth_scen",	  "oid",  "str",	  0,	  83,	  "clean",	  "load", "persistent",	  1		  ]
 [ 7,	  "simplemind",		  "int",  "int",	  0,	  165,	  "dirty",	  "load", "transient",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
@@ -156,7 +156,7 @@ end main;	# 12
 # h	t		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
 # int	str		str	str	lng	int	str		str	str		int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 7,	  "simplemind",	  "int",  "int",  0,	  165,	  "dirty",	  "load", "transient",	  0		  ]
+[ 7,	  "simplemind",	  "int",  "int",  0,	  210,	  "dirty",	  "load", "transient",	  0		  ]
 
 # 18:09:04 >  
 # 18:09:04 >  Done.
