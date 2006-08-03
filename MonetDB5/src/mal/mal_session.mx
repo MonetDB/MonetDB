@@ -255,6 +255,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 				err = "database cannot be connected to";
 				break;
 			}
+			buf[len] = '\0';
 			/* note: in theory, multiple addresses can be in this file.
 			 * We ignore this for now, and just connect to the first one */
 			if ((p = strchr(buf, '\n')) == NULL) {
@@ -282,6 +283,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 				err = "database cannot be connected to";
 				break;
 			}
+			buf[len] = '\0';
 			while ((p = strchr(buf, '\n')) != NULL) {
 				*p = '\0';
 				if (strcmp(buf, lang) == 0) {
