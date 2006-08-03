@@ -1814,6 +1814,8 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 		x++;
 	}
 	  bunins_failed:
+	bn->hsorted = b->hsorted;
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) 
 		bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;

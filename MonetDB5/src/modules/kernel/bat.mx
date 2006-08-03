@@ -746,7 +746,7 @@ mal_export char *BKCdelete_bun(int *r, int *bid, ptr h, ptr t);
 mal_export char *BKCdestroy(signed char *r, int *bid);
 mal_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
 mal_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);
-mal_export str BKCnewBATlng(int *res, int *ht, int *tt);
+mal_export str BKCnewBATlng(int *res, int *ht, int *tt, lng *cap);
 mal_export str BKCnewBat(int *res, int *ht, int *tt);
 mal_export str BKCreverse(int *ret, int *bid);
 mal_export str BKCmirror(int *ret, int *bid);
@@ -1692,12 +1692,11 @@ BKCnewBATint(int *res, int *ht, int *tt, int *cap)
 }
 
 str
-BKCnewBATlng(int *res, int *ht, int *tt)
+BKCnewBATlng(int *res, int *ht, int *tt, lng *cap)
 {
 	BAT *b;
-	lng cap = 0;
 
-	if (CMDnew_lng(&b, ht, tt, &cap) == GDK_SUCCEED) {
+	if (CMDnew_lng(&b, ht, tt, cap) == GDK_SUCCEED) {
 		*res = b->batCacheid;
 		BBPkeepref(*res);
 		return MAL_SUCCEED;
@@ -1709,9 +1708,9 @@ BKCnewBATlng(int *res, int *ht, int *tt)
 str
 BKCnewBat(int *res, int *ht, int *tt)
 {
-	int cap = 0;
+	lng cap = 0;
 
-	return BKCnewBATint(res, ht, tt, &cap);
+	return BKCnewBATlng(res, ht, tt, &cap);
 }
 
 str
