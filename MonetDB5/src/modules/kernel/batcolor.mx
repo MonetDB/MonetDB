@@ -124,21 +124,12 @@ comment	"Extracts Cb(blue color) component from a color atom";
 	X= BATnew(Y->htype,T,BATcount(Y)); \
 	if( Y->htype== TYPE_void) \
 		BATseqbase(X, Y->hseqbase); \
-	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
 		return throwMessage("batstr." Z, "no space available "); \
-	}
-#define prepareResult2(X,Y,A,T,Z) \
-	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
-	Y->hsorted=X->hsorted; \
-	if( X == NULL){ \
-		BBPreleaseref(Y->batCacheid); \
-		BBPreleaseref(A->batCacheid); \
-		return throwMessage("batstr." Z, "no space available "); \
-	}
+	} \
+	X->hsorted=Y->hsorted; \
+	X->tsorted=0; 
 #define finalizeResult(X,Y,Z) \
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \

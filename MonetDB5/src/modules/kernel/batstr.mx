@@ -189,21 +189,23 @@ comment "Perform SQL like operation against a string bat";
 	X= BATnew(Y->htype,T,BATcount(Y)); \
 	if( Y->htype== TYPE_void) \
 		BATseqbase(X, Y->hseqbase); \
-	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
 		return throwMessage("batstr." Z, "no space available "); \
-	}
+	} \
+	X->hsorted=Y->hsorted; \
+	X->tsorted=0; 
 #define prepareResult2(X,Y,A,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
 	if( Y->htype== TYPE_void) \
 		BATseqbase(X, Y->hseqbase); \
-	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
 		BBPreleaseref(A->batCacheid); \
 		return throwMessage("batstr." Z, "no space available "); \
-	}
+	} \
+	X->hsorted=Y->hsorted; \
+	X->tsorted=0; 
 #define finalizeResult(X,Y,Z) \
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \
@@ -565,6 +567,8 @@ STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
 			STRSubString(yp, xp, offset, length);
 		bunfastins(bn, h, yp);
 	}
+	bn->hsorted = b->hsorted;
+	bn->tsorted = 0;
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -667,6 +671,8 @@ STRbatlike(int *ret, int *bid, str *pat, str *esc){
 		return throwMessage("batstr.like","Can not find BAT");
 	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
 	BATseqbase(BATmirror(b),o);
+	bn->hsorted = b->hsorted;
+	bn->tsorted = b->tsorted;
 
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNhead(b, p);

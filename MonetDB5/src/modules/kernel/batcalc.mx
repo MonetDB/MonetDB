@@ -723,7 +723,6 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	}
 	dst->batBuns->free = BATcount(left) * s1;
 	BATsetcount(dst, BATcount(left));
-	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
@@ -760,7 +759,6 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	}
 	dst->batBuns->free = BATcount(left) * s1;
 	BATsetcount(dst, BATcount(left));
-	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
@@ -864,6 +862,8 @@ newBATresult(BAT *b, int tpe)
 		BATseqbase(bn, b->hseqbase);
 	} else
 		bn = BATnew(b->htype, tpe, BATcount(b));
+	bn->hsorted = b->hsorted;
+	bn->tsorted = b->tsorted;
 	return bn;
 }
 
@@ -1136,7 +1136,6 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	}
 	dst->batBuns->free = BATcount(left) * s1;
 	BATsetcount(dst, BATcount(left));
-	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
@@ -1614,8 +1613,6 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 		(bn)->batBuns->free += s1;
 		(bn)->batCount ++;
 	}
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = BATtordered(b);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	 *ret= bn->batCacheid;
 	BBPkeepref(*ret);
@@ -1645,7 +1642,6 @@ str CMDconvert@1_@2(int *ret, int *bid){
 		bunfastins(bn, h, &y);
 	}
 bunins_failed:
-	bn->hsorted = BAThordered(b);
 	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
@@ -1739,6 +1735,7 @@ CMDconvertstr_int(int *ret, int *bid)
 		bunfastins(bn, h, &y);
 	}
 	  bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -1807,7 +1804,7 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 	}
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 	BATseqbase(bn, b->hseqbase);
-	@:tstBat(CMDconvertstr_int)@
+	@:tstBat(CMDconvertvoid_int_oid)@
 	x = b->hseqbase;
 
 	BATloopFast(b, p, q, xx) {
@@ -1856,6 +1853,7 @@ CMDconvertstr_bit(int *ret, int *bid)
 		bunfastins(bn, h, &y);
 	}
   bunins_failed:
+	bn->tsorted = 0;
 	if (!(bn->batDirty&2))
 		bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
