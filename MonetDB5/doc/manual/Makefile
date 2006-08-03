@@ -19,6 +19,7 @@ pdfs:
 	make MANUAL=manual pdf
 	make MANUAL=sqlmanual pdf
 	make MANUAL=m5manual pdf
+	make MANUAL=xqmanual pdf
 pdf: 
 	mkdir -p $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	mkbdy $(MANUAL) $(M5DIR) $(M4DIR)
@@ -35,6 +36,7 @@ webs:
 	make MANUAL=manual web
 	make MANUAL=sqlmanual web
 	make MANUAL=m5manual web
+	make MANUAL=xqmanual web
 web:
 	@echo "Create tmp:" $(M5DIR)/doc/share/tmp/$(MANUAL)/
 	@echo "using:" $(M4DIR)
