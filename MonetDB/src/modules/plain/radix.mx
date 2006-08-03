@@ -1352,8 +1352,20 @@ M4_RDX_BATnormal_bdvm(BAT **bn, int *size)
 
 
 @- data types for relational simulation
+
 @= integerdef
+@:integerdef_extern(@1)@
+@:integerdef_static(@1)@
+@
+@= integerdef_extern
 #define integer@1 int
+int  integer@1ToStr(str* dst, int* len, int* src) { return intToStr(dst,len,src); }
+int  integer@1FromStr(str src, int* len, int** dst) { return intFromStr(src,len,dst); }
+int  integer@1Cmp(int* l, int* r) { return *l - *r; }
+int* integer@1Null(void) { integer_nil[0] = int_nil; return integer_nil; }
+hash_t integer@1Hash(int*i) { return int_HUSSLE(*i); }
+@
+@= integerdef_static
 static size_t
 integer@1Copy(void *dst, void *src, size_t size)
 {
@@ -1361,13 +1373,9 @@ integer@1Copy(void *dst, void *src, size_t size)
 	*(int*) dst = *(int*) src;
 	return sizeof(int);
 }
-int* integer@1Null(void) { integer_nil[0] = int_nil; return integer_nil; }
-hash_t integer@1Hash(int*i) { return int_HUSSLE(*i); }
-int  integer@1ToStr(str* dst, int* len, int* src) { return intToStr(dst,len,src); }
-int  integer@1FromStr(str src, int* len, int** dst) { return intFromStr(src,len,dst); }
 static
 int  integer@1Dummy(int i, int p) { S256; return i; } /* create some distance in the binary between fcns */
-int  integer@1Cmp(int* l, int* r) { return *l - *r; }
+@
 @c
 #define S004 i=(i&255)*p; i=(i&255)*p; i=(i&255)*p; i=(i&255)*p;
 #define S016 S004 S004 S004 S004
@@ -1383,7 +1391,10 @@ int integer_nil[256];
 @:integerdef(32)@
 @:integerdef(64)@
 @:integerdef(128)@
-@:integerdef(256)@
+/* otherwise, icc (correctly) complains about
+ * integer256Copy() & integer256Dummy()
+ * being "declared but never referenced"   */
+@:integerdef_extern(256)@
 
 typedef struct {
 	size_t(*cpy) (void *dst, void *src, size_t size);
