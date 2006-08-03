@@ -242,6 +242,7 @@ grp_new(BAT *b, BAT *h)
 {
 	if (h) {
 		BATkey(h, TRUE);
+		BATkey(BATmirror(h), FALSE);
 		h->tsorted = 0;
 		if ((h->hsorted = BAThordered(b)) & 1) {
 			if (BATcount(h) == BATcount(b)) {
