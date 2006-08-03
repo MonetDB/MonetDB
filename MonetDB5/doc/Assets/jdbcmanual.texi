@@ -27,15 +27,19 @@ installed separately, since it is not included in the main MonetDB
 module.
 
 You should be able to issue the following command on the MonetDB prompt
-without errors on MonetDB 4 series:
+without errors:
+@ifset M4manual
 @example
 @code{module(sql\_server);}
 @code{sql\_server\_start();}
 @end example
-or on MonetDB 5 series:
+@end ifset
+
+@ifclear M4manual
 @example
 @code{include sql;}
 @end example
+@end ifclear
 
 @subsection Getting the driver Jar
 If you (compiled and) installed MonetDB and the SQL module the regular
@@ -204,91 +208,3 @@ public class MJDBCTest {
 }
 @end verbatim
 
-@subsection Using JDBC with MonetDB/XQuery
-Even though JDBC was designed for the SQL language, the MonetDB JDBC
-driver can be used to interact with the MonetDB/XQuery server.  The JDBC
-will act differently and limited when making such connection, but the
-basic query and answer retrieval is supported.  All SQL specific
-methods, such as @code{COMMIT}, @code{SAVEPOINT}, et-cetera will not
-work and most probably cause errors when being used.
-
-In order to use XQuery over JDBC, the driver has to be instructed to
-support this during connect:
-@verbatim
-// make sure the ClassLoader has the MonetDB JDBC driver loaded
-Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-// request a Connection to a MonetDB/XQuery server running on
-// 'localhost' using the explicit xquery language
-Connection con = DriverManager.getConnection(
-    "jdbc:monetdb://localhost/database?language=xquery",
-    "monetdb",
-    "monetdb"
-);
-Statement stmt = con.createStatement();
-
-ResultSet rs = stmt.executeQuery("1 + 1");
-while (rs.next()) {
-    System.out.println(rs.getString(1));
-}
-rs.close();
-@end verbatim
-In the above example, there is one thing different then for a normal SQL
-connection: the language to use is specified in the connection URL.
-The MonetDB JDBC driver supports
-additional settings and/or hints through arguments in the connection
-URL.  For a list of supported options, use the
-@code{java.sql.Driver}'s capabilities to report about this.  The
-option needed for XQuery communications is the @code{language} option,
-and should be set in as argument in the URL, like in the example above.
-
-After the connection is made, queries can be sent to the server using
-the conventional @code{Statement.executeQuery()} method, which returns
-@code{ResultSet}s containing the XQuery results.  Each row in such
-result set represents an XQuery resource.
-
-@subsection XML:DB driver
-On top of the MonetDB JDBC driver, an XML:DB driver for MonetDB/XQuery
-exists.  It is by default not shipped, due to licence issues.  If one
-wants to use it, one has to compile it by hand, following the directions
-in the @code{sql/src/jdbc/lib/README} file.
-
-XML:DB gives a more XML-like approach to XQuery results from the server.
-Since XML:DB support is built on top of JDBC, there is no difference in
-speed or features.  Since the XML:DB documentation itself is rather
-shallow, the best documentation we can give is an example of how to use
-it.  This example is included in the source distributed and located in
-@code{sql/src/jdbc/example/XMLDBtest.java}.
-
-@verbatim
-import org.xmldb.api.*;
-import org.xmldb.api.base.*;
-import org.xmldb.api.modules.*;
-
-/**
- * Quick example demonstrating the XML:DB driver.
- *
- * To compile and run this example, MonetDB_XMLDB.jar, MonetDB_JDBC.jar
- * and xmldb.jar (from the lib dir) should be in the classpath.
- *
- * @author Fabian Groffen
- */
-public class XMLDBtest {
-    public static void main(String[] args) throws Exception {
-        Class.forName("nl.cwi.monetdb.xmldb.base.MonetDBDatabase");
-        try {
-            Collection col = DatabaseManager.getCollection("xmldb:monetdb://localhost/demo", "monetdb", "monetdb"); 
-
-            XQueryService xqs = (XQueryService)col.getService("XQueryService", "1");
-            ResourceSet set = xqs.query("(<foo>1</foo>,<bar />)");
-            ResourceIterator it = set.getIterator();
-            while(it.hasMoreResources()) {
-                Resource r = it.nextResource();
-                System.out.println(r.getContent());
-            }
-            
-        } catch (XMLDBException e) {
-            e.printStackTrace();
-        }
-    }
-}
-@end verbatim

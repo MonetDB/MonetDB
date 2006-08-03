@@ -85,7 +85,7 @@ direction for additional information.
 First time users of MonetDB should read @ref{Download
 and Installation} 
 @ifset SQLmanual
-and @ref{SQL}
+and @ref{SQL Introduction}
 @end ifset
 . It prepares the ground to develop
 applications.
