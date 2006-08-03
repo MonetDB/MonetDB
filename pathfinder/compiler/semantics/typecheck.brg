@@ -605,12 +605,12 @@ reduce (PFcnode_t * p, int goalnt)
              * -------------------------------------------------------
              *  E |- ifthenelse (Atom, CoreExp1, CoreExpr2) : t1 | t2
              */
-            if (PFty_eq (PFty_defn (TY(L(p))), PFty_boolean ()))
+            if (PFty_eq (PFty_defn (TY(L(p))), PFty_xs_boolean ()))
                 TY(p) = *PFty_simplify (PFty_choice (TY(RL(p)), TY(RR(p))));
             else
                 PFoops (OOPS_TYPECHECK,
                         "if-then-else condition of type %s (expected %s)",
-                        PFty_str (TY(L(p))), PFty_str (PFty_boolean ()));
+                        PFty_str (TY(L(p))), PFty_str (PFty_xs_boolean ()));
 
             /*
              * no mixture of updates and expressions
@@ -917,7 +917,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFty_t t1 = TY(R(p));
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
-            if (!PFty_promotable (TY(L(p)), PFty_qname ()))
+            if (!PFty_promotable (TY(L(p)), PFty_xs_QName ()))
                 PFoops (OOPS_TYPECHECK,
                         "tag name in computed element constructor"
                         " has illegal type `%s'",
@@ -937,7 +937,7 @@ reduce (PFcnode_t * p, int goalnt)
         {
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
-            if (!PFty_promotable (TY(L(p)), PFty_qname ()))
+            if (!PFty_promotable (TY(L(p)), PFty_xs_QName ()))
                 PFoops (OOPS_TYPECHECK,
                         "tag name in computed attribute constructor"
                         " has illegal type '%s'",
@@ -972,7 +972,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           pi (Atom, Atom) */
         case 44:
-            if (!PFty_promotable (TY(L(p)), PFty_string ()))
+            if (!PFty_promotable (TY(L(p)), PFty_xs_string ()))
                 PFoops (OOPS_TYPECHECK,
                         "target name in processing-instruction constructor"
                         " has illegal type '%s'",
@@ -982,7 +982,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           pi (lit_str, Atom) */
         case 45:
-            TY(L(p)) = PFty_string ();
+            TY(L(p)) = PFty_xs_string ();
             TY(p) = PFty_pi (L(p)->sem.str);
             break;
 
@@ -1022,9 +1022,9 @@ reduce (PFcnode_t * p, int goalnt)
                         " Orderspec requires at most one atomic item "
                         "(given: %s).", PFty_str (TY(L(p))));
 
-            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_string ())) &&
-                !PFty_subtype (TY(L(p)), PFty_opt (PFty_decimal ())) &&
-                !PFty_subtype (TY(L(p)), PFty_opt (PFty_double ())))
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_string ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_decimal ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_double ())))
                 PFoops (OOPS_TYPECHECK,
                         "[err:XPTY0004]"
                         " Orderspec requires an type whose order can be "

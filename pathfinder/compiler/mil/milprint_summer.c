@@ -255,17 +255,17 @@ kind_str (int i)
 static int
 get_kind (PFty_t t)
 {
-    if (PFty_subtype (t, PFty_star (PFty_integer ())))
+    if (PFty_subtype (t, PFty_star (PFty_xs_integer ())))
         return INT;
-    else if (PFty_subtype (t, PFty_star (PFty_string ())))
+    else if (PFty_subtype (t, PFty_star (PFty_xs_string ())))
         return STR;
-    else if (PFty_subtype (t, PFty_star (PFty_double ())))
+    else if (PFty_subtype (t, PFty_star (PFty_xs_double ())))
         return DBL;
-    else if (PFty_subtype (t, PFty_star (PFty_decimal ())))
+    else if (PFty_subtype (t, PFty_star (PFty_xs_decimal ())))
         return DEC;
     else if (PFty_subtype (t, PFty_star (PFty_untypedAtomic ())))
         return U_A;
-    else if (PFty_subtype (t, PFty_star (PFty_boolean ())))
+    else if (PFty_subtype (t, PFty_star (PFty_xs_boolean ())))
         return NORMAL;
     else if (PFty_subtype (t, PFty_star (PFty_node ())))
         return NORMAL;
@@ -1678,15 +1678,15 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 cur_level, cur_level);
         return;
     }
-    else if (TY_EQ (exp_type, PFty_integer ()))
+    else if (TY_EQ (exp_type, PFty_xs_integer ()))
         kind = "INT";
-    else if (TY_EQ (exp_type, PFty_decimal ()))
+    else if (TY_EQ (exp_type, PFty_xs_decimal ()))
         kind = "DEC";
-    else if (TY_EQ (exp_type, PFty_string ()))
+    else if (TY_EQ (exp_type, PFty_xs_string ()))
         kind = "STR";
-    else if (TY_EQ (exp_type, PFty_double ()))
+    else if (TY_EQ (exp_type, PFty_xs_double ()))
         kind = "DBL";
-    else if (TY_EQ (exp_type, PFty_boolean ()))
+    else if (TY_EQ (exp_type, PFty_xs_boolean ()))
         kind = "BOOL";
     else if (TY_EQ (exp_type, PFty_untypedAtomic ()))
         kind = "U_A";
@@ -3358,7 +3358,7 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
 static void
 translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    if (TY_EQ (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_xs_integer ()))
     {
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
@@ -3372,14 +3372,14 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, int_container(), item, "item");
         }
     }
-    else if (TY_EQ (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_xs_decimal ()))
         evaluateCast (f, rcode, rc, dec_container(), int_container(), "[lng]()");
-    else if (TY_EQ (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_xs_double ()))
         evaluateCast (f, rcode, rc, dbl_container(), int_container(), "[lng]()");
-    else if (TY_EQ (input_type, PFty_string ()) ||
+    else if (TY_EQ (input_type, PFty_xs_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, rcode, rc, str_container(), int_container(), "[lng]()");
-    else if (TY_EQ (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_xs_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), int_container(), "[lng]()");
     else /* handles the choice type */
 	evaluateCastAny(f, rc, rcode, int_container(), "[lng]()");  
@@ -3399,9 +3399,9 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    if (TY_EQ (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_xs_integer ()))
         evaluateCast (f, rcode, rc, int_container(), dec_container(), "[dbl]()");
-    else if (TY_EQ (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_xs_decimal ()))
     {
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
@@ -3415,12 +3415,12 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, dec_container(), item, "item");
         }
     }
-    else if (TY_EQ (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_xs_double ()))
         evaluateCast (f, rcode, rc, dbl_container(), dec_container(), "[dbl]()");
-    else if (TY_EQ (input_type, PFty_string ()) ||
+    else if (TY_EQ (input_type, PFty_xs_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, rcode, rc, str_container(), dec_container(), "[dbl]()");
-    else if (TY_EQ (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_xs_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
 	evaluateCastAny(f, rc, rcode, dec_container(), "[dbl]()");  
@@ -3440,11 +3440,11 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    if (TY_EQ (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_xs_integer ()))
         evaluateCast (f, rcode, rc, int_container(), dbl_container(), "[dbl]()");
-    else if (TY_EQ (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_xs_decimal ()))
         evaluateCast (f, rcode, rc, dec_container(), dbl_container(), "[dbl]()");
-    else if (TY_EQ (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_xs_double ()))
     {
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
@@ -3458,10 +3458,10 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, dbl_container(), item, "item");
         }
     }
-    else if (TY_EQ (input_type, PFty_string ()) || 
+    else if (TY_EQ (input_type, PFty_xs_string ()) || 
              TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, rcode, rc, str_container(), dbl_container(), "[dbl]()");
-    else if (TY_EQ (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_xs_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
 	evaluateCastAny(f, rc, rcode, dbl_container(), "[dbl]()");  
@@ -3483,13 +3483,13 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
     type_co cast_container = (rcode == STR)?str_container():u_A_container();
 
-    if (TY_EQ (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_xs_integer ()))
         evaluateCast (f, rcode, rc, int_container(), cast_container, "[str]()");
-    else if (TY_EQ (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_xs_decimal ()))
         evaluateCast (f, rcode, rc, dec_container(), cast_container, "[str]()");
-    else if (TY_EQ (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_xs_double ()))
         evaluateCast (f, rcode, rc, dbl_container(), cast_container, "[str]()");
-    else if (TY_EQ (input_type, PFty_string ()) ||
+    else if (TY_EQ (input_type, PFty_xs_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()) ||
              /* cope with special case introduced by simplifyCoreTree in
                 combination with setting the input type of fn:concat as atomic?
@@ -3508,12 +3508,12 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, str_container(), item, "item");
         }
 
-        if (TY_EQ (input_type, PFty_string ()) && rcode == U_A)
+        if (TY_EQ (input_type, PFty_xs_string ()) && rcode == U_A)
             milprintf(f, "kind := U_A;\n");
         else if (TY_EQ (input_type, PFty_untypedAtomic ()) && rcode == STR)
             milprintf(f, "kind := STR;\n");
     }
-    else if (TY_EQ (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_xs_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
     else /* handles the choice type */ 
 	evaluateCastAny(f, rc, rcode, cast_container, "[str]()");  
@@ -3533,16 +3533,16 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 static void
 translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
-    if (TY_EQ (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_xs_integer ()))
         evaluateCast (f, rcode, rc, int_container(), bool_container(), "[bit]()");
-    else if (TY_EQ (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_xs_decimal ()))
         evaluateCast (f, rcode, rc, dec_container(), bool_container(), "[bit]()");
-    else if (TY_EQ (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_xs_double ()))
         evaluateCast (f, rcode, rc, dbl_container(), bool_container(), "[bit]()");
-    else if (TY_EQ (input_type, PFty_string ()) ||
+    else if (TY_EQ (input_type, PFty_xs_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, rcode, rc, str_container(), bool_container(), "[!=](\"\")");
-    else if (TY_EQ (input_type, PFty_boolean ()));
+    else if (TY_EQ (input_type, PFty_xs_boolean ()));
     else /* handles the choice type */ 
 	evaluateCastAny(f, NORMAL, BOOL, bool_container(), "[!=](\"\")");  
 }
@@ -3768,37 +3768,37 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
     rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
 
     /* evaluate the operation */
-    if (TY_EQ(expected, PFty_integer()))
+    if (TY_EQ(expected, PFty_xs_integer()))
     {
         rcode = (code)?INT:NORMAL;
         evaluateOp (f, rcode, rc1, rc2, counter, operator,
                     int_container(), (div)?"0LL":NULL);
     }
-    else if (TY_EQ(expected, PFty_double()))
+    else if (TY_EQ(expected, PFty_xs_double()))
     {
         rcode = (code)?DBL:NORMAL;
         evaluateOp (f, rcode, rc1, rc2, counter, operator,
                     dbl_container(), (div)?"dbl(0)":NULL);
     }
-    else if (TY_EQ(expected, PFty_decimal()))
+    else if (TY_EQ(expected, PFty_xs_decimal()))
     {
         rcode = (code)?DEC:NORMAL;
         evaluateOp (f, rcode, rc1, rc2, counter, operator,
                     dec_container(), (div)?"dbl(0)":NULL);
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_integer())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_integer())))
     {
         rcode = (code)?INT:NORMAL;
         evaluateOpOpt (f, rcode, rc1, rc2, counter, operator,
                        int_container(), "INT", (div)?"0LL":NULL);
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_double())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_double())))
     {
         rcode = (code)?DBL:NORMAL;
         evaluateOpOpt (f, rcode, rc1, rc2, counter, operator,
                        dbl_container(), "DBL", (div)?"dbl(0)":NULL);
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_decimal())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_decimal())))
     {
         rcode = (code)?DEC:NORMAL;
         evaluateOpOpt (f, rcode, rc1, rc2, counter, operator,
@@ -3886,43 +3886,43 @@ translateComparison (opt_t *f, int cur_level, int counter,
     rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
 
     /* evaluate the comparison */
-    if (TY_EQ(expected, PFty_integer()))
+    if (TY_EQ(expected, PFty_xs_integer()))
     {
         evaluateComp (f, rc1, rc2, counter, comp, int_container());
     }
-    else if (TY_EQ(expected, PFty_double()))
+    else if (TY_EQ(expected, PFty_xs_double()))
     {
         evaluateComp (f, rc1, rc2, counter, comp, dbl_container());
     }
-    else if (TY_EQ(expected, PFty_decimal()))
+    else if (TY_EQ(expected, PFty_xs_decimal()))
     {
         evaluateComp (f, rc1, rc2, counter, comp, dec_container());
     }
-    else if (TY_EQ(expected, PFty_boolean()))
+    else if (TY_EQ(expected, PFty_xs_boolean()))
     {
         evaluateComp (f, rc1, rc2, counter, comp, bool_container());
     }
-    else if (TY_EQ(expected, PFty_string()))
+    else if (TY_EQ(expected, PFty_xs_string()))
     {
         evaluateComp (f, rc1, rc2, counter, comp, str_container());
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_integer())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_integer())))
     {
         evaluateCompOpt (f, rc1, rc2, counter, comp, int_container());
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_double())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_double())))
     {
         evaluateCompOpt (f, rc1, rc2, counter, comp, dbl_container());
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_decimal())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_decimal())))
     {
         evaluateCompOpt (f, rc1, rc2, counter, comp, dec_container());
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_boolean())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_boolean())))
     {
         evaluateCompOpt (f, rc1, rc2, counter, comp, bool_container());
     }
-    else if (TY_EQ(expected, PFty_opt(PFty_string())))
+    else if (TY_EQ(expected, PFty_opt(PFty_xs_string())))
     {
         evaluateCompOpt (f, rc1, rc2, counter, comp, str_container());
     }
@@ -3955,7 +3955,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
             "var trues := iter_count.[!=](0);\n",
             cur_level);
 
-    if (PFty_subtype (input_type, PFty_star(PFty_integer ())))
+    if (PFty_subtype (input_type, PFty_star(PFty_xs_integer ())))
     {
         milprintf(f,
                 "trues := trues.access(BAT_WRITE);\n"
@@ -3974,7 +3974,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(INT));
     }
-    else if (PFty_subtype (input_type, PFty_star(PFty_double ())))
+    else if (PFty_subtype (input_type, PFty_star(PFty_xs_double ())))
     {
         milprintf(f,
                 "trues := trues.access(BAT_WRITE);\n"
@@ -3993,7 +3993,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(DBL));
     }
-    else if (PFty_subtype (input_type, PFty_star(PFty_decimal ())))
+    else if (PFty_subtype (input_type, PFty_star(PFty_xs_decimal ())))
     {
         milprintf(f,
                 "trues := trues.access(BAT_WRITE);\n"
@@ -4012,7 +4012,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(DEC));
     }
-    else if (PFty_subtype (input_type, PFty_star(PFty_string ())) ||
+    else if (PFty_subtype (input_type, PFty_star(PFty_xs_string ())) ||
              PFty_subtype (input_type, PFty_star(PFty_untypedAtomic ())))
     {
         milprintf(f,
@@ -4032,7 +4032,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(STR));
     }
-    else if (PFty_subtype (input_type, PFty_star(PFty_boolean ())))
+    else if (PFty_subtype (input_type, PFty_star(PFty_xs_boolean ())))
     {
         /* this branch never occurs, because it gets optimized away :) */
         milprintf(f,
@@ -5953,29 +5953,29 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
        (attribute step and text() test) */
     assert (fun->sig_count == 1);
     PFty_t input_type = (fun->sigs[0].par_ty)[0];
-    if (PFty_subtype (PFty_decimal (), input_type))
+    if (PFty_subtype (PFty_xs_decimal (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, dec_container());
         eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, dec_container());
     }
     /* integer is listed after decimal 
        (as type decimal is otherwise recognized as integer) */
-    else if (PFty_subtype (PFty_integer (), input_type))
+    else if (PFty_subtype (PFty_xs_integer (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, int_container());
         eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, int_container());
     }
-    else if (PFty_subtype (PFty_double (), input_type))
+    else if (PFty_subtype (PFty_xs_double (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, dbl_container());
         eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, dbl_container());
     }
-    else if (PFty_subtype (PFty_string (), input_type))
+    else if (PFty_subtype (PFty_xs_string (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, str_container());
         eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, str_container());
     }
-    else if (PFty_subtype (PFty_boolean (), input_type))
+    else if (PFty_subtype (PFty_xs_boolean (), input_type))
     {
         if (cast_fst || cast_snd)
             mps_error ("cast to boolean is not supported in thetajoin evaluation.");
@@ -6938,7 +6938,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (rc != NORMAL)
             milprintf(f,
                     "var cast_val := [dbl](item%s);\n", kind_str(rc));
-        else if (PFty_subtype (TY(L(args)), PFty_boolean ()))
+        else if (PFty_subtype (TY(L(args)), PFty_xs_boolean ()))
             milprintf(f,
                     "var cast_val := [dbl](item);\n");
         else
@@ -7237,11 +7237,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         int rcode = (code)?INT:NORMAL;
         /* the semantics of idiv are a normal div operation
            followed by a cast to integer */
-        if (!PFty_subtype (TY(L(args)), PFty_integer ()))
+        if (!PFty_subtype (TY(L(args)), PFty_xs_integer ()))
         {
             rc = translateOperation (f, VALUES, cur_level, counter, "/", args, true);
             translateCast2INT (f, rcode, rc, TY(L(args)));
-            testCastComplete(f, cur_level, PFty_integer ());
+            testCastComplete(f, cur_level, PFty_xs_integer ());
         }
         else
             rcode = translateOperation (f, code, cur_level, counter, "/", args, true);
@@ -8906,7 +8906,7 @@ simplifyCoreTree (PFcnode_t *c)
                 if (LLR(c)->kind == c_var)
                 {
                     new_node = PFcore_num (1);
-                    TY(new_node) = PFty_integer ();
+                    TY(new_node) = PFty_xs_integer ();
                     replace_var (LLR(c)->sem.var, new_node, R(c));
                     LLR(c) = PFcore_nil ();
                     TY(LLR(c)) = PFty_none();
@@ -9025,7 +9025,7 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) ||
                       !PFqname_eq(fun->qname,PFqname (PFns_fn,"string-join"))) &&
-                     PFty_subtype(TY(DL(c)), PFty_string ()))
+                     PFty_subtype(TY(DL(c)), PFty_xs_string ()))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
@@ -9064,7 +9064,7 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence")) &&
-                PFty_subtype(TY(DL(c)), PFty_string ()))
+                PFty_subtype(TY(DL(c)), PFty_xs_string ()))
             {
                 new_node = PFcore_wire1(c_text, DL(c));
                 TY(new_node) = PFty_text();
@@ -9093,7 +9093,7 @@ simplifyCoreTree (PFcnode_t *c)
                                            PFcore_str (""));
                 TY(new_node)    =
                 TY(L(new_node)) = PFty_untypedAtomic ();
-                TY(R(new_node)) = PFty_string ();
+                TY(R(new_node)) = PFty_xs_string ();
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
@@ -9198,7 +9198,7 @@ simplifyCoreTree (PFcnode_t *c)
                      {
                           if (is_rpc && i == 0)
                           {
-                               expected = PFty_plus( PFty_string() );
+                               expected = PFty_plus( PFty_xs_string() );
                           }
                           else
                           {
@@ -9298,11 +9298,11 @@ simplifyCoreTree (PFcnode_t *c)
             /* we want to avoid comparison between different types */
             if (input_type.type == ty_choice)
             {
-                L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
+                L(c) = PFcore_seqcast (PFcore_seqtype (PFty_xs_string()), L(c));
                 /* type new code, to avoid multiple casts */
                 TY(c)     =
                 TY(L(c))  =
-                TY(LL(c)) = PFty_string ();
+                TY(LL(c)) = PFty_xs_string ();
             }
             break;
         default: 

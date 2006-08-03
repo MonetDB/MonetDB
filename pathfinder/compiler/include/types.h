@@ -224,12 +224,6 @@ PFty_t PFty_node (void);
 PFty_t PFty_text (void);
 PFty_t PFty_pi (char *);
 PFty_t PFty_comm (void);
-PFty_t PFty_integer (void);
-PFty_t PFty_string (void);
-PFty_t PFty_boolean (void);
-PFty_t PFty_decimal (void);
-PFty_t PFty_double (void);
-PFty_t PFty_qname (void);
 PFty_t PFty_stmt (void);
 
 /** 

@@ -1512,7 +1512,7 @@ reduce (PFpnode_t * p, int goalnt)
         case 72:
             C(p) = orderspecs (p->sem.mode, 
                                fs_convert_op_by_type (fn_data (C(L(p))), 
-                                                      PFty_string ()),
+                                                      PFty_xs_string ()),
                                C(R(p)));
             break;
 
@@ -4035,7 +4035,7 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
          * In that case, we shall convert to xs:double.
          */
         if (PFty_eq (exp_prime, PFty_numeric ()))
-            exp_prime = PFty_double ();
+            exp_prime = PFty_xs_double ();
 
         /* if type exp_prime is atomic untypedAtomic 
            does not need to be casted to atomic 

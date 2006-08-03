@@ -64,6 +64,13 @@
 
 #include "mem.h"
 
+#define L(n) ((n)->child[0])
+#define R(n) ((n)->child[1])
+#define LR(n) R(L(n))
+#define RL(n) L(R(n))
+#define LL(n) L(L(n))
+#define RR(n) R(R(n))
+
 /**
  * XML Schema import requires libxml2
  */
@@ -394,7 +401,7 @@ imported_qname (char *nsloc)
 
     qn = PFstr_qname (nsloc);
 
-    if (qn.ns.prefix)
+    if (qn.ns.prefix && *(qn.ns.prefix))
         PFinfo (OOPS_SCHEMAIMPORT,
                 "namespace of `%s' replaced by target namespace `%s'",
                 PFqname_str (qn),
@@ -424,7 +431,7 @@ ref_qname (char *nsloc)
 
     qn = PFstr_qname (nsloc);
 
-    if (qn.ns.prefix) {
+    if (qn.ns.prefix && *(qn.ns.prefix)) {
         if ((ns = lookup_ns (qn.ns.prefix))) {
             qn.ns = *ns;
 
@@ -553,7 +560,7 @@ attributes (void *ctx, const xmlChar **atts)
         while (*atts) {
             qn = PFstr_qname ((char *) *atts);
 
-            if (qn.ns.prefix) {
+            if (qn.ns.prefix && *(qn.ns.prefix)) {
                 if (strcmp (qn.ns.prefix, XMLNS) == 0) {
                     /* `xmlns:loc="uri"' NS declaration attribute */
                     atts++;
@@ -2420,23 +2427,26 @@ schema_imports (PFpnode_t *di)
          * lit_str  lit_str
          *  (uri)    (loc)
          */
-        imp = di->child[0];
+        imp = L(di);
 
-        if (imp->kind == p_schm_imp && imp->child[1]->kind == p_lit_str) {
+        if (imp->kind == p_schm_imp
+                && R(imp)->kind == p_schm_ats
+                && RL(imp)->kind == p_lit_str) {
+
 #if HAVE_LIBXML2
             PFns_t ns;
             char *uri;
             char *loc;
 
             /* access XML Schema location */
-            loc = imp->child[1]->sem.str;
+            loc = RL(imp)->sem.str;
 
             /* access target namespace URI for this import */
-            assert (imp->child[0]->kind == p_lit_str);
-            uri = imp->child[0]->sem.str;
+            assert (L(imp)->kind == p_lit_str);
+            uri = L(imp)->sem.str;
 
             /* construct target namespace */
-            ns = (PFns_t) { .prefix = 0, .uri = PFstrdup (uri) };
+            ns = (PFns_t) { .prefix = NULL, .uri = PFstrdup (uri) };
 
             /* import the schema */
             schema_import (ns, loc);

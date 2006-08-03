@@ -798,7 +798,7 @@ reduce (PFcnode_t * p, int goalnt)
              */
             if (! PFqname_eq (p->sem.apply.fun->qname,
                               PFqname (PFns_fn, "boolean"))) {
-                if (PFty_subtype (TY(LL(p)), PFty_boolean ())) {
+                if (PFty_subtype (TY(LL(p)), PFty_xs_boolean ())) {
                     *p = *LL(p);
                     rewritten = true;
                     break;
@@ -811,7 +811,7 @@ reduce (PFcnode_t * p, int goalnt)
                  * If the argument is a subtype of xs:string,
                  * fn:string returns the argument itself.
                  */
-                if (PFty_subtype (TY(LL(p)), PFty_string ())) {
+                if (PFty_subtype (TY(LL(p)), PFty_xs_string ())) {
                     *p = *LL(p);
                     rewritten = true;
                     break;
@@ -825,7 +825,7 @@ reduce (PFcnode_t * p, int goalnt)
                     PFvar_t   *v = new_var (NULL);
                     
                     c = flwr (let (letbind (var (v), LL(p)), nil ()),
-                              cast (seqtype (PFty_string ()), var (v)));
+                              cast (seqtype (PFty_xs_string ()), var (v)));
 
                     *p = *c;
                     
@@ -984,14 +984,14 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_fn, "string-join"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
                     *p = *str ("");
-                    TY(p) = PFty_string ();
+                    TY(p) = PFty_xs_string ();
 
                     /* assign new node a state label */
                     relabel (p, kids);
                     rewritten = true;
                     break;
                 }
-                else if (PFty_subtype (TY(LL(p)), PFty_string ())) {
+                else if (PFty_subtype (TY(LL(p)), PFty_xs_string ())) {
                     *p = *LL(p);
                     rewritten = true;
                     break;

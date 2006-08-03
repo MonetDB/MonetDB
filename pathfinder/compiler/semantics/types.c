@@ -214,7 +214,7 @@ PFty_comm (void)
     return t;
 }
 
-PFty_t 
+static PFty_t 
 PFty_integer (void)
 {
     PFty_t t = { .type  = ty_integer,
@@ -226,7 +226,7 @@ PFty_integer (void)
     return t;
 }
 
-PFty_t 
+static PFty_t 
 PFty_decimal (void)
 {
     PFty_t t = { .type = ty_decimal,
@@ -238,7 +238,7 @@ PFty_decimal (void)
     return t;
 }
 
-PFty_t 
+static PFty_t 
 PFty_double (void)
 {
     PFty_t t = { .type = ty_double,
@@ -250,7 +250,7 @@ PFty_double (void)
     return t;
 }
 
-PFty_t 
+static PFty_t 
 PFty_string (void)
 {
     PFty_t t = { .type = ty_string,
@@ -262,7 +262,7 @@ PFty_string (void)
     return t;
 }
 
-PFty_t 
+static PFty_t 
 PFty_boolean (void)
 {
     PFty_t t = { .type = ty_boolean,
@@ -274,7 +274,7 @@ PFty_boolean (void)
     return t;
 }
 
-PFty_t 
+static PFty_t 
 PFty_qname (void)
 {
     PFty_t t = { .type = ty_qname,
