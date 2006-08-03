@@ -192,7 +192,7 @@ push_state (int state)
  * @return popped state
  */
 static int
-pop_state ()
+pop_state (void)
 {
     int s;
 
@@ -210,7 +210,7 @@ pop_state ()
  * @return state at stack top
  */
 static int
-top_state ()
+top_state (void)
 {
     assert (! PFarray_empty (state_stack));
 
@@ -235,7 +235,7 @@ push_attributes (PFarray_t *atts)
  * @return popped attribute list
  */
 static PFarray_t *
-pop_attributes ()
+pop_attributes (void)
 {
     PFarray_t *atts;
 
@@ -309,6 +309,26 @@ pop_type (void)
 static void
 push_ns (PFns_t *ns)
 {
+    /*
+     * A NULL pointer serves as a marker on the stack.  Otherwise
+     * it must be a sensible namespace.
+     */
+    if (ns) {
+        /*
+         * A NULL pointer would indicate a wildcard namespace (see qname.c),
+         * which cannot make sense here.  An empty string indicates the
+         * default element namespace (not the target namespace!).
+         */
+        assert (ns->prefix);
+
+        /*
+         * Our convention is to set .uri = NULL only if we don't know the
+         * URI of a namespace (yet).  Such a situation cannot arise here.
+         * "No namespace" would lead to an empty .uri string.
+         */
+        assert (ns->uri);
+    }
+
     *(PFns_t **) PFarray_add (ns_stack) = ns;
 }
 
@@ -316,13 +336,13 @@ push_ns (PFns_t *ns)
  * Pop namespaces from the namespace stack until we hit the 0 mark.
  */
 static void
-pop_ns ()
+pop_ns (void)
 {
     PFns_t *ns;
 
     assert (! PFarray_empty (ns_stack));
 
-    /* pop the namespace stack until we hit the scope (0) mark */
+    /* pop the namespace stack until we hit the scope (NULL) mark */
     do {
         ns = *(PFns_t **) PFarray_top (ns_stack);
         PFarray_del (ns_stack);
@@ -334,9 +354,9 @@ pop_ns ()
  * prefix @a prefix.
  *
  * @param prefix namespace prefix (0 if this is a lookup for the
- * default namespace)
- * @return (pointer to) associated in-scope
- * namespace (or 0 if no matching namespace is in scope)
+ *               default namespace)
+ * @return (pointer to) associated in-scope namespace (or NULL if
+ *         no matching namespace is in scope)
  */
 static PFns_t *
 lookup_ns (char *prefix)
@@ -344,16 +364,17 @@ lookup_ns (char *prefix)
     int n;
     PFns_t *ns;
 
+    assert (prefix);
+
     for (n = PFarray_last (ns_stack); n; n--) {
         ns = *(PFns_t **) PFarray_at (ns_stack, n - 1);
 
+        /* ns == NULL would be the stack marker, which we simply skip */
         if (ns) {
-            /* lookup for default namespace */
-            if (prefix == 0 && ns->prefix == 0)
-                return ns;
+            assert (ns->prefix);
 
             /* lookup for regular namespace */
-            if (prefix && ns->prefix && strcmp (ns->prefix, prefix) == 0)
+            if (strcmp (ns->prefix, prefix) == 0)
                 return ns;
         }
     }
@@ -364,19 +385,20 @@ lookup_ns (char *prefix)
 /**
  * Declare a new namespace.
  *
- * @param ns the namespace prefix for this NS (0 if default namespace)
- * @param uri URI for the NS
+ * @param prefix  the namespace prefix for this NS (empty string
+ *                if default namespace)
+ * @param uri     URI for the namespace
  * @return a new Pathfinder namespace (PFns_t)
  */
 static PFns_t *
-new_ns (char *ns, char *uri)
+new_ns (char *prefix, char *uri)
 {
     PFns_t *new_ns = PFmalloc (sizeof (PFns_t));
 
+    assert (prefix);
     assert (uri);
 
-    new_ns->prefix = ns;
-    new_ns->uri = uri;
+    *new_ns = (PFns_t) { .prefix = prefix, .uri = uri };
 
     return new_ns;
 }
@@ -399,6 +421,10 @@ imported_qname (char *nsloc)
 
     assert (nsloc);
 
+    /*
+     * It is still valid to call PFstr_qname() here, because we will
+     * overwrite the namespace information in a moment.
+     */
     qn = PFstr_qname (nsloc);
 
     if (qn.ns.prefix && *(qn.ns.prefix))
@@ -413,10 +439,10 @@ imported_qname (char *nsloc)
 }
 
 /**
- * Attach the proper namespace to a referenced QName @a nsloc.  If @a nsloc
- * has a namespace prefix, check that this namespace prefix has been
- * properly declared.  If @a nsloc has no namespace prefix, attach
- * the target namespace for this schema import.
+ * Attach the proper namespace to a referenced QName @a nsloc.  If
+ * @a nsloc has a namespace prefix, check that this namespace prefix
+ * has been properly declared.  If @a nsloc has no namespace prefix,
+ * attach the target namespace for this schema import.
  *
  * @param nsloc (possibly qualified) referenced name
  * @return QName with namespace attached
@@ -431,19 +457,21 @@ ref_qname (char *nsloc)
 
     qn = PFstr_qname (nsloc);
 
-    if (qn.ns.prefix && *(qn.ns.prefix)) {
-        if ((ns = lookup_ns (qn.ns.prefix))) {
-            qn.ns = *ns;
+    assert (qn.ns.prefix);
 
-            return qn;
-        }
-        else
-            PFoops (OOPS_BADNS,
-                    "(XML Schema import) prefix `%s' unknown",
-                    qn.ns.prefix);
-    }
-
-    qn.ns = target_ns;
+    /*
+     * Don't use lookup_ns() for unqualified names, as this would
+     * yield the default element namespace, *not* the target
+     * namespace.
+     */
+    if (! *(qn.ns.prefix))
+        qn.ns = target_ns;
+    else if ((ns = lookup_ns (qn.ns.prefix)))
+        qn.ns = *ns;
+    else
+        PFoops (OOPS_BADNS,
+                "(XML Schema import) prefix `%s' unknown",
+                qn.ns.prefix);
 
     return qn;
 }
@@ -478,12 +506,16 @@ map_open_tag (void *ctx, char *nsloc)
 
     assert (nsloc);
 
+    /* validly called here, as we don't look into qn.ns.uri */
     qn = PFstr_qname (nsloc);
 
-    /* check namespace of opening tag
-     * NB. if QName qn is unqualified (qn.ns.ns == 0), the following
-     * lookup_ns () call will try to lookup the default element
-     * namespace which is the right thing to do
+    /*
+     * check namespace of opening tag
+     *
+     * The namespace table lists the default element namespace
+     * under the empty string prefix.  For unqualified QNames, this
+     * will correctly lead to the default element namespace in
+     * lookup_ns().
      */
     if ((ns = lookup_ns (qn.ns.prefix))) {
         /* is this the XML Schema namespace? */
@@ -554,13 +586,16 @@ attributes (void *ctx, const xmlChar **atts)
     attrs = PFarray (sizeof (char *));
 
     /* push namespace scope marker */
-    push_ns (0);
+    push_ns (NULL);
 
     if (atts)
         while (*atts) {
+
             qn = PFstr_qname ((char *) *atts);
 
-            if (qn.ns.prefix && *(qn.ns.prefix)) {
+            assert (qn.ns.prefix);
+
+            if (*(qn.ns.prefix)) {
                 if (strcmp (qn.ns.prefix, XMLNS) == 0) {
                     /* `xmlns:loc="uri"' NS declaration attribute */
                     atts++;
@@ -584,7 +619,7 @@ attributes (void *ctx, const xmlChar **atts)
                 atts++;
 
                 /* declare default element namespace |-> uri */
-                push_ns (new_ns (0, PFstrdup ((char *) *atts)));
+                push_ns (new_ns ("", PFstrdup ((char *) *atts)));
                 atts++;
 
                 continue;
@@ -727,12 +762,13 @@ schema_import_start_element (void *ctx,
 
     assert (t);
 
-    /* parse the attributes present in <t ...>,
+    /*
+     * parse the attributes present in <t ...>,
      * this also introduces all namespaces declared via `xmlns=...'
      */
     attrs = attributes (ctx, atts);
-    /* push the attributes such that we can access them when we see </t>
-     */
+
+    /* push the attributes such that we can access them when we see </t> */
     push_attributes (attrs);
 
     open_tag = map_open_tag (ctx, (char *) t);
@@ -836,7 +872,7 @@ start_schema (PFarray_t *atts)
     char *targetNamespace;
 
     if ((targetNamespace = attribute_value (atts, "targetNamespace")))
-        target_ns = *new_ns (0, PFstrdup (targetNamespace));
+        target_ns = *new_ns (PFstrdup (""), PFstrdup (targetNamespace));
 }
 
 /**
@@ -900,8 +936,7 @@ end_list (PFarray_t *unused)
 {
     (void) unused;
 
-    /*   t   -->   t*
-     */
+    /*   t   -->   t*   */
     push_type (PFty_star (pop_type ()));
 }
 
@@ -1278,7 +1313,7 @@ end_top_level_complex_type_wboth (PFarray_t *atts)
     /*  [[ <complexType name="n"> t a0 ... ak </complexType> ]]   -->
      *  n |t--> ([[ a0 ]] & ... & [[ ak ]]) , [[ t ]]
      */
-    combine_atts_partial_type (0);
+    combine_atts_partial_type (0);     /* argument is ignored */
     end_top_level_type (atts);
 }
 
@@ -2446,7 +2481,7 @@ schema_imports (PFpnode_t *di)
             uri = L(imp)->sem.str;
 
             /* construct target namespace */
-            ns = (PFns_t) { .prefix = NULL, .uri = PFstrdup (uri) };
+            ns = (PFns_t) { .prefix = "", .uri = PFstrdup (uri) };
 
             /* import the schema */
             schema_import (ns, loc);
