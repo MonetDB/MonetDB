@@ -590,9 +590,9 @@ void SERVERannounce(struct in_addr addr, int port, int ssl) {
 	str host = NULL;
 
 	if (addr.s_addr == INADDR_ANY) {
-		host = alloca(sizeof(char) * (HOST_NAME_MAX + 1));
-		gethostname(host, HOST_NAME_MAX);
-		host[HOST_NAME_MAX] = '\0';
+		host = alloca(sizeof(char) * (90 + 1));
+		gethostname(host, 90);
+		host[90] = '\0';
 	} else {
 		/* avoid doing this, it requires some includes that probably
 		 * give trouble on windowz
