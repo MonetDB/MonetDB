@@ -4,7 +4,7 @@
 cat:= inspect.getEnvironment();
 fs := algebra.find(cat,"mapi_port");
 port := calc.int(fs);
-io.printf("port %d\n",port);
+#io.printf("port %d\n",port);
 
 mid:= mserver.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal");
 mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");
