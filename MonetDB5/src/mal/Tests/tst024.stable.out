@@ -23,7 +23,7 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 !ERROR: '_2' overwrites i
 !ERROR: '_5' overwrites _2
 !ERROR: '_5' overwrites _2
-function user.main():void;	# 0  unknown (main:void)
+function user.main():void;	# 0  (main:void)
 #detect illegal use of temporary variables 	# 1  unknown (_1:str)
     i := 12;	# 2  unknown (i:any)<-(_3:int)
 # internal location of i is 3 	# 3  unknown (_4:str)
