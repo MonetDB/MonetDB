@@ -6305,8 +6305,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  }\n"
                 "} # end of RPC call\n",
                 apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
-                counter, counter, counter, counter,
-                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
                 counter, counter, counter, counter);
     } else {
         /* call the proc */
