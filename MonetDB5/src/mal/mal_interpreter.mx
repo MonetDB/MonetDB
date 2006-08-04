@@ -833,12 +833,12 @@ the bind(namespace, batname, mode) operation. [todo]
 		}
 	} 
 @= batpropcheck
-	if( @1->batStamp <= stamp){
-		if( GDKdebug & 8)
-			BATpropcheck(@1, BATPROPS_QUICK);
-	} else
-	if( GDKdebug & 2 )
-			BATpropcheck(@1, BATPROPS_QUICK);
+{
+	if (@1->H != @1->T) {
+		BATpropcheck(BATmirror(@1), BATPROPS_QUICK);
+	}
+	BATpropcheck(@1, BATPROPS_QUICK);
+}
 @= restoreTarget
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", needsCleanup(pci));
@@ -879,10 +879,12 @@ the bind(namespace, batname, mode) operation. [todo]
 				oldmsg= GDKstrdup(cntxt->errbuf);
 				*cntxt->errbuf= 0;
 			}
-			if (b->H != b->T) {
-				@:batpropcheck(BATmirror(b))@
-			}
-			@:batpropcheck(b)@
+			if( b->batStamp <= stamp){
+				if( GDKdebug & 8)
+					@:batpropcheck(b)@
+			} else
+				if( GDKdebug & 2)
+					@:batpropcheck(b)@
 			BBPunfix(b->batCacheid);
 			if( cntxt->errbuf && cntxt->errbuf[0]) {
 				if( oldmsg){
