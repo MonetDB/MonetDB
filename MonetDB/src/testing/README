@@ -85,9 +85,9 @@ have changed since my proposal.
      MapiClient connects to Mserver
      (optional)                                             (TST.prologue) (^,`)
   + for SQL tests, a MAL script to be used as
-     prologue for mserver5, i.e., a script that is executed (sourced) by 
-     mserver5 before "include sql;" is called and before (the first)
-     SQL-MapiClient connects to mserver5
+     prologue for mserver5, i.e., a script that is executed by mserver5 after
+     "include sql;" is called and before (the first) SQL-MapiClient connects
+     to mserver5
      (optional)                                             (TST.prologue5)(^,`)
   + for MapiClient tests, a MIL script to be used as
      epilogue for Mserver, i.e., a script that is executed by Mserver after

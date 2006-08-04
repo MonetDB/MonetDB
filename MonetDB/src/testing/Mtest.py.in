@@ -2101,8 +2101,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if env['VERSION'] >= 49900:
                 source = ""
                 if PROLOGUE:
-                    source = 'language.source("%s"); ' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
-                Srvr = "%s --dbinit='%s include sql;'" % (Srvr,source)
+                    source = ' language.source("%s");' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
+                Srvr = "%s --dbinit='include sql;%s'" % (Srvr,source)
             else:
                 Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         if SERVER == "XQUERY":
