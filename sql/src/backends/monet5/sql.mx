@@ -1838,7 +1838,7 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 /* when casting a floating point to an decimal we like to preserve the 
  * precision.  This means we first scale the float before converting.
 */
-str @2_num2dec_@1( @1 *res, @2 *v, int *s2, int *d2 )
+str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	@2 r;
