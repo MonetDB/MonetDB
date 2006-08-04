@@ -54,7 +54,7 @@ function user.main():void;	# 0  (main:void)
     io.print(z);	# 8 IOprint_val (_14:int)<-(z:dbl)
     io.print("done");	# 9 IOprint_val (_15:int)<-(_16:str)
     mdb.list("user","qry");	# 10 MDBlist3 (_17:void)<-(_5:str)(_6:str)
-    mdb.list("user","main");	# 11 MDBlist3 (_18:void)<-(_5:str)(_19:str)
+    mdb.list();	# 11 MDBlist (_18:void)
 end main;	# 12  
 [ "execute" ]
 [ 0.8414709848078965 ]
@@ -75,7 +75,7 @@ function user.main():void;
     io.print(z);
     io.print("done");
     mdb.list("user","qry");
-    mdb.list("user","main");
+    mdb.list();
 end main;
 
 # 23:52:51 >  
