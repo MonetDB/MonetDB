@@ -150,12 +150,11 @@ opt_key (PFla_op_t *p)
             } else if (p->sem.number.part)
                 break;
 
-            /* FIXME: We discard the following optimization as it
-               replaces number operators by rownum operators. These
-               are more difficult to cope with in the proxy generation
-               phase. */
-            break;
-
+/* FIXME: We discard the following optimization as it
+   replaces number operators by rownum operators. These
+   are more difficult to cope with in the proxy generation
+   phase. */
+#if 0
             /* if there already exists a key column with the
                same type we can replace the number operator
                by a projection. */
@@ -179,6 +178,7 @@ opt_key (PFla_op_t *p)
                     SEEN(p) = true;
                     break;
                 }
+#endif
             break;
 
         default:
