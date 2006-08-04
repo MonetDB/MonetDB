@@ -177,6 +177,7 @@ mal_export str SYSgetPorts(int *ret, str *lang);
                 BATname(b, "@2");
         BATroles(b,"@1","@2");
         BATmode(b,TRANSIENT);
+		BBPkeepref(b->batCacheid);
         BATfakeCommit(b);
         *ret = b->batCacheid;
 @c
