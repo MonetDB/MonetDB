@@ -431,6 +431,7 @@ for separate name space management.
 
 #define getVarDepth(M,I)   ((M)->var[I]->depth)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
+#define setVisible(M,I) getVar(M,I)->isudftype = 1;
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
 #define setVarCleanup(M,I)     ((M)->var[I]->cleanup)
 #define isVarGarbage(M,I)     ((M)->var[I]->cleanup)
