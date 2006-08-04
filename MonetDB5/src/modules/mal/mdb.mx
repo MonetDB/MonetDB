@@ -71,10 +71,13 @@ pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
+command getDebug():int
+address MDBgetDebug
+comment "Get the kernel debugging bit-set.
+See the MonetDB configuration file for details";
 command setDebug(flg:int):int
 address MDBsetDebug
-comment "Set the kernel debugging bit-set and return
-its previous value.
+comment "Set the kernel debugging bit-set and return its new value.
 See the MonetDB configuration file for details";
 command getException(s:str):str
 address MDBgetExceptionVariable
@@ -154,6 +157,7 @@ mdb_export str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBgetDebug(int *ret);
 mal_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -264,11 +268,17 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
+MDBgetDebug(int *ret)
+{
+    *ret = GDKdebug;
+    return MAL_SUCCEED;
+}
+
+str
 MDBsetDebug(int *ret, int *flg)
 {
-    (void) ret;
-    GDKdebug= *flg;
-	*ret = GDKdebug;
+    GDKdebug = *flg;
+    *ret = GDKdebug;
     return MAL_SUCCEED;
 }
 

@@ -1648,6 +1648,7 @@ end main;	# 11
 [ "getCount",			  "command",	  "statistics",	  "(nme:str):lng ",										  "STATgetCount;"			  ]
 [ "getCount",			  "command",	  "bbp",	  "():bat[:int,:lng] ",										  "CMDbbpCount;"			  ]
 [ "getDatabases",		  "command",	  "status",	  "():bat[:str,:str] ",										  "SYSgetDatabases;"			  ]
+[ "getDebug",			  "command",	  "mdb",	  "():int ",														  "MDBgetDebug;"			  ]
 [ "getDefinition",		  "command",	  "inspect",	  "(mod:str,fcn:str):bat[:str,:str] ",								  "INSPECTgetDefinition;"		  ]
 [ "getDefinition",		  "pattern",	  "mdb",	  "():bat[:void,:str] ",									  "MDBgetDefinition;"			  ]
 [ "getDelta",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",							  "BKCgetDelta;"			  ]
