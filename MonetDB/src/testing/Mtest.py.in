@@ -1533,10 +1533,12 @@ def RunTest(env, TST, BusyPorts, COND) :
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
 
-        if os.path.isfile(TST+".prelude")  and  EXT not in  ['.milC','.sql','.xq','.x100']:
-            PRELUDE = TST+".prelude"
-        else:
-            PRELUDE = ""
+        PRELUDE = ""
+        if EXT not in  ['.milC','.sql','.xq','.x100']:
+            if os.path.isfile(TST+".prelude")  and  env['VERSION'] < 49900:
+                PRELUDE = TST+".prelude"
+            if os.path.isfile(TST+".prelude5")  and  env['VERSION'] >= 49900:
+                PRELUDE = TST+".prelude5"
 
         TIMEOUTED = "Mtimeout"
         for v in env['exe'].keys():
@@ -2087,6 +2089,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         PROLOGUE = ""
         if os.path.isfile(TST+".prologue") and env['VERSION'] < 49900:
             PROLOGUE = " "+TST+".prologue"
+        if os.path.isfile(TST+".prologue5") and env['VERSION'] >= 49900:
+            PROLOGUE = " "+TST+".prologue5"
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
 	lang="mil"
@@ -2095,13 +2099,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "SQL":
 	    lang="sql"
             if env['VERSION'] >= 49900:
-                Srvr = '%s --dbinit="include sql;"' % (Srvr)
+                source = ""
+                if PROLOGUE:
+                    source = 'language.source("%s"); ' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
+                Srvr = "%s --dbinit='%s include sql;'" % (Srvr,source)
             else:
                 Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         if SERVER == "XQUERY":
 	    lang="xquery"
             Srvr = '%s --dbinit="module(pathfinder); pfstart();"' % Srvr
-        Srvr = Srvr+PROLOGUE
+        if SERVER != "SQL"  or  env['VERSION'] < 49900:
+            Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
             Srvr = Srvr+' & echo.& '
@@ -2224,8 +2232,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             fp.close()
 
     if SERVER in ["MAPI", "SQL", "XQUERY"]:
+        EPILOGUE = None
         if os.path.isfile(TST+".epilogue") and env['VERSION'] < 49900:
             EPILOGUE = open(TST+".epilogue",'r')
+        if os.path.isfile(TST+".epilogue5") and env['VERSION'] >= 49900:
+            EPILOGUE = open(TST+".epilogue5",'r')
+        if EPILOGUE:
             EpiFailed = ""
             try:
                 pSrvrIn.write(EPILOGUE.read())
