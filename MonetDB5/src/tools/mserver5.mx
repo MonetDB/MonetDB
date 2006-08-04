@@ -472,7 +472,7 @@ the configuration file.
 		sscanf(GDKgetenv("mal_listing"), "%d", &listing);
 
 	for (i = 0; monet_script[i]; i++) {
-		malInclude(mal_clients, monet_script[i], 0, listing);
+		evalFile(mal_clients, monet_script[i], listing);
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
