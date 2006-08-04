@@ -39,6 +39,7 @@ do
 		-e 's/\bcity_budget\b/decimal(7,2)/ig' \
 		-e 's/\bname,/string,/ig' \
 		-e 's/\bname$/string/ig' \
+		-e 's/(.*)\bFROM ONLY (.*)/\1 FROM \2/ig' \
 		-e 's/BEGIN;/START TRANSACTION;/ig' \
 		-e 's/END;/COMMIT;/ig' \
 		-e 's/COMMENT.*;//ig' \
