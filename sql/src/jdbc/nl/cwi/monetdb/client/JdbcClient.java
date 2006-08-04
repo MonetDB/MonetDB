@@ -152,9 +152,10 @@ public class JdbcClient {
 
 		if (copts.getOption("help").isPresent()) {
 			System.out.print(
-"Usage java -jar MonetDB_JDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
-"                                 [-l language] [-b [database]] [-d [table]]\n" +
-"                                 [-e] [-X<opt>]\n" +
+"Usage java -jar jdbcclient-X.Y.jar\n" +
+"                  [-h host[:port]] [-p port] [-f file] [-u user]\n" +
+"                  [-l language] [-b database] [-e] [-d [table]]\n" +
+"                  [-X<opt>]\n" +
 "or using long option equivalents --host --port --file --user --language\n" +
 "--dump --echo --database.\n" +
 "Arguments may be written directly after the option like -p50000.\n" +
@@ -185,6 +186,11 @@ copts.produceHelpMessage()
 		in = new BufferedReader(new InputStreamReader(System.in));
 		out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
 
+		// whether the semi-colon at the end of a String terminates the
+		// query or not (default = yes => SQL)
+		boolean scolonterm = true;
+		boolean xmlMode =
+				"xml".equals(copts.getOption("Xoutput").getArgument());
 		boolean isEmbedded = copts.getOption("Xembedded").isPresent();
 		if (isEmbedded) {
 			// user and password don't matter for embedded
@@ -224,6 +230,11 @@ copts.produceHelpMessage()
 		String lang = oc.getArgument();
 		if (oc.isPresent())
 			attr += "language=" + lang + "&";
+		// set some behaviour based on the language XQuery
+		if (lang.equals("xquery")) {
+			scolonterm = false;	// no ; to end a statement
+			xmlMode = true; // the user will like xml results, most probably
+		}
 		oc = copts.getOption("Xdebug");
 		if (oc.isPresent()) {
 			attr += "debug=true&";
@@ -286,9 +297,6 @@ copts.produceHelpMessage()
 		}
 		stmt = con.createStatement();
 		
-		boolean xmlMode =
-				"xml".equals(copts.getOption("Xoutput").getArgument());
-
 		// see if we will have to perform a database dump (only in SQL
 		// mode)
 		if ("sql".equals(lang) && copts.getOption("dump").isPresent()) {
@@ -449,7 +457,7 @@ copts.produceHelpMessage()
 					}
 					processBatch(batchSize);
 				} else {
-					processInteractive(true, doEcho, user);
+					processInteractive(true, doEcho, scolonterm, user);
 				}
 			} else {
 				if (!copts.getOption("quiet").isPresent()) {
@@ -464,7 +472,7 @@ copts.produceHelpMessage()
 					out.println("Type \\q to quit, \\h for a list of available commands");
 					out.flush();
 				}
-				processInteractive(false, doEcho, user);
+				processInteractive(false, doEcho, scolonterm, user);
 			}
 
 			// free resources, close the statement
@@ -502,6 +510,7 @@ copts.produceHelpMessage()
 	public static void processInteractive(
 		boolean hasFile,
 		boolean doEcho,
+		boolean scolonterm,
 		String user
 	)
 		throws IOException, SQLException
@@ -512,6 +521,7 @@ copts.produceHelpMessage()
 		QueryPart qp = null;
 
 		String query = "", curLine;
+		StringBuffer rl = new StringBuffer();
 		boolean wasComplete = true, doProcess, lastac = false;
 		if (!hasFile) {
 			lastac = con.getAutoCommit();
@@ -522,12 +532,54 @@ copts.produceHelpMessage()
 
 		// the main (interactive) process loop
 		int i = 0;
-		for (i = 1; (curLine = in.readLine()) != null; i++) {
+		char c = 0;
+		for (i = 1; true; i++) {
+			// Manually read a line, because we want to detect an EOF
+			// (ctrl-D).  Doing so allows to have a terminator for query
+			// which is not based on a special character, as is the
+			// problem for XQuery
+			curLine = in.readLine();
+			if (curLine == null) {
+				out.println("");
+				if (query != "") {
+					try {
+						executeQuery(query, stmt, out);
+					} catch (SQLException e) {
+						if (hasFile) {
+							System.err.println("Error on line " + i + ": " + e.getMessage());
+						} else {
+							System.err.println("Error: " + e.getMessage());
+						}
+						// print all error messages in the chain (if any)
+						while ((e = e.getNextException()) != null) {
+							System.err.println(e.getMessage());
+						}
+					}
+					query = "";
+					wasComplete = true;
+					if (!hasFile) {
+						boolean ac = con.getAutoCommit();
+						if (ac != lastac) {
+							out.println("auto commit mode: " + (ac ? "on" : "off"));
+							lastac = ac;
+						}
+						out.print(getPrompt(user, stack, wasComplete));
+					}
+					out.flush();
+					// try to read again
+					continue;
+				} else {
+					// user did ctrl-D without something in the buffer,
+					// so terminate
+					break;
+				}
+			}
+
 			if (doEcho) {
 				out.println(curLine);
 				out.flush();
 			}
-			qp = scanQuery(curLine, stack);
+			qp = scanQuery(curLine, stack, scolonterm);
 			if (!qp.isEmpty()) {
 				doProcess = true;
 				if (wasComplete) {
@@ -545,7 +597,8 @@ copts.produceHelpMessage()
 						out.println("\\d<obj> describes the given table or view");
 					} else if (dbmd != null && qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
-						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
+						if (object.endsWith(";"))
+							object = object.substring(0, object.length() - 1);
 						if (!object.equals("")) {
 							int dot;
 							String schema;
@@ -625,8 +678,10 @@ copts.produceHelpMessage()
 							}
 						}
 						query = "";
+						wasComplete = true;
+					} else {
+						wasComplete = false;
 					}
-					wasComplete = qp.isComplete();
 				}
 			}
 			if (!hasFile) {
@@ -638,21 +693,6 @@ copts.produceHelpMessage()
 				out.print(getPrompt(user, stack, wasComplete));
 			}
 			out.flush();
-		}
-		if (qp != null) {
-			try {
-				if (query != "") executeQuery(query, stmt, out);
-			} catch (SQLException e) {
-				if (hasFile) {
-					System.err.println("Error on line " + i + ": " + e.getMessage());
-				} else {
-					System.err.println("Error: " + e.getMessage());
-				}
-				// print all error messages in the chain (if any)
-				while ((e = e.getNextException()) != null) {
-					System.err.println(e.getMessage());
-				}
-			}
 		}
 	}
 
@@ -830,9 +870,15 @@ copts.produceHelpMessage()
 	 * identified by -- and removes white space where appropriate.
 	 *
 	 * @param query the query to parse
+	 * @param stack query stack to work with
+	 * @param scolonterm whether a ';' makes this query part complete
 	 * @return a QueryPart object containing the results of this parse
 	 */
-	private static QueryPart scanQuery(String query, SQLStack stack) {
+	private static QueryPart scanQuery(
+			String query,
+			SQLStack stack,
+			boolean scolonterm)
+	{
 		// examine string, char for char
 		boolean wasInString = (stack.peek() == '\'');
 		boolean wasInIdentifier = (stack.peek() == '"');
@@ -924,7 +970,7 @@ copts.produceHelpMessage()
 			return(new QueryPart(false, query.substring(start, stop), true));
 		} else {
 			// see if the string is complete
-			if (query.charAt(stop - 1) == ';') {
+			if (scolonterm && query.charAt(stop - 1) == ';') {
 				return(new QueryPart(true, query.substring(start, stop), false));
 			} else {
 				return(new QueryPart(false, query.substring(start, stop), false));
