@@ -24,6 +24,7 @@ if [ $# -eq 1 ]; then
 	SQL="$1"
 fi
 
+$SQL < sql99/create_table.sql
 cat input/copy.source \
 	| sed -r \
 		-e s+@abs_srcdir@+$PWD+ig \
