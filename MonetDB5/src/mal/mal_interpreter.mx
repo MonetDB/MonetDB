@@ -484,10 +484,17 @@ str runMALsequence( malTask *task)
 	int backup[MAXARG];
 	str sbackup[MAXARG];
 	lng oldtimer=0;
+	int oldinblock=0;
+	int oldoublock=0;
+	struct mallinfo oldMemory;
+#ifdef HAVE_SYS_RESOURCE_H
+	struct rusage oldResource;
+#endif
 	@:performanceVariables@
 
-	if( (oldtimer= cntxt->timer) )
-		cntxt->timer= GDKusec();
+	if( cntxt->timerFlag)
+		oldtimer= cntxt->timer= GDKusec();
+	oldMemory.arena= 0;
 		
 MALrestart:
 	stkpc = task->startpc;
@@ -496,13 +503,18 @@ MALrestart:
 	    pci = getInstrPtr(mb,stkpc);
 	    if( stk->cmd  ) {
 			lng t=0;
-			if( oldtimer) t= GDKusec();
+			if( oldtimer)
+				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
 	        if( stk->cmd == 'x') goto MALevalExit;
-			if( oldtimer )  {
+			if( oldtimer ) {
 				/* ignore debugger waiting time*/
 				t= GDKusec()-t;
 				oldtimer += t;
+#ifdef HAVE_SYS_RESOURCE_H
+				getrusage(RUSAGE_SELF, &oldResource);
+#endif
+				oldMemory= MT_mallinfo();
 			}
 	    }
 
@@ -846,7 +858,7 @@ the bind(namespace, batname, mode) operation. [todo]
 	}
 	if( GDKdebug & 10 ){
 		BAT *b;
-		str oldmsg =0, msg;
+		str oldmsg =0;
 
 		for( i=0; i< pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
@@ -864,12 +876,11 @@ the bind(namespace, batname, mode) operation. [todo]
 			BATpropcheck(b, BATPROPS_QUICK);
 			BBPunfix(b->batCacheid);
 			if( cntxt->errbuf && cntxt->errbuf[0]) {
-	            msg= GDKstrdup(cntxt->errbuf);
 				if( oldmsg){
 					strcpy(cntxt->errbuf,oldmsg);
 					GDKfree(oldmsg);
 				}
-				return throwMessage("mal.propertyCheck",msg);
+				return throwMessage("mal.propertyCheck","Errors found");
 			}
 			if( oldmsg){
 				*cntxt->errbuf = *oldmsg;
@@ -1135,26 +1146,28 @@ starts with the exception identifer, followed by contextual details.
 @{
 
 @= exceptionHndlr
-if( cntxt->timer){
-	lng n= GDKusec();
-	lng l= n - cntxt->timer;
-	if( stk->cmd != 't' && stk->cmd != 'C')
-	    stream_printf(cntxt->fdout,"#%6d usec",l);
+if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
+	stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
-	if( cntxt->resource.ru_minflt > 0){
-	    struct rusage ru;
-	    getrusage(RUSAGE_SELF,&ru);
-	    if( ru.ru_inblock - cntxt->resource.ru_inblock > 0)
-	        stream_printf(cntxt->fdout," %3d R",
-	            ru.ru_inblock - cntxt->resource.ru_inblock);
-	    if( ru.ru_oublock - cntxt->resource.ru_oublock > 0)
-	        stream_printf(cntxt->fdout," %3d W",
-	            ru.ru_oublock - cntxt->resource.ru_oublock);
-	    cntxt->resource= ru;
+	if( cntxt->ioFlag){
+		getrusage(RUSAGE_SELF, &cntxt->resource);
+		if(	cntxt->resource.ru_inblock - oldinblock 
+		 ||	cntxt->resource.ru_oublock - oldoublock ) {
+			stream_printf(cntxt->fdout,"# %3d R",
+				cntxt->resource.ru_inblock- oldinblock);
+			stream_printf(cntxt->fdout," %3d W",
+				cntxt->resource.ru_oublock- oldoublock);
+		}
 	}
 #endif
+	if( cntxt->memoryFlag){
+		cntxt->memory= MT_mallinfo();
+		if( cntxt->memory.arena- oldMemory.arena > 0)
+			stream_printf(cntxt->fdout,"# %6d bytes",
+				cntxt->memory.arena-oldMemory.arena );
+	}
 	printTraceCall(cntxt,mb,stk,stkpc);
-	cntxt->timer= GDKusec();
+	cntxt->timer = GDKusec();
 }
 
 if( ret != MAL_SUCCEED ) {

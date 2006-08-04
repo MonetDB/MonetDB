@@ -120,10 +120,16 @@ information should be dealt with separately.[TODO]
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */
 	short   debugOptimizer,debugScheduler;
+@-
+For program debugging we need information on the timer and memory
+usage patterns.
+@h
 	lng     timer;      /* trace time in usec */
+	struct mallinfo memory;
 #ifdef HAVE_SYS_RESOURCE_H
-	struct  rusage resource;	/* trace resource usage */
+	struct  rusage resource;	/* trace memory resource usage */
 #endif
+	sht timerFlag, memoryFlag, ioFlag;
 @-
 @}
 @-

@@ -82,6 +82,7 @@ where      -- print stack trace
 down       -- go down the stack
 up         -- go up the stack
 timer      -- produce micro-second response time
+memory     -- produce memory consumption data
 io         -- produce page activity trace
 help       -- this message
 mdb>
@@ -247,14 +248,21 @@ the test case.
 >
 @end example
 
-The command setTimer() produces timing statistics in micro-seconds. 
-Aside from the time spent in each statement
-separately, it accumulate the timeing for the complete call.
+The commands mdb.setTimer() toggle the performance traceing flag. 
+The argument is an integer to designate the action, i.e.
+0 turns off the tracer otherwise it turns it on.
+
+The primary output of the timer is statistics in micro-seconds,
+the memory tracer shows the arena increment, and the IO tracer
+shows in- and out-blocks.
 The time spent on preparing the trace information is excluded
-from the time reported.
+from the report.
 For more detailed timing information the Linux
 tool @emph{valgrind} may be of help.
 
+The routines mdb.setMemory(), and mdb.setIO() extend the timer
+trace with an overview of the changes in the memory usage and
+IO activity.
 @example
 >function test(i:int):str;
 >	mdb.setTimer(true);
@@ -596,7 +604,7 @@ call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				GDKfree(tpe);
 			}
 			/* in timer mode we show more details */
-			if( cntxt->timer && isaBatType(v->type)){
+			if( cntxt->timerFlag && isaBatType(v->type)){
 				str tpe= getTypeName(v->type);
 				BAT *b;
 				strcat(msg,tpe);
@@ -740,7 +748,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			for (su = stk; su; su = su->up)
 				su->cmd = 0;
 			cntxt->itrace = 0;
-			cntxt->timer = 0;
+			cntxt->timerFlag = 0;
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
@@ -769,6 +777,22 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 			if (strncmp("modules", b, 7) == 0) {
 				showModules(out, cntxt->nspace);
+				continue;
+			}
+			if( strncmp("memory",b,6) == 0){
+				skipWord(cntxt, b);
+				cntxt->memoryFlag = (sht) atol(b);
+				cntxt->memory= MT_mallinfo();
+				stream_printf(out,"arena %d ordblks %d smblks %d "
+					" hblkhd %d hblks %d fsmblks %d uordblks %d\n",
+					cntxt->memory.arena,
+					cntxt->memory.ordblks,
+					cntxt->memory.smblks,
+					cntxt->memory.hblkhd,
+					cntxt->memory.hblks,
+					cntxt->memory.fsmblks,
+					cntxt->memory.uordblks
+				);
 				continue;
 			}
 
@@ -818,10 +842,10 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				mdbSetBreakRequest(cntxt, mb, b, 't');
 			} else
 			if (strncmp("timer", b, 5) == 0) {
-				if (cntxt->timer == 0)
+				skipWord(cntxt, b);
+				cntxt->timerFlag = (sht) atol(b);
+				if( cntxt->timer == 0)
 					cntxt->timer = GDKusec();
-				else
-					cntxt->timer = 0;
 				stk->cmd = 0;
 			}
 			break;
@@ -883,14 +907,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 							stream_printf(out, " zombie ");
 						stream_printf(out, " dirty=%d \n", BATdirty(BBP_cache(i)));
 					}
-				stream_printf(out,"BBP cache\n");
-/*
-				for(i=0; i<BATCACHE_SIZE; i++)
-					stream_printf(out, "[%d] bid %d next %d prev = %d ", i,
-					batcache_t[i].bid,
-					batcache_t[i].bin_next,
-					batcache_t[i].bin_prev);
-*/
 				continue;
 			}
 			if (strncmp(b, "breakpoints",11) == 0) {
@@ -938,8 +954,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			char *t;
 
 			if (strncmp("io", b, 2) == 0) {
-				if (cntxt->timer == 0)
-					cntxt->timer = GDKusec();
+				skipWord(cntxt, b);
+				cntxt->ioFlag = (sht) atol(b);
 #ifdef HAVE_SYS_RESOURCE_H
 				getrusage(RUSAGE_SELF, &cntxt->resource);
 				stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" " minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
@@ -1150,7 +1166,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if( mdbSessionActive== 0) return;
 	showErrors();
-	if (cntxt->timer)
+	if (cntxt->timerFlag)
 		cntxt->timer = GDKusec();
 	mdbSessionActive= 0; /* for name completion */
 }

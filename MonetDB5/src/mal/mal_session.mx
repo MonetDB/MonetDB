@@ -77,9 +77,18 @@ malBootstrap()
 	bf = GDKgetenv("mal_bootstrap");
 	if (bf)
 		bootfile = bf;
-	malInclude(c, bootfile, 0, 0);
+	MSinitClientPrg(c, "main");
+	malInclude(c, bootfile, 0);
 	mal_scope = c->nspace;
-	showErrors();
+	pushEndInstruction(c->curprg->def);
+	trimMalBlk(c->curprg->def);
+	chkProgram(c->nspace, c->curprg->def);
+	if (c->curprg->def->errors) {
+		showErrors();
+		GDKfatal("Failed to initialise system");
+		return 0;
+	}
+	MALengine(c);
 	return 1;
 }
 

@@ -867,7 +867,7 @@ be debugged upfront already.
 str
 parseInclude(Client cntxt)
 {
-	str modnme = 0;
+	str modnme = 0,s;
 	int x;
 	char *nxt;
 
@@ -892,7 +892,10 @@ parseInclude(Client cntxt)
 	}
 	skipToEnd(cntxt);
 
-	malInclude(cntxt, modnme, modnme, 0);
+	s = (str) loadModuleLibrary(modnme);
+	if (s)
+		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
+	malInclude(cntxt, modnme, 0);
 	return "";
 }
 @- Definition
