@@ -477,7 +477,7 @@ int cstToken(Client cntxt, ValPtr cst)
 		}
 	}
 	if( cst->vtype == TYPE_flt) {
-		cst->val.fval = (flt) strtod(CURRENT(cntxt),NULL);
+		cst->val.fval = (flt) strtof(CURRENT(cntxt),NULL);
 	}
 	if( cst->vtype == TYPE_dbl){
 		cst->val.dval = (dbl) strtod(CURRENT(cntxt),NULL);

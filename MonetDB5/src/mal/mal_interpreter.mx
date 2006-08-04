@@ -481,6 +481,7 @@ str runMALsequence( malTask *task)
 	InstrPtr pci=0; 
 	int stkexception;
 	str ret=0;
+	int stamp= -1;
 	int backup[MAXARG];
 	str sbackup[MAXARG];
 	lng oldtimer=0;
@@ -822,14 +823,22 @@ the bind(namespace, batname, mode) operation. [todo]
 		for(i=0; i<pci->retc; i++) {
 			sbackup[i]= 0;  
 			backup[i]= 0;  
-			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat)
+			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 				backup[i]= stk->stk[getArg(pci,i)].val.br.id;
-			else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
+				stamp= BBPcurstamp();
+			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 					backup[i]= stk->stk[getArg(pci,i)].len;
 					sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
 			} 
 		}
 	} 
+@= batpropcheck
+	if( @1->batStamp <= stamp){
+		if( GDKdebug & 8)
+			BATpropcheck(@1, BATPROPS_QUICK);
+	} else
+	if( GDKdebug & 2 )
+			BATpropcheck(@1, BATPROPS_QUICK);
 @= restoreTarget
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", needsCleanup(pci));
@@ -871,9 +880,9 @@ the bind(namespace, batname, mode) operation. [todo]
 				*cntxt->errbuf= 0;
 			}
 			if (b->H != b->T) {
-				BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+				@:batpropcheck(BATmirror(b))@
 			}
-			BATpropcheck(b, BATPROPS_QUICK);
+			@:batpropcheck(b)@
 			BBPunfix(b->batCacheid);
 			if( cntxt->errbuf && cntxt->errbuf[0]) {
 				if( oldmsg){
