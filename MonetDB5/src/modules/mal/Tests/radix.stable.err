@@ -1,15 +1,15 @@
 stderr of test 'radix` in directory 'src/modules/mal` itself:
 
 
-# 09:11:31 >  
-# 09:11:31 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/lib/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dblogs" --set mapi_port=31198 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  radix.mal < /dev/null
-# 09:11:31 >  
+# 13:57:31 >  
+# 13:57:31 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=32697 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  radix.mal < /dev/null
+# 13:57:31 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.13.1
-# builtin opt 	monet_pid = 682
-# builtin opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONETDB
+# builtin opt 	gdk_version = 4.13.0
+# builtin opt 	monet_pid = 9035
+# builtin opt 	prefix = /ufs/mk/opensource/MonetDB/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -29,9 +29,9 @@ stderr of test 'radix` in directory 'src/modules/mal` itself:
 # builtin opt 	mapi_clients = 2
 # builtin opt 	sql_debug = 0
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5
+# config opt 	prefix = /ufs/mk/monet5/Linux
 # config opt 	config = ${prefix}/etc/MonetDB5.conf
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5
+# config opt 	prefix = /ufs/mk/monet5/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
 # config opt 	gdk_dbname = demo
@@ -52,16 +52,16 @@ stderr of test 'radix` in directory 'src/modules/mal` itself:
 # config opt 	pf_httpd_port = 8080
 # config opt 	xquery_output = dm
 # config opt 	xquery_cacheMB = 100
-# cmdline opt 	config = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/etc/MonetDB5.conf
+# cmdline opt 	config = /ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/lib/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONETDB/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dbfarm
-# cmdline opt 	sql_logdir = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./MONET5/var/MonetDB5/dblogs
-# cmdline opt 	mapi_port = 31198
+# cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# cmdline opt 	sql_logdir = /ufs/mk/monet5/Linux/var/MonetDB5/dblogs
+# cmdline opt 	mapi_port = 32697
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_modules_mal
 
-# 09:11:32 >  
-# 09:11:32 >  Done.
-# 09:11:32 >  
+# 13:57:31 >  
+# 13:57:31 >  Done.
+# 13:57:31 >  
 

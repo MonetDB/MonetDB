@@ -23,15 +23,26 @@ stdout of test 'armada03` in directory 'src/modules/mal` itself:
 #io.print(p);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:str,:oid);	# 1 CMDBATnew (b:bat[:str,:oid])<-(_2:str)(_3:oid)
-    s := armada.addSite(127.0.0.2:inet,50000:int,"chain":str,"key":str);	# 2 ARMADAaddSite (s:oid)<-(_5:inet)(_6:int)(_7:str)(_8:str)
-    bat.insert(b,nil:str,s);	# 3 BKCinsert_bun (_9:void)<-(b:bat[:str,:oid])(_10:str)(s:oid)
-    s := armada.addSite(127.0.0.3:inet,50000:int,"chain":str,"key":str);	# 4 ARMADAaddSite (s:oid)<-(_11:inet)(_6:int)(_7:str)(_8:str)
-    bat.insert(b,"func2",s);	# 5 BKCinsert_bun (_12:void)<-(b:bat[:str,:oid])(_13:str)(s:oid)
-    t := armada.addTrail(b);	# 6 ARMADAaddTrailBAT (t:int)<-(b:bat[:str,:oid])
-    p := armada.getTrail(t);	# 7 ARMADAgetTrail (p:str)<-(t:int)
-    io.print(p);	# 8 IOprint_val (_16:int)<-(p:str)
-end main;	# 9  
+#line 32 "/ufs/mk/monet5/src/modules/mal/armada.mx" 	# 1  (_1:str)
+#pattern open():void 	# 2  (_2:str)
+#address ARMADAopen 	# 3  (_3:str)
+#comment "Locate and open the Armada box"; 	# 4  (_4:str)
+#pattern close():void 	# 5  (_5:str)
+#address ARMADAclose 	# 6  (_6:str)
+#comment "Close the Armada box"; 	# 7  (_7:str)
+#pattern destroy():void 	# 8  (_8:str)
+#address ARMADAdestroy 	# 9  (_9:str)
+#comment "Destroy the Armada box (irreversible, use with caution!)"; 	# 10  (_10:str)
+    armada.prelude();	# 11 ARMADAprelude (_11:void)
+    b := bat.new(:str,:oid);	# 12 CMDBATnew (b:bat[:str,:oid])<-(_13:str)(_14:oid)
+    s := armada.addSite(127.0.0.2:inet,50000:int,"chain":str,"key":str);	# 13 ARMADAaddSite (s:oid)<-(_16:inet)(_17:int)(_18:str)(_19:str)
+    bat.insert(b,nil:str,s);	# 14 BKCinsert_bun (_20:void)<-(b:bat[:str,:oid])(_21:str)(s:oid)
+    s := armada.addSite(127.0.0.3:inet,50000:int,"chain":str,"key":str);	# 15 ARMADAaddSite (s:oid)<-(_22:inet)(_17:int)(_18:str)(_19:str)
+    bat.insert(b,"func2",s);	# 16 BKCinsert_bun (_23:void)<-(b:bat[:str,:oid])(_24:str)(s:oid)
+    t := armada.addTrail(b);	# 17 ARMADAaddTrailBAT (t:int)<-(b:bat[:str,:oid])
+    p := armada.getTrail(t);	# 18 ARMADAgetTrail (p:str)<-(t:int)
+    io.print(p);	# 19 IOprint_val (_27:int)<-(p:str)
+end main;	# 20  
 [ "[#, 0].[func2, 1]" ]
 
 # 13:04:37 >  

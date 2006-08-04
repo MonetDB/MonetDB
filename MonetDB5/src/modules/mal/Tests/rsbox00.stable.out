@@ -69,44 +69,52 @@ stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
 ##rsbox.close();
 #
 function user.main():void;	# 0  (main:void)
-    rs := rsbox.create(1:int,'u':chr);	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
-    rs := rsbox.create(2:int,'t':chr);	# 2 RSBcreate (rs:resultset)<-(_4:int)(_5:chr)
-    resultset.setProperty(rs,1:int,"table","table1");	# 3 RSsetPropertyStr (_6:resultset)<-(rs:resultset)(_2:int)(_7:str)(_8:str)
-    resultset.setProperty(rs,1:int,"schema","sys");	# 4 RSsetPropertyStr (_9:resultset)<-(rs:resultset)(_2:int)(_10:str)(_11:str)
-    resultset.setProperty(rs,2:int,"width",1:int);	# 5 RSsetPropertyInt (_12:resultset)<-(rs:resultset)(_4:int)(_13:str)(_2:int)
-    resultset.setProperty(rs,2:int,"table","table2");	# 6 RSsetPropertyStr (_14:resultset)<-(rs:resultset)(_4:int)(_7:str)(_15:str)
-    resultset.setProperty(rs,2:int,"schema","sys");	# 7 RSsetPropertyStr (_16:resultset)<-(rs:resultset)(_4:int)(_10:str)(_11:str)
-    b1 := bat.new(:void,:str);	# 8 CMDBATnew (b1:bat[:void,:str])<-(_18:void)(_19:str)
-    bat.insert(b1,nil:void,"test1");	# 9 BKCinsert_bun (_20:void)<-(b1:bat[:void,:str])(_21:void)(_22:str)
-    bat.insert(b1,nil:void,"test2");	# 10 BKCinsert_bun (_23:void)<-(b1:bat[:void,:str])(_21:void)(_24:str)
-    bat.insert(b1,nil:void,nil:str);	# 11 BKCinsert_bun (_25:void)<-(b1:bat[:void,:str])(_21:void)(_26:str)
-    b2 := bat.new(:void,:int);	# 12 CMDBATnew (b2:bat[:void,:int])<-(_18:void)(_28:int)
-    bat.insert(b2,nil:void,2:int);	# 13 BKCinsert_bun (_29:void)<-(b2:bat[:void,:int])(_21:void)(_4:int)
-    bat.insert(b2,nil:void,nil:int);	# 14 BKCinsert_bun (_30:void)<-(b2:bat[:void,:int])(_21:void)(_31:int)
-    bat.insert(b2,nil:void,5);	# 15 BKCinsert_bun (_32:void)<-(b2:bat[:void,:int])(_21:void)(_33:int)
-    resultset.populateColumn(rs,1:int,b1);	# 16 RSpopulateColumn (_34:resultset)<-(rs:resultset)(_2:int)(b1:bat[:void,:str])
-    resultset.populateColumn(rs,2:int,b2);	# 17 RSpopulateColumn (_35:resultset)<-(rs:resultset)(_4:int)(b2:bat[:void,:int])
-    resultset.writeNextPart(rs);	# 18 RSwriteNextPart (_36:int)<-(rs:resultset)
-    io.print("Before any cleanup:");	# 19 IOprint_val (_37:int)<-(_38:str)
-barrier (v,res):= rsbox.newIterator();	# 20 RSBiterator (v:lng)(res:resultset) jump 23
-    io.print(res);	# 21 IOprint_val (_41:int)<-(res:resultset)
-    redo (v,res):= rsbox.hasMoreElements();	# 22 RSBhasMoreElements (v:lng)(res:resultset) jump 21
-exit v;	# 23  (v:lng)
-    rsbox.release(rs);	# 24 RSBdelete (_42:void)<-(rs:resultset)
-    io.print("After release of 'myid':");	# 25 IOprint_val (_43:int)<-(_44:str)
-barrier (v,res):= rsbox.newIterator();	# 26 RSBiterator (v:lng)(res:resultset) jump 29
-    io.print(res);	# 27 IOprint_val (_45:int)<-(res:resultset)
-    redo (v,res):= rsbox.hasMoreElements();	# 28 RSBhasMoreElements (v:lng)(res:resultset) jump 27
-exit v;	# 29  (v:lng)
-    rsbox.releaseAll();	# 30 RSBreleaseAll (_46:void)
-    io.print("After a releaseAll:");	# 31 IOprint_val (_47:int)<-(_48:str)
-barrier (v,res):= rsbox.newIterator();	# 32 RSBiterator (v:lng)(res:resultset) jump 35
-    io.print(res);	# 33 IOprint_val (_49:int)<-(res:resultset)
-    redo (v,res):= rsbox.hasMoreElements();	# 34 RSBhasMoreElements (v:lng)(res:resultset) jump 33
-exit v;	# 35  (v:lng)
-# we did not open, it so why close it? 	# 36  (_54:str)
-#rsbox.close(); 	# 37  (_56:str)
-end main;	# 38  
+## Test generic ResultSet + rsbox behaviour: 	# 1  (_1:str)
+## create two ResultSets, fill one with two BATs and see if everything is 	# 2  (_2:str)
+## properly released. 	# 3  (_3:str)
+#line 113 "/ufs/mk/monet5/src/modules/mal/rsbox.mx" 	# 4  (_4:str)
+# ResultSets themselves should never be serialised to disk.  The 	# 5  (_5:str)
+# fromStr and toStr functions merely exist to adhere to the interface 	# 6  (_6:str)
+#line 207 "/ufs/mk/monet5/src/modules/mal/rsbox.mx" 	# 7  (_7:str)
+#line 208 "/ufs/mk/monet5/src/modules/mal/rsbox.mx" 	# 8  (_8:str)
+    rs := rsbox.create(1:int,'u':chr);	# 9 RSBcreate (rs:resultset)<-(_10:int)(_11:chr)
+    rs := rsbox.create(2:int,'t':chr);	# 10 RSBcreate (rs:resultset)<-(_12:int)(_13:chr)
+    resultset.setProperty(rs,1:int,"table","table1");	# 11 RSsetPropertyStr (_14:resultset)<-(rs:resultset)(_10:int)(_15:str)(_16:str)
+    resultset.setProperty(rs,1:int,"schema","sys");	# 12 RSsetPropertyStr (_17:resultset)<-(rs:resultset)(_10:int)(_18:str)(_19:str)
+    resultset.setProperty(rs,2:int,"width",1:int);	# 13 RSsetPropertyInt (_20:resultset)<-(rs:resultset)(_12:int)(_21:str)(_10:int)
+    resultset.setProperty(rs,2:int,"table","table2");	# 14 RSsetPropertyStr (_22:resultset)<-(rs:resultset)(_12:int)(_15:str)(_23:str)
+    resultset.setProperty(rs,2:int,"schema","sys");	# 15 RSsetPropertyStr (_24:resultset)<-(rs:resultset)(_12:int)(_18:str)(_19:str)
+    b1 := bat.new(:void,:str);	# 16 CMDBATnew (b1:bat[:void,:str])<-(_26:void)(_27:str)
+    bat.insert(b1,nil:void,"test1");	# 17 BKCinsert_bun (_28:void)<-(b1:bat[:void,:str])(_29:void)(_30:str)
+    bat.insert(b1,nil:void,"test2");	# 18 BKCinsert_bun (_31:void)<-(b1:bat[:void,:str])(_29:void)(_32:str)
+    bat.insert(b1,nil:void,nil:str);	# 19 BKCinsert_bun (_33:void)<-(b1:bat[:void,:str])(_29:void)(_34:str)
+    b2 := bat.new(:void,:int);	# 20 CMDBATnew (b2:bat[:void,:int])<-(_26:void)(_36:int)
+    bat.insert(b2,nil:void,2:int);	# 21 BKCinsert_bun (_37:void)<-(b2:bat[:void,:int])(_29:void)(_12:int)
+    bat.insert(b2,nil:void,nil:int);	# 22 BKCinsert_bun (_38:void)<-(b2:bat[:void,:int])(_29:void)(_39:int)
+    bat.insert(b2,nil:void,5);	# 23 BKCinsert_bun (_40:void)<-(b2:bat[:void,:int])(_29:void)(_41:int)
+    resultset.populateColumn(rs,1:int,b1);	# 24 RSpopulateColumn (_42:resultset)<-(rs:resultset)(_10:int)(b1:bat[:void,:str])
+    resultset.populateColumn(rs,2:int,b2);	# 25 RSpopulateColumn (_43:resultset)<-(rs:resultset)(_12:int)(b2:bat[:void,:int])
+    resultset.writeNextPart(rs);	# 26 RSwriteNextPart (_44:int)<-(rs:resultset)
+    io.print("Before any cleanup:");	# 27 IOprint_val (_45:int)<-(_46:str)
+barrier (v,res):= rsbox.newIterator();	# 28 RSBiterator (v:lng)(res:resultset) jump 31
+    io.print(res);	# 29 IOprint_val (_49:int)<-(res:resultset)
+    redo (v,res):= rsbox.hasMoreElements();	# 30 RSBhasMoreElements (v:lng)(res:resultset) jump 29
+exit v;	# 31  (v:lng)
+    rsbox.release(rs);	# 32 RSBdelete (_50:void)<-(rs:resultset)
+    io.print("After release of 'myid':");	# 33 IOprint_val (_51:int)<-(_52:str)
+barrier (v,res):= rsbox.newIterator();	# 34 RSBiterator (v:lng)(res:resultset) jump 37
+    io.print(res);	# 35 IOprint_val (_53:int)<-(res:resultset)
+    redo (v,res):= rsbox.hasMoreElements();	# 36 RSBhasMoreElements (v:lng)(res:resultset) jump 35
+exit v;	# 37  (v:lng)
+    rsbox.releaseAll();	# 38 RSBreleaseAll (_54:void)
+    io.print("After a releaseAll:");	# 39 IOprint_val (_55:int)<-(_56:str)
+barrier (v,res):= rsbox.newIterator();	# 40 RSBiterator (v:lng)(res:resultset) jump 43
+    io.print(res);	# 41 IOprint_val (_57:int)<-(res:resultset)
+    redo (v,res):= rsbox.hasMoreElements();	# 42 RSBhasMoreElements (v:lng)(res:resultset) jump 41
+exit v;	# 43  (v:lng)
+# we did not open, it so why close it? 	# 44  (_58:str)
+#rsbox.close(); 	# 45  (_59:str)
+end main;	# 46  
 &t
 $id	2
 $columncount	2
