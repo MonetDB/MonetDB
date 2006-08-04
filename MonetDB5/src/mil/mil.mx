@@ -113,8 +113,10 @@ MILinit(Client cntxt)
 #endif
 	/* load the modules */
 	defaultScenario(cn);
-	malInclude(cn, "mil_algebra_procs", "mil_algebra_procs", 0);
-	malInclude(cn, "mil_system_procs", "mil_system_procs", 0);
+	loadModuleLibrary("mil_algebra_procs");
+	malInclude(cn, "mil_algebra_procs", 0);
+	loadModuleLibrary("mil_system_procs");
+	malInclude(cn, "mil_system_procs", 0);
 	(void) cntxt;
 	MCkillClient(cn,1);
 	return MAL_SUCCEED;
@@ -420,7 +422,7 @@ Prescan the input to make processing easier
 @c
 	nextChar(c);
 	c->yycur--;
-	malInclude(c, buf, NULL, LIST_MAL_INSTR);
+	malInclude(c, buf, LIST_MAL_INSTR);
 	showErrors();
 	resetScenario(c);
 	MSinitClientPrg(c, "main");
