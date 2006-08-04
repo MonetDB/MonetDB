@@ -30,6 +30,20 @@ do
 		-e 's/\bint8\b/bigint/ig' \
 		-e 's/\bint4\b/integer/ig' \
 		-e 's/\bint2\b/smallint/ig' \
+		-e 's/\bfloat4\b/float/ig' \
+		-e 's/\bfloat8\b/double/ig' \
+		-e 's/\bpath\b/string/ig' \
+		-e 's/\bpoint\b/string/ig' \
+		-e 's/\bbox\b/string/ig' \
+		-e 's/\bpolygon\b/string/ig' \
+		-e 's/\bcity_budget\b/decimal(7,2)/ig' \
+		-e 's/\bname,/string,/ig' \
+		-e 's/\bname$/string/ig' \
+		-e 's/BEGIN;/START TRANSACTION;/ig' \
+		-e 's/END;/COMMIT;/ig' \
+		-e 's/COMMENT.*;//ig' \
+		-e 's/CREATE TABLE.*INHERITS.*;//ig' \
+		-e 's/\) INHERITS.*;/\);/ig' \
 		-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
 		-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 		-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
