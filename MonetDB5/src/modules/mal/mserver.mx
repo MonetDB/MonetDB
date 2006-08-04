@@ -1970,16 +1970,22 @@ SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		i= *(int*) getArgReference(stk,pci,pci->retc+3);
 		snprintf(buf,BUFSIZ,"%s:bat[:void,:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
 			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
-	} else 
-		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\");",
-			getVarName(mb,getDestVar(pci)),*nme);
+	} else {
+		str hn,tn;
+		int target= getArgType(mb,pci,0);
+		hn= getTypeName(getHeadType(target));
+		tn= getTypeName(getTailType(target));
+		snprintf(buf,BUFSIZ,"%s:bat[%s,%s]:=bbp.bind(\"%s\");",
+			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
+		GDKfree(hn);
+		GDKfree(tn);
+	}
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
-	if( mapi_error(mid) ) {
-		char *err = mapi_error_str(mid);
-		return throwMessage("mserver.bind",err);
-	}
+	if( mapi_error(mid) )
+		return throwMessage("mapi.bind",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 @}
