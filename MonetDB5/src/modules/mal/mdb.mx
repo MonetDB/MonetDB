@@ -67,17 +67,26 @@ pattern setCatch(b:bit):void
 address MDBsetCatch
 comment "Turn on/off catching exceptions";
 
-pattern setTimer(b:bit):void
+command setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
+
+command setMemory(b:bit):void
+address MDBsetMemory
+comment "Turn on/off memory statistics tracing.";
+
+command setIO(b:bit):void
+address MDBsetIO
+comment "Turn on/off io statistics tracing";
 
 command getDebug():int
 address MDBgetDebug
 comment "Get the kernel debugging bit-set.
 See the MonetDB configuration file for details";
+
 command setDebug(flg:int):int
 address MDBsetDebug
-comment "Set the kernel debugging bit-set and return its new value.
+comment "Set the kernel debugging bit-set and return its previous value.
 See the MonetDB configuration file for details";
 command getException(s:str):str
 address MDBgetExceptionVariable
@@ -160,7 +169,9 @@ mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBgetDebug(int *ret);
 mal_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBsetTimer(int *ret, bit *flag);
+mdb_export str MDBsetMemory(int *ret, bit *flag);
+mdb_export str MDBsetIO(int *ret, bit *flag);
 mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
 mdb_export str MDBgetExceptionReason(str *ret, str *msg);
 mdb_export str MDBgetExceptionContext(str *ret, str *msg);
@@ -277,8 +288,8 @@ MDBgetDebug(int *ret)
 str
 MDBsetDebug(int *ret, int *flg)
 {
-    GDKdebug = *flg;
     *ret = GDKdebug;
+    GDKdebug = *flg;
     return MAL_SUCCEED;
 }
 
@@ -295,14 +306,33 @@ MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MDBsetTimer(int *ret, bit *flag)
 {
 	Client cntxt = MCgetClient();
-	int b;
 
-	(void) mb;		/* still unused */
-	b = *(chr *) getArgReference(stk, p, 1);
-	cntxt->timer = b ? GDKusec() : 0;
+	(void) ret;
+	cntxt->timerFlag =  *flag;
+	cntxt->timer= GDKusec();
+	return MAL_SUCCEED;
+}
+
+str
+MDBsetMemory(int *ret, bit *flag)
+{
+	Client cntxt = MCgetClient();
+	(void) ret;
+
+	cntxt->memoryFlag = *flag;
+	return MAL_SUCCEED;
+}
+
+str
+MDBsetIO(int *ret, bit *format)
+{
+	Client cntxt = MCgetClient();
+	(void) ret;
+
+	cntxt->ioFlag = *format;
 	return MAL_SUCCEED;
 }
 

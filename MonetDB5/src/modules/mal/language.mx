@@ -264,7 +264,7 @@ CMDevalFile(int *ret, str *fnme)
 		strcat(buffer, "/");
 	}
 	strcat(buffer, s);
-	malInclude(MCgetClient(), buffer, 0, FALSE);
+	evalFile(c, buffer, 0);
 
 	return MAL_SUCCEED;
 }
