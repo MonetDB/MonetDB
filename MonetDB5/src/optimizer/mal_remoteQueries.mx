@@ -57,7 +57,7 @@ just before they are locally needed.
 
 @verbatim
 mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-mserver.rpc(mid,"b:=bbp.bind(\"rvar\");");
+mserver.rpc(mid,"b:bat[:void,:int] :=bbp.bind(\"rvar\");");
 mserver.rpc(mid,"c:=algebra.select(b,0,12);");
 c:bat[:void,:int]:= mserver.rpc(mid, "io.print(c);");
 io.print(c);
@@ -124,6 +124,11 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	len= strlen(msg);
 	for (k = 0; k < p->retc; k++) {
 		VarPtr v = getVar(mb, getArg(p, k));
+		if( v->isudftype){
+			str tpe = getTypeName(getVarType(mb, getArg(p, k)));
+			sprintf(msg+len, "%s:%s ", v->name, tpe);
+			GDKfree(tpe);
+		} else
 		if (isTmpVar(mb, getArg(p,k)))
 			sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
 		else
@@ -200,7 +205,7 @@ their isolated runtime environment.
 	r= newInstruction(mb,ASSIGNsymbol);
 	getModuleId(r)= mserverRef;
 	getFunctionId(r)= rpcRef;
-	getArg(r,0)= newTmpVariable(mb, TYPE_void);
+	getArg(r,0)= newTmpVariable(mb, @1);
 	pushArgument(mb,r,j);
 
 @= putRemoteVariables
@@ -273,7 +278,10 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		
 		if( (getModuleId(p)== mserverRef && getFunctionId(p)==bindRef)){
 			if( p->argc == 3 && getArgType(mb,p,1) == TYPE_int ) {
+				int tpe;
+				setVisible(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
+				tpe = getArgType(mb,p,0);
 				/* result is remote */
 				location[getArg(p,0)]= j;
 
@@ -285,7 +293,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				getModuleId(p) = bbpRef;
 
-				@:prepareRemote()@
+				@:prepareRemote(tpe)@
 				@:putRemoteVariables()@
 				@:remoteAction()@
 			} else
@@ -301,7 +309,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* only use the second argument (string) */
 				getArg(p,1)= getArg(p,2);
 
-				@:prepareRemote()@
+				@:prepareRemote(TYPE_void)@
 
 				s= RQcall2str(mb,p);
 				pushStr(mb,r,s+1);
@@ -318,7 +326,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* turn the instruction into a local one */
 				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
 
-				@:prepareRemote()@
+				@:prepareRemote(TYPE_void)@
 				@:putRemoteVariables()@
 				@:remoteAction()@
 			} else
@@ -332,7 +340,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* turn the instruction into a local one */
 				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
 
-				@:prepareRemote()@
+				@:prepareRemote(TYPE_void)@
 				@:putRemoteVariables()@
 				@:remoteAction()@
 			} else
