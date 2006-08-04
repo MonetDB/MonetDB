@@ -1,15 +1,14 @@
-stderr of test 'remote01` in directory 'src/optimizer` itself:
+stderr of test 'remote04` in directory 'src/optimizer` itself:
 
 
-# 23:06:19 >  
-# 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote01.mal < /dev/null
-# 23:06:19 >  
+# 18:22:21 >  
+# 18:22:21 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30234 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote04.mal < /dev/null
+# 18:22:21 >  
 
-#warning: trace option not yet supported
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.11.3
-# builtin opt 	monet_pid = 22513
+# builtin opt 	gdk_version = 4.13.0
+# builtin opt 	monet_pid = 15298
 # builtin opt 	prefix = /ufs/mk/opensource/MonetDB/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -58,11 +57,11 @@ stderr of test 'remote01` in directory 'src/optimizer` itself:
 # cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /ufs/mk/monet5/Linux/var/MonetDB5/dblogs
-# cmdline opt 	mapi_port = 30126
+# cmdline opt 	mapi_port = 30234
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_optimizer
 
-# 23:06:19 >  
-# 23:06:19 >  Done.
-# 23:06:19 >  
+# 18:22:21 >  
+# 18:22:21 >  Done.
+# 18:22:21 >  
 
