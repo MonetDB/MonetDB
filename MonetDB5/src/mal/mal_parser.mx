@@ -477,48 +477,73 @@ int cstToken(Client cntxt, ValPtr cst)
 		}
 	}
 	if( cst->vtype == TYPE_flt) {
-		cst->val.fval = (flt) strtof(CURRENT(cntxt),NULL);
+		int len= i;
+		float *pval= 0;
+		fltFromStr(CURRENT(cntxt), &len, &pval);
+		cst->val.fval= *pval;
+		if( pval) GDKfree(pval);
 	}
 	if( cst->vtype == TYPE_dbl){
-		cst->val.dval = (dbl) strtod(CURRENT(cntxt),NULL);
-		if( cst->val.dval>= FLT_MIN && cst->val.dval<= FLT_MAX ){
+		int len= i;
+		double *pval= 0;
+		dblFromStr(CURRENT(cntxt), &len, &pval);
+		cst->val.dval= *pval;
+		if( pval) GDKfree(pval);
+		if( cst->val.dval> FLT_MIN && cst->val.dval<= FLT_MAX ){
 			cst->vtype= TYPE_flt;
 			cst->val.fval = (flt) cst->val.dval;
 		}
 	}
 	if (*s == '@') {
+		cst->vtype = TYPE_oid;
+		errno = 0;
+		cst->val.lval = strtoll(CURRENT(cntxt),NULL,0);
+		if( cst->val.lval <0 || errno== ERANGE )
+			cst->val.oval= oid_nil;
+		else
+			cst->val.oval= (oid) cst->val.lval;
 		i++;
 		s++;
-		cst->vtype = TYPE_oid;
 		while (isdigit(*s)) {
 			i++;
 			s++;
 		}
-		cst->val.oval = (oid) strtoll(CURRENT(cntxt),NULL,0);
-	}
+		return i;
+	} 
 	if (*s == 'L') {
-		if (cst->vtype == TYPE_int)
+		if( cst->vtype == TYPE_int)
 			cst->vtype = TYPE_lng;
-		if (cst->vtype == TYPE_flt)
+		if( cst->vtype == TYPE_flt)
 			cst->vtype = TYPE_dbl;
 		i++;
 		s++;
 		if (*s == 'L') {
-			if (cst->vtype == TYPE_int)
-				cst->vtype = TYPE_lng;
 			i++;
 			s++;
 		}
-		if( cst->vtype == TYPE_lng)
-			cst->val.lval= strtoll(CURRENT(cntxt),NULL,0);
-		if( cst->vtype == TYPE_dbl)
-			cst->val.dval= strtod(CURRENT(cntxt),NULL);
+		if( cst->vtype == TYPE_dbl ){
+			int len= i;
+			double *pval= 0;
+			dblFromStr(CURRENT(cntxt), &len, &pval);
+			cst->val.dval= *pval;
+			if( pval) GDKfree(pval);
+		} else {
+			int len= i;
+			lng *pval= 0;
+			lngFromStr(CURRENT(cntxt), &len, &pval);
+			cst->val.lval= *pval;
+			if( pval) GDKfree(pval);
+			if( cst->val.lval> INT_MIN && cst->val.lval<= INT_MAX ){
+				cst->vtype= TYPE_int;
+				cst->val.ival = (int) cst->val.lval;
+			}
+		}
 		return i;
 	}
 handleInts:
 	if( cst->vtype == TYPE_int || cst->vtype == TYPE_lng){
 		l = strtoll(CURRENT(cntxt),NULL,0);
-		if( l>= INT_MIN && l<= INT_MAX ){
+		if( l> INT_MIN && l<= INT_MAX ){
 			cst->vtype= TYPE_int;
 			cst->val.ival = (int)l;
 		} else {

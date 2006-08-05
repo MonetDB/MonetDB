@@ -644,6 +644,11 @@ possible change in the control flow.
 	            stkpc= pci->jump; 
 	        else stkpc++;
 	        break;
+	    case TYPE_chr:
+	        if( v->val.cval[0] )
+	            stkpc= pci->jump; 
+	        else stkpc++;
+	        break;
 	    case TYPE_str:
 	        if( v->len > 0 && v->val.pval!= str_nil )
 	            stkpc= pci->jump; 
