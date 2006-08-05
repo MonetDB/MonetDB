@@ -3327,6 +3327,8 @@ mapi_execute_internal(MapiHdl hdl)
 	finish_handle(hdl);
 	mapi_param_store(hdl);
 	cmd = hdl->query;
+	if( cmd == NULL)
+		return MERROR;
 	size = strlen(cmd);
 
 	if (mid->trace) {
