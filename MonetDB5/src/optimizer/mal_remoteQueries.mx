@@ -76,6 +76,23 @@ this code can be further improved by glueing
 the instructions together when until the first
 result is needed. 
 @{
+Glueing together statements should respect the flow.
+It seems that we can savely concatenate subsequence
+requests.
+@verbatim
+mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+mserver.rpc(mid,"b:bat[:void,:int] :=bbp.bind(\"rvar\");");
+mserver.rpc(mid,"c:=algebra.select(b,0,12);");
+c:bat[:void,:int]:= mserver.rpc(mid, "io.print(c);");
+io.print(c);
+mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+low:= 5+1;
+mserver.put(mid,"low",low);
+i:= mserver.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
+io.printf(" count %d\n",i);
+io.print(d);
+@end verbatim
+
 @mal
 pattern optimizer.remoteQueries():str
 address QOTRQoptimizer;
@@ -321,12 +338,17 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
+				int tpe;
+				setVisible(mb,getArg(p,0));
+				j = getArg(p,1); /* lookupServer with key */
+				tpe = getArgType(mb,p,0);
+
 				@:lookupServer(4)@
 
 				/* turn the instruction into a local one */
 				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
 
-				@:prepareRemote(TYPE_void)@
+				@:prepareRemote(tpe)@
 				@:putRemoteVariables()@
 				@:remoteAction()@
 			} else
