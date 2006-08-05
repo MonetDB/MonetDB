@@ -20,13 +20,13 @@ install the MonetDB SQL front end on the same system.  See the file
 `MonetDB HowToStart-Win32.txt`__ for information on how to compile and
 install MonetDB.
 
-__ ../MonetDB/Windows/index.html
+__ ../../MonetDB/Windows/index.html
 
 For compilation and installation on a Unix system (e.g., Linux, IRIX,
 Solaris, AIX, MacOS X/Darwin), or on Windows using CYGWIN, see the
 instructions in the file `HowToStart-SQL`__.
 
-__ Unix/index.html
+__ ../Unix/index.html
 
 
 Prerequisites
