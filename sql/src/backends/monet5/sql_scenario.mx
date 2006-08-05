@@ -1002,7 +1002,7 @@ produce code.
 
 		s = sql_symbol2stmt(m);
 
-		if (!s && (err = mvc_status(m))) {
+		if (s==0 || (err = mvc_status(m))) {
 			msg = throwMessage("SQLparser", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
