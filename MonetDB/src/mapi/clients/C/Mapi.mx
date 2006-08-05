@@ -1490,7 +1490,7 @@ add_error(struct MapiResultSet *result, char *error)
 char *
 mapi_result_error(MapiHdl hdl)
 {
-	return hdl->result ? hdl->result->errorstr : NULL;
+	return hdl && hdl->result ? hdl->result->errorstr : NULL;
 }
 
 /* Go to the next result set, if any, and close the current result

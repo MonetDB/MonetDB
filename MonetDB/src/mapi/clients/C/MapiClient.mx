@@ -17,50 +17,72 @@
 @a Sjoerd Mullender, based on code by M. Kersten and Peter Boncz and Niels Nes
 @v 5
 @f MapiClient
-@* The Mapi Client interface (V4+V5)
+@* The Mapi Client interface 
 A textual interface to the Monet server using the Mapi library,
-providing command-line MIL access for its users. It is the preferred
+providing command-line access for its users. It is the preferred
 interface for non-DBAs.
 
 @+ Manual Page
-@T
-The {\tt MapiClient} program provides a textual
+The @code{MapiClient} program provides a textual
 interface to the MonetDB server. Unlike the Mserver console, the
-{\tt MapiClient} program is intended not only for the database
+@code{MapiClient} program is intended not only for the database
 administrator, but for all users. It is more comfortable than the
 console, since it provides a command history and automatic file name
-completion. The default authorization for SQL interaction is the user
-'monetdb'.
+completion. 
 
-\begin{verbatim}
+@verbatim
 MapiClient [options] [inputfile+]
-\end{verbatim}
+@end verbatim
 
 The following options are supported:
 
-\begin{tabular} {l l l}
- -b t/f      & --blocked=true/false & blocked mode \\
- -D          & --dump               & dump sql database \\
- -e          & --error              & exit on error \\
- -h hostname & --host=hostname      & host to connect to \\
- -l language & --language=lang      & {mal,sql,mil,xquery} \\
- -P passwd   & --passwd=passwd      & password \\
- -p portnr   & --port=portnr        & port to connect to \\
- -d database & --database=database  & database to connect to \\
- -s stmt     & --statement=stmt     & run single statement \\
- -t          & --trace              & trace Monet interaction \\
- -T          & --time               & time commands \\
- -u user     & --user=user          & user id \\
- -H          & --history            & load/save cmdline history (default off) \\
- -?          & --help               & show this usage message \\
-\end{tabular}
+@multitable @columnfractions .25 .25 .25 @verb @verb @verb
+@item -b t/f      
+@tab --blocked=true/false
+@tab blocked mode 
+@item -D          
+@tab --dump           
+@tab dump sql database 
+@item -e          
+@tab --error          
+@tab exit on error 
+@item -h hostname 
+@tab --host=hostname  
+@tab host to connect to 
+@item -l language 
+@tab --language=lang  
+@tab {mal,sql,mil} 
+@item -P passwd   
+@tab --passwd=passwd  
+@tab password 
+@item -p portnr   
+@tab --port=portnr    
+@tab port to connect to 
+@item -s stmt     
+@tab --statement=stmt 
+@tab run single statement 
+@item -t          
+@tab --trace          
+@tab trace Monet interaction 
+@item -T          
+@tab --time           
+@tab time commands 
+@item -u user     
+@tab --user=user      
+@tab user id 
+@item -H          
+@tab --history        
+@tab load/save cmdline history (default off) 
+@item -?          
+@tab --help           
+@tab show this usage message 
+@end multitable
 
 Calling "MapiClient -l sql" establishes a SQL connection with an
 Mserver server running on the local machine. The default user
 'monetdb' is used, which provides administrative rights.
 To protect your database you may want to introduce another DBA name and
 limit the access permisions of 'monetdb' to the level of a guest account.
-@
 
 @{
 @+ Implementation
@@ -1519,3 +1541,4 @@ main(int argc, char **argv)
 	mapi_disconnect(mid);
 	return c;
 }
+@}
