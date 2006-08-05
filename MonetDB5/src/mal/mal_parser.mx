@@ -533,10 +533,6 @@ int cstToken(Client cntxt, ValPtr cst)
 			lngFromStr(CURRENT(cntxt), &len, &pval);
 			cst->val.lval= *pval;
 			if( pval) GDKfree(pval);
-			if( cst->val.lval> INT_MIN && cst->val.lval<= INT_MAX ){
-				cst->vtype= TYPE_int;
-				cst->val.ival = (int) cst->val.lval;
-			}
 		}
 		return i;
 	}
