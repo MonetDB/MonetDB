@@ -602,7 +602,8 @@ module radix;
 
 pattern radix_cluster( b:bat[:any_1,:any_2], limits:str, perc:flt, radix1:int ... ):bat[:any_1,:any_2]
 address M5_RDX_radix_cluster
-comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses
+comment
+"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses
  the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower
  significant bits) can be indicated by passing a negative number of bits as first parameter.
 
@@ -614,188 +615,269 @@ comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clus
  the cluster sizes.
 
  If you pass a non-empty but writable limits bat, it will be used as above for resume,
- and will also be overwritten with the new cluster boundaries";
+ and will also be overwritten with the new cluster boundaries"
+;
 
 pattern radix_cluster( b:bat[:any_1,:any_2], perc:flt, radix1:int ... ):bat[:any_1,:any_2]
 address M5_RDX_radix_cluster_l
-comment "shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc, radix1, ... );";
+comment
+"shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc, radix1, ... );"
+;
 
 pattern radix_cluster( b:bat[:any_1,:any_2], limits:str, radix1:int ... ):bat[:any_1,:any_2]
 address M5_RDX_radix_cluster_p
-comment "shortcut for:  radix_cluster( b, limits, perc=1.0, radix1, ... );";
+comment
+"shortcut for:  radix_cluster( b, limits, perc=1.0, radix1, ... );"
+;
 
 pattern radix_cluster( b:bat[:any_1,:any_2], radix1:int ... ):bat[:any_1,:any_2]
 address M5_RDX_radix_cluster_lp
-comment "shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc=1.0, radix1, ... );";
+comment
+"shortcut for:  radix_cluster( b, limits=\"tmp_0\", perc=1.0, radix1, ... );"
+;
 
 command radix_cluster2( b:bat[:any_1,:any_2], p:int, r:int, i:int ):bat[:any_1,:any_2]
 address M5_RDX_radix_cluster2
-comment "(Partially) radix-cluster b in p (<=4) passes on r in total (r/p bits per pass),
- ignoring the lower i bits.";
+comment
+"(Partially) radix-cluster b in p (<=4) passes on r in total (r/p bits per pass),
+ ignoring the lower i bits."
+;
 
 
 command radix_bits( b:bat[:any_1,:any_2] ):int
 address M5_RDX_radix_bits
-comment "return the number of bits on which the head column is radix clustered.";
+comment
+"return the number of bits on which the head column is radix clustered."
+;
 
 
 command radix_count( b:bat[:oid,:oid], shift:int, radix:int ):bat[:int,:int]
 address M5_RDX_radix_count
-comment "return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.
+comment
+"return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.
  the first int holds the number of radix bits, the second how many lower bits to ignore.
  notice that the bat b maybe partially radix-clustered (or not at all). the radix_count
- command just detects consecutive chunks where ( 1 ) the tail values have the same specified
- radix-bits and (2) the head values are ascending";
+ command just detects consecutive chunks where (1) the tail values have the same specified
+ radix-bits and (2) the head values are ascending"
+;
 
 command radix_count2( b:bat[:any_1,:oid], shift:int, radix:int ):bat[:int,:int]
 address M5_RDX_radix_count2
-comment "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail
-the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift";
+comment
+"generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail
+the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
+;
 
 
 command radix_decluster( b:bat[:oid,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
 address M5_RDX_radix_decluster
-comment "merge a (partially) radix-clustered dense collection of oids back to their original void
+comment
+"merge a (partially) radix-clustered dense collection of oids back to their original void
  position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier
- that tells how many times the number of chunks the matching-window-size should be.";
+ that tells how many times the number of chunks the matching-window-size should be."
+;
 
 command radix_decluster( b:bat[:oid,:any_1], radix_cnt:bat[:int,:int] ):bat[:void,:any_1]
 address M5_RDX_radix_decluster_m
-comment "shortcut for:  radix_decluster( b, radix_cnt, multiplier=4 );";
+comment
+"shortcut for:  radix_decluster( b, radix_cnt, multiplier=4 );"
+;
 
 
 command radix_decluster2( b:bat[:any_2,:oid], a:bat[:any_2,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
 address M5_RDX_radix_decluster2
-comment "";
+comment
+""
+;
 
 command radix_decluster3( b:bat[:any_2,:oid], a:bat[:any_2,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
 address M5_RDX_radix_decluster3
-comment "";
+comment
+""
+;
 
 command radix_decluster4( b:bat[:any_2,:oid], a:bat[:any_2,:any_1], radix_cnt:bat[:int,:int], multiplier:int ):bat[:void,:any_1]
 address M5_RDX_radix_decluster4
-comment "";
+comment
+""
+;
 
 
 command radix_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, hitrate:int ):bat[:any_1,:any_3]
 address M5_RDX_radix_join
-comment "nested-loop join on radix clustered inputs";
+comment
+"nested-loop join on radix clustered inputs"
+;
 
 command radix_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int ):bat[:any_1,:any_3]
 address M5_RDX_radix_join_h
-comment "shortcut for:  radix_join( l, r, radix, hitrate=1 );";
+comment
+"shortcut for:  radix_join( l, r, radix, hitrate=1 );"
+;
 
 command radix_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3] ):bat[:any_1,:any_3]
 address M5_RDX_radix_join_xh
-comment "shortcut for:  radix_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1 );";
+comment
+"shortcut for:  radix_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1 );"
+;
 
 
 command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, hitrate:int, cutoff:bit ):bat[:any_1,:any_3]
 address M5_RDX_phash_join
-comment "partitioned hash-join on radix clustered inputs";
+comment
+"partitioned hash-join on radix clustered inputs"
+;
 
 command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, hitrate:int ):bat[:any_1,:any_3]
 address M5_RDX_phash_join_c
-comment "shortcut for:  phash_join( l, r, radix, hitrate, cutoff=key(r) );";
+comment
+"shortcut for:  phash_join( l, r, radix, hitrate, cutoff=key(r) );"
+;
 
 command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int, cutoff:bit ):bat[:any_1,:any_3]
 address M5_RDX_phash_join_h
-comment "shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff );";
+comment
+"shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff );"
+;
 
 command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], radix:int ):bat[:any_1,:any_3]
 address M5_RDX_phash_join_hc
-comment "shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff=key(r) );";
+comment
+"shortcut for:  phash_join( l, r, radix, hitrate=1, cutoff=key(r) );"
+;
 
 command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3], cutoff:bit ):bat[:any_1,:any_3]
 address M5_RDX_phash_join_xh
-comment "shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff );";
+comment
+"shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff );"
+;
 
 command phash_join( l:bat[:any_1,:any_2], r:bat[:any_2,:any_3] ):bat[:any_1,:any_3]
 address M5_RDX_phash_join_xhc
-comment "shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff=key(r) );";
+comment
+"shortcut for:  phash_join( l, r, radix=min(radix_bits(reverse(l)), radix_bits(r)), hitrate=1, cutoff=key(r) );"
+;
 
 
 command jivejoin0( proj:bat[:oid,:oid], attr:bat[:void,:any_1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:any_1]
 address M5_RDX_jivejoin0
-comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
+comment
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+;
 
 command jivejoin1( preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:any_1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:any_1]
 address M5_RDX_jivejoin1
-comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
+comment
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+;
 
 command jivejoin2( proj:bat[:oid,:oid], attr:bat[:void,:any_1] ):bat[:void,:any_1]
 address M5_RDX_jivejoin2
-comment "positional join that creates a void head by inserting the join result positionally";
+comment
+"positional join that creates a void head by inserting the join result positionally"
+;
 
 
 command posjoin( c:bat[:void,:oid], v:bat[:void,:any_1], radix_bits:int, stride:int, vector_size:int ):bat[:void,:any_1]
 address M5_RDX_posjoin_clustered
-comment "perform a positional join that exploits radix-clusteredness for prefetching";
+comment
+"perform a positional join that exploits radix-clusteredness for prefetching"
+;
 
 command posjoin( c:bat[:void,:oid], v:bat[:void,:any_1], radix_bits:int, stride:int ):bat[:void,:any_1]
 address M5_RDX_posjoin_clustered_v
-comment "shortcut for:  posjoin( c, v, radix_bits, stride, vector_size=512 );";
+comment
+"shortcut for:  posjoin( c, v, radix_bits, stride, vector_size=512 );"
+;
 
 command posjoin( c:bat[:void,:oid], v:bat[:void,:any_1], radix_bits:int ):bat[:void,:any_1]
 address M5_RDX_posjoin_clustered_sv
-comment "shortcut for:  posjoin( c, v, radix_bits, stride=128, vector_size=512 );";
+comment
+"shortcut for:  posjoin( c, v, radix_bits, stride=128, vector_size=512 );"
+;
 
 
 command cache_join( l:bat[:void,:oid], r:bat[:void,:any_1], cache_size:int, cache_line_size:int ):bat[:oid,:any_1]
 address M5_RDX_cache_join
-comment "cache-conscious positional (\"fetch-\") join with given cache_size & cache_line_size";
+comment
+"cache-conscious positional (\"fetch-\") join with given cache_size & cache_line_size"
+;
 
 command cache_join( l:bat[:void,:oid], r:bat[:void,:any_1] ):bat[:oid,:any_1]
 address M5_RDX_cache_join_256k_32
-comment "shortcut for:  cache_join( l, r, cache_size=256*1024, cache_line_size=32 );";
+comment
+"shortcut for:  cache_join( l, r, cache_size=256*1024, cache_line_size=32 );"
+;
 
 
 command uniform( base:oid, size:int, domain:int ):bat[:oid,:int]
 address M5_RDX_BATuniform
-comment "create a random bat of certain size, head values starting from base, unique, dense and ordered,
- tail values perfect uniform from a certain domain ((domain >= size)  =>  unique tails).";
+comment
+"create a random bat of certain size, head values starting from base, unique, dense and ordered,
+ tail values perfect uniform from a certain domain ((domain >= size)  =>  unique tails)."
+;
 
 command uniform( size:int, domain:int ):bat[:oid,:int]
 address M5_RDX_BATuniform_b
-comment "shortcut for:  uniform( base=0@0, size, domain);";
+comment
+"shortcut for:  uniform( base=0@0, size, domain);"
+;
 
 command uniform( size:int ):bat[:oid,:int]
 address M5_RDX_BATuniform_bd
-comment "shortcut for:  uniform( base=0@0, size, domain=size);";
+comment
+"shortcut for:  uniform( base=0@0, size, domain=size);"
+;
 
 
 command normal( base:oid, size:int, domain:int, stddev:int, mean:int ):bat[:oid,:int]
 address M5_RDX_BATnormal
-comment "create a random bat of certain size, head values starting from base, unique, dense and ordered,
- tail values from a normal distribution between [0..domain] with given stddev & mean.";
+comment
+"create a random bat of certain size, head values starting from base, unique, dense and ordered,
+ tail values from a normal distribution between [0..domain] with given stddev & mean."
+;
 
 command normal( size:int, domain:int, stddev:int, mean:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_b
-comment "shortcut for:  normal( base=0@0, size, domain, stddev, mean);";
+comment
+"shortcut for:  normal( base=0@0, size, domain, stddev, mean);"
+;
 
 command normal( base:oid, size:int, domain:int, stddev:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_m
-comment "shortcut for:  normal( base, size, domain, stddev, mean=domain/2);";
+comment
+"shortcut for:  normal( base, size, domain, stddev, mean=domain/2);"
+;
 
 command normal( size:int, domain:int, stddev:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_bm
-comment "shortcut for:  normal( base=0@0, size, domain, stddev, mean=domain/2);";
+comment
+"shortcut for:  normal( base=0@0, size, domain, stddev, mean=domain/2);"
+;
 
 command normal( base:oid, size:int, domain:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_vm
-comment "shortcut for:  normal( base, size, domain, stddev=domain/10, mean=domain/2);";
+comment
+"shortcut for:  normal( base, size, domain, stddev=domain/10, mean=domain/2);"
+;
 
 command normal( size:int, domain:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_bvm
-comment "shortcut for:  normal( base=0@0, size, domain, stddev=domain/10, mean=domain/2);";
+comment
+"shortcut for:  normal( base=0@0, size, domain, stddev=domain/10, mean=domain/2);"
+;
 
 command normal( base:oid, size:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_dvm
-comment "shortcut for:  normal( base, size, domain=size, stddev=domain/10, mean=domain/2);";
+comment
+"shortcut for:  normal( base, size, domain=size, stddev=domain/10, mean=domain/2);"
+;
 
 command normal( size:int ):bat[:oid,:int]
 address M5_RDX_BATnormal_bdvm
-comment "shortcut for:  normal( base=0@0, size, domain=size, stddev=domain/10, mean=domain/2);";
+comment
+"shortcut for:  normal( base=0@0, size, domain=size, stddev=domain/10, mean=domain/2);"
+;
 
 @(
  @= integer
@@ -812,11 +894,15 @@ comment "shortcut for:  normal( base=0@0, size, domain=size, stddev=domain/10, m
 
 command [pax]( b:bat[:any_1,:integer@1] ):bat[:any_1,:pax@1]
 address M5_RDX_BATpax
-comment "convert an integer@1 to pax@1";
+comment
+"convert an integer@1 to pax@1"
+;
 
 command [integer]( b:bat[:any_1,:integer@1], width:int ):bat[:any_1,:any]
 address M5_RDX_BATinteger
-comment "create a view that makes tail column appear as an integerX column for some width=X";
+comment
+"create a view that makes tail column appear as an integerX column for some width=X"
+;
 
  @= int
 .ATOM Int@1 = integer@1;
@@ -824,38 +910,56 @@ comment "create a view that makes tail column appear as an integerX column for s
 
 command [IntX]( b:bat[:any_1,:integer@1] ):bat[:any_1,:Int@1]
 address M5_RDX_BATintX
-comment "convert an integer@1 to Int@1";
+comment
+"convert an integer@1 to Int@1"
+;
 
 command jivejoin1( preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:integer@1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:Int@1]
 address M5_RDX_jivejoin1
-comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
+comment
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+;
 
 command jivejoin1( preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:pax@1], cnt:bat[:int,:int], shift:int, radix:int ):bat[:void,:Int@1]
 address M5_RDX_jivejoin1
-comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
+comment
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+;
 
 command jivejoin2( proj:bat[:oid,:oid], attr:bat[:void,:integer@1] ):bat[:void,:Int@1]
 address M5_RDX_jivejoin2
-comment "positional join that creates a void head by inserting the join result positionally";
+comment
+"positional join that creates a void head by inserting the join result positionally"
+;
 
 command jivejoin2( proj:bat[:oid,:oid], attr:bat[:void,:pax@1] ):bat[:void,:Int@1]
 address M5_RDX_jivejoin2
-comment "positional join that creates a void head by inserting the join result positionally";
+comment
+"positional join that creates a void head by inserting the join result positionally"
+;
 
 command posjoin( proj:bat[:void,:oid], attr:bat[:void,:integer@1] ):bat[:void,:Int@1]
 address M5_RDX_posjoin_tuple
-comment "positional join with built-in NSM projection";
+comment
+"positional join with built-in NSM projection"
+;
 
 command posjoin( proj:bat[:void,:oid], attr:bat[:void,:pax@1] ):bat[:void,:Int@1]
 address M5_RDX_posjoin_tuple
-comment "positional join with built-in PAX projection";
+comment
+"positional join with built-in PAX projection"
+;
 
 pattern radix_cluster( b:bat[:integer@1,:any_2], limits:str, perc:flt, radix1:int ... ):bat[:Int@1,:any_2]
 address M5_RDX_radix_cluster
-comment "";
+comment
+""
+;
 pattern radix_cluster( b:bat[:pax@1,:any_2], limits:str, perc:flt, radix1:int ... ):bat[:Int@1,:any_2]
 address M5_RDX_radix_cluster
-comment "";
+comment
+""
+;
 
  @= tpe
  @:@1(1,4)@
@@ -873,20 +977,28 @@ comment "";
 
 command [integer]( b:bat[:any_1,:int], width:int ):bat[:any_1,:any]
 address M5_RDX_BATinteger
-comment "create a view that makes tail column appear as an integerX column for some width=X";
+comment
+"create a view that makes tail column appear as an integerX column for some width=X"
+;
 
 command [integer]( b:bat[:any_1,:int] ):bat[:any_1,:integer1]
 address M5_RDX_BATinteger1
-comment "shortcut for:  [integer]( b, width=1 );";
+comment
+"shortcut for:  [integer]( b, width=1 );"
+;
 
 
 command pax_blocksize( int ):int
 address M5_RDX_pax_blocksize
-comment "set the pax blocksize";
+comment
+"set the pax blocksize"
+;
 
 command pax_blocksize(  ):int
 address M5_RDX_pax_blocksize_get
-comment "get the pax blocksize";
+comment
+"get the pax blocksize"
+;
 @)
 
 @(
