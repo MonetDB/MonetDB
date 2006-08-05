@@ -1209,6 +1209,13 @@ consumed before continueing.
 A few extra routines should be defined to
 dump and inspect the sessions table.
 	
+@= catchErrors
+	if( mapi_error(mid) == -4 && hdl && mapi_result_error(hdl) ){
+		return throwMessage("@1", mapi_result_error(hdl));
+	}
+	if( mapi_error(mid) )
+		return throwMessage("@1",
+			mapi_result_error(SERVERsessions[i].hdl));
 @c
 #define MAXSESSIONS 32
 struct{
@@ -1386,29 +1393,24 @@ SERVERping(int *ret, int *key){
 str 
 SERVERquery(int *ret, int *key, str *qry){
 	Mapi mid;
+	MapiHdl hdl=0;
 	int i;
 	@:accessTest(*key,query)@
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl = mapi_query(mid, *qry);
-	if (mapi_result_error(SERVERsessions[i].hdl) != NULL) {
-		str msg = throwMessage("mserver.query",
-			mapi_result_error(SERVERsessions[i].hdl));
-		mapi_close_handle(SERVERsessions[i].hdl);
-		return(msg);
-	}
+	@:catchErrors(mserver.query)@
 	*ret = *key;
 	return MAL_SUCCEED;
 }
 str 
 SERVERquery_handle(int *ret, int *key, str *qry){
 	Mapi mid;
+	MapiHdl hdl=0;
 	int i;
 	@:accessTest(*key,query_handle)@
 	mapi_query_handle(SERVERsessions[i].hdl, *qry);
-	if( mapi_error(mid) ) 
-		return throwMessage("mserver.query_handle",
-			mapi_result_error(SERVERsessions[i].hdl));
+	@:catchErrors(mserver.query_handle)@
 	*ret = *key;
 	return MAL_SUCCEED;
 }
@@ -1789,8 +1791,7 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	hdl= mapi_query(mid, qry);
-	if( mapi_error(mid) )
-		return throwMessage("mapi.rpc",mapi_error_str(mid));
+	@:catchErrors(mserver.rpc)@
 	GDKfree(qry);
 
 	i= 0;
@@ -1853,8 +1854,7 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tt= getTailType(getVarType(mb,getArg(pci,0)));
 
 	hdl= mapi_query(mid, *qry);
-	if( mapi_error(mid) )
-		return throwMessage("mapi.rpc",mapi_error_str(mid));
+	@:catchErrors(mserver.rpc)@
 	
 	b= BATnew(ht,tt,256);
 	i= 0;
@@ -1895,6 +1895,7 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ptr val;
 	int i,tpe;
 	Mapi mid;
+	MapiHdl hdl=0;
 	char *w=0, buf[BUFSIZ];
 
 	key= (int*) getArgReference(stk,pci,pci->retc);
@@ -1917,8 +1918,7 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
-	if( mapi_error(mid) )
-		return throwMessage("mapi.put",mapi_result_error(SERVERsessions[i].hdl));
+	@:catchErrors(mserver.put)@
 	return MAL_SUCCEED;
 }
 str
@@ -1953,6 +1953,7 @@ SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *nme,*tab,*col;
 	int i;
 	Mapi mid;
+	MapiHdl hdl=0;
 	char buf[BUFSIZ];
 	key= (int*) getArgReference(stk,pci,pci->retc);
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
@@ -1983,9 +1984,7 @@ SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
-	if( mapi_error(mid) )
-		return throwMessage("mapi.bind",
-			mapi_result_error(SERVERsessions[i].hdl));
+	@:catchErrors(mserver.bind)@
 	return MAL_SUCCEED;
 }
 @}
