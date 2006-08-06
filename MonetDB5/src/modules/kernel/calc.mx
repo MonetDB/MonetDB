@@ -359,6 +359,7 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(chr,lng)@
 
 	@:mal_coercion(ptr,lng)@
+	@:mal_coercion(lng,ptr)@
 
 @}
 @+ Boolean operations { or, xor, and, not }
@@ -760,6 +761,21 @@ str CALClengthstr(int *res , str *a ) {
 @:any_binary_minmax(MIN,<=)@
 @:any_binary_minmax(MAX,>)@
 
+@-
+@= calc_macrobinop
+mal_export str CALCbinary@1@3(@3 *res , @3 *a, @3 *b );
+str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
+#ifdef DEBUG
+	printf( "CALCbinary@1@3\n");
+#endif
+   if (*a == @3_nil || *b == @3_nil) {
+	*res = @3_nil;
+   } else {
+   	*res = @2 (*a,*b);
+   }
+   return(MAL_SUCCEED);
+}
+@c
 #define calc_max(s1,s2) ((s1)>(s2))?(s1):(s2)
 @:calc_macrobinop(MAX,calc_max,chr)@
 @:calc_macrobinop(MAX,calc_max,sht)@
@@ -1268,131 +1284,91 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 @:calc_binop(LSH,<<,@1,int,@1)@
 @:calc_binop(RSH,>>,@1,int,@1)@
 
-@= calc_macrobinop
-mal_export str CALCbinary@1@3(@3 *res , @3 *a, @3 *b );
-str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
-#ifdef DEBUG
-	printf( "CALCbinary@1@3\n");
-#endif
-   if (*a == @3_nil || *b == @3_nil) {
-	*res = @3_nil;
-   } else {
-   	*res = @2 (*a,*b);
-   }
-   return(MAL_SUCCEED);
-}
-@
-Coercions do not check on information loss
-@= mal_coercion_impl2
-mal_export str CALC@22@1(@1 *res, @2 *a);
-str CALC@22@1(@1 *res, @2 *a)
-{
-	char buf[1024];
-	sprintf(buf,"%@3",*a);
-	*res = (@1) GDKstrdup(buf);
-	return MAL_SUCCEED;
-}
+@+ The Coercion implementation
+Coercions generally do not check on information loss
 @-
 @= mal_coercion_impl
 mal_export str CALC@22@1(@1 *res, @2 *a);
 str CALC@22@1(@1 *res, @2 *a)
 {
-	if (*a == @2_nil)
+	if (*a == @2_nil @3)
 		*res= @1_nil;
 	else
-		*res= (@1) *a;
-	return MAL_SUCCEED;
-}
-@= mal_coercion_bit_impl
-mal_export str CALC@22bit(oid *res, @2 *a);
-str CALC@22bit(oid *res, @2 *a)
-{
-	if (*a == @2_nil )
-		*res= bit_nil;
-	else
-		*res= (int) *a != 0;
-	return MAL_SUCCEED;
-}
-@= mal_coercion_oid_impl
-mal_export str CALC@22oid(oid *res, @2 *a);
-str CALC@22oid(oid *res, @2 *a)
-{
-	if (*a == @2_nil || (int)*a < 0)
-		*res= oid_nil;
-	else
-		*res= (oid) *a;
+		*res= @4;
 	return MAL_SUCCEED;
 }
 @-
 @c
-@:mal_coercion_bit_impl(bit,bit)@
-@:mal_coercion_bit_impl(bit,oid)@
-@:mal_coercion_bit_impl(bit,chr)@
-@:mal_coercion_bit_impl(bit,sht)@
-@:mal_coercion_bit_impl(bit,int)@
-@:mal_coercion_bit_impl(bit,lng)@
-@:mal_coercion_bit_impl(bit,flt)@
-@:mal_coercion_bit_impl(bit,dbl)@
+@:mal_coercion_impl(bit,bit, , *a != 0)@
+@:mal_coercion_impl(bit,oid, , *a != 0)@
+@:mal_coercion_impl(bit,chr, , *a != 0)@
+@:mal_coercion_impl(bit,sht, , *a != 0)@
+@:mal_coercion_impl(bit,int, , *a != 0)@
+@:mal_coercion_impl(bit,lng, , *a != 0)@
+@:mal_coercion_impl(bit,flt, , *a != 0)@
+@:mal_coercion_impl(bit,dbl, , *a != 0)@
 
-@:mal_coercion_impl(lng,oid)@
-@:mal_coercion_impl(lng,chr)@
-@:mal_coercion_impl(lng,bit)@
-@:mal_coercion_impl(lng,sht)@
-@:mal_coercion_impl(lng,int)@
-@:mal_coercion_impl(lng,lng)@
-@:mal_coercion_impl(lng,flt)@
-@:mal_coercion_impl(lng,dbl)@
+@:mal_coercion_impl(lng,oid,, (lng) *a)@
+@:mal_coercion_impl(lng,chr,, (lng) *a)@
+@:mal_coercion_impl(lng,bit,, (lng) *a)@
+@:mal_coercion_impl(lng,sht,, (lng) *a)@
+@:mal_coercion_impl(lng,int,, (lng) *a)@
+@:mal_coercion_impl(lng,lng,, (lng) *a)@
+@:mal_coercion_impl(lng,flt,, (lng) *a)@
+@:mal_coercion_impl(lng,dbl,, (lng) *a)@
 
-@:mal_coercion_impl(sht,oid)@
-@:mal_coercion_impl(sht,bit)@
-@:mal_coercion_impl(sht,chr)@
-@:mal_coercion_impl(sht,sht)@
-@:mal_coercion_impl(sht,int)@
-@:mal_coercion_impl(sht,lng)@
-@:mal_coercion_impl(sht,flt)@
-@:mal_coercion_impl(sht,dbl)@
+@:mal_coercion_impl(sht,oid, , (sht) *a)@
+@:mal_coercion_impl(sht,bit, , (sht) *a)@
+@:mal_coercion_impl(sht,chr, , (sht) *a)@
+@:mal_coercion_impl(sht,sht, , (sht) *a)@
+@:mal_coercion_impl(sht,int, , (sht) *a)@
+@:mal_coercion_impl(sht,lng, , (sht) *a)@
+@:mal_coercion_impl(sht,flt, , (sht) *a)@
+@:mal_coercion_impl(sht,dbl, , (sht) *a)@
 
-@:mal_coercion_impl(int,oid)@
-@:mal_coercion_impl(int,bit)@
-@:mal_coercion_impl(int,chr)@
-@:mal_coercion_impl(int,sht)@
-@:mal_coercion_impl(int,int)@
-@:mal_coercion_impl(int,lng)@
-@:mal_coercion_impl(int,flt)@
-@:mal_coercion_impl(int,dbl)@
+@:mal_coercion_impl(int,oid, , (int) *a)@
+@:mal_coercion_impl(int,bit, , (int) *a)@
+@:mal_coercion_impl(int,chr, , (int) *a)@
+@:mal_coercion_impl(int,sht, , (int) *a)@
+@:mal_coercion_impl(int,int, , (int) *a)@
+@:mal_coercion_impl(int,lng, , (int) *a)@
+@:mal_coercion_impl(int,flt, , (int) *a)@
+@:mal_coercion_impl(int,dbl, , (int) *a)@
 
-@:mal_coercion_oid_impl(oid,bit)@
-@:mal_coercion_oid_impl(oid,chr)@
-@:mal_coercion_oid_impl(oid,oid)@
-@:mal_coercion_oid_impl(oid,lng)@
-@:mal_coercion_oid_impl(oid,sht)@
-@:mal_coercion_oid_impl(oid,int)@
-@:mal_coercion_oid_impl(oid,flt)@
-@:mal_coercion_oid_impl(oid,dbl)@
+@:mal_coercion_impl(oid,bit, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,chr, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,oid, , (oid) *a)@
+@:mal_coercion_impl(oid,lng, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,sht, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,int, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,flt, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,dbl, || *a < 0 , (oid) *a)@
 
-@:mal_coercion_impl(flt,flt)@
-@:mal_coercion_impl(flt,dbl)@
-@:mal_coercion_impl(flt,sht)@
-@:mal_coercion_impl(flt,chr)@
-@:mal_coercion_impl(flt,int)@
-@:mal_coercion_impl(flt,lng)@
+@:mal_coercion_impl(flt,flt, , (flt) *a)@
+@:mal_coercion_impl(flt,dbl, , (flt) *a)@
+@:mal_coercion_impl(flt,sht, , (flt) *a)@
+@:mal_coercion_impl(flt,chr, , (flt) *a)@
+@:mal_coercion_impl(flt,int, , (flt) *a)@
+@:mal_coercion_impl(flt,lng, , (flt) *a)@
 
-@:mal_coercion_impl(dbl,dbl)@
-@:mal_coercion_impl(dbl,flt)@
-@:mal_coercion_impl(dbl,sht)@
-@:mal_coercion_impl(dbl,int)@
-@:mal_coercion_impl(dbl,chr)@
-@:mal_coercion_impl(dbl,lng)@
+@:mal_coercion_impl(dbl,dbl, , (dbl) *a)@
+@:mal_coercion_impl(dbl,flt, , (dbl) *a)@
+@:mal_coercion_impl(dbl,sht, , (dbl) *a)@
+@:mal_coercion_impl(dbl,int, , (dbl) *a)@
+@:mal_coercion_impl(dbl,chr, , (dbl) *a)@
+@:mal_coercion_impl(dbl,lng, , (dbl) *a)@
 
-@:mal_coercion_impl(chr,bit)@
-@:mal_coercion_impl(chr,chr)@
-@:mal_coercion_impl(chr,oid)@
-@:mal_coercion_impl(chr,flt)@
-@:mal_coercion_impl(chr,dbl)@
-@:mal_coercion_impl(chr,sht)@
-@:mal_coercion_impl(chr,int)@
-@:mal_coercion_impl(chr,lng)@
+@:mal_coercion_impl(chr,bit, , (chr) *a)@
+@:mal_coercion_impl(chr,chr, , (chr) *a)@
+@:mal_coercion_impl(chr,oid, , (chr) *a)@
+@:mal_coercion_impl(chr,flt, , (chr) *a)@
+@:mal_coercion_impl(chr,dbl, , (chr) *a)@
+@:mal_coercion_impl(chr,sht, , (chr) *a)@
+@:mal_coercion_impl(chr,int, , (chr) *a)@
+@:mal_coercion_impl(chr,lng, , (chr) *a)@
 
+@:mal_coercion_impl(ptr,lng, , (ptr) *a)@
+@:mal_coercion_impl(lng,ptr, , (lng) *a)@
 
 mal_export str CALCbat2BAT(int *res, bat *bid);
 str CALCbat2BAT(int *res, bat *bid){
@@ -1404,33 +1380,7 @@ str CALCBAT2bat(int *res, bat *bid){
 	*res= *bid;
 	return MAL_SUCCEED;
 }
-
-mal_export str CALClng2ptr(ptr *res, lng *a);
-str
-CALClng2ptr(ptr *res, lng *a)
-{
-	(void) res;
-	(void) a;		/* fool compiler */
-	return MAL_SUCCEED;
-}
-
-mal_export str CALCptr2lng(lng *res, ptr *a);
-str
-CALCptr2lng(lng *res, ptr *a)
-{
-	(void) res;
-	(void) a;		/* fool compiler */
-	return MAL_SUCCEED;
-}
-
 @-
-Old stuff, probably wrong
-	@:mal_coercion_impl2(str,sht,d)@
-	@:mal_coercion_impl2(str,int,d)@
-	@:mal_coercion_impl2(str,lng,D)@
-	@:mal_coercion_impl2(str,flt,f)@
-	@:mal_coercion_impl2(str,dbl,f)@
-@+ The Coercion implementation
 The conversion routines are relatively easy to define.
 @= convertImpl
 
@@ -1566,6 +1516,10 @@ CALCbat2batid(bat *ret, int *bid)
 {
 	BAT *b;
 
+	if( *bid == bat_nil){
+		*ret= bat_nil;
+		return MAL_SUCCEED;
+	}
 	b = BATdescriptor(*bid);
 	if (b == 0)
 		throwMessage("calc.getBAT", "Bat does not exist");
@@ -1580,6 +1534,10 @@ CALCbatid2bat(int *bid, int *ret)
 {
 	BAT *b;
 
+	if( *ret == bat_nil){
+		*bid= bat_nil;
+		return MAL_SUCCEED;
+	}
 	b = BATdescriptor(*ret);
 	if (b == 0)
 		return throwMessage("calc.:bat", "Bat does not exist");
