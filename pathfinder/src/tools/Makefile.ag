@@ -72,5 +72,5 @@ lib_embeddedxq = {
 
 bin_Mbeddedxq = {
 	SOURCES = prog.c
-	LIBS = -L$(MONETDB_PREFIX)/lib -lembeddedxq -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib libembeddedxq -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
