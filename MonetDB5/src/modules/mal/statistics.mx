@@ -776,7 +776,9 @@ str
 STATgetHotset(int *bid)
 {
 	BAT *b;
+	Box box;
 
+	OpenBox("getHotset");
 	b = BATjoin(STAT_id_inuse, STAT_id_nme, BATcount(STAT_id_nme));
 	BBPincref(*bid = b->batCacheid, TRUE);
 	return MAL_SUCCEED;
@@ -795,8 +797,10 @@ STATgetObjects(int *bid)
 s_export str STATget@1(lng *ret, str *nme);
 str
 STATget@1(lng *ret, str *nme){
+	Box box;
 	ptr p;
 	int i;
+	OpenBox("get@1");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if( p == NULL)
 		return throwMessage("statistics.get@1","Object not known");
@@ -820,7 +824,9 @@ STATgetHistogram(int *ret, str *nme)
 	ptr p;
 	int i;
 	BAT *h;
+	Box box;
 
+	OpenBox("getHistogram");
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
 	if (p == NULL)
 		return throwMessage("statistics.getHistogram", "BAT not known");
