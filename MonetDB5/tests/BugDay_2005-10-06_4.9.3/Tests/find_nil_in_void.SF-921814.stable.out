@@ -61,15 +61,15 @@ exit MALexception;	# 9  (MALexception:any)
     z := algebra.find(b,0@0:oid);	# 17 ALGfind (z:str)<-(b:bat[:void,:str])(_10:oid)
     zs := str.str(z);	# 18 STRtostr (zs:str)<-(z:str)
 catch MALexception;	# 19  (MALexception:any) jump 21
-    zs := nil:str;	# 20  (zs:str)<-(_22:str)
+    zs := nil:str;	# 20  (zs:str)<-(_13:str)
 exit MALexception;	# 21  (MALexception:any)
-    io.printf("oid(0) -> %s\n",zs);	# 22 IOprint_formatted_str (_23:int)<-(_15:str)(zs:str)
+    io.printf("oid(0) -> %s\n",zs);	# 22 IOprint_formatted_str (_22:int)<-(_15:str)(zs:str)
     z := algebra.find(b,nil:oid);	# 23 ALGfind (z:str)<-(b:bat[:void,:str])(_16:oid)
     zs := str.str(z);	# 24 STRtostr (zs:str)<-(z:str)
 catch MALexception;	# 25  (MALexception:any) jump 27
-    zs := nil:str;	# 26  (zs:str)<-(_24:str)
+    zs := nil:str;	# 26  (zs:str)<-(_13:str)
 exit MALexception;	# 27  (MALexception:any)
-    io.printf("oid(nil) -> %s\n",zs);	# 28 IOprint_formatted_str (_25:int)<-(_18:str)(zs:str)
+    io.printf("oid(nil) -> %s\n",zs);	# 28 IOprint_formatted_str (_23:int)<-(_18:str)(zs:str)
 end main;	# 29  
 #-----------------#
 # h	t	  # name
