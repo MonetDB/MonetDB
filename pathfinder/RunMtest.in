@@ -51,7 +51,7 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance PATH with Msql and MonetDB binaries
-PATH="${builddir}/compiler:${MONETDB_PREFIX}/bin:$PATH"
+PATH="${builddir}/compiler:${builddir}/src/tools:${MONETDB_PREFIX}/bin:$PATH"
 libpath="${MOD_PATH}"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
