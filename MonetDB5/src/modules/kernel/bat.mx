@@ -2794,10 +2794,14 @@ BKCsetRole(int *r, int *bid, char **hname, char **tname)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setRole", "Cannot access descriptor");
 	}
-	if (*hname == 0)
+	if (hname == 0 || *hname == 0 || **hname == 0){
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.setRole", "head name missing");
-	if (*tname == 0)
+	}
+	if (tname == 0 || *tname == 0 || **tname == 0){
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.setRole", "tail name missing");
+	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
 	*r = 0;
@@ -2812,8 +2816,10 @@ BKCsetColumn(int *r, int *bid, str *tname)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setColumn", "Cannot access descriptor");
 	}
-	if (*tname == 0)
+	if (tname == 0 || *tname == 0 || **tname == 0){
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.setColumn", "column name missing");
+	}
 	BATroles(b, b->hident, *tname);
 	BBPreleaseref(b->batCacheid);
 	*r =0;
@@ -2828,8 +2834,15 @@ BKCsetColumns(int *r, int *bid, str *hname, str *tname)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setColumns", "Cannot access descriptor");
 	}
+	if (hname == 0 || *hname == 0 || **hname == 0){
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("bat.setRole", "head name missing");
+	}
+	if (tname == 0 || *tname == 0 || **tname == 0){
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("bat.setRole", "tail name missing");
+	}
 	BATroles(b, *hname, *tname);
-	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	*r =0;
 	return MAL_SUCCEED;
