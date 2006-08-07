@@ -1565,7 +1565,11 @@ convertConstant(malType type, ValPtr vr)
 			*w = vr->val.cval[0];
 		  } else 
 			ATOMformat(vr->vtype, VALptr(vr), &w);
-		  VALset(vr, type, w);
+			assert(w != NULL);
+			vr->vtype= TYPE_str;
+			vr->len = strlen(w);
+			vr->val.sval= w;
+		  /* VALset(vr, type, w); does not use TYPE-str */
 		}
 		return vr->vtype != type;
 
@@ -1684,7 +1688,9 @@ fndConstant(MalBlkPtr mb, ValPtr cst)
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
 
-		if (v->isaconstant && v->type == cst->vtype && ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
+		if (v && v->isaconstant && 
+			v->type == cst->vtype && 
+			ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
 			return i;
 	}
 	return -1;
@@ -1707,7 +1713,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 {
 	int i, k;
 	ValPtr vr;
-	ptr vcst = VALget(cst);
 
 	if (cst->vtype != type){
 		int otype= cst->vtype;
@@ -1721,24 +1726,17 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(tt);
 			mb->errors++;
 		}
+		assert(cst->vtype== type);
 	}
-	k = mb->vtop - MAL_VAR_WINDOW;
-	if (k < 0)
-		k = 0;
-/* see how much gain it produces, about 5% */
-	for (i = mb->vtop - 1; i >= k; i--) {
-		VarPtr v = getVar(mb, i);
-
-		if (v && v->isaconstant && 
-			v->type == type && 
-			ATOMcmp(cst->vtype, VALget(&v->value), vcst) == 0)
-				return i;
-	}
+	k= fndConstant(mb,cst);
+	if( k >= 0 )
+		return k;
 	k = newTmpVariable(mb, type);
 	isConstant(mb, k) = 1;
 	setFixed(mb, k);
 	vr = &getVarConstant(mb, k);
-	memcpy((char *) vr, cst, sizeof(ValRecord));
+	*vr = *cst;
+	/*memcpy((char *) vr, cst, sizeof(ValRecord));*/
 	return k;
 }
 
