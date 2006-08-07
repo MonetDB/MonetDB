@@ -1,4 +1,7 @@
 #test the statistics module
+mdb.start();
+tz:= bbp.bind("timezones");
+io.print(tz);
 statistics.dump();
 statistics.deposit("timezones");
 statistics.dump();
