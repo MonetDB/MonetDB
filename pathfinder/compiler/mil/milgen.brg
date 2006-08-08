@@ -40,6 +40,7 @@
 #include "oops.h"
 #include "mem.h"
 #include "physical.h"
+#include "alg_dag.h"
 #include "properties.h"
 #include "mil.h"
 
@@ -497,8 +498,7 @@ VAR (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 
 #define MAX_KIDS 10
 
-#define SEEN(p) ((p)->bit_mil_ctr)
-#define LABEL_SEEN(p) ((p)->bit_mil_label)
+#define SEEN(p) ((p)->bit_dag)
 
 enum axis_t {
       ax_anc
@@ -4381,25 +4381,25 @@ label (PFpa_op_t *p)
         STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p), 0, 0);
     }
     else if (L(p) && !R(p)) {
-        if (!LABEL_SEEN(L(p))) label (L(p));
+        if (!SEEN(L(p))) label (L(p));
         STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p),
                                          STATE_LABEL(L(p)),
                                          0);
     }
     else if (!L(p) && R(p)) {
-        if (!LABEL_SEEN(R(p))) label (R(p));
+        if (!SEEN(R(p))) label (R(p));
         STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p),
                                          STATE_LABEL(R(p)),
                                          0);
     }
     else {
-        if (!LABEL_SEEN(L(p))) label (L(p));
-        if (!LABEL_SEEN(R(p))) label (R(p));
+        if (!SEEN(L(p))) label (L(p));
+        if (!SEEN(R(p))) label (R(p));
         STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p),
                                          STATE_LABEL(L(p)),
                                          STATE_LABEL(R(p)));
     }
-    LABEL_SEEN(p) = true;
+    SEEN(p) = true;
 }
 
 /**
@@ -4412,12 +4412,14 @@ PFmilgen (PFpa_op_t *n)
 
     /* set counters in algebra tree nodes */
     inc_refctr (n);
+    PFpa_dag_reset (n);
 
     /* initialize list of variables we use */
     mvars = PFarray (sizeof (mvar_t));
 
     /* enrich algebra tree with state labels for subsequent reduce() call */
     label (n);
+    PFpa_dag_reset (n);
 
     /* we start with an empty MIL program */
     milprog = declare (unused ());

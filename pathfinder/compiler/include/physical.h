@@ -334,10 +334,9 @@ struct PFpa_op_t {
                                         */
     short              state_label;/**< Burg puts its state information here. */
 
-    unsigned     bit_mil_ctr   :1; /**< used in milgen.brg to allow the
-                                        refctr generation on a DAG */
-    unsigned     bit_mil_label :1; /**< used in milgen.brg to prune the
-                                        DAG labeling. */
+    unsigned           bit_reset:1;/**< used to reset the dag bit
+                                             in a DAG traversal */
+    unsigned           bit_dag:1;  /**< enables DAG traversal */
 
     struct PFpa_op_t  *child[PFPA_OP_MAXCHILD];
     unsigned int       refctr;

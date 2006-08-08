@@ -37,14 +37,28 @@
 
 /* helper function that prepares the DAG bit reset */
 static void
-prepare_reset (PFla_op_t *n)
+la_prepare_reset (PFla_op_t *n)
 {
     assert (n);
     if (n->bit_reset)
         return;
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prepare_reset (n->child[i]);
+        la_prepare_reset (n->child[i]);
+
+    n->bit_reset = true;
+}
+
+/* helper function that prepares the DAG bit reset */
+static void
+pa_prepare_reset (PFpa_op_t *n)
+{
+    assert (n);
+    if (n->bit_reset)
+        return;
+
+    for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
+        pa_prepare_reset (n->child[i]);
 
     n->bit_reset = true;
 }
@@ -52,14 +66,30 @@ prepare_reset (PFla_op_t *n)
 /* helper function that reset the DAG bit
    to allow another DAG traversal */
 static void
-dag_bit_reset (PFla_op_t *n)
+la_dag_bit_reset (PFla_op_t *n)
 {
     assert (n);
     if (!n->bit_reset)
         return;
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        dag_bit_reset (n->child[i]);
+        la_dag_bit_reset (n->child[i]);
+
+    n->bit_reset = false;
+    n->bit_dag = false;
+}
+
+/* helper function that reset the DAG bit
+   to allow another DAG traversal */
+static void
+pa_dag_bit_reset (PFpa_op_t *n)
+{
+    assert (n);
+    if (!n->bit_reset)
+        return;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        pa_dag_bit_reset (n->child[i]);
 
     n->bit_reset = false;
     n->bit_dag = false;
@@ -119,8 +149,19 @@ out_bit_reset (PFla_op_t *n)
  */
 void
 PFla_dag_reset (PFla_op_t *n) {
-    prepare_reset (n);
-    dag_bit_reset (n);
+    la_prepare_reset (n);
+    la_dag_bit_reset (n);
+}
+
+/*
+ * Reset the DAG bit of the physical algebra tree.
+ * (it requires a clean reset bit to traverse
+ *  the physical tree as DAG.)
+ */
+void
+PFpa_dag_reset (PFpa_op_t *n) {
+    pa_prepare_reset (n);
+    pa_dag_bit_reset (n);
 }
 
 /*
@@ -130,7 +171,7 @@ PFla_dag_reset (PFla_op_t *n) {
  */
 void
 PFla_in_out_reset (PFla_op_t *n) {
-    prepare_reset (n);
+    la_prepare_reset (n);
     in_out_bit_reset (n);
 }
 
@@ -141,7 +182,7 @@ PFla_in_out_reset (PFla_op_t *n) {
  */
 void
 PFla_in_reset (PFla_op_t *n) {
-    prepare_reset (n);
+    la_prepare_reset (n);
     in_bit_reset (n);
 }
 
@@ -152,7 +193,7 @@ PFla_in_reset (PFla_op_t *n) {
  */
 void
 PFla_out_reset (PFla_op_t *n) {
-    prepare_reset (n);
+    la_prepare_reset (n);
     out_bit_reset (n);
 }
 

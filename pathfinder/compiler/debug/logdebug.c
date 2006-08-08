@@ -182,11 +182,113 @@ static char *atomtype[] = {
     , [aat_qname] = "qname"
 };
 
+static char *
+literal (PFalg_atom_t a)
+{
+    PFarray_t *s = PFarray (sizeof (char));
+
+    if (a.special == amm_min)
+        return "MIN";
+    else if (a.special == amm_max)
+        return "MAX";
+
+    switch (a.type) {
+
+        case aat_nat:
+            PFarray_printf (s, "#%u", a.val.nat);
+            break;
+
+        case aat_int:
+            PFarray_printf (s, "%i", a.val.int_);
+            break;
+            
+        case aat_str:
+        case aat_uA:
+            PFarray_printf (s, "\\\"%s\\\"", a.val.str);
+            break;
+
+        case aat_dec:
+            PFarray_printf (s, "%g", a.val.dec);
+            break;
+
+        case aat_dbl:
+            PFarray_printf (s, "%g", a.val.dbl);
+            break;
+
+        case aat_bln:
+            PFarray_printf (s, a.val.bln ? "true" : "false");
+            break;
+
+        case aat_qname:
+            PFarray_printf (s, "%s", PFqname_str (a.val.qname));
+            break;
+
+        default:
+            PFarray_printf (s, "<node/>");
+            break;
+    }
+
+    return (char *) s->base;
+}
+
+static char *
+xml_literal (PFalg_atom_t a)
+{
+    PFarray_t *s = PFarray (sizeof (char));
+
+    if (a.special == amm_min)
+        PFarray_printf (
+           s, "<value type=\"%s\">MIN</value>",
+           atomtype[a.type]);
+    else if (a.special == amm_max)
+        PFarray_printf (
+           s, "<value type=\"%s\">MAX</value>",
+           atomtype[a.type]);
+    else if (a.type == aat_nat)
+        PFarray_printf (
+           s, "<value type=\"%s\">%u</value>",
+           atomtype[a.type],
+           a.val.nat);
+    else if (a.type == aat_int)
+        PFarray_printf (
+           s, "<value type=\"%s\">%i</value>",
+           atomtype[a.type],
+           a.val.int_);
+    else if (a.type == aat_str || a.type == aat_uA)
+        PFarray_printf (
+           s, "<value type=\"%s\">%s</value>",
+           atomtype[a.type],
+           a.val.str);
+    else if (a.type == aat_dec)
+        PFarray_printf (
+           s, "<value type=\"%s\">%g</value>",
+           atomtype[a.type],
+           a.val.dec);
+    else if (a.type == aat_dbl)
+        PFarray_printf (
+           s, "<value type=\"%s\">%g</value>",
+           atomtype[a.type],
+           a.val.dbl);
+    else if (a.type == aat_bln)
+        PFarray_printf (
+           s, "<value type=\"%s\">%s</value>",
+           atomtype[a.type],
+           a.val.bln ?
+               "true" : "false");
+    else if (a.type == aat_qname)
+        PFarray_printf (s, "%s",
+                PFqname_str (a.val.qname));
+    else
+        PFarray_printf (s, "<value type=\"node\"/>");
+
+    return (char *) s->base;
+}
+
 /**
  * Print algebra tree in AT&T dot notation.
  * @param dot Array into which we print
  * @param n The current node to print (function is recursive)
- * @param node Name of the parent node.
+ * @param node_id the next available node id.
  */
 static unsigned int 
 la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
@@ -282,40 +384,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                 for (c = 0; c < n->sem.lit_tbl.tuples[i].count; c++) {
                     if (c != 0)
                         PFarray_printf (dot, ",");
-
-                    if (n->sem.lit_tbl.tuples[i].atoms[c].special == amm_min)
-                        PFarray_printf (dot, "MIN");
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].special ==
-                             amm_max)
-                        PFarray_printf (dot, "MAX");
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_nat)
-                        PFarray_printf (dot, "#%u",
-                                n->sem.lit_tbl.tuples[i].atoms[c].val.nat);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_int)
-                        PFarray_printf (dot, "%i",
-                                n->sem.lit_tbl.tuples[i].atoms[c].val.int_);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str
-                             || n->sem.lit_tbl.tuples[i].atoms[c].type 
-                             == aat_uA)
-                        PFarray_printf (dot, "\\\"%s\\\"",
-                                n->sem.lit_tbl.tuples[i].atoms[c].val.str);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_dec)
-                        PFarray_printf (dot, "%g",
-                                n->sem.lit_tbl.tuples[i].atoms[c].val.dec);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_dbl)
-                        PFarray_printf (dot, "%g",
-                                n->sem.lit_tbl.tuples[i].atoms[c].val.dbl);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_bln)
-                        PFarray_printf (dot, "%s",
-                                n->sem.lit_tbl.tuples[i].atoms[c].val.bln ?
-                                        "true" : "false");
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type 
-                             == aat_qname)
-                        PFarray_printf (dot, "%s",
-                                PFqname_str (n->sem.lit_tbl.tuples[i]
-                                                    .atoms[c].val.qname));
-                    else
-                        PFarray_printf (dot, "<NODE>");
+                    PFarray_printf (dot, "%s", 
+                                    literal (n->sem.lit_tbl
+                                                   .tuples[i].atoms[c]));
                 }
 
                 PFarray_printf (dot, "]");
@@ -335,41 +406,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             break;
 
         case la_attach:
-            PFarray_printf (dot, "%s (%s), val: ", a_id[n->kind],
-                            PFatt_str (n->sem.attach.attname));
-
-            if (n->sem.attach.value.special == amm_min)
-                PFarray_printf (dot, "MIN");
-            else if (n->sem.attach.value.special ==
-                     amm_max)
-                PFarray_printf (dot, "MAX");
-            else if (n->sem.attach.value.type == aat_nat)
-                PFarray_printf (dot, "#%u",
-                        n->sem.attach.value.val.nat);
-            else if (n->sem.attach.value.type == aat_int)
-                PFarray_printf (dot, "%i",
-                        n->sem.attach.value.val.int_);
-            else if (n->sem.attach.value.type == aat_str
-                     || n->sem.attach.value.type == aat_uA)
-                PFarray_printf (dot, "\\\"%s\\\"",
-                        n->sem.attach.value.val.str);
-            else if (n->sem.attach.value.type == aat_dec)
-                PFarray_printf (dot, "%g",
-                        n->sem.attach.value.val.dec);
-            else if (n->sem.attach.value.type == aat_dbl)
-                PFarray_printf (dot, "%g",
-                        n->sem.attach.value.val.dbl);
-            else if (n->sem.attach.value.type == aat_bln)
-                PFarray_printf (dot, "%s",
-                        n->sem.attach.value.val.bln ?
-                                "true" : "false");
-            else if (n->sem.attach.value.type 
-                     == aat_qname)
-                PFarray_printf (dot, "%s",
-                        PFqname_str (n->sem.attach.value.val.qname));
-            else
-                PFarray_printf (dot, "<NODE>");
-
+            PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
+                            PFatt_str (n->sem.attach.attname),
+                            literal (n->sem.attach.value));
             break;
 
         case la_eqjoin:
@@ -854,15 +893,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
  * Print algebra tree in XML notation.
  * @param xml Array into which we print
  * @param n The current node to print (function is recursive)
- * @param node Name of the parent node.
+ * @param node_id the next available node id.
  */
 static unsigned int 
 la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
 {
     unsigned int c;
 
-    /* enable DAG traversal */
-    n->bit_dag = true;
     assert(n->node_id);
 
     /* open up label */
@@ -970,70 +1007,15 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
 
             for (c = 0; c < n->schema.count;c++) {
                 PFarray_printf (xml, 
-                                "      <column name=\"%s\" new=\"true\">",
+                                "      <column name=\"%s\" new=\"true\">\n",
                                 PFatt_str (n->schema.items[c].name));
                 /* print out tuples in table, if table is not empty */
-                for (unsigned int i = 0; i < n->sem.lit_tbl.count; i++) {
-                    PFarray_printf (xml, "\n          ");
-                    if (n->sem.lit_tbl.tuples[i].atoms[c].special == amm_min)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">MIN</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type]);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].special ==
-                             amm_max)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">MAX</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type]);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_nat)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">%u</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
-                           n->sem.lit_tbl.tuples[i].atoms[c].val.nat);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_int)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">%i</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
-                           n->sem.lit_tbl.tuples[i].atoms[c].val.int_);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str
-                             || n->sem.lit_tbl.tuples[i].atoms[c].type 
-                             == aat_uA)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">%s</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
-                           n->sem.lit_tbl.tuples[i].atoms[c].val.str);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_dec)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">%g</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
-                           n->sem.lit_tbl.tuples[i].atoms[c].val.dec);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_dbl)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">%g</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
-                           n->sem.lit_tbl.tuples[i].atoms[c].val.dbl);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_bln)
-                        PFarray_printf (
-                           xml, 
-                           "<value type=\"%s\">%s</value>",
-                           atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
-                           n->sem.lit_tbl.tuples[i].atoms[c].val.bln ?
-                               "true" : "false");
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type 
-                             == aat_qname)
-                        PFarray_printf (xml, "%s",
-                                PFqname_str (n->sem.lit_tbl.tuples[i]
-                                                    .atoms[c].val.qname));
-                    else
-                        PFarray_printf (xml, "<value type=\"node\"/>");
-                }
-                PFarray_printf (xml, "\n      </column>\n");
+                for (unsigned int i = 0; i < n->sem.lit_tbl.count; i++)
+                    PFarray_printf (xml,
+                                    "          %s\n",
+                                    xml_literal (n->sem.lit_tbl
+                                                       .tuples[i].atoms[c]));
+                PFarray_printf (xml, "      </column>\n");
             }
 
             PFarray_printf (xml, "    </content>\n");
@@ -1052,71 +1034,13 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
 
         case la_attach:
             PFarray_printf (xml, 
-                            "    <content>\n      <column name=\"%s\" "
-                            "new=\"true\">\n        ", 
-                            PFatt_str (n->sem.attach.attname));
-
-            /* print out tuple */
-            if (n->sem.attach.value.special == amm_min)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">MIN</value>",
-                   atomtype[n->sem.attach.value.type]);
-            else if (n->sem.attach.value.special ==
-                     amm_max)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">MAX</value>",
-                   atomtype[n->sem.attach.value.type]);
-            else if (n->sem.attach.value.type == aat_nat)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">%u</value>",
-                   atomtype[n->sem.attach.value.type],
-                   n->sem.attach.value.val.nat);
-            else if (n->sem.attach.value.type == aat_int)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">%i</value>",
-                   atomtype[n->sem.attach.value.type],
-                   n->sem.attach.value.val.int_);
-            else if (n->sem.attach.value.type == aat_str
-                     || n->sem.attach.value.type == aat_uA)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">%s</value>",
-                   atomtype[n->sem.attach.value.type],
-                   n->sem.attach.value.val.str);
-            else if (n->sem.attach.value.type == aat_dec)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">%g</value>",
-                   atomtype[n->sem.attach.value.type],
-                   n->sem.attach.value.val.dec);
-            else if (n->sem.attach.value.type == aat_dbl)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">%g</value>",
-                   atomtype[n->sem.attach.value.type],
-                   n->sem.attach.value.val.dbl);
-            else if (n->sem.attach.value.type == aat_bln)
-                PFarray_printf (
-                   xml, 
-                   "<value type=\"%s\">%s</value>",
-                   atomtype[n->sem.attach.value.type],
-                   n->sem.attach.value.val.bln ?
-                       "true" : "false");
-            else if (n->sem.attach.value.type 
-                     == aat_qname)
-                PFarray_printf (
-                    xml,
-                    "<value type=\"%s\">%s</value>",
-                    atomtype[n->sem.attach.value.type],
-                    PFqname_str (n->sem.attach.value.val.qname));
-            else
-                PFarray_printf (xml, "<value type=\"node\"/>");
-
-            PFarray_printf (xml, "\n      </column>\n    </content>\n");
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        %s\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.attach.attname),
+                            xml_literal (n->sem.attach.value));
             break;
 
         case la_eqjoin:
@@ -1270,7 +1194,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
             PFarray_printf (xml, 
                             "    <content>\n" 
                             "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the count operator"
+                            "        <annotation>new rownum column"
                                     "</annotation>\n"
                             "      </column>\n",
                             PFatt_str (n->sem.rownum.attname));
@@ -1612,6 +1536,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
 
     /* close up label */
     PFarray_printf (xml, "  </node>\n");
+
+    /* mark node visited */
+    n->bit_dag = true;
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
         if (!n->child[c]->bit_dag) {

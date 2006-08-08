@@ -563,6 +563,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             }
             if (status->print_dot)
                 PFpa_dot (pfout, paroot);
+            if (status->print_xml)
+                PFpa_xml (pfout, paroot);
         }
         else
             PFinfo (OOPS_NOTICE,

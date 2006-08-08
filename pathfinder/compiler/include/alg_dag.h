@@ -35,12 +35,19 @@
 
 #include <logical.h>
 
-/*
+/**
  * Reset the DAG bit of the logical algebra tree.
  * (it requires a clean reset bit to traverse
  *  the logical tree as DAG.)
  */
 void PFla_dag_reset (PFla_op_t *n);
+
+/**
+ * Reset the DAG bit of the physical algebra tree.
+ * (it requires a clean reset bit to traverse
+ *  the physical tree as DAG.)
+ */
+void PFpa_dag_reset (PFpa_op_t *n);
 
 /*
  * Reset the IN and OUT bits of the logical algebra tree.

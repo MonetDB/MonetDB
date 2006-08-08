@@ -38,11 +38,11 @@
 #include "pathfinder.h"
 #include "physdebug.h"
 
+#include "alg_dag.h"
 #include "mem.h"
 /* #include "pfstrings.h" */
 #include "prettyp.h"
 #include "oops.h"
-#include "properties.h"
 
 /** Node names to print out for all the Algebra tree nodes. */
 static char *a_id[]  = {
@@ -127,11 +127,92 @@ static char *a_id[]  = {
     , [pa_string_join]     = "fn:string-join"
 };
 
+/** Node names to print out for all the Algebra tree nodes. */
+static char *xml_id[]  = {
+      [pa_serialize]       = "serialize"
+    , [pa_lit_tbl]         = "tbl"
+    , [pa_empty_tbl]       = "empty_tbl"
+    , [pa_attach]          = "attach"
+    , [pa_cross]           = "cross"
+    , [pa_leftjoin]        = "leftjoin"
+    , [pa_eqjoin]          = "eqjoin"
+    , [pa_project]         = "project"
+    , [pa_select]          = "select"
+    , [pa_append_union]    = "append_union"
+    , [pa_merge_union]     = "merge_union"
+    , [pa_intersect]       = "intersect"
+    , [pa_difference]      = "difference"
+    , [pa_sort_distinct]   = "sort_distinct"
+    , [pa_std_sort]        = "sort"
+    , [pa_refine_sort]     = "refine_sort"
+    , [pa_num_add]         = "num-add"
+    , [pa_num_add_atom]    = "num-add (atom)"
+    , [pa_num_sub]         = "num-sub"
+    , [pa_num_sub_atom]    = "num-sub (atom)"
+    , [pa_num_mult]        = "num-mult"
+    , [pa_num_mult_atom]   = "num-mult (atom)"
+    , [pa_num_div]         = "num-div"
+    , [pa_num_div_atom]    = "num-div (atom)"
+    , [pa_num_mod]         = "num-mod"
+    , [pa_num_mod_atom]    = "num-mod (atom)"
+    , [pa_eq]              = "eq"
+    , [pa_eq_atom]         = "eq (atom)"
+    , [pa_gt]              = "gt"
+    , [pa_gt_atom]         = "gt (atom)"
+    , [pa_num_neg]         = "neg"
+    , [pa_bool_and]        = "and"
+    , [pa_bool_or]         = "or"
+    , [pa_bool_not]        = "not"
+    , [pa_bool_and_atom]   = "and (atom)"
+    , [pa_bool_or_atom]    = "or (atom)"
+    , [pa_avg]             = "avg"
+    , [pa_min]             = "max"
+    , [pa_max]             = "min"
+    , [pa_sum]             = "sum"
+    , [pa_hash_count]      = "hash_count"
+    , [pa_merge_rownum]    = "mrownum"
+    , [pa_hash_rownum]     = "hrownum"
+    , [pa_number]          = "number"
+    , [pa_type]            = "type"
+    , [pa_type_assert]     = "type assertion"
+    , [pa_cast]            = "cast"
+    , [pa_llscj_anc]       = "scjoin"
+    , [pa_llscj_anc_self]  = "scjoin"
+    , [pa_llscj_attr]      = "scjoin"
+    , [pa_llscj_child]     = "scjoin"
+    , [pa_llscj_desc]      = "scjoin"
+    , [pa_llscj_desc_self] = "scjoin"
+    , [pa_llscj_foll]      = "scjoin"
+    , [pa_llscj_foll_sibl] = "scjoin"
+    , [pa_llscj_parent]    = "scjoin"
+    , [pa_llscj_prec]      = "scjoin"
+    , [pa_llscj_prec_sibl] = "scjoin"
+    , [pa_doc_tbl]         = "fn:doc"
+    , [pa_doc_access]      = "access"
+    , [pa_element]         = "elem"
+    , [pa_element_tag]     = "elem_tag"
+    , [pa_attribute]       = "attr"
+    , [pa_textnode]        = "text"
+    , [pa_docnode]         = "doc"
+    , [pa_comment]         = "comment"
+    , [pa_processi]        = "pi"
+    , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
+    , [pa_roots]           = "roots"
+    , [pa_fragment]        = "frags"
+    , [pa_frag_union]      = "frag_union"
+    , [pa_empty_frag]      = "empty_frag"
+    , [pa_cond_err]        = "!ERROR"
+    , [pa_concat]          = "fn:concat"
+    , [pa_contains]        = "fn:contains"
+    , [pa_string_join]     = "fn:string-join"
+};
+
 /** string representation of algebra atomic types */
 static char *atomtype[] = {
-      [aat_int]   = "int"
+      [aat_nat]   = "nat"
+    , [aat_int]   = "int"
     , [aat_str]   = "str"
-    , [aat_uA]    = "aU"
+    , [aat_uA]    = "uA"
     , [aat_node]  = "node"
     , [aat_anode] = "attr"
     , [aat_pnode] = "pnode"
@@ -141,26 +222,119 @@ static char *atomtype[] = {
     , [aat_qname] = "qname"
 };
 
-/** Current node id */
-/* static unsigned no = 0; */
-/** Temporary variable to allocate mem for node names */
-static char    *child;
-/** Temporary variable for node labels in dot tree */
-/*static char     label[32];*/
+static char *
+literal (PFalg_atom_t a)
+{
+    PFarray_t *s = PFarray (sizeof (char));
 
-static char * literal (PFalg_atom_t a);
+    if (a.special == amm_min)
+        return "MIN";
+    else if (a.special == amm_max)
+        return "MAX";
+
+    switch (a.type) {
+
+        case aat_nat:
+            PFarray_printf (s, "#%u", a.val.nat);
+            break;
+
+        case aat_int:
+            PFarray_printf (s, "%i", a.val.int_);
+            break;
+            
+        case aat_str:
+        case aat_uA:
+            PFarray_printf (s, "\\\"%s\\\"", a.val.str);
+            break;
+
+        case aat_dec:
+            PFarray_printf (s, "%g", a.val.dec);
+            break;
+
+        case aat_dbl:
+            PFarray_printf (s, "%g", a.val.dbl);
+            break;
+
+        case aat_bln:
+            PFarray_printf (s, a.val.bln ? "true" : "false");
+            break;
+
+        case aat_qname:
+            PFarray_printf (s, "%s", PFqname_str (a.val.qname));
+            break;
+
+        default:
+            PFarray_printf (s, "<node/>");
+            break;
+    }
+
+    return (char *) s->base;
+}
+
+static char *
+xml_literal (PFalg_atom_t a)
+{
+    PFarray_t *s = PFarray (sizeof (char));
+
+    if (a.special == amm_min)
+        PFarray_printf (
+           s, "<value type=\"%s\">MIN</value>",
+           atomtype[a.type]);
+    else if (a.special == amm_max)
+        PFarray_printf (
+           s, "<value type=\"%s\">MAX</value>",
+           atomtype[a.type]);
+    else if (a.type == aat_nat)
+        PFarray_printf (
+           s, "<value type=\"%s\">%u</value>",
+           atomtype[a.type],
+           a.val.nat);
+    else if (a.type == aat_int)
+        PFarray_printf (
+           s, "<value type=\"%s\">%i</value>",
+           atomtype[a.type],
+           a.val.int_);
+    else if (a.type == aat_str || a.type == aat_uA)
+        PFarray_printf (
+           s, "<value type=\"%s\">%s</value>",
+           atomtype[a.type],
+           a.val.str);
+    else if (a.type == aat_dec)
+        PFarray_printf (
+           s, "<value type=\"%s\">%g</value>",
+           atomtype[a.type],
+           a.val.dec);
+    else if (a.type == aat_dbl)
+        PFarray_printf (
+           s, "<value type=\"%s\">%g</value>",
+           atomtype[a.type],
+           a.val.dbl);
+    else if (a.type == aat_bln)
+        PFarray_printf (
+           s, "<value type=\"%s\">%s</value>",
+           atomtype[a.type],
+           a.val.bln ?
+               "true" : "false");
+    else if (a.type == aat_qname)
+        PFarray_printf (s, "%s",
+                PFqname_str (a.val.qname));
+    else
+        PFarray_printf (s, "<value type=\"node\"/>");
+
+    return (char *) s->base;
+}
 
 /**
  * Print algebra tree in AT&T dot notation.
  * @param dot Array into which we print
  * @param n The current node to print (function is recursive)
- * @param node Name of the parent node.
+ * @param node_id the next available node id.
  */
-static void 
-pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
+static unsigned int 
+pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
 {
     unsigned int c;
-    static int node_id = 1;
+    assert(n->node_id);
 
     static char *color[] = {
           [pa_serialize]       = "\"#C0C0C0\""
@@ -241,11 +415,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_string_join]     = "\"#C0C0C0\""
     };
 
-    n->node_id = node_id;
-    node_id++;
-
     /* open up label */
-    PFarray_printf (dot, "%s [label=\"", node);
+    PFarray_printf (dot, "node%i [label=\"", n->node_id);
+
+    /* the following line enables id printing to simplify comparison with
+       generated XML plans */
+    /* PFarray_printf (dot, "id: %i\\n", n->node_id); */
 
     /* create label */
     switch (n->kind)
@@ -660,71 +835,747 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
     /* close up label */
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
-    for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c] != 0; c++) {      
-        child = (char *) PFmalloc (sizeof ("node4294967296"));
+    for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c]; c++) {      
 
         /*
          * Label for child node has already been built, such that
          * only the edge between parent and child must be created
          */
-        if (n->child[c]->node_id != 0) {
-            sprintf (child, "node%i", n->child[c]->node_id);
-            PFarray_printf (dot, "%s -> %s;\n", node, child);
-        }
-        else {
-            sprintf (child, "node%i", node_id);
-            PFarray_printf (dot, "%s -> %s;\n", node, child);
+        if (n->child[c]->node_id == 0)
+            n->child[c]->node_id =  node_id++;
 
-            pa_dot (dot, n->child[c], child);
-        }
+        PFarray_printf (dot, "node%i -> node%i;\n",
+                        n->node_id, n->child[c]->node_id);
     }
+
+    /* mark node visited */
+    n->bit_dag = true;
+
+    for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c]; c++) {
+        if (!n->child[c]->bit_dag)
+            node_id = pa_dot (dot, n->child[c], node_id);
+    }
+
+    return node_id;
+    /* close up label */
 }
 
-static char *
-literal (PFalg_atom_t a)
+/**
+ * Print physical algebra tree in XML notation.
+ * @param xml Array into which we print
+ * @param n The current node to print (function is recursive)
+ * @param node_id the next available node id.
+ */
+static unsigned int 
+pa_xml (PFarray_t *xml, PFpa_op_t *n, unsigned int node_id)
 {
-    PFarray_t *s = PFarray (sizeof (char));
+    unsigned int c;
+    assert(n->node_id);
 
-    if (a.special == amm_min)
-        return "MIN";
-    else if (a.special == amm_max)
-        return "MAX";
+    /* open up label */
+    PFarray_printf (xml,
+                    "  <node id=\"%i\" kind=\"%s\">\n",
+                    n->node_id,
+                    xml_id[n->kind]);
 
-    switch (a.type) {
+    /* create label */
+    switch (n->kind)
+    {
+        case pa_lit_tbl:
+            /* list the attributes of this table */
+            PFarray_printf (xml, "    <content>\n"); 
 
-        case aat_nat:
-            PFarray_printf (s, "#%u", a.val.nat);
+            for (c = 0; c < n->schema.count;c++) {
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" new=\"true\">\n",
+                                PFatt_str (n->schema.items[c].name));
+                /* print out tuples in table, if table is not empty */
+                for (unsigned int i = 0; i < n->sem.lit_tbl.count; i++)
+                    PFarray_printf (xml,
+                                    "          %s\n",
+                                    xml_literal (n->sem.lit_tbl
+                                                       .tuples[i].atoms[c]));
+                PFarray_printf (xml, "      </column>\n");
+            }
+
+            PFarray_printf (xml, "    </content>\n");
             break;
 
-        case aat_int:
-            PFarray_printf (s, "%i", a.val.int_);
-            break;
-            
-        case aat_str:
-        case aat_uA:
-            PFarray_printf (s, "\\\"%s\\\"", a.val.str);
+        case pa_empty_tbl:
+            PFarray_printf (xml, "    <content>\n"); 
+            /* list the attributes of this table */
+            for (c = 0; c < n->schema.count;c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" new=\"true\"/>\n",
+                                PFatt_str (n->schema.items[c].name));
+
+            PFarray_printf (xml, "    </content>\n");
             break;
 
-        case aat_dec:
-            PFarray_printf (s, "%g", a.val.dec);
+        case pa_attach:
+            PFarray_printf (xml, 
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        %s\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.attach.attname),
+                            xml_literal (n->sem.attach.value));
             break;
 
-        case aat_dbl:
-            PFarray_printf (s, "%g", a.val.dbl);
+        case pa_leftjoin:
+        case pa_eqjoin:
+            PFarray_printf (xml, 
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>first join argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>second join argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.eqjoin.att1),
+                            PFatt_str (n->sem.eqjoin.att2));
             break;
 
-        case aat_bln:
-            PFarray_printf (s, a.val.bln ? "true" : "false");
+        case pa_project:
+            PFarray_printf (xml, "    <content>\n");
+            for (c = 0; c < n->sem.proj.count; c++)
+                if (n->sem.proj.items[c].new != n->sem.proj.items[c].old)
+                    PFarray_printf (
+                        xml, 
+                        "      <column name=\"%s\" "
+                                      "old_name=\"%s\" "
+                                      "new=\"true\"/>\n",
+                        PFatt_str (n->sem.proj.items[c].new),
+                        PFatt_str (n->sem.proj.items[c].old));
+                else
+                    PFarray_printf (
+                        xml, 
+                        "      <column name=\"%s\" new=\"false\"/>\n",
+                        PFatt_str (n->sem.proj.items[c].old));
+
+            PFarray_printf (xml, "    </content>\n");
             break;
 
+        case pa_select:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>select on column %s results "
+                                    "in smaller relation</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.select.att),
+                            PFatt_str (n->sem.select.att));
+            break;
+
+        case pa_std_sort:
+        case pa_refine_sort:
+        {
+            unsigned int i;
+
+            PFarray_printf (xml, "    <content>\n");
+
+            for (c = 0; c < PFord_count (n->sem.sortby.existing); c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" function=\"existing"
+                                        " sort\""
+                                        " position=\"%u\" new=\"false\">\n"
+                                "        <annotation>%u. existing sort "
+                                        "criterion</annotation>\n"
+                                "      </column>\n",
+                                PFatt_str (PFord_order_at (
+                                               n->sem.sortby.existing,
+                                               c)),
+                                c+1, c+1);
+
+            i = c;
+            for (c = 0; c < PFord_count (n->sem.sortby.required); c++)
+                PFarray_printf (xml, 
+                                "      <column name=\"%s\" function=\"new"
+                                        " sort\""
+                                        " position=\"%u\" new=\"false\">\n"
+                                "        <annotation>%u. sort argument"
+                                        "</annotation>\n"
+                                "      </column>\n",
+                                PFatt_str (PFord_order_at (
+                                               n->sem.sortby.required,
+                                               c)),
+                                i+c+1, i+c+1);
+
+            PFarray_printf (xml, "    </content>\n");
+        }   break;
+
+        case pa_num_add:
+        case pa_num_sub:
+        case pa_num_mult:
+        case pa_num_div:
+        case pa_num_mod:
+        case pa_eq:
+        case pa_gt:
+        case pa_bool_and:
+        case pa_bool_or:
+        case pa_concat:
+        case pa_contains:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the operation"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>first argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>second argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.binary.res),
+                            PFatt_str (n->sem.binary.att1),
+                            PFatt_str (n->sem.binary.att2));
+            break;
+
+        case pa_num_add_atom:
+        case pa_num_sub_atom:
+        case pa_num_mult_atom:
+        case pa_num_div_atom:
+        case pa_num_mod_atom:
+        case pa_eq_atom:
+        case pa_gt_atom:
+        case pa_bool_and_atom:
+        case pa_bool_or_atom:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the operation"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>first argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      %s\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.bin_atom.res),
+                            PFatt_str (n->sem.bin_atom.att1),
+                            xml_literal (n->sem.bin_atom.att2));
+            break;
+
+        case pa_num_neg:
+        case pa_bool_not:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the operation"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.unary.res),
+                            PFatt_str (n->sem.unary.att));
+            break;
+
+        case pa_hash_count:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the count operator"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.count.res));
+            if (n->sem.count.part != att_NULL)
+                PFarray_printf (xml,
+                            "      <column name=\"%s\" function=\"partition\""
+                                    " new=\"false\">\n"
+                            "        <annotation>partitioning argument"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.count.part));
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_avg:
+        case pa_max:
+        case pa_min:
+        case pa_sum:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the %s operator"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>argument for %s"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.aggr.res),
+                            xml_id[n->kind],
+                            PFatt_str (n->sem.aggr.att),
+                            xml_id[n->kind]);
+            if (n->sem.aggr.part != att_NULL)
+                PFarray_printf (xml,
+                            "      <column name=\"%s\" function=\"partition\""
+                                    " new=\"false\">\n"
+                            "        <annotation>partitioning argument"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.aggr.part));
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_hash_rownum:
+        case pa_merge_rownum:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>new rownum column"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.rownum.attname));
+
+            if (n->sem.rownum.part != att_NULL)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" function=\"partition\""
+                                        " new=\"false\">\n"
+                                "        <annotation>partitioning argument"
+                                        "</annotation>\n"
+                                "      </column>\n",
+                                PFatt_str (n->sem.rownum.part));
+
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_number:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the count operator"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.number.attname));
+
+            if (n->sem.rownum.part != att_NULL)
+                PFarray_printf (xml,
+                                "      <column name=\"%s\" function=\"partition\""
+                                        " new=\"false\">\n"
+                                "        <annotation>partitioning argument"
+                                        "</annotation>\n"
+                                "      </column>\n",
+                                PFatt_str (n->sem.number.part));
+
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_type:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the type operator"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>argument"
+                                    "</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.type.res),
+                            PFatt_str (n->sem.type.att));
+
+            if (atomtype[n->sem.type.ty])
+                PFarray_printf (xml, 
+                                "      <type name=\"%s\">\n"
+                                "        <annotation>type to check"
+                                        "</annotation>\n"
+                                "      </type>\n",
+                                atomtype[n->sem.type.ty]);
+            else
+                PFarray_printf (xml, 
+                                "      <type name=\"%i\">\n"
+                                "        <annotation>type to check"
+                                        "</annotation>\n"
+                                "      </type>\n",
+                                n->sem.type.ty);
+
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_type_assert:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>column to assign "
+                                    "more explicit type</annotation>\n"
+                            "      </column>\n",
+                            PFatt_str (n->sem.type.att));
+
+            if (atomtype[n->sem.type.ty])
+                PFarray_printf (xml, 
+                                "      <type name=\"%s\">\n"
+                                "        <annotation>type to assign"
+                                        "</annotation>\n"
+                                "      </type>\n",
+                                atomtype[n->sem.type.ty]);
+            else
+                PFarray_printf (xml, 
+                                "      <type name=\"%i\">\n"
+                                "        <annotation>type to assign"
+                                        "</annotation>\n"
+                                "      </type>\n",
+                                n->sem.type.ty);
+
+            PFarray_printf (xml, "    </content>\n");
+            break;
+
+        case pa_cast:
+            PFarray_printf (xml, 
+                            "    <content>\n" 
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the cast operator"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <type name=\"%s\">\n"
+                            "        <annotation>type to cast"
+                                    "</annotation>\n"
+                            "      </type>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.type.res),
+                            PFatt_str (n->sem.type.att),
+                            atomtype[n->sem.type.ty]);
+            break;
+
+        case pa_llscj_anc:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "ancestor");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_anc_self:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "anc-or-self");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_attr:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "attribute");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_child:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "child");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_desc:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "descendant");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_desc_self:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "desc-or-self");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_foll:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "following");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_foll_sibl:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "fol-sibling");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_parent:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "parent");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_prec:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "preceding");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_llscj_prec_sibl:
+            PFarray_printf (xml, "    <content>\n      <step axis=\"");
+            PFarray_printf (xml, "prec-sibling");
+            PFarray_printf (xml,
+                            "\" type=\"%s\"/>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFty_str (n->sem.scjoin.ty),
+                            PFatt_str (n->sem.scjoin.iter),
+                            PFatt_str (n->sem.scjoin.item));
+            break;
+
+        case pa_doc_tbl:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.ii.iter),
+                            PFatt_str (n->sem.ii.item));
+            break;
+
+        case pa_doc_access:
+            PFarray_printf (xml, 
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the document access"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>references to the document"
+                                    " relation</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"",
+                            PFatt_str (n->sem.doc_access.res),
+                            PFatt_str (n->sem.doc_access.att));
+
+            switch (n->sem.doc_access.doc_col)
+            {
+                case doc_atext:
+                    PFarray_printf (xml, "doc.attribute");
+                    break;
+                case doc_text:
+                    PFarray_printf (xml, "doc.textnode");
+                    break;
+                case doc_comm:
+                    PFarray_printf (xml, "doc.comment");
+                    break;
+                case doc_pi_text:
+                    PFarray_printf (xml, "doc.pi");
+                    break;
+                default: PFoops (OOPS_FATAL,
+                        "unknown document access in dot output");
+            }
+            PFarray_printf (xml, 
+                            "\" new=\"false\">\n"
+                            "        <annotation>document relation"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n");
+            break;
+
+        case pa_element:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.ii.iter),
+                            PFatt_str (n->sem.ii.item));
+            break;
+        
+        case pa_attribute:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the attribute "
+                                    "construction</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" function=\"qname item\""
+                                    " new=\"false\">\n"
+                            "        <annotation>qname argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" function=\"content item"
+                                    "\" new=\"false\">\n"
+                            "        <annotation>value argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.attr.res),
+                            PFatt_str (n->sem.attr.qn),
+                            PFatt_str (n->sem.attr.val));
+            break;
+
+        case pa_textnode:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"true\">\n"
+                            "        <annotation>result of the textnode "
+                                    "construction</annotation>\n"
+                            "      </column>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <annotation>value argument"
+                                    "</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.textnode.res),
+                            PFatt_str (n->sem.textnode.item));
+            break;
+
+        case pa_merge_adjacent:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.ii.iter),
+                            PFatt_str (n->sem.ii.item));
+            break;
+        
+        case pa_cond_err:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" new=\"false\">\n"
+                            "        <error>%s</error>\n"
+                            "        <annotation>argument that triggers"
+                                    " error message</annotation>\n"
+                            "      </column>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.err.att),
+                            PFstrdup (n->sem.err.str));
+            break;
+
+        case pa_string_join:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <column name=\"%s\" function=\"iter\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            PFatt_str (n->sem.ii.iter),
+                            PFatt_str (n->sem.ii.item));
+            break;
+        
         default:
-            PFarray_printf (s, "?");
             break;
     }
 
-    return (char *) s->base;
+    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
+
+        /*
+         * Label for child node has already been built, such that
+         * only the edge between parent and child must be created
+         */
+        if (n->child[c]->node_id == 0)
+            n->child[c]->node_id =  node_id++;
+
+        PFarray_printf (xml,
+                        "    <edge to=\"%i\"/>\n", 
+                        n->child[c]->node_id);
+    }
+
+    /* close up label */
+    PFarray_printf (xml, "  </node>\n");
+
+    /* mark node visited */
+    n->bit_dag = true;
+
+    for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c]; c++) {
+        if (!n->child[c]->bit_dag)
+            node_id = pa_xml (xml, n->child[c], node_id);
+    }
+
+    return node_id;
+    /* close up label */
 }
 
+
+static void
+reset_node_id (PFpa_op_t *n)
+{
+    if (n->bit_dag)
+        return;
+    else
+        n->bit_dag = true;
+
+    n->node_id = 0;
+
+    for (unsigned int c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++)
+        reset_node_id (n->child[c]);
+}
 
 /**
  * Dump physical algebra tree in AT&T dot format
@@ -749,7 +1600,11 @@ PFpa_dot (FILE *f, PFpa_op_t *root)
                              "node [color=\"#C0C0C0\"];\n"
                              "node [fontsize=10];\n");
 
-        pa_dot (dot, root, "node1");
+        root->node_id = 1;
+        pa_dot (dot, root, root->node_id + 1);
+        PFpa_dag_reset (root);
+        reset_node_id (root);
+        PFpa_dag_reset (root);
 
         /* add domain subdomain relationships if required */
         if (PFstate.format) {
@@ -766,6 +1621,34 @@ PFpa_dot (FILE *f, PFpa_op_t *root)
         /* put content of array into file */
         PFarray_printf (dot, "}\n");
         fprintf (f, "%s", (char *) dot->base);
+    }
+}
+
+/**
+ * Dump physical algebra tree in XML format
+ *
+ * @param f file to dump into
+ * @param root root of physical algebra tree
+ */
+void
+PFpa_xml (FILE *f, PFpa_op_t *root)
+{
+    if (root) {
+
+        /* initialize array to hold dot output */
+        PFarray_t *xml = PFarray (sizeof (char));
+
+        PFarray_printf (xml, "<physical_query_plan>\n");
+
+        root->node_id = 1;
+        pa_xml (xml, root, root->node_id + 1);
+        PFpa_dag_reset (root);
+        reset_node_id (root);
+        PFpa_dag_reset (root);
+
+        PFarray_printf (xml, "</physical_query_plan>\n");
+        /* put content of array into file */
+        fprintf (f, "%s", (char *) xml->base);
     }
 }
 
