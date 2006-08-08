@@ -620,9 +620,10 @@ dm_seqStart (XqueryCtx* ctx, int count)
  * Handle the end() of an XQUERY/Pathfinder result sequence
  */
 static bool
-dm_seqEnd (XqueryCtx* ctx)
+dm_seqEnd (XqueryCtx* ctx, bit emptySeq)
 {
     (void)ctx;
+    (void)emptySeq;
 
     stream_write (GDKout, "\n", 1, 1);
 
@@ -692,10 +693,11 @@ xml_complete_seqStart (XqueryCtx* ctx)
  * Handle the end() of an XQUERY/Pathfinder result sequence
  */
 static bool
-xml_seqEnd (XqueryCtx* ctx)
+xml_seqEnd (XqueryCtx* ctx, bit emptySeq)
 {
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
-        stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+        if (!emptySeq)
+            stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
 
     }
@@ -759,9 +761,10 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
  * Handle the end() of an XQUERY/Pathfinder result sequence
  */
 static bool
-typed_xml_seqEnd (XqueryCtx* ctx)
+typed_xml_seqEnd (XqueryCtx* ctx, bit emptySeq)
 {
     (void)ctx;
+    (void)emptySeq;
 
     char *seq_end = "</result:sequence>";
     stream_write (GDKout, seq_end, strlen (seq_end), 1);

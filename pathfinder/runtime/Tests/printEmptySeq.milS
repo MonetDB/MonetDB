@@ -1,0 +1,13 @@
+module(pathfinder);
+
+printf("\"xml mode\":\n");
+xquery("xml", "()", 0).printf();
+
+printf("\n\"xml-mapi\" mode:\n");
+xquery("xml-mapi", "()", 0).printf();
+
+printf("\n\"xml-soap\" mode:\n");
+xquery("xml-soap", "()", 0).printf();
+
+printf("\n\"xml-mapi-soap\" mode:\n");
+xquery("xml-soap", "()", 0).printf();

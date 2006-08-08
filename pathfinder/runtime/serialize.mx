@@ -197,7 +197,11 @@ typedef struct serializeFunStruct {
     /* and finally the sequence layout handlers */
     bool (*seqStart)(XqueryCtx* ctx, int count);
     bool (*complete_seqStart)(XqueryCtx* ctx);
-    bool (*seqEnd)(XqueryCtx* ctx);
+    /* add an extra parameter to indicate if the result is empty. This
+     * is used to prevent that an extra EOLN is (incorrectly) printed in
+     * the modes "xml", "xml-mapi", "xml-soap", "xml-mapi-soap", when
+     * the result contains an empty sequence. */
+    bool (*seqEnd)(XqueryCtx* ctx, bit emptySeq);
     bool (*seqItemStart)(XqueryCtx* ctx, int kind);
     bool (*seqItemEnd)(XqueryCtx* ctx, int kind);
     bool (*seqItemSeparator)(XqueryCtx* ctx, int kind_bef, int kind_aft);
@@ -1536,6 +1540,7 @@ xquery_print_result_DRIVER (
     size_t bs, yy, curcnt, maxcnt, buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;
     static BUN (*fun_k) (BAT *, oid);
+    bit emptySeq;
 
     /* prepare serialization */ 
     if ( !createWsContext (ctx, ws, mode, driverFun, driverArg) )
@@ -1544,6 +1549,7 @@ xquery_print_result_DRIVER (
     curcnt = 0;
     maxcnt = BATcount (item);
     buncnt = maxcnt;
+    emptySeq = BATcount(item) > 0 ? 0 : 1;
     
     /* decide lookup method for BAT kind once for all items */
     if (IS_FAKE_PROJECT(kind))
@@ -1769,7 +1775,7 @@ xquery_print_result_DRIVER (
         }
 
         /* end of item sequence callback */
-        if ( !ctx->driverFun->seqEnd(ctx) ) return GDK_FAIL;
+        if ( !ctx->driverFun->seqEnd(ctx, emptySeq) ) return GDK_FAIL;
     } 
     
     if ( !disposeWsContext(ctx) )
