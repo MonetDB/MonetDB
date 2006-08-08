@@ -197,11 +197,7 @@ typedef struct serializeFunStruct {
     /* and finally the sequence layout handlers */
     bool (*seqStart)(XqueryCtx* ctx, int count);
     bool (*complete_seqStart)(XqueryCtx* ctx);
-    /* add an extra parameter to indicate if the result is empty. This
-     * is used to prevent that an extra EOLN is (incorrectly) printed in
-     * the modes "xml", "xml-mapi", "xml-soap", "xml-mapi-soap", when
-     * the result contains an empty sequence. */
-    bool (*seqEnd)(XqueryCtx* ctx, bit emptySeq);
+    bool (*seqEnd)(XqueryCtx* ctx);
     bool (*seqItemStart)(XqueryCtx* ctx, int kind);
     bool (*seqItemEnd)(XqueryCtx* ctx, int kind);
     bool (*seqItemSeparator)(XqueryCtx* ctx, int kind_bef, int kind_aft);
@@ -591,6 +587,7 @@ check@1NsChange (XqueryCtx* ctx, str par_uri, str par_prefix)
 @c
 @:checkElemNsChange(Elem,handle_attribute,@:addNsLink@)@
 @:checkElemNsChange(TopAttrHelper,seqEmitAttribute,(void)xnf; /* pacify compiler */)@
+
 
 @= checkAttrNsChange
 static bool
@@ -1540,7 +1537,6 @@ xquery_print_result_DRIVER (
     size_t bs, yy, curcnt, maxcnt, buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;
     static BUN (*fun_k) (BAT *, oid);
-    bit emptySeq;
 
     /* prepare serialization */ 
     if ( !createWsContext (ctx, ws, mode, driverFun, driverArg) )
@@ -1549,7 +1545,6 @@ xquery_print_result_DRIVER (
     curcnt = 0;
     maxcnt = BATcount (item);
     buncnt = maxcnt;
-    emptySeq = BATcount(item) > 0 ? 0 : 1;
     
     /* decide lookup method for BAT kind once for all items */
     if (IS_FAKE_PROJECT(kind))
@@ -1620,6 +1615,15 @@ xquery_print_result_DRIVER (
                 }
             }
         }
+
+        if (ctx->modes & (MODE_XML | MODE_SOAP) && BATcount(item) == 0){
+            /* complete start of item sequence callback */
+            if ( !ctx->driverFun->complete_startElementEmpty(ctx) )
+                return GDK_FAIL;
+            stream_write (GDKout, "\n", 1, 1);
+            return GDK_SUCCEED;
+        }
+
         /* complete start of item sequence callback */
         if ( !ctx->driverFun->complete_seqStart(ctx) )
             return GDK_FAIL;
@@ -1775,7 +1779,7 @@ xquery_print_result_DRIVER (
         }
 
         /* end of item sequence callback */
-        if ( !ctx->driverFun->seqEnd(ctx, emptySeq) ) return GDK_FAIL;
+        if ( !ctx->driverFun->seqEnd(ctx) ) return GDK_FAIL;
     } 
     
     if ( !disposeWsContext(ctx) )

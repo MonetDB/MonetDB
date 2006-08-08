@@ -407,10 +407,8 @@ sax_seqStart (XqueryCtx* ctx, int count)
  * Handle the end() of an XQUERY/Pathfinder result sequence
  */
 static bool
-sax_seqEnd (XqueryCtx* ctx, bit emptySeq)
+sax_seqEnd (XqueryCtx* ctx)
 {
-    (void)emptySeq;
-
     if ( !(ctx->modes & MODE_NO_ROOT) )
         sax_handle_endElement (ctx, NULL, (char *) ctx->driverWs);
 

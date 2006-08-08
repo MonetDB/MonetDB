@@ -53,7 +53,7 @@ bool null_seqEmitDbl (XqueryCtx* ctx, dbl dv);
 bool null_seqEmitStr (XqueryCtx* ctx, str sv);
 bool null_seqStart (XqueryCtx* ctx, int count);
 bool null_complete_seqStart (XqueryCtx* ctx);
-bool null_seqEnd (XqueryCtx* ctx, bit emptySeq);
+bool null_seqEnd (XqueryCtx* ctx);
 bool null_seqItemStart (XqueryCtx* ctx, int kind);
 bool null_seqItemEnd (XqueryCtx* ctx, int kind);
 bool null_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2);
@@ -292,10 +292,9 @@ null_complete_seqStart (XqueryCtx* ctx)
  * 'End of item sequence' callback.
  */
 bool
-null_seqEnd (XqueryCtx* ctx, bit emptySeq)
+null_seqEnd (XqueryCtx* ctx)
 {
     (void) ctx;
-    (void)emptySeq;
     return SUCCESS;
 }
 
