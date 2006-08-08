@@ -1367,8 +1367,8 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(chr,int, , (chr) *a)@
 @:mal_coercion_impl(chr,lng, , (chr) *a)@
 
-@:mal_coercion_impl(ptr,lng, , (ptr) *a)@
-@:mal_coercion_impl(lng,ptr, , (lng) *a)@
+@:mal_coercion_impl(ptr,lng, , *(ptr *) *a)@
+@:mal_coercion_impl(lng,ptr, , *(lng *) *a)@
 
 mal_export str CALCbat2BAT(int *res, bat *bid);
 str CALCbat2BAT(int *res, bat *bid){
