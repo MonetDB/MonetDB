@@ -6,6 +6,12 @@ declare function func:convert($v as xs:decimal?) as xs:decimal?
     2.20371 * $v
 };
 
+declare function func:testEmptySeq($v1 as xs:string*, $v2 as
+xs:anyNode*, $v3 as xs:integer*)
+{
+    ()
+};
+
 declare function func:add($v1 as xs:decimal, $v2 as xs:decimal*) as 
 xs:decimal* 
 {
