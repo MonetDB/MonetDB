@@ -311,11 +311,11 @@ axis step evaluation on the @2 axis from the given context."
 .COMMAND ll_@1(BAT[oid,oid] iter,
                    BAT[oid,oid] ctx,
                    BAT[oid,int] pre_size,
-                   BAT[void,oid] cands,
+                   BAT[void,any] cands,
                    int height,
                    bit one_iter, bit one_ctx,
                    oid min_iter, oid max_iter,
-                   bit no_iter_order): BAT[oid,oid] = PFll_@1;
+                   bit no_iter_order, chr kind_test): BAT[oid,oid] = PFll_@1;
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
@@ -426,6 +426,8 @@ const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
+var kind_idx := true;
+var kind_debug := false;
 
 proc addValues(bat[void,any::1] container, any::1 delta) : oid
 {
@@ -791,7 +793,7 @@ proc ll_htordered_unique_thetajoin( int mode,
 	var item_descs := cands.ord_select(fst,lst).reverse().chk_order();
 @
 @= wrap
-PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,oid] cands) : BAT[void,bat]
+PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
 {
 	var result := nil;
 	var one_iter := FALSE;
@@ -810,15 +812,9 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 	if ( (count(iter) != count(item)) or (seqbase(iter) != seqbase(item)) ) {
 		ERROR("@1(1): heads of iter & item/ctx must be aligned!");
 	}
-	if ( ((tail(cands) = "void") or (ttype(cands) = 0)) and isnil(seqbase(reverse(cands))) ) {
-		ERROR("@1(2): tail of cands must not be NIL!");
-	}
 	@:chk_order(@1(3),0,iter)@
 	@:chk_order(@1(4),1,item)@
 	cands := cands.chk_order(); # just in case...
-	if ( not(ordered(reverse(cands))) ) {
-		ERROR("@1(5): tail of cands must be sorted!");
-	}
 
 	var pre_size := ws.fetch(PRE_SIZE).fetch(cont);
 	var height   := ws.fetch(HEIGHT).fetch(cont);
@@ -890,9 +886,11 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 
 	# the actual location step
 	if ( isnil(result) ) {
+var t := time();
 		var res := ll_@1 (iter, item, pre_size, cands,
 		                   height, one_iter, one_item, 
-		                   min_iter, max_iter, (and(order,2) = 0));
+		                   min_iter, max_iter, (and(order,2) = 0), kind_test);
+if (kind_debug) printf("ll_@1(input=%d,table=%d,cands=%d,kind_test=%d) = %d (%dms)\n", count(item),count(pre_size),count(cands),int(kind_test), count(res), time()-t);
 		result := new(void,bat,2).seqbase(0@0)
 		          .append(res.mark(0@0).reverse())
 		          .append(res.reverse().mark(0@0).reverse())
@@ -1081,7 +1079,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 , ns, loc
 @
 @= params2
-, cands
+, cands, kind_test
 @
 
 # code for tagname testing
@@ -1231,21 +1229,29 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
  }
 @
 @= no_pre
+if (kind_debug) printf("no_pre_@1_@2_@3_@4\n");
         # this code ensures the correct handling of updates in path steps
 	cands := ws.fetch(PRE_SIZE).fetch(contID).uselect(0,int(nil)).reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre
 {
+   if (kind_idx) {
 	var map_pid := ws.fetch(MAP_PID).fetch(contID);
  	var nid_rid := ws.fetch(NID_RID).fetch(contID);
 	var nid_    := ws.fetch(KND_NID.find(@1)).fetch(contID).reverse().project(nil);
 	cands := nid_.reverse().leftfetchjoin(nid_rid).[swizzle](map_pid);
-	nid_    := nil;
+if (kind_debug) printf("kind_pre_@1_@2_@3_@4 cands=%d table=%d\n", count(cands), count(nid_rid));
+
 	if ((count(cands) > 1) and not(ordered(reverse(cands)))) {
 		cands := cands.reverse().access(BAT_WRITE).order().access(BAT_READ).reverse();
 	}
 	@:shrink_code@
+    } else {
+ 	cands := ws.fetch(PRE_KIND).fetch(contID);
+        kind_test := kind;
+if (kind_debug) printf("kind_pre_@1_@2_@3_@4 cands=%d table=%d\n", count(ws.fetch(KND_NID.find(@1)).fetch(contID)), count(cands));
+    }
 }
 @
 @= nsloc_pre
@@ -1289,6 +1295,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
                 }
 	}
 	cands := cands.chk_order();
+if (kind_debug) printf("nsloc_pre_@1_@2_@3_@4 cands=%d, tab=%d\n", count(cands), count(nid_rid));
         if ( not(ordered(reverse(cands))) ) {
                 printf("= nsloc_pre(4): cands not ordered on tail.\n");
         }
@@ -1296,16 +1303,20 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
  }
 @
 @= loc_pre
+if (kind_debug) printf("loc_pre_@1_@2_@3_@4\n");
 	@:ns_loc_pre(qn,loc,QN,LOC,ELEMENT)@
 @
 @= ns_pre
+if (kind_debug) printf("ns_pre_@1_@2_@3_@4\n");
 	@:ns_loc_pre(qn,ns,QN,URI,ELEMENT)@
 @
 @= target_pre
+if (kind_debug) printf("target_pre_@1_@2_@3_@4\n");
 	@:ns_loc_pre(prop,tgt,PROP,TGT,PI)@ 
 @
 @= ns_loc_pre
  {
+if (kind_debug) printf("ns_loc_pre_@1_@2_@3_@4\n");
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
 	var map_pid := ws.fetch(MAP_PID).fetch(contID);
 	var nid_rid := ws.fetch(NID_RID).fetch(contID);
@@ -1421,6 +1432,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var result_cont;
     var tmp_res;
     var cands;
+    var kind_test := chr(nil);
 
     var uniqueCont := cont.tunique().sort();
     var contID := uniqueCont.reverse().fetch(0);

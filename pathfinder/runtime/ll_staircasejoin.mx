@@ -101,13 +101,13 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @= ll_proto
 static int
 ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-	int height, oid min_iter, oid max_iter, bit no_iter_order, bit self);
+	int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test);
 @
 @= ll_head
 int
 PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
 	 int *_height, bit *_one_iter, bit *_one_ctx,
-	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order)
+	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order, chr *_kind_test)
 {
     /* --------------------------- declarations ---------------------------- */
 
@@ -120,6 +120,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
     bit no_iter_order = *_no_iter_order;
     bit self = FALSE;
     bit trivial_cases = TRUE;
+    chr *kind = NULL, kind_test = *_kind_test;
     BAT *res = NULL;
     size_t res_size = 0;
 
@@ -166,10 +167,21 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         GDKerror("%s: head (oid) of pre_size must NOT be materialized.\n", name);
         @:ll_return(GDK_FAIL)@
     }
-
-    if (BATcount(cand_bat) == BATcount(pre_size)) {
+    if (kind_test != chr_nil) {
+        if ((cand_bat->ttype != TYPE_chr) ||                       /* it contains kinds */
+            (BATcount(cand_bat) != BATcount(pre_size)) ||    /* is the entire pre table */
+            (BUNsize(cand_bat) != sizeof(chr))) /* and a real void bat (i.e. chr array) */
+        {
+            GDKerror("%s: cand_bat with kind test must be a real kind bat.\n", name);
+            @:ll_return(GDK_FAIL)@
+        }
+        kind = (chr*) BUNfirst(cand_bat);
         cand_bat = NULL;
-    } else {
+    } else if (ATOMtype(cand_bat->ttype) != TYPE_oid) {
+        GDKerror("%s: OID type expected in tail of cand_bat.\n", name);
+        @:ll_return(GDK_FAIL)@
+    } else 
+    if (BATcount(cand_bat) != BATcount(pre_size)) {
         if (BATtvoid(cand_bat) && cand_bat->tseqbase == oid_nil)
         {
             GDKerror("%s: tail of cand_bat must not be VOID-NIL.\n", name);
@@ -180,6 +192,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
             GDKerror("%s: cand_bat must be ordered on tail.\n", name);
             @:ll_return(GDK_FAIL)@
         }
+    } else {
+        cand_bat = NULL;
     }
 
     /* --------------------------- empty result ---------------------------- */
@@ -332,6 +346,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                    if ((kind == NULL) || (kind[pre] == kind_test)) continue;
                     *(oid*)dst              = iter;
                     *(oid*)(dst+SIZEOF_OID) = pre;
                     dst += bs_res;
@@ -343,6 +358,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 oid lst_iter = iter_bat->tseqbase + BATcount(iter_bat);
 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                    if ((kind == NULL) || (kind[pre] == kind_test))
                     for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
                         *(oid*)dst              = iter;
                         *(oid*)(dst+SIZEOF_OID) = pre;
@@ -357,6 +373,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 BUN lst_iter = BUNtloc(iter_bat, BUNlast(iter_bat));
                 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                    if ((kind == NULL) || (kind[pre] == kind_test))
                     for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
                         *(oid*)dst              = *(oid*)iter;
                         *(oid*)(dst+SIZEOF_OID) = pre;
@@ -381,7 +398,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         }
 
         if (ll_@1(&res, iter_bat, ctx_bat, pre_size, cand_bat, 
-                  height, min_iter, max_iter, no_iter_order, self) == GDK_FAIL )
+                  height, min_iter, max_iter, no_iter_order, self, kind, kind_test) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -473,7 +490,7 @@ struct stack_item_C {
 
 static int
 ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-             int height, oid min_iter, oid max_iter, bit no_iter_order, bit self)
+             int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test)
 {
     BAT *res = *result;
     si_C *stack = 0;
@@ -612,7 +629,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {};
     } else {
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
-            @:inner_loop_child_body@
+            @:inner_loop_child_body(if(kind[pre]==kind_test))@
         }
     }
 @
@@ -629,7 +646,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         assert(!res->hloc);
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
-             cur_bun += iter_bunsize) {
+             cur_bun += iter_bunsize) @1 {
             *(oid*)dst              = *(oid*)BUNtail(iter_bat,cur_bun);
             *(oid*)(dst+SIZEOF_OID) = pre;
             dst += bunsize;
@@ -667,7 +684,7 @@ struct stack_item_D {
 
 static int
 ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-                  int height, oid min_iter, oid max_iter, bit no_iter_order, bit self)
+                  int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test)
 {
     BAT *res = *result;
     int bs_res = BUNsize(res);
@@ -758,7 +775,7 @@ BATprint(cand_bat);
         stack[stack_top++] = new_stack_item;
         onstack_set(iter_idx);
         if (self) {
-            if (pre == cnd) {
+            if (pre == cnd && ((kind == NULL) || (kind[pre] == kind_test))) {
                 oid iter = min_iter + iter_idx;
                 bunfastins(res, &iter, &pre);
             }
@@ -902,6 +919,7 @@ BATprint(cand_bat);
             }
         } else {
             for ( ; pre <= @1 ; pre++ ) {
+                if ((kind == NULL) || (kind[pre] == kind_test)) 
                 for (j = 0 ; j < stack_top ; j++ ) {
                     *(oid*)dst              = iters_on_stack[j];
                     *(oid*)(dst+SIZEOF_OID) = pre;
