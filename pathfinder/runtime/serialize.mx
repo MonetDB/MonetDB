@@ -588,7 +588,6 @@ check@1NsChange (XqueryCtx* ctx, str par_uri, str par_prefix)
 @:checkElemNsChange(Elem,handle_attribute,@:addNsLink@)@
 @:checkElemNsChange(TopAttrHelper,seqEmitAttribute,(void)xnf; /* pacify compiler */)@
 
-
 @= checkAttrNsChange
 static bool
 check@1AttrNsChange (XqueryCtx* ctx,
@@ -1615,15 +1614,6 @@ xquery_print_result_DRIVER (
                 }
             }
         }
-
-        if (ctx->modes & (MODE_XML | MODE_SOAP) && BATcount(item) == 0){
-            /* complete start of item sequence callback */
-            if ( !ctx->driverFun->complete_startElementEmpty(ctx) )
-                return GDK_FAIL;
-            stream_write (GDKout, "\n", 1, 1);
-            return GDK_SUCCEED;
-        }
-
         /* complete start of item sequence callback */
         if ( !ctx->driverFun->complete_seqStart(ctx) )
             return GDK_FAIL;
