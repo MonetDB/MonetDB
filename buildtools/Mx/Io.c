@@ -25,6 +25,7 @@
 #include "MxFcnDef.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -204,7 +205,7 @@ fmustopen(char *fname, char *mode)
 			    (p != fname + 2 || fname[1] != ':') &&
 #endif
 			    stat(fname, &buf) < 0 && mkdir(fname, S_IRWXU) < 0)
-				Fatal("fmustopen:", "Can't create directory %s\n", fname);
+				Fatal("fmustopen:", "Can't create directory %s:%s\n", fname, strerror(errno));
 			*p = DIR_SEP;
 		}
 	}
@@ -230,12 +231,12 @@ IoWriteFile(char *s, CmdCode m)
 	if ((f->f_mode & m) == m) {
 		ofile = fmustopen(f->f_tmp, "a");
 		if (ofile == NULL)
-			Fatal("IoWriteFile", "can't append to:%s", f->f_tmp);
+			Fatal("IoWriteFile", "can't append to %s: %s", f->f_tmp, strerror(errno));
 	} else {
 		f->f_mode |= m;
 		ofile = fmustopen(f->f_tmp, "w");
 		if (ofile == NULL)
-			Fatal("IoWriteFile", "can't create:%s", f->f_tmp);
+			Fatal("IoWriteFile", "can't create %s: %s", f->f_tmp, strerror(errno));
 		if (disclaimer)
 			insertDisclaimer(ofile, f->f_tmp);
 	}
