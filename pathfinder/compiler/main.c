@@ -461,11 +461,10 @@ static struct option long_options[] = {
     { "print-XML",                    no_argument,    NULL, 'X' },
     { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
 /* Wouter: enable-standoff  (with the short-option b (Burkowski ;)
-   sorrt for the confusion, but I'm afraid all other letters
+   sorry for the confusion, but I'm afraid all other letters
    have been picked by now... */
     { "enable-standoff",              no_argument,    NULL, 'b' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
-    { "debug",                     optional_argument, NULL, 'd' },
     { "dead-code-elimination",     required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
     { "help",                         no_argument,    NULL, 'h' },
@@ -601,10 +600,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTXabcd::e:f:hlo:pqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTXabce:f:hlo:pqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTXabcd::e:f:hlo:pqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTXabce:f:hlo:pqrs:t");
 #endif
 
         if (c == -1)
@@ -637,8 +636,6 @@ main (int argc, char *argv[])
                         long_option (opt_buf, ", --%s", 'H'));
                 printf ("  -q%s: do not print informational messages to log file\n",
                         long_option (opt_buf, ", --%s", 'q'));
-                printf ("  -d[N]%s: print debug information (default level=1)\n",
-                        long_option (opt_buf, ", --%s", 'd'));
                 /*
                    printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
                    "\n        (will not read XQuery input then)\n",
@@ -781,10 +778,6 @@ main (int argc, char *argv[])
                 status->print_core_tree = true;
                 break;
 
-            case 'd':
-                status->debug = optarg ? atoi(optarg) : 1;
-                break;
-
             case 'e':
                 status->dead_code_el = optarg ? atoi(optarg) == 1: true;
                 break;
@@ -836,7 +829,7 @@ main (int argc, char *argv[])
                 break;
 
             case 'q':
-                status->debug = 0;
+                status->quiet = true;
                 break;
 
             case 's':

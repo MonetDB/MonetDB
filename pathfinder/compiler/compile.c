@@ -106,7 +106,7 @@ static char *phases[] = {
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
 /** global state of the compiler */
 PFstate_t PFstate = {
-    .debug               = 1,
+    .quiet               = false,
     .timing              = false,
     .print_dot           = false,
     .print_xml           = false,
@@ -508,7 +508,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->print_parse_tree) {
         if (proot) {
             if (status->print_pretty) {
-                if (status->debug != 0)
+                if (! status->quiet)
                     printf ("Parse tree %s:\n", phases[status->stop_after]);
                 PFabssyn_pretty (pfout, proot);
             }
@@ -524,7 +524,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->print_core_tree) {
         if (croot) {
             if (status->print_pretty) {
-                if (status->debug != 0)
+                if (! status->quiet)
                     printf ("Core tree %s:\n", phases[status->stop_after]);
                 PFcore_pretty (pfout, croot);
             }

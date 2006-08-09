@@ -65,7 +65,7 @@ enum PFinvocation_t {
 
 /** componentes of global compiler state */
 struct PFstate_t {
-    unsigned int debug;       /**< command line switch: -d */
+    bool quiet;               /**< command line switch: -q */
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
     bool print_xml;           /**< command line switch: -X */
