@@ -22,9 +22,7 @@ Over..
 # 13:46:51 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-*cd*CD
-</XQueryResult>
+<XQueryResult>*cd*CD</XQueryResult>
 
 # 13:46:51 >  
 # 13:46:51 >  Done.

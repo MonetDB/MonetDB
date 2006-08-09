@@ -22,9 +22,7 @@ Over..
 # 10:04:26 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<a xmlns="http://create.another/default/element/namespace"/>
-</XQueryResult>
+<XQueryResult><a xmlns="http://create.another/default/element/namespace"/></XQueryResult>
 
 # 10:04:26 >  
 # 10:04:26 >  Done.

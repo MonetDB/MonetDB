@@ -22,8 +22,6 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<p xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="it" xlink:type="simple" xlink:href="rectangles.html">
+<XQueryResult><p xmlns:xlink="http://www.w3.org/1999/xlink" xml:lang="it" xlink:type="simple" xlink:href="rectangles.html">
   Ancora sui rettangoli
-</p>
-</XQueryResult>
+</p></XQueryResult>

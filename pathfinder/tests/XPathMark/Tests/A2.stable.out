@@ -22,6 +22,4 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<?robots index="yes" follow ="no"?>
-</XQueryResult>
+<XQueryResult><?robots index="yes" follow ="no"?></XQueryResult>

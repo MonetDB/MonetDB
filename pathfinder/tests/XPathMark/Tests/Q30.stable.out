@@ -22,11 +22,9 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<bidder>
+<XQueryResult><bidder>
 <date>03/17/2000</date>
 <time>10:07:48</time>
 <personref person="person9"/>
 <increase>27.00</increase>
-</bidder>
-</XQueryResult>
+</bidder></XQueryResult>

@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item id="item0">
+<XQueryResult><item id="item0">
 <location>United States</location>
 <quantity>1</quantity>
 <name>duteous nine eighteen </name>
@@ -385,5 +384,4 @@ filthy divers fault apparell worthiness supposition parchment restitution rings 
 </text>
 </mail>
 </mailbox>
-</item>
-</XQueryResult>
+</item></XQueryResult>

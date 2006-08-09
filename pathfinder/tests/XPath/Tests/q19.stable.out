@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<open_auction id="open_auction1">
+<XQueryResult><open_auction id="open_auction1">
 <initial>69.64</initial>
 <reserve>398.65</reserve>
 <bidder>
@@ -485,8 +484,7 @@ humble near make page friends nunnery doubting flow aweary grieves misty gracefu
 <start>06/26/2000</start>
 <end>02/04/1998</end>
 </interval>
-</open_auction>
-</XQueryResult>
+</open_auction></XQueryResult>
 
 # 21:03:59 >  
 # 21:03:59 >  Done.

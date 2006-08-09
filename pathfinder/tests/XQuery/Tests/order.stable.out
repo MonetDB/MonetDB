@@ -22,9 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult foo="1 2.2999999999999998 test blub foo" bar="1 2.2999999999999998 test blub bar" baz="1 2.2999999999999998 test blub baz">
-
-</XQueryResult>
+<XQueryResult foo="1 2.2999999999999998 test blub foo" bar="1 2.2999999999999998 test blub bar" baz="1 2.2999999999999998 test blub baz"></XQueryResult>
 
 # 23:34:19 >  
 # 23:34:19 >  Done.

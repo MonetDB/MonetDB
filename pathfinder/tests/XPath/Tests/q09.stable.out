@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item id="item1">
+<XQueryResult><item id="item1">
 <location>United States</location>
 <quantity>1</quantity>
 <name>great </name>
@@ -605,8 +604,7 @@ suff person champaign stronger swallowed vulgar difficulties prays concealing oc
 </text>
 </mail>
 </mailbox>
-</item>
-</XQueryResult>
+</item></XQueryResult>
 
 # 17:37:56 >  
 # 17:37:56 >  Done.

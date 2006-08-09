@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<book year="2000">
+<XQueryResult><book year="2000">
         <title>Data on the Web</title>
         <author><last>Abiteboul</last><first>Serge</first></author>
         <author><last>Buneman</last><first>Peter</first></author>
@@ -37,8 +36,7 @@ Over..
         <author><last>Suciu</last><first>Dan</first></author><last>Suciu</last>Suciu<first>Dan</first>Dan
         <publisher>Morgan Kaufmann Publishers</publisher>Morgan Kaufmann Publishers
         <price>39.95</price>39.95
-    
-</XQueryResult>
+    </XQueryResult>
 
 # 17:58:55 >  
 # 17:58:55 >  Done.

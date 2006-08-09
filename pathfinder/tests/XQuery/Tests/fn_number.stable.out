@@ -22,9 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<a>4</a>4.000000 
-</XQueryResult>
+<XQueryResult><a>4</a>4.000000</XQueryResult>
 
 # 11:46:09 >  
 # 11:46:09 >  Done.

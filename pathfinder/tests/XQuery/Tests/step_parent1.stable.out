@@ -22,14 +22,12 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<book year="1992">
+<XQueryResult><book year="1992">
         <title>Advanced Programming in the Unix environment</title>
         <author><last>Stevens</last><first>W.</first></author>
         <publisher>Addison-Wesley</publisher>
         <price>65.95</price>
-    </book>
-</XQueryResult>
+    </book></XQueryResult>
 
 # 23:29:58 >  
 # 23:29:58 >  Done.

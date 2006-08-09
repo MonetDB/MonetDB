@@ -22,9 +22,7 @@ Over..
 # 13:06:16 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-*c*bra
-</XQueryResult>
+<XQueryResult>*c*bra</XQueryResult>
 
 # 13:06:16 >  
 # 13:06:16 >  Done.

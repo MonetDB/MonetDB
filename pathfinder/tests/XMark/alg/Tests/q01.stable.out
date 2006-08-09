@@ -16,9 +16,7 @@ stdout of test 'q01` in directory 'tests/XMark/alg` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-Ayonca Vijaykrishnan
-</XQueryResult>
+<XQueryResult>Ayonca Vijaykrishnan</XQueryResult>
 
 # 14:39:53 >  
 # 14:39:53 >  Done.

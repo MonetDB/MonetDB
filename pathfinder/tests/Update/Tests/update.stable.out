@@ -27,8 +27,7 @@ item := new(void,oid).seqbase(0@0).append(0@0);
 var iter := new(void,oid).seqbase(0@0).append(1@0);
 print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_values,str_values);
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<document copyright="CWI" title="test document"><?pi0000 foo?>
+<XQueryResult><document copyright="CWI" title="test document"><?pi0000 foo?>
 <element author="Sjoerd Mullender" title="test element" attr="0000" copyright="CWI" attribute="attribute value">element content 0000</element>
 <element author="Sjoerd Mullender" title="test element" attr="0001" copyright="CWI" attribute="attribute value">element content 0001</element>
 <element author="Sjoerd Mullender" title="test element" attr="0002" copyright="CWI" attribute="attribute value">element content 0002</element>
@@ -10128,8 +10127,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="9997" copyright="CWI" attribute="attribute value">element content 9997</element>
 <element author="Sjoerd Mullender" title="test element" attr="9998" copyright="CWI" attribute="attribute value">element content 9998</element>
 <element author="Sjoerd Mullender" title="test element" attr="9999" copyright="CWI" attribute="attribute value">element content 9999</element>
-</document>
-</XQueryResult>
+</document></XQueryResult>
 destroy_ws(ws);
 ;
 printf("\nDone..\n");

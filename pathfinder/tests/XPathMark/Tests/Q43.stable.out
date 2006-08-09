@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person7">
+<XQueryResult><person id="person7">
 <name>Vasanth Gaudioso</name>
 <emailaddress>mailto:Gaudioso@newpaltz.edu</emailaddress>
 <phone>+0 (756) 51213177</phone>
@@ -58,5 +57,4 @@ Over..
 <gender>female</gender>
 <business>Yes</business>
 </profile>
-</person>
-</XQueryResult>
+</person></XQueryResult>

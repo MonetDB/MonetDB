@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person7">
+<XQueryResult><person id="person7">
 <name>Mehrdad McCay</name>
 <emailaddress>mailto:McCay@acm.org</emailaddress>
 <address>
@@ -106,8 +105,7 @@ Over..
 <business>Yes</business>
 <age>28</age>
 </profile>
-</person>
-</XQueryResult>
+</person></XQueryResult>
 
 # 19:55:35 >  
 # 19:55:35 >  Done.

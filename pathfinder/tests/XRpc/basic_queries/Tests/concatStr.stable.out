@@ -22,9 +22,7 @@ Over..
 # 11:42:24 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-First string. Second string.
-</XQueryResult>
+<XQueryResult>First string. Second string.</XQueryResult>
 
 # 11:42:24 >  
 # 11:42:24 >  Done.

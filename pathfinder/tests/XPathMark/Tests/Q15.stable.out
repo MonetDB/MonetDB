@@ -22,6 +22,4 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<increase>43.50</increase><increase>27.00</increase>
-</XQueryResult>
+<XQueryResult><increase>43.50</increase><increase>27.00</increase></XQueryResult>

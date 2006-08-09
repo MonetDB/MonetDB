@@ -22,14 +22,12 @@ Over..
 # 15:54:06 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<doc>
+<XQueryResult><doc>
  <greet kind="informal">Hi </greet>
  <greet kind="casual">Hello </greet>
  <location kind="global">World</location>
  <location kind="local">Amsterdam</location>
-</doc>
-</XQueryResult>
+</doc></XQueryResult>
 
 # 15:54:06 >  
 # 15:54:06 >  Done.

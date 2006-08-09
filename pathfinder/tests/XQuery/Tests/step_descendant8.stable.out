@@ -23,15 +23,13 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-
         <title>Data on the Web</title>Data on the Web
         <author><last>Abiteboul</last><first>Serge</first></author><last>Abiteboul</last>Abiteboul<first>Serge</first>Serge
         <author><last>Buneman</last><first>Peter</first></author><last>Buneman</last>Buneman<first>Peter</first>Peter
         <author><last>Suciu</last><first>Dan</first></author><last>Suciu</last>Suciu<first>Dan</first>Dan
         <publisher>Morgan Kaufmann Publishers</publisher>Morgan Kaufmann Publishers
         <price>39.95</price>39.95
-    
-</XQueryResult>
+    </XQueryResult>
 
 # 23:53:12 >  
 # 23:53:12 >  Done.

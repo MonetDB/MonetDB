@@ -22,9 +22,7 @@ Over..
 # 18:03:19 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result><preferred>1</preferred><standard>52</standard><challenge>19</challenge><na>55</na></result>
-</XQueryResult>
+<XQueryResult><result><preferred>1</preferred><standard>52</standard><challenge>19</challenge><na>55</na></result></XQueryResult>
 
 ### time for run 1: 98 msec
 ### time for run 2: 42 msec

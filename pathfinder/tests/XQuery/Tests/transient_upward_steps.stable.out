@@ -22,8 +22,7 @@ Over..
 # 10:53:19 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<res>
+<XQueryResult><res>
   <res1><d><e/><f/></d><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><d><e/><f/></d></res1>
   <res2><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><d><e/><f/></d><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><d><e/><f/></d></res2>
   <res2><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><d><e/><f/></d><e/><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><c foo2="bar"/></res2>
@@ -31,8 +30,7 @@ Over..
   <res4><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><d><e/><f/></d><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><d><e/><f/></d><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a></res4>
   <res5/>
   <res6/>
-  </res>
-</XQueryResult>
+  </res></XQueryResult>
 
 # 10:53:19 >  
 # 10:53:19 >  Done.

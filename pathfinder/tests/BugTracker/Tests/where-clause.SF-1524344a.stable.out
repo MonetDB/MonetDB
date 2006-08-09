@@ -22,8 +22,7 @@ Over..
 # 23:24:25 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<query id="25687"><qtext>windows 98</qtext><event rel="not"><s sid="15153">
+<XQueryResult><query id="25687"><qtext>windows 98</qtext><event rel="not"><s sid="15153">
    This
    feature
    accords
@@ -185,8 +184,7 @@ Over..
    in
    <timex.date>1995</timex.date>
    .
-  </s></event></query>
-</XQueryResult>
+  </s></event></query></XQueryResult>
 
 # 23:24:25 >  
 # 23:24:25 >  Done.

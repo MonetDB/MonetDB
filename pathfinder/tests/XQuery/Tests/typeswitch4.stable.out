@@ -22,9 +22,7 @@ Over..
 # 15:53:15 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-integer string decimal double element() attribute() text()
-</XQueryResult>
+<XQueryResult>integer string decimal double element() attribute() text()</XQueryResult>
 
 # 15:53:16 >  
 # 15:53:16 >  Done.

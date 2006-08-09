@@ -22,9 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<author><last>Stevens</last><first>W.</first></author><last>Stevens</last>Stevens<first>W.</first>W.
-</XQueryResult>
+<XQueryResult><author><last>Stevens</last><first>W.</first></author><last>Stevens</last>Stevens<first>W.</first>W.</XQueryResult>
 
 # 23:31:18 >  
 # 23:31:18 >  Done.

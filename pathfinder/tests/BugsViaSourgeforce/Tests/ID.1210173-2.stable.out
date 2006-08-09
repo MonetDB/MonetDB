@@ -22,9 +22,7 @@ Over..
 # 01:35:07 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<sentence>HiWorld</sentence><sentence>HiAmsterdam</sentence><sentence>HelloWorld</sentence><sentence>HelloAmsterdam</sentence>
-</XQueryResult>
+<XQueryResult><sentence>HiWorld</sentence><sentence>HiAmsterdam</sentence><sentence>HelloWorld</sentence><sentence>HelloAmsterdam</sentence></XQueryResult>
 
 # 01:35:07 >  
 # 01:35:07 >  Done.

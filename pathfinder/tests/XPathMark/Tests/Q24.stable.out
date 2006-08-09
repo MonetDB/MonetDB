@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person0">
+<XQueryResult><person id="person0">
 <name>Edwige Rotger</name>
 <emailaddress>mailto:Rotger@unical.it</emailaddress>
 <phone>+0 (563) 40749141</phone>
@@ -105,5 +104,4 @@ Over..
 <business>No</business>
 <age>18</age>
 </profile>
-</person>
-</XQueryResult>
+</person></XQueryResult>

@@ -22,8 +22,7 @@ Over..
 # 14:25:20 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Asset>
+<XQueryResult><Asset>
         <GlobalId>1</GlobalId>
         <TrackName>asset1</TrackName>
         <TrackNr>1</TrackNr><TrackNr1/>
@@ -40023,8 +40022,7 @@ Over..
         <GlobalId>9999</GlobalId>
         <TrackName>asset9999</TrackName>
         <TrackNr>9</TrackNr>
-      </Asset>
-</XQueryResult>
+      </Asset></XQueryResult>
 
 # 14:25:20 >  
 # 14:25:20 >  Done.

@@ -22,9 +22,7 @@ Over..
 # 13:11:35 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-a*cADA*
-</XQueryResult>
+<XQueryResult>a*cADA*</XQueryResult>
 
 # 13:11:35 >  
 # 13:11:35 >  Done.

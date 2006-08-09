@@ -15,8 +15,7 @@ stdout of test 'test2` in directory 'tests/StandOff/basic` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result1><a start="1" end="4"><b start="2" end="3"/></a><b start="2" end="3"/></result1><result2><b start="2" end="3"/></result2><result3><b start="2" end="3"/></result3><result4/>
+<XQueryResult><result1><a start="1" end="4"><b start="2" end="3"/></a><b start="2" end="3"/></result1><result2><b start="2" end="3"/></result2><result3><b start="2" end="3"/></result3><result4/>
 </XQueryResult>
 
 # 17:02:15 >  

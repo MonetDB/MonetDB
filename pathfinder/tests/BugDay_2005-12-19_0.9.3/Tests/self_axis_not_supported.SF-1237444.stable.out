@@ -19,9 +19,7 @@ shred_doc(TSTDOC,"test1237444.xml");
 
 xquery("xml", "doc(\"test1237444.xml\")//*/self::scene").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<scene id="1"/><scene id="2"/><scene id="3"/>
-</XQueryResult>
+<XQueryResult><scene id="1"/><scene id="2"/><scene id="3"/></XQueryResult>
 
 quit();
 

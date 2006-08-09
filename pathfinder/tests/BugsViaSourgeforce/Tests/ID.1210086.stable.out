@@ -22,12 +22,10 @@ Over..
 # 01:29:06 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<a>
+<XQueryResult><a>
 !txt1
 =txt2
-</a>
-</XQueryResult>
+</a></XQueryResult>
 
 # 01:29:06 >  
 # 01:29:06 >  Done.

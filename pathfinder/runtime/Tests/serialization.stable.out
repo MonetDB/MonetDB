@@ -18,14 +18,11 @@ var query := "(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodeki
 #
 xquery("xml"            ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult attr="val">
-1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-</XQueryResult>
+<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 xquery("xml-soap"       ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult attr="val">
-<xs:integer>1</xs:integer>
+<XQueryResult attr="val"><xs:integer>1</xs:integer>
 <xs:double>2.300000</xs:double>
 <xs:double>30.000000</xs:double>
 <xs:string>string</xs:string>
@@ -33,8 +30,7 @@ xquery("xml-soap"       ,query , 0).printf();
 <xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
 <xs:anyNode>text</xs:anyNode>
 <xs:anyNode><!--comment--></xs:anyNode>
-<xs:anyNode><?pi_tgt pi_data?></xs:anyNode>
-</XQueryResult>
+<xs:anyNode><?pi_tgt pi_data?></xs:anyNode></XQueryResult>
 
 xquery("xml-typed"      ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
@@ -43,14 +39,11 @@ xquery("xml-typed"      ,query , 0).printf();
 # ... and their corresponding mapi variants
 xquery("mapi-xml"       ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult attr="val">
-=1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-=</XQueryResult>
+=<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 xquery("mapi-xml-soap"  ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult attr="val">
-=<xs:integer>1</xs:integer>
+=<XQueryResult attr="val"><xs:integer>1</xs:integer>
 =<xs:double>2.300000</xs:double>
 =<xs:double>30.000000</xs:double>
 =<xs:string>string</xs:string>
@@ -58,8 +51,7 @@ xquery("mapi-xml-soap"  ,query , 0).printf();
 =<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
 =<xs:anyNode>text</xs:anyNode>
 =<xs:anyNode><!--comment--></xs:anyNode>
-=<xs:anyNode><?pi_tgt pi_data?></xs:anyNode>
-=</XQueryResult>
+=<xs:anyNode><?pi_tgt pi_data?></xs:anyNode></XQueryResult>
 
 xquery("mapi-xml-typed" ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
@@ -69,9 +61,7 @@ xquery("mapi-xml-typed" ,query , 0).printf();
 # additional XML mode arguments:
 #
 xquery("xml-noheader"   ,query , 0).printf();
-<XQueryResult attr="val">
-1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-</XQueryResult>
+<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 # does not work for xml-typed mode
 xquery("xml-noroot"     ,query , 0).printf();
@@ -80,9 +70,7 @@ xquery("xml-noroot"     ,query , 0).printf();
 # does not work for xml-typed mode
 xquery("xml-root-name"  ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<name attr="val">
-1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-</name>
+<name attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></name>
 
 
 # data model modes:
@@ -140,15 +128,11 @@ xquery("seq"            ,query , 0).printf();
 #
 xquery(""               ,query , 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult attr="val">
-1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-</XQueryResult>
+<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 
 xquery("mapi"           ,query , 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult attr="val">
-=1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
-=</XQueryResult>
+=<XQueryResult attr="val">1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?></XQueryResult>
 quit();
 
 # 13:48:29 >  

@@ -22,9 +22,7 @@ Over..
 # 16:49:02 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<price> 65.95</price><price>129.95</price><price>39.95</price><price>65.95</price>
-</XQueryResult>
+<XQueryResult><price> 65.95</price><price>129.95</price><price>39.95</price><price>65.95</price></XQueryResult>
 
 # 16:49:03 >  
 # 16:49:03 >  Done.

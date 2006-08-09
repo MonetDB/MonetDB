@@ -14,9 +14,7 @@ xquery("xml","for $t in (text { \"Hello \" }, text {\"my \" }, \"World\")\n\
 where string($t) != \"my \"\n\
 return text { $t }").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-Hello World
-</XQueryResult>
+<XQueryResult>Hello World</XQueryResult>
 quit();
 
 # 20:31:19 >  

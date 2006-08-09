@@ -22,8 +22,7 @@ Over..
 # 17:11:51 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<foo>
+<XQueryResult><foo>
     <hello>
         <world>
         </world>
@@ -51,7 +50,6 @@ Over..
         </world>
          
      
-
 </XQueryResult>
 
 # 17:11:51 >  

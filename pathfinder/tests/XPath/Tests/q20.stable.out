@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item id="item4">
+<XQueryResult><item id="item4">
 <location>United States</location>
 <quantity>1</quantity>
 <name>lived unsur </name>
@@ -45,8 +44,7 @@ causes remove adding tear often rounds underbearing tree purer kibes endless wom
 </text>
 </mail>
 </mailbox>
-</item>
-</XQueryResult>
+</item></XQueryResult>
 
 # 21:06:08 >  
 # 21:06:08 >  Done.

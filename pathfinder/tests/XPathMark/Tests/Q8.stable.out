@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<open_auction id="open_auction0">
+<XQueryResult><open_auction id="open_auction0">
 <initial>6.12</initial>
 <bidder>
 <date>02/17/2000</date>
@@ -106,5 +105,4 @@ execut cheeks counsellors pollution flying lecher three knife bar venge tallow m
 <start>06/14/1999</start>
 <end>04/05/1998</end>
 </interval>
-</open_auction>
-</XQueryResult>
+</open_auction></XQueryResult>

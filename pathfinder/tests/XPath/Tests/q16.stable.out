@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person1">
+<XQueryResult><person id="person1">
 <name>Daishiro Juric</name>
 <emailaddress>mailto:Juric@rwth-aachen.de</emailaddress>
 <phone>+0 (692) 53964736</phone>
@@ -184,8 +183,7 @@ Over..
 <zipcode>23</zipcode>
 </address>
 <creditcard>4586 2519 6227 6395</creditcard>
-</person>
-</XQueryResult>
+</person></XQueryResult>
 
 # 20:49:57 >  
 # 20:49:57 >  Done.

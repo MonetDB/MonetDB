@@ -22,10 +22,8 @@ Over..
 # 21:55:40 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<authlist><author><name>Abiteboul</name><books><title>Data on the Web</title></books></author><author><name>Buneman</name><books><title>Data on the Web</title></books></author><author><name>Stevens</name><books><title>Advanced Programming
-           in the Unix Environment</title><title>TCP/IP Illustrated</title></books></author><author><name>Suciu</name><books><title>Data on the Web</title></books></author></authlist>
-</XQueryResult>
+<XQueryResult><authlist><author><name>Abiteboul</name><books><title>Data on the Web</title></books></author><author><name>Buneman</name><books><title>Data on the Web</title></books></author><author><name>Stevens</name><books><title>Advanced Programming
+           in the Unix Environment</title><title>TCP/IP Illustrated</title></books></author><author><name>Suciu</name><books><title>Data on the Web</title></books></author></authlist></XQueryResult>
 
 # 21:55:41 >  
 # 21:55:41 >  Done.

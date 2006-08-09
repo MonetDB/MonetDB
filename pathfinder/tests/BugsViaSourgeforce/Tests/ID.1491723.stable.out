@@ -38,9 +38,7 @@ Over..
 # 10:13:54 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item>1 - 10 - 2</item><item>2 - 20 - 3</item>
-</XQueryResult>
+<XQueryResult><item>1 - 10 - 2</item><item>2 - 20 - 3</item></XQueryResult>
 
 # 10:13:54 >  
 # 10:13:54 >  Done.

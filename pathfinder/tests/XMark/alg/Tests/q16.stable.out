@@ -16,9 +16,7 @@ stdout of test 'q16` in directory 'tests/XMark/alg` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person68"/>
-</XQueryResult>
+<XQueryResult><person id="person68"/></XQueryResult>
 
 # 14:40:09 >  
 # 14:40:09 >  Done.

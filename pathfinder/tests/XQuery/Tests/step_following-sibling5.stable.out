@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<book year="1999">
+<XQueryResult><book year="1999">
         <title>The Economics of Technology and Content for Digital TV</title>
         <editor>
                <last>Gerbarg</last><first>Darcy</first>
@@ -31,8 +30,7 @@ Over..
         </editor>
             <publisher>Kluwer Academic Publishers</publisher>
         <price>129.95</price>
-    </book>
-</XQueryResult>
+    </book></XQueryResult>
 
 # 23:32:08 >  
 # 23:32:08 >  Done.

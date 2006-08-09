@@ -26,8 +26,7 @@ item := new(void,oid).seqbase(0@0).append(0@0);
 var iter := new(void,oid).seqbase(0@0).append(1@0);
 print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_values,str_values);
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<documents>
+<XQueryResult><documents>
 <document published="1998-06-15">
 <title>
 Synchronized Multimedia Integration Language (SMIL) 1.0 Specification
@@ -69,8 +68,7 @@ Synchronized Multimedia (SYMM) Working Group of the World-Wide Web Consortium
 Recommendation
 </type>
 </document>
-</documents>
-</XQueryResult>
+</documents></XQueryResult>
 destroy_ws(ws);
 ;
 printf("\nDone..\n");

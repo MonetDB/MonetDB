@@ -17,9 +17,7 @@ shred_doc(TSTSRCDIR+"/not_constant_2.SF-1378750.xml","not_constant_2.SF-1378750.
 # Shredded XML doc("not_constant_2.SF-1378750.xml"), total time after commit=0.112s
 xquery("xml","doc(\"not_constant_2.SF-1378750.xml\")//volume union doc(\"not_constant_2.SF-1378750.xml\")//data[not(.//volume)]").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<volume/><volume/>
-</XQueryResult>
+<XQueryResult><volume/><volume/></XQueryResult>
 quit();
 
 # 02:43:26 >  

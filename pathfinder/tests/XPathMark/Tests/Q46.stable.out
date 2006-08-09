@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<open_auction id="open_auction0">
+<XQueryResult><open_auction id="open_auction0">
 <initial>6.12</initial>
 <bidder>
 <date>02/17/2000</date>
@@ -211,5 +210,4 @@ rough <emph> heaven consecrated grace thews </emph> toil oblivion bottom fellows
 <start>01/19/1998</start>
 <end>02/23/2000</end>
 </interval>
-</open_auction>
-</XQueryResult>
+</open_auction></XQueryResult>

@@ -23,7 +23,6 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-
     <book year="1994">
         <title>TCP/IP Illustrated</title>
         <author><last>Stevens</last><first>W.</first></author>
@@ -38,10 +37,9 @@ Over..
  
     
         <title>Advanced Programming in the Unix environment</title>Advanced Programming in the Unix environment
+        </XQueryResult>
         
-</XQueryResult>
-
-# 23:51:16 >  
-# 23:51:16 >  Done.
-# 23:51:16 >  
+# 15:59:43 >  
+# 15:59:43 >  Done.
+# 15:59:43 >  
 

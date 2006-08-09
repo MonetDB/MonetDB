@@ -13,23 +13,23 @@ module(pathfinder);
 
 xquery("xml", "()", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult/>
+<XQueryResult></XQueryResult>
 
 xquery("xml-mapi", "()", 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
-=<XQueryResult/>
+=<XQueryResult></XQueryResult>
 
 xquery("xml-soap", "()", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult/>
+<XQueryResult></XQueryResult>
 
 xquery("xml-soap", "()", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult/>
+<XQueryResult></XQueryResult>
 
 xquery("null", "()", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult/>
+<XQueryResult></XQueryResult>
 quit();
 
 # 11:08:33 >  

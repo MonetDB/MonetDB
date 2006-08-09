@@ -22,9 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<foo bar="test"/>
-</XQueryResult>
+<XQueryResult><foo bar="test"/></XQueryResult>
 
 # 23:34:39 >  
 # 23:34:39 >  Done.

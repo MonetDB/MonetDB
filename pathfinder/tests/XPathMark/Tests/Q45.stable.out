@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<open_auction id="open_auction1">
+<XQueryResult><open_auction id="open_auction1">
 <initial>33.09</initial>
 <reserve>83.71</reserve>
 <bidder>
@@ -194,5 +193,4 @@ rest impudent granted sceptre space hand count hates civil opens veins wast devi
 <start>01/19/1998</start>
 <end>02/23/2000</end>
 </interval>
-</open_auction>
-</XQueryResult>
+</open_auction></XQueryResult>

@@ -16,9 +16,7 @@ stdout of test 'q20` in directory 'tests/XMark/alg` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result><preferred>1</preferred><standard>52</standard><challenge>19</challenge><na>55</na></result>
-</XQueryResult>
+<XQueryResult><result><preferred>1</preferred><standard>52</standard><challenge>19</challenge><na>55</na></result></XQueryResult>
 
 # 14:30:34 >  
 # 14:30:34 >  Done.

@@ -22,9 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-1 2.2999999999999998 34 blub
-</XQueryResult>
+<XQueryResult>1 2.2999999999999998 34 blub</XQueryResult>
 
 # 23:33:23 >  
 # 23:33:23 >  Done.

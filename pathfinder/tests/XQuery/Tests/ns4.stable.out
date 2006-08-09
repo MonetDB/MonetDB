@@ -22,9 +22,7 @@ Over..
 # 09:47:26 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<a:bar xmlns:a="http://asdf.com/example1"/><b:bar xmlns:b="http://asdf.com/example2"/>
-</XQueryResult>
+<XQueryResult><a:bar xmlns:a="http://asdf.com/example1"/><b:bar xmlns:b="http://asdf.com/example2"/></XQueryResult>
 
 # 09:47:26 >  
 # 09:47:26 >  Done.

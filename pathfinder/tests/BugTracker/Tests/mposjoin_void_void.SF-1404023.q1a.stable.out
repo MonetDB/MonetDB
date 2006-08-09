@@ -25,9 +25,7 @@ shred_doc(file2,name2);
 xquery("xml","for $i in doc(\""+name2+"\")//b where some $j in distinct-values(doc(\""+name1+"\")//aap) satisfies ends-with(exactly-one($i/@name), $j) return element { \"test\" } { $i }").printf();
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<test><b name="iets.jpg"/></test><test><b name="ietsmeer.jpg"/></test>
-</XQueryResult>
+<XQueryResult><test><b name="iets.jpg"/></test><test><b name="ietsmeer.jpg"/></test></XQueryResult>
 
 delete_doc(name2);
 delete_doc(name1);

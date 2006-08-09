@@ -22,9 +22,7 @@ Over..
 # 18:03:00 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-30
-</XQueryResult>
+<XQueryResult>30</XQueryResult>
 
 ### time for run 1: 98 msec
 ### time for run 2: 42 msec

@@ -15,9 +15,7 @@ stdout of test 'q03` in directory 'tests/XMark/alg` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<increase last="27.00" first="9.00"/><increase last="4.50" first="1.50"/><increase last="6.00" first="1.50"/><increase last="21.00" first="10.50"/><increase last="19.50" first="4.50"/><increase last="15.00" first="1.50"/><increase last="7.50" first="3.00"/><increase last="45.00" first="1.50"/><increase last="6.00" first="1.50"/><increase last="3.00" first="1.50"/><increase last="33.00" first="16.50"/><increase last="12.00" first="3.00"/>
-</XQueryResult>
+<XQueryResult><increase last="27.00" first="9.00"/><increase last="4.50" first="1.50"/><increase last="6.00" first="1.50"/><increase last="21.00" first="10.50"/><increase last="19.50" first="4.50"/><increase last="15.00" first="1.50"/><increase last="7.50" first="3.00"/><increase last="45.00" first="1.50"/><increase last="6.00" first="1.50"/><increase last="3.00" first="1.50"/><increase last="33.00" first="16.50"/><increase last="12.00" first="3.00"/></XQueryResult>
 
 # 14:39:55 >  
 # 14:39:55 >  Done.

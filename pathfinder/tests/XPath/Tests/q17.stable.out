@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person0">
+<XQueryResult><person id="person0">
 <name>Huei Demke</name>
 <emailaddress>mailto:Demke@uu.se</emailaddress>
 <address>
@@ -194,8 +193,7 @@ Over..
 <emailaddress>mailto:Morreau@ucsb.edu</emailaddress>
 <phone>+83 (890) 82752371</phone>
 <creditcard>6926 3703 6920 9765</creditcard>
-</person>
-</XQueryResult>
+</person></XQueryResult>
 
 # 19:55:35 >  
 # 19:55:35 >  Done.

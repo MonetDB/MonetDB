@@ -13,16 +13,14 @@ module(pathfinder);
 
 xquery("xml-soap-root-PrintTypedMode", "(<a><b/></a>, \"hello\", \"hi\", 1, 2.3, <bla><d/><e/></bla>, 34, <foo><bar>\"hello\"</bar></foo>)", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
-<PrintTypedMode>
-<xs:anyNode><a><b/></a></xs:anyNode>
+<PrintTypedMode><xs:anyNode><a><b/></a></xs:anyNode>
 <xs:string>hello</xs:string>
 <xs:string>hi</xs:string>
 <xs:integer>1</xs:integer>
 <xs:double>2.300000</xs:double>
 <xs:anyNode><bla><d/><e/></bla></xs:anyNode>
 <xs:integer>34</xs:integer>
-<xs:anyNode><foo><bar>"hello"</bar></foo></xs:anyNode>
-</PrintTypedMode>
+<xs:anyNode><foo><bar>"hello"</bar></foo></xs:anyNode></PrintTypedMode>
 quit();
 
 # 17:12:39 >  

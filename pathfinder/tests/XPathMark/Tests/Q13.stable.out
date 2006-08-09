@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item id="item0">
+<XQueryResult><item id="item0">
 <location>United States</location>
 <quantity>1</quantity>
 <name>duteous nine eighteen </name>
@@ -809,5 +808,4 @@ rest impudent granted sceptre space hand count hates civil opens veins wast devi
 <start>01/19/1998</start>
 <end>02/23/2000</end>
 </interval>
-</open_auction>
-</XQueryResult>
+</open_auction></XQueryResult>

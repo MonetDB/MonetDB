@@ -16,9 +16,7 @@ stdout of test 'q15` in directory 'tests/XMark/alg` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<text> hopes whole drowsy </text>
-</XQueryResult>
+<XQueryResult><text> hopes whole drowsy </text></XQueryResult>
 
 # 14:30:34 >  
 # 14:30:34 >  Done.

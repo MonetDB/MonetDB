@@ -2879,9 +2879,7 @@ a0042 := a0042.reverse ().mark (0@0).reverse ();
 a0044 := a0044.reverse ().mark (0@0).reverse ();
 print_result ("xml", ws, a0042, a0044, a0009, a0016, a0019, a0025);
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result><preferred>1</preferred><standard>52</standard><challenge>19</challenge><na>55</na></result>
-</XQueryResult>
+<XQueryResult><result><preferred>1</preferred><standard>52</standard><challenge>19</challenge><na>55</na></result></XQueryResult>
 a0012 := unused;
 a0013 := unused;
 a0000 := unused;

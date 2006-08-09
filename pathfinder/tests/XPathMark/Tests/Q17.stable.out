@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<site>
+<XQueryResult><site>
 <regions>
 <africa>
 <item id="item0">
@@ -993,5 +992,4 @@ sinon hideous rarely examined merchants jack articles abhor goose transformation
 </annotation>
 </closed_auction>
 </closed_auctions>
-</site>
-</XQueryResult>
+</site></XQueryResult>

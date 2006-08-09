@@ -16,8 +16,7 @@ stdout of test 'upd` in directory 'tests/XMark/alg` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<v><site>
+<XQueryResult><v><site>
 <regions>
 <africa>
 <item id="item0">
@@ -10382,8 +10381,7 @@ lowly farewell require cap dropsied <bold> tides died finisher religiously blood
 </annotation>
 </closed_auction>
 </closed_auctions>
-</site></v>
-</XQueryResult>
+</site></v></XQueryResult>
 
 # 19:51:56 >  
 # 19:51:56 >  Done.

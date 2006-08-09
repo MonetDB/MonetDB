@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item id="item1">
+<XQueryResult><item id="item1">
 <location>United States</location>
 <quantity>1</quantity>
 <name>great </name>
@@ -74,5 +73,4 @@ arthur thrive womb wound baseness joy preventions obey vow bawds myrtle said sha
 <incategory category="category0"/>
 <mailbox>
 </mailbox>
-</item>
-</XQueryResult>
+</item></XQueryResult>

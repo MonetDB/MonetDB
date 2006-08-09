@@ -22,9 +22,7 @@ Over..
 # 00:07:14 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<b>2</b><b>3</b>5.000000 5.000000 5.000000 5.000000 
-</XQueryResult>
+<XQueryResult><b>2</b><b>3</b>5.000000 5.000000 5.000000 5.000000</XQueryResult>
 
 # 00:07:14 >  
 # 00:07:14 >  Done.

@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<bib>
+<XQueryResult><bib>
     <book year="1994">
         <title>TCP/IP Illustrated</title>
         <author><last>Stevens</last><first>W.</first></author>
@@ -62,8 +61,7 @@ Over..
         <author><last>Stevens</last><first>W.</first></author>
         <publisher>Addison-Wesley</publisher>
         <price>65.95</price>
-    </book><author><last>Stevens</last><first>W.</first></author>
-</XQueryResult>
+    </book><author><last>Stevens</last><first>W.</first></author></XQueryResult>
 
 # 23:50:41 >  
 # 23:50:41 >  Done.

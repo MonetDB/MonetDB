@@ -22,9 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-100<a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><e/><f/>100 100<b>textnode</b><d><e/><f/></d><c foo2="bar"/>100
-</XQueryResult>
+<XQueryResult>100<a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><e/><f/>100 100<b>textnode</b><d><e/><f/></d><c foo2="bar"/>100</XQueryResult>
 
 # 23:56:32 >  
 # 23:56:32 >  Done.

@@ -22,12 +22,10 @@ Over..
 # 18:01:21 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result title="Document bond-repository.xml category Corel1/Croatia:"><Category name="Corel1/Croatia">
+<XQueryResult><result title="Document bond-repository.xml category Corel1/Croatia:"><Category name="Corel1/Croatia">
 <Picture><DisplayName>154000</DisplayName><RelPath>Corel1/Croatia/154000.jpg</RelPath></Picture>
 <Picture><DisplayName>154099</DisplayName><RelPath>Corel1/Croatia/154099.jpg</RelPath></Picture>
-</Category></result>
-</XQueryResult>
+</Category></result></XQueryResult>
 
 # 20:48:39 >  
 # 20:48:39 >  Done.

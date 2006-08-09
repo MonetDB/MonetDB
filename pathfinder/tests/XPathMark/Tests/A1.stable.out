@@ -22,6 +22,4 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<!-- This is a processing instruction to tell search-engines whether and how they should index this page. --><!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. --><!-- This is the last comment. -->
-</XQueryResult>
+<XQueryResult><!-- This is a processing instruction to tell search-engines whether and how they should index this page. --><!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. --><!-- This is the last comment. --></XQueryResult>

@@ -15,9 +15,7 @@ stdout of test 'songs` in directory 'tests/StandOff/video` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<song end="4500" start="0" artist="Beatles"/><song end="13000" start="10000" artist="Bach"/>
-</XQueryResult>
+<XQueryResult><song end="4500" start="0" artist="Beatles"/><song end="13000" start="10000" artist="Bach"/></XQueryResult>
 
 # 08:57:07 >  
 # 08:57:07 >  Done.

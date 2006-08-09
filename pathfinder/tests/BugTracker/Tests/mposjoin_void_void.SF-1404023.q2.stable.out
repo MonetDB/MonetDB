@@ -22,9 +22,7 @@ Over..
 # 19:37:06 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<b name="iets.jpg"/><b name="ietsmeer.jpg"/>
-</XQueryResult>
+<XQueryResult><b name="iets.jpg"/><b name="ietsmeer.jpg"/></XQueryResult>
 
 # 19:37:06 >  
 # 19:37:06 >  Done.

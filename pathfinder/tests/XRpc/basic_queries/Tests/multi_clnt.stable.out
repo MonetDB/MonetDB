@@ -22,27 +22,21 @@ Over..
 # 14:09:12 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-51.000000 71.000000 61.000000 81.000000 
-</XQueryResult>
+<XQueryResult>51.000000 71.000000 61.000000 81.000000</XQueryResult>
 
 # 14:09:12 >  
 # 14:09:12 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=35509 soap_multi_clnt_s01.xq
 # 14:09:12 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-51.000000 71.000000 61.000000 81.000000 
-</XQueryResult>
+<XQueryResult>51.000000 71.000000 61.000000 81.000000</XQueryResult>
 
 # 14:09:12 >  
 # 14:09:12 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=35509 soap_multi_clnt_s02.xq
 # 14:09:12 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-51.000000 71.000000 61.000000 81.000000 
-</XQueryResult>
+<XQueryResult>51.000000 71.000000 61.000000 81.000000</XQueryResult>
 
 # 14:09:12 >  
 # 14:09:12 >  Done.

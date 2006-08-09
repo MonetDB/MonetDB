@@ -115,8 +115,7 @@ a0008 := a0008.reverse ().mark (0@0).reverse ();
 a0009 := a0009.reverse ().mark (0@0).reverse ();
 print_result ("xml", ws, a0008, a0009.set_kind (ELEM), a0001.[lng](), a0005, a0006, a0007);
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<site>
+<XQueryResult><site>
 <regions>
 <africa>
 <item id="item0">
@@ -10481,8 +10480,7 @@ lowly farewell require cap dropsied <bold> tides died finisher religiously blood
 </annotation>
 </closed_auction>
 </closed_auctions>
-</site>
-</XQueryResult>
+</site></XQueryResult>
 a0002 := unused;
 a0003 := unused;
 a0004 := unused;

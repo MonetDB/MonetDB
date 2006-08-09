@@ -22,9 +22,7 @@ Over..
 # 01:35:07 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-aap 2aap2
-</XQueryResult>
+<XQueryResult>aap 2aap2</XQueryResult>
 
 # 01:35:07 >  
 # 01:35:07 >  Done.

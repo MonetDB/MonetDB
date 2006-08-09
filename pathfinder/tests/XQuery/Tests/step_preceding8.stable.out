@@ -23,7 +23,6 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-
     <book year="1994">
         <title>TCP/IP Illustrated</title>
         <author><last>Stevens</last><first>W.</first></author>
@@ -48,8 +47,7 @@ Over..
         <price>65.95</price>65.95
     
  
-    
-</XQueryResult>
+    </XQueryResult>
 
 # 23:52:53 >  
 # 23:52:53 >  Done.

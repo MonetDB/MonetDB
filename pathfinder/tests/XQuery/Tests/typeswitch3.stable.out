@@ -22,9 +22,7 @@ Over..
 # 15:52:19 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-integer string decimal double node() node() node()
-</XQueryResult>
+<XQueryResult>integer string decimal double node() node() node()</XQueryResult>
 
 # 15:52:20 >  
 # 15:52:20 >  Done.

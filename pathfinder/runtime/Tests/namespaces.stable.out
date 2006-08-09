@@ -22,9 +22,7 @@ Over..
 # 13:11:29 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult xmlns:foo="foo_uri" foo:att2="attval" xmlns:foo_1="foo_uri1" foo_1:att3="attval" xmlns:foo_2="other_foo_uri" foo_2:att1="attval">
-<a xmlns="default_uri" att4="attval"><b xmlns="" xmlns:foo="other_foo_uri" foo:att1="attval"/><bar:c xmlns:bar="bar_uri" foo:att5="attval"/></a>
-</XQueryResult>
+<XQueryResult xmlns:foo="foo_uri" foo:att2="attval" xmlns:foo_1="foo_uri1" foo_1:att3="attval" xmlns:foo_2="other_foo_uri" foo_2:att1="attval"><a xmlns="default_uri" att4="attval"><b xmlns="" xmlns:foo="other_foo_uri" foo:att1="attval"/><bar:c xmlns:bar="bar_uri" foo:att5="attval"/></a></XQueryResult>
 
 # 13:11:29 >  
 # 13:11:29 >  Done.

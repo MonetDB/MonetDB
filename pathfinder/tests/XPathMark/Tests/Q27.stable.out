@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person3">
+<XQueryResult><person id="person3">
 <name>Baldomir Melton</name>
 <emailaddress>mailto:Melton@versata.com</emailaddress>
 <creditcard>4396 8149 5210 4179</creditcard>
@@ -35,5 +34,4 @@ Over..
 <emailaddress>mailto:Koyama@imag.fr</emailaddress>
 <homepage>http://www.imag.fr/~Koyama</homepage>
 <creditcard>2742 7237 7761 6914</creditcard>
-</person>
-</XQueryResult>
+</person></XQueryResult>

@@ -22,9 +22,7 @@ Over..
 # 10:04:27 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result><matches>2</matches><results><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result></results></result>
-</XQueryResult>
+<XQueryResult><result><matches>2</matches><results><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result><result>0</result></results></result></XQueryResult>
 
 # 10:04:27 >  
 # 10:04:27 >  Done.

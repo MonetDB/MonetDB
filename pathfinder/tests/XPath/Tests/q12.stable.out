@@ -22,8 +22,7 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<open_auction id="open_auction0">
+<XQueryResult><open_auction id="open_auction0">
 <initial>210.62</initial>
 <reserve>1540.75</reserve>
 <bidder>
@@ -407,8 +406,7 @@ determine believe scarcity ascend well disports storm print welshman rosencrantz
 <start>06/16/1998</start>
 <end>12/05/2000</end>
 </interval>
-</open_auction>
-</XQueryResult>
+</open_auction></XQueryResult>
 
 # 19:55:35 >  
 # 19:55:35 >  Done.

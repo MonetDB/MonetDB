@@ -12,9 +12,7 @@ stdout of test 'ID.1205565-b` in directory 'tests/BugsViaSourgeforce` itself:
 module("pathfinder");
 xquery("xml","text { <node/> }").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-
-</XQueryResult>
+<XQueryResult></XQueryResult>
 quit();
 
 # 22:15:49 >  

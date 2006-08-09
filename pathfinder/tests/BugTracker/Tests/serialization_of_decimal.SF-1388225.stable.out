@@ -47,9 +47,7 @@ print(a0012);
 [ 1@0,	  0@0	  ]
 print_result ("xml", ws, a0012, a0013, a0003, a0004, a0005, a0006);
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-1 2.300000
-</XQueryResult>
+<XQueryResult>1 2.300000</XQueryResult>
 quit();
 
 # 23:57:37 >  

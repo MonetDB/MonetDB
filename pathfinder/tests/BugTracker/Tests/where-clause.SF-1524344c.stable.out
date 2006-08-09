@@ -22,8 +22,7 @@ Over..
 # 23:24:25 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<event rel="not"><s sid="15153">
+<XQueryResult><event rel="not"><s sid="15153">
    This
    feature
    accords
@@ -104,8 +103,7 @@ Over..
    in
    <timex.date>1995</timex.date>
    .
-  </s></event>
-</XQueryResult>
+  </s></event></XQueryResult>
 
 # 23:24:25 >  
 # 23:24:25 >  Done.
