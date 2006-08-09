@@ -193,6 +193,9 @@ static PFarray_t *nub (PFarray_t *, bool (*) (void *, void *));
  */
 typedef unsigned long long bitset_t;
 
+/** structural (deep) type equalitiy */
+static bool ty_eq (PFty_t *t1, PFty_t *t2);
+
 /** 
  * For non-empty ts = { t1, t2, t3, ..., tn } and binary type constructor #,
  * compute the right-deep type t1 # (t2 # (t3 # (... # tn)...))
@@ -513,17 +516,29 @@ sigma (ty_set_t ts)
 }
 
 /**
- * Shallow (and name-based) equality for types.  Usage:
+ * Shallow (and name-based) type matching.  Implements the test
  *
- * - (1) detect duplicate leading names in #leadingnames ()
- * - (2) deriving @a t2 by @a t1 in #pd_ty ()
+ *   <x, p> in lf(t)
+ *
+ * in Definition 2 of Antimirov's article.
+ *
+ * Succeeds if
+ * 
+ *  - @a t1 is a descendant of @a t2 in the named type hierarchy, or
+ *  - the name of @a t1 matches against the one of @a t2 (@a t2 may
+ *    be a wildcard), or
+ *  - @a t1 and @a t2 are the same named types.
+ *
+ * Usage:
+ *
+ *  - deriving @a t2 by @a t1 in #pd_ty ()
  *
  * @param t1 (pointer to) first type
  * @param t2 (pointer to) second type
  * @return true, if both types are shallow equal, false otherwise
  */
 static bool
-name_eq (PFty_t *t1, PFty_t *t2)
+matches (PFty_t *t1, PFty_t *t2)
 {
     assert (t1 && t2);
 
@@ -547,7 +562,7 @@ name_eq (PFty_t *t1, PFty_t *t2)
 
     case ty_named:
         /* compare symbol spaces and type names */
-        return PFty_eq (*t1, *t2);
+        return ty_eq (t1, t2);
     
     default:
         return true;
@@ -623,7 +638,7 @@ static ty_set_t
 leadingnames (PFty_t t)
 {
     return nub (_ln (PFty_simplify (t), ty_set ()),
-                (bool (*) (void *, void *)) name_eq);
+                (bool (*) (void *, void *)) ty_eq);
 }
 
 
@@ -670,8 +685,8 @@ ty_eq (PFty_t *t1, PFty_t *t2)
 	if (PFty_wildcard (*t1) && PFty_wildcard (*t2))
 	    return ty_eq (t1->child[0], t2->child[0]);
 	else
-	    return ty_eq (t1->child[0], t2->child[0]) &&
-		(PFqname_eq (t1->name, t2->name) == 0);
+	    return (PFqname_eq (t1->name, t2->name) == 0)
+                && ty_eq (t1->child[0], t2->child[0]);
 
     case ty_pi:
         if (PFty_wildcard (*t1) && PFty_wildcard (*t2))
@@ -942,13 +957,13 @@ pd_ty (PFty_t *x, PFty_t t)
     lin_form = lf (t);
 
     /* pds = { <content (t_), p> | <t_, p> <- lin_form /\ 
-     *                             name_eq (x, t_,) /\ p != none }
+     *                             matches (x, t_,) /\ p != none }
      */
     for (n = 0; n < PFarray_last (lin_form); n++) {
         t_ = (ty_pair_set_elem (lin_form, n))->fst;
         p  = (ty_pair_set_elem (lin_form, n))->snd;
 
-        if ((p.type != ty_none) && name_eq (x, &t_)) {
+        if ((p.type != ty_none) && matches (x, &t_)) {
             pd = (ty_pair_t *) PFmalloc (sizeof (ty_pair_t));
 
             pd->fst = content (t_);
