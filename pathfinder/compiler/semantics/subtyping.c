@@ -82,6 +82,11 @@
 #include "oops.h"
 #include "mem.h"
 
+#ifndef NDEBUG
+/* make fprintf() accessible for debugging code */
+#include <stdio.h>
+#endif
+
 /**
  * We try to account for the algebraic nature of Antimirov's subtyping
  * algorithm by using a functional (non-destructive) style of programming
@@ -2465,5 +2470,63 @@ PFty_simplify (PFty_t t)
     return s;
 }
 
+#ifndef NDEBUG
+
+/*
+ * Debugging routines.
+ *
+ * These are available via the --debug command line option and
+ * meant to test internal type-related stuff via Mtest.
+ */
+
+/**
+ * Perform a number of internal tests with respect to the subtyping
+ * algorithms.  Accessible via command line option --debug.
+ * Facilitates testing the algorithms with Mtest.
+ */
+void
+PFty_debug_subtyping (void)
+{
+    /*
+     * Pairs of types that will be tested.  Feel free to add more.
+     */
+    struct { PFty_t t1; PFty_t t2; } types[] =
+    {
+        { .t1 = PFty_xs_integer (),
+          .t2 = PFty_xs_decimal () },
+        { .t1 = PFty_choice (
+                  PFty_elem (PFqname (PFns_pf, "foo"), PFty_xs_integer ()),
+                  PFty_elem (PFqname (PFns_wild, NULL), PFty_xs_double ())),
+          .t2 = PFty_elem (PFqname (PFns_pf, "foo"), PFty_xs_integer ()) },
+        { .t1 = PFty_choice (
+                  PFty_elem (PFqname (PFns_pf, "foo"), PFty_xs_integer ()),
+                  PFty_elem (PFqname (PFns_wild, NULL), PFty_xs_double ())),
+          .t2 = PFty_elem (PFqname (PFns_wild, NULL), PFty_xs_double ()) },
+        { .t1 = PFty_choice (
+                  PFty_elem (PFqname (PFns_wild, NULL), PFty_xs_double ()),
+                  PFty_elem (PFqname (PFns_pf, "foo"), PFty_xs_integer ())),
+          .t2 = PFty_elem (PFqname (PFns_pf, "foo"), PFty_xs_integer ()) },
+        { .t1 = PFty_choice (
+                  PFty_elem (PFqname (PFns_wild, NULL), PFty_xs_double ()),
+                  PFty_elem (PFqname (PFns_pf, "foo"), PFty_xs_integer ())),
+          .t2 = PFty_elem (PFqname (PFns_wild, NULL), PFty_xs_double ()) }
+    };
+
+    fprintf (stderr, "Testing the subtyping algorithm:\n");
+    fprintf (stderr, "-------------------------------:\n");
+    fprintf (stderr, "\n");
+
+    for (unsigned int i = 0; i < sizeof (types) / sizeof (*types); i++)
+        fprintf (stderr, "%s <: %s : %s\n",
+                         PFty_str (types[i].t1),
+                         PFty_str (types[i].t2),
+                         PFty_subtype (types[i].t1, types[i].t2)
+                           ? "true" : "false");
+
+    fprintf (stderr, "\n");
+    fprintf (stderr, "Subtype debugging completed.\n");
+}
+
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -49,6 +49,7 @@ Usage: pf [OPTION] [FILE]
         17  after compiling logical into the physical algebra
         18  after compiling the physical algebra into MIL code
         19  after the MIL program has been serialized
+= -d TEST, --debug=TEST: call internall debugging function TEST
 = -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
 = -l, --print-logical-algebra: print logical algebra tree

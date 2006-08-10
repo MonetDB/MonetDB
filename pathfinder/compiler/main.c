@@ -439,6 +439,18 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#ifndef NDEBUG
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
+#ifndef HAVE_STRCASECMP
+#define strcasecmp(a,b) strcmp ((a), (b))
+#endif
+
+#endif
+
 #include "compile.h"
 
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
@@ -465,6 +477,9 @@ static struct option long_options[] = {
    have been picked by now... */
     { "enable-standoff",              no_argument,    NULL, 'b' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
+#ifndef NDEBUG
+    { "debug",                     required_argument, NULL, 'd' },
+#endif
     { "dead-code-elimination",     required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
     { "help",                         no_argument,    NULL, 'h' },
@@ -600,10 +615,18 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTXabce:f:hlo:pqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTXabc"
+#ifndef NDEBUG
+                                     "d:"
+#endif
+                                     "e:f:hlo:pqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTXabce:f:hlo:pqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTXabc"
+#ifndef NDEBUG
+                                "d:"
+#endif
+                                "e:f:hlo:pqrs:t");
 #endif
 
         if (c == -1)
@@ -671,6 +694,11 @@ main (int argc, char *argv[])
 
                 for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
                     printf ("        %2u  %s\n", i, phases[i]);
+
+#ifndef NDEBUG
+                printf ("  -d TEST%s: call internall debugging function TEST\n",
+                        long_option (opt_buf, ", --%s=TEST", 'd'));
+#endif
 
                 printf ("  -a%s: print abstract syntax tree\n",
                         long_option (opt_buf, ", --%s", 'a'));
@@ -778,6 +806,24 @@ main (int argc, char *argv[])
                 status->print_core_tree = true;
                 break;
 
+#ifndef NDEBUG
+            case 'd':
+                if (! strcasecmp (optarg, "list")) {
+                    printf ("Available debug functions:\n");
+                    printf ("  list      - this list\n");
+                    printf ("  subtyping - test subtype relationships for "
+                            "a fixed set of types\n");
+                    exit (0);
+                }
+                else if (! strcasecmp (optarg, "subtyping"))
+                    status->debug.subtyping = true;
+                else
+                    PFoops (OOPS_CMDLINEARGS,
+                            "unrecognized debug function `%s'", optarg);
+
+                break;
+#endif
+
             case 'e':
                 status->dead_code_el = optarg ? atoi(optarg) == 1: true;
                 break;
@@ -843,11 +889,10 @@ main (int argc, char *argv[])
                 status->print_types = true;
                 break;
 
-                /*
-                   default:
-                   (void) PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
-                   goto failure;
-                */
+            default:
+                PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
+                break;
+
         }           /* end of switch */
     }           /* end of while */
 

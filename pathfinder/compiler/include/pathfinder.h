@@ -88,6 +88,13 @@ struct PFstate_t {
 
     char* genType;     /* kind of output */
     enum PFinvocation_t invocation;
+
+#ifndef NDEBUG
+    struct {
+        bool   subtyping;     /**< invoke PFty_debug_subtyping()?
+                                   (command line option `-d subtyping') */
+    } debug;
+#endif
 };
 
 

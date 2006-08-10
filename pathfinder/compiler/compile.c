@@ -74,6 +74,11 @@
 #include "mem.h"
 #include "coreopt.h"
 
+#ifndef NDEBUG
+/* to invoke PFty_debug_subtyping() if --debug subtyping */
+#include "subtyping.h"
+#endif
+
 /* include libxml2 library to parse module definitions from an URI */
 #include "libxml/xmlIO.h"
 
@@ -130,7 +135,13 @@ PFstate_t PFstate = {
     .opt_alg             = "OIKDCG_VGO_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCGCGP",
     .format              = NULL,
 
-    .genType             = "xml"
+    .genType             = "xml",
+
+#ifndef NDEBUG
+    .debug = {
+        .subtyping       = false
+    }
+#endif
 };
 
 jmp_buf PFexitPoint;
@@ -346,6 +357,15 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
     if (status->timing)
         PFlog ("XML Schema import:\t\t %s", PFtimer_str (tm));
+
+#ifndef NDEBUG
+    /*
+     * All types are available now, and we can invoke PFty_debug_subtyping()
+     * if requested.
+     */
+    if (status->debug.subtyping)
+        PFty_debug_subtyping ();
+#endif
 
     STOP_POINT(9);
 

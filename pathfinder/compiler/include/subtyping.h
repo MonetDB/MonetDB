@@ -92,6 +92,16 @@ PFty_t (*PFty_quantifier (PFty_t)) (PFty_t);
 void ty_FIXME (void);
 #endif
 
+#ifndef NDEBUG
+
+/**
+ * Perform a number of internal tests with respect to the subtyping
+ * algorithms.  Accessible via command line option --debug.
+ * Facilitates testing the algorithms with Mtest.
+ */
+void PFty_debug_subtyping (void);
+
+#endif
 
 #endif /* SUBTYPING_H */
 
