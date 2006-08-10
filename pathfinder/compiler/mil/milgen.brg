@@ -1628,14 +1628,24 @@ reduce (PFpa_op_t * p, int goalnt)
             /*
              * If we had to CTderive(), turn the grp result into an
              * actual BAT using CTmap().
+             *
+             * Use chk_order() to ensure that order properties are
+             * correctly derived on the back-end.
+             *
+             * NOTE:
+             *   We only want to use chk_order() on computed BATs,
+             *   *not* if grouping[i] are just the variable names of
+             *   the input relations.  Otherwise, chk_order() would
+             *   have a side-effect on our input, with unpredictable
+             *   effects...
              */
             if (PFord_count (p->sem.merge_union.ord) > 1)
                 for (unsigned int i = 0; i < 2; i++)
-                    grouping[i] = ctmap (grouping[i]);
+                    grouping[i] = chk_order (ctmap (grouping[i]));
 
 
             /* first two arguments of merged_union() are the grouping atts */
-            args = arg (chk_order (grouping[0]), chk_order (grouping[1]));
+            args = arg (grouping[0], grouping[1]);
 
             for (unsigned int i = 0; i < p->schema.count; i++) {
 
