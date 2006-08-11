@@ -1,4 +1,4 @@
-INCLUDES = -I../modules/atoms \
+INCLUDES = -I../modules/atoms -I../optimizer \
 	-I../mal $(MONETDB_INCS) \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCL_FLAGS) $(PCRE_CFLAGS)
 

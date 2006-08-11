@@ -131,8 +131,11 @@ This is kept around in a global structure and is the basis for
 micro scheduling decisions.
 @{
 @h
+#ifndef _MAL_SCHEDULER
+#define _MAL_SCHEDULER
 #include "mal.h"
-#include "mal_macro.h"
+#include "mal_instruction.h"
+#include "mal_client.h"
 
 #define DEBUG_MAL_SCHEDULER
 
@@ -168,6 +171,8 @@ struct {
 sched_export str MALscheduler(Client c);
 sched_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+#endif /* MAL_SCEDULER */
+
 @+ Scheduler implementation
 @= schedulerCleanup
 	if(@1) {
@@ -177,6 +182,8 @@ sched_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_scheduler.h"
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "opt_prelude.h"
+#include "opt_macro.h"
 
 str
 debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
