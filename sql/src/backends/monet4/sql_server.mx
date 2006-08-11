@@ -1125,6 +1125,14 @@ module(mapi); # mapi_listen
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
 
+proc sql_environment() : BAT[str,BAT] {
+	var b := new(str,bat,2);
+	var e := environment();
+	b.insert("name", e.mark(0@0).reverse());
+	b.insert("value", e.reverse().mark(0@0).reverse());
+	return b;
+}
+
 proc daytime ( lng s ) : daytime {
 	return add(daytime(0), s*lng(1000));
 }

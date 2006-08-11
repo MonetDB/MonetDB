@@ -1255,6 +1255,7 @@ optimize(mvc *c, stmt *s)
 	case st_sql:
 	case st_dbat:
 	case st_basetable:
+	case st_table:
 	case st_idxbat:
 
 	case st_atom:

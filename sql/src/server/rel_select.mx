@@ -1545,7 +1545,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
-		if (!t->table && t->query) { /* base view */
+		if (isView(t)) { /* base view */
 			node *n,*m;
 			sql_rel *rel = rel_parse(sql, t->query);
 			if (!rel)

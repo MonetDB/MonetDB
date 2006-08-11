@@ -168,8 +168,8 @@ Double bind operations should also be eliminated.
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if ( (getFunctionId(p) == bindRef || 
-					getFunctionId(p) == bindidxRef) && 
-				getModuleId(p) == sqlRef) {
+			getFunctionId(p) == bindidxRef) && 
+			getModuleId(p) == sqlRef) {
 			/*
 			int arg = getArg(p,4);
 			if (getVarConstant(mb,arg).val.ival == 0) 
@@ -309,10 +309,10 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0);
-		COoptimizer(mb,0,0);	/* coercions */
+		COoptimizer(mb, 0, 0);	/* coercions */
 		ARoptimizer(mb, 0, 0);	/* alias removal */
-		MRoptimizer(mb,0,0);	/* reduce stack space */
-		CToptimizer(mb,0,0);	/* common terms */
+		MRoptimizer(mb, 0, 0);	/* reduce stack space */
+		CToptimizer(mb, 0, 0);	/* common terms */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		/* CRKoptimizer(mb,0,0); too early !!*/
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){

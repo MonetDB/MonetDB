@@ -188,6 +188,23 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
+function calc.sql_environment():bat[:str,:bat];
+	b := bat.new(:str,:bat,2);
+	e := inspect.getEnvironment();
+	n := algebra.markT(e, 0:oid);
+	r := bat.reverse(n);
+	v := algebra.markH(e, 0:oid);
+        ri:= calc.bat(r);
+        bat.insert(b, "name", ri);
+        vi:= calc.bat(v);
+        bat.insert(b, "value", vi);
+	return b;
+end sql_environment;
+
+command calc.db_users() :bat[:str,:bat]
+address db_users_wrap
+comment "return table of users with sql scenario";
+
 @- SQL function aliases
 The code generate should identify the precise module
 target for all functions. This creates quite some
@@ -2030,6 +2047,7 @@ month_interval_str( int *ret, str *s, int *ek, int *sk ){
 	*ret = res;
 	return NULL;
 }
+
 str 
 second_interval_str( lng *res, str *s, int *ek, int *sk ){
 

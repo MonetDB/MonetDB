@@ -139,19 +139,21 @@ sql_update_var(mvc *m, char *name)
 int
 sql_create_env(mvc *m, sql_schema *s)
 {
-	BUN p, q;
+	list *l;
+	/* here we create a new table-type */
+	sql_subtype tpe;
 
-	/* TODO change to view AS BATS ? */
-	sql_table *t = mvc_create_table(m, s, "env", 1, SQL_PERSIST, 0, -1);
-
+	sql_table *t = mvc_create_generated(m, s, "#env", NULL, 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
-	BATloop(GDKenv, p, q) {
-		char *name = BUNhead(GDKenv, p);
-		char *val = BUNtail(GDKenv, p);
 
-		table_insert(m->session->tr, t, name, val, NULL);
-	}
+	sql_find_subtype(&tpe, "table", 0, 0);
+	tpe.comp_type = t;
+	tpe.digits = t->base.id; /* pass the table through digits */
+
+	/* add function */
+	l = list_create((fdestroy) &arg_destroy);
+	mvc_create_func(m, s, "env", l, &tpe, FALSE, FALSE, "sql_environment");
 	return 0;
 }
 
@@ -168,10 +170,10 @@ sql_create_profile(mvc *m, sql_schema *s)
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 2048);
-	mvc_create_column_(m, t, "parse", "int", 9);
-	mvc_create_column_(m, t, "optimize", "int", 9);
-	mvc_create_column_(m, t, "exec", "int", 9);
-	mvc_create_column_(m, t, "total", "int", 9);
+	mvc_create_column_(m, t, "parse", "int", 32);
+	mvc_create_column_(m, t, "optimize", "int", 32);
+	mvc_create_column_(m, t, "exec", "int", 32);
+	mvc_create_column_(m, t, "total", "int", 32);
 	mvc_create_column_(m, t, "user", "varchar", 512);
 
 	return 0;

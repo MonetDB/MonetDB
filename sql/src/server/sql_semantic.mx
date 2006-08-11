@@ -374,7 +374,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 	node *n, *m;
 	tvar *tv = NULL;
 
-	if (!t->table && t->query[0] != ';') {
+	if (isView(t)) {
 
 		stmt *sq = sqlparse_intern(sql, t->query, sql->mode);
 
@@ -389,6 +389,13 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 			sc = stmt_column(sc, stmt_dup(sq));
 			table_add_column(tv, sc, NULL, c->base.name);
 		}
+	} else if (isGenerated(t)) {
+		/* just a complex type, ie cannot be used directly as table */
+		(void) sql_error(
+			sql, 07,
+			"Generated Tables cannot be used directly"
+		);
+		return NULL;
 	} else {
 		stmt *ts;
 
@@ -615,6 +622,62 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 }
 
 
+static stmt *
+check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
+{
+	char *tname;
+	stmt *tab = s;
+	int temp = 0;
+	assert(s->type == st_table);
+
+	if (s->type == st_table) {
+		tab = s->op1.stval;
+		temp = s->flag;
+	}
+	if (tab->type == st_list) {
+		node *n, *m;
+		list *l = create_stmt_list();
+		for (n = ct->columns.set->h, m = tab->op1.lval->h; 
+			n && m; n = n->next, m = m->next) 
+		{
+			sql_column *c = n->data;
+			stmt *r = check_types(sql, &c->type, stmt_dup(m->data), tpe);
+			if (!r) {
+				list_destroy(l);
+				stmt_destroy(s);
+				return NULL;
+			}
+			tname = table_name(r);
+			r = stmt_alias(r, tname, c->base.name);
+			list_append(l, r);
+		}
+		stmt_destroy(s);
+		return stmt_table(stmt_list(l), temp);
+	} else { /* single column/value */
+		sql_column *c;
+		stmt *r;
+		sql_subtype *st = tail_type(tab);
+
+		if (list_length(ct->columns.set) != 1) {
+			stmt *res = sql_error(
+				sql, 03,
+				"single value of type %s and complex type %s are not equal",
+				st->type->sqlname,
+				(ct->type==0)?"table":"unknown"
+			);
+			stmt_destroy(s);
+			return res;
+		}
+		c = ct->columns.set->h->data;
+		r = check_types(sql, &c->type, tab, tpe);
+		tname = table_name(r);
+		r = stmt_alias(r, tname, c->base.name);
+		return stmt_table(r, temp);
+	}
+	stmt_destroy(s);
+	return NULL;
+}
+
 /* check_types tries to match the ct type with the type of s if they don't
  * match s is converted. Returns NULL on failure.
  */
@@ -622,10 +685,13 @@ stmt *
 check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 {
 	int c = 0;
-	sql_subtype *t = NULL, *st = tail_type(s);
+	sql_subtype *t = NULL, *st = NULL;
 	stmt *old = NULL;
 
-	(void)tpe;
+	if (ct->comp_type) 
+		return check_table_types(sql, ct->comp_type, s, tpe);
+
+ 	st = tail_type(s);
 	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
 		return s;
 	} else if (!st) {

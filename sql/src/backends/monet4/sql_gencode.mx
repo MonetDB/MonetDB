@@ -1310,6 +1310,57 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 
+		case st_table: {
+			stmt *lst = s->op1.stval;
+			size_t buflen = BUFSIZ;
+
+			backend_dumpstmt_(lst, nr, sql);
+
+			write_head(sql, -s->nr);
+			buf = NEW_ARRAY(char, buflen + 1);
+
+			buf[0] = 0;
+			len = 0;
+
+			/* the column list */
+			if (lst->type == st_list) {
+				list *l = lst->op1.lval;
+				int cnt = list_length(l);
+
+				len = snprintf(buf, buflen, "var s%d := new(str, bat, %d);\n", -s->nr, cnt );
+
+				write_command(sql, buf);
+				write_part(sql, buf, len);
+				len = 0;
+
+				for (n = l->h; n; n = n->next) {
+					size_t sl;
+					stmt *c = n->data;
+					char *cn = column_name(c);
+					char *ncn = sql_escape_ident(cn);
+
+					sl = strlen(cn);
+					if (buflen - len < 128 + sl) {
+						buflen += BUFSIZ + sl;
+						buf = RENEW_ARRAY(char, buf, buflen);
+					}
+					len = snprintf(buf, buflen, "s%d.insert(\"%s\", s%d);\n", -s->nr, ncn, c->nr);
+					assert(len <= buflen);
+					_DELETE(cn);
+					_DELETE(ncn);
+					write_command(sql, buf);
+					write_part(sql, buf, len);
+					len = 0;
+				}
+			} else {
+				fprintf(stderr, "not a valid column list %u\n", lst->type);
+			}
+			write_tail(sql, -s->nr);
+			_DELETE(buf);
+			backend_dec_nr2(s->op1.stval);
+			break;
+		}
+
 		/* flow control statements */
 		case st_while: {
 			int c;
@@ -1388,7 +1439,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_basetable:	/* relation(table) */
 		case st_ptable:
 		case st_pivot:
-		case st_groupby:
 			printf("backend_dumpstmt_: not implemented stmt %s\n", st_type2string(s->type));
 			assert(0);
 		}
@@ -1735,8 +1785,9 @@ backend_create_func(backend *be, sql_func *f)
 	}
 	i += snprintf(buf + i, BUFSIZ - i, ") : ");
 	if (f->res.type) { 
-		i += snprintf(buf + i, BUFSIZ - i, "%s\n", 
-			f->res.type->base.name);
+		i += snprintf(buf + i, BUFSIZ - i, "%s%s\n", 
+			f->res.type->base.name, 
+			(f->res.comp_type?"[void,BAT]":""));
 	} else {
 		i += snprintf(buf + i, BUFSIZ - i, "void\n");
 	}
@@ -1750,7 +1801,7 @@ backend_create_func(backend *be, sql_func *f)
 
 	(void)backend_parse(c->session->stk, cmd);
 
-/*#define PSM_DEBUG */
+#define PSM_DEBUG 
 #ifdef PSM_DEBUG
 	fprintf(stdout, "%s\n", cmd);
 	fflush(stdout);

@@ -661,52 +661,6 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
 		return stmt_none();
-	/* only db admin can create views on bats */
-	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		return sql_error(sql, 02, "CREATE VIEW AS BATS: insufficient privileges for user %s", backend_get_string(sql, "user"));
-	} else {
-		char *err = NULL;
-		sql_table *t = NULL;
-		dnode *n = column_spec->h;
-		int nr = 0, i = 0;
-		char **names = NULL;
-
-		for (; n; n = n->next ) 
-			nr++;
-		names = NEW_ARRAY(char*,nr);
-		for (n = column_spec->h; n; n = n->next, i++ )
-			names[i] = n->data.sval;
-
-		if (nr == 1) {
-			char buf[BUFSIZ];
-			/* semi-colon here indicates it's a view as bats!!! */
-			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
-					name, names[0]);
-			t = mvc_create_view(sql, s, name, buf, 0);
-			err = sql_view_from_bat(sql->session->tr, t, names[0]);
-		} else {
-			char buf[BUFSIZ];
-			char cols[BUFSIZ];
-			cols[0] = '\0';
-			for (i = 0; i < nr; i++) {
-				if (i > 0) strcat(cols, ", ");
-				strcat(cols, "\"");
-				strcat(cols, names[i]);
-				strcat(cols, "\"");
-			}
-			/* semi-colon here indicates it's a view as bats!!! */
-			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
-					name, cols);
-			t = mvc_create_view(sql, s, name, buf, 0);
-			err = sql_view_on_bats(sql->session->tr, t, names, nr);
-		}
-		if (err != NULL) {
-			sql_error(sql, 02, err);
-			GDKfree(err);
-			sql_trans_drop_table(sql->session->tr, t->s, t->base.name, 0);
-			return NULL;
-		}
-		return stmt_none();
 	}
 	return NULL;
 }
@@ -731,7 +685,7 @@ drop_view(mvc *sql, dlist *qname)
 		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", backend_get_string(sql, "user"), ss->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
-	} else if (!t->table) {
+	} else if (isView(t)) {
 		mvc_drop_table(sql, ss, t->base.name, 0);
 		return stmt_none();
 	} else {
@@ -1484,16 +1438,14 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 			}
 		}
 	}
-	if (t->table) {
+	if (isTable(t)) {
 		node *n, *m;
 
 		for (n = t->s->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
 
-			/* Each view must have a query, so no NULL check.  Don't
-			 * consider VIEW AS BAT here, because that won't parse so
-			 * nice all the time, and won't depend on a table either. */
-			if (!ot->table && ot->query[0] != ';') {
+			/* Each view must have a query, so no NULL check.  */
+			if (isView(ot)) {
 				scope *scp = scope_open(NULL);
 				stmt *s = scope_sqlparse(sql, scp, ot->query);
 

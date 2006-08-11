@@ -106,6 +106,7 @@ tail_column(stmt *st)
 	case st_group_ext:
 	case st_group:
 	case st_basetable:	/* a table is not a column */
+	case st_table:		/* a table is not a column */
 	case st_ptable:
 	case st_temp:
 	case st_unop:
@@ -188,10 +189,10 @@ head_column(stmt *st)
 	case st_var:
 	case st_seq_next:
 	case st_basetable:
+	case st_table:
 	case st_temp:
 	case st_op:
 	case st_ptable:
-	case st_groupby:
 	case st_idxbat:
 		return NULL;
 
@@ -940,6 +941,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_sql:
 	case st_dbat:
 	case st_basetable:
+	case st_table:
 	case st_idxbat:
 
 	case st_atom:

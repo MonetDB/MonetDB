@@ -70,6 +70,7 @@ typedef enum tokens {
 	SQL_CHARSET,
 	SQL_SCHEMA,
 	SQL_TABLE,
+	SQL_TYPE,
 	SQL_CASE,
 	SQL_CAST,
 	SQL_RETURN,
@@ -212,7 +213,6 @@ extern int sqlparse(void *);
 %}
 /* KNOWN NOT DONE OF sql'99
  *
- * TRIGGERS
  * COLLATION
  * TRANSLATION
  * REF/SCOPE
@@ -355,12 +355,12 @@ int yydebug=1;
 	opt_when
 	procedure_statement
 	if_opt_else
+	func_data_type
 
 %type <type>
 	data_type
 	datetime_type
 	interval_type
-	func_data_type
 
 %type <sval>
 	opt_constraint_name
@@ -443,7 +443,6 @@ int yydebug=1;
 	triggered_statement
 	procedure_statement_list
 	argument_list
-	table_function_column_list
 	when_statements
 	when_search_statements
 	case_opt_else_statement
@@ -453,6 +452,7 @@ int yydebug=1;
 	opt_temporary_table_declarations
 	invoked_routines
 	routine_body
+	table_function_column_list
 
 %type <ival>
 	drop_action
@@ -586,7 +586,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN 
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
@@ -1664,7 +1664,6 @@ view_def:
 
 view_as:
 	select_stmt
-  |	BATS			{ $$ = NULL; }
   ;
 
 opt_with_check_option:
@@ -1743,12 +1742,12 @@ invoked_routines:
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
-    RETURNS data_type
+    RETURNS func_data_type
     EXTERNAL sqlNAME string
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_type(f, &$8);
+				append_symbol(f, $8);
 				append_string(f, $11);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -1760,7 +1759,7 @@ func_def:
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_type(f, &$8);
+				append_symbol(f, $8);
 				append_string(f, NULL);
 				append_list(f, $9);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -1771,7 +1770,7 @@ func_def:
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_type(f, NULL);   /* no result */
+				append_symbol(f, NULL);   /* no result */
 				append_string(f, NULL); /* no mil-impl */
 				append_list(f, $7);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -1866,7 +1865,10 @@ return_statement:
    ;
 
 return_value:
-      scalar_exp
+      simple_scalar_exp
+   |  search_condition
+   |  TABLE select_with_parens	
+		{ $$ = _symbol_create_symbol(SQL_TABLE, $2); }
    |  NULLX 	{ $$ = _newAtomNode( NULL);  }
    ;
 
@@ -1984,15 +1986,22 @@ opt_end_label:
 	
 	
 table_function_column_list:
-	column data_type	{ $$ = NULL; }
+	column data_type	{ $$ = L();
+				  append_string($$, $1);
+			  	  append_type($$, &$2);
+				}
   |     table_function_column_list ',' column data_type
-				{ $$ = NULL; }
+				{ 
+				  append_string($$, $3);
+			  	  append_type($$, &$4);
+				}
   ;
 
 func_data_type:
     TABLE '(' table_function_column_list ')'	
-		{ sql_find_subtype(&$$, "table", 0, 0); }
+		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
  |  data_type
+		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
  ;
 
 opt_paramlist:
@@ -2986,7 +2995,6 @@ simple_scalar_exp:
 scalar_exp:
     simple_scalar_exp 	{ $$ = $1; }
  |  subquery	%prec UMINUS
- |  TABLE select_with_parens	{ $$ = $2; }
  ;
 
 value_exp:
@@ -3012,7 +3020,11 @@ var_ref:
  ;
 
 func_ref:
-    func_ident '(' scalar_exp ')'
+    func_ident '(' ')'
+	{ dlist *l = L();
+  	  append_string(l, $1);
+	  $$ = _symbol_create_list( SQL_OP, l ); }
+|   func_ident '(' scalar_exp ')'
 	{ dlist *l = L();
   	  append_string(l, $1);
   	  append_symbol(l, $3);

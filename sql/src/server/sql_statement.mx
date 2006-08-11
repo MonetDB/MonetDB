@@ -50,10 +50,11 @@ typedef union stmtdata {
 typedef enum stmt_type {
 	st_none,
 	st_sql,			/* sometimes a query rewrite is easier */
-	st_var,			
-	st_seq_next,		
+	st_var,			/* use and/or declare variable */
+	st_seq_next,		/* calculate next sequence number */
 
-	st_basetable,
+	st_basetable,	
+	st_table,		/* some functions return a table */
 	st_temp,		/* temporal bat */
 	st_bat,
 	st_column,		/* relational column result */
@@ -115,7 +116,6 @@ typedef enum stmt_type {
 
 	st_ptable,		/* (R(tables) */
 	st_pivot,		/* binary relation between R and input table */
-	st_groupby,		/* (R, groupby columns) */
 
 	/* used internally only */
 	st_list,
@@ -185,9 +185,10 @@ extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_seq_next(char *seqname);
 extern stmt *stmt_internal(int st, list *ops);
 
+extern stmt *stmt_table(stmt *cols, int temp);
 extern stmt *stmt_basetable(sql_table *t, char *tname);
 
-#define isbasetable(s) (s->type == st_basetable && s->op1.tval->table)
+#define isbasetable(s) (s->type == st_basetable && isTable(s->op1.tval))
 #define basetable_table(s) s->op1.tval
 
 #define ptable_pivots(s)		((s)->op1.lval)
@@ -237,7 +238,6 @@ extern stmt *stmt_set(stmt *s1);
 extern stmt *stmt_sets(list *s1);
 extern stmt *stmt_ptable(stmt *p);
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
-extern stmt *stmt_groupby(stmt *p, list *cols);
 
 extern stmt *stmt_find(stmt *b, stmt *v, sql_column *c);
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
@@ -321,6 +321,7 @@ st_type2string(st_type type)
 		ST(seq_next);
 
 		ST(basetable);
+		ST(table);
 		ST(temp);
 		ST(bat);
 
@@ -386,7 +387,6 @@ st_type2string(st_type type)
 		ST(sets);
 		ST(ptable);
 		ST(pivot);
-		ST(groupby);
 		ST(list);
 	
 		ST(while);
@@ -648,19 +648,15 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op3.stval);
 			break;
 
-		case st_groupby:
-			stmt_destroy(s->op1.stval);
-			list_destroy(s->op2.lval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			break;
-
 		case st_var:
 			if (s->op1.sval)
 				_DELETE(s->op1.sval);
 			break;
 
 			/* reference only independently managed resources */
+		case st_table:
+			stmt_destroy(s->op1.stval); 
+			break;
 		case st_basetable:
 		case st_table_clear:
 			if (s->op2.sval)
@@ -850,6 +846,16 @@ stmt_internal(int st, list *ops)
 }
 
 stmt *
+stmt_table(stmt *cols, int temp)
+{
+	stmt *s = stmt_create(st_table);
+
+	s->op1.stval = cols;
+	s->flag = temp;
+	return s;
+}
+
+stmt *
 stmt_basetable(sql_table *t, char *name)
 {
 	stmt *s = stmt_create(st_basetable);
@@ -901,7 +907,7 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 {
 	stmt *s = stmt_bat_(c, basetable, access );
 	
-	if (c->base.flag != TR_NEW && c->t->table &&
+	if (c->base.flag != TR_NEW && isTable(c->t) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
 		stmt *i = stmt_bat_(c, stmt_dup(basetable), RD_INS );
 		stmt *u = stmt_bat_(c, stmt_dup(basetable), RD_UPD );
@@ -911,7 +917,7 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 		s = stmt_union(s, stmt_dup(u));
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (access == RDONLY && c->t->table) {
+	if (access == RDONLY && isTable(c->t)) {
 		stmt *d = stmt_tbat(c->t, RDONLY);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
@@ -945,7 +951,7 @@ stmt_idxbat(sql_idx * idx, int access)
 {
 	stmt *s = stmt_idxbat_(idx, access);
 
-	if (idx->base.flag != TR_NEW && idx->t->table &&
+	if (idx->base.flag != TR_NEW && isTable(idx->t) &&
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
 		stmt *i = stmt_idxbat_(idx, RD_INS);
 		stmt *u = stmt_idxbat_(idx, RD_UPD);
@@ -955,7 +961,7 @@ stmt_idxbat(sql_idx * idx, int access)
 		s = stmt_union(s, stmt_dup(u));
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (access == RDONLY && idx->t->table) {
+	if (access == RDONLY && isTable(idx->t)) {
 		stmt *d = stmt_tbat(idx->t, RDONLY);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
@@ -1537,19 +1543,6 @@ stmt_pivot(stmt *base, stmt *ptable)
 	s->t = stmt_dup(base);	/* pivots have oid's in the tail */
 	s->nrcols = 2;
 	list_append(ptable_pivots(ptable), s);
-	return s;
-}
-
-stmt *
-stmt_groupby(stmt *ptable, list *cols)
-{
-	stmt *s = stmt_create(st_groupby);
-
-	assert(ptable->type == st_ptable);
-
-	s->op1.stval = ptable;
-	s->op2.lval = cols;
-	s->nrcols = 2;
 	return s;
 }
 

@@ -260,6 +260,7 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 	if (t->digits && res->digits > t->digits)
 		res->digits = t->digits;
 	res->scale = scale;
+	res->comp_type = NULL;
 }
 
 sql_subtype *
@@ -582,6 +583,8 @@ func_cmp(sql_func *f, char *name, int nrargs)
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
 			sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+			if (f->res.comp_type) 
+				fres->res.comp_type = f->res.comp_type;
 			return fres;
 		}
 	}
@@ -716,6 +719,37 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 		}
 		n = n->next;
 	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (!f->res.type)
+				continue;
+			if (strcmp(f->base.name, name) == 0) {
+				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+					unsigned int scale = 0;
+					sql_subfunc *fres = NEW(sql_subfunc);
+
+					_DELETE(name);
+					sql_ref_init(&(fres->ref));
+					fres->func = f;
+					for (n = ops->h; n; n = n->next) {
+						sql_subtype *a = n->data;
+
+						/* same scale as the input */
+						if (a && a->scale > scale)
+							scale = a->scale;
+					}
+					sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+					if (f->res.comp_type) 
+						fres->res.comp_type = f->res.comp_type;
+					return fres;
+				}
+			}
+		}
+	}
 	_DELETE(name);
 	return NULL;
 }
@@ -782,6 +816,8 @@ sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res
 					scale = a->scale;
 			}
 			sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+			if (f->res.comp_type) 
+				fres->res.comp_type = f->res.comp_type;
 			return fres;
 		}
 		n = n->next;

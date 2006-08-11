@@ -83,6 +83,36 @@ sql_select_cleanup(mvc *sql, stmt *s, stmt *subset, group *grp)
 }
 
 static tvar *
+sql_table_func(mvc *sql, scope *scp, symbol *query)
+{
+	tvar *tv = NULL;
+	sql_subtype *st = NULL;
+	node *m;
+	stmt *sq = sql_value_exp(sql, scp, query->data.lval->h->data.sym, NULL, NULL, sql_from);
+	char *tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
+
+	if (!sq)
+		return NULL;
+
+	/* colum or table function */
+	st = tail_type(sq);
+	assert(st->comp_type);
+	tv = scope_add_table(scp, sq, tname, NULL);
+
+	/* foreach column add column name */
+	for (m = st->comp_type->columns.set->h; m; m = m->next) {
+		sql_column *c = m->data;
+		char *cname = _strdup(c->base.name);
+		stmt *sc = stmt_find(stmt_dup(sq), stmt_atom_string(cname), c);
+
+		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
+		sc = stmt_column(sc, stmt_dup(sq));
+		table_add_column(tv, sc, NULL, cname);
+	}
+	return tv;
+}
+
+static tvar *
 table_ref(mvc *sql, scope *scp, symbol *tableref)
 {
 	char *tname = NULL;
@@ -120,12 +150,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		}
 		return scope_add_table_columns(sql, scp, t, tname, RDONLY);
 	} else if (tableref->token == SQL_TABLE) {
-		stmt *s = sql_value_exp(sql, scp, tableref->data.lval->h->data.sym, NULL, NULL, sql_from);
-		char *tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
-
-		if (!s)
-			return NULL;
-		return scope_add_table(scp, s, tname, NULL);
+		return sql_table_func(sql, scp, tableref);
 	} else if (tableref->token == SQL_SELECT) {
 		return sql_subquery_optname(sql, scp, tableref);
 	} else {
@@ -927,20 +952,18 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 }
 
 static stmt *
-sql_op(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset)
+sql_op(mvc *sql, symbol *se)
 {
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
+	char *fname = l->data.sval;
 
-	(void) scp;
-	(void) grp;
-	(void) subset;		/* Stefan: unused!? */
-
-	f = sql_bind_func(sql->session->schema, l->data.sval, NULL, NULL);
+	f = sql_bind_func(sql->session->schema, fname, NULL, NULL);
 	if (f) {
 		return stmt_op(f);
 	} else {
-		return sql_error(sql, 02, "SELECT: no such operator '%s()'", l->data.sval);
+		return sql_error(sql, 02, 
+			"SELECT: no such operator '%s()'", fname);
 	}
 	return NULL;
 }
@@ -1104,6 +1127,41 @@ sql_column_value(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int
 }
 
 stmt *
+sql_table_exp(mvc *sql, scope *scp, symbol *sym ) 
+{
+	stmt *ls = scope_subquery(sql, scp, sym);
+
+	if (!ls)
+		return ls;
+
+	if (ls->type == st_list) { 
+		if (ls->nrcols <= 0) { /* single row */
+			list *l = create_stmt_list();
+			node *n;
+			for (n = ls->op1.lval->h; n; n = n->next) {
+				stmt *nsq = stmt_dup(n->data);
+				char *cname = column_name(nsq);
+				char *tname = table_name(nsq);
+				stmt *temp = stmt_temp(tail_type(nsq));
+
+				nsq = stmt_append(temp, nsq);
+				nsq = stmt_alias(nsq, tname, cname);
+				list_append(l, nsq);
+			}
+			stmt_destroy(ls);
+			ls = stmt_list(l);
+		}
+	} else if (ls->nrcols <= 0) { /* single row */
+		char *cname = column_name(ls);
+		char *tname = table_name(ls);
+		stmt *temp = stmt_temp(tail_type(ls));
+		ls = stmt_append(temp, ls);
+		ls = stmt_alias(ls, tname, cname);
+	}
+	return stmt_table(ls, 1);
+}
+
+stmt *
 sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 {
 
@@ -1113,7 +1171,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	case SQL_BINOP:
 		return sql_binop(sql, scp, se, grp, subset, f);
 	case SQL_OP:
-		return sql_op(sql, scp, se, grp, subset);
+		return sql_op(sql, se);
 	case SQL_UNOP:
 		return sql_unop(sql, scp, se, grp, subset, f);
 	case SQL_AGGR:
@@ -1134,6 +1192,11 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 		return s;
 	}
+	case SQL_TABLE:  /* turn a subquery into a tabular result */
+	{
+		return sql_table_exp(sql, scp, se->data.sym);
+	}
+		break;
 	case SQL_PARAMETER:{
 		char n[BUFSIZ];
 
