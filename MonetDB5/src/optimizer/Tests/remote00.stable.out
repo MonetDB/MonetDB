@@ -5,6 +5,8 @@ stdout of test 'remote00` in directory 'src/optimizer` itself:
 # 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote00.mal < /dev/null
 # 23:06:19 >  
 
+Mtimeout -timeout 60 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=12345 --trace --debug=10 --dbname "db1"
+Mtimeout -timeout 60 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=12346 --trace --debug=10 --dbname "db2"
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -12,41 +14,35 @@ stdout of test 'remote00` in directory 'src/optimizer` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-#mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-#mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");
-#
-#b:bat[:int,:int] := mserver.bind(mid,"rbat");
-#c:=algebra.select(b,0,12);
-#io.print(c);
-#d:=algebra.select(b,5,10);
-#low:= 5+1;
-#e:=algebra.select(d,low,7);
-#i:=aggr.count(e);
-#io.printf(" count %d\n",i);
-#io.print(d);
-#optimizer.remoteQueries();
-#
-function user.main():void;	# 0  (main:void)
-    mid := mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");	# 1 SERVERreconnectAlias (mid:int)<-(_2:str)(_3:str)(_4:int)(_5:str)(_5:str)(_6:str)
-    mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);bat.insert(rb,2,7);");	# 2 SERVERquery (_7:void)<-(mid:int)(_8:str)
-    b:bat[:int,:int]  := mserver.bind(mid,"rbat");	# 3 SERVERbindBAT (b:bat[:int,:int])<-(mid:int)(_10:str)
-    mserver.rpc(mid,"    c := algebra.select(b,0,12);");	# 4 SERVERquery (_27:void)<-(mid:int)(_28:str)
-    c := mserver.rpc(mid,"io.print(c);");	# 5 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_31:str)
-    io.print(c);	# 6 IOprint_val (_14:int)<-(c:bat[:int,:int])
-    mserver.rpc(mid,"    d := algebra.select(b,5,10);");	# 7 SERVERquery (_32:void)<-(mid:int)(_33:str)
-    low := calc.+(5,1);	# 8 CALCbinaryADDintint (low:int)<-(_16:int)(_19:int)
-    _37 := mserver.put("low",low);	# 9 SERVERputLocal (_37:str)<-(_38:str)(low:int)
-    mserver.rpc(mid,_37,"    e := algebra.select(d,low,7);");	# 10 SERVERmapi_rpc_single_row (_34:void)<-(mid:int)(_37:str)(_39:str)
-    mserver.rpc(mid,"    i := aggr.count(e);");	# 11 SERVERquery (_40:void)<-(mid:int)(_41:str)
-    i := mserver.rpc(mid,"io.print(i);");	# 12 SERVERmapi_rpc_single_row (i:int)<-(mid:int)(_44:str)
-    io.printf(" count %d\n",i);	# 13 IOprint_formatted_int (_23:int)<-(_24:str)(i:int)
-    d := mserver.rpc(mid,"io.print(d);");	# 14 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_47:str)
-    io.print(d);	# 15 IOprint_val (_25:int)<-(d:bat[:int,:int])
-end main;	# 16  
-!ERROR: MALException: Could not connect: Setup connection failed
-!ERROR:     at mserver.connect(mserver.mx:1208)
-
-# 23:06:19 >  
-# 23:06:19 >  Done.
-# 23:06:19 >  
+>>[ 1 ]
+>>>[ "12345" ]
+>># MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:db2
+# Visit http://monetdb.cwi.nl/ for further information
+>>>>>[ "12346" ]
+>>#RQcall:#b:bat[:int,:int] := bbp.bind("rbat":str);
+#RQcall:#c:= algebra.select(b,0:int,12:int);
+#RQcall:#d:= algebra.select(b,5:int,10:int);
+#RQcall:#e:= algebra.select(d,low,7:int);
+#RQcall:#i:= aggr.count(e);
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  1	  ]
+[ 2,	  7	  ]
+[ 1 ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 2,	  7	  ]
+>
+# 10:12:48 >  
+# 10:12:48 >  Done.
+# 10:12:48 >  
 

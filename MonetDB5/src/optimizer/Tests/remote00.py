@@ -24,24 +24,14 @@ io.print(mapi_port);
 alarm.sleep(4);
 '''
 
+# The last part of server 2 is on one line to make sure the optimizer is called
 prelude_2 = '''
 alarm.sleep(2);
 env := inspect.getEnvironment();
 mapi_port := algebra.find(env, "mapi_port");
-io.print(mapi_port);
-mid:= mserver.reconnect("s0_0","localhost",%d,"monetdb","monetdb","mal");
-io.print(mid);
-mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\\\"rbat\\\"); bat.insert(rb,1,1); bat.insert(rb,2,7);");
-b:bat[:int,:int] := mserver.bind(mid,"rbat");
-c:=algebra.select(b,0,12);
-io.print(c);
-d:=algebra.select(b,5,10);
-low:= 5+1;
-e:=algebra.select(d,low,7);
-i:=aggr.count(e);
-io.print(i);
-io.print(d);
-optimizer.remoteQueries();
+io.print(mapi_port); 
+
+mid:= mserver.reconnect("s0_0","localhost",%d,"monetdb","monetdb","mal"); mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\\\"rbat\\\"); bat.insert(rb,1,1); bat.insert(rb,2,7);"); b:bat[:int,:int]:= mserver.bind(mid,"rbat"); c:=algebra.select(b,0,12); io.print(c); d:=algebra.select(b,5,10); low:= 5+1; e:=algebra.select(d,low,7); i:=aggr.count(e); io.print(i); io.print(d); optimizer.remoteQueries();
 '''
 
 def main():
