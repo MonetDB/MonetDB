@@ -47,6 +47,7 @@
 #include "mem.h"          /* PFmalloc() */
 #include "oops.h"
 #include "alg_dag.h"
+#include "algopt.h"
 
 /*
  * Easily access subtree-parts.
@@ -66,13 +67,13 @@
 /**
  *
  * conflict resolving functions that are used by the
- * eqjoin - number proxy (kind=1) and the 
+ * eqjoin - number proxy (kind=1) and the
  * semijoin - number - cross proxy
  *
  */
 
 /**
- * join_resolve_conflict_worker tries to cope with the 
+ * join_resolve_conflict_worker tries to cope with the
  * remaining conflicting nodes. It accepts operators of
  * whose cardinality is the same as the one of the equi-join
  * and whose columns are all still visible at the entry
@@ -96,7 +97,7 @@ join_resolve_conflict_worker (PFla_op_t *p,
     bool remove, rp_ref = false, rlp_ref = false;
     unsigned int i = 0, last = PFarray_last (conflict_list);
     unsigned int ori_last = last;
-    
+
     while (i < last) {
         remove = false;
         node = *(PFla_op_t **) PFarray_at (conflict_list, i);
@@ -105,11 +106,11 @@ join_resolve_conflict_worker (PFla_op_t *p,
         if (node->kind != la_project &&
             node->kind != la_distinct)
             return ori_last == last;
-            
+
         /* look into the children of the join operator */
         if (rp == node)                  { rp_ref  = true; remove = true; }
         else if (L(rp) && L(rp) == node) { rlp_ref = true; remove = true; }
-        
+
         if (remove) {
             *(PFla_op_t **) PFarray_at (conflict_list, i)
                 = *(PFla_op_t **) PFarray_top (conflict_list);
@@ -141,13 +142,13 @@ join_resolve_conflict_worker (PFla_op_t *p,
                                              sizeof (*(proj_list1)));
         PFalg_proj_t *proj_list2 = PFmalloc (count *
                                              sizeof (*(proj_list2)));
-        
+
         for (i = 0; i < rp->schema.count; i++) {
             proj_list1[i] = rp->sem.proj.items[i];
             proj_list2[i] = PFalg_proj (rp->sem.proj.items[i].new,
                                         rp->sem.proj.items[i].new);
         }
-                    
+
         *p  = *PFla_eqjoin (lp,
                             PFla_project_ (L(rp), count, proj_list1),
                             latt,
@@ -165,13 +166,13 @@ join_resolve_conflict_worker (PFla_op_t *p,
         PFalg_proj_t *proj_list  = PFmalloc (sizeof (PFalg_proj_t));
         PFalg_proj_t *proj_listP = PFmalloc (sizeof (PFalg_proj_t));
         PFalg_proj_t *proj_listD = PFmalloc (sizeof (PFalg_proj_t));
-        
+
         proj_list [0] = rp->sem.proj.items[0];
         proj_listP[0] = PFalg_proj (rp->sem.proj.items[0].new,
                                     rp->sem.proj.items[0].new);
         proj_listD[0] = PFalg_proj (rp->sem.proj.items[0].old,
                                     rp->sem.proj.items[0].new);
-                    
+
         *p  = *PFla_eqjoin (lp, PFla_project_ (
                                     PFla_distinct (L(L(rp))),
                                     1, proj_list),
@@ -196,7 +197,7 @@ join_resolve_conflict_worker (PFla_op_t *p,
  * that refer to the proxy entry or proxy exit operator. If there
  * are remaining conflicting entries we try to solve them in
  * a separate worker.
- * 
+ *
  * @ret the return code can be one of the following three values:
  *      CONFLICT (0) meaning we could not solve all conflicts
  *      PROXY_ONLY (1) meaning that the proxy exit operator was
@@ -213,11 +214,11 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
     int leaf_ref = PROXY_ONLY;
     unsigned int i = 0, last = PFarray_last (conflict_list);
     bool consistent;
-    
+
     assert (proxy_entry);
     assert (proxy_exit);
     assert (conflict_list);
-    
+
     /* remove entry and exit references */
     while (i < last) {
         node = *(PFla_op_t **) PFarray_at (conflict_list, i);
@@ -240,7 +241,7 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
         return leaf_ref;
 
     p = proxy_entry;
-    
+
     /* This check is more restrictive as required... */
     if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
         !PFprop_key_right (p->prop, p->sem.eqjoin.att2))
@@ -248,7 +249,7 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
 
     /* the subdomain relationship ensures that we only look at the child
        of the equi-join whose cardinality is unchanged after the join. */
-       
+
     /* Check all domains before calling the worker as
        it might rewrite the DAG which results in missing
        domain information in the newly constructed nodes. */
@@ -257,17 +258,17 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
                                          p->sem.eqjoin.att2),
                        PFprop_dom_left (p->prop,
                                         p->sem.eqjoin.att1)) &&
-        PFprop_subdom (p->prop, 
+        PFprop_subdom (p->prop,
                        PFprop_dom_left (p->prop,
                                         p->sem.eqjoin.att1),
                        PFprop_dom_right (p->prop,
                                          p->sem.eqjoin.att2))) {
-        consistent = join_resolve_conflict_worker (p, L(p), R(p), 
+        consistent = join_resolve_conflict_worker (p, L(p), R(p),
                                                    p->sem.eqjoin.att1,
                                                    p->sem.eqjoin.att2,
                                                    conflict_list);
         if (! consistent) return CONFLICT;
-        consistent = join_resolve_conflict_worker (p, R(p), L(p), 
+        consistent = join_resolve_conflict_worker (p, R(p), L(p),
                                                    p->sem.eqjoin.att2,
                                                    p->sem.eqjoin.att1,
                                                    conflict_list);
@@ -278,24 +279,24 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
                                               p->sem.eqjoin.att2),
                             PFprop_dom_left (p->prop,
                                              p->sem.eqjoin.att1))) {
-        consistent = join_resolve_conflict_worker (p, L(p), R(p), 
+        consistent = join_resolve_conflict_worker (p, L(p), R(p),
                                                    p->sem.eqjoin.att1,
                                                    p->sem.eqjoin.att2,
                                                    conflict_list);
         if (! consistent) return CONFLICT;
     }
-    else if (PFprop_subdom (p->prop, 
+    else if (PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
                                              p->sem.eqjoin.att1),
                             PFprop_dom_right (p->prop,
                                               p->sem.eqjoin.att2))) {
-        consistent = join_resolve_conflict_worker (p, R(p), L(p), 
+        consistent = join_resolve_conflict_worker (p, R(p), L(p),
                                                    p->sem.eqjoin.att2,
                                                    p->sem.eqjoin.att1,
                                                    conflict_list);
         if (! consistent) return CONFLICT;
     }
-    
+
     return PFarray_last (conflict_list)? CONFLICT : leaf_ref;
 }
 
@@ -373,7 +374,7 @@ static bool
 semijoin_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     PFla_op_t *lp, *rp;
-    
+
     if (p->kind != la_number || L(p)->kind != la_cross)
         return false;
 
@@ -394,11 +395,11 @@ semijoin_exit (PFla_op_t *p, PFla_op_t *entry)
 #define OP_UNDEF  2
 
 /**
- * Worker for function only_eqjoin_refs that traverses the DAG 
+ * Worker for function only_eqjoin_refs that traverses the DAG
  * and checks the references to the exit,
  */
 static int
-only_eqjoin_refs_worker (PFla_op_t *p, PFla_op_t *exit, 
+only_eqjoin_refs_worker (PFla_op_t *p, PFla_op_t *exit,
                          PFla_op_t *entry, int join)
 {
     int cur_op, res_op;
@@ -445,7 +446,7 @@ only_eqjoin_refs_worker (PFla_op_t *p, PFla_op_t *exit,
         cur_op = OP_JOIN;
     else
         cur_op = OP_NOJOIN;
-    
+
     res_op = OP_UNDEF;
     /* traverse children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++) {
@@ -471,7 +472,7 @@ only_eqjoin_refs (PFla_op_t *root,
                   PFla_op_t *proxy_exit)
 {
     int join_ops_only;
-    
+
     /* Make sure that the proxy pattern is not visited,
        thus pruning all internal references to the exit node. */
     SEEN(proxy_entry) = true;
@@ -482,7 +483,7 @@ only_eqjoin_refs (PFla_op_t *root,
     join_ops_only = only_eqjoin_refs_worker (root, proxy_exit,
                                              proxy_entry, OP_NOJOIN);
     PFla_dag_reset (root);
-    
+
     return join_ops_only != OP_NOJOIN;
 }
 
@@ -493,9 +494,9 @@ only_eqjoin_refs (PFla_op_t *root,
  *
  * The basic pattern (in (1)) consists of an equi-join which has a number
  * and a distinct argument. The pattern can be seen as some kind of semijoin.
- * The distinct operator works on a single column that is inferred from 
+ * The distinct operator works on a single column that is inferred from
  * the column generated by the number operator. Underneath the number operator
- * a cross product is located. 
+ * a cross product is located.
  * The pattern is rewritten in such a way that the number operator # ends
  * up at the top of the DAG fragment. As input for the distinct operator we
  * use a combined key of two new number operators that reside in the cross
@@ -510,11 +511,11 @@ only_eqjoin_refs (PFla_op_t *root,
  *
  *
  *                                                     |
- *                                                     |  
+ *                                                     |
  *                                                 pi_(entry)
  *                                                     |
- *                                                     #_____       
- *                   |                                       \  
+ *                                                     #_____
+ *                   |                                       \
  *                   |                           ____________|X|
  *                  |X|                         /               \
  *                 /   \                      |X|____            |
@@ -535,16 +536,16 @@ only_eqjoin_refs (PFla_op_t *root,
  *                    X                       |    \___ #'       |
  *                  _/ \_                     |         |        |
  *                 /     \                    |         X        |
- *                /2\    /3\                  \_____   / \   ___/ 
- *               /___\  /___\                       \ /   \ /     
- *                                                   #"    #"'    
- *                                                   |      |     
- *                                                  /2\    /3\    
- *                                                 /___\  /___\   
- *                                                          
- *                                                          
+ *                /2\    /3\                  \_____   / \   ___/
+ *               /___\  /___\                       \ /   \ /
+ *                                                   #"    #"'
+ *                                                   |      |
+ *                                                  /2\    /3\
+ *                                                 /___\  /___\
+ *
+ *
  *                  ( 1 )                             ( 2 )
- *                                                          
+ *
  * If the number operator # in (1) is referenced by another operator
  * outside the proxy pattern we have to ensure the pattern in (3). The
  * basic idea is to allow only references to # that don't require the
@@ -555,13 +556,13 @@ only_eqjoin_refs (PFla_op_t *root,
  * projection pi_(exit) that is connected to the new number operator #
  * at the top of the new DAG.
  *
- *                                                         
+ *
  *                                 (|X|)--(_)*---     |
- *                                   |           \    |  
+ *                                   |           \    |
  *                                 (pi)*          pi_(entry)
  *                                   |                |
- *         (|X|)                  (pi_(exit))---------#_____       
- *         /    \                                           \  
+ *         (|X|)                  (pi_(exit))---------#_____
+ *         /    \                                           \
  *        |      \                              ____________|X|
  *        |      (_)*                          /               \
  *        |        \                         |X|____            |
@@ -582,14 +583,14 @@ only_eqjoin_refs (PFla_op_t *root,
  *        |       \___   |                   |    \___ #'       |
  *         \          \ /                    |         |        |
  *          -----------#                     |         X        |
- *                     |                     \_____   / \   ___/ 
- *                     X                           \ /   \ /     
- *                   _/ \_                          #"    #"'    
- *                  /     \                         |      |     
- *                 /2\    /3\                      /2\    /3\    
- *                /___\  /___\                    /___\  /___\   
- *                                                         
- *                                                         
+ *                     |                     \_____   / \   ___/
+ *                     X                           \ /   \ /
+ *                   _/ \_                          #"    #"'
+ *                  /     \                         |      |
+ *                 /2\    /3\                      /2\    /3\
+ *                /___\  /___\                    /___\  /___\
+ *
+ *
  *                  ( 3 )                            ( 4 )
  */
 static void
@@ -616,11 +617,11 @@ modify_semijoin_proxy (PFla_op_t *root,
                                              proxy_exit,
                                              conflict_list)))
         return;
-                                         
+
     /* If the proxy exit is referenced from outside the proxy as well
-       and the references are NOT equi-joins we can not remove the 
+       and the references are NOT equi-joins we can not remove the
        number operator at the proxy exit and thus don't push up the
-       cross product. Thus we would not benefit from a rewrite 
+       cross product. Thus we would not benefit from a rewrite
        and give up. */
     if (leaf_ref == MULTIPLE &&
         ! only_eqjoin_refs (root, proxy_entry, proxy_exit))
@@ -639,14 +640,14 @@ modify_semijoin_proxy (PFla_op_t *root,
         rproject = rp;
         rp = L(rp);
     }
-    
+
     /* normalize the pattern such that the distinct
        operator always resides in the 'virtual' right side (rp). */
     if (lp->kind == la_distinct) {
         rp = lp; /* we do not need the old 'rp' reference anymore */
         lproject = rproject; /* we do not need the old 'rproject' anymore */
     }
-        
+
     /* we have now checked the additional requirements (conflicts
        resolved or rewritable) and als have ensured that:
        - rp references the distinct operator
@@ -654,7 +655,7 @@ modify_semijoin_proxy (PFla_op_t *root,
 
        Thus we can begin the translation ...
      */
-    
+
     /* name of the key column */
     num_col = proxy_exit->sem.number.attname;
 
@@ -698,7 +699,7 @@ modify_semijoin_proxy (PFla_op_t *root,
         used_cols = used_cols | num_col_alias;
     } else
         num_col_alias = num_col;
-        
+
     /* Create the projection list for the input of the equi-join that
        maps the two new column names num_col1 and num_col2. */
     left_proj[0] = PFalg_proj (num_col_alias, num_col);
@@ -721,7 +722,7 @@ modify_semijoin_proxy (PFla_op_t *root,
         else if (lproject) {
             for (j = 0; j < lproject->sem.proj.count; j++)
                 if (entry_col == lproject->sem.proj.items[j].new) {
-                    proxy_proj[i] = 
+                    proxy_proj[i] =
                         PFalg_proj (entry_col,
                                     lproject->sem.proj.items[j].old);
                     break;
@@ -764,7 +765,7 @@ modify_semijoin_proxy (PFla_op_t *root,
                         new_number,
                         proxy_entry->schema.count,
                         proxy_proj);
-             
+
     if (leaf_ref == MULTIPLE) {
         /* Split up the references to the proxy exit: The modified
            proxy exit (operator: exit_op) is input to the references
@@ -773,7 +774,7 @@ modify_semijoin_proxy (PFla_op_t *root,
            the tuples pruned inside anyway. */
         /* hide the two new columns num_col1 and num_col2 by
            introducing the following projection */
-        PFla_op_t *exit_op = PFla_project_ (number, 
+        PFla_op_t *exit_op = PFla_project_ (number,
                                             proxy_exit->schema.count,
                                             exit_proj);
 
@@ -821,7 +822,7 @@ static void
 join_prepare (PFla_op_t *root)
 {
     PFprop_infer_key (root);
-    /* key property inference already requires 
+    /* key property inference already requires
        the domain property inference. Thus we can
        skip it:
     PFprop_infer_dom (root);
@@ -844,16 +845,16 @@ join_entry (PFla_op_t *p)
                        PFprop_dom_left (p->prop,
                                         p->sem.eqjoin.att1)))
         return true;
-        
+
     if (PFprop_key_right (p->prop, p->sem.eqjoin.att2) &&
-        PFprop_subdom (p->prop, 
+        PFprop_subdom (p->prop,
                        PFprop_dom_left (p->prop,
                                         p->sem.eqjoin.att1),
                        PFprop_dom_right (p->prop,
                                          p->sem.eqjoin.att2)))
         return true;
 
-    return false; 
+    return false;
 }
 
 /**
@@ -864,7 +865,7 @@ static bool
 join_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     dom_t entry_dom, dom;
-    
+
     if (p->kind != la_rownum && p->kind != la_number)
         return false;
 
@@ -876,10 +877,10 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
         if (p->sem.number.part) return false;
         dom = PFprop_dom (p->prop, p->sem.number.attname);
     }
-   
+
     /* look up the super domain of the two join attributes */
     if (PFprop_key_right (entry->prop, entry->sem.eqjoin.att2) &&
-        PFprop_subdom (entry->prop, 
+        PFprop_subdom (entry->prop,
                        PFprop_dom_left (entry->prop,
                                         entry->sem.eqjoin.att1),
                        PFprop_dom_right (entry->prop,
@@ -924,13 +925,13 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
  *          /   / \             _ _ _ _ __/ |  \_ _ __
  *          |  / t1\           /(sem.base1) pi_(proxy)\(sem.ref)
  *          | /_____\          |            |          |
- *          |    |                         |X|          
+ *          |    |                         |X|
  *          \   /              |          /   \        |
- *           \ /                         /  pi_(entry)  
+ *           \ /                         /  pi_(entry)
  *            #_(num_col)      |        |      |       |
- *                                      |     |X|       
+ *                                      |     |X|
  *                             |    pi_(left) / \      |
- *                                      |    / t1\      
+ *                                      |    / t1\
  *                             |        |   /_____\    |
  *                                      |      | _ _ _/
  *                             |        |      |/
@@ -945,7 +946,7 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
  *                                       #_(num_col)
  *
  *            ( 1 )                    ( 2 )
- *                                                            
+ *
  */
 static void
 generate_join_proxy (PFla_op_t *root,
@@ -959,7 +960,7 @@ generate_join_proxy (PFla_op_t *root,
                 icols = 0, used_cols = 0;
     unsigned int i, j, k, count, dist_count;
     PFalg_attlist_t req_cols, new_cols;
-    PFla_op_t *num_op, *exit_op, *entry_op, *proxy_op, *base_op; 
+    PFla_op_t *num_op, *exit_op, *entry_op, *proxy_op, *base_op;
 
     PFalg_proj_t *exit_proj  = PFmalloc (proxy_exit->schema.count *
                                          sizeof (PFalg_proj_t));
@@ -979,7 +980,7 @@ generate_join_proxy (PFla_op_t *root,
                                  proxy_exit,
                                  conflict_list))
         return;
-                                         
+
     /* Discard proxies with rownum operators as these would probably never
        benefit from the rewrites based on proxies. In addition checking the
        usage of the rownum column requires quite some work. */
@@ -988,7 +989,7 @@ generate_join_proxy (PFla_op_t *root,
 
     /* assign unique names to track the names inside the proxy body */
     PFprop_infer_unq_names (proxy_entry);
-    
+
     /* short-hand for the key column name */
     num_col = proxy_exit->sem.number.attname;
 
@@ -996,7 +997,7 @@ generate_join_proxy (PFla_op_t *root,
        (-- it will be filled in after collecting all the used column
         names and generating a new free one). */
     count = 1;
-    
+
     /* collect all the used column names and create a one-to-one
        projection list except for the number column. */
     for (i = 0; i < proxy_exit->schema.count; i++) {
@@ -1013,11 +1014,11 @@ generate_join_proxy (PFla_op_t *root,
                       PFalg_unq_name (num_col, 0),
                       ~used_cols);
     used_cols = used_cols | new_num_col;
-              
+
     /* ... and replace the number column by the column generated
        by the new nested number operator */
     exit_proj[0] = PFalg_proj (num_col, new_num_col);
-        
+
     /* In addition create two names for mapping the old as well
        as the new number operators... */
     new_num_col_alias = PFalg_ori_name (
@@ -1037,18 +1038,18 @@ generate_join_proxy (PFla_op_t *root,
     new_cols.count = 0;
     new_cols.atts = PFmalloc (proxy_entry->schema.count *
                               sizeof (PFalg_attlist_t));
-                              
+
     /* reset counters for the projection lists */
     count = 0;
     dist_count = 0;
-    
+
     /* Add the second join argument to the projection that replaces
        proxy entry join. This will ensure that there are no dangling
        references. */
     above_proj[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att2,
                                       num_col);
-                                     
-    /* map the input to the output names. 
+
+    /* map the input to the output names.
        For new columns create new 'free' names */
     for (i = 0; i < proxy_entry->schema.count; i++) {
         PFalg_att_t entry_col = proxy_entry->schema.items[i].name;
@@ -1075,7 +1076,7 @@ generate_join_proxy (PFla_op_t *root,
                 if (k == dist_count) {
                     /* map output name to the same name as the input column */
                     entry_proj[dist_count] = PFalg_proj (exit_col, entry_col);
-                    /* keep input names and replace the 'new_num_col' 
+                    /* keep input names and replace the 'new_num_col'
                        (disguised as 'num_col') by the real 'num_col' */
                     proxy_proj[dist_count] = exit_col == num_col
                                              ? PFalg_proj (num_col, num_col_alias)
@@ -1097,7 +1098,7 @@ generate_join_proxy (PFla_op_t *root,
             used_cols = used_cols | new_exit_col;
             /* add column to the list of new columns */
             new_cols.atts[new_cols.count++] = new_exit_col;
-            /* map columns similar to the above mapping (for already 
+            /* map columns similar to the above mapping (for already
                existing columns) */
             entry_proj[dist_count] = PFalg_proj (new_exit_col, entry_col);
             proxy_proj[dist_count] = PFalg_proj (new_exit_col, new_exit_col);
@@ -1110,11 +1111,11 @@ generate_join_proxy (PFla_op_t *root,
         }
     }
 
-                               
+
     /* Start icols property inference with the collected 'new' columns */
     PFprop_infer_icol_specific (proxy_entry, icols);
 
-    /* All the columns that are required at the exit point are required columns 
+    /* All the columns that are required at the exit point are required columns
        for the proxy */
     req_cols.atts = PFmalloc (PFprop_icols_count (proxy_exit->prop) *
                               sizeof (PFalg_attlist_t));
@@ -1128,7 +1129,7 @@ generate_join_proxy (PFla_op_t *root,
     req_cols.count = count;
 
     /* Create a proxy base on top of the proxy exit. (If this number operator
-       is not referenced above it will be removed by a following icol 
+       is not referenced above it will be removed by a following icol
        optimization phase.) */
     base_op = PFla_proxy_base (proxy_exit);
     /* Create a new number operator which will replace the old key column
@@ -1172,7 +1173,7 @@ generate_join_proxy (PFla_op_t *root,
     /* ... and replace the old proxy entry operator with a projection that
        references the proxy operator and maps back the column names to
        the original ones generated by the proxy entry. */
-    *proxy_entry = *PFla_project_ (proxy_op, 
+    *proxy_entry = *PFla_project_ (proxy_op,
                                    proxy_entry->schema.count,
                                    above_proj);
 
@@ -1180,8 +1181,633 @@ generate_join_proxy (PFla_op_t *root,
        traversal */
     *(PFla_op_t **) PFarray_add (checked_nodes) = L(entry_op);
     *(PFla_op_t **) PFarray_add (checked_nodes) = L(R(L(entry_op)));
-    
+
 }
+
+
+
+
+/**
+ *
+ * Functions specific to the nested proxies rewrite.
+ *
+ */
+
+
+/**
+ * proxy_unnest_resolve_conflicts discards all detected
+ * proxies that reference nodes which reference nodes
+ * inside the proxy.
+ */
+static bool
+proxy_unnest_resolve_conflicts (PFla_op_t *proxy_entry,
+                                PFarray_t *conflict_list)
+{
+    PFla_op_t *node;
+    unsigned int last = PFarray_last (conflict_list);
+
+    assert (proxy_entry);
+    assert (conflict_list);
+
+    /* remove entry and exit references */
+    while (last) {
+        node = *(PFla_op_t **) PFarray_top (conflict_list);
+        if (proxy_entry == node) {
+            PFarray_del (conflict_list);
+            last--;
+        } else
+            return false;
+    }
+
+    return true;
+}
+
+/**
+ * The nested proxy pattern requires no preparation.
+ */
+static void
+proxy_unnest_prepare (PFla_op_t *root)
+{
+    (void) root;
+}
+
+/**
+ * Look for proxies of kind=1 as the starting point of the
+ * new proxy pattern.
+ */
+static bool
+proxy_unnest_entry (PFla_op_t *p)
+{
+    return p->kind == la_proxy && p->sem.proxy.kind == 1;
+}
+
+/**
+ * Look for a proxy of kind=1 that is connected with the
+ * entry proxy via a special set of operators.
+ */
+static bool
+proxy_unnest_exit (PFla_op_t *proxy, PFla_op_t *entry)
+{
+    PFla_op_t *p;
+
+    if (proxy->kind != la_proxy || proxy->sem.proxy.kind != 1)
+        return false;
+
+    p = L(entry->sem.proxy.base1);
+    while (p->kind != la_proxy) {
+        switch (p->kind) {
+            case la_attach:
+            case la_project:
+            case la_num_add:
+            case la_num_subtract:
+            case la_num_multiply:
+            case la_num_divide:
+            case la_num_modulo:
+            case la_num_eq:
+            case la_num_gt:
+            case la_num_neg:
+            case la_bool_and:
+            case la_bool_or:
+            case la_bool_not:
+            case la_cast:
+                p = L(p);
+                break;
+
+            case la_doc_access:
+                p = R(p);
+                break;
+
+            default:
+                return false;
+        }
+    }
+    return proxy == p;
+}
+
+/**
+ * collect_mappings_worker modifies the
+ * two column name lists based on the column names
+ * in the first three arguments:
+ * - res is set to null in req_col_names
+ * - res is removed from new_col_names
+ * - att1 and att2 are added to new_col_names if
+ *   they are not already present.
+ */
+static void
+collect_mappings_worker (PFalg_att_t res,
+                         PFalg_att_t att1,
+                         PFalg_att_t att2,
+                         unsigned int req_count,
+                         PFalg_proj_t *req_col_names,
+                         PFarray_t *new_col_names)
+{
+    PFalg_att_t col;
+    unsigned int i;
+    bool att1_present = false, att2_present = false;
+
+    /* reset name mapping of the result column
+       in the list of required columns */
+    for (i = 0; i < req_count; i++)
+        if (res == req_col_names[i].old)
+            req_col_names[i].old = att_NULL;
+
+    /* Remove result column and add att1 and att2 columns
+       if they are not already an available column. */
+    for (i = 0; i < PFarray_last (new_col_names); i++) {
+        col = *(PFalg_att_t *) PFarray_at (new_col_names, i);
+        if (col == res) {
+            *(PFalg_att_t *) PFarray_at (new_col_names, i)
+                = *(PFalg_att_t *) PFarray_top (new_col_names);
+            PFarray_del (new_col_names);
+            i--;
+        }
+        else if (col == att1)
+            att1_present = true;
+        else if (col == att2)
+            att2_present = true;
+    }
+    if (!att1_present && att1)
+        *(PFalg_att_t *) PFarray_add (new_col_names) = att1;
+    if (!att2_present && att2)
+        *(PFalg_att_t *) PFarray_add (new_col_names) = att2;
+}
+
+/**
+ * collect_mappings traverses a list of operators and keeps
+ * track of the column names for a given list of required output
+ * columns. In addition it collects the names of all columns that
+ * are required for processing the operators on their way.
+ */
+static void
+collect_mappings (PFla_op_t *p,
+                  unsigned int req_count,
+                  PFalg_proj_t *req_col_names,
+                  PFarray_t *new_col_names)
+{
+    while (p->kind != la_proxy) {
+        switch (p->kind) {
+            case la_attach:
+                collect_mappings_worker (p->sem.attach.attname,
+                                         att_NULL,
+                                         att_NULL,
+                                         req_count,
+                                         req_col_names,
+                                         new_col_names);
+                break;
+
+            case la_project:
+            {
+                PFalg_att_t col;
+                unsigned int i, j;
+
+                for (i = 0; i < req_count; i++) {
+                    col = req_col_names[i].old;
+                    for (j = 0; j < p->sem.proj.count; j++)
+                        if (col == p->sem.proj.items[j].new) {
+                            req_col_names[i].old = p->sem.proj.items[j].old;
+                            break;
+                        }
+                }
+                for (i = 0; i < PFarray_last (new_col_names); i++) {
+                    col = *(PFalg_att_t *) PFarray_at (new_col_names, i);
+                    for (j = 0; j < p->sem.proj.count; j++)
+                        if (col == p->sem.proj.items[j].new) {
+                            *(PFalg_att_t *) PFarray_at (new_col_names, i) =
+                                p->sem.proj.items[j].old;
+                            break;
+                        }
+                }
+            }   break;
+
+            case la_num_add:
+            case la_num_subtract:
+            case la_num_multiply:
+            case la_num_divide:
+            case la_num_modulo:
+            case la_num_eq:
+            case la_num_gt:
+            case la_bool_and:
+            case la_bool_or:
+                collect_mappings_worker (p->sem.binary.res,
+                                         p->sem.binary.att1,
+                                         p->sem.binary.att2,
+                                         req_count,
+                                         req_col_names,
+                                         new_col_names);
+                break;
+
+            case la_num_neg:
+            case la_bool_not:
+                collect_mappings_worker (p->sem.unary.res,
+                                         p->sem.unary.att,
+                                         att_NULL,
+                                         req_count,
+                                         req_col_names,
+                                         new_col_names);
+                break;
+
+            case la_cast:
+                collect_mappings_worker (p->sem.type.res,
+                                         p->sem.type.att,
+                                         att_NULL,
+                                         req_count,
+                                         req_col_names,
+                                         new_col_names);
+                break;
+
+            case la_doc_access:
+                collect_mappings_worker (p->sem.doc_access.res,
+                                         p->sem.doc_access.att,
+                                         att_NULL,
+                                         req_count,
+                                         req_col_names,
+                                         new_col_names);
+
+                p = R(p);
+                continue;
+                break;
+
+            default:
+                PFoops (OOPS_FATAL,
+                        "Can't match the operator of kind %i in proxy"
+                        "generation.", p->kind);
+                break;
+        }
+        p = L(p);
+    }
+
+}
+
+/**
+ * We rewrite a DAG of the form shown in (1) into an equivalent one
+ * (shown in (2)). Thus we avoid that the upper proxy DAG is evaluated
+ * in dependence of the lower proxy. Intermediate results become much
+ * smaller.
+ * Some conditions have to be fulfilled to allow such a rewrite. The
+ * upper proxy (proxy1) may only work on columns that are already
+ * available at the bottom of the lower proxy (proxy2). This is ensured
+ * by comparing the required columns of proxy1 with the new columns of
+ * proxy2 and checking that the operators between the proxies do not
+ * generate any of the required columns. Furthermore there may not be
+ * any references to this pattern from outside it and the operators
+ * between the proxies have to work on tuples only (discarding any
+ * iter information).
+ * If the conditions are all fulfilled we can rewrite our pattern from
+ * (1) to (2):
+ * - We remove the number operators of both proxies and replace them
+ *   by a common number operator (plus additional projections to map
+ *   the column names correctly).
+ *   All columns referenced in proxy1 that are not required are linked
+ *   to a dummy column to avoid dangling references -- these columns
+ *   will be pruned by following icols optimization phase.
+ * - The result of both proxies is joined based on the values generated
+ *   in the common number operator. Again projections ensure the correct
+ *   column name mapping.
+ *   As the optional operators between the original first and original
+ *   second proxy (...) may have some spare columns (the required columns
+ *   of proxy1) we misuse one of them to propagate the join column. This
+ *   is the reason for the projection pi_(top2) -- it maps the join column
+ *   to an unused 'required' column.
+ * - As a side effect the operators marking the patterns as proxies are
+ *   removed.
+ *
+ *            |
+ *          proxy1 (kind=1)
+ *            |
+ *            pi_(proxy)                              pi_(top)
+ *            |                                         |
+ *           |X|                                       |X|
+ *          /   \                          ____________/ \___________
+ *         /  pi_(entry)                  /                          \
+ *        |      |                        |                          |
+ *        |     |X|                      pi_(top1)                  pi_(mid)
+ *    pi_(left) / \                       |                          |
+ *        |    / t1\                      |                         ... (*)
+ *        |   /_____\                     |                          |
+ *        |      |                        |                         pi_(top2)
+ *        |      |                        |                          |
+ *        |   pi_(exit)                  |X|                        |X|
+ *        |      |                      /   \                      /   \
+ *        \___   |                     /  pi_(entry)              /  pi_(entry)
+ *            \ /                     |      |                   |      |
+ *             #_(new_num_col)        |     |X|                  |     |X|
+ *             |                  pi_(left) / \              pi_(left) / \
+ *         proxy1_base                |    / t1\                 |    / t2\
+ *             |                      |   /_____\                |   /_____\
+ *             |                      |      |                   |      |
+ *            ... (*)                 |      |                   |      |
+ *             |                      |   pi_(exit)              |   pi_(exit)
+ *             |                      |      |                   |      |
+ *           proxy2 (kind=1)          \___   |                   \___   |
+ *             |                          \ /                        \ /
+ *             pi_(proxy)                 pi_(base1)              pi_(base2)
+ *             |                           |                          |
+ *            |X|                          \___________   ____________/
+ *           /   \                                     \ /
+ *          /  pi_(entry)                               #_(num_col1)
+ *         |      |                                     |
+ *         |     |X|
+ *     pi_(left) / \                                  ( 2 )
+ *         |    / t2\
+ *         |   /_____\             (*) ... represents an arbitrary number
+ *         |      |                    of the following operators:
+ *         |      |                    - project
+ *         |   pi_(exit)               - attach
+ *         |      |                    - +, -, *, \, %, neg
+ *         \___   |                    - eq, gt, not, and, or
+ *             \ /                     - cast
+ *              #_(new_num_col)        - doc_access
+ *              |
+ *          proxy2_base
+ *              |
+ *
+ *            ( 1 )
+ */
+static void
+unnest_proxy (PFla_op_t *root,
+              PFla_op_t *proxy1,
+              PFla_op_t *proxy2,
+              PFarray_t *conflict_list,
+              PFarray_t *exit_refs,
+              PFarray_t *checked_nodes)
+{
+    /* additional references to the nodes of the pattern */
+    PFla_op_t *mid_proxy, *mid_proxy_base, *proxy1_base, *proxy2_base;
+    /* temporary nodes */
+    PFla_op_t *p;
+    /* newly constructed operators */
+    PFla_op_t *num_op, *proxy1_num, *proxy2_num;
+
+    /* record the name usage/mapping of the in-between proxy */
+    PFalg_proj_t *req_col_names;
+    PFarray_t    *new_col_names;
+
+    PFalg_att_t cur_col,
+                map_col_old, map_col_new,
+                num_col1, num_col2;
+    PFalg_att_t icols, used_cols;
+
+    unsigned int i, j,
+                 req_count, top1_proj_count;
+
+    /* projection lists required for the to-be-rewritten DAG */
+    PFalg_proj_t *top_proj,
+                 *top1_proj, *base1_proj,
+                 *mid2_proj,
+                 *top2_proj, *base2_proj;
+
+    assert (root);
+    assert (proxy1);
+    assert (proxy2);
+    assert (conflict_list);
+    assert (exit_refs);
+    assert (checked_nodes);
+
+    /* Skip proxy generation if operators other than proxy1
+       are referenced from outside the pattern. */
+    if (!proxy_unnest_resolve_conflicts (proxy1,
+                                         conflict_list))
+        return;
+
+    /* Ensure that the 'upper' proxy is not completely
+       independent. (Otherwise the mvd optimization will
+       rewrite it.) */
+    if (!proxy1->sem.proxy.req_cols.count)
+        return;
+
+    /* collect all required columns of the entry proxy */
+    icols = 0;
+    for (i = 0; i < proxy1->sem.proxy.req_cols.count; i++)
+        icols = icols | proxy1->sem.proxy.req_cols.atts[i];
+
+    /* Start icols property inference with the collected 'required' columns */
+    PFprop_infer_icol_specific (proxy1, icols);
+
+    /* skip proxy rewrite if the upper proxy requires
+       columns generated by the base proxy */
+    for (i = 0; i < proxy2->schema.count; i++) {
+        cur_col = proxy2->schema.items[i].name;
+        if (PFprop_icol (proxy2->prop, cur_col))
+            for (j = 0; j < proxy2->sem.proxy.new_cols.count; j++)
+                if (cur_col == proxy2->sem.proxy.new_cols.atts[j])
+                    return;
+    }
+
+    /**
+     * collect the remaining relevant operators:
+     *  - the base of the 'upper' proxy (proxy1)
+     *  - the base of the 'lower' proxy (proxy2)
+     *  - the beginning of the intermediate proxy (mid_proxy)
+     *  - the end of the intermediate proxy (mid_proxy_base)
+     */
+    proxy1_base = proxy1->sem.proxy.base1;
+    proxy2_base = proxy2->sem.proxy.base1;
+    mid_proxy = L(proxy1_base);
+
+    p = mid_proxy;
+    while (p != proxy2) {
+        mid_proxy_base = p;
+
+        if (p->kind == la_doc_access)
+            p = R(p);
+        else
+            p = L(p);
+    }
+
+    /* generate an initial list of required attribute names */
+    req_count     = proxy1->sem.proxy.req_cols.count;
+    req_col_names = PFmalloc (req_count *
+                              sizeof (PFalg_proj_t));
+    for (unsigned int i = 0; i < req_count; i++) {
+        cur_col = proxy1->sem.proxy.req_cols.atts[i];
+        req_col_names[i] = PFalg_proj (cur_col, cur_col);
+    }
+    new_col_names = PFarray (sizeof (PFalg_att_t));
+
+    /* In req_col_names we store the mappings of the required column
+       names (collect_mappings updates the columns names as side effect)
+       and in new_col_names we collect (as side effect as well) the list
+       of columns that is required by the in-between proxy. */
+    collect_mappings (mid_proxy,
+                      req_count,
+                      req_col_names,
+                      new_col_names);
+
+    /* Ensure that the intermediate proxy does not generate
+       the columns required by the upper proxy. */
+    for (i = 0; i < req_count; i++)
+        if (!req_col_names[i].old)
+            return;
+
+    /* Ensure that at least one of the required columns is not used
+       in the in-between proxy, such we can misuse it to transport
+       the key values for the connecting join. */
+    for (i = 0; i < req_count; i++) {
+        cur_col = req_col_names[i].old;
+        for (j = 0; j < PFarray_last (new_col_names); j++)
+            if (cur_col == *(PFalg_att_t *) PFarray_at (new_col_names, j))
+                break;
+        if (j == PFarray_last (new_col_names)) {
+            map_col_new = req_col_names[i].new;
+            map_col_old = req_col_names[i].old;
+            break;
+        }
+    }
+    /* There is no 'free' column that can be used
+       to transport the key information. */
+    if (i == req_count)
+        return;
+
+
+
+    /* All conditions have been checked -- start rewriting. */
+
+
+
+    /* Get the number operators of the two proxies */
+    proxy1_num = L(L(L(L(proxy1))));
+    proxy2_num = L(L(L(L(proxy2))));
+
+    assert (proxy1_num->kind == la_number &&
+            proxy2_num->kind == la_number);
+
+    top_proj   = PFmalloc (proxy1->schema.count *
+                           sizeof (PFalg_proj_t));
+    /* #new columns + join column + 1 required column is
+       an upper bound for the size of the top1 projection */
+    top1_proj  = PFmalloc ((proxy1->sem.proxy.new_cols.count + 2) *
+                           sizeof (PFalg_proj_t));
+    base1_proj = PFmalloc (proxy1_num->schema.count *
+                           sizeof (PFalg_proj_t));
+    mid2_proj  = PFmalloc (mid_proxy->schema.count *
+                           sizeof (PFalg_proj_t));
+    top2_proj  = PFmalloc (proxy2->schema.count *
+                           sizeof (PFalg_proj_t));
+    base2_proj = PFmalloc (proxy2_num->schema.count *
+                           sizeof (PFalg_proj_t));
+
+    /* collect all the used column names*/
+    used_cols = 0;
+    for (i = 0; i < proxy1->sem.proxy.new_cols.count; i++)
+        used_cols = used_cols | proxy1->sem.proxy.new_cols.atts[i];
+    for (i = 0; i < proxy1_base->schema.count; i++)
+        used_cols = used_cols | proxy1_base->schema.items[i].name;
+    for (i = 0; i < proxy2_base->schema.count; i++)
+        used_cols = used_cols | proxy2_base->schema.items[i].name;
+
+    /* Generate two new column names from the list
+       of 'remaining' column names. */
+    num_col1 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    used_cols = used_cols | num_col1;
+    num_col2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    /* used_cols = used_cols | num_col2; */
+
+    /* create overall number operator */
+    num_op = PFla_number (L(proxy2_base), num_col1, att_NULL);
+
+    /* create projection that replaces the number operator of the
+       'upper' proxy pattern */
+    assert (L(proxy1_num) = proxy1_base);
+    for (i = 0; i < proxy1_base->schema.count; i++) {
+        cur_col = proxy1_base->schema.items[i].name;
+
+        for (j = 0; j < req_count; j++)
+            if (cur_col == req_col_names[j].new) {
+                base1_proj[i] = req_col_names[j];
+                break;
+            }
+        if (j == req_count)
+            base1_proj[i] = PFalg_proj (cur_col, num_col1);
+    }
+    base1_proj[i] = PFalg_proj (proxy1_num->sem.number.attname, num_col1);
+
+    /* replace the number operator */
+    *proxy1_num = *PFla_project_ (num_op,
+                                  proxy1_num->schema.count,
+                                  base1_proj);
+
+
+    /* create projection that replaces the number operator of the
+       'lower' proxy pattern */
+    assert (L(proxy2_num) = proxy2_base);
+    for (i = 0; i < proxy2_base->schema.count; i++) {
+        cur_col = proxy2_base->schema.items[i].name;
+        base2_proj[i] = PFalg_proj (cur_col, cur_col);
+    }
+    base2_proj[i] = PFalg_proj (proxy2_num->sem.number.attname, num_col1);
+
+    /* replace the number operator */
+    *proxy2_num = *PFla_project_ (num_op,
+                                  proxy2_num->schema.count,
+                                  base2_proj);
+
+
+    /* prepare projection located at the top of proxy2 (pi_(top2)) */
+    for (i = 0; i < L(proxy2)->sem.proj.count; i++) {
+        cur_col = L(proxy2)->sem.proj.items[i].new;
+        if (cur_col == map_col_old)
+            top2_proj[i] = PFalg_proj (map_col_old,
+                                       L(L(proxy2))->sem.eqjoin.att1);
+        else
+            top2_proj[i] = L(proxy2)->sem.proj.items[i];
+    }
+
+    /* place the projection */
+    *proxy2 = *PFla_project_ (L(L(proxy2)),
+                              proxy2->schema.count,
+                              top2_proj);
+
+
+    /* prepare projection located at the top of in-between
+       operators (pi_(mid)) */
+    for (i = 0; i < mid_proxy->schema.count; i++) {
+        cur_col = mid_proxy->schema.items[i].name;
+        if (map_col_new == cur_col)
+            mid2_proj[i] = PFalg_proj (num_col2, cur_col);
+        else
+            mid2_proj[i] = PFalg_proj (cur_col, cur_col);
+    }
+
+    /* prepare projection located at the top of proxy1 (pi_(top1)) */
+    top1_proj_count = 0;
+    for (i = 0; i < L(proxy1)->sem.proj.count; i++) {
+        cur_col = L(proxy1)->sem.proj.items[i].new;
+        if (map_col_new == cur_col)
+            top1_proj[top1_proj_count++] = L(proxy1)->sem.proj.items[i];
+        else
+            for (j = 0; j < proxy1->sem.proxy.new_cols.count; j++)
+                if (proxy1->sem.proxy.new_cols.atts[i] == cur_col) {
+                    top1_proj[top1_proj_count++] = L(proxy1)->sem.proj.items[i];
+                    break;
+                }
+    }
+    top1_proj[top1_proj_count++] = PFalg_proj (num_col1,
+                                     L(L(proxy1))->sem.eqjoin.att1);
+
+    /* prepare the projection replacing the root of the pattern */
+    for (i = 0; i < proxy1->schema.count; i++) {
+        cur_col = proxy1->schema.items[i].name;
+        top_proj[i] = PFalg_proj (cur_col, cur_col);
+    }
+
+    /* Connect the proxies via an equi-join. (Projections map
+       the column names to avoid naming conflicts.) */
+    *proxy1 = *PFla_project_ (
+                   PFla_eqjoin (
+                       PFla_project_ (
+                           L(L(proxy1)),
+                           top1_proj_count,
+                           top1_proj),
+                       PFla_project_ (
+                           mid_proxy,
+                           mid_proxy->schema.count,
+                           mid2_proj),
+                       num_col1,
+                       num_col2),
+                   proxy1->schema.count,
+                   top_proj);
+}
+
 
 
 
@@ -1212,7 +1838,7 @@ node_in_list (PFla_op_t *p, PFarray_t *node_list)
  * and fulfills the condition of @a check_entry.
  */
 static PFla_op_t *
-find_proxy_entry (PFla_op_t *p, PFarray_t *checked_nodes, 
+find_proxy_entry (PFla_op_t *p, PFarray_t *checked_nodes,
                   bool (* check_entry) (PFla_op_t *))
 {
     PFla_op_t *node;
@@ -1245,7 +1871,7 @@ find_proxy_entry (PFla_op_t *p, PFarray_t *checked_nodes,
  * find_proxy_exit traverses the DAG top down and returns the
  * node that fulfills the condition of @a check_exit for the complete
  * sub-DAG. @a exit makes the 'first' exit node visible for the remaining
- * sub-DAG to avoid conflicting exit references and to collect 
+ * sub-DAG to avoid conflicting exit references and to collect
  * the referencing nodes (@a exit_refs).
  *
  * In addition we mark all nodes during the traversal with the 'in' bit.
@@ -1279,7 +1905,7 @@ find_proxy_exit (PFla_op_t *p,
     /* look at each node only once */
     else if (SEEN(p))
         return NULL;
-        
+
     /* Mark nodes as seen and 'in'side the proxy. */
     SEEN(p) = true;
     IN(p) = true;
@@ -1295,7 +1921,7 @@ find_proxy_exit (PFla_op_t *p,
             PFoops (OOPS_FATAL,
                     "Cannot cope with multiple different exit nodes "
                     "in proxy recognition phase!");
-                    
+
         /* collect all nodes that reference the exit node */
         if (exit && exit == p->child[i])
             *(PFla_op_t **) PFarray_add (exit_refs) = p;
@@ -1325,7 +1951,7 @@ find_conflicts (PFla_op_t *p, PFarray_t *conflict_list)
         *(PFla_op_t **) PFarray_add (conflict_list) = p;
         SEEN(p) = true; /* this stops the traversal in the next line */
     }
-    
+
     /* look at each node only once */
     if (SEEN(p))
         return;
@@ -1346,7 +1972,7 @@ intro_proxy_kind (PFla_op_t *root,
                   void (* prepare_traversal) (PFla_op_t *),
                   bool (* entry_criterion) (PFla_op_t *),
                   bool (* exit_criterion) (PFla_op_t *, PFla_op_t *),
-                  void (* generate_proxy) (PFla_op_t *, PFla_op_t *, 
+                  void (* generate_proxy) (PFla_op_t *, PFla_op_t *,
                                            PFla_op_t *, PFarray_t *,
                                            PFarray_t *, PFarray_t *),
                   PFarray_t *checked_nodes)
@@ -1422,10 +2048,10 @@ PFla_op_t *
 PFintro_proxies (PFla_op_t *root)
 {
     PFarray_t *checked_nodes = PFarray (sizeof (PFla_op_t *));
-    
-    /* find proxies and rewrite them in one go. 
-       They are based on semi-join - number/rownum pairs */ 
-    intro_proxy_kind (root, 
+
+    /* find proxies and rewrite them in one go.
+       They are based on semi-join - number/rownum pairs */
+    intro_proxy_kind (root,
                       join_prepare,
                       semijoin_entry,
                       semijoin_exit,
@@ -1435,13 +2061,29 @@ PFintro_proxies (PFla_op_t *root)
     /* As we match the same nodes (equi-joins) again we need to reset
        the list of checked nodes */
     PFarray_last (checked_nodes) = 0;
-    
-    /* generate proxies consisting of equi-join - number/rownum pairs */ 
-    intro_proxy_kind (root, 
+
+    /* generate proxies consisting of equi-join - number/rownum pairs */
+    intro_proxy_kind (root,
                       join_prepare,
                       join_entry,
                       join_exit,
                       generate_join_proxy,
+                      checked_nodes);
+
+    /* As we match different nodes the current list is of no importance */
+    PFarray_last (checked_nodes) = 0;
+
+    /* We require the superfluous number operators to be pruned. */
+    PFalgopt_icol (root);
+
+    /* rewrite (directly) following proxies that are independent
+       of each other into an DAG that might evaluates both proxies
+       in parallel */
+    intro_proxy_kind (root,
+                      proxy_unnest_prepare,
+                      proxy_unnest_entry,
+                      proxy_unnest_exit,
+                      unnest_proxy,
                       checked_nodes);
 
     return root;
