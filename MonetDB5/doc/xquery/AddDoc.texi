@@ -3,13 +3,13 @@ For example, to add the document @url{../../../files/HelloWorld.xml,HelloWorld.x
 to the database try the following:
 
 @verbatim
-  % @value{mclient} -lmil
+  > @value{mclient} -lmil
   # Monet Database Server V4.8.2
   # Copyright (c) 1993-2005, CWI. All rights reserved.
   # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
   # Visit http://monetdb.cwi.nl/ for further information.
-  mil&gt;shred_doc("/.../HelloWorld.xml","HelloWorld.xml");
-  mil&gt;\q
+  mil>shred_doc("/.../HelloWorld.xml","HelloWorld.xml");
+  mil>\q
 @end verbatim
 
 Using the MIL language switch of @value{mclient} you directly interact
@@ -23,7 +23,7 @@ backslash-q.
 
 @strong{Note:} you don't have to start a new MAPI session for each document you
 want to shred. You can simply call @code{shred_doc(physical_name, logical_name)}
-again during the same a session.
+again during the same session.
 
 A copy of the original document is now part of your persistent collection.
 The second argument of  @code{shred_doc} is its logical name,
@@ -36,7 +36,7 @@ using its logical name:
 @end verbatim
 
 @strong{Note:} that issueing this XQuery should be done with 
-@url{../APIs/MapiClient,MapiClient in XQuery mode}
-(i.e. with option @code{-lx} instead of @code{-lmil}).
+@url{../APIs/MapiClient,@value{mclient} in XQuery mode}
+(i.e. with option @code{-lxquery} instead of @code{-lmil}).
 
 

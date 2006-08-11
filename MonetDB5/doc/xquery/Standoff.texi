@@ -45,46 +45,46 @@ Note the @code{select-wide} is an extension of the XPath (and thus XQuery) synta
 The StandOff axis steps, similar in behavior to the standard
 XPath steps (e.g. @code{child::*}, @code{descendant::*})
 have been added to MonetDB/XQuery to make querying
-concurrent such region really easy.</p> 
+concurrent such region really easy.
 
 @itemize
-@item <code>/select-narrow::</code>
-@item <code>/select-wide::</code>
-@item <code>/reject-narrow::</code>
-@item <code>/reject-wide::</code>
+@item @code{/select-narrow::}
+@item @code{/select-wide::}
+@item @code{/reject-narrow::}
+@item @code{/reject-wide::}
 @end itemize
 
 @itemize
   @item Axis steps will always be 'local' e.g. will only yield
-      matches from the same document (fragment).@item 
+      matches from the same document (fragment).
   @item Each node is only returned once (no duplicates) and in 
       document order.
 @end itemize
 
 
 @subsubsection context/select-narrow::nodename
-From the set of nodes with nodename 'nodename', say: @{n1, n2...@}, 
+From the set of nodes with nodename `nodename', say: @{n1, n2...@}, 
 return only the nodes contained in the context nodes (e.g. 
 return n if there is a context node for which holds: context_start 
 <= n_start and n_end <= context_end)
 
 
 @subsubsection context/select-wide::nodename
-From the set of nodes with nodename 'nodename', say: @{n1, n2...@},
+From the set of nodes with nodename `nodename', say: @{n1, n2...@},
 return only the nodes overlapping with the context nodes (e.g. 
 return n if there is a context node for which holds: context_start 
 <= n_end and n_start <= context_end)
 
 @subsubsection context/reject-narrow::nodename
-From the set of nodes with nodename 'nodename', say: @{n1, n2...@}, 
+From the set of nodes with nodename `nodename', say: @{n1, n2...@}, 
 return all BUT the nodes contained in the context nodes (e.g. 
-return n if there is NOT a context node for which holds: context_start 
+return n if there is NO context node for which holds: context_start 
 <= n_start and n_end <= context_end)
 
 @subsubsection context/reject-wide::nodename
-From the set of nodes with nodename 'nodename', say: @{n1, n2...@}, 
+From the set of nodes with nodename `nodename', say: @{n1, n2...@}, 
 return all BUT the nodes overlapping with the context nodes (e.g. 
-return n if there is NOT a context node for which holds: context_start 
+return n if there is NO context node for which holds: context_start 
 <= n_end and n_start <= context_end)
 
 @node Availability, Why StandOff Extensions? ,Extended XPath Steps, StandOff Extensions
@@ -94,7 +94,7 @@ The steps have been made available in MonetDB/XQuery
   The StandOff steps have been @strong{turned off by default}
   as they do not follow the XQuery recommendation as set by the W3C. 
   To @emph{enable} the steps you need to start the database server 
-  (Mserver) with the option <code>--set standoff=enable</code>.
+  (Mserver) with the option @code{--set standoff=enable}.
 
 Inside the server, the StandOff steps are
 implemented efficiently using sophisticated @emph{interval-join} algorithms, 
@@ -118,7 +118,7 @@ XML describing interesting features discovered on confiscated hard drives
 The regions refer to the positions on disk where the features where found.
 Used in computer-assisted crime scene investigations (CSI).
 
-@item @url{http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=AlJiAhRiBoVr:NLPXML:06, tandoff In NLP}:
+@item @url{http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=AlJiAhRiBoVr:NLPXML:06, Standoff In NLP}:
 XML describing the grammatical structure of natural texts. 
 Inline annotation cannot be used because natural language is ambiguous, and multiple parses
 are often possible. Thus structure is separated from content, and refers to it by word position.
@@ -133,8 +133,8 @@ biomolecular data on those genes.
 Used in collaborative genome research efforts.
 
 @end itemize
-If you have similar XML data and use MonetDB/XQuery to manage this, please contact
-use on the @url{href='http://lists.sourceforge.net/lists/listinfo/monetdb-users,mailing list}.
+If you have similar XML data and use MonetDB/XQuery to manage this, please 
+contact us on the @url{http://lists.sourceforge.net/lists/listinfo/monetdb-users,mailing list}.
 
 For XQueries with such region overlap/containment conditions, other XML database systems 
 resort to query plans that have to compare all pairs of regions ("quadratic complexity"). 

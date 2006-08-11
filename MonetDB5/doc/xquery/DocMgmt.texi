@@ -17,7 +17,6 @@ or by making use of @url{'../../../../MonetDB/Version4/Documentation/Tools/MapiC
 interface in MIL interaction mode (i.e. @strong{without} the @code{-lx} 
 option @url{../APIs/MapiClient,to use MapiClient for XQuery interaction}).
 
-In the next version (0.14), we add new XQuery @strong{builtin functions}
+The upcoming release contains new XQuery @strong{builtin functions}
 integrated in the update framework to allow document management to
 be performed using XQuery statements.
-
