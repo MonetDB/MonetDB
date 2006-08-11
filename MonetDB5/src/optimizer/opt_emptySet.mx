@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_emptyset
+@f opt_emptySet
 @a M. Kersten
 @-
 @node Empty Set Reduction, Singleton Sets, Constant Expressions, Toolkit
@@ -65,64 +65,39 @@ The implementation differs slightly from other optimizers in that
 we need the variables that are designated as being empty
 @mal
 pattern optimizer.emptySet():str
-address QOTESoptimizer;
+address OPTemptySet;
 pattern optimizer.emptySet(mod:str, fcn:str):str
-address QOTESoptimizer
+address OPTemptySet
 comment "Move constant expressions out of the blocks";
 @h
 #ifndef _MAL_EMPTYSET_
 #define _MAL_EMPTYSET_
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-#define DEBUG_MAL_EMPTYSET	 /* show partial result */
-
-opt_export str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str ESevaluate(MalBlkPtr mb, int cnt, int *vars);
+#define DEBUG_OPT_EMPTYSET	 /* show partial result */
 #endif
 @c
-#include "mal_emptyset.h"
+#include "opt_emptySet.h"
+#include "opt_aliases.h"
+#include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 #include "mal_namespace.h"
 
-str
-ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int *sets;
-	int i, k = 0;
-	PropertySet ps;
-
-	sets = (int *) alloca(mb->vtop * sizeof(int));
-	(void) mb;
-	(void) stk;
-	(void) p;
-#ifdef DEBUG_MAL_EMPTYSET
-	printf("ESoptimizer called, collect empty sets and process them\n");
-#endif
-	for (i = 0; i < mb->vtop; i++) {
-		ps = getVarProperties(mb, i);
-		if (fndProperty(ps, "empty")) {
-			sets[k++] = i;
-		}
-	}
-	ESevaluate(mb, k, sets);
-	return MAL_SUCCEED;
-}
 
 #define propagate(X) p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
 	p->argc = 2; p->fcn = 0; getFunctionId(p)= getModuleId(p)=NULL;
-str
+static void
 ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
-	lng clk = GDKusec();
 	char *empty;
 	int i, j, limit, doAR = 0;
 	InstrPtr p, *old;
 
 	if( mb->errors) 
-		return MAL_SUCCEED;
-#ifdef DEBUG_MAL_EMPTYSET
+		return ;
+#ifdef DEBUG_OPT_EMPTYSET
 	stream_printf(GDKout, "START emptyset optimizer %d:", cnt);
 	for (i = 0; i < cnt; i++)
 		stream_printf(GDKout, ",%d ", vars[i]);
@@ -146,7 +121,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 		p = old[i];
 		for (j = 0; j < p->retc; j++)
 			if (empty[getArg(p, j)] && getLastUpdate(mb, getArg(p, j)) > i) {
-#ifdef DEBUG_MAL_EMPTYSET
+#ifdef DEBUG_OPT_EMPTYSET
 				stream_printf(GDKout, "reject emptyset %d\n", getArg(p, j));
 #endif
 				empty[getArg(p, j)] = 0;
@@ -157,10 +132,10 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 		for (j = p->retc; j < p->argc; j++)
 			if (empty[getArg(p, j)]) {
 				/* decode operations */
-				if (getName("bat", 3) == getModuleId(p)) {
-					if (getName("insert", 6) == getFunctionId(p) || 
-						getName("delete", 6) == getFunctionId(p) || 
-						getName("append", 6) == getFunctionId(p)) {
+				if (getModuleId(p) == batRef) {
+					if (getFunctionId(p)== insertRef || 
+						getFunctionId(p)== deleteRef || 
+						getFunctionId(p)== appendRef) {
 						if (j == 2) {
 							/* you don;t add anything */
 							p->token = IGNOREsymbol;
@@ -174,7 +149,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						doAR++;
 						break;
 					}
-				} else if (getName("algebra", 7) == getModuleId(p)) {
+				} else if (getModuleId(p)== algebraRef) {
 					if (getName("markH", 5) == getFunctionId(p) || 
 						getName("markT", 5) == getFunctionId(p)) {
 						propagate(1);
@@ -269,54 +244,47 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 			}
 	}
 	if (doAR && mb->errors == 0) {
-#ifdef DEBUG_MAL_EMPTYSET
+#ifdef DEBUG_OPT_EMPTYSET
 		printf("MID STAGE doAR=%d\n", doAR);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-		ARoptimizer(mb, 0, 0);
-		DCoptimizer(mb, 0, 0);
+		OPTaliases(mb, 0, 0);
+		OPTdeadcode(mb, 0, 0);
 	}
 
-	optimizerCheck(mb, "mal.emptyset", 1, GDKusec() - clk);
-#ifdef DEBUG_MAL_EMPTYSET
+#ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-	return MAL_SUCCEED;
 }
 
-@- Optimizer code wrapper
+int
+OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int *sets;
+	int i, k = 0;
+	PropertySet ps;
+
+	sets = (int *) alloca(mb->vtop * sizeof(int));
+	(void) mb;
+	(void) stk;
+	(void) p;
+#ifdef DEBUG_OPT_EMPTYSET
+	printf("ESoptimizer called, collect empty sets and process them\n");
+#endif
+	for (i = 0; i < mb->vtop; i++) {
+		ps = getVarProperties(mb, i);
+		if (fndProperty(ps, "empty")) {
+			sets[k++] = i;
+		}
+	}
+	ESevaluate(mb, k, sets);
+	return 1;
+}
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(emptySet)@
 @c
-mal_export str QOTESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme;
-	str fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
+@:wrapOptimizer(emptySet)@
 
-	optimizerInit();
-	removeInstruction(mb, p);
-	if( p->argc > 1){
-		if( stk != 0){
-			modnme= (str)getArgValue(stk,p,1);
-			fcnnme= (str)getArgValue(stk,p,2);
-		} else {
-			modnme= getArgDefault(mb,p,1);
-			fcnnme= getArgDefault(mb,p,2);
-		}
-		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
-		if( scope)
-			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-		if( s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-			return throwMessage("optimizer.emptySet",buf);
-		}
-		if( s->def->errors == 0)
-			ESoptimizer(s->def,0,0);
-	} else
-			ESoptimizer(mb,0,0);
-	return MAL_SUCCEED;
-}
-@}

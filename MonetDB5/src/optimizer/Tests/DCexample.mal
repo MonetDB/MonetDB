@@ -7,5 +7,5 @@
     V23 := algebra.join(V16,V22);
 	io.print("done");
 
-optimizer.deadCodeRemoval();
+optimizer.deadcode();
 mdb.list();

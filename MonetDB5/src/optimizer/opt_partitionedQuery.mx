@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_partitionedQuery
+@f opt_partitionedQuery
 @a M. Kersten
 @-
 @node Partitioned Databases, Strength Reduction, Multi-Association Tables, Toolkit
@@ -70,38 +70,119 @@ end qry;
 @{
 @mal
 pattern optimizer.partitionedQuery():str
-address QOTBPToptimizer;
+address OPTpartitionedQuery;
 pattern optimizer.partitionedQuery(mod:str, fcn:str):str
-address QOTBPToptimizer
+address OPTpartitionedQuery
 comment "Experiment with partitioned databases";
 @h
-#ifndef _MAL_PARTITIONED_
-#define _MAL_PARTITIONED_
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
+#ifndef _OPT_PARTITIONED_
+#define _OPT_PARTITIONED_
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-#define DEBUG_MAL_PARTITIONED	/* show partial result */
-opt_export str BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
+#define DEBUG_OPT_PARTITIONED	/* show partial result */
 #endif
 @c
-#include "mal_partitionedQuery.h"
-#include "mal_optimizer.h"
+#include "opt_partitionedQuery.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_namespace.h"
 
 extern int BPTfindGrp(int bid);
 
-extern str BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid);
 extern str BPTneedsExpansion(MalBlkPtr mb, int varid);
 extern int BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid);
+@-
+The first implementation takes a query block and replaces the first
+bat variable with its partitioned equivalent.
+The external references should be adjusted to permit working
+your way through the complete graph incrementally.
+They denote an inclusive range.
+A copy of the program block is made by default. This could be
+optimized away later.
+@{
+@c
+static str
+BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
+{
+	InstrPtr *old, p;
+	int i, limit, actions = 0;
+	int idx = -1, bid = -1;
+	int pcf, pcl;
+	lng clk= GDKusec();
+
+	setLifespan(mb);
+	old = mb->stmt;
+
+	limit = mb->stop;
+	newMalBlkStmt(mb, limit + 10);
+#ifdef DEBUG_OPT_PARTITIONED
+	stream_printf(GDKout, "variable replacement '%s'", getVarName(mb, varid));
+	stream_printf(GDKout, " instructions %d-%d ", *first, *last);
+	stream_printf(GDKout, " lifespan %d-%d\n", mb->var[varid]->beginLifespan, mb->var[varid]->endLifespan);
+#endif
+	/* copy prelude into place */
+	for (i = 0; i < *first; i++)
+		pushInstruction(mb, old[i]);
+
+	actions++;
+	/* barrier (idx,bid):= partitions.newIterator(var); */
+	p = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(p, putName("partitions", 10));
+	setFunctionId(p, putName("newIterator", 11));
+	p->barrier = BARRIERsymbol;
+	idx = newTmpVariable(mb, TYPE_int);
+	pushReturn(mb, p, idx);
+	bid = newTmpVariable(mb, getVarType(mb, varid));
+	pushReturn(mb, p, bid);
+	pushArgument(mb, p, varid);
+	pushInstruction(mb, p);
+
+	pcf = mb->stop;
+	for (i = *first; i <= *last; i++)
+		pushInstruction(mb, old[i]);
+	pcl = mb->stop;
+@-
+Before we finalize, we should also check all operations for being applicable 
+to partitions as well. Where necessary they should be replaced by an
+accumulated version.
+@c
+	/* finalize the loop */
+	/* redo (idx,bid):= partitions.hasMoreElements(var); */
+	p = newInstruction(mb,REDOsymbol);
+	setModuleId(p, putName("partitions", 10));
+	setFunctionId(p, putName("hasMoreElements", 15));
+	pushReturn(mb, p, idx);
+	pushReturn(mb, p, bid);
+	pushArgument(mb, p, varid);
+	pushInstruction(mb, p);
+	/* exit (idx,bid) */
+	p = newInstruction(mb,EXITsymbol);
+	pushReturn(mb, p, idx);
+	pushReturn(mb, p, bid);
+	pushInstruction(mb, p);
+
+	*first = mb->stop;
+	/* copy the rest of the program back into place */
+	for (; i < limit; i++)
+		pushInstruction(mb, old[i]);
+	GDKfree(old);
+	*last = mb->stop - 1;
+
+	/* now replace variable with the alias bid */
+	if (bid != -1)
+		replaceAlias(mb, pcf, pcl, varid, bid);
+	/* and have to check the baked program */
+	optimizerCheck(mb,"partitionedQuery",1,GDKusec()-clk);
+	
+	return MAL_SUCCEED;
+}
 
 @-
 Calling the optimizer from the MAL context is currently
 focussed on replacing the BAT arguments only.
 @c
-str
-BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+int
+OPTpartitionedQueryImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	InstrPtr p;
@@ -113,7 +194,7 @@ BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = p->retc; i < p->argc; i++) {
 		BPTneedsExpansion(mb, p->argv[i]);
 	}
-	return MAL_SUCCEED;
+	return 0; /* optimizer administration alread handled */
 }
 
 @-
@@ -206,133 +287,9 @@ BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
 }
 
 @}
-@-
-The first implementation takes a query block and replaces the first
-bat variable with its partitioned equivalent.
-The external references should be adjusted to permit working
-your way through the complete graph incrementally.
-They denote an inclusive range.
-A copy of the program block is made by default. This could be
-optimized away later.
-@{
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(partitionedQuery)@
 @c
-str
-BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
-{
-	InstrPtr *old, p;
-	int i, limit, actions = 0;
-	int idx = -1, bid = -1;
-	int pcf, pcl;
-	lng clk = GDKusec();
-
-	if( mb->errors) 
-		return MAL_SUCCEED;
-	setLifespan(mb);
-	old = mb->stmt;
-
-	limit = mb->stop;
-	newMalBlkStmt(mb, limit + 10);
-#ifdef DEBUG_MAL_PARTITIONED
-	stream_printf(GDKout, "variable replacement '%s'", getVarName(mb, varid));
-	stream_printf(GDKout, " instructions %d-%d ", *first, *last);
-	stream_printf(GDKout, " lifespan %d-%d\n", mb->var[varid]->beginLifespan, mb->var[varid]->endLifespan);
-#endif
-	/* copy prelude into place */
-	for (i = 0; i < *first; i++)
-		pushInstruction(mb, old[i]);
-
-	actions++;
-	/* barrier (idx,bid):= partitions.newIterator(var); */
-	p = newInstruction(mb,ASSIGNsymbol);
-	setModuleId(p, putName("partitions", 10));
-	setFunctionId(p, putName("newIterator", 11));
-	p->barrier = BARRIERsymbol;
-	idx = newTmpVariable(mb, TYPE_int);
-	pushReturn(mb, p, idx);
-	bid = newTmpVariable(mb, getVarType(mb, varid));
-	pushReturn(mb, p, bid);
-	pushArgument(mb, p, varid);
-	pushInstruction(mb, p);
-
-	pcf = mb->stop;
-	for (i = *first; i <= *last; i++)
-		pushInstruction(mb, old[i]);
-	pcl = mb->stop;
-@-
-Before we finalize, we should also check all operations for being applicable 
-to partitions as well. Where necessary they should be replaced by an
-accumulated version.
-@c
-	/* finalize the loop */
-	/* redo (idx,bid):= partitions.hasMoreElements(var); */
-	p = newInstruction(mb,REDOsymbol);
-	setModuleId(p, putName("partitions", 10));
-	setFunctionId(p, putName("hasMoreElements", 15));
-	pushReturn(mb, p, idx);
-	pushReturn(mb, p, bid);
-	pushArgument(mb, p, varid);
-	pushInstruction(mb, p);
-	/* exit (idx,bid) */
-	p = newInstruction(mb,EXITsymbol);
-	pushReturn(mb, p, idx);
-	pushReturn(mb, p, bid);
-	pushInstruction(mb, p);
-
-	*first = mb->stop;
-	/* copy the rest of the program back into place */
-	for (; i < limit; i++)
-		pushInstruction(mb, old[i]);
-	GDKfree(old);
-	*last = mb->stop - 1;
-
-	/* now replace variable with the alias bid */
-	if (bid != -1)
-		ARreplaceAlias(mb, pcf, pcl, varid, bid);
-	optimizerCheck(mb, "mal.partitioned", actions, GDKusec() - clk);
-	return MAL_SUCCEED;
-}
-
-@- Optimizer code wrapper
-@c
-mal_export str QOTBPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTBPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		BPToptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.partitionedQuery",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		BPToptimizer(s->def,0,0);
-		optimizerCheck(s->def,"partitionedQuery",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(partitionedQuery)@

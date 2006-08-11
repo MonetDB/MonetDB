@@ -9,4 +9,4 @@ barrier go:= true;
 redo go:= i<2;
 exit go;
 	io.print(b);
-optimizer.aliasRemoval();
+optimizer.aliases();

@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_factorize
+@f opt_factorize
 @a M. Kersten
 @-
 @node Code Factorization, Multi-Association Tables, Garbage Collector,  Toolkit
@@ -77,24 +77,21 @@ For the time being this is captured in a local routine.
 @{
 @mal
 pattern optimizer.factorize():str
-address QOTFToptimizer;
+address OPTfactorize;
 pattern optimizer.factorize(mod:str, fcn:str):str
-address QOTFToptimizer
+address OPTfactorize
 comment "Turn function into a factory";
 
 @h
-#ifndef _MAL_FACTORY_
-#define _MAL_FACTORY_
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
+#ifndef _OPT_FACTORIZE_
+#define _OPT_FACTORIZE_
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-/* #define DEBUG_MAL_FACTORY     show partial result */
-
-opt_export str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
+/* #define DEBUG_OPT_FACTORIZE     show partial result */
 #endif
 @c
-#include "mal_factorize.h"
+#include "opt_factorize.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
@@ -106,8 +103,8 @@ Moving instruction out of the guarded block is a separate
 optimization step.
 
 @c
-int
-FTallowed(InstrPtr p)
+static int
+OPTallowed(InstrPtr p)
 {
 	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc") == 0) {
 		if (isUnsafeInstruction(p))
@@ -116,21 +113,18 @@ FTallowed(InstrPtr p)
 	return 1;
 }
 
-str
-FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+int
+OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k,  v, noop = 0, se;
 	InstrPtr p;
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0;
 	InstrPtr *first, *second;
-	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	if( mb->errors) 
-		return MAL_SUCCEED;
 	setLifespan(mb);
 	varused = GDKmalloc(mb->vtop * sizeof(int));
 	for (i = 0; i < mb->vtop; i++)
@@ -171,7 +165,7 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* beware, none of the target variables may live
 		   before the cut point.  */
 		for (k = 0; k < p->retc; k++)
-			if (getVar(mb, p->argv[k])->beginLifespan < i || !FTallowed(p))
+			if (getVar(mb, p->argv[k])->beginLifespan < i || !OPTallowed(p))
 				se = 0;
 		if (p->barrier == RETURNsymbol) {
 			se = 1;
@@ -201,7 +195,7 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(first);
 		GDKfree(second);
 		/* remove the FToptimizer request */
-		return MAL_SUCCEED;
+		return 1;
 	}
 
 	first[0]->token = FACTORYsymbol;
@@ -247,52 +241,11 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(varused);
 	GDKfree(first);
 	GDKfree(second);
-	optimizerCheck(mb, "optimizer.factorize", 1, GDKusec() - clk);
-	/* remove the FToptimizer request */
-	return MAL_SUCCEED;
+	return 1;
 }
 
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(factorize)@
 @c
-mal_export str QOTFToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTFToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		FToptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.factorize",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		FToptimizer(s->def,0,0);
-		optimizerCheck(s->def,"factorize",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(factorize)@

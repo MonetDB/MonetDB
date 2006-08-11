@@ -91,28 +91,33 @@ include statistics;
 
 include optimizer;
 # here follows all the optimizer modules
-include mal_optimizer;
-include mal_commonTerms;
-include mal_constantExpression;
-include mal_costmodel;
-include mal_emptyset;
-include mal_factorize;
-include mal_garbageCollector;
-include mal_generators;
-include mal_inliners;
-include mal_cascade;
-include mal_multiplex;
-include mal_multitable;
-include mal_partitionedQuery;
-include mal_peephole;
-include mal_qep;
-include mal_reduce;
-include mal_singleton;
-include mal_strengthReduction;
+include opt_support;
+include opt_accumulators;
+include opt_aliases;
+include opt_coercion;
+include opt_deadcode;
+include opt_commonTerms;
+include opt_constantExpression;
+include opt_costModel;
+include opt_emptySet;
+include opt_factorize;
+include opt_garbageCollector;
+include opt_generators;
+include opt_inliners;
+include opt_macro;
+include opt_multiplex;
+include opt_multiTable;
+include opt_partitionedQuery;
+include opt_peephole;
+include opt_qep;
+include opt_rangePush;
+include opt_reduce;
+include opt_singleton;
+include opt_strengthReduction;
 
-include mal_crack;	#  not in alpha5
-include mal_joinselect;	#  not in alpha5
-include mal_remoteQueries; # not in alpha5
+include opt_crack;	#  not in alpha5
+include opt_joinselect;	#  not in alpha5
+include opt_remoteQueries; # not in alpha5
 
 include chopper;
 #include logger;

@@ -188,14 +188,12 @@ using the
 
 @node Prepared Queries, StandOff Extensions , Miscellaneous ,XQuery Introduction
 @include xquery/PreparedQueries.texi
-@include xquery/warning.texi
 
 @node StandOff Extensions, Extended XPath Steps ,Prepared Queries ,XQuery Introduction
 @section StandOff Extensions
-@include xquery/warning.texi
 @include xquery/Standoff.texi
 
-@node Programming Interfaces, The Mapi Library, Why StandOff Extensions?, Top
+@node Programming Interfaces, The JDBC Library, Why StandOff Extensions?, Top
 @menu
 * The Mapi Library ::
 * The Perl Library::
@@ -207,32 +205,11 @@ using the
 @c @include xquery/API.texi
 
 @c End of XQuery specific part
-@node The Mapi Library,An Example, Programming Interfaces, Programming Interfaces
-@include Assets/mapimanual.texi
 
-@node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
-@include Assets/perlmanual.texi
+@node The JDBC Library, Appendices , Programming Interfaces, Programming Interfaces
+@include xquery/jdbcmanual.texi
 
-@node The PHP Library, The Python Library, The Perl Library , Programming Interfaces
-@include Assets/phpmanual.texi
-
-@node The Python Library, The JDBC Library , The PHP Library, Programming Interfaces
-@include Assets/pythonmanual.texi
-
-@node The JDBC Library, The ODBC Library , The Python Library, Programming Interfaces
-@include Assets/jdbcmanual.texi
-
-@node The ODBC Library, Embedded MonetDB , The JDBC Library, Programming Interfaces
-@include Assets/odbcmanual.texi
-
-@node Embedded MonetDB, A Simple Example, The ODBC Library , Top
-@include Assets/Mbedded.texi
-
-@node Embedded Limitations , Appendices , Configuration Parameters, Embedded MonetDB
-@include Assets/MbeddedLimits.texi
-
-
-@node Appendices, XQuery Functions, Embedded Limitations, Top
+@node Appendices, XQuery Functions, The JDBC Library, Top
 @menu
 * XQuery Functions::
 * Troubleshooting::

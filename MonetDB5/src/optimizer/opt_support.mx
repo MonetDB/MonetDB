@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_optimizer
+@f opt_support
 @a M. Kersten
 @* The MAL Optimizer
 One of the prime reasons to design the MAL intermediate language is to have
@@ -113,13 +113,6 @@ patterns.  (Enhance is with semantic equivalent instructions)
 Impact: High
 Prereq: AR
 
-@emph{Access Mode Optimizer (AMoptimizer)}
-Goal: the default access mode for BATs is readonly.
-When updates are needed, it is switched to WriteMode,
-which needs to be done only once.
-Approach: remove duplicate calls
-Impact: low
-
 @emph{Dead Code Removal (DCoptimizer)}
 Goal: to remove all instructions whose result is not used
 Rationale: due to sloppy coding or alternative execution paths
@@ -165,7 +158,7 @@ MAL program, which reduces to a scalar expression.
 Approach: Identify a set variable for replacement.
 Impact:
 
-@emph{Cascade Range Propagation (CRoptimizer)}
+@emph{Range Propagation (RPoptimizer)}
 Goal: look for constant ranges in select statements and
 propagate them through the code.
 Rationale: partitioned tables and views may give rise to
@@ -348,7 +341,7 @@ them in a preferred order of deployment.
 @item Group C:
 @tab    Join Path Optimizer (JPoptimizer)
 @item 
-@tab    Cascade Ranges (CRoptimizer)
+@tab    Ranges Propagation (RPoptimizer)
 @item 
 @tab    Operator Cost Reduction (OCoptimizer)
 @item 
@@ -382,8 +375,6 @@ them in a preferred order of deployment.
 
 @item group F:
 @tab    Alias Removal (ARoptimizer)
-@item 
-@tab    Access Mode Optimizer (AMoptimizer)
 @item 
 @tab    Dead Code Removal (DCoptimizer)
 @item 
@@ -443,35 +434,11 @@ when polymorphic typechecking is required afterwards.
 @{
 The optimizers defined here are registered to the optimizer module.
 @mal
-pattern optimizer.aliasRemoval():str
-address QOTARoptimizer;
-pattern optimizer.aliasRemoval(mod:str, fcn:str):str
-address QOTARoptimizer
-comment "Alias removal optimizer";
-
-pattern optimizer.deadCodeRemoval():str
-address QOTDCoptimizer;
-pattern optimizer.deadCodeRemoval(mod:str, fcn:str):str
-address QOTDCoptimizer
-comment "Dead code optimizer";
-
-pattern optimizer.coercions():str
-address QOTCOoptimizer;
-pattern optimizer.coercions(mod:str, fcn:str):str
-address QOTCOoptimizer
-comment "Handle simple type coercions";
-
 pattern optimizer.heuristics():str
-address QOTHRoptimizer;
+address OPTheuristics;
 pattern optimizer.heuristics(mod:str, fcn:str):str
-address QOTHRoptimizer
+address OPTheuristics
 comment "Handle simple replacements";
-
-pattern optimizer.accumulators():str
-address QOTAEoptimizer;
-pattern optimizer.accumulators(mod:str, fcn:str):str
-address QOTAEoptimizer
-comment "Replace calculations with accumulator model";
 
 @h
 #include "mal.h"
@@ -479,12 +446,7 @@ comment "Replace calculations with accumulator model";
 #include "mal_client.h"
 #include "mal_scenario.h"
 
-/* #define DEBUG_MAL_OPTIMIZER     show partial result */
-
-#define isAlife(M,I,X)          ( (M)->var[I]->beginLifespan<=X && \
-                                  (M)->var[I]->endLifespan>=X)
-#define isSinglepoint(M,I)  ( (M)->var[I]->beginLifespan== \
-                  (M)->var[I]->endLifespan)
+/* #define DEBUG_OPT_OPTIMIZER     show partial result */
 
 #ifdef _MSC_VER
 #ifndef LIBOPTIMIZER
@@ -504,18 +466,7 @@ opt_export str optimizeMALBlock(MalBlkPtr mb);
 opt_export void showOptimizerStep(int i, int flg);
 opt_export void showOptimizerHistory(void);
 opt_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export int ARoptimizerStep(MalBlkPtr mb, int pc);
-opt_export void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
-opt_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str CToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export void replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
 
 opt_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 opt_export int isUnsafeInstruction(InstrPtr q);
@@ -531,6 +482,10 @@ opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
 opt_export int allTargetsVisible(MalBlkPtr mb, int pc, int qc);
 
+#define isAlife(M,I,X)          ( (M)->var[I]->beginLifespan<=X && \
+                                  (M)->var[I]->endLifespan>=X)
+#define isSinglepoint(M,I)  ( (M)->var[I]->beginLifespan== \
+                  (M)->var[I]->endLifespan)
 @}
 @-
 @node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
@@ -589,11 +544,12 @@ Unclear what will be the best strategy. For the time being we just recalc.
 @{
 If one of the optimizers fails, we should not attempt others.
 @c
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"
 #include "mal_namespace.h"
+
 
 int
 optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
@@ -645,7 +601,7 @@ optimizeMALBlock(MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 
-#ifdef DEBUG_MAL_OPTIMIZER
+#ifdef DEBUG_OPT_OPTIMIZER
 	int oldstop = mb->stop;
 #endif
 
@@ -670,10 +626,9 @@ optimizeMALBlock(MalBlkPtr mb)
 			}
 		}
 	} while (qot && cnt++ < 64);
-#ifdef DEBUG_MAL_OPTIMIZER
-	if (MCgetClient()->debugOptimizer && oldstop != mb->stop) {
-		stream_printf(GDKout, "Optimizer effect %d -> %d instructions\n", oldstop, mb->stop);
-	}
+#ifdef DEBUG_OPT_OPTIMIZER
+	stream_printf(GDKout, "Optimizer effect %d -> %d instructions\n", 
+			oldstop, mb->stop);
 #endif
 	if (cnt >= 64)
 		return throwMessage("optimizer.MALoptimizer", "too many optimization cycles\n");
@@ -882,11 +837,9 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 		for (i = p->retc; i < p->argc; i++)
 			for (j = q->retc; j < q->argc; j++)
 				if (p->argv[i] == q->argv[j]) {
-#ifdef DEBUG_MAL_OPTIMIZER
-					if (MCgetClient()->debugOptimizer) {
-						stream_printf(GDKout, "Found overlapping assignment barrier for \n");
-						printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-					}
+#ifdef DEBUG_OPT_OPTIMIZER
+					stream_printf(GDKout, "Found overlapping assignment barrier for \n");
+					printInstruction(GDKout, mb, q, LIST_MAL_ALL);
 #endif
 					/* TODO check safety property of the argument */
 					return TRUE;
@@ -1097,29 +1050,6 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 Summarization of the data flow dependencies can be modelled as a dependency graph.
 It can be made explicit or kept implicit using the operators needed.
 We start with the latter. The primary steps to deal with is dead code removal.
-@c
-int
-removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p)
-{
-	/* detect if the destination variable is not used anymor */
-	/* return if it worked out */
-	(void) mb;
-	(void) pc;
-	(void) p;		/* fool the compiler */
-	return FALSE;
-}
-
-int
-removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p)
-{
-	/* detect if the source variable is not used anymor */
-	/* return if it worked out */
-	(void) mb;
-	(void) pc;
-	(void) p;		/* fool the compiler */
-	return FALSE;
-}
-
 @- Basic Algebraic Blocks
 Many code snippets produced by e.g. the SQL compiler is just 
 a linear representation of an algebra tree/graph. Its detection
@@ -1165,232 +1095,8 @@ of simple SQL rewrites using the module name as the discriminator.
 * Variable Stack Reduction::
 * Query Execution Plans::
 @end menu
-
-@node Alias Removal, Dead Code Removal, Toolkit, Toolkit
-@- Alias Removal
-The routine @code{optimizer.aliasRemoval()}
-walks through the program looking for simple
-assignment statements, e.g. V:=W. It replaces all subsequent
-occurrences of V by W, provided V is assigned a value once and
-W does not change in the remainder of the code.
-Special care should be taken for iterator blocks as illustrated in
-the case below:
-@verbatim
-	i:=0;
-	b:= "done";
-barrier go:= true;
-	c:=i+1;
-	d:="step";
-	v:=d;
-	io.print(v);
-	i:=c;
-redo go:= i<2;
-exit go;
-	io.print(b);
-	optimizer.aliasRemoval();
-@end verbatim
-The constant strings are propagated to the @code{print()} routine, while
-the initial assigment @code{i:=0} should be retained. The code block becomes:
-@verbatim
-	i:=0;
-barrier go:= true;
-	c:=i+1;
-	io.print("step");
-	i:=c;
-redo go:= i<2;
-exit go;
-	io.print("done");
-@end verbatim
 @{
-The key decision is to find the next statement that
-changes the candidate. 
-Beware that parameters could be changed as part of a call.
-They are marked as unsafe.
-@c
-int
-ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
-{
-	int i, k, blkcount = 0, used = 0;
-	InstrPtr q;
-
-	for (i = pc; i < mb->stop && isAlife(mb, varid, i); i++) {
-		q = getInstrPtr(mb, i);
-		for (k = 0; k < q->retc; k++)
-			if (q->argv[k] == varid)
-				goto ARfound;
-		for (; k < q->argc; k++)
-			if (q->argv[k] == varid) {
-				used++;
-				if (!isInvariant(mb, pc, i, varid))
-					goto ARfound;
-			}
-		if (blockStart(q))
-			blkcount++;
-		if (blockExit(q))
-			blkcount--;
-		if (blockCntrl(q))
-			blkcount--;
-		if (blkcount < 0)
-			break;	/* it is part of a block */
-		if (blockCntrl(q))
-			blkcount++;
-	}
-	  ARfound:
-	if (blkcount || !used)
-		return pc - 1;
-	return i;
-}
-
 @-
-When you propagate an alias through the program, the properties
-maintained should also be updated. In particular, the lifespan
-of the alias changes as part of the move.
-@c
-void
-ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
-{
-	InstrPtr p;
-	VarPtr v;
-	int k;
-
-	v = getVar(mb, alias);
-	for (; pc < pcl; pc++) {
-		p = getInstrPtr(mb, pc);
-		for (k = p->retc; k < p->argc; k++)
-			if (p->argv[k] == src) {
-				p->argv[k] = alias;
-				if (pc > v->endLifespan)
-					v->endLifespan = pc;
-			}
-	}
-}
-
-@-
-Alias removal is targeted at simple assignments only,
-because MAL does not allow for nested expressions.
-Instructions changing the flow of control should also be ignored.
-In all other cases the target variables are potential candidates
-for alias removal.
-@c
-int
-ARoptimizerStep(MalBlkPtr mb, int pc)
-{
-	int k, kn = 0;
-	InstrPtr p;
-
-	p = getInstrPtr(mb, pc);
-	if (p == 0 || getModuleId(p) || getFunctionId(p))
-		return pc;
-	if (p->token != ASSIGNsymbol)
-		return pc;
-	if (blockStart(p) || blockExit(p) || blockCntrl(p))
-		return pc;
-
-	for (k = 0; k < p->retc; k++) {
-		int m;
-
-		m = ARnxtAssignment(mb, pc + 1, p->argv[k]);
-		if (m != pc) {
-			ARreplaceAlias(mb, pc + 1, m, p->argv[k], p->argv[p->retc + k]);
-			kn++;
-#ifdef DEBUG_MAL_OPTIMIZER
-			if (MCgetClient()->debugOptimizer) {
-				stream_printf(GDKout, "Delete alias assignment\n");
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-			}
-#endif
-		}
-	}
-	/* delete the instruction if all targets have been replaced */
-	if (kn == p->retc && kn) {
-		/* all target variables pushed through */
-		removeInstruction(mb, p);
-		setLifespan(mb);
-		return pc - 1;
-	}
-	return pc;
-}
-
-str
-ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i, oldstop;
-	lng clk = GDKusec();
-
-	(void) stk;
-	if( mb->errors) {
-		if (pci)
-			removeInstruction(mb, pci);
-		return MAL_SUCCEED;
-	}
-#ifdef DEBUG_MAL_OPTIMIZER
-	if (MCgetClient()->debugOptimizer) {
-		stream_printf(GDKout, "start alias removal\n");
-		printFunction(GDKout, mb, LIST_MAL_ALL);
-	}
-#endif
-	setLifespan(mb);
-	oldstop= mb->stop;
-	for (i = 1; i < mb->stop; i++)
-		i = ARoptimizerStep(mb, i);
-	/* remove the ARoptimizer request */
-	if (pci)
-		removeInstruction(mb, pci);
-	optimizerCheckFlow(mb, "mal.aliasRemoval", oldstop-mb->stop-(pci?1:0), 
-			GDKusec() - clk);
-	return NULL;
-}
-
-@}
-@-
-@node Dead Code Removal, Accumulator Evaluations, Alias Removal, Toolkit
-@- Dead Code Removal
-Dead code fragments are recognized by assignments to variables
-whose value is not consumed any more. 
-It can be detected  by marking all variables used as 
-arguments as being relevant. 
-In parallel, we built a list of instructions that should appear 
-in the final result.
-The new code block is than built in one scan, discarding the
-superflous instructions.
-
-Instructions that produce side effects to the environment, 
-e.g. printing and BAT updates, should be taken into account. 
-Such (possibly recursive) functions should be marked with a property 
-(@code{unsafe}) For now we recognize a few important ones
-Likewise instructions marked as control flow instructions should be retained.
-
-An illustrative example is the following MAL snippet:
-@verbatim
-	V7 := bat.new(:void,:int);
-	V10 := bat.new(:int,:void);
-	V16 := algebra.markH(V7);
-	V17 := algebra.join(V16,V7);
-	V19 := bat.new(:void,:int);
-	V22 := bat.new(:void,:int);
-	V23 := algebra.join(V16,V22);
-	io.print("done");
-	optimizer.deadCodeRemoval();
-@end verbatim
-The dead code removal trims this program to the following short block:
-@verbatim
-	io.print("done");
-@end verbatim
-
-A refinement of the dead code comes from using arguments
-that cease to exist due to actions taken by an optimizer.
-For example, in the snippet below the @code{cascade} optimizer
-may conclude that variable V31 becomes empty and simply
-injects a 'dead' variable by dropping the assignment statement.
-This makes other code dead as well.
-@example
-	V30 := algebra.select( V7, 10,100);
-	V31 := algebra.select(V30,-1,5);
-	V32 := aggr.sum(V31);
-	io.print(V32);
-@end example
-[implementation pending]
-@{
 The dead code remover should not be used for testing, 
 because it will trim most programs to an empty list.
 The side effect tests should become part of the signature
@@ -1432,385 +1138,23 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 	return FALSE;
 }
-
-str
-DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+void
+replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 {
-	int i, j, k, dc = 0, se;
 	InstrPtr p;
-	int *varused;
-	int *pcused;
-	int actions = 0;
-	lng clk = GDKusec();
+	VarPtr v;
+	int k;
 
-	(void) pci;
-	(void) stk;		/* to fool compilers */
-	if( mb->errors) 
-		return MAL_SUCCEED;
-
-	varused = GDKmalloc(mb->vtop * sizeof(int));
-	for (i = 0; i < mb->vtop; i++)
-		varused[i] = 0;
-
-	pcused = GDKmalloc(mb->stop * sizeof(int));
-	for (i = 0; i < mb->stop; i++)
-		pcused[i] = 0;
-
-	for (i = mb->stop - 1; i >= 0; i--) {
-		p = getInstrPtr(mb, i);
-		switch (p->token) {
-		case IGNOREsymbol:
-			break;
-		case FUNCTIONsymbol:
-		case COMMANDsymbol:
-		case FACTORYsymbol:
-		case ENDsymbol:
-			pcused[i] = 1;
-			for (k = 0; k < p->retc; k++)
-				varused[p->argv[k]] = 1;
-			break;
-		case EXITsymbol:
-			/*     stream_printf(MCgetClient()->fdout,"#Handle DCR in iterator\n"); */
-		case RETURNsymbol:
-			pcused[i] = 1;
-			for (k = 0; k < p->retc; k++)
-				varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
-			break;
-		default:
-			se = 0;
-			for (k = 0; k < p->retc; k++)
-				if (varused[p->argv[k]])
-					se++;
-			/* do not deal with dead barrier blocks */
-			if (blockCntrl(p) || hasSideEffects(p, FALSE) || se) {
-				for (k = 0; k < p->argc; k++)
-					varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
-				pcused[i] = 1;
-			} else
-				dc++;
-		}
-	}
-#ifdef DEBUG_MAL_OPTIMIZER
-	{
-		Client cntxt = MCgetClient();
-
-		stream_printf(GDKout, "Dead code variables \n");
-		for (i = 0; i < mb->vtop; i++)
-			if (varused[i] == 0)
-				stream_printf(cntxt->fdout, "%s,", getVarName(mb, i));
-		stream_printf(MCgetClient()->fdout, "\nDead code instructions \n");
-		for (i = 1; i < mb->stop; i++)
-			if (pcused[i] == 0)
-				printInstruction(cntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
-		stream_printf(cntxt->fdout, "End of DCoptimizer\n");
-	}
-#endif
-	/* compress the code block */
-	for (i = j = 1; i < mb->stop; i++) {
-		if (pcused[i]) {
-			mb->stmt[j] = mb->stmt[i];
-
-			j++;
-		} else {
-			p = getInstrPtr(mb, i);
-			freeInstruction(p);
-			actions++;
-		}
-	}
-	mb->stop = j;
-	GDKfree(varused);
-	GDKfree(pcused);
-	optimizerCheck(mb, "mal.deadCodeRemoval", actions, GDKusec() - clk);
-	/* remove the DCoptimizer request */
-	return NULL;
-}
-
-@}
-
-@-
-@node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Toolkit
-@- Accumulator Evaluations
-Bulk arithmetic calculations are pretty expensive,
-because new @code{BAT}s are created for each expression. 
-This memory hunger can be reduced
-by detecting opportunities for accummulator processing, i.e.
-where a (temporary) variable is overwritten.
-For example, consider the program snippet
-@example
-	t3:= batcalc.*(64,t2);
-	t4:= batcalc,+(t1,t3);
-	optimizer.accumulators();
-@end example
-If variable t2 is not used any further in
-the program block, we can re-use its storage space
-and propagate its alias through the remainder of the code.
-@example
-	batcalc.*(t2,64,t2);
-	t4:= batcalc.+(t2,t1,t2);
-@end example
-The implementation is straight forward. It only deals with the
-arithmetic operations available in @code{batcalc} right now.
-This set will be gradually be extended.
-The key decision is to determine whether we may overwrite
-any of the arguments. We assume this is permissible if the argument
-was produced by an operator from the @code{algebra, algebra2, group, aggr}
-modules.
-@{
-@c
-int AEvalidInstruction(InstrPtr p){
-	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc") == 0)
-		return strcmp(getFunctionId(p),"init") != 0;
-	if (getModuleId(p) && strcmp(getModuleId(p), "array") == 0)
-			return strcmp(getFunctionId(p),"grid") != 0;
-	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc"))
-		return 0;
-	return 0;
-}
-
-int
-coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
-{
-	int t, a, b;
-
-	a = getArg(p, 0);
-	b = getArg(p, 1);
-	t = getVarType(mb, b);
-	if( getVarType(mb,a) != t) return 0;
-	if (strcmp(getFunctionId(p), ATOMname(t)) == 0) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "int") == 0 && t == TYPE_int) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "str") == 0 && t == TYPE_str) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "oid") == 0 && t == TYPE_oid) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "lng") == 0 && t == TYPE_lng) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "sht") == 0 && t == TYPE_sht) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "bit") == 0 && t == TYPE_bit) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "dbl") == 0 && t == TYPE_dbl) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "flt") == 0 && t == TYPE_flt) {
-		removeInstruction(mb, p);
-		ARreplaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	return 0;
-}
-str
-COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i, k;
-	InstrPtr p;
-	int actions = 0;
-	lng clk = GDKusec();
-	str calcRef= putName("calc",4);
-
-	(void) pci;
-	(void) stk;		/* to fool compilers */
-	if (pci)
-		removeInstruction(mb, pci);
-	if( mb->errors) 
-		return MAL_SUCCEED;
-
-	for (i = 1; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		if (getModuleId(p) == NULL)
-			continue;
-		if (getModuleId(p)==calcRef && p->argc == 2) {
-			k= coercionOptimizerStep(mb, i, p);
-			actions += k;
-			if( k) i--;
-		}
-	}
-	/* remove the COcoercion request */
-	if (pci)
-		removeInstruction(mb, pci);
-@-
-This optimizer affects the flow, but not the type and declaration
-structure
-@c
-	optimizerCheckFlow(mb, "mal.coercionOptimizer", actions, GDKusec() - clk);
-	if (mb->errors) {
-		showErrors();
-		return throwMessage("COoptimizer", "Optimization raised errors");
-	}
-	if( actions) 
-		return ARoptimizer(mb,stk,0);
-	return MAL_SUCCEED;
-}
-str
-AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i, a, b, valid;
-	InstrPtr p;
-	Client cntxt = MCgetClient();
-	Module scope = cntxt->nspace;
-	char *olderr;
-	int errlen, actions = 0;
-	lng clk = GDKusec();
-	int olderrnr = mb->errors;
-
-	(void) pci;
-	(void) stk;		/* to fool compilers */
-	if (pci)
-		removeInstruction(mb, pci);
-	if( mb->errors) 
-		return MAL_SUCCEED;
-	setLifespan(mb);
-@-
-Safe the errors encountered sofar. They have to be reset
-at the end of the optimization attempt.
-@c
-	errlen = strlen(cntxt->errbuf) + 1;
-	olderr = alloca(errlen);
-	if (errlen)
-		strncpy(olderr, cntxt->errbuf, errlen);
-	if (errlen)
-		strncpy(cntxt->errbuf, olderr, errlen);
-
-	for (i = 1; i < mb->stop; i++) {
-		VarPtr v;
-
-		p = getInstrPtr(mb, i);
-		if (getModuleId(p) == NULL)
-			continue;
-		if( !AEvalidInstruction(p) ) continue;
-
-		if (p->argc == 3) {
-			/* binary/unary operation, check first argument */
-			v = getVar(mb, a = getArg(p, 1));
-			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i) continue;
-			valid= getEndLifespan(mb,a) <= i;
-
-#ifdef DEBUG_MAL_OPTIMIZER
-			stream_printf(GDKout, "Found AE candidate ");
-			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
-				i, b,a,getArg(p,2), valid, isaBatType(v->type));
-			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-			if (isaBatType(v->type) && valid){
-				pushArgument(mb, p, getArg(p,2));
-				getArg(p,2)= getArg(p,1);
-				getArg(p,1)= a;
-				getArg(p,0)= newTmpVariable(mb,TYPE_any);
-
-				mb->errors = 0;
-				typeChecker(scope, mb, p, TRUE);
-				if (p->typechk == TYPE_UNKNOWN) {
-					/* reset instruction */
-					mb->errors= olderrnr;
-					getArg(p,0)= getArg(p,1);
-					getArg(p,1)= getArg(p,2);
-					getArg(p,2)= a;
-					p->argc--;
-					typeChecker(scope, mb, p, TRUE);
-				} else if (a != b)
-					ARreplaceAlias(mb, i + 1, mb->stop, b, a);
-#ifdef DEBUG_MAL_OPTIMIZER
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-				actions++;
-				continue;
+	v = getVar(mb, alias);
+	for (; pc < pcl; pc++) {
+		p = getInstrPtr(mb, pc);
+		for (k = p->retc; k < p->argc; k++)
+			if (p->argv[k] == src) {
+				p->argv[k] = alias;
+				if (pc > v->endLifespan)
+					v->endLifespan = pc;
 			}
-			/* continue with binary version */
-			v = getVar(mb, a = getArg(p, 2));
-			valid= getEndLifespan(mb,a) <= i;
-#ifdef DEBUG_MAL_OPTIMIZER
-			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
-				i, b,getArg(p,1),a, valid, isaBatType(v->type));
-#endif
-			if (isaBatType(v->type) && valid){
-				pushArgument(mb, p, getArg(p,2));
-				getArg(p,2)= getArg(p,1);
-				getArg(p,1)= a;
-				getArg(p,0)= newTmpVariable(mb,TYPE_any);
-
-				mb->errors = 0;
-				typeChecker(scope, mb, p, TRUE);
-				if (p->typechk == TYPE_UNKNOWN) {
-					/* reset instruction */
-					mb->errors = olderrnr;
-					getArg(p,0)= getArg(p,1);
-					getArg(p,1)= getArg(p,2);
-					getArg(p,2)= a;
-					p->argc--;
-					typeChecker(scope, mb, p, TRUE);
-				} else if (a != b)
-					ARreplaceAlias(mb, i + 1, mb->stop, b, a);
-#ifdef DEBUG_MAL_OPTIMIZER
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-				actions++;
-				continue;
-			}
-		} else if (p->argc == 2) {
-			/* binary/unary operation, check first argument  and return type */
-			v = getVar(mb, a = getArg(p, 1));
-			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i) continue;
-			valid= getEndLifespan(mb,a) <= i;
-
-			if (isaBatType(v->type)  && valid){
-#ifdef DEBUG_MAL_OPTIMIZER
-				stream_printf(GDKout, "Found unary AE candidate\n");
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-				pushArgument(mb, p, a);
-				getArg(p,1)= getArg(p,0);
-				getArg(p,0)= newTmpVariable(mb,TYPE_any);
-
-				mb->errors = 0;
-				typeChecker(scope, mb, p, TRUE);
-				if (p->typechk == TYPE_UNKNOWN) {
-					/* reset instruction */
-					mb->errors = olderrnr;
-					getArg(p,0)= getArg(p,1);
-					getArg(p,1)= getArg(p,2);
-					p->argc--;
-					typeChecker(scope, mb, p, TRUE);
-				} else if (a != b)
-					ARreplaceAlias(mb, i + 1, mb->stop, b, a);
-				actions++;
-			}
-		}
 	}
-	if (errlen)
-		strncpy(cntxt->errbuf, olderr, errlen);
-	/* remove the AEoptimizer request */
-	optimizerCheck(mb, "mal.accumulators", actions, GDKusec() - clk);
-	if (mb->errors) {
-		showErrors();
-		return throwMessage("AEoptimizer", "Optimization raised errors");
-	}
-	return MAL_SUCCEED;
 }
 
 @}
@@ -1892,30 +1236,23 @@ SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 	return 0;
 }
 
-str
-HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int
+OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, combis = 0, squeeze = 0;
 	InstrPtr p;
-	lng clk = GDKusec();
 
 	(void) stk;		/* fool compilers */
-	if( mb->errors) {
-		if (pci)
-			removeInstruction(mb, pci);
-		return MAL_SUCCEED;
-	}
+	(void) pci;
 
 	/* process the combinators */
 	for (i = 0; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
 		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
 			if (SPcombi000(mb, i, k)) {
-#ifdef DEBUG_MAL_OPTIMIZER
-				if (MCgetClient()->debugOptimizer) {
-					stream_printf(GDKout, "Combinator found\n");
-					printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
-				}
+#ifdef DEBUG_OPT_OPTIMIZER
+				stream_printf(GDKout, "Combinator found\n");
+				printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
 #endif
 				combis++;
 				k--;	/* an instruction has been removed */
@@ -1927,22 +1264,15 @@ HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getInstrPtr(mb, i);
 		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
 			if (SPsqueezer000(mb, i, k)) {
-#ifdef DEBUG_MAL_OPTIMIZER
-				if (MCgetClient()->debugOptimizer) {
-					stream_printf(GDKout, "Squeezer found\n");
-					printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
-				}
+#ifdef DEBUG_OPT_OPTIMIZER
+				stream_printf(GDKout, "Squeezer found\n");
+				printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
 #endif
 				squeeze++;
 				k--;	/* an instruction has been removed */
 			}
 	}
-
-	/* remove the HRoptimizer request */
-	if (pci)
-		removeInstruction(mb, pci);
-	optimizerCheck(mb, "mal.selectPushDown", squeeze, GDKusec() - clk);
-	return NULL;
+	return squeeze;
 }
 
 @-
@@ -1960,111 +1290,10 @@ Note that this operation depends on HRoptimizer, because it already
 pushes down the selection through the semijoin.
 Should be done differently
 
-@+ Access Mode optimizer
-Another example of a heuristic optimizer, which was used 
-at one point in the SQL optimizer.
-Walk through the program code searching for setWriteMode
-and make sure it is done once per basic block. It assumes
-that instructions do not change the access mode as a side
-effect.
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(heuristics)@
 @c
-static MALfcn AMsetWriteMode;
+@:wrapOptimizer(heuristics)@
 
-int
-AMoptimizerStep(MalBlkPtr mb, int pc)
-{
-	int k, kn = 0;
-	InstrPtr p;
-	lng clk = GDKusec();
-	int actions = 0;
-
-	p = getInstrPtr(mb, pc);
-	if (p->fcn != AMsetWriteMode)
-		return pc;
-	kn = getArg(p, 1);
-
-	for (k = pc - 1; k > 1; k--) {
-		p = getInstrPtr(mb, k);
-		if (p->barrier)
-			return pc;
-		if (p->fcn != AMsetWriteMode)
-			continue;
-		if (getArg(p, 1) == kn) {
-			if (p)
-				removeInstruction(mb, p);
-			actions++;
-			return pc - 1;
-		}
-	}
-	optimizerCheck(mb, "mal.accessMode", actions, GDKusec() - clk);
-	return pc;
-}
-
-str
-AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i;
-	Symbol s;
-
-	(void) stk;
-	s = findMALSymbol("bat", "setWriteMode");
-	if (s == 0)
-		return throwMessage("AMoptimizer", "bat.setWriteMode missing\n");
-	AMsetWriteMode = getSignature(s)->fcn;
-	for (i = 1; i < mb->stop; i++)
-		i = AMoptimizerStep(mb, i);
-	/* remove the AMoptimizer request */
-	if (pci)
-		removeInstruction(mb, pci);
-	return MAL_SUCCEED;
-}
-@- Optimizer code wrapper
-@= QOTC
-mal_export str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		@1optimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage(@2".optimizer",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		@1optimizer(s->def,0,0);
-		optimizerCheck(s->def,@2 "",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@c
-@:QOTC(AR, "aliasRemoval")@
-@:QOTC(AE, "accumulators")@
-@:QOTC(CO, "coercions")@
-@:QOTC(DC, "deadCodeRemoval")@
-@:QOTC(HR, "heuristics")@
 @}

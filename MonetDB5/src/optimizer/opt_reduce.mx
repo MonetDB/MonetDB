@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_reduce
+@f opt_reduce
 @a M. Kersten
 @-
 @node Variable Stack Reduction, Query Execution Plans, Costmodels, Toolkit
@@ -41,24 +41,22 @@ the isused property, or this property can again be easily derived.
 @{
 @mal
 pattern optimizer.reduce():str
-address QOTMRoptimizer;
+address OPTreduce;
 pattern optimizer.reduce(mod:str, fcn:str):str
-address QOTMRoptimizer
+address OPTreduce
 comment "Reduce the stack space claims";
 
 @h
 #ifndef _MAL_REDUCE_
 #define _MAL_REDUCE_
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-opt_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
-/* #define DEBUG_MAL_REDUCE     show partial result */
+/* #define DEBUG_OPT_REDUCE     show partial result */
 
 #endif
 @c
-#include "mal_reduce.h"
+#include "opt_reduce.h"
 #include "mal_interpreter.h"
 
 static 
@@ -90,14 +88,15 @@ void MRconstant(MalBlkPtr mb){
 			getArg(p,j) = alias[getArg(p,j)];
 	}
 }
-str
-MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+static int
+OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *vars, *used;
 	int cnt = 0, i, j;
 	InstrPtr q;
 	int actions = 0;
-	lng clk = GDKusec();
+	(void)stk;
+	(void) p;
 
 	vars = (int *) alloca(mb->vtop * sizeof(int));
 	used= (int *) alloca(mb->vtop * sizeof(int));
@@ -129,7 +128,7 @@ MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cnt++;
 	}
 	actions = mb->vtop - cnt;
-#ifdef DEBUG_MAL_REDUCE
+#ifdef DEBUG_OPT_REDUCE
 	stream_printf(GDKout, "Reduction %d -> %d\n", mb->vtop, cnt);
 #endif
 
@@ -142,54 +141,10 @@ MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	mb->vtop = cnt;
-	(void)stk;
-	if(p)
-		removeInstruction(mb,p); 
-	optimizerCheck(mb, "mal.reduce", actions, GDKusec() - clk);
-	return MAL_SUCCEED;
+	return actions;
 }
-
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(reduce)@
 @c
-mal_export str QOTMRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTMRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		MRoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.reduce",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		MRoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"reduce",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(reduce)@

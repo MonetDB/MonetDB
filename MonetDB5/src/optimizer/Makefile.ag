@@ -7,14 +7,15 @@ MTSAFE
 lib_optimizer = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES =  mal_crack.mx mal_optimizer.mx optimizer.mx  mal_factorize.mx \
-		mal_garbageCollector.mx mal_strengthReduction.mx \
-		mal_commonTerms.mx mal_partitionedQuery.mx \
-		mal_emptyset.mx mal_peephole.mx mal_multiplex.mx \
-		mal_singleton.mx mal_costmodel.mx mal_reduce.mx \
-		mal_qep.mx mal_multitable.mx mal_prelude.mx \
-		mal_generators.mx mal_remoteQueries.mx mal_joinselect.mx \
-		mal_constantExpression.mx mal_inliners.mx mal_cascade.mx
+	SOURCES =  opt_prelude.mx \
+		opt_support.mx  opt_crack.mx optimizer.mx  opt_factorize.mx \
+		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
+		opt_aliases.mx opt_commonTerms.mx opt_partitionedQuery.mx \
+		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
+		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
+		opt_accumulators.mx opt_qep.mx opt_multiTable.mx \
+		opt_generators.mx opt_remoteQueries.mx opt_joinselect.mx \
+		opt_constantExpression.mx opt_inliners.mx opt_rangePush.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
@@ -26,11 +27,13 @@ lib_optimizer = {
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = optimizer.mx mal_optimizer.mx mal_optimizer.mx \
-	mal_commonTerms.mx mal_costmodel.mx mal_emptyset.mx mal_factorize.mx \
-	mal_garbageCollector.mx mal_generators.mx mal_multiplex.mx \
-	mal_multitable.mx mal_partitionedQuery.mx mal_peephole.mx mal_qep.mx \
-	mal_reduce.mx mal_remoteQueries.mx mal_singleton.mx mal_strengthReduction.mx \
-	mal_crack.mx mal_joinselect.mx mal_constantExpression.mx mal_inliners.mx \
-	mal_cascade.mx
+	SOURCES =  opt_prelude.mx \
+		opt_support.mx  opt_crack.mx optimizer.mx  opt_factorize.mx \
+		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
+		opt_aliases.mx opt_commonTerms.mx opt_partitionedQuery.mx \
+		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
+		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
+		opt_accumulators.mx opt_qep.mx opt_multiTable.mx \
+		opt_generators.mx opt_remoteQueries.mx opt_joinselect.mx \
+		opt_constantExpression.mx opt_inliners.mx opt_rangePush.mx
 }

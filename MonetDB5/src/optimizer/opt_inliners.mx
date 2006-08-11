@@ -14,14 +14,14 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_inliners
+@f opt_inliners
 @a M. Kersten
 @-
 @node Function Inliners, Common Terms , Macro Processing, Toolkit
 
 @subsection Function Inliners
 The routine @code{optimizer.inliners()} searches MAL function definitions
-property @{inline@}  is set. In addition, all MAL function calls
+whose property @{inline@}  is set. In addition, all MAL function calls
 whose primary target variable carry the @{inline} property are inlined
 as well.
 The code is expanded inline using the macro processor.
@@ -29,38 +29,34 @@ The code is expanded inline using the macro processor.
 @{
 @mal
 pattern optimizer.inliners():str
-address QOTIXoptimizer;
+address OPTinliners;
 pattern optimizer.inliners(mod:str, fcn:str):str
-address QOTIXoptimizer
+address OPTinliners
 comment "Expand inline functions";
 
 @h
-#ifndef _MAL_INLINE_
-#define _MAL_INLINE_
-#include "mal_prelude.h"
+#ifndef _OPT_INLINE_
+#define _OPT_INLINE_
+#include "opt_prelude.h"
+#include "opt_support.h"
 #include "mal_interpreter.h"
-#include "mal_macro.h"
-#include "mal_optimizer.h"
+#include "opt_macro.h"
 
-opt_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
-#define DEBUG_MAL_INLINE     /* show partial result */
+#define DEBUG_OPT_INLINE     /* show partial result */
 
 #endif
 @c
-#include "mal_inliners.h"
+#include "opt_inliners.h"
 
-str
-IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+int
+OPTinlinersImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	InstrPtr q,sig;
 	int actions = 0;
-	lng clk = GDKusec();
 	PropertySet ps;
+	(void) p;
 
-	if(p)
-		removeInstruction(mb,p); 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if( q->blk){
@@ -69,7 +65,7 @@ IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( isPropertyDefined(ps,"inline") ){
 				inlineMALblock(mb,i,q->blk);
 				actions++;
-#ifdef DEBUG_MAL_INLINE
+#ifdef DEBUG_OPT_INLINE
 				printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 			} else {
@@ -77,7 +73,7 @@ IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				if( isPropertyDefined(ps,"inline") ){
 					inlineMALblock(mb,i,q->blk);
 					actions++;
-#ifdef DEBUG_MAL_INLINE
+#ifdef DEBUG_OPT_INLINE
 					printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 				}
@@ -85,42 +81,11 @@ IXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	(void)stk;
-	optimizerCheck(mb, "mal.inliner", actions, GDKusec() - clk);
-	return MAL_SUCCEED;
+	return actions;
 }
 
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(inliners)@
 @c
-mal_export str QOTIXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTIXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    str modnme;
-    str fcnnme;
-    Module  scope=NULL;
-    Symbol s= NULL;
-
-    optimizerInit();
-    removeInstruction(mb, p);
-    if( p->argc > 1){
-        if( stk != 0){
-            modnme= (str)getArgValue(stk,p,1);
-            fcnnme= (str)getArgValue(stk,p,2);
-        } else {
-            modnme= getArgDefault(mb,p,1);
-            fcnnme= getArgDefault(mb,p,2);
-        }
-        scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
-        if( scope)
-            s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-        if( s == NULL) {
-            char buf[1024];
-            snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-            return throwMessage("optimizer.inliner",buf);
-        }
-        if( s->def->errors == 0)
-            IXoptimizer(s->def,0,0);
-    } else
-            IXoptimizer(mb,0,0);
-    return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(inliners)@

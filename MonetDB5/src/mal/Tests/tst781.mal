@@ -10,6 +10,7 @@ end select;
 t:= bat.new(:void,:int);
 io.print("test inliners");
 select(t,0,1);
-optimizer.inliners();
+#optimizer.inliners();
+optimizer.macro("user","select");
 mdb.list();
 

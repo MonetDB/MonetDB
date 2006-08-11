@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_peephole
+@f opt_peephole
 @a M. Kersten
 @-
 @node Peephole Optimization, Multiplex Compiler,  Singleton Sets, Toolkit
@@ -29,28 +29,27 @@ front-end specific variations are foreseen.
 @{
 @mal
 pattern optimizer.peephole():str
-address QOTPHoptimizer;
+address OPTpeephole;
 pattern optimizer.peephole(mod:str, fcn:str):str
-address QOTPHoptimizer
+address OPTpeephole
 comment "Perform local rewrites";
 @h
 #ifndef _MAL_PEEPHOLE_
 #define _MAL_PEEPHOLE_
-#include "mal_optimizer.h"
+#include "opt_support.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "opt_prelude.h"
 
-/* #define DEBUG_MAL_PEEPHOLE     show partial result */
-
-opt_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+/* #define DEBUG_OPT_PEEPHOLE     show partial result */
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
 #endif
 
 @c
-#include "mal_prelude.h"
-#include "mal_peephole.h"
-#include "mal_namespace.h"
-#include "mal_interpreter.h"	/* for showErrors() */
+#include "opt_peephole.h"
+#include "opt_aliases.h"
 @}
 @- 
 The SQL frontend heavily relies on a pivot table, which
@@ -90,16 +89,13 @@ which is translated by the peephole optimizer into:
 The type of a variable may have to be reset when you change
 the program structure.
 @c
-str
-PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int
+OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
 	int i, limit, doit, aropt = 0;
-	lng clk = GDKusec();
 
-	if( mb->errors) 
-		return MAL_SUCCEED;
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 	stream_printf(GDKout, "Peephole optimizer started\n");
 #endif
 	(void) stk;
@@ -121,7 +117,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getVar(mb,getArg(p,1))->value.val.oval == 0){
 				if (match(q, "algebra", "markT") || 
 					match(q, "algebra", "markH")) {
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 					printf("PEEPHOLE 0\n");
 					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 					printInstruction(GDKout, mb, q, LIST_MAL_ALL);
@@ -137,7 +133,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						match(p, "algebra", "markT") && 
 						match(q, batRef, reverseRef)
 			) {
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 				printf("PEEPHOLE 1\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
@@ -152,7 +148,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				doit++;
 			} else if (q && match(p, "algebra", "markH") && match(q, "algebra", "join")
 			) {
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 				printf("PEEPHOLE markH-join\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
@@ -174,7 +170,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						match(q, batRef, reverseRef) && 
 						getArg(p, 0) == getArg(q, 1) && 
 						getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 				printf("PEEPHOLE reverse-reverse\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
@@ -197,63 +193,24 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (aropt) {
 			chkProgram(MCgetClient()->nspace, mb);
 			setLifespan(mb);
-			ARoptimizer(mb, 0, 0);
+			OPTaliases(mb, 0, 0);
 		}
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 		if (doit) {
 			stream_printf(GDKout, "PEEPHOLE %d\n", doit);
 			printFunction(GDKout, mb, LIST_MAL_ALL);
 		}
 #endif
 	} while (doit);
-#ifdef DEBUG_MAL_PEEPHOLE
+#ifdef DEBUG_OPT_PEEPHOLE
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-	optimizerCheck(mb, "mal.peephole", 1, GDKusec() - clk);
-	return MAL_SUCCEED;
+	return 1;
 }
 
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(peephole)@
 @c
-mal_export str QOTPHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTPHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
+@:wrapOptimizer(peephole)@
 
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		PHoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.peephole",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		PHoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"peephole",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}

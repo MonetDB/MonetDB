@@ -10,7 +10,7 @@ barrier j:= i<lim;
 exit j;
 end welcome;
 
-optimizer.macroExpansion("user","welcome");
+optimizer.macro("user","welcome");
 
 io.print("test expansion");
 a:= user.welcome(2);

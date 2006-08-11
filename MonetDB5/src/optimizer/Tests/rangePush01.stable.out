@@ -1,9 +1,9 @@
-stdout of test 'cascade01` in directory 'src/optimizer` itself:
+stdout of test 'rangePush01` in directory 'src/optimizer` itself:
 
 
-# 08:32:56 >  
-# 08:32:56 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=32344 --set monet_prompt= --trace --dbname=mTests_src_optimizer  cascade01.mal < /dev/null
-# 08:32:56 >  
+# 00:05:04 >  
+# 00:05:04 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=33688 --set monet_prompt= --trace --dbname=mTests_src_optimizer  rangePush01.mal < /dev/null
+# 00:05:04 >  
 
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
@@ -21,8 +21,7 @@ stdout of test 'cascade01` in directory 'src/optimizer` itself:
 #s5:= algebra.select(b,80,80,false,true);
 #s6:= algebra.select(b,80,80,true,false);
 #s7:= algebra.select(b,80,80,false,false);
-#optimizer.cascade();
-#optimizer.emptySet();
+#optimizer.rangePush();
 #mdb.list();
 #
 function user.main():void;	# 0  (main:void)
@@ -50,7 +49,7 @@ function user.main():void;
     mdb.list();
 end main;
 
-# 08:32:56 >  
-# 08:32:56 >  Done.
-# 08:32:56 >  
+# 00:05:04 >  
+# 00:05:04 >  Done.
+# 00:05:04 >  
 

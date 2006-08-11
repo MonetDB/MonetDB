@@ -6,6 +6,6 @@ c:= 3*b;		io.print(c);
 d:= calc.flt(c);io.print(d);
 e:= mmath.sin(d);io.print(e);
 
-optimizer.aliasRemoval();
+optimizer.aliases();
 optimizer.constantExpression();
 mdb.list();

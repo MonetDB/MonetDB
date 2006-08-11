@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_singleton
+@f opt_singleton
 @a M. Kersten
 @-
 @node Singleton Sets, Peephole Optimization, Empty Set Reduction,  Toolkit
@@ -51,24 +51,22 @@ is translated by into the code block
 @{
 @mal
 pattern optimizer.singleton():str
-address QOTSToptimizer;
+address OPTsingleton;
 pattern optimizer.singleton(mod:str, fcn:str):str
-address QOTSToptimizer
+address OPTsingleton
 comment "Perform singleton optimization";
 
 @h
-#ifndef _MAL_SINGLETON_
-#define _MAL_SINGLETON_
-#include "mal_optimizer.h"
-#include "mal_prelude.h"
+#ifndef _OPT_SINGLETON_
+#define _OPT_SINGLETON_
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-#define DEBUG_MAL_SINGLETON     /* show partial result */
-
-opt_export str SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str STevaluate(MalBlkPtr mb, int cnt, int *vars);
+#define DEBUG_OPT_SINGLETON     /* show partial result */
 #endif
 @c
-#include "mal_singleton.h"
+#include "opt_singleton.h"
+#include "opt_aliases.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 #include "mal_namespace.h"
@@ -86,7 +84,7 @@ typedef struct {
 	int packed;
 } STtuple;
 
-void
+static void
 STrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx)
 {
 	InstrPtr p;
@@ -108,7 +106,7 @@ STrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx)
 	pushArgument(mb, p, tidx);
 }
 
-int
+static int
 STalias(int idx, int top, STtuple * tuples)
 {
 	int i;
@@ -119,7 +117,7 @@ STalias(int idx, int top, STtuple * tuples)
 	return -1;
 }
 
-int
+static int
 STnewTuple(MalBlkPtr mb, int vidx, int *top, STtuple * tuples)
 {
 	tuples[*top].packed = 1;
@@ -136,7 +134,7 @@ STnewTuple(MalBlkPtr mb, int vidx, int *top, STtuple * tuples)
 	return *top - 1;
 }
 
-void
+static void
 STunpack(MalBlkPtr mb, int varid, STtuple * tuples)
 {
 	InstrPtr p = 0;
@@ -152,7 +150,7 @@ STunpack(MalBlkPtr mb, int varid, STtuple * tuples)
 	tuples[varid].packed = 0;
 }
 
-void
+static void
 STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 {
 	InstrPtr p = 0;
@@ -165,7 +163,7 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 	pushArgument(mb, p, tuples[varid].tidx);
 }
 
-str
+static str
 STevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
 	lng clk = GDKusec();
@@ -187,7 +185,7 @@ variables on the stack.
 @c
 	for (i = 0; i < cnt; i++)
 		STnewTuple(mb, vars[i], &top, tuples);
-#ifdef DEBUG_MAL_SINGLETON
+#ifdef DEBUG_OPT_SINGLETON
 	stream_printf(GDKout, "START SINGLETON OPTIMIZER %d:", cnt);
 	for (i = 0; i < top; i++)
 		stream_printf(GDKout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
@@ -331,34 +329,33 @@ variables on the stack.
 		pushInstruction(mb, p);
 	}
 	if (doAR) {
-#ifdef DEBUG_MAL_SINGLETON
+#ifdef DEBUG_OPT_SINGLETON
 		printf("MID STAGE doAR=%d\n", doAR);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 		for (i = 0; i < top; i++)
 			stream_printf(GDKout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
 		stream_printf(GDKout, "\n");
 #endif
-		ARoptimizer(mb, 0, 0);
+		OPTaliases(mb, 0, 0);
 	}
 	GDKfree(old);
 
 	optimizerCheck(mb, "mal.emptyset", 1, GDKusec() - clk);
-#ifdef DEBUG_MAL_SINGLETON
+#ifdef DEBUG_OPT_SINGLETON
 	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 	return MAL_SUCCEED;
 }
 
-str
-SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+static int
+OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *vars;
 	int cnt = 0, i, j;
 
 	vars = (int *) alloca(mb->vtop);
 
-	removeInstruction(mb, p);
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		for (j = 0; j < p->retc; j++)
@@ -368,48 +365,11 @@ SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	STevaluate(mb, cnt, vars);
 	(void) stk;
-	return MAL_SUCCEED;
+	return 1;
 }
-@- Optimizer code wrapper
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(singleton)@
 @c
-mal_export str QOTSToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTSToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		SToptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.singleton",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		SToptimizer(s->def,0,0);
-		optimizerCheck(s->def,"singleton",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
+@:wrapOptimizer(singleton)@

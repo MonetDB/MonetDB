@@ -14,80 +14,107 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_macro
+@f opt_macro
 @a M. L. Kersten
 @-
 @node Macro Processing, Function Inliners, Heuristic Rewrite Rules, Toolkit
-@- Macro Processing
-Two optimizers are based on MAL macro expansion and contraction.
+@- Macro and Orcam Processing
+The optimizers form the basis for replacing code fragments.
+Two optimizers are focused on code expansion and contraction.
 The former involves replacing individual instructions by a block of
-MAL code.
+MAL code, i.e. a @code{macro} call.
 The latter depicts the inverse operation, a group of instructions
-is replaced by a single MAL assignment statement.
+is replaced by a single MAL assignment statement, i.e. a @code{orcam}
+call.
 
-The macros structures considered are type-correct MAL functions only,
+The macro facility is limited to type-correct MAL functions,
 which means that replacement is not essential from a semantic
 point of view. They could have been called, or the block need
-not be compressed.
+not be compressed. It is equivalent to inline code expansion.
 
-The optimizers form the basis for replacing code fragments.
-In particular, it provides a basis to develop front-end
-specific code generation templates.
+The @code{macro} and @code{orcam} transformations provide 
+a basis to develop front-end specific code generation templates.
 The prototypical test case is the following template:
 @example
-function joinPath( a:bat[:any$1,:any$2],
+function user.joinPath( a:bat[:any$1,:any$2],
                 b:bat[:any$2,:any$3],
-                c:bat[:any$3,:any4]):bat[:any$1,:any$4];
+                c:bat[:any$3,:any4]):bat[:any$1,:any$4]
+address fastjoinpath;
     z:= join(a,b);
     zz:= join(z,c);
     return zz;
-end joinPath;
+end user.joinPath;
 @end example
 
-The MEoptimizer will hunt for occurrences of the instruction
-joinPath() and replaces it with the body, i.e. it in-lines the code.
-Conversely,  the MCoptimizer attempts to localize a block
-of two join operations and,
-when found, it is replaced by the call to joinPath.
+The call @code{optimizer.macro("user", "joinPath")} hunts
+for occurrences of the instruction call in the block in
+which it is called
+and replaces it with the body, i.e. it in-lines the code.
+Conversely,  the @code{optimizer.orcam("user", "joinPath")}
+attempts to localize a block of two join operations and,
+when found, it is replaced by the direct call to @code{joinPath}.
+In turn, type resolution then directs execution to a built-in
+function @code{fastjoinpath}.
 
 The current implementation is limited to finding a consecutive
 sequence, ending in a return-statement. The latter is needed to
 properly embed the result in the enclosed environment.
 It may be extended in the future to consider the flow of control as well.
 
+@{
 After both operations the flow of control structure has to be
-checked and fort contraction we also have to resolve the new
+checked and for contraction we also have to resolve the new
 code, e.g. to bind the new instruction with an implementation.
 (Or become part of a macro expansion)
 
 The implementation is based on matching MAL instructions.
-The operation malMatch takes two MAL instructions and returns true
-if they are equivalent. This means they address the same function,
-but also that their variables are isomorphic.
+This means they address the same function, but also that their 
+variables are isomorphic.
 The generalization of malMatch is malFcnMatch, which checks
 equivalence of a function body as an occurrence in another one.
+@}
 
-The optimizers work on a specific symbol, module or act on all
-known symbols.
-
+The optimizer can be targeted to a function @code{user.foo()}
+using the call @code{optimizer.macro("user","foo","user","joinPath");
 @- Known issues. 
 The functions subject to expansion or contraction should be
 checked on 'proper' behavior.
 
 The current implementation is extremely limited. 
-The MCoptimizer does not recognize use of intermediate results 
+The @code{macro} optimizer does not recognize use of intermediate results 
 outside the block being contracted. This should be checked and
 it should block the replacement, unless the intermediates are part of
 the return list.
 Likewise, we assume here that the block has a single return
 statement, which is also the last one to be executed.
 
-The MCoptimizer can only expand functions. Factories already
+The @code{macro} optimizer can only expand functions. Factories already
 carry a significant complex flow of control that is hard
 to simulate in the nested flow structure of an arbitrary function.
 
-The MEoptimizer can not deal with calls controlled by a barrier.
+The @code{orcam} optimizer can not deal with calls controlled by a barrier.
 It would often require a rewrite of several other statements as well.
+
+@mal
+pattern optimizer.macro(targetmod:str,targetfcn:str):void
+address OPTmacro
+comment "Inline the code of the target function.";
+#pattern optimizer.macro(targetmod:str):void
+#address OPTmacro
+#comment "Inline functions known a specific module.";
+pattern optimizer.macro(mod:str,fcn:str,targetmod:str,targetfcn:str):void
+address OPTmacro
+comment "Inline a target function used in a specific function.";
+
+pattern optimizer.orcam(targetmod:str,targetfcn:str):void
+address OPTorcam
+comment "Inverse macro processor for current function";
+#pattern optimizer.orcam(targetmod:str):void
+#address OPTorcam
+#comment "Inverse macro processor for a module";
+pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void
+address OPTorcam
+comment "Inverse macro, find pattern and replace with a function call.";
 
 @{
 @+ Implementation section
@@ -95,29 +122,24 @@ It would often require a rewrite of several other statements as well.
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
-/* #define DEBUG_MAL_MACRO*/
+/* #define DEBUG_OPT_MACRO*/
 
-#include "mal.h"
-#include "mal_client.h"
-
-mal_export int malMatch(InstrPtr p1, InstrPtr p2);
-mal_export int malFcnMatch(MalBlkPtr m1, MalBlkPtr mb, int pc);
-mal_export int replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-mal_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-mal_export str ORCAMprocessor(MalBlkPtr mb, Symbol t);
-mal_export str MACROprocessor(MalBlkPtr mb, Symbol t);
-mal_export str MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn);
+opt_export str MACROprocessor(MalBlkPtr mb, Symbol t);
+opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 #endif /* _MAL_MACRO_H_ */
 @-
 @c
-#include "mal_macro.h"
+#include "opt_prelude.h"
+#include "opt_macro.h"
+#include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
+
 @-
 The optimizer hooks are introduced first.
 They are refered to from the optimizer module.
 @c
-int
+static int
 malMatch(InstrPtr p1, InstrPtr p2)
 {
 	int i, j;
@@ -155,7 +177,7 @@ a signature and end-statement. They are ignored in the comparison
 Beware, the variables in the block being removed, could be
 used furtheron in the program. [tricky to detect, todo]
 @c
-int
+static int
 malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 {
 	int i, j, k, lim;
@@ -184,7 +206,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 			mvar[mtop++] = getArg(q, j);
 	}
 	assert(mtop == ctop);	/*shouldn;t happen */
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	for (i = 0; i < ctop; i++)
 		printf("match %d %d\n", cvar[i], mvar[i]);
 #endif
@@ -210,7 +232,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	InstrPtr *ns, p,q;
 	int *nv;
 
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	printf("inlineMALblock\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 	printFunction(GDKout,mc,LIST_MAL_ALL);
@@ -284,7 +306,7 @@ of the block.
 The semantic test is encapsulated in a routines.
 @c
 
-str
+static str
 MACROvalidate(MalBlkPtr mb)
 {
 	int retseen = 0;
@@ -310,7 +332,7 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 	int i, cnt = 0, last = -1;
 	str msg = MAL_SUCCEED;
 
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	printf("calling the MACRO processor\n");
 #endif
 	if (t == NULL)
@@ -322,7 +344,7 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 		q = getInstrPtr(mb, i);
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && 
 			getSignature(t)->token == FUNCTIONsymbol) {
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 			printf("Hit, replace macro call %s\n", t->name);
 #endif
 			if (i == last)
@@ -348,7 +370,7 @@ The function being replaced should assign the result to
 the signature variables. Otherwise it will be difficult
 to assess which result to retain.
 @c
-int
+static int
 replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 {
 	int i, j, k, lim;
@@ -372,7 +394,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			mvar[mtop++] = getArg(p, j);
 	}
 	assert(mtop == ctop);	/*shouldn;t happen */
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	for (i = 0; i < ctop; i++)
 		printf("match %d %d\n", cvar[i], mvar[i]);
 #endif
@@ -414,7 +436,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	return pc;
 }
 
-str
+static str
 ORCAMprocessor(MalBlkPtr mb, Symbol t)
 {
 	MalBlkPtr mc = t->def;
@@ -423,13 +445,13 @@ ORCAMprocessor(MalBlkPtr mb, Symbol t)
 
 	if (t == NULL || mc->stop < 3)
 		return msg;
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	printf("calling the ORCAM processor for %s\n", t->name);
 #endif
 	/* strip signature, return, and end statements */
 	for (i = 1; i < mb->stop - mc->stop + 3; i++)
 		if (malFcnMatch(mc, mb, i)) {
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 			printf("found match for %s at %d \n", t->name, i);
 #endif
 			msg = MACROvalidate(mc);
@@ -443,36 +465,112 @@ ORCAMprocessor(MalBlkPtr mb, Symbol t)
 }
 
 @-
-The optimizer call infrastructure
+The optimizer call infrastructure is identical to the liners
+function with the exception that here we inline all possible
+functions, regardless their
 @c
-str
-MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn)
+@= implementation
+static int
+OPT@1Implementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	MalBlkPtr target= mb;
 	Module s;
 	Symbol t;
-	str msg = MAL_SUCCEED;
+	str mod,fcn;
 	int j;
 
 	(void) p;
 	(void) stk;
 
+	if( p->argc == 3){
+		mod= getArgDefault(mb,p,1);
+		fcn= getArgDefault(mb,p,2);
+	} else {
+		mod= getArgDefault(mb,p,1);
+		fcn= getArgDefault(mb,p,2);
+		s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
+		if (s == 0)
+			return 0;
+		t= findSymbolInModule(s, fcn);
+		if( t == 0)
+			return 0;
+		target= t->def;
+		mod= getArgDefault(mb,p,3);
+		fcn= getArgDefault(mb,p,4);
+	}
 	s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
 	if (s == 0)
-		return throwException(MALEXCEPTION, "optimizer.@1optimizer", "module '%s' not found\n", fcn);
+		return 0;
 	if (s->subscope) {
 		j = getSubScope(fcn);
 		for (t = s->subscope[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol)
-					/* call macro expansion */
-					ORCAMprocessor(mb, t);
-				if (msg)
-					break;
+					@2processor(target, t);
 			}
 	}
-	chkFlow(mb);
-	chkDeclarations(mb, TRUE);
-	return msg;
+	return 1;
 }
+@c
+@:implementation(macro,MACRO)@
+@:implementation(orcam,ORCAM)@
+@- Optimizer code wrapper
+The optimizer wrapper code is the interface to the MAL optimizer calls.
+It prepares the environment for the optimizers to do their work and removes
+the call itself to avoid endless recursions.
+
+Before an optimizer is finished, it should leave a clean state behind.
+Moreover, the information of the optimization step is saved for
+debugging and analysis.
+
+The wrapper expects the optimizers to return the number of
+actions taken, i.e. number of succesful changes to the code.
+
+This code is slightly different from other optimizer
+wrappers, because the mod.fcn argument is optional.
+@= exportOptimizer
+opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+@= wrapOptimizer
+str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Module s;
+	Symbol t;
+	str msg,mod,fcn;
+	lng clk= GDKusec();
+	int actions = 0;
+
+	optimizerInit();
+	if( p->argc == 3){
+		mod= getArgDefault(mb,p,1);
+		fcn= getArgDefault(mb,p,2);
+	} else {
+		mod= getArgDefault(mb,p,3);
+		fcn= getArgDefault(mb,p,4);
+	}
+	s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
+	if (s == 0)
+		return 0;
+	t= findSymbolInModule(s, fcn);
+	if( t == 0)
+		return 0;
+
+	msg = MACROvalidate(t->def);
+	if( msg) 
+		return msg;
+	if( mb->errors == 0)
+		actions= OPT@1Implementation(mb,stk,p);
+	if( p )
+		removeInstruction(mb, p);
+    optimizerCheck(mb, "optimizer.rangePush", actions, GDKusec() - clk);
+	return MAL_SUCCEED;
+}
+@h
+@:exportOptimizer(macro)@
+@c
+@:wrapOptimizer(macro)@
+@h
+@:exportOptimizer(orcam)@
+@c
+@:wrapOptimizer(orcam)@
 
 @}

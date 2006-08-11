@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_crack
+@f opt_crack
 @a S.Idreos
 The cracker optimizer searches patterns to be replaced by
 the special cracker index operations.
@@ -22,28 +22,25 @@ the special cracker index operations.
 @{
 @mal
 pattern optimizer.crack():str
-address QOTCRKoptimizer;
+address OPTcrack;
 pattern optimizer.crack(mod:str, fcn:str):str
-address QOTCRKoptimizer
+address OPTcrack
 comment "Replace algebra select with crackers select";
 
 @h
-#ifndef _MAL_CRACK_
-#define _MAL_CRACK_
-#include "mal_optimizer.h"
-
-/* #define DEBUG_MAL_CRACK */
-
-opt_export str CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifndef _OPT_CRACK_
+#define _OPT_CRACK_
+/* #define DEBUG_OPT_CRACK */
+#include "opt_support.h"
 
 #endif
 
 
 @c  
-#include "mal_crack.h"
+#include "opt_crack.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_prelude.h"
+#include "opt_prelude.h"
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
@@ -53,18 +50,13 @@ opt_export str CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* find all algebra select structions in a mal block mb and change them to the corresponding crackers command
     */
-str
-CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int
+OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, *old;
 	int i, limit;
 
-	lng clk = GDKusec();
-
-	if( mb->errors) 
-		return MAL_SUCCEED;
-
-#ifdef DEBUG_MAL_CRACK
+#ifdef DEBUG_OPT_CRACK
 	printf("Crack optimizer started\n");
 #endif
 	(void) stk;
@@ -75,7 +67,7 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-#ifdef DEBUG_MAL_CRACK
+#ifdef DEBUG_OPT_CRACK
 		printf("limit is at: %d and i is at: %d  ", limit, i);
 	        printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
@@ -140,52 +132,10 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			removeInstruction(mb, p);
 
 	}
-	optimizerCheck(mb, "optimizer.crack", 1, GDKusec() - clk);	
-	return MAL_SUCCEED;
+	return 1;
 }
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(crack)@
 @c
-mal_export str QOTCRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTCRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		CRKoptimizer(mb, stk, p);
-		optimizerCheck(mb,"crack",1,GDKusec()-clk);
-		removeInstruction(mb, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.crack",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		CRKoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"crack",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(crack)@

@@ -2,7 +2,7 @@
 # bat C can still be shared with B
 optimizer.setDebug();
 optimizer.commonTerms();
-optimizer.aliasRemoval();
+optimizer.aliases();
 b:= bat.new(:int,:int);
 c:= bat.new(:int,:int);
 bat.insert(b,1,1);

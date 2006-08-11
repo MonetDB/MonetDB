@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_generators
+@f opt_generators
 @a M. Kersten
 @-
 @node Partitioned Databases, Strength Reduction, Multi-Association Tables, Toolkit
@@ -83,25 +83,25 @@ first normalize the query plan, moving related instructions close
 together.
 @mal
 pattern optimizer.generators():str
-address QOTBGoptimizer;
+address OPTgenerators;
 pattern optimizer.generators(mod:str, fcn:str):str
-address QOTBGoptimizer
+address OPTgenerators
 comment "Resolve the multi-table definitions";
 
 @h
 #ifndef _MAL_BATLOOPS_
 #define _MAL_BATLOOPS_
-#include "mal_optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 #include "mal_builder.h"
 #include "pbm.h"
 
 opt_export str BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-/* #define DEBUG_MAL_BATLOOPS     show partial result */
+/* #define DEBUG_OPT_BATLOOPS     show partial result */
 
 #endif
 @c
-#include "mal_generators.h"
-#include "mal_prelude.h"
+#include "opt_generators.h"
 
 static int
 isPBMalias(int idx, int mvar[], int top){
@@ -148,8 +148,9 @@ The table mloop contains the PC of the corresponding iterator.
 #define GEN_OPENED 1
 #define GEN_PARTIAL 2
 #define GEN_PACKED 4
-str
-BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+
+int
+OPTgeneratorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, stmt[256];
 	int oldtop, keep=0,i,j,k,m=0;
 #ifndef NDEBUG
@@ -159,14 +160,10 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int  mtop=0, mvar[256], mstatus[256];
 	int size,match,actions=0;
 	char tmpname[128];
-	lng clk = GDKusec();
-#ifdef DEBUG_MAL_BATLOOPS
+#ifdef DEBUG_OPT_BATLOOPS
 	stream_printf(GDKout,"Start generators optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
-
-	if(p)
-		removeInstruction(mb,p);
 
 	setLifespan(mb); /* to detect future variable use */
 	old = mb->stmt;
@@ -383,7 +380,7 @@ Moreover, it then terminates the block in which it was used.
 		
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0){
-#ifdef DEBUG_MAL_BATLOOPS
+#ifdef DEBUG_OPT_BATLOOPS
 			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 			printInstruction(GDKout,mb,p,0);
 #endif
@@ -408,55 +405,15 @@ At this stage we should close any open generators.
 	pushInstruction(mb,old[oldtop-1]);
 	GDKfree(old);
 	(void) stk; 
-	optimizerCheck(mb, "optimizer.generators", actions, GDKusec() - clk);
-#ifdef DEBUG_MAL_BATLOOPS
+#ifdef DEBUG_OPT_BATLOOPS
 	stream_printf(GDKout,"Result of generators optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
-
-	return MAL_SUCCEED;
+	return actions;
 }
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(generators)@
 @c
-mal_export str QOTBGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTBGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
+@:wrapOptimizer(generators)@
 
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		BGoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.generators",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		BGoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"generators",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}

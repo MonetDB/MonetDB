@@ -10,7 +10,7 @@ function qry(i:dbl):dbl;
    return z;
 end qry;
 t0:= alarm.usec();
-optimizer.aliasRemoval("user","qry");
+optimizer.aliases("user","qry");
 optimizer.commonTerms("user","qry");
 t1:= alarm.usec();
 t2:= t1-t0;

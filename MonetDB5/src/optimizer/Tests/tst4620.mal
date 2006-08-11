@@ -23,7 +23,7 @@ d:= algebra.select(b,0:int,49:int);
 i:= aggr.count(d);
 io.print(i);
 
-optimizer.macroContraction("algebra","joinPath");
+optimizer.orcam("algebra","joinPath");
 #to be detected by join inversion
 z:= algebra.join(b,c);
 zz:= algebra.join(z,d);

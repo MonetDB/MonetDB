@@ -15,24 +15,23 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_joinselect
+@f opt_joinselect
 @a S. Idreos
 The combination of joins and selects is effective in the 
 context of cracker optimizations.
 @mal
 pattern optimizer.joinselect():str
-address QOTJSoptimizer;
+address OPTjoinselect;
 pattern optimizer.joinselect(mod:str, fcn:str):str
-address QOTJSoptimizer
+address OPTjoinselect
 comment "Replace select with join select";
 @h
 #ifndef _MAL_JOINSEL
 #define _MAL_JOINSEL
-#include "mal_optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-/*#define DEBUG_MAL_JOINSEL    show partial result*/ 
-
-opt_export str JSoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+/*#define DEBUG_OPT_JOINSEL    show partial result*/ 
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
@@ -43,17 +42,15 @@ opt_export str JSoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 @c
-#include "mal_prelude.h"
-#include "mal_joinselect.h"
+#include "opt_joinselect.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
-str
-JSoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int
+OPTjoinselectImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, *old, qs, qi, qu, qd, r, d, k;// qu, qi, r, d,  *old;
 	int i, limit, attr;
-	lng clk = GDKusec();
 	int start = -1;
 	int *scr_s, *scr_i, *scr_u, *scr_d;
 	int *ps, *pi, *pu, *pd;
@@ -61,10 +58,7 @@ JSoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int xx = sizeof(int);
 	int pivot = -1;
 
-	if( mb->errors) 
-		return MAL_SUCCEED;
-
-#ifdef DEBUG_MAL_JOINSEL
+#ifdef DEBUG_OPT_JOINSEL
 	stream_printf(GDKout, "Joinselect optimizer started\n");
 #endif
 
@@ -303,53 +297,13 @@ end:
 	GDKfree(scr_u);
 	GDKfree(scr_d);
 
-#ifdef DEBUG_MAL_JOINSEL
+#ifdef DEBUG_OPT_JOINSEL
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-	optimizerCheck(mb, "mal.joinselect", 1, GDKusec() - clk);
-	return MAL_SUCCEED;
+	return 1;
 }
-
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(joinselect)@
 @c
-mal_export str QOTJSoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTJSoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		optimizerInit();
-		JSoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("joinselect.optimizer",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		JSoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"joinselect",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(joinselect)@

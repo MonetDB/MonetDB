@@ -14,13 +14,13 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_prelude
+@f opt_prelude
 @a M. Kersten
 These definitions are handy to have around in the optimizer
 @h
 #ifndef MAL_PRELUDE
 #define MAL_PRELUDE
-#include "mal_optimizer.h"
+#include "opt_support.h"
 
 opt_export  str aggrRef;
 opt_export  str algebraRef;
@@ -87,7 +87,8 @@ opt_export  str bind_dbatRef;
 opt_export void optimizerInit(void);
 #endif
 @c
-#include "mal_prelude.h"
+#include "opt_support.h"
+#include "opt_prelude.h"
 
 str aggrRef;
 str algebraRef;

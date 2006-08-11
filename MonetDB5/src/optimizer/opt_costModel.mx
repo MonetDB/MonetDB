@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_costmodel
+@f opt_costModel
 @a M. L. Kersten
 @-
 @node Costmodels, Variable Stack Reduction, Strength Reduction, Toolkit
@@ -58,34 +58,30 @@ estimators.
 @+ Implementation section
 @mal
 pattern optimizer.costModel():str
-address QOTRMoptimizer;
+address OPTcostModel;
 pattern optimizer.costModel(mod:str, fcn:str):str
-address QOTRMoptimizer
+address OPTcostModel
 comment "Estimate the cost of a relational expression";
 @h
-#ifndef _MAL_COSTMODEL_H_
-#define _MAL_COSTMODEL_H_
+#ifndef _OPT_COSTMODEL_H_
+#define _OPT_COSTMODEL_H_
 
-#define DEBUG_MAL_COSTMODEL
+#define DEBUG_OPT_COSTMODEL
 
 #include "mal.h"
 #include <math.h>
-#include "mal_macro.h"
 #include "mal_interpreter.h"
 #include "mal_client.h"
 #include "mal_namespace.h"
-#include "mal_optimizer.h"
-#include "mal_prelude.h"
+#include "opt_support.h"
+#include "opt_prelude.h"
 
 #define getProps(Y) mb->var[Y]->props
 
-opt_export void RMcalculator(MalBlkPtr mb);
-opt_export str RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export int getCost(MalBlkPtr mb, int varid);
-#endif /* _MAL_COSTMODEL_H_ */
+#endif /* _OPT_COSTMODEL_H_ */
 @-
 @c
-#include "mal_costmodel.h"
+#include "opt_costModel.h"
 
 static void
 fixPropertySet(MalBlkPtr mb, int dst)
@@ -113,12 +109,25 @@ The cost formula are repetative
 		k= (@3);
 		fixPropertySet(mb, getArg(p,0));
 		setProperty(getProps(getArg(p,0)),"RMcost","=", TYPE_int, &k);
+@-
+The cost will be used in many places to make decisions.
+Access should be fast.
 @c
-void
-RMcalculator(MalBlkPtr mb)
+int
+OPTgetCost(MalBlkPtr mb, int varid)
+{
+	int c;
+
+	c = *(getVarCost(varid));
+	return c;
+}
+int
+OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, *c, *c1, *c2, k;
 	InstrPtr p;
+	(void) stk;
+	(void) pci;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -177,76 +186,10 @@ RMcalculator(MalBlkPtr mb)
 			}
 		}
 	}
+	return 1;
 }
-str
-RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	lng clk = GDKusec();
-
-	(void) stk;
-	if (p)
-		removeInstruction(mb, p);
-	if( mb->errors) 
-		return MAL_SUCCEED;
-	RMcalculator(mb);
-	optimizerCheck(mb, "mal.costEstimation", 1, GDKusec() - clk);
-	return MAL_SUCCEED;
-}
-
-@-
-The cost will be used in many places to make decisions.
-Access should be fast.
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(costModel)@
 @c
-int
-getCost(MalBlkPtr mb, int varid)
-{
-	int c;
-
-	c = *(getVarCost(varid));
-	return c;
-}
-
-@- Optimizer code wrapper
-@c
-mal_export str QOTRMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTRMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		RMoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.costModel",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		RMoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"costModel",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(costModel)@

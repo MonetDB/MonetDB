@@ -448,6 +448,7 @@ for separate name space management.
 #define setDestType(M,P,V)  setVarType((M),getDestVar(P),V)
 #define getDestType(M,P)    destinationType((M),(P))
 #define getArg(P,I) (P)->argv[I]
+#define setArg(P,I,R) (P)->argv[I]= R
 #define getArgName(M,P,I)   getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)   getVarType((M),(P)->argv[I])
 

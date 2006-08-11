@@ -621,12 +621,5 @@ have to call the scenario exit.
 	}
 }
 
-@+ MAL scenario initialization
-The scenario initialization is currently empty. However, the file should always
-be available. Actually, we should move welcome messages to this script, because
-it will indicate that the kernel is basically running as expected.
-@mal
-#print("Welcome in MAL scenario");
-
 @-
 @}

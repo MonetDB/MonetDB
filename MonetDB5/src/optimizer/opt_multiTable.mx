@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_multitable
+@f opt_multiTable
 @a M. Kersten
 @-
 @node Multi-Association Tables , Partitioned Databases, Code Factorization, Toolkit
@@ -110,25 +110,25 @@ operations. The operations mat.new() and mat.range() can be
 removed as a last step in the optimizer. It is now handy for
 debugging.
 @mal
-pattern optimizer.multitable():str
-address QOTMToptimizer;
-pattern optimizer.multitable(mod:str, fcn:str):str
-address QOTMToptimizer
+pattern optimizer.multiTable():str
+address OPTmultiTable;
+pattern optimizer.multiTable(mod:str, fcn:str):str
+address OPTmultiTable
 comment "Resolve the multi-table definitions";
 @h
 #ifndef _MAL_MERGETABLE_
 #define _MAL_MERGETABLE_
-#include "mal_optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 #include "mal_builder.h"
 
 #include "pbm.h"
 opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-/* #define DEBUG_MAL_MERGETABLE     show partial result */
+/* #define DEBUG_OPT_MERGETABLE     show partial result */
 
 #endif
 @c
-#include "mal_multitable.h"
-#include "mal_prelude.h"
+#include "opt_multiTable.h"
 
 static int
 isMATalias(int idx, int mvar[], int top){
@@ -161,19 +161,15 @@ void MATcollect(int m, InstrPtr *mat, int *mvar, int mtop, int *newvar, int *n){
 		} else { newvar[*n]=  getArg(mat[m],i); *n = *n+1;}
 }
 
-str
-MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+int
+OPTmultiTableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, mat[256];
 	int oldtop,i,j,k,m,mtop=0, mvar[256],tpe;
 	int size,match,actions=0;
-	lng clk = GDKusec();
-#ifdef DEBUG_MAL_MERGETABLE
+#ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Start MAT optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
-
-	if(p)
-		removeInstruction(mb,p);
 
 	old = mb->stmt;
 	oldtop= mb->stop;
@@ -248,7 +244,7 @@ Remove their definitions afterwards.
 		if( match>1 ){
 			for( k= p->retc; k<p->argc && match>1; k++, match--)
 			if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
-#ifdef DEBUG_MAL_MERGETABLE
+#ifdef DEBUG_OPT_MERGETABLE
 				stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 				printInstruction(GDKout,mb,p,0);
 #endif
@@ -434,7 +430,7 @@ afterwards for further consideration.
 @c
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
-#ifdef DEBUG_MAL_MERGETABLE
+#ifdef DEBUG_OPT_MERGETABLE
 			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 			printInstruction(GDKout,mb,p,0);
 #endif
@@ -465,55 +461,15 @@ because they are not needed for the execution.
 For the time being, they are no-ops.
 @c
 	(void) stk; 
-	optimizerCheck(mb, "optimizer.multitable", actions, GDKusec() - clk);
-#ifdef DEBUG_MAL_MERGETABLE
+#ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
 
-	return MAL_SUCCEED;
+	return actions;
 }
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(multiTable)@
 @c
-mal_export str QOTMToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTMToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		MToptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.multiTable",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		MToptimizer(s->def,0,0);
-		optimizerCheck(s->def,"multiTable",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(multiTable)@

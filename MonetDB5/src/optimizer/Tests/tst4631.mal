@@ -112,7 +112,7 @@ function qry1();
 end qry1;
 
 optimizer.setDebug();
-optimizer.aliasRemoval("user","qry1");
+optimizer.aliases("user","qry1");
 optimizer.reduce("user","qry1");
 optimizer.commonTerms("user","qry1");
 mdb.list("user","qry1");

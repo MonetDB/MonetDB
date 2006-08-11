@@ -12,4 +12,4 @@ u:= algebra.select(r,0,3);	# reuse t
 io.print(u);
 io.print("done");
 optimizer.commonTerms();
-optimizer.aliasRemoval();
+optimizer.aliases();

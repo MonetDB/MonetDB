@@ -1,0 +1,179 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f opt_deadcode
+@-
+@node Dead Code Removal, Accumulator Evaluations, Alias Removal, Toolkit
+@- Dead Code Removal
+Dead code fragments are recognized by assignments to variables
+whose value is not consumed any more. 
+It can be detected  by marking all variables used as 
+arguments as being relevant. 
+In parallel, we built a list of instructions that should appear 
+in the final result.
+The new code block is than built in one scan, discarding the
+superflous instructions.
+
+Instructions that produce side effects to the environment, 
+e.g. printing and BAT updates, should be taken into account. 
+Such (possibly recursive) functions should be marked with a property 
+(@code{unsafe}) For now we recognize a few important ones
+Likewise instructions marked as control flow instructions should be retained.
+
+An illustrative example is the following MAL snippet:
+@verbatim
+	V7 := bat.new(:void,:int);
+	V10 := bat.new(:int,:void);
+	V16 := algebra.markH(V7);
+	V17 := algebra.join(V16,V7);
+	V19 := bat.new(:void,:int);
+	V22 := bat.new(:void,:int);
+	V23 := algebra.join(V16,V22);
+	io.print("done");
+	optimizer.deadCodeRemoval();
+@end verbatim
+The dead code removal trims this program to the following short block:
+@verbatim
+	io.print("done");
+@end verbatim
+
+A refinement of the dead code comes from using arguments
+that cease to exist due to actions taken by an optimizer.
+For example, in the snippet below the @code{rangePush} optimizer
+may conclude that variable V31 becomes empty and simply
+injects a 'dead' variable by dropping the assignment statement.
+This makes other code dead as well.
+@example
+	V30 := algebra.select( V7, 10,100);
+	V31 := algebra.select(V30,-1,5);
+	V32 := aggr.sum(V31);
+	io.print(V32);
+@end example
+[implementation pending]
+@{
+@mal
+pattern optimizer.deadcode():str
+address OPTdeadcode;
+pattern optimizer.deadcode(mod:str, fcn:str):str
+address OPTdeadcode
+comment "Dead code optimizer";
+@h
+#ifndef _OPT_DEADCODE_
+#define _OPT_DEADCODE_
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "mal_interpreter.h"
+
+/* #define DEBUG_OPT_REDUCE     show partial result */
+
+#endif
+@c
+
+@c
+#include "opt_deadcode.h"
+
+static int 
+OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, j, k, dc = 0, se;
+	InstrPtr p;
+	int *varused;
+	int *pcused;
+	int actions = 0;
+
+	(void) pci;
+	(void) stk;		/* to fool compilers */
+
+	varused = GDKmalloc(mb->vtop * sizeof(int));
+	for (i = 0; i < mb->vtop; i++)
+		varused[i] = 0;
+
+	pcused = GDKmalloc(mb->stop * sizeof(int));
+	for (i = 0; i < mb->stop; i++)
+		pcused[i] = 0;
+
+	for (i = mb->stop - 1; i >= 0; i--) {
+		p = getInstrPtr(mb, i);
+		switch (p->token) {
+		case IGNOREsymbol:
+			break;
+		case FUNCTIONsymbol:
+		case COMMANDsymbol:
+		case FACTORYsymbol:
+		case ENDsymbol:
+			pcused[i] = 1;
+			for (k = 0; k < p->retc; k++)
+				varused[p->argv[k]] = 1;
+			break;
+		case EXITsymbol:
+			/*     stream_printf(MCgetClient()->fdout,"#Handle DCR in iterator\n"); */
+		case RETURNsymbol:
+			pcused[i] = 1;
+			for (k = 0; k < p->retc; k++)
+				varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
+			break;
+		default:
+			se = 0;
+			for (k = 0; k < p->retc; k++)
+				if (varused[p->argv[k]])
+					se++;
+			/* do not deal with dead barrier blocks */
+			if (blockCntrl(p) || hasSideEffects(p, FALSE) || se) {
+				for (k = 0; k < p->argc; k++)
+					varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
+				pcused[i] = 1;
+			} else
+				dc++;
+		}
+	}
+#ifdef DEBUG_OPT_OPTIMIZER
+	{
+		Client cntxt = MCgetClient();
+
+		stream_printf(GDKout, "Dead code variables \n");
+		for (i = 0; i < mb->vtop; i++)
+			if (varused[i] == 0)
+				stream_printf(cntxt->fdout, "%s,", getVarName(mb, i));
+		stream_printf(MCgetClient()->fdout, "\nDead code instructions \n");
+		for (i = 1; i < mb->stop; i++)
+			if (pcused[i] == 0)
+				printInstruction(cntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
+		stream_printf(cntxt->fdout, "End of DCoptimizer\n");
+	}
+#endif
+	/* compress the code block */
+	for (i = j = 1; i < mb->stop; i++) {
+		if (pcused[i]) {
+			mb->stmt[j] = mb->stmt[i];
+
+			j++;
+		} else {
+			p = getInstrPtr(mb, i);
+			freeInstruction(p);
+			actions++;
+		}
+	}
+	mb->stop = j;
+	GDKfree(varused);
+	GDKfree(pcused);
+	return actions;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(deadcode)@
+@c
+@:wrapOptimizer(deadcode)@
+@}

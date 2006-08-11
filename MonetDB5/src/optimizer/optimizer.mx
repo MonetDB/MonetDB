@@ -58,29 +58,6 @@ pattern showPlan()
 address QOTshowPlan
 comment "Illustrate the plan derived so far";
 @-
-The macro processors are also be called during optimizer time
-@mal
-pattern macroExpansion():void 
-address QOTMEoptimizer
-comment "Inline each function";
-pattern macroExpansion(mod:str):void 
-address QOTMEoptimizerModule
-comment "Inline functions known a specific module";
-pattern macroExpansion(mod:str, fcn:str):void
-address QOTMEoptimizerSymbol
-comment "Inline a specific function";
-
-pattern macroContraction():void
-address QOTMCoptimizer
-comment "Inline of a function";
-pattern macroContraction(mod:str):void
-address QOTMCoptimizerModule
-comment "Inliner of functions in a specific module";
-pattern macroContraction(mod:str, fcn:str):void
-address QOTMCoptimizerSymbol
-comment "Inliner of a specific function";
-
-@-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
 The most important one is the multi-path join, which should
@@ -100,19 +77,12 @@ optimizer.prelude();
 #define _OPTIMIZER_H
 /* #define OPTIMIZER_DEBUG*/
 
-#include "mal_optimizer.h"
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"
 #include "mal_namespace.h"
-#include "mal_macro.h"
-
-opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str QOTMEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str QOTMCoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str QOTMCoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str QOTMCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#include "opt_support.h"
+#include "opt_prelude.h"
 
 opt_export str optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -344,7 +314,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void)stk;
 	nme= getVarConstant(mb, getArg(p,1)).val.sval;
 	fcn= getVarConstant(mb, getArg(p,2)).val.sval;
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer: %s.%s\n",nme,fcn);
 #endif
 	removeInstruction(mb,p);
@@ -380,7 +350,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	removeInstruction(mb,p);
 	fcn= getVarConstant(mb, getArg(p,1)).val.sval;
 	s= findModule(mal_scope, putName(fcn,strlen(fcn)));
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer: %s\n",fcn);
 #endif
 	if( s== 0)
@@ -408,7 +378,7 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str msg= MAL_SUCCEED;
 
 	removeInstruction(mb,p);
-#ifdef DEBUG_MAL_MACRO
+#ifdef DEBUG_OPT_MACRO
 	printf("@1optimizer\n");
 #endif
 	for(s= mal_scope; s; s=s->outer)
@@ -430,7 +400,5 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return msg;
 }
 @c
-@:macroOptimizer(ME, MACRO)@
-@:macroOptimizer(MC, ORCAM)@
 
 @}

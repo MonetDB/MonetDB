@@ -14,16 +14,16 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_cascade
+@f opt_rangePush
 @a M. Kersten
-@- Cascaded Ranges Conditions
+@- Range Propagation
 Almost all queries are interested in a few slices
 of the table. If applied to a view, the query plans
 often contain multiple selections over the same column.
 They may also have fixed range arguments comming from
 fragmentation criteria.
 
-The purpose of the @code{cascade} optimizer is to
+The purpose of the @code{rangePush} optimizer is to
 minimize the number of table scans by cascading the
 range terms as much as possible. Useless instructions
 are removed from the plan.
@@ -34,7 +34,7 @@ are removed from the plan.
     s2:= algebra.select(s1,5,95);
     s3:= algebra.select(s2,50,nil);
     s4:= algebra.select(s3,nil,75);
-optimizer.cascade();
+optimizer.rangePush();
 @end example
 
 This lengthly sequence can be compressed into a single one:
@@ -42,8 +42,7 @@ This lengthly sequence can be compressed into a single one:
     b := bat.new(:void,:int);
     s1:= algebra.select(b,50,75);
 @end example
-Cascading range information is not limited to conjunctive
-selections. A union over two range selections from a single
+A union over two range selections from a single
 source could also be a target.
 @example
     t1:= algebra.select(b,1,10);
@@ -56,7 +55,7 @@ would become
 @end example
 
 @{
-The cascades should be limited to simple blocks.
+The range cascades should be limited to simple blocks.
 Furthermore, we should ensure that variables are not re-used
 other then in side-effect functions.
 
@@ -65,29 +64,27 @@ have done their work. Empty scans are simply dropped,
 which leads to a planned cleaning by the dead code optimizer.
 
 @mal
-pattern optimizer.cascade():str
-address QOTCRoptimizer;
-pattern optimizer.cascade(mod:str, fcn:str):str
-address QOTCRoptimizer
-comment "Cascade constant range selections";
+pattern optimizer.rangePush():str
+address OPTrangePush;
+pattern optimizer.rangePush(mod:str, fcn:str):str
+address OPTrangePush
+comment "Push constant range selections through the program";
 
 @h
-#ifndef _MAL_CASCADE_
-#define _MAL_CASCADE_
-#include "mal_optimizer.h"
+#ifndef _OPT_RANGEPUSH_
+#define _OPT_RANGEPUSH_
+#include "opt_support.h"
+#include "opt_prelude.h"
 
-/* #define DEBUG_MAL_CASCADE */
-
-opt_export str CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+/* #define DEBUG_OPT_RANGEPUSH */
 
 #endif
 
 
 @c  
-#include "mal_cascade.h"
+#include "opt_rangePush.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_prelude.h"
 
 typedef struct RANGE{
 	int used;		/* how often it has been used */
@@ -96,7 +93,7 @@ typedef struct RANGE{
 	int lastupdate, lastrange;
 }RangeRec, *Range;
 
-#ifdef DEBUG_MAL_CASCADE
+#ifdef DEBUG_OPT_RANGEPUSH
 static void 
 printRange(MalBlkPtr mb, Range rng, int idx){
 	(void) rng;
@@ -111,20 +108,19 @@ printRange(MalBlkPtr mb, Range rng, int idx){
 }
 #endif
 
-str
-CRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int
+OPTrangePushImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, limit,actions=0;
-	lng clk = GDKusec();
 	InstrPtr p, *old;
 	int x,y,z;
 	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
 
 	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
 	if( mb->errors) 
-		return MAL_SUCCEED;
+		return 0;
 
-#ifdef DEBUG_MAL_CASCADE
+#ifdef DEBUG_OPT_RANGEPUSH
 	printf("Cascade optimizer started\n");
 #endif
 	(void) stk;
@@ -235,52 +231,20 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 			}
 		}
 	}
-#ifdef DEBUG_MAL_CASCADE
+#ifdef DEBUG_OPT_RANGEPUSH
 		for(j=0; j< mb->vtop; j++)
 		if( range[j].used )
 			printRange(mb,range,j);
 #endif
-	if (pci) 
-		removeInstruction(mb, pci);
-	optimizerCheck(mb, "optimizer.cascade", actions, GDKusec() - clk);	
 @-
 Phase II, if we succeeded in pushing constants around and
 changing instructions, we might as well try once more to perform
-aliasRemoval, constantExpression, and cascade.
+aliasRemoval, constantExpression, and rangePush.
 @c
-	return MAL_SUCCEED;
+	return actions;
 }
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(rangePush)@
 @c
-mal_export str QOTCRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTCRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme;
-	str fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-
-	optimizerInit();
-	removeInstruction(mb, p);
-	if( p->argc > 1){
-		if( stk != 0){
-			modnme= (str)getArgValue(stk,p,1);
-			fcnnme= (str)getArgValue(stk,p,2);
-		} else {
-			modnme= getArgDefault(mb,p,1);
-			fcnnme= getArgDefault(mb,p,2);
-		}
-		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
-		if( scope)
-			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-		if( s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-			return throwMessage("optimizer.cascade",buf);
-		}
-		if( s->def->errors == 0)
-			CRoptimizer(s->def,0,0);
-	} else
-			CRoptimizer(mb,0,0);
-	return MAL_SUCCEED;
-}
+@:wrapOptimizer(rangePush)@

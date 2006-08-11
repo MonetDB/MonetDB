@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_constantExpression
+@f opt_constantExpression
 @a M. Kersten
 @-
 @node Constant Expressions, Empty Set Reduction, Common Terms, Toolkit
@@ -46,40 +46,28 @@ The code produced by the optimizer would be
 @{
 @mal
 pattern optimizer.constantExpression():str
-address QOTCXoptimizer;
+address OPTconstantExpression;
 pattern optimizer.constantExpression(mod:str, fcn:str):str
-address QOTCXoptimizer
+address OPTconstantExpression
 comment "Evaluate constant expressions once.";
 
 @h
-#ifndef _MAL_CX_
-#define _MAL_CX_
-#include "mal_optimizer.h"
-
-/* #define DEBUG_MAL_CX  */
-
-opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-#endif
-
-
-@c  
-#include "mal_constantExpression.h"
+#ifndef _OPT_CX_
+#define _OPT_CX_
 #include "mal_stack.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_prelude.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
-	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+/* #define DEBUG_OPT_CX  */
+#endif
+@c  
+#include "opt_constantExpression.h"
+#include "opt_aliases.h"
 
-#define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
-	getModuleId(X) && getModuleId(X)==M)
-
-/* find all algebra select structions in a mal block mb and change them to the corresponding crackers command
-    */
 static int
-CXallConstant(MalBlkPtr mb, InstrPtr p){
+OPTallConstant(MalBlkPtr mb, InstrPtr p){
 	int i;
 
 	for( i= p->retc; i < p->argc; i++)
@@ -87,12 +75,11 @@ CXallConstant(MalBlkPtr mb, InstrPtr p){
 			return FALSE;
 	return ( getModuleId(p) == calcRef || getModuleId(p) == mmathRef);
 }
-str
-CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+int
+OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
 	int i, j, limit, done=0, again=0;
-	lng clk = GDKusec();
 	Client c= MCgetClient();
 	MalStkPtr env;
 
@@ -100,9 +87,9 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 
 	if( mb->errors) 
-		return MAL_SUCCEED;
+		return 0;
 
-#ifdef DEBUG_MAL_CX
+#ifdef DEBUG_OPT_CX
 	stream_printf(GDKout,"Constant expression optimizer started\n");
 #endif
 	limit = mb->stop;
@@ -114,11 +101,11 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < limit; i++) {
 			p = getInstrPtr(mb,i);
 			if( p->argc - p->retc > 0 )
-				j = CXallConstant(mb,p);
+				j = OPTallConstant(mb,p);
 			else j = 0;
-#ifdef DEBUG_MAL_CX
+#ifdef DEBUG_OPT_CX
 			stream_printf(GDKout,"Constants:%d\n",j);
-			printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
+			printInstruction(GDKout, mb, p, LIST_OPT_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
 				reenterMAL(c,mb,i,i+1,env,0,0) == MAL_SUCCEED){
@@ -128,7 +115,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getModuleId(p)=0;
 				getArg(p,1)= j;
 				p->argc = 2;
-#ifdef DEBUG_MAL_CX
+#ifdef DEBUG_OPT_CX
 				stream_printf(GDKout,"Evaluated new constant=%d\n",j);
 #endif
 				done++;
@@ -136,48 +123,15 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		if( again )
-			ARoptimizer(mb,0,0);
+			OPTaliases(mb,0,0);
 	} while( again );
 	clearStack(env);	/* garbage collect */
 	freeStack(env);
-	optimizerCheck(mb, "optimizer.constantExpression", 1, GDKusec() - clk);	
-	return MAL_SUCCEED;
+	return 1;
 }
-@- Optimizer code wrapper
-A template approach to call the optimizer with or without
-arguments and to administer the result.
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(constantExpression)@
 @c
-mal_export str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
+@:wrapOptimizer(constantExpression)@
 
-	optimizerInit();
-	removeInstruction(mb, p);
-	if( p->argc > 1){
-		if( stk != 0){
-			modnme= (str)getArgValue(stk,p,1);
-			fcnnme= (str)getArgValue(stk,p,2);
-		} else {
-			modnme= getArgDefault(mb,p,1);
-			fcnnme= getArgDefault(mb,p,2);
-		}
-		scope = findModule(MCgetClient()->nspace,putName(modnme,strlen(modnme)) );
-		if( scope)
-			s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-		if( s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-			return throwMessage("optimizer.constantExpression",buf);
-		}
-		if( s->def->errors == 0)
-			CXoptimizer(s->def,0,0);
-	} else 
-			CXoptimizer(mb,0,0);
-	
-	return MAL_SUCCEED;
-}
-@}

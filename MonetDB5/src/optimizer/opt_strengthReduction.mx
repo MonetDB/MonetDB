@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_strengthReduction
+@f opt_strengthReduction
 @a M. Kersten
 @-
 @node Strength Reduction, Costmodels, Partitioned Databases, Toolkit
@@ -62,24 +62,24 @@ outside the barrier.
 @{
 @mal
 pattern optimizer.strengthReduction():str
-address QOTSRoptimizer;
+address OPTstrengthReduction;
 pattern optimizer.strengthReduction(mod:str, fcn:str):str
-address QOTSRoptimizer
+address OPTstrengthReduction
 comment "Move constant expressions out of the loop";
 
 @h
-#ifndef _MAL_STRENGTHREDUCTION_
-#define _MAL_STRENGTHREDUCTION_
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
+#ifndef _OPT_STRENGTHREDUCTION_
+#define _OPT_STRENGTHREDUCTION_
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-/* #define DEBUG_MAL_STRENGTHREDUCTION     show partial result */
+/* #define DEBUG_OPT_STRENGTHREDUCTION     show partial result */
 
 opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
-#include "mal_strengthReduction.h"
+#include "opt_strengthReduction.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
 @+ Strength reduction implementation
@@ -119,22 +119,15 @@ int isNewSource(InstrPtr p) {
 	if( mp == getName("blob",4)) return 1;
 	return 0;
 }
-str
-SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j = 0, k, se= FALSE;
 	InstrPtr p;
 	int bk, ik, blk, blkbegin, blkexit, actions = 0;
 	InstrPtr *before, *within;
-	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
-	if( mb->errors) {
-		if (pci)
-			removeInstruction(mb, pci);
-		return MAL_SUCCEED;
-	}
 
 	before = (InstrPtr *) alloca((mb->ssize + 1) * sizeof(InstrPtr));
 	within = (InstrPtr *) alloca((mb->ssize + 1) * sizeof(InstrPtr));
@@ -155,7 +148,7 @@ SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					blkbegin = i;
 					blkexit = getBlockExit(mb,i);
 				}
-#ifdef DEBUG_MAL_STRENGTHREDUCTION
+#ifdef DEBUG_OPT_STRENGTHREDUCTION
 			stream_printf(GDKout, "check block %d-%d\n", blkbegin, blkexit);
 #endif
 			}
@@ -168,7 +161,7 @@ SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (blk == 0)
 				blkexit= blkbegin = 0;
 			/* move the saved instruction into place */
-#ifdef DEBUG_MAL_STRENGTHREDUCTION
+#ifdef DEBUG_OPT_STRENGTHREDUCTION
 			stream_printf(GDKout, "combine both %d %d\n", bk, ik);
 #endif
 			for (k = 0; k < ik; k++)
@@ -207,7 +200,7 @@ none of the arguments is assigned a value.
 			for (k = 0; k < q->retc; k++)
 				if (SRoverwritten(p, getArg(q, k))) {
 					se = TRUE;
-#ifdef DEBUG_MAL_STRENGTHREDUCTION
+#ifdef DEBUG_OPT_STRENGTHREDUCTION
 					stream_printf(GDKout, "variable is set in loop %d\n", 
 						getArg(p, k));
 #endif
@@ -222,14 +215,14 @@ after the loop, because then you may not simple move an expression.
 			if ( getVar(mb, getArg(p, k))->beginLifespan <= blkbegin ||
 				 getVar(mb, getArg(p, k))->endLifespan >= blkexit) {
 				se = TRUE;
-#ifdef DEBUG_MAL_STRENGTHREDUCTION
+#ifdef DEBUG_OPT_STRENGTHREDUCTION
 				stream_printf(GDKout, "variable may not be used out %d\n", getArg(p, k));
 #endif
 				goto noreduction;
 			}
 
   noreduction:
-#ifdef DEBUG_MAL_STRENGTHREDUCTION
+#ifdef DEBUG_OPT_STRENGTHREDUCTION
 		stream_printf(GDKout,"move %d to stack %s\n", i, (se ?"within":"before"));
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
@@ -248,60 +241,17 @@ after the loop, because then you may not simple move an expression.
 
 	mb->stop = 0;
 
-#ifdef DEBUG_MAL_STRENGTHREDUCTION
+#ifdef DEBUG_OPT_STRENGTHREDUCTION
 	stream_printf(GDKout,"stop= %d bk=%d\n",mb->stop,bk);
 #endif
 	for (i = 0; i < bk; i++)
 	if( before[i])
 		pushInstruction(mb, before[i]);
-	if (pci)
-		removeInstruction(mb, pci);
-	optimizerCheck(mb, "mal.strengthReduction", actions, GDKusec() - clk);
-	/* remove the SRoptimizer request */
-	return MAL_SUCCEED;
+	return actions;
 }
-
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(strengthReduction)@
 @c
-mal_export str QOTSRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTSRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
+@:wrapOptimizer(strengthReduction)@
 
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		SRoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.strengthReduction",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		SRoptimizer(s->def,0,0);
-		optimizerCheck(s->def, "strengthReduction",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}

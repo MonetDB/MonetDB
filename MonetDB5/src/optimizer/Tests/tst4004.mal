@@ -19,5 +19,5 @@ exit c;
 io.print(A);
 io.print(D);
 
-optimizer.deadCodeRemoval();
+optimizer.deadcode();
 

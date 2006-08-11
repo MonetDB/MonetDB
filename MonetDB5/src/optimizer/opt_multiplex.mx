@@ -16,7 +16,7 @@
 
 @' 
 
-@f mal_multiplex
+@f opt_multiplex
 @a M. Kersten
 @-
 @node Multiplex Compiler, Garbage Collector,  Peephole Optimization, Toolkit
@@ -73,10 +73,9 @@ comment "Compiler for multiplexed instructions.";
 #define _OPT_MULTIPLEX_H_
 #include "mal.h"
 #include "mal_builder.h"
-#include "optimizer.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-opt_export str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _OPT_MULTIPLEX_H_ */
 
 @+ Code generation
@@ -85,9 +84,8 @@ code in place.
 The subsequent call to the typechecker ensures we end up with
 a valid program.
 @c
-#include "mal_multiplex.h"
+#include "opt_multiplex.h"
 #include "mal_interpreter.h"
-#include "mal_optimizer.h"
 #include "mal_instruction.h"
 
 @-
@@ -112,7 +110,7 @@ The algorithm consists of two phases: phase one deals with
 collecting the relevant information, phase two is the actual
 code construction.
 @c
-str
+static str
 OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, k, mloop, resB, iter = 0, cr;
@@ -244,22 +242,25 @@ find the actual arguments at the proper place of the callee.
 
 static str optimizerRef;
 static str multiplexRef;
+@-
+This optimizer is directly called for the current routine.
+It is more a code generator then an optimizer per se.
+@c
 str
 OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	InstrPtr *old, p;
 	int i,j, limit,doit= 0, init=0;
-	lng clk = GDKusec();
+	lng clk=GDKusec();
 
+	optimizerInit();
 	if( optimizerRef == 0) 
 		optimizerRef = putName("optimizer", 9);
 	if( multiplexRef == 0) 
 		multiplexRef = putName("multiplex", 9);
 	(void) stk;
 	(void) pci;
-	if( mb->errors) 
-		return MAL_SUCCEED;
 	old = mb->stmt;
 
 	limit = mb->stop;
@@ -285,4 +286,5 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
+
 @}

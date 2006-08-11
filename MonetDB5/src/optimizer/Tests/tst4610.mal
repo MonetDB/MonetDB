@@ -8,7 +8,7 @@ function joinPath( a:bat[:any_1,:any_2],
     return zz;
 end joinPath;
 
-optimizer.macroContraction("user","joinPath");
+optimizer.orcam("user","joinPath");
 
 a:= bat.new(:int,:int);
 b:= bat.new(:int,:int);

@@ -13,5 +13,5 @@ end doit;
 
 dummy.hello();
 z:=dummy.doit(1,"help");
-optimizer.macroExpansion("dummy");
+optimizer.macro("dummy","hello");
 

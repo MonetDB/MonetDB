@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mal_remoteQueries
+@f opt_remoteQueries
 @a M. Kersten
 @-
 @- Remote Query Execution
@@ -95,17 +95,17 @@ io.print(d);
 
 @mal
 pattern optimizer.remoteQueries():str
-address QOTRQoptimizer;
+address OPTremoteQueries;
 pattern optimizer.remoteQueries(mod:str, fcn:str):str
-address QOTRQoptimizer
+address OPTremoteQueries
 comment "Resolve the multi-table definitions";
 @h
-#ifndef _MAL_REMOTE_
-#define _MAL_REMOTE_
-#include "mal_optimizer.h"
-#include "mal_prelude.h"
+#ifndef _OPT_REMOTE_
+#define _OPT_REMOTE_
+#include "opt_prelude.h"
+#include "opt_support.h"
 
-/* #define DEBUG_MAL_REMOTE     show partial result */
+/* #define DEBUG_OPT_REMOTE     show partial result */
 
 opt_export str RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str RQcall2str(MalBlkPtr mb, InstrPtr p);
@@ -115,7 +115,7 @@ opt_export str RQcall2str(MalBlkPtr mb, InstrPtr p);
 #endif
 
 @c
-#include "mal_remoteQueries.h"
+#include "opt_remoteQueries.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_instruction.h"
@@ -247,13 +247,12 @@ typedef struct{
 	int dbhdl;
 } DBalias;
 
-str
-RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static int
+OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
 	int i, j, cnt, limit, doit=0;
 	int remoteSite,collectFirst;
-	lng clk = GDKusec();
 	int *location;
 	DBalias *dbalias;
 	int dbtop,k;
@@ -263,9 +262,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cst.val.ival= 0;
 
 
-	if( mb->errors) 
-		return MAL_SUCCEED;
-#ifdef DEBUG_MAL_REMOTE
+#ifdef DEBUG_OPT_REMOTE
 	stream_printf(GDKout, "RemoteQueries optimizer started\n");
 #endif
 	(void) stk;
@@ -367,7 +364,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				@:remoteAction()@
 			} else
 				pushInstruction(mb,p);
-#ifdef DEBUG_MAL_REMOTE
+#ifdef DEBUG_OPT_REMOTE
 			printf("found remote variable %s ad %d\n", 
 				getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
 #endif
@@ -452,57 +449,16 @@ to be shipped should be simple.
 		}
 	}
 	GDKfree(old);
-	optimizerCheck(mb, "mal.remoteQueries", doit, GDKusec() - clk);
-#ifdef DEBUG_MAL_REMOTE
+#ifdef DEBUG_OPT_REMOTE
 	if (doit) {
 		stream_printf(GDKout, "remoteQueries %d\n", doit);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
 #endif
-	return MAL_SUCCEED;
+	return doit;
 }
-
-@- Optimizer code wrapper
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(remoteQueries)@
 @c
-mal_export str QOTRQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOTRQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-
-	/* handle the empty argument list */
-	if( p->argc== 1){
-		/* setLifespan(mb); they should do it themselves*/
-		optimizerInit();
-		RQoptimizer(mb, stk, p);
-		return MAL_SUCCEED;
-	}
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage("optimizer.remoteQueries",buf);
-	}
-	
-	if( s->def->errors == 0){
-		optimizerInit();
-		RQoptimizer(s->def,0,0);
-		optimizerCheck(s->def,"remoteQueries",1,GDKusec()-clk);
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-@}
+@:wrapOptimizer(remoteQueries)@

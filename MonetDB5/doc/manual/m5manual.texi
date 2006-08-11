@@ -3,7 +3,7 @@
 
 @setfilename MonetDB
 @setcontentsaftertitlepage
-@settitle MonetDB Reference Manual
+@settitle MonetDB Server Reference Manual
 @c %**end of header
 
 @c environment
@@ -37,7 +37,7 @@ using the
 @end copying
 
 @titlepage
-@title MonetDB Reference Manual
+@title MonetDB Server Reference Manual
 @subtitle Version @value{VERSION}
 @author @emph{The MonetDB Development Team}
 @page
@@ -214,22 +214,25 @@ using the
 @include mal_stack.bdy.texi
 
 @node The MAL Optimizer, Landscape, Stack Management, Top
-@include mal_optimizer.bdy.texi
-@include mal_macro.bdy.texi
-@include mal_inliners.bdy.texi
-@include mal_commonTerms.bdy.texi
-@include mal_constantExpression.bdy.texi
-@include mal_emptyset.bdy.texi
-@include mal_singleton.bdy.texi
-@include mal_peephole.bdy.texi
-@include mal_multiplex.bdy.texi
-@include mal_garbageCollector.bdy.texi
-@include mal_factorize.bdy.texi
-@include mal_multitable.bdy.texi
-@include mal_partitionedQuery.bdy.texi
-@include mal_strengthReduction.bdy.texi
-@include mal_costmodel.bdy.texi
-@include mal_reduce.bdy.texi
+@include opt_support.bdy.texi
+@include opt_aliases.bdy.texi
+@include opt_deadcode.bdy.texi
+@include opt_accumulators.bdy.texi
+@include opt_macro.bdy.texi
+@include opt_inliners.bdy.texi
+@include opt_commonTerms.bdy.texi
+@include opt_constantExpression.bdy.texi
+@include opt_emptySet.bdy.texi
+@include opt_singleton.bdy.texi
+@include opt_peephole.bdy.texi
+@include opt_multiplex.bdy.texi
+@include opt_garbageCollector.bdy.texi
+@include opt_factorize.bdy.texi
+@include opt_multiTable.bdy.texi
+@include opt_partitionedQuery.bdy.texi
+@include opt_strengthReduction.bdy.texi
+@include opt_costModel.bdy.texi
+@include opt_reduce.bdy.texi
 @node Query Execution Plans, The MAL Debugger, Variable Stack Reduction,  Toolkit
 @include mal_qep.bdy.texi
 
