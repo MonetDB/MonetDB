@@ -309,12 +309,12 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0);
-		COoptimizer(mb, 0, 0);	/* coercions */
-		ARoptimizer(mb, 0, 0);	/* alias removal */
-		MRoptimizer(mb, 0, 0);	/* reduce stack space */
-		CToptimizer(mb, 0, 0);	/* common terms */
+		OPTcoercion(mb,0,0);	/* coercions */
+		OPTaliases(mb, 0, 0);	/* alias removal */
+		OPTreduct(mb,0,0);	/* reduce stack space */
+		OPTcommonTerms(mb,0,0);	/* common terms */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
-		/* CRKoptimizer(mb,0,0); too early !!*/
+		/* OPTcrack(mb,0,0); too early !!*/
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
 		/* no optimization needed */
 	} else if( optimizer ){
