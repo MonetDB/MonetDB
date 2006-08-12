@@ -64,7 +64,7 @@ sql_export void monet5_set_number(mvc *m, char *name, lng val);
 #include "sql_optimizer.h"
 #include "sql_scope.h"
 #include "mal_namespace.h"
-#include "mal_prelude.h"
+#include "opt_prelude.h"
 #include "mal_builder.h"
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);

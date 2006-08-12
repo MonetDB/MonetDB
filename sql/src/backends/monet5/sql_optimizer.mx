@@ -101,16 +101,19 @@ quite some (expensive) instructions can be safed.
 The current heuristic is geared at avoiding trivial
 factory structures.
 @c
-#include "mal_macro.h"
 #include "mal_builder.h"
-#include "mal_prelude.h"
-#include "mal_optimizer.h"
-#include "mal_peephole.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "opt_aliases.h"
+#include "opt_coercion.h"
+#include "opt_commonTerms.h"
+#include "opt_crack.h"
+#include "opt_macro.h"
+#include "opt_multiplex.h"
+#include "opt_peephole.h"
+#include "opt_reduce.h"
 #include "mal_debugger.h"
 #include "mal_namespace.h"
-#include "mal_reduce.h"
-#include "mal_crack.h"
-#include "mal_multiplex.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -311,7 +314,7 @@ care of.
 			optimizerCheck(mb,"sql.baseline",-1,0);
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
-		OPTreduct(mb,0,0);	/* reduce stack space */
+		OPTreduce(mb,0,0);	/* reduce stack space */
 		OPTcommonTerms(mb,0,0);	/* common terms */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		/* OPTcrack(mb,0,0); too early !!*/
