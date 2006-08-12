@@ -138,7 +138,7 @@ file in reconstruction format";
 #define _XQUERY_H
 
 #include <mal.h>
-#include <mal_prelude.h>
+#include <opt_prelude.h>
 #include <mal_session.h>
 
 #ifdef _MSC_VER
