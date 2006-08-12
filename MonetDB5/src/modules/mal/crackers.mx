@@ -2284,6 +2284,7 @@ struct tempBATNode{
 	xx = BUNsize(b);
 	zz = BUNsize(c);
 	
+	(void)insFirst;
 	/* make room for the new buns */
 	lng needed = insertions - (((b)->batBuns->size - (b)->batBuns->free) / xx);
 	if ( needed > 0 ){
