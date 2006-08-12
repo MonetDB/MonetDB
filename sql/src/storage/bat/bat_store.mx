@@ -3211,31 +3211,6 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 	return c;
 }
 
-static sql_column *
-rollforward_use_bat(sql_trans *tr, sql_column *c)
-{
-	int ok = SQL_OK;
-	char bname[BUFSIZ];
-	BAT *b;
-
-	(void)tr;
-	b = temp_descriptor(c->bat.ibid);
-
-	snprintf(bname, BUFSIZ, "%s_%s_%s",
-			c->t->s->base.name, c->t->base.name, c->base.name);
-	c->bat.name = _strdup(bname);
-	c->bat.bid = bm_add_bat(bm, b, bname);
-
-	if (tr->parent == gtrans)
-		ok = log_bat_persists(logger, b, c->bat.name);
-
-	bat_destroy(b);
-
-	if (ok != SQL_OK)
-		return NULL;
-	return c;
-}
-
 static sql_table *
 rollforward_create_table(sql_trans *tr, sql_table *t)
 {
