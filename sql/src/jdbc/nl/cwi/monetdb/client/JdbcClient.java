@@ -233,7 +233,8 @@ copts.produceHelpMessage()
 		// set some behaviour based on the language XQuery
 		if (lang.equals("xquery")) {
 			scolonterm = false;	// no ; to end a statement
-			xmlMode = true; // the user will like xml results, most probably
+			if (!copts.getOption("Xoutput").isPresent())
+				xmlMode = true; // the user will like xml results, most probably
 		}
 		oc = copts.getOption("Xdebug");
 		if (oc.isPresent()) {
