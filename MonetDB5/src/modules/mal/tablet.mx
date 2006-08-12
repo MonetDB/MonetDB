@@ -1518,8 +1518,10 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		char *s, *end;
 
 		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
-			GDKerror("ASCIIload_file: read error\n");
-			res = -1;
+			if (as->nr != ~(size_t)0 && i < as->nr) {
+				GDKerror("ASCIIload_file: read error\n");
+				res = -1;
+			}
 			break;
 		}
 		end = b->buf + b->len;
