@@ -245,6 +245,8 @@ static str multiplexRef;
 @-
 This optimizer is directly called for the current routine.
 It is more a code generator then an optimizer per se.
+@h
+opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
 OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
