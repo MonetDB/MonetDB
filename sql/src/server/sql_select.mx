@@ -62,7 +62,7 @@ extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 #include "sql_env.h"
 
 static stmt *sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel);
-static stmt *sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection);
+static stmt *sql_simple_select(mvc *sql, scope *scp, SelectNode *sn);
 static stmt *sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f);
 
 static tvar *query_exp_optname(mvc *sql, scope *scp, symbol *q);
@@ -201,7 +201,7 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel)
 			return NULL;
 
 	} else if (toplevel) {	/* only on top level query */
-		return sql_simple_select(sql, scp, sn->where, sn->selection);
+		return sql_simple_select(sql, scp, sn);
 	}
 	return sql_select(sql, scp, sn, toplevel);
 }
@@ -3092,7 +3092,7 @@ find_base_row( stmt *subset, int aggr )
 }
 
 static stmt *
-sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
+sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 {
 	stmt *subset = NULL;
 	stmt *s = NULL;
@@ -3101,11 +3101,11 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	node *m;
 	int aggr = 0;
 
-	if (!selection) 
+	if (!sn->selection) 
 		return sql_error(sql, 02, "SELECT: '*' not allowed without FROM");
 		
-	if (where) {
-		s = sql_logical_exp(sql, scp, where, NULL, NULL, sql_where);
+	if (sn->where) {
+		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);
 		if (!s)
 			return NULL;
 		if (s->type != st_set && s->type != st_sets) {
@@ -3114,7 +3114,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		subset = s;
 	}
 	sl = create_stmt_list();
-	for ( n = selection->h; n; n = n->next) {
+	for ( n = sn->selection->h; n; n = n->next) {
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs || !tail_type(cs)) {
@@ -3127,7 +3127,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		aggr |= cs->aggr;
 	}
 	rl = create_stmt_list();
-	for (m = sl->h, n = selection->h; m && n; m = m->next, n = n->next) {
+	for (m = sl->h, n = sn->selection->h; m && n; m = m->next, n = n->next){
 		stmt *cs = m->data;
 
 		/* t1.* */
@@ -3154,6 +3154,39 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	if (subset)
 		stmt_destroy(subset);
 	list_destroy(sl);
+
+	/* SELECT ... INTO var_list */
+	if (sn->into) {
+		list *nl = create_stmt_list();
+
+		for (m = rl->h, n = sn->into->h; m && n; m = m->next, n = n->next) {
+			sql_subtype *tpe = NULL;
+			char *nme = n->data.sval;
+			stmt *a = NULL, *v = m->data, *var;
+			int level;
+
+			if ((var=stack_find_var(sql, nme)) == NULL || !v->key) {
+				list_destroy(rl);
+				list_destroy(nl);
+				if (var)
+					return sql_error(sql, 02, "SELECT INTO: needs a single row");
+				else
+					return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
+			}
+			tpe = tail_type(var);
+			level = stack_find_frame(sql, nme);
+			v = check_types(sql, tpe, stmt_dup(v), type_equal); 
+			if (!v) {
+				list_destroy(rl);
+				list_destroy(nl);
+				return NULL;
+			}
+			a = stmt_assign(nme, v, level);
+			list_append(nl, a);
+		}
+		list_destroy(rl);
+		rl = nl;
+	}
 
 	s = stmt_list(rl);
 
@@ -3244,7 +3277,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 	group *grp = NULL;
 
 	if (!sn->from)
-		return sql_simple_select(sql, scp, sn->where, sn->selection);
+		return sql_simple_select(sql, scp, sn);
 
 	if (sn->where) {
 		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);

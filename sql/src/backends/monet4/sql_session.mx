@@ -489,6 +489,10 @@ query string with "M".
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
 	}
+	if (m->session->auto_commit && m->session->active) {
+		if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0) 
+			(void) handle_error(m, out, 0);
+	}
 	if (m->session->active)
 		mvc_rollback(m, 0, NULL);
 	return GDK_SUCCEED;
@@ -571,6 +575,36 @@ mvc_sql(mvc *m, char *cmd)
 		return GDK_FAIL;
 	else
 		return GDK_SUCCEED;
+}
+
+int 
+sql_variables(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	int i;
+	mvc *m;
+	Variable v;
+	BAT *vars, *r; 
+
+	if (lt->cnt != 0) 
+		return handle_argerror(res, lt->cnt, 0);
+
+        v = VARfind(&stk, "myc");
+        if (v == NULL) 
+            return GDKerror("sql_variables: failed to lookup myc variable.\n"); 
+
+	m = v->binding.val.pval;
+
+	vars = BATnew(TYPE_void,TYPE_str, m->topvars);
+	vars->hseqbase = 0;
+	for (i=0; i<m->topvars && m->vars[i].s; i++) 
+		BUNappend(vars, m->vars[i].name, FALSE);
+	r = BATnew(TYPE_str,TYPE_bat,1);
+	BUNins(r, "name", &vars->batCacheid, FALSE);
+	BBPunfix(vars->batCacheid);
+	res->vtype = TYPE_bat;
+	res->val.bval = r->batCacheid;
+	BBPkeepref(r->batCacheid);
+	return GDK_SUCCEED;
 }
 
 /* initialize the global variable, ie make mvc point to these */

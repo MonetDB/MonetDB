@@ -144,6 +144,7 @@ module 'sql_server'
 [ "sht(str, int, int) : sht"						  ]
 [ "sql_frontend() : ptr "							  ]
 [ "sql_trace() : void"								  ]
+[ "sql_variables() : ptr "								  ]
 [ "sqlconsole( ) "							  ]
 [ "sqllogmanager() : void"						  ]
 [ "str(mvc, int, int, int, int, any, int) : str"				  ]

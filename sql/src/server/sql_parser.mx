@@ -283,6 +283,7 @@ int yydebug=1;
 	update_statement
 	update_stmt
 	control_statement
+	select_statement_single_row
 	call_statement
 	routine_invocation
 	return_statement
@@ -387,6 +388,7 @@ int yydebug=1;
 	external_name
 	opt_begin_label
 	opt_end_label
+	target_specification
 
 %type <l>
 	object_privileges
@@ -453,6 +455,7 @@ int yydebug=1;
 	invoked_routines
 	routine_body
 	table_function_column_list
+	select_target_list
 
 %type <ival>
 	drop_action
@@ -1809,7 +1812,6 @@ procedure_statement_list:
 procedure_statement:
 	transaction_statement
     |	update_statement
-    |   select_stmt
     |	schema
     | 	grant
     | 	revoke
@@ -1819,6 +1821,7 @@ procedure_statement:
     |   declare_statement
     |   set_statement
     |	control_statement
+    |   select_statement_single_row
     ;
 
 control_statement:
@@ -2572,6 +2575,27 @@ simple_select:
 		NULL, NULL, -1, -1);
 	}
     ;
+
+select_statement_single_row:
+    SELECT opt_distinct selection INTO select_target_list table_exp
+	{ $$ = newSelectNode( SA, $2, $3, $5,
+		$6->h->data.sym,
+		$6->h->next->data.sym,
+		$6->h->next->next->data.sym,
+		$6->h->next->next->next->data.sym,
+		NULL, NULL, -1, -1);
+	}
+    ;
+
+select_target_list:
+	target_specification 	{ $$ = append_string(L(), $1); }
+ |  	select_target_list ',' target_specification
+				{ $$ = append_string($1, $3); }
+ ;
+
+target_specification:
+	ident
+ ;
 
 select_no_parens:
     simple_select

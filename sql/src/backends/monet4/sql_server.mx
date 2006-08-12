@@ -216,6 +216,9 @@ stream.
 @:mel_interval(int)@
 @:mel_interval(lng)@
 
+	.BUILTIN sql_variables() : ptr = sql_variables;
+		"return the table with session variables"
+
 .END sql_server;
 
 @-
