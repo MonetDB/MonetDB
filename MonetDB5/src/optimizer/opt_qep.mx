@@ -145,6 +145,8 @@ QEPexpandChildren(QEP qep, int extra){
 	qep->climit = qep->climit + extra;
 	return qep;
 }
+
+#if 0
 static QEP
 QEPfree(QEP qep){
 	GDKfree(qep->children);
@@ -152,9 +154,11 @@ QEPfree(QEP qep){
 	GDKfree(qep);
 	return NULL;
 }
+#endif
 @-
 Extract a child from the qep, to be inserted somewhere else
 @c
+#if 0
 static QEP
 QEPdelete(QEP qep, int pos){
 	int i;
@@ -167,6 +171,7 @@ QEPdelete(QEP qep, int pos){
 	}
 	return q;
 }
+#endif
 QEP
 QEPappend(QEP qep, QEP child){
 	int i;
@@ -180,6 +185,7 @@ QEPappend(QEP qep, QEP child){
 		child->parents[0]= qep;
 	return qep;
 }
+#if 0
 static QEP
 QEPinsert(QEP qep, int pos, QEP child){
 	int i;
@@ -200,6 +206,7 @@ QEPinsert(QEP qep, int pos, QEP child){
 		qep = QEPappend(qep,q);
 	return qep;
 }
+#endif
 @-
 The core of the work is focused on building the tree using a flow analysis. 
 Building the tree means that we should not allow the same variable can not be used twice.
@@ -279,10 +286,6 @@ QEPdump(stream *f, QEP qep, int indent){
 	for(i=0; i< qep->climit; i++)
 	if( qep->children[i])
 		QEPdump(f,qep->children[i], indent+ inc);
-}
-static void
-QEPdot(QEP qep){
-	(void) qep;
 }
 static int
 OPTdumpQEPImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){

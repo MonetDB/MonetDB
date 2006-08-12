@@ -84,28 +84,6 @@ typedef struct {
 	int packed;
 } STtuple;
 
-static void
-STrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx)
-{
-	InstrPtr p;
-	int tpe;
-
-	p = newStmt(mb, batRef, newRef);
-	p->argv[0] = sidx;
-	tpe = getVarType(mb, hidx);
-	if (tpe == TYPE_oid)
-		tpe = TYPE_void;
-	pushArgument(mb, p, newTmpVariable(mb, tpe));
-	tpe = getVarType(mb, tidx);
-	pushArgument(mb, p, newTmpVariable(mb, tpe));
-	pushInt(mb, p, 1);
-
-	p = newStmt(mb, batRef, insertRef);
-	pushArgument(mb, p, sidx);
-	pushArgument(mb, p, hidx);
-	pushArgument(mb, p, tidx);
-}
-
 static int
 STalias(int idx, int top, STtuple * tuples)
 {
