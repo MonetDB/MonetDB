@@ -1058,6 +1058,7 @@ mapi_export int mapi_get_querytype(MapiHdl hdl);
 mapi_export int mapi_get_tableid(MapiHdl hdl);
 mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
+mapi_export MapiHdl mapi_get_active (Mapi mid);
 
 mapi_export void mapi_setBlocking(int b);
 #ifdef __cplusplus
@@ -4529,4 +4530,9 @@ mapi_is_connected(Mapi mid)
 	return mid->connected;
 }
 
+MapiHdl
+mapi_get_active(Mapi mid)
+{
+	return mid->active;
+}
 @}

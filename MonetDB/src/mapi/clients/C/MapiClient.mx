@@ -180,7 +180,7 @@ timerEnd(void)
 }
 
 static int
-doRequest(Mapi mid, const char *buf)
+doRequest(Mapi mid, const char *buf, int interactive)
 {
 	MapiHdl hdl;
 
@@ -193,7 +193,8 @@ doRequest(Mapi mid, const char *buf)
 		mapi_close_handle(hdl);
 		return 1;
 	}
-	mapi_close_handle(hdl);
+	if (! (mapi_get_active(mid) && interactive ))
+		mapi_close_handle(hdl);
 	return 0;
 }
 
@@ -723,9 +724,9 @@ static int
 dump_tables(Mapi mid)
 {
 	const char *tables = "SELECT \"name\" FROM \"_tables\" WHERE "
-		"\"istable\" = TRUE AND \"system\" = FALSE";
+		"\"type\" = 0 AND \"system\" = FALSE";
 	const char *views = "SELECT \"name\",\"query\" FROM \"_tables\" WHERE "
-		"\"istable\" = FALSE AND \"system\" = FALSE";
+		"\"type\" = 1 AND \"system\" = FALSE";
 	MapiHdl hdl;
 	int rc = 0;
 
@@ -943,7 +944,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	char *line = NULL;
 	char *buf = NULL;
 	size_t length;
-	MapiHdl hdl = NULL;
+	MapiHdl hdl = mapi_get_active(mid);;
 	MapiMsg rc = MOK;
 
 #ifdef HAVE_LIBREADLINE
@@ -991,6 +992,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				return 0;
 			}
 			/* hdl != NULL, we should finish the current query */
+			line = NULL;
 			length = 0;
 		} else
 			length = strlen(line);
@@ -1121,9 +1123,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   happen according to the protocol) we break
 			   out of the loop (via the continue).  The
 			   assertion at the end will then go off. */
-			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
-				continue;	/* get more data */
-
+			if (mapi_query_done(hdl) == MMORE) {
+			   	if (line != NULL) {
+					continue;	/* get more data */
+			   	} else if (mapi_query_done(hdl) == MMORE) {
+					hdl = NULL;
+					continue;	/* done */
+				}
+			}
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 			do {
@@ -1494,7 +1501,7 @@ main(int argc, char **argv)
 	   don't do it here */
 	if (command && strcmp(language, "xquery") != 0) {
 		/* execute from command-line */
-		c = doRequest(mid, command);
+		c = doRequest(mid, command, interactive);
 		command = NULL;
 	}
 	if (optind < argc) {
