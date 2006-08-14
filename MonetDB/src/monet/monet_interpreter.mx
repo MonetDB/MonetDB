@@ -511,13 +511,9 @@ static int profilemode = 0;	/* 1-> events 2-> count summary */
 static BAT *profilerCount = 0;
 static BAT *profilerTicks = 0;
 
-static MT_Lock profilerLock;
-
 void
 closeProfiler(stream *o)
 {
-	if (profilerLock == NULL)
-		profilerLock = MT_create_lock();
 	monet_set_lock(profilerLock, "startProfiler");
 	if (o == eventstream) {
 		eventstream = NULL;
@@ -529,8 +525,6 @@ closeProfiler(stream *o)
 int
 startProfiler(stream *o)
 {
-	if (profilerLock == NULL)
-		profilerLock = MT_create_lock();
 	monet_set_lock(profilerLock, "startProfiler");
 	eventstream = o;
 	delayswitch = 1;
@@ -554,14 +548,12 @@ commitProfiler(void)
 int
 stopProfiler(void)
 {
-	if (profilerLock)
-		monet_set_lock(profilerLock, "stopProfiler");
+	monet_set_lock(profilerLock, "stopProfiler");
 	eventstream = NULL;
 	profilemode = 0;
 	if (profilerCount || profilerTicks)
 		commitProfiler();
-	if (profilerLock)
-		monet_unset_lock(profilerLock, "stopProfiler");
+	monet_unset_lock(profilerLock, "stopProfiler");
 	return 0;
 }
 
@@ -2317,8 +2309,6 @@ setProfilerFilter(str left, str right)
 		GDKerror("setProfilerFilter: out of profile filter space.\n");
 		return GDK_FAIL;
 	}
-	if (profilerLock == NULL)
-		profilerLock = MT_create_lock();
 	monet_set_lock(profilerLock, "startProfiler");
 	if (strcmp(left, "*") == 0 && strcmp(right, "*") == 0) {
 		for (i = 0; i < filtertop; i++) {

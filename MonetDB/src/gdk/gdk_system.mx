@@ -17,11 +17,21 @@
 @f gdk_system
 @a Niels Nes, Peter Boncz
 @+ Threads
-This file contains the threads implementation based on the Posix 
-thread library interface, consisting of Posix standard thread 
-functions. 
+This file contains a wrapper layer for threading, hence the underscore 
+convention MT_x (Multi-Threading).  As all platforms that MonetDB runs 
+on now support POSIX Threads (pthreads), this wrapping layer has become
+rather thin.
+
+In the late 1990s when multi-threading support was introduced in MonetDB, 
+pthreads was just emerging as a standard API and not widely adaopted yet. 
+The earliest MT implementation focused on SGI Unix and provided multi-
+threading using multiple processses, and shared memory. 
+
+One of the relics of this model, namely the need to pre-allocate locks and 
+semaphores, and consequently a maximum number of them, has been removed in 
+the latest iteration of this layer.
+
 @{
-@- Pthread Definitions
 @h
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
@@ -53,202 +63,6 @@ functions.
 # include <signal.h>
 #endif
 
-typedef void *MT_Lock;
-typedef void *MT_Sema;
-typedef void *MT_Cond;
-typedef size_t MT_Id;
-
-#if SIZEOF_VOID_P == 4
-/* "limited" stack size on 32-bit systems */
-/* to avoid address space fragmentation   */
-#define THREAD_STACK_SIZE	((size_t)  512*1024)
-#else
-/* "increased" stack size on 64-bit systems    */
-/* since some compilers seem to require this   */
-/* for burg-generated code in pathfinder       */
-/* and address space fragmentation is no issue */
-#define THREAD_STACK_SIZE	((size_t)4*512*1024)
-#endif
-
-#define MAXLOCKS	256
-#define MAXSEMAS	64
-
-@- Environment Specific Defines
-Define your error reporting routine @%MT_error(str message)@.
-@h
-#define MT_error	GDKsyserror
-#define MT_warning	GDKwarning
-@-
-Define your error integer debug flag @%MT_debug@.
-@h
-#define MT_debug	GDKdebug
-gdk_export int GDKdebug;
-
-@-
-Define your debug printing stream @%MT_out@.
-@h
-gdk_export void *THRgetdata(int);
-
-#define MT_out		stderr
-
-@- Global Variables
-The are part of the interface (i.e. you may use them).
-@h
-gdk_export MT_Lock MT_system_lock;	/* system administration lock */
-
-@+ Interface Definition
-The routines that are available for use for thread and process management.
-@-
-Init the package. Must be called once before any of the other operations.
-@h
-gdk_export void MT_init(void);
-
-@-
-Set which signals should be blocked, ignores  SIGQUIT, SIGALRM
-@h
-#ifdef HAVE_PTHREAD_SIGMASK
-gdk_export void MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
-#endif
-
-@-
-Create a new thread executing 'function' with single parameter 'arg'. 
-May return an error, in which case no thread is created.
-@h
-gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg);
-
-@-
-Exit the current thread. The status will be ignored, unless some thread
-wait()-s for you to finish.
-a wait()
-@h
-gdk_export void MT_exit_thread(int status);
-
-@-
-Exit the process. All threads are terminated.
-@h
-gdk_export void MT_global_exit(int status);
-
-@-
-Ask your thread id.
-@h
-gdk_export MT_Id MT_getpid(void);
-
-
-@-
-Kill a thread.
-@h
-gdk_export int MT_kill_thread(MT_Id t);
-
-@-
-Destroy an inter-process lock;
-@h
-gdk_export void MT_destroy_lock(MT_Lock l);
-
-@-
-Create a new thread-lock. Initial status: unset.
-@h
-gdk_export MT_Lock MT_create_lock(void);
-
-@-
-Set a lock. The calling thread in this process blocks till the lock is set.
-@h
-gdk_export void MT_set_lock(MT_Lock l, char *name);
-
-@-
-Unset a lock.
-@h
-gdk_export void MT_unset_lock(MT_Lock l, char *name);
-
-@-
-Try a lock. Returns error (EBUSY) if the lock was already 
-set. Else, the lock is set.
-@h
-gdk_export int MT_try_lock(MT_Lock l);
-
-@-
-Dump info about the lock named 'name' on stream 'fp'.
-@h
-gdk_export void MT_dump_lock(MT_Lock l, FILE *fp, char *name);
-
-@- Mthreads Macro Implementations
-
-@-
-Create a counting thread semaphore, set the number of resources.
-@h
-gdk_export MT_Sema MT_create_sema(int nresources);
-
-
-@-
-Destroy a counting thread semaphore;
-@h
-gdk_export void MT_destroy_sema(MT_Sema s);
-
-@-
-Increment a semaphore.
-@h
-gdk_export void MT_up_sema(MT_Sema s, char *name);
-
-@-
-Decrement a semaphore. If it already has value 0, the thread is
-blocked until a decrement is possible again.
-@h
-gdk_export void MT_down_sema(MT_Sema s, char *name);
-
-@-
-Try to decrement a semaphore. If it already has value 0, an error
-(EBUSY) is returned. Else, the semaphore is decremented.
-[obsolete] gdk_export int 	MT_try_sema(MT_Sema s);
-
-@-
-Dump info about the semaphore named 'name' on stream 'fp'.
-@h
-gdk_export void MT_dump_sema(MT_Sema s, FILE *fp, char *name);
-
-@-
-Create a thread condition variable.
-@h
-gdk_export MT_Cond MT_create_cond(void);
-
-@-
-Destroy a counting thread semaphore;
-@h
-gdk_export void MT_destroy_cond(MT_Cond c);
-
-@-
-Signal a condition variable.
-@h
-gdk_export void MT_signal_cond(MT_Cond c, char *name);
-
-@-
-Wait on the condition variable. This needs a lock to avoid race conditions
-on the condition variable.
-@h
-gdk_export void MT_wait_cond(MT_Cond c, MT_Lock l, char *name);
-
-@-
-Check if some process is still alive.
-@h
-gdk_export int MT_alive(int pid);
-
-@-
-Allocate anonymous virtual memory.
-@h
-#define MT_geterrno()		errno
-#define MT_seterrno(x)		errno=x
-
-gdk_export size_t _MT_npages;
-gdk_export size_t _MT_pagesize;
-
-#define MT_pagesize()	_MT_pagesize
-#define MT_npages()	_MT_npages
-
-#endif /*_GDK_SYSTEM_H_*/
-
-
-@- Mthreads Routine implementations
-@c
-#include "gdk.h"
-
 #ifdef HAVE_PTHREAD_H
 /* don't re-include config.h; on Windows, don't redefine pid_t in an
    incompatible way 
@@ -267,7 +81,6 @@ gdk_export size_t _MT_pagesize;
 #endif
 #endif
 
-
 #ifdef HAVE_SEMAPHORE_H
 # include <semaphore.h>
 #endif
@@ -281,35 +94,138 @@ gdk_export size_t _MT_pagesize;
 # include <sys/resource.h>
 #endif
 
+/* debug and errno integers */
+gdk_export int GDKdebug;
+#define MT_geterrno()	errno
+#define MT_seterrno(x)	errno=x
+
+#define MT_log(_impl, _object, _action, _caller, _fp) { if (GDKdebug & 1024) { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; }
+
+/* virtual memory defines */
+gdk_export size_t _MT_npages;
+gdk_export size_t _MT_pagesize;
+#define MT_pagesize()	_MT_pagesize
+#define MT_npages()	_MT_npages
+@h
+/* API */
+gdk_export void    MT_init(void);     /*  init the package. */
+gdk_export int     MT_alive(int pid); /* OS independent way to check if some process is still alive. */
+
+#define MT_initialized() (MT_pagesize() > 0)
+
+@- MT Thread Api
+@h
+typedef size_t MT_Id; /* thread number. will not be zero*/
+
+gdk_export int     MT_create_thread(MT_Id *t, void (*function) (void *), void *arg);
+gdk_export void    MT_exit_thread(int status);
+gdk_export void    MT_global_exit(int status);
+gdk_export MT_Id   MT_getpid(void);
+gdk_export int     MT_kill_thread(MT_Id t);
+#ifdef HAVE_PTHREAD_SIGMASK
+gdk_export void    MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
+#endif
+
+#if SIZEOF_VOID_P == 4
+/* "limited" stack size on 32-bit systems */
+/* to avoid address space fragmentation   */
+#define THREAD_STACK_SIZE	((size_t)  512*1024)
+#else
+/* "increased" stack size on 64-bit systems    */
+/* since some compilers seem to require this   */
+/* for burg-generated code in pathfinder       */
+/* and address space fragmentation is no issue */
+#define THREAD_STACK_SIZE	((size_t)4*512*1024)
+#endif
+
+
+@- MT Lock API
+@h
+typedef pthread_mutex_t MT_Lock;
+
+#define MT_lock_init(l)      pthread_mutex_init((pthread_mutex_t*) l, 0)
+#define MT_lock_destroy(l)   pthread_mutex_destroy((pthread_mutex_t*) l)
+#define MT_lock_set(l,n)     MT_log(pthread_mutex_lock((pthread_mutex_t *) l), l, "MT_set_lock", n, stderr)
+#define MT_lock_unset(l,n)   MT_log(pthread_mutex_unlock((pthread_mutex_t *) l), l, "MT_unset_lock", n, stderr)
+#define MT_lock_try(l)       pthread_mutex_trylock((pthread_mutex_t *) l)
+#define MT_lock_dump(l,fp,n) MT_log(/*nothing*/, &l, "MT_dump_lock", n, fp)
+
+/* backward compatability API */
+#define MT_init_lock(l)      MT_lock_init(&l)   
+#define MT_destroy_lock(l)   MT_lock_destroy(&l)   
+#define MT_set_lock(l,n)     MT_lock_set(&l,n)     
+#define MT_unset_lock(l,n)   MT_lock_unset(&l,n)   
+#define MT_try_lock(l)       MT_lock_try(&l)       
+#define MT_dump_lock(l,fp,n) MT_lock_dump(&l,fp,n) 
+
+gdk_export MT_Lock MT_system_lock;
+
+@- MT Semaphore API
+@h
 #if defined(_AIX) || defined(__APPLE_CC__)
 typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 } pthread_sema_t;
+
+gdk_export void    pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
+gdk_export void    pthread_sema_destroy(pthread_sema_t *s)
+gdk_export void    pthread_sema_up(pthread_sema_t *s)
+gdk_export void    pthread_sema_down(pthread_sema_t *s)
 #else
-#define pthread_sema_t sem_t
+#define pthread_sema_t       sem_t
+#define pthread_sema_init    sem_init
+#define pthread_sema_destroy sem_destroy
+#define pthread_sema_up      sem_post
+#define pthread_sema_down    sem_wait
 #endif
 
-MT_Lock MT_system_lock = NULL;	/* system administration lock */
+typedef pthread_sema_t MT_Sema;
 
-pthread_mutex_t MT_firstlock[MAXLOCKS];
-pthread_sema_t MT_firstsema[MAXSEMAS];
-pthread_cond_t MT_firstcond[MAXSEMAS];
+#define MT_sema_init(s,nr)   pthread_sema_init(s,0,nr)
+#define MT_sema_destroy(s)   pthread_sema_destroy(s)
+#define MT_sema_up(s,n)      MT_log(pthread_sema_up(s), s, "MT_up_sema", n, stderr)
+#define MT_sema_down(s,n)    MT_log(pthread_sema_down(s), s, "MT_down_sema", n, stderr)
+#define MT_sema_dump(s,fp,n) MT_log(/*nothing*/, s, "MT_dump_sema", n, fp)
 
-int MT_curlock = 0, MT_nextlock[MAXLOCKS];
-ptrdiff_t MT_cursema = 0, MT_nextsema[MAXSEMAS];
-ptrdiff_t MT_curcond = 0, MT_nextcond[MAXSEMAS];
+/* backward compatability API */
+#define MT_init_sema(s,nr)   MT_sema_init(&s,nr)
+#define MT_destroy_sema(s)   MT_sema_destroy(&s)
+#define MT_up_sema(s,n)      MT_sema_up(&s,n)
+#define MT_down_sema(s,n)    MT_sema_down(&s,n)
+#define MT_dump_sema(s,fp,n) MT_sema_dump(&s,fp,n)
+
+@- MT Conditional Variable API
+@h
+typedef pthread_cond_t MT_Cond;
+
+#define MT_cond_init(c)      pthread_cond_init((pthread_cond_t*) c, NULL)
+#define MT_cond_destroy(c)   pthread_cond_destroy((pthread_cond_t*) c)
+#define MT_cond_signal(c,n)  MT_log(pthread_cond_signal((pthread_cond_t*) c), c, "MT_signal_cond", n, stderr)
+#define MT_cond_wait(c,l,n)  MT_log(pthread_cond_wait((pthread_cond_t*) c, (pthread_mutex_t *) l), c, "MT_wait_cond", n, stderr)
+
+/* backward compatability API */
+#define MT_init_cond(c)      MT_cond_init(&c)
+#define MT_destroy_cond(c)   MT_cond_destroy(&c)   
+#define MT_signal_cond(c,n)  MT_cond_signal(&c,n)  
+#define MT_wait_cond(c,l,n)  MT_cond_wait(&c,&l,n)  
+
+#endif /*_GDK_SYSTEM_H_*/
+
+
+@- Mthreads Routine implementations
+@c
+#include "gdk.h"
 
 size_t _MT_pagesize = 0;	/* variable holding memory size */
 size_t _MT_npages = 0;		/* variable holding page size */
 
+MT_Lock MT_system_lock = PTHREAD_MUTEX_INITIALIZER;
+
 void
 MT_init(void)
 {
-	static pthread_mutex_t l;
-	int i;
-
 #ifdef HAVE_GETSYSTEMINFO
 	{
 		SYSTEM_INFO sysInfo;
@@ -354,20 +270,6 @@ MT_init(void)
 	}
 #endif
 #endif
-	for (i = 1; i < MAXLOCKS; i++) {
-		MT_nextlock[i - 1] = i;
-	}
-	MT_nextlock[MAXLOCKS - 1] = -1;
-
-	for (i = 1; i < MAXSEMAS; i++) {
-		MT_nextsema[i - 1] = (ptrdiff_t) i;
-		MT_nextcond[i - 1] = (ptrdiff_t) i;
-	}
-	MT_nextsema[MAXSEMAS - 1] = (ptrdiff_t) -1;
-	MT_nextcond[MAXSEMAS - 1] = (ptrdiff_t) -1;
-
-	pthread_mutex_init(&l, 0);
-	MT_system_lock = (MT_Lock) &l;
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -421,7 +323,6 @@ void
 MT_exit_thread(int s)
 {
 	int st = s;
-
 	pthread_exit(&st);
 }
 
@@ -438,87 +339,6 @@ MT_kill_thread(MT_Id t)
 	return -1;		/* XXX */
 #endif
 }
-
-MT_Lock
-MT_create_lock(void)
-{
-	pthread_mutex_t *new_mutex;
-
-	MT_set_lock(MT_system_lock, "MT_create_lock");
-	if (MT_curlock == -1) {
-		fprintf(MT_out, "MT_create_lock: ran out of locks.\n");
-		MT_global_exit(-1);
-	}
-	new_mutex = MT_firstlock + MT_curlock;
-	MT_curlock = MT_nextlock[MT_curlock];
-	MT_unset_lock(MT_system_lock, "MT_create_lock");
-	pthread_mutex_init(new_mutex, 0);
-
-	return (MT_Lock) new_mutex;
-}
-
-
-void
-MT_destroy_lock(MT_Lock l)
-{
-	int idx = (int) (((pthread_mutex_t *) l) - MT_firstlock);
-
-	if (l == NULL)
-		return;
-	pthread_mutex_destroy(l);
-	MT_set_lock(MT_system_lock, "MT_destroy_lock");
-	MT_nextlock[idx] = MT_curlock;
-	MT_curlock = idx;
-	MT_unset_lock(MT_system_lock, "MT_destroy_lock");
-}
-
-void
-MT_set_lock(MT_Lock l, char *name)
-{
-	int t = 0;
-
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_set_lock(" SZFMT "\@%s) " PTRFMT " %d\n", (size_t) MT_getpid(), name, PTRFMTCAST(void *)l, t);
-
-		fflush(MT_out);
-	}
-	(void) pthread_mutex_lock((pthread_mutex_t *) l);
-}
-
-void
-MT_unset_lock(MT_Lock l, char *name)
-{
-	int t = 0;
-
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_unset_lock(" SZFMT "\@%s) " PTRFMT " %d\n", (size_t) MT_getpid(), name, PTRFMTCAST(void *)l, t);
-
-		fflush(MT_out);
-	}
-	t = pthread_mutex_unlock((pthread_mutex_t *) l);
-}
-
-int
-MT_try_lock(MT_Lock l)
-{
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_try_lock:" SZFMT " " PTRFMT "\n", (size_t) MT_getpid(), PTRFMTCAST(void *)l);
-
-		fflush(MT_out);
-	}
-	if (l == NULL)
-		return 0;
-	return pthread_mutex_trylock(l);
-}
-
-
-void
-MT_dump_lock(MT_Lock l, FILE *fp, char *name)
-{
-	(void) l;
-	fprintf(fp, "%s: MT_dump_lock() not implemented.\n", name);
-}
-
 #if defined(_AIX) || defined(__APPLE_CC__)
 static void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
@@ -537,7 +357,7 @@ pthread_sema_destroy(pthread_sema_t *s)
 }
 
 static void
-pthread_sema_post(pthread_sema_t *s)
+pthread_sema_up(pthread_sema_t *s)
 {
 	int status = pthread_mutex_lock(&(s->mutex));
 
@@ -549,7 +369,7 @@ pthread_sema_post(pthread_sema_t *s)
 }
 
 static void
-pthread_sema_wait(pthread_sema_t *s)
+pthread_sema_down(pthread_sema_t *s)
 {
 	int status = pthread_mutex_lock(&(s->mutex));
 
@@ -559,132 +379,7 @@ pthread_sema_wait(pthread_sema_t *s)
 	}
 	status = pthread_mutex_unlock(&(s->mutex));
 }
-#else
-#define pthread_sema_post	sem_post
-#define pthread_sema_wait	sem_wait
-#define pthread_sema_init	sem_init
-#define pthread_sema_destroy	sem_destroy
 #endif
-
-void
-MT_up_sema(MT_Sema s, char *name)
-{
-	(void) pthread_sema_post((pthread_sema_t *) s);
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_up_sema(" SZFMT "\@%s) " PTRFMT "\n", (size_t) MT_getpid(), name, PTRFMTCAST(void *)s);
-
-		fflush(MT_out);
-	}
-}
-
-void
-MT_down_sema(MT_Sema s, char *name)
-{
-	(void) pthread_sema_wait((pthread_sema_t *) s);
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_down_sema(" SZFMT "\@%s) " PTRFMT "\n", (size_t) MT_getpid(), name, PTRFMTCAST(void *)s);
-
-		fflush(MT_out);
-	}
-}
-
-MT_Sema
-MT_create_sema(int nresources)
-{
-	pthread_sema_t *new_sema;
-
-	MT_set_lock(MT_system_lock, "MT_create_sema");
-	if (MT_cursema == -1) {
-		fprintf(MT_out, "MT_create_sema: ran out of semaphores.\n");
-		MT_global_exit(-1);
-	}
-	new_sema = MT_firstsema + MT_cursema;
-	MT_cursema = MT_nextsema[MT_cursema];
-	MT_unset_lock(MT_system_lock, "MT_create_sema");
-
-	(void) pthread_sema_init(new_sema, 0, nresources);
-	return (MT_Sema) new_sema;
-}
-
-
-void
-MT_destroy_sema(MT_Sema s)
-{
-	ptrdiff_t idx = ((pthread_sema_t *) s) - MT_firstsema;
-
-	if (s == NULL)
-		return;
-	(void) pthread_sema_destroy(s);
-
-	MT_set_lock(MT_system_lock, "MT_destroy_sema");
-	MT_nextsema[idx] = MT_cursema;
-	MT_cursema = idx;
-	MT_unset_lock(MT_system_lock, "MT_destroy_sema");
-}
-
-void
-MT_dump_sema(MT_Sema s, FILE *fp, char *name)
-{
-	(void) s;
-	fprintf(fp, "%s: MT_dump_sema() not implemented.\n", name);
-}
-
-void
-MT_signal_cond(MT_Cond c, char *name)
-{
-	(void) pthread_cond_signal((pthread_cond_t *) c);
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_signal_cond(" SZFMT "\@%s) " PTRFMT "\n", (size_t) MT_getpid(), name, PTRFMTCAST(void *)c);
-
-		fflush(MT_out);
-	}
-}
-
-void
-MT_wait_cond(MT_Cond c, MT_Lock l, char *name)
-{
-	(void) pthread_cond_wait((pthread_cond_t *) c, (pthread_mutex_t *) l);
-	if (MT_debug & 1024) {
-		fprintf(MT_out, "MT_cond_wait(" SZFMT "\@%s) " PTRFMT PTRFMT "\n", (size_t) MT_getpid(), name, PTRFMTCAST(void *)c, PTRFMTCAST(void *)l);
-
-		fflush(MT_out);
-	}
-}
-
-MT_Cond
-MT_create_cond()
-{
-	pthread_cond_t *new_cond;
-
-	MT_set_lock(MT_system_lock, "MT_create_cond");
-	if (MT_curcond == -1) {
-		fprintf(MT_out, "MT_create_cond: ran out of condition.\n");
-		MT_global_exit(-1);
-	}
-	new_cond = MT_firstcond + MT_curcond;
-	MT_curcond = MT_nextcond[MT_curcond];
-	MT_unset_lock(MT_system_lock, "MT_create_cond");
-
-	(void) pthread_cond_init(new_cond, NULL);
-	return (MT_Cond) new_cond;
-}
-
-
-void
-MT_destroy_cond(MT_Cond c)
-{
-	ptrdiff_t idx = ((pthread_cond_t *) c) - MT_firstcond;
-
-	if (c == NULL)
-		return;
-	(void) pthread_cond_destroy(c);
-
-	MT_set_lock(MT_system_lock, "MT_destroy_cond");
-	MT_nextcond[idx] = MT_curcond;
-	MT_curcond = idx;
-	MT_unset_lock(MT_system_lock, "MT_destroy_cond");
-}
-
 
 MT_Id
 MT_getpid(void)
@@ -706,6 +401,4 @@ MT_alive(int pid)
 	return 0;
 #endif
 }
-
 @}
-@-

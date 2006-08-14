@@ -170,7 +170,7 @@ int enum_sht_shift = -(GDK_sht_min+1);	/* GDK_sht_min == GDK_sht_nil == -32768 *
 
 #define MAX_ENUM 80
 
-MT_Lock enum_lock = NULL;
+MT_Lock enum_lock;
 bat enum_map[MAX_ENUM] = { 0 };
 oid enum_histo[MAX_ENUM] = { 0 };
 int enum_tpe[MAX_ENUM] = { -1 };
@@ -834,7 +834,7 @@ enum_ishisto(bit *ret, int *enum_t, BAT *column)
 bat *
 enum_prelude(void)
 {
-	enum_lock = MT_create_lock();
+	MT_init_lock(enum_lock);
 	return NULL;
 }
 

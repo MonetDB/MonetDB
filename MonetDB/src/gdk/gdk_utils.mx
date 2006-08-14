@@ -216,7 +216,7 @@ GDKlog(const char *format, ...)
 	int mustopen = GDKgetHome();
 	time_t tm = time(0);
 
-	if (MT_system_lock == NULL)
+	if (!MT_initialized()) 
 		return;
 
 	va_start(ap, format);
@@ -989,23 +989,19 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 			GDK_vm_maxsize = newmax;
 	}
 
-	if (GDKthreadLock)
-		gdk_set_lock(GDKthreadLock, "GDKmemfail");
+	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	THRprintf(GDKerr, "!%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	GDKdebug |= 4;
-	if (GDKthreadLock)
-		gdk_unset_lock(GDKthreadLock, "GDKmemfail");
+	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 
 	BBPtrim(memtarget, vmtarget);
 
-	if (GDKthreadLock)
-		gdk_set_lock(GDKthreadLock, "GDKmemfail");
+	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug, bak);
 	THRprintf(GDKerr, "!%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
-	if (GDKthreadLock)
-		gdk_unset_lock(GDKthreadLock, "GDKmemfail");
+	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 }
 
 /* the blocksize is stored in the ssize_t before it. Negative size <=> VM memory */
@@ -1383,19 +1379,19 @@ GDKprotect()
 {
 	int i;
 
-	if (GDKthreadLock == 0) {
+	if (GDKprotected == 0) {
 		TMDEBUG printf("# GDKlocks created\n");
 
-		GDKthreadLock = MT_create_lock();
+		MT_init_lock(GDKthreadLock);
 		for (i = 0; i <= BBPLOCKMASK; i++) {
-			GDKswapLock[i] = MT_create_lock();
-			GDKhashLock[i] = MT_create_lock();
+			MT_init_lock(GDKswapLock[i]);
+			MT_init_lock(GDKhashLock[i]);
 		}
-		GDKcacheLock = MT_create_lock();
-		GDKunloadLock = MT_create_lock();
-		GDKunloadCond = MT_create_cond();
-		GDKtrimLock = MT_create_lock();
-		GDKtmLock = MT_create_lock();
+		MT_init_lock(GDKcacheLock);
+		MT_init_lock(GDKunloadLock);
+		MT_init_cond(GDKunloadCond);
+		MT_init_lock(GDKtrimLock);
+		MT_init_lock(GDKtmLock);
 		GDKprotected = 1;
 	}
 }
@@ -1495,13 +1491,11 @@ gdk_export void GDKexit(int status);
 void
 GDKexit(int status)
 {
-	if (GDKthreadLock)
-		gdk_set_lock(GDKthreadLock, "GDKexit");
+	gdk_set_lock(GDKthreadLock, "GDKexit");
 	if (GDKstopped == 0) {
 		GDKstopped++;	/* shouldn't there be a lock here? */
 		GDKnrofthreads = 0;
-		if (GDKthreadLock)
-			gdk_unset_lock(GDKthreadLock, "GDKexit");
+		gdk_unset_lock(GDKthreadLock, "GDKexit");
 
 		/* Kill all threads except myself */
 		if (status == 0) {
@@ -1523,8 +1517,7 @@ GDKexit(int status)
 		GDKunlockHome();
 		MT_global_exit(status);
 	}
-	if (GDKthreadLock)
-		gdk_unset_lock(GDKthreadLock, "GDKexit");
+	gdk_unset_lock(GDKthreadLock, "GDKexit");
 }
 
 @
@@ -1535,7 +1528,7 @@ int GDKdebug = 0;
 int GDKembedded = 0;
 int GDKprotected = 0;
 
-MT_Lock GDKthreadLock = NULL;
+MT_Lock GDKthreadLock;
 MT_Lock GDKswapLock[BBPLOCKMASK + 1];
 MT_Lock GDKhashLock[BBPLOCKMASK + 1];
 MT_Lock GDKcacheLock, GDKtrimLock;
@@ -1629,9 +1622,7 @@ Really really get the lock. Now!!
 int
 GDKgetHome(void)
 {
-	if (GDKlockFile)
-		return 0;
-	if (MT_system_lock == NULL)
+	if (MT_initialized() == 0 || GDKlockFile)
 		return 0;
 	while ((GDKlockFile = fopen(GDKLOCK, "r+")) == NULL) {
 		GDKerror("GDKgetHome: PANIC on open %s. sleep(1)\n", GDKLOCK);
@@ -2160,9 +2151,7 @@ THRprintf(stream *s, const char *format, ...)
 	if (!s)
 		return -1;
 
-	if (MT_system_lock) {
-		gdk_set_lock(MT_system_lock, "THRprintf");
-	}
+	gdk_set_lock(MT_system_lock, "THRprintf");
 	if (*format != '!') {
 		c = '#';
 	} else {
@@ -2202,9 +2191,7 @@ THRprintf(stream *s, const char *format, ...)
 cleanup:
 	if (bf != THRprintbuf)
 		free(bf);
-	if (MT_system_lock) {
-		gdk_unset_lock(MT_system_lock, "THRprintf");
-	}
+	gdk_unset_lock(MT_system_lock, "THRprintf");
 	return n;
 }
 

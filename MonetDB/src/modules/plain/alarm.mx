@@ -97,7 +97,7 @@ A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
 #ifdef SIGALRM
-MT_Sema
+void
 CLKalarm(time_t t, str action)
 {
 	int j;
@@ -107,7 +107,7 @@ CLKalarm(time_t t, str action)
 
 	if (timerTop == MAXtimer) {
 		GDKerror("CLKalarm: timer stack overflow\n");
-		return 0;
+		return;
 	}
 	for (j = 0; j < timerTop; j++) {
 		if (timer[j].alarm_time > t)
@@ -121,12 +121,11 @@ CLKalarm(time_t t, str action)
 		timer[k].action = GDKstrdup(action);
 	} else {
 		timer[k].action = 0;
-		timer[k].sema = MT_create_sema(0);
+                MT_init_sema(timer[k].sema, 0);
 	}
 	if (k == timerTop++) {
 		CLKinitTimer(t, 0);	/* set it sooner */
 	}
-	return timer[k].sema;
 }
 #endif
 @-
@@ -236,7 +235,7 @@ CMDalarm(int *secs, str action)
 		GDKerror("CMDalarm: not implemented\n");
 		return GDK_FAIL;
 #else
-		(void) CLKalarm(time(0) + *secs, action);
+		CLKalarm(time(0) + *secs, action);
 #endif
 	}
 	return GDK_SUCCEED;

@@ -411,7 +411,7 @@ cache_new(str name)
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	c->errbuf = NULL;
-	c->barrier = NULL;
+	MT_init_sema(c->barrier,0);
 	return c;
 }
 
@@ -422,9 +422,7 @@ cache record from the @%cache_idx@ BAT.
 static int
 cache_free(cache_t *c)
 {
-	if (c->barrier != NULL) {
-		MT_destroy_sema(c->barrier);
-	}
+	MT_destroy_sema(c->barrier);
 	GDKfree(c);
 	return 0;
 }
@@ -476,8 +474,7 @@ cache_fill(cache_t *c, int tpe, union cache_t_val val, int i)
 		BBPincref(c->val.bval, TRUE);
 	}
 	if (c->locked) {
-		if (c->barrier != NULL)
-			MT_up_sema(c->barrier, "cache_fill");
+		MT_up_sema(c->barrier, "cache_fill");
 	}
 	MT_unset_lock(TCPlock, "cache_fill");
 	return 0;
@@ -1158,7 +1155,7 @@ Init the global structures.
 bat *
 TCPprelude(void)
 {
-	TCPlock = MT_create_lock();
+	MT_init_lock(TCPlock);
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
 	if (cache_idx == NULL)
 		return NULL;
@@ -1595,15 +1592,12 @@ Lookup or create (if it did not exist) a cache item by this name.
 	c = cache_find(name);
 	if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0)
 		goto get_direct;
-	if (c->locked++ == 0 && c->barrier == NULL) {
-		c->barrier = MT_create_sema(0);
-	}
+	c->locked++;
 	MT_unset_lock(TCPlock, "TCPimport");
 @-
 Try to pass the barrier. This makes you wait till the BAT arrived.
 @c
-	if (c->barrier != NULL)
-		MT_down_sema(c->barrier, "TCPimport");
+	MT_down_sema(c->barrier, "TCPimport");
 @-
 Delayed free of the cache item; this occurs when the cache
 was cleared (or your line went down) while you were waiting.
@@ -1653,8 +1647,7 @@ Copy from the cache into the return value.
 	if (*remove) {
 		cache_del(c);
 	} else if (c->locked) {
-		if (c->barrier != NULL)
-			MT_up_sema(c->barrier, "TCPimport");
+		MT_up_sema(c->barrier, "TCPimport");
 	}
 	MT_unset_lock(TCPlock, "TCPimport");
 	return GDK_SUCCEED;

@@ -312,6 +312,7 @@ m_export MT_Lock monet_contextLock;	/* protects CNTXT structures */
 m_export MT_Lock monet_voidLock;	/* protects void hack */
 m_export MT_Sema monet_available;	/* worker threads in queue */
 m_export MT_Sema monet_forksync;	/* sync semaphore for fork */
+m_export MT_Lock profilerLock;	        /* protects profiler */
 
 m_export int monet_tokseq;	/* value of TOK_SEQ */
 m_export int monet_tokident;	/* value of TOK_IDENT */
@@ -348,7 +349,7 @@ str *monet_script = NULL;
 str monet_dbinit = NULL;
 str monet_general = 0;
 MT_Lock monet_critical, monet_notifyLock, monet_voidLock;
-MT_Lock monet_parserLock, monet_contextLock;
+MT_Lock monet_parserLock, monet_contextLock, profilerLock;
 MT_Sema monet_available, monet_forksync;
 
 @-
@@ -432,13 +433,14 @@ protectMonet(void)
 		TMDEBUG printf("# protectMonet: upgrade protection %d>0\n", monet_forks);
 		TMDEBUG printf("# Monet locks created\n");
 
-		monet_critical = MT_create_lock();
-		monet_contextLock = MT_create_lock();
-		monet_parserLock = MT_create_lock();
-		monet_notifyLock = MT_create_lock();
-		monet_voidLock = MT_create_lock();
-		monet_available = MT_create_sema(0);
-		monet_forksync = MT_create_sema(0);
+		MT_init_lock(monet_critical);
+		MT_init_lock(monet_contextLock);
+		MT_init_lock(monet_parserLock);
+		MT_init_lock(monet_notifyLock);
+		MT_init_lock(monet_voidLock);
+                MT_init_sema(monet_available, 0);
+                MT_init_sema(monet_forksync, 0);
+		MT_init_lock(profilerLock);
 		TBL_protect();
 		GDKprotect();
 		monet_needshared = 0;

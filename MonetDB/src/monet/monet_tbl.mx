@@ -1465,13 +1465,11 @@ Since all code will move to modules this function will be come obsolute.
 void
 TBL_protect()
 {
-	if (TBL_protector == NULL) {
-		TMDEBUG printf("# TBL locks created\n");
+	TMDEBUG printf("# TBL locks created\n");
 
-		TBL_protector = MT_create_lock();
-		TBL_writelock = MT_create_lock();
-		TBL_barrier = MT_create_sema(0);
-	}
+	MT_init_lock(TBL_protector);
+	MT_init_lock(TBL_writelock);
+	MT_init_lock(TBL_barrier);
 }
 void
 TBL_init(void)

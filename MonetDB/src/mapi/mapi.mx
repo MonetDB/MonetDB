@@ -227,7 +227,7 @@ init_client_cache()
 {
 	int i;
 
-	mapi_cache_lock = MT_create_lock();
+	MT_init_lock(mapi_cache_lock);
 
 	for(i=0; i<=MAX_FRONTENDS; i++)  
 		mapi_frontends[i] = 0;
@@ -408,7 +408,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	mc->frontend = f->nr;
 	mc->inuse = 1;
 	mc->t = ~(MT_Id)0;
-	mc->s = MT_create_sema(0);
+        MT_init_sema(mc->s, 0);
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
 		if (s) {
@@ -978,10 +978,11 @@ locking_function(int mode, int n, const char *file, int line)
 {
 	(void) file;
 	(void) line;
-	if (mode & CRYPTO_LOCK)
+	if (mode & CRYPTO_LOCK) {
 		MT_set_lock(mutex_buf[n], "locking_function");
-	else
+	} else {
 		MT_unset_lock(mutex_buf[n], "locking_function");
+	}
 }
 
 static unsigned long
@@ -1005,7 +1006,7 @@ mapi_prelude(void)
 		return NULL;
 	}
 	for (i = 0; i < nlocks; i++)
-		mutex_buf[i] = MT_create_lock();
+		MT_init_lock(mutex_buf[i]);
 	CRYPTO_set_locking_callback(locking_function);
 	CRYPTO_set_id_callback(id_function);
 #endif

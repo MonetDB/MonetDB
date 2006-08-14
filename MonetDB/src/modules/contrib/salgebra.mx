@@ -1085,10 +1085,10 @@ salgebra_prelude(void)
 #endif
 	/* allocate locks */
 	for (i = 0; i <= BBPLOCKMASK; i++) {
-		salgebra_chashLock[i] = MT_create_lock();
+		MT_init_lock(salgebra_chashLock[i]);
 	}
-	salgebra_cacheLock = MT_create_lock();
-	salgebra_refcntLock = MT_create_lock();
+	MT_init_lock(salgebra_cacheLock);
+	MT_init_lock(salgebra_refcntLock);
 
 	salgebra_cache = BATnew(TYPE_int, TYPE_clusterhash, 10);
 	BBPrename(BBPcacheid(salgebra_cache), "ch_cache");

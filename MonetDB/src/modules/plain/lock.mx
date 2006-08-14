@@ -77,63 +77,76 @@ typedef ptr monet_sema;
 int
 create_lock(monet_lock *l)
 {
-	*l = MT_create_lock();
+        *l = (monet_lock) GDKmalloc(sizeof(MT_Lock));
+	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
+	MT_lock_init((MT_Lock*) *l);
 	return GDK_SUCCEED;
 }
 
 int
 set_lock(monet_lock *l)
 {
-	MT_set_lock((MT_Lock) *l, "set_lock");
+	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
+	MT_lock_set((MT_Lock*) *l, "set_lock");
 	return GDK_SUCCEED;
 }
 
 int
 try_lock(int *res, monet_lock *l)
 {
-	*res = MT_try_lock((MT_Lock) *l) ? EBUSY : 0;
+	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
+	*res = MT_lock_try((MT_Lock*) *l) ? EBUSY : 0;
 	return GDK_SUCCEED;
 }
 
 int
 unset_lock(monet_lock *l)
 {
-	MT_unset_lock((MT_Lock) *l, "unset_lock");
+	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
+	MT_lock_unset((MT_Lock*) *l, "unset_lock");
 	return GDK_SUCCEED;
 }
 
 int
 destroy_lock(monet_lock *l)
 {
-	MT_destroy_lock((MT_Lock) *l);
+	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
+        GDKfree(*l);
+	MT_lock_destroy((MT_Lock*) *l);
 	return GDK_SUCCEED;
 }
 
 int
 create_sema(monet_sema *s, int *init)
 {
-	*s = MT_create_sema(*init);
+        *s = (monet_sema) GDKmalloc(sizeof(MT_Sema));
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_init((MT_Sema *) *s, *init);
 	return GDK_SUCCEED;
 }
 
 int
 up_sema(monet_sema *s)
 {
-	MT_up_sema((MT_Sema) *s, "up_sema");
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_up((MT_Sema*) *s, "up_sema");
 	return GDK_SUCCEED;
 }
 
 int
 down_sema(monet_sema *s)
 {
-	MT_down_sema((MT_Sema) *s, "down_sema");
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_down((MT_Sema*) *s, "down_sema");
 	return GDK_SUCCEED;
 }
 
 int
 destroy_sema(monet_sema *s)
 {
-	MT_destroy_sema((MT_Sema) *s);
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_destroy((MT_Sema*) *s);
+	GDKfree(*s);
 	return GDK_SUCCEED;
 }
 
