@@ -1580,6 +1580,8 @@ convertConstant(malType type, ValPtr vr)
 		vr->val.bval = 0;
 		return 0;
 	case TYPE_ptr:
+		/* all coercions should be avoided to protect against memory probing */
+		/*
 		if (vr->vtype == TYPE_void) {
 			vr->vtype = type;
 			vr->val.pval = 0;
@@ -1605,6 +1607,7 @@ convertConstant(malType type, ValPtr vr)
 			if (ATOMextern(type) == 0 )
 				GDKfree(d);
 		}
+		*/
 		return vr->vtype != type;
 @-
 Extended types are always represented as string literals
@@ -1726,8 +1729,8 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
-		}
-		assert(cst->vtype== type);
+		} else
+			assert(cst->vtype== type);
 	}
 	k= fndConstant(mb,cst);
 	if( k >= 0 )
