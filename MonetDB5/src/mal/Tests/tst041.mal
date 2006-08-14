@@ -36,6 +36,3 @@ io.print(nil:str);
 f:= 'Z';	io.print(f);
 f:= calc.chr(nil);	io.print(f);
 f:= calc.chr("X");	io.print(f);
-
-p:= 0:ptr;  io.print(p);
-p:= 1:ptr;  io.print(p);

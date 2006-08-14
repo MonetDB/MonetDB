@@ -111,11 +111,7 @@ function user.main():void;	# 0  (main:void)
     io.print(f);	# 62 IOprint_val (_61:int)<-(f:chr)
     f := calc.chr("X");	# 63 CALCstr2chr (f:chr)<-(_62:str)
     io.print(f);	# 64 IOprint_val (_63:int)<-(f:chr)
-    p := 0:ptr;	# 65  (p:ptr)<-(_65:ptr)
-    io.print(p);	# 66 IOprint_val (_66:int)<-(p:ptr)
-    p := 1:ptr;	# 67  (p:ptr)<-(_67:ptr)
-    io.print(p);	# 68 IOprint_val (_68:int)<-(p:ptr)
-end main;	# 69  
+end main;	# 65  
 [ nil ]
 [ 23 ]
 [ nil ]
@@ -148,9 +144,6 @@ end main;	# 69
 [ 'Z' ]
 [ nil ]
 [ 'X' ]
-[ 0 ]
-[ 1 ]
-#
 
 # 07:58:44 >  
 # 07:58:44 >  Done.
