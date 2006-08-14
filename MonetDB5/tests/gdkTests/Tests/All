@@ -4,3 +4,4 @@ append_dense_tail.mal
 cross
 binsemijoin
 binsemijoin2
+void
