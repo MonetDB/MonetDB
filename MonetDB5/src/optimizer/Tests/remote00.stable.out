@@ -5,8 +5,6 @@ stdout of test 'remote00` in directory 'src/optimizer` itself:
 # 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote00.mal < /dev/null
 # 23:06:19 >  
 
-Mtimeout -timeout 60 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=12345 --trace --debug=10 --dbname "db1"
-Mtimeout -timeout 60 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=12346 --trace --debug=10 --dbname "db2"
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
