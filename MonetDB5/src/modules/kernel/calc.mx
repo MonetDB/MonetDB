@@ -315,13 +315,6 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(@1,flt)@
 	@:mal_coercion(@1,dbl)@
 @mal
-	@:mal_coercion(bit,bit)@
-	@:mal_coercion(bit,sht)@
-	@:mal_coercion(bit,int)@
-	@:mal_coercion(bit,lng)@
-	@:mal_coercion(bit,flt)@
-	@:mal_coercion(bit,dbl)@
-
 	@:scalar_coercion(bit)@
 	@:scalar_coercion(chr)@
 	@:scalar_coercion(lng)@
@@ -357,7 +350,6 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(chr,sht)@
 	@:mal_coercion(chr,int)@
 	@:mal_coercion(chr,lng)@
-
 @}
 @+ Boolean operations { or, xor, and, not }
 @mal
