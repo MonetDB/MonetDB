@@ -1639,6 +1639,9 @@ unnest_proxy (PFla_op_t *root,
         if (!req_col_names[i].old)
             return;
 
+    /* dummy initialization */
+    map_col_new = map_col_old = att_NULL;
+
     /* Ensure that at least one of the required columns is not used
        in the in-between proxy, such we can misuse it to transport
        the key values for the connecting join. */
@@ -1655,8 +1658,7 @@ unnest_proxy (PFla_op_t *root,
     }
     /* There is no 'free' column that can be used
        to transport the key information. */
-    if (i == req_count)
-        return;
+    if (i == req_count) return;
 
 
 
