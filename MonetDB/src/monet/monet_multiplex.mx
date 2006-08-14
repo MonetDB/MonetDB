@@ -445,7 +445,7 @@ interpret_multiplex_fcn(str s,		/* operator name */
 			if (b == NULL)
 				return 0;
 			real_type = b->htype;
-			if (real_type == TYPE_void) {
+			if (BAThdense(b)) {
 				if (hseq == oid_nil) {
 					hseq = b->hseqbase;
 				}
