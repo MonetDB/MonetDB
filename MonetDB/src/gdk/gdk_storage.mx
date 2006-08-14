@@ -436,10 +436,12 @@ DESCsetmodes(BAT *b, BAT *img)
 		img->batBuns->storage = b->batMapbuns;
 	}
 	if (img->hheap && b->batMaphheap != STORE_UNSET) {
-		img->hheap->storage = b->batMaphheap;
+		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
+		img->hheap->storage = GDK_ELIMDOUBLES(img->hheap)?STORE_MEM:b->batMaphheap;
 	}
 	if (img->theap && b->batMaptheap != STORE_UNSET) {
-		img->theap->storage = b->batMaptheap;
+		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
+		img->theap->storage = GDK_ELIMDOUBLES(img->theap)?STORE_MEM:b->batMaptheap;
 	}
 
 	/* change modes in img into legal modes, and reset b's mapdity if something had to be corrected */
@@ -573,17 +575,32 @@ BATload_intern(bat i)
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype) && ret >= 0) {
 		ret |= HEAPload(b->hheap, nme, "hheap", b->batRestricted == BAT_READ);
-		assert(ret >= 0);
-		if (ret >= 0 && BATatoms[b->htype].atomHeapCheck == HEAP_check)
+		if (ret < 0) {
+			HEAPfree(b->batBuns);
+			return NULL;
+		}
+		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->hheap, b->htype);
+		} else if (ATOMstorage(b->htype) == TYPE_str && !GDK_ELIMDOUBLES(b->hheap)) {
+			/* heap may have been mmaped-ed, appended-by-force, and then corrupted by crash */
+			memset(b->hheap->base, 0, GDK_STRHASHTABLE*sizeof(var_t)); /* empty hashtable = consistent */
+		}
 	}
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype) && ret >= 0) {
 		ret |= HEAPload(b->theap, nme, "theap", b->batRestricted == BAT_READ);
-		assert(ret >= 0);
-		if (ret >= 0 && BATatoms[b->ttype].atomHeapCheck == HEAP_check)
+		if (ret < 0) {
+			if (b->hheap) HEAPfree(b->hheap);
+			HEAPfree(b->batBuns);
+			return NULL;
+		}
+		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->theap, b->ttype);
+		} else if (ATOMstorage(b->ttype) == TYPE_str && !GDK_ELIMDOUBLES(b->theap)) {
+			/* heap may have been mmaped-ed, appended-by-force, and then corrupted by crash */
+			memset(b->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t)); /* empty hashtable = consistent */
+		}
 	}
 
 	/* handle fatal errors */
