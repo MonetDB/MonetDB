@@ -83,8 +83,6 @@ comment "Move constant expressions out of the blocks";
 #include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-#include "mal_namespace.h"
-
 
 #define propagate(X) p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
 	p->argc = 2; p->fcn = 0; getFunctionId(p)= getModuleId(p)=NULL;
@@ -95,8 +93,6 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 	int i, j, limit, doAR = 0;
 	InstrPtr p, *old;
 
-	if( mb->errors) 
-		return ;
 #ifdef DEBUG_OPT_EMPTYSET
 	stream_printf(GDKout, "START emptyset optimizer %d:", cnt);
 	for (i = 0; i < cnt; i++)
@@ -143,15 +139,15 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 							break;
 						}
 					} else 
-					if ( getName("reverse", 7) == getFunctionId(p) ){
+					if ( getFunctionId(p)== reverseRef ){
 						p->token = IGNOREsymbol;
 						empty[getArg(p, 0)] = 1;
 						doAR++;
 						break;
 					}
 				} else if (getModuleId(p)== algebraRef) {
-					if (getName("markH", 5) == getFunctionId(p) || 
-						getName("markT", 5) == getFunctionId(p)) {
+					if (getFunctionId(p) == markHRef || 
+						getFunctionId(p)== markTRef) {
 						propagate(1);
 						doAR++;
 						empty[getArg(p, 0)] = 1;
@@ -165,8 +161,8 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						pushBit(mb, p, FALSE);
 						doAR++;
 						break;
-					} else if (getName("select", 6) == getFunctionId(p) || 
-								getName("uselect", 7) == getFunctionId(p) || 
+					} else if (getFunctionId(p) == selectRef || 
+								getFunctionId(p)== uselectRef || 
 								getName("like", 4) == getFunctionId(p) || 
 								getName("sortH", 5) == getFunctionId(p) || 
 								getName("sortT", 5) == getFunctionId(p) ||
@@ -213,7 +209,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 							empty[p->argv[0]] = 1;
 						doAR++;
 						break;
-					} else if ( getName("join", 4) == getFunctionId(p) || 
+					} else if ( getFunctionId(p) == joinRef || 
 								getName("semijoin", 8) == getFunctionId(p) ||
 								getName("fetchjoin", 9) == getFunctionId(p) ||
 								getName("mergejoin", 9) == getFunctionId(p) || 
@@ -229,7 +225,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						empty[p->argv[0]] = 1;
 						doAR++;
 						break;
-					} else if (getName("count", 5) == getFunctionId(p)) {
+					} else if (getFunctionId(p) == countRef) {
 						/* count propagation */
 						setModuleId(p, NULL);
 						setFunctionId(p, NULL);
@@ -266,7 +262,6 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	PropertySet ps;
 
 	sets = (int *) alloca(mb->vtop * sizeof(int));
-	(void) mb;
 	(void) stk;
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET
@@ -286,5 +281,5 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @h
 @:exportOptimizer(emptySet)@
 @c
-@:wrapOptimizer(emptySet)@
-
+@:wrapOptimizer(emptySet,OPT_CHECK_ALL)@
+@}

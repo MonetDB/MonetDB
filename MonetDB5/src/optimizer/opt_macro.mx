@@ -131,9 +131,7 @@ opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 @c
 #include "opt_prelude.h"
 #include "opt_macro.h"
-#include "mal_client.h"
 #include "mal_interpreter.h"
-#include "mal_namespace.h"
 
 @-
 The optimizer hooks are introduced first.
@@ -561,7 +559,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions= OPT@1Implementation(mb,stk,p);
 	if( p )
 		removeInstruction(mb, p);
-    optimizerCheck(mb, "optimizer.rangePush", actions, GDKusec() - clk);
+    optimizerCheck(mb, "optimizer.rangePush", actions, GDKusec() - clk, OPT_CHECK_ALL);
 	return MAL_SUCCEED;
 }
 @h
@@ -571,6 +569,6 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @h
 @:exportOptimizer(orcam)@
 @c
-@:wrapOptimizer(orcam)@
+@:wrapOptimizer(orcam,OPT_CHECK_ALL)@
 
 @}

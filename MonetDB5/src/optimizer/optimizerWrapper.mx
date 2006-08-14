@@ -46,6 +46,6 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	} else
 		if( mb->errors == 0)
 			actions= OPT@1Implementation(mb,stk,p);
-    optimizerCheck(mb, "optimizer.rangePush", actions, GDKusec() - clk);
+    optimizerCheck(mb, "optimizer.rangePush", actions, GDKusec() - clk,@2);
 	return MAL_SUCCEED;
 }

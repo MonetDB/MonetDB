@@ -35,15 +35,10 @@ comment "Replace algebra select with crackers select";
 
 #endif
 
-
 @c  
 #include "opt_crack.h"
-#include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
-
-#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
-	getModuleId(X) && strcmp(getModuleId(X),M)==0)
 
 #define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
 	getModuleId(X) && getModuleId(X)==M)
@@ -138,4 +133,5 @@ OPTcrackImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @h
 @:exportOptimizer(crack)@
 @c
-@:wrapOptimizer(crack)@
+@:wrapOptimizer(crack,OPT_CHECK_ALL)@
+@}

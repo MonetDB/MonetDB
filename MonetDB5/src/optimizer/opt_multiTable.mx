@@ -123,7 +123,6 @@ comment "Resolve the multi-table definitions";
 #include "mal_builder.h"
 
 #include "pbm.h"
-opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 /* #define DEBUG_OPT_MERGETABLE     show partial result */
 
 #endif
@@ -472,4 +471,5 @@ For the time being, they are no-ops.
 @h
 @:exportOptimizer(multiTable)@
 @c
-@:wrapOptimizer(multiTable)@
+@:wrapOptimizer(multiTable,OPT_CHECK_ALL)@
+@}

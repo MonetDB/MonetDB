@@ -22,7 +22,7 @@
 @subsection Function Inliners
 The routine @code{optimizer.inliners()} searches MAL function definitions
 whose property @{inline@}  is set. In addition, all MAL function calls
-whose primary target variable carry the @{inline} property are inlined
+whose primary target variable carry the @{inline@} property are inlined
 as well.
 The code is expanded inline using the macro processor.
 
@@ -88,4 +88,5 @@ OPTinlinersImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @h
 @:exportOptimizer(inliners)@
 @c
-@:wrapOptimizer(inliners)@
+@:wrapOptimizer(inliners,OPT_CHECK_ALL)@
+@}

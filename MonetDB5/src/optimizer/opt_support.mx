@@ -66,7 +66,7 @@ should have done their work already. For example, it doesn;t make sense
 to perform a static evaluation unless you have already propagated the
 constants using Alias Removal.
 
-@emph{Constant expressions (CXoptimizer)}
+@emph{Constant expressions}
 Goal: to remove scalar expressions which need be evaluated once during the
 query lifetime.
 Rationale: static expressions appear 
@@ -77,11 +77,12 @@ Early evaluation aids subsequent optimization.
 Approach: inspect all instructions to locate static expressions. 
 Whether they should be removed depends on the expected re-use,
 which in most cases call for an explicit request upon query registration 
-to do so. The result of a static evaluation provides a ground for AR.
+to do so. The result of a static evaluation provides a ground for 
+alias removal.
 Impact: relevant for stored queries (MAL functions)
-Prereq: AR, CT
+Prereq: alias removal, common terms
 
-@emph{Relational Expression Optimizer (RXoptimizer)}
+@emph{Relational Expression Optimizer}
 Goal: to evaluate a relational plan using properties of BATs,
 such as being empty or forming an aligned group.
 These optimizations assume that the code generator can detect properties
@@ -89,7 +90,7 @@ while compiling e.g. an SQL query.
 Impact: high
 Prereq:
 
-@emph{Alias Removal (ARoptimizer)}
+@emph{Alias Removal }
 Goal: to reduce the number of  variables referenceing the same value,
 thereby reducing the analysis complexity.
 Rationale: query transformations often result in replacing
@@ -102,7 +103,7 @@ replaced by a single variable.
 Impact: medium
 
 
-@emph{Common Term Optimizer (CToptimizer)}
+@emph{Common Term Optimizer }
 Goal: to reduce the amount of work by avoiding calculation of the same
 operation twice.
 Rationale: to simplify code generation for front-ends, they do not have
@@ -111,9 +112,9 @@ detect at the MAL level.
 Approach: simply walk through the instruction sequence and locate identical
 patterns.  (Enhance is with semantic equivalent instructions)
 Impact: High
-Prereq: AR
+Prereq: Alias Removal
 
-@emph{Dead Code Removal (DCoptimizer)}
+@emph{Dead Code Removal }
 Goal: to remove all instructions whose result is not used
 Rationale: due to sloppy coding or alternative execution paths
 dead code may appear. Als XML Pathfinder is expected to produce
@@ -121,7 +122,7 @@ a large number of simple assignments.
 Approach: Every instruction should produce a value used somewhere else.
 Impact: low
 
-@emph{Heuristic Rule Rewrites (HRoptimizer)}
+@emph{Heuristic Rule Rewrites }
 Goal: to reduce the volume as quick as possible.
 Rationale: most queries are focussed on a small part of the database.
 To avoid carrying too many intermediates, the selection should be performed as
@@ -130,7 +131,7 @@ known upfront, which in turn depends on histogram of the value distribution.
 Approach: locate selections and push them back/forth through the flow graph.
 Impact: high
 
-@emph{Join Path Optimizer (JPoptimizer)}
+@emph{Join Path Optimizer }
 Goal: to reduce the volume produced by a join sequence
 Rationale: join paths are potentially expensive operations. Ideally the join
 path is evaluated starting at the smallest component, so as to reduce the
@@ -142,7 +143,7 @@ restore to an incremental algorithm, which decides on the steps using the
 size of the relations.
 Impact: high
 
-@emph{Operator Sort (OSoptimizer)}
+@emph{Operator Sort }
 Goal: to sort the dataflow graph in such a way as to reduce the
 cost, or to assure locality of access for operands.
 Rationale: A simple optimizer is to order the instructions for
@@ -150,7 +151,7 @@ execution by permutation of the query components
 Approach:
 Impact:
 
-@emph{Singleton Set (SSoptimizer)}
+@emph{Singleton Set }
 Goal: to replace sets that are known to produce precisely
 one tuple.
 Rationale: Singleton sets can be represented by value pairs in the
@@ -158,7 +159,7 @@ MAL program, which reduces to a scalar expression.
 Approach: Identify a set variable for replacement.
 Impact:
 
-@emph{Range Propagation (RPoptimizer)}
+@emph{Range Propagation }
 Goal: look for constant ranges in select statements and
 propagate them through the code.
 Rationale: partitioned tables and views may give rise to
@@ -166,19 +167,19 @@ expressions that contain multiple selections over the
 same BAT. If their arguments are constant, the result
 of such selects can sometimes be predicted, or the
 multiple selections can be cascaded into a single operation.
-Impact: high, should be followed by AR and DC 
+Impact: high, should be followed by alias removal and dead code removal 
 
-@emph{Result Cacher (RCoptimizer)}
+@emph{Result Cacher }
 Goal: to reduce the processing cost by keeping track of expensive to
 compute intermediate results
 Rationale: 
 Approach: result caching becomes active after an instruction has been 
 evaluated. The result can be cached as long as its underlying operands
 remain unchanged. Result caching can be made transparent to the user, but
-affects the other QOTs
+affects the other quer optimizers.
 Impact: high
 
-@emph{Vector Execution (VEoptimizer)}
+@emph{Vector Execution }
 Goal: to rewrite a query to use a cache-optimal vector implementation
 Rationale: processing in the cache is by far the best you can get.
 However, the operands may far exceed the cache size and should be broken
@@ -186,7 +187,7 @@ into pieces followed by a staged execution of the fragments involved.
 Approach: replace the query plan with fragment streamers
 Impact:
 
-@emph{Staged Execution (SEoptimizer)}
+@emph{Staged Execution }
 Goal: to split a query plan into a number of steps, such that the first
 response set is delivered as quickly as possible. The remainder is only
 produced upon request.
@@ -198,7 +199,7 @@ This fragmentation could be determined upfront by the user or is derived
 from the query and database statistics.
 impact: high
 
-@emph{Code Parallizer (CPoptimizer)}
+@emph{Code Parallizer }
 Goal: to exploit parallel IO and cpu processing in both SMP and MPP settings.
 Rationale: throwing more resources to solve a complex query helps, provided
 it is easy to determine that parallel processing recovers the administrative
@@ -206,7 +207,7 @@ overhead
 Approach: every flow path segment can be handled by an independent process thread.
 Impact: high
 
-@emph{Query Evaluation Maps (QEMoptimizer)}
+@emph{Query Evaluation Maps }
 Goal: to avoid touching any tuple that is not relevant for answering a query.
 Rationale: the majority of work in solving a query is to disgard tuples of
 no interest and to find correlated tuples through join conditions. Ideally,
@@ -215,7 +216,7 @@ a map) to replace disgarding by map lookup.
 Approach: piggyback selection and joins as database fragmentation instructions
 Impact: high
 
-@emph{MAL Compiler (MCcompiler) (tactics)}
+@emph{MAL Compiler (tactics)}
 Goal: to avoid interpretation of functional expressions
 Rationale: interpretation of arithmetic expressions with an interpreter
 is always expensive. Replacing a complex arithmetic expressin with a
@@ -224,7 +225,7 @@ cached (MAL) queries
 Approach:
 Impact: high
 
-@emph{Dynamic Query Scheduler (DQscheduler) (tactics)}
+@emph{Dynamic Query Scheduler (tactics)}
 Goal: to organize the work in a way so as to optimize resource usage
 Rationale: straight interpretation of a query plan may not lead to the best
 use of the underlying resources. For example, the content of the runtime
@@ -234,7 +235,7 @@ takes over control. The scheduling step involves a re-ordering of the
 instructions within the boundaries imposed by the flow graph.
 impact: medium
 
-@emph{Aggregate Groups (AGoptimizer)}
+@emph{Aggregate Groups }
 Goal: to reduce the cost of computing aggregate expressions over times
 Rationale: many of our applications call for calculation of aggregates
 over dynamically defined groupings. They call for lengtly scans and it pays
@@ -243,14 +244,14 @@ later consumption (eg the optimizers)
 Approach:
 Impact: High
 
-@emph{Data Cube optimizer (DCoptimizer)}
+@emph{Data Cube optimizer}
 Goal: to recognize data cube operations
 Rationale: 
 Approach:
 Impact:
 
 
-@emph{Demand Driven Interpreter (DDoptimizer) (tactics)}
+@emph{Demand Driven Interpreter (tactics)}
 Goal: to use the best interpreter and libraries geared at the task at hand
 Rationale: Interpretation of a query plan can be based on different
 computational models. A demand driven interpretation starts at the intended 
@@ -259,7 +260,7 @@ possibly in a pipelined fashion. (Vulcano model)
 Approach: merely calls for a different implementation of the core operators
 Impact: high
 
-@emph{Iterator Strength Reduction (SRoptimizer)}
+@emph{Iterator Strength Reduction }
 Goal: to reduce the cost of iterator execution by moving instructions
 out of the loop.
 Rationale: although iteration at the MAL level should be avoided due to
@@ -269,7 +270,7 @@ work needed.
 Approach: inspect the flowgraph for each iterator and move instructions around.
 Impact: low
 
-@emph{Accumulator Evaluation (AEoptimizer)}
+@emph{Accumulator Evaluation }
 Goal: to replace operators with cheaper ones.
 Rationale: based on the actual state of the computation and the richness of
 the supporting libraries there may exists alternative routes to solve a query.
@@ -277,9 +278,9 @@ Approach: Operator rewriting depends on properties. No general technique.
 The first implementation looks at calculator expressions such as they
 appear frequently in the RAM compiler.
 Impact: high
-Prerequisite: should be called after CToptimizer to avoid clashes.
+Prerequisite: should be called after common term optimizer to avoid clashes.
 
-@emph{Code Inliner (CIoptimizer)}
+@emph{Code Inliner }
 Goal: to reduce the calling depth of the interpreter and to obtain
 a better starting point for code squeezing
 Rationale: substitution of code blocks (or macro expansion) leads to
@@ -289,7 +290,7 @@ This should be avoided for functions called repeatedly.
 Approach: called explicity to inline a module (or symbol)
 Impact: medium
 
-@emph{Code Outliner (COoptimizer)}
+@emph{Code Outliner }
 Goal: to reduce the program size by replacing a group with a single
 instruction
 Rationale: inverse macro expansion leads to
@@ -300,7 +301,7 @@ Approach: called explicitly to outline a module (or symbol)
 Impact: medium
 
 
-@emph{Garbage Collector (GCoptimizer)}
+@emph{Garbage Collector }
 Goal: to release resources as quickly as possible
 Rationale: BATs referenced from a MAL program keep resources locked.
 Approach: In cooperation with a resource scheduler we should identify those
@@ -308,7 +309,7 @@ that can be released quickly. It requires a forced gargabe collection call
 at the end of the BAT's lifespan.
 Impact: large
 
-@emph{Foreign Key replacements (FKoptimizer)}
+@emph{Foreign Key replacements }
 Goal: to improve multi-attribute joins over foreign key constraints
 Rationale: the code produced by the SQL frontend involves foreign key 
 constraints, which provides many opportunities for speedy code.
@@ -325,60 +326,60 @@ them in a preferred order of deployment.
 
 @multitable @columnfractions .12 .8
 @item Group A:
-@tab    Code Inliner (CIoptimizer)
+@tab    Code Inliner.
 @item 
-@tab    Constant Expression Evaluator. (CXoptimizer)
+@tab    Constant Expression Evaluator. 
 @item 
-@tab    Relational Expression Evaluator. (RXoptimizer)
+@tab    Relational Expression Evaluator. 
 @item 
-@tab    Strength Reduction (SRoptimizer)
+@tab    Strength Reduction.
 
 @item Group B:
-@tab    Common Term Optimizer (CToptimizer)
+@tab    Common Term Optimizer.
 @item 
-@tab    Query Evaluation Maps (QMoptimizer)
+@tab    Query Evaluation Maps.
 
 @item Group C:
-@tab    Join Path Optimizer (JPoptimizer)
+@tab    Join Path Optimizer.
 @item 
-@tab    Ranges Propagation (RPoptimizer)
+@tab    Ranges Propagation.
 @item 
-@tab    Operator Cost Reduction (OCoptimizer)
+@tab    Operator Cost Reduction.
 @item 
-@tab    Operator Sort (OSoptimizer)
+@tab    Operator Sort.
 @item 
-@tab    Foreign Key handling (FKoptimizer)
+@tab    Foreign Key handling.
 @item 
-@tab    Aggregate Groups (AGoptimizer)
+@tab    Aggregate Groups.
 @item 
-@tab    Data Cube optimizer (DCoptimizer)
+@tab    Data Cube optimizer.
 @item 
-@tab    Heuristic Rule Rewrite (HRoptimizer)
+@tab    Heuristic Rule Rewrite.
 
 @item group D:
-@tab    Code Parallizer (CPoptimizer)
+@tab    Code Parallizer.
 @item 
-@tab    Accumulator Evaliations (AEoptimizer)
+@tab    Accumulator Evaliations.
 @item 
-@tab    Result Cacher (RCoptimizer)
+@tab    Result Cacher.
 @item
-@tab	Replication Manager (RManager)
+@tab	Replication Manager.
 
 @item group E:
-@tab    MAL Compiler (MCcompiler)
+@tab    MAL Compiler.
 @item 
-@tab    Dynamic Query Scheduler (DQscheduler)
+@tab    Dynamic Query Scheduler.
 @item 
-@tab    Vector Execution (VEoptimizer)
+@tab    Vector Execution.
 @item 
-@tab    Staged Execution (SEoptimizer)
+@tab    Staged Execution.
 
 @item group F:
-@tab    Alias Removal (ARoptimizer)
+@tab    Alias Removal.
 @item 
-@tab    Dead Code Removal (DCoptimizer)
+@tab    Dead Code Removal.
 @item 
-@tab    Garbage Collector (GCoptimizer)
+@tab    Garbage Collector.
 @end multitable
 @-
 Alias removal can be applied after each other optimization step.
@@ -443,7 +444,6 @@ comment "Handle simple replacements";
 @h
 #include "mal.h"
 #include "mal_function.h"
-#include "mal_client.h"
 #include "mal_scenario.h"
 
 /* #define DEBUG_OPT_OPTIMIZER     show partial result */
@@ -459,8 +459,7 @@ comment "Handle simple replacements";
 #endif
 
 opt_export str MALoptimizer(Client c);
-opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec);
-opt_export int optimizerCheckFlow(MalBlkPtr mb, str name, int actions, lng usec);
+opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag);
 opt_export void resetOptimizerDebugger(void);
 opt_export str optimizeMALBlock(MalBlkPtr mb);
 opt_export void showOptimizerStep(int i, int flg);
@@ -509,7 +508,7 @@ The optimizer terminates when no optimizer transformer call remains.
 Note, all optimizer instructions are executed only once. This means that the
 instruction can be removed from further consideration. However, in the case
 that a designated function is selected for optimization (e.g. 
-CToptimizer(user,qry)) the pc is assumed 0. The first instruction always
+commonTerms(user,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
 
 To safeguard against incomplete optimizer implementations it
@@ -548,18 +547,29 @@ If one of the optimizers fails, we should not attempt others.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"
-#include "mal_namespace.h"
 
 
+@-
+The optimizerCheck is defensive. In some cases, e.g. coercion,
+a light check would be sufficient. Such a refinement is left
+for the future using an additional flag.
+@h
+#define OPT_CHECK_FLOW	1
+#define OPT_CHECK_TYPES 2
+#define OPT_CHECK_DECL 4
+#define OPT_CHECK_SPAN 8
+
+#define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL | OPT_CHECK_SPAN)
+@c
 int
-optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
+optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 {
 	Client cntxt = MCgetClient();
 	if( actions > 0){
-		chkFlow(mb);
-		chkTypes(cntxt->nspace, mb);
-		chkDeclarations(mb, TRUE);
-		setLifespan(mb);
+		if( flag & OPT_CHECK_FLOW) chkFlow(mb);
+		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->nspace, mb);
+		if( flag & OPT_CHECK_DECL) chkDeclarations(mb, TRUE);
+		if( flag & OPT_CHECK_SPAN) setLifespan(mb);
 	}
 	if( cntxt->debugOptimizer)
 		optimizerDebug(mb, name, actions, usec);
@@ -568,28 +578,8 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 		stream_printf(GDKout, "Optimizer %s failed\n", name);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
-	(void)usec;
 	return mb->errors;
 }
-int
-optimizerCheckFlow(MalBlkPtr mb, str name, int actions, lng usec)
-{
-	Client cntxt;
-	if( actions > 0){
-		cntxt= MCgetClient();
-		chkFlow(mb);
-		if( cntxt->debugOptimizer)
-			optimizerDebug(mb, name, actions, usec);
-	}
-	if (mb->errors) {
-		showErrors();
-		stream_printf(GDKout, "Optimizer %s failed\n", name);
-		printFunction(GDKout, mb, LIST_MAL_ALL);
-	}
-	(void)usec;
-	return mb->errors;
-}
-
 @-
 Limit the loop count in the optimizer.
 @c
@@ -605,11 +595,12 @@ optimizeMALBlock(MalBlkPtr mb)
 	int oldstop = mb->stop;
 #endif
 
+	optimizerInit();
 	do {
 		qot = 0;
 		for (pc = 0; pc < mb->stop; pc++) {
 			p = getInstrPtr(mb, pc);
-			if (getModuleId(p) && idcmp(getModuleId(p), "optimizer") == 0) {
+			if (getModuleId(p) && getModuleId(p) == optimizerRef) {
 				qot++;
 				if (p->fcn)
 					/* all optimizers should behave like patterns */
@@ -1294,6 +1285,6 @@ Should be done differently
 @h
 @:exportOptimizer(heuristics)@
 @c
-@:wrapOptimizer(heuristics)@
+@:wrapOptimizer(heuristics,OPT_CHECK_ALL)@
 
 @}

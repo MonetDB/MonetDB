@@ -160,7 +160,6 @@ OPTaliasStep(MalBlkPtr mb, int pc)
 	}
 	return pc;
 }
-@{
 
 static int
 OPTaliasesImplementation
@@ -183,5 +182,5 @@ OPTaliasesImplementation
 @h
 @:exportOptimizer(aliases)@
 @c
-@:wrapOptimizer(aliases)@
+@:wrapOptimizer(aliases,OPT_CHECK_ALL)@
 @}

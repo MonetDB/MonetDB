@@ -94,7 +94,6 @@ comment "Garbage collector optimizer";
 @c
 #include "opt_garbageCollector.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_namespace.h"
 #include "opt_prelude.h"
 
 @= releaseBAT
@@ -106,7 +105,7 @@ comment "Garbage collector optimizer";
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
 @c
-int
+static int
 OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit, done;
@@ -171,7 +170,6 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #endif
 	GDKfree(stmt);
-
 	return actions;
 }
 
@@ -179,5 +177,5 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @h
 @:exportOptimizer(garbageCollector)@
 @c
-@:wrapOptimizer(garbageCollector)@
+@:wrapOptimizer(garbageCollector,OPT_CHECK_ALL)@
 @}

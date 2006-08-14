@@ -113,7 +113,7 @@ OPTallowed(InstrPtr p)
 	return 1;
 }
 
-int
+static int
 OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k,  v, noop = 0, se;
@@ -248,4 +248,5 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @h
 @:exportOptimizer(factorize)@
 @c
-@:wrapOptimizer(factorize)@
+@:wrapOptimizer(factorize,OPT_CHECK_ALL)@
+@}

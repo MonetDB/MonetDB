@@ -69,7 +69,6 @@ comment "Perform singleton optimization";
 #include "opt_aliases.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-#include "mal_namespace.h"
 
 @-
 When we run into an instruction that can not be optimized,
@@ -144,7 +143,6 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 static str
 STevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
-	lng clk = GDKusec();
 	int i, j = 0, k, limit, doAR = 0;
 	InstrPtr p;
 	InstrPtr *old;
@@ -176,8 +174,9 @@ variables on the stack.
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		/* decode operations */
-		if (getName("bat", 3) == getModuleId(p)) {
-			if (getName("reverse", 7) == getFunctionId(p) && (k = STalias(getArg(p, 1), top, tuples) >= 0)) {
+		if (getModuleId(p) == batRef) {
+			if (getFunctionId(p) == reverseRef && 
+				(k = STalias(getArg(p, 1), top, tuples) >= 0)) {
 				setModuleId(p, NULL);
 				setFunctionId(p, NULL);
 				p->retc = p->argc = 2;
@@ -190,8 +189,10 @@ variables on the stack.
 				doAR++;
 			} else
 				goto STrepack;
-		} else if (getName("io", 2) == getModuleId(p)) {
-			if (getName("print", 5) == getFunctionId(p) && p->argc == 3 && (k = STalias(getArg(p, 1), top, tuples)) >= 0) {
+		} else if (getModuleId(p)== ioRef) {
+			if (getFunctionId(p) == printRef &&
+				p->argc == 3 && 
+				(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				if (tuples[k].packed == 0) {
 					getArg(p, 1) = tuples[k].hidx;
 					pushArgument(mb, p, tuples[k].tidx);
@@ -199,7 +200,7 @@ variables on the stack.
 					goto STrepack;
 			} else
 				goto STrepack;
-		} else if (getName("algebra", 7) == getModuleId(p)) {
+		} else if (getModuleId(p) == algebraRef) {
 			if (getName("markH", 5) == getFunctionId(p) && 
 				(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
@@ -215,7 +216,7 @@ variables on the stack.
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				doAR++;
-			} else if (getName("markT", 5) == getFunctionId(p) && 
+			} else if (getFunctionId(p) == markTRef && 
 						(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
 				setModuleId(p, NULL);
@@ -230,7 +231,7 @@ variables on the stack.
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				doAR++;
-			} else if (getName("join", 4) == getFunctionId(p)) {
+			} else if (getFunctionId(p) == joinRef) {
 				int k1 = STalias(getArg(p, 1), top, tuples);
 				int k2 = STalias(getArg(p, 2), top, tuples);
 
@@ -261,7 +262,7 @@ variables on the stack.
 			} else
 /*
 				getName("kunion",6)== getFunctionId(p) ||
-				getName("join",4)== getFunctionId(p) ||
+				getFunctionId(p) == joinRef ||
 				getName("fetchjoin",9)== getFunctionId(p) ||
 				getName("mergejoin",9)== getFunctionId(p) ||
 				getName("indexjoin",9)== getFunctionId(p) ||
@@ -269,7 +270,8 @@ variables on the stack.
 				getName("cartesianproduct",16)== getFunctionId(p) ||
 				getName("union",5)== getFunctionId(p) )
 */
-			if (getName("count", 5) == getFunctionId(p) && (k = STalias(getArg(p, 1), top, tuples)) >= 0) {
+			if (getFunctionId(p) == countRef && 
+				(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
 				/* count propagation */
 				setModuleId(p, NULL);
@@ -318,7 +320,6 @@ variables on the stack.
 	}
 	GDKfree(old);
 
-	optimizerCheck(mb, "mal.emptyset", 1, GDKusec() - clk);
 #ifdef DEBUG_OPT_SINGLETON
 	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
@@ -350,4 +351,5 @@ OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @h
 @:exportOptimizer(singleton)@
 @c
-@:wrapOptimizer(singleton)@
+@:wrapOptimizer(singleton,OPT_CHECK_ALL)@
+@}

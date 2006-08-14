@@ -415,5 +415,5 @@ At this stage we should close any open generators.
 @h
 @:exportOptimizer(generators)@
 @c
-@:wrapOptimizer(generators)@
-
+@:wrapOptimizer(generators,OPT_CHECK_ALL)@
+@}

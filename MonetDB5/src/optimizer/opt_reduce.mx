@@ -147,4 +147,5 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @h
 @:exportOptimizer(reduce)@
 @c
-@:wrapOptimizer(reduce)@
+@:wrapOptimizer(reduce,OPT_CHECK_ALL)@
+@}

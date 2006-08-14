@@ -86,7 +86,6 @@ comment "Produce an indented tree visualisation";
 #ifndef _OPT_QEP_
 #define _OPT_QEP_
 #include "mal.h"
-#include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
@@ -106,7 +105,6 @@ typedef struct QEPrecord {
 #endif /* _OPT_QEP_ */
 @c
 #include "opt_qep.h"
-
 
 static QEP
 QEPnew(int p, int c){
@@ -301,6 +299,5 @@ OPTdumpQEPImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @h
 @:exportOptimizer(dumpQEP)@
 @c
-@:wrapOptimizer(dumpQEP)@
-
+@:wrapOptimizer(dumpQEP,OPT_CHECK_ALL)@
 @}

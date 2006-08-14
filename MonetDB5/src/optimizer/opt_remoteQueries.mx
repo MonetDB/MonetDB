@@ -45,7 +45,7 @@ or the output for the user could be retrieved.
 An optimal solution depends on the actual resources 
 available at both ends and the time to ship the BAT. 
 
-The remote query optimizer @code{RQoptimizer} 
+The remote query optimizer 
 assumes that the remote site has sufficient
 resources to handle the instructions.
 For each remote query it creates a private connection.
@@ -107,24 +107,17 @@ comment "Resolve the multi-table definitions";
 
 /* #define DEBUG_OPT_REMOTE     show partial result */
 
-opt_export str RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str RQcall2str(MalBlkPtr mb, InstrPtr p);
-
-#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
-	getModuleId(X) && strcmp(getModuleId(X),M)==0)
 #endif
 
 @c
 #include "opt_remoteQueries.h"
-#include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_instruction.h"
 #include "mal_builder.h"
 @-
 The instruction sent is produced with a variation of call2str
 from the debugger.
 @c
-str
+static str
 RQcall2str(MalBlkPtr mb, InstrPtr p)
 {
 	int k,len=1;
@@ -182,7 +175,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		}
 		strcat(msg,");");
 	} 
-printf("#RQcall:%s\n",msg);
+/* printf("#RQcall:%s\n",msg);*/
 	return msg;
 }
 @- 
@@ -461,4 +454,5 @@ to be shipped should be simple.
 @h
 @:exportOptimizer(remoteQueries)@
 @c
-@:wrapOptimizer(remoteQueries)@
+@:wrapOptimizer(remoteQueries,OPT_CHECK_ALL)@
+@}

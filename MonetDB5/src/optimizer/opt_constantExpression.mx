@@ -55,7 +55,6 @@ comment "Evaluate constant expressions once.";
 #ifndef _OPT_CX_
 #define _OPT_CX_
 #include "mal_stack.h"
-#include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
 #include "opt_support.h"
@@ -75,7 +74,7 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 			return FALSE;
 	return ( getModuleId(p) == calcRef || getModuleId(p) == mmathRef);
 }
-int
+static int
 OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -85,9 +84,6 @@ OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) pci;
-
-	if( mb->errors) 
-		return 0;
 
 #ifdef DEBUG_OPT_CX
 	stream_printf(GDKout,"Constant expression optimizer started\n");
@@ -133,5 +129,6 @@ OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @h
 @:exportOptimizer(constantExpression)@
 @c
-@:wrapOptimizer(constantExpression)@
+@:wrapOptimizer(constantExpression,OPT_CHECK_ALL)@
+@}
 

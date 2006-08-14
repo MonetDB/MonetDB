@@ -57,46 +57,6 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 		replaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(getFunctionId(p), "int") == 0 && t == TYPE_int) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "str") == 0 && t == TYPE_str) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "oid") == 0 && t == TYPE_oid) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "lng") == 0 && t == TYPE_lng) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "sht") == 0 && t == TYPE_sht) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "bit") == 0 && t == TYPE_bit) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "dbl") == 0 && t == TYPE_dbl) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
-	if (strcmp(getFunctionId(p), "flt") == 0 && t == TYPE_flt) {
-		removeInstruction(mb, p);
-		replaceAlias(mb, i, mb->stop, a, b);
-		return 1;
-	}
 	return 0;
 }
 static int
@@ -122,8 +82,7 @@ OPTcoercionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 @-
 This optimizer affects the flow, but not the type and declaration
-structure
-	optimizerCheckFlow(mb, "mal.coercionOptimizer", actions, GDKusec() - clk);
+structure. A cheaper optimizer is sufficient.
 @c
 	return actions;
 }
@@ -131,5 +90,5 @@ structure
 @h
 @:exportOptimizer(coercion)@
 @c
-@:wrapOptimizer(coercion)@
+@:wrapOptimizer(coercion,OPT_CHECK_FLOW)@
 @}

@@ -85,12 +85,8 @@ comment "Experiment with partitioned databases";
 @c
 #include "opt_partitionedQuery.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_namespace.h"
 
-extern int BPTfindGrp(int bid);
-
-extern str BPTneedsExpansion(MalBlkPtr mb, int varid);
-extern int BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid);
+extern int OPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid);
 @-
 The first implementation takes a query block and replaces the first
 bat variable with its partitioned equivalent.
@@ -99,10 +95,9 @@ your way through the complete graph incrementally.
 They denote an inclusive range.
 A copy of the program block is made by default. This could be
 optimized away later.
-@{
 @c
 static str
-BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
+OPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
 {
 	InstrPtr *old, p;
 	int i, limit, actions = 0;
@@ -172,31 +167,9 @@ accumulated version.
 	if (bid != -1)
 		replaceAlias(mb, pcf, pcl, varid, bid);
 	/* and have to check the baked program */
-	optimizerCheck(mb,"partitionedQuery",1,GDKusec()-clk);
-	
+	optimizerCheck(mb,"partitionedQuery",1,GDKusec()-clk,OPT_CHECK_ALL);
 	return MAL_SUCCEED;
 }
-
-@-
-Calling the optimizer from the MAL context is currently
-focussed on replacing the BAT arguments only.
-@c
-int
-OPTpartitionedQueryImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i;
-	InstrPtr p;
-
-	(void) stk;
-	(void) pci;
-
-	p = getInstrPtr(mb, 0);
-	for (i = p->retc; i < p->argc; i++) {
-		BPTneedsExpansion(mb, p->argv[i]);
-	}
-	return 0; /* optimizer administration alread handled */
-}
-
 @-
 Not all BATs call for iterator expansion. Unfortunately
 we can not check this always at compile time, because
@@ -204,8 +177,8 @@ we need the actual BAT identifier.  Therefor the user should
 supply the variable instead.
 We
 @c
-str
-BPTneedsExpansion(MalBlkPtr mb, int varid)
+static str
+OPTneedsExpansion(MalBlkPtr mb, int varid)
 {
 	int tpe;
 	int first, last;
@@ -217,9 +190,9 @@ BPTneedsExpansion(MalBlkPtr mb, int varid)
 		last = mb->stop - 2;
 		printf("start first=%d last=%d \n", first, last);
 		for (; first < mb->stop && last < mb->stop;) {
-			if (BPTvalidFlowNetwork(mb, &first, &last, varid)) {
+			if (OPTvalidFlowNetwork(mb, &first, &last, varid)) {
 				printf("replace first=%d last=%d \n", first, last);
-				msg = BPTreplacement(mb, &first, &last, varid);
+				msg = OPTreplacement(mb, &first, &last, varid);
 				if (msg)
 					return msg;
 			} else {
@@ -230,6 +203,26 @@ BPTneedsExpansion(MalBlkPtr mb, int varid)
 		}
 	}
 	return MAL_SUCCEED;
+}
+
+@-
+Calling the optimizer from the MAL context is currently
+focussed on replacing the BAT arguments only.
+@c
+static int
+OPTpartitionedQueryImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	InstrPtr p;
+
+	(void) stk;
+	(void) pci;
+
+	p = getInstrPtr(mb, 0);
+	for (i = p->retc; i < p->argc; i++) {
+		OPTneedsExpansion(mb, p->argv[i]);
+	}
+	return 0; /* optimizer administration alread handled */
 }
 
 @}
@@ -247,7 +240,7 @@ be considered as safe to expand. It first skips to the
 next instruction that uses the variable mentioned.
 @c
 int
-BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
+OPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
 {
 	int i, k = 0, iocount = 0;
 	InstrPtr p;
@@ -286,10 +279,9 @@ BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
 	return iocount > 0;
 }
 
-@}
-
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(partitionedQuery)@
 @c
-@:wrapOptimizer(partitionedQuery)@
+@:wrapOptimizer(partitionedQuery,OPT_CHECK_ALL)@
+@}

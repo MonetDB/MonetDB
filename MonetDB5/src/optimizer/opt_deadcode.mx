@@ -158,7 +158,6 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = j = 1; i < mb->stop; i++) {
 		if (pcused[i]) {
 			mb->stmt[j] = mb->stmt[i];
-
 			j++;
 		} else {
 			p = getInstrPtr(mb, i);
@@ -175,5 +174,5 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @h
 @:exportOptimizer(deadcode)@
 @c
-@:wrapOptimizer(deadcode)@
+@:wrapOptimizer(deadcode,OPT_CHECK_ALL)@
 @}

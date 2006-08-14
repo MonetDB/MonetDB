@@ -71,8 +71,6 @@ comment "Estimate the cost of a relational expression";
 #include "mal.h"
 #include <math.h>
 #include "mal_interpreter.h"
-#include "mal_client.h"
-#include "mal_namespace.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
 
@@ -113,7 +111,7 @@ The cost formula are repetative
 The cost will be used in many places to make decisions.
 Access should be fast.
 @c
-int
+static int
 OPTgetCost(MalBlkPtr mb, int varid)
 {
 	int c;
@@ -121,7 +119,7 @@ OPTgetCost(MalBlkPtr mb, int varid)
 	c = *(getVarCost(varid));
 	return c;
 }
-int
+static int
 OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, *c, *c1, *c2, k;
@@ -192,4 +190,5 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @h
 @:exportOptimizer(costModel)@
 @c
-@:wrapOptimizer(costModel)@
+@:wrapOptimizer(costModel,OPT_CHECK_ALL)@
+@}

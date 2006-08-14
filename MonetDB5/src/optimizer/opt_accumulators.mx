@@ -65,12 +65,12 @@ comment "Replace calculations with accumulator model";
 #include "opt_accumulators.h"
 
 static int
-AEvalidInstruction(InstrPtr p){
-	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc") == 0)
+OPTvalidInstruction(InstrPtr p){
+	if (getModuleId(p)== batcalcRef )
 		return strcmp(getFunctionId(p),"init") != 0;
 	if (getModuleId(p) && strcmp(getModuleId(p), "array") == 0)
 			return strcmp(getFunctionId(p),"grid") != 0;
-	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc"))
+	if (getModuleId(p)== batcalcRef)
 		return 0;
 	return 0;
 }
@@ -106,7 +106,7 @@ at the end of the optimization attempt.
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p) == NULL)
 			continue;
-		if( !AEvalidInstruction(p) ) continue;
+		if( !OPTvalidInstruction(p) ) continue;
 
 		if (p->argc == 3) {
 			/* binary/unary operation, check first argument */
@@ -116,7 +116,7 @@ at the end of the optimization attempt.
 			valid= getEndLifespan(mb,a) <= i;
 
 #ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(GDKout, "Found AE candidate ");
+			stream_printf(GDKout, "Found accumulation candidate ");
 			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
 				i, b,a,getArg(p,2), valid, isaBatType(v->type));
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
@@ -185,7 +185,7 @@ at the end of the optimization attempt.
 
 			if (isaBatType(v->type)  && valid){
 #ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(GDKout, "Found unary AE candidate\n");
+				stream_printf(GDKout, "Found unary accumulation candidate\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 				pushArgument(mb, p, a);
@@ -216,5 +216,5 @@ at the end of the optimization attempt.
 @h
 @:exportOptimizer(accumulators)@
 @c
-@:wrapOptimizer(accumulators)@
+@:wrapOptimizer(accumulators,OPT_CHECK_ALL)@
 @}

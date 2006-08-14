@@ -86,8 +86,6 @@ a valid program.
 @c
 #include "opt_multiplex.h"
 #include "mal_interpreter.h"
-#include "mal_instruction.h"
-
 @-
 The generic solution to the multiplex operators is to translate
 them to a MAL loop. 
@@ -240,8 +238,6 @@ find the actual arguments at the proper place of the callee.
 	return msg;
 }
 
-static str optimizerRef;
-static str multiplexRef;
 @-
 This optimizer is directly called for the current routine.
 It is more a code generator then an optimizer per se.
@@ -256,11 +252,6 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,j, limit,doit= 0, init=0;
 	lng clk=GDKusec();
 
-	optimizerInit();
-	if( optimizerRef == 0) 
-		optimizerRef = putName("optimizer", 9);
-	if( multiplexRef == 0) 
-		multiplexRef = putName("multiplex", 9);
 	(void) stk;
 	(void) pci;
 	old = mb->stmt;
@@ -284,9 +275,8 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( init){
 		GDKfree(old);
-		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk);
+		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk,OPT_CHECK_ALL);
 	}
 	return MAL_SUCCEED;
 }
-
 @}
