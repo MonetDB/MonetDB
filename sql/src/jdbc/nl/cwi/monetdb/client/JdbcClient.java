@@ -546,6 +546,7 @@ copts.produceHelpMessage()
 					try {
 						executeQuery(query, stmt, out);
 					} catch (SQLException e) {
+						out.flush();
 						if (hasFile) {
 							System.err.println("Error on line " + i + ": " + e.getMessage());
 						} else {
@@ -598,7 +599,7 @@ copts.produceHelpMessage()
 						out.println("\\d<obj> describes the given table or view");
 					} else if (dbmd != null && qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
-						if (object.endsWith(";"))
+						if (scolonterm && object.endsWith(";"))
 							object = object.substring(0, object.length() - 1);
 						if (!object.equals("")) {
 							int dot;
@@ -672,6 +673,7 @@ copts.produceHelpMessage()
 						try {
 							executeQuery(query, stmt, out);
 						} catch (SQLException e) {
+							out.flush();
 							if (hasFile) {
 								System.err.println("Error on line " + i + ": " + e.getMessage());
 							} else {
