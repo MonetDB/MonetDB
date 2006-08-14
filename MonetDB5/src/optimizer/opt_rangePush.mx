@@ -121,7 +121,7 @@ OPTrangePushImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return 0;
 
 #ifdef DEBUG_OPT_RANGEPUSH
-	printf("Cascade optimizer started\n");
+	printf("Range select optimizer started\n");
 #endif
 	(void) stk;
 	(void) pci;
@@ -161,7 +161,8 @@ side-effect since it was bound to X.
 						VALptr( &getVarConstant(mb,y)) ) > 0){
 					getArg(p,2)= range[x].lcst;
 					z= range[x].srcvar;
-					if( getArg(p,1) == x && range[z].lastupdate == range[z].lastrange){
+					if( getArg(p,1) == x && 
+						range[z].lastupdate == range[z].lastrange){
 						getArg(p,1) = z;
 						actions++;
 					}
@@ -208,7 +209,7 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 				z =ATOMcmp( getVarType(mb,y),
                         VALptr( &getVarConstant(mb,x)),
                         VALptr( &getVarConstant(mb,y)));
-				x= p->argc >= 4;
+				x=  p->argc > 4;
 				x= x && isConstant(mb,getArg(p,4));
 				x= x && isConstant(mb,getArg(p,5));
 				x= x && getVarConstant(mb,getArg(p,4)).val.cval[0];
