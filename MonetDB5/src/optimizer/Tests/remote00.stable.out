@@ -22,12 +22,7 @@ stdout of test 'remote00` in directory 'src/optimizer` itself:
 # dbname:db2
 # Visit http://monetdb.cwi.nl/ for further information
 >>>>>[ "12346" ]
->>#RQcall:#b:bat[:int,:int] := bbp.bind("rbat":str);
-#RQcall:#c:= algebra.select(b,0:int,12:int);
-#RQcall:#d:= algebra.select(b,5:int,10:int);
-#RQcall:#e:= algebra.select(d,low,7:int);
-#RQcall:#i:= aggr.count(e);
-#-----------------#
+>>#-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
