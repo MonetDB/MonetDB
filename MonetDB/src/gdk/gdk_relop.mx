@@ -2468,7 +2468,9 @@ order columns by their size (smallest first)
 
 		/* insertion sort on size */
 		for (j = 0; j < i; j++) {
-			if (COLSIZE(reorder[j]) > COLSIZE(c + i)) {
+			if (COLSIZE(reorder[j]) > COLSIZE(c + i) ||
+			    /* in case of equal size, we prefer dense over non-dense */
+			    (COLSIZE(reorder[j]) == COLSIZE(c + i) && !BAThdense(reorder[j]->b) && BAThdense((c + i)->b))) {
 				for (k = i; k > j; k--) {
 					reorder[k] = reorder[k - 1];
 				}
