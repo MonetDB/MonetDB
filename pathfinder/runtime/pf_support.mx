@@ -426,7 +426,6 @@ const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
-var kind_idx := true;
 var kind_debug := false;
 
 proc addValues(bat[void,any::1] container, any::1 delta) : oid
@@ -1230,28 +1229,14 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 @
 @= no_pre
 if (kind_debug) printf("no_pre_@1_@2_@3_@4\n");
-        # this code ensures the correct handling of updates in path steps
-	cands := ws.fetch(PRE_SIZE).fetch(contID).uselect(0,int(nil)).reverse();
-	cands := cands.chk_order();
+        # no selection: cands is everything
+	cands := ws.fetch(PRE_SIZE).fetch(contID).mirror();
 @
 @= kind_pre
 {
-   if (kind_idx) {
-	var map_pid := ws.fetch(MAP_PID).fetch(contID);
- 	var nid_rid := ws.fetch(NID_RID).fetch(contID);
-	var nid_    := ws.fetch(KND_NID.find(@1)).fetch(contID).reverse().project(nil);
-	cands := nid_.reverse().leftfetchjoin(nid_rid).[swizzle](map_pid);
-if (kind_debug) printf("kind_pre_@1_@2_@3_@4 cands=%d table=%d\n", count(cands), count(nid_rid));
-
-	if ((count(cands) > 1) and not(ordered(reverse(cands)))) {
-		cands := cands.reverse().access(BAT_WRITE).order().access(BAT_READ).reverse();
-	}
-	@:shrink_code@
-    } else {
- 	cands := ws.fetch(PRE_KIND).fetch(contID);
-        kind_test := kind;
+     cands := ws.fetch(PRE_KIND).fetch(contID);
+     kind_test := kind;
 if (kind_debug) printf("kind_pre_@1_@2_@3_@4 cands=%d table=%d\n", count(ws.fetch(KND_NID.find(@1)).fetch(contID)), count(cands));
-    }
 }
 @
 @= nsloc_pre
@@ -5892,7 +5877,7 @@ CMDnil@1(int *res, int *v1, int *v2)
 @:nilarithC(plus,+)@
 
 bat* pf_support_prelude() {
-    MT_lock_init(&pf_runtime_lock);
+    MT_init_lock(pf_runtime_lock);
     return NULL;
 }
 

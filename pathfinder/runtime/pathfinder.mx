@@ -2573,6 +2573,7 @@ xquery_parse_numeric(char* p,
  * from a cached MIL tree. Otherwise use pathfinder to compile. Returns error string (NULL if ok).
  */
 static char xquery_too_complex[80] = "xquery_prepare: xquery is too complex for cached execution.\n";
+#define xquery_nondescriptive_error ((char*) -1)
 static char*
 xquery_prepare(xquery_client *ctx, 
                int msec, 
@@ -2752,26 +2753,26 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-    /* if (err && err != xquery_function_error) 
-     * we could return that error here, but it is more consistent to let the PF 
-     * compiler give out all error messages ("why make error queries fast?").
+    /* if (err != NULL) we could return that error here, but it is more consistent 
+     * to let the PF compiler give out all error messages ("why make error queries fast?").
      *
-     * we can re-enable this if we (ever) decide to create a low-resource XQ
-     * implementation that only supports prepared queries and lacks a linked
-     * in PF compiler.  
+     * we can re-enable immediate return if we (ever) decide to create a low-resource XQ
+     * implementation that only supports prepared queries and lacks a linked PF compiler.  
      */
-    if (err && err != xquery_function_error) {
+    if (err == xquery_function_error) /* MIL execution failed, do not generate error in PF compiler */
+       return xquery_nondescriptive_error;
+    if (err) {
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
         /* compile and execute the query (minus module imports) */
-        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3, NULL)) 
-                err = NULL; /* in case of execution err, it stays -1 */
+        err = xquery_nondescriptive_error;
+        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3, NULL)) err = NULL;
         if (sec1) free(sec1);
         if (sec2) free(sec2);
         if (sec3) free(sec3);
     } 
-    return err?((char*)-1):NULL; /* -1=error, NULL=OK */
+    return err; 
 }
 
 /*
@@ -2848,7 +2849,7 @@ xquery_client_engine(mapi_client *fc )
                 }
             }
             err = xquery_prepare(ctx, msec, p, xquery);
-            if (err && err != (char*) -1) {
+            if (err && err != xquery_nondescriptive_error) {
                 /* report errors back to client */
                 stream_write(ctx->fderr, err, strlen(err), 1);
             }
@@ -2941,7 +2942,7 @@ CMDxquery(Cntxt stk,
                 stream *bak = GDKout;
                 THRsetdata(0,s);
                 err = xquery_prepare(ctx, msec, mode, xquery);
-                if (err == NULL) {
+                if (err == NULL || err == xquery_nondescriptive_error) {
                     res->val.sval = GDKmalloc(b->pos+1);
                     if (res->val.sval) {
                         memcpy(res->val.sval, b->buf, b->pos);
@@ -2966,7 +2967,7 @@ CMDxquery(Cntxt stk,
     xquery_client_free_(ctx);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
     if (err) {
-	GDKerror((err==(char*)-1)?res->val.sval:err);
+	GDKerror((err==xquery_nondescriptive_error)?res->val.sval:err);
 	VALclear(res);
         return GDK_FAIL;
     } 

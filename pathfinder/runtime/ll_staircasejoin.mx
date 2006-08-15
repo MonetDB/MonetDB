@@ -68,11 +68,6 @@ const int PF_SOFTWARE_PREFETCH = 128;
     }\
 }
 
-@= bat2array
-    /* definition for "array-like" access on tails of void-headed BAT */
-    /* ! FIXME: works only if BUNsize(@1) == sizeof(@3) !!!!!!!! */
-    @2 = ((@3*) BUNtloc(@1, BUNfirst(@1))) - (int)@1->hseqbase;
-@c
 
 /*******************************************************************/
 
@@ -81,26 +76,26 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_head(descendant)@
     self = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
-@:ll_main(descendant)@
+@:ll_main(descendant, (size[pre] & (1<<31)))@
 
 /* DESCENDANT-OR-SELF STEP */
 @:ll_head(descendant_or_self)@
     self = TRUE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
-@:ll_main(descendant)@
+@:ll_main(descendant, (size[pre] & (1<<31)))@
 
 /* CHILD STEP */
 @:ll_proto(child)@
 @:ll_head(child)@
     trivial_cases = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
-@:ll_main(child)@
+@:ll_main(child, FALSE)@
 
 /* Templates / Wrappers */
 
 @= ll_proto
 static int
-ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
+ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
 	int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test);
 @
 @= ll_head
@@ -122,7 +117,9 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
     bit trivial_cases = TRUE;
     chr *kind = NULL, kind_test = *_kind_test;
     BAT *res = NULL;
+    BAT *del = NULL;
     size_t res_size = 0;
+    int *size;
 
     /* --------------------------- checks ---------------------------------- */
 
@@ -167,6 +164,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         GDKerror("%s: head (oid) of pre_size must NOT be materialized.\n", name);
         @:ll_return(GDK_FAIL)@
     }
+
     if (kind_test != chr_nil) {
         if ((cand_bat->ttype != TYPE_chr) ||                       /* it contains kinds */
             (BATcount(cand_bat) != BATcount(pre_size)) ||    /* is the entire pre table */
@@ -177,24 +175,19 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         }
         kind = (chr*) BUNfirst(cand_bat);
         cand_bat = NULL;
-    } else if (ATOMtype(cand_bat->ttype) != TYPE_oid) {
-        GDKerror("%s: OID type expected in tail of cand_bat.\n", name);
+    } else if (BATcount(cand_bat) == BATcount(pre_size)) {
+        cand_bat = NULL; /* HACK: no selection */
+    } else if (!(BATtordered(cand_bat) & 1)) {
+        GDKerror("%s: cand_bat must be ordered on tail.\n", name);
         @:ll_return(GDK_FAIL)@
-    } else 
-    if (BATcount(cand_bat) != BATcount(pre_size)) {
-        if (BATtvoid(cand_bat) && cand_bat->tseqbase == oid_nil)
-        {
-            GDKerror("%s: tail of cand_bat must not be VOID-NIL.\n", name);
+    } else if (cand_bat->ttype == TYPE_void) {
+        /* rare case: an oid candidate-list that is void-dense.  materialize it */ 
+        del = BATnew(TYPE_void, TYPE_oid, BATcount(cand_bat));
+        if (del == NULL || (cand_bat->tseqbase != oid_nil && BATins(del, cand_bat, FALSE) == NULL)) 
             @:ll_return(GDK_FAIL)@
-        }
-        if (!(BATtordered(cand_bat) & 1))
-        {
-            GDKerror("%s: cand_bat must be ordered on tail.\n", name);
-            @:ll_return(GDK_FAIL)@
-        }
-    } else {
-        cand_bat = NULL;
+        cand_bat = del;
     }
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
 
     /* --------------------------- empty result ---------------------------- */
 
@@ -227,13 +220,12 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
 
         oid fst_ctx = *(oid*)BUNtail(ctx_bat, BUNfirst(ctx_bat));
         oid lst_ctx = 0;
-        BUN dst = 0, p = 0;
+        BUN dst = 0;
         size_t max_size = 0;
-        int bs_res = 0, sze = 0;
+        int bs_res = 0;
 
-        BUNfndVOID(p, pre_size, &fst_ctx);
-        sze = *(int*)BUNtloc(pre_size, p);
-        max_size = res_size = (size_t)((sze&GDK_int_max) + (int)self);
+        assert((size[fst_ctx] & (1<<31)) == 0);
+        max_size = res_size = (size_t)(size[fst_ctx] + (int)self);
         if ( cand_bat ) {
             if ( BATcount(cand_bat) < res_size ) {
                 res_size = BATcount(cand_bat);
@@ -253,129 +245,58 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         assert(!res->hloc);
         bs_res = BUNsize(res);
         if ( cand_bat ) {
-            if ( BATtdense(cand_bat) ) {
-                oid cand = 0;
-                oid fst_cand = MAX(fst_ctx, cand_bat->tseqbase);
-                oid lst_cand = MIN(lst_ctx, cand_bat->tseqbase + BATcount(cand_bat));
+            BUN cand = 0;
+            int bs_cand_bat = BUNsize(cand_bat);
+            BUN fst_cand = BUNtloc(cand_bat, SORTfndfirst_oid(cand_bat, &fst_ctx));
+            BUN lst_cand = BUNtloc(cand_bat, BUNlast(cand_bat));
                 
-                if ( one_iter ) {
-                    oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
+            if ( one_iter ) {
+                oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
-                    for (cand = fst_cand ; cand < lst_cand ; cand++ ) {
-                        *(oid*)dst              = iter;
-                        *(oid*)(dst+SIZEOF_OID) = cand;
-                        dst += bs_res;
-                    }
-                } else 
-                if ( BATtdense(iter_bat) ) {
-                    oid iter = 0;
-                    oid fst_iter = iter_bat->tseqbase;
-                    oid lst_iter = iter_bat->tseqbase + BATcount(iter_bat);
-
-                    for (cand = fst_cand ; cand < lst_cand ; cand++ ) {
-                        for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
-                            *(oid*)dst              = iter;
-                            *(oid*)(dst+SIZEOF_OID) = cand;
-                            dst += bs_res;
-                        }
-                    }
-                } else 
-                /* !BATtdense(iter_bat) */ {
-                    BUN iter = 0;
-                    int bs_iter_bat = BUNsize(iter_bat);
-                    BUN fst_iter = BUNtloc(iter_bat, BUNfirst(iter_bat));
-                    BUN lst_iter = BUNtloc(iter_bat, BUNlast(iter_bat));
-                    
-                    for (cand = fst_cand ; cand < lst_cand ; cand++ ) {
-                        for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
-                            *(oid*)dst              = *(oid*)iter;
-                            *(oid*)(dst+SIZEOF_OID) = cand;
-                            dst += bs_res;
-                        }
-                    }
+                for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
+                    *(oid*)dst              = iter;
+                    *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
+                    dst += bs_res;
                 }
             } else 
-            /* !BATtdense(cand_bat) */ {
-                BUN cand = 0;
-                int bs_cand_bat = BUNsize(cand_bat);
-                BUN fst_cand = BUNtloc(cand_bat, SORTfndfirst_oid(cand_bat, &fst_ctx));
-                BUN lst_cand = BUNtloc(cand_bat, BUNlast(cand_bat));
-                
-                if ( one_iter ) {
-                    oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
-
-                    for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
-                        *(oid*)dst              = iter;
+            {   /* multiple iters */
+                BUN iter = 0;
+                int bs_iter_bat = BUNsize(iter_bat);
+                BUN fst_iter = BUNfirst(iter_bat);
+                BUN lst_iter = BUNlast(iter_bat);
+                    
+                for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
+                    for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
+                        *(oid*)dst              = *(oid*)BUNtail(iter_bat,iter);
                         *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
                         dst += bs_res;
                     }
-                } else 
-                if ( BATtdense(iter_bat) ) {
-                    oid iter = 0;
-                    oid fst_iter = iter_bat->tseqbase;
-                    oid lst_iter = iter_bat->tseqbase + BATcount(iter_bat);
-
-                    for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
-                        for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
-                            *(oid*)dst              = iter;
-                            *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
-                            dst += bs_res;
-                        }
-                    }
-                } else 
-                /* !BATtdense(iter_bat) */ {
-                    BUN iter = 0;
-                    int bs_iter_bat = BUNsize(iter_bat);
-                    BUN fst_iter = BUNtloc(iter_bat, BUNfirst(iter_bat));
-                    BUN lst_iter = BUNtloc(iter_bat, BUNlast(iter_bat));
-                    
-                    for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
-                        for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
-                            *(oid*)dst              = *(oid*)iter;
-                            *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
-                            dst += bs_res;
-                        }
-                    }
                 }
             }
-        } else
-        /* !cands */ {
+        } else 
+        {   /* !cands */ 
             oid pre = 0;
             
             if ( one_iter ) {
                 oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
-                    if ((kind == NULL) || (kind[pre] == kind_test)) continue;
+                    if ((kind && kind[pre] == kind_test) || @2) continue; 
                     *(oid*)dst              = iter;
                     *(oid*)(dst+SIZEOF_OID) = pre;
                     dst += bs_res;
                 }
             } else 
-            if ( BATtdense(iter_bat) ) {
-                oid iter = 0;
-                oid fst_iter = iter_bat->tseqbase;
-                oid lst_iter = iter_bat->tseqbase + BATcount(iter_bat);
-
-                for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
-                    if ((kind == NULL) || (kind[pre] == kind_test))
-                    for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
-                        *(oid*)dst              = iter;
-                        *(oid*)(dst+SIZEOF_OID) = pre;
-                        dst += bs_res;
-                    }
-                }
-            } else 
-            /* !BATtdense(iter_bat) */ {
+            {   /* multiple iters */
                 BUN iter = 0;
                 int bs_iter_bat = BUNsize(iter_bat);
-                BUN fst_iter = BUNtloc(iter_bat, BUNfirst(iter_bat));
-                BUN lst_iter = BUNtloc(iter_bat, BUNlast(iter_bat));
+                BUN fst_iter = BUNfirst(iter_bat);
+                BUN lst_iter = BUNlast(iter_bat);
                 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
-                    if ((kind == NULL) || (kind[pre] == kind_test))
+                    if ((kind && kind[pre] == kind_test) || @2) continue; 
                     for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
-                        *(oid*)dst              = *(oid*)iter;
+                        *(oid*)dst              = *(oid*)BUNtail(iter_bat,iter);
                         *(oid*)(dst+SIZEOF_OID) = pre;
                         dst += bs_res;
                     }
@@ -397,7 +318,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
             @:ll_return(GDK_FAIL)@
         }
 
-        if (ll_@1(&res, iter_bat, ctx_bat, pre_size, cand_bat, 
+        if (ll_@1(&res, iter_bat, ctx_bat, cand_bat, size,
                   height, min_iter, max_iter, no_iter_order, self, kind, kind_test) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
@@ -441,9 +362,10 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
 @
 
 @= ll_return
+{   if (del) BBPreclaim(del);
     if (res && (@1 == GDK_FAIL))
         BBP_unfix_reclaim(res);
-    return @1;
+    return @1; }
 @c
 
 /* ============================== Tools =================================== */
@@ -489,12 +411,12 @@ struct stack_item_C {
 };
 
 static int
-ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
+ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
              int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test)
 {
     BAT *res = *result;
     si_C *stack = 0;
-    int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, *size = 0;
+    int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0;
     oid pre = 0, ctx = 0, cur_ctx = 0;
     BUN cur_bun = 0, iter_bun = 0, ctx_bun = 0, ctx_last = 0;
     BUN cand_cur = cand_bat?BUNtloc(cand_bat,BUNfirst(cand_bat)):NULL;
@@ -514,7 +436,6 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
     }
     stack_top = 0;
 
-    @:bat2array(pre_size,size,int)@
 
     iter_bunsize = BUNsize(iter_bat);
     ctx_bunsize = BUNsize(ctx_bat);
@@ -594,41 +515,40 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
        (either descendant ctx node or end of scope) and prunes
        all subtree which can't hold any matches */
     if (cand_bat) {
-        if (BATtdense(cand_bat)) {
-            oid fst_pre = MAX(pre, cand_bat->tseqbase);
-            oid lst_pre = MIN(@1 , cand_bat->tseqbase + BATcount(cand_bat) - 1);
-            for (; pre <= @1 && pre <  fst_pre; pre += (size[pre]&GDK_int_max) + 1) {
-            };
-            for (;              pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
-                @:inner_loop_child_body@
-            }
-        } else {
-            if (cand_cur <= cand_lst) {
-                BUN fst_pre = cand_cur;
-                oid lst_pre = MIN(@1, *(oid*)cand_lst);
+        if (cand_cur <= cand_lst) {
+            BUN fst_pre = cand_cur;
+            oid lst_pre = MIN(@1, *(oid*)cand_lst);
 
-                for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += (size[pre]&GDK_int_max) + 1) {};
-                for (;              pre <=        lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
-                    /* poor man's binary search / exploiting forward scan */
-                    while (fst_pre+4096 <= cand_lst && *(oid*) (fst_pre+4096) < pre)
-                        fst_pre += 4096;
-                    while (fst_pre+256 <= cand_lst && *(oid*) (fst_pre+256) < pre)
-                        fst_pre += 256;
-                    while (fst_pre+16 <= cand_lst && *(oid*) (fst_pre+16) < pre)
-                        fst_pre += 16;
-                    while (fst_pre <= cand_lst && *(oid*)fst_pre < pre)
-                        fst_pre += BUNsize(cand_bat);
-                    if (fst_pre <= cand_lst && *(oid*)fst_pre == pre) {
-                            @:inner_loop_child_body@
-                            fst_pre += BUNsize(cand_bat);
-                    }
-                }
-                cand_cur = fst_pre;
+            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) { 
+                assert((size[pre] & (1<<31)) == 0);
             }
+            for (;              pre <=        lst_pre; pre += size[pre] + 1) {
+                assert((size[pre] & (1<<31)) == 0);
+
+                /* poor man's binary search / exploiting forward scan */
+                while (fst_pre+104876 <= cand_lst && *(oid*) (fst_pre+104876) < pre)
+                    fst_pre += 104876; /* this avoids mmapped I/O */
+                while (fst_pre+32768 <= cand_lst && *(oid*) (fst_pre+32768) < pre)
+                    fst_pre += 32768;
+                while (fst_pre+1024 <= cand_lst && *(oid*) (fst_pre+1024) < pre)
+                    fst_pre += 1024;
+                while (fst_pre+32 <= cand_lst && *(oid*) (fst_pre+32) < pre)
+                    fst_pre += 32;
+                while (fst_pre <= cand_lst && *(oid*)fst_pre < pre)
+                    fst_pre += BUNsize(cand_bat);
+                if (fst_pre <= cand_lst && *(oid*)fst_pre == pre) {
+                        @:inner_loop_child_body@
+                        fst_pre += BUNsize(cand_bat);
+                }
+            }
+            cand_cur = fst_pre;
         }
-        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {};
+        for (; pre <= @1; pre += size[pre] + 1) {
+            assert((size[pre] & (1<<31)) == 0);
+        }
     } else {
-        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+        for (; pre <= @1; pre += size[pre] + 1) {
+            assert((size[pre] & (1<<31)) == 0);
             @:inner_loop_child_body(if(kind[pre]==kind_test))@
         }
     }
@@ -683,7 +603,7 @@ struct stack_item_D {
 #define onstack_get(b)	(onstack[(b)>>OST_shift] &   (((OST)1)<<((b)&OST_mask)))
 
 static int
-ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
+ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
                   int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test)
 {
     BAT *res = *result;
@@ -692,7 +612,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *c
     OST *onstack = 0;
     oid *iters_on_stack = 0;
     int stack_size = 0, onstack_size = 0, iters_on_stack_size = 0, j = 0;
-    int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, *size = 0, bs_cnd = 0;
+    int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, bs_cnd = 0;
     oid pre = 0, ctx = 0, iter_idx = 0, cnd = 0, lst_cnd = GDK_oid_max;
     BUN iter_bun = 0, ctx_bun = 0, ctx_last = 0, cnd_bun = 0;
     oid num_iters = (max_iter - min_iter) + 1, i;
@@ -703,26 +623,13 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *c
     
     (void)height;
 
-/*
-BATprint(pre_size);
-BATprint(ctx_bat);
-BATprint(cand_bat);
-*/
-
     if (cand_bat) {
-        if (BATtdense(cand_bat)) {
-            cnd = cand_bat->tseqbase;
-            lst_cnd = cnd + BATcount(cand_bat) - 1;
-        } else {
-            bs_cnd  = BUNsize(cand_bat);
-            cnd_bun = BUNtloc(cand_bat, BUNfirst(cand_bat));
-            cnd     = *(oid*)cnd_bun;
-            lst_cnd = *(oid*)BUNtloc(cand_bat, BUNlast(cand_bat) - bs_cnd);
-        }
+        bs_cnd  = BUNsize(cand_bat);
+        cnd_bun = BUNtloc(cand_bat, BUNfirst(cand_bat));
+        cnd     = *(oid*)cnd_bun;
+        lst_cnd = *(oid*)BUNtloc(cand_bat, BUNlast(cand_bat) - bs_cnd);
     }
 
-    @:bat2array(pre_size,size,int)@
-    
     for (i=OST_mask; i; i>>=1) OST_shift++;
 
     /* stack for context set nodes will never grow over number of iters */
@@ -734,7 +641,7 @@ BATprint(cand_bat);
     }
     stack_top = 0;
 
-    /* bitvektor to maintain which iters are currently on the stack */
+    /* bitvector to maintain which iters are currently on the stack */
     onstack_size = OST_bytes * ((num_iters >> OST_shift) + 1);
     onstack = (OST*)GDKmalloc(onstack_size);
     if (onstack == NULL) {
@@ -891,35 +798,21 @@ BATprint(cand_bat);
         dst = BUNlast(res);
         assert(!res->hloc);
         if (cand_bat) {
-            if (BATtdense(cand_bat)) {
-                oid cur_pre = 0;
-                oid fst_pre = cnd;
-                oid lst_pre = MIN(@1 , lst_cnd);
+            BUN cur_pre = 0;
+            oid lst_ctx = @1;
+            BUN fst_pre = cnd_bun;
+            BUN lst_pre = BUNtloc(cand_bat, BUNlast(cand_bat));
                             
-                for (cur_pre = fst_pre ; cur_pre <= lst_pre ; cur_pre++ ) {
-                    for (j = 0 ; j < stack_top ; j++ ) {
-                        *(oid*)dst              = iters_on_stack[j];
-                        *(oid*)(dst+SIZEOF_OID) = cur_pre;
-                        dst += bs_res;
-                    }
-                }
-            } else {
-                BUN cur_pre = 0;
-                oid lst_ctx = @1;
-                BUN fst_pre = cnd_bun;
-                BUN lst_pre = BUNtloc(cand_bat, BUNlast(cand_bat));
-                            
-                for (cur_pre = fst_pre ; cur_pre < lst_pre && *(oid*)cur_pre <= lst_ctx; cur_pre += bs_cnd ) {
-                    for (j = 0 ; j < stack_top ; j++ ) {
-                        *(oid*)dst              = iters_on_stack[j];
-                        *(oid*)(dst+SIZEOF_OID) = *(oid*)cur_pre;
-                        dst += bs_res;
-                    }
+            for (cur_pre = fst_pre ; cur_pre < lst_pre && *(oid*)cur_pre <= lst_ctx; cur_pre += bs_cnd ) {
+                for (j = 0 ; j < stack_top ; j++ ) {
+                    *(oid*)dst              = iters_on_stack[j];
+                    *(oid*)(dst+SIZEOF_OID) = *(oid*)cur_pre;
+                    dst += bs_res;
                 }
             }
         } else {
             for ( ; pre <= @1 ; pre++ ) {
-                if ((kind == NULL) || (kind[pre] == kind_test)) 
+                if ((kind && kind[pre] == kind_test) || (size[pre] & (1<<31))) continue; 
                 for (j = 0 ; j < stack_top ; j++ ) {
                     *(oid*)dst              = iters_on_stack[j];
                     *(oid*)(dst+SIZEOF_OID) = pre;
