@@ -32,7 +32,7 @@
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mg:= mguide.open("auctions.xml");
 b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
-# create the context node set using the tail of the open_auctions/open_auction
+# create the context node set using the tail of the [open_auctions,open_auction]
 br:= bat.reverse(b0);
 b := bat.mirror(br);
 
@@ -43,13 +43,16 @@ mr:= mguide.new("result");
 x0:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder");
 # detect that the head of x0 is fully covered by b, which is a path prefix match
 # and no further reduction has been made. Then the next join is trivial.
-X1 := algebra.join(b,x0);
-g0:= group.first(x1);
+#First finding the first in each group reduces the join size
+X1:= group.first(x0);
+g0 := algebra.join(b,x1);
 
 # RETURN <increase> $b/bidder[1]/increase/text()
-x3:bat[:oid,:str] := mguide.descendant(mb,g0,"/site/open_auctions/open_auction/bidder","/site/open_auctions/open_auction/bidder/increase/string@");
+x3:bat[:oid,:str] := mguide.descendant(mb,g0,"/site/open_auctions/open_auction/bidder","/site/open_auctions/open_auction/bidder/increase/#string@");
 
-mguide.add(mr,"/increase",g1);
-mguide.add(mr,"/increase/string()",x3);
+mguide.add(mr,"/increase",g0);
+g0m:= bat.mirror(g0);
+mguide.add(mr,"/increase/#cdata",g0m);
+mguide.add(mr,"/increase/#cdata/#string@",x3);
 
 mguide.serialize(mr);

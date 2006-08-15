@@ -33,9 +33,9 @@
 #$b IN doc("auction.xml")
 mg := mguide.open("auction.xml");
 
-# Recursive parse brings you directly to the id string
-b1:bat[:oid,:str] := mguide.bind(mg,"/site/people/person/id/cdata/string@");
-# b1 represents the edge cdata/text()
+# Recursive parse brings you directly to the attribute id string
+b1:bat[:oid,:str] := mguide.bind(mg,"/site/people/person/id@");
+# b1 represents the edge [id@,text()]
 
 # Limit this set to all person0
 b2:= algebra.uselect(b1,"person0");
@@ -45,9 +45,9 @@ b2:= algebra.uselect(b1,"person0");
 # This is a guide specific action and can be optimized by not
 # using materialized intermediates
 b4:bat[:oid,:oid] := mguide.ancestor(mg, b2,
-		"/site/people/person/id/cdata/string@", "/site/people/person");
+		"/site/people/person/id@", "/site/people/person");
 
-# b4 represents the edge person/id
+# b4 represents the edge [person,id@]
 # it can be reached by a double join.
 # the context binding for $b now is just
 b := bat.mirror(b4);
@@ -57,11 +57,11 @@ mr:= mguide.new("result");
 
 # propagate the context restriction to the child
 x2:bat[:oid,:str] := mguide.descendant(mg,b, 
-		"/site/people/person", "/site/people/person/name/cdata/string@");
-# all valid strings are collected
+		"/site/people/person", "/site/people/person/name/#cdata/string@");
+# all valid strings are collected using a join-path evaluation
 
 # construct a new guide structure
-mguide.add(mr, "/cdata",x2);
-mguide.add(mr, "/cdata/string@",x2);
+mguide.add(mr, "/#cdata",x2);
+mguide.add(mr, "/#cdata/string@",x2);
 
 mguide.serialize(mr);
