@@ -37,6 +37,17 @@ return
   | perl -pe 's|^declare variable (\${fn:data($i/@variable)}) external;|let $1 := doc("\$TSTSRCBASE/'"$DOCS_DIR"'/{$i/text()}.xml") return|' \
 </x>
 }
+{
+if ($tst/*:input-query) then
+<q>
+  | perl -pe 's|^(declare variable \${fn:data($tst/*:input-query/@variable)} .*)external;|$1:= (\n'"` \
+	cat "$XQTS_SRC/Queries/XQuery/$TSTDIR/{fn:data($tst/*:input-query/@name)}.xq" \
+	 | sed -e 's|\\$|\\\\$|g' \
+	`"'\n);|' \
+</q>
+else
+<q/>
+}
   > "$XQTS_DST/$TSTDIR/Tests/$TSTNME.xq.in"
 (
 echo 'stdout of test '\'"$TSTNME"'` in directory '\'"$XQTS_DIR/$TSTDIR"'` itself:'
