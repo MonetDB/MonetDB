@@ -675,7 +675,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     }
 
     /* Retrieve the whole received RPC request message, and remove the
-     * first line of the message, so that the messgae we pass to
+     * first line of the message, so that the message we pass to
      * CMDshred2bats starts directly with the envelope tag. */
     req_msg = shttpd_get_msg(arg);
 

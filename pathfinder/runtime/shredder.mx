@@ -31,7 +31,9 @@
 #ifndef SHREDDER_H
 #define SHREDDER_H
 
-pf_support_export int CMDshred2bats(BAT **res2mil, str location, str buffer, str opt);
+#include "pf_support.h"
+
+pf_support_export int shred_stream2bats(BAT **res2mil, stream *s, str opt);
 
 #endif /* SHREDDER_H */
 @c
@@ -647,7 +649,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 }
 
 
-static int mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer);
+static int mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer, stream *s);
 
 static char *timer_str (long elapsed);
 
@@ -689,22 +691,22 @@ shred_doc_or_docseq(
 	BAT **res2mil,
 	str location,
 	str buffer,
+        stream *s,
 	BAT* docseq,
 	str opt,
 	struct serializeFunStruct* serFun,
 	void* serCtx
 	)
 {
+    int doc_origins;
 #ifdef SUPER_ROOT
     static int adjust_super_root(shredCtxStruct* shredCtx);
 #endif
     /* timing */
-    struct timeval now;
-    long start, stop;
+    lng start, stop;
 
     /* start timer */
-    (void) gettimeofday (&now, 0);
-    start = now.tv_sec * 1000000 + now.tv_usec;
+    start = GDKusec(); 
 
 #ifdef SHRED_HOLES
     int pageFree;
@@ -723,23 +725,17 @@ shred_doc_or_docseq(
     /* shred context */
     shredCtxStruct* shredCtx;
 
-    if ( docseq != NULL ) {
-        if ( strlen(location)!=0 || strlen(buffer)!= 0 ) {
-          GDKerror("shredder.mx:CMDshred2bats: if docseq BAT used location and buffer must be empty\n");
-          return GDK_FAIL;
-        }
-    } else {
-        /* detect NULL strings from MIL */
-        if ( strlen(location)==0 && strlen(buffer) == 0 ) {
-            GDKerror("shredder.mx:CMDshred2bats: nothing to shred!\n");
-            return GDK_FAIL;
-        }
+    doc_origins = (docseq!=NULL)?1:0 +
+                  (strlen(location)!=0)?1:0 + 
+                  (strlen(buffer)!=0)?1:0 +
+                  (s!=NULL)?1:0; 
 
-        /* check if file and buffer spec mutually exclusive */
-        if ( strlen(location)!=0 && strlen(buffer)!= 0 ) {
-            GDKerror("shredder.mx:CMDshred2bats: \"location\" and \"buffer\" may not contain values at the same time!\n");
-            return GDK_FAIL;
-        }
+    if ( doc_origins != 1 ) {
+        if (doc_origins)
+                GDKerror("shredder.mx:CMDshred2bats: only one of location, buffer, s or docseq BAT can be used\n");
+        else 
+            GDKerror("shredder.mx:CMDshred2bats: nothing to shred!\n");
+        return GDK_FAIL;
     }
 
     off_t estimatedSize;
@@ -759,7 +755,7 @@ shred_doc_or_docseq(
     int doc_pre;
 
     if ( docseq == NULL ) {
-        if ( (doc_pre=mainSHREDDER(shredCtx, location, buffer)) < 0 )
+        if ( (doc_pre=mainSHREDDER(shredCtx, location, buffer, s)) < 0 )
             return GDK_FAIL;
 	oid doc_pre_oid = PRE2NID((oid)doc_pre, shredCtx->pageFree);
 
@@ -776,7 +772,7 @@ shred_doc_or_docseq(
             str ds_loc = (str)BUNhead(docseq, p);
             str ds_buf = (str)BUNtail(docseq, p);
 
-            if ( (doc_pre=mainSHREDDER(shredCtx,ds_loc,ds_buf)) < 0 )
+            if ( (doc_pre=mainSHREDDER(shredCtx,ds_loc,ds_buf, NULL)) < 0 )
                 return GDK_FAIL;
 	    oid doc_pre_oid = PRE2NID((oid)doc_pre, shredCtx->pageFree);
 
@@ -799,8 +795,7 @@ shred_doc_or_docseq(
     }
 
     /* read elapsed time */
-    gettimeofday (&now, 0);
-    stop = now.tv_sec * 1000000 + now.tv_usec;
+    stop = GDKusec();
 
     if ( PRINT_STAT ) {
         stream_printf(GDKout,"# Elapsed time = %s [%s/node]\n",
@@ -811,18 +806,23 @@ shred_doc_or_docseq(
 }
 
 int
+shred_stream2bats(BAT **res2mil, stream *s, str opt) {
+    return shred_doc_or_docseq(res2mil,"","",s,NULL,opt,NULL,NULL);
+}
+
+int
 CMDshred2bats(BAT **res2mil, str location, str buffer, str opt) {
-    return shred_doc_or_docseq(res2mil,location,buffer,NULL,opt,NULL,NULL);
+    return shred_doc_or_docseq(res2mil,location,buffer,NULL,NULL,opt,NULL,NULL);
 }
 
 int
 CMDshred2collection(BAT **res2mil, BAT* docseq, str opt) {
-    return shred_doc_or_docseq(res2mil,"","",docseq,opt,NULL,NULL);
+    return shred_doc_or_docseq(res2mil,"","",NULL,docseq,opt,NULL,NULL);
 }
 
 int
 EXTshred_and_index_doc(str location, str opt, struct serializeFunStruct* serFun, void* serCtx) {
-    return shred_doc_or_docseq(NULL,location,"",NULL,opt,serFun,serCtx);
+    return shred_doc_or_docseq(NULL,location,"",NULL,NULL,opt,serFun,serCtx);
 }
 
 #define CHECK_BAT_SIZE(SB,I)    if ( ((off_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return oid_nil; 
@@ -1031,7 +1031,7 @@ static int createHole(shredCtxStruct* shredCtx)
 
 #define NEXT_PRE(P)     { if ( (P->nnode_pre++) == GDK_oid_max ) { GDKerror("shredder.mx: FATAL_ERROR: NEXT_PRE(): pre >GDK_oid_max. Use 64bit oid!\n"); exit(0); }; CHECK_HOLE(P); if (0) stream_printf(GDKout,"NEXT_PRE=" OIDFMT "\n",P->nnode_pre); }
 
-#define SHREDCTX(X)   ((shredCtxStruct*)((xmlParserCtxtPtr)X)->_private)
+#define SHREDCTX(X)   ((shredCtxStruct*)(X))
 
 /**
  * enter new XML node into pre|size|level|prop|kind relation
@@ -1831,7 +1831,7 @@ xmlSAXHandler shredder = {
  * Main shredder driver handling the libxml2 and buffer stuff
  */
 static int 
-mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
+mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer, stream *s)
 {
     int print_error_newline = TRUE;
     int wellFormed = 0;
@@ -1858,13 +1858,13 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
     xmlSetGenericErrorFunc ((void*)&print_error_newline, print_error);
 
     /* parse XML input (receive SAX events) */
-    if ( strlen(location) == 0 ) {
+    if ( strlen(buffer) > 0 ) {
         xmlCtx = xmlCreateMemoryParserCtxt(buffer, shredCtx->fileSize);
         if ( !xmlCtx ) {
             GDKerror("shred:mainSHREDDER: xmlCreateMemoryParserCtxt() failed\n");
             return -1;
         }
-    } else {
+    } else if (strlen(location) > 0) {
 #if HAVE_SAX2
         if ( !(xmlCtx = xmlCreateURLParserCtxt (location, XML_PARSE_XINCLUDE
 #ifdef XML_PARSE_NOXINCNODE
@@ -1880,15 +1880,39 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
         return -1;
 #endif
     }
-    xmlCtx->sax        = &shredder;
-    xmlCtx->_private = shredCtx; /* set the SHREDCTX() value */
-    xmlSwitchEncoding (xmlCtx, XML_CHAR_ENCODING_UTF8);
+    if (s) {
+        int done = 0, first = 1;
+        char buf[BUFSIZ];
+        do {
+                ssize_t len = 0;
 
-    /* The good old xmlParseDocument() works without complaining! */
-    (void) xmlParseDocument (xmlCtx);
+                len = stream_read(s, buf, 1, sizeof(buf));
+                if (len < 0) {
+                        stream_printf(GDKout, "shredder: read () returned " SSZFMT " -> bailing out\n", len);
+                        shredCtx->err = 1;
+                        break;
+                }
+                done = (len == 0);
+                if (first) {
+                        xmlCtx = xmlCreatePushParserCtxt(&shredder, shredCtx, buf, len, "shredder");
+                        first = 0;
+                        if (done)
+                                xmlParseChunk(xmlCtx, buf, 0, done);
+                } else {
+                        buf[len] = '\0';
+                        xmlParseChunk(xmlCtx, buf, len, done);
+                }
+        } while (!done);
+    } else {
+        /* The good old xmlParseDocument() works without complaining! */
+        xmlCtx->sax        = &shredder;
+        xmlCtx->userData = shredCtx; /* set the SHREDCTX() value */
+        xmlSwitchEncoding (xmlCtx, XML_CHAR_ENCODING_UTF8);
+        (void) xmlParseDocument (xmlCtx);
+    }
     wellFormed = xmlCtx->wellFormed;
     xmlCtx->sax      = NULL; /* avoid double free() */
-    xmlCtx->_private = NULL; /* avoid double free() */
+    xmlCtx->userData = NULL; /* avoid double free() */
     xmlFreeParserCtxt(xmlCtx);
 
     /* free the TEXT buffer */

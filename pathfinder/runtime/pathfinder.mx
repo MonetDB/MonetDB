@@ -45,6 +45,7 @@
 .MODULE pathfinder;
 
 .USE streams;
+.USE pf_support;
 
 .COMMAND xquery_frontend() : ptr = xquery_frontend;
  "create/return the xquery_frontend callback interface to pass to mapi register. "
@@ -162,8 +163,6 @@ PROC xquery_server_start() : void {
 #
 # - DOCID_OID      BAT[void,oid] docid / persistent document-ID (the key to the doc_* tables)
 # - DOCID_NAME     BAT[void,str] docid / document name
-
-module(pf_support); 
 
 @- ws definition
 
@@ -682,21 +681,8 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 }
 
 
-PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection, bit doCommit, str opt, timestamp ts, int ws) : int
+PROC shred_doc_index(BAT[oid,bat] shredRES, BAT[str,bat] docBAT, str location, str name, str collection, bit doCommit, timestamp ts, int ws) : int
 {
-    var shredRES;
-
-    if (false) {
-      var docseq := bat(str,str,4);
-      docseq.insert(location,"");
-      # docseq.insert("/home/flokstra/scripts/DATA/foo.xml","");
-      shredRES := shred2collection(docseq,opt);
-      # docseq_pre is a [void,oid] BAT containing the document_pre numbers of
-      # the documents in the docseq BAT in the same order.
-      var docseq_pre := shredRES.fetch(ATTR_PROP+1);
-    } else {
-      shredRES := shred2bats(location,"",opt);
-    }
     var err, exists := false;
 
     # always make sure not to cause errors while holding the lock
@@ -742,6 +728,30 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection,
         if (not(isnil(err))) ERROR(err);
     }
     return height;
+}
+
+PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection, bit doCommit, str opt, timestamp ts, int ws) : int
+{
+    var shredRES;
+
+    if (false) {
+      var docseq := bat(str,str,4);
+      docseq.insert(location,"");
+      # docseq.insert("/home/flokstra/scripts/DATA/foo.xml","");
+      shredRES := shred2collection(docseq,opt);
+      # docseq_pre is a [void,oid] BAT containing the document_pre numbers of
+      # the documents in the docseq BAT in the same order.
+      var docseq_pre := shredRES.fetch(ATTR_PROP+1);
+    } else {
+      shredRES := shred2bats(location,"",opt);
+    }
+    return shred_doc_index(shredRES, docBAT, location, name, collection, doCommit, ts, ws);
+}
+
+PROC shred_stream( str name, bat[oid,bat] shredRES) : int
+{
+    var docBAT := bat(str,bat,WS_SIZE);
+    return shred_doc_index(shredRES, docBAT, "", name, name, true, "", timestamp(nil), int(nil));
 }
 
 PROC shred_doc_base(str location, str name, str collection, bit doCommit, str opt) : void
@@ -1180,6 +1190,7 @@ xquery_method(stream *out,
 #endif
 @c
 #include "pathfinder.h"
+#include "shredder.h"
 
 #define XQUERY_BUFSIZE 16364
 
@@ -1293,6 +1304,9 @@ typedef struct _xquery_loaded_module {
     int nslen;
 } xquery_loaded_module;
 
+#define XQ_PROFILE 1
+/* trace and debug */
+#define XQ_TRACE 2      
 
 /* cached MIL client + Xquery specific context */
 typedef struct {
@@ -1331,6 +1345,8 @@ typedef struct {
     size_t var_usage_size; 
     size_t proc_vid_size;
 
+    int mode;           /* bit vector of execution modes */
+
     /* size of the cached procs */
     size_t cachesize;
 
@@ -1359,11 +1375,11 @@ MT_Lock pf_cache_lock;
  * - parse MIL buffer into a tree
  *
  * int
- * xquery_mil_exec(xquery_client *ctx, char* buf, int debug) { 
+ * xquery_mil_exec(xquery_client *ctx, char* buf) { 
  * - execute MIL buffer (parse & execute)
  *
  * int
- * xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, 
+ * xquery_compile_exec(xquery_client *ctx, char* xquery, int is_url, 
  *                     char** prologue, char** query, char** epilogue, char* nsurl) 
  * - translate xquery to MIL and execute
  *
@@ -1420,13 +1436,12 @@ xquery_mil2tree(xquery_client *ctx,
  */
 static int 
 xquery_mil_exec(xquery_client *ctx,  
-                char* buf, 
-                int debug) 
+                char* buf) 
 {
     int ret = 0;
     YYSTREE t;
 
-    if (debug)
+    if (ctx->mode&XQ_TRACE)
         stream_write(ctx->fderr, buf, strlen(buf), 1);
 
     t = xquery_mil2tree(ctx, buf); 
@@ -1455,7 +1470,6 @@ static char* xquery_parse_string(char* p, char *buf, int len);
 }    }
 static int
 xquery_compile_exec(xquery_client *ctx, 
-                    char *mode,  
                     char* xquery, 
                     int is_url, 
                     char** prologue, 
@@ -1463,8 +1477,7 @@ xquery_compile_exec(xquery_client *ctx,
                     char** epilogue,
                     char* nsurl)
 {
-    int is_mil = 0, len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
-    char *mapi = strstr(mode, "mapi")?"=":"";
+    int is_mil = 0, len=0, ret = 0;
     char *err = NULL;
 
     int options = 0;
@@ -1483,7 +1496,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (is_mil && query == NULL) {
             *prologue = xquery; *epilogue = NULL;
         } else {
-            err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue, options);
+            err = PFcompile_MonetDB(xquery, prologue, &del, epilogue, options);
             if (err == NULL && nsurl != NULL){
                 /* get the module namespace URL Y from pattern: "module namespace X = Y" */
                 char *p0 = xquery_parse_space(xquery); 
@@ -1519,9 +1532,11 @@ xquery_compile_exec(xquery_client *ctx,
     }
     if (err) {
         len = strlen(err);
-        if (*mapi) {
+        /* niels: NOT SURE about this condition */
+        if (strstr("mapi",*(ctx->genType))) {
             /* put ! before error lines */
             char *p = err, *q = err;
+
             while (*p) {
                 if (*p++ == '\n')
                     len++;
@@ -1549,14 +1564,14 @@ xquery_compile_exec(xquery_client *ctx,
 
     /* execute the three MIL sections */
     if (ret && *prologue && **prologue)
-        ret = xquery_mil_exec(ctx, *prologue, debug);
+        ret = xquery_mil_exec(ctx, *prologue);
 
     if (ret && query) {
         if (*query && **query)
-            ret = xquery_mil_exec(ctx, *query, debug);
+            ret = xquery_mil_exec(ctx, *query);
 
         if (ret && *epilogue && **epilogue)
-            ret = xquery_mil_exec(ctx, *epilogue, 0);
+            ret = xquery_mil_exec(ctx, *epilogue);
     }
     return ret?ret+is_mil:0;
 }
@@ -1577,7 +1592,7 @@ xquery_compile_exec(xquery_client *ctx,
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
- * xquery_function_call(xquery_client *ctx, int msec, char* mode, char *ns, char *method, 
+ * xquery_function_call(xquery_client *ctx, int msec, char *ns, char *method, 
  *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -1724,7 +1739,6 @@ static char xquery_function_error[80] = "xquery_method: error during execution.\
 static char* 
 xquery_function_call(xquery_client *ctx, 
                      int msec, 
-                     char *mode, 
                      char *ns, 
                      char *method, 
                      int argc, 
@@ -1737,8 +1751,8 @@ xquery_function_call(xquery_client *ctx,
     xquery_prepared_function *prepfun = ctx->prepared_functions;
     xquery_function *fun;
     int i, j, k, l, m=0, tpe[MAXPARAMS], mincnt[MAXPARAMS], maxcnt[MAXPARAMS];
-    int debug = (strstr(mode,"debug") != NULL);
     char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
+    int debug = ctx->mode&XQ_TRACE;
 
     /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
     for(j=0; j<argc; j++) {
@@ -1887,16 +1901,12 @@ xquery_function_call(xquery_client *ctx,
 
     /* set the MIL shredBAT and getType variables to the actual values */
     ctx->shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
-    if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
-        if (*(ctx->genType)) GDKfree(*(ctx->genType));
-        *(ctx->genType) = GDKstrdup(mode);
-    }
-
     *(ctx->time_compile) = GDKms() - msec;
     
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
+/*
         if (strstr(mode, "rpcservertime") != NULL) {
            printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
            printf("\tTrans: %d msec\n", (*ctx->time_compile) );
@@ -1904,6 +1914,7 @@ xquery_function_call(xquery_client *ctx,
            printf("\tQuery: %d msec\n", (*ctx->time_exec - *ctx->time_shred) );
            printf("Server_Serialisation + Network_Server_2_Client: %d msec\n", (*ctx->time_print) );
         }
+*/
 
         size_t dummy;
         if (fun->size == 0)
@@ -1937,11 +1948,11 @@ xquery_function_call(xquery_client *ctx,
  * - free module structure 
  *
  * xquery_module* 
- * xquery_module_compile(xquery_client *ctx, char* mode, char *url)
+ * xquery_module_compile(xquery_client *ctx, char *url)
  * - get an xquery module, compile it and cache it (return NULL on error)
  *
  * char*
- * xquery_module_load(xquery_client *ctx, char* mode, char *ns, char *url)
+ * xquery_module_load(xquery_client *ctx, char *ns, char *url)
  * - check whether we already loaded the module, or if we already 
  *   have it cached. If not, fetch&compile. Returns error string or NULL if ok.
  */
@@ -1969,7 +1980,6 @@ xquery_module_free(xquery_module *mod)
  */
 xquery_module*
 xquery_module_compile(xquery_client *ctx, 
-                      char* mode, 
                       char *url) 
 {
     xquery_module *mod = NULL;
@@ -1985,7 +1995,7 @@ xquery_module_compile(xquery_client *ctx,
     strcpy(mod->url, url);
     mod->nsurl = mod->url + url_len;
 
-    ret = xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
+    ret = xquery_compile_exec(ctx, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
     if (!ret) {
         xquery_module_free(mod);
         return NULL;
@@ -2022,7 +2032,6 @@ xquery_module_compile(xquery_client *ctx,
  */
 static char* 
 xquery_module_load(xquery_client *ctx, 
-                   char* mode, 
                    char *ns, 
                    char *module,
                    char *url) 
@@ -2054,12 +2063,12 @@ xquery_module_load(xquery_client *ctx,
             if (strcmp(def->url, url) == 0) break;
 
         if (def == NULL){
-            mod->def = xquery_module_compile(ctx, mode, url);
+            mod->def = xquery_module_compile(ctx, url);
         }
         MT_unset_lock(pf_module_lock, "xquery_module_load");
 
         /* if a compiled module was found, we still need to execute it */
-        if (def && xquery_mil_exec(ctx, def->prologue, strstr(mode, "debug") != NULL))
+        if (def && xquery_mil_exec(ctx, def->prologue))
             mod->def = def; /* TODO: find a way to share PROC defs between MIL sessions */
 
         if (mod->def == NULL) {
@@ -2068,7 +2077,7 @@ xquery_module_load(xquery_client *ctx,
         }
         ctx->var_usage_size = BATcount(ctx->var_usage);
         ctx->proc_vid_size = BATcount(ctx->proc_vid);
-    } else if (strstr(mode,"debug") != NULL) {
+    } else if (ctx->mode&XQ_TRACE) {
         stream_write(ctx->fderr, mod->def->prologue, strlen(mod->def->prologue), 1);
     }
     mod->ns = ns;
@@ -2174,7 +2183,7 @@ xquery_client_alloc_(xquery_client *ctx)
 {
     Variable v;
 
-    if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
+    if (!xquery_mil_exec(ctx, (char*) PFinitMIL()))
         return "xquery_client_alloc: failed to execute init script.\n"; 
 
     @:find_var(shredBAT,int,ival)@
@@ -2240,9 +2249,10 @@ xquery_client_alloc(mapi_client *fc)
 static char *
 xquery_client_init_(xquery_client *ctx )
 {
+    ctx->mode = 0;
     if (!ctx->initialized) {
         ctx->initialized = 1;
-        if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
+        if (!xquery_mil_exec(ctx, (char*) PFvarMIL()))
             return "xquery_client_init: failed to execute variable declarations.\n"; 
     }
     return NULL;
@@ -2268,7 +2278,7 @@ xquery_client_free_cached_modules(xquery_client *ctx)
         xquery_loaded_module *del = mod;
         mod = mod->next;
         /* free all modules */
-        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
+        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue))
             fprintf(stderr, "xquery_client_free: client %d error dropping %s\n", ctx->stk, del->def->url);
         GDKfree(mod);
     }
@@ -2420,7 +2430,7 @@ xquery_client_end(xquery_client *ctx, char *err)
  * all above functions return the new pointer in the xquery after parsing.
  *
  * char*
- * xquery_prepare(xquery_client *ctx, int msec, char* mode, char* xquery)
+ * xquery_prepare(xquery_client *ctx, int msec, char* xquery)
  * - parse xquery; chop off module imports, and recognize single method calls. These are re-executed
  *   from a cached MIL tree. Otherwise use pathfinder to compile. Returns error string (NULL if ok).
  */
@@ -2577,7 +2587,6 @@ static char xquery_too_complex[80] = "xquery_prepare: xquery is too complex for 
 static char*
 xquery_prepare(xquery_client *ctx, 
                int msec, 
-               char* mode, 
                char* query) 
 {
     int nsbuf = 0, loaded_modules = 0, len;
@@ -2585,7 +2594,7 @@ xquery_prepare(xquery_client *ctx,
     char val[256], url1[256], url2[256];
     char *err = NULL;
 
-    if (strstr(mode,"debug") != NULL) {
+    if (ctx->mode&XQ_TRACE) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
         char *prologue = (char*) PFinitMIL();
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
@@ -2656,7 +2665,7 @@ xquery_prepare(xquery_client *ctx,
                     /* cut off module import from the query, and load it here (to have it cached later) */
                     *nsend = 0;
 
-                    err = xquery_module_load(ctx, mode, ns, url1, url2);
+                    err = xquery_module_load(ctx, ns, url1, url2);
                     if (err) return err;
                     loaded_modules++;
                     *nsend = bak; 
@@ -2747,7 +2756,7 @@ xquery_prepare(xquery_client *ctx,
                     int* cnt_ptr = cnt;    
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, msec, mode, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
+                    err = xquery_function_call(ctx, msec, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
@@ -2767,7 +2776,8 @@ xquery_prepare(xquery_client *ctx,
         char *sec3 = NULL;
         /* compile and execute the query (minus module imports) */
         err = xquery_nondescriptive_error;
-        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3, NULL)) err = NULL;
+        if (xquery_compile_exec(ctx, query, 0, &sec1, &sec2, &sec3, NULL)) 
+                err = NULL;
         if (sec1) free(sec1);
         if (sec2) free(sec2);
         if (sec3) free(sec3);
@@ -2797,11 +2807,11 @@ xquery_prepare(xquery_client *ctx,
 static void
 xquery_client_engine(mapi_client *fc )
 {
+    ssize_t n;
     size_t curlen;
     xquery_client *ctx = fc->fc;
     stream *in = fc->c->fdin, *out = fc->c->fdout;
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
-    int msec;
 
     while(1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
@@ -2816,7 +2826,7 @@ xquery_client_engine(mapi_client *fc )
         }
 
         for (p = ctx->buf, curlen = 0; p; ) {
-            ssize_t n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
+            n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
             if (n < 0) {
                 xquery_client_end(ctx, NULL); 
                 return;
@@ -2833,40 +2843,83 @@ xquery_client_engine(mapi_client *fc )
                 }
             }
         }
-        if (curlen == 0)
+        if (curlen == 0 || !p)
                 break;
-        msec = GDKms();
-    
-        /* execute query */
-        if (p) {
-            p[curlen] = 0;        /* terminate (we know there is space) */
-    
-            /* first line of the query is the mode */ 
-            for (xquery = p; *xquery; xquery++) {
-                if (*xquery == '\n') {
-                    *xquery++ = 0;
-                    break;
+        p[curlen] = 0;        /* terminate (we know there is space) */
+        if (*p == 'X') {
+                /* remove newline */
+                p[curlen-1] = 0;  
+                p++;
+                switch(*p) {
+                case 'p': /* profile */
+                        ctx->mode |= XQ_PROFILE;
+                        break;
+                case 't': /* trace */
+                        ctx->mode |= XQ_TRACE;
+                        break;
+                case 'o': /* output format */
+                        p += sizeof("output ")-1-sizeof("mapi-"); 
+                        strncpy(p,"mapi-",sizeof("mapi-")-1);
+                        if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), p)) { 
+                            if (*(ctx->genType)) 
+                                GDKfree(*(ctx->genType));
+                            *(ctx->genType) = GDKstrdup(p);
+                        }
+                        break; 
+                case 'c': { /* shred from stream */
+                        int i;
+                        BAT *res;
+
+                        p += sizeof("copy ")-1;
+                        /* start shredder (first character should be skipped) */
+                        if (!fc->c->blocked && 
+                                stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
+                                xquery_client_end(ctx, "could not write prompt"); 
+                                return;
+                        }
+                        if (stream_flush(out)) {
+                                xquery_client_end(ctx, "could not flush prompt"); 
+                                return;
+                        }
+                        shred_stream2bats(&res /* result bats */, in, NULL);
+
+                        /* insert into document collection (p is name)*/
+
+                        /* taking the easy way, dump to string */
+                        i=snprintf(ctx->buf, ctx->buflen, "shred_stream(\"%s\", bat(%d));\n", p, res->batCacheid);
+                        if (i<0 || xquery_mil_exec(ctx, ctx->buf)<0) {
+                                xquery_client_end(ctx, "shred_stream failed"); 
+                                BBPunfix(BBPcacheid(res));
+                                return;
+                        }
+                        BBPunfix(BBPcacheid(res));
+                        break;
+                    }
                 }
-            }
-            err = xquery_prepare(ctx, msec, p, xquery);
+                continue; 
+        } else if (*p == 'S' || *p == 's') {
+            /* execute query */
+            int msec = GDKms();
+            xquery = p+1;
+            err = xquery_prepare(ctx, msec, xquery);
             if (err && err != xquery_nondescriptive_error) {
                 /* report errors back to client */
                 stream_write(ctx->fderr, err, strlen(err), 1);
             }
-        }
-        if (strstr(p, "debug")) {
-            /* memory debugging */
-            xquery_prepared_function *fun = ctx->prepared_functions;
-            BAT *b = NULL;
-            view_client_size(&b, &fc->stk);
-            if (b) {
-               while(fun) {
-                   BUNins(b, fun->def->proc, &fun->def->size, FALSE);
-                   fun = fun->next;
+            if (ctx->mode&XQ_TRACE) {
+                /* memory debugging */
+                xquery_prepared_function *fun = ctx->prepared_functions;
+                BAT *b = NULL;
+                view_client_size(&b, &fc->stk);
+                if (b) {
+                   while(fun) {
+                      BUNins(b, fun->def->proc, &fun->def->size, FALSE);
+                      fun = fun->next;
+                   } 
+                   BATprintf(GDKstdout, b);
+                   BBPreclaim(b);
                 } 
-                BATprintf(GDKstdout, b);
-                BBPreclaim(b);
-            } 
+            }
         }
         /* second and on queries also need a cleared context */
         xquery_client_end(ctx, NULL); 
@@ -2933,6 +2986,11 @@ CMDxquery(Cntxt stk,
         MT_unset_lock(pf_compiler_lock, "CMDxquery");
     }
 
+    if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
+        if (*(ctx->genType)) 
+                GDKfree(*(ctx->genType));
+        *(ctx->genType) = GDKstrdup(mode);
+    }
     if (err == NULL) {
         buffer *b = buffer_create(XQUERY_BUFSIZE);
         if (b) {
@@ -2941,7 +2999,7 @@ CMDxquery(Cntxt stk,
                 /* run the query, but collect all output in a buffer */
                 stream *bak = GDKout;
                 THRsetdata(0,s);
-                err = xquery_prepare(ctx, msec, mode, xquery);
+                err = xquery_prepare(ctx, msec, xquery);
                 if (err == NULL || err == xquery_nondescriptive_error) {
                     res->val.sval = GDKmalloc(b->pos+1);
                     if (res->val.sval) {
@@ -3027,12 +3085,17 @@ xquery_method(stream *out,
         argc = argc % 1000;
     }
 
+    if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
+        if (*(ctx->genType)) 
+                GDKfree(*(ctx->genType));
+        *(ctx->genType) = GDKstrdup(mode);
+    }
     if (err == NULL && module){
-        err = xquery_module_load(ctx, mode, ns="xrpc", module, uri); 
+        err = xquery_module_load(ctx, ns="xrpc", module, uri); 
     }
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
+        err = xquery_function_call(ctx, msec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 

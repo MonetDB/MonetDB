@@ -135,8 +135,6 @@ PFstate_t PFstate = {
     .opt_alg             = "OIKDCG_VGO_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCGCGP",
     .format              = NULL,
 
-    .genType             = "xml",
-
 #ifndef NDEBUG
     .debug = {
         .subtyping       = false
@@ -422,7 +420,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        if (PFprintMILtemp (croot, status->optimize, module_base, -1, status->genType, tm_first, 
+        if (PFprintMILtemp (croot, status->optimize, module_base, -1, tm_first, 
                             &prologue, &query, &epilogue, status->standoff_axis_steps))
             goto failure;
         fputs(prologue, pfout);
@@ -602,8 +600,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
  * Compiler driver of the Pathfinder compiler interface for usage
  * by the Monet Runtime environment. 
  * 
- * mode is used to indicate "sax", "xml" or "none" output.
- *
  * MonetDB actually would like pathfinder to 
  * - be thread-safe (now there are global vars all over the place) 
  * - use string input/output rather than files.
@@ -612,7 +608,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
 char*
-PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue, int options)
+PFcompile_MonetDB (char *xquery, char** prologue, char** query, char** epilogue, int options)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
@@ -645,7 +641,6 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
          */
         PFstate.standoff_axis_steps = (options & COMPILE_OPTION_STANDOFF);
 
-        PFstate.genType = mode;
         if (setjmp(PFexitPoint) != 0 ) {
                 return PFerrbuf;
         }
@@ -666,7 +661,7 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
 #if MILPRINT_SUMMER_IS_DEFAULT
-        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, PFstate.genType, timing, 
+        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing, 
                                 prologue, query, epilogue, PFstate.standoff_axis_steps);
 #else
 

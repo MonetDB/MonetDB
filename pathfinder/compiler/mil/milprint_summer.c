@@ -10848,7 +10848,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
  * @param c the root of the core tree
  */
 int
-PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *genType, long timing, 
+PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long timing, 
                 char** prologue, char** query, char** epilogue, bool standoff)
 {
     PFarray_t *way, *counter;
@@ -10898,12 +10898,11 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     /* define working set and all other MIL context (global vars for the query) */
     if (module_base == 0) {
         milprintf(f, PFstartMIL());
-        milprintf(f, "  genType := \"%s\";\n"
-                     "  var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        milprintf(f, "  var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
                      "  var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
                      "  var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
                      "  var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-                     "  var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n", genType);
+                     "  var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n");
     }
         
     /* recursive translation of the core tree */
