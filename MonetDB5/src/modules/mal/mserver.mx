@@ -779,10 +779,11 @@ locking_function(int mode, int n, const char *file, int line)
 {
 	(void) file;
 	(void) line;
-	if (mode & CRYPTO_LOCK)
+	if (mode & CRYPTO_LOCK){
 		MT_set_lock(mutex_buf[n], "locking_function");
-	else
+	} else {
 		MT_unset_lock(mutex_buf[n], "locking_function");
+	}
 }
 
 static unsigned long
@@ -805,7 +806,7 @@ SERVERprelude(void)
 		return NULL;
 	}
 	for (i = 0; i < nlocks; i++)
-		mutex_buf[i] = MT_create_lock();
+		MT_lock_init(&mutex_buf[i]);
 	CRYPTO_set_locking_callback(locking_function);
 	CRYPTO_set_id_callback(id_function);
 #endif

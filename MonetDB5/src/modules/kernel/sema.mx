@@ -47,28 +47,34 @@ typedef ptr monet_sema;
 int
 create_sema(monet_sema *s, int *init)
 {
-	*s = MT_create_sema(*init);
+	*s = (monet_sema) GDKmalloc(sizeof(MT_Sema));
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_init((MT_Sema *) *s, *init);
 	return GDK_SUCCEED;
 }
 
 int
 up_sema(monet_sema *s)
 {
-	MT_up_sema((MT_Sema) *s, "up_sema");
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_up((MT_Sema*) *s, "up_sema");
 	return GDK_SUCCEED;
 }
 
 int
 down_sema(monet_sema *s)
 {
-	MT_down_sema((MT_Sema) *s, "down_sema");
+    if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+    MT_sema_down((MT_Sema*) *s, "down_sema");
 	return GDK_SUCCEED;
 }
 
 int
 destroy_sema(monet_sema *s)
 {
-	MT_destroy_sema((MT_Sema) *s);
+	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
+	MT_sema_destroy((MT_Sema*) *s);
+	GDKfree(*s);
 	return GDK_SUCCEED;
 }
 
