@@ -281,7 +281,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
-                    if ((kind && kind[pre] == kind_test) || @2) continue; 
+                    if ((kind && kind[pre] != kind_test) || @2) continue; 
                     *(oid*)dst              = iter;
                     *(oid*)(dst+SIZEOF_OID) = pre;
                     dst += bs_res;
@@ -294,7 +294,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 BUN lst_iter = BUNlast(iter_bat);
                 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
-                    if ((kind && kind[pre] == kind_test) || @2) continue; 
+                    if ((kind && kind[pre] != kind_test) || @2) continue; 
                     for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
                         *(oid*)dst              = *(oid*)BUNtail(iter_bat,iter);
                         *(oid*)(dst+SIZEOF_OID) = pre;
@@ -812,7 +812,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *s
             }
         } else {
             for ( ; pre <= @1 ; pre++ ) {
-                if ((kind && kind[pre] == kind_test) || (size[pre] & (1<<31))) continue; 
+                if ((kind && kind[pre] != kind_test) || (size[pre] & (1<<31))) continue; 
                 for (j = 0 ; j < stack_top ; j++ ) {
                     *(oid*)dst              = iters_on_stack[j];
                     *(oid*)(dst+SIZEOF_OID) = pre;

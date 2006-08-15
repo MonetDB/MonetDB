@@ -774,23 +774,6 @@ proc ll_htordered_unique_thetajoin( int mode,
 	@:chk_order(@1@2,1,iter)@
 	# =>  we do not need to sort the input
 	order := or(order,1);
-@
-@= descs_per_item
-	# "descendant" / "descendant_or_self"
-	# => result for a single item is a simple slice of cands
-	var fst := item.fetch(@2);
-	var sze := pre_size.fetch(fst);
-	var lst := nil;
-	if (isnil(sze) or ((sze>>31)!=0)) {
-		# empty result
-		lst := oid(0);
-		fst := oid(1);
-	} else {
-		lst := oid(int(fst) + sze);
-        	fst := oid(int(fst) + skip_self);
-        }
-	var item_descs := cands.ord_select(fst,lst).reverse().chk_order();
-@
 @= wrap
 PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
 {
@@ -818,11 +801,11 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 	var pre_size := ws.fetch(PRE_SIZE).fetch(cont);
 	var height   := ws.fetch(HEIGHT).fetch(cont);
 
-    if (ws.fetch(WS_FRAG).fetch(cont).count() > 0){
-        var min_size := int(ws.fetch(WS_FRAG).fetch(cont).fetch(0));
-        var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(cont).fetch(min_size));
-#pre_size     := pre_size.slice(min_size, max_size);
-    }
+        if (ws.fetch(WS_FRAG).fetch(cont).count() > 0){
+                var min_size := int(ws.fetch(WS_FRAG).fetch(cont).fetch(0));
+                var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(cont).fetch(min_size));
+                pre_size := pre_size.slice(min_size, max_size);
+        }
     
 	# trivial cases	
 	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
@@ -838,16 +821,6 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 		# 1 iter, 1 item
 		one_iter := TRUE;
 		one_item := TRUE;
-		if ( "@1" != "child" ) {
-			# "descendant" / "descendant_or_self"
-			# =>  result is a simple slice of cands
-			@:descs_per_item(@1,0)@
-			result := new(void,bat,2).seqbase(0@0)
-			          .append(constant2bat(iter.fetch(0)))
-			          .append(item_descs.mark(0@0).reverse())
-			          .access(BAT_READ);
-			return result;
-		}
 		# =>  we do not need to sort neither input nor output
 		order := 3;
 		iter := iter.chk_order(); # just in case...
