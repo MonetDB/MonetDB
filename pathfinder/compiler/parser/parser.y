@@ -776,21 +776,25 @@ Module                    : VersionDecl MainModule
 /* [2] */
 VersionDecl               : /* empty */
                             { PFquery.version = "1.0";
-                              PFquery.encoding = NULL; }
+                              PFquery.encoding = "UTF-8"; }
                           | "xquery version" StringLiteral OptEncoding_
                             Separator
-                            { if (strcmp ($2, "1.0")) {
+                            { PFquery.version = $2; PFquery.encoding = $3; 
+                              if (strcmp (PFquery.version, "1.0")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
-                                              "we only support XQuery version "
-                                              "'1.0' (well, not even really "
-                                              "that)");
+                                              "only XQuery version '1.0' is supported");
                                   YYERROR;
                               }
-                              PFquery.version = $2; PFquery.encoding = $3; }
+                              if (strcmp (PFquery.encoding, "UTF-8") || strcmp (PFquery.encoding, "utf-8")) {
+                                  PFinfo_loc (OOPS_PARSE, @$,
+                                              "only XQueries in UTF-8 encoding are supported");
+                                  YYERROR;
+                              }
+                            }
                           ;
 
 OptEncoding_              : /* empty */
-                            { $$ = NULL; }
+                            { $$ = "UTF-8"; }
                           | encoding_StringLiteral
                             { $$ = $1; }
                           ;

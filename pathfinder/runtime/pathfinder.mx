@@ -2472,21 +2472,22 @@ xquery_parse_space(char* p)
  * parse an XML datamodel string. Deliver an unescaped version as a result 
  */
 static char* 
-xquery_parse_string(char* p, 
+xquery_parse_string(char *src, 
                     char *buf, 
                     int len) 
 {
-    char *q = buf, *r = buf+len-1;
+    char *p = src, *q = buf, *r = buf+len-1;
     int sep1 = *p++;
     int sep2 = (sep1=='"')?'\'':'"';
     int escape = 0;
+    if (sep1 != '\'' && sep1 != '"') return src;
     while(*p) {
         if (escape) {
             if (p[0] == sep2) escape = 0;
             if (q < r) *q++ = *p; p++;
         } else {
             if (p[0] == sep1) {
-                p++; break;
+                break;
             } else if (p[0] == sep2) {
                 if (p[1] == sep1 && p[2] == sep1 && p[3] == sep2) {
                     if (q < r) *q++ = sep1; p += 4;
@@ -2535,6 +2536,7 @@ xquery_parse_string(char* p,
             }
         }
     }
+    if (*p++ != sep1) return src;
     *q = 0;
     return p;
 }
@@ -2570,6 +2572,7 @@ xquery_parse_numeric(char* p,
  * parse xquery; chop off module imports, and recognize single method calls. These are re-executed
  * from a cached MIL tree. Otherwise use pathfinder to compile. Returns error string (NULL if ok).
  */
+static char xquery_too_complex[80] = "xquery_prepare: xquery is too complex for cached execution.\n";
 static char*
 xquery_prepare(xquery_client *ctx, 
                int msec, 
@@ -2577,7 +2580,7 @@ xquery_prepare(xquery_client *ctx,
                char* query) 
 {
     int nsbuf = 0, loaded_modules = 0, len;
-    char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
+    char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *q, *p = query;
     char val[256], url1[256], url2[256];
     char *err = NULL;
 
@@ -2588,6 +2591,28 @@ xquery_prepare(xquery_client *ctx,
         prologue = (char*) PFvarMIL();
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
     }
+
+    /* handle optional xquery version string */
+    p = xquery_parse_space(p);
+    if (strncmp(p, "xquery", 6) == 0 && ISSPACE(p[6])) {
+        err = "xquery_prepare: illegal xquery version or encoding";
+        p = xquery_parse_space(p+6);
+        if (strncmp(p, "version", 7) == 0 && ISSPACE(p[7])) {
+            q = xquery_parse_space(p+7);
+            p = xquery_parse_string(q, val, 256);
+            if (p > q && strcmp(val,"1.0") == 0) {
+                p = xquery_parse_space(p);
+                if (strncmp(p, "encoding", 8) == 0 && ISSPACE(p[8])) {
+                    q = xquery_parse_string(p+8, val, 256);
+                    if (q > p+8 && strcmp(val, "UTF-8") == 0) 
+                        p = xquery_parse_space(q);
+                }
+                if (*p++ == ';') err = NULL; /* ok! */
+            }
+        }
+    }
+   
+    /* parse one ore more import module statements */  
     while(*p && err == NULL) {
         p = xquery_parse_space(p);
         if (strncmp(p, "import", 6) || !ISSPACE(p[6])) {
@@ -2607,15 +2632,24 @@ xquery_prepare(xquery_client *ctx,
                     if (*p == '=') {
                         p = xquery_parse_space(p+1);
                     } else {
-                        return "xquery_prepare: expecting '=' after namespace declaration";
+                        err = "xquery_prepare: expecting '=' after namespace declaration";
+                        break;
                     }
                 }
-                p = xquery_parse_string(p, url1, 256);
-                p = xquery_parse_space(p);
+                q = xquery_parse_string(p, url1, 256);
+                if (q == p) {
+                    err = "xquery_prepare: expecting URI after namespace declaration";
+                    break;
+                }
+                p = xquery_parse_space(q);
                 if (*p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
                     char bak = *nsend;
                     loc = xquery_parse_space(p+1);
                     locend = xquery_parse_string(loc, url2, 256);
+                    if (locend == loc) {
+                        err = "xquery_prepare: expecting URI after at-hint in module import";
+                        break; 
+                    }
                     p = xquery_parse_space(locend);
 
                     /* cut off module import from the query, and load it here (to have it cached later) */
@@ -2627,18 +2661,21 @@ xquery_prepare(xquery_client *ctx,
                     *nsend = bak; 
                 } while (*p == ',');
 
-                if (*p != ';') {
-                    return "xquery_prepare: missing ';' after module import.\n";
-                } else {
+                if (*p == ';') {
                     p++;
+                } else if (err == NULL) {
+                    err = "xquery_prepare: missing ';' after module import.\n";
                 }
+            } else {
+                err = xquery_too_complex; /* we understand only no other imports than module */
+                break;
             }
         }
     }
 
     if (loaded_modules == 0) {
-        err = (char*) -1; /* no module loaded: query not recognized as a function call */
-    } else {
+        err = xquery_too_complex; /* must at least load one module to be able to just execute a function */
+    } else if (err == NULL) {
         /* detect queries that consist of a single method call only */
         nsend = ns = (char*) &nsbuf; 
         loc = p; 
@@ -2651,7 +2688,7 @@ xquery_prepare(xquery_client *ctx,
             p = xquery_parse_space(locend);
         }
         if (*p != '(' || ((locend-loc) == 2 && loc[0] == 'i' && loc[1] == 'f')) {
-            err = (char*) -1; /* query not recognized as a function call */
+            err = xquery_too_complex; /* this was not a function call, but an if-statement */
         } else {
             int cnt[MAXPARAMS];
             char* tpe[MAXPARAMS];
@@ -2680,7 +2717,7 @@ xquery_prepare(xquery_client *ctx,
                     }
                 } else {
                     /* complex parameter */
-                    err = (char*) -1; /* query not recognized as a simple function call */
+                    err = xquery_too_complex; 
                     break;
                 }
                 if (++argc >= MAXPARAMS) {
@@ -2701,7 +2738,7 @@ xquery_prepare(xquery_client *ctx,
             if (err == NULL) {    
                 p = xquery_parse_space(p);
                 if (*p == '/') {
-                    err = (char*) -1;
+                    err = xquery_too_complex;  /* what was this case?? */
                 } else if (*p) {
                     err = "xquery_prepare: unexpected characters after ';'.\n";
                 } else {
@@ -2715,9 +2752,15 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-    if (err == xquery_function_error) {
-        err = (char*) -1; /* execution error in xquery_function_call */
-    } else if (err == (char*) -1) {
+    /* if (err && err != xquery_function_error) 
+     * we could return that error here, but it is more consistent to let the PF 
+     * compiler give out all error messages ("why make error queries fast?").
+     *
+     * we can re-enable this if we (ever) decide to create a low-resource XQ
+     * implementation that only supports prepared queries and lacks a linked
+     * in PF compiler.  
+     */
+    if (err && err != xquery_function_error) {
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
@@ -2728,7 +2771,7 @@ xquery_prepare(xquery_client *ctx,
         if (sec2) free(sec2);
         if (sec3) free(sec3);
     } 
-    return err;
+    return err?((char*)-1):NULL; /* -1=error, NULL=OK */
 }
 
 /*
@@ -2898,7 +2941,7 @@ CMDxquery(Cntxt stk,
                 stream *bak = GDKout;
                 THRsetdata(0,s);
                 err = xquery_prepare(ctx, msec, mode, xquery);
-                if (err == NULL || err == (char*) -1) {
+                if (err == NULL) {
                     res->val.sval = GDKmalloc(b->pos+1);
                     if (res->val.sval) {
                         memcpy(res->val.sval, b->buf, b->pos);
