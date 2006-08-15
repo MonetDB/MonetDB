@@ -2623,14 +2623,15 @@ xquery_prepare(xquery_client *ctx,
 
                     err = xquery_module_load(ctx, mode, ns, url1, url2);
                     if (err) return err;
+                    loaded_modules++;
                     *nsend = bak; 
                 } while (*p == ',');
-            }
-            if (*p != ';') {
-                return "xquery_prepare: missing ';' after module import.\n";
-            } else {
-                loaded_modules++;
-                p++;
+
+                if (*p != ';') {
+                    return "xquery_prepare: missing ';' after module import.\n";
+                } else {
+                    p++;
+                }
             }
         }
     }
