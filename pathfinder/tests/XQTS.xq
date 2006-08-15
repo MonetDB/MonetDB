@@ -47,11 +47,16 @@ echo 'Over..'
 echo ''
 {
 if ($tst/*:output-file) then
+for $o at $p in $tst/*:output-file
+return
+if ($p = 1) then
 <o>
 echo -e '{text{"<?xml"}} version="1.0" encoding="utf-8"{text{"?>"}}\n<XQueryResult>'
-cat "$XQTS_SRC/ExpectedTestResults/$TSTDIR/{$tst/*:output-file[1]/text()}"
+cat "$XQTS_SRC/ExpectedTestResults/$TSTDIR/{$o/text()}"
 echo -e '\n</XQueryResult>'
 </o>
+else
+<o/>
 else
 <o/>
 }
