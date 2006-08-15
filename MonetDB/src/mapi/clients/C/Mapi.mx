@@ -206,6 +206,9 @@ section.
 @item mapi_stream_query()	@tab Send query and prepare for reading tuple stream
 @item mapi_table()	@tab	Get current table name
 @item mapi_timeout()	@tab	Set timeout for long-running queries[TODO]
+@item mapi_output()	@tab	Set output format 
+@item mapi_stream_into()	@tab	Stream document into server 
+@item mapi_profile()	@tab	Set profile flag
 @item mapi_trace()	@tab	Set trace flag
 @item mapi_trace_log()	@tab Keep log of interaction
 @item mapi_virtual_result()	@tab Submit a virtual result set
@@ -593,6 +596,18 @@ The reverse action of @code{mapi_quote()}, turning the database
 representation into a C-representation. The storage space is
 dynamically created and should be freed after use.
 
+@item MapiMsg  mapi_output(Mapi mid, char *output)
+
+Set the output format for results send by the server.
+
+@item MapiMsg  mapi_stream_into(Mapi mid, char *input)
+
+Stream a document into the server.
+
+@item MapiMsg  mapi_profile(Mapi mid, int flag)
+
+Set the profile flag to time commands send to the server.
+
 @item MapiMsg  mapi_trace(Mapi mid, int flag)
 
 Set the trace flag to monitor interaction with the server.
@@ -708,6 +723,9 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 #define MAPI_SEEK_CUR	1
 #define MAPI_SEEK_END	2
 
+#define MAPI_TRACE	1
+#define MAPI_TRACE_LANG	2
+
 typedef int MapiMsg;
 
 #define MOK		0
@@ -719,8 +737,7 @@ typedef int MapiMsg;
 #define LANG_MAL	0
 #define LANG_MIL	1
 #define LANG_SQL	2
-#define LANG_XCORE	3
-#define LANG_XQUERY	4
+#define LANG_XQUERY	3
 @-
 The table field information is extracted from the table headers
 obtained from the server. This list may be extended in the future.
@@ -826,6 +843,7 @@ struct MapiStruct {
 	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
 
+	int profile;		/* profile Mapi interaction */
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
 	int auto_commit;
@@ -988,6 +1006,9 @@ mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
+mapi_export MapiMsg mapi_output(Mapi mid, char *output);
+mapi_export MapiMsg mapi_stream_into(Mapi mid, char *input);
+mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export int mapi_get_trace(Mapi mid);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
@@ -1290,14 +1311,6 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	return MOK;
 }
 
-MapiMsg
-mapi_trace(Mapi mid, int flag)
-{
-	mapi_clrError(mid);
-	mid->trace = flag;
-	return MOK;
-}
-
 int
 mapi_get_trace(Mapi mid)
 {
@@ -1351,7 +1364,7 @@ new_result(MapiHdl hdl)
 
 	assert((hdl->lastresult == NULL && hdl->result == NULL) || (hdl->result != NULL && hdl->lastresult != NULL && hdl->lastresult->next == NULL));
 
-	if (hdl->mid->trace)
+	if (hdl->mid->trace == MAPI_TRACE)
 		printf("allocating new result set\n");
 	/* append a newly allocated struct to the end of the linked list */
 	result = malloc(sizeof(*result));
@@ -1399,7 +1412,7 @@ close_result(MapiHdl hdl)
 		return MERROR;
 	mid = hdl->mid;
 	assert(mid != NULL);
-	if (mid->trace)
+	if (mid->trace == MAPI_TRACE)
 		printf("closing result set\n");
 	if (result->tableid >= 0 && result->querytype != Q_PREPARE) {
 		if (mid->active && !mid->active->needmore && read_into_cache(mid->active, 0) != MOK)
@@ -1779,8 +1792,6 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 		mid->languageId = LANG_MAL;
 	else if (strcmp(lang, "sql") == 0)
 		mid->languageId = LANG_SQL;
-	else if (strcmp(lang, "xcore") == 0)
-		mid->languageId = LANG_XCORE;
 	else if (strcmp(lang, "xquery") == 0)
 		mid->languageId = LANG_XQUERY;
 
@@ -2108,7 +2119,7 @@ mapi_start_talking(Mapi mid)
 		close_connection(mid);
 		return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 	}
-	if (mid->trace) {
+	if (mid->trace == MAPI_TRACE) {
 		printf("sending first request [%d]:%s", BLOCK, buf);
 		fflush(stdout);
 	}
@@ -2255,7 +2266,7 @@ err:
 	}
 	mapi_close_handle(hdl);
 
-	if (mid->trace)
+	if (mid->trace == MAPI_TRACE)
 		printf("connection established\n");
 	if (mid->languageId == LANG_MAL)
 		return mid->error;
@@ -2539,22 +2550,6 @@ mapi_check_query(MapiHdl hdl)
 	}
 }
 
-MapiMsg
-mapi_timeout(Mapi mid, int time)
-{
-	mapi_check(mid, "mapi_timeout");
-	if (mid->trace)
-		printf("Set timeout to %d\n", time);
-	return mapi_setError(mid, "Operation not yet implemented", "mapi_timeout", MERROR);
-}
-
-@-
-The routine mapi_query is one of the most heavily used ones.
-It sends a complete statement for execution
-(i.e., ending in a newline; possibly including additional newlines).
-Interaction with the server is sped up using block based interaction.
-The query is retained in the Mapi structure to repeat shipping.
-@c
 static MapiHdl
 prepareQuery(MapiHdl hdl, const char *cmd)
 {
@@ -2572,6 +2567,42 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 	return hdl;
 }
 
+
+MapiMsg
+mapi_timeout(Mapi mid, int time)
+{
+	mapi_check(mid, "mapi_timeout");
+	if (mid->trace == MAPI_TRACE)
+		printf("Set timeout to %d\n", time);
+	return mapi_setError(mid, "Operation not yet implemented", "mapi_timeout", MERROR);
+}
+
+static int
+mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
+{
+	MapiHdl hdl;
+
+	mapi_check(mid, "mapi_Xcommand");
+	if (stream_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
+	    stream_flush(mid->to)) {
+		close_connection(mid);
+		mapi_setError(mid, stream_error(mid->to), "mapi_Xcommand", MTIMEOUT);
+		return MERROR;
+	}
+	hdl = prepareQuery(mapi_new_handle(mid), "Xcommand");
+	mid->active = hdl;
+	read_into_cache(hdl, 0);
+	mapi_close_handle(hdl);	/* reads away any output */
+	return MOK;
+}
+
+@-
+The routine mapi_query is one of the most heavily used ones.
+It sends a complete statement for execution
+(i.e., ending in a newline; possibly including additional newlines).
+Interaction with the server is sped up using block based interaction.
+The query is retained in the Mapi structure to repeat shipping.
+@c
 MapiMsg
 mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 {
@@ -2780,7 +2811,7 @@ mapi_param_store(MapiHdl hdl)
 	}
 	checkSpace(strlen(p) + 1);
 	strcpy(hdl->query + k, p);
-	if (hdl->mid->trace)
+	if (hdl->mid->trace == MAPI_TRACE)
 		printf("param_store: result=%s\n", hdl->query);
 	return;
 }
@@ -2825,12 +2856,12 @@ read_line(Mapi mid)
 			ssize_t len;
 
 			/* fetch one more block */
-			if (mid->trace)
+			if (mid->trace == MAPI_TRACE)
 				printf("fetch next block: start at:%d\n", mid->blk.end);
 			len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
 			mid->blk.buf[mid->blk.end + len] = 0;
-			if (mid->trace) {
+			if (mid->trace == MAPI_TRACE) {
 				printf("got next block: length:" SSZFMT "\n", len);
 				printf("text:%s\n", mid->blk.buf + mid->blk.end);
 			}
@@ -2855,7 +2886,7 @@ read_line(Mapi mid)
 			mid->blk.buf[mid->blk.end] = 0;
 		}
 	}
-	if (mid->trace) {
+	if (mid->trace == MAPI_TRACE) {
 		printf("got complete block: \n");
 		printf("text:%s\n", mid->blk.buf + mid->blk.nxt);
 	}
@@ -2866,7 +2897,7 @@ read_line(Mapi mid)
 	reply = mid->blk.buf + mid->blk.nxt;
 	mid->blk.nxt = nl - mid->blk.buf;
 
-	if (mid->trace)
+	if (mid->trace == MAPI_TRACE)
 		printf("read_line:%s\n", reply);
 	return reply;
 }
@@ -2875,28 +2906,60 @@ read_line(Mapi mid)
 MapiMsg
 mapi_setAutocommit(Mapi mid, int autocommit)
 {
-	MapiHdl hdl;
-
-	mapi_check(mid, "mapi_setAutocommit");
 	if (mid->auto_commit == autocommit)
 		return MOK;
 	if (mid->languageId != LANG_SQL) {
 		mapi_setError(mid, "autocommit only supported in SQL", "mapi_setAutocommit", MERROR);
 		return MERROR;
 	}
-	if (stream_printf(mid->to, "X" "auto_commit %d\n", autocommit) < 0 ||
-	    stream_flush(mid->to)) {
-		close_connection(mid);
-		mapi_setError(mid, stream_error(mid->to), "mapi_setAutocommit", MTIMEOUT);
-		return MERROR;
-	}
 	mid->auto_commit = autocommit;
-	hdl = prepareQuery(mapi_new_handle(mid), "autocommit");
-	mid->active = hdl;
-	read_into_cache(hdl, 0);
-	mapi_close_handle(hdl);	/* reads away any output */
+	if (autocommit)
+		return mapi_Xcommand(mid, "auto_commit", "1");
+	else
+		return mapi_Xcommand(mid, "auto_commit", "0");
+}
+
+MapiMsg
+mapi_output(Mapi mid, char * output)
+{
+	mapi_clrError(mid);
+	if (mid->languageId == LANG_XQUERY && strcmp(output,"dm")!=0)
+		return mapi_Xcommand(mid, "output", output);
 	return MOK;
 }
+
+MapiMsg
+mapi_stream_into(Mapi mid, char *input)
+{
+	mapi_clrError(mid);
+	if (mid->languageId == LANG_XQUERY) {
+		/* HACK alert, switch to mil too lose the extra 'S' */
+		mid->languageId = LANG_MIL; 
+		return mapi_Xcommand(mid, "copy", input);
+	}
+	return MOK;
+}
+
+MapiMsg
+mapi_profile(Mapi mid, int flag)
+{
+	mapi_clrError(mid);
+	mid->profile = flag;
+	if (mid->profile && mid->languageId == LANG_XQUERY)
+		return mapi_Xcommand(mid, "profile", "");
+	return MOK;
+}
+
+MapiMsg
+mapi_trace(Mapi mid, int flag)
+{
+	mapi_clrError(mid);
+	mid->trace = flag;
+	if (mid->trace == MAPI_TRACE_LANG && mid->languageId == LANG_XQUERY)
+		return mapi_Xcommand(mid, "trace", "");
+	return MOK;
+}
+
 
 static int
 slice_row(const char *reply, char *null, char ***anchorsp, int length, int endchar)
@@ -3332,10 +3395,10 @@ mapi_execute_internal(MapiHdl hdl)
 		return MERROR;
 	size = strlen(cmd);
 
-	if (mid->trace) {
+	if (mid->trace == MAPI_TRACE) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
-	if (mid->languageId == LANG_SQL) {
+	if (mid->languageId == LANG_SQL || mid->languageId == LANG_XQUERY) {
 		if (size > MAXQUERYSIZE) {
 			/* If the query is large and we don't do
 			   anything about it, deadlock may occur: the
@@ -3478,7 +3541,7 @@ mapi_query_prep(Mapi mid)
 	if (mid->active && read_into_cache(mid->active, 0) != MOK)
 		return NULL;
 	assert(mid->active == NULL);
-	if (mid->languageId == LANG_SQL) {
+	if (mid->languageId == LANG_SQL || mid->languageId == LANG_XQUERY) {
 		/* indicate to server this is a SQL command */
 		stream_write(mid->to, "S", 1, 1);
 	}
@@ -3505,7 +3568,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		hdl->query[sz] = 0;
 	}
 
-	if (mid->trace) {
+	if (mid->trace == MAPI_TRACE) {
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = 0;
@@ -3553,7 +3616,7 @@ mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = mapi_quick_response(hdl, fd);
-	if (mid->trace)
+	if (mid->trace == MAPI_TRACE)
 		printf("mapi_quick_query return:%d\n", ret);
 	return hdl;
 }
@@ -3575,7 +3638,7 @@ mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 		/* look ahead to detect errors */
 		ret = mapi_quick_response(hdl, fd);
 	}
-	if (mid->trace)
+	if (mid->trace == MAPI_TRACE)
 		printf("mapi_quick_query return:%d\n", ret);
 	return hdl;
 }

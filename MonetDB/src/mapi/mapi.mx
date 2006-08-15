@@ -243,7 +243,7 @@ init_client_cache()
 	nr_mapi_clients = 0;
 }
 
-void
+static void
 exit_client_cache()
 {
 	int i;
@@ -395,6 +395,8 @@ mapi_client_free(mapi_client *fc)
 	fc->inuse = 0;
 
 	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	if (fc->thread)
+		THRdel(fc->thread); 
 }
 
 static mapi_client *
@@ -519,7 +521,6 @@ mapi_client_engine(void *FC )
 		fc->inuse = 0;
 	}
 	fc->inuse = 2;
-	THRdel(fc->thread); 
 	f->f_free(fc);
 	mapi_client_free(fc);
 }
