@@ -13,9 +13,19 @@ XQTS_SRC="$3"
 XQTS_DST="$TSTSRCBASE/$XQTS_DIR"
 DOCS_DIR="$XQTS_DIR/doc"
 DOCS_DST="$XQTS_DST/doc"
+MODS_DIR="$XQTS_DIR/mod"
+MODS_DST="$XQTS_DST/mod"
 
 mkdir -p "$DOCS_DST"
 cp "$XQTS_SRC/TestSources"/*.xml "$DOCS_DST"
+mkdir -p "$MODS_DST"
+for i in "$XQTS_SRC/TestSources"/*-lib.xq ; do
+	cat "$i" \
+	 | perl -pe 's|(module namespace .*[^ ]) *= *([^ ].*;)|$1 = $2|' \
+	 > "{text{"$MODS_DST/${i##*/}"}}"
+done
+ln -s "moduleDefs-lib.xq" "$MODS_DST/module-defs.xq"
+ln -s "modulesdiffns-lib.xq" "$MODS_DST/modulesdiffns.xq"
 </h>
 ,
 for $tst in doc("XQTSCatalog.xml")//*:test-case
@@ -48,6 +58,19 @@ if ($tst/*:input-query) then
 else
 <q/>
 }
+  | perl -pe 's|^(import module namespace .*[^ ]) *= *([^ ].*;)|$1 = $2|' \
+  | perl -pe 's|^(import module namespace .* = [^ ]+)( +at .*)? *;|$1 at;|' \
+{
+if ($tst/*:module) then
+for $m in $tst/*:module
+return
+<m>
+  | perl -pe 's|^(import module namespace .* at.*);|$1 "\$TSTSRCBASE/'"$MODS_DIR"'/{$m/text()}.xq",;|' \
+</m>
+else
+<m/>
+}
+  | perl -pe 's|^(import module namespace .* at.*),;|$1;|' \
   > "$XQTS_DST/$TSTDIR/Tests/$TSTNME.xq.in"
 (
 echo 'stdout of test '\'"$TSTNME"'` in directory '\'"$XQTS_DIR/$TSTDIR"'` itself:'
