@@ -322,7 +322,7 @@ mal_export void mal_exit(void);
 #include "mal_namespace.h"  /* for initNamespace() */
 #include "mal_client.h"
 
-MT_Lock     mal_contextLock=0;
+MT_Lock     mal_contextLock;
 @-
 Initialization of the MAL context
 The compiler directive STRUCT_ALIGNED tells that the
@@ -357,7 +357,8 @@ void tstAligned()
 #endif
 }
 int mal_init(){
-	mal_contextLock= MT_create_lock();
+	MT_lock_init( &mal_contextLock);
+
 	tstAligned();
 	initNamespace();
 	initParser();

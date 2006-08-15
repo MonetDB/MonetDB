@@ -251,8 +251,7 @@ only.
 	obj->name= GDKstrdup(name);
 	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 	obj->val = newGlobalStack(MAXVARS);
-	if( GDKprotected)
-		obj->lock= MT_create_lock();
+	MT_lock_init(&obj->lock);
 @-
 @c
 #include "mal_box.h"
@@ -359,8 +358,7 @@ closeBox(str name, int flag)
 
 	if ((box = findBox(name))) {
 		saveBox(box, flag);
-		if( GDKprotected && box->lock)
-			MT_destroy_lock(box->lock);
+		MT_destroy_lock(box->lock);
 		return 0;
 	}
 	return -1;
@@ -381,8 +379,7 @@ destroyBox(str name)
 			boxfile = boxFileName(box[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
-			if( GDKprotected && box[i]->lock)
-				MT_destroy_lock(box[i]->lock);
+			MT_destroy_lock(box[i]->lock);
 		} else
 			box[i] = box[j++];
 	}

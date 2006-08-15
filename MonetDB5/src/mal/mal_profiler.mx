@@ -232,7 +232,8 @@ reset once the owner leaves. The routine profilerReset() handles the case.
 #include "mal_debugger.h"
 
 #ifdef MALprofiler
-static MT_Lock profileLock = 0;
+static MT_Lock profileLock ;
+static int profileLockInitialized = 0;
 static stream *eventstream = 0;
 
 static int onlineProfiling = TRUE;
@@ -316,7 +317,10 @@ The parameter of getEventStream is the return value of the enclosing function:
 	setStartPoint:  a str
 	setEndPoint:    a str
 @= getEventStream
-	if( profileLock==0) profileLock= MT_create_lock();
+	if( ! profileLockInitialized) {
+		MT_lock_init(&profileLock);
+		profileLockInitialized= 1;
+	}
 	mal_set_lock(profileLock,"profileLock");
 	if( eventstream == NULL) {
 	    mal_unset_lock(profileLock,"profileLock");
@@ -879,8 +883,10 @@ setLogFile(Module cntxt, str fname)
 {
 	(void) cntxt;		/* still unused */
 #ifdef MALprofiler
-	if (profileLock == 0)
-		profileLock = MT_create_lock();
+	if( ! profileLockInitialized) {
+		MT_lock_init(&profileLock);
+		profileLockInitialized= 1;
+	}
 	mal_set_lock(profileLock, "profileLock");
 	eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
@@ -1033,8 +1039,10 @@ setFilter(Module cntxt, str mod, str fcn)
 		return;
 	}
 
-	if (profileLock == 0)
-		profileLock = MT_create_lock();
+	if( ! profileLockInitialized) {
+		MT_lock_init(&profileLock);
+		profileLockInitialized= 1;
+	}
 	mal_set_lock(profileLock, "profileLock");
 	while (s != NULL) {
 		if (s->subscope)
@@ -1077,8 +1085,10 @@ resetFilter(Module cntxt, str mod, str fcn)
 	(void) mod;
 	(void) fcn;		/* still unused */
 
-	if (profileLock == 0)
-		profileLock = MT_create_lock();
+	if( ! profileLockInitialized) {
+		MT_lock_init(&profileLock);
+		profileLockInitialized= 1;
+	}
 	mal_set_lock(profileLock, "profileLock");
 	if (profileAll) {
 		profileAll = FALSE;
