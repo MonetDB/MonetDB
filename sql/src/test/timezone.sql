@@ -6,4 +6,4 @@ insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-
 insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30+04:30');
 select * from time_example;
 set time zone local;
-select * from sessions;;
+select current_timezone;

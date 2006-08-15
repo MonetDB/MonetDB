@@ -19,24 +19,8 @@
 # entry point
 docs: $(prefix)/doc/SQLsessionDemo.html \
 	$(prefix)/doc/SQLfeatures/SQLfeatures.html \
-	$(prefix)/doc/jdbcmanual/jdbcmanual.html \
 	$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html \
 	$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html
-
-$(prefix)/doc/jdbcmanual.html:	$(top_srcdir)/jdbcmanual.html
-	-@mkdir -p $(prefix)/doc
-	cp $< $@
-
-$(prefix)/doc/jdbcmanual/jdbcmanual.tex:	$(top_srcdir)/src/jdbc/jdbcmanual.tex
-	-@mkdir -p $(prefix)/doc/jdbcmanual
-	cp $< $@
-
-$(prefix)/doc/jdbcmanual/jdbcmanual.aux:	$(prefix)/doc/jdbcmanual/jdbcmanual.tex
-	(cd $(prefix)/doc/jdbcmanual; latex jdbcmanual.tex; latex jdbcmanual.tex)
-
-$(prefix)/doc/jdbcmanual/jdbcmanual.html:	$(prefix)/doc/jdbcmanual/jdbcmanual.aux
-	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/jdbcmanual doc/jdbcmanual/jdbcmanual.tex -noinfo)
-
 
 $(prefix)/doc/SQLsessionDemo.html:	$(top_srcdir)/SQLsessionDemo.html
 	-@mkdir -p $(prefix)/doc

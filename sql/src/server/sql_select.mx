@@ -63,7 +63,7 @@ extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 #include "sql_env.h"
 
 static stmt *sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel);
-static stmt *sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection);
+static stmt *sql_simple_select(mvc *sql, scope *scp, SelectNode *sn);
 static stmt *sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f);
 
 static tvar *query_exp_optname(mvc *sql, scope *scp, symbol *q);
@@ -81,6 +81,36 @@ sql_select_cleanup(mvc *sql, stmt *s, stmt *subset, group *grp)
 		stmt_destroy(subset);
 	if (s)
 		stmt_destroy(s);
+}
+
+static tvar *
+sql_table_func(mvc *sql, scope *scp, symbol *query)
+{
+	tvar *tv = NULL;
+	sql_subtype *st = NULL;
+	node *m;
+	stmt *sq = sql_value_exp(sql, scp, query->data.lval->h->data.sym, NULL, NULL, sql_from);
+	char *tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
+
+	if (!sq)
+		return NULL;
+
+	/* colum or table function */
+	st = tail_type(sq);
+	assert(st->comp_type);
+	tv = scope_add_table(scp, sq, tname, NULL);
+
+	/* foreach column add column name */
+	for (m = st->comp_type->columns.set->h; m; m = m->next) {
+		sql_column *c = m->data;
+		char *cname = _strdup(c->base.name);
+		stmt *sc = stmt_find(stmt_dup(sq), stmt_atom_string(cname), c);
+
+		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
+		sc = stmt_column(sc, stmt_dup(sq));
+		table_add_column(tv, sc, NULL, cname);
+	}
+	return tv;
 }
 
 static tvar *
@@ -121,7 +151,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 
 			return NULL;
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
-			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", sql->user, s->base.name, tname);
+			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", backend_get_string(sql, "user"), s->base.name, tname);
 			return NULL;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
@@ -129,6 +159,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		}
 		return scope_add_table_columns(sql, scp, t, tname, RDONLY);
 	} else if (tableref->token == SQL_TABLE) {
+<<<<<<< sql_select.mx
 		stmt *s = sql_value_exp(sql, scp, tableref->data.lval->h->data.sym, NULL, NULL, sql_from);
 
 	
@@ -138,6 +169,9 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		if (!s)
 			return NULL;
 		return scope_add_table(scp, s, tname, NULL);
+=======
+		return sql_table_func(sql, scp, tableref);
+>>>>>>> 1.143
 	} else if (tableref->token == SQL_SELECT) {
 		return sql_subquery_optname(sql, scp, tableref);
 	} else {
@@ -188,7 +222,7 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel)
 			return NULL;
 
 	} else if (toplevel) {	/* only on top level query */
-		return sql_simple_select(sql, scp, sn->where, sn->selection);
+		return sql_simple_select(sql, scp, sn);
 	}
 	return sql_select(sql, scp, sn, toplevel);
 }
@@ -241,32 +275,15 @@ flat_subquery(mvc *sql, symbol *sq)
 static stmt *
 sql_var_ref(mvc *sql, char *name, int at)
 {
-	stmt *s = NULL;;
-	if ((s = stack_find_var(sql, name)) != NULL) {
-		return stmt_var(_strdup(name), tail_type(s), 0);
-	} else { /* global var ? */
-		char *tpe = sql_get_type(sql, name);
-	
-		if (tpe) {
-			stmt *res;
-			char buf[BUFSIZ];
+	stmt *s = NULL;
 
-			int i = snprintf(buf, BUFSIZ, "select CAST(value AS %s) from sessions where name = '%s';\n", tpe, name);
-			if (i<0)
-				return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
-			res = sqlparse_intern(sql, buf, sql->mode);
-			if (!res)
-				return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
-			_DELETE(tpe);
-			return res;
-		} else {
-			if (at) {
-				return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
-			} else {
-	
-				return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
-			}
-		}
+	if ((s = stack_find_var(sql, name)) != NULL) {
+		int frame = stack_find_frame(sql, name);
+		return stmt_var(_strdup(name), tail_type(s), 0, frame);
+	} else  if (at) {
+		return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+	} else {
+		return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
 	}
 }
 
@@ -296,7 +313,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			if (!a) {
 				return sql_var_ref(sql, name, 0);
 			} else {
-				cs = stmt_var(_strdup(a->name), &a->type, 0);
+				cs = stmt_var(_strdup(a->name), &a->type, 0, 0);
 			}
 		}
 	} else if (dlist_length(l) == 2) {
@@ -968,20 +985,18 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 }
 
 static stmt *
-sql_op(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset)
+sql_op(mvc *sql, symbol *se)
 {
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
+	char *fname = l->data.sval;
 
-	(void) scp;
-	(void) grp;
-	(void) subset;		/* Stefan: unused!? */
-
-	f = sql_bind_func(sql->session->schema, l->data.sval, NULL, NULL);
+	f = sql_bind_func(sql->session->schema, fname, NULL, NULL);
 	if (f) {
 		return stmt_op(f);
 	} else {
-		return sql_error(sql, 02, "SELECT: no such operator '%s()'", l->data.sval);
+		return sql_error(sql, 02, 
+			"SELECT: no such operator '%s()'", fname);
 	}
 	return NULL;
 }
@@ -1145,6 +1160,41 @@ sql_column_value(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int
 }
 
 stmt *
+sql_table_exp(mvc *sql, scope *scp, symbol *sym ) 
+{
+	stmt *ls = scope_subquery(sql, scp, sym);
+
+	if (!ls)
+		return ls;
+
+	if (ls->type == st_list) { 
+		if (ls->nrcols <= 0) { /* single row */
+			list *l = create_stmt_list();
+			node *n;
+			for (n = ls->op1.lval->h; n; n = n->next) {
+				stmt *nsq = stmt_dup(n->data);
+				char *cname = column_name(nsq);
+				char *tname = table_name(nsq);
+				stmt *temp = stmt_temp(tail_type(nsq));
+
+				nsq = stmt_append(temp, nsq);
+				nsq = stmt_alias(nsq, tname, cname);
+				list_append(l, nsq);
+			}
+			stmt_destroy(ls);
+			ls = stmt_list(l);
+		}
+	} else if (ls->nrcols <= 0) { /* single row */
+		char *cname = column_name(ls);
+		char *tname = table_name(ls);
+		stmt *temp = stmt_temp(tail_type(ls));
+		ls = stmt_append(temp, ls);
+		ls = stmt_alias(ls, tname, cname);
+	}
+	return stmt_table(ls, 1);
+}
+
+stmt *
 sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 {
 
@@ -1154,7 +1204,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	case SQL_BINOP:
 		return sql_binop(sql, scp, se, grp, subset, f);
 	case SQL_OP:
-		return sql_op(sql, scp, se, grp, subset);
+		return sql_op(sql, se);
 	case SQL_UNOP:
 		return sql_unop(sql, scp, se, grp, subset, f);
 	case SQL_AGGR:
@@ -1175,6 +1225,11 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 		return s;
 	}
+	case SQL_TABLE:  /* turn a subquery into a tabular result */
+	{
+		return sql_table_exp(sql, scp, se->data.sym);
+	}
+		break;
 	case SQL_PARAMETER:{
 		char n[BUFSIZ];
 
@@ -1183,7 +1238,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		snprintf(n, BUFSIZ, "A%d", 
 			(sql->params)?list_length(sql->params):0);
 		sql_add_param(sql, n, NULL);
-		return stmt_var(_strdup(n), NULL, 0);
+		return stmt_var(_strdup(n), NULL, 0, 0);
 	}
 	case SQL_NULL:
 		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
@@ -3070,7 +3125,7 @@ find_base_row( stmt *subset, int aggr )
 }
 
 static stmt *
-sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
+sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 {
 	stmt *subset = NULL;
 	stmt *s = NULL;
@@ -3079,11 +3134,11 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	node *m;
 	int aggr = 0;
 
-	if (!selection) 
+	if (!sn->selection) 
 		return sql_error(sql, 02, "SELECT: '*' not allowed without FROM");
 		
-	if (where) {
-		s = sql_logical_exp(sql, scp, where, NULL, NULL, sql_where);
+	if (sn->where) {
+		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);
 		if (!s)
 			return NULL;
 		if (s->type != st_set && s->type != st_sets) {
@@ -3092,7 +3147,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		subset = s;
 	}
 	sl = create_stmt_list();
-	for ( n = selection->h; n; n = n->next) {
+	for ( n = sn->selection->h; n; n = n->next) {
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs || !tail_type(cs)) {
@@ -3105,7 +3160,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		aggr |= cs->aggr;
 	}
 	rl = create_stmt_list();
-	for (m = sl->h, n = selection->h; m && n; m = m->next, n = n->next) {
+	for (m = sl->h, n = sn->selection->h; m && n; m = m->next, n = n->next){
 		stmt *cs = m->data;
 
 		/* t1.* */
@@ -3132,6 +3187,39 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	if (subset)
 		stmt_destroy(subset);
 	list_destroy(sl);
+
+	/* SELECT ... INTO var_list */
+	if (sn->into) {
+		list *nl = create_stmt_list();
+
+		for (m = rl->h, n = sn->into->h; m && n; m = m->next, n = n->next) {
+			sql_subtype *tpe = NULL;
+			char *nme = n->data.sval;
+			stmt *a = NULL, *v = m->data, *var;
+			int level;
+
+			if ((var=stack_find_var(sql, nme)) == NULL || !v->key) {
+				list_destroy(rl);
+				list_destroy(nl);
+				if (var)
+					return sql_error(sql, 02, "SELECT INTO: needs a single row");
+				else
+					return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
+			}
+			tpe = tail_type(var);
+			level = stack_find_frame(sql, nme);
+			v = check_types(sql, tpe, stmt_dup(v), type_equal); 
+			if (!v) {
+				list_destroy(rl);
+				list_destroy(nl);
+				return NULL;
+			}
+			a = stmt_assign(nme, v, level);
+			list_append(nl, a);
+		}
+		list_destroy(rl);
+		rl = nl;
+	}
 
 	s = stmt_list(rl);
 
@@ -3222,7 +3310,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 	group *grp = NULL;
 
 	if (!sn->from)
-		return sql_simple_select(sql, scp, sn->where, sn->selection);
+		return sql_simple_select(sql, scp, sn);
 
 	if (sn->where) {
 		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);

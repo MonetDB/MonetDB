@@ -59,18 +59,10 @@ called 'sessions'.
 
 extern int mvc_debug_on(mvc *m, int flag);
 
-extern stmt *env(mvc *sql, symbol *s);
-
 extern int sql_update_var(mvc *sql, char *name);
-extern int sql_set_var_value(mvc *sql, char *name, char *value);
-
-extern char *sql_get_var(mvc *sql, char *name);
-extern char *sql_get_type(mvc *sql, char *name);
 
 extern int sql_create_env(mvc *sql, sql_schema *s);
-extern int sql_create_sessions(mvc *sql, sql_schema *tmp);
 extern int sql_create_profile(mvc *sql, sql_schema *tmp);
-extern int sql_sessions(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
 @c
@@ -94,6 +86,7 @@ mvc_debug_on(mvc *m, int flg)
 	return 0;
 }
 
+<<<<<<< sql_env.mx
 char *
 sql_get_var(mvc *m, char *name)
 {
@@ -299,37 +292,31 @@ sql_set_var_value(mvc *m, char *name, char *value)
 	return res;
 }
 
+=======
+>>>>>>> 1.56
 int
 sql_update_var(mvc *m, char *name)
 {
 	if (strcmp(name, "debug") == 0) {
-		m->debug = sql_get_int_var(m, "debug");
+		m->debug = backend_get_number(m, "debug");
 	} else if (strcmp(name, "current_schema") == 0) {
-		char *schema = sql_get_str_var(m, "current_schema");
+		char *schema = backend_get_string(m, "current_schema");
 
 		if (!mvc_set_schema(m, schema)) {
 			GDKwarning("Schema (%s) missing\n", schema);
-			if (schema)
-				_DELETE(schema);
 			return GDK_FAIL;
 		}
-		if (schema)
-			_DELETE(schema);
 	} else if (strcmp(name, "current_role") == 0) {
-		char *role = sql_get_str_var(m, "current_role");
+		char *role = backend_get_string(m, "current_role");
 
 		if (!mvc_set_role(m, role)) {
 			GDKwarning("Role (%s) missing\n", role);
-			if (role)
-				_DELETE(role);
 			return GDK_FAIL;
 		}
-		if (role)
-			_DELETE(role);
 	} else if (strcmp(name, "current_timezone") == 0) {
-		m->timezone = sql_get_int_var(m, "current_timezone") / 60;
+		m->timezone = backend_get_number(m, "current_timezone") / 60;
 	} else if (strcmp(name, "explain") == 0) {
-		char *explain = sql_get_str_var(m, "explain");
+		char *explain = backend_get_string(m, "explain");
 
 		if (!explain || strcmp(explain, "") == 0)
 			m->explain = m_normal;
@@ -341,26 +328,23 @@ sql_update_var(mvc *m, char *name)
 			m->explain = m_trace;
 		else {
 			GDKwarning("Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
-			if (explain)
-				_DELETE(explain);
 			return GDK_FAIL;
 		}
-		if (explain)
-			_DELETE(explain);
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
-		m->cache = sql_get_bit_var(m, "cache");
+		m->cache = backend_get_number(m, "cache");
 	}  else if (strcmp(name,"profile") == 0){
-		int flag = sql_get_bit_var(m, "profile");
+		int flag = backend_get_number(m, "profile");
 		m->explain= flag? m_profile:m_normal;
 	}  else if (strcmp(name,"trace") == 0){
-		int flag = sql_get_bit_var(m, "trace");
+		int flag = backend_get_number(m, "trace");
 		m->explain= flag? m_trace:m_normal;
 	}
 	return GDK_SUCCEED;
 }
 
 
+<<<<<<< sql_env.mx
 stmt *
 sql_declare_var(mvc *m, symbol *s)
 {
@@ -435,24 +419,25 @@ sql_sessions(mvc *m)
 	return 0;
 }
 
+=======
+>>>>>>> 1.56
 int
-sql_create_sessions(mvc *m, sql_schema *s)
+sql_create_env(mvc *m, sql_schema *s)
 {
+<<<<<<< sql_env.mx
 	sql_table *t = mvc_create_table(m, s, "sessions", NULL, 1, SQL_GLOBAL_TEMP, CA_PRESERVE, -1, LOCATION);
+=======
+	list *l;
+	/* here we create a new table-type */
+	sql_subtype tpe;
+	sql_table *
+>>>>>>> 1.56
 
+	t = mvc_create_generated(m, s, "#env", NULL, 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
-	mvc_create_column_(m, t, "type", "varchar", 1024);
-	mvc_create_column_(m, t, "access", "int", 9);
-	/* access 0     read/write
-	   1    via sql_privileges (role/user)  
-	   ie set session authorization bla
-	   set role bla
-	   2    read only
-	 */
-	return 0;
-}
 
+<<<<<<< sql_env.mx
 int
 sql_create_env(mvc *m, sql_schema *s)
 {
@@ -460,15 +445,26 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* TODO change to view AS BATS ? */
 	sql_table *t = mvc_create_table(m, s, "env", NULL, 1, SQL_PERSIST, 0, -1, LOCATION);
+=======
+	sql_find_subtype(&tpe, "table", 0, 0);
+	tpe.comp_type = t;
+	tpe.digits = t->base.id; /* pass the table through digits */
 
+	/* add function */
+	l = list_create((fdestroy) &arg_destroy);
+	mvc_create_func(m, s, "env", l, &tpe, FALSE, FALSE, "sql_environment");
+>>>>>>> 1.56
+
+	t = mvc_create_generated(m, s, "#var", NULL, 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
-	mvc_create_column_(m, t, "value", "varchar", 2048);
-	BATloop(GDKenv, p, q) {
-		char *name = BUNhead(GDKenv, p);
-		char *val = BUNtail(GDKenv, p);
 
-		table_insert(m->session->tr, t, name, val, NULL);
-	}
+	sql_find_subtype(&tpe, "table", 0, 0);
+	tpe.comp_type = t;
+	tpe.digits = t->base.id; /* pass the table through digits */
+
+	/* add function */
+	l = list_create((fdestroy) &arg_destroy);
+	mvc_create_func(m, s, "var", l, &tpe, FALSE, FALSE, "sql_variables");
 	return 0;
 }
 
@@ -485,32 +481,13 @@ sql_create_profile(mvc *m, sql_schema *s)
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 2048);
-	mvc_create_column_(m, t, "parse", "int", 9);
-	mvc_create_column_(m, t, "optimize", "int", 9);
-	mvc_create_column_(m, t, "exec", "int", 9);
-	mvc_create_column_(m, t, "total", "int", 9);
+	mvc_create_column_(m, t, "parse", "int", 32);
+	mvc_create_column_(m, t, "optimize", "int", 32);
+	mvc_create_column_(m, t, "exec", "int", 32);
+	mvc_create_column_(m, t, "total", "int", 32);
 	mvc_create_column_(m, t, "user", "varchar", 512);
 
 	return 0;
 }
 
 @}
-
-stmt *
-env(mvc * sql, symbol * s) 
-{
-	stmt *ret = NULL;
-
-	switch (s->token) {
-	case SQL_SET:
-		sql->type = Q_UPDATE;
-		return sql_set_var(sql, s);
-	case SQL_DECLARE:
-		return sql_declare_var(sql, s);
-	default:
-		return sql_error(sql, 01, 
-			 "Env statement unknown Symbol(%ld)->token = %s",
-			 (long) s, token2string(s->token));
-	}
-	return ret;
-}

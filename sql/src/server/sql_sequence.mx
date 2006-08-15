@@ -48,15 +48,15 @@ sql_create_sequences(mvc *m, sql_schema *s)
 	t = mvc_create_table(m, s, "sequences", NULL, 1, SQL_PERSIST, 0, -1, LOCATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "schema", "varchar", 1024);
-	mvc_create_column_(m, t, "start", "bigint", 19);
-	mvc_create_column_(m, t, "increment", "bigint", 19);
-	mvc_create_column_(m, t, "cache", "bigint", 19);
-	mvc_create_column_(m, t, "minvalue", "bigint", 19);
-	mvc_create_column_(m, t, "maxvalue", "bigint", 19);
-	mvc_create_column_(m, t, "cycle", "boolean", 0);
+	mvc_create_column_(m, t, "start", "bigint", 64);
+	mvc_create_column_(m, t, "increment", "bigint", 64);
+	mvc_create_column_(m, t, "cache", "bigint", 64);
+	mvc_create_column_(m, t, "minvalue", "bigint", 64);
+	mvc_create_column_(m, t, "maxvalue", "bigint", 64);
+	mvc_create_column_(m, t, "cycle", "boolean", 1);
 	/* columns for internal use */
-	mvc_create_column_(m, t, "cached", "bigint", 19);
-	mvc_create_column_(m, t, "called", "boolean", 0);
+	mvc_create_column_(m, t, "cached", "bigint", 64);
+	mvc_create_column_(m, t, "called", "boolean", 1);
 
 	return 0;
 }
@@ -103,7 +103,7 @@ sql_create_seq(
 	} else if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", sql->user, ss->base.name);
+				"for '%s' in schema '%s'", backend_get_string(sql, "user"), ss->base.name);
 	}
 
 	/* generate defaults */
@@ -193,7 +193,7 @@ sql_alter_seq(
 	if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02,
 				"ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", sql->user, ss->base.name);
+				"for '%s' in schema '%s'", backend_get_string(sql, "user"), ss->base.name);
 	}
 
 	/* make sure the in memory sequence structure is flushed */
@@ -320,7 +320,7 @@ sql_drop_seq(mvc *sql, sql_schema *ss, symbol *qname)
 	if (!sql_find_seq(sql, name)) {
 		return sql_error(sql, 02, "DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", sql->user,  ss->base.name);
+		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", backend_get_string(sql, "user"),  ss->base.name);
 	}
 	/* make sure the in memory sequence structure is flushed */
 	ok = sequence_exit(name);

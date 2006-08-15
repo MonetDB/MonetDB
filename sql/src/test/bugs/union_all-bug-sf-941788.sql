@@ -6,7 +6,7 @@ AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
 "REF_GENERATION" FROM "_tables" as ptables, "schemas" WHERE
 "ptables"."schema_id" = "schemas"."id" AND
-"ptables"."istable" = true AND "ptables"."system" = true
+"ptables"."type" = 0 AND "ptables"."system" = true
 AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
     'keycolumns', 'keys', 'modules', 'sequences')
 UNION ALL SELECT null AS
@@ -30,7 +30,7 @@ AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM "_tables" as ptables, "schemas" WHERE "ptables"."schema_id" =
-"schemas"."id" AND "ptables"."istable" = true AND "ptables"."system" = true
+"schemas"."id" AND "ptables"."type" = 0 AND "ptables"."system" = true
 AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
     'keycolumns', 'keys', 'modules', 'sequences')
 UNION ALL
@@ -41,7 +41,7 @@ SELECT null AS "TABLE_CAT", "schemas"."name" AS
 null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM tmp."_tables" as ttables, "schemas" WHERE "ttables"."schema_id" =
-"schemas"."id" AND "ttables"."istable" = true and "ttables"."system" = true
+"schemas"."id" AND "ttables"."type" = 0 and "ttables"."system" = true
 AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
     'keycolumns', 'keys', 'modules', 'sequences')
 UNION ALL

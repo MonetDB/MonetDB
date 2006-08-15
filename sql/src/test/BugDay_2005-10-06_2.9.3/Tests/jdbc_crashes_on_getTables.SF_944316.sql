@@ -10,7 +10,7 @@ SELECT * FROM (
 		'id' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
 	FROM "tables", "schemas"
-	WHERE "tables"."schema_id" = "schemas"."id" AND "tables"."istable" = true
+	WHERE "tables"."schema_id" = "schemas"."id" AND "tables"."type" = 0
 )
 AS "tables"
 WHERE 1 = 1 AND ("TABLE_TYPE" LIKE 'TABLE' OR "TABLE_TYPE" LIKE 'VIEW')

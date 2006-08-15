@@ -21,7 +21,7 @@ SELECT * FROM (
 	FROM "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = true
+		AND "tables"."type" = 0
 ) AS "tables"
 WHERE 1 = 1
 	AND ("TABLE_TYPE" LIKE 'TABLE' OR "TABLE_TYPE" LIKE 'VIEW')
@@ -44,7 +44,7 @@ SELECT * FROM (
 -- 	FROM "tables", "schemas"
 -- 	WHERE "tables"."schema_id" = "schemas"."id"
 -- 		AND "tables"."system" = true
--- 		AND "tables"."istable" = true
+-- 		AND "tables"."type" = 0
 --
 -- 	UNION ALL
 
@@ -61,7 +61,7 @@ SELECT * FROM (
 -- 	FROM "tables", "schemas"
 -- 	WHERE "tables"."schema_id" = "schemas"."id"
 -- 		AND "tables"."system" = false
--- 		AND "tables"."istable" = true
+-- 		AND "tables"."type" = 0
 --
 -- 	UNION ALL
 
@@ -78,7 +78,7 @@ SELECT * FROM (
 	FROM "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 	UNION ALL
 
@@ -95,7 +95,7 @@ SELECT * FROM (
 	FROM "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 	UNION ALL
 
@@ -112,7 +112,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = true
+		AND "tables"."type" = 0
 
 	UNION ALL
 
@@ -129,7 +129,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
-		AND "tables"."istable" = true
+		AND "tables"."type" = 0
 
 	UNION ALL
 
@@ -146,7 +146,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 	UNION ALL
 
@@ -163,7 +163,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 ) AS "tables"
 	WHERE 1 = 1
@@ -187,7 +187,7 @@ SELECT * FROM (
 	FROM "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = true
+		AND "tables"."type" = 0
 
 	UNION ALL
 
@@ -204,7 +204,7 @@ SELECT * FROM (
  	FROM "tables", "schemas"
  	WHERE "tables"."schema_id" = "schemas"."id"
  		AND "tables"."system" = false
- 		AND "tables"."istable" = true
+ 		AND "tables"."type" = 0
 
  	UNION ALL
 
@@ -221,7 +221,7 @@ SELECT * FROM (
 	FROM "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 	UNION ALL
 
@@ -238,7 +238,7 @@ SELECT * FROM (
 	FROM "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 	UNION ALL
 
@@ -255,7 +255,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = true
+		AND "tables"."type" = 0
 
 	UNION ALL
 
@@ -272,7 +272,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
-		AND "tables"."istable" = true
+		AND "tables"."type" = 0
 
 	UNION ALL
 
@@ -289,7 +289,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 	UNION ALL
 
@@ -306,7 +306,7 @@ SELECT * FROM (
 	FROM tmp."_tables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
-		AND "tables"."istable" = false
+		AND "tables"."type" = 1
 
 ) AS "tables"
 	WHERE 1 = 1

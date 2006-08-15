@@ -984,11 +984,11 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	}
 	if (!t) {
 		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
-	} else if (!t->table) {
+	} else if (isView(t)) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", sql->user, tname);
+		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", backend_get_string(sql, "user"), tname);
 	}
 	if (columns) {
 		dnode *n;
@@ -1154,6 +1154,9 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	return res;
 }
 
+/* TODO rewrite on parser level into, INSERT INTO x select * from import()
+   where import is a function returning a table of to be inserted values.
+ */
 static stmt *
 sql_bulkinsert(mvc *sql, scope *scp, sql_table *t, char *tsep, char *rsep, char *filename, int nr)
 {
@@ -1282,7 +1285,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 
 	if (!t) {
 		return sql_error(sql, 02, "UPDATE: no such table '%s'", tname);
-	} else if (!t->table) {
+	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
 	} else {
 		int len = 0, i = 0;
@@ -1593,12 +1596,17 @@ delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 		t = mvc_bind_table(sql, s, tname, location);
 	}
 	if (!t) {
+<<<<<<< sql_updates.mx
 		return sql_error(sql, 02, "DELETE FROM: no such table '%s' for database '%s'", tname,host);
 	} else if (!t->table){ 
+=======
+		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);
+	} else if (isView(t)) {
+>>>>>>> 1.81
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_DELETE)) {
-		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sql->user, tname);
+		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", backend_get_string(sql, "user"), tname);
 	} else {
 		tvar *tv = NULL;
 		stmt *s = NULL;

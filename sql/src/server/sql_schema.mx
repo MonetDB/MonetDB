@@ -198,7 +198,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 		if (!allowed) {
 			list_destroy(l);
-			return sql_error(sql, 02, "GRANTOR '%s' is not allowed to grant ALL privileges for table '%s'", sql->user, tname);
+			return sql_error(sql, 02, "GRANTOR '%s' is not allowed to grant ALL privileges for table '%s'", backend_get_string(sql,"user"), tname);
 		}
 
 		for (gn = grantees->h; gn; gn = gn->next) {
@@ -280,7 +280,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 					if (!allowed) {
 						list_destroy(l);
-						return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", sql->user, priv2string(priv), tname);
+						return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", backend_get_string(sql, "user"), priv2string(priv), tname);
 					}
 
 					c = mvc_bind_column(sql, t, cname);
@@ -299,7 +299,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 				if (!allowed) {
 					list_destroy(l);
-					return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", sql->user, priv2string(priv), tname);
+					return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", backend_get_string(sql, "user"), priv2string(priv), tname);
 				}
 
 				list_append(l, sql_insert_priv(sql, grantee_id, t->base.id, priv, grantor, grant));
@@ -573,7 +573,7 @@ create_trigger(mvc *sql, symbol *symb, int time, symbol *trigger_event,
 		new_name = opt_ref->h->next->data.sval;
 	}
 	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), ss->base.name);
 	if (mvc_bind_trigger(sql, ss, tname ))
 		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
 	if (!(t = mvc_bind_table(sql, ss, table_name, location)))
@@ -593,7 +593,7 @@ drop_trigger(mvc *sql, symbol *symb)
 	sql_schema *ss = cur_schema(sql);
 
 	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), ss->base.name);
 	if (mvc_bind_trigger(sql, ss, tname ) == NULL)
 		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
 	mvc_drop_trigger(sql, ss, tname);
@@ -696,7 +696,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 	if (mvc_bind_table(sql, s, name, location)) {
 		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use for database '%s'", name, host);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", sql->user, s->base.name);
+		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
 	} else if (query) {
 		stmt *sq = NULL;
 		int len = 0;
@@ -729,6 +729,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 		_DELETE(subquery);
 		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
+<<<<<<< sql_schema.mx
 		if(dlist_length(using)==2)
 			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,res);
 		else
@@ -785,6 +786,9 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 			return NULL;
 		}
 		return res;
+=======
+		return stmt_none();
+>>>>>>> 1.85
 	}
 	return NULL;
 }
@@ -814,12 +818,22 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dli
 
 	t = mvc_bind_table(sql, s, tname,location);
 
+<<<<<<< sql_schema.mx
 	if (!schema_privs(sql->role_id, s)) 
 		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", sql->user, s->base.name);
+=======
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", backend_get_string(sql, "user"), ss->base.name);
+>>>>>>> 1.85
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
+<<<<<<< sql_schema.mx
 	} else if (!t->table) {
 		mvc_drop_table(sql, s, t->base.name, 0);
+=======
+	} else if (isView(t)) {
+		mvc_drop_table(sql, ss, t->base.name, 0);
+>>>>>>> 1.85
 		return stmt_none();
 	} else {
 		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
@@ -863,7 +877,7 @@ drop_index(mvc *sql, symbol *symb)
 	sql_idx *i = mvc_bind_idx(sql, ss, iname);
 
 	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP INDEX: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+		return sql_error(sql, 02, "DROP INDEX: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), ss->base.name);
 	if (!i) {
 		return sql_error(sql, 02, "DROP INDEX: no such index '%s'", iname);
 	} else {
@@ -915,7 +929,7 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 	if (backend_find_user(sql, user) < 0)
 		return sql_error(sql, 02, "ALTER USER: no such user '%s'", user);
 
-	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && strcmp(user, sql->user) != 0)
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && strcmp(user, backend_get_string(sql, "user")) != 0)
 		return sql_error(sql, 02, "ALTER USER: insufficient privileges to change password for user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "ALTER USER: no such schema '%s'", schema);
@@ -1489,7 +1503,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 	if (t && (t->location == location)) { 
 		return sql_error(sql, 02, "CREATE TABLE: name '%s' already in use for database %s", name, host);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, s->base.name);
+		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", backend_get_string(sql, "user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
 		t = mvc_create_table(sql, s, name, NULL, 0, temp, commit_action, -1, location);
@@ -1608,7 +1622,7 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 	if (!t) 
 		return sql_error(sql, 02, "DROP TABLE: no such table '%s'", tname);
 	if (!schema_privs(sql->role_id, s)) 
-		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", sql->user, s->base.name);
+		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
 	if (t->keys.set) {
 		node *n;
 
@@ -1635,16 +1649,14 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 			}
 		}
 	}
-	if (t->table) {
+	if (isTable(t)) {
 		node *n, *m;
 
 		for (n = t->s->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
 
-			/* Each view must have a query, so no NULL check.  Don't
-			 * consider VIEW AS BAT here, because that won't parse so
-			 * nice all the time, and won't depend on a table either. */
-			if (!ot->table && ot->query[0] != ';') {
+			/* Each view must have a query, so no NULL check.  */
+			if (isView(ot)) {
 				scope *scp = scope_open(NULL);
 				stmt *s = scope_sqlparse(sql, scp, ot->query);
 
@@ -1813,7 +1825,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		return sql_error(sql, 02, "CREATE SCHEMA: no such authorization '%s'", auth);
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		return sql_error(sql, 02, "CREATE SCHEMA: insufficient privileges for user '%s'", sql->user);
+		return sql_error(sql, 02, "CREATE SCHEMA: insufficient privileges for user '%s'", backend_get_string(sql, "user"));
 	}
 	if (mvc_bind_schema(sql, name)) {
 		return sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
@@ -1869,7 +1881,7 @@ drop_schema(mvc *sql, symbol *symb, int dropaction)
 	if (!s) {
 		return sql_error(sql, 02, "Drop Schema name %s does not exist", name);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP SCHEMA: access denied for %s to schema ;'%s'", sql->user, s->base.name);
+		return sql_error(sql, 02, "DROP SCHEMA: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
 		return sql_error(sql, 02, "DROP SCHEMA: cannot drop current schema");
 	} else if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0) {

@@ -71,6 +71,7 @@ typedef enum tokens {
 	SQL_CHARSET,
 	SQL_SCHEMA,
 	SQL_TABLE,
+	SQL_TYPE,
 	SQL_CASE,
 	SQL_CAST,
 	SQL_RETURN,
@@ -214,7 +215,6 @@ extern int sqlparse(void *);
 %}
 /* KNOWN NOT DONE OF sql'99
  *
- * TRIGGERS
  * COLLATION
  * TRANSLATION
  * REF/SCOPE
@@ -286,6 +286,7 @@ int yydebug=1;
 	update_statement
 	update_stmt
 	control_statement
+	select_statement_single_row
 	call_statement
 	routine_invocation
 	return_statement
@@ -359,12 +360,12 @@ int yydebug=1;
 	opt_when
 	procedure_statement
 	if_opt_else
+	func_data_type
 
 %type <type>
 	data_type
 	datetime_type
 	interval_type
-	func_data_type
 
 %type <sval>
 	opt_constraint_name
@@ -391,6 +392,7 @@ int yydebug=1;
 	external_name
 	opt_begin_label
 	opt_end_label
+	target_specification
 
 %type <l>
 	object_privileges
@@ -457,6 +459,8 @@ int yydebug=1;
 	opt_with_check_option_data
 	invoked_routines
 	routine_body
+	table_function_column_list
+	select_target_list
 
 %type <ival>
 	drop_action
@@ -528,9 +532,15 @@ int yydebug=1;
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
+<<<<<<< sql_parser.mx
 	LEX_ERROR 
 %token	USER CURRENT_USER sqlSESSION SESSION_USER LOCAL CURRENT_ROLE 
 
+=======
+	LEX_ERROR
+%token	USER CURRENT_USER SESSION_USER LOCAL 
+%token  CURRENT_ROLE sqlSESSION
+>>>>>>> 1.198
 %token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
@@ -590,7 +600,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN 
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
@@ -1669,8 +1679,12 @@ view_def:
   ;
 
 view_as:
+<<<<<<< sql_parser.mx
 	select_stmt		{$$ = $1;}
   |	BATS			{ $$ = NULL; }
+=======
+	select_stmt
+>>>>>>> 1.198
   ;
 
 
@@ -1774,12 +1788,12 @@ invoked_routines:
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
-    RETURNS data_type
+    RETURNS func_data_type
     EXTERNAL sqlNAME string
 			{ dlist *f = L();
 				append_symbol(f, $3);
 				append_list(f, $5);
-				append_type(f, &$8);
+				append_symbol(f, $8);
 				append_string(f, $11);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -1787,28 +1801,24 @@ func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    AS			{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
     routine_body
 			{ dlist *f = L();
 				append_symbol(f, $3);
 				append_list(f, $5);
-				append_type(f, &$8);
+				append_symbol(f, $8);
 				append_string(f, NULL);
-				append_list(f, $11);
+				append_list(f, $9);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
     create PROCEDURE qname
 	'(' opt_paramlist ')'
-    AS			{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
     routine_body
 			{ dlist *f = L();
 				append_symbol(f, $3);
 				append_list(f, $5);
-				append_type(f, NULL);   /* no result */
+				append_symbol(f, NULL);   /* no result */
 				append_string(f, NULL); /* no mil-impl */
-				append_list(f, $9);
+				append_list(f, $7);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 
@@ -1825,6 +1835,17 @@ routine_body:
 		{ $$ = $3; }
  ;
 
+/* change into compound statement 
+<compound statement> ::=
+                [ <beginning label> <colon> ] BEGIN [ [ NOT ] ATOMIC ]
+                [ <local declaration list> ] [ <local cursor declaration list> ] [ <local handler declaration list> ]
+                [ <SQL statement list> ] END [ <ending label> ]
+
+<beginning label> ::= <statement label>
+
+<statement label> ::= <identifier>
+*/
+
 procedure_statement_list:
     procedure_statement SCOLON 	{ $$ = append_symbol(L(), $1); }
  |  procedure_statement_list 
@@ -1834,7 +1855,6 @@ procedure_statement_list:
 procedure_statement:
 	transaction_statement
     |	update_statement
-    |   select_stmt
     |	schema
     | 	grant
     | 	revoke
@@ -1844,6 +1864,7 @@ procedure_statement:
     |   declare_statement
     |   set_statement
     |	control_statement
+    |   select_statement_single_row
     ;
 
 control_statement:
@@ -1890,7 +1911,10 @@ return_statement:
    ;
 
 return_value:
-      scalar_exp
+      simple_scalar_exp
+   |  search_condition
+   |  TABLE select_with_parens	
+		{ $$ = _symbol_create_symbol(SQL_TABLE, $2); }
    |  NULLX 	{ $$ = _newAtomNode( NULL);  }
    ;
 
@@ -2007,9 +2031,23 @@ opt_end_label:
  ;
 	
 	
+table_function_column_list:
+	column data_type	{ $$ = L();
+				  append_string($$, $1);
+			  	  append_type($$, &$2);
+				}
+  |     table_function_column_list ',' column data_type
+				{ 
+				  append_string($$, $3);
+			  	  append_type($$, &$4);
+				}
+  ;
+
 func_data_type:
-    TABLE		{ sql_find_subtype(&$$, "table", 0, 0); }
+    TABLE '(' table_function_column_list ')'	
+		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
  |  data_type
+		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
  ;
 
 opt_paramlist:
@@ -2585,6 +2623,27 @@ simple_select:
 	}
     ;
 
+select_statement_single_row:
+    SELECT opt_distinct selection INTO select_target_list table_exp
+	{ $$ = newSelectNode( SA, $2, $3, $5,
+		$6->h->data.sym,
+		$6->h->next->data.sym,
+		$6->h->next->next->data.sym,
+		$6->h->next->next->next->data.sym,
+		NULL, NULL, -1, -1);
+	}
+    ;
+
+select_target_list:
+	target_specification 	{ $$ = append_string(L(), $1); }
+ |  	select_target_list ',' target_specification
+				{ $$ = append_string($1, $3); }
+ ;
+
+target_specification:
+	ident
+ ;
+
 select_no_parens:
     simple_select
  |  set_select 
@@ -3011,6 +3070,10 @@ scalar_exp:
 
 value_exp:
     atom
+ |  user		{ $$ = _symbol_create_list( SQL_COLUMN, 
+			  append_string(L(), sa_strdup(SA, "current_user"))); }
+ |  CURRENT_ROLE	{ $$ = _symbol_create_list( SQL_COLUMN, 
+			  append_string(L(), sa_strdup(SA, "current_role"))); }
  |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  var_ref		
  |  aggr_ref
@@ -3028,7 +3091,11 @@ var_ref:
  ;
 
 func_ref:
-    func_ident '(' scalar_exp ')'
+    func_ident '(' ')'
+	{ dlist *l = L();
+  	  append_string(l, $1);
+	  $$ = _symbol_create_list( SQL_OP, l ); }
+|   func_ident '(' scalar_exp ')'
 	{ dlist *l = L();
   	  append_string(l, $1);
   	  append_symbol(l, $3);
@@ -3350,14 +3417,6 @@ literal:
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
- |  user
-		{ mvc *m = (mvc*)parm;
-		  sql_subtype t;
-
-		  sql_find_subtype(&t, "char", strlen(m->user),0);
-		  $$ = _newAtomNode( 
-			_atom_string(&t,sql2str(sa_strdup(SA, m->user))));
-		}
  |  sqlINT
 		{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value;
@@ -3918,7 +3977,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | PATH		{ $$ = sa_strdup(SA, "path"); }		/* sloppy: officially reserved */
 | PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
 | PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }	/* sloppy: officially reserved */
-| ROLE		{ $$ = sa_strdup(SA, "role"); }		/* neither reserved nor non-reserv. */
+| ROLE		{ $$ = sa_strdup(SA, "role"); }	 	/* neither reserved nor non-reserv. */
 | sqlSIZE	{ $$ = sa_strdup(SA, "size"); }		/* sloppy: officially reserved */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
@@ -3959,10 +4018,10 @@ intval:
 	sqlINT	{ $$ = strtol($1,&$1,10); }
  |	IDENT	{ mvc *m = (mvc*)parm;
 		  char *name = $1;
-		  char *v, *t;
-		  sql_subtype tpe;
+		  sql_subtype *tpe;
+		  stmt *var;
 
-		  if (!(v = sql_get_var(m, name))) {
+		  if (!(var = stack_find_var(m, name))) {
 			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "constant (%s) unknown", $1);
@@ -3970,12 +4029,11 @@ intval:
 			$$ = 0;
 			YYABORT;
 		  }
-		  t = sql_get_type(m, name);
-		  sql_find_subtype(&tpe, t, 0, 0);
-		  if (tpe.type->localtype == TYPE_lng ||
-		      tpe.type->localtype == TYPE_int ||
-		      tpe.type->localtype == TYPE_sht ) {
-			$$ = strtol(v,&v,10);
+		  tpe = tail_type(var);
+		  if (tpe->type->localtype == TYPE_lng ||
+		      tpe->type->localtype == TYPE_int ||
+		      tpe->type->localtype == TYPE_sht ) {
+			$$ = backend_get_number(m, name);
 		  } else {
 			char buf[BUFSIZ];
 

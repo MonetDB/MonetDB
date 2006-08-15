@@ -134,7 +134,7 @@ typedef struct sql_type {
 	int localtype;		/* localtype, need for coersions */
 	unsigned char radix;
 	unsigned int bits;
-	unsigned char eclass; 	/* type are grouped into equivalence classes */ 
+	unsigned char eclass; 	/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;
 
@@ -147,6 +147,8 @@ typedef struct sql_subtype {
 	sql_type *type;
 	unsigned int digits;
 	unsigned int scale;
+
+	struct sql_table *comp_type;	
 } sql_subtype;
 
 typedef struct sql_aggr {
@@ -343,13 +345,27 @@ typedef struct sql_column {
 
 } sql_column;
 
+typedef enum table_types {
+	tt_table = 0, 		/* table */
+	tt_view = 1, 		/* view */
+	tt_generated = 2	/* generated (functions can be sql or c-code) */
+} table_types;
+
+#define isTable(x) (x->type==tt_table)
+#define isView(x)  (x->type==tt_view)
+#define isGenerated(x)  (x->type==tt_generated)
+
 typedef struct sql_table {
 	sql_base base;
-	bit table;		/* table or view */
+	sht type;		/* table, view or generated */
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
-	char *query;
+	char *query;		/* views and generated may require some query 
+
+				   A generated without a query is simply 
+					a type definition
+				*/
 	int  sz;
 	lng  cnt;		/* number of tuples */
 

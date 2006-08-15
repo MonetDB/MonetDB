@@ -70,10 +70,10 @@ Over..
 # 1 # length
 [ 1	]
 # sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
-# name,	query,	istable,	system,	commit_action # name
-# varchar,	varchar,	boolean,	boolean,	smallint # type
-# 1,	1,	5,	5,	1 # length
-[ "r",	NULL,	true,	false,	0	]
+# name,	query,	type,	system,	commit_action # name
+# varchar,	varchar,	smallint,	boolean,	smallint # type
+# 1,	1,	1,	5,	1 # length
+[ "r",	NULL,	0,	false,	0	]
 [ 1	]
 [ 1	]
 # r # table_name

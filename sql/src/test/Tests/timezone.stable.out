@@ -24,29 +24,20 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-[ 1	]
-# time_example,	time_example # table_name
+# sys.time_example,	sys.time_example # table_name
 # time_local,	time_tz # name
 # timestamp,	timestamptz # type
 # 26,	26 # length
 [ 1995-07-15 07:30:00.000000,	1995-07-15 17:30:00.000000+10:00	]
 [ 1995-07-15 07:30:00.000000,	1995-07-15 15:00:00.000000+10:00	]
 [ 1995-07-15 07:30:00.000000,	1995-07-15 13:00:00.000000+10:00	]
-[ 1	]
-# sessions,	sessions,	sessions,	sessions # table_name
-# name,	value,	type,	access # name
-# varchar,	varchar,	varchar,	int # type
-# 16,	7,	12,	10 # length
-[ "debug",	"0",	"int",	0	]
-[ "explain",	"",	"varchar(8)",	0	]
-[ "current_schema",	"sys",	"varchar(1024)",	0	]
-[ "current_user",	"monetdb",	"varchar(1024)",	1	]
-[ "current_role",	"monetdb",	"varchar(1024)",	0	]
-[ "current_timezone",	"0",	"sec_interval",	0	]
-[ "cache",	"true",	"boolean",	0	]
-[ "optimizer",	"on",	"varchar(1024)",	0	]
+# . # table_name
+# single_value # name
+# sec_interval # type
+# 0 # length
+[ 0	]
 
-# 12:37:13 >  
-# 12:37:13 >  Done.
-# 12:37:13 >  
+# 11:26:42 >  
+# 11:26:42 >  Done.
+# 11:26:42 >  
 

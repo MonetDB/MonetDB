@@ -1552,7 +1552,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
-		if (!t->table && t->query) { /* base view */
+		if (isView(t)) { /* base view */
 			node *n,*m;
 			sql_rel *rel = rel_parse(sql, t->query);
 			if (!rel)
@@ -1594,6 +1594,21 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 }
 
 static sql_exp *
+rel_var_ref(mvc *sql, char *name, int at)
+{
+	stmt *s;
+
+	if ((s = stack_find_var(sql, name)) != NULL) {
+		/*int frame = stack_find_frame(sql, name);*/
+		return exp_param(name, tail_type(s));
+	} else if (at) {
+		return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
+	} else {
+		return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
+	}
+}
+
+static sql_exp *
 rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 {
 	sql_exp *exp = NULL;
@@ -1610,18 +1625,7 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		char *name = l->h->data.sval;
 		
 		exp = rel_bind_column(sql, rel, name);
-		if (!exp) {
-			char *v, *t;
-			sql_subtype tpe;
-
-			if (!(v = sql_get_var(sql, name)))
-				return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
-			t = sql_get_type(sql, name);
-			if (!sql_find_subtype(&tpe, t, 0, 0))
-				return sql_error(sql, 02, "SELECT: no such type '%s'", t);
-			exp = exp_atom(atom_general(&tpe, _strdup(v), 1));
-		}
-		if (!exp) 
+		if (!exp && (exp = rel_var_ref(sql, name, 0)) == NULL)
 			return NULL;
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
@@ -2101,7 +2105,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			} else if (r->card > CARD_ATOM) {
 				/* should be changed to a dynamic check ! */
 				return sql_error(sql, 02, 
-					"subquery returned more than one row");
+				 "SELECT: subquery returned more than one row");
 			} else if (r) { 
 				rs = exp_relation(r);
 			}
@@ -3067,7 +3071,8 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		list_destroy(results);
 		return sql_error(sql, 02, "result type missing");
 	}
-	for (; dn; dn = dn->next) {
+	/* for COALESCE we skip the last (else part) */
+	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
 
 		if (token == SQL_COALESCE) {
@@ -3241,6 +3246,8 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return rel_aggr(sql, rel, se, f);
 	case SQL_COLUMN:
 		return rel_column_ref(sql, *rel, se );
+	case SQL_NAME:
+		return rel_var_ref(sql, se->data.sval, 1);
 	case SQL_SELECT: {
 		sql_rel *old = NULL;
 		sql_rel *r = NULL;
@@ -3410,8 +3417,55 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection)
 	return rel;
 }
 
+/* some users like to use aliases allready in the groupby */
+sql_exp *
+rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
+{
+	dnode *n;
+	dlist *gl = grp->data.lval;
+	char *name = NULL;
+
+	if (dlist_length(gl) > 1)
+		return NULL;
+	if (!selection)
+		return NULL;
+
+	name = gl->h->data.sval;
+	for (n = selection->h; n; n = n->next) {
+		/* we only look for columns */
+		if (n->data.sym->token == SQL_COLUMN) {
+			dlist *l = n->data.sym->data.lval;
+			/* AS name */ 
+			if (l->h->next->data.sval &&
+			    strcmp(l->h->next->data.sval, name) == 0){
+				sql_exp *ve = rel_value_exp(sql, &rel, l->h->data.sym, sql_sel);
+				if (ve) {
+					dlist *l = dlist_create(sql->sa);
+					symbol *sym;
+					exp_set_name(ve, name);
+					/* now we should rewrite the selection
+					   such that it uses the new group
+					   by column 
+					*/
+					dlist_append_string(sql->sa, l,  
+						sa_strdup(sql->sa, name));
+					sym = symbol_create_list(sql->sa, SQL_COLUMN, l);
+					l = dlist_create(sql->sa);
+					dlist_append_symbol(sql->sa, l, sym);
+					/* no alias */
+					dlist_append_symbol(sql->sa, l, NULL);
+					n->data.sym = symbol_create_list(sql->sa, SQL_COLUMN, l);
+				
+				}
+				return ve;
+			}
+		}
+	}
+	return NULL;
+}
+
 static sql_rel *
-rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby )
+rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection )
 {
 	dnode *o = groupby->data.lval->h;
 	list *exps = new_exp_list();
@@ -3421,8 +3475,15 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby )
 		sql_exp *e = rel_column_ref(sql, rel, grp);
 
 		if (!e) {
-			list_destroy(exps);
-			return NULL;
+			/* reset error */
+			sql->errstr[0] = '\0';
+			sql->session->status = 0;
+
+			e = rel_selection_ref(sql, rel, grp, selection);
+			if (!e) {
+				list_destroy(exps);
+				return NULL;
+			}
 		}
 		append(exps, e);
 	}
@@ -3525,7 +3586,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			rel = rel_group_by(sql, rel, sn->groupby );
+			rel = rel_group_by(sql, rel, sn->groupby,sn->selection);
 
 			if (!rel) 
 				return NULL;

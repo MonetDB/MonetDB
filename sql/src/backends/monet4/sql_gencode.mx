@@ -41,6 +41,11 @@ sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
 sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr, char *name);
 sql_server_export void monet4_parse(backend_stack stk, char *code);
+sql_server_export char *monet4_get_string(mvc *m, char *name);
+sql_server_export lng monet4_get_number(mvc *m, char *name);
+
+sql_server_export void monet4_set_string(mvc *m, char *name, char *val);
+sql_server_export void monet4_set_number(mvc *m, char *name, lng val);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -365,7 +370,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				size_t buflen = strlen(s->op1.sval) + 32;
 				buf = NEW_ARRAY(char, buflen + 1);
 
-				if (s->flag) /* declare */
+				if (s->flag & VAR_DECLARE) /* declare */
 					len = snprintf(buf, buflen, "var %s;\n", s->op1.sval);
 				else
 					len = snprintf(buf, buflen, "var s%d := %s;\n", -s->nr, s->op1.sval);
@@ -379,10 +384,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			}
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
-			break;
-		}
-		case st_update_var:{
-			mvc_dump_1(sql, s, "update_var", nr);
 			break;
 		}
 		case st_seq_next:{
@@ -1318,6 +1319,57 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 
+		case st_table: {
+			stmt *lst = s->op1.stval;
+			size_t buflen = BUFSIZ;
+
+			backend_dumpstmt_(lst, nr, sql);
+
+			write_head(sql, -s->nr);
+			buf = NEW_ARRAY(char, buflen + 1);
+
+			buf[0] = 0;
+			len = 0;
+
+			/* the column list */
+			if (lst->type == st_list) {
+				list *l = lst->op1.lval;
+				int cnt = list_length(l);
+
+				len = snprintf(buf, buflen, "var s%d := new(str, bat, %d);\n", -s->nr, cnt );
+
+				write_command(sql, buf);
+				write_part(sql, buf, len);
+				len = 0;
+
+				for (n = l->h; n; n = n->next) {
+					size_t sl;
+					stmt *c = n->data;
+					char *cn = column_name(c);
+					char *ncn = sql_escape_ident(cn);
+
+					sl = strlen(cn);
+					if (buflen - len < 128 + sl) {
+						buflen += BUFSIZ + sl;
+						buf = RENEW_ARRAY(char, buf, buflen);
+					}
+					len = snprintf(buf, buflen, "s%d.insert(\"%s\", s%d);\n", -s->nr, ncn, c->nr);
+					assert(len <= buflen);
+					_DELETE(cn);
+					_DELETE(ncn);
+					write_command(sql, buf);
+					write_part(sql, buf, len);
+					len = 0;
+				}
+			} else {
+				fprintf(stderr, "not a valid column list %u\n", lst->type);
+			}
+			write_tail(sql, -s->nr);
+			_DELETE(buf);
+			backend_dec_nr2(s->op1.stval);
+			break;
+		}
+
 		/* flow control statements */
 		case st_while: {
 			int c;
@@ -1380,6 +1432,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			len = snprintf(buf, buflen, "%s := s%d;\n", s->op1.sval, v);
 			assert(len <= buflen);
 			write_part(sql, buf, len);
+			if (VAR_GLOBAL(s->flag)) { /* globals */
+				len = snprintf(buf, buflen, "mvc_update_var(myc, \"%s\");\n", s->op1.sval);
+				write_part(sql, buf, len);
+			}
 			backend_dump_nil(sql, s->op2.stval);
 			_DELETE(buf);
 		} 	break;
@@ -1392,7 +1448,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_basetable:	/* relation(table) */
 		case st_ptable:
 		case st_pivot:
-		case st_groupby:
 			printf("backend_dumpstmt_: not implemented stmt %s\n", st_type2string(s->type));
 			assert(0);
 		}
@@ -1622,6 +1677,68 @@ monet4_parse(backend_stack stack, char *cmd)
 	backend_parse((Cntxt) stack, cmd);
 }
 
+char *monet4_get_string(mvc *m, char *name)
+{
+	Cntxt c = m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL) 
+		if (v->binding.vtype == TYPE_str) 
+			return v->binding.val.sval;
+	return NULL;
+}
+
+void monet4_set_string(mvc *m, char *name, char *val)
+{
+	Cntxt c = m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL && v->binding.vtype == TYPE_str) {
+		if (v->binding.val.sval != NULL)
+			GDKfree(v->binding.val.sval);
+		v->binding.val.sval = _strdup(val);
+	}
+}
+
+
+lng monet4_get_number(mvc *m, char *name)
+{
+	Cntxt c = m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL) {
+		if (v->binding.vtype == TYPE_lng) 
+			return v->binding.val.lval;
+		if (v->binding.vtype == TYPE_int) 
+			return v->binding.val.ival;
+		if (v->binding.vtype == TYPE_sht) 
+			return v->binding.val.shval;
+		if (v->binding.vtype == TYPE_bit) 
+			if (v->binding.val.cval[0])
+				return 1;
+			return 0;
+	}
+	return 0;
+}
+
+void monet4_set_number(mvc *m, char *name, lng val)
+{
+	Cntxt c = m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL) {
+		if (v->binding.vtype == TYPE_lng) 
+			v->binding.val.lval = val;
+		if (v->binding.vtype == TYPE_int) 
+			v->binding.val.ival = val;
+		if (v->binding.vtype == TYPE_sht) 
+			v->binding.val.shval = val;
+		if (v->binding.vtype == TYPE_bit) {
+			if (val)
+				v->binding.val.cval[0] = 1;
+			else 
+				v->binding.val.cval[0] = 0;
+		}
+	}
+}
+
+
 int backend_dump(backend *be, cq *q, stmt *s)
 {
 	int err = 0;
@@ -1677,8 +1794,9 @@ backend_create_func(backend *be, sql_func *f)
 	}
 	i += snprintf(buf + i, BUFSIZ - i, ") : ");
 	if (f->res.type) { 
-		i += snprintf(buf + i, BUFSIZ - i, "%s\n", 
-			f->res.type->base.name);
+		i += snprintf(buf + i, BUFSIZ - i, "%s%s\n", 
+			f->res.type->base.name, 
+			(f->res.comp_type?"[void,BAT]":""));
 	} else {
 		i += snprintf(buf + i, BUFSIZ - i, "void\n");
 	}
@@ -1692,7 +1810,7 @@ backend_create_func(backend *be, sql_func *f)
 
 	(void)backend_parse(c->session->stk, cmd);
 
-#define PSM_DEBUG
+/* #define PSM_DEBUG */
 #ifdef PSM_DEBUG
 	fprintf(stdout, "%s\n", cmd);
 	fflush(stdout);

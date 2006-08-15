@@ -9,6 +9,9 @@
 
 *sql-2.14 (15 Aug 2006)
 
+  02 Aug 2006; Fabian Groffen <mr-meltdown>; OPEN
+  Add SSL support in JDBC.
+
   18 Jul 2006; Niels Nes <nielsnes>; OPEN
   Change symbol/list into tree with dynamic number of children.
 
@@ -23,13 +26,19 @@
   identity columns.  Also related (?) detect dependencies of tables upon
   sequences to warn/cascade during DROP.
   
-  20 Jun 2006; Fabian Groffen <mr-meltdown>; OPEN
+  20 Jun 2006; Fabian Groffen <mr-meltdown>; DONE
   "Generated columns" which are evaluated when they are needed.  The
   idea is to have some piece of MAL code that is just inserted before
   the actual bind.  This would solve problems for the authorisation
   system in M5 and can solve SEQUENCES which now have sneaky inplace
   transactions. (isview -> table_type, table 0, view 1, viewasbats 2, 
 	sqlgenerated 3, mgenerated 4)
+
+	table types are now
+		0 table
+		1 view
+		2 generated (this means there is a function which generates
+		             a table of this form, ie is not a table but a type)
 
   01 Jun 2006; Fabian Groffen <mr-meltdown>; OPEN
   Mapi speed-up.  The tuples in Mapi output can (and should) be sent in

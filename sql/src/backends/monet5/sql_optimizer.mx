@@ -102,17 +102,26 @@ quite some (expensive) instructions can be safed.
 The current heuristic is geared at avoiding trivial
 factory structures.
 @c
-#include "mal_macro.h"
 #include "mal_builder.h"
+<<<<<<< sql_optimizer.mx
 #include "mal_prelude.h"
 #include "mal_remoteQueries.h"
 #include "mal_reduce.h"
 #include "mal_peephole.h"
+=======
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "opt_aliases.h"
+#include "opt_coercion.h"
+#include "opt_commonTerms.h"
+#include "opt_crack.h"
+#include "opt_macro.h"
+#include "opt_multiplex.h"
+#include "opt_peephole.h"
+#include "opt_reduce.h"
+>>>>>>> 1.95
 #include "mal_debugger.h"
 #include "mal_namespace.h"
-#include "mal_reduce.h"
-#include "mal_crack.h"
-#include "mal_multiplex.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -170,8 +179,8 @@ Double bind operations should also be eliminated.
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if ( (getFunctionId(p) == bindRef || 
-					getFunctionId(p) == bindidxRef) && 
-				getModuleId(p) == sqlRef) {
+			getFunctionId(p) == bindidxRef) && 
+			getModuleId(p) == sqlRef) {
 			/*
 			int arg = getArg(p,4);
 			if (getVarConstant(mb,arg).val.ival == 0) 
@@ -269,8 +278,43 @@ void
 optimizeMalBlk(Client c, backend * be, MalBlkPtr mb)
 {
 	str optimizer;
+<<<<<<< sql_optimizer.mx
 	(void)be;
 	optimizer = sql_get_var(be->mvc,"optimizer");
+=======
+	MalBlkPtr mb;
+
+	cache = findModule(c->nspace, putName("sql_cache",9));
+	if (cache == 0) 
+		return;
+	
+	insertSymbol(cache, c->curprg);
+	trimMalBlk(c->curprg->def);
+	c->blkmode = 0;
+	mb= c->curprg->def;
+	chkProgram(c->nspace, mb);
+#ifdef _SQL_OPTIMIZER_DEBUG
+	printf("ADD QUERY TO CACHE\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+@-
+An error in the compilation should be reported to the user.
+And if the debugging option is set, the debugger is called
+to allow inspection.
+@c
+	if (mb->errors) {
+		mvc *m;
+		m = ((mvc *) c->state[OPTIMIZE]);
+		showErrors();
+
+		if (c->listing)
+			printFunction(c->fdout, mb, c->listing);
+		if ( m->debug )
+			runMALDebugger(c->curprg);
+		return;
+	}
+	optimizer = backend_get_string(be->mvc, "optimizer");
+>>>>>>> 1.95
 #ifdef _SQL_OPTIMIZER_DEBUG
 	if( optimizer)
 		stream_printf(c->fdout,"optimizer=%s\n",optimizer);
@@ -286,13 +330,18 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0);
-		COoptimizer(mb,0,0);	/* coercions */
-		ARoptimizer(mb, 0, 0);	/* alias removal */
-		CToptimizer(mb,0,0);	/* common terms */
+		OPTcoercion(mb,0,0);	/* coercions */
+		OPTaliases(mb, 0, 0);	/* alias removal */
+		OPTreduce(mb,0,0);	/* reduce stack space */
+		OPTcommonTerms(mb,0,0);	/* common terms */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
+<<<<<<< sql_optimizer.mx
 		MRoptimizer(mb,0,0);	/* reduce stack space */
 		RQoptimizer(mb,0,0);
 		/* CRKoptimizer(mb,0,0); too early !!*/
+=======
+		/* OPTcrack(mb,0,0); too early !!*/
+>>>>>>> 1.95
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
 		/* no optimization needed */
 	} else if( optimizer ){

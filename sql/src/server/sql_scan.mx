@@ -91,7 +91,6 @@ scanner_init_keywords(void)
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
 	keywords_insert("AUTHORIZATION", AUTHORIZATION);
-	keywords_insert("BATS", BATS);
 	keywords_insert("BETWEEN", BETWEEN);
 	keywords_insert("SYMMETRIC", SYMMETRIC);
 	keywords_insert("ASYMMETRIC", ASYMMETRIC);

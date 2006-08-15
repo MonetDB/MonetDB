@@ -15,7 +15,7 @@ drop table ff;
 select (4-1)*5;
 --select current_date;
 
-select name, query, istable, system, commit_action from _tables
+select name, query, "type", system, commit_action from _tables
 	where name like 'foo' or name like 'ff';
 
 create table s4(i time);
@@ -31,7 +31,7 @@ select * from r;
 
 select * from r;
 
-select name, query, istable, system, commit_action from _tables
+select name, query, "type", system, commit_action from _tables
 	where name in ('s4', 'r', 'foo', 'ff');
 
 drop table r;

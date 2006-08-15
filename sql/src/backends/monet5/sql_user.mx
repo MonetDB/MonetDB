@@ -29,6 +29,8 @@ system authorisation.
 sql_export void monet5_user_init(backend_functions *be_funcs);
 sql_export str  monet5_user_get_def_schema(mvc *m, oid user);
 
+sql_export str db_users_wrap(int *r);
+
 #endif /* _SQL_USER_H_ */
 
 @c
@@ -74,34 +76,55 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 	return(NULL);
 }
 
-static int
-monet5_find_user(ptr mp, str user) {
+static BAT *
+db_users() 
+{
+	bat b, bid;
 	str tmp;
-	bat b;
-	BAT *users;
-	bat bid = 0;
-	BAT *scens;
-	BUN p;
-	(void)mp;	/* we don't need mvc, as we do a M5 backend call */
-	
+
 	/* prepare the scens BAT: it should contain the sql scenario */
-	scens = BATnew(TYPE_str, TYPE_void, 1);
+	BAT *scens = BATnew(TYPE_str, TYPE_void, 1);
+
 	BUNins(scens, "sql", 0, FALSE);
 	bid = BBPcacheid(scens);
 	if ((tmp = AUTHgetUsers(&b, &bid)) != MAL_SUCCEED) {
 		BBPunfix(bid); 
 		GDKfree(tmp);
-		return(-1);
+		return(NULL);
 	}
 	BBPunfix(bid);
+	return BBPdescriptor(b);
+}
 
-	users = BATdescriptor(b);
-	assert(users);
+static int
+monet5_find_user(ptr mp, str user) 
+{
+	BAT *users;
+	BUN p;
+	(void)mp;	/* we don't need mvc, as we do a M5 backend call */
+	
+
+	users = db_users();
+	if (!users)
+		return -1; 
 	p = BUNfnd(BATmirror(users), user);
-	BBPunfix(b);
+	BBPunfix(users->batCacheid);
 
 	/* yeah, I would prefer to return something different too */
 	return(p == NULL ? -1 : 1);
+}
+
+str
+db_users_wrap(int *r)
+{
+	BAT *b = db_users();
+	BAT *t = BATnew(TYPE_str, TYPE_bat, 1);
+
+	BUNins(t, "name", &b->batCacheid, FALSE);
+	BBPunfix(b->batCacheid);
+	*r = t->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
 }
 
 static void
@@ -112,6 +135,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	char *err = NULL;
 	int schema_id = 0;
 	str monetdbuser = "monetdb";
+	sql_subtype tpe;
+	list *l;
 
 	/* create the authorisation related tables */
 	t = mvc_create_table(m, s, "db_user_info", NULL, 1, SQL_PERSIST, 0, -1, LOCATION);
@@ -120,6 +145,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	uinfo = t;
 
+<<<<<<< sql_user.mx
 	t = mvc_create_view(m, s, "db_users", ";CREATE VIEW \"db_users\" (\"[system BAT]\") AS BATS", 1, LOCATION);
 	err = sql_view_from_bat(m->session->tr, t, "M5system_auth_user");
 	if (err != NULL) {
@@ -135,14 +161,34 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 		sql_trans_drop_table(m->session->tr, t->s, t->base.name, 0);
 	}
 	*/
+=======
+	(void)err;
+	t = mvc_create_generated(m, s, "#db_users", NULL, 1);
+	mvc_create_column_(m, t, "name", "varchar", 2048);
+
+	sql_find_subtype(&tpe, "table", 0, 0);
+	tpe.comp_type = t;
+	tpe.digits = t->base.id; /* pass the table through digits */
+
+	/* add function */
+	l = list_create((fdestroy) &arg_destroy);
+	/* following funcion returns a table (single column) of user names
+	   with the approriate scenario (sql) */
+	mvc_create_func(m, s, "db_users", l, &tpe, FALSE, FALSE, "db_users");
+>>>>>>> 1.6
 
 	t = mvc_create_view(m, s, "users",
-			"SELECT u.\"t\" AS \"name\", "
+			"SELECT u.\"name\" AS \"name\", "
 				"ui.\"fullname\", ui.\"default_schema\" "
-			"FROM \"sys\".\"db_users\" AS u LEFT JOIN "
+			"FROM db_users() AS u LEFT JOIN "
 				"\"sys\".\"db_user_info\" AS ui "
+<<<<<<< sql_user.mx
 				"ON u.\"t\" = ui.\"name\" "
 			";", 1, LOCATION);
+=======
+				"ON u.\"name\" = ui.\"name\" "
+			";", 1);
+>>>>>>> 1.6
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
@@ -264,9 +310,6 @@ monet5_user_get_def_schema(mvc *m, oid user)
 		_DELETE(p);
 
 		m->user_id = m->role_id = id;
-
-		m->user = _strdup(username);
-		m->role = _strdup(username);
 	} else {
 		schema = NULL;
 	}
@@ -276,8 +319,10 @@ monet5_user_get_def_schema(mvc *m, oid user)
 			mvc_rollback(m, 0, NULL);
 		return NULL;
 	}
-	/* only now we can initialize the sessions table */
-	sql_sessions(m);
+	/* reset the user and schema names */
+	backend_set_string(m, "current_schema", schema);
+	backend_set_string(m, "current_user", username);
+	backend_set_string(m, "current_role", username);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }

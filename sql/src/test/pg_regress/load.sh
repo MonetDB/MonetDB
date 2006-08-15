@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -14,19 +16,18 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-MTSAFE
+PWD=`pwd`
+echo $PWD
 
-SUBDIRS = tests
+SQL='MapiClient -lsql -umonetdb -Pmonetdb'
+if [ $# -eq 1 ]; then
+	SQL="$1"
+fi
 
-EXTRA_DIST = build.xml build.properties release.txt
-EXTRA_DIST_DIR = nl/cwi/monetdb/jdbc \
-		 nl/cwi/monetdb/client \
-		 nl/cwi/monetdb/mcl \
-		 nl/cwi/monetdb/xmldb \
-		 lib /
-		 example
-
-ant_jar_jdbcclient = {
-	DIR = datadir/MonetDB/lib
-	FILES = jdbcclient-1.4.jar monetdb-1.4-jdbc.jar
-}
+$SQL < sql99/create_table.sql
+cat input/copy.source \
+	| sed -r \
+		-e s+@abs_srcdir@+$PWD+ig \
+	      	-e 's/.*@abs_builddir@.*//ig' \
+	      	-e "s/COPY (.*);/COPY INTO \1 USING DELIMITERS '\\\\t\', '\\\\n';/ig" \
+	| $SQL

@@ -489,6 +489,10 @@ query string with "M".
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
 	}
+	if (m->session->auto_commit && m->session->active) {
+		if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0) 
+			(void) handle_error(m, out, 0);
+	}
 	if (m->session->active)
 		mvc_rollback(m, 0, NULL);
 	return GDK_SUCCEED;
@@ -534,9 +538,9 @@ mvc_sql(mvc *m, char *cmd)
         output->binding.val.pval = NULL;
 
 	m->qc = NULL;
+	/* disable caching */
 	m->cache = 0;
 	m->user_id = m->role_id = USER_MONETDB;
-	m->user = _strdup("monetdb");
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -564,7 +568,6 @@ mvc_sql(mvc *m, char *cmd)
 	bstream_destroy(m->scanner.rs);
 	assert(m->qc == NULL);
 
-	GDKfree(m->user);
 	*m = o;
 	m->session->auto_commit = ac;
         output->binding.val.pval = m->scanner.ws;
@@ -573,6 +576,139 @@ mvc_sql(mvc *m, char *cmd)
 	else
 		return GDK_SUCCEED;
 }
+
+int 
+sql_variables(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	int i;
+	mvc *m;
+	Variable v;
+	BAT *vars, *r; 
+
+	if (lt->cnt != 0) 
+		return handle_argerror(res, lt->cnt, 0);
+
+        v = VARfind(&stk, "myc");
+        if (v == NULL) 
+            return GDKerror("sql_variables: failed to lookup myc variable.\n"); 
+
+	m = v->binding.val.pval;
+
+	vars = BATnew(TYPE_void,TYPE_str, m->topvars);
+	vars->hseqbase = 0;
+	for (i=0; i<m->topvars && m->vars[i].s; i++) 
+		BUNappend(vars, m->vars[i].name, FALSE);
+	r = BATnew(TYPE_str,TYPE_bat,1);
+	BUNins(r, "name", &vars->batCacheid, FALSE);
+	BBPunfix(vars->batCacheid);
+	res->vtype = TYPE_bat;
+	res->val.bval = r->batCacheid;
+	BBPkeepref(r->batCacheid);
+	return GDK_SUCCEED;
+}
+
+/* initialize the global variable, ie make mvc point to these */
+static int
+global_variables(mvc *sql, char *user, char *schema)
+{
+	Cntxt stk = sql->session->stk;
+	Variable v;
+	sql_subtype ctype;
+	char *typename;
+	char *name;
+	stmt *r = NULL;
+
+ 	typename = "int";
+	sql_find_subtype(&ctype, typename, 0, 0);
+ 	name = "debug";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.ival = 0;
+
+	typename = "varchar";
+	sql_find_subtype(&ctype, typename, 8, 0);
+	name = "explain";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup("");
+
+	sql_find_subtype(&ctype, typename, 1024, 0);
+	name = "current_schema";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup(schema);
+
+	name = "current_user";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup(user);
+
+	name = "current_role";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup(user);
+
+	name = "optimizer";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup("yes");
+
+	typename = "sec_interval";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	name = "current_timezone";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.ival = 0;
+
+	typename = "boolean";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	name = "cache";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.cval[0] = 1;
+
+	name = "profile";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.cval[0] = 0;
+
+	name = "trace";
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.cval[0] = 0;
+	return 0;
+}
+
 
 char *
 mvc_login(mvc *m, char *user, char *passwd)
@@ -620,9 +756,6 @@ mvc_login(mvc *m, char *user, char *passwd)
 
 				_DELETE(p);
 				m->user_id = m->role_id = id;
-
-				m->user = _strdup(user);
-				m->role = _strdup(user);
 			} else {
 				schema = NULL;
 			}
@@ -636,8 +769,10 @@ mvc_login(mvc *m, char *user, char *passwd)
 			mvc_rollback(m, 0, NULL);
 		return NULL;
 	}
-	/* only now we can initialize the sessions table */
-	sql_sessions(m);
+	/* reset the user and schema names */
+	backend_set_string(m, "current_schema", schema);
+	backend_set_string(m, "current_user", user);
+	backend_set_string(m, "current_role", user);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }
@@ -658,7 +793,6 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	rs = bstream_create(in, 0);
 	m = mvc_create(0, (backend_stack) stk, rs, out);
-	m->cache = 1;
 	if (!m) {
 		GDKerror("Couldn't start sqlconsole");
 		return GDK_FAIL;
@@ -708,7 +842,6 @@ sql_client_alloc(mapi_client *fc)
 	if (!m) 
 		return "!couldn't allocate sql catalog";
 	fc->fc = be;
-	m->cache = 1;
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(fc->stk, "myc");
@@ -723,6 +856,8 @@ sql_client_alloc(mapi_client *fc)
 	v->binding.vtype = TYPE_Bstream;
 	v->binding.val.pval = NULL;
 
+	/* only now we can initialize the global variables */
+	global_variables(m, "monetdb", "sys");
 	return NULL;
 }
 
@@ -736,7 +871,7 @@ sql_client_init(mapi_client *fc)
 	Variable v;
 
 	rs = bstream_create(fc->c->fdin, fc->c->blocked ? (128 * BLOCK) : 0);
-	mvc_reset(m, rs, fc->c->fdout);
+	mvc_reset(m, rs, fc->c->fdout, 10);
 	schema = mvc_login(m, fc->c->user, fc->c->passwd);
 	if (!schema) {
 		char *res = "schema authorization error";
@@ -843,11 +978,9 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	rs = bstream_create(in, 0);
 	m = mvc_create(0, (backend_stack) stk, rs, out);
-	m->cache = 1;
 
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
-	m->user = _strdup("monetdb");
 	m->session->schema = mvc_bind_schema(m, "sys");
 
 	res->vtype = TYPE_mvc;

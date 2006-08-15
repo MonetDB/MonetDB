@@ -216,6 +216,9 @@ stream.
 @:mel_interval(int)@
 @:mel_interval(lng)@
 
+	.BUILTIN sql_variables() : ptr = sql_variables;
+		"return the table with session variables"
+
 .END sql_server;
 
 @-
@@ -303,6 +306,10 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	be_funcs->fstack = &monet4_freestack;
 	be_funcs->fcode = &monet4_freecode;
 	be_funcs->finterpret = &monet4_parse;
+	be_funcs->fget_string = (get_string_fptr)&monet4_get_string;
+	be_funcs->fget_number = (get_number_fptr)&monet4_get_number;
+	be_funcs->fset_string = (set_string_fptr)&monet4_set_string;
+	be_funcs->fset_number = (set_number_fptr)&monet4_set_number;
 	monet4_user_init(be_funcs);
 	backend_init(be_funcs);	/* we probably leak be_funcs here */
 	CNTXTclient(stk, &father);
@@ -861,7 +868,7 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 /* when casting a floating point to an decimal we like to preserve the 
  * precision.  This means we first scale the float before converting.
 */
-int @2_num2dec_@1( @1 *res, @2 *v, int *s2, int *d2 )
+int @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	@2 r;
@@ -1120,6 +1127,14 @@ module(mapi); # mapi_listen
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
+
+proc sql_environment() : BAT[str,BAT] {
+	var b := new(str,bat,2);
+	var e := environment();
+	b.insert("name", e.mark(0@0).reverse());
+	b.insert("value", e.reverse().mark(0@0).reverse());
+	return b;
+}
 
 proc daytime ( lng s ) : daytime {
 	return add(daytime(0), s*lng(1000));

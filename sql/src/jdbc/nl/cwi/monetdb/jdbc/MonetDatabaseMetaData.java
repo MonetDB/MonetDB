@@ -47,18 +47,42 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		return(stmt);
 	}
 
-	private synchronized Map getEnvMap() throws SQLException {
+	/**
+	 * Internal cache for environment properties retrieved from the
+	 * server.  To avoid querying the server over and over again, once a
+	 * value is read, it is kept in a Map for reuse.
+	 */
+	private synchronized String getEnv(String key) throws SQLException {
+		String ret;
+
 		if (envs == null) {
-			// make the env map
+			// make the env map, insert all entries from env()
 			envs = new HashMap();
-			ResultSet env = getStmt().executeQuery("SELECT * FROM (SELECT \"name\", \"value\" FROM \"sys\".\"env\" UNION ALL SELECT \"name\", \"value\" FROM \"sessions\") AS \"env\"");
+			ResultSet env = getStmt().executeQuery(
+					"SELECT \"name\", \"value\" FROM env() as env");
 			while (env.next()) {
 				envs.put(env.getString("name"), env.getString("value"));
 			}
 			env.close();
 		}
+		if ((ret = (String)envs.get(key)) == null) {
+			// It might be some key from the "sessions" table, which is
+			// no longer there, but available as variables.  Just query
+			// for the variable, and hope that it is ok (not a user
+			// variable, etc.)  In general, it should be ok, because
+			// it's only used inside this class.
+			// The effects of caching a variable, might be
+			// undesirable... TODO
+			ResultSet env = getStmt().executeQuery(
+					"SELECT @\"" + key + "\" AS \"value\"");
+			if (env.next()) {
+				ret = env.getString("value");
+				envs.put(key, ret);
+			}
+			env.close();
+		}
 
-		return(envs);
+		return(ret);
 	}
 
 	/**
@@ -88,10 +112,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getURL() throws SQLException {
-		Map env = getEnvMap();
-		return("jdbc:monetdb://" + (String)env.get("host") +
-			":" + (String)env.get("sql_port") + "/" +
-			(String)env.get("gdk_dbname"));
+		return("jdbc:monetdb://" + getEnv("host") +
+			":" + getEnv("sql_port") + "/" +
+			getEnv("gdk_dbname"));
 	}
 
 	/**
@@ -101,8 +124,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getUserName() throws SQLException {
-		Map env = getEnvMap();
-		return((String)env.get("current_user"));
+		return(getEnv("current_user"));
 	}
 
 	/**
@@ -168,8 +190,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getDatabaseProductVersion() throws SQLException {
-		Map env = getEnvMap();
-		return((String)env.get("gdk_version"));
+		return(getEnv("gdk_version"));
 	}
 
 	/**
@@ -1447,19 +1468,19 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	{
 		String select;
 		String orderby;
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 
 		select =
 			"SELECT * FROM ( " +
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
-				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 0 THEN 'TABLE' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 0 THEN 'VIEW' " +
-				"   WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
-				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
+				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
+				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 1 AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 0 THEN 'TABLE' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 1 AND \"tables\".\"temporary\" = 0 THEN 'VIEW' " +
+				"   WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
+				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 1 AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 1 AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
 				"END AS \"TABLE_TYPE\", \"tables\".\"query\" AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
 				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
 			"FROM \"sys\".\"tables\" AS \"tables\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
@@ -1499,7 +1520,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database error occurs
 	 */
 	public ResultSet getSchemas() throws SQLException {
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT \"name\" AS \"TABLE_SCHEM\", " +
 				"'" + cat + "' AS \"TABLE_CATALOG\", " +
@@ -1525,8 +1546,6 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database error occurs
 	 */
 	public ResultSet getCatalogs() throws SQLException {
-		Map env = getEnvMap();
-
 		/*
 		// doing this with a VirtualResultSet is much more efficient...
 		String query =
@@ -1545,7 +1564,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 		columns[0] = "TABLE_TYPE";
 		types[0] = "varchar";
-		results[0][0] = ((String)env.get("gdk_dbname"));
+		results[0][0] = getEnv("gdk_dbname");
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -1652,7 +1671,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String columnNamePattern
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
@@ -1734,7 +1753,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String columnNamePattern
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 		"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
@@ -1816,7 +1835,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String tableNamePattern
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 		"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
@@ -2154,7 +2173,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	public ResultSet getImportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query = keyQuery(cat);
 
 		if (schema != null) {
@@ -2224,7 +2243,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	public ResultSet getExportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query = keyQuery(cat);
 
 		if (schema != null) {
@@ -2309,7 +2328,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String ftable
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query = keyQuery(cat);
 
 		if (pschema != null) {
@@ -2481,7 +2500,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		boolean approximate
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT * FROM ( " +
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
@@ -2678,7 +2697,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		int[] types
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'java.lang.Object' AS \"CLASS_NAME\", 0 AS \"DATA_TYPE\", " +
@@ -2798,7 +2817,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String typeNamePattern
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'' AS \"SUPERTYPE_CAT\", '' AS \"SUPERTYPE_SCHEM\", " +
@@ -2845,7 +2864,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String tableNamePattern
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
 			"'' AS \"SUPERTABLE_NAME\" WHERE 1 = 0";
@@ -2929,7 +2948,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String attributeNamePattern
 	) throws SQLException
 	{
-		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'' AS \"ATTR_NAME\", '' AS \"ATTR_TYPE_NAME\", 0 AS \"ATTR_SIZE\", " +
@@ -2977,8 +2996,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getDatabaseMajorVersion() throws SQLException {
-		Map env = getEnvMap();
-		String version = (String)env.get("gdk_version");
+		String version = getEnv("gdk_version");
 		int major = 0;
 		try {
 			major = Integer.parseInt(version.substring(0, version.indexOf(".")));
@@ -2996,8 +3014,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getDatabaseMinorVersion() throws SQLException {
-		Map env = getEnvMap();
-		String version = (String)env.get("gdk_version");
+		String version = getEnv("gdk_version");
 		int minor = 0;
 		try {
 			int start = version.indexOf(".");

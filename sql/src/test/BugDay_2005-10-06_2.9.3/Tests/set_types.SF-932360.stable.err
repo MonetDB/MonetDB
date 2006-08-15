@@ -64,19 +64,18 @@ stderr of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-10-06_2.9.3
 
-# 14:30:11 >  
-# 14:30:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46462  < set_types.SF-932360.sql
-# 14:30:11 >  
+# 13:52:38 >  
+# 13:52:38 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36531  < set_types.SF-932360.sql
+# 13:52:38 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:36531
 QUERY = set current_timezone = 60;
-ERROR = !ERROR: second_interval_sht: operation failed.
-MAPI  = monetdb@localhost:45579
+
+MAPI  = monetdb@localhost:36531
 QUERY = set current_timezone = 0;
-ERROR = !ERROR: second_interval_sht: operation failed.
 
 
-# 14:30:12 >  
-# 14:30:12 >  Done.
-# 14:30:12 >  
+# 13:52:39 >  
+# 13:52:39 >  Done.
+# 13:52:39 >  
 

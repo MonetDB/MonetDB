@@ -34,7 +34,6 @@
 #  include <time.h>
 # endif
 #endif
-#include <string.h>
 
 static long
 gettime(void)
@@ -149,6 +148,8 @@ main(int argc, char **av)
 		}
 	}
 
+	setlen = mo_system_config(&set, setlen);
+
 	mid = embedded_sql(set, setlen);
 
 	/* now for each file given on the command line (or stdin) 
@@ -198,5 +199,6 @@ main(int argc, char **av)
 			printf("Timer: %ld (usec)\n", gettime()-t0);
 	}
 	free(buf);
+	mapi_destroy(mid);
 	return 0;
 }

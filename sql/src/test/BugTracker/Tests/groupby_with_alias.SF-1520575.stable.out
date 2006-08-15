@@ -21,7 +21,6 @@ Over..
 # 09:13:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33703  < groupby_with_alias.SF-1520575.sql
 # 09:13:53 >  
 
-[ 1	]
 # sys.test # table_name
 # b # name
 # int # type
