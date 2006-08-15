@@ -3011,9 +3011,9 @@ extern void xmlInitThreads(void);
 bat *
 xquery_prelude(void)
 {
-    pf_compiler_lock = MT_create_lock();
-    pf_module_lock = MT_create_lock();
-    pf_cache_lock = MT_create_lock();
+    MT_lock_init(&pf_compiler_lock);
+    MT_lock_init(&pf_module_lock);
+    MT_lock_init(&pf_cache_lock);
 
     xmlInitThreads();
    

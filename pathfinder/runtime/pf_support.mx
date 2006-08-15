@@ -5594,7 +5594,7 @@ CMDinvalid_qname(str *ret, BAT *b)
 MT_Lock pf_runtime_lock;
 
 int CMDpflock(ptr *ret) {
-    *ret = (ptr) pf_runtime_lock;
+    *ret = (ptr) &pf_runtime_lock;
     return GDK_SUCCEED;
 }
 
@@ -5892,7 +5892,7 @@ CMDnil@1(int *res, int *v1, int *v2)
 @:nilarithC(plus,+)@
 
 bat* pf_support_prelude() {
-    pf_runtime_lock = MT_create_lock();
+    MT_lock_init(&pf_runtime_lock);
     return NULL;
 }
 

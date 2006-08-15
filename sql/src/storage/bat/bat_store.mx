@@ -65,7 +65,7 @@ extern BAT *temp_descriptor(oid b);
 #define CATALOG_VERSION 30100
 
 static struct logger *logger = NULL;
-static MT_Lock bs_lock = NULL;
+static MT_Lock bs_lock;
 static int store_oid = 0;
 static int nr_sessions = 0;
 static int nr_active = 0;
@@ -2227,7 +2227,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		return -1;
 
 	store_oid = logger_oid(logger);
-	bs_lock = MT_create_lock();
+	MT_lock_init(&bs_lock);
 
 	types_init(debug);
 
