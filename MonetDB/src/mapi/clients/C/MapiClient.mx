@@ -1524,7 +1524,7 @@ main(int argc, char **argv)
 			prompt = promptbuf;
 		}
 		/* stream xml document into the server */
-		if (strcmp(language, "xquery") == 0) {
+		if (input && strcmp(language, "xquery") == 0) {
 			mapi_stream_into(mid, input);
 		}
 		if (strcmp(language, "xquery") == 0)
