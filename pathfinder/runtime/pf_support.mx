@@ -801,12 +801,6 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 	var pre_size := ws.fetch(PRE_SIZE).fetch(cont);
 	var height   := ws.fetch(HEIGHT).fetch(cont);
 
-        if (ws.fetch(WS_FRAG).fetch(cont).count() > 0){
-                var min_size := int(ws.fetch(WS_FRAG).fetch(cont).fetch(0));
-                var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(cont).fetch(min_size));
-                pre_size := pre_size.slice(min_size, max_size);
-        }
-    
 	# trivial cases	
 	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
 		result := new(void,bat,2).seqbase(0@0)
