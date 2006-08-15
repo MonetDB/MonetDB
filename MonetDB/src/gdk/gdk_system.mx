@@ -169,10 +169,10 @@ typedef struct {
 	pthread_cond_t cond;
 } pthread_sema_t;
 
-gdk_export void    pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
-gdk_export void    pthread_sema_destroy(pthread_sema_t *s)
-gdk_export void    pthread_sema_up(pthread_sema_t *s)
-gdk_export void    pthread_sema_down(pthread_sema_t *s)
+gdk_export void    pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
+gdk_export void    pthread_sema_destroy(pthread_sema_t *s);
+gdk_export void    pthread_sema_up(pthread_sema_t *s);
+gdk_export void    pthread_sema_down(pthread_sema_t *s);
 #else
 #define pthread_sema_t       sem_t
 #define pthread_sema_init    sem_init
