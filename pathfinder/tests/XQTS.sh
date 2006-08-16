@@ -41,7 +41,7 @@ rm -rf "$XQTS_SRC"
 mkdir -p "$XQTS_SRC" || exit 1
 (
 cd "$XQTS_SRC" || exit 1
-wget http://www.w3.org/XML/Query/test-suite/XQTS_0_9_4.zip
+wget http://www.w3.org/XML/Query/test-suite/XQTS_0_9_4.zip || exit 1
 unzip XQTS_0_9_4.zip >/dev/null || exit 1
 ) || exit 1
 
