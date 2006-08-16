@@ -3514,7 +3514,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "kind := STR;\n");
     }
     else if (TY_EQ (input_type, PFty_xs_boolean ()))
-        evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
+        evaluateCast (f, rcode, rc, bool_container(), cast_container, "leftfetchjoin(bool_str)");
     else /* handles the choice type */ 
 	evaluateCastAny(f, rc, rcode, cast_container, "[str]()");  
 }
@@ -3948,185 +3948,60 @@ translateComparison (opt_t *f, int cur_level, int counter,
 static void
 fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
 {
+    /* first analyze how big the sequences are per iter */
     milprintf(f,
             "{ # translate fn:boolean (item*) as boolean\n"
             "iter := iter.materialize(ipik);\n"
-            "var iter_count := {count}(iter.reverse(), loop%03u.reverse(), FALSE);\n"
-            "var trues := iter_count.[!=](0);\n",
-            cur_level);
+            "var iter_count := {count}(iter.reverse(), loop%03u.reverse(), FALSE).tmark(0@0);\n"
+            "var iter_pos := {min}(iter.reverse());\n"
+            "var sequences := iter_count.ord_uselect(2,int(nil));\n"
+            "var emptyseqs := iter_count.ord_uselect(0,0);\n", cur_level);
 
-    if (PFty_subtype (input_type, PFty_star(PFty_xs_integer ())))
-    {
-        milprintf(f,
-                "trues := trues.access(BAT_WRITE);\n"
-                "var test := iter_count.ord_uselect(1).mirror();\n"
-                "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s).materialize(test);\n"
-                "test := nil;\n"
-                "var test_int := test_item%s;\n"
-                "test_item := nil;\n"
-                "var test_falses := test_int.ord_uselect(0LL);\n"
-                "test_int := nil;\n"
-                "var falses := test_falses.project(false);\n"
-                "trues := trues.replace(falses);\n"
-                "test_falses := nil;\n"
-                "falses := nil;\n"
-                "trues := trues.access(BAT_READ);\n",
-                kind_str(rc), (rc)?"":val_join(INT));
-    }
-    else if (PFty_subtype (input_type, PFty_star(PFty_xs_double ())))
-    {
-        milprintf(f,
-                "trues := trues.access(BAT_WRITE);\n"
-                "var test := iter_count.ord_uselect(1).mirror();\n"
-                "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s).materialize(test);\n"
-                "test := nil;\n"
-                "var test_dbl := test_item%s;\n"
-                "test_item := nil;\n"
-                "var test_falses := test_dbl.ord_uselect(dbl(0));\n"
-                "test_dbl := nil;\n"
-                "var falses := test_falses.project(false);\n"
-                "test_falses := nil;\n"
-                "trues := trues.replace(falses);\n"
-                "falses := nil;\n"
-                "trues := trues.access(BAT_READ);\n",
-                kind_str(rc), (rc)?"":val_join(DBL));
-    }
-    else if (PFty_subtype (input_type, PFty_star(PFty_xs_decimal ())))
-    {
-        milprintf(f,
-                "trues := trues.access(BAT_WRITE);\n"
-                "var test := iter_count.ord_uselect(1).mirror();\n"
-                "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s).materialize(test);\n"
-                "test := nil;\n"
-                "var test_dec := test_item%s;\n"
-                "test_item := nil;\n"
-                "var test_falses := test_dec.ord_uselect(dbl(0));\n"
-                "test_dec := nil;\n"
-                "var falses := test_falses.project(false);\n"
-                "test_falses := nil;\n"
-                "trues := trues.replace(falses);\n"
-                "falses := nil;\n"
-                "trues := trues.access(BAT_READ);\n",
-                kind_str(rc), (rc)?"":val_join(DEC));
-    }
-    else if (PFty_subtype (input_type, PFty_star(PFty_xs_string ())) ||
-             PFty_subtype (input_type, PFty_star(PFty_untypedAtomic ())))
-    {
-        milprintf(f,
-                "trues := trues.access(BAT_WRITE);\n"
-                "var test := iter_count.ord_uselect(1).mirror();\n"
-                "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s).materialize(test);\n"
-                "test := nil;\n"
-                "var test_str_ := test_item%s;\n"
-                "test_item := nil;\n"
-                "var test_falses := test_str_.ord_uselect(\"\");\n"
-                "test_str_ := nil;\n"
-                "var falses := test_falses.project(false);\n"
-                "test_falses := nil;\n"
-                "trues := trues.replace(falses);\n"
-                "falses := nil;\n"
-                "trues := trues.access(BAT_READ);\n",
-                kind_str(rc), (rc)?"":val_join(STR));
-    }
-    else if (PFty_subtype (input_type, PFty_star(PFty_xs_boolean ())))
-    {
-        /* this branch never occurs, because it gets optimized away :) */
-        milprintf(f,
-                "trues := trues.access(BAT_WRITE);\n"
-                "var test := iter_count.ord_uselect(1).mirror();\n"
-                "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item).materialize(test);\n"
-                "test := nil;\n"
-                "var test_falses := test_item.ord_uselect(0@0);\n"
-                "test_item := nil;\n"
-                "var falses := test_falses.project(false);\n"
-                "test_falses := nil;\n"
-                "trues := trues.replace(falses);\n"
-                "falses := nil;\n"
-                "trues := trues.access(BAT_READ);\n");
-    }
-    else if (PFty_subtype (input_type, PFty_star(PFty_atomic ())))
-    {
-        if (rc != NORMAL) 
-            mps_error ("forgot to cope with type '%s' in fn:boolean.",
-                       kind_container(rc).name);
-
-        /* FIXME: rewrite stuff two use only one column instead of oid|oid */
-        milprintf(f,
-                "trues := trues.access(BAT_WRITE);\n"
-                "var test := iter_count.ord_uselect(1).mirror();\n"
-                "iter := iter.reverse();\n"
-                "item := iter.leftfetchjoin(item);\n"
-                "kind := iter.leftfetchjoin(kind);\n"
-                "var test_kind := test.leftjoin(kind);\n"
-                "test := nil;\n"
-                "var str_test := test_kind.ord_uselect(STR);\n"
-                "var u_A_test := test_kind.ord_uselect(U_A);\n"
-                "var int_test := test_kind.ord_uselect(INT);\n"
-                "var dbl_test := test_kind.ord_uselect(DBL);\n"
-                "var dec_test := test_kind.ord_uselect(DEC);\n"
-                "var bool_test := test_kind.ord_uselect(BOOL);\n"
-                "test := nil;\n"
-                "str_test := str_test.mirror();\n"
-                "u_A_test := u_A_test.mirror();\n"
-                "int_test := int_test.mirror();\n"
-                "dbl_test := dbl_test.mirror();\n"
-                "dec_test := dec_test.mirror();\n"
-                "bool_test := bool_test.mirror();\n"
-                "str_test := str_test.leftjoin(item);\n"
-                "u_A_test := u_A_test.leftjoin(item);\n"
-                "int_test := int_test.leftjoin(item);\n"
-                "dec_test := dec_test.leftjoin(item);\n"
-                "dbl_test := dbl_test.leftjoin(item);\n"
-                "bool_test := bool_test.leftjoin(item);\n"
-                "var test_str_ := str_test.leftfetchjoin(str_values);\n"
-                "var test_u_A_ := u_A_test.leftfetchjoin(str_values);\n"
-                "var test_int := int_test.leftfetchjoin(int_values);\n"
-                "var test_dec := dec_test.leftfetchjoin(dec_values);\n"
-                "var test_dbl := dbl_test.leftfetchjoin(dbl_values);\n"
-                "bool_test := bool_test.ord_uselect(0@0);\n"
-                "str_test := test_str_.ord_uselect(\"\");\n"
-                "u_A_test := test_u_A_.ord_uselect(\"\");\n"
-                "int_test := test_int.ord_uselect(0LL);\n"
-                "dec_test := test_dec.ord_uselect(dbl(0));\n"
-                "dbl_test := test_dbl.ord_uselect(dbl(0));\n"
-                "test_str_ := nil;\n"
-                "test_u_A_ := nil;\n"
-                "test_int := nil;\n"
-                "test_dec := nil;\n"
-                "test_dbl := nil;\n"
-                "var str_falses := str_test.project(false);\n"
-                "var u_A_falses := u_A_test.project(false);\n"
-                "var int_falses := int_test.project(false);\n"
-                "var dec_falses := dec_test.project(false);\n"
-                "var dbl_falses := dbl_test.project(false);\n"
-                "var bool_falses := bool_test.project(false);\n"
-                "str_test := nil;\n"
-                "u_A_test := nil;\n"
-                "int_test := nil;\n"
-                "dec_test := nil;\n"
-                "dbl_test := nil;\n"
-                "bool_test := nil;\n"
-                "trues := trues.replace(str_falses);\n"
-                "trues := trues.replace(u_A_falses);\n"
-                "trues := trues.replace(int_falses);\n"
-                "trues := trues.replace(dec_falses);\n"
-                "trues := trues.replace(dbl_falses);\n"
-                "trues := trues.replace(bool_falses);\n"
-                "trues := trues.access(BAT_READ);\n");
-    }
+    /* error check. Note that kind maybe constant, leftfetchjoin and min both work here  */
     milprintf(f,
-            "iter := iter_count.hmark(0@0);\n"
+            "# incomprehensible XQuery semantics: |sequences|>1 are true, but *must* start with a node\n"
+            "if (bit(count(sequences))) {\n"
+            "  if (sequences.hmark(0@0).leftfetchjoin(iter_pos).leftfetchjoin(kind).min() < NODE)\n" 
+            "  {  ERROR (\"err:FORG0006: boolean() cannot handle sequences with length>1 that start with an atomic.\"); }\n"
+            "}\n");
+
+    /* again kind/item constant safe. we just get the first item of each sequence now */
+    milprintf(f,
+            "# get the first item of each non-empty sequence\n"
+            "iter := iter_pos.hmark(0@0);\n"
+            "item%s := iter_pos.leftfetchjoin(item%s).tmark(0@0);\n"
+            "kind := iter_pos.leftfetchjoin(kind).tmark(0@0);\n"
             "ipik := iter;\n"
-            "iter_count := nil;\n"
-            "pos := 1@0;\n"
-            "kind := BOOL;\n"
-            "item := trues.[oid]().tmark(0@0);\n"
-            "trues := nil;\n"
+            "pos := 1@0;\n", kind_str(rc), kind_str(rc));
+
+    /* if any of the values are of type node, replace them by a true */
+    if (rc == NORMAL) /* otherwise no nodes anyway */
+    milprintf(f,
+            "# replace all nodes by true (also the single-node sequences!!)\n"
+            "if (type(kind) = bat) {\n"
+            "  sequences := kind.ord_uselect(NODE,int(nil));\n" 
+            "  if (bit(count(sequences))) {\n"
+            "    item.access(BAT_WRITE).replace(sequences.project(1@0)).access(BAT_READ);\n"
+            "    kind.access(BAT_WRITE).replace(sequences.project(BOOL)).access(BAT_READ);\n"
+            "  }\n"
+            "} else { if (kind = NODE) {\n"
+            "  item := 1@0;\n"
+            "  kind := BOOL;\n"
+            "}}\n");
+
+    /* now that everything is a single atomic value, cast them to bool */
+    translateCast2BOOL (f, NORMAL, rc, input_type);
+
+    /* finally, if applicable, get back the empty sequences as falses. */
+    milprintf(f,
+            "if (bit(count(emptyseqs))) {\n"
+            "  item := loop%03u.tmark(oid(nil)).outerjoin(reverse(iter)).outerjoin(item).seqbase(0@0);\n"
+            "  iter := loop%03u.tmark(0@0);\n"
+            "  ipik := iter;\n"
+            "  item.access(BAT_WRITE).replace(emptyseqs.project(0@0)).access(BAT_READ);\n"
+            "}\n", cur_level, cur_level);
+
+    milprintf(f,
             "} # end of translate fn:boolean (item*) as boolean\n");
 }
 
