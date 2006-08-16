@@ -748,10 +748,10 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection,
     return shred_doc_index(shredRES, docBAT, location, name, collection, doCommit, ts, ws);
 }
 
-PROC shred_stream( str name, bat[oid,bat] shredRES) : int
+PROC shred_stream( str docname, str colname, bat[oid,bat] shredRES) : int
 {
     var docBAT := bat(str,bat,WS_SIZE);
-    return shred_doc_index(shredRES, docBAT, "", name, name, true, timestamp(nil), int(nil));
+    return shred_doc_index(shredRES, docBAT, "", docname, colname, true, timestamp(nil), int(nil));
 }
 
 PROC shred_doc_base(str location, str name, str collection, bit doCommit, str opt) : void
@@ -2868,7 +2868,7 @@ xquery_client_engine(mapi_client *fc )
                 case 'c': { /* shred from stream */
                         int i;
                         BAT *res;
-                        char *name;
+                        char *dname, *cname;
 
                         p += sizeof("copy ")-1;
                         /* start shredder (first character should be skipped) */
@@ -2881,21 +2881,26 @@ xquery_client_engine(mapi_client *fc )
                                 xquery_client_end(ctx, "could not flush prompt"); 
                                 return;
                         }
-                        name = GDKstrdup(p);
+                        dname = GDKstrdup(p);
+                        cname = strchr(dname, ' ');
+                        if (cname) 
+                                *cname++ = 0;
+                        else /* default collection name is the document name */
+                                cname = dname; 
                         shred_stream2bats(&res /* result bats */, in, NULL);
 
                         /* insert into document collection (p is name)*/
 
                         /* taking the easy way, dump to string */
-                        i=snprintf(ctx->buf, ctx->buflen, "shred_stream(\"%s\", bat(%d));\n", name, res->batCacheid);
+                        i=snprintf(ctx->buf, ctx->buflen, "shred_stream(\"%s\", \"%s\", bat(%d));\n", dname, cname, res->batCacheid);
                         if (i<0 || xquery_mil_exec(ctx, ctx->buf)<0) {
                                 xquery_client_end(ctx, "shred_stream failed"); 
                                 BBPunfix(BBPcacheid(res));
-                                GDKfree(name);
+                                GDKfree(dname);
                                 return;
                         }
                         BBPunfix(BBPcacheid(res));
-                        GDKfree(name);
+                        GDKfree(dname);
                         break;
                     }
                 }
