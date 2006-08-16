@@ -151,7 +151,7 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 @:join(leftmerge)@
 @:join(fetch)@
 @:join(leftfetch)@
-@:join(leftouter,outer)@
+@:join(outer,outer)@
 
 .END constant;
 @mil
