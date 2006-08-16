@@ -1835,7 +1835,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer, stream *s)
 {
     int print_error_newline = TRUE;
     int wellFormed = 0;
-    xmlParserCtxtPtr xmlCtx;
+    xmlParserCtxtPtr xmlCtx = NULL;
 
     /* this code is not really Unicode or multi-byte aware (yet) */
     assert (sizeof (char) == sizeof (xmlChar));
