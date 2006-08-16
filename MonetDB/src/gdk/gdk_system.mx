@@ -340,7 +340,7 @@ MT_kill_thread(MT_Id t)
 #endif
 }
 #if defined(_AIX) || defined(__APPLE_CC__)
-static void
+void
 pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 {
 	(void) flag;
@@ -349,14 +349,14 @@ pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
 	pthread_cond_init(&(s->cond), 0);
 }
 
-static void
+void
 pthread_sema_destroy(pthread_sema_t *s)
 {
 	pthread_mutex_destroy(&(s->mutex));
 	pthread_cond_destroy(&(s->cond));
 }
 
-static void
+void
 pthread_sema_up(pthread_sema_t *s)
 {
 	int status = pthread_mutex_lock(&(s->mutex));
@@ -368,7 +368,7 @@ pthread_sema_up(pthread_sema_t *s)
 	status = pthread_mutex_unlock(&(s->mutex));
 }
 
-static void
+void
 pthread_sema_down(pthread_sema_t *s)
 {
 	int status = pthread_mutex_lock(&(s->mutex));
