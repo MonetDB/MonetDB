@@ -39,7 +39,7 @@ main(int argc, char **argv)
 	MapiHdl hdl = NULL;
 	int i, port;
 	char buf[40];
-	int sql = 0;
+	int lang = 0;
 
 	/* char *line; */
 
@@ -47,26 +47,32 @@ main(int argc, char **argv)
 		printf("usage:smack00 <port> [<language>]\n");
 		exit(-1);
 	}
-	if (argc == 3)
-		sql = strcmp(argv[2], "sql") == 0;
+	if (argc == 3) {
+		if (strcmp(argv[2], "sql") == 0) 
+			lang = 1;
+		else if (strcmp(argv[2], "xquery") == 0)
+			lang = 2;
+	}
 
 	port = atol(argv[1]);
-	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (sql) ? "sql" : 0, NULL);
+	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (lang==0) ? NULL : (lang==1)? "sql": "xquery", NULL);
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 
 	/* switch of autocommit */
-	if (sql && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
+	if (lang==1 && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
 		die(dbh,NULL);
 
 	for (i = 0; i < 20000; i++) {
-		if (sql)
+		if (lang==2)
+			snprintf(buf, 40, "%d", i);
+		else if (lang==1)
 			snprintf(buf, 40, "select %d;", i);
 		else
 			snprintf(buf, 40, "print(%d);", i);
 		if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
-		while ( /*line= */ mapi_fetch_line(hdl)) {
+		while ( (/*line= */ mapi_fetch_line(hdl)) != NULL) {
 			/*printf("%s \n", line); */
 		}
 		if (mapi_error(dbh))

@@ -40,18 +40,22 @@ main(int argc, char **argv)
 	int i;
 	char buf[40], *line;
 	int port;
-	int sql = 0;
+	int lang = 0;
 
 	if (argc != 2 && argc != 3) {
 		printf("usage: smack01 <port> [<language>]\n");
 		exit(-1);
 	}
-	if (argc == 3)
-		sql = strcmp(argv[2], "sql") == 0;
+	if (argc == 3) {
+		if (strcmp(argv[2], "sql") == 0) 
+			lang = 1;
+		else if (strcmp(argv[2], "xquery") == 0)
+			lang = 2;
+	}
+
 
 	port = atol(argv[1]);
-
-	dbh = mapi_mapi("localhost", port, "monetdb", "monetdb", sql ? "sql" : 0, NULL);
+	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (lang==0) ? NULL : (lang==1)? "sql": "xquery", NULL);
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i); */
 		mapi_reconnect(dbh);
@@ -59,10 +63,12 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 
 		/* switch of autocommit */
-		if (sql && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
+		if (lang==1 && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
 			die(dbh,NULL);
 
-		if (sql)
+		if (lang==2)
+			snprintf(buf, 40, "%d", i);
+		else if (lang==1)
 			snprintf(buf, 40, "select %d;", i);
 		else
 			snprintf(buf, 40, "print(%d);", i);
