@@ -2813,7 +2813,7 @@ xquery_client_engine(mapi_client *fc )
     stream *in = fc->c->fdin, *out = fc->c->fdout;
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
 
-    while(1) {
+    while (1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
         if (!fc->c->blocked && 
                 stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
@@ -2848,7 +2848,7 @@ xquery_client_engine(mapi_client *fc )
         p[curlen] = 0;        /* terminate (we know there is space) */
         if (*p == 'X') {
                 /* remove newline */
-                p[curlen-1] = 0;  
+                if (p[curlen - 1] == '\n') p[curlen - 1] = 0;  
                 p++;
                 switch(*p) {
                 case 'p': /* profile */
@@ -2858,8 +2858,7 @@ xquery_client_engine(mapi_client *fc )
                         ctx->mode |= XQ_TRACE;
                         break;
                 case 'o': /* output format */
-                        p += sizeof("output ")-1-sizeof("mapi-"); 
-                        strncpy(p,"mapi-",sizeof("mapi-")-1);
+                        p += sizeof("output ") - 1;
                         if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), p)) { 
                             if (*(ctx->genType)) 
                                 GDKfree(*(ctx->genType));
