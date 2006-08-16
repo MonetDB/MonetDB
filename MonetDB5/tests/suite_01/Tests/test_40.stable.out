@@ -218,7 +218,7 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("cb.print();"); 	# 98  (_129:str)
     wb_a := io.print(cb);	# 99 IOprint_val (wb_a:int)<-(cb:bat[:int,:int])
 #	mil.line("commit();"); 	# 100  (_142:str)
-    xb_a := transaction.commit();	# 101 TRNglobal_commit (xb_a:void)
+    xb_a := transaction.commit();	# 101 TRNglobal_commit (xb_a:bit)
 #	mil.line("quit();"); 	# 102  (_144:str)
     yb_a := clients.quit();	# 103 CLTquitDefault (yb_a:void)
 end main;	# 104  

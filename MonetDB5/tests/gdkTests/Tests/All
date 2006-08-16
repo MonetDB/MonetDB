@@ -4,4 +4,6 @@ append_dense_tail.mal
 cross
 binsemijoin
 binsemijoin2
+reload
+str_heap
 void
