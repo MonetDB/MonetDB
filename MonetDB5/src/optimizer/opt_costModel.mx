@@ -112,14 +112,6 @@ The cost will be used in many places to make decisions.
 Access should be fast.
 @c
 static int
-OPTgetCost(MalBlkPtr mb, int varid)
-{
-	int c;
-
-	c = *(getVarCost(varid));
-	return c;
-}
-static int
 OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, *c, *c1, *c2, k;
