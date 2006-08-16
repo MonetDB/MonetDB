@@ -100,8 +100,10 @@ echo 'stderr of test '\'"$TSTNME"'` in directory '\'"$XQTS_DIR/$TSTDIR"'` itself
 echo ''
 {
 if ($tst/*:expected-error) then
+for $e in $tst/*:expected-error
+return
 <e>
-echo '! expecting {fn:data($tst/@scenario)} "{$tst/*:expected-error/text()}" (cf., http://www.w3.org/TR/xquery/#ERR{$tst/*:expected-error/text()} ) !'
+echo '! expecting {fn:data($tst/@scenario)} "{$e/text()}" (cf., http://www.w3.org/TR/xquery/#ERR{$e/text()} ) !'
 </e>
 else
 <e/>
