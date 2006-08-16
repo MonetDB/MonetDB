@@ -93,8 +93,9 @@ void pferror (const char *s);
 
 
 /* scanner information to provide better error messages */
-extern char  *pftext;
-extern int    pflineno;
+extern char         *pftext;
+extern unsigned int  cur_col;
+extern unsigned int  cur_row;
 
 /**
  * True if we have been invoked via parse_module().
@@ -2820,12 +2821,12 @@ get_rpc_uri(char *prefix){
 void pferror (const char *s)
 {
     if (pftext && *pftext)
-        PFlog ("%s on line %d (next token is `%s')",
-                s, pflineno,
+        PFlog ("%s on line %d, column %d (next token is `%s')",
+                s, cur_row, cur_col,
                 pftext);
     else
-        PFlog ("%s on line %d",
-                s, pflineno);
+        PFlog ("%s on line %d, column %d",
+                s, cur_row, cur_col);
 }
 
 char* pfinput = NULL; /* standard input of scanner, used by flex */

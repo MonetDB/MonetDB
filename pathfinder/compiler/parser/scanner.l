@@ -80,41 +80,111 @@ extern YYLTYPE pflloc;
 /* input buffer */
 extern char *pfinput;
 
+/* current byte position within the buffer */
+unsigned int inputpos;
+
+/* current line and column within the query */
+unsigned int cur_row;
+unsigned int cur_col;
+
 /** how many spaces make up one tabstop */
 #define TAB_STEP 8
 
 /**
  * Executed (in the flex-generated scanner) each time a rule matches,
  * after yytext and yyleng were set, but before the action is
- * triggered.  Used to calculate length of a token (esp. in the
- * presence of tabstops) and to increment the line number in case of
- * newline commands.
+ * triggered.  Used to calculate length of a token and to increment
+ * the line number in case of newline commands.
  */ 
 #define YY_USER_ACTION                                      \
  do {                                                       \
-   int i;                                                   \
    pflloc.first_col = pflloc.last_col + 1;                  \
    pflloc.first_row = pflloc.last_row;                      \
                                                             \
-   for (i = 0; i < yyleng; i++) {                           \
-     if (yytext[i] == '\n') {                               \
-       pflloc.last_col = 0;                                 \
-       pflloc.last_row++;                                   \
-     }                                                      \
-     else if (yytext[i] == '\t') {                          \
-       pflloc.last_col = ((pflloc.last_col + TAB_STEP) /    \
-                          TAB_STEP) * TAB_STEP;             \
-     }                                                      \
-     else {                                                 \
-       pflloc.last_col++;                                   \
-     }                                                      \
-   }                                                        \
+   pflloc.last_col  = cur_col;                              \
+   pflloc.last_row  = cur_row;                              \
  } while(0);
 
-#define YY_INPUT(buf,result,max_size)                       \
- { int c = *pfinput;                                        \
-   pfinput += (c != 0);                                     \
-   result = (c != 0) ? (buf[0] = c, 1) : YY_NULL;           \
+/**
+ * Lexical states in which we skip comments.  Any comment (possibly
+ * nested) is returned as a single space in these states.
+ */
+#define IGNORE_COMMENTS \
+    (YY_START == INITIAL                  \
+     || YY_START == DEFAULT               \
+     || YY_START == OPERATOR              \
+     || YY_START == NAMESPACEDECL         \
+     || YY_START == NAMESPACEKEYWORD      \
+     || YY_START == VARNAME               \
+     || YY_START == SINGLETYPE            \
+     || YY_START == ITEMTYPE              \
+     || YY_START == OCCURRENCEINDICATOR   \
+     || YY_START == KINDTEST              \
+     || YY_START == KINDTESTFORPI         \
+     || YY_START == PRESERVE_MODE         \
+     || YY_START == INHERIT_MODE          \
+     || YY_START == NEXT_PRAGMA)          \
+
+/**
+ * Interface function for flex.  Skip (possibly nested) comments
+ * as we go if we are in one of the states listed above.  Return
+ * a single space for any comment we read, in compliance with
+ * Section A.2.4.1 of the W3C XQuery specs (that is, the expression
+ *
+ *     foo(: comment )- bar
+ *
+ * is to be parsed as `foo - bar', i.e., "foo minus bar", not the
+ * QName `foo-bar').
+ *
+ * While we are at it, also count current position within the query
+ * file for helpful error messages.
+ */
+#define YY_INPUT(buf,result,max_size)                                 \
+ {                                                                    \
+     int level = 0;                                                   \
+     do {                                                             \
+         if (pfinput[inputpos] == 0) {                                \
+             result = YY_NULL;                                        \
+             if (level > 0)                                           \
+                 PFoops (OOPS_PARSE, "unterminated comment");         \
+             break;                                                   \
+         }                                                            \
+                                                                      \
+         /* update position information */                            \
+         if (pfinput[inputpos] == '\n') {                             \
+             cur_col = 0;                                             \
+             cur_row++;                                               \
+         }                                                            \
+                                                                      \
+         if (IGNORE_COMMENTS                                          \
+                  && pfinput[inputpos] == '('                         \
+                  && pfinput[inputpos + 1] == ':') {                  \
+             inputpos += 2;                                           \
+             level++;                                                 \
+             cur_col += 2;                                            \
+         }                                                            \
+         else if (IGNORE_COMMENTS                                     \
+                  && level > 0                                        \
+                  && pfinput[inputpos] == ':'                         \
+                  && pfinput[inputpos + 1] == ')') {                  \
+             inputpos += 2;                                           \
+             level--;                                                 \
+             cur_col += 2;                                            \
+                                                                      \
+             /* a comment behaves like whitespace (XQuery A.2.4.1) */ \
+             if (level == 0) {                                        \
+                 buf[0] = ' ';                                        \
+                 result = 1;                                          \
+                 break;                                               \
+             }                                                        \
+         }                                                            \
+         else {                                                       \
+             cur_col++;                                               \
+             buf[0] = pfinput[inputpos++];                            \
+             result = 1;                                              \
+         }                                                            \
+                                                                      \
+     } while (level > 0);                                             \
  }
 
 /**
@@ -131,18 +201,6 @@ extern char *pfinput;
 static PFarray_t *lexical_stack = NULL;
 static unsigned int lexical_sp = 0;
 
-/** initialize the lexical state stack when scanner starts up 
-#define YY_USER_INIT lexical_sp = 0; lexical_stack = PFarray (sizeof (int))
-*/
-
-void
-lexical_init()
-{
-        lexical_sp = 0; 
-        lexical_stack = PFarray (sizeof (int));
-}
-
-   
 static void
 popState (void)
 {
@@ -212,8 +270,10 @@ PFscanner_init (char *buf)
     }
 
     *PFerrbuf = 0;
-    pfinput = buf;
-    pflineno = 1;
+    pfinput  = buf;
+    inputpos = 0;
+    cur_col  = 0;
+    cur_row  = 1;
 }
 
 /* forward declarations */
@@ -229,9 +289,6 @@ static char *extract_ncname (const char *s, unsigned int index);
 
 /* we need the `unput' feature of flex */
 %option unput
-
-/* provide token line number to the parser */
-%option yylineno
 
 /*
  * We don't use the REJECT command and indicate this here. Unfortunately,

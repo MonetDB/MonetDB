@@ -2513,7 +2513,7 @@ PFty_debug_subtyping (void)
     };
 
     fprintf (stderr, "Testing the subtyping algorithm:\n");
-    fprintf (stderr, "-------------------------------:\n");
+    fprintf (stderr, "--------------------------------\n");
     fprintf (stderr, "\n");
 
     for (unsigned int i = 0; i < sizeof (types) / sizeof (*types); i++)
