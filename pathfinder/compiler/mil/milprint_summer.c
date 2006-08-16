@@ -6051,7 +6051,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "var snd_iter := join_result.tmark(0@0);\n"
                 "var fst_iter := join_result.hmark(0@0);\n",
                 comp);
-        /* map back to cur_level */
+        /* map forth to cur_level */
         milprintf(f,
                 "{\n"
                 "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
@@ -6064,7 +6064,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 i+1, i+1);
         }
         milprintf(f,
-                "fst_iter := fst_iter.leftjoin(mapping);\n"
+                "fst_iter := reverse(reverse(mapping).leftjoin(reverse(fst_iter)));\n"
                 "}\n"
                 "snd_iter := fst_iter.hmark(0@0).leftfetchjoin(snd_iter);\n"
                 "fst_iter := fst_iter.tmark(0@0);\n"
