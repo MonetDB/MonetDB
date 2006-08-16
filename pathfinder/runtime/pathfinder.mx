@@ -1509,9 +1509,9 @@ xquery_compile_exec(xquery_client *ctx,
                             char* p3 = xquery_parse_ident(p2);
                             if (p3 > p2) {
                                 char *p4 = xquery_parse_space(p3); 
-                                if (p4 > p3 && *p4++ == '=') {
+                                if (p4 >= p3 && *p4++ == '=') {
                                     char *p5 = xquery_parse_space(p4); 
-                                    if (p5 > p4 && xquery_parse_string(p5, nsurl, 1024) > p5) {
+                                    if (p5 >= p4 && xquery_parse_string(p5, nsurl, 1024) > p5) {
                                         err = NULL; /* success! */
                                     }
                                 }
@@ -2666,9 +2666,9 @@ xquery_prepare(xquery_client *ctx,
                     *nsend = 0;
 
                     err = xquery_module_load(ctx, ns, url1, url2);
-                    if (err) return err;
-                    loaded_modules++;
                     *nsend = bak; 
+                    if (err) break;
+                    loaded_modules++;
                 } while (*p == ',');
 
                 if (*p == ';') {

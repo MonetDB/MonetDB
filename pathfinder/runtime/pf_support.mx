@@ -426,6 +426,7 @@ const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
+const bool_str := bat(void,str,2).append("false").append("true").seqbase(0@0).access(BAT_READ);
 var kind_debug := false;
 
 proc addValues(bat[void,any::1] container, any::1 delta) : oid
