@@ -99,9 +99,9 @@ Plain_mods@batloop() {
 
 Module: "array"
 
-[ 6 ]
-[ 6 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 5 ]
+[ 5 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature								help									  # name
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "concat",	  "PROC:      ",  "concat(BAT[oid,any::1], BAT[oid,any::1], int) : BAT[oid,any::1]",	  "Adds 'offset' two second arrays indexes and merges tables"		  ]
@@ -109,7 +109,6 @@ Module: "array"
 [ "grid",	  "COMMAND:   ",  "grid(int, int, int, int) : BAT[void,int]",				  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)"	  ]
 [ "grid",	  "COMMAND:   ",  "grid(lng, lng, lng, lng) : BAT[void,lng]",				  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)"	  ]
 [ "print_array",  "COMMAND:   ",  "print_array(BAT[any::1,any], ..BAT[any::1,int]..) : void",		  "Prints an array, using 1 value bat and N aligned index bats"		  ]
-[ "ram",	  "COMMAND:   ",  "ram(str, str, int, int, str) : str",					  "Converts ram to mil/x100. Caution: this is just a temporary hack. Parameters: ram basedir, ram query, optimization1 level, optimization2 level, translator "	  ]
 
 Module: "bat_cast"
 
