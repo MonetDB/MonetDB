@@ -142,7 +142,7 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 .COMMAND @1join ( oid left, any::1 right ) : any::1 = CMDconstjoinCopy;
 "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
 
-.COMMAND @1join ( any::1 left, BAT[any::1,any::2] right ) : any::2 = CMDconstjoinLeftCopy;
+.COMMAND @1join ( any::1 left, BAT[any::1,any::2] right ) : any::2 = CMDconst@2joinLeftCopy;
 "@1join(l,r); where the first parameter is a MIL constant. Return a MIL constant."
 @m
 @:join()@
@@ -151,6 +151,7 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 @:join(leftmerge)@
 @:join(fetch)@
 @:join(leftfetch)@
+@:join(leftouter,outer)@
 
 .END constant;
 @mil
@@ -371,6 +372,27 @@ CMDconstjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
 	}
 	return res;
 }
+
+int
+CMDconstouterjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
+{
+	BAT* bn = BATuselect(BATmirror(b), val, val);
+        res = GDK_FAIL;
+        if (bn) {
+		ptr val = ATOMnilptr(b->ttype);
+		if (BATcount(bn) == 1) {
+			val = BUNhead(bn,BUNfirst(bn));
+		} else if (BATcount(bn) > 1) {
+			val = NULL;
+        		GDKerror("outerjoin(const,%s): const should match exactly once.\n",
+                                BBP_logical(b->batCacheid));
+		}
+        	res = CMDconstCopy(ret, val, ATOMtype(b->ttype));
+		BBPreclaim(bn);
+	}
+	return res;
+}
+
 
 int 
 CMDconstDiff(BAT **res, BAT *l, ptr val) 
