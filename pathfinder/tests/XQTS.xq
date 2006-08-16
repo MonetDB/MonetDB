@@ -22,6 +22,9 @@ mkdir -p "$MODS_DST"
 for i in "$XQTS_SRC/TestSources"/*-lib.xq ; do
 	cat "$i" \
 	 | perl -pe 's|(module namespace .*[^ ]) *= *([^ ].*;)|$1 = $2|' \
+	 | perl -pe 's|(xs:[a-zA-Z]*)\(([^\(\)]*(\([^\(\)]*(\([^\(\)]*\)[^\(\)]*)*\)[^\(\)]*)*)\)|$2 cast as $1|g' \
+	 | perl -pe 's|(xs:[a-zA-Z]*)\(([^\(\)]*(\([^\(\)]*(\([^\(\)]*\)[^\(\)]*)*\)[^\(\)]*)*)\)|$2 cast as $1|g' \
+	 | perl -pe 's|(xs:[a-zA-Z]*)\(([^\(\)]*(\([^\(\)]*(\([^\(\)]*\)[^\(\)]*)*\)[^\(\)]*)*)\)|$2 cast as $1|g' \
 	 > "{text{"$MODS_DST/${i##*/}"}}"
 done
 ln -s "moduleDefs-lib.xq" "$MODS_DST/module-defs.xq"
@@ -68,6 +71,9 @@ else
 <m/>
 }
   | perl -pe 's|^(import module namespace .* at.*),;|$1;|' \
+  | perl -pe 's|(xs:[a-zA-Z]*)\(([^\(\)]*(\([^\(\)]*(\([^\(\)]*\)[^\(\)]*)*\)[^\(\)]*)*)\)|$2 cast as $1|g' \
+  | perl -pe 's|(xs:[a-zA-Z]*)\(([^\(\)]*(\([^\(\)]*(\([^\(\)]*\)[^\(\)]*)*\)[^\(\)]*)*)\)|$2 cast as $1|g' \
+  | perl -pe 's|(xs:[a-zA-Z]*)\(([^\(\)]*(\([^\(\)]*(\([^\(\)]*\)[^\(\)]*)*\)[^\(\)]*)*)\)|$2 cast as $1|g' \
   > "$XQTS_DST/$TSTDIR/Tests/$TSTNME.xq.in"
 (
 echo 'stdout of test '\'"$TSTNME"'` in directory '\'"$XQTS_DIR/$TSTDIR"'` itself:'
