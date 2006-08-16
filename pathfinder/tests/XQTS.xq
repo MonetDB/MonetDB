@@ -28,8 +28,7 @@ ln -s "moduleDefs-lib.xq" "$MODS_DST/module-defs.xq"
 ln -s "modulesdiffns-lib.xq" "$MODS_DST/modulesdiffns.xq"
 </h>
 ,
-for $tst in doc("XQTSCatalog.xml")//*:test-case
-return
+for $tst in doc("XQTSCatalog.xml")//*:test-case return
 if ($tst/*:output-file or $tst/*:expected-error) then
 <t>
 
@@ -41,8 +40,7 @@ mkdir -p "$XQTS_DST/$TSTDIR/Tests"
 echo "$TSTNME" >> "$XQTS_DST/$TSTDIR/Tests/All"
 cat "$XQTS_SRC/Queries/XQuery/$TSTDIR/$TSTFLE" \
 {
-for $i in $tst/*:input-file
-return 
+for $i in $tst/*:input-file return
 <x>
   | perl -pe 's|^declare variable (\${fn:data($i/@variable)}) external;|let $1 := doc("\$TSTSRCBASE/'"$DOCS_DIR"'/{$i/text()}.xml") return|' \
 </x>
@@ -62,8 +60,7 @@ else
   | perl -pe 's|^(import module namespace .* = [^ ]+)( +at .*)? *;|$1 at;|' \
 {
 if ($tst/*:module) then
-for $m in $tst/*:module
-return
+for $m in $tst/*:module return
 <m>
   | perl -pe 's|^(import module namespace .* at.*);|$1 "\$TSTSRCBASE/'"$MODS_DIR"'/{$m/text()}.xq",;|' \
 </m>
@@ -81,8 +78,7 @@ echo 'Over..'
 echo ''
 {
 if ($tst/*:output-file) then
-for $o at $p in $tst/*:output-file
-return
+for $o at $p in $tst/*:output-file return
 if ($p = 1) then
 <o>
 echo -e '{text{"<?xml"}} version="1.0" encoding="utf-8"{text{"?>"}}\n<XQueryResult>'
@@ -100,8 +96,7 @@ echo 'stderr of test '\'"$TSTNME"'` in directory '\'"$XQTS_DIR/$TSTDIR"'` itself
 echo ''
 {
 if ($tst/*:expected-error) then
-for $e in $tst/*:expected-error
-return
+for $e in $tst/*:expected-error return
 <e>
 echo '! expecting {fn:data($tst/@scenario)} "{$e/text()}" (cf., http://www.w3.org/TR/xquery/#ERR{$e/text()} ) !'
 </e>
