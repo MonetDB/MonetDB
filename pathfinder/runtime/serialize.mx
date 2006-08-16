@@ -1210,11 +1210,11 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
  *
  */
 char* match(char* mode, char* key) {
-	char *s = strstr(mode, key);
-	char *t = s + strlen(key);
-	if ((s != NULL) && (s == mode || s[-1] == '-') && (*t == 0 || *t == '-'))
-		return s;
-	return NULL;
+    char *s = strstr(mode, key);
+    char *t = s + strlen(key);
+    if ((s != NULL) && (s == mode || s[-1] == '-') && (*t == 0 || *t == '-'))
+        return s;
+    return NULL;
 }
 
 static bool
@@ -1251,8 +1251,8 @@ createWsContext (XqueryCtx*        ctx,
            noroot, root-name, noheader, and typed */
         /* user specified result tag */
         restag = match(mode,"root");
-	if (restag && restag[4]) {
-	    *restag = 0; /* cut off the suffix not to have false matches later */
+        if (restag && restag[4]) {
+            *restag = 0; /* cut off the suffix not to have false matches later */
             restag += 5; /* rest of mode is root tag */
         } else {
             restag = "XQueryResult"; /* default root tag */
@@ -1282,8 +1282,8 @@ createWsContext (XqueryCtx*        ctx,
         /* sax stream can be also enclosed
            in additional root element (or not) */
         restag = match(mode,"root");
-	if (restag && restag[4]) {
-	    *restag = 0; /* cut off the suffix not to have false matches later */
+        if (restag && restag[4]) {
+            *restag = 0; /* cut off the suffix not to have false matches later */
             restag += 5; /* rest of mode is root tag */
         } else {
             restag = "XQueryResult"; /* default root tag */
@@ -1303,8 +1303,8 @@ createWsContext (XqueryCtx*        ctx,
 
 
     /* choose the correct set of callback functions */
-    if ( driverFun ) {
-     ctx->driverFun = driverFun;
+    if (driverFun) {
+        ctx->driverFun = driverFun;
     }
     else if ( ctx->modes & MODE_SAX ) {
         ctx->driverFun = & saxSerializeFun;
