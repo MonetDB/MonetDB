@@ -600,7 +600,7 @@ dynamically created and should be freed after use.
 
 Set the output format for results send by the server.
 
-@item MapiMsg  mapi_stream_into(Mapi mid, char *input)
+@item MapiMsg  mapi_stream_into(Mapi mid, char *docname, char *colname)
 
 Stream a document into the server.
 
@@ -1007,7 +1007,7 @@ mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_output(Mapi mid, char *output);
-mapi_export MapiMsg mapi_stream_into(Mapi mid, char *input);
+mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname);
 mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export int mapi_get_trace(Mapi mid);
@@ -2929,13 +2929,19 @@ mapi_output(Mapi mid, char * output)
 }
 
 MapiMsg
-mapi_stream_into(Mapi mid, char *input)
+mapi_stream_into(Mapi mid, char *docname, char *colname)
 {
 	mapi_clrError(mid);
 	if (mid->languageId == LANG_XQUERY) {
+		char buf[BUFSIZ];
+		int i;
+
 		/* HACK alert, switch to mil too lose the extra 'S' */
 		mid->languageId = LANG_MIL; 
-		return mapi_Xcommand(mid, "copy", input);
+		i = snprintf(buf, BUFSIZ, "%s %s", docname, colname);
+		if (i < 0)
+			return MERROR;
+		return mapi_Xcommand(mid, "copy", buf);
 	}
 	return MOK;
 }

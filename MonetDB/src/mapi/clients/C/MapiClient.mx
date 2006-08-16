@@ -1242,6 +1242,8 @@ usage(const char *prog)
 	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "Options are:\n");
 	fprintf(stderr, " -b t/f      | --blocked=true/false /* blocked mode */\n");
+	fprintf(stderr, " -c config   | --config=file    /* config filename */\n");
+	fprintf(stderr, " -C colname  | --collection=name /* collection name */\n");
 	fprintf(stderr, " -D          | --dump           /* dump sql database */\n");
 	fprintf(stderr, " -e          | --error          /* exit on error */\n");
 	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n");
@@ -1276,6 +1278,7 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *output = NULL;
 	char *input = NULL;
+	char *colname = NULL;
 	int dodump = 0;
 	int trace = 0;
 	int guest = 1;
@@ -1289,6 +1292,7 @@ main(int argc, char **argv)
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
+		{"collection", 1, 0, 'C'},
 		{"dump", 0, 0, 'D'},
 		{"error", 0, 0, 'e'},
 		{"interactive", 0, 0, 'i'},
@@ -1317,7 +1321,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:ei::l:u::p:o:P::d:qHh:s:Dt::TX:?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:C:ei::l:u::p:o:P::d:qHh:s:Dt::TX:?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
@@ -1329,6 +1333,9 @@ main(int argc, char **argv)
 			break;
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
+			break;
+		case 'C':
+			colname = optarg;
 			break;
 		case 'e':
 			exit_on_error = 1;
@@ -1525,7 +1532,7 @@ main(int argc, char **argv)
 		}
 		/* stream xml document into the server */
 		if (input && strcmp(language, "xquery") == 0) {
-			mapi_stream_into(mid, input);
+			mapi_stream_into(mid, input, colname);
 		}
 		if (strcmp(language, "xquery") == 0)
 			c = doFile(mid, NULL, 1);
