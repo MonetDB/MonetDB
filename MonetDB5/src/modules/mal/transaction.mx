@@ -27,15 +27,19 @@ Note, however, the SQL front-end obeys transaction semantics.
 @mal
 module transaction;
 
-command sync() 
+command sync() :bit
 address TRNglobal_sync
 comment "Save all persistent BATs";
-command commit() 
+command commit() :bit
 address TRNglobal_commit
 comment "Global commit on all BATs";
-command abort() 
+command abort() :bit
 address TRNglobal_abort
 comment "Global abort on all BATs";
+command subcommit(b:bat[:any_1,:str]):bit
+address TRNsubcommit
+comment "commit only a set of BATnames, passed in the tail 
+(to which you must have exclusive access!)";
 
 pattern commit(c:any...) 
 address TRNtrans_commit
@@ -47,6 +51,9 @@ pattern clean(c:any...)
 address TRNtrans_clean
 comment "Declare a BAT clean without flushing to disk.";
 
+command prev(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address TRNtrans_prev
+comment "The previous stae of this BAT";
 command alpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address TRNtrans_alpha
 comment	"List insertions since last commit.";
@@ -64,30 +71,39 @@ comment	"List deletions since last commit.";
 mal_export str TRNglobal_sync(int *ret);
 mal_export str TRNglobal_abort(int *ret);
 mal_export str TRNglobal_commit(int *ret);
+mal_export str TRNsub_commit(int *ret, int *bid);
 mal_export str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str TRNtrans_prev(int *ret, int *bid);
 mal_export str TRNtrans_alpha(int *ret, int *bid);
 mal_export str TRNtrans_delta(int *ret, int *bid);
 
 int
-global_sync(void)
+global_sync(bit *ret)
 {
-	BBPsync(TRUE, NULL);
+	*ret = BBPsync(BBPsize, NULL)?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
 int
-global_commit(void)
+global_commit(bit *ret)
 {
-	TMcommit();
+	*ret = TMcommit()?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
 int
-global_abort(void)
+global_abort(bit *ret)
 {
-	TMabort();
+	*ret = TMabort()?FALSE:TRUE;
+	return GDK_SUCCEED;
+}
+
+int 
+global_subcommit(bit* ret, BAT *bl)
+{
+	*ret = TMsubcommit(bl)?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
@@ -102,6 +118,13 @@ int
 trans_delta(BAT **retval, BAT *b)
 {
 	*retval = BATdelta(b);
+	return retval ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+trans_prev(BAT **retval, BAT *b)
+{
+	*retval = BATprev(b);
 	return retval ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -157,24 +180,32 @@ The remainder contains the Monet 5 wrapper code to make this all work
 str
 TRNglobal_sync(int *ret)
 {
-	(void) ret;
-	BBPsync(TRUE, NULL);
+	*ret = BBPsync(BBPsize,NULL)?FALSE:TRUE;
 	return MAL_SUCCEED;
 }
 
 str
 TRNglobal_abort(int *ret)
 {
-	(void) ret;
-	TMabort();
+	*ret = TMabort()?FALSE:TRUE;
 	return MAL_SUCCEED;
 }
 
 str
 TRNglobal_commit(int *ret)
 {
-	(void) ret;
-	TMcommit();
+	*ret = TMcommit()?FALSE:TRUE;
+	return MAL_SUCCEED;
+}
+str
+TRNsubcommit(int *ret, int *bid)
+{
+	BAT *b;
+	b= BATdescriptor(*bid);
+	if( b == NULL)
+		return throwMessage("transaction.subcommit","BAT with commit list missing");
+	*ret = TMsubcommit(b)?FALSE:TRUE;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -239,6 +270,19 @@ TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			return throwMessage("transaction.commit", "BAT not accessible");
 		BBPunfix(b->batCacheid);
 	}
+	return MAL_SUCCEED;
+}
+
+str
+TRNtrans_prev(int *ret, int *bid)
+{
+	BAT *b,*bn= NULL;
+	b= BATdescriptor(*bid);
+	if (b  == NULL) 
+		return throwMessage("transaction.prev", "Cannot access descriptor");
+	trans_prev(&bn,b);
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
