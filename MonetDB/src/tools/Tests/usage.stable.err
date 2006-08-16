@@ -27,6 +27,8 @@ Options are:
 Usage: MapiClient [ options ]
 Options are:
  -b t/f      | --blocked=true/false /* blocked mode */
+ -c config   | --config=file    /* config filename */
+ -C colname  | --collection=name /* collection name */
  -D          | --dump           /* dump sql database */
  -e          | --error          /* exit on error */
  -H          | --history        /* load/save cmdline history (default off) */
