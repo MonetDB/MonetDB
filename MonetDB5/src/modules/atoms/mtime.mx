@@ -2711,12 +2711,12 @@ The Monet V5 API interface is defined here
 	ticks = @2;
 	tzone_create(&(ltz.tzval), &ticks);
 	vr.val.lval = ltz.lval;
-	tz = BUNins(tz,@1,&vr.val.lval,FALSE);
+	tzbat = BUNins(tzbat,@1,&vr.val.lval,FALSE);
 @= TIMEZONES2
 	ticks = @2;
 	tzone_create_dst(&(ltz.tzval), &ticks,&@3,&@4);
 	vr.val.lval = ltz.lval;
-	tz = BUNins(tz,@1,&vr.val.lval,FALSE);
+	tzbat = BUNins(tzbat,@1,&vr.val.lval,FALSE);
 @-
 Include BAT macros
 @c
@@ -2809,12 +2809,12 @@ MTIMEprelude()
 		return throwMessage("time.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		BAT *tz = BATnew(TYPE_str, ATOMindex("timezone"), 30);
+		BAT *tzbat = BATnew(TYPE_str, ATOMindex("timezone"), 30);
 
-		if (tz == NULL)
+		if (tzbat == NULL)
 			return throwMessage("time.prelude", "failed to create box");
-		BBPrename(tz->batCacheid, "timezones");
-		timezones = tz;
+		BBPrename(tzbat->batCacheid, "timezones");
+		timezones = tzbat;
 		newVariable(box->sym, GDKstrdup("timezones"), newBatType(TYPE_str, ATOMindex("timezone")));
 		if (bindBAT(box, "timezones", "timezones")) {
 			return throwMessage("time.prelude", "could not bind timezones");
