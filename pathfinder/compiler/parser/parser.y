@@ -2922,6 +2922,7 @@ PFparse_modules (PFpnode_t *r)
 
         module = parse_module (((module_t *) PFarray_at (modules, i))->ns,
                                ((module_t *) PFarray_at (modules, i))->uri);
+        req_module_ns = NULL;
 
         /*
          * declarations are the left child of the root for queries,
