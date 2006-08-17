@@ -1,8 +1,3 @@
-Statistics about stderr of test 'bad-011` in directory 'compiler/parser`:
-          3 lines,        26 words,       176 chars   in lines not matching '^$|^#|^=`
-=         3 lines,        26 words,       176 chars   in lines not matching '^$|^#`
-#        15 lines,        57 words,       334 chars   in all lines
-
 stderr of test 'bad-011` in directory 'compiler/parser` itself:
 
 
@@ -10,7 +5,7 @@ stderr of test 'bad-011` in directory 'compiler/parser` itself:
 # 17:18:36 >  Mtimeout -timeout 60 ./bad-011 bad-011 
 # 17:18:36 >  
 
-syntax/parse error, unexpected ... on line/in: 2, column 37 (next token is `c')
+syntax error, unexpected invalid_character, expecting $end on line 2, column 37 (next token is `c')
 parse error: XQuery parsing failed
 # halted in parser.y (PFparse), line 2868
 

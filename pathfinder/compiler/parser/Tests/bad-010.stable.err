@@ -1,8 +1,3 @@
-Statistics about stderr of test 'bad-010` in directory 'compiler/parser`:
-          3 lines,        26 words,       175 chars   in lines not matching '^$|^#|^=`
-=         3 lines,        26 words,       175 chars   in lines not matching '^$|^#`
-#        15 lines,        57 words,       333 chars   in all lines
-
 stderr of test 'bad-010` in directory 'compiler/parser` itself:
 
 
@@ -10,7 +5,7 @@ stderr of test 'bad-010` in directory 'compiler/parser` itself:
 # 17:18:35 >  Mtimeout -timeout 60 ./bad-010 bad-010 
 # 17:18:35 >  
 
-syntax/parse error, unexpected ... on line/in: 2, column 1 (next token is `'')
+syntax error, unexpected invalid_character, expecting $end on line 2, column 1 (next token is `'')
 parse error: XQuery parsing failed
 # halted in parser.y (PFparse), line 2868
 
