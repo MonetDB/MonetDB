@@ -1,6 +1,6 @@
 module namespace mies = "http://test.cwi.nl/mies";
 
-import module namespace aap = "http://test.cwi.nl/aap" at "$TSTSRCDIR/aap.xq"; 
+import module namespace aap = "http://test.cwi.nl/aap" at "$TSTSRCDIR/aap.xq";
 
 declare variable $mies:value := 6;
 
