@@ -546,10 +546,15 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
         for (; pre <= @1; pre += size[pre] + 1) {
             assert((size[pre] & (1<<31)) == 0);
         }
-    } else {
+    } else if (kind) {
         for (; pre <= @1; pre += size[pre] + 1) {
             assert((size[pre] & (1<<31)) == 0);
             @:inner_loop_child_body(if(kind[pre]==kind_test))@
+        }
+    } else {
+        for (; pre <= @1; pre += size[pre] + 1) {
+            assert((size[pre] & (1<<31)) == 0);
+            @:inner_loop_child_body()@
         }
     }
 @
