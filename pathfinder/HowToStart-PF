@@ -370,7 +370,7 @@ then is communication time between MapiClient and the Mserver.
 
 The default mode (``dm``) for XQuery output results are pretty-printed
 sequences. You may enforce all output to be valid XML, with the
-MapiClient option ``-s xml``.  Your output will then be enclosed by
+MapiClient option ``-o xml``.  Your output will then be enclosed by
 <XQueryResult> root tags.
 
 The output mode (``dm`` or ``xml``) may be set with the
