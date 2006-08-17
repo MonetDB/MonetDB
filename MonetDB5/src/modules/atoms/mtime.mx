@@ -836,7 +836,8 @@ typedef union {
 #define set_rule(r,i) { (r).s.weekday = (i)&15;\
 			(r).s.day = ((i)&(63<<6))>>6;\
 			(r).s.minutes = ((i)&(2047<<10))>>10;\
-			(r).s.month = ((i)&(15<<21))>>21; }
+			(r).s.month = ((i)&(15<<21))>>21; \
+			(r).s.empty = 0; /* to please valgrind */ }
 
 /* phony zero values, used to get negative numbers from unsigned sub-integers in rule */
 #define WEEKDAY_ZERO	8
