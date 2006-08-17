@@ -1532,7 +1532,8 @@ unnest_proxy (PFla_op_t *root,
               PFarray_t *checked_nodes)
 {
     /* additional references to the nodes of the pattern */
-    PFla_op_t *mid_proxy, *mid_proxy_base, *proxy1_base, *proxy2_base;
+    /* (StM: To pacify icc, I commented-out the (yet?) unused "mid_proxy_base".) */
+    PFla_op_t *mid_proxy, /**mid_proxy_base,*/ *proxy1_base, *proxy2_base;
     /* temporary nodes */
     PFla_op_t *p;
     /* newly constructed operators */
@@ -1599,6 +1600,7 @@ unnest_proxy (PFla_op_t *root,
      *  - the base of the 'lower' proxy (proxy2)
      *  - the beginning of the intermediate proxy (mid_proxy)
      *  - the end of the intermediate proxy (mid_proxy_base)
+     *    (StM: To pacify icc, I commented-out the (yet?) unused "mid_proxy_base".)
      */
     proxy1_base = proxy1->sem.proxy.base1;
     proxy2_base = proxy2->sem.proxy.base1;
@@ -1606,7 +1608,7 @@ unnest_proxy (PFla_op_t *root,
 
     p = mid_proxy;
     while (p != proxy2) {
-        mid_proxy_base = p;
+        /*mid_proxy_base = p;*/
 
         if (p->kind == la_doc_access)
             p = R(p);
