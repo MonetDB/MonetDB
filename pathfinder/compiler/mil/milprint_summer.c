@@ -10514,10 +10514,6 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* ============================================== */
         /* retrieve variable occurrences in function body */
         /* ============================================== */
-        counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
-
-        for(i=0; i < (int) PFarray_last(counter); i++) 
-            hash = hash*3 + *(int*) PFarray_at(counter,i);
 
         /* finish name by printing start (hashed name), connecting and terminating it */
         sprintf(c->sem.apply.fun->sig, "fn%08X", hash);
@@ -10528,6 +10524,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                  milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.apply.fun->sig, f->module_base+first);
                  f->num_fun--;
         }
+        counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
     }
     /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
