@@ -2816,7 +2816,7 @@ BKCsetColumn(int *r, int *bid, str *tname)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setColumn", "Cannot access descriptor");
 	}
-	if (tname == 0 || *tname == 0 || strlen(*tname) == 0){
+	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.setColumn", "column name missing");
 	}
