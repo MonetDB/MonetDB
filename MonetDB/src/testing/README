@@ -129,7 +129,7 @@ have changed since my proposal.
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB --set xquery_port=$XQUERYPORT --dbinit="module(pathfinder); pfstart();" [TST.prologue] &
-         MapiClient -lxquery -sxml < TST[_(s|p)XX].xq
+         MapiClient -lxquery -oxml < TST[_(s|p)XX].xq
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
 
@@ -226,7 +226,7 @@ have changed since my proposal.
 	TSTTRGBASE	$MONETDB_PREFIX				base for test output
 	MAPICLIENT	MapiClient -lmil			mapi-client program	`)
 	SQLCLIENT	MapiClient -lsql			sql-client program	`)
-	XQUERYCLIENT	MapiClient -lxquery -sxml		xquery-client program	`)
+	XQUERYCLIENT	MapiClient -lxquery -oxml		xquery-client program	`)
 
     `) Alternative Mapi-, SQL-, & XQUERY- client programs need to accept (or ignore)
        "--config=", "--host=", & "--port=" options.

@@ -2577,7 +2577,7 @@ def main(argv) :
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['MAPICLIENT']     = "'MapiClient -lmil'" 
         dft['SQLCLIENT']      = "'MapiClient -lsql'" 
-        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -sxml'" 
+        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -oxml'" 
         dft['X100CLIENT']     = "'x100run_mapi'" 
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
