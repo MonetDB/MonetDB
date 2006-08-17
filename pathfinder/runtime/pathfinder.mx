@@ -1456,6 +1456,56 @@ static char* xquery_parse_ident(char* p);
 static char* xquery_parse_space(char* p); 
 static char* xquery_parse_string(char* p, char *buf, int len); 
 
+/**
+ * Returns the number of newlines in the given string.
+ */
+static inline int xquery_get_line_count(char *in) {
+    int ret = 0;
+    
+    while (*in) {
+        if (*in++ == '\n')
+            ret++;
+    }
+
+    return(ret);
+}
+
+/**
+ * Convert the given string into a Mapi protocol compliant error string.
+ * Care is taken that multiline errors are also catched.  In detail this
+ * function adds ! characters such that every line starts with one.  The
+ * original error is read from err, and written to out.  The latter
+ * should contain enough space, which is ensured by using the
+ * XQUERYERROR2MAPI macro.
+ */
+static char *xquery_make_mapi_error(char *err, char *out) {
+    char *p = NULL, *q = err;
+
+    *out = '!'; 
+    for (p = out + 1; *q; q++) {
+        *p++ = *q;
+        if (*q == '\n')
+            *p++ = '!'; 
+    }
+    /* guard against errors that do not terminate in a newline */
+    if (q > err && q[-1] != '\n') {
+        *p++ = '\n';
+    } else if (p[-1] == '!') {
+        p--;
+    }
+    *p = 0;
+
+    return(out);
+}
+
+#define XQUERYERROR2MAPI(ERR, LEN) \
+    if (ERR != NULL) { \
+        ERR = xquery_make_mapi_error(ERR, \
+                alloca(sizeof(char*) * \
+                    (strlen(ERR) + xquery_get_line_count(ERR) + 3))); \
+        LEN = strlen(ERR); \
+    }
+
 /*
  * translate xquery to MIL and execute, return error(0)/ok(1)
  * We collect the MIL scripts in three sections (prologue,query,epilogue).
@@ -1530,33 +1580,9 @@ xquery_compile_exec(xquery_client *ctx,
             free(del); /* we are ignoring the query part apparently */
         }
     }
-    if (err) {
-        len = strlen(err);
-        /* niels: NOT SURE about this condition */
-        if (strstr("mapi",*(ctx->genType))) {
-            /* put ! before error lines */
-            char *p = err, *q = err;
-
-            while (*p) {
-                if (*p++ == '\n')
-                    len++;
-            }
-            err = (char*) alloca(len+3);
-            *err = '!'; 
-            for (p = err + 1; *q; q++) {
-                *p++ = *q;
-                if (*q == '\n')
-                    *p++ = '!'; 
-            }
-            /* guard against errors that do not terminate in a newline */
-            if (q > err && q[-1] != '\n')
-                *p++ = '\n';
-            else if (p[-1] == '!')
-                p--;
-            *p = 0;
-            len = p - err;
-        }
-    }
+    /* niels: NOT SURE about this condition */
+    if (err && strstr("mapi", *(ctx->genType)) == 0)
+        XQUERYERROR2MAPI(err, len);
     MT_unset_lock(pf_compiler_lock, "xquery_compile_exec");
     
     /* write errors and debug info on client stream */
@@ -2762,11 +2788,13 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-    /* if (err != NULL) we could return that error here, but it is more consistent 
-     * to let the PF compiler give out all error messages ("why make error queries fast?").
+    /* if (err != NULL) we could return that error here, but it is more
+     * consistent to let the PF compiler give out all error messages
+     * ("why make error queries fast?").
      *
-     * we can re-enable immediate return if we (ever) decide to create a low-resource XQ
-     * implementation that only supports prepared queries and lacks a linked PF compiler.  
+     * we can re-enable immediate return if we (ever) decide to create a
+     * low-resource XQ implementation that only supports prepared
+     * queries and lacks a linked PF compiler.  
      */
     if (err == xquery_function_error) /* MIL execution failed, do not generate error in PF compiler */
        return xquery_nondescriptive_error;
@@ -2777,7 +2805,7 @@ xquery_prepare(xquery_client *ctx,
         /* compile and execute the query (minus module imports) */
         err = xquery_nondescriptive_error;
         if (xquery_compile_exec(ctx, query, 0, &sec1, &sec2, &sec3, NULL)) 
-                err = NULL;
+            err = NULL;
         if (sec1) free(sec1);
         if (sec2) free(sec2);
         if (sec3) free(sec3);
@@ -2859,6 +2887,12 @@ xquery_client_engine(mapi_client *fc )
                         break;
                 case 'o': /* output format */
                         p += sizeof("output ") - 1;
+                        /* Prefix with "mapi-" to get mapi specific
+                         * (protocol) output.  We can always do this,
+                         * because we can only come here through mapi.
+                         */
+                        p -= sizeof("mapi-") - 1;
+                        memcpy(p, "mapi-", sizeof("mapi-") - 1);
                         if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), p)) { 
                             if (*(ctx->genType)) 
                                 GDKfree(*(ctx->genType));
@@ -2912,6 +2946,7 @@ xquery_client_engine(mapi_client *fc )
             err = xquery_prepare(ctx, msec, xquery);
             if (err && err != xquery_nondescriptive_error) {
                 /* report errors back to client */
+                stream_write(ctx->fderr, "!", 1, 1);
                 stream_write(ctx->fderr, err, strlen(err), 1);
             }
             if (ctx->mode&XQ_TRACE) {
