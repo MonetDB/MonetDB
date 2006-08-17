@@ -111,8 +111,8 @@ int
 destroy_lock(monet_lock *l)
 {
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
-        GDKfree(*l);
 	MT_lock_destroy((MT_Lock*) *l);
+	GDKfree(*l);
 	return GDK_SUCCEED;
 }
 
