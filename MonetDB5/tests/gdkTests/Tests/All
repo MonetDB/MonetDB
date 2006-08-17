@@ -1,10 +1,12 @@
-append_dense_tail.mal
+append_dense_tail
+bat_replace
+binsearchmultijoin
 binsemijoin
 binsemijoin2
 casts
 cross
-intersect_diff_void.mal
-intersect_diff_nil.mal
+intersect_diff_void
+intersect_diff_nil
 qsort
 reload
 str_heap
