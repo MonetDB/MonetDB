@@ -68,7 +68,7 @@ stderr of test 'A7` in directory 'tests/XPathMark` itself:
 # 18:39:20 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50144 A7.xq
 # 18:39:20 >  
 
-syntax error, unexpected invalid_character, expecting "]" on line 1 (next token is `:')
+syntax error, unexpected invalid_character, expecting "]" on line 1, column 36 (next token is `:')
 parse error: XQuery parsing failed
 # halted in /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/compiler/parser/parser.y (PFparse), line 2440
 
