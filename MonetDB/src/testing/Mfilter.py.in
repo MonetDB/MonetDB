@@ -224,20 +224,21 @@ test = (
         # element of "norm_out", unless the latter is "None" (then, the
         # respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
-                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected .* on line |unexpected .* in: )?(.*\n)',
-                r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*\n)',
-                r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\.)',
+                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected .* on line |unexpected .* in: )?(.*)(\n)',
+                r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)(\n)',
+                r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\..*)(\n)',
                 r'^()(.*!ERROR: .*)(operation failed.\n)',
-                r'^(ERROR =|       )( !ERROR: )(SQLerror:assert:|MALexception:)?([^:]+)(: *)(: *)?(.*\n)',
-                r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*\n)',
+                r'^(ERROR =|       )( !ERROR: )(SQLerror:assert:|MALexception:)?([^:]+)(: *)(: *)?(.*)(\n)',
+                r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*)(\n)',
            ])+')',  re.MULTILINE)
+norm_hint = ' [see next line for the original non-normalized output]\n'
 norm_out = (
-                None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,
-                None, '(0,0-0,0)', None,
-                None, '?', None,
-                '= ', None, None,
-                None, None, '', None, ': ', '', None,
-                None, 'mserver_sql', None,
+                None, 'syntax/parse', None, 'unexpected ... on line/in: ', None, norm_hint,
+                None, '...', None, norm_hint,
+                None, '...', None, norm_hint,
+                '= ', None, None, norm_hint,
+                None, None, '', None, ': ', '', None, norm_hint,
+                None, 'mserver_sql', None, norm_hint,
            )
 
 
@@ -303,6 +304,7 @@ def mFilter (FILE, IGNORE) :
                     else:
                         oline += norm_out[i]
                 i+=1
+            xline = '# '+iline
         else:
             oline = iline
         if iline == "#~EndVariableOutput~#\n":
