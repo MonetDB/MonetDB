@@ -234,6 +234,11 @@ BAT *STAT_id_min_lng;
 BAT *STAT_id_max_lng;
 BAT *STAT_id_histogram;
 
+@-
+The statistics are currently limited to the server session.
+Upon need we can turn it into a persistent mode.
+@c
+static int statisticsMode= TRANSIENT;
 
 static BAT *
 STAT_create(str hnme, str tnme, int ht, int tt)
@@ -252,7 +257,7 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
-	BATmode(b, PERSISTENT);
+	BATmode(b, statisticsMode);
 #ifdef DEBUG_STATISTICS
 	printf("created %s\n", buf);
 #endif
@@ -279,6 +284,8 @@ STATcommit()
 static void
 STATinit()
 {
+	if( STAT_id_inuse) 
+		return;
 	mal_set_lock(mal_contextLock, "statistics");
 	STAT_id_inuse = STAT_create("id", "inuse", TYPE_int, TYPE_int);
 	STAT_id_nme = STAT_create("id", "nme", TYPE_int, TYPE_str);
@@ -298,15 +305,28 @@ STATexit()
 {
 	if(STAT_id_inuse ==0) return;
 	mal_set_lock(mal_contextLock, "statistics");
-	BBPreclaim(STAT_id_inuse );
-	BBPreclaim(STAT_id_nme );
-	BBPreclaim(STAT_id_expire );
-	BBPreclaim(STAT_id_stamp );
-	BBPreclaim(STAT_id_count );
-	BBPreclaim(STAT_id_size );
-	BBPreclaim(STAT_id_min_lng );
-	BBPreclaim(STAT_id_max_lng );
-	BBPreclaim(STAT_id_histogram );
+
+	BBPreclaim(STAT_id_inuse);
+	BBPreclaim(STAT_id_nme);
+	BBPreclaim(STAT_id_expire);
+	BBPreclaim(STAT_id_stamp);
+	BBPreclaim(STAT_id_count);
+	BBPreclaim(STAT_id_size);
+	BBPreclaim(STAT_id_min_lng);
+	BBPreclaim(STAT_id_max_lng);
+	BBPreclaim(STAT_id_histogram);
+
+	STAT_id_inuse= NULL;
+	STAT_id_nme= NULL;
+	STAT_id_expire= NULL;
+	STAT_id_stamp= NULL;
+	STAT_id_count= NULL;
+	STAT_id_size= NULL;
+	STAT_id_min_lng= NULL;
+	STAT_id_max_lng= NULL;
+	STAT_id_histogram= NULL;
+
+	TMcommit();
 	mal_unset_lock(mal_contextLock, "statistics");
 }
 
@@ -456,7 +476,7 @@ STATforceUpdate(int *ret, str *nme)
 		return MAL_SUCCEED;
 	snprintf(buf, PATHLENGTH, "H%s", BATgetId(b));
 	BBPrename(h->batCacheid, buf);
-	BATmode(h, PERSISTENT);
+	BATmode(h, statisticsMode); 
 	BBPincref(h->batCacheid, TRUE);
 	BATcommit(h);
 
