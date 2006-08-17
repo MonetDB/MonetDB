@@ -1,0 +1,19 @@
+Statistics about stderr of test 'bad-008` in directory 'compiler/parser`:
+          2 lines,        12 words,        96 chars   in lines not matching '^$|^#|^=`
+=         2 lines,        12 words,        96 chars   in lines not matching '^$|^#`
+#        14 lines,        43 words,       265 chars   in all lines
+
+stderr of test 'bad-008` in directory 'compiler/parser` itself:
+
+
+# 17:18:34 >  
+# 17:18:34 >  Mtimeout -timeout 60 ./bad-008 bad-008 
+# 17:18:34 >  
+
+parse error: unterminated comment
+# halted in lex.yy.c (yy_get_next_buffer), line 5802
+
+# 17:18:34 >  
+# 17:18:34 >  Done.
+# 17:18:34 >  
+

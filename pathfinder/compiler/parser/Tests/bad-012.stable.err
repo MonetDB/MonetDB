@@ -1,0 +1,20 @@
+Statistics about stderr of test 'bad-012` in directory 'compiler/parser`:
+          3 lines,        26 words,       184 chars   in lines not matching '^$|^#|^=`
+=         3 lines,        26 words,       184 chars   in lines not matching '^$|^#`
+#        15 lines,        57 words,       342 chars   in all lines
+
+stderr of test 'bad-012` in directory 'compiler/parser` itself:
+
+
+# 17:18:36 >  
+# 17:18:36 >  Mtimeout -timeout 60 ./bad-012 bad-012 
+# 17:18:36 >  
+
+syntax/parse error, unexpected ... on line/in: 1, column 38 (next token is `attribute')
+parse error: XQuery parsing failed
+# halted in parser.y (PFparse), line 2868
+
+# 17:18:36 >  
+# 17:18:36 >  Done.
+# 17:18:36 >  
+

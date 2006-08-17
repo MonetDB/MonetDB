@@ -87,6 +87,16 @@ unsigned int inputpos;
 unsigned int cur_row;
 unsigned int cur_col;
 
+/**
+ * keep track of whether we are within a string
+ * (and don't ignore comments there)
+ *
+ * If we see an "opening" quote (single ' or double "),
+ * store it here in instring.  Reset it to \0 when we
+ * find the matching "closing" quote.
+ */
+static char instring;
+
 /** how many spaces make up one tabstop */
 #define TAB_STEP 8
 
@@ -110,20 +120,21 @@ unsigned int cur_col;
  * nested) is returned as a single space in these states.
  */
 #define IGNORE_COMMENTS \
-    (YY_START == INITIAL                  \
-     || YY_START == DEFAULT               \
-     || YY_START == OPERATOR              \
-     || YY_START == NAMESPACEDECL         \
-     || YY_START == NAMESPACEKEYWORD      \
-     || YY_START == VARNAME               \
-     || YY_START == SINGLETYPE            \
-     || YY_START == ITEMTYPE              \
-     || YY_START == OCCURRENCEINDICATOR   \
-     || YY_START == KINDTEST              \
-     || YY_START == KINDTESTFORPI         \
-     || YY_START == PRESERVE_MODE         \
-     || YY_START == INHERIT_MODE          \
-     || YY_START == NEXT_PRAGMA)          \
+    (!instring                                \
+     && (YY_START == INITIAL                  \
+         || YY_START == DEFAULT               \
+         || YY_START == OPERATOR              \
+         || YY_START == NAMESPACEDECL         \
+         || YY_START == NAMESPACEKEYWORD      \
+         || YY_START == VARNAME               \
+         || YY_START == SINGLETYPE            \
+         || YY_START == ITEMTYPE              \
+         || YY_START == OCCURRENCEINDICATOR   \
+         || YY_START == KINDTEST              \
+         || YY_START == KINDTESTFORPI         \
+         || YY_START == PRESERVE_MODE         \
+         || YY_START == INHERIT_MODE          \
+         || YY_START == NEXT_PRAGMA))         \
 
 /**
  * Interface function for flex.  Skip (possibly nested) comments
@@ -139,52 +150,59 @@ unsigned int cur_col;
  * While we are at it, also count current position within the query
  * file for helpful error messages.
  */
-#define YY_INPUT(buf,result,max_size)                                 \
- {                                                                    \
-     int level = 0;                                                   \
-     do {                                                             \
-         if (pfinput[inputpos] == 0) {                                \
-             result = YY_NULL;                                        \
-             if (level > 0)                                           \
-                 PFoops (OOPS_PARSE, "unterminated comment");         \
-             break;                                                   \
-         }                                                            \
-                                                                      \
-         /* update position information */                            \
-         if (pfinput[inputpos] == '\n') {                             \
-             cur_col = 0;                                             \
-             cur_row++;                                               \
-         }                                                            \
-                                                                      \
-         if (IGNORE_COMMENTS                                          \
-                  && pfinput[inputpos] == '('                         \
-                  && pfinput[inputpos + 1] == ':') {                  \
-             inputpos += 2;                                           \
-             level++;                                                 \
-             cur_col += 2;                                            \
-         }                                                            \
-         else if (IGNORE_COMMENTS                                     \
-                  && level > 0                                        \
-                  && pfinput[inputpos] == ':'                         \
-                  && pfinput[inputpos + 1] == ')') {                  \
-             inputpos += 2;                                           \
-             level--;                                                 \
-             cur_col += 2;                                            \
-                                                                      \
-             /* a comment behaves like whitespace (XQuery A.2.4.1) */ \
-             if (level == 0) {                                        \
-                 buf[0] = ' ';                                        \
-                 result = 1;                                          \
-                 break;                                               \
-             }                                                        \
-         }                                                            \
-         else {                                                       \
-             cur_col++;                                               \
-             buf[0] = pfinput[inputpos++];                            \
-             result = 1;                                              \
-         }                                                            \
-                                                                      \
-     } while (level > 0);                                             \
+#define YY_INPUT(buf,result,max_size)                                    \
+ {                                                                       \
+     int level = 0;                                                      \
+     do {                                                                \
+         if (pfinput[inputpos] == 0) {                                   \
+             result = YY_NULL;                                           \
+             if (level > 0)                                              \
+                 PFoops (OOPS_PARSE, "unterminated comment");            \
+             break;                                                      \
+         }                                                               \
+                                                                         \
+         /* update position information */                               \
+         if (pfinput[inputpos] == '\n') {                                \
+             cur_col = 0;                                                \
+             cur_row++;                                                  \
+         }                                                               \
+                                                                         \
+         /* Don't ignore comments in strings */                          \
+         if (level == 0                                                  \
+             && (pfinput[inputpos] == '\'' || pfinput[inputpos] == '"')) \
+             instring = IGNORE_COMMENTS                                  \
+                 ? pfinput[inputpos]                                     \
+                 : (instring == pfinput[inputpos]) ? '\0' : instring;    \
+                                                                         \
+         if (IGNORE_COMMENTS                                             \
+                  && pfinput[inputpos] == '('                            \
+                  && pfinput[inputpos + 1] == ':') {                     \
+             inputpos += 2;                                              \
+             level++;                                                    \
+             cur_col += 2;                                               \
+         }                                                               \
+         else if (IGNORE_COMMENTS                                        \
+                  && level > 0                                           \
+                  && pfinput[inputpos] == ':'                            \
+                  && pfinput[inputpos + 1] == ')') {                     \
+             inputpos += 2;                                              \
+             level--;                                                    \
+             cur_col += 2;                                               \
+                                                                         \
+             /* a comment behaves like whitespace (XQuery A.2.4.1) */    \
+             if (level == 0) {                                           \
+                 buf[0] = ' ';                                           \
+                 result = 1;                                             \
+                 break;                                                  \
+             }                                                           \
+         }                                                               \
+         else {                                                          \
+             cur_col++;                                                  \
+             buf[0] = pfinput[inputpos++];                               \
+             result = 1;                                                 \
+         }                                                               \
+                                                                         \
+     } while (level > 0);                                                \
  }
 
 /**
@@ -274,6 +292,7 @@ PFscanner_init (char *buf)
     inputpos = 0;
     cur_col  = 0;
     cur_row  = 1;
+    instring = '\0';
 }
 
 /* forward declarations */
