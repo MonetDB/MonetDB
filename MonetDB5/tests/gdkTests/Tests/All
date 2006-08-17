@@ -1,9 +1,12 @@
-casts
-qsort
 append_dense_tail.mal
-cross
 binsemijoin
 binsemijoin2
+casts
+cross
+intersect_diff_void.mal
+intersect_diff_nil.mal
+qsort
 reload
 str_heap
+TMsubcommit
 void
