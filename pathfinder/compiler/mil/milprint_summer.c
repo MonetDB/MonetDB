@@ -7479,6 +7479,85 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult (f, counter);
         return NORMAL;
     }
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"add-doc")) == 0)
+    {
+        milprintf(f, "# fn:add-doc (str, str [, str] [, int]) as add_stmt\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult(f, counter);
+        translate2MIL(f, NORMAL, cur_level, counter, RL(args));
+        counter++;
+        saveResult(f, counter);
+        if (fun->arity == 2) {
+            counter++;
+            milprintf(f,
+                      "var item%03u := item%03u;\n"
+                      "var kind%03u := kind%03u;\n"
+                      "int_values.append(0LL);\n"
+                      "item := int_values.reverse().find(0LL);\n"
+                      "kind := INT;\n",
+                      counter, counter - 1, counter, counter - 1);
+        } else {
+            translate2MIL(f, NORMAL, cur_level, counter, RRL(args));
+            counter++;
+            saveResult(f, counter);
+            if (fun->arity == 3) {
+                milprintf(f,
+                          "kind%03u := constant2bat(kind%03u);\n"
+                          "if (kind%03u.fetch(0) = INT) {\n"
+                          "  kind := kind%03u;\n"
+                          "  item := item%03u;\n"
+                          "  kind%03u := kind%03u;\n"
+                          "  item%03u := item%03u;\n"
+                          "} else {\n"
+                          "  kind := INT;\n"
+                          "  int_values.append(0LL);\n"
+                          "  var item := int_values.reverse().find(0LL);\n"
+                          "}\n",
+                          counter, counter, counter, counter, counter, counter, counter - 1, counter, counter - 1);
+            } else {
+                translate2MIL(f, NORMAL, cur_level, counter, RRRL(args));
+            }
+        }
+        milprintf(f,
+                  "var item1 := constant2bat(item%03u);\n"
+                  "var item2 := constant2bat(item%03u);\n"
+                  "var item3 := constant2bat(item%03u);\n"
+                  "var item4 := constant2bat(item);\n"
+                  "var kind1 := constant2bat(kind%03u);\n"
+                  "var kind2 := constant2bat(kind%03u);\n"
+                  "var kind3 := constant2bat(kind%03u);\n"
+                  "var kind4 := constant2bat(kind);\n"
+                  "iter := constant2bat(iter);\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n",
+                  counter - 2, counter - 1, counter, counter - 2, counter - 1, counter);
+        if (fun->arity > 2) {
+            deleteResult(f, counter);
+        }
+        deleteResult(f, counter - 1);
+        deleteResult(f, counter - 2);
+        return NORMAL;
+    }
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"del-doc")) == 0)
+    {
+        milprintf(f, "# fn:del-doc (str) as del_stmt\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        return NORMAL;
+    }
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
     {
         if (fun->arity == 0)
@@ -10617,19 +10696,33 @@ const char* PFdocbatMIL(void) {
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
 
-static const char* _PFstopMIL(bool is_update) {
+static const char* _PFstopMIL(int statement_type) {
     static char buf[1024];
 
     strcpy(buf,
            "  time_print := time();\n"
            "  time_exec := time_print - time_exec;\n"
            "  \n");
-    if (is_update)
-        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
-    else
+    switch (statement_type) {
+    case 0:
+        /* normal statement */
         strcat(buf,
                "  if (genType.search(\"none\") = -1)\n"
                "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
+        break;
+    case 1:
+        /* update statement */
+        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
+        break;
+    case 2:
+        /* add-doc statement */
+        strcat(buf, "  do_add_doc(ws, item, kind, int_values, str_values);\n");
+        break;
+    case 3:
+        /* del-doc statement */
+        strcat(buf, "  do_del_doc(ws, item, kind, int_values, str_values);\n");
+        break;
+    }
     strcat(buf,
            "});\n"
            "destroy_ws(ws);\n"
@@ -10788,8 +10881,14 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
         milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
         milprintf(f, _PFstopMIL(PFty_subtype (TY(R(c)), PFty_empty ())
-                                    ? false /* only the empty sequence has type empty and is not updateable */
-                                    : PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
+                                ? 0		       /* only the empty sequence has type empty and is not updateable */
+                                : (PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))
+                                   ? 1
+                                   : (PFty_subtype(TY(R(c)), PFty_star(PFty_adddoc_stmt()))
+                                      ? 2
+                                      : (PFty_subtype(TY(R(c)), PFty_star(PFty_deldoc_stmt()))
+                                         ? 3
+                                         : 0)))));
     }
 
     if (opt_close(f, prologue, query, epilogue)) {

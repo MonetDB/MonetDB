@@ -225,6 +225,11 @@ PFty_t PFty_text (void);
 PFty_t PFty_pi (char *);
 PFty_t PFty_comm (void);
 PFty_t PFty_stmt (void);
+/* these should be two different new types that cannot be combined
+   with anything other than themselves
+   these values are only used in xquery_fo.c and milprint_summer.c */
+#define PFty_adddoc_stmt PFty_stmt
+#define PFty_deldoc_stmt PFty_stmt
 
 /** 
  * Type constructors (internal).
