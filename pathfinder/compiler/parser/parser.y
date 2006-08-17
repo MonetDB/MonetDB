@@ -786,9 +786,9 @@ VersionDecl               : /* empty */
                                               "only XQuery version '1.0' is supported");
                                   YYERROR;
                               }
-                              if (strcmp (PFquery.encoding, "UTF-8") || strcmp (PFquery.encoding, "utf-8")) {
+                              if (strcmp (PFquery.encoding, "UTF-8") && strcmp (PFquery.encoding, "utf-8")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
-                                              "only XQueries in UTF-8 encoding are supported");
+                                              "only XQueries in UTF-8 encoding are supported, not in '%s' encoding", PFquery.encoding);
                                   YYERROR;
                               }
                             }
