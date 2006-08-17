@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 764 ]
+[ 768 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 764 ]
+[ 768 ]
 
 var All:=0;
 
@@ -724,8 +724,8 @@ Module: "builtin"
 
 Module: "constant"
 
-[ 48 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 52 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																				  # name
 # str		str		str											str																																				  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -767,6 +767,10 @@ Module: "constant"
 [ "mergejoin",		  "COMMAND:   ",  "mergejoin(any::1, BAT[any::1,any::2]) : any::2",				  "mergejoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																										  ]
 [ "mergejoin",		  "COMMAND:   ",  "mergejoin(oid, any::1) : any::1",						  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
 [ "min",	  "COMMAND:   ",  "min(any::1) : any::1",								  "min(b); where the first parameter is interpreted as a constant column"																											  ]
+[ "outerjoin",		  "COMMAND:   ",  "outerjoin(BAT[oid,oid], any::1) : BAT[oid,any::1]",						  "outerjoin(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																																																							  ]
+[ "outerjoin",		  "COMMAND:   ",  "outerjoin(BAT[void,oid], any::1) : any::1",							  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																																																										  ]
+[ "outerjoin",		  "COMMAND:   ",  "outerjoin(any::1, BAT[any::1,any::2]) : any::2",						  "outerjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																																																										  ]
+[ "outerjoin",		  "COMMAND:   ",  "outerjoin(oid, any::1) : any::1",								  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																																																							  ]
 [ "project",	  "COMMAND:   ",  "project(any, any::1) : any::1",							  "project(b,c); where the first parameter is interpreted as a constant column"																											  ]
 [ "slice",	  "COMMAND:   ",  "slice(any::1, int, int) : any::1",							  "slice(b,lo,hi); where the first parameter is interpreted as a constant column"																										  ]
 [ "slice",	  "COMMAND:   ",  "slice(any::1, lng, lng) : any::1",							  "slice(b,lo,hi); where the first parameter is interpreted as a constant column"																										  ]
@@ -909,7 +913,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 764 ]
+[ 768 ]
 
 quit();
 
