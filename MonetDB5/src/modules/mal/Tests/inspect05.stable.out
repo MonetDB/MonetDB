@@ -1,27 +1,30 @@
 stdout of test 'inspect05` in directory 'src/modules/mal` itself:
 
 
-# 00:03:55 >  
-# 00:03:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect05.mal </dev/null
-# 00:03:55 >  
+# 10:59:43 >  
+# 10:59:43 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=36085 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect05.mal < /dev/null
+# 10:59:43 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl/ for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ##Illustrate the modules loaded after start
 #k:= inspect.getKind();
 #m:= inspect.getModule();
 #f:= inspect.getFunction();
-#s:= inspect.getSignature();
-#io.print(k,m,f,s);
+#f1:= bat.reverse(f);
+#f2:= algebra.ssort(f1);
+#fs:= bat.reverse(f2);
+#s:= inspect.getSignatures();
+#a:= inspect.getAddresses();
+#io.table(fs,k,m,s,a);
 #
-
 function user.main():void;	# 0  (main:void)
-#Illustrate the modules loaded after start 	# 1  (_2:str)
+#Illustrate the modules loaded after start 	# 1  (_1:str)
     k := inspect.getKind();	# 2 INSPECTgetkind (k:bat[:void,:str])
     m := inspect.getModule();	# 3 INSPECTgetAllModules (m:bat[:void,:str])
     f := inspect.getFunction();	# 4 INSPECTgetAllFunctions (f:bat[:void,:str])
@@ -3118,7 +3121,7 @@ end main;	# 11
 [ "zcrackUnordered_validate",		  "command",	  "crackers",	  "(b:bat[:oid,:chr],low:chr,hgh:chr):bit ",										  "CRKcrackUnorderedThree_validate_chr;"	  ]
 [ "zcrackUnordered_validate",		  "command",	  "crackers",	  "(b:bat[:oid,:chr],mid:chr):bit ",											  "CRKcrackUnorderedZero_validate_chr;"		  ]
 
-# 00:03:55 >  
-# 00:03:55 >  Done.
-# 00:03:55 >  
+# 10:59:43 >  
+# 10:59:43 >  Done.
+# 10:59:43 >  
 
