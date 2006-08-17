@@ -102,7 +102,19 @@ echo 'stderr of test '\'"$TSTNME"'` in directory '\'"$XQTS_DIR/$TSTDIR"'` itself
 echo ''
 {
 if ($tst/*:expected-error) then
-for $e in $tst/*:expected-error return
+for $e in $tst/*:expected-error
+let $mxq := doc("XQTS.Errors.xml")/MXQerrors/MXQerror[@id = $e/text()] return
+if ($mxq) then
+<e>
+echo '# expecting {fn:data($tst/@scenario)} "{$e/text()}" (cf., http://www.w3.org/TR/xquery/#ERR{$e/text()} ) !'
+{
+for $msg in $mxq return
+<E>
+echo '{$msg/text()}'
+</E>
+}
+</e>
+else
 <e>
 echo '! expecting {fn:data($tst/@scenario)} "{$e/text()}" (cf., http://www.w3.org/TR/xquery/#ERR{$e/text()} ) !'
 </e>

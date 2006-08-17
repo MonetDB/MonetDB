@@ -1,7 +1,7 @@
 #!/bin/sh
 
 XQTS_DIR='tests/XQTS'
-XQTS_SRC="/var/tmp/XQTS"
+XQTS_SRC='/export/scratch0/manegold/XQTS_0_9_4'
 
 if [ ! "$1" ] ; then
 	echo 'Usage: '"$0"' <TSTSRCBASE>'
@@ -37,22 +37,28 @@ echo '1+2' | MapiClient -lx -sxml || {
 
 set -x
 
-rm -rf "$XQTS_SRC"
-mkdir -p "$XQTS_SRC" || exit 1
-(
-cd "$XQTS_SRC" || exit 1
-wget http://www.w3.org/XML/Query/test-suite/XQTS_0_9_4.zip || exit 1
-unzip XQTS_0_9_4.zip >/dev/null || exit 1
-) || exit 1
+#rm -rf "$XQTS_SRC"
+#mkdir -p "$XQTS_SRC" || exit 1
+#(
+#cd "$XQTS_SRC" || exit 1
+#wget http://www.w3.org/XML/Query/test-suite/XQTS_0_9_4.zip || exit 1
+#unzip XQTS_0_9_4.zip >/dev/null || exit 1
+#) || exit 1
 
 rm -rf "$XQTS_DST"
 mkdir -p "$XQTS_DST" || exit 1
 
-cat "$THISDIR/XQTS.xq" | sed 's|doc("[^")]*XQTSCatalog.xml")|doc("'"$XQTS_SRC"'/XQTSCatalog.xml")|g' | MapiClient -lx -sxml | grep -v '^<.*>$' | sed -e 's|&lt;|<|g' -e 's|&gt;|>|g' > "$XQTS_DST/.XQTS.sh" || exit 1
+cat "$THISDIR/XQTS.xq" \
+ | sed -e 's|doc("[^")]*XQTSCatalog.xml")|doc("'"$XQTS_SRC"'/XQTSCatalog.xml")|g' \
+       -e 's|doc("[^")]*XQTS.Errors.xml")|doc("'"$THISDIR"'/XQTS.Errors.xml")|g' \
+ | MapiClient -lx -sxml \
+ | grep -v '^<.*>$' \
+ | sed -e 's|&lt;|<|g' -e 's|&gt;|>|g' \
+ > "$XQTS_DST/.XQTS.sh" || exit 1
 
 /bin/sh "$XQTS_DST/.XQTS.sh" "$TSTSRCBASE" "$XQTS_DIR" "$XQTS_SRC" || exit 1
 
-rm -rf "$XQTS_SRC"
+#rm -rf "$XQTS_SRC"
 
 set +x
 
