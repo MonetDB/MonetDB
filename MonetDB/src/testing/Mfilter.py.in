@@ -224,22 +224,42 @@ test = (
         # element of "norm_out", unless the latter is "None" (then, the
         # respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
-                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected .* on line |unexpected .* in: )?(.*)(\n)',
-                r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)(\n)',
-                r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\..*)(\n)',
-                r'^()(.*!ERROR: .*)(operation failed.\n)',
-                r'^(ERROR =|       )( !ERROR: )(SQLerror:assert:|MALexception:)?([^:]+)(: *)(: *)?(.*)(\n)',
-                r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*)(\n)',
+                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',	# 01: 5
+                r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',					# 02: 3
+                r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\..*)\n',		# 03: 3
+                r'^()(.*!ERROR: .*)(operation failed.\n)',							# 04: 3
+                r'^(ERROR =|       )( !ERROR: )(SQLerror:assert:|MALexception:)?([^:]+)(: *)(: *)?(.*)\n',	# 05: 7
+                r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*)\n',					# 06: 3
+                r'^(ERROR: I/O warning : failed to load external entity ")(.*)(".*)\n',				# 07: 3
+                r'^(ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt\(")(.*)("\) failed.*)\n',			# 08: 3
+                r'^(ERROR: err:FORG0001: could not cast value)( from )?(.*)( to )(.*)(\..*)\n',			# 09: 6
+                r"^(type error: can't cast type ')(.*)(' to type ')(.*)('.*)\n",				# 10: 5
+                r'^(type error: no variant of function )(.*)( accepts the given argument type\(s\): )(.*)\n',	# 11: 4
+                r'^()(type error:   .*)\n',									# 12: 2
+                r'^(type error: illegal arguments for function )(.*)\n',					# 13: 2
+                r"^(ERROR: pcre_replace: .flags. contains invalid character ')(.*)('.*)\n",			# 14: 3
+                r"^(ERROR: err:XPTY0004: illegal qname ')(.*)('.*)\n",						# 15: 3
+                r'^(ERROR: err:XQDY0025: attribute names are not unique )(in constructed element )?(.*)\n',	# 16: 3
            ])+')',  re.MULTILINE)
-norm_hint = ' [see next line for the original non-normalized output]\n'
 norm_out = (
-                None, 'syntax/parse', None, 'unexpected ... on line/in: ', None, norm_hint,
-                None, '...', None, norm_hint,
-                None, '...', None, norm_hint,
-                '= ', None, None, norm_hint,
-                None, None, '', None, ': ', '', None, norm_hint,
-                None, 'mserver_sql', None, norm_hint,
+                None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,	# 01: 5
+                None, '...', None,							# 02: 3
+                None, '...', None,							# 03: 3
+                '= ', None, None,							# 04: 3
+                None, None, '', None, ': ', '', None,					# 05: 7
+                None, 'mserver_sql', None,						# 06: 3
+                None, '...', None,							# 07: 3
+                None, '...', None,							# 08: 3
+                None, None, '...', None, '...', None,					# 09: 6
+                None, '...', None, '...', None,						# 10: 5
+                None, '...', None, '...',						# 11: 4
+                '=', None,								# 12: 2
+                None, '...',								# 13: 2
+                None, '...', None,							# 14: 3
+                None, '...', None,							# 15: 3
+                None, None, '...',							# 16: 3
            )
+norm_hint = ' [see next line for the original non-normalized output]\n'
 
 
 def mFilter (FILE, IGNORE) :
@@ -304,6 +324,7 @@ def mFilter (FILE, IGNORE) :
                     else:
                         oline += norm_out[i]
                 i+=1
+            oline += norm_hint
             xline = '# '+iline
         else:
             oline = iline
