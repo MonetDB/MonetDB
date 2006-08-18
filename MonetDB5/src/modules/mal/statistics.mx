@@ -850,7 +850,8 @@ STATgetHistogram(int *ret, str *nme)
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
 	if (p == NULL)
 		return throwMessage("statistics.getHistogram", "BAT not known");
-	p = BUNfnd(STAT_id_histogram, (int *) p);
+	i= *(int*) BUNhead(STAT_id_nme,p);
+	p = BUNfnd(STAT_id_histogram, &i);
 	if (p == NULL)
 		return throwMessage("statistics.getHistogram", "Histogram not known");
 	i = BBPindex((str) BUNtail(STAT_id_histogram, p));
