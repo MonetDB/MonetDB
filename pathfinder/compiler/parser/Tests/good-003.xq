@@ -1,2 +1,2 @@
-xquery version "1.0" encoding "iso-8859-15";
+xquery version "1.0" encoding "UTF-8";
 42
