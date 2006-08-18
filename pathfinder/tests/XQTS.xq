@@ -29,6 +29,16 @@ for i in "$XQTS_SRC/TestSources"/*-lib.xq ; do
 done
 ln -s "moduleDefs-lib.xq" "$MODS_DST/module-defs.xq"
 ln -s "modulesdiffns-lib.xq" "$MODS_DST/modulesdiffns.xq"
+
+(
+cd "$XQTS_SRC/Queries/XQuery"
+perl -i -p -e 's|^declare variable \$input-context external;|declare variable \$input-context1 external;|' \
+	OptionalFeatureErrors/CombinedErrorCodes/combined-errors-1.xq
+perl -i -p -e 's|^declare variable \$input-context1 external;|declare variable \$input-context external;|' \
+	Functions/QNameFunc/QNameConstructFunc/ExpandedQNameConstructFunc/qName-1.xq \
+	Functions/QNameFunc/ResolveQNameConstructFunc/fn-resolve-qname-[12].xq \
+	TrivialEmbedding/trivial-[1234].xq
+)
 </h>
 ,
 for $tst in doc("XQTSCatalog.xml")//*:test-case return
