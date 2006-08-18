@@ -1611,6 +1611,7 @@ optimized cases that use exec_opt and hence optimize_call
 			} else {	/* (head_type == TYPE_void) */
 				if (GDKdebug & 131072)
 					THRprintf(GDKout, "setaggr impl: void-optimized sort\n");
+				sqb = nested->hseqbase;
 				for (; r < s; r += yy) {
 					oid last = *(oid *) BUNhead(extent, r);
 
@@ -1618,8 +1619,7 @@ optimized cases that use exec_opt and hence optimize_call
 						zz = minpos + (last - minoid);
 						q = BUNptr(b, zz);
 						p = q + xx;
-						/* needed in case b->ttype == TYPE_void; shouldn't harm in other cases */
-						nested->hseqbase = nested->tseqbase = last;
+						nested->hseqbase = nested->tseqbase = sqb + zz;
 					} else {
 						q = p;
 					}
