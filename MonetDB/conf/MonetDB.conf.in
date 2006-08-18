@@ -117,7 +117,7 @@ pf_httpd_port=48080
 
 #output mode "dm" = pretty printed, 
 #            "xml" = enforce XML with enclosing <XQueryResult> tags
-xquery_output=dm                          
+xquery_output=xml                          
 
 #limit the document cache on disk to 100MB
 xquery_cacheMB=100                      

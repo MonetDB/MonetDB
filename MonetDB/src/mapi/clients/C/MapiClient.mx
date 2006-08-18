@@ -62,8 +62,8 @@ The following options are supported:
 @tab --statement=stmt 
 @tab run single statement 
 @item -t          
-@tab --trace=level
-@tab trace (without level) Monet interaction, else trace frontend language
+@tab --trace
+@tab trace mapi network interaction
 @item -T          
 @tab --time           
 @tab time commands 
@@ -860,7 +860,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 			/* in case of xquery; do the whole file in one go */
-			if (skipequals) continue;
+			if (skipequals && !feof(fp)) continue;
 		}
 
 		assert(hdl != NULL);
@@ -900,6 +900,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
+
 	} while (length > 0);
 	/* reached on end of file */
 	assert(hdl == NULL);
@@ -1257,7 +1258,7 @@ usage(const char *prog)
 	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
-	fprintf(stderr, " -t [level]  | --trace[=level]  /* without level trace Monet interaction, with level trace frontend language */\n");
+	fprintf(stderr, " -t          | --trace          /* trace mapi network interaction */\n");
 	fprintf(stderr, " -u user     | --user=user      /* user id */\n");
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
 	exit(-1);
@@ -1404,8 +1405,6 @@ main(int argc, char **argv)
 			break;
 		case 't':
 			trace = MAPI_TRACE;
-			if (optarg != NULL) 
-				trace = MAPI_TRACE_LANG;
 			break;
 		case 'S':{
 			char *eq = strchr(optarg, '=');
@@ -1521,10 +1520,6 @@ main(int argc, char **argv)
 			interactive_stdin = 1;
 		}
 		if (interactive_stdin) { 
-			if (strcmp(language, "xquery") == 0) {
-				fprintf(stderr, "XQuery cannot be used interactively\n");
-				exit(1);
-			}
 #ifdef HAVE_LIBREADLINE
 			init_readline(mid, language, save_history);
 #else
