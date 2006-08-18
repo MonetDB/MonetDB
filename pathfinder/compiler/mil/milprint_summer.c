@@ -3952,16 +3952,16 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     milprintf(f,
             "{ # translate fn:boolean (item*) as boolean\n"
             "iter := iter.materialize(ipik);\n"
-            "var iter_count := {count}(iter.reverse(), loop%03u.reverse(), FALSE).tmark(0@0);\n"
+            "var iter_count := {count}(iter.reverse(), loop%03u.reverse(), FALSE);\n"
             "var iter_pos := {min}(iter.reverse());\n"
             "var sequences := iter_count.ord_uselect(2,int(nil));\n"
-            "var emptyseqs := iter_count.ord_uselect(0,0);\n", cur_level);
+            "var emptyseqs := iter_count.tmark(0@0).ord_uselect(0,0);\n", cur_level);
 
     /* error check. Note that kind maybe constant, leftfetchjoin and min both work here  */
     milprintf(f,
             "# incomprehensible XQuery semantics: |sequences|>1 are true, but *must* start with a node\n"
             "if (bit(count(sequences))) {\n"
-            "  if (sequences.hmark(0@0).leftfetchjoin(iter_pos).leftfetchjoin(kind).min() < NODE)\n" 
+            "  if (sequences.hmark(0@0).join(iter_pos).leftfetchjoin(kind).min() < NODE)\n" 
             "  {  ERROR (\"err:FORG0006: boolean() cannot handle sequences with length>1 that start with an atomic.\"); }\n"
             "}\n");
 
@@ -10705,8 +10705,9 @@ static const char* _PFstopMIL(int statement_type) {
     switch (statement_type) {
     case 0:
         /* normal statement */
-        strcat(buf,
-               "  if (genType.search(\"none\") = -1)\n"
+        strcat(buf, 
+               "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"
+               "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"
                "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
         break;
     case 1:
@@ -10727,7 +10728,7 @@ static const char* _PFstopMIL(int statement_type) {
            "destroy_ws(ws);\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
-           "if (genType.search(\"timing\") >= 0)\n"
+           "if (genType.startsWith(\"timing\"))\n"
            "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
            "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
            "}\n");

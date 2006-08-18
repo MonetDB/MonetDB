@@ -1304,10 +1304,6 @@ typedef struct _xquery_loaded_module {
     int nslen;
 } xquery_loaded_module;
 
-#define XQ_PROFILE 1
-/* trace and debug */
-#define XQ_TRACE 2      
-
 /* cached MIL client + Xquery specific context */
 typedef struct {
     bit initialized;
@@ -1345,7 +1341,7 @@ typedef struct {
     size_t var_usage_size; 
     size_t proc_vid_size;
 
-    int mode;           /* bit vector of execution modes */
+    int mode; /* XQ bitmasks */ 
 
     /* size of the cached procs */
     size_t cachesize;
@@ -1353,6 +1349,10 @@ typedef struct {
     xquery_prepared_function* prepared_functions;
     xquery_loaded_module *loaded_modules; 
 } xquery_client;
+
+/* bitmasks for mode */
+#define XQ_DEBUG 1
+#define XQ_MAPI  2 
 
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
 int xquery_cacheid = 0;
@@ -1441,7 +1441,7 @@ xquery_mil_exec(xquery_client *ctx,
     int ret = 0;
     YYSTREE t;
 
-    if (ctx->mode&XQ_TRACE)
+    if (ctx->mode&XQ_DEBUG)
         stream_write(ctx->fderr, buf, strlen(buf), 1);
 
     t = xquery_mil2tree(ctx, buf); 
@@ -1455,56 +1455,6 @@ xquery_mil_exec(xquery_client *ctx,
 static char* xquery_parse_ident(char* p); 
 static char* xquery_parse_space(char* p); 
 static char* xquery_parse_string(char* p, char *buf, int len); 
-
-/**
- * Returns the number of newlines in the given string.
- */
-static inline int xquery_get_line_count(char *in) {
-    int ret = 0;
-    
-    while (*in) {
-        if (*in++ == '\n')
-            ret++;
-    }
-
-    return(ret);
-}
-
-/**
- * Convert the given string into a Mapi protocol compliant error string.
- * Care is taken that multiline errors are also catched.  In detail this
- * function adds ! characters such that every line starts with one.  The
- * original error is read from err, and written to out.  The latter
- * should contain enough space, which is ensured by using the
- * XQUERYERROR2MAPI macro.
- */
-static char *xquery_make_mapi_error(char *err, char *out) {
-    char *p = NULL, *q = err;
-
-    *out = '!'; 
-    for (p = out + 1; *q; q++) {
-        *p++ = *q;
-        if (*q == '\n')
-            *p++ = '!'; 
-    }
-    /* guard against errors that do not terminate in a newline */
-    if (q > err && q[-1] != '\n') {
-        *p++ = '\n';
-    } else if (p[-1] == '!') {
-        p--;
-    }
-    *p = 0;
-
-    return(out);
-}
-
-#define XQUERYERROR2MAPI(ERR, LEN) \
-    if (ERR != NULL) { \
-        ERR = xquery_make_mapi_error(ERR, \
-                alloca(sizeof(char*) * \
-                    (strlen(ERR) + xquery_get_line_count(ERR) + 3))); \
-        LEN = strlen(ERR); \
-    }
 
 /*
  * translate xquery to MIL and execute, return error(0)/ok(1)
@@ -1580,9 +1530,32 @@ xquery_compile_exec(xquery_client *ctx,
             free(del); /* we are ignoring the query part apparently */
         }
     }
-    /* niels: NOT SURE about this condition */
-    if (err && strstr("mapi", *(ctx->genType)) == 0)
-        XQUERYERROR2MAPI(err, len);
+    if (err) {
+        len = strlen(err);
+        if (ctx->mode&XQ_MAPI) {
+            /* put ! before error lines */
+            char *p = err, *q = err;
+
+            while (*p) {
+                if (*p++ == '\n')
+                    len++;
+            }
+            err = (char*) alloca(len+3);
+            *err = '!'; 
+            for (p = err + 1; *q; q++) {
+                *p++ = *q;
+                if (*q == '\n')
+                    *p++ = '!'; 
+            }
+            /* guard against errors that do not terminate in a newline */
+            if (q > err && q[-1] != '\n')
+                *p++ = '\n';
+            else if (p[-1] == '!')
+                p--;
+            *p = 0;
+            len = p - err;
+        }
+    }
     MT_unset_lock(pf_compiler_lock, "xquery_compile_exec");
     
     /* write errors and debug info on client stream */
@@ -1749,13 +1722,13 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
 
 @= seqbase
     BATseqbase(ctx->@1, @2);
-    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
+    if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
 @= bunins
     if (BUNins(ctx->@1, @2, @3, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
+    if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @= bunappend
     if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
+    if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
 @c
 /*
  * call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
@@ -1778,7 +1751,6 @@ xquery_function_call(xquery_client *ctx,
     xquery_function *fun;
     int i, j, k, l, m=0, tpe[MAXPARAMS], mincnt[MAXPARAMS], maxcnt[MAXPARAMS];
     char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
-    int debug = ctx->mode&XQ_TRACE;
 
     /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
     for(j=0; j<argc; j++) {
@@ -1850,6 +1822,8 @@ xquery_function_call(xquery_client *ctx,
         }
         MT_unset_lock(pf_cache_lock, "xquery_function_call");
     }
+    if (fun->mil == NULL)
+       return "xquery_function_call: malloc failed.\n";
 
     /* if no MIL tree is available, create it now */
     if (prepfun->lt == NULL) {
@@ -1918,7 +1892,7 @@ xquery_function_call(xquery_client *ctx,
     @:seqbase(fun_item000, 0, "0@0")@
 
     /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
-    if (debug) { 
+    if (ctx->mode&XQ_DEBUG) { 
         /* MIL corresponding to BUNins calls we made from C */
         stream_write(ctx->fderr, mil, strlen(mil), 1);
         /* MIL corresponding to UDF call sequence (even if we already have it cached) */
@@ -1933,7 +1907,7 @@ xquery_function_call(xquery_client *ctx,
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
 /*
-        if (strstr(mode, "rpcservertime") != NULL) {
+        if (strstr(*(ctx->genType), "rpcservertime") != NULL) {
            printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
            printf("\tTrans: %d msec\n", (*ctx->time_compile) );
            printf("\tShred: %d msec\n", (*ctx->time_shred) );
@@ -2103,7 +2077,7 @@ xquery_module_load(xquery_client *ctx,
         }
         ctx->var_usage_size = BATcount(ctx->var_usage);
         ctx->proc_vid_size = BATcount(ctx->proc_vid);
-    } else if (ctx->mode&XQ_TRACE) {
+    } else if (ctx->mode&XQ_DEBUG) {
         stream_write(ctx->fderr, mod->def->prologue, strlen(mod->def->prologue), 1);
     }
     mod->ns = ns;
@@ -2197,10 +2171,11 @@ CMDxquery_start_query_cache(lng *maxsize)
 static xquery_client*
 xquery_client_new(Cntxt stk) {
     xquery_client *ctx = (xquery_client*)GDKmalloc(sizeof(xquery_client));
-
-    memset(ctx, 0, sizeof(xquery_client));
-    ctx->stk = stk; 
-    ctx->fderr = GDKerr;
+    if (ctx) {
+        memset(ctx, 0, sizeof(xquery_client));
+        ctx->stk = stk; 
+        ctx->fderr = GDKerr;
+    }
     return ctx; 
 }
 
@@ -2620,7 +2595,7 @@ xquery_prepare(xquery_client *ctx,
     char val[256], url1[256], url2[256];
     char *err = NULL;
 
-    if (ctx->mode&XQ_TRACE) {
+    if (ctx->mode&XQ_DEBUG) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
         char *prologue = (char*) PFinitMIL();
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
@@ -2788,13 +2763,11 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-    /* if (err != NULL) we could return that error here, but it is more
-     * consistent to let the PF compiler give out all error messages
-     * ("why make error queries fast?").
+    /* if (err != NULL) we could return that error here, but it is more consistent 
+     * to let the PF compiler give out all error messages ("why make error queries fast?").
      *
-     * we can re-enable immediate return if we (ever) decide to create a
-     * low-resource XQ implementation that only supports prepared
-     * queries and lacks a linked PF compiler.  
+     * we can re-enable immediate return if we (ever) decide to create a low-resource XQ
+     * implementation that only supports prepared queries and lacks a linked PF compiler.  
      */
     if (err == xquery_function_error) /* MIL execution failed, do not generate error in PF compiler */
        return xquery_nondescriptive_error;
@@ -2805,7 +2778,7 @@ xquery_prepare(xquery_client *ctx,
         /* compile and execute the query (minus module imports) */
         err = xquery_nondescriptive_error;
         if (xquery_compile_exec(ctx, query, 0, &sec1, &sec2, &sec3, NULL)) 
-            err = NULL;
+                err = NULL;
         if (sec1) free(sec1);
         if (sec2) free(sec2);
         if (sec3) free(sec3);
@@ -2831,6 +2804,16 @@ xquery_prepare(xquery_client *ctx,
     }
 }
 @c
+static char* 
+xquery_change_genType(xquery_client *ctx, char* magic_string) {
+    if (strcmp(*(ctx->genType), magic_string)) { 
+        char* newmode = GDKstrdup(magic_string);
+        if (newmode == NULL) return "xquery_change_genType: malloc failure";
+        GDKfree(*(ctx->genType));
+        (*ctx->genType) = newmode;
+    }
+    return NULL;
+}
 
 static void
 xquery_client_engine(mapi_client *fc )
@@ -2839,8 +2822,16 @@ xquery_client_engine(mapi_client *fc )
     size_t curlen;
     xquery_client *ctx = fc->fc;
     stream *in = fc->c->fdin, *out = fc->c->fdout;
-    char *xquery,  buf[100], *p=buf, *err = (char*) -1;
+    char *p, *xquery, *err = (char*) -1;
 
+    /* buf is the mode string that is available during execution in the MIL genType var */
+    char buf[113], *genType, *output; 
+    strcpy(buf, "timing-mapi-xml");
+    genType = buf+7; /* initially skis over  over "timing-" */
+    output = buf+12; /* place to overwrite with alternatives to "xml" */
+    output[100] = 0; /* max 100 characters in output string, ensure zero at end */
+
+    ctx->mode = XQ_MAPI;
     while (1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
         if (!fc->c->blocked && 
@@ -2880,25 +2871,14 @@ xquery_client_engine(mapi_client *fc )
                 p++;
                 switch(*p) {
                 case 'p': /* profile */
-                        ctx->mode |= XQ_PROFILE;
-                        break;
-                case 't': /* trace */
-                        ctx->mode |= XQ_TRACE;
+                        genType = buf; /* now includes "timing-" prefix */
                         break;
                 case 'o': /* output format */
                         p += sizeof("output ") - 1;
-                        /* Prefix with "mapi-" to get mapi specific
-                         * (protocol) output.  We can always do this,
-                         * because we can only come here through mapi.
-                         */
-                        p -= sizeof("mapi-") - 1;
-                        memcpy(p, "mapi-", sizeof("mapi-") - 1);
-                        if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), p)) { 
-                            if (*(ctx->genType)) 
-                                GDKfree(*(ctx->genType));
-                            *(ctx->genType) = GDKstrdup(p);
-                        }
-                        break; 
+                        strncpy(output, p, 100); /* 'output' has room for 100 chars */
+                        if (strncmp(output, "debug", 5) == 0)
+                            ctx->mode |= XQ_DEBUG;
+                        break;
                 case 'c': { /* shred from stream */
                         int i;
                         BAT *res;
@@ -2916,6 +2896,10 @@ xquery_client_engine(mapi_client *fc )
                                 return;
                         }
                         dname = GDKstrdup(p);
+                        if (dname == NULL) {
+                                xquery_client_end(ctx, "malloc failure"); 
+                                return;
+                        }
                         cname = strchr(dname, ' ');
                         if (cname) 
                                 *cname++ = 0;
@@ -2943,13 +2927,14 @@ xquery_client_engine(mapi_client *fc )
             /* execute query */
             int msec = GDKms();
             xquery = p+1;
-            err = xquery_prepare(ctx, msec, xquery);
+            err = xquery_change_genType(ctx, genType);
+            if (err == NULL) 
+                err = xquery_prepare(ctx, msec, xquery);
             if (err && err != xquery_nondescriptive_error) {
                 /* report errors back to client */
-                stream_write(ctx->fderr, "!", 1, 1);
                 stream_write(ctx->fderr, err, strlen(err), 1);
             }
-            if (ctx->mode&XQ_TRACE) {
+            if (ctx->mode&XQ_DEBUG) {
                 /* memory debugging */
                 xquery_prepared_function *fun = ctx->prepared_functions;
                 BAT *b = NULL;
@@ -2973,17 +2958,23 @@ xquery_client_engine(mapi_client *fc )
 int
 xquery_frontend( ptr *F)
 {
-	char *m_clients = GDKgetenv("mapi_clients"); 
-	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
-	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
-	*F = f;
-	f->name = GDKstrdup("xquery");
-	f->cache_limit = nr;
-	f->f_alloc = xquery_client_alloc;
-	f->f_init  = xquery_client_init;
-	f->f_free  = xquery_client_free;
-	f->f_engine  = xquery_client_engine; /* read/parse/execute loop */
-	return GDK_SUCCEED;
+    char *m_clients = GDKgetenv("mapi_clients"); 
+    int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+    mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
+    if (f) {
+        f->name = GDKstrdup("xquery");
+        if (f->name) {
+            *F = f;
+            f->cache_limit = nr;
+	    f->f_alloc = xquery_client_alloc;
+	    f->f_init  = xquery_client_init;
+	    f->f_free  = xquery_client_free;
+	    f->f_engine  = xquery_client_engine; /* read/parse/execute loop */
+	    return GDK_SUCCEED;
+        }
+        GDKfree(f);
+    }
+    return GDK_FAIL;
 }
 
 
@@ -3028,12 +3019,7 @@ CMDxquery(Cntxt stk,
         PFURLCACHE("CMDxquery", xquery, 1);
         MT_unset_lock(pf_compiler_lock, "CMDxquery");
     }
-
-    if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
-        if (*(ctx->genType)) 
-                GDKfree(*(ctx->genType));
-        *(ctx->genType) = GDKstrdup(mode);
-    }
+    err = xquery_change_genType(ctx, mode);
     if (err == NULL) {
         buffer *b = buffer_create(XQUERY_BUFSIZE);
         if (b) {
@@ -3095,20 +3081,24 @@ xquery_method(stream *out,
     int msec = GDKms();
     MT_Id XQthread_id = THRgettid();
     Thread XQthread = THRget(XQthread_id);
-    char *err = NULL, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
+    char *err, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
     stream *s = NULL;
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
 
-    if (mc == NULL) 
+    if (mc == NULL || mc->fc == NULL) 
         return "xquery_method: out of client slots.\n";
 
-    if (rpctiming){
-        mode = "xml-rpcservertime-timing-noheader-soap-root-iter";
-    }
-    
     ctx = mc->fc; 
     ctx->fderr = GDKerr;
+    ctx->mode = 0;
+
+    if (rpctiming){
+        mode = "timing-rpcservertime-xml-noheader-soap-root-iter";
+    }
+    err = xquery_change_genType(ctx, mode);
+    if (err) return err;
+
     mc->t = XQthread_id;
     mc->thread = XQthread;
     monetSetChannel(XQthread, GDKin, out);
@@ -3118,20 +3108,10 @@ xquery_method(stream *out,
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
-            if (rpctiming){
-                mode = "xml-rpcservertime-timing-debug-noheader-soap-root-iter";
-            } else {
-                mode = "xml-debug-noheader-soap-root-iter";
-            }
+            ctx->mode |= XQ_DEBUG;
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
-    }
-
-    if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
-        if (*(ctx->genType)) 
-                GDKfree(*(ctx->genType));
-        *(ctx->genType) = GDKstrdup(mode);
     }
     if (err == NULL && module){
         err = xquery_module_load(ctx, ns="xrpc", module, uri); 
