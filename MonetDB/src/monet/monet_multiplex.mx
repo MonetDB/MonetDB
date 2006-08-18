@@ -1484,7 +1484,7 @@ there are the {strings, polygons, images, etc}!
 	if ((BAThordered(b) & 1) == 0 && ATOMvarsized(b->ttype)) {
 		hidden_vartype = b->ttype;	/* just copy offsets */
 	}
-	nested = BATnew(hidden_vartype ? TYPE_var : BATttype(b), TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
+	nested = BATnew(hidden_vartype ? TYPE_var : b->ttype, TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
 	nested_rev = BATmirror(nested);
 	nested->batRestricted = BAT_READ;
 	prop_key = (b->batSet || b->tkey);
