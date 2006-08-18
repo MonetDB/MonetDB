@@ -937,7 +937,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	char *line = NULL;
 	char *buf = NULL;
 	size_t length;
-	MapiHdl hdl = mapi_get_active(mid);;
+	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 
 #ifdef HAVE_LIBREADLINE
