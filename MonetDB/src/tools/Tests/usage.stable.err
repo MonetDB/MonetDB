@@ -42,7 +42,7 @@ Options are:
  -q          | --quiet          /* don't print welcome message */
  -s stmt     | --statement=stmt /* run single statement */
  -T          | --time           /* time commands */
- -t [level]  | --trace[=level]  /* without level trace Monet interaction, with level trace frontend language */
+ -t          | --trace          /* trace mapi network interaction */
  -u user     | --user=user      /* user id */
  -?          | --help           /* show this usage message */
 
