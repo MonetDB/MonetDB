@@ -115,7 +115,6 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	cnt = BATcount(b);
 	first = BUNindex(b, BUNfirst(b));
 	view = VIEWcreate_(b, TRUE);
-	BBPunfix(b->batCacheid);
 
 	/*  printf("set bat chunk bound to %d %d - %d\n",
 	 *granule, first, MIN(cnt,(size_t) *granule)); */
@@ -123,6 +122,7 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	BATseqbase(view, first - 1);
 	*vid = view->batCacheid;
 	BBPkeepref(view->batCacheid); 
+	BBPunfix(b->batCacheid);
 	*res = first;
 	return MAL_SUCCEED;
 }
@@ -157,8 +157,7 @@ CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
 	VIEWbounds(view, i, i + (size_t) * granule - 1);
 	BATseqbase(view, i - 1);
 	BBPunfix(b->batCacheid);
-	BBPincref(*vid, TRUE);
-	BBPunfix(view->batCacheid);
+	BBPkeepref(view->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;
 }

@@ -247,7 +247,7 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 			stream_printf(fp, "%s", tl);
 		return MAL_SUCCEED;
 	}
-	if (isaBatType(tpe) || tpe == TYPE_bat) {
+	if (isaBatType(tpe) ) {
 		BAT *b;
 
 		if (*(int *) val == 0) {
