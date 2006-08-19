@@ -1359,6 +1359,7 @@ str CALC@22@1(@1 *res, @2 *a)
 mal_export str CALCbat2BAT(int *res, bat *bid);
 str CALCbat2BAT(int *res, bat *bid){
 	*res= *bid;
+	BBPincref(*res, TRUE);
 	return MAL_SUCCEED;
 }
 mal_export str CALCBAT2bat(bat *res, int *bid);
