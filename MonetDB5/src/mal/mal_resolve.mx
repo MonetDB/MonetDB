@@ -374,11 +374,15 @@ Beware, this is not yet effectuated in the interpreter.
 		}
 		@:prepostProcess(ts,i,mb)@
 	}
-	if( p == getSignature(s))
+@-
+ signatures are handled by the caller
+	if( p == getSignature(s)){
+printf("handle signature prepost\n");
 	for(i=p->retc;i<p->argc;i++) {
 		int ts= getArgType(mb,p,i);
 		@:prepostProcess(ts,i,mb)@
 	}
+}
 @-
 It may happen that an argument was still untyped and as a result of
 the polymorphism matching became strongly typed. This should be
@@ -449,16 +453,16 @@ This piece of code may be shared by the separate binder
 Since we now know the storage type of the receiving variable, we can
 set the garbagge collection flag.
 @= prepostProcess
-	if(isaBatType(@1)){
+	if( findGDKtype(@1) == TYPE_bat){
 		setVarCleanup(mb,getArg(p,@2)) = TRUE;
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
-		p->gc= QUICKCLEANUP;
+		p->gc|= QUICKCLEANUP;
 	}
 	else if( !isPolyType(@1)  && @1< TYPE_any && 
 			@1>=0 && ATOMstorage(@1)== TYPE_str){
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
 		setVarCleanup(mb,getArg(p,@2)) = TRUE;
-		p->gc= QUICKCLEANUP;
+		p->gc|= QUICKCLEANUP;
 	} 
 @c
 #ifdef DEBUG_MAL_RESOLVE
@@ -617,6 +621,9 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 	if( isaSignature(p) ) {
 		for(k=0;k<p->argc;k++)
 			setFixed(mb,getArg(p,k));
+		for(k=p->retc;k<p->argc;k++){
+			@:prepostProcess(getArgType(mb,p,k),k,mb)@
+		}
 		p->typechk= TYPE_RESOLVED;
 		for(k=0; k<p->retc;k++)
 			p->typechk = MIN(p->typechk,typeKind(mb,p,0));

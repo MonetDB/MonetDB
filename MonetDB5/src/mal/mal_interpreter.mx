@@ -56,21 +56,18 @@ typedef struct{
 mal_export void showErrors(void);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
-	    MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
+			MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void garbageElement(ValPtr v);
-mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
-mal_export void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk);
+mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 
-mal_export ptr getArgValue(MalStkPtr stk, 
-	    InstrPtr pci, int k);
-mal_export ptr getArgReference(MalStkPtr stk, 
-	    InstrPtr pci, int k);
+mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
+mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 
 #define VALcopy2(lhs,rhs) if( (rhs)->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
@@ -78,7 +75,7 @@ mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 @c
 #include "mal_interpreter.h"
 #include "mal_debugger.h"   /* for mdbStep() */
-#include "mal_type.h"       
+#include "mal_type.h"
 
 @-
 We can speed up the copying, provided we ignore copying ptr-based
@@ -110,11 +107,8 @@ tstagain:
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
 	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
 	default:
-	    tpe= ATOMstorage(tpe);
-	    goto tstagain;
-/*
-	val= (ptr) v->val.pval; 
-	GDKerror("evalParameters:unknown value type\n");*/
+		tpe= ATOMstorage(tpe);
+		goto tstagain;
 	}
 	return val;
 } 
@@ -151,7 +145,7 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_lng: ret= (ptr) & v->val.lval; break;
 	case TYPE_str: ret= (ptr) & v->val.sval; break;
 	default:
-	     ret= (ptr) & v->val.pval; 
+		ret= (ptr) & v->val.pval; 
 	}
 	return ret;
 #endif
@@ -186,11 +180,11 @@ prepareMALstack(MalBlkPtr mb){
 
 	for(i= 1; i< mb->vtop; i++)
 	if( isConstant(mb,i) > 0 ){
-	    lhs = &stk->stk[i];
-	    rhs = &getVarConstant(mb,i);
-	    VALcopy2(lhs,rhs);
+		lhs = &stk->stk[i];
+		rhs = &getVarConstant(mb,i);
+		VALcopy2(lhs,rhs);
 	} else {
-	    lhs = &stk->stk[i];
+		lhs = &stk->stk[i];
 		lhs->vtype = getVarGDKType(mb,i);
 	}
 	return stk;
@@ -206,10 +200,10 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	str ret;
 
 	if( mb->errors){
-	    char buf[2*PATHLENGTH];
-	    showErrors();
-	    sprintf(buf, "'%s.%s' contains errors\n",
-	        getModName(mb),getFcnName(mb));
+		char buf[2*PATHLENGTH];
+		showErrors();
+		sprintf(buf, "'%s.%s' contains errors\n",
+			getModName(mb),getFcnName(mb));
 		if( cntxt->itrace == 0 ) /* permit debugger analysis */
 			return raiseException(mb,0,"SyntaxError",buf);
 	}
@@ -228,13 +222,13 @@ being called.
 	/* allocate space for value stack */
 	/* the global stack should be large enough */
 	if( mbcaller== NULL && env != NULL){
-	    stk = env;
-	    if( mb != stk->blk) 
-	        GDKerror("runMAL:misalignment of symbols\n");
-	    if( mb->vtop > stk->stksize) {
-	        GDKerror("stack too small");
-	    }
-	    pci= pcicaller;
+		stk = env;
+		if( mb != stk->blk) 
+			GDKerror("runMAL:misalignment of symbols\n");
+		if( mb->vtop > stk->stksize) {
+			GDKerror("stack too small");
+		}
+		pci= pcicaller;
 	} else {
 		newStack(stk,mb->vsize);
 		memset((char *) stk, 0, stackSize(mb->vtop));
@@ -242,39 +236,40 @@ being called.
 		stk->stksize= mb->vsize;
 		stk->blk= mb;
 		stk->cmd= cntxt->itrace; /* set debug mode */
-	    if( env) {
-	        stk->stkdepth= stk->stksize + env->stkdepth;
-	        @:safeguardStack@
-	    }
+		if( env) {
+			stk->stkdepth= stk->stksize + env->stkdepth;
+			@:safeguardStack@
+		}
 	} 
 
 	if( env && mbcaller){
-	    InstrPtr pp;
-	    int k;
+		InstrPtr pp;
+		int k;
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence 
 f,a1..an,b1..bn. This slightly complicates the implementation
 of the return statement.
 @c
-	    pci= pcicaller;
-	    pp = getInstrPtr(mb, 0);
-	    /* set return type */
-	    lhs = &stk->stk[0];
-	    lhs->vtype =getVarGDKType(mb,0);
-	    i= pci->retc;
-	    for(k=pp->retc; i<pci->argc; i++,k++){
-	        lhs = &stk->stk[pp->argv[k]];
-	        /* variable arguments ? */
-	        if( k== pp->argc-1) k--; 
+		pci= pcicaller;
+		pp = getInstrPtr(mb, 0);
+		/* set return types */
+		for(i=0; i< pci->retc; i++){
+			lhs = &stk->stk[i];
+			lhs->vtype =getVarGDKType(mb,i);
+		}
+		for(k=pp->retc; i<pci->argc; i++,k++){
+			lhs = &stk->stk[pp->argv[k]];
+			/* variable arguments ? */
+			if( k== pp->argc-1) k--; 
 
-	        rhs = &env->stk[pci->argv[i]];
-	        VALcopy2(lhs,rhs);
+			rhs = &env->stk[pci->argv[i]];
+			VALcopy2(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id, TRUE);
-	    }
-	    stk->up = env;
-	    env->down = stk;
+		}
+		stk->up = env;
+		env->down = stk;
 	} 
 @-
 An optimization is to copy all constant variables used in functions immediately
@@ -286,17 +281,15 @@ observed due the small size of the function).
 Moreover, we have to copy the result types to the stack for later
 use. The stack value is cleared to avoid misinterpretation of left-over
 information. Since a stack frame may contain values of a previous call,
-we should first remove garbage. A problematic case is when
-the variable accepts any type, then we leave it up to the 
-pattern operators to deal with it.
+we should first remove garbage. 
 @c
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
 	if( isConstant(mb,i) > 0 ){
-	    lhs = &stk->stk[i];
-	    rhs = &getVarConstant(mb,i);
-	    VALcopy2(lhs,rhs);
+		lhs = &stk->stk[i];
+		rhs = &getVarConstant(mb,i);
+		VALcopy2(lhs,rhs);
 	} else {
-	    lhs = &stk->stk[i];
+		lhs = &stk->stk[i];
 		lhs->vtype = getVarGDKType(mb,i);
 	}
 #ifdef STACKTRACE
@@ -323,9 +316,7 @@ pattern operators to deal with it.
 	printStack(GDKout,mb,stk); 
 #endif
 	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
-		if( env!= stk) 
-	            garbageCollectAll(mb,stk);
-	    else garbageCollector(mb,stk);
+		garbageCollector(mb,stk, env != stk);
 	}
 	return ret;
 }
@@ -365,9 +356,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	printStack(GDKout,mb,stk); 
 #endif
 	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
-		if( env!= stk)
-			garbageCollectAll(mb,stk);
-	    else garbageCollector(mb,stk);
+		garbageCollector(mb,stk,env!=stk);
 	}
 	return ret;
 }
@@ -597,18 +586,13 @@ elements in the value stack.
 	@:beginProfile@
 	ret = 0;
 	switch( pci->token){
-	case ASSIGNsymbol:
-	    @:assignStmt@ 
-	    break;
+	case ASSIGNsymbol: @:assignStmt@ break;
 	case PATcall: @:patterncall@ break;
 	case CMDcall: @:commandcall@ break;
 	case FACcall: @:factorycall@ break;
 	case FCNcall: @:functioncall@ break;
 	case NOOPsymbol:
 	case REMsymbol:
-	case COMMANDsymbol:
-	case FUNCTIONsymbol:
-	case FACTORYsymbol:
 	    break;
 	case ENDsymbol: 
 	    if( getInstrPtr(mb,0)->token == FACTORYsymbol)
@@ -616,7 +600,7 @@ elements in the value stack.
 		if( oldtimer)
 			cntxt->timer= oldtimer;
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
-			garbageCollectAll(mb, stk);
+			garbageCollector(mb, stk, TRUE);
 	    @:endProfile@
 	    goto MALevalExit;
 	default:
@@ -729,16 +713,11 @@ possible change in the control flow.
 	            rhs = &stk->stk[pp->argv[i]];
 	            lhs = &env->stk[pci->argv[i]];
 	            VALcopy2(lhs,rhs);
-	            if( needsCleanup(pci)){
-	                for(k= pci->retc; k< pci->argc; k++)
-	                    if( getArg(pci,k) == getArg(pci,i) ) goto noinc;
-	                if( lhs->vtype == TYPE_bat )
-	                    BBPincref(lhs->val.br.id, TRUE); 
-	            }
-				noinc:;
+				if( lhs->vtype == TYPE_bat )
+					BBPincref(lhs->val.br.id, TRUE); 
 	        }
 	        if( garbageControl(getInstrPtr(mb,0)) )
-	            garbageCollectAll(mb, stk);
+	            garbageCollector(mb, stk, TRUE);
 			/* reset the clock */
 			if( oldtimer)
 				cntxt->timer= oldtimer;
@@ -747,9 +726,6 @@ possible change in the control flow.
 	    @:endProfile@
 	    goto MALevalExit;
 	default:
-	    /* why needed 
-if( getDestVar(pci) == stkexception) 
-	        stkexception = -1; */
 	    stkpc++; 
 	}
 
@@ -1279,10 +1255,6 @@ just one reference per BAT. This doesn't work, because we may
 keep BAT-views around, which depend on the existence of the
 underlying BAT.
 
-@{
-Look further in mal_instruction.mx for the before/after calls.
-@}
-
 All string values are private to the VALrecord, which means they
 have to be freed explicitly before a MAL function returns. 
 The first step is to always safe the destination variable
@@ -1300,30 +1272,25 @@ void garbageElement(ValPtr v)
 		v->len= 0;
 		return;
 	}
-	if( v->vtype== TYPE_bat && v->val.bval) {
+	if( v->vtype== TYPE_bat ) {
 @}
 @-
 All operations are responsible to properly set the
 reference count of the BATs being produced or destroyed.
-The exception are the target BAT variables. Their
-reference is saved until the operation is finished.
-They the reference can be reduced (due to overwrite
-of the target variable) or retained(the operation failed).
-
-Actually, the libraries should not leave the
+The libraries should not leave the
 physical reference count being set. This is only
-allowed during a GDK operation. All references
-should be logical.
+allowed during the execution of a GDK operation.
+All references should be logical.
 @-
 @{
 @c
 	    int bid= ABS(v->val.bval);
 	    /* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 	        bid, BBP_lrefs(bid),BBP_refs(bid));*/
-		if( bid == 0) return;
+	    v->val.bval =0;
+		if( bid == 0 ) return;
 	    if( BBP_lrefs(bid) )
 	        BBPdecref(bid,TRUE);
-	    v->val.bval =0;
 	}
 }
 @-
@@ -1345,7 +1312,7 @@ Beware that variables may be know polymorphic, their actual
 type should be saved for variables that recide on a global
 stack frame.
 @c
-void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
+void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
 {   int k;
 	ValPtr v;
 
@@ -1354,7 +1321,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 	printStack(GDKout,mb,stk,0);
 #endif
 	for(k=0;k<mb->vtop; k++) {
-	    if(isVarGarbage(mb,k) && isTmpVar(mb,k)){
+	    if(isVarGarbage(mb,k) && (flag || isTmpVar(mb,k) )){
 	        garbageElement(v= &stk->stk[k]);
 	        v->vtype= TYPE_int;
 	        v->val.ival= int_nil;
@@ -1364,17 +1331,6 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 	stream_printf(GDKout,"--->stack after garbage collector\n");
 	printStack(GDKout,mb,stk,0);
 #endif
-}
-void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk)
-{   int k;
-	ValPtr v;
-
-	for(k=0;k<mb->vtop; k++) 
-	if( isVarGarbage(mb,k)) {
-	        garbageElement(v= &stk->stk[k]);
-	        v->vtype= TYPE_int;
-	        v->val.ival= int_nil;
-	}
 }
 @-
 Sometimes it helps to release a BAT when it won;t be used anymore.

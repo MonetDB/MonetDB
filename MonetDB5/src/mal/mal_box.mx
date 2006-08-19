@@ -298,7 +298,7 @@ newBox(str name)
 void
 freeBox(int i){
 		if (box[i]) {
-			garbageCollectAll(box[i]->sym, box[i]->val);
+			garbageCollector(box[i]->sym, box[i]->val,TRUE);
 			GDKfree(box[i]->name);
 			freeMalBlk(box[i]->sym);
 			GDKfree(box[i]->val);

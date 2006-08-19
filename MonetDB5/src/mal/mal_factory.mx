@@ -383,6 +383,8 @@ Let's call it as a synchronous action, without concern on parallelism.
 
 		rhs = &pl->env->stk[getArg(pci, i)];
 		VALcopy(lhs, rhs);
+		if( lhs->vtype == TYPE_bat )
+			BBPincref(lhs->val.br.id, TRUE);
 	}
 	if (mb->errors)
 		return throwMessage("factory.call", "Factory contains errors");
@@ -444,12 +446,23 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		pl->stk= stk;
 	} else  {
 		pl= plants+i;
+@-
+When you re-enter the factory the old arguments should be
+released to make room for the new ones.
+@c
+		for (i = psig->retc; i < psig->argc; i++) {
+			lhs = &pl->stk->stk[getArg(psig, i)];
+			if( lhs->vtype == TYPE_bat )
+				BBPdecref(lhs->val.br.id, TRUE);
+		}
 	}
 	/* copy the calling arguments onto the stack of the factory */
 	i = psig->retc;
 	for (i = psig->retc; i < psig->argc; i++) {
 		lhs = &pl->stk->stk[getArg(psig, i)];
 		VALcopy(lhs, argv[i]);
+		if( lhs->vtype == TYPE_bat )
+			BBPincref(lhs->val.br.id, TRUE);
 	}
 	if( flag && cntxt->timer == 0)
 		mdbStep(cntxt,mb,pl->stk,pl->pc);
