@@ -1,9 +1,9 @@
 stdout of test 'tst860` in directory 'src/mal` itself:
 
 
-# 15:05:40 >  
-# 15:05:40 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=38048 --set monet_prompt= --trace --dbname=mTests_src_mal  tst860.mal < /dev/null
-# 15:05:40 >  
+# 21:27:43 >  
+# 21:27:43 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=34237 --set monet_prompt= --trace --dbname=mTests_src_mal  tst860.mal < /dev/null
+# 21:27:43 >  
 
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
@@ -111,14 +111,36 @@ end main;	# 40
 [ 24 ]
 [ 15760 ]
 [ nil ]
-[ "could not get histogram from timezones" ]
-[ "MALexception:user.main[24]:statistics.getHistogram:Histogram not known\n" ]
 [ "histogram" ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ 0 ]
+#---------------------------------------------------------------------------------------------------------#
+# h												t	  # name
+# timezone											int	  # type
+#---------------------------------------------------------------------------------------------------------#
+[ GMT+12:00,											  1	  ]
+[ GMT+11:00,											  1	  ]
+[ GMT+10:00,											  1	  ]
+[ GMT+09:00,											  1	  ]
+[ GMT+08:00,											  1	  ]
+[ GMT+07:00,											  1	  ]
+[ GMT+05:00,											  1	  ]
+[ GMT+04:00,											  1	  ]
+[ GMT,												  1	  ]
+[ GMT-01:00,											  1	  ]
+[ GMT-10:00,											  1	  ]
+[ GMT-11:00,											  1	  ]
+[ GMT+06:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT+03:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT+02:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT+01:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],		  1	  ]
+[ GMT-02:00-DST[first sunday from end of october@02:01,first sunday from end of march@02:01],	  1	  ]
+[ GMT-03:00-DST[first sunday from end of october@02:01,first sunday from end of march@02:01],	  1	  ]
+[ GMT-04:00-DST[first sunday from end of october@02:01,first sunday from end of march@02:01],	  1	  ]
+[ GMT-05:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT-06:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT-07:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ GMT-09:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01],	  1	  ]
+[ 24 ]
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
@@ -129,11 +151,10 @@ end main;	# 40
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
 [ 6,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 17,	  "Htimezones",		  1,	  1		  ]
+[ 17,	  "Htimezones",		  2,	  2		  ]
 [ 18,	  "tmp_22",		  1,	  1		  ]
-[ 19,	  "tmp_23",		  0,	  1		  ]
 
-# 15:05:40 >  
-# 15:05:40 >  Done.
-# 15:05:40 >  
+# 21:27:43 >  
+# 21:27:43 >  Done.
+# 21:27:43 >  
 

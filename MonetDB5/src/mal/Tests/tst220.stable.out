@@ -25,10 +25,10 @@ stdout of test 'tst220` in directory 'src/mal` itself:
 #end steal; 
 function user.steal(bb:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (steal:bat[:any_1,:any_2])<-(bb:bat[:any_1,:any_2])
     i := bbp.getLRefCount(bb);	# 1 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any_1,:any_2])
-    io.printf("enter function refcount =%d[2,4]\n",i);	# 2 IOprint_formatted_int (_3:int)<-(_4:str)(i:int)
+    io.printf("enter function refcount =%d[2,3]\n",i);	# 2 IOprint_formatted_int (_3:int)<-(_4:str)(i:int)
     loc := bb;	# 3  (loc:bat[:any_1,:any_2])<-(bb:bat[:any_1,:any_2])
     i := bbp.getLRefCount(bb);	# 4 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any_1,:any_2])
-    io.printf("local in function refcount =%d[3,5]\n",i);	# 5 IOprint_formatted_int (_6:int)<-(_7:str)(i:int)
+    io.printf("local in function refcount =%d[3,4]\n",i);	# 5 IOprint_formatted_int (_6:int)<-(_7:str)(i:int)
     return bb;	# 6  (bb:bat[:any_1,:any_2])
 end steal;	# 7  
 #
@@ -126,11 +126,11 @@ function user.main():void;	# 0  (main:void)
     io.printf("call function\n");	# 34 IOprint_str (_35:int)<-(_36:str)
     d := user.steal(b);	# 35  (d:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 36 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("return from function refcount =%d[3]\n",i);	# 37 IOprint_formatted_int (_38:int)<-(_39:str)(i:int)
+    io.printf("return from function refcount =%d[2]\n",i);	# 37 IOprint_formatted_int (_38:int)<-(_39:str)(i:int)
     io.printf("check self replacement, overrule refcount!\n");	# 38 IOprint_str (_40:int)<-(_41:str)
     b := user.steal(b);	# 39  (b:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 40 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("return from function refcount =%d[3]\n",i);	# 41 IOprint_formatted_int (_42:int)<-(_39:str)(i:int)
+    io.printf("return from function refcount =%d[2]\n",i);	# 41 IOprint_formatted_int (_42:int)<-(_39:str)(i:int)
     z := bbp.getRefCount();	# 42 CMDbbpRefCount (z:bat[:int,:int])
     zl := bbp.getLRefCount();	# 43 CMDbbpLRefCount (zl:bat[:int,:int])
     zn := bbp.getNames();	# 44 CMDbbpNames (zn:bat[:int,:str])
@@ -154,13 +154,13 @@ assignment refcount =1[1]
 after 4rd assignment refcount =2[2]
 after 5rd assignment refcount =1[1]
 call function
-enter function refcount =2[2,4]
-local in function refcount =3[3,5]
-return from function refcount =3[3]
+enter function refcount =2[2,3]
+local in function refcount =3[3,4]
+return from function refcount =2[2]
 check self replacement, overrule refcount!
-enter function refcount =4[2,4]
-local in function refcount =5[3,5]
-return from function refcount =3[3]
+enter function refcount =3[2,3]
+local in function refcount =4[3,4]
+return from function refcount =2[2]
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
@@ -171,7 +171,7 @@ return from function refcount =3[3]
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
 [ 6,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 7,	  "tmp_7",		  0,	  3		  ]
+[ 7,	  "tmp_7",		  0,	  2		  ]
 [ 8,	  "tmp_10",		  0,	  2		  ]
 [ 9,	  "tmp_11",		  0,	  1		  ]
 

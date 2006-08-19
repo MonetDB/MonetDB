@@ -1,11 +1,11 @@
 # a test checking BAT reference counting under various situations
 function steal(bb:bat[:any_1,:any_2]) :bat[:any_1,:any_2];
 	i:= bbp.getLRefCount(bb);
-	io.printf("enter function refcount =%d[2,4]\n",i);
+	io.printf("enter function refcount =%d[2,3]\n",i);
 
 	loc:= bb;
 	i:= bbp.getLRefCount(bb);
-	io.printf("local in function refcount =%d[3,5]\n",i);
+	io.printf("local in function refcount =%d[3,4]\n",i);
 
 	return bb;
 end steal; 
@@ -56,12 +56,12 @@ end createone;
 	io.printf("call function\n");
 	d:= user.steal(b);
 	i:= bbp.getLRefCount(b);
-	io.printf("return from function refcount =%d[3]\n",i);
+	io.printf("return from function refcount =%d[2]\n",i);
 
 	io.printf("check self replacement, overrule refcount!\n");
 	b:= user.steal(b);
 	i:= bbp.getLRefCount(b);
-	io.printf("return from function refcount =%d[3]\n",i);
+	io.printf("return from function refcount =%d[2]\n",i);
 
 	z:= bbp.getRefCount();
 	zl:= bbp.getLRefCount();
