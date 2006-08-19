@@ -1563,6 +1563,13 @@ unnest_proxy (PFla_op_t *root,
     assert (conflict_list);
     assert (exit_refs);
     assert (checked_nodes);
+#ifdef NDEBUG
+    /* StM: otherwise compilers (correctly) complain about these being
+       unuset in case assertions are switched off */
+    (void) root;
+    (void) exit_refs;
+    (void) checked_nodes;
+#endif
 
     /* Skip proxy generation if operators other than proxy1
        are referenced from outside the pattern. */
