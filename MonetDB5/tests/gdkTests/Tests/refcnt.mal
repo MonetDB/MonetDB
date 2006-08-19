@@ -53,18 +53,19 @@ user.tmp();
 #top.rename("top");
 top := bat.new(:str,:bat);
 bat.setName(top,"top");
-mdb.start();
 
 #
 #addBAT(top,"one");
 #addBAT(top,"two");
 user.addBAT(top,"one");
+user.tmp();
 user.addBAT(top,"two");
 #tmp();
 user.tmp();
 #
 #delBAT(top,"one");
 user.delBAT(top,"one");
+io.print("one droppped");
 #tmp();
 user.tmp();
 #
@@ -75,9 +76,11 @@ bat.insert(m,10:oid,"ten");
 #i.insert(oid(20),"twenty");
 bat.insert(m,20:oid,"twenty");
 #VAR res := [createBAT](i);
+io.print("do multiplex");
 r:bat[:oid,:bat]:= optimizer.multiplex("user.createBAT",m);
 io.print(r);
 #tmp();
+io.print("done multiplex");
 user.tmp();
 #
 #top := nil;
@@ -86,10 +89,14 @@ user.tmp();
 #}
 #
 ##BUGS:
+# in M5 this bug does not appear, because there is one reference
+# returned from createBAT.
 ##- bat("one") still exists, due to not decreasing the reference counter
 ##  at the delete from bat("top")
 ##- bat("ten") and bat("twenty") still exist, due to creation during multiplex
 ##  operation (?)
+# moreover, due to multiplex code inlining the reference count of "twenty" is 2
+# instead of the initial expected 1.
 #tmp();
 #quit();
 clients.quit();
