@@ -260,7 +260,7 @@ Finalize the factory loop
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
-	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
+	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk, OPT_CHECK_ALL);
 @-
 At this stage we can once call upon the optimizers to do their work.
 Static known information is known and stored in constant variables,
@@ -329,7 +329,7 @@ care of.
 @c
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
-			optimizerCheck(mb,"sql.baseline",-1,0);
+			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
@@ -365,7 +365,7 @@ care of.
 			optimizer =nxt;
 		} 
 		if( c->debug)
-			optimizerCheck(mb,"sql.baseline",-1,0);
+			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 		optimizeMALBlock(mb);
 	}
 }
@@ -604,7 +604,7 @@ The code is wrong, we should not try it more than once
 		GDKfree(old);
 	}
 	if( total) {
-		optimizerCheck(mb,"sql.kdiff_replacement",1,GDKusec()-clk);
+		optimizerCheck(mb,"sql.kdiff_replacement",1,GDKusec()-clk, OPT_CHECK_ALL);
 #ifdef _SQL_OPTIMIZER_DEBUG
 		printf("FINAL STAGE errors=%d\n",mb->errors);
 		printFunction(GDKout,mb,LIST_MAL_ALL);

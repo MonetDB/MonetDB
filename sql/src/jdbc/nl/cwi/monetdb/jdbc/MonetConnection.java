@@ -317,13 +317,13 @@ public class MonetConnection implements Connection {
 			commandTempl[1] = null;		// post
 			commandTempl[2] = "\nX";	// separator
 		} else if (lang == LANG_XQUERY) {
-			queryTempl[0] = "mapi-seq\n";
+			queryTempl[0] = "s";
 			queryTempl[1] = null;
 			queryTempl[2] = ",";
 
-			commandTempl[0] = null;		// pre
+			commandTempl[0] = "X";		// pre
 			commandTempl[1] = null;		// post
-			commandTempl[2] = null;		// separator
+			commandTempl[2] = "\nX";	// separator
 		} else if (lang == LANG_MIL) {
 			queryTempl[0] = null;
 			queryTempl[1] = ";";
@@ -347,6 +347,12 @@ public class MonetConnection implements Connection {
 			offset -= (offset / 60) * 60;
 			tz += (offset < 10 ? "0" : "") + offset;
 			sendIndependantCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
+		}
+		// the following initialisers are only valid when the language
+		// is XQUERY...
+		if (lang == LANG_XQUERY) {
+			// output format 
+			sendControlCommand("output seq");
 		}
 
 		// we're absolutely not closed, since we're brand new
