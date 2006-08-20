@@ -1,8 +1,12 @@
-<MXQerrors><MXQerror id="FOAR0001">
+<MXQerrors>
+(: http://www.w3.org/TR/xpath-functions/#error-summary :)
+           <MXQerror id="FOER0000">
+ERROR: err:FOER0000
+</MXQerror><MXQerror id="FOAR0001">
 ERROR: err:FOAR0001: division by 0 is forbidden.
 </MXQerror><MXQerror id="FOAR0002">
-ERROR: err:FOAR0001: division by 0 is forbidden.
 =ERROR: err:FOAR0002, Numeric operation overflow/underflow.
+ERROR: err:FOAR0001: division by 0 is forbidden.
 </MXQerror><MXQerror id="FOCA0001">
 ERROR: err:FOCA0001, Input value too large for decimal.
 </MXQerror><MXQerror id="FOCA0002">
@@ -45,8 +49,6 @@ ERROR: err:FODT0001, Overflow/underflow in date/time operation.
 ERROR: err:FODT0002, Overflow/underflow in duration operation.
 </MXQerror><MXQerror id="FODT0003">
 ERROR: err:FODT0003, Invalid timezone value.
-</MXQerror><MXQerror id="FOER0000">
-ERROR: err:FOER0000
 </MXQerror><MXQerror id="FONC0001">
 =ERROR: err:FONC0001, ???
 illegal reference to context node: at (0,0-0,0): ``.'\'\'' is unbound
@@ -107,6 +109,7 @@ type error: illegal arguments for function ...
 </MXQerror><MXQerror id="FOTY0012">
 ERROR: err:FOTY0012, Argument node does not have a typed value.
 </MXQerror>
+(: http://www.w3.org/TR/xslt-xquery-serialization/#id-errors :)
            <MXQerror id=".SENR0001">
 ERROR: err:SENR0001, It is a error [err:SENR0001] if an item in S5 in sequence normalization is an attribute node or a namespace node.
 </MXQerror><MXQerror id=".SERE0003">
@@ -140,6 +143,7 @@ ERROR: err:SERE0015, It is an error to use the HTML output method when > appears
 </MXQerror><MXQerror id=".SEPM0016">
 ERROR: err:SEPM0016, It is a an error if a parameter value is invalid for the defined domain.
 </MXQerror>
+(: http://www.w3.org/TR/xquery/#id-errors :)
            <MXQerror id=".XPST0001">
 ERROR: err:XPST0001, It is a static error if analysis of an expression relies on some component of the static context that has not been assigned a value.
 </MXQerror><MXQerror id=".XPDY0002">
