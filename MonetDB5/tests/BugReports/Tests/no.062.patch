@@ -1,9 +1,0 @@
-# this file should be ran after a M2m compile
-echo "patch no.062.mal"
-echo "reason: remove ambiguous code"
-ex - no.062.mal <<!EOF
-g/1-1/s//1 - 1/
-g/^!/d
-w no.062.mal
-q
-!EOF
