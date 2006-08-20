@@ -3184,14 +3184,17 @@ def main(argv) :
         product = os.path.split(env['TSTSRCBASE'])[-1]
         if product == 'sql':
             product += env['TST_FIVE']
-        compiler = 'NTV'
-        if os.name != 'nt':
+        compiler = ''
+        if os.name == 'nt':
+            compiler = 'NTV'
+        else:
             f = os.path.join(env['TSTBLDBASE'],'Makefile')
-            r = re.compile("^CC = (.*)$", re.MULTILINE)
-            for l in fileinput.input(f):
-                mt = r.match(l)
-                if mt:
-                    compiler = mt.group(1)
+            if os.path.isfile(f):
+                r = re.compile("^CC = (.*)$", re.MULTILINE)
+                for l in fileinput.input(f):
+                    mt = r.match(l)
+                    if mt:
+                        compiler = mt.group(1)
 
         # start of times.sql output preparation
         try:
