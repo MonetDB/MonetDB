@@ -6,7 +6,7 @@ class Popen:
 		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
 
 def server_start(x,dbname,mapi_port):
-    srvcmd = '%s --debug=10 --dbname "%s"' % (re.sub('mapi_port=.* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
+    srvcmd = '%s --debug=10 --dbname "%s"' % (re.sub('mapi_port=[^ ]* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
     return Popen(srvcmd);
 
 def server_stop(srv):
