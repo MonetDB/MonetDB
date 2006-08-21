@@ -185,35 +185,34 @@ function user.main():void;	# 0  (main:void)
     bat.insert(m,20@0:oid,"twenty");	# 46 BKCinsert_bun (_52:void)<-(m:bat[:oid,:str])(_53:oid)(_54:str)
 #VAR res := [createBAT](i); 	# 47  (_55:str)
     io.print("do multiplex");	# 48 IOprint_val (_56:int)<-(_57:str)
-    _79 := bat.new(:oid,:BAT);	# 49 CMDBATnew (_79:bat[:oid,:BAT])<-(_45:oid)(_27:BAT)
-barrier (_81,_82,_83):= bat.newIterator(m);	# 50 CHPbunIterator (_81:lng)(_82:oid)(_83:str)<-(m:bat[:oid,:str]) jump 56
-    _85 := user.createBAT(_83);	# 51  (_85:BAT)<-(_83:str)
-    bat.insert(_79,_82,_85);	# 52 BKCinsert_bun (_86:void)<-(_79:bat[:oid,:BAT])(_82:oid)(_85:BAT)
+    _78 := bat.new(:oid,:BAT);	# 49 CMDBATnew (_78:bat[:oid,:BAT])<-(_45:oid)(_27:BAT)
+barrier (_80,_81,_82):= bat.newIterator(m);	# 50 CHPbunIterator (_80:lng)(_81:oid)(_82:str)<-(m:bat[:oid,:str]) jump 56
+    _84 := user.createBAT(_82);	# 51  (_84:BAT)<-(_82:str)
+    bat.insert(_78,_81,_84);	# 52 BKCinsert_bun (_85:void)<-(_78:bat[:oid,:BAT])(_81:oid)(_84:BAT)
 catch MALexception:str ;	# 53  (MALexception:str) jump 54
 exit MALexception:str ;	# 54  (MALexception:str)
-    redo (_81,_82,_83):= bat.hasMoreElements(m);	# 55 CHPbunHasMoreElements (_81:lng)(_82:oid)(_83:str)<-(m:bat[:oid,:str]) jump 51
-exit (_81,_82,_83);	# 56  (_81:lng)(_82:oid)(_83:str)
-    r:bat[:oid,:BAT]  := _79;	# 57  (r:bat[:oid,:BAT])<-(_79:bat[:oid,:BAT])
+    redo (_80,_81,_82):= bat.hasMoreElements(m);	# 55 CHPbunHasMoreElements (_80:lng)(_81:oid)(_82:str)<-(m:bat[:oid,:str]) jump 51
+exit (_80,_81,_82);	# 56  (_80:lng)(_81:oid)(_82:str)
+    r:bat[:oid,:BAT]  := _78;	# 57  (r:bat[:oid,:BAT])<-(_78:bat[:oid,:BAT])
     io.print(r);	# 58 IOprint_val (_60:int)<-(r:bat[:oid,:BAT])
 #tmp(); 	# 59  (_61:str)
     io.print("done multiplex");	# 60 IOprint_val (_62:int)<-(_63:str)
-    user.tmp();	# 61  (_64:void)
-#top := nil; 	# 62  (_65:str)
-#res := nil; 	# 63  (_66:str)
-#} 	# 64  (_67:str)
-##BUGS: 	# 65  (_68:str)
-# in M5 this bug does not appear, because there is one reference 	# 66  (_69:str)
-# returned from createBAT. 	# 67  (_70:str)
-##- bat("one") still exists, due to not decreasing the reference counter 	# 68  (_71:str)
-##  at the delete from bat("top") 	# 69  (_72:str)
-##- bat("ten") and bat("twenty") still exist, due to creation during multiplex 	# 70  (_73:str)
-##  operation (?) 	# 71  (_74:str)
-# moreover, due to multiplex code inlining the reference count of "twenty" is 2 	# 72  (_75:str)
-# instead of the initial expected 1. 	# 73  (_76:str)
-#tmp(); 	# 74  (_61:str)
-#quit(); 	# 75  (_77:str)
-    clients.quit();	# 76 CLTquitDefault (_78:void)
-end main;	# 77  
+#top := nil; 	# 61  (_64:str)
+#res := nil; 	# 62  (_65:str)
+#} 	# 63  (_66:str)
+##BUGS: 	# 64  (_67:str)
+# in M5 this bug does not appear, because there is one reference 	# 65  (_68:str)
+# returned from createBAT. 	# 66  (_69:str)
+##- bat("one") still exists, due to not decreasing the reference counter 	# 67  (_70:str)
+##  at the delete from bat("top") 	# 68  (_71:str)
+##- bat("ten") and bat("twenty") still exist, due to creation during multiplex 	# 69  (_72:str)
+##  operation (?) 	# 70  (_73:str)
+# moreover, due to multiplex code inlining the reference count of "twenty" is 2 	# 71  (_74:str)
+# instead of the initial expected 1. 	# 72  (_75:str)
+#tmp(); 	# 73  (_61:str)
+#quit(); 	# 74  (_76:str)
+    clients.quit();	# 75 CLTquitDefault (_77:void)
+end main;	# 76  
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
@@ -270,22 +269,6 @@ end main;	# 77
 [ 10@0,	  <ten>		  ]
 [ 20@0,	  <twenty>	  ]
 [ "done multiplex" ]
-#---------------------------------------------------------#
-# bbp	name			refcnt	lrefcnt		  # name
-# int	str			int	int		  # type
-#---------------------------------------------------------#
-[ 1,	  "monet_environment",	  1,	  0		  ]
-[ 2,	  "monet_unicode_case",	  1,	  0		  ]
-[ 3,	  "timezones",		  1,	  0		  ]
-[ 4,	  "M5system_auth_user",	  1,	  1		  ]
-[ 5,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 6,	  "M5system_auth_scen",	  1,	  1		  ]
-[ 7,	  "ten",		  0,	  1		  ]
-[ 8,	  "tmp_10",		  0,	  1		  ]
-[ 10,	  "top",		  0,	  1		  ]
-[ 11,	  "two",		  0,	  1		  ]
-[ 12,	  "twenty",		  0,	  2		  ]
-[ 13,	  "tmp_15",		  0,	  2		  ]
 
 # 20:39:37 >  
 # 20:39:37 >  Done.
