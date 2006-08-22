@@ -148,9 +148,12 @@ ERROR: err:SEPM0016, It is a an error if a parameter value is invalid for the de
            <MXQerror id="XPST0001">
 ERROR: err:XPST0001, It is a static error if analysis of an expression relies on some component of the static context that has not been assigned a value.
 </MXQerror><MXQerror id="XPDY0002">
-ERROR: err:XPDY0002, It is a dynamic error if evaluation of an expression relies on some part of the dynamic context that has not been assigned a value.
+=ERROR: err:XPDY0002, It is a dynamic error if evaluation of an expression relies on some part of the dynamic context that has not been assigned a value.
+illegal reference to context node: at (0,0-0,0): ``.'\'\'' is unbound
 </MXQerror><MXQerror id="XPST0003">
-ERROR: err:XPST0003, It is a static error if an expression is not a valid instance of the grammar defined in A.1 EBNF.
+=ERROR: err:XPST0003, It is a static error if an expression is not a valid instance of the grammar defined in A.1 EBNF.
+syntax error, ...
+parse error: XQuery parsing failed
 </MXQerror><MXQerror id="XPTY0004">
 =ERROR: err:XPTY0004, It is a type error if, during the static analysis phase, an expression is found to have a static type that is not appropriate for the context in which the expression occurs, or during the dynamic evaluation phase, the dynamic type of a value does not match a required type as specified by the matching rules in 2.5.4 SequenceType Matching.
 ERROR: err:XPTY0004: cast to '\''%s'\'' does not allow empty sequences to be casted.
@@ -160,13 +163,16 @@ ERROR: err:XPTY0004: order by expression expects at most one value.
 [err:XPTY0004] Orderspec requires an type whose order can be decided using '\''gt'\'' (given: ...).
 [err:XPTY0004] Orderspec requires at most one atomic item (given: ...).
 </MXQerror><MXQerror id="XPST0005">
-ERROR: err:XPST0005, During the analysis phase, it is a static error if the static type assigned to an expression other than the expression () or data(()) is empty-sequence().
+=ERROR: err:XPST0005, During the analysis phase, it is a static error if the static type assigned to an expression other than the expression () or data(()) is empty-sequence().
+ERROR: path steps are only supported starting from non-attribute nodes
 </MXQerror><MXQerror id="XPTY0006">
 ERROR: err:XPTY0006, (Not currently used.)
 </MXQerror><MXQerror id="XPTY0007">
 ERROR: err:XPTY0007, (Not currently used.)
 </MXQerror><MXQerror id="XPST0008">
-ERROR: err:XPST0008, It is a static error if an expression refers to an element name, attribute name, schema type name, namespace prefix, or variable name that is not defined in the static context, except within an ElementTest or an AttributeTest.
+=ERROR: err:XPST0008, It is a static error if an expression refers to an element name, attribute name, schema type name, namespace prefix, or variable name that is not defined in the static context, except within an ElementTest or an AttributeTest.
+variable(s) out of scope or unknown: at (0,0-0,0): ...
+variable(s) out of scope or unknown: erroneous variable references reported above
 </MXQerror><MXQerror id="XQST0009">
 ERROR: err:XQST0009, An implementation that does not support the Schema Import Feature must raise a static error if a Prolog contains a schema import.
 </MXQerror><MXQerror id="XPST0010">
@@ -182,11 +188,13 @@ ERROR: err:XQST0015, (Not currently used.)
 </MXQerror><MXQerror id="XQST0016">
 ERROR: err:XQST0016, An implementation that does not support the Module Feature raises a static error if it encounters a module declaration or a module import.
 </MXQerror><MXQerror id="XPST0017">
-ERROR: err:XPST0017, It is a static error if the expanded QName and number of arguments in a function call do not match the name and arity of a function signature in the static context.
+=ERROR: err:XPST0017, It is a static error if the expanded QName and number of arguments in a function call do not match the name and arity of a function signature in the static context.
+error in function application: at (0,0-0,0): wrong number of arguments for function `...'\'' (expected ..., got ...)
 </MXQerror><MXQerror id="XPTY0018">
 ERROR: err:XPTY0018, It is a type error if the result of the last step in a path expression contains both nodes and atomic values.
 </MXQerror><MXQerror id="XPTY0019">
-ERROR: err:XPTY0019, It is a type error if the result of a step (other than the last step) in a path expression contains an atomic value.
+=ERROR: err:XPTY0019, It is a type error if the result of a step (other than the last step) in a path expression contains an atomic value.
+ERROR: err:XP0019: Argument to location step must be a node sequence.
 </MXQerror><MXQerror id="XPTY0020">
 ERROR: err:XPTY0020, It is a type error if, in an axis step, the context item is not a node.
 </MXQerror><MXQerror id="XPDY0021">
@@ -310,9 +318,11 @@ ERROR: err:XQST0078, (Not currently used.)
 </MXQerror><MXQerror id="XQST0079">
 ERROR: err:XQST0079, It is a static error if an extension expression contains neither a pragma that is recognized by the implementation nor an expression enclosed in curly braces.
 </MXQerror><MXQerror id="XPST0080">
-ERROR: err:XPST0080, The target type of a cast or castable expression must be an atomic type that is in the in-scope schema types and is not xs:NOTATION or xs:anyAtomicType, optionally followed by the occurrence indicator "?"; otherwise a static error is raised.
+=ERROR: err:XPST0080, The target type of a cast or castable expression must be an atomic type that is in the in-scope schema types and is not xs:NOTATION or xs:anyAtomicType, optionally followed by the occurrence indicator "?"; otherwise a static error is raised.
+type error: casting is only allowed to an atomic type
 </MXQerror><MXQerror id="XPST0081">
-ERROR: err:XPST0081, It is a static error if a QName used in a query contains a namespace prefix that cannot be expanded into a namespace URI by using the statically known namespaces.
+=ERROR: err:XPST0081, It is a static error if a QName used in a query contains a namespace prefix that cannot be expanded into a namespace URI by using the statically known namespaces.
+bad usage of XML namespaces: at ...
 </MXQerror><MXQerror id="XQST0082">
 ERROR: err:XQST0082, (Not currently used.)
 </MXQerror><MXQerror id="XPST0083">
