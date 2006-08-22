@@ -562,6 +562,8 @@ def msc_binary(fd, var, binmap, msc):
             srcs = srcs + " " + t + ".tab.obj"
         elif ext == "yy.o":
             srcs = srcs + " " + t + ".yy.obj"
+        elif ext == 'def':
+            srcs = srcs + ' ' + target
         elif ext in hdrs_ext:
             HDRS.append(target)
         elif ext in scripts_ext:
@@ -757,7 +759,8 @@ def msc_library(fd, var, libmap, msc):
         #if ext not in automake_ext:
         msc['EXTRA_DIST'].append(src)
 
-    srcs = pref + sep + libname + "_OBJS ="
+    srcs = '%s%s%s_OBJS =' % (pref, sep, libname)
+    deps = '%s%s%s_DEPS = $(%s%s%s_OBJS)' % (pref, sep, libname, pref, sep, libname)
     deffile = ''
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":
@@ -782,15 +785,17 @@ def msc_library(fd, var, libmap, msc):
                 if target not in SCRIPTS:
                     SCRIPTS.append(target)
             elif ext == 'def':
-                deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
+                deffile = ' "-DEF:%s"' % target
+                deps = deps + " " + target
     fd.write(srcs + "\n")
+    fd.write(deps + "\n")
     ln = pref + sep + libname
     if libmap.has_key('NOINST'):
-        fd.write("%s.lib: $(%s_OBJS)\n" % (ln, ln.replace('-','_')))
+        fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln.replace('-','_')))
         fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
-        fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
+        fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
 	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
@@ -852,7 +857,8 @@ def msc_libs(fd, var, libsmap, msc):
             if libslist:
                 msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc)
 
-        srcs = "lib"+sep+libname+"_OBJS ="
+        srcs = "lib%s%s_OBJS =" % (sep, libname)
+        deps = "lib%s%s_DEPS = $(lib%s%s_OBJS)" % (sep, libname, sep, libname)
         deffile = ''
         for target in libsmap['TARGETS']:
             t, ext = split_filename(target)
@@ -872,11 +878,13 @@ def msc_libs(fd, var, libsmap, msc):
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 elif ext == 'def':
-                    deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
+                    deffile = ' "-DEF:%s"' % target
+                    deps = deps + " " + target
         fd.write(srcs + "\n")
+        fd.write(deps + "\n")
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
-        fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
+        fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_DEPS)\n")
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
 	fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':

@@ -637,7 +637,7 @@ sabaoth.marchScenario("sql":str);
 
 #include <sql_mem.h>
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBSQL
 #define sql_export extern __declspec(dllimport)
 #else

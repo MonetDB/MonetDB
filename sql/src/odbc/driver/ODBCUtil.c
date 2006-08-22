@@ -42,13 +42,13 @@
 #include <float.h>
 
 
-#ifdef _MSC_VER
+#ifdef WIN32
 /* Windows seems to need this */
 BOOL WINAPI
 DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("DllMain %d\n", reason);
+	ODBCLOG("DllMain %ld\n", (long) reason);
 #endif
 	(void) hinstDLL;
 	(void) reason;

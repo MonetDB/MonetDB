@@ -77,7 +77,7 @@ extern "C" {
 #endif
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
 #define SQL_API __stdcall
 #else
 #define SQL_API

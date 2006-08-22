@@ -220,6 +220,17 @@ def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
             add = add + " " + am_translate_dir(l, am) + ".la"
     return add + "\n"
 
+def am_additional_deps(name, sep, type, list, am, pref = 'lib'):
+    if type == "BIN":
+        add = am_normalize(name)+"_DEPENDENCIES ="
+    elif type == "LIB":
+        add = pref+sep+name+"_la_DEPENDENCIES ="
+    else:
+        add = name + " ="
+    for l in list:
+        add = add + " " + l
+    return add + "\n"
+
 def am_additional_install_libs(name, sep, list, am):
     add = "$(do)install-" + name + "LTLIBRARIES : "
     for l in list:
@@ -665,8 +676,10 @@ def am_library(fd, var, libmap, am):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am, pref))
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
+    ldflags = []
     if libmap.has_key("LDFLAGS"):
-        fd.write(am_additional_flags(libname, sep, "LIB", libmap["LDFLAGS"], am))
+        for x in libmap["LDFLAGS"]:
+            ldflags.append(x)
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
@@ -679,6 +692,7 @@ def am_library(fd, var, libmap, am):
     fullpref = pref+sep+libname+'_la'
     nsrcs = "nodist_"+fullpref+"_SOURCES ="
     srcs = "dist_"+fullpref+"_SOURCES ="
+    deps = []
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -694,8 +708,17 @@ def am_library(fd, var, libmap, am):
                 am_dep(fd, target, libmap['DEPS'][target], am, fullpref+"-")
                 basename = target[:-2]
                 fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, fullpref, basename, basename, basename))
+            elif target[-4:] == '.def':
+                ldflags.append("-export-symbols")
+                ldflags.append(target)
+                deps.append(target)
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
+
+    if deps:
+        fd.write(am_additional_deps(libname, sep, "LIB", deps, am))
+    if ldflags:
+        fd.write(am_additional_flags(libname, sep, "LIB", ldflags, am))
 
     if len(SCRIPTS) > 0:
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))

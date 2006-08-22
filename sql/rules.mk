@@ -89,6 +89,9 @@ HIDE=1
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.cc.tmp >> $*.yy.cc
 	$(RM) $*.yy.cc.tmp
 
+%.def: %.syms
+	cp $< $@
+
 ifdef NEED_MX
 
 %.m: %.mx

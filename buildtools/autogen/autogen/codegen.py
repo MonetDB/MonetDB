@@ -124,6 +124,7 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'pc.in':    [ '.pc' ],
             'ini.in':    [ '.ini' ],
             'rc':       [ '.res' ],
+            'syms':     [ '.def' ],
 }
 
 

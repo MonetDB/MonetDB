@@ -102,7 +102,7 @@ proto::gen_module(ostream &o, const Module &d)
 	o << " */\n\n"; 
 	o << "#include <gdk.h>\n\n";
 
-	o << "#ifdef NATIVE_WIN32\n";
+	o << "#ifdef WIN32\n";
 	o << "#ifndef LIB" << upper(d.Name()) << "\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllimport)\n";
 	o << "#else\n";
