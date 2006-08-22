@@ -13,6 +13,25 @@ AC_PROG_LEX
 AM_PROG_LEX()
 AC_PROG_YACC()
 
+dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
+dnl they work fine with both flex 2.5.4 and 2.5.33.
+dnl To avoid any problems, we refuse to work with flex 2.5.31 "everywhre",
+dnl not only with Pathfider & MEL.
+
+if test "x$LEX" != "x"; then    dnl flex found on the system?
+
+AC_MSG_CHECKING([for flex version])
+flex_ver="`$LEX -V | head -n1`"
+AC_MSG_RESULT($flex_ver)
+
+case "$flex_ver" in
+*2.5.31*)
+  AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
+               please install/use flex 2.5.4 or flex 2.5.33 instead.])
+esac
+
+fi   dnl flex found on the system?
+
 # Checks for libraries.
 
 # Checks for header files.
