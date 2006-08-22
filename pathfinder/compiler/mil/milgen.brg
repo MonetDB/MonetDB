@@ -3194,16 +3194,8 @@ reduce (PFpa_op_t * p, int goalnt)
             env_add (p->env, p->sem.textnode.res, aat_pfrag, frag);
 
             execute (
-                /* FIXME: 
-                 *   The W3C XQuery spec says that a text node constructor
-                 *   accepts an argument of type xs:string (aat_str), not
-                 *   xs:untypedAtomic (aat_uA) as specified below.  This should
-                 *   be rectified once we get around the 
-                 *   fs:item-sequence-to-untypedAtomic-text() business (see
-                 *   comment in fs.brg for TextConstructor).
-                 */
                 assgn (var (v->name),
-                       textnode (VAR (L(p)->env, p->sem.textnode.item, aat_uA),
+                       textnode (VAR (L(p)->env, p->sem.textnode.item, aat_str),
                                  var (PF_MIL_VAR_WS))),
                 assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
                 assgn (var (pre->name), fetch (var (v->name), lit_int (1))),

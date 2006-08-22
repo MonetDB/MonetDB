@@ -3062,11 +3062,32 @@ reduce (PFpnode_t * p, int goalnt)
              *   the empty sequence differently. For now, we leave everything
              *   as it is and wait until the W3C guys know what they want.
              */
+	    PFvar_t *v1 = new_var (NULL);
+	    PFvar_t *v2 = new_var (NULL);
+	    PFvar_t *v3 = new_var (NULL);
             PFfun_t *is2uA =
-                function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
+	      function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
 
-            C(p) = constr (p->kind, APPLY (is2uA, C(L(p))));
-
+	    /* 
+	     * Text node construction:
+	     *
+	     * text { e }
+	     *  ==
+	     * let $v1 := fn:data (e) return
+	     *   let $v2 := pf:item-sequence-to-untypedAtomic ($v1) return
+	     *     let $v3 := $v2 cast as xs:string? return
+	     *        text { $v3 }
+	     */
+	    C(p) = flwr (let (letbind (var (v1), fn_data (C(L(p)))),
+			      nil ()),
+			 flwr (let (letbind (var (v2),
+					     APPLY (is2uA, (var (v1)))),
+				    nil ()),
+			       flwr (let (letbind (var (v3),
+					  cast (seqtype (PFty_opt (PFty_xs_string ())),
+						var (v2))),
+					  nil ()),
+				     constr (p->kind, var (v3)))));   
         } break;
 
         /* CommentConstructor:     comment (Expr) */
