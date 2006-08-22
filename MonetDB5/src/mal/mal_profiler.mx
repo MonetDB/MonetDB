@@ -1418,7 +1418,6 @@ have to safe monitor information.
 @c
 void initProfiler(MalBlkPtr mb){
 	if( mb->profiler) return;
-	mb->profiler = (ProfPtr) GDKmalloc(mb->ssize*sizeof(ProfRecord));
-	memset((char*) mb->profiler, 0, mb->ssize*sizeof(ProfRecord));
+	mb->profiler = (ProfPtr) GDKzalloc(mb->ssize*sizeof(ProfRecord));
 }
 @}

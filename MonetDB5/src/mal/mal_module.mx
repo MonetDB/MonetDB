@@ -106,11 +106,10 @@ point for the modules to be added later.
 	if( nme == NULL){
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-	cur = (Module) GDKmalloc(sizeof(ModuleRecord));
+	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if( cur == NULL){
 		GDKfatal("@1: cannot initialize scope\n");
 	}
-	memset((str)cur, 0, sizeof(ModuleRecord));
 	cur->name = nme;
 	cur->outer = NULL;
 	cur->sibling = NULL;
@@ -130,8 +129,7 @@ Module scopeJump[256][256];  /* to speedup access to correct scope */
 
 void newSubScope(Module scope){
 	int len = (MAXSCOPE)*sizeof(Module);
-	scope->subscope = (Symbol *) GDKmalloc(len);
-	memset((char*)scope->subscope, 0, len);
+	scope->subscope = (Symbol *) GDKzalloc(len);
 }
 @-
 Definition of a new module scope may interfere with concurrent

@@ -552,11 +552,10 @@ newSymbol(str nme, int kind)
 	if (nme == NULL) {
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-	cur = (Symbol) GDKmalloc(sizeof(SymRecord));
+	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
 	if (cur == NULL) {
 		GDKfatal("@1: cannot initialize scope\n");
 	}
-	memset((str) cur, 0, sizeof(SymRecord));
 	cur->name = nme;
 	cur->kind = kind;
 	cur->peer = NULL;
@@ -594,10 +593,9 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
 
-	p = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * maxstmts);
+	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL)
 		GDKfatal("newMalBlk:could not get instruction storage\n");
-	memset((char *) p, 0, sizeof(InstrPtr) * maxstmts);
 	mb->stmt = p;
 
 	mb->stop = 0;
@@ -610,10 +608,9 @@ newMalBlk(int maxvars, int maxstmts)
 	MalBlkPtr mb;
 	VarPtr *v;
 
-	v = (VarPtr *) GDKmalloc(sizeof(VarPtr) * maxvars);
+	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
 	if (v == NULL)
 		GDKfatal("newMalBlk:could not get variable storage\n");
-	memset(v, 0, sizeof(VarPtr) * maxvars);
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if (mb == NULL)
 		GDKfatal("newMalBlk:could not get storage\n");
@@ -690,10 +687,9 @@ copyMalBlk(MalBlkPtr old)
 	MalBlkPtr mb;
 	int i;
 
-	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
+	mb = (MalBlkPtr) GDKzalloc(sizeof(MalBlkRecord));
 	if (mb == NULL)
 		GDKfatal("newMalBlk:could not get storage\n");
-	memset((char *) mb, 0, sizeof(MalBlkRecord));
 	mb->props = old->props;
 	mb->alternative = old->alternative;
 	mb->var = (VarPtr *) GDKmalloc(sizeof(VarPtr) * old->vsize);
@@ -709,11 +705,10 @@ copyMalBlk(MalBlkPtr old)
 		mb->vtop++;
 	}
 
-	mb->stmt = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * old->ssize);
+	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
 
 	if (mb->stmt == NULL)
 		GDKfatal("newMalBlk:could not get instruction storage\n");
-	memset((char *) mb->stmt, 0, sizeof(InstrPtr) * old->ssize);
 
 	mb->stop = old->stop;
 	mb->ssize = old->ssize;
@@ -752,11 +747,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 
 	assert(varsize > 0 && stmtsize > 0);
 	len = sizeof(ValPtr) * (mb->vtop + varsize);
-	v = (VarRecord **) GDKmalloc(len);
+	v = (VarRecord **) GDKzalloc(len);
 	if (v == NULL)
 		GDKfatal("newMalBlk:could not get variable storage\n");
 
-	memset((char *) v, 0, len);
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 
 	if (mb->var)
@@ -766,11 +760,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 	mb->vsize = mb->vtop + varsize;
 
 	len = sizeof(InstrPtr) * (mb->ssize + stmtsize);
-	stmt = (InstrPtr *) GDKmalloc(len);
+	stmt = (InstrPtr *) GDKzalloc(len);
 
 	if (stmt == NULL)
 		GDKfatal("newMalBlk:could not get instruction storage\n");
-	memset((char *) stmt, 0, len);
 	memcpy((str) stmt, (str) mb->stmt, sizeof(InstrPtr) * mb->stop);
 	GDKfree(mb->stmt);
 	mb->stmt = stmt;
@@ -1232,14 +1225,13 @@ cheap to perform a linear search to a variable or constant.
 		if (mb->vtop >mb->vsize)
 			GDKfatal("newVariable:variable administration\n");
 
-        new= (VarPtr *) GDKmalloc(s * sizeof(VarPtr));
+        new= (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
         /*printf("generate new variable block %d\n",s);*/
         if( new== NULL ){
             mb->errors++;
             GDKerror("newMalBlk:no storage left\n");
             return mb->vtop;
         }
-        memset(new, 0, s * sizeof(VarPtr));
         memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
         GDKfree((str)mb->var);
         mb->vsize= s;
@@ -1265,15 +1257,8 @@ newVariable(MalBlkPtr mb, str name, malType type)
 			mb->errors++;
 		}
 	}
-/*
-    if( isReserved(name)){
-        GDKerror("'%s' is a reserved identifier\n",name);
-        mb->errors++;
-    } 
-*/
 	n = mb->vtop;
-	getVar(mb, n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
-	memset((str) getVar(mb, n), 0, sizeof(VarRecord));
+	getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
 	mb->var[n]->name = name;
 	mb->var[n]->props = NULL;
 
@@ -1319,10 +1304,8 @@ newTmpVariable(MalBlkPtr mb, malType type)
 
 	@:makeVarSpace@
 	n = mb->vtop;
-	if (getVar(mb, n) == NULL) {
-		getVar(mb, n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
-		memset((str) getVar(mb, n), 0, sizeof(VarRecord));
-	}
+	if (getVar(mb, n) == NULL) 
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
 /* already captured by memset
     mb->var[n]->name = 0;
     mb->var[n]->props = NULL;
@@ -1392,8 +1375,7 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	VarPtr w;
 
 	(void) src;		/* fool the compiler */
-	w = (VarPtr) GDKmalloc(sizeof(VarRecord));
-	memset((str) w, 0, sizeof(VarRecord));
+	w = (VarPtr) GDKzalloc(sizeof(VarRecord));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
 	w->type = v->type;
 	w->gdktype = v->gdktype;
@@ -1907,14 +1889,13 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 	i = mb->stop;
 	if (i + 1 >= mb->ssize) {
 		int space = (mb->ssize + STMT_INCREMENT) * sizeof(InstrPtr);
-		InstrPtr *newblk = (InstrPtr *) GDKmalloc(space);
+		InstrPtr *newblk = (InstrPtr *) GDKzalloc(space);
 
 		if (newblk == NULL) {
 			mb->errors++;
 			GDKerror("pushInstruction:no storage left\n");
 			return;
 		}
-		memset((char *) newblk, 0, space);
 		memcpy(newblk, mb->stmt, mb->stop * sizeof(InstrPtr));
 
 		mb->ssize += STMT_INCREMENT;
@@ -2555,9 +2536,8 @@ void
 printSignature(stream *fd, Symbol s, int flg)
 {
 	InstrPtr p;
-	str txt = GDKmalloc(BLOCK);
+	str txt = GDKzalloc(BLOCK);
 
-	memset(txt, 0, BLOCK);
 	p = getSignature(s);
 	(void) fcnDefinition(s->def, p, txt, flg);
 	stream_printf(fd, "%s\n", txt);

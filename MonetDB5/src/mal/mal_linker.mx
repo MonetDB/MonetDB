@@ -243,23 +243,18 @@ initM5Loader()
 		mal_set_lock(mal_contextLock, "loadModule");
 		if (moduleLoaded == NULL) {
 			maxmodules = MAXMODULES;
-			moduleLoaded = (str *) GDKmalloc(maxmodules * sizeof(str));
-			memset((char*) moduleLoaded, 0, maxmodules * sizeof(str));
-			moduleFiles = (str *) GDKmalloc(maxmodules * sizeof(str));
-			memset((char*) moduleFiles, 0, maxmodules * sizeof(str));
-			moduleHandle = (void **) GDKmalloc(maxmodules * sizeof(void *));
-			memset((char*) moduleHandle, 0, maxmodules * sizeof(void *));
+			moduleLoaded = (str *) GDKzalloc(maxmodules * sizeof(str));
+			moduleFiles = (str *) GDKzalloc(maxmodules * sizeof(str));
+			moduleHandle = (void **) GDKzalloc(maxmodules * sizeof(void *));
 			lastmodule = 0;
 		}
 		mal_unset_lock(mal_contextLock, "loadModule");
 	} else if (lastmodule + 2 == maxmodules) {
 		/* guarantee at least one free slot */
 		mal_set_lock(mal_contextLock, "loadModule");
-		newModuleLoaded = (str *) GDKmalloc(newsize * sizeof(str));
-		newModuleFiles = (str *) GDKmalloc(newsize * sizeof(str));
-		newModuleHandle = (void **) GDKmalloc(newsize * sizeof(void *));
-		memset((char *) newModuleLoaded, 0, newsize * sizeof(str));
-		memset((char *) newModuleFiles, 0, newsize * sizeof(str));
+		newModuleLoaded = (str *) GDKzalloc(newsize * sizeof(str));
+		newModuleFiles = (str *) GDKzalloc(newsize * sizeof(str));
+		newModuleHandle = (void **) GDKzalloc(newsize * sizeof(void *));
 		memcpy((char *) newModuleLoaded, (char *) moduleLoaded, maxmodules * sizeof(str *));
 		memcpy((char *) newModuleFiles, (char *) moduleFiles, maxmodules * sizeof(str));
 		memcpy((char *) newModuleHandle, (char *) moduleHandle, maxmodules * sizeof(void **));

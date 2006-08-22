@@ -332,8 +332,7 @@ str strCopy(Client cntxt, int length){
 	int i;
 
 	i = length<4 ? 4: length;
-	s = GDKmalloc(i);
-	memset(s,0,i);
+	s = GDKzalloc(i);
 	if (s == 0) 
 		GDKfatal("FATAL:strCopy:");
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2) );

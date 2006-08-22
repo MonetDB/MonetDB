@@ -246,8 +246,7 @@ The hierarchy of object spaces ends at the root of the tree.
 This is a dummy element and should contain system-wide objects
 only.
 @= newBOX
-	obj= (Box) GDKmalloc(sizeof(BoxRecord));
-	memset((char*) obj, 0, sizeof(BoxRecord));
+	obj= (Box) GDKzalloc(sizeof(BoxRecord));
 	obj->name= GDKstrdup(name);
 	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 	obj->val = newGlobalStack(MAXVARS);

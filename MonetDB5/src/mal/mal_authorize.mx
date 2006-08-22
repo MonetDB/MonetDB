@@ -94,6 +94,11 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 static str AUTHdecypherValue(str *ret, str *value);
 static str AUTHcypherValue(str *ret, str *value);
 static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
+
+static BAT *user = NULL;
+static BAT *pass = NULL;
+static BAT *scen = NULL;
+
 /**
  * Requires the current client to be the admin user.  If not the case,
  * this function returns an InvalidCredentialsException.
@@ -103,7 +108,7 @@ AUTHrequireAdmin() {
 	oid id = MCgetClient()->user;
 
 	if (id != 0) {
-		char u[BUFSIZ];
+		char u[BUFSIZ]="";
 		str user = u;
 		str tmp;
 		
@@ -122,9 +127,9 @@ AUTHrequireAdmin() {
 str
 AUTHrequireAdminOrUser(str *username) {
 	oid id = MCgetClient()->user;
-	char u[BUFSIZ];
+	char u[BUFSIZ]= "";
 	str user = u;
-	str tmp;
+	str tmp= MAL_SUCCEED;
 
 	/* root?  then all is well */
 	if (id == 0) return(MAL_SUCCEED);
@@ -145,16 +150,16 @@ If the BATs do not exist, they are created, and the monetdb/monetdb
 administrator account is added.  Initialising the authorization tables
 can only be done after the GDK kernel has been initialized.
 @c
-static BAT *user = NULL;
-static BAT *pass = NULL;
-static BAT *scen = NULL;
-
 void
 AUTHcommit() {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
+	assert(b);
 
+	assert(user);
 	BUNappend(b, BATgetId(user), FALSE);
+	assert(pass);
 	BUNappend(b, BATgetId(pass), FALSE);
+	assert(pass);
 	BUNappend(b, BATgetId(scen), FALSE);
 	TMsubcommit(b);
 	BBPreclaim(b);
@@ -282,6 +287,9 @@ AUTHcheckCredentials(
 	oid *id;
 
 	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(username));
+	assert(user);
+	assert(pass);
+	assert(scen);
 
 	if (*username == NULL || strNil(*username))
 		throwIC("checkCredentials", "Invalid credentials for unknown user");
@@ -323,7 +331,7 @@ AUTHcheckCredentials(
 	 * apply)
 	 */
 	b = BATselect(scen, id, id);
-	if (BATcount(b) > 0) {
+	if (b && BATcount(b) > 0) {
 		if (*scenario == NULL || strNil(*scenario)) {
 			/* of course we DO NOT tell the exact reason here again */
 			throwICf("checkCredentials", "Invalid credentials for user '%s'",
@@ -366,6 +374,9 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	str hash;
 
 	rethrow("addUser", tmp, AUTHrequireAdmin());
+	assert(user);
+	assert(pass);
+	assert(scen);
 	
 	/* some pre-condition checks */
 	if (*username == NULL || strNil(*username))
@@ -429,6 +440,9 @@ AUTHremoveUser(str *username) {
 	str tmp;
 
 	rethrow("removeUser", tmp, AUTHrequireAdmin());
+	assert(user);
+	assert(pass);
+	assert(scen);
 
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))

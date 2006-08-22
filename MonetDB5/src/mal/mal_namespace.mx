@@ -119,23 +119,17 @@ static void expandNamespace(int incr){
 
 }
 void initNamespace() {
-	namespace.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
-	memset((char*) namespace.nme, 0, sizeof(str *) * MAXIDENTIFIERS);
-	namespace.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-	memset((char*) namespace.link, 0, sizeof(int) * MAXIDENTIFIERS);
-	namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-	memset((char*) namespace.hit, 0, sizeof(int) * MAXIDENTIFIERS);
-	namespace.length= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-	memset((char*) namespace.length, 0, sizeof(int) * MAXIDENTIFIERS);
+	namespace.nme= (str *) GDKzalloc(sizeof(str *) * MAXIDENTIFIERS);
+	namespace.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
+	namespace.hit= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
+	namespace.length= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	namespace.size = MAXIDENTIFIERS;
 	namespace.nmetop= 256; /* hash overflow */
 
 #ifdef _BACKUP_
-	backup.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
-	memset((char*) backup.nme, 0, sizeof(str *) * MAXIDENTIFIERS);
-	backup.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-	memset((char*) backup.link, 0, sizeof(int) * MAXIDENTIFIERS);
-	backup.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+	backup.nme= (str *) GDKzalloc(sizeof(str *) * MAXIDENTIFIERS);
+	backup.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
+	backup.hit= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	backup.size = MAXIDENTIFIERS;
 	backup.nmetop= 256; /* hash overflow */
 #endif
