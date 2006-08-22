@@ -124,11 +124,6 @@ MSinitClientPrg(Client cntxt, str nme)
 		if (mb->stop <= cnt + 1) {	/* complete comments */
 			mb->typefixed = 0;
 			mb->flowfixed = 0;
-/* use instruction pools
-			for (i--; i > 1; i--)
-				freeInstruction(mb->stmt[i]);
-*/
-
 			mb->stop = 1;
 			cntxt->glb = 0;
 			return;
@@ -673,12 +668,4 @@ and marking all non-temporary variables as being (potentially) used.
 	return msg;
 }
 
-/* copied over from modules/kernel/status */
-@= Pseudo
-        if (BBPindex("view_@1_@2") <= 0)
-                BATname(b, "@2");
-        BATroles(b,"@1","@2");
-        BATmode(b,TRANSIENT);
-        BATfakeCommit(b);
-        *ret = b->batCacheid;
 @}
