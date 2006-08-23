@@ -88,28 +88,25 @@ fixPropertySet(MalBlkPtr mb, int dst)
 	if (mb->var[dst]->props == 0)
 		mb->var[dst]->props = newPropertySet();
 }
-#define getVarCost(Y) (fndProperty(mb->var[Y]->props,"cost")?\
-		(int*) getPropertyValue(mb->var[Y]->props,"cost"):\
-		(int*)getPropertyValue(mb->var[Y]->props,"rows") )
-
-#define getVarSize(Y) (int*)getPropertyValue(mb->var[Y]->props,"size") )
+#define getVarRows(Y) (int*)getPropertyValue(mb->var[Y]->props,"rows")
+#define getVarSize(Y) (int*)getPropertyValue(mb->var[Y]->props,"size")
 
 @-
 The cost formula are repetative
-@= newCost
-		c1 = getVarCost(getArg(p,@1));
+@= newRows
+		c1 = getVarRows(getArg(p,@1));
 		if( c1 == NULL) continue;
 		k= @2;
 		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"cost", "=", TYPE_int, &k);
-@= newCost2
-		c1 = getVarCost(getArg(p,@1));
-		c2 = getVarCost(getArg(p,@2));
+		setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_int, &k);
+@= newRows2
+		c1 = getVarRows(getArg(p,@1));
+		c2 = getVarRows(getArg(p,@2));
 		if( c1 == NULL) continue;
 		if( c2 == NULL) continue;
 		k= (@3);
 		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"cost","=", TYPE_int, &k);
+		setProperty(getProps(getArg(p,0)),"rows","=", TYPE_int, &k);
 @-
 The cost will be used in many places to make decisions.
 Access should be fast.
@@ -119,63 +116,75 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, *c, *c1, *c2, k;
 	InstrPtr p;
+	str sortrevRef= putName("sort_reverse",12);
+	str projectRef= putName("project",7);
 	(void) stk;
 	(void) pci;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p)==algebraRef) {
-			if (getFunctionId(p) && idcmp(getFunctionId(p), "markRef") == 0) {
-				@:newCost(1, *c1)@
+			if (getFunctionId(p) == markTRef  || 
+				getFunctionId(p) == markHRef  ||
+				getFunctionId(p) == sortRef  ||
+				getFunctionId(p) == sortrevRef  ||
+				getFunctionId(p) == projectRef  ||
+				getFunctionId(p) == kunionRef) {
+				@:newRows(1, *c1)@
 			} else if (getFunctionId(p)== kdifferenceRef) {
-				@:newCost2(1, 2, *c1 - *c2 < 0 ? 0 : *c1 - *c2)@
+				@:newRows2(1, 2, *c1 - *c2 < 0 ? 0 : *c1 - *c2)@
 			} else if (getFunctionId(p)==joinRef ) {
-				@:newCost2(1, 2, *c1 < *c2 ? *c1 : *c2)@
-			} else if (getFunctionId(p)== selectRef) {
-				@:newCost(1, *c1 > 100 ? *c1 / 2 : *c1)@
-			} else if (getFunctionId(p)==uselectRef) {
-				@:newCost(1, *c1 > 100 ? *c1 / 2 : *c1)@
+				@:newRows2(1, 2, *c1 < *c2 ? *c1 : *c2)@
+			} else if ( getFunctionId(p)== selectRef ||
+						getFunctionId(p)== uselectRef) {
+				@:newRows(1, *c1 > 100 ? *c1 / 2 : *c1)@
 			} else if (getFunctionId(p)== crossRef) {
-				@:newCost2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2))@
+				@:newRows2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2))@
 			} else if (getFunctionId(p) && idcmp(getFunctionId(p), "tunique") == 0) {
-				@:newCost(1, *c1 < 50 ? *c1 : *c1 / 10)@
-			} else if (getFunctionId(p)==sortRef || 
-						idcmp(getFunctionId(p), "sort_reverse") == 0) {
-				@:newCost(1, *c1)@
+				@:newRows(1, *c1 < 50 ? *c1 : *c1 / 10)@
 			}
-
 		} else if (getModuleId(p)==batRef) {
-			if (getFunctionId(p) == reverseRef) {
-				@:newCost(1, *c1)@
-			} else if (getFunctionId(p)==mirrorRef) {
-				@:newCost(1, *c1)@
+			if (getFunctionId(p) == reverseRef ||
+				getFunctionId(p) == setWriteModeRef  ||
+				getFunctionId(p) == deleteRef  ||
+				getFunctionId(p) == mirrorRef) {
+				@:newRows(1, *c1)@
+			} else if (	getFunctionId(p) == appendRef ){
+				if( p->argc == 4 ){
+					@:newRows2(1,2, *c1 + *c2 +1)@ 
+				}
+			} else if (	getFunctionId(p) == insertRef){
+				@:newRows(1, *c1 + 1)@ /* faked */
 			}
 		} else if (getModuleId(p)==groupRef) {
 			if (getFunctionId(p) ==newRef) {
-				@:newCost(1, *c1 / 10)@
+				@:newRows(1, *c1 / 10)@
 			} else {
-				@:newCost(1, *c1)@
+				@:newRows(1, *c1)@
 			}
 		} else if (getModuleId(p) && idcmp(getModuleId(p), "multiplex") == 0) {
 			if (getFunctionId(p) && idcmp(getFunctionId(p), "script") == 0) {
-				if (getVarCost(getArg(p, 1))) {
-					@:newCost(1, *c1)@
+				if (getVarRows(getArg(p, 1))) {
+					@:newRows(1, *c1)@
 				} else {
-					@:newCost(2, *c1)@
+					@:newRows(2, *c1)@
 				}
 			}
 		} else if (getModuleId(p)== aggrRef) {
-			if (getFunctionId(p) ==sumRef || 
-				getFunctionId(p) ==minRef || 
-				getFunctionId(p) ==maxRef || 
-				getFunctionId(p) ==avgRef) {
-				@:newCost(2, *c1)@
+			if (getFunctionId(p) == sumRef || 
+				getFunctionId(p) == minRef || 
+				getFunctionId(p) == maxRef || 
+				getFunctionId(p) == avgRef) {
+				@:newRows(2, *c1)@
+			} else	if (getFunctionId(p) == countRef){
+				@:newRows(1, 1)@
 			}
 		} else {
 			/* propagate count to cost */
 			for (j = 0; j < p->retc; j++) {
-				if ((c = (int *) getVarCost(p->argv[j])))
-					setProperty(getProps(p->argv[j]), "cost", "=", TYPE_int, c);
+				if( !fndProperty(mb->var[p->argv[j]]->props,"rows") &&
+					(c = (int *) getVarRows(p->argv[j])))
+					setProperty(getProps(p->argv[j]), "rows", "=", TYPE_int, c);
 			}
 		}
 	}

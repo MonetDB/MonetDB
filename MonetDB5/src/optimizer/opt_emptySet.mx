@@ -86,6 +86,7 @@ comment "Move constant expressions out of the blocks";
 
 #define propagate(X) p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
 	p->argc = 2; p->fcn = 0; getFunctionId(p)= getModuleId(p)=NULL;
+
 static void
 ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
@@ -253,12 +254,18 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 }
+@-
+We first have to find all candidates for empty set removal.
+They are recognized by an estimated zero row count and they
+are not the target of an update.
+@c
 
 int
 OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *sets;
-	int i, k = 0;
+	int i, k=0;
+	int *rows;
 	PropertySet ps;
 
 	sets = (int *) alloca(mb->vtop * sizeof(int));
@@ -271,7 +278,10 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		ps = getVarProperties(mb, i);
 		if (fndProperty(ps, "empty")) {
 			sets[k++] = i;
-		}
+		} else
+		if ( (rows= (int*) getPropertyValue(ps, "rows"))   && *rows == 0) {
+			sets[k++] = i;
+		} 
 	}
 	ESevaluate(mb, k, sets);
 	return 1;
