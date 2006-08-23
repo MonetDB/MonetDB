@@ -59,10 +59,16 @@ stderr of test 'typeswitch` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-type error: binding sequence in a for clause has static type `empty'
-# halted in typecheck.brg (reduce), line 457
+# 11:46:07 >  
+# 11:46:07 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 typeswitch.xq
+# 11:46:07 >  
 
-# 23:35:33 >  
-# 23:35:33 >  Done.
-# 23:35:33 >  
+MAPI  = monetdb@localhost:35613
+QUERY = for $a in () return typeswitch ($a) case xs:integer return "integer" default return "empty"
+ERROR = !type error: binding sequence in a for clause has static type `empty'
+        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/typecheck.brg (reduce), line 456
+
+# 11:46:08 >  
+# 11:46:08 >  Done.
+# 11:46:08 >  
 

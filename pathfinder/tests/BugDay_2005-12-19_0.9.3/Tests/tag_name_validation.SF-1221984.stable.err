@@ -68,7 +68,9 @@ stderr of test 'tag_name_validation.SF-1221984` in directory 'tests/BugDay_2005-
 # 13:24:50 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=55645 tag_name_validation.SF-1221984.xq
 # 13:24:50 >  
 
-ERROR: err:XPTY0004: illegal qname ' '
+MAPI  = monetdb@localhost:35613
+QUERY = element { " " } { "test" }
+ERROR = !ERROR: err:XPTY0004: illegal qname ' '
 
 # 13:24:50 >  
 # 13:24:50 >  Done.

@@ -68,9 +68,11 @@ stderr of test 'strange_ampersand.SF-1208620` in directory 'tests/BugDay_2005-11
 # 16:58:14 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=59940 strange_ampersand.SF-1208620.xq
 # 16:58:14 >  
 
-syntax error, unexpected invalid_character on line 1, column 9 (next token is `"')
-parse error: XQuery parsing failed
-# halted in /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/compiler/parser/parser.y (PFparse), line 2440
+MAPI  = monetdb@localhost:35613
+QUERY = "typo &l;"
+ERROR = !syntax error, unexpected invalid_character on line 1, column 9 (next token is `"')
+        !parse error: XQuery parsing failed
+        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/parser/parser.y (PFparse), line 2868
 
 # 16:58:14 >  
 # 16:58:14 >  Done.

@@ -63,7 +63,10 @@ stderr of test 'orderby3` in directory 'tests/XQuery` itself:
 # 15:35:29 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=53332 orderby3.xq
 # 15:35:29 >  
 
-type error: [err:XPTY0004] Orderspec requires an type whose order can be decided using 'gt' (given: string | untypedAtomic | decimal | integer).
+MAPI  = monetdb@localhost:35613
+QUERY = for $a in (1, "foo", data(attribute bar { 23 }), 3.4, 25) order by $a return $a
+ERROR = !type error: [err:XPTY0004] Orderspec requires an type whose order can be decided using 'gt' (given: string | untypedAtomic | decimal | integer).
+        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/typecheck.brg (reduce), line 1031
 
 # 15:35:29 >  
 # 15:35:29 >  Done.

@@ -59,15 +59,15 @@ stderr of test 'cast2` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-# 19:01:38 >  
-# 19:01:38 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=51436 cast2.xq
-# 19:01:38 >  
+# 11:45:25 >  
+# 11:45:25 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 cast2.xq
+# 11:45:25 >  
 
-ERROR: err:FORG0001: could not cast value to integer.
+MAPI  = monetdb@localhost:35613
+QUERY = for $a in (1, 2.3, "34 blub", data(attribute foobar { "" }), data(<bar><baz>20</baz>100</bar>)) return $a cast as xs:integer
+ERROR = !ERROR: err:FORG0001: could not cast value to integer.
 
-
-
-# 19:01:38 >  
-# 19:01:38 >  Done.
-# 19:01:38 >  
+# 11:45:25 >  
+# 11:45:25 >  Done.
+# 11:45:25 >  
 

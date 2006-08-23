@@ -59,13 +59,28 @@ stderr of test 'typing3` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-type error: no variant of function fn:foo accepts the given argument type(s): decimal
-type error: maybe you meant:
-type error:   fn:foo (xs:integer) as item*
-type error: illegal arguments for function fn:foo
-# halted in /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/compiler/semantics/typecheck.brg (overload), line 1121
+# 11:46:49 >  
+# 11:46:49 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 typing3.xq
+# 11:46:49 >  
 
-# 23:33:14 >  
-# 23:33:14 >  Done.
-# 23:33:14 >  
+MAPI  = monetdb@localhost:35613
+QUERY = (: The `as xs:decimal' sets the *static* type of $a to
+           xs:decimal (without affecting its *dynamic type).
+           Function foo() is thus called with ill-typed parameters,
+           and static typing will complain. :)
+        declare function foo ($x as xs:integer)
+        {
+          $x
+        };
+        
+        let $a as xs:decimal := 42 return foo ($a)
+ERROR = !type error: no variant of function fn:foo accepts the given argument type(s): decimal
+        !type error: maybe you meant:
+        !type error:   fn:foo (xs:integer) as item*
+        !type error: illegal arguments for function fn:foo
+        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/typecheck.brg (fun_not_found), line 1229
+
+# 11:46:49 >  
+# 11:46:49 >  Done.
+# 11:46:49 >  
 

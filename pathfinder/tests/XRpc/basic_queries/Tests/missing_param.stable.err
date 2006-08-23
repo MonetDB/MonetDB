@@ -64,14 +64,18 @@ stderr of test 'missing_param` in directory 'tests/XRpc/basic_queries` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_Soap
 
-# 11:42:25 >  
-# 11:42:25 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50652 soap_missing_param.xq
-# 11:42:25 >  
+# 11:46:54 >  
+# 11:46:54 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35613 missing_param.xq
+# 11:46:54 >  
 
-error in function application: at (3,1-3,22): wrong number of arguments for function `func:add' (expected 3, got 2)
-# halted in ../../../compiler/semantics/functions.c (check_fun_usage), line 359
+MAPI  = monetdb@localhost:35613
+QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "/net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/xquery/tests/XRpc/basic_queries/Tests/basicfunctions.xq";
+        
+        xrpc:add(50, (10, 30))
+ERROR = !error in function application: at (3,3-3,23): wrong number of arguments for function `func:add' (expected 3, got 2)
+        !# halted in /ufs/fabian/scratch/monetdb/current/xquery/compiler/semantics/functions.c (check_fun_usage), line 362
 
-# 11:42:25 >  
-# 11:42:25 >  Done.
-# 11:42:25 >  
+# 11:46:54 >  
+# 11:46:54 >  Done.
+# 11:46:54 >  
 
