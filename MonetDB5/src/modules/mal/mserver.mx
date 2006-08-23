@@ -279,6 +279,7 @@ address SERVERepilogue;
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
+#include "mal_sabaoth.h"
 #include "C/Mapi.h"
 
 #ifdef NATIVE_WIN32
@@ -588,6 +589,7 @@ error:
 void SERVERannounce(struct in_addr addr, int port, int ssl) {
 	str buf = alloca(sizeof(char) * 1024);
 	str host = NULL;
+	bit bssl = ssl != 0 ? 1 : 0;
 
 	if (addr.s_addr == INADDR_ANY) {
 		host = alloca(sizeof(char) * (90 + 1));
@@ -605,9 +607,8 @@ void SERVERannounce(struct in_addr addr, int port, int ssl) {
 				((ntohl(addr.s_addr) >> 8) & 0xff),
 				(ntohl(addr.s_addr) & 0xff));
 	}
-	snprintf(buf, 1023, "sabaoth.marchConnection(\"%s\":str, %d:int, %d:bit);",
-			host, port, ssl != 0 ? 1 : 0);
-	callString(mal_clients, buf, 0);
+	if ((buf = SABAOTHmarchConnection(&ssl, &host, &port, &bssl)) != MAL_SUCCEED)
+		GDKfree(buf);
 }
 
 str
