@@ -41,7 +41,11 @@ perl -i -p -e 's|^declare variable \$input-context1 external;|declare variable \
 )
 </h>
 ,
-for $tst in doc("XQTSCatalog.xml")//*:test-case return
+for $tst in doc("XQTSCatalog.xml")//*:test-case
+(:[for $et in *:expected-error/text() where (starts-with($et,"XQST0046")) return $et]:)
+(:[not(*:expected-error)]:)
+for $yes in doc("/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/pathfinder/tests/XQTS.supported.xml")//yes 
+where (<x>{fn:data($tst/@FilePath)}{fn:data($tst/@name)}.xq</x> = <x>{fn:data($yes/@FilePathName)}</x>) return
 if ($tst/*:output-file or $tst/*:expected-error) then
 <t>
 

@@ -51,6 +51,8 @@ mkdir -p "$XQTS_DST" || exit 1
 cat "$THISDIR/XQTS.xq" \
  | sed -e 's|doc("[^")]*XQTSCatalog.xml")|doc("'"$XQTS_SRC"'/XQTSCatalog.xml")|g' \
        -e 's|doc("[^")]*XQTS.Errors.xml")|doc("'"$THISDIR"'/XQTS.Errors.xml")|g' \
+       -e 's|doc("[^")]*XQTS.missing.xml")|doc("'"$THISDIR"'/XQTS.missing.xml")|g' \
+       -e 's|doc("[^")]*XQTS.supported.xml")|doc("'"$THISDIR"'/XQTS.supported.xml")|g' \
  | MapiClient -lx -sxml \
  | grep -v '^<.*>$' \
  | sed -e 's|&lt;|<|g' -e 's|&gt;|>|g' \

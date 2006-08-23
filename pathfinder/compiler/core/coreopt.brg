@@ -787,7 +787,7 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_fn, "exactly-one"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_empty ()))
                     PFoops (OOPS_FATAL,
-                            "err:FORG0005, fn:exactly-one called with a"
+                            "err:FORG0005, fn:exactly-one called with a "
                             "sequence containing zero or more than one item.");
                 break;
             }
