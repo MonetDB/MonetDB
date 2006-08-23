@@ -14,7 +14,7 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) \
+INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS) \
 		   -I../optimizer -I../scheduler -I../modules/kernel
 
 MTSAFE
@@ -35,7 +35,8 @@ lib_mal = {
 	SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(READLINE_LIBS)
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(READLINE_LIBS) $(OPENSSL_LIBS)
 }
 #scripts_mal = {
 	#DIR = pkglibdir

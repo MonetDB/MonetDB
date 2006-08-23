@@ -10,16 +10,36 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		chopper.mx language.mx box.mx \
-		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
+		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx mat.mx \
-		mserver.mx sabaoth.mx radix.mx
+		sabaoth.mx radix.mx
 		#datacell.mx 
 
 	HEADERS = h 
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_batExtensions = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = batExtensions.mx
+	HEADERS = h
+	LIBS = ../../mal/libmal ../kernel/lib_bat $(MONETDB_LIBS) -lbat -lstream -lMapi \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_mserver = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = mserver.mx
+	HEADERS = h
+	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream -lMapi \
+                $(OPENSSL_LIBS) $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
