@@ -823,6 +823,7 @@ mal_export str BKCgetSequenceBase(oid *r, int *bid);
 mal_export ssize_t void_replace_bat(BAT *b, BAT *u, bit force);
 mal_export int void_inplace(BAT *b, oid id, ptr val, bit force);
 
+mal_export int CMDbatsize(lng *tot, BAT *b);
 #endif /*_BAT_H_*/
 
 @c
