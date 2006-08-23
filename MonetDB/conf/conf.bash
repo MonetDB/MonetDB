@@ -645,6 +645,9 @@ fi
 
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
 WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
+if [ "${os}${BITS}" = "Linux64" ] ; then
+	WHAT_CONFIGURE="$WHAT_CONFIGURE --libdir=${WHAT_PREFIX}/lib64"
+fi
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
