@@ -34,18 +34,25 @@ done
 
 if [ "${xml}" ] ; then
 	conf_opts="${conf_opts} --with-libxml2=${xml}"
+	if [ -d "${xml}/lib64" ]
+	  then	xmllib="${xml}/lib64"
+	  else	xmllib="${xml}/lib"
+	fi
 	if [ "${xml#/usr}" = "${xml}" ] ; then
 		binpath="${xml}/bin:${binpath}"
-		libpath="${xml}/lib:${libpath}"
+		libpath="${xmllib}:${libpath}"
 	  elif [ "${xml}" != "/usr" ] ; then
 		binpath="${binpath}:${xml}/bin"
-		libpath="${libpath}:${xml}/lib"
+		libpath="${libpath}:${xmllib}"
 	fi
 fi
 
 for d in "${MONETDB_PREFIX}" "${PATHFINDER_PREFIX}" "${softpath}" "${xml}" ; do
+	ddd="${d}/lib${BITS}/pkgconfig"
 	dd="${d}/lib/pkgconfig"
-	if [ "${d}"  -a  -d "${dd}" ] ; then
+	if [ "${d}"  -a  -d "${ddd}" ] ; then
+		export PKG_CONFIG_PATH="${ddd}:${PKG_CONFIG_PATH}"
+	elif [ "${d}"  -a  -d "${dd}" ] ; then
 		export PKG_CONFIG_PATH="${dd}:${PKG_CONFIG_PATH}"
 	fi
 done

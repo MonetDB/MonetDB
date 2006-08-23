@@ -149,9 +149,9 @@ working program.
 cc sample.c -I$MONETDB_PREFIX \
         -I$MONETDB_PREFIX/include/common \
         -I$MONETDB_PREFIX/include/mapi  \
-        -L$MONETDB_PREFIX/lib \
+        -L$MONETDB_PREFIX/lib[64] \
         -lMapi -lutils -lstream \
-        -Wl,--rpath -Wl,$MONETDB_PREFIX/lib/MonetDB:$MONETDB_PREFIX/lib \
+        -Wl,--rpath -Wl,$MONETDB_PREFIX/lib[64]/MonetDB:$MONETDB_PREFIX/lib[64] \
         -o sample
 @end verbatim
 @end example

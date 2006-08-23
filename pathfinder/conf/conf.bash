@@ -108,6 +108,7 @@ pytpath=""
 modpath=""
 mtest_modpath=""
 conf_opts=""
+libdir="lib"
 
 os="`uname | sed 's|_NT-.*$||'`"
 hw="`uname -m`"
@@ -220,6 +221,12 @@ if [ "${BITS}" = "32"  -o  "${os}" = "Linux" ] ; then
 	softpath=${soft32}
   else
 	softpath=${soft64}
+fi
+# "our" libdir
+if [ "${os}${BITS}" = "Linux64" ] ; then
+	libdir=lib64
+  else
+  	libdir=lib
 fi
 
 # (additional) system-specific settings
@@ -489,30 +496,30 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	# but still needed for the rest:
 	if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
 		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
-		modpath="${WHAT_PREFIX}/lib/${pkgdir}"
-		libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
+		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}"
+		libpath="${WHAT_PREFIX}/${libdir}:${modpath}:${libpath}"
 		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 	fi
 	if [ "${os}" = "CYGWIN" ] ; then
 		# CYGWIN finds dlls using the PATH variable 
 		if [ "${what}" = "MONETDB" ] ; then
-			binpath="${WHAT_PREFIX}/lib/bin:${binpath}"
+			binpath="${WHAT_PREFIX}/${libdir}/bin:${binpath}"
 		fi
 	fi
 	if [ "${os}" = "IRIX64" ] ; then
 		# IRIX64 requires this to find dependend modules
 		if [ "${what}" = "MONETDB" ] ; then
-			libpath="${WHAT_PREFIX}/lib/${pkgdir}:${libpath}"
+			libpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${libpath}"
 		  else
-			libpath="${MONETDB_PREFIX}/lib/${pkgdir}:${libpath}"
+			libpath="${MONETDB_PREFIX}/${libdir}/${pkgdir}:${libpath}"
 		fi
 	fi
 	if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
 		# native 64-bit version on SunOS needs this to find libmonet
 		if [ "${what}" = "MONETDB" ] ; then
-			libpath="${WHAT_PREFIX}/lib:${libpath}"
+			libpath="${WHAT_PREFIX}/${libdir}:${libpath}"
 		  else
-			libpath="${MONETDB_PREFIX}/lib:${libpath}"
+			libpath="${MONETDB_PREFIX}/${libdir}:${libpath}"
 		fi
 	fi
   else
@@ -646,7 +653,7 @@ fi
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
 WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
 if [ "${os}${BITS}" = "Linux64" ] ; then
-	WHAT_CONFIGURE="$WHAT_CONFIGURE --libdir=${WHAT_PREFIX}/lib64"
+	WHAT_CONFIGURE="$WHAT_CONFIGURE --libdir=${WHAT_PREFIX}/${libdir}"
 fi
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
@@ -658,7 +665,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
 		echo " MTEST_${what}5=${MTEST_WHAT}"
 		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
 		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"

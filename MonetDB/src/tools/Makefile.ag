@@ -17,8 +17,8 @@
 MTSAFE
 INCLUDES = ../common ../gdk ../monet ../modules/plain ../mapi/clients/C $(PTHREAD_INCS)
 
-GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS) 
-MONETDB_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
+GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
+EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
 STATIC_MODS = \
 	../modules/plain/lib_algebra ../modules/plain/lib_arith \
@@ -81,7 +81,7 @@ largeTOC_SHARED_MODS =	\
 	../modules/contrib/lib_iterator	\
 	../modules/contrib/lib_vector
 
-EXTRA_DIST = static_modules.mx 
+EXTRA_DIST = static_modules.mx
 #monetdb-config.sh.in monetdb-config.bat.in
 
 lib_initmodules = {
@@ -91,19 +91,19 @@ lib_initmodules = {
 
 bin_Mserver = {
 	SOURCES = Mserver.mx
-	LIBS = libinitmodules ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONETDB_LIBS) \
+	LIBS = libinitmodules ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(EXTRA_LIBS) \
 		../common/libmutils ../common/libstream
 }
 
 lib_embeddedmil = {
 	SOURCES = embeddedclient.mx
-	LIBS = libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONETDB_LIBS) \
+	LIBS = libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(EXTRA_LIBS) \
 		../common/libmutils ../common/libstream
 }
 
 bin_Mbeddedmil = {
 	SOURCES = prog.c
-	LIBS = libembeddedmil libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONETDB_LIBS) \
+	LIBS = libembeddedmil libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(EXTRA_LIBS) \
 		../common/libmutils ../common/libstream
 }
 
