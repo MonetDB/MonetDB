@@ -107,14 +107,14 @@ end column;	# 1
 #exit always;
 #end qry1;
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;	# 0  (qry1:bit)<-(A0:sht)(A1:sht)(A2:sht)(A3:date)(A4:int)
-    V6:bat[:void,:date]{count=1000}  := user.bind("sys","lineitem","l_shipdate",0);	# 1  (V6:bat[:void,:date])<-(_7:str)(_8:str)(_9:str)(_10:int)
-    V11:bat[:void,:oid]{count=1000}  := user.bind_dbat("sys","lineitem",0);	# 2  (V11:bat[:void,:oid])<-(_7:str)(_8:str)(_10:int)
-    V22:bat[:void,:bit]{count=1000}  := user.bind("sys","lineitem","l_returnflag",0);	# 3  (V22:bat[:void,:bit])<-(_7:str)(_8:str)(_13:str)(_10:int)
-    V29:bat[:void,:bit]{count=1000}  := user.bind("sys","lineitem","l_linestatus",0);	# 4  (V29:bat[:void,:bit])<-(_7:str)(_8:str)(_15:str)(_10:int)
-    V53:bat[:void,:int]{count=1000}  := user.bind("sys","lineitem","l_quantity",0);	# 5  (V53:bat[:void,:int])<-(_7:str)(_8:str)(_17:str)(_10:int)
-    V60:bat[:void,:flt]{count=1000}  := user.bind("sys","lineitem","l_extendedprice",0);	# 6  (V60:bat[:void,:flt])<-(_7:str)(_8:str)(_19:str)(_10:int)
-    V75:bat[:void,:flt]{count=1000}  := user.bind("sys","lineitem","l_discount",0);	# 7  (V75:bat[:void,:flt])<-(_7:str)(_8:str)(_21:str)(_10:int)
-    V105:bat[:void,:flt]{count=1000}  := user.bind("sys","lineitem","l_tax",0);	# 8  (V105:bat[:void,:flt])<-(_7:str)(_8:str)(_23:str)(_10:int)
+    V6:bat[:void,:date]{rows=1000}  := user.bind("sys","lineitem","l_shipdate",0);	# 1  (V6:bat[:void,:date])<-(_7:str)(_8:str)(_9:str)(_10:int)
+    V11:bat[:void,:oid]{rows=1000}  := user.bind_dbat("sys","lineitem",0);	# 2  (V11:bat[:void,:oid])<-(_7:str)(_8:str)(_10:int)
+    V22:bat[:void,:bit]{rows=1000}  := user.bind("sys","lineitem","l_returnflag",0);	# 3  (V22:bat[:void,:bit])<-(_7:str)(_8:str)(_13:str)(_10:int)
+    V29:bat[:void,:bit]{rows=1000}  := user.bind("sys","lineitem","l_linestatus",0);	# 4  (V29:bat[:void,:bit])<-(_7:str)(_8:str)(_15:str)(_10:int)
+    V53:bat[:void,:int]{rows=1000}  := user.bind("sys","lineitem","l_quantity",0);	# 5  (V53:bat[:void,:int])<-(_7:str)(_8:str)(_17:str)(_10:int)
+    V60:bat[:void,:flt]{rows=1000}  := user.bind("sys","lineitem","l_extendedprice",0);	# 6  (V60:bat[:void,:flt])<-(_7:str)(_8:str)(_19:str)(_10:int)
+    V75:bat[:void,:flt]{rows=1000}  := user.bind("sys","lineitem","l_discount",0);	# 7  (V75:bat[:void,:flt])<-(_7:str)(_8:str)(_21:str)(_10:int)
+    V105:bat[:void,:flt]{rows=1000}  := user.bind("sys","lineitem","l_tax",0);	# 8  (V105:bat[:void,:flt])<-(_7:str)(_8:str)(_23:str)(_10:int)
 barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     V12 := bat.reverse(V11);	# 10 BKCreverse (V12:bat[:oid,:void])<-(V11:bat[:void,:oid])
     V13 := algebra.kdifference(V6,V12);	# 11 ALGkdiff (V13:bat[:oid,:date])<-(V6:bat[:void,:date])(V12:bat[:oid,:void])
@@ -192,26 +192,26 @@ function user.main():void;	# 0  (main:void)
     mdb.list("user","qry1");	# 4 MDBlist3 (_7:void)<-(_5:str)(_6:str)
 end main;	# 5  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;
-    V6:bat[:void,:date]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_shipdate",0);
-    V11:bat[:void,:oid]{RMcost=1000,count=1000}  := user.bind_dbat("sys","lineitem",0);
-    V22:bat[:void,:bit]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_returnflag",0);
-    V29:bat[:void,:bit]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_linestatus",0);
-    V53:bat[:void,:int]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_quantity",0);
-    V60:bat[:void,:flt]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_extendedprice",0);
-    V75:bat[:void,:flt]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_discount",0);
-    V105:bat[:void,:flt]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_tax",0);
+    V6:bat[:void,:date]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_shipdate",0);
+    V11:bat[:void,:oid]{cost=1000,rows=1000}  := user.bind_dbat("sys","lineitem",0);
+    V22:bat[:void,:bit]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_returnflag",0);
+    V29:bat[:void,:bit]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_linestatus",0);
+    V53:bat[:void,:int]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_quantity",0);
+    V60:bat[:void,:flt]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_extendedprice",0);
+    V75:bat[:void,:flt]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_discount",0);
+    V105:bat[:void,:flt]{cost=1000,rows=1000}  := user.bind("sys","lineitem","l_tax",0);
 barrier always := true;
-    V12{RMcost=1000} := bat.reverse(V11);
-    V13{RMcost=0} := algebra.kdifference(V6,V12);
+    V12{cost=1000} := bat.reverse(V11);
+    V13{cost=0} := algebra.kdifference(V6,V12);
     V16 := mtime.date_sub_sec_interval(A3,A4);
     a := mtime.date(nil:void);
-    V17{RMcost=0} := algebra.uselect(V13,a,V16);
+    V17{cost=0} := algebra.uselect(V13,a,V16);
     V20 := algebra.markT(V17,0@0);
     V21 := bat.reverse(V20);
-    V26{RMcost=0} := algebra.kdifference(V22,V12);
+    V26{cost=0} := algebra.kdifference(V22,V12);
     V27 := algebra.join(V21,V26);
     (h,V28):= group.new(V27);
-    V33{RMcost=0} := algebra.kdifference(V29,V12);
+    V33{cost=0} := algebra.kdifference(V29,V12);
     V34 := algebra.join(V21,V33);
     (Ext,V35):= group.derive(h,V28,V34);
     V36 := algebra.tunique(Ext);
@@ -220,15 +220,15 @@ barrier always := true;
     V43 := algebra.sort(V42);
     V51 := algebra.join(V37,V34);
     V52 := group.refine(V43,V51);
-    V57{RMcost=0} := algebra.kdifference(V53,V12);
+    V57{cost=0} := algebra.kdifference(V53,V12);
     V58 := algebra.join(V21,V57);
     V59 := aggr.sum(V58,V35,V37);
-    V64{RMcost=0} := algebra.kdifference(V60,V12);
+    V64{cost=0} := algebra.kdifference(V60,V12);
     V65 := algebra.join(V21,V64);
     V66 := aggr.sum(V65,V35,V37);
     V72 := calc.lng(A0);
     V74 := calc.*(V72,100);
-    V82{RMcost=0} := algebra.kdifference(V75,V12);
+    V82{cost=0} := algebra.kdifference(V75,V12);
     V83 := algebra.join(V21,V82);
     V84 := optimizer.multiplex("calc.-",V74,V83);
     V86 := batcalc.*(V65,V84);
@@ -239,7 +239,7 @@ barrier always := true;
     V101 := batcalc.*(V65,V100);
     V103 := calc.lng(A2);
     V104 := calc.*(V103,100);
-    V109{RMcost=0} := algebra.kdifference(V105,V12);
+    V109{cost=0} := algebra.kdifference(V105,V12);
     V110 := algebra.join(V21,V109);
     V111 := optimizer.multiplex("calc.+",V104,V110);
     V113 := batcalc.*(V101,V111);

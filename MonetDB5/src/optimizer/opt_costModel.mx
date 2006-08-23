@@ -32,11 +32,11 @@ MAL program in search for
 relational operators and estimates their result size. 
 The operations taken into account are @{reverse, select, join, mark,
 uselect, kdifference,cross@}
-The estimated size is left behind as property @code{RMcost},
+The estimated size is left behind as property @code{cost},
 to avoid overwriting information produced by the front-end compiler.
 @verbatim
-    r{count=100} := bat.new(:void,:int);
-    s{count=1000}:= bat.new(:void,:int);
+    r{rows=100} := bat.new(:void,:int);
+    s{rows=1000}:= bat.new(:void,:int);
     rs:= algebra.select(s,1,1);
     rr:= bat.reverse(r);
     j:= algebra.join(rs,rr);
@@ -44,18 +44,19 @@ to avoid overwriting information produced by the front-end compiler.
 @end verbatim
 changes the properties of the instructions as follows:
 @verbatim
-    r{RMcost=100,count=100} := bat.new(:void,:int);
-    s{RMcost=1000,count=1000} := bat.new(:void,:int);
-    rs{RMcost=500} := algebra.select(s{RMcost=1000,count=1000},1,1);
-    rr{RMcost=100} := bat.reverse(r{RMcost=100,count=100});
-    j{RMcost=100} := algebra.join(rs{RMcost=500},rr{RMcost=100});
+    r{cost=100,rows=100} := bat.new(:void,:int);
+    s{cost=1000,rows=1000} := bat.new(:void,:int);
+    rs{cost=500} := algebra.select(s{cost=1000,rows=1000},1,1);
+    rr{cost=100} := bat.reverse(r{cost=100,rows=100});
+    j{cost=100} := algebra.join(rs{cost=500},rr{cost=100});
 @end verbatim
 
 The cost estimation does not use any statistics on the actual
 data distribution yet. It just applies a few heuristic cost
-estimators.
+estimators. 
 @{
 @+ Implementation section
+The size propagation should still be added.
 @mal
 pattern optimizer.costModel():str
 address OPTcostModel;
@@ -87,9 +88,11 @@ fixPropertySet(MalBlkPtr mb, int dst)
 	if (mb->var[dst]->props == 0)
 		mb->var[dst]->props = newPropertySet();
 }
-#define getVarCost(Y) (fndProperty(mb->var[Y]->props,"RMcost")?\
-		(int*) getPropertyValue(mb->var[Y]->props,"RMcost"):\
-		(int*)getPropertyValue(mb->var[Y]->props,"count") )
+#define getVarCost(Y) (fndProperty(mb->var[Y]->props,"cost")?\
+		(int*) getPropertyValue(mb->var[Y]->props,"cost"):\
+		(int*)getPropertyValue(mb->var[Y]->props,"rows") )
+
+#define getVarSize(Y) (int*)getPropertyValue(mb->var[Y]->props,"size") )
 
 @-
 The cost formula are repetative
@@ -98,7 +101,7 @@ The cost formula are repetative
 		if( c1 == NULL) continue;
 		k= @2;
 		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"RMcost", "=", TYPE_int, &k);
+		setProperty(getProps(getArg(p,0)),"cost", "=", TYPE_int, &k);
 @= newCost2
 		c1 = getVarCost(getArg(p,@1));
 		c2 = getVarCost(getArg(p,@2));
@@ -106,7 +109,7 @@ The cost formula are repetative
 		if( c2 == NULL) continue;
 		k= (@3);
 		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"RMcost","=", TYPE_int, &k);
+		setProperty(getProps(getArg(p,0)),"cost","=", TYPE_int, &k);
 @-
 The cost will be used in many places to make decisions.
 Access should be fast.
@@ -169,10 +172,10 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				@:newCost(2, *c1)@
 			}
 		} else {
-			/* propagate count to RMcost */
+			/* propagate count to cost */
 			for (j = 0; j < p->retc; j++) {
 				if ((c = (int *) getVarCost(p->argv[j])))
-					setProperty(getProps(p->argv[j]), "RMcost", "=", TYPE_int, c);
+					setProperty(getProps(p->argv[j]), "cost", "=", TYPE_int, c);
 			}
 		}
 	}
