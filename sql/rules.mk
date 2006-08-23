@@ -90,7 +90,7 @@ HIDE=1
 	$(RM) $*.yy.cc.tmp
 
 %.def: %.syms
-	cp $< $@
+	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) grep -v DllMain $<;; esac > $@
 
 ifdef NEED_MX
 
