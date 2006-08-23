@@ -172,8 +172,7 @@ OPTgeneratorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	oldsize= mb->ssize;
 #endif
 	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
-	mb->stmt = (InstrPtr *) GDKmalloc(size  * sizeof(InstrPtr));
-	memset((char*)mb->stmt, 0, size * sizeof(InstrPtr));
+	mb->stmt = (InstrPtr *) GDKzalloc(size  * sizeof(InstrPtr));
 	mb->ssize = size ;
 	mb->stop = keep;
 

@@ -113,15 +113,11 @@ QEPnew(int p, int c){
 	qep->mb= NULL;
 	qep->p = NULL;
 	qep->plimit = p;
-	if( p ){
-		qep->parents = (QEP*) GDKmalloc( sizeof(QEP) * p);
-		memset((char*) qep->parents,0, sizeof(QEP) * p);
-	}
+	if( p )
+		qep->parents = (QEP*) GDKzalloc( sizeof(QEP) * p);
 	qep->climit = c;
-	if( c){
-		qep->children = (QEP *) GDKmalloc( sizeof(QEP) * c);
-		memset((char*) qep->children,0, sizeof(QEP) * c);
-	}
+	if( c)
+		qep->children = (QEP *) GDKzalloc( sizeof(QEP) * c);
 	return qep;
 }
 static QEP

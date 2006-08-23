@@ -236,9 +236,7 @@ after the loop, because then you may not simple move an expression.
 		before[bk++] = within[k];
 	before[bk++] = getInstrPtr(mb, i);
 	GDKfree(mb->stmt);
-	mb->stmt = (InstrPtr *) GDKmalloc((mb->ssize) * sizeof(InstrPtr));
-	memset((char*)mb->stmt, 0, (mb->ssize) * sizeof(InstrPtr));
-
+	mb->stmt = (InstrPtr *) GDKzalloc((mb->ssize) * sizeof(InstrPtr));
 	mb->stop = 0;
 
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
