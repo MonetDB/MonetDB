@@ -159,19 +159,14 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		}
 		return scope_add_table_columns(sql, scp, t, tname, RDONLY);
 	} else if (tableref->token == SQL_TABLE) {
-<<<<<<< sql_select.mx
 		stmt *s = sql_value_exp(sql, scp, tableref->data.lval->h->data.sym, NULL, NULL, sql_from);
 
 	
 	/*For replication we need to change here*/
-		char *tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 
 		if (!s)
 			return NULL;
-		return scope_add_table(scp, s, tname, NULL);
-=======
 		return sql_table_func(sql, scp, tableref);
->>>>>>> 1.143
 	} else if (tableref->token == SQL_SELECT) {
 		return sql_subquery_optname(sql, scp, tableref);
 	} else {
@@ -3640,7 +3635,7 @@ pull_refresh(mvc * sql, symbol *symb, stmt * ret)
 		if (!sname)
 			schema = cur_schema(sql);
 		sql_table *view = find_sql_table(schema,qname_table(fl->h->data.sym->data.lval->h->data.sym),LOCATION);
-		if(view->table && view->query){
+		if(!isView(view) && view->query){
 			if(*(int *) find_table_value(sql, schema->base.name, "replication", "push/pull", "view_id", &view->base.id, LOCATION)){
 				snprintf(
 					query,

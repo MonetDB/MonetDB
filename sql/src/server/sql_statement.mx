@@ -50,15 +50,9 @@ typedef union stmtdata {
 typedef enum stmt_type {
 	st_none,
 	st_sql,			/* sometimes a query rewrite is easier */
-<<<<<<< sql_statement.mx
 	st_remote,			/* sometimes a query rewrite is easier */
-	st_var,			/* still needs work */
-	st_update_var,
-	st_seq_next,		
-=======
 	st_var,			/* use and/or declare variable */
 	st_seq_next,		/* calculate next sequence number */
->>>>>>> 1.118
 
 	st_basetable,	
 	st_table,		/* some functions return a table */
@@ -187,15 +181,11 @@ extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
 
 extern stmt *stmt_none(void);
 extern stmt *stmt_sql(char *query);
-<<<<<<< sql_statement.mx
 extern stmt *stmt_remote(char *query,int location,stmt* st);
-extern stmt *stmt_var(char *varname, sql_subtype *t, int declare);
-=======
 
 #define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(char *varname, sql_subtype *t, int declare, int level);
->>>>>>> 1.118
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_seq_next(char *seqname);
 extern stmt *stmt_internal(int st, list *ops);
@@ -815,7 +805,6 @@ stmt_sql(char *query)
 }
 
 stmt *
-<<<<<<< sql_statement.mx
 stmt_remote(char *query, int location, stmt* st)
 {
 	stmt *s = stmt_create(st_remote);
@@ -827,10 +816,7 @@ stmt_remote(char *query, int location, stmt* st)
 }
 
 stmt *
-stmt_var(char *varname, sql_subtype *t, int declare)
-=======
 stmt_var(char *varname, sql_subtype *t, int declare, int level)
->>>>>>> 1.118
 {
 	stmt *s = stmt_create(st_var);
 

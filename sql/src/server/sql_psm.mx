@@ -360,7 +360,7 @@ result_type(mvc *sql, char *fname, symbol *res )
 
 		tnme[0] = '#';
 		strcpy(tnme+1, fname);
-		tbl = mvc_create_generated(sql, sql->session->schema, tnme, NULL, 1 /* system ?*/);
+		tbl = mvc_create_generated(sql, sql->session->schema, tnme, NULL, 1 /* system ?*/, LOCATION);
 		for(;n; n = n->next->next) {
 			sql_subtype *ct = &n->next->data.typeval;
 		    	mvc_create_column(sql, tbl, n->data.sval, ct);
@@ -391,11 +391,7 @@ has_return(stmt *s )
 }
 
 static stmt *
-<<<<<<< sql_psm.mx
-create_func(mvc *sql, symbol *qname, dlist *params, sql_subtype *res, char *impl, dlist *body)
-=======
-create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlist *body)
->>>>>>> 1.10
+create_func(mvc *sql, symbol *qname, dlist *params, symbol *res, char *impl, dlist *body)
 {
 	char *fname = qname_table(qname);
 	dnode *n;
@@ -452,11 +448,7 @@ psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-<<<<<<< sql_psm.mx
-		ret = create_func(sql, l->h->data.sym, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
-=======
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
->>>>>>> 1.10
+		ret = create_func(sql, l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_SET:

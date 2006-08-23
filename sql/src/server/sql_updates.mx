@@ -1596,13 +1596,8 @@ delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 		t = mvc_bind_table(sql, s, tname, location);
 	}
 	if (!t) {
-<<<<<<< sql_updates.mx
 		return sql_error(sql, 02, "DELETE FROM: no such table '%s' for database '%s'", tname,host);
-	} else if (!t->table){ 
-=======
-		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
->>>>>>> 1.81
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_DELETE)) {

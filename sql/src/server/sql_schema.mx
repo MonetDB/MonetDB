@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sql_list.h>
-#include <mal_prelude.h>
+#include <opt_prelude.h>
 #include "sql_symbol.h"
 #include "sql_select.h"
 #include "sql_statement.h"
@@ -668,8 +668,8 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 			qname_host(sym),
 			QUERY(sql->scanner) + sql->scanner.as
 		);
-			return stmt_remote(string_query,location,res);
 		}
+		return stmt_remote(string_query,location,res);
         }
 	return res;
 }
@@ -729,66 +729,11 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 		_DELETE(subquery);
 		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
-<<<<<<< sql_schema.mx
 		if(dlist_length(using)==2)
 			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,res);
 		else
 			res = create_replication_support(sql,s,symb,query,using->h->data.ival,0, res);
 		return res;
-	/* only db admin can create views on bats */
-	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		return sql_error(sql, 02, "CREATE VIEW AS BATS: insufficient privileges for user %s", sql->user);
-	} else {
-		char *err = NULL;
-		sql_table *t = NULL;
-		t = mvc_create_view(sql, s, name, NULL, 0, location);
-		if(dlist_length(using)==2)
-			res = create_replication_support(sql,s,symb,query,using->h->data.ival,using->t->data.ival,res);
-		else
-			res = create_replication_support(sql,s,symb,query,using->h->data.ival,0, res);
-		dnode *n = column_spec->h;
-		int nr = 0, i = 0;
-		char **names = NULL;
-
-		for (; n; n = n->next ) 
-			nr++;
-		names = NEW_ARRAY(char*,nr);
-		for (n = column_spec->h; n; n = n->next, i++ )
-			names[i] = n->data.sval;
-
-		if (nr == 1) {
-			char buf[BUFSIZ];
-			/* semi-colon here indicates it's a view as bats!!! */
-			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
-					name, names[0]);
-			t = mvc_create_view(sql, s, name, buf, 0,location);
-			err = sql_view_from_bat(sql->session->tr, t, names[0]);
-		} else {
-			char buf[BUFSIZ];
-			char cols[BUFSIZ];
-			cols[0] = '\0';
-			for (i = 0; i < nr; i++) {
-				if (i > 0) strcat(cols, ", ");
-				strcat(cols, "\"");
-				strcat(cols, names[i]);
-				strcat(cols, "\"");
-			}
-			/* semi-colon here indicates it's a view as bats!!! */
-			snprintf(buf, BUFSIZ, ";CREATE VIEW \"%s\" (\"%s\") AS BATS",
-					name, cols);
-			t = mvc_create_view(sql, s, name, buf, 0,location);
-			err = sql_view_on_bats(sql->session->tr, t, names, nr);
-		}
-		if (err != NULL) {
-			sql_error(sql, 02, err);
-			GDKfree(err);
-			sql_trans_drop_table(sql->session->tr, t->s, t->base.name, 0);
-			return NULL;
-		}
-		return res;
-=======
-		return stmt_none();
->>>>>>> 1.85
 	}
 	return NULL;
 }
@@ -818,22 +763,12 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dli
 
 	t = mvc_bind_table(sql, s, tname,location);
 
-<<<<<<< sql_schema.mx
 	if (!schema_privs(sql->role_id, s)) 
-		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", sql->user, s->base.name);
-=======
-	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", backend_get_string(sql, "user"), ss->base.name);
->>>>>>> 1.85
+		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", backend_get_string(sql, "user"), s->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
-<<<<<<< sql_schema.mx
-	} else if (!t->table) {
-		mvc_drop_table(sql, s, t->base.name, 0);
-=======
 	} else if (isView(t)) {
 		mvc_drop_table(sql, ss, t->base.name, 0);
->>>>>>> 1.85
 		return stmt_none();
 	} else {
 		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
@@ -1764,10 +1699,10 @@ drop_view(mvc *sql, symbol *symb)
 	sql_table *t = mvc_bind_table(sql, ss, tname, location);
 
 	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user_id, ss->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: no such view '%s'", tname);
-	} else if (!t->table || t->query != NULL) {
+	} else if (isView(t) || t->query != NULL) {
 		mvc_drop_table(sql, ss, t->base.name, 0);
 		if(t->location == 0)
 			return drop_remote_view(sql,ss,t,symb);

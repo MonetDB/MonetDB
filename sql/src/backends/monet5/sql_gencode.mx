@@ -44,7 +44,7 @@ A dummy module is needed to load properly.
 #include <sql_mvc.h>
 #include <sql_semantic.h>
 #include <mal_function.h>
-#include <mal_prelude.h>
+#include <opt_prelude.h>
 
 sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 sql_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);

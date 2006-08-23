@@ -28,7 +28,7 @@ phase of the scenario.
 #ifndef _SQL_SCENARIO_H_
 #define _SQL_SCENARIO_H_
 #include "sql.h"
-#include "mal_multiplex.h"
+#include "opt_multiplex.h"
 #include "mal_builder.h"
 
 /* #define _SQL_SCENARIO_DEBUG */

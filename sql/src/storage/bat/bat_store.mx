@@ -1142,12 +1142,8 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	bat_destroy(table_id);
 	bat_destroy(table_names);
 	bat_destroy(table_queries);
-<<<<<<< bat_store.mx
-	bat_destroy(table_istable);
 	bat_destroy(table_location);
-=======
 	bat_destroy(table_type);
->>>>>>> 1.88
 	bat_destroy(D_columns);
 	bat_destroy(D_idxs);
 	bat_destroy(D_keys);
@@ -1522,12 +1518,8 @@ bs_init_table(struct bm *bm, int istmp)
 	update_table_bat(sql_table_name, U_table_name, D_sql_table);
 	update_table_bat(sql_table_schema, U_table_schema, D_sql_table);
 	update_table_bat(sql_table_query, U_table_query, D_sql_table);
-<<<<<<< bat_store.mx
-	update_table_bat(sql_table_istable, U_table_istable, D_sql_table);
 	update_table_bat(sql_table_location, U_table_location, D_sql_table);
-=======
 	update_table_bat(sql_table_type, U_table_type, D_sql_table);
->>>>>>> 1.88
 
 	bat_destroy(sql_table_id);
 	bat_destroy(sql_table_name);
@@ -2107,11 +2099,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 }
 
 static sql_table *
-<<<<<<< bat_store.mx
-create_table_intern(char *name, bit table, bit system, int persistence, int commit_action, int location)
-=======
-create_table_intern(char *name, sht type, bit system, int persistence, int commit_action)
->>>>>>> 1.88
+create_table_intern(char *name, sht type, bit system, int persistence, int commit_action, int location)
 {
 	sql_table *t = NEW(sql_table);
 
@@ -2144,11 +2132,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, int location)
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-<<<<<<< bat_store.mx
-	sql_table *t = create_table_intern(name, 1, 1, persistence, commit_action, location);
-=======
-	sql_table *t = create_table_intern(name, tt_table, 1, persistence, commit_action);
->>>>>>> 1.88
+	sql_table *t = create_table_intern(name, tt_table, 1, persistence, commit_action, location);
 
 	BAT *b;
 	oid rid;
@@ -4475,11 +4459,7 @@ sql_table *
 sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int persistence, int commit_action, int sz, int location)
 {
 	BAT *b;
-<<<<<<< bat_store.mx
-	sql_table *t = create_table_intern(name, 1, system, persistence, commit_action, location);
-=======
-	sql_table *t = create_table_intern(name, tt_table, system, persistence, commit_action);
->>>>>>> 1.88
+	sql_table *t = create_table_intern(name, tt_table, system, persistence, commit_action, location);
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables", LOCATION);
 	sht ca;
@@ -4503,11 +4483,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, bit 
 	cs_add(&s->tables, t, TR_NEW);
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	ca = t->commit_action;
-<<<<<<< bat_store.mx
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &ca, &t->location);
-=======
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca);
->>>>>>> 1.88
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->location);
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	return t;
@@ -4516,12 +4492,9 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, bit 
 sql_table *
 sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int location)
 {
-<<<<<<< bat_store.mx
-	sql_table *t = create_table_intern(name, 0, system, SQL_PERSIST, 0, location);
-=======
-	sql_table *t = create_table_intern(name, tt_view, system, SQL_PERSIST, 0);
+	sql_table *t = create_table_intern(name, tt_view, system, SQL_PERSIST, 0, location);
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *systable = find_sql_table(syss, "_tables");
+	sql_table *systable = find_sql_table(syss, "_tables", LOCATION);
 	sht ca;
 
 	t->query = sql ? _strdup(sql) : NULL;
@@ -4540,10 +4513,9 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 }
 
 sql_table *
-sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system)
+sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int location)
 {
-	sql_table *t = create_table_intern(name, tt_generated, system, SQL_PERSIST, 0);
->>>>>>> 1.88
+	sql_table *t = create_table_intern(name, tt_generated, system, SQL_PERSIST, 0, location);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *systable = find_sql_table(syss, "_tables", LOCATION);
 	sht ca;
@@ -4553,15 +4525,9 @@ sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, 
 	cs_add(&s->tables, t, TR_NEW);
 
 	ca = t->commit_action;
-<<<<<<< bat_store.mx
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, 
-			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, 
-			&t->system, &ca, &t->location);
-=======
 	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			ATOMnilptr(TYPE_str), &t->type,
-			&t->system, &ca);
->>>>>>> 1.88
+			&t->system, &ca, &t->location);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
