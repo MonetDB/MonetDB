@@ -74,7 +74,7 @@ we update its context descriptor to denote an SQL scenario.
 #include <bat/res_table.h>
 #include "mal_namespace.h"
 #include "mal_debugger.h"
-#include "bat.h"
+#include "bat5.h"
 #include <mtime.h>
 #include "optimizer.h"
 
