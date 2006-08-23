@@ -428,7 +428,24 @@ Bn.reverse().project(nil).sort().reverse().print();
 [ nil,	  63	  ]
 [ nil,	  64	  ]
 
-var b:=uniform(16).tmark(0@0);
+var b:=new(void,int,16).seqbase(0@0)
+.append(8)
+.append(13)
+.append(1)
+.append(2)
+.append(0)
+.append(6)
+.append(12)
+.append(3)
+.append(4)
+.append(14)
+.append(9)
+.append(7)
+.append(10)
+.append(15)
+.append(11)
+.append(5)
+.access(BAT_READ);
 
 var b0 := radix_cluster(b,1).tmark(0@0);
 var b1 := radix_cluster(b,2).tmark(0@0);
@@ -586,8 +603,43 @@ print(
 [ 14@0,	  14@0,	  14@0,	  14@0,	  14@0	  ]
 [ 15@0,	  15@0,	  15@0,	  15@0,	  15@0	  ]
 
-var l := uniform(15).radix_cluster(2).tmark(0@0);
-var r := uniform(17).radix_cluster(2).tmark(0@0).reverse();
+var l:=new(void,int,15).seqbase(0@0)
+.append(4)
+.append(8)
+.append(0)
+.append(12)
+.append(1)
+.append(13)
+.append(5)
+.append(9)
+.append(2)
+.append(10)
+.append(14)
+.append(6)
+.append(7)
+.append(11)
+.append(3)
+.access(BAT_READ).radix_cluster(2).tmark(0@0);
+
+var r:=new(void,int,17).seqbase(0@0)
+.append(16)
+.append(4)
+.append(12)
+.append(8)
+.append(0)
+.append(1)
+.append(5)
+.append(9)
+.append(13)
+.append(14)
+.append(10)
+.append(6)
+.append(2)
+.append(15)
+.append(7)
+.append(11)
+.append(3)
+.access(BAT_READ).radix_cluster(2).tmark(0@0).reverse();
 
 print(
  join(l,r)
