@@ -74,6 +74,7 @@ The server options have the following meaning:
 #include "mal.h"
 #include "mserver5.h"
 #include "mal_authorize.h"
+#include "mal_sabaoth.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
@@ -482,15 +483,12 @@ the configuration file.
 			MT_sleep_ms(5000);
 	} else
 		MSserveClient(mal_clients);
-
-	/* MSserverClient frees the MalBlk of the stack in such a way that
-	 * we cannot reinit main, or reuse it.  Hence, we have to create a
-	 * new function to terminate properly here. */
-	MSinitClientPrg(mal_clients, "terminate");
-	/* no matter what, we suppress a listing of this command, because it
-	 * makes no sense */
-	callString(mal_clients, "sabaoth.wildRetreat();", 0);
 	mal_exit();
+
+	/* deregister everything that was registered, ignore errors */
+	if ((err = SABAOTHwildRetreat(&i)) != MAL_SUCCEED)
+		free(err);
+
 	return 0;
 }
 @}

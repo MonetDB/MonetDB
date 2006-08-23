@@ -2803,7 +2803,7 @@ MTIMEprelude()
 	tzone tz;
 
 	monettime_prelude();
-	tz= *tz_nilptr; /* to ensure initialized variables */
+	tz = *tz_nilptr; /* to ensure initialized variables */
 
 	/* here we should initialize the time box as well */
 	box = openBox("time");
