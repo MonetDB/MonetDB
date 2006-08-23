@@ -1487,10 +1487,6 @@ main(int argc, char **argv)
 		return c;
 	}
 
-	if (strcmp(language, "xquery") == 0) {
-		mapi_noexplain(mid, "!");
-	}
-
 	c = 0;
 
 	/* we're interactive if explicit or if no files and no -s option
