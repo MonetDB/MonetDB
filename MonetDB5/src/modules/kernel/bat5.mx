@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f bat
+@f bat5
 @v 2.0
 @a Peter Boncz, M.L. Kersten
 @* Binary Association Tables
@@ -826,7 +826,7 @@ mal_export int void_inplace(BAT *b, oid id, ptr val, bit force);
 #endif /*_BAT_H_*/
 
 @c
-#include "bat.h"
+#include "bat5.h"
 #include <stream.h>
 #include "mal_exception.h"
 @-

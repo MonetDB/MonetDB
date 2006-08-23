@@ -28,7 +28,7 @@ lib_batExtensions = {
 	SEP = _
 	SOURCES = batExtensions.mx
 	HEADERS = h
-	LIBS = ../../mal/libmal ../kernel/lib_bat $(MONETDB_LIBS) -lbat -lstream -lMapi \
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -58,7 +58,7 @@ lib_crackers = {
 	SEP = _
 	SOURCES = crackers.mx 
 	HEADERS = h 
-	LIBS = ../../mal/libmal ../kernel/lib_bat $(MONETDB_LIBS) -lbat -lstream ../atoms/lib_mtime \
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream ../atoms/lib_mtime \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -101,7 +101,7 @@ lib__bbp = {
 
 	HEADERS = h
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_bat \
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -125,7 +125,7 @@ lib__transaction = {
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_bat $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -136,7 +136,7 @@ lib__partitions = {
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_bat $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

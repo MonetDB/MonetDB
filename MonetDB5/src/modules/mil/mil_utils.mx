@@ -103,7 +103,7 @@ address MILinsert_bun;
 Compatibility code wrappers
 @c
 #include "mal.h"
-#include "bat.h"
+#include "bat5.h"
 #include "mil_utils.h"
 #include "mal_utils.h"
 #include "streams.h"

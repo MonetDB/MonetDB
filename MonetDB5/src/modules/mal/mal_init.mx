@@ -48,7 +48,7 @@ include mtime;
 include inet;
 
 # the kernel stuff to make it work
-include bat;
+include bat5;
 include batExtensions;
 include pcre;
 include algebra;

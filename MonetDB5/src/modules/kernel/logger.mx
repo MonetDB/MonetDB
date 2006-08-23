@@ -95,7 +95,7 @@ comment "Log the inserts in the WAL (return success)"
 @h
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
-#include "bat.h"
+#include "bat5.h"
 #include "stream.h"
 
 #define LOG_OK 0

@@ -184,7 +184,7 @@ as a handle.
 #endif
 @c
 #include "partitions.h"
-#include "bat.h"
+#include "bat5.h"
 
 mal_export int BPTfindGrp(int bid);
 mal_export void BPTresize(int size);

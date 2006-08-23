@@ -37,7 +37,7 @@ address MILinsert_bun;
 Compatibility code wrappers
 @c
 #include "mal.h"
-#include "bat.h"
+#include "bat5.h"
 
 str
 MILinsert_void_bun(int *r, int *bid, ptr t)
