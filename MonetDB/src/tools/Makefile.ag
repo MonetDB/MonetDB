@@ -91,20 +91,21 @@ lib_initmodules = {
 
 bin_Mserver = {
 	SOURCES = Mserver.mx
-	LIBS = libinitmodules ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(EXTRA_LIBS) \
-		../common/libmutils ../common/libstream
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+		../gdk/libbat ../monet/libmonet ../common/libmutils ../common/libstream
 }
 
 lib_embeddedmil = {
 	SOURCES = embeddedclient.mx
-	LIBS = libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(EXTRA_LIBS) \
-		../common/libmutils ../common/libstream
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+		../gdk/libbat ../monet/libmonet ../common/libmutils ../common/libstream ../mapi/clients/C/libMapi
 }
 
 bin_Mbeddedmil = {
 	SOURCES = prog.c
-	LIBS = libembeddedmil libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(EXTRA_LIBS) \
-		../common/libmutils ../common/libstream
+	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
+		libembeddedmil \
+		../gdk/libbat ../monet/libmonet ../common/libmutils ../common/libstream ../mapi/clients/C/libMapi
 }
 
 #doc_Mserver = {
