@@ -1,6 +1,7 @@
 %define name MonetDB-XQuery
 %define release 1
 %define version @VERSION@
+
 %define prefix /usr
 
 Name: %{name}
@@ -64,7 +65,7 @@ rm -rf $RPM_BUILD_ROOT
 
 ./configure \
 	--enable-assert=no \
-	--enable-optimize=no --enable-debug --enable-noexpand=all \
+	--enable-optimize \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
 	--prefix=%{prefix} \
