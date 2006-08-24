@@ -30,7 +30,11 @@ then
 fi
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/backends/@SQL_BACKEND@/.libs:${builddir}/src/backends/@SQL_BACKEND@:${MONETDB_PREFIX}/lib/MonetDB"
+MOD_PATH="${builddir}/src/backends/@SQL_BACKEND@/.libs:${builddir}/src/backends/@SQL_BACKEND@"
+if [ -d "${MONETDB_PREFIX}/lib64" ]
+  then	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib64/MonetDB"
+  else	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib/MonetDB"
+fi
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"

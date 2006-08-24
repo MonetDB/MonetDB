@@ -1,5 +1,10 @@
 #!/bin/sh
 
-PATH=$MONETDB_BUILD/src/mapi/examples/C:$MONETDB_PREFIX/lib/MonetDB/Tests:$PATH ; export PATH
+for i in $MONETDB_PREFIX/lib/MonetDB/Tests $MONETDB_PREFIX/lib64/MonetDB/Tests $MONETDB_BUILD/src/mapi/examples/C ; do
+	if [ -d "$i" ] ; then
+		PATH="$i:$PATH"
+	fi
+done
+export PATH
 
 Mlog -x smack01 $MAPIPORT sql

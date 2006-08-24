@@ -116,7 +116,7 @@ rm -rf $RPM_BUILD_ROOT
 
 ./configure \
 	--enable-assert=no \
-	--enable-optimize \
+	--enable-optimize=no --enable-debug --enable-noexpand=all \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
 	--prefix=%{prefix} \
