@@ -61,7 +61,6 @@ stdout of test 'double_load_double_drop.SF-1082293` in directory 'tests/BugDay_2
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 !ERROR: DESCload: atom 'lock' unknown, in BAT '34'.
-!ERROR: interpret: MIL operator invocation of 'print(BAT)' with illegal types.
 quit();
 
 # 13:07:29 >  

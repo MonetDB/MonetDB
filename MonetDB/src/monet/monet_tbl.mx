@@ -807,11 +807,17 @@ typedef struct {
 	str anyval[1 + MAXPARAMS];	/* instantiated type of any var */
 } paramcheck_t;
 
-#define ATOM_LOOKUP(nme, tpe, atomtbl) {		\
-	int _tpe = tpe;					\
-	BUN _p = BUNfnd(atomtbl, &_tpe);		\
-	if (_p == NULL) return TBL_RESOLVE_NOTPE;	\
-	nme = (str) BUNtail(atomtbl, _p);		\
+/* for built-in types use BATatoms and not atomtbl because finding
+   TYPE_bat is not reliable otherwise (there is both "bat" and "BAT"
+   in atomtbl) */
+#define ATOM_LOOKUP(nme, tpe, atomtbl) {			\
+	int _tpe = tpe;						\
+	if (_tpe <= TYPE_str) nme = BATatoms[_tpe].name;	\
+	else {							\
+		BUN _p = BUNfnd(atomtbl, &_tpe);		\
+		if (_p == NULL) return TBL_RESOLVE_NOTPE;	\
+			nme = (str) BUNtail(atomtbl, _p);	\
+	}							\
 }
 
 int
