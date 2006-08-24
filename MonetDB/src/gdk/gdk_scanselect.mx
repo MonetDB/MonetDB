@@ -256,10 +256,10 @@ Type-mappers for convenience
 @= HT_bunfastins_typemap
 #define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
 #define @1@2_bunfastins_nocheck(b, p, h, t, s)    @1@3_bunfastins_nocheck(b, p, h, t, s)
-#define @1@2_bunfastins(b, h, t)                  @1@3_bunfastins_nocheck_noinc(b, h, t)
+#define @1@2_bunfastins(b, h, t)                  @1@3_bunfastins(b, h, t)
 #define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
 #define @2@1_bunfastins_nocheck(b, p, h, t, s)    @3@1_bunfastins_nocheck(b, p, h, t, s)
-#define @2@1_bunfastins(b, h, t)                  @3@1_bunfastins_nocheck_noinc(b, h, t)
+#define @2@1_bunfastins(b, h, t)                  @3@1_bunfastins(b, h, t)
 @h
 @:HT_bunfastins_typemap(void,flt,int)@
 @:HT_bunfastins_typemap(chr,flt,int)@
