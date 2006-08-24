@@ -15,7 +15,7 @@ For windows setups the story is a little bit more complex.
 TODO
 
 When the build process is complete you should have a PHP extension_dir under
-your MonetDB prefix directory. Usually this is prefix/lib/php4.
+your MonetDB prefix directory. Usually this is prefix/lib(64)/php4.
 Besides this binary module the pear db driver should be installed under
 prefix/php_peardir/db, which usually is prefix/share/pear/db.
 Depending on your local setup you could now use these files by coping them
@@ -29,7 +29,7 @@ php section.
 safe_mode = Off
 safe_mode_gid = Off
 include_path = ".:/opt/MonetDB-4.6/share/pear:/usr/share/pear"
-extension_dir = /opt/MonetDB-4.6/lib/php4
+extension_dir = /opt/MonetDB-4.6/lib(64)/php4
 @end example
 
 @subsection A Simple PHP Example

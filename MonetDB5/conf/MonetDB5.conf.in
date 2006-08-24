@@ -101,7 +101,7 @@ delay=120		#waiting between pinging the server
 # MAL section
 # Monet Virtual Machine
 #====================================
-mal_init=${prefix}/lib/MonetDB5/mal_init.mal
+mal_init=@libdir@@DIRSEP@@PACKAGE@/mal_init.mal
 mal_listing = 7           # List everything
 #    1 = List the original input
 #    2 = List the MAL instruction

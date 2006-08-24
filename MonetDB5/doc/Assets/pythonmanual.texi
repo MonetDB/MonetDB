@@ -11,7 +11,7 @@ could tell 'configure' where to find the python installation.
 
 When the build process is complete you should have a python library 
 directory under your MonetDB prefix directory. Usually this 
-is @emph{prefix/lib/python2.4/site-packages}.
+is @emph{prefix/lib(64)/python2.4/site-packages}.
 Now add this directory to your PYTHONPATH.
 
 For windows setups the story is a little bit more complex.

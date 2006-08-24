@@ -21,11 +21,11 @@
 @+ Module Loading
 The server is bootstrapped by processing a MAL script with
 module definitions. For each module encountered, the object library 
-lib_<modulename>.so is searched for in @dots{}/lib/MonetDB.
+lib_<modulename>.so is searched for in @dots{}/lib(64)/MonetDB.
 The corresponding signature are defined 
-in @dots{}/lib/<modulename>.mal.
+in @dots{}/lib(64)/<modulename>.mal.
 @-
-The default bootstrap script is called @dots{}/lib/MonetDB/mal_init.mal
+The default bootstrap script is called @dots{}/lib(64)/MonetDB/mal_init.mal
 and it is designated in the configuration file as the mal_init property.
 The rationale for this set-up is that database administrators can
 extend/overload the bootstrap procedure without affecting the distributed

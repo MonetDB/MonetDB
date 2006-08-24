@@ -9,7 +9,7 @@ Below we illustrate its most important components.
 @item prefix=/ufs/myhome/monet5/Linux
 @item exec_prefix=$@verb{ { }prefix@verb{ } }
 @item dbfarm=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dbfarm	
-@item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
+@item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib(64)/MonetDB5
 @item checkpoint_dir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/chkpnt
 @item dbname=demo
 @item version=4.99.29
@@ -27,7 +27,7 @@ The remainder consists of arguments used by functional modules, or
 related tools. Consult their documentation before changing them.
 @itemize @bullet
 @item delay=120		
-@item mal_init=$@verb{ { }prefix@verb{ } }/lib/MonetDB5/mal_init.mal
+@item mal_init=$@verb{ { }prefix@verb{ } }/lib(64)/MonetDB5/mal_init.mal
 @item mal_listing = 7    
 @item sql_logdir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dblogs 
 @item pf_httpd_port=8080
