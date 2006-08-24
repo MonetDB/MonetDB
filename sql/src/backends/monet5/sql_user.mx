@@ -36,7 +36,7 @@ sql_export str db_users_wrap(int *r);
 @c
 #include "sql_user.h"
 #include "sql_mvc.h"
-#include "bat.h"
+#include "bat5.h"
 #include "mal_authorize.h"
 
 static str

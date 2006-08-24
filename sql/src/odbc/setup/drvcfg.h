@@ -41,7 +41,7 @@
 
 #define ODBCVER 0x0351
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBMONETODBCS
 #define odbc_export extern __declspec(dllimport)
 #else

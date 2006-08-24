@@ -115,7 +115,7 @@ lib_MonetODBC = {
 	SQLTables.c \
 	SQLTransact.c \
 	driver.rc \
-	ODBC.def
+	ODBC.syms
 	WINLIBS = $(SOCKET_LIBS)
 	LIBS = $(MONETDB_LIBS) -lMapi -lstream $(ICONV_LIBS) $(ODBC_LIBS)
 }

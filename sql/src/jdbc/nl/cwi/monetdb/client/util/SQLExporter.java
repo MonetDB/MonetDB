@@ -265,7 +265,6 @@ public class SQLExporter extends Exporter {
 	 *
 	 * @param rs the ResultSet to dump
 	 * @throws SQLException if a database error occurs
-	 * @see setForm()
 	 */
 	public void dumpResultSet(ResultSet rs) throws SQLException {
 		switch (outputMode) {

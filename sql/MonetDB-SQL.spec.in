@@ -1,6 +1,7 @@
 %define name MonetDB-SQL
 %define release 1
 %define version @VERSION@
+
 %define prefix /usr
 
 Name: %{name}

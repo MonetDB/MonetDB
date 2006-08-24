@@ -162,5 +162,13 @@ MONET4=yes
 .c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-.SUFFIXES: .m .mx .proto_h .mil .glue_c
+{$(SRCDIR)}.syms.def:
+	echo EXPORTS > $@
+	type $< >> $@
+
+.syms.def:
+	echo EXPORTS > $@
+	type $< >> $@
+
+.SUFFIXES: .m .mx .proto_h .mil .glue_c .syms .def
 .PRECIOUS: .m 

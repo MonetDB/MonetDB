@@ -328,7 +328,7 @@ All Rights Reserved.
 
   <target name="doc_xmldb" depends="compile_xmldb,jar_jdbc">
     <javadoc
-      classpath="${libdir}/xmldb.jar:${jardir}/MonetDB_JDBC.jar"
+      classpath="${libdir}/xmldb.jar:${jdbc-jar}"
       destdir="${docdir}/xmldb"
       author="true"
       version="true"

@@ -1,3 +1,7 @@
+MonetDB-SQL.pc
+RunMapprove.bat
+RunMserver.bat
+RunMtest.bat
 bin
 com
 conf

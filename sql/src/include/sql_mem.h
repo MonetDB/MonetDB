@@ -30,7 +30,7 @@
 #define SQL_OK 	GDK_SUCCEED
 #define SQL_ERR GDK_FAIL
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBSQLSERVER
 #define sql_export extern __declspec(dllimport)
 #else

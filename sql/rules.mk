@@ -89,6 +89,9 @@ HIDE=1
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.cc.tmp >> $*.yy.cc
 	$(RM) $*.yy.cc.tmp
 
+%.def: %.syms
+	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) grep -v DllMain $<;; esac > $@
+
 ifdef NEED_MX
 
 %.m: %.mx

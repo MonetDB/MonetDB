@@ -328,10 +328,6 @@ public class XMLExporter extends Exporter {
 	 * Generates an XML representation of the given ResultSet.
 	 *
 	 * @param rs the ResultSet
-	 * @param useNil write xsi:nil="true" (nil) for null values if true,
-	 *               or omits the whole tag (absent) otherwise
-	 * @param writeSchema if true the schema named tag is written in the
-	 *                    output
 	 */
 	public void dumpResultSet(ResultSet rs) throws SQLException {
 		// write simple XML serialisation

@@ -103,13 +103,19 @@ The current heuristic is geared at avoiding trivial
 factory structures.
 @c
 #include "mal_builder.h"
+ <<<<<<< sql_optimizer.mx
 #include "opt_remoteQueries.h"
 #include "opt_multiTable.h"
+ =======
+#include "bat5.h"
+
+ >>>>>>> 1.98
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "opt_aliases.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
+#include "opt_costModel.h"
 #include "opt_crack.h"
 #include "opt_macro.h"
 #include "opt_multiplex.h"
@@ -268,6 +274,74 @@ the cache when the underlying table is changed.
 #endif
 	return MAL_SUCCEED;
 }
+@-
+Cost-based optimization and semantic evaluations require statistics to work with.
+They should come from the SQL catalog and are included in the MAL program.
+The properties passed at this point are the number of rows. 
+At a later stage we should also add head/tail sizes, key, unique, sort, dense.
+@c
+#define getProps(Y) mb->var[Y]->props
+
+void
+SQLgetStatistics(mvc *m,MalBlkPtr mb){
+	int i;
+	lng rows; /* size;*/
+	InstrPtr p;
+	BAT *b;
+	str dbatRef = putName("bind_dbat",9);
+
+	for(i=0; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( getModuleId(p)== sqlRef && getFunctionId(p)== bindRef ){
+			b= mvc_bind(m, 
+				getVarConstant(mb, getArg(p,1)).val.sval,
+				getVarConstant(mb, getArg(p,2)).val.sval,
+				getVarConstant(mb, getArg(p,3)).val.sval,
+				getVarConstant(mb, getArg(p,4)).val.ival);
+			if( b ){
+				rows= BATcount(b);
+				if (mb->var[getArg(p,0)]->props == 0)
+					mb->var[getArg(p,0)]->props = newPropertySet();
+				setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_lng, &rows);
+				/* CMDbatsize(&size,b);*/
+				/* setProperty(getProps(getArg(p,0)),"size", "=", TYPE_lng, &size);*/
+
+				BBPunfix(b->batCacheid);
+#ifdef _SQL_OPTIMIZER_DEBUG
+				stream_printf(GDKout,"size of %s.%s.%s %d\n",
+				getVarConstant(mb, getArg(p,1)).val.sval,
+				getVarConstant(mb, getArg(p,2)).val.sval,
+				getVarConstant(mb, getArg(p,3)).val.sval,
+				getVarConstant(mb, getArg(p,4)).val.ival, rows);
+#endif
+			}
+		} else
+		if( getModuleId(p)== sqlRef && getFunctionId(p)== dbatRef ){
+			b= mvc_bind_dbat(m, 
+				getVarConstant(mb, getArg(p,1)).val.sval,
+				getVarConstant(mb, getArg(p,2)).val.sval,
+				getVarConstant(mb, getArg(p,3)).val.ival);
+			if( b ){
+				rows= BATcount(b);
+				if (mb->var[getArg(p,0)]->props == 0)
+					mb->var[getArg(p,0)]->props = newPropertySet();
+				setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_lng, &rows);
+				/* CMDbatsize(&size,b);*/
+				/*setProperty(getProps(getArg(p,0)),"size", "=", TYPE_lng, &size);*/
+
+				BBPunfix(b->batCacheid);
+#ifdef _SQL_OPTIMIZER_DEBUG
+				stream_printf(GDKout,"size of %s.%s.%s %d\n",
+				getVarConstant(mb, getArg(p,1)).val.sval,
+				getVarConstant(mb, getArg(p,2)).val.sval,
+				getVarConstant(mb, getArg(p,3)).val.sval,
+				getVarConstant(mb, getArg(p,4)).val.ival, rows);
+#endif
+			}
+		}
+	}
+}
+
 
 void
 optimizeMalBlk(Client c, backend * be, MalBlkPtr mb)
@@ -319,10 +393,12 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
+		/* SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);*/
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
 		OPTcommonTerms(mb,0,0);	/* common terms */
+		OPTcostModel(mb,0,0);	/* propagate cost distribution */
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		OPTmultiTable(mb,0,0);	/* reduce stack space */
 		OPTremoteQueries(mb,0,0);
