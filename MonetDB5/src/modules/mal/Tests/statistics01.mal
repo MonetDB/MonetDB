@@ -1,9 +1,9 @@
 #test the statistics module
 tz:= bbp.bind("timezones");
 statistics.prelude();
-statistics.dump();
+#statistics.dump();		is size dependent
 statistics.deposit("timezones");
-statistics.dump();
+#statistics.dump();		is size dependent
 b:= statistics.getHotset();
 io.print(b);
 l:= statistics.getCount("timezones");
