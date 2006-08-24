@@ -164,6 +164,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						break;
 					} else if (getFunctionId(p) == selectRef || 
 								getFunctionId(p)== uselectRef || 
+								getFunctionId(p)== tuniqueRef || 
 								getName("like", 4) == getFunctionId(p) || 
 								getName("sortH", 5) == getFunctionId(p) || 
 								getName("sortT", 5) == getFunctionId(p) ||
@@ -172,7 +173,6 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 								getName("unique", 6) == getFunctionId(p) || 
 								getName("sunique", 7) == getFunctionId(p) || 
 								getName("kunique", 7) == getFunctionId(p) ||
-								getName("tunique", 7) == getFunctionId(p) || 
 								getName("intersect", 9) == getFunctionId(p) || 
 								getName("sintersect", 10) == getFunctionId(p) || 
 								getName("kintersect", 10) == getFunctionId(p) ||

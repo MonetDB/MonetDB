@@ -24,16 +24,13 @@ The cost parameters are typically the size of the (intermediate)
 results and response time. Alternatively, they are running
 aggregates, e.g. max memory and total execution time,
 obtained from a simulated run.
-The current implementation contains a framework and example for
+The current implementation contains a framework and an example for
 building your own cost-based optimized.
 
-The @code{optimizer.costEstimation()} works its way through a 
+The @code{optimizer.costModel()} works its way through a 
 MAL program in search for
 relational operators and estimates their result size. 
-The operations taken into account are @{reverse, select, join, mark,
-uselect, kdifference,cross@}
-The estimated size is left behind as property @code{cost},
-to avoid overwriting information produced by the front-end compiler.
+The estimated size is left behind as the property @code{rows}.
 @verbatim
     r{rows=100} := bat.new(:void,:int);
     s{rows=1000}:= bat.new(:void,:int);
@@ -44,19 +41,27 @@ to avoid overwriting information produced by the front-end compiler.
 @end verbatim
 changes the properties of the instructions as follows:
 @verbatim
-    r{cost=100,rows=100} := bat.new(:void,:int);
-    s{cost=1000,rows=1000} := bat.new(:void,:int);
-    rs{cost=500} := algebra.select(s{cost=1000,rows=1000},1,1);
-    rr{cost=100} := bat.reverse(r{cost=100,rows=100});
-    j{cost=100} := algebra.join(rs{cost=500},rr{cost=100});
+    r{rows=100} := bat.new(:void,:int);
+    s{rows=1000} := bat.new(:void,:int);
+    rs{rows=501} := algebra.select(s,1,1);
+    rr{rows=100} := bat.reverse(r);
+    j{rows=100} := algebra.join(rs,rr);
 @end verbatim
 
 The cost estimation does not use any statistics on the actual
-data distribution yet. It just applies a few heuristic cost
-estimators. 
+data distribution yet. It relies on the @code{rows}
+property provided by the front-end or other optimizers.
+It just applies a few heuristic cost estimators.
+However, it ensures that empty results are only tagged
+with @code{rows=0} if the estimate is accurate, otherwise
+it assumes at least one result row. This property makes
+it possible to safely pass the result of the cost estimation
+to the @code{emptySet} optimizer for code squeezing.
 @{
 @+ Implementation section
-The size propagation should still be added.
+To work in conjunction with the emptySet optimizer, we should
+assure that we don't estimate empty sets. The row count may
+only become zero if you are absolutely sure.
 @mal
 pattern optimizer.costModel():str
 address OPTcostModel;
@@ -94,22 +99,25 @@ fixPropertySet(MalBlkPtr mb, int dst)
 @-
 The cost formula are repetative
 @= newRows
-		c1 = getVarRows(getArg(p,@1));
-		if( c1 == NULL) continue;
-		k= @2;
-		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_int, &k);
-@= newRows2
-		c1 = getVarRows(getArg(p,@1));
+{		c1 = getVarRows(getArg(p,@1));
 		c2 = getVarRows(getArg(p,@2));
 		if( c1 == NULL) continue;
 		if( c2 == NULL) continue;
 		k= (@3);
-		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"rows","=", TYPE_int, &k);
+		fixPropertySet(mb, getArg(p,@4));
+		setProperty(getProps(getArg(p,@4)),"rows","=", TYPE_int, &k);
+}
+@= newRows1
+		@:newRows(@1,@1,@2,0)@
+@= newRows2
+		@:newRows(@1,@2,@3,0)@
 @-
 The cost will be used in many places to make decisions.
 Access should be fast.
+The SQL front-end also makes the BAT index available as the
+property bid. This can be used to access the BAT and involve
+more properties into the decision procedure.
+[to be done]
 @c
 static int
 OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -130,54 +138,50 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getFunctionId(p) == sortrevRef  ||
 				getFunctionId(p) == projectRef  ||
 				getFunctionId(p) == kunionRef) {
-				@:newRows(1, *c1)@
+				@:newRows1(1, *c1)@
 			} else if (getFunctionId(p)== kdifferenceRef) {
-				@:newRows2(1, 2, *c1 - *c2 < 0 ? 0 : *c1 - *c2)@
-			} else if (getFunctionId(p)==joinRef ) {
+				@:newRows2(1, 2, *c1==0? 0: *c2==0? *c1: *c1 - *c2 < 0 ? 1 : *c1 - *c2+1)@
+			} else if (getFunctionId(p) ==joinRef ) {
+				/* assume 1-1 joins */
 				@:newRows2(1, 2, *c1 < *c2 ? *c1 : *c2)@
-			} else if ( getFunctionId(p)== selectRef ||
-						getFunctionId(p)== uselectRef) {
-				@:newRows(1, *c1 > 100 ? *c1 / 2 : *c1)@
-			} else if (getFunctionId(p)== crossRef) {
-				@:newRows2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2))@
-			} else if (getFunctionId(p) && idcmp(getFunctionId(p), "tunique") == 0) {
-				@:newRows(1, *c1 < 50 ? *c1 : *c1 / 10)@
+			} else if ( getFunctionId(p) == selectRef ||
+						getFunctionId(p) == uselectRef) {
+				@:newRows1(1, *c1 > 100 ? *c1 / 2 +1: *c1)@
+			} else if (getFunctionId(p) == crossRef) {
+				@:newRows2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2 +1))@
+			} else if (getFunctionId(p) == tuniqueRef ) {
+				@:newRows1(1, *c1 < 50 ? *c1 : *c1 / 10+1)@
 			}
-		} else if (getModuleId(p)==batRef) {
+		} else if (getModuleId(p) ==batRef) {
 			if (getFunctionId(p) == reverseRef ||
 				getFunctionId(p) == setWriteModeRef  ||
 				getFunctionId(p) == deleteRef  ||
 				getFunctionId(p) == mirrorRef) {
-				@:newRows(1, *c1)@
+				@:newRows1(1, *c1)@
 			} else if (	getFunctionId(p) == appendRef ){
 				if( p->argc == 4 ){
-					@:newRows2(1,2, *c1 + *c2 +1)@ 
+					@:newRows(1,2, *c1 + *c2,1)@ 
+				} else
+				if( p->argc == 5 ){
+					@:newRows(1,2, *c1 + 1,1)@ 
 				}
 			} else if (	getFunctionId(p) == insertRef){
-				@:newRows(1, *c1 + 1)@ /* faked */
+				@:newRows1(1, *c1 + 1)@ /* faked */
 			}
 		} else if (getModuleId(p)==groupRef) {
 			if (getFunctionId(p) ==newRef) {
-				@:newRows(1, *c1 / 10)@
+				@:newRows1(1, *c1 / 10+1)@
 			} else {
-				@:newRows(1, *c1)@
-			}
-		} else if (getModuleId(p) && idcmp(getModuleId(p), "multiplex") == 0) {
-			if (getFunctionId(p) && idcmp(getFunctionId(p), "script") == 0) {
-				if (getVarRows(getArg(p, 1))) {
-					@:newRows(1, *c1)@
-				} else {
-					@:newRows(2, *c1)@
-				}
+				@:newRows1(1, *c1)@
 			}
 		} else if (getModuleId(p)== aggrRef) {
 			if (getFunctionId(p) == sumRef || 
 				getFunctionId(p) == minRef || 
 				getFunctionId(p) == maxRef || 
 				getFunctionId(p) == avgRef) {
-				@:newRows(2, *c1)@
+				@:newRows1(2, *c1)@
 			} else	if (getFunctionId(p) == countRef){
-				@:newRows(1, 1)@
+				@:newRows1(1, 1)@
 			}
 		} else {
 			/* propagate count to cost */
