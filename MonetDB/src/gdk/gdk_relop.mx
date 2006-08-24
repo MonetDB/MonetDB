@@ -508,7 +508,6 @@ The aftermath -- property setting -- is relatively straightforward here.
 BAT *
 densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
-	lng t0=0, t1=0;
 	BUN l_cur, l_end, r_cur, dst;
 	ssize_t offset;
 	size_t base, xx;
@@ -524,14 +523,11 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densefetchjoin(@1,@2);\n");
 
-	ALGODEBUG t0=GDKusec();
 	BATloopFast(l, l_cur, l_end, xx) {
 		@:bunfastins_nocheck_(@1,@2)@
 		r_cur += yy;
 		dst += zz;
 	}
-	ALGODEBUG t1=GDKusec();
-	ALGODEBUG THRprintf(GDKout, LLFMT "us\n", t1-t0);
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
@@ -545,7 +541,6 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 BAT *
 orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
-        lng t0=0, t1=0;
 	BUN l_cur, l_end, r_cur, dst;
 	ssize_t offset;
 	size_t base, xx, yy;
@@ -559,15 +554,12 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedfetchjoin(@1,@2);\n");
 
-        ALGODEBUG t0=GDKusec();
 	BATloopFast(l, l_cur, l_end, xx) {
 		yy = offset + *(oid *) BUNtail(l, l_cur);
 		r_cur = BUNptr(r, yy);
 		@:bunfastins_nocheck_(@1,@2)@
 		dst += zz;
 	}
-	ALGODEBUG t1=GDKusec();
-	ALGODEBUG THRprintf(GDKout, LLFMT "us\n", t1-t0);
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
@@ -581,7 +573,6 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 BAT *
 defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
-        lng t0=0, t1=0;
 	BUN l_cur, l_end, r_cur, dst;
 	ssize_t offset;
 	size_t xx, yy, base, end;
@@ -598,7 +589,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATmmap_pin(r);
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
-        ALGODEBUG t0=GDKusec();
 	BATloopFast(l, l_cur, l_end, xx) {
 		yy = offset + *(oid *) BUNtail(l, l_cur);
 		if (yy < base || yy >= end) {
@@ -608,8 +598,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@:bunfastins_nocheck_(@1,@2)@
 		dst += zz;
 	}
-	ALGODEBUG t1=GDKusec();
-	ALGODEBUG THRprintf(GDKout, LLFMT "us\n", t1-t0);
 	BATmmap_unpin(r);
 	ret = bn;
       goto bunins_failed;
@@ -1030,12 +1018,7 @@ BATfetchjoin(BAT *l, BAT *r, size_t estimate)
 {
 	/* fetchjoin now implies that you assure no fetch misses (hitalways) */
 	/* allows swapping of left and right input for faster processing */
-	lng t0=0, t1=0;
-        ALGODEBUG t0=GDKusec();
-	BAT *b = batfetchjoin(l, r, estimate, TRUE, FALSE);
-	ALGODEBUG t1=GDKusec();
-	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: " LLFMT "us\n", t1-t0);
-	return b;
+	return batfetchjoin(l, r, estimate, TRUE, TRUE);
 }
 
 BAT *
@@ -1044,7 +1027,7 @@ BATleftfetchjoin(BAT *l, BAT *r, size_t estimate)
 	/* fetchjoin now implies that you assure no fetch misses (hitalways) */
 	/* do not swap left and right input,
 	   and hence maintain order of left head in result */
-	return batfetchjoin(l, r, estimate, FALSE, FALSE);
+	return batfetchjoin(l, r, estimate, FALSE, TRUE);
 }
 
 @-
@@ -1137,17 +1120,10 @@ hash join: the bread&butter join of monet
 BAT *
 BATjoin(BAT *l, BAT *r, size_t estimate)
 {
-	lng t0=0, t1=0;
 	/* allows swapping of left and right input for faster processing */
-        ALGODEBUG t0=GDKusec();
 	BAT *b = batjoin(l, r, estimate, TRUE);
-	ALGODEBUG t1=GDKusec();
-	ALGODEBUG THRprintf(GDKout, "BATjoin: " LLFMT "us\n", t1-t0);
 
-        ALGODEBUG t0=GDKusec();
 	BATpropcheck(b, BATPROPS_ALL);
-	ALGODEBUG t1=GDKusec();
-	ALGODEBUG THRprintf(GDKout, "BATjoin: " LLFMT "us\n", t1-t0);
 	return b;
 }
 
