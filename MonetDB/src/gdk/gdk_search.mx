@@ -640,6 +640,17 @@ SORTfndfirst_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
+@(
+		if (bunsize == 2 || bunsize == 4 || bunsize == 8 || (bunsize&15) == 0) {
+			/* poor man's binary search / exploiting backward scan */
+			while (cur-4096 >= end && @3_EQ(BUNt@1(b,cur-4096),v,@4))
+				cur -= 4096;
+			while (cur-256 >= end && @3_EQ(BUNt@1(b,cur-256),v,@4))
+				cur -= 256;
+			while (cur-16 >= end && @3_EQ(BUNt@1(b,cur-16),v,@4))
+				cur -= 16;
+		}
+@)
 		while((cur-=bunsize) >= end) {
 			if (!@3_EQ(BUNt@1(b,cur),v,@4))
 				break;
@@ -675,6 +686,17 @@ SORTfndlast_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
+@(
+		if (bunsize == 2 || bunsize == 4 || bunsize == 8 || (bunsize&15) == 0) {
+			/* poor man's binary search / exploiting forward scan */
+			while (cur+4096 < end && @3_EQ(BUNt@1(b,cur+4096),v,@4))
+				cur += 4096;
+			while (cur+256 < end && @3_EQ(BUNt@1(b,cur+256),v,@4))
+				cur += 256;
+			while (cur+16 < end && @3_EQ(BUNt@1(b,cur+16),v,@4))
+				cur += 16;
+		}
+@)
 		while((cur+=bunsize) < end) {
 			if (!@3_EQ(BUNt@1(b,cur),v,@4))
 				break;
