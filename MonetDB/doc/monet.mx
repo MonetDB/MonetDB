@@ -327,7 +327,7 @@ environment variable.\\
 If you compiled with dynamic libraries (which is default - but static compilation 
 is also possible), the MonetDB server, @[<a href="../Tools/Mserver/index.html">Mserver</a>@, depends on a number 
 of {\small .so} libraries that need to be found. Therefore, you might need to add
-the {\tt lib/} directory to your {\tt LD\_LIBRARY\_PATH}.\\
+the {\tt lib(64)/} directory to your {\tt LD\_LIBRARY\_PATH}.\\
 
 However, in (the most common) case you compiled MonetDB yourself, you actually do not 
 have to set the library path, as during compilation the prefixed path is compiled
@@ -372,7 +372,7 @@ gdk_mmap=33554432		# memory chunks of size >= 32M will be mmaped
 gdk_debug=0			# debug
 monet_prompt=>			# prompt 
 monet_welcome=yes		# Version and copyright information
-monet_mod_path=${exec_prefix}/lib/MonetDB
+monet_mod_path=${exec_prefix}/lib(64)/MonetDB
 monet_deamon=no			# if yes, there is no interactive server console
 \end{verbatim}
 
@@ -381,7 +381,7 @@ and {\tt gdk\_dbname} to your most commonly used database instance. This will
 basically enable you to start @[<a href="../Tools/Mserver/index.html">Mserver</a>@ without any command-line parameters.\\
 
 If {\tt prefix} is set correctly, you will, in general, not need to adapt 
-{\tt exec\_prefix} and {\tt monet\_mod\_path} (where MonetDB looks for {\tt lib/}
+{\tt exec\_prefix} and {\tt monet\_mod\_path} (where MonetDB looks for {\tt lib(64)/}
 directories with extension modules) anymore.\\
 
 The {\tt gdk\_dbfarm} variable holds the directory in which one or more database

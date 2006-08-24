@@ -286,7 +286,7 @@ short-term lock ('protector').
 
 @- Module Filename Convention
 The file is assumed to be in directory: module_dir (set to
-$PREFIX/lib/ ?)  The file is assumed to have either of these file
+$PREFIX/lib(64)/ ?)  The file is assumed to have either of these file
 names, searched in the following order; <module>-<database>_<user>.so,
 <module>-<database>.so, <module>_<user>.so, <module>.soo .
 
