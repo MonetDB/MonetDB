@@ -40,6 +40,8 @@ var dec_flt := [flt](dec_bat);
 var dec_int := [int](dec_bat);
 var dec_lng := [lng](dec_bat);
 var dec_dbl := [dbl](dec_bat);
+# this one fails because there is no conversion defined to sht
+var dec_sht := [sht](dec_bat);
 
 print(dec_bat.col_name("value"), 
   dec_prc.col_name("precision"), 
