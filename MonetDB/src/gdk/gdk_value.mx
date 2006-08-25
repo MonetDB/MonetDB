@@ -263,7 +263,7 @@ up with an ILLEGALVALUE.
 ptr
 VALconvert2(int typ, ValPtr src, ValPtr dst)
 {
-	int src_tpe = src->vtype, dst_tpe = typ;
+	int orig_src_tpe = src->vtype, src_tpe = src->vtype, dst_tpe = typ;
 	ptr p;			/* what's going to be returned (may change for BATs */
 
 	/* use base types for user types */
@@ -275,18 +275,19 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 	if (src != dst)
 		*dst = *src;	/* copy already in case there is no conversion */
 
-	/* we already know the source type so we can overwrite it (in case src==dst) */
+	/* we saved the original value of src->vtype, so we can
+	   overwrite that (in case src==dst */
 	dst->vtype = typ;
 	p = VALptr(dst);
 
-	if (src_tpe != dst_tpe && src->vtype != typ && dst_tpe != TYPE_void) {
+	if (src_tpe != dst_tpe && orig_src_tpe != typ && dst_tpe != TYPE_void) {
 		if (src_tpe >= TYPE_str || dst_tpe >= TYPE_str) {
 			if (ATOMcmp(src_tpe, ATOMnilptr(src_tpe), VALptr(src)) == 0) {
 				VALset(dst, dst_tpe, ATOMnil(dst_tpe));
 			} else {
 				return ILLEGALVALUE;
 			}
-		} else if ((src->vtype == TYPE_bat && src->val.bval == 0) ||
+		} else if ((orig_src_tpe == TYPE_bat && src->val.bval == 0) ||
 			   ATOMcmp(src_tpe, ATOMnilptr(src_tpe), VALptr(src)) == 0) {
 			/* dst_tpe is a built-in type, so VALptr(dst) (p) points to valid memory */
 			memcpy(p, ATOMnilptr(dst_tpe), ATOMsize(dst_tpe));
