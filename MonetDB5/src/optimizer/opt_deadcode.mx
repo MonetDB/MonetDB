@@ -79,7 +79,7 @@ comment "Dead code optimizer";
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-/* #define DEBUG_OPT_DEAD     trace its behavior */
+/* #define DEBUG_OPT_DEAD      trace its behavior */
 
 #endif
 @c

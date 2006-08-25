@@ -85,66 +85,40 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-#define propagate(X) { p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
-	p->argc = 2; p->fcn = 0; doAR++;\
+#define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1),TRUE); \
+	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; doAR++;\
 	if( getVarType(mb,getArg(p,0)) == getVarType(mb,getArg(p,1)) ) { \
 		setModuleId(p,NULL); setFunctionId(p,NULL); \
 	} else { setModuleId(p,batcalcRef); setFunctionId(p,identityRef);} }
 
 static void
-ESevaluate(MalBlkPtr mb, int cnt, int *vars)
+ESevaluate(MalBlkPtr mb, char *empty)
 {
-	char *empty;
-	int i, j, limit, doAR = 0,tpe;
+	int i, j, k, limit, doAR = 0,tpe;
 	InstrPtr p;
 	str likeRef = getName("like", 4);
 	str existRef = getName("exist", 5);
-	str sortHRef = getName("sortH", 5);
-	str sortTRef = getName("sortT", 5);
-	str sortHTRef = getName("sortHT", 6);
-	str sortTHRef = getName("sortTH", 6);
 	str uniqueRef = getName("unique", 6);
 	str suniqueRef = getName("sunique", 7);
 	str kuniqueRef = getName("kunique", 7);
-	str unionRef = getName("union", 5);
-	str sunionRef = getName("sunion", 6);
-	str kunionRef = getName("kunion", 6);
 	str intersectRef = getName("intersect", 9);
 	str sintersectRef = getName("sintersect", 10);
 	str kintersectRef = getName("kintersect", 10);
 	str fragmentRef = getName("fragment", 8);
-	str differenceRef = getName("difference", 10);
-	str kdifferenceRef = getName("kdifference", 11);
 	str fetchjoinRef = getName("fetchjoin", 9);
 	str mergejoinRef = getName("mergejoin", 9);
 	str indexjoinRef = getName("indexjoin", 9);
 	str hashjoinRef = getName("hashjoin", 8);
 	str cartesianproductRef = getName("cartesianproduct", 16);
 
-	empty = alloca(mb->vtop);
-	memset(empty,0,mb->vtop);
-	for (i = 0; i < cnt; i++)
-		empty[vars[i]] = 1;
-
 	setLifespan(mb);
 	limit= mb->stop;
 
-	/* Sanity check on the validity of the emptyness property */
-	for (i = 0; i < limit; i++) {
-		p = getInstrPtr(mb,i);
-		for (j = 0; j < p->retc; j++)
-			if (empty[getArg(p, j)] && getLastUpdate(mb, getArg(p, j)) > i) {
-#ifdef DEBUG_OPT_EMPTYSET
-				stream_printf(GDKout, "reject emptyset %d\n", getArg(p, j));
-#endif
-				empty[getArg(p, j)] = 0;
-			}
-	}
-
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
-	for (i = 0; i < limit; i++) {
+	for (i = k = 0; i < limit; i++) {
 		p = getInstrPtr(mb,i);
+		mb->stmt[k++] = p;
 @-
 If the target variable is already marked as containing zero rows,
 the statement itself can then be removed.
@@ -155,7 +129,6 @@ the statement itself can then be removed.
 		tpe= getVarType(mb,getArg(p,0));
 		pushArgument(mb,p,newTypeVariable(mb,getHeadType(tpe)));
 		pushArgument(mb,p,newTypeVariable(mb,getTailType(tpe)));
-		empty[getArg(p,0)] = 1;
 		doAR++;
 @c
 		if (p->retc==1 && empty[getArg(p, 0)] &&
@@ -176,16 +149,11 @@ sequences to filter and replace calls with empty arguments.
 						if (j == 2) {
 							/* represents an empty bulk update */
 							/* which does not produce a result */
-							setModuleId(p, NULL);
-							setFunctionId(p, NULL);
-							getArg(p,1)= getArg(p,0);
-							setVarUsed(mb, getArg(p,0),TRUE);
-							p->argc=2;
-							p->token= ASSIGNsymbol;
+							freeInstruction(p);
+							k--;
 						}
-					} 
+					} else 
 					if (getFunctionId(p)== reverseRef ){
-						empty[getArg(p, 0)] = 1;
 					}
 					break;
 				} 
@@ -218,8 +186,6 @@ sequences to filter and replace calls with empty arguments.
 
 						/* result is empty */
 						propagate(1);
-						if (getLastUpdate(mb, getArg(p, 0)) == i)
-							empty[getArg(p, 0)] = 1;
 						break;
 					} 
 					if ( getFunctionId(p) == differenceRef || 
@@ -264,18 +230,7 @@ sequences to filter and replace calls with empty arguments.
 				}
 			}
 	}
-/*
-	if (doAR && mb->errors == 0) {
-		setLifespan(mb);
-#ifdef DEBUG_OPT_EMPTYSET
-		printf("MID STAGE doAR=%d\n", doAR);
-		printFunction(GDKout, mb, LIST_MAL_ALL);
-#endif
-		OPTaliases(mb, 0, 0);
-		OPTdeadcode(mb, 0, 0);
-	}
-*/
-
+	mb->stop= k;
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
@@ -290,12 +245,13 @@ are not the target of an update.
 int
 OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *sets;
-	int i, k=0;
+	char *empty;
+	int i;
 	int *rows;
 	PropertySet ps;
 
-	sets = (int *) alloca(mb->vtop * sizeof(int));
+	empty = (char *) alloca(mb->vtop * sizeof(int));
+	memset(empty,0,mb->vtop);
 	(void) stk;
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET
@@ -310,13 +266,13 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	else
 		stream_printf(GDKout, ",%d ", i);
 #endif
-			sets[k++] = i;
+			empty[i] = 1;
 		} 
 	}
 #ifdef DEBUG_OPT_EMPTYSET
 	stream_printf(GDKout, "\n");
 #endif
-	ESevaluate(mb, k, sets);
+	ESevaluate(mb, empty);
 	return 1;
 }
 
