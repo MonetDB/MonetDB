@@ -264,7 +264,7 @@ ptr
 VALconvert2(int typ, ValPtr src, ValPtr dst)
 {
 	int src_tpe = src->vtype, dst_tpe = typ;
-	ptr p = VALptr(dst);	/* what's going to be returned (may change for BATs */
+	ptr p;			/* what's going to be returned (may change for BATs */
 
 	/* use base types for user types */
 	if (src_tpe > TYPE_str)
@@ -274,6 +274,10 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 
 	if (src != dst)
 		*dst = *src;	/* copy already in case there is no conversion */
+
+	/* we already know the source type so we can overwrite it (in case src==dst) */
+	dst->vtype = typ;
+	p = VALptr(dst);
 
 	if (src_tpe != dst_tpe && src->vtype != typ && dst_tpe != TYPE_void) {
 		if (src_tpe >= TYPE_str || dst_tpe >= TYPE_str) {
@@ -325,9 +329,8 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 				}
 				if (bid == 0 || !BBPvalid(bid)) {
 					return ILLEGALVALUE;
-				} else {
-					p = (ptr) BATdescriptor(bid);
 				}
+				p = (ptr) BATdescriptor(bid);
 				dst->val.bval = bid;
 				break;
 			}
@@ -515,7 +518,6 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 			}
 		}
 	}
-	dst->vtype = typ;
 	return p;
 }
 
