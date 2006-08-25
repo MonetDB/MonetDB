@@ -318,7 +318,7 @@ typedef struct VARRECORD {
 	bit fixtype;		/* the type has been fixed */
 	bit isudftype;		/* type defined in program */
 	bit cleanup;		/* remove upon function return */
-	bit inout;		/* in-out argument to function */
+	bit isused;		/* in-out argument to function */
 	int tmpindex;		/* temporary variable */
 	short scope;		/* block id where it is declared */
 	short depth;		/* ... depth in nesting */
@@ -427,7 +427,6 @@ for separate name space management.
 #define isTmpVar(M,I)   (!(M)->var[I]->name || *(M)->var[I]->name == TMPMARKER)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
 #define getVarProperties(M,I)   ((M)->var[I]->props)
-#define isInOutArgument(M,I)   ((M)->var[I]->inout)
 
 #define getVarDepth(M,I)   ((M)->var[I]->depth)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
@@ -435,6 +434,8 @@ for separate name space management.
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
 #define setVarCleanup(M,I)     ((M)->var[I]->cleanup)
 #define isVarGarbage(M,I)     ((M)->var[I]->cleanup)
+#define setVarUsed(M,I,V)		((M)->var[I]->isused= V)
+#define isVarUsed(M,I)		((M)->var[I]->isused)
 #define getVarConstant(M,I)     ((M)->var[I]->value)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
@@ -492,7 +493,6 @@ mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTmpSink(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void delVariable(MalBlkPtr mb, int varid);
-mal_export int isVarUsed(MalBlkPtr mb, int varid);
 mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
@@ -1266,7 +1266,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	isConstant(mb, n) = 0;
 	setVarCleanup(mb, n) = FALSE;
 	getVar(mb, n)->isudftype = 0;
-	getVar(mb, n)->inout = 0;
+	getVar(mb, n)->isused = 0;
 	mb->vtop++;
 	return n;
 }
@@ -1312,7 +1312,7 @@ newTmpVariable(MalBlkPtr mb, malType type)
     isConstant(mb,n) = 0;
     setVarCleanup(mb,n) = FALSE;
 	getVar(mb,n)->isudftype= 0;
-	getVar(mb,n)->inout= 0;
+	getVar(mb,n)->isused= 0;
 */
 	getVarTmp(mb, n) = n;
 	setVarType(mb, n, type);
@@ -1344,22 +1344,6 @@ newTypeVariable(MalBlkPtr mb, malType type)
 	return n;
 }
 
-int
-isVarUsed(MalBlkPtr mb, int varid)
-{
-	int i,j;
-	InstrPtr p;
-
-	for( i=1; i<mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for( j=p->retc; j<p->argc; j++)
-			if( getArg(p,j) == varid) return TRUE;
-		if( p->barrier )
-			for( j=0; j<p->retc; j++)
-				if( getArg(p,j) == varid) return TRUE;
-	}
-	return FALSE;
-}
 void
 delVariable(MalBlkPtr mb, int varid)
 {
@@ -1382,7 +1366,7 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	w->cleanup = v->cleanup;
 	w->fixtype = v->fixtype;
 	w->isudftype = v->isudftype;
-	w->inout = v->inout;
+	w->isused = v->isused;
 	w->isaconstant = v->isaconstant;
 	w->isatypevar = v->isatypevar;
 	w->tmpindex = v->tmpindex;
@@ -1439,7 +1423,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->cleanup = 0;
 	v->fixtype = 0;
 	v->isudftype = 0;
-	v->inout = 0;
+	v->isused = 0;
 	v->isaconstant = 0;
 	v->isatypevar = 0;
 	v->tmpindex = 0;

@@ -674,13 +674,14 @@ debugLifespan(MalBlkPtr mb)
 void
 setLifespan(MalBlkPtr mb)
 {
-	int pc, k;
+	int pc, j, k;
 	InstrPtr p;
 
 	for (k = 0; k < mb->vtop; k++) {
 		VarPtr v = getVar(mb, k);
 
 		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
+		v->isused= 0;
 	}
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
@@ -697,6 +698,15 @@ setLifespan(MalBlkPtr mb)
 				v->endLifespan = pc;
 			}
 		}
+@-
+For all variables we keep track if it is used, cq modified.
+This simplifies subsequent optimization.
+@c
+		if( p->token != NOOPsymbol)
+			for(j= p->retc; j<p->argc; j++)
+				setVarUsed(mb,getArg(p,j),!isTypeVar(mb,getArg(p,j)) );
+		if( blockCntrl(p) || blockStart(p) )
+			setVarUsed(mb,getDestVar(p),TRUE);
 	}
 	/* debugLifespan(mb); */
 }
@@ -709,12 +719,12 @@ isLoopBarrier(MalBlkPtr mb, int pc){
 	p= getInstrPtr(mb,pc);
 	if( p->barrier != BARRIERsymbol)
 		return 0;
-	varid= getArg(p,0);
+	varid= getDestVar(p);
 	for(pc++; pc< mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		if( p->barrier == REDOsymbol && getArg(p,0)== varid)
+		if( p->barrier == REDOsymbol && getDestVar(p)== varid)
 			return 1;
-		if( p->barrier == EXITsymbol && getArg(p,0)== varid)
+		if( p->barrier == EXITsymbol && getDestVar(p)== varid)
 			break;
 	}
 	return 0;
@@ -730,7 +740,7 @@ getBlockBegin(MalBlkPtr mb,int pc){
 	for(i= pc; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( p->barrier == EXITsymbol ){
-			varid= getArg(p,0);
+			varid= getDestVar(p);
 			break;
 		}
 	}
@@ -739,7 +749,7 @@ getBlockBegin(MalBlkPtr mb,int pc){
 	for(; pc> 0; pc--){
 		p= getInstrPtr(mb,pc);
 		if( (p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol) &&
-		    getArg(p,0)== varid)
+		    getDestVar(p)== varid)
 			return pc;
 	}
 	return 0;
@@ -751,10 +761,10 @@ getBlockExit(MalBlkPtr mb,int pc){
 	p= getInstrPtr(mb,pc);
 	if( p->barrier != BARRIERsymbol && p->barrier != CATCHsymbol)
 		return 0;
-	varid= getArg(p,0);
+	varid= getDestVar(p);
 	for(pc++; pc< mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		if( p->barrier == EXITsymbol && getArg(p,0)== varid)
+		if( p->barrier == EXITsymbol && getDestVar(p)== varid)
 			return pc;
 	}
 	return 0;
