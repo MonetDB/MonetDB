@@ -108,16 +108,32 @@ command insertionsForce(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):v
 address CRKmergeInsertions_Force_@1 
 comment "Merge the insertions bat with the cracker bat and update the cracker index";
 
+command insertionsBForce(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+address CRKmergeInsertionsB_Force_@1 
+comment "Merge the insertions bat with the cracker bat and update the cracker index";
+
 command insertionsOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_OnNeed 
+comment "Keep the insertions bat separatelly and do a complete merge only if a relevant query arrives in the future";
+
+command insertionsBOnNeed(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+address CRKmergeInsertionsB_OnNeed 
 comment "Keep the insertions bat separatelly and do a complete merge only if a relevant query arrives in the future";
 
 command insertionsOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_OnNeedGradually 
 comment "Keep the insertions bat separatelly and merge only what is needed if a relevant query arrives in the future";
 
+command insertionsBOnNeedGradually(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+address CRKmergeInsertionsB_OnNeedGradually 
+comment "Keep the insertions bat separatelly and merge only what is needed if a relevant query arrives in the future";
+
 command insertionsOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1], deleteNodes:bit):void
 address CRKmergeInsertions_OnNeedGraduallyRipple 
+comment "Keep the insertions bat separatelly and merge only what is needed using the ripple strategy if a relevant query arrives in the future";
+
+command insertionsBOnNeedGraduallyRipple(b:bat[:any_1,:@1], c:bat[:any_1,:@1]):void
+address CRKmergeInsertionsB_OnNeedGraduallyRipple 
 comment "Keep the insertions bat separatelly and merge only what is needed using the ripple strategy if a relevant query arrives in the future";
 
 command verifyCrackerIndex(b:bat[:any_1,:@1]):void
@@ -347,6 +363,7 @@ typedef struct {
 												1 gradually,
 												2 ripple */ 
 	bit 		deleteNodes;    /* if true, merging operations will delete nodes form the index if it makes things easier */
+	bit 		mergeFromTheEnd;
 } CrackTreeIndex;
 
 mal_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
@@ -359,8 +376,11 @@ mal_export str CRKprintCrackerBAT(int *k, int *bid);
 mal_export str CRKprintCrackerInsertions(int *k, int *bid);
 mal_export str CRKmergeInsertions_Forget(int *k, int *bid, int *new);
 mal_export str CRKmergeInsertions_OnNeed(int *k, int *bid, int *new, bit *deleteNodes);
+mal_export str CRKmergeInsertionsB_OnNeed(int *k, int *bid, int *new);
 mal_export str CRKmergeInsertions_OnNeedGradually(int *k, int *bid, int *new, bit *deleteNodes);
+mal_export str CRKmergeInsertionsB_OnNeedGradually(int *k, int *bid, int *new);
 mal_export str CRKmergeInsertions_OnNeedGraduallyRipple(int *k, int *bid, int *new, bit *deleteNodes);
+mal_export str CRKmergeInsertionsB_OnNeedGraduallyRipple(int *k, int *bid, int *new);
 #endif /* _CRACKERS_H */
 
 @c
@@ -581,8 +601,7 @@ GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 	curValue = BUNtloc(b, cur);
 
 	if (current->deleted == TRUE){
-		if ( (@2_EQ(&x,curValue,@3@1) && inclusive == current->inclusive) ||
-		     (@2_LT(&x,curValue,@3@1) || (@2_EQ(&x,curValue,@3@1) && inclusive == TRUE && current->inclusive == FALSE)) ){	
+		if ( @2_EQ(&x,curValue,@3@1) || @2_LT(&x,curValue,@3@1) ){	
 			if (current->left == NULL){
         	                *p1 = previous;
                 	        *p2 = getNextPosition(current, b, base,  xx, next);
@@ -599,12 +618,12 @@ GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 			return GetLow_@1(x, inclusive, current->right, b, base, xx, p1, p2, getPreviousPosition(current, b, base,  xx, previous), next);
 	}
 
-	if ( @2_EQ(&x,curValue,@3@1) && inclusive == current->inclusive){
+	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == TRUE)) ){
 		*p1 = *(lng*)BUNhloc(b, cur);	
 		return 1;
 	}	
 
-       	if ( @2_LT(&x,curValue,@3@1) || (@2_EQ(&x,curValue,@3@1) && inclusive == TRUE && current->inclusive == FALSE) ){
+       	if ( @2_LT(&x,curValue,@3@1) || @2_EQ(&x,curValue,@3@1) ){
 
 		if (current->left == NULL){
 			/* crack from the begining of the bat */
@@ -636,8 +655,7 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 	curValue = BUNtloc(b, cur);
 
 	if (current->deleted == TRUE){
-		if ( (@2_EQ(&x,curValue,@3@1) && inclusive == current->inclusive) ||
-		     (@2_GT(&x,curValue,@3@1) || (@2_EQ(&x,curValue,@3@1) && inclusive == FALSE && current->inclusive == TRUE)) ){
+		if ( @2_EQ(&x,curValue,@3@1) || @2_GT(&x,curValue,@3@1) ){
 			 if (current->right == NULL){
                        	 	*p1 = getPreviousPosition(current, b, base,  xx, previous);
                         	*p2 = next;
@@ -654,12 +672,12 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 
 	}
 
-	if ( @2_EQ(&x,curValue,@3@1) && inclusive == current->inclusive){
+	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == FALSE))){
 		*p2 = *(lng*)BUNhloc(b, cur);	
 		return 1;
 	}	
 
-	if ( @2_GT(&x,curValue,@3@1) || (@2_EQ(&x,curValue,@3@1) && inclusive == FALSE && current->inclusive == TRUE) ){
+	if ( @2_GT(&x,curValue,@3@1) || @2_EQ(&x,curValue,@3@1) ){
 
 		if (current->right == NULL){
 			/* crack until the end of the BAT if this was the last index entry but the needed value is still bigger */
@@ -791,53 +809,53 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 }
 
 struct Node *
-findNodeH_@1(@1  x, struct Node * current, BAT *b, BUN base, int xx, struct Node * next){
+findNodeH_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * next){
 
         BUN cur,curValue;	
 
 	cur = base + ((current->position) * xx);
 	curValue = BUNtloc(b, cur);
 
-	if ( @2_EQ(&x,curValue,@3@1) && current->inclusive == FALSE)
+	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == FALSE)) )
 		return (current->deleted == TRUE) ? getNextNode(current, next) : current;
 
-        if( @2_GT(&x,curValue,@3@1) || (@2_EQ(&x,curValue,@3@1) && current->inclusive == TRUE) ){
+        if( @2_GT(&x,curValue,@3@1) || @2_EQ(&x,curValue,@3@1) ){
 
 		if (current->right == NULL)
 			return next;
 		else
-      			return findNodeH_@1(x, current->right, b, base, xx, next);
+      			return findNodeH_@1(x, inclusive, current->right, b, base, xx, next);
 	}
 
 	if (current->left == NULL)
 		return (current->deleted == TRUE) ? getNextNode(current, next) : current;
 	else		
-		return findNodeH_@1(x, current->left, b, base, xx, (current->deleted == TRUE) ? getNextNode(current, next) : current);	
+		return findNodeH_@1(x, inclusive, current->left, b, base, xx, (current->deleted == TRUE) ? getNextNode(current, next) : current);	
 }
 
 struct Node *
-findNodeL_@1(@1  x, struct Node * current, BAT *b, BUN base, int xx, struct Node * prev){
+findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx, struct Node * prev){
 
 	BUN cur,curValue;
  
 	cur = base + ((current->position) * xx);
 	curValue = BUNtloc(b, cur);
 
-	if ( @2_EQ(&x,curValue,@3@1) && current->inclusive == TRUE)
-		return current;
+	if ( @2_EQ(&x,curValue,@3@1) && (inclusive == FALSE || (inclusive == TRUE && current->inclusive == TRUE)) )
+		return (current->deleted == TRUE) ? getPreviousNode(current, prev) : current;
 
-        if( @2_LT(&x,curValue,@3@1) || (@2_EQ(&x,curValue,@3@1) && current->inclusive == FALSE) ){
+        if( @2_LT(&x,curValue,@3@1) || @2_EQ(&x,curValue,@3@1) ){
 
 		if (current->left == NULL)
 			return prev;
 		else
-			return findNodeL_@1(x, current->left, b, base, xx, prev);
+			return findNodeL_@1(x, inclusive, current->left, b, base, xx, prev);
 	}
 
 	if (current->right == NULL)
-		return current;
+		return (current->deleted == TRUE) ? getPreviousNode(current, prev) : current;
 	else
-		return findNodeL_@1(x, current->right, b, base, xx, prev);
+		return findNodeL_@1(x, inclusive, current->right, b, base, xx, (current->deleted == TRUE) ? getPreviousNode(current, prev) : current);
 }
 
 void 
@@ -2228,7 +2246,7 @@ struct tempBATNode{
 			bats++;
 		} else
 			hghIndexNode->deleted = TRUE;
-		hghIndexNode = findNodeH_@1(*(@1*)crkt, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+		hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 		if (hghIndexNode != NULL)
 			lastPos = *(lng*)BUNhloc(c, idxFirst + ((hghIndexNode->position) * zz));
 		else 
@@ -2245,7 +2263,7 @@ struct tempBATNode{
 	int xx, zz, bats = 0, position = -1;
 	struct Node * hghIndexNode, *lowIndexNode;
 	struct tempBATNode *tempBATs, *lastBAT, *temp;
-	lng extended = 0, extendedIns = 0, insDone = 0, written, pos, prevPos, lastPos, prevcrsize, insertions;
+	lng endPosition, extended = 0, extendedIns = 0, insDone = 0, written, pos, prevPos, lastPos, prevcrsize, insertions;
 	bit takeNext;
 
 	for (int i = 0; i < maxCrackMap; i++)
@@ -2312,7 +2330,7 @@ struct tempBATNode{
 	crkFirst = BUNfirst(b);
 	crkLast  = BUNtloc(b,BUNlast(b)-xx);
 
-	lowIndexNode = findNodeH_@1(*(@1*)inst, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+	lowIndexNode = findNodeH_@1(*(@1*)inst, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 	if ( lowIndexNode == NULL ) 
 		goto end;				
 	cur      = idxFirst + ((lowIndexNode->position) * zz);
@@ -2321,7 +2339,7 @@ struct tempBATNode{
 	crkh = BUNhloc(b, crkFirst + (*(lng*)curPos) * xx + xx); 
 	crkt = BUNtloc(b, crkFirst + (*(lng*)curPos) * xx + xx); 
 	prevPos = *(lng*)curPos;
-	hghIndexNode = findNodeH_@1(*(@1*)crkt, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+	hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 	if ( hghIndexNode == NULL )
 		lastPos = prevcrsize - 1;
 	else 
@@ -2353,7 +2371,7 @@ struct tempBATNode{
 
 	while (@5){
 	
-		lowIndexNode = findNodeH_@1(*(@1*)BUNtloc(tempBATs->b,BUNfirst(tempBATs->b)), TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+		lowIndexNode = findNodeH_@1(*(@1*)BUNtloc(tempBATs->b,BUNfirst(tempBATs->b)), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 		if (lowIndexNode == NULL)
 			break; 	
 
@@ -2385,7 +2403,7 @@ struct tempBATNode{
 			takeNext = TRUE;
 		} else {
 			if (crkt <= crkLast){
-				hghIndexNode = findNodeH_@1(*(@1*)crkt, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+				hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 				if ( hghIndexNode == NULL )
 					lastPos = prevcrsize-1;
 				else 
@@ -2509,21 +2527,159 @@ printf(" \n Total bun in are %lld \n", insDone+ extendedIns);
 printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);	
 */
 	}
+	endPosition = startPosition + insDone + extendedIns;
 @
+
+@= mergeInsertionsFromTheEndBodyI
+        BAT *c, *u, *b;
+	BUN insh, inst, crkh, crkt, idxFirst, cur, curVal, curPos, crkFirst, crkLast, insLast, insFirst, next, write;
+	int xx, zz, position = -1;
+	struct Node *IndexNode = NULL;
+	lng prevPos, prevcrsize, insertions, remainingIns, buns;
+
+	BUN wh,wt;
+	lng copy;
+
+	for (int i = 0; i < maxCrackMap; i++)
+                if (TreeIndex[i].bid == *bid){
+                        position = i;
+			break;	
+		}
+
+        if ((u = BATdescriptor(*new)) == NULL) 
+                return throwMessage("crackers.mergeInsertions_@1", "Cannot access insertions BAT");
+
+	/* abort if there are no insertions to merge */	
+	if (BATcount(u) == 0) {
+		BBPunfix(u->batCacheid);
+		return MAL_SUCCEED;
+	}
+
+	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL){ 
+		BBPunfix(u->batCacheid);
+		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker index");
+	}
+	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL){
+		BBPunfix(u->batCacheid);
+		BBPunfix(c->batCacheid);
+		return throwMessage("crackers.mergeInsertions_@1", "Cannot access cracker BAT");
+	}
+	if (endPosition == -1)
+		endPosition = BATcount(u) - 1;
+	insertions = endPosition - startPosition + 1;
+
+	/* sort in place the insertions bat */ 
+	if (u->tsorted == FALSE){
+		u->batRestricted = BAT_WRITE;
+		BATmirror(BATorder(BATmirror(u)));
+	}
+
+	remainingIns = insertions;
+	prevcrsize = BATcount(b);
+	xx = BUNsize(b);
+	zz = BUNsize(c);
+	insFirst = BUNfirst(u);	
+	insLast = BUNtloc(u,BUNlast(u));	
+
+	/* make room for the new buns */
+	lng needed = insertions - (((b)->batBuns->size - (b)->batBuns->free) / xx);
+	if ( needed > 0 ){
+                size_t ncap = BATcapacity(b) + needed;
+                size_t grows = BATgrows(b);
+                if (ncap > grows)
+                        grows = ncap;
+                if (BATextend(b, grows) == NULL)
+                        return throwMessage("crackers.mergeInsertions_@1", "Failed to make room for the new values");
+        }
+	
+	insh 	 = BUNhloc(u, insFirst + endPosition*xx);
+	inst 	 = BUNtloc(u, insFirst + endPosition*xx);
+	idxFirst = BUNfirst(c);
+	crkFirst = BUNfirst(b);
+@
+@= mergeInsertionsFromTheEndBodyII
+	prevPos = prevcrsize - 1;
+	while ( remainingIns > 0 && 
+		(IndexNode = findNodeL_@1(*(@1*)BUNtloc(b,next), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) != NULL ) {
+		
+		write  = next + xx;
+
+		cur    = idxFirst + (IndexNode->position) * zz;
+                curPos = BUNhloc(c, cur);
+		curVal = BUNtloc(c, cur);
+		next   = crkFirst + (*(lng*)curPos) * xx;
+		buns   = prevPos - (*(lng*)curPos);
+	
+		crkh = BUNhloc(b,write+(remainingIns-1)*xx);
+		crkt = BUNtloc(b,write+(remainingIns-1)*xx);
+		while(  remainingIns > 0 && 
+			(@2_GT(inst,curVal,@3@1) || (@2_EQ(inst,curVal,@3@1) && IndexNode->inclusive == TRUE)) ){
+			*(oid*)crkh = *(oid*)insh;
+			*(@1 *)crkt = *(@1 *)inst;
+			crkh-=xx; crkt-=xx; insh-=xx; inst-=xx; remainingIns--; 
+		}
+
+		if (remainingIns == 0)
+                break;
+
+		if (buns>remainingIns){
+			/*memcpy(next+xx, write, remainingIns*xx);*/
+			crkh = BUNhloc(b, next+xx);
+       		        crkt = BUNtloc(b, next+xx);
+			wh   = BUNhloc(b,write);
+			wt   = BUNtloc(b,write);
+			copy = (buns>remainingIns?remainingIns:buns);
+			for(int i=0;i<copy;i++){
+				*(oid*)wh = *(oid*)crkh;
+                       	 	*(@1 *)wt = *(@1 *)crkt;
+                       	 	crkh+=xx; crkt+=xx; wh+=xx; wt+=xx;
+			}
+		} else {
+			/*memcpy(next+xx, write+(remainingIns-buns)*xx, buns*xx);*/
+			crkh = BUNhloc(b, next+xx);
+       		        crkt = BUNtloc(b, next+xx);
+			wh   = BUNhloc(b,write+(remainingIns-buns)*xx);
+			wt   = BUNtloc(b,write+(remainingIns-buns)*xx);
+			copy = (buns>remainingIns?remainingIns:buns);
+			for(int i=0;i<copy;i++){
+				*(oid*)wh = *(oid*)crkh;
+                       	 	*(@1 *)wt = *(@1 *)crkt;
+                       	 	crkh+=xx; crkt+=xx; wh+=xx; wt+=xx;
+			}
+		}
+		
+		prevPos = *(lng*)curPos;
+		*(lng*)curPos =  *(lng*)curPos + remainingIns;
+	}
+
+	if (IndexNode == NULL && remainingIns > 0){
+		/*memcpy(insFirst, next + xx, remainingIns);*/
+		crkh = BUNhloc(b, insFirst+startPosition*xx);
+                crkt = BUNtloc(b, insFirst+startPosition*xx);
+		wh   = BUNhloc(b, next + xx);
+		wt   = BUNtloc(b, next + xx);
+		for(int i=0;i<remainingIns;i++){
+			*(oid*)wh = *(oid*)crkh;
+                        *(@1 *)wt = *(@1 *)crkt;
+                        crkh+=xx; crkt+=xx; wh+=xx; wt+=xx;
+		}
+	}
+
+@
+
 @= shrinkInsertions
-	if (lowIndexNode == NULL){
 		/* shrink the insertions bat */
 		crkh  = BUNhloc(u,insFirst+startPosition*xx);
 		crkt  = BUNtloc(u,insFirst+startPosition*xx);
-		insh  = BUNhloc(u,insFirst+(startPosition+insDone+extendedIns)*xx);
-		inst  = BUNtloc(u,insFirst+(startPosition+insDone+extendedIns)*xx);
+		insh  = BUNhloc(u,insFirst+endPosition*xx);
+		inst  = BUNtloc(u,insFirst+endPosition*xx);
 		while (inst < insLast){
 			*(oid*)crkh = *(oid*)insh;
 			*( @1*)crkt = *( @1*)inst;
 			crkh+=xx; crkt+=xx; insh+=xx; inst+=xx;
 		}
 
-		crkLast = insFirst + (startPosition + (insertions - (startPosition + insDone + extendedIns)))*xx;
+		crkLast = insFirst + (startPosition + (BATcount(u) - endPosition))*xx;
 		u->batBuns->free = crkLast - u->batBuns->base; 
    		BATsetcount(u, u->batBuns->free/xx);
 		if (BATcount(u) == 0){
@@ -2534,7 +2690,6 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 printf("\n 				Consumed insertions \n");
 */
 		}
-	}
 @
 
 @= mergeInsertionOperations
@@ -2569,8 +2724,9 @@ mergeInsertionsRipple_@1(int *bid, int *new, lng startPosition, @1* hgh, bit inc
 
 	@:mergeInsertionsBody(@1,@2,@3, && (@2_LT(inst,hgh,@3@1) || (@2_EQ(inst,hgh,@3@1) && inclusive == TRUE)), ((@2_LT(curValue,hgh,@3@1) || (@2_EQ(curValue,hgh,@3@1) && inclusive == TRUE && lowIndexNode->inclusive == TRUE)) || bats > 0))@
 
-
-	@:shrinkInsertions(@1)@
+	if (lowIndexNode == NULL){
+		@:shrinkInsertions(@1)@
+	}
 
 	if (lowIndexNode != NULL){
 		/* we have to merge the scratch values back in the insertions bat */
@@ -2673,7 +2829,6 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 		if (@2_GT(&min,inst,@3@1))
 			min = *(@1*)inst;
 
-
 	/* Partially delete tree with lazy deletion */
 	PartiallyLazyFreeAVLTree_@1(TreeIndex[position].Tree, min, c, BUNfirst(c), BUNsize(c));
 
@@ -2684,6 +2839,203 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 
 	return MAL_SUCCEED;
 }
+
+mal_export str CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new);
+str
+CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new){
+	(void)k;
+	lng startPosition = 0;
+	lng endPosition   = -1;
+
+	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
+
+	next = BUNlast(b) - xx;
+
+	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
+
+	crkLast = BUNlast(b) + insertions * xx;
+	b->batBuns->free = crkLast - b->batBuns->base;
+        BATsetcount(b, b->batBuns->free/xx); 
+
+	BBPunfix(c->batCacheid);
+	BBPunfix(u->batCacheid);
+	BBPunfix(b->batCacheid);
+
+ 	return MAL_SUCCEED;
+}
+
+str
+mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
+
+	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
+
+	next = BUNlast(b) - xx;
+
+	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
+
+	crkLast = BUNlast(b) + insertions * xx;
+	b->batBuns->free = crkLast - b->batBuns->base;
+        BATsetcount(b, b->batBuns->free/xx); 
+
+	BBPunfix(c->batCacheid);
+	BBPunfix(u->batCacheid);
+	BBPunfix(b->batCacheid);
+
+        return MAL_SUCCEED;
+}
+
+str
+mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosition){
+
+	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
+
+	next = BUNlast(b) - xx;
+
+	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
+
+	crkLast = BUNlast(b) + insertions * xx;
+	b->batBuns->free = crkLast - b->batBuns->base;
+        BATsetcount(b, b->batBuns->free/xx); 
+
+	endPosition++;
+	@:shrinkInsertions(@1)@
+
+        BBPunfix(c->batCacheid);
+        BBPunfix(u->batCacheid);
+        BBPunfix(b->batCacheid);
+
+        return MAL_SUCCEED;
+}
+
+str                             
+mergeInsertionsBRipple_@1(int *bid, int *new, lng startPosition, lng endPosition, @1 *hgh, bit inclusive){
+        BAT *ripple;    
+        BUN rh, rt, rnext;     
+	lng toRippleBuns;
+	lng exceedBuns = 0;
+                        
+        @:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
+                
+	toRippleBuns = endPosition - startPosition +1;
+	ripple = BATnew(TYPE_oid, TYPE_@1, toRippleBuns);
+/*
+printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, endPosition);
+*/
+        /* find out buns that should be rippled */
+        if ( (IndexNode = findNodeH_@1(*(@1*)hgh, inclusive, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) != NULL ){
+		IndexNode->deleted = TRUE;
+		rh = BUNhloc(ripple, BUNfirst(ripple));
+		rt = BUNtloc(ripple, BUNfirst(ripple));
+		cur     = idxFirst + (IndexNode->position) * zz;
+                curPos  = BUNhloc(c, cur); 
+		prevPos = *(lng*)curPos;
+                rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
+
+		/* merging will start from this bun */		
+		next = crkFirst + (*(lng*)curPos) * xx;
+
+                crkh = BUNhloc(b,rnext);
+                crkt = BUNtloc(b,rnext);
+		crkLast = BUNtloc(b,BUNlast(b));
+
+		/* find out how many buns until we get into the next chunk */
+		if ( (IndexNode = findNodeH_@1(*(@1*)BUNtloc(b,rnext),TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
+			buns = BATcount(b) - (*(lng*)curPos) - 1;
+		else {
+			cur    = idxFirst + (IndexNode->position) * zz;
+               		curPos = BUNhloc(c, cur);
+                	rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
+                	buns   = (*(lng*)curPos) - prevPos;
+		}
+		int i;
+		for (i=0; i<toRippleBuns; i++){
+			if (i > buns && crkt < crkLast){
+				IndexNode->deleted = TRUE;
+				if ( (IndexNode = findNodeH_@1(*(@1*)BUNtloc(b,rnext),TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
+					buns = BATcount(b) - prevPos - 1;
+				else {
+					cur    = idxFirst + (IndexNode->position) * zz;
+               				curPos = BUNhloc(c, cur);
+                			rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
+                			buns   = (*(lng*)curPos) - prevPos;
+				}
+			}
+			*(oid*)rh = *(oid*)crkh;
+			*(@1 *)rt = *(@1 *)crkt;
+			rh+=xx; rt+=xx; crkh+=xx; crkt+=xx;	
+			if (crkt >= crkLast){ 
+				i++;
+				exceedBuns = toRippleBuns - i;
+				break;
+			}
+		}
+		ripple->batBuns->free = BUNfirst(ripple) + i*xx - ripple->batBuns->base;	
+		BATsetcount(ripple, i);
+	} else 
+		next = BUNlast(b) - xx;
+
+        @:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@ 
+
+	if (exceedBuns > 0){
+		crkLast = BUNlast(b) + exceedBuns * xx;
+		b->batBuns->free = crkLast - b->batBuns->base;
+       	 	BATsetcount(b, b->batBuns->free/xx); 
+        }
+
+	endPosition++;
+	if (BATcount(ripple) > 0){
+		ripple->tsorted = FALSE;		
+		ripple->batRestricted = BAT_WRITE;
+		BATmirror(BATorder(BATmirror(ripple)));
+		
+		/* merge */
+		rh    = BUNhloc(ripple, BUNfirst(ripple));
+		rt    = BUNtloc(ripple, BUNfirst(ripple));
+		crkh  = BUNhloc(u,insFirst+startPosition*xx);
+		crkt  = BUNtloc(u,insFirst+startPosition*xx);
+		insh  = BUNhloc(u,insFirst+endPosition*xx);
+		inst  = BUNtloc(u,insFirst+endPosition*xx);
+
+		crkLast = BUNtloc(ripple,BUNlast(ripple));
+		insLast = BUNtloc(u,BUNlast(u));
+
+		while(rt < crkLast || inst < insLast){
+			if (rt < crkLast && inst >= insLast){
+				*(oid*)crkh = *(oid*)rh;
+                                *( @1*)crkt = *( @1*)rt;
+                                crkh+=xx; crkt+=xx; rh+=xx; rt+=xx;
+			} else
+			if (rt >= crkLast && inst < insLast){
+				*(oid*)crkh = *(oid*)insh;
+                                *( @1*)crkt = *( @1*)inst;
+                                crkh+=xx; crkt+=xx; insh+=xx; inst+=xx;
+			} else {
+				if (@2_LE(rt,inst,@3@1)){	
+					*(oid*)crkh = *(oid*)rh;
+					*( @1*)crkt = *( @1*)rt;
+					crkh+=xx; crkt+=xx; rh+=xx; rt+=xx;
+				} else {
+					*(oid*)crkh = *(oid*)insh;
+					*( @1*)crkt = *( @1*)inst;
+					crkh+=xx; crkt+=xx; insh+=xx; inst+=xx;
+				}
+			}
+		}
+/*
+printf("\n -------Rippled "SZFMT" tuples \n", BATcount(ripple));
+*/		
+	} else {
+		@:shrinkInsertions(@1)@
+	} 
+                                
+        BBPunfix(c->batCacheid);
+        BBPunfix(u->batCacheid);        
+        BBPunfix(b->batCacheid);
+	BBPreclaim(ripple);
+                        
+        return MAL_SUCCEED;
+} 
+
 @
 
 @c
@@ -2725,6 +3077,19 @@ CRKmergeInsertions_Forget(int *k, int *bid, int *new){
 
 @= insertionsOnNeed
 str
+CRKmergeInsertionsB_OnNeed@1(int *k, int *bid, int *new){
+        (void) k;
+	int position = existsTreeIndex(*bid);
+	if (position == -1) 
+		return throwMessage("crackers.CRKmergeInsertionsB_OnNeed@1", "Cannot find cracker index");
+	appendInsertions(new,position);
+	TreeIndex[position].mergeInsertions = @2;
+	TreeIndex[position].deleteNodes = FALSE;	
+	TreeIndex[position].mergeFromTheEnd = TRUE;
+        return MAL_SUCCEED;
+}
+
+str
 CRKmergeInsertions_OnNeed@1(int *k, int *bid, int *new, bit *deleteNodes){
         (void) k;
 	int position = existsTreeIndex(*bid);
@@ -2733,6 +3098,7 @@ CRKmergeInsertions_OnNeed@1(int *k, int *bid, int *new, bit *deleteNodes){
 	appendInsertions(new,position);
 	TreeIndex[position].mergeInsertions = @2;
 	TreeIndex[position].deleteNodes = *deleteNodes;	
+	TreeIndex[position].mergeFromTheEnd = FALSE;
         return MAL_SUCCEED;
 }
 @
@@ -2741,6 +3107,9 @@ CRKmergeInsertions_OnNeed@1(int *k, int *bid, int *new, bit *deleteNodes){
 @:insertionsOnNeed(,0)@
 @:insertionsOnNeed(Gradually,1)@
 @:insertionsOnNeed(GraduallyRipple,2)@
+
+
+
 
 @= verifyIndex
 str
@@ -2774,7 +3143,7 @@ verifyCrackerIndex_@1(int *bid){
 	crkLast  = BUNtloc(b, BUNlast(b));
 	crkt     = BUNtloc(b, BUNfirst(b));
 
-	hghIndexNode = findNodeH_@1(*(@1*)crkt, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+	hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 	if (hghIndexNode == NULL){
 		BBPunfix(c->batCacheid);
         	BBPunfix(b->batCacheid);
@@ -2803,7 +3172,7 @@ verifyCrackerIndex_@1(int *bid){
 	prevIncl = hghIndexNode->inclusive;
 
 	while (crkt < crkLast){
-		if ((hghIndexNode = findNodeH_@1(*(@1*)crkt, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
+		if ((hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
 			break;
 
 		indexEntries++;
@@ -3257,7 +3626,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	int gapL = 1;
 	int gapH = 1;
 	BUN l, lt, insLast;
-	lng insertionsStart;
+	lng insertionsStart, insertionsEnd, insertions;
 	
 	if (@2_GT(low,hgh,@3@1))
 		return throwMessage("crackers.crack", "illegal range");
@@ -3344,6 +3713,12 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		if ((u = BATdescriptor(TreeIndex[m].iid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access here insertions BAT");			
 
+		insertions = BATcount(u);
+		if (insertions == 0){
+                        BBPunfix(u->batCacheid);
+                        goto crack; /* no qualifying values in the insertions */
+                }
+
 		/* if necessary, sort in place the insertions bat */
 		if (u->tsorted == FALSE){
 			u->batRestricted = BAT_WRITE;
@@ -3352,20 +3727,18 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 
 		/* binary search to find the position of the lowest requested value in the insertions*/
 		l = SORTfndfirst_@4(u,low);
-		insLast = BUNlast(u);
-		if (l == insLast){
+		lt = BUNtloc(u,l);
+		insLast = BUNtloc(u, BUNlast(u));
+		if (lt == insLast){
 			BBPunfix(u->batCacheid);	 
 			goto crack; /* no qualifying values in the insertions */
 		}
-		lt = BUNtloc(u,l);
 		xx = BUNsize(u);
-		if (@2_EQ(lt,low,@3@1) && inclusiveLow == FALSE){
-			while (l < insLast && @2_EQ(lt,low,@3@1)){
-				l  +=xx; 
+		if (@2_EQ(lt,low,@3@1) && *inclusiveLow == FALSE){
+			while (lt < insLast && @2_EQ(lt,low,@3@1))
 				lt +=xx; 
-			}
 		} 			
-		if (l == insLast){ 
+		if (lt == insLast){ 
 			BBPunfix(u->batCacheid);	 
 			goto crack; /* no qualifying values in the insertions */
 		}
@@ -3373,22 +3746,51 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 			BBPunfix(u->batCacheid);	 
 			goto crack; /* no qualifying values in the insertions */ 	
 		}
-		insertionsStart = BUNindex(u,l);	
+		insertionsStart = BUNindex(u,lt);	
+		
+		/* binary search to find the position of the highest requested value in the insertions */
+                l = SORTfndfirst_@4(u, hgh);
+		lt = BUNtloc(u,l);
+		if (lt < insLast){
+			if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == TRUE){	
+				while (lt < insLast && @2_EQ(lt,hgh,@3@1))
+                              		lt +=xx;
+				lt-=xx;
+			} else 
+			if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == FALSE)
+                                lt -=xx;
+		 	else
+			if ( @2_GT(lt,hgh,@3@1) )
+                                lt -=xx;
+		}
+
+		if (lt == insLast) lt-=xx;
+		insertionsEnd = BUNindex(u,lt);
+
 		BBPunfix(u->batCacheid);
 		
 		if (TreeIndex[m].mergeInsertions == 0){	
 			/* merge completely */
-			mergeInsertions_@1(bid, &TreeIndex[m].iid, 0, TreeIndex[m].deleteNodes); 
+			if (TreeIndex[m].mergeFromTheEnd == TRUE)
+				mergeInsertionsB_@1(bid, &TreeIndex[m].iid, 0, insertions-1); 
+			else
+				mergeInsertions_@1(bid, &TreeIndex[m].iid, 0, TreeIndex[m].deleteNodes); 
 			TreeIndex[m].mergeInsertions = -1 ;
 			TreeIndex[m].iid = -1;
 
 		} else if (TreeIndex[m].mergeInsertions == 1){
 			/* merge only the requested values */			
-			mergeInsertionsGradually_@1(bid, &TreeIndex[m].iid, insertionsStart, hgh, *inclusiveHgh, TreeIndex[m].deleteNodes);	
+			if (TreeIndex[m].mergeFromTheEnd == TRUE)
+				mergeInsertionsBGradually_@1(bid, &TreeIndex[m].iid, insertionsStart, insertionsEnd);
+			else
+				mergeInsertionsGradually_@1(bid, &TreeIndex[m].iid, insertionsStart, hgh, *inclusiveHgh, TreeIndex[m].deleteNodes);	
 			
 		} else if (TreeIndex[m].mergeInsertions == 2){
 			/* merge only the requested values using the ripple strategy */
-			mergeInsertionsRipple_@1(bid, &TreeIndex[m].iid, insertionsStart, hgh, *inclusiveHgh, TreeIndex[m].deleteNodes);	
+			if (TreeIndex[m].mergeFromTheEnd == TRUE)
+				mergeInsertionsBRipple_@1(bid, &TreeIndex[m].iid, insertionsStart, insertionsEnd, hgh, *inclusiveHgh);	
+			else
+				mergeInsertionsRipple_@1(bid, &TreeIndex[m].iid, insertionsStart, hgh, *inclusiveHgh, TreeIndex[m].deleteNodes);	
                 }
  
 	}
