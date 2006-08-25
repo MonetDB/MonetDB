@@ -36,7 +36,7 @@ For example, consider the following MAL test
 @verbatim
     V1 := bat.new(:void,:int);
     V7 := bat.new(:void,:int);
-    V10{empty} := bat.new(:int,:void);
+    V10{rows=0} := bat.new(:int,:void);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markH(V12);
@@ -58,24 +58,25 @@ During empty set propagation, new candidates may appear. For example,
 taking the intersection with an empty set creates a target variable
 that is empty too. It becomes an immediate target for optimization.
 The current implementation is conservative. A limited set of
-instructions is considered. Any addition to the MonetDB instruction
+instructions is considered, geared at SQL.
+Any addition to the MonetDB instruction
 set would call for assessment on their effect.
 @{
 The implementation differs slightly from other optimizers in that
-we need the variables that are designated as being empty
+we need first to collect the BAT variables that are designated as being empty
 @mal
 pattern optimizer.emptySet():str
 address OPTemptySet;
 pattern optimizer.emptySet(mod:str, fcn:str):str
 address OPTemptySet
-comment "Move constant expressions out of the blocks";
+comment "Symbolic evaluation of empty BAT expressions";
 @h
 #ifndef _MAL_EMPTYSET_
 #define _MAL_EMPTYSET_
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_EMPTYSET	 /* show partial result */
+/* #define DEBUG_OPT_EMPTYSET	 show partial result */
 #endif
 @c
 #include "opt_emptySet.h"
@@ -84,38 +85,53 @@ comment "Move constant expressions out of the blocks";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-#define propagate(X) p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
-	p->argc = 2; p->fcn = 0; getFunctionId(p)= getModuleId(p)=NULL;
+#define propagate(X) { p->token= ASSIGNsymbol; getArg(p,1)= getArg(p,X);\
+	p->argc = 2; p->fcn = 0; doAR++;\
+	if( getVarType(mb,getArg(p,0)) == getVarType(mb,getArg(p,1)) ) { \
+		setModuleId(p,NULL); setFunctionId(p,NULL); \
+	} else { setModuleId(p,batcalcRef); setFunctionId(p,identityRef);} }
 
 static void
 ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
 	char *empty;
-	int i, j, limit, doAR = 0;
-	InstrPtr p, *old;
-
-#ifdef DEBUG_OPT_EMPTYSET
-	stream_printf(GDKout, "START emptyset optimizer %d:", cnt);
-	for (i = 0; i < cnt; i++)
-		stream_printf(GDKout, ",%d ", vars[i]);
-	stream_printf(GDKout, "\n");
-#endif
+	int i, j, limit, doAR = 0,tpe;
+	InstrPtr p;
+	str likeRef = getName("like", 4);
+	str existRef = getName("exist", 5);
+	str sortHRef = getName("sortH", 5);
+	str sortTRef = getName("sortT", 5);
+	str sortHTRef = getName("sortHT", 6);
+	str sortTHRef = getName("sortTH", 6);
+	str uniqueRef = getName("unique", 6);
+	str suniqueRef = getName("sunique", 7);
+	str kuniqueRef = getName("kunique", 7);
+	str unionRef = getName("union", 5);
+	str sunionRef = getName("sunion", 6);
+	str kunionRef = getName("kunion", 6);
+	str intersectRef = getName("intersect", 9);
+	str sintersectRef = getName("sintersect", 10);
+	str kintersectRef = getName("kintersect", 10);
+	str fragmentRef = getName("fragment", 8);
+	str differenceRef = getName("difference", 10);
+	str kdifferenceRef = getName("kdifference", 11);
+	str fetchjoinRef = getName("fetchjoin", 9);
+	str mergejoinRef = getName("mergejoin", 9);
+	str indexjoinRef = getName("indexjoin", 9);
+	str hashjoinRef = getName("hashjoin", 8);
+	str cartesianproductRef = getName("cartesianproduct", 16);
 
 	empty = alloca(mb->vtop);
-	for (i = 0; i < mb->vtop; i++)
-		empty[i] = 0;
+	memset(empty,0,mb->vtop);
 	for (i = 0; i < cnt; i++)
 		empty[vars[i]] = 1;
 
-	old = alloca(mb->ssize * sizeof(InstrPtr));
-	memcpy((char*) old, mb->stmt, mb->ssize * sizeof(InstrPtr));
-
 	setLifespan(mb);
 	limit= mb->stop;
-	/* memset((char*)mb->stmt,0,mb->ssize * sizeof(InstrPtr));
-	mb->stop =0; */
+
+	/* Sanity check on the validity of the emptyness property */
 	for (i = 0; i < limit; i++) {
-		p = old[i];
+		p = getInstrPtr(mb,i);
 		for (j = 0; j < p->retc; j++)
 			if (empty[getArg(p, j)] && getLastUpdate(mb, getArg(p, j)) > i) {
 #ifdef DEBUG_OPT_EMPTYSET
@@ -124,8 +140,32 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 				empty[getArg(p, j)] = 0;
 			}
 	}
+
+	/* Symbolic evaluation of the empty BAT variables */
+	/* by looking at empty BAT arguments */
 	for (i = 0; i < limit; i++) {
-		p = old[i];
+		p = getInstrPtr(mb,i);
+@-
+If the target variable is already marked as containing zero rows,
+the statement itself can then be removed.
+@= makeEmptySet
+		setModuleId(p, batRef);
+		setFunctionId(p, newRef);
+		p->argc = 1;
+		tpe= getVarType(mb,getArg(p,0));
+		pushArgument(mb,p,newTypeVariable(mb,getHeadType(tpe)));
+		pushArgument(mb,p,newTypeVariable(mb,getTailType(tpe)));
+		empty[getArg(p,0)] = 1;
+		doAR++;
+@c
+		if (p->retc==1 && empty[getArg(p, 0)] &&
+			isaBatType(getArgType(mb,p,0)) ) {
+			@:makeEmptySet@
+		}
+@-
+The bulk of the intelligence lies in inspecting calling
+sequences to filter and replace calls with empty arguments.
+@c
 		for (j = p->retc; j < p->argc; j++)
 			if (empty[getArg(p, j)]) {
 				/* decode operations */
@@ -134,26 +174,23 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						getFunctionId(p)== deleteRef || 
 						getFunctionId(p)== appendRef) {
 						if (j == 2) {
-							/* you don;t add anything */
-							p->token = IGNOREsymbol;
-							doAR++;
-							break;
+							/* represents an empty bulk update */
+							/* which does not produce a result */
+							setModuleId(p, NULL);
+							setFunctionId(p, NULL);
+							getArg(p,1)= getArg(p,0);
+							setVarUsed(mb, getArg(p,0),TRUE);
+							p->argc=2;
+							p->token= ASSIGNsymbol;
 						}
-					} else 
-					if ( getFunctionId(p)== reverseRef ){
-						p->token = IGNOREsymbol;
+					} 
+					if (getFunctionId(p)== reverseRef ){
 						empty[getArg(p, 0)] = 1;
-						doAR++;
-						break;
 					}
-				} else if (getModuleId(p)== algebraRef) {
-					if (getFunctionId(p) == markHRef || 
-						getFunctionId(p)== markTRef) {
-						propagate(1);
-						doAR++;
-						empty[getArg(p, 0)] = 1;
-						break;
-					} else if (getName("exist", 4) == getFunctionId(p)) {
+					break;
+				} 
+				if (getModuleId(p)== algebraRef) {
+					if (getFunctionId(p) == existRef) {
 						/* always false */
 						setModuleId(p, NULL);
 						setFunctionId(p, NULL);
@@ -162,71 +199,58 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						pushBit(mb, p, FALSE);
 						doAR++;
 						break;
-					} else if (getFunctionId(p) == selectRef || 
-								getFunctionId(p)== uselectRef || 
-								getFunctionId(p)== tuniqueRef || 
-								getName("like", 4) == getFunctionId(p) || 
-								getName("sortH", 5) == getFunctionId(p) || 
-								getName("sortT", 5) == getFunctionId(p) ||
-								getName("sortHT", 6) == getFunctionId(p) || 
-								getName("sortTH", 6) == getFunctionId(p) || 
-								getName("unique", 6) == getFunctionId(p) || 
-								getName("sunique", 7) == getFunctionId(p) || 
-								getName("kunique", 7) == getFunctionId(p) ||
-								getName("intersect", 9) == getFunctionId(p) || 
-								getName("sintersect", 10) == getFunctionId(p) || 
-								getName("kintersect", 10) == getFunctionId(p) ||
-								getName("fragment", 8) == getFunctionId(p)) {
+					} 
+					if ( getFunctionId(p) == selectRef || 
+						getFunctionId(p) == uselectRef || 
+						getFunctionId(p) == tuniqueRef || 
+						getFunctionId(p) == likeRef  || 
+						getFunctionId(p) == sortHRef  || 
+						getFunctionId(p) == sortTRef  ||
+						getFunctionId(p) == sortHTRef  || 
+						getFunctionId(p) == sortTHRef  || 
+						getFunctionId(p) == uniqueRef  || 
+						getFunctionId(p) == suniqueRef  || 
+						getFunctionId(p) == kuniqueRef  ||
+						getFunctionId(p) == intersectRef  || 
+						getFunctionId(p) == sintersectRef  || 
+						getFunctionId(p) == kintersectRef  ||
+						getFunctionId(p) == fragmentRef ){
 
-								/* result is empty */
-								propagate(1);
-								if (getLastUpdate(mb, getArg(p, 0)) == i)
-									empty[getArg(p, 0)] = 1;
-					} else if (getName("difference", 10) == getFunctionId(p) || 
-								getName("kdifference", 11) == getFunctionId(p)
-						) {
-						if (getLastUpdate(mb, getArg(p, 0)) == i) {
-							/* always empty */
-							setModuleId(p, NULL);
-							setFunctionId(p, NULL);
-							p->argc = 2;
-							p->token = ASSIGNsymbol;
-							if (j == 1)
-								empty[getArg(p, 0)] = 1;
-							doAR++;
+						/* result is empty */
+						propagate(1);
+						if (getLastUpdate(mb, getArg(p, 0)) == i)
+							empty[getArg(p, 0)] = 1;
+						break;
+					} 
+					if ( getFunctionId(p) == differenceRef || 
+						getFunctionId(p) == kdifferenceRef ) {
+						propagate(1);
+						break;
+					}
+					if ( getFunctionId(p) == sunionRef || 
+						 getFunctionId(p) == kunionRef || 
+						 getFunctionId(p) == unionRef) {
+						/* copy non-empty argument */
+						if( j == 1) {
+							propagate(2);
+						} else {
+							propagate(1);
 						}
 						break;
-					} else if (getName("sunion", 6) == getFunctionId(p) || 
-								getName("kunion", 6) == getFunctionId(p) || 
-								getName("union", 5) == getFunctionId(p)) {
-						/* always identity */
-						setModuleId(p, NULL);
-						setFunctionId(p, NULL);
-						p->argc = 2;
-						p->token = ASSIGNsymbol;
-						if (j == 1)
-							p->argv[1] = p->argv[2];
-						if (empty[p->argv[1]])
-							empty[p->argv[0]] = 1;
-						doAR++;
+					} 
+					if ( getFunctionId(p) == joinRef || 
+						getFunctionId(p) == semijoinRef ||
+						getFunctionId(p) == fetchjoinRef ||
+						getFunctionId(p) == mergejoinRef || 
+						getFunctionId(p) == indexjoinRef || 
+						getFunctionId(p) == hashjoinRef || 
+						getFunctionId(p) == cartesianproductRef
+						) {
+						/* should always produce an empty bat */
+						@:makeEmptySet@
 						break;
-					} else if ( getFunctionId(p) == joinRef || 
-								getName("semijoin", 8) == getFunctionId(p) ||
-								getName("fetchjoin", 9) == getFunctionId(p) ||
-								getName("mergejoin", 9) == getFunctionId(p) || 
-								getName("indexjoin", 9) == getFunctionId(p) || 
-								getName("hashjoin", 8) == getFunctionId(p) || 
-								getName("cartesianproduct", 16) == getFunctionId(p)
-								) {
-						/* incomplete, should produce an empty bat */
-						setModuleId(p, NULL);
-						setFunctionId(p, NULL);
-						p->argc = 2;
-						p->token = IGNOREsymbol;
-						empty[p->argv[0]] = 1;
-						doAR++;
-						break;
-					} else if (getFunctionId(p) == countRef) {
+					} 
+					if (getFunctionId(p) == countRef) {
 						/* count propagation */
 						setModuleId(p, NULL);
 						setFunctionId(p, NULL);
@@ -240,7 +264,9 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 				}
 			}
 	}
+/*
 	if (doAR && mb->errors == 0) {
+		setLifespan(mb);
 #ifdef DEBUG_OPT_EMPTYSET
 		printf("MID STAGE doAR=%d\n", doAR);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
@@ -248,6 +274,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 		OPTaliases(mb, 0, 0);
 		OPTdeadcode(mb, 0, 0);
 	}
+*/
 
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
@@ -276,13 +303,19 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	for (i = 0; i < mb->vtop; i++) {
 		ps = getVarProperties(mb, i);
-		if (fndProperty(ps, "empty")) {
-			sets[k++] = i;
-		} else
 		if ( (rows= (int*) getPropertyValue(ps, "rows"))   && *rows == 0) {
+#ifdef DEBUG_OPT_EMPTYSET
+	if( k == 0)
+		stream_printf(GDKout, "START emptyset optimizer %d", i);
+	else
+		stream_printf(GDKout, ",%d ", i);
+#endif
 			sets[k++] = i;
 		} 
 	}
+#ifdef DEBUG_OPT_EMPTYSET
+	stream_printf(GDKout, "\n");
+#endif
 	ESevaluate(mb, k, sets);
 	return 1;
 }

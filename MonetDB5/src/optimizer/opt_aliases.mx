@@ -138,6 +138,10 @@ OPTaliasStep(MalBlkPtr mb, int pc)
 	if (blockStart(p) || blockExit(p) || blockCntrl(p))
 		return pc;
 
+	/* trap identity assignments */
+	if( getArg(p,0)== getArg(p,1) && p->argc == 2) 
+		kn = p->retc;
+	else
 	for (k = 0; k < p->retc; k++) {
 		int m;
 

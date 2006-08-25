@@ -559,7 +559,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions= OPT@1Implementation(mb,stk,p);
 	if( p )
 		removeInstruction(mb, p);
-    optimizerCheck(mb, "optimizer.rangePush", actions, GDKusec() - clk, OPT_CHECK_ALL);
+    optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
 	return MAL_SUCCEED;
 }
 @h

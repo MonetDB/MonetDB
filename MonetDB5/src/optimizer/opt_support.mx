@@ -1108,6 +1108,8 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == deleteRef)
 		return TRUE;
 	if( getModuleId(p)== sqlRef){
+		if( getFunctionId(p) == bindRef) return FALSE;
+		if( getFunctionId(p) == bind_dbatRef) return FALSE;
 		if( getFunctionId(p) == getName("resultSet",9)) return FALSE;
 		return TRUE;
 	}
@@ -1115,17 +1117,15 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p)== rpcRef)
 			return TRUE;
 	}
-	if (idcmp("mdb", getModuleId(p)) == 0)
-		return TRUE;
-	if (idcmp("destroy", getFunctionId(p)) == 0)
+	if( getModuleId(p)== mdbRef)
 		return TRUE;
 	if (idcmp("prelude", getFunctionId(p)) == 0)
 		return TRUE;
-	if (idcmp("decimal_prelude", getFunctionId(p)) == 0)
+	if (idcmp("destroy", getFunctionId(p)) == 0)
 		return TRUE;
 	if (idcmp("keep", getFunctionId(p)) == 0)
 		return TRUE;
-	if (strict && getFunctionId(p) && strcmp(getFunctionId(p),newRef)==0)
+	if (strict && getFunctionId(p)==newRef)
 		return TRUE;
 	return FALSE;
 }

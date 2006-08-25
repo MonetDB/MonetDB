@@ -1,7 +1,7 @@
 function test():void;
 	V1 := bat.new(:void,:oid);
 	V7 := bat.new(:void,:oid);
-	V10{empty} := bat.new(:int,:void);
+	V10{rows=0} := bat.new(:int,:void);
 	V11 := bat.reverse(V10);    
 	V12 := algebra.kdifference(V7,V11);       
 	V16 := algebra.markH(V12);  
@@ -14,6 +14,5 @@ function test():void;
 	V25 := aggr.count(V17);  
 end test;
 
-#optimizer.setProperty("user","test","V10","empty",1);
 optimizer.emptySet("user","test");
 mdb.list("user","test");

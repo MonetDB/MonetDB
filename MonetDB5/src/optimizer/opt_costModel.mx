@@ -118,6 +118,8 @@ The SQL front-end also makes the BAT index available as the
 property bid. This can be used to access the BAT and involve
 more properties into the decision procedure.
 [to be done]
+Also make sure you don't re-use variables, because then the
+row count becomes non-deterministic.
 @c
 static int
 OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

@@ -44,8 +44,8 @@ is translated by into the code block
 	b := bat.new(:int,:int);
 	bat.insert(b,1,2);
 	c{singleton} := algebra.select(b,0,4);
-	($15,$16):= bat.unpack(c{singleton});
-	d := bat.pack(nil,$16);
+	(_15,_16):= bat.unpack(c{singleton});
+	d := bat.pack(nil,_16);
 	io.print(d);
 @end verbatim
 @{
@@ -121,7 +121,9 @@ STunpack(MalBlkPtr mb, int varid, STtuple * tuples)
 
 	p = newFcnCall(mb, batRef, unpackRef);
 	getArg(p, 0) = tuples[varid].hidx;
+	setVarUsed(mb,getArg(p,0),TRUE);
 	setArgument(mb, p, 1, tuples[varid].tidx);
+	setVarUsed(mb,getArg(p,1),TRUE);
 	p->retc++;
 	pushArgument(mb, p, tuples[varid].vidx);
 	tuples[varid].packed = 0;
@@ -212,7 +214,9 @@ variables on the stack.
 				k = STnewTuple(mb, getArg(p, 0), &top, tuples);
 				tuples[k].packed = 0;
 				p->argv[0] = tuples[k].hidx;
+				setVarUsed(mb,getArg(p,0),TRUE);
 				p->argv[1] = tuples[k].tidx;
+				setVarUsed(mb,getArg(p,1),TRUE);
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				doAR++;
@@ -227,7 +231,9 @@ variables on the stack.
 				k = STnewTuple(mb, getArg(p, 0), &top, tuples);
 				tuples[k].packed = 0;
 				p->argv[0] = tuples[k].hidx;
+				setVarUsed(mb,getArg(p,0),TRUE);
 				p->argv[1] = tuples[k].tidx;
+				setVarUsed(mb,getArg(p,1),TRUE);
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				doAR++;

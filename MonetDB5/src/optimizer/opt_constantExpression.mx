@@ -78,7 +78,7 @@ static int
 OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, j, limit, done=0, again=0;
+	int first=0, nxt, i, j, k, limit, done=0, again=0;
 	Client c= MCgetClient();
 	MalStkPtr env;
 
@@ -88,38 +88,48 @@ OPTconstantExpressionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CX
 	stream_printf(GDKout,"Constant expression optimizer started\n");
 #endif
-	limit = mb->stop;
 	
 	do{
 		again = 0;
+		limit = mb->stop;
 		env= prepareMALstack(mb);
 		env->keepAlive= TRUE;
-		for (i = 0; i < limit; i++) {
+		nxt= first;
+		for (k=i= first ; i < limit; i++) {
 			p = getInstrPtr(mb,i);
 			if( p->argc - p->retc > 0 )
 				j = OPTallConstant(mb,p);
 			else j = 0;
+			if(j && nxt == first) nxt=i;
 #ifdef DEBUG_OPT_CX
 			stream_printf(GDKout,"Constants:%d\n",j);
 			printInstruction(GDKout, mb, p, LIST_OPT_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
+				getLastUpdate(mb,getArg(p,0)) == i &&
 				reenterMAL(c,mb,i,i+1,env,0,0) == MAL_SUCCEED){
-				j= defConstant(mb,getArgType(mb,p,0), &env->stk[getArg(p,0)]);
-				p->token= ASSIGNsymbol;
-				getFunctionId(p)=0;
-				getModuleId(p)=0;
-				getArg(p,1)= j;
-				p->argc = 2;
+@-
+The last assignment of a constant expression turns the variable into
+a constant itself.
+@c
+				isConstant(mb,getArg(p,0))= TRUE;
+				setFixed(mb,getArg(p,0));
+				getVarConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
+				env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
+				freeInstruction(p);
 #ifdef DEBUG_OPT_CX
-				stream_printf(GDKout,"Evaluated new constant=%d\n",j);
+				stream_printf(GDKout,"Evaluated new constant=%d\n",getArg(p,0));
 #endif
 				done++;
 				again++;
-			}
+			} else mb->stmt[k++]=p;
 		}
-		if( again )
-			OPTaliases(mb,0,0);
+		if( k != mb->stop){
+			mb->stop= k;
+			setLifespan(mb);	/* the lastUpdate property changes */
+		} else
+			mb->stop= k;
+		first= nxt;
 	} while( again );
 	clearStack(env);	/* garbage collect */
 	freeStack(env);

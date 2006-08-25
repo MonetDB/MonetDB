@@ -76,8 +76,10 @@ comment "Dead code optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
+#include "mal_instruction.h"
+#include "mal_function.h"
 
-/* #define DEBUG_OPT_REDUCE     show partial result */
+/* #define DEBUG_OPT_DEAD     trace its behavior */
 
 #endif
 @c
@@ -88,87 +90,49 @@ comment "Dead code optimizer";
 static int 
 OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, dc = 0, se;
-	InstrPtr p;
-	int *varused;
-	int *pcused;
+	int i, j, k, se,limit;
+	InstrPtr p=0;
 	int actions = 0;
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	varused = GDKmalloc(mb->vtop * sizeof(int));
-	for (i = 0; i < mb->vtop; i++)
-		varused[i] = 0;
-
-	pcused = GDKmalloc(mb->stop * sizeof(int));
-	for (i = 0; i < mb->stop; i++)
-		pcused[i] = 0;
-
-	for (i = mb->stop - 1; i >= 0; i--) {
-		p = getInstrPtr(mb, i);
-		switch (p->token) {
-		case IGNOREsymbol:
-			break;
-		case FUNCTIONsymbol:
-		case COMMANDsymbol:
-		case FACTORYsymbol:
-		case ENDsymbol:
-			pcused[i] = 1;
-			for (k = 0; k < p->retc; k++)
-				varused[p->argv[k]] = 1;
-			break;
-		case EXITsymbol:
-			/*     stream_printf(MCgetClient()->fdout,"#Handle DCR in iterator\n"); */
-		case RETURNsymbol:
-			pcused[i] = 1;
-			for (k = 0; k < p->retc; k++)
-				varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
-			break;
-		default:
-			se = 0;
-			for (k = 0; k < p->retc; k++)
-				if (varused[p->argv[k]])
-					se++;
-			/* do not deal with dead barrier blocks */
-			if (blockCntrl(p) || hasSideEffects(p, FALSE) || se) {
-				for (k = 0; k < p->argc; k++)
-					varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
-				pcused[i] = 1;
-			} else
-				dc++;
-		}
-	}
-#ifdef DEBUG_OPT_OPTIMIZER
-	{
-		Client cntxt = MCgetClient();
-
-		stream_printf(GDKout, "Dead code variables \n");
-		for (i = 0; i < mb->vtop; i++)
-			if (varused[i] == 0)
-				stream_printf(cntxt->fdout, "%s,", getVarName(mb, i));
-		stream_printf(MCgetClient()->fdout, "\nDead code instructions \n");
-		for (i = 1; i < mb->stop; i++)
-			if (pcused[i] == 0)
-				printInstruction(cntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
-		stream_printf(cntxt->fdout, "End of DCoptimizer\n");
-	}
+	setLifespan(mb);
+#ifdef DEBUG_OPT_DEAD
+	stream_printf(GDKout,"ENTERING DEAD CODE ELIMINATION\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
-	/* compress the code block */
-	for (i = j = 1; i < mb->stop; i++) {
-		if (pcused[i]) {
-			mb->stmt[j] = mb->stmt[i];
+
+	limit= mb->stop;
+	for (i = j = 1; i < limit; i++) {
+		p= getInstrPtr(mb,i);
+
+		se = p->token == ENDsymbol;
+		if( p->token != NOOPsymbol)
+		for (k = 0; k < p->retc; k++)
+			if( isVarUsed(mb,getArg(p,k)) ){
+				se++;
+				break;
+			}
+
+		if (se || hasSideEffects(p, FALSE)) {
+			mb->stmt[j] = p;
 			j++;
 		} else {
-			p = getInstrPtr(mb, i);
 			freeInstruction(p);
 			actions++;
 		}
 	}
 	mb->stop = j;
-	GDKfree(varused);
-	GDKfree(pcused);
-	return actions;
+	/* we may have uncovered new use-less operations */
+	if( actions) 
+		j= OPTdeadcodeImplementation(mb, stk, pci);
+
+#ifdef DEBUG_OPT_DEAD
+	stream_printf(GDKout,"LEAVING DEAD CODE ELIMINATION\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+	return actions+j;
 }
 @include optimizerWrapper.mx
 @h
