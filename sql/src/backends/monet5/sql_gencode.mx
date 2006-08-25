@@ -1846,6 +1846,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 */
 
 	backend_dumpstmt(be, curBlk, s);
+	pushEndInstruction(curBlk);
+	setLifespan(curBlk);
 
 	if (cq){
 		be->Toptimize = GDKusec();
@@ -1859,7 +1861,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	}
 */
 
-	pushEndInstruction(curBlk);
 	curPrg = c->curprg;
 	if (c->backup) {
 		c->curprg = c->backup;
@@ -1943,8 +1944,9 @@ backend_create_func(backend *be, sql_func *f)
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
-	addQueryToCache(c);
 	pushEndInstruction(curBlk);
+	setLifespan(curBlk);
+	addQueryToCache(c);
 	if (c->backup) {
 		c->curprg = c->backup;
 		c->backup = 0;

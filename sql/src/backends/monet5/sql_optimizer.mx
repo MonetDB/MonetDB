@@ -110,6 +110,8 @@ factory structures.
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_costModel.h"
+#include "opt_deadcode.h"
+#include "opt_emptySet.h"
 #include "opt_crack.h"
 #include "opt_macro.h"
 #include "opt_multiplex.h"
@@ -265,10 +267,11 @@ the cache when the underlying table is changed.
 Cost-based optimization and semantic evaluations require statistics to work with.
 They should come from the SQL catalog and are included in the MAL program.
 The properties passed at this point are the number of rows. 
-At a later stage we should also add head/tail sizes, key, unique, sort, dense.
+A better way is to mark all BATs used as a constant, because that permits
+access to all properties. However, this creates unnecessary locking during stack
+initialization. Therfore, we store the BAT id as a property for the optimizer
+to work with. It can pick up the BAT if needed.
 @c
-#define getProps(Y) mb->var[Y]->props
-
 void
 SQLgetStatistics(mvc *m,MalBlkPtr mb){
 	int i;
@@ -287,11 +290,11 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb){
 				getVarConstant(mb, getArg(p,4)).val.ival);
 			if( b ){
 				rows= BATcount(b);
+				getVarConstant(mb, getArg(p,0)).val.bval= b->batCacheid;
 				if (mb->var[getArg(p,0)]->props == 0)
 					mb->var[getArg(p,0)]->props = newPropertySet();
 				setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_lng, &rows);
-				/* CMDbatsize(&size,b);*/
-				/* setProperty(getProps(getArg(p,0)),"size", "=", TYPE_lng, &size);*/
+				setProperty(getProps(getArg(p,0)),"bid", "=", TYPE_int, &b->batCacheid);
 
 				BBPunfix(b->batCacheid);
 #ifdef _SQL_OPTIMIZER_DEBUG
@@ -313,8 +316,7 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb){
 				if (mb->var[getArg(p,0)]->props == 0)
 					mb->var[getArg(p,0)]->props = newPropertySet();
 				setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_lng, &rows);
-				/* CMDbatsize(&size,b);*/
-				/*setProperty(getProps(getArg(p,0)),"size", "=", TYPE_lng, &size);*/
+				setProperty(getProps(getArg(p,0)),"bid", "=", TYPE_int, &b->batCacheid);
 
 				BBPunfix(b->batCacheid);
 #ifdef _SQL_OPTIMIZER_DEBUG
@@ -383,12 +385,23 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-		/* SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);*/
+		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
+@-
+Empty set removal may introduce both alias instructions and
+dead code. The should be removed.
+IF YOU ACTIVATE THIS CODE, YOU MIGTH ENCOUNTER ERRORS
+		OPTcostModel(mb,0,0);	 /* propagate cost distribution */
+		OPTemptySet(mb,0,0);	 /* remove empty results */
+		OPTaliases(mb, 0, 0);	 /* alias removal */
+@c
+
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
-		OPTreduce(mb,0,0);	/* reduce stack space */
 		OPTcommonTerms(mb,0,0);	/* common terms */
-		OPTcostModel(mb,0,0);	/* propagate cost distribution */
+		OPTdeadcode(mb, 0, 0);	/* dead code removal */
+		OPTreduce(mb,0,0);	/* reduce stack space */
+
+
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		/* OPTcrack(mb,0,0); too early !!*/
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
@@ -433,11 +446,8 @@ enable re-entry when used as a cache-optimized query.
 The second optimization is move access mode changes on the base tables
 to the front of the plan.
 
-We also apply the Alias Removal optimizer to trim the instruction list
-by removing simple assignments.
 
 @c
-
 str
 SQLoptimizer(Client c)
 {
@@ -449,173 +459,4 @@ SQLoptimizer(Client c)
 #endif
 	return MAL_SUCCEED;
 }
-@-
-The SQLkdiffSplitter searches this important operator and splits
-the dataflow graph into two sections with a switch on the size of
-the second operand. In many situations it is empty, there are no
-deleted tuples to consider. The effect is that we do not have
-to reduce the table to elements that are still valid.
-
-Beware, the SQL code may contain several kdifference statements.
-One for each base table touched. They should all be split,
-which leads to an explosion in the plan sizes
-@c
-void SQLkdiffSplitter(Client c){
-	MalBlkPtr mb;
-	int limit,i,k,l,foundit=1,total=0, zero,cnt,lab;
-	InstrPtr *old;
-	InstrPtr q,p;
-	int *map,mtop;
-	long clk= GDKusec();
-
-#ifdef _SQL_OPTIMIZER_DEBUG
-	printf("START kdifference optimizer\n");
-	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
-#endif
-	while(foundit) {
-		foundit=0;
-		mb= c->curprg->def;
-		setLifespan(mb);
-		limit=mb->stop;
-		old= mb->stmt;
-		newMalBlkStmt(mb,mb->stop*2+5);
-
-		for(i=0;i<limit; i++){
-			p= old[i];
-			if( getModuleId(p)== sqlRef &&
-			    strcmp(getFunctionId(p),"kdifference")==0){
-				total++;
-				foundit++;
-@-
-The starting situation is to obtain the count and perform
-an instruction copy until the endLifespan of the first operand.
-	cnt:= algebra.count(t);
-barrier doit:= c>0;
-	....
-exit	doit;
-	..rest of code
-@c
-				q= newInstruction(mb,ASSIGNsymbol);
-				cnt= newTmpVariable(mb,TYPE_lng);
-				q->argv[0]=cnt;
-				q->argv[1]= p->argv[2];
-				q->argc=2;
-				setModuleId(q,putName("algebra",7));
-				setFunctionId(q,putName("count",5));
-				pushInstruction(mb,q);
-
-				q= newInstruction(mb,ASSIGNsymbol);
-				q->barrier= BARRIERsymbol;
-				lab= newTmpVariable(mb,TYPE_bit);
-				setModuleId(q,putName("calc",4));
-				setFunctionId(q,putName(">",1));
-				q->argv[0]=lab;
-				q->argv[1]=cnt;
-				q->retc=1;
-				q->argc=2;
-				pushLng(mb,q,0);
-				zero= q->argv[2];
-				pushInstruction(mb,q);
-@-
-We have to perform the expensive kdifference anyway
-@c
-				q= newInstruction(mb,ASSIGNsymbol);
-				setModuleId(q,putName("algebra",7));
-				setFunctionId(q,putName("kdifference",5));
-				q->argv[0]= p->argv[0];
-				q->retc=1;
-				pushArgument(mb,q,p->argv[1]);
-				pushArgument(mb,q,p->argv[2]);
-				pushInstruction(mb,q);
-				typeChecker(c->nspace,mb,q,TRUE);
-				/* endLifespan = mb->var[p->argv[0]]->endLifespan;*/
-				k= i; /* for later */
-				for(i++;i< limit-1; i++){
-					q= old[i];
-/* just handle the first */
-					pushInstruction(mb,q);
-					if( getModuleId(q)== sqlRef  &&
-						strcmp(getFunctionId(q),"kdifference")==0){
-						setModuleId(q,putName("algebra",7));
-					}
-				}
-				i--;
-
-				q= newInstruction(mb,EXITsymbol);
-				q->barrier= EXITsymbol;
-				q->argv[0]= lab;
-				pushInstruction(mb,q);
-
-@-
-Durig the second phase we copy the same sequence, but
-now we have to remap the variables. In this process the
-variable types may change, which means we have to keep
-track of them.
-@c
-				q= newInstruction(mb,ASSIGNsymbol);
-				q->barrier= BARRIERsymbol;
-				setModuleId(q,putName("calc",4));
-				setFunctionId(q,putName("==",2)); 
-				q->argv[0]=lab;
-				q->argv[1]=cnt;
-				q->argv[2]=zero;
-				q->retc=1;
-				q->argc=3;
-				pushInstruction(mb,q);
-@-
-Now we don;t have to perform the expensive kdifference 
-@c
-				map= (int*) GDKmalloc(2 * sizeof(int)*mb->vtop);
-				map[0]= getArg(p,0);
-				map[1]= getArg(p,1);
-				mtop=2;
-
-				i=k; 
-				for(i++;i< limit-1; i++){
-					q= copyInstruction(old[i]);
-/* just handle the first */
-					if( getModuleId(q)== sqlRef && 
-						strcmp(getFunctionId(q),"kdifference")==0){
-						setModuleId(q,putName("algebra",7));
-					}
-					for(k=0;k<q->argc; k++)
-					for(l=0;l<mtop; l+=2)
-					if( getArg(q,k)== map[2*l] ){
-						/* deal with the type compatibility issue */
-						q->argv[k]= map[2*l+1];
-						break;
-					}
-					pushInstruction(mb,q);
-				}
-				i--;
-
-				q= newInstruction(mb,EXITsymbol);
-				q->barrier= EXITsymbol;
-				q->argv[0]= lab;
-				pushInstruction(mb,q);
-
-				/* remove the old instruction */
-				GDKfree(map);
-				freeInstruction(p);
-				continue;
-			}
-			/* just move the instruction into place */
-			pushInstruction(mb,p);
-		}
-@-
-The code is wrong, we should not try it more than once
-		foundit= foundit || (i<limit);
-@c
-		foundit=0;
-		GDKfree(old);
-	}
-	if( total) {
-		optimizerCheck(mb,"sql.kdiff_replacement",1,GDKusec()-clk, OPT_CHECK_ALL);
-#ifdef _SQL_OPTIMIZER_DEBUG
-		printf("FINAL STAGE errors=%d\n",mb->errors);
-		printFunction(GDKout,mb,LIST_MAL_ALL);
-#endif
-	}
-}
-
 @}
