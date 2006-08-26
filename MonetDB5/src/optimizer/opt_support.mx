@@ -1112,7 +1112,7 @@ hasSideEffects(InstrPtr p, int strict)
 	if( getModuleId(p)== sqlRef){
 		if( getFunctionId(p) == bindRef) return FALSE;
 		if( getFunctionId(p) == bind_dbatRef) return FALSE;
-		if( getFunctionId(p) == getName("resultSet",9)) return FALSE;
+		if( getFunctionId(p) == resultSetRef) return FALSE;
 		return TRUE;
 	}
 	if( getModuleId(p)== mserverRef){

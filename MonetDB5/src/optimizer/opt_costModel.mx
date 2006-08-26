@@ -126,7 +126,8 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, *c, *c1, *c2, k;
 	InstrPtr p;
-	str sortrevRef= putName("sort_reverse",12);
+	str sortrevRef= putName("sortReverse",11);
+	str sortrevTailRef= putName("sortReverseTail",15);
 	str projectRef= putName("project",7);
 	(void) stk;
 	(void) pci;
@@ -137,7 +138,9 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (getFunctionId(p) == markTRef  || 
 				getFunctionId(p) == markHRef  ||
 				getFunctionId(p) == sortRef  ||
+				getFunctionId(p) == sortTailRef  ||
 				getFunctionId(p) == sortrevRef  ||
+				getFunctionId(p) == sortrevTailRef  ||
 				getFunctionId(p) == projectRef  ||
 				getFunctionId(p) == kunionRef) {
 				@:newRows1(1, *c1)@

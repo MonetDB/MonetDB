@@ -184,8 +184,8 @@ sequences to filter and replace calls with empty arguments.
 						getFunctionId(p) == uselectRef || 
 						getFunctionId(p) == tuniqueRef || 
 						getFunctionId(p) == likeRef  || 
-						getFunctionId(p) == sortHRef  || 
-						getFunctionId(p) == sortTRef  ||
+						getFunctionId(p) == sortRef  || 
+						getFunctionId(p) == sortTailRef  ||
 						getFunctionId(p) == sortHTRef  || 
 						getFunctionId(p) == sortTHRef  || 
 						getFunctionId(p) == uniqueRef  || 
