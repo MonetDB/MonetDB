@@ -58,7 +58,7 @@ lib_sqlserver = {
 		rel_bin.mx \
 		rel_dump.mx
 
-	WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
+	WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
 	LIBS = $(MONET5_LIBS) $(MONETDB_LIBS)
 }
 

@@ -25,6 +25,6 @@ lib_sqlcommon = {
 		sql_mem.mx sql_list.mx sql_backend.mx \
 		sql_keyword.mx sql_changeset.mx sql_types.mx sql_string.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
+	WINLIBS = -lbat -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
 	LIBS = $(MONETDB_LIBS)
 }
