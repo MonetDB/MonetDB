@@ -353,22 +353,31 @@ newPropertySet()
 	return ps;
 }
 
-PropertySet
-cpyPropertySet(PropertySet old)
-{
-	PropertySet ps;
-	ps = (PropertySet) GDKmalloc(sizeof(struct PROPSET));
-	memcpy((char *) ps, (char *) old, sizeof(struct PROPSET));
-	GDKwarning("Property set copying not finished\n");
-	return ps;
-}
-
 Property
 cpyProperty(PropertySet * target, Property src)
 {
 	if (*target == 0)
 		*target = newPropertySet();
-	return setProperty(*target, src->nme, src->operator, src->val.vtype, VALptr(&src->val));
+	return setProperty(*target, src->nme, 
+			src->operator, src->val.vtype, VALptr(&src->val));
+}
+
+PropertySet
+cpyPropertySet(PropertySet old)
+{
+	PropertySet ps;
+	Property pr;
+	int i;
+
+	ps = newPropertySet();
+	for(i=0; i< MAXPROPLIST; i++){
+		pr = old->prop[i];
+		while(pr){
+			cpyProperty(&ps, pr);
+			pr= pr->nxt;
+		}
+	}
+	return ps;
 }
 
 void
@@ -499,26 +508,29 @@ propertySet2str(PropertySet ps)
 	char buf[128 * 1024];
 	str s = buf, t = 0;
 	Property pr;
-	int idx = 0;
+	int i,first=0;
 
-	if (ps == NULL || ps->prop[idx] == NULL)
+	if (ps == NULL )
 		return GDKstrdup("");
-	pr = ps->prop[idx];
+	pr = ps->prop[0];
 	*s++ = '{';
-	while (pr) {
-		t = 0;
-		ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
-		if (pr->operator && * pr->operator)
-			sprintf(s, "%s%s%s", pr->nme, pr->operator, t);
-		else
-			sprintf(s, "%s", pr->nme);
-		while (*s)
-			s++;
-		pr = pr->nxt;
-		if (pr)
-			*s++ = ',';
-		if (t)
+	for(i=0; i<MAXPROPLIST; i++){
+		pr = ps->prop[i];
+		while(pr){
+			t = 0;
+			if (first++ )
+				*s++ = ',';
+			ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
+			if (pr->operator && * pr->operator)
+				sprintf(s, "%s%s%s", pr->nme, pr->operator, t);
+			else
+				sprintf(s, "%s", pr->nme);
+			while (*s)
+				s++;
+			pr= pr->nxt;
+			if (t)
 			GDKfree(t);
+		}
 	}
 	*s++ = '}';
 	*s = 0;

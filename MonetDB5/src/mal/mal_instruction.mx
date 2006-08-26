@@ -1375,6 +1375,8 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 
 	VALcopy(&w->value, &v->value);
 	dst->var[dst->vtop] = w;
+	if( v->props )
+		w->props = cpyPropertySet(v->props);
 }
 
 @-

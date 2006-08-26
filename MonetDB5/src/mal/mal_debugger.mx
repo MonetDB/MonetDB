@@ -843,7 +843,11 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			} else
 			if (strncmp("timer", b, 5) == 0) {
 				skipWord(cntxt, b);
-				cntxt->timerFlag = (sht) atol(b);
+				switch( *b){
+				case '0': cntxt->timerFlag = 0; break;
+				case '1': cntxt->timerFlag = 1; break;
+				default: cntxt->timerFlag = ! cntxt->timerFlag;
+				}
 				if( cntxt->timer == 0)
 					cntxt->timer = GDKusec();
 				stk->cmd = 0;
@@ -1527,7 +1531,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "where      -- print stack trace\n");
 	stream_printf(f, "down       -- go down the stack\n");
 	stream_printf(f, "up         -- go up the stack\n");
-	stream_printf(f, "timer      -- produce micro-second response time\n");
+	stream_printf(f, "timer {0,1}-- produce micro-second response time [default=0]\n");
 	stream_printf(f, "trace <var>-- trace assignment to variables\n");
 	stream_printf(f, "io         -- produce page activity trace \n");
 	stream_printf(f, "help       -- this message\n");
