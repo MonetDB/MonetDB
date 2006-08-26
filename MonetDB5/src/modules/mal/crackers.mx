@@ -2263,7 +2263,7 @@ struct tempBATNode{
 	int xx, zz, bats = 0, position = -1;
 	struct Node * hghIndexNode, *lowIndexNode;
 	struct tempBATNode *tempBATs, *lastBAT, *temp;
-	lng endPosition, extended = 0, extendedIns = 0, insDone = 0, written, pos, prevPos, lastPos, prevcrsize, insertions;
+	lng extended = 0, extendedIns = 0, insDone = 0, written, pos, prevPos, lastPos, prevcrsize, insertions;
 	bit takeNext;
 
 	for (int i = 0; i < maxCrackMap; i++)
@@ -2527,12 +2527,11 @@ printf(" \n Total bun in are %lld \n", insDone+ extendedIns);
 printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);	
 */
 	}
-	endPosition = startPosition + insDone + extendedIns;
 @
 
 @= mergeInsertionsFromTheEndBodyI
         BAT *c, *u, *b;
-	BUN insh, inst, crkh, crkt, idxFirst, cur, curVal, curPos, crkFirst, crkLast, insLast, insFirst, next, write;
+	BUN insh, inst, crkh, crkt, idxFirst, cur, curVal, curPos, crkFirst, crkLast, insFirst, next, write;
 	int xx, zz, position = -1;
 	struct Node *IndexNode = NULL;
 	lng prevPos, prevcrsize, insertions, remainingIns, buns;
@@ -2579,7 +2578,6 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 	xx = BUNsize(b);
 	zz = BUNsize(c);
 	insFirst = BUNfirst(u);	
-	insLast = BUNtloc(u,BUNlast(u));	
 
 	/* make room for the new buns */
 	lng needed = insertions - (((b)->batBuns->size - (b)->batBuns->free) / xx);
@@ -2707,8 +2705,12 @@ mergeInsertions_@1(int *bid, int *new, lng startPosition, bit deleteNodes){
 
 str
 mergeInsertionsGradually_@1(int *bid, int *new, lng startPosition, @1* hgh, bit inclusive, bit deleteNodes){
+
+	lng endPosition;
 		
 	@:mergeInsertionsBody(@1,@2,@3, && (@2_LT(inst,hgh,@3@1) || (@2_EQ(inst,hgh,@3@1) && inclusive == TRUE)),1)@
+
+	endPosition = startPosition + insDone + extendedIns;
 
 	@:shrinkInsertions(@1)@
 
@@ -2722,7 +2724,11 @@ mergeInsertionsGradually_@1(int *bid, int *new, lng startPosition, @1* hgh, bit 
 str
 mergeInsertionsRipple_@1(int *bid, int *new, lng startPosition, @1* hgh, bit inclusive, bit deleteNodes){
 
+	lng endPosition;
+
 	@:mergeInsertionsBody(@1,@2,@3, && (@2_LT(inst,hgh,@3@1) || (@2_EQ(inst,hgh,@3@1) && inclusive == TRUE)), ((@2_LT(curValue,hgh,@3@1) || (@2_EQ(curValue,hgh,@3@1) && inclusive == TRUE && lowIndexNode->inclusive == TRUE)) || bats > 0))@
+
+	endPosition = startPosition + insDone + extendedIns;
 
 	if (lowIndexNode == NULL){
 		@:shrinkInsertions(@1)@
@@ -2745,8 +2751,8 @@ mergeInsertionsRipple_@1(int *bid, int *new, lng startPosition, @1* hgh, bit inc
 		rscrt = BUNtloc(tempBATs->b, BUNfirst(tempBATs->b));
 		crkh  = BUNhloc(u,insFirst+startPosition*xx);
 		crkt  = BUNtloc(u,insFirst+startPosition*xx);
-		insh  = BUNhloc(u,insFirst+(startPosition + insDone + extendedIns)*xx);
-		inst  = BUNtloc(u,insFirst+(startPosition + insDone + extendedIns)*xx);
+		insh  = BUNhloc(u,insFirst+(endPosition)*xx);
+		inst  = BUNtloc(u,insFirst+(endPosition)*xx);
 
 		crkLast = BUNtloc(tempBATs->b,BUNlast(tempBATs->b));
 		insLast = BUNtloc(u,BUNlast(u));
@@ -2887,8 +2893,11 @@ mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
 str
 mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosition){
 
+	BUN insLast;
+
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
+	insLast = BUNtloc(u,BUNlast(u));	
 	next = BUNlast(b) - xx;
 
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
@@ -2910,12 +2919,13 @@ mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosit
 str                             
 mergeInsertionsBRipple_@1(int *bid, int *new, lng startPosition, lng endPosition, @1 *hgh, bit inclusive){
         BAT *ripple;    
-        BUN rh, rt, rnext;     
+        BUN rh, rt, rnext, insLast;     
 	lng toRippleBuns;
 	lng exceedBuns = 0;
                         
         @:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
                 
+	insLast = BUNtloc(u,BUNlast(u));	
 	toRippleBuns = endPosition - startPosition +1;
 	ripple = BATnew(TYPE_oid, TYPE_@1, toRippleBuns);
 /*
