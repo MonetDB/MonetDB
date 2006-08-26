@@ -28,11 +28,13 @@ function user.main():void;	# 0  (main:void)
 # testing repeatative reverse optimalisation 	# 1  (_1:str)
     r := bat.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-(_3:int)(_3:int)
     bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun (_4:void)<-(r:bat[:int,:int])(_5:int)(_6:int)
-    rr := bat.reverse(r);	# 4 BKCreverse (rr:bat[:int,:int])<-(r:bat[:int,:int])
-    z := algebra.markT(rr,0@0:oid);	# 5 ALGtmark (z:bat[:int,:void])<-(rr:bat[:int,:int])(_8:oid)
-    k := 23:int;	# 6  (k:int)<-(_14:int)
-    io.print(r);	# 7 IOprint_val (_15:int)<-(r:bat[:int,:int])
-end main;	# 8  
+    o := 0@0:oid;	# 4  (o:oid)<-(_8:oid)
+    rr := bat.reverse(r);	# 5 BKCreverse (rr:bat[:int,:int])<-(r:bat[:int,:int])
+    z := algebra.markT(rr,o);	# 6 ALGtmark (z:bat[:int,:void])<-(rr:bat[:int,:int])(o:oid)
+    t := r;	# 7  (t:bat[:int,:int])<-(r:bat[:int,:int])
+    k := 23:int;	# 8  (k:int)<-(_14:int)
+    io.print(t);	# 9 IOprint_val (_15:int)<-(t:bat[:int,:int])
+end main;	# 10  
 #-----------------#
 # h	t	  # name
 # int	int	  # type

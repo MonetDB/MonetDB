@@ -202,7 +202,7 @@ void optimizerInit(){
 		crossRef = putName("cross",5);
 		deleteRef = putName("delete",6);
 		depositRef = putName("deposit",7);
-		kdifferenceRef= putName("kdifference",10);
+		differenceRef= putName("difference",10);
 		finishRef = putName("finish",6);
 		expandRef = putName("expand",6);
 		groupRef = putName("group",5);

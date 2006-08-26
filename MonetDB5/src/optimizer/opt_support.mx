@@ -571,12 +571,13 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 		if( flag & OPT_CHECK_DECL) chkDeclarations(mb, TRUE);
 		if( flag & OPT_CHECK_SPAN) setLifespan(mb);
 	}
-	if( cntxt->debugOptimizer)
+	if( cntxt->debugOptimizer){
 		optimizerDebug(mb, name, actions, usec);
-	if (mb->errors) {
-		showErrors();
-		stream_printf(GDKout, "Optimizer %s failed\n", name);
-		printFunction(GDKout, mb, LIST_MAL_ALL);
+		if (mb->errors) {
+			showErrors();
+			stream_printf(GDKout, "Optimizer %s failed\n", name);
+			printFunction(GDKout, mb, LIST_MAL_ALL);
+		}
 	}
 	return mb->errors;
 }
@@ -596,6 +597,7 @@ optimizeMALBlock(MalBlkPtr mb)
 #endif
 
 	optimizerInit();
+	/* assume the type and flow have been checked already */
 	do {
 		qot = 0;
 		for (pc = 0; pc < mb->stop; pc++) {

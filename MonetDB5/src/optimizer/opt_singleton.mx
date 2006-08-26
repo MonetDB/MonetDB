@@ -314,16 +314,15 @@ variables on the stack.
 		}
 		pushInstruction(mb, p);
 	}
-	if (doAR) {
 #ifdef DEBUG_OPT_SINGLETON
-		printf("MID STAGE doAR=%d\n", doAR);
+	if (doAR) {
+		printf("FINAL STAGE doAR=%d\n", doAR);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 		for (i = 0; i < top; i++)
 			stream_printf(GDKout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
 		stream_printf(GDKout, "\n");
-#endif
-		OPTaliases(mb, 0, 0);
 	}
+#endif
 	GDKfree(old);
 
 #ifdef DEBUG_OPT_SINGLETON

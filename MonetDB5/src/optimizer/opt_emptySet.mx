@@ -42,17 +42,31 @@ For example, consider the following MAL test
     V16 := algebra.markH(V12);
     V17 := algebra.join(V16,V7);
     bat.append(V1,V17);
+	optimizer.costModel();
 	optimizer.emptySet();
 @end verbatim
 @end example
-Calling the emptySet optimizer replaces this program
-by the following code snippet.
+Calling the optimizers replaces this program
+by the following code snippet. 
 @example
-     V1 := bat.new(:void,:int);
-     V7 := bat.new(:void,:int);
-     V16 := algebra.markH(V7);
-     V17 := algebra.join(V16,V7);
-     bat.append(V1,V17);
+    V1 := bat.new(:void,:int);
+    V7 := bat.new(:void,:int);
+    V10{rows=0} := bat.new(:int,:void);
+    V11{rows=0} := bat.new(:void,:int);
+    V12 := V7;
+    V16 := algebra.markH(V12);
+    V17 := algebra.join(V16,V7);
+    bat.append(V1,V17);
+
+@end example
+This block can be further optimized using alias propagation
+and dead code removal. The final block becomes:
+@example
+    V1 := bat.new(:void,:int);
+    V7 := bat.new(:void,:int);
+    V16 := algebra.markH(V7);
+    V17 := algebra.join(V16,V7);
+    bat.append(V1,V17);
 @end example
 During empty set propagation, new candidates may appear. For example,
 taking the intersection with an empty set creates a target variable
@@ -86,15 +100,15 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "mal_builder.h"
 
 #define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1),TRUE); \
-	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; doAR++;\
+	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
 	if( getVarType(mb,getArg(p,0)) == getVarType(mb,getArg(p,1)) ) { \
 		setModuleId(p,NULL); setFunctionId(p,NULL); \
 	} else { setModuleId(p,batcalcRef); setFunctionId(p,identityRef);} }
 
-static void
+static int
 ESevaluate(MalBlkPtr mb, char *empty)
 {
-	int i, j, k, limit, doAR = 0,tpe;
+	int i, j, k, actions = 0,tpe;
 	InstrPtr p;
 	str likeRef = getName("like", 4);
 	str existRef = getName("exist", 5);
@@ -111,12 +125,10 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	str hashjoinRef = getName("hashjoin", 8);
 	str cartesianproductRef = getName("cartesianproduct", 16);
 
-	setLifespan(mb);
-	limit= mb->stop;
 
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
-	for (i = k = 0; i < limit; i++) {
+	for (i = k = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
 		mb->stmt[k++] = p;
 @-
@@ -129,7 +141,7 @@ the statement itself can then be removed.
 		tpe= getVarType(mb,getArg(p,0));
 		pushArgument(mb,p,newTypeVariable(mb,getHeadType(tpe)));
 		pushArgument(mb,p,newTypeVariable(mb,getTailType(tpe)));
-		doAR++;
+		actions++;
 @c
 		if (p->retc==1 && empty[getArg(p, 0)] &&
 			isaBatType(getArgType(mb,p,0)) ) {
@@ -165,7 +177,7 @@ sequences to filter and replace calls with empty arguments.
 						p->argc = 1;
 						p->token = ASSIGNsymbol;
 						pushBit(mb, p, FALSE);
-						doAR++;
+						actions++;
 						break;
 					} 
 					if ( getFunctionId(p) == selectRef || 
@@ -223,7 +235,7 @@ sequences to filter and replace calls with empty arguments.
 						p->argc = 1;
 						p->token = ASSIGNsymbol;
 						pushLng(mb,p,0);
-						doAR++;
+						actions++;
 						break;
 					}
 					/* CONTINUE WITH THETA JOIN */
@@ -235,6 +247,7 @@ sequences to filter and replace calls with empty arguments.
 	printf("FINAL STAGE errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
+	return actions;
 }
 @-
 We first have to find all candidates for empty set removal.
@@ -272,8 +285,7 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef DEBUG_OPT_EMPTYSET
 	stream_printf(GDKout, "\n");
 #endif
-	ESevaluate(mb, empty);
-	return 1;
+	return ESevaluate(mb, empty);
 }
 
 @include optimizerWrapper.mx
