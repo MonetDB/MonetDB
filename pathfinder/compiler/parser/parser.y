@@ -256,7 +256,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
     dec             dec;
     double          dbl;
     char           *str;
-    char            chr;
     bool            bit;
     PFqname_t       qname;
     PFpnode_t      *pnode;
@@ -478,14 +477,25 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token invalid_character
 
 %type <str>
+               "{{"
+               "}}"
                at_URILiteral
+               AttrContentChar
+               AttributeValueContText_
+               CharRef
+               ElementContentChar
+               ElementContentText_
                encoding_StringLiteral
+               EscapeQuot
+               EscapeApos
                NCName
                OptCollationStringLiteral_
                OptEncoding_
+               PFChar
                PITarget
                PI_NCName_LBrace
                PragmaContents
+               PredefinedEntityRef
                StringLiteral
                URILiteral
 
@@ -512,19 +522,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 
 %type <dbl>
                DoubleLiteral
-
-%type <chr>    
-               "{{"
-               "}}"
-               AttrContentChar
-               AttributeValueContText_
-               PFChar
-               CharRef
-               ElementContentChar
-               ElementContentText_
-               EscapeQuot
-               EscapeApos
-               PredefinedEntityRef
 
 %type <mode>
                OrderModifier
@@ -2226,26 +2223,32 @@ AttributeValueCont_       : AttributeValueContTexts_
                           ;
 
 AttributeValueContTexts_  : AttributeValueContText_
-                            { /*
-                               * initialize new dynamic array and insert
-                               * one character
-                               */
-                              $$ = PFarray (sizeof (char));
-                              *((char *) PFarray_add ($$)) = $1;
+                            {   /*
+                                 * initialize new dynamic array and insert
+                                 * one (UTF-8) character
+                                 */
+                                $$ = PFarray (sizeof (char));
+                                while (*($1)) {
+                                    *((char *) PFarray_add ($$)) = *($1);
+                                    ($1)++;
+                                }
                             }
                           | AttributeValueContTexts_ AttributeValueContText_
-                            { /* append one charater to array */
-                              *((char *) PFarray_add ($1)) = $2;
+                            {   /* append one (UTF-8) charater to array */
+                                while (*($2)) {
+                                    *((char *) PFarray_add ($1)) = *($2);
+                                    ($2)++;
+                                }
                             }
                           ;
 
 AttributeValueContText_   : AttrContentChar      { $$ = $1; }
-                          | EscapeQuot           { $$ = '"'; }
-                          | EscapeApos           { $$ = '\''; }
+                          | EscapeQuot           { $$ = "\""; }
+                          | EscapeApos           { $$ = "'"; }
                           | PredefinedEntityRef  { $$ = $1; }
                           | CharRef              { $$ = $1; }
-                          | "{{"                 { $$ = '{'; }
-                          | "}}"                 { $$ = '}'; }
+                          | "{{"                 { $$ = "{"; }
+                          | "}}"                 { $$ = "}"; }
                           ;
 
 /* [101] */
@@ -2274,25 +2277,31 @@ DirElemContent            : DirectConstructor      { $$ = $1; }
                           ;
 
 ElementContentTexts_      : ElementContentText_
-                            { /*
-                               * initialize new dynamic array and insert
-                               * one character
-                               */
-                              $$ = PFarray (sizeof (char));
-                              *((char *) PFarray_add ($$)) = $1;
+                            {   /*
+                                 * initialize new dynamic array and insert
+                                 * one (UTF-8) character
+                                 */
+                                $$ = PFarray (sizeof (char));
+                                while (*($1)) {
+                                    *((char *) PFarray_add ($$)) = *($1);
+                                    ($1)++;
+                                }
                             }
                           | ElementContentTexts_ ElementContentText_
-                            { /* append one charater to array */
-                              *((char *) PFarray_add ($1)) = $2;
-                              $$ = $1;
+                            {   /* append one (UTF-8) charater to array */
+                                while (*($2)) {
+                                    *((char *) PFarray_add ($1)) = *($2);
+                                    ($2)++;
+                                }
+                                $$ = $1;
                             }
                           ;
 
 ElementContentText_       : ElementContentChar    { $$ = $1; }
                           | PredefinedEntityRef   { $$ = $1; }
                           | CharRef               { $$ = $1; }
-                          | "{{"                  { $$ = '{'; }
-                          | "}}"                  { $$ = '}'; }
+                          | "{{"                  { $$ = "{"; }
+                          | "}}"                  { $$ = "}"; }
                           ;
 
 /* [103] */
@@ -2318,9 +2327,12 @@ Chars_                    : /* empty */
                             { /* initialize new dynamic array */
                               $$ = PFarray (sizeof (char)); }
                           | Chars_ PFChar
-                            { /* append one charater to array */
-                              *((char *) PFarray_add ($1)) = $2;
-                              $$ = $1;
+                            {   /* append one (UTF-8) charater to array */
+                                while (*($2)) {
+                                    *((char *) PFarray_add ($1)) = *($2);
+                                    ($2)++;
+                                }
+                                $$ = $1;
                             }
                           ;
 

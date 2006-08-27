@@ -296,7 +296,7 @@ PFscanner_init (char *buf)
 }
 
 /* forward declarations */
-static char entity_ref (const char *s, char **endptr);
+static char * entity_ref (const char *s, char **endptr);
 static char *extract_string (const char *s);
 static PFqname_t extract_qname (const char *s, unsigned int index);
 static char *extract_ncname (const char *s, unsigned int index);
@@ -375,66 +375,99 @@ static char *extract_ncname (const char *s, unsigned int index);
  */
 
 /* XML Character Classes (http://www.w3.org/TR/REC-xml/#CharClasses) */
-/* 8 bit characters from the Letter class
-   see http://www.w3.org/TR/REC-xml/#NT-Letter */
-Letter                           [\x41-\x5a\x61-\x7a\xc0-\xd6\xd8-\xf6\xf8-\xff]
-/* 8 bit characters from the Digit class
-   see http://www.w3.org/TR/REC-xml/#NT-Digit */
+
+/* see http://www.w3.org/TR/REC-xml/#NT-Letter */
+Letter                           {BaseChar}|{Ideographic}
+
+/* see http://www.w3.org/TR/REC-xml/#NT-BaseChar */
+OneByteBaseChar                  [\x41-\x5a\x61-\x7a]
+TwoByteBaseChar                  \xc3[\x80-\x96\x98-\xb6\xb8-\xbf]|\xc4[\x80-\xb1\xb4-\xbe]|\xc5[\x81-\x88\x8a-\xbe]|\xc6[\x80-\xbf]|\xc7[\x80-\x83\x8d-\xb0\xb4\xb5\xba-\xbf]|\xc8[\x80-\x97]|\xc9[\x90-\xbf]|\xca[\x80-\xa8\xbb-\xbf]|\xcb[\x80\x81]|\xce[\x86\x88-\x8a\x8c\x8e-\xa1\xa3-\xbf]|\xcf[\x80-\x8e\x90-\x96\x9a\x9c\x9e\xa0\xa2-\xb3]|\xd0[\x81-\x8c\x8e-\xbf]|\xd1[\x80-\x8f\x91-\x9c\x9e-\xbf]|\xd2[\x80\x81\x90-\xbf]|\xd3[\x80-\x84\x87\x88\x8b\x8c\x90-\xab\xae-\xb5\xb8\xb9]|\xd4[\xb1-\xbf]|\xd5[\x80-\x96\x99\xa1-\xbf]|\xd6[\x80-\x86]|\xd7[\x90-\xaa\xb0-\xb2]|\xd8[\xa1-\xba]|\xd9[\x81-\x8a\xb1-\xbf]|\xda[\x80-\xb7\xba-\xbe]|\xdb[\x80-\x8e\x90-\x93\x95\xa5\xa6]
+ThreeByteBaseChar                \xe0(\xa4[\x85-\xb9\xbd]|\xa5[\x98-\xa1]|\xa6[\x85-\x8c\x8f-\x90\x93-\xa8\xaa-\xb0\xb2\xb6-\xb9]|\xa7[\x9c\x9d\x9f-\xa1\xb0\xb1]|\xa8[\x85-\x8a\x8f\x90\x93-\xa8\xaa-\xb0\xb2\xb3\xb5\xb6\xb8\xb9]|\xa9[\x99-\x9c\x9e\xb2-\xb4]|\xaa[\x85-\x8b\x8d\x8f-\x91\x93-\xa8\xaa-\xb0\xb2\xb3\xb5-\xb9\xbd]|\xab\xa0|\xac[\x85-\x8c\x8f\90\x93-\xa8\xaa-\xb0\xb2\xb3\xb6-\xb9\xbd]|\xad[\x9c\x9d\x9f-\xa1]|\xae[\x85-\x8a\x8e-\x90\x92-\x95\x99-\x9a\x9c\x9e\x9f\xa3\xa4\xa8-\xaa\xae-\xb5\xb7-\xb9]|\xb0[\x85-\x8c\x8e\x90\x92-\xa8\xaa-\xb3\xb5-\xb9]|\xb1[\xa0\xa1]|\xb2[\x85-\x8c\x8e-\x90\x92-\xa8\xaa-\xb3\xb5-\xb9]|\xb3[\x9e\xa0\xa1]|\xb4[\x85-\x8c\x8e-\x90\x92-\xa8\xaa-\xb9]|\xb5[\xa0\xa1]|\xb8[\x81-\xae\xb0\xb2\xb3]|\xb9[\x80-\x85]|\xba[\x81\x82\x84\x87\x88\x8a\x8d\x94-\x97\x99-\x9f\xa1-\xa3\xa5\xa7\xaa\xab\xad-\xae\xb0\xb2\xb3\xbd]|\xbb[\x80-\x84]|\xbd[\x80-\x87\x89-\xa9])|\xe1(\x82[\xa0-\xbf]|\x83[\x80-\x85\x90-\xb6]|\x84[\x80\x82\x83\x85-\x87\x89\x8b\x8c\x8e-\x92\xbc\xbe]|\x85[\x80\x8c\x8e\x90\x94\x95\x99\x9f-\xa1\xa3\xa5\xa7\xa9\xad\xae\xb2\xb3\xb5]|\x86[\x9e\xa8\xab\xae\xaf\xb7\xb8\xba\xbc-\xbf]|\x87[\x80-\x82\xab\xb0\xb9]|\xb8[\80-\xbf]|\xb9[\x80-\xbf]|\xba[\x80-\x9b\xa0-\xbf]|\xbb[\x80-\xb9]|\xbc[\x80-\x95\x98-\x9d\xa0-\xbf]|\xbd[\x80-\x85\x88-\x8d\x90-\x97\x99\x9b\x9d\x9f-\xbd]|\xbe[\x80-\xb4\xb6-\xbc\xbe]|\xbf[\x82-\x84\x86-\x8c\x90-\x93\x96-\x9b\xa0-\xac\xb2\xb4\xb6-\xbc])|\xe2(\x84[\xa6\xaa\xab\xae]|\x86[\x80-\x82])|\xe3(\x81[\x81-\xbf]|\x82[\x80-\x94\xa1-\xbf]|\x83[\x80-\xba]|\x84[\x85-\xac])|\xea[\xb0-\xbf][\x80-\xbf]|[\xeb\xec][\x80-\xbf][\x80-\xbf]|\xed([\x80-\x9d][\x80-\xbf]|\x9e[\x80-\xa3])
+
+BaseChar                         {OneByteBaseChar}|{TwoByteBaseChar}|{ThreeByteBaseChar}
+
+/* see http://www.w3.org/TR/REC-xml/#NT-Ideographic */
+Ideographic                      \xe4[\xb8-\xbf][\x80-\xbf]|[\xe5-\xe8][\x80-\xbf][\x80-\xbf]|\xe9[\x80-\xbd][\x80-\xbf]|\xe9\xbe[\x80-\xa5]|\xe3\x80[\x87\xa1-\xa9]
+
+/* see http://www.w3.org/TR/REC-xml/#NT-CombiningChar */
+CombiningChar                    \xcc[\x80-\xbf]|\xcd[\x80-\x85\xa0\xa1]|\xd2[\x83-\x86]|\xd6[\x91-\xa1\xa3-\xb9\xbb-\xbd\xbf]|\xd7[\x81\x82\x84]|\xd9[\x8b-\x92\xb0]|\xdb[\x96-\xa4\xa7\xa8\xaa-\xad]|\xe0(\xa4[\x81-\x83\xbc\xbe\xbf]|\xa5[\x80-\x8d\x91-\x94\xa2\xa3]|\xa6[\x81-\x83\xbc\xbe\xbf]|\xa7[\x80-\x84\x87\x88\x8b-\x8d\x97\xa2\xa3]|\xa8[\x82\xbc\xbe\xbf]|\xa9[\x80-\x82\x87\x88\x8b-\x8d\xb0\xb1]|\xaa[\x81-\x83\xbc\xbe\xbf]|\xab[\x80-\x85\x87-\x89\x8b-\x8d]|\xac[\x81-\x83\xbc\xbe\xbf]|\xad[\x80-\x83\x87\x88\x8b-\x8d\x96\x97]|\xae[\x82\x83\xbe\xbf]|\xaf[\x80-\x82\x86-\x88\x8a-\x8d\x97]|\xb0[\x81-\x83\xbe\xbf]|\xb1[\x80-\x84\x86-\x88\x8a-\x8d\x95\x96]|\xb2[\x82\x83\xbe\xbf]|\xb3[\80-\x84\x86-\x88\x8a-\x8d\x95\x96]|\xb4[\x82\x83\xbe\xbf]|\xb5[\x80-\x83\x86-\x88\x8a-\x8d\x97]|\xb8[\xb1\xb4-\xba]|\xb9[\x87-\x8e]|\xba[\xb1\xb4-\xb9\xbb\xbc]|\xbb[\x88-\x8d]|\xbc[\x98\x99\xb5\xb7\xb9\xbe\xbf]|\xbd[\xb1-\xbf]|\xbe[\x80-\x84\x86-\x8b\x90-\x95\x97\x99-\xad\xb1-\xb7\xb9])|\xe2(\x83[\x90-\x9c\xa1])|\xe3(\x80[\xaa-\xaf]|\x82[\x99\x9a])
+
+/* see http://www.w3.org/TR/REC-xml/#NT-Extender */
+Extender                         \xc2\xb7|\xcb[\x90\x91]|\xce\x87|\xd9\x80|\e0[\xb9\xbb]\x86|\xe3\x80[\x85\xb1-\xb5]|\xe3\x82[\x9d\x9e]|\xe3\x83[\xbc-\xbe]
+
+/* see http://www.w3.org/TR/REC-xml/#NT-Digit */
+XMLDigit                         [\x30-\x39]|\xd9[\xa0-\xa9]|\xdb[\xb0-\xb9]|\xe0[\xa5\xa7\xa9\xab\xad\xb1\xb3\xb5][\xa6-\xaf]|\xe0\xaf[\xa7-\xaf]|\xe0[\xb9\xbb][\x90-\x99]|\xe0\xbc[\xa0-\xa9]
+
+/* Digit according to the XQuery definition */
 Digit                            [\x30-\x39]
 Digits                           {Digit}+
-/* 0x00B7 is the only 8 bit Extender char
-   see http://www.w3.org/TR/REC-xml/#NT-Extender */
-Extender                         "\xb7"
 
-/* An XML Name, minus the ":"
-   see http://www.w3.org/TR/REC-xml-names/#NT-NCName */
-NCName                           ({Letter}|"_"){NCNameChar}*
-NCNameChar                       {Letter}|{Digit}|"."|"-"|"_"|{Extender}
+/* XQuery WD [148]: Char - [{}<&] */
+ElementContentChar               {MinimalChar}|[-'"#)]
+/* XQuery WD [149]: Char - [{}<&"] */
+QuotAttrContentChar              {MinimalChar}|[-'#)]
+/* XQuery WD [150]: Char - [{}<&'] */
+AposAttrContentChar              {MinimalChar}|[-"#)]
 
-/* QName: http://www.w3.org/TR/REC-xml-names/#NT-QName */
+/* XQuery WD [141] */
+IntegerLiteral                   {Digits}
+/* XQuery WD [142] */
+DecimalLiteral                   ("."{Digits})|({Digits}"."[0-9]*)
+/* XQuery WD [143] */
+DoubleLiteral                    (("."{Digits})|({Digits}("."[0-9]*)?))[eE][-+]?{Digits}
+/* XQuery WD [144] */
+StringLiteral                    ("\""({PredefinedEntityRef}|{CharRef}|"\"\""|{MinimalChar}|[-'{}<#)])*"\"")|("'"({PredefinedEntityRef}|{CharRef}|"''"|{MinimalChar}|[-"{}<#)])*"'")
+/* XQuery WD [145] */
+PredefinedEntityRef              "&"("lt"|"gt"|"amp"|"quot"|"apos")";"
+
+
+/* XQuery WD [152] http://www.w3.org/TR/REC-xml/#NT-PITarget
+   !W3C: This pattern also matches "xml".
+   We are catching "xml" in parser.y */
+PITarget                         ({Letter}|"_"|":"){NameChar}*
+/* http://www.w3.org/TR/REC-xml/#NT-NameChar */
+NameChar                         {Letter}|{XMLDigit}|"."|"-"|"_"|":"|{CombiningChar}|{Extender}
+
+/* XQuery WD [153] or http://www.w3.org/TR/REC-xml/#NT-CharRef */
+CharRef                          ("&#"[0-9]+";")|("&#x"[0-9a-fA-F]+";")
+
+/* XQuery WD [154]: QName: http://www.w3.org/TR/REC-xml-names/#NT-QName */
 QName                            ({Prefix}":")?{LocalPart}
 Prefix                           {NCName}
 LocalPart                        {NCName}
 
-/* Whitespace http://www.w3.org/TR/REC-xml/#NT-S */
+/* XQuery WD [155]: An XML Name, minus the ":"
+   see http://www.w3.org/TR/REC-xml-names/#NT-NCName */
+NCName                           ({Letter}|"_"){NCNameChar}*
+NCNameChar                       {Letter}|{Digit}|"."|"-"|"_"|{CombiningChar}|{Extender}
+
+/* XQuery WD [156]: Whitespace http://www.w3.org/TR/REC-xml/#NT-S */
 S                                {WhiteSpaceChar}+
 WhiteSpaceChar                   [\x20\x09\x0d\x0a]
 
-/* 8 bit Char http://www.w3.org/TR/REC-xml/#NT-Char */
-PFChar                           [\x09\x0a\x0d\x20-\xff]
-
-/* ElementContentChar */
-QuotAttrContentChar              [\x09\x0a\x0d\x20-\x21\x23-\x25\x27-\x3b\x3d\x3e\x3f-\x7a\x7c\x7e-\xff]
-AposAttrContentChar              [\x09\x0a\x0d\x20-\x25\x28-\x3b\x3d\x3e\x3f-\x7a\x7c\x7e-\xff]
-ElementContentChar               [\x09\x0a\x0d\x20-\x25\x27-\x3b\x3d\x3e\x3f-\x7a\x7c\x7e-\xff]
-
-/* XQuery WD [132] */
-IntegerLiteral                   {Digits}
-/* XQuery WD [133] */
-DecimalLiteral                   ("."{Digits})|({Digits}"."[0-9]*)
-/* XQuery WD [134] */
-DoubleLiteral                    (("."{Digits})|({Digits}("."[0-9]*)?))[eE][-+]?{Digits}
-/* XQuery WD [135] */
-StringLiteral                    ("\""({PredefinedEntityRef}|{CharRef}|"\"\""|[^"&])*"\"")|("'"({PredefinedEntityRef}|{CharRef}|"''"|[^'&])*"'")
-/* XQuery WD [136] http://www.w3.org/TR/REC-xml/#NT-PITarget
-   !W3C: This pattern also matches "xml".
-   FIXME: Catch [xX][mM][lL] in parser rule. */
-PITarget                         ({Letter}|"_"|":"){NameChar}*
-NameChar                         {Letter}|{Digit}|"."|"-"|"_"|{Extender}
-
-/* XQuery WD [140] */
-PredefinedEntityRef              "&"("lt"|"gt"|"amp"|"quot"|"apos")";"
-/* XQuery WD [141] or http://www.w3.org/TR/REC-xml/#NT-CharRef */
-CharRef                          ("&#"[0-9]+";")|("&#x"[0-9a-fA-F]+";")
+/* XQuery WD [157]: http://www.w3.org/TR/REC-xml/#NT-Char */
+/* all characters, except {}<&'"- (in other words: Char - [-{}<'"#)] */
+MinimalChar                      [\x09\x0a\x0d\x20\x21\x24-\x25\x28\x2a-\x2c\x2e-\x3b\x3d-\x7a\x7c\x7e\x7f]|[\xc0-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf][\x80-\xbf]|[\xf0-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf]
+Char                             {MinimalChar}|[-{}<&'"#)]
 
 /* We have a minor problem here.
    A colon at the end of the comment (e.g., `(: foo ::)') leads to
    a parse error in Pathfinder.  */
+/*
 ExprComment                      "(:"([^(:]|"("[^:]|":"[^)])*":)"
+*/
+PragmaContentChar                {MinimalChar}|[-{}<'"]
+PragmaContent                    ({PragmaContentChar}|"#"({PragmaContentChar}|"#")|({PragmaContentChar}|")")")")*
+/*
+PragmaContent                    {PragmaContentChar}*
 PragmaContent                    ([^#)]|"#"[^)]|[^#]")")*
+*/
 
 /* whitespace/comments in compound keywords */
+/* comments are stripped away by YY_INPUT()
 _                                ({S}|{ExprComment})+
+*/
+_                                {S}
 
 %%
 
@@ -897,13 +930,13 @@ _                                ({S}|{ExprComment})+
 "{"                                { pushState (QUOT_ATTRIBUTE_CONTENT);
                                      gotoState (DEFAULT);
                                      yield (lbrace); }
-{QuotAttrContentChar}              { pflval.chr = *yytext;
+{QuotAttrContentChar}              { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (AttrContentChar);
                                    }
-{PredefinedEntityRef}              { pflval.chr = entity_ref (yytext, NULL);
+{PredefinedEntityRef}              { pflval.str = entity_ref (yytext, NULL);
                                      yield (PredefinedEntityRef);
                                    }
-{CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
+{CharRef}                          { pflval.str = entity_ref (yytext, NULL);
                                      yield (CharRef);
                                    }
 .                                  { yield (invalid_character); }
@@ -918,13 +951,13 @@ _                                ({S}|{ExprComment})+
 "{"                                { pushState (APOS_ATTRIBUTE_CONTENT);
                                      gotoState (DEFAULT);
                                      yield (lbrace); }
-{AposAttrContentChar}              { pflval.chr = *yytext;
+{AposAttrContentChar}              { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (AttrContentChar);
                                    }
-{PredefinedEntityRef}              { pflval.chr = entity_ref (yytext, NULL);
+{PredefinedEntityRef}              { pflval.str = entity_ref (yytext, NULL);
                                      yield (PredefinedEntityRef);
                                    }
-{CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
+{CharRef}                          { pflval.str = entity_ref (yytext, NULL);
                                      yield (CharRef);
                                    }
 .                                  { yield (invalid_character); }
@@ -948,13 +981,13 @@ _                                ({S}|{ExprComment})+
                                      yield (cdata_start); }
 "<"                                { pushState (ELEMENT_CONTENT);
                                      gotoState (START_TAG); yield (less_than); }
-{PredefinedEntityRef}              { pflval.chr = entity_ref (yytext, NULL);
+{PredefinedEntityRef}              { pflval.str = entity_ref (yytext, NULL);
                                      yield (PredefinedEntityRef);
                                    }
-{CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
+{CharRef}                          { pflval.str = entity_ref (yytext, NULL);
                                      yield (CharRef);
                                    }
-{ElementContentChar}               { pflval.chr = *yytext;
+{ElementContentChar}               { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (ElementContentChar);
                                    }
 .                                  { yield (invalid_character); }
@@ -962,7 +995,7 @@ _                                ({S}|{ExprComment})+
 
 <XML_COMMENT>{
 "-->"                              { popState (); yield (xml_comment_end); }
-{PFChar}                           { pflval.chr = *yytext;
+{Char}                             { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (PFChar);
                                    }
 .                                  { yield (invalid_character); }
@@ -980,7 +1013,7 @@ _                                ({S}|{ExprComment})+
 
 <PROCESSING_INSTRUCTION_CONTENT>{
 "?>"                               { popState (); yield (question_mark_gt); }
-{PFChar}                           { pflval.chr = *yytext;
+{Char}                             { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (PFChar);
                                    }
 .                                  { yield (invalid_character); }
@@ -988,7 +1021,7 @@ _                                ({S}|{ExprComment})+
 
 <CDATA_SECTION>{
 "]]>"                              { popState (); yield (cdata_end); }
-{PFChar}                           { pflval.chr = *yytext;
+{Char}                             { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (PFChar);
                                    }
 .                                  { yield (invalid_character); }
@@ -1053,51 +1086,68 @@ _                                ({S}|{ExprComment})+
 }
 %%
 
-static char
+static char *
 entity_ref (const char *s, char **endptr)
 {
+    /* four characters max */
+    char      *ret = memset (PFmalloc (4 * sizeof (char)), 0, 4);
+    /* unicode value of the character we have to return */
+    long int   code;
+
     assert (*s == '&');
 
     if (s[1] == '#') {
         /* this is a character reference (`&#') */
         if (s[2] == 'x') {
-            return (char) strtol (s + 3, endptr, 16);
+            code = strtol (s + 3, endptr, 16);
         } else {
-            return (char) strtol (s + 2, endptr, 10);
+            code = strtol (s + 2, endptr, 10);
         }
+
+        if (code <= 0x0000007f)
+            ret[0] = (char) code;
+        else if (code <= 0x000007ff) {
+            ret[0] = (char) ((code >> 6) | 0xc0);
+            ret[1] = (char) ((code & 0x003f) | 0x80);
+        }
+        else if (code <= 0x0000ffff) {
+            ret[0] = (char) ((code >> 12) | 0xe0);
+            ret[1] = (char) (((code >> 6) & 0x003f) | 0x80);
+            ret[2] = (char) ((code & 0x003f) | 0x80);
+        }
+        else
+            PFoops_loc (OOPS_PARSE, pflloc, "illegal character entity");
     }
     else {
         /* this is a predefined entity */
         if (!strncmp (s + 1, "lt", 2)) {
             if (endptr)
                 *endptr = (char *) s + 3;
-            return '<';
+            ret[0] = '<';
         }
         else if (!strncmp (s + 1, "gt", 2)) {
             if (endptr)
                 *endptr = (char *) s + 3;
-            return '>';
+            ret[0] = '>';
         }
         else if (!strncmp (s + 1, "amp", 3)) {
             if (endptr)
                 *endptr = (char *) s + 4;
-            return '&';
+            ret[0] = '&';
         }
         else if (!strncmp (s + 1, "quot", 4)) {
             if (endptr)
                 *endptr = (char *) s + 5;
-            return '"';
+            ret[0] = '"';
         }
         else if (!strncmp (s + 1, "apos", 4)) {
             if (endptr)
                 *endptr = (char *) s + 5;
-            return '\'';
+            ret[0] = '\'';
         }
     }
 
-    PFoops (OOPS_PARSE, "error in entity reference: `%s'", s);
-    assert(0); /* we should never come here! */
-    return '\0'; /* pacify picky compilers */
+    return ret;
 }
 
 /**
@@ -1108,36 +1158,19 @@ entity_ref (const char *s, char **endptr)
 static char *
 extract_string (const char *s)
 {
-    unsigned int  start = 0;
-    unsigned int  end = 0;
-    PFarray_t    *ret = PFarray (sizeof (char));
-    char         *endptr;
-    unsigned int  i = 0;
-    unsigned short ws_level = 0;
+    unsigned int   start = 0;
+    unsigned int   end = 0;
+    PFarray_t     *ret = PFarray (sizeof (char));
+    char          *endptr;
+    char          *entity;
+    unsigned int   i = 0;
 
-    /* find first quote character, skipping comments */
+    /* find first quote character */
     while (true) {
 
         assert (s[start]);
 
-        if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
-            ws_level = 1;
-            start += 2;
-            while (ws_level > 0) {
-                assert (s[start]);
-                if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
-                    start += 2;
-                    ws_level++;
-                }
-                else if (s[start] == ':' && s[start+1] && s[start+1]==')') {
-                    start += 2;
-                    ws_level--;
-                }
-                else
-                    start++;
-            }
-        }
-        else if (s[start] != '"' && s[start] != '\'')
+        if (s[start] != '"' && s[start] != '\'')
             start++;
         else
             break;
@@ -1158,8 +1191,11 @@ extract_string (const char *s)
         }
         /* test for entities */
         else if (s[end] == '&') {
-            *((char *) PFarray_at (ret, i++))
-                = entity_ref (s + end, &endptr);
+            entity = entity_ref (s + end, &endptr);
+            while (*entity) {
+                *((char *) PFarray_at (ret, i++)) = *entity;
+                entity++;
+            }
             end = endptr - s;
         }
         /* everything else */

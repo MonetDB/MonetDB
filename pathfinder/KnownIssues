@@ -1,18 +1,4 @@
 
- -- The Pathfinder compiler does not allow nested XQuery comments.
-    A query like
-
-      (: a (: nested :) comment :)
-      (1, 2)
-
-    thus produces a parsing error.
-
-    [For developers:
-      Within grouped tokens this is hard to implement. Between
-      tokens, however, we could support this by introducing an
-      additional lexical state, similar to the proposal in older
-      W3C drafts.]
-
  -- Pathfinder does support XQuery library modules. There are a
     few deviations from the standard, though:
 
