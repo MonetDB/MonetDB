@@ -421,10 +421,10 @@ address CALCbat2str;
 command bat(v:void) :bat[:any_1,:any_2] 
 address CALCnil2bat;
 
-command bat(b:bat[:any_1,:any_2]):bat
-address CALCbat2BAT;
-command bat(b:bat):bat[:any_1,:any_2]
-address CALCBAT2bat;
+#command bat(b:bat):bat[:any_1,:any_2]
+#address CALCBAT2bat;
+#command bat(b:bat[:any_1,:any_2]):bat
+#address CALCbat2BAT;
 
 command str(v:void) :str 
 address CALCnil2str;
@@ -1511,7 +1511,7 @@ CALCbat2batid(bat *ret, int *bid)
 	if (b == 0)
 		throwMessage("calc.getBAT", "Bat does not exist");
 	*ret = b->batCacheid;
-	BBPreleaseref(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
