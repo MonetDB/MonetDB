@@ -194,10 +194,8 @@ function calc.sql_environment():bat[:str,:bat];
 	n := algebra.markT(e, 0:oid);
 	r := bat.reverse(n);
 	v := algebra.markH(e, 0:oid);
-        ri:= calc.bat(r);
-        bat.insert(b, "name", ri);
-        vi:= calc.bat(v);
-        bat.insert(b, "value", vi);
+	bat.insert(b, "name", r);
+	bat.insert(b, "value", v);
 	return b;
 end sql_environment;
 
