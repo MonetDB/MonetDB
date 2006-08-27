@@ -656,7 +656,7 @@ if [ "${os}${BITS}" = "Linux64" ] ; then
 	WHAT_CONFIGURE="$WHAT_CONFIGURE --libdir='"'${prefix}'"/${libdir}'"
 fi
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
-eval "alias configure_${wh_t}=\"`echo "${WHAT_CONFIGURE}" | sed -e 's|\\$|\\\$|g'`\""
+eval "alias configure_${wh_t}=\"`echo "${WHAT_CONFIGURE}" | sed -e 's|\\$|\\\\\$|g'`\""
 eval "alias configure_${wh_t}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
