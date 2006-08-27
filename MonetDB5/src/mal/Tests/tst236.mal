@@ -9,7 +9,7 @@ end dir;
 function createBAT(name:str):bat;
 	res:= bat.new(:int,:int);
 	bat.setName(res,name);
-	i:= calc.bat(res);
+	i:= calc.getBATidentifier(res);
 	return i;
 end createBAT;
 m:= bat.new(:oid,:str);

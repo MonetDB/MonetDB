@@ -107,14 +107,13 @@ This effectively overloads the MAL procedure.
 #include "mal_resolve.h"
 #include "mal_namespace.h"
 
-int resolveType(int dsttype, int srctype);
 malType getPolyType(malType t, int *polytype);
 int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
 #define MAXMALARG 256
 
-str traceFcnName= "_____";
+str traceFcnName= "____";
 int tracefcn;
 int polyVector[MAXTYPEVAR];
 void polyInit(){
@@ -279,6 +278,10 @@ possible match for the non-polymorphic case.
 			int actual = getArgType(mb,p,i);
 			int formal = getArgType(s->def,sig,i);
 			if(formal!=actual ){
+#ifdef DEBUG_MAL_RESOLVE
+			stream_printf(GDKout,"unmatched %d formal %s actual %s\n",
+				i, getTypeName(formal), getTypeName(actual));
+#endif
 				unmatched= i;
 				break;
 			}
@@ -294,7 +297,7 @@ An optimizer may at a later stage automatically insert such coercion requests.
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		 stream_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
-			getModuleId(sig), getFunctionId(sig), unmatched, polymorphic,p==sig);
+			getModuleId(sig), getFunctionId(sig), unmatched, sig->polymorphic,p==sig);
 		if( sig->polymorphic){
 			int l;
 			for(l=0;l<2*p->argc;l++) 
@@ -305,8 +308,8 @@ An optimizer may at a later stage automatically insert such coercion requests.
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 		stream_printf(GDKout,"++> test against signature\n");
 		printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
-		stream_printf(GDKout,"\nmismatch test %s poly %s\n",
-			getTypeName(getArgType(mb,p,unmatched)),
+		stream_printf(GDKout,"\nmismatch unmatched %d test %s poly %s\n",
+			unmatched, getTypeName(getArgType(mb,p,unmatched)),
 			getTypeName(getArgType(s->def,sig,unmatched)));
 	}
 #endif
@@ -331,7 +334,7 @@ the resulting type can not be determined.
 		updateTypeMap(formal, actual, polytype);
 		s1= getPolyType(formal, polytype);
 
-		returntype[i]= resolveType(actual,s1);
+		returntype[i]= resolveType(s1,actual);
 		if( returntype[i]== -1 ){
 			s1= -1;
 			break;
@@ -345,7 +348,7 @@ the resulting type can not be determined.
 		if( actual== formal)
 			returntype[i]= actual;
 		else {
-			returntype[i]= resolveType(actual,formal);
+			returntype[i]= resolveType(formal,actual);
 			if( returntype[i]== -1 ){
 				s1= -1;
 				break;
@@ -499,6 +502,8 @@ compatible with the destination variable.
 In both cases the 'receiving' variable may not be fully qualified,
 i.e. of type 'any'. The type resolution algorithm creates the concrete
 type for subsequent use.
+@h
+mal_export int resolveType(int dsttype, int srctype);
 @c
 int resolveType(int dsttype, int srctype){  
 #ifdef DEBUG_MAL_RESOLVE
@@ -511,6 +516,11 @@ int resolveType(int dsttype, int srctype){
 	if( dsttype == srctype) return dsttype;
 	if( dsttype == TYPE_any) return srctype;
 	if( srctype == TYPE_any) return dsttype;
+@-
+A bat reference can be coerced to bat type.
+@c
+	if(isaBatType(srctype) && dsttype == TYPE_bat) return srctype;
+	if(isaBatType(dsttype) && srctype == TYPE_bat) return dsttype;
 	if( isaBatType(dsttype) && isaBatType(srctype) ){
 		int h1,t1,h2,t2,h3,t3;
 		h1= getHeadType(dsttype);
@@ -537,6 +547,8 @@ int resolveType(int dsttype, int srctype){
 		}
 #ifdef DEBUG_MAL_RESOLVE
 		if( tracefcn){
+			int i1=getHeadIndex(dsttype);
+			int i2= getTailIndex(dsttype);
 		stream_printf(GDKout,"resolved to bat[:%s,:%s] bat[:%s,:%s]->bat[%s:%d,%s:%d]\n",
 			getTypeName(h1),getTypeName(t1),
 			getTypeName(h2),getTypeName(t2),
@@ -895,28 +907,48 @@ type resolution.
 @c
 int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
-	int h,t;
+	int h,t,ret=0;
+
+	if( formal== TYPE_bat && isaBatType(actual) ) return 0;
+#ifdef DEBUG_MAL_RESOLVE
+	stream_printf(GDKout,"updateTypeMap:");
+	stream_printf(GDKout,"formal %s ", getTypeName(formal));
+	stream_printf(GDKout,"actual %s\n", getTypeName(actual));
+#endif
 
 	if( (h=getTailIndex(formal))  ){
 		t= getTailType(actual);
 		if( t != polytype[h]){
+			if( polytype[h]== TYPE_bat && isaBatType(actual))
+				ret= 0;
+			else
 			if( polytype[h] == TYPE_any ) polytype[h]=  t;
-			else return -1;
+			else {
+				ret= -1;
+				goto updLabel;
+			}
 		}
 	}
 	if( isaBatType(formal)){
-		if(!isaBatType(actual)) return -1;
+		if(!isaBatType(actual) && actual!= TYPE_bat) return -1;
 		if( (h=getHeadIndex(formal)) ){
-			t= getHeadType(actual);
+			t= actual == TYPE_bat? actual: getHeadType(actual);
 			if( t!= polytype[h]){
 				if( polytype[h] == TYPE_any) polytype[h]= t;
-				else return -1;
+				else {
+					ret= -1;
+					goto updLabel;
+				}
 			}
 		}
 	} else
 	if( isaColType(formal))
-		if(!isaColType(actual)) return -1;
-	return 0;
+		if(!isaColType(actual)) ret= -1;
+updLabel:
+#ifdef DEBUG_MAL_RESOLVE
+	stream_printf(GDKout,"updateTypeMap returns: %d\n",ret);
+#endif
+	return ret;
 }
 @-
 A completely different mechanism would have been to hardcode some of the mostly

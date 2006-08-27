@@ -54,6 +54,7 @@ be geared towards fast execution and to ease symbolic debugging.
 #define _MAL_FCN_H
 
 #include "mal_module.h"
+#include "mal_resolve.h"
 
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE */
@@ -317,7 +318,7 @@ void chkFlow(MalBlkPtr mb)
 			    } else
 			    if(ps->typechk == TYPE_RESOLVED)
 			    for(i=0;i<p->retc; i++){
-	                if( getArgType(mb,ps,i) != getArgType(mb,p,i) ){
+	                if( resolveType(getArgType(mb,ps,i),getArgType(mb,p,i)) <0 ){
 	                    GDKerror("%s type mismatch at type %d\n",
 	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
 			                                getArgType(mb,p,i));

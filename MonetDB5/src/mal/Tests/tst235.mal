@@ -11,7 +11,7 @@ end dir;
 function createBAT(name:str):bat;
     res:= bat.new(:int,:int);
     bat.setName(res,name);
-    i:= calc.bat(res);
+    i:= calc.getBATidentifier(res);
 	j:= i; # now res should have 3 lrefs
 	dir();
     return i;

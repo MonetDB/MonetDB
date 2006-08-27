@@ -3,14 +3,14 @@ z:= bat.new(:int,:int);
 bat.insert(z,1,2);
 io.print(z);
 b:= bat.new(:int,:bat);
-zid:= calc.bat(z);
+zid:= calc.getBATidentifier(z);
 io.print("zid");
 io.print(zid);
-za:bat[:int,:int]:= calc.bat(zid);
+za:bat[:int,:int]:= calc.getBAT(zid);
 io.print(za);
 io.print("zid done");
 
-i:= calc.bat(zid);
+i:= calc.getBAT(zid);
 io.print(i);
 
 bat.insert(b,0,zid);
@@ -19,6 +19,6 @@ io.print(b);
 a:= algebra.fetch(b,0);
 io.print("fetch it");
 io.print(a);
-aa:bat[:int,:int]:= calc.bat(a);
+aa:bat[:int,:int]:= calc.getBAT(a);
 io.print(aa);
 io.print("done");
