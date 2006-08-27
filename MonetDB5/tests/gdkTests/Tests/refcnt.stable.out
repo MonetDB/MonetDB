@@ -41,9 +41,8 @@ end tmp;	# 5
 function user.addBAT(b:bat[:str,:BAT],name:str):void;	# 0  (addBAT:void)<-(b:bat[:str,:BAT])(name:str)
     add := bat.new(:int,:int);	# 1 CMDBATnew (add:bat[:int,:int])<-(_4:int)(_4:int)
     bat.setName(add,name);	# 2 BKCsetName (_5:void)<-(add:bat[:int,:int])(name:str)
-    i := calc.bat(add);	# 3 CALCbat2BAT (i:BAT)<-(add:bat[:int,:int])
-    bat.insert(b,name,i);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:str,:BAT])(name:str)(i:BAT)
-end addBAT;	# 5  
+    bat.insert(b,name,add);	# 3 BKCinsert_bun (_6:void)<-(b:bat[:str,:BAT])(name:str)(add:bat[:int,:int])
+end addBAT;	# 4  
 ##
 ###BUG: bat(name) will not be deleted in the garbage collection
 ###     because the delete doesn't decrease the reference counter
@@ -75,7 +74,7 @@ end delBAT;	# 2
 function user.createBAT(name:str):BAT;	# 0  (createBAT:BAT)<-(name:str)
     res := bat.new(:int,:int);	# 1 CMDBATnew (res:bat[:int,:int])<-(_3:int)(_3:int)
     bat.setName(res,name);	# 2 BKCsetName (_4:void)<-(res:bat[:int,:int])(name:str)
-    i := calc.bat(res);	# 3 CALCbat2BAT (i:BAT)<-(res:bat[:int,:int])
+    i := calc.getBATidentifier(res);	# 3 CALCbat2batid (i:BAT)<-(res:bat[:int,:int])
     return i;	# 4  (i:BAT)
 end createBAT;	# 5  
 ##

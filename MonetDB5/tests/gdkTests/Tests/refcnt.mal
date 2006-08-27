@@ -15,8 +15,7 @@ end tmp;
 function addBAT(b:bat[:str,:bat],name:str):void;
 	add:= bat.new(:int,:int);
 	bat.setName(add,name);
-	i:= calc.bat(add);
-	bat.insert(b,name,i);
+	bat.insert(b,name,add);
 end addBAT;
 #
 ##BUG: bat(name) will not be deleted in the garbage collection
@@ -40,7 +39,7 @@ end delBAT;
 function createBAT(name:str):bat;
 	res:= bat.new(:int,:int);
 	bat.setName(res,name);	
-	i:= calc.bat(res);
+	i:= calc.getBATidentifier(res);
 	return i;
 end createBAT;
 #
