@@ -1,6 +1,6 @@
 %define name MonetDB
-%define release 1
 %define version @VERSION@
+%define release 1_@LINUX_DIST@.oid@oids@
 
 %define prefix /usr
 %define sysconfdir /etc
@@ -158,7 +158,7 @@ rm -rf $RPM_BUILD_ROOT
 
 ./configure \
 	--enable-assert=no \
-	--enable-optimize \
+	--enable-optimize=no --enable-debug --enable-noexpand=all \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
 	--with-gxx="%{comp_cxx}" \

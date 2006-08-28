@@ -230,6 +230,7 @@ case $enableval in
 esac
 bits=$enableval
 ])
+AC_SUBST(bits)
 if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
 	case "$GCC-$CC-$host_os-$host" in
@@ -280,14 +281,53 @@ yes-*-darwin8*-powerpc*-*)
 	;;
 esac
 
+
+oids=$bits
 AC_ARG_ENABLE(oid32,
 	AC_HELP_STRING([--enable-oid32],
 		[use 32 bits vor OIDs on a 64-bit architecture]),
 	enable_oid32=$enableval,
 	enable_oid32=no)
 case $enable_oid32 in
-yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture]);;
+yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture])
+	oids=32
+	;;
 esac
+AC_SUBST(oids)
+
+
+LINUX_DIST=''
+case "$host_os" in
+    linux*)
+	AC_MSG_CHECKING(which Linux distribution we're using) 
+	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc !
+	if test -s /etc/fedora-release ; then
+		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
+			| sed 's|^.*\(Fedora\) Core.* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/redhat-release ; then
+		LINUX_DIST="`cat /etc/redhat-release | head -n1 \
+			| sed 's|^.*\(Red\) \(Hat\).* Linux *\([[A-Z]]*\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1\2:\4\3|' \
+			| sed 's|^Red Hat Enterprise Linux \([[AW]]S\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|RHEL:\2\1|' \
+			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
+			| sed 's|^\(Scientific\) Linux SL release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/SuSE-release ; then
+		LINUX_DIST="`cat /etc/SuSE-release   | head -n1 \
+			| sed 's|^.*\(SUSE\) LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\3E\2|' \
+			| sed 's|^SUSE LINUX Enterprise \([[SD]]\)[[ervsktop]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|SLE\1:\2|' \
+			| sed 's|^.*\(SuSE\) Linux.* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
+	elif test -s /etc/gentoo-release ; then
+		LINUX_DIST="`cat /etc/gentoo-release | head -n1 \
+			| sed 's|^.*\(Gentoo\) Base System.* version \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/debian_version ; then
+		LINUX_DIST="Debian:`cat /etc/debian_version | head -n1`"
+	else
+		LINUX_DIST="`uname -s`:`uname -r | sed 's|^\([[0-9\.]]*\)\([[^0-9\.]].*\)$|\1|'`"
+	fi
+	LINUX_DIST="`echo "$LINUX_DIST" | sed 's|:||'`"
+	AC_MSG_RESULT($LINUX_DIST)
+	;;
+esac
+AC_SUBST(LINUX_DIST)
 
 
 dnl  Set compiler switches.
