@@ -1119,6 +1119,10 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p)== rpcRef)
 			return TRUE;
 	}
+	if( getModuleId(p)== streamsRef ||
+		getModuleId(p)== bstreamsRef
+	)
+		return TRUE;
 	if( getModuleId(p)== mdbRef)
 		return TRUE;
 	if (idcmp("prelude", getFunctionId(p)) == 0)

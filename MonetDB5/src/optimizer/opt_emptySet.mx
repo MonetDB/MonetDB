@@ -263,8 +263,8 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int *rows;
 	PropertySet ps;
 
-	empty = (char *) alloca(mb->vtop * sizeof(int));
-	memset(empty,0,mb->vtop);
+	empty = (char *) alloca(mb->vsize * sizeof(char));
+	memset(empty,0,mb->vsize);
 	(void) stk;
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET

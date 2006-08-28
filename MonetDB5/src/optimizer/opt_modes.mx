@@ -86,7 +86,7 @@ OPTmodesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} 
 	}
 #ifdef DEBUG_OPT_MODES
-	stream_printf(GDKout,"OPTIMIZE MODES");
+	stream_printf(GDKout,"OPTIMIZE MODES\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 	return actions;
