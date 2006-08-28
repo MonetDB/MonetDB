@@ -593,6 +593,7 @@ We don;t search the cache for a previous incarnation.
 			c->state[PARSER] = be;
 			MSresetInstructions(c->curprg->def, 1);
 			freeVariables(c->curprg->def, 0, 0);
+			c->curprg= oldsym;
 		}
 	}
 #ifdef _SQL_COMPILE
