@@ -312,7 +312,9 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb){
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.ival);
 			if( b ){
-				rows= BATcount(b);
+				/* deletion bats are 'never empty'  to avoid
+				  complex size propagation in the optimizer */
+				rows= BATcount(b)+1;
 				if (mb->var[getArg(p,0)]->props == 0)
 					mb->var[getArg(p,0)]->props = newPropertySet();
 				setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_lng, &rows);
@@ -385,20 +387,21 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
+#ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
+		optimizerCheck(mb,"optimizer.SQLgetstatistics",1,0,0);
 @-
 Empty set removal may introduce both alias instructions and
 dead code. The should be removed.
-IF YOU ACTIVATE THIS CODE, YOU MIGTH ENCOUNTER ERRORS
+@c
 		OPTcostModel(mb,0,0);	 /* propagate cost distribution */
 		OPTemptySet(mb,0,0);	 /* remove empty results */
-		OPTaliases(mb, 0, 0);	 /* alias removal */
-@c
-
+		OPTaliases(mb, 0, 0);	/* alias removal */
+#endif
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTcommonTerms(mb,0,0);	/* common terms */
-		OPTdeadcode(mb, 0, 0);	/* dead code removal */
+		OPTdeadcode(mb, 0, 0);	 /* dead code removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
 
 
