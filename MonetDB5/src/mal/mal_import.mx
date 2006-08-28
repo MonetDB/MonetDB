@@ -233,7 +233,7 @@ evalFile(Client c, str fname, int listing){
 		if( s) stream_printf(c->fdout, "#WARNING: %s\n",s);
 	} else {
 		c->fdin = bstream_create(fd, 128 * BLOCK);
-		MSinitClientPrg(c,"main");	/* re-initialize context */
+		MSinitClientPrg(c,"user","main");	/* re-initialize context */
 		runScenario(c);
 	}
 
@@ -271,7 +271,7 @@ compileString(Symbol *fcn, Client c, str s){
 	mal_unquote(qry = GDKstrdup(s));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
-	MSinitClientPrg(c, "main");	/* create new context */
+	MSinitClientPrg(c,"user", "main");	/* create new context */
 	/* runPhase(READER,restoreClient1) */
 	if(msg== MAL_SUCCEED && c->phase[READER] && 
 		(msg= (str) (*c->phase[READER])(c)) ){
@@ -328,7 +328,7 @@ callString(Client c, str s, int listing)
 	mal_unquote(qry = GDKstrdup(s));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
-	MSinitClientPrg(c, "main");	/* create new context */
+	MSinitClientPrg(c,"user", "main");	/* create new context */
 	@:runPhase(READER,restoreClient1)@
 	@:runPhase(PARSER,restoreClient1)@
 	/* restore IO channel */

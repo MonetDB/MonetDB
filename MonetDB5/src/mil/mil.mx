@@ -425,7 +425,7 @@ Prescan the input to make processing easier
 	malInclude(c, buf, LIST_MAL_INSTR);
 	showErrors();
 	resetScenario(c);
-	MSinitClientPrg(c, "main");
+	MSinitClientPrg(c,"user", "main");
 	return msg;
 }
 

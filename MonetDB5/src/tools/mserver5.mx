@@ -460,7 +460,7 @@ Time to execute the script files.
 Start with the init command[todo], which may be defined in
 the configuration file.
 @c
-	MSinitClientPrg(mal_clients, "main");
+	MSinitClientPrg(mal_clients, "user","main");
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
 	if (dbinit) {

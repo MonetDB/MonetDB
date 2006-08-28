@@ -36,7 +36,7 @@ It may overwritten using a command line argument.
 
 mal_export int malBootstrap(void);
 mal_export void MSserveClient(void *dummy);
-mal_export void MSinitClientPrg(Client cntxt, str nme);
+mal_export void MSinitClientPrg(Client cntxt, str mod, str nme);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
@@ -77,7 +77,7 @@ malBootstrap()
 	bf = GDKgetenv("mal_bootstrap");
 	if (bf)
 		bootfile = bf;
-	MSinitClientPrg(c, "main");
+	MSinitClientPrg(c,"user", "main");
 	malInclude(c, bootfile, 0);
 	mal_scope = c->nspace;
 	pushEndInstruction(c->curprg->def);
@@ -110,7 +110,7 @@ introduced.
 @c
 
 void
-MSinitClientPrg(Client cntxt, str nme)
+MSinitClientPrg(Client cntxt, str mod, str nme)
 {
 	InstrPtr p;
 	MalBlkPtr mb;
@@ -132,7 +132,10 @@ MSinitClientPrg(Client cntxt, str nme)
 	cntxt->curprg = newFunction(putName(nme, strlen(nme)), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
-	setModuleScope(p, cntxt->nspace);
+	if( mod )
+		setModuleId(p,mod);
+	else
+		setModuleScope(p, cntxt->nspace);
 	setVarType(mb, findVariable(mb, nme), TYPE_void);
 	insertSymbol(cntxt->nspace, cntxt->curprg);
 	cntxt->glb = 0;
@@ -351,7 +354,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 	}
 
-	MSinitClientPrg(c, "main");
+	MSinitClientPrg(c,"user", "main");
 
 	GDKfree(command);
 	if (MT_create_thread(&p, MSserveClient, (void *) c) < 0) {
