@@ -130,7 +130,7 @@ This module contains a simple interface for network connections.
 		RETURN stream_strip(s,(""+chr(1)));
 	}
 	ADDHELP("mapi_stream_read", "windhouw", "June  22 2001",
-		"Read a string from <S> until a '\1' character.",
+		"Read a string from <S> until a '\\1' character.",
 		mod());
 
 	PROC stream_line(Stream s) : str {

@@ -707,7 +707,7 @@ gdk_export const char str_nil[2];
 
 #define void_nil	oid_nil
 @c
-const chr chr_nil = GDK_chr_min;
+const chr chr_nil = (chr) '\200';
 const sht sht_nil = GDK_sht_min;
 const int int_nil = GDK_int_min;
 const flt flt_nil = GDK_flt_min;
@@ -1089,64 +1089,168 @@ chrFromStr(char *src, int *len, chr **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		base = chr_nil;
 		p += 3;
-	} else if (p[0] != '\'' || p[1] == 0) {
-		/* check for a UTF-8 byte-sequence without quotes. */
-		int inc = 0;
+	} else {
+		int q = p[0] == '\'' && p[1] != 0;
 
-		if (p[0] < 0xC0) {
-			base = p[0];
-			inc = (p[0] < 0x80);
-		} else if (p[0] < 0xE0) {
-			base = (p[0] - 0xC0) << 6;
-			if (base && (p[1] & 0xC0) != 0x80) {
-				base |= (p[1] & 0x3F);
-				inc = 2;
+		if (q)
+			p++;
+		error = 1;	/* until proved otherwise */
+		if ((*p & 0x80) == 0) {
+			if (q && *p == '\\' && p[1] != 0) {
+				/* interpret backslash escape but only in a single-quoted string*/
+				p++;
+				switch (*p) {
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+					/* \ with up to three octal digits */
+					base = base08(*p);
+					if (num08(p[1])) {
+						p++;
+						base = mult08(base) + base08(*p);
+						if (num08(p[1])) {
+							p++;
+							base = mult08(base) + base08(*p);
+						}
+					}
+					error = 0;
+					break;
+				case 'x':
+					/* \x with one or two hexadecimal digits */
+					if (num16(p[1])) {
+						p++;
+						base = base16(*p);
+						if (num16(p[1])) {
+							p++;
+							base = mult16(base) + base16(*p);
+						}
+						error = 0;
+					}
+					break;
+				case 'a':
+					base = '\a';
+					error = 0;
+					break;
+				case 'b':
+					base = '\b';
+					error = 0;
+					break;
+				case 'f':
+					base = '\f';
+					error = 0;
+					break;
+				case 'n':
+					base = '\n';
+					error = 0;
+					break;
+				case 'r':
+					base = '\r';
+					error = 0;
+					break;
+				case 't':
+					base = '\t';
+					error = 0;
+					break;
+				case '\0':
+					/* cannot happen */
+					break;
+				case '\'':
+				case '\\':
+					/* \' and \\ can be handled by the default case */
+				default:
+					/* unrecognized \ escape, just copy the backslashed character */
+					base = *p;
+					error = 0;
+					break;
+				}
+				p++;
+			} else {
+				base = *p++;
+				error = 0;
 			}
-		} else if (p[0] < 0xF0) {
-			base = (p[0] - 0xE0) << 12;
-			if (base && (p[1] & 0xC0) != 0x80) {
-				base |= (p[1] & 0x3F) << 6;
-				if (base && (p[2] & 0xC0) != 0x80) {
-					base |= (p[2] & 0x3F);
-					inc = 3;
+#ifndef ASCII_CHR
+		} else if ((*p & 0xC0) == 0x80) {
+			/* illegal UTF-8 sequence */
+		} else if ((*p & 0xE0) == 0xC0) {
+			base = (*p++ & 0x1F) << 6;
+			if (base && (*p & 0xC0) == 0x80) {
+				base |= *p++ & 0x3F;
+				error = 0;
+			}
+#if 0 /* not needed until chr supports the whole Unicode range */
+		} else if ((*p & 0xF0) == 0xE0) {
+			base = (*p++ & 0x0F) << 12;
+			if (base && (*p & 0xC0) == 0x80) {
+				base |= (*p++ & 0x3F) << 6;
+				if ((*p & 0xC0) == 0x80) {
+					base |= *p++ & 0x3F;
+					error = 0;
 				}
 			}
-		} else {
-			base = (p[0] - 0xF0) << 18;
-			if ((p[1] & 0xC0) == 0x80) {
-				base |= (p[1] & 0x3F) << 12;
-				if (base && (p[2] & 0xC0) == 0x80) {
-					base |= (p[2] & 0x3F) << 6;
-					if (base && (p[3] & 0xC0) != 0x80) {
-						base |= p[3] & 0x3F;
-						inc = 4;
+		} else if ((*p & 0xF8) == 0xF0) {
+			base = (*p++ & 0x07) << 18;
+			if (base && (*p & 0xC0) == 0x80) {
+				base |= (*p++ & 0x3F) << 12;
+				if ((*p & 0xC0) == 0x80) {
+					base |= (*p++ & 0x3F) << 6;
+					if ((*p & 0xC0) == 0x80) {
+						base |= *p++ & 0x3F;
+						error = 0;
 					}
 				}
 			}
-		}
-		/* notice we do parse large UTF-8 chars but return nil for them */
-		error = (inc == 0 || base > 255);
-		p += inc;
-	} else {
-		/* 'old' latin-1 chr between single quotes */
-		if (p[1] == '\\' && num08(p[2])) {
-			p += 2;
-			while (error == 0) {
-				base = mult08(base) + base08(*p);
-				if (base >= 128)
-					error = 1;
-				p++;
-				if (!num08(*p))
-					break;
+		} else if ((*p & 0xFC) == 0xF8) {
+			base = (*p++ & 0x03) << 24;
+			if (base && (*p & 0xC0) == 0x80) {
+				base |= (*p++ & 0x3F) << 18;
+				if ((*p & 0xC0) == 0x80) {
+					base |= (*p++ & 0x3F) << 12;
+					if ((*p & 0xC0) == 0x80) {
+						base |= (*p++ & 0x3F) << 6;
+						if ((*p & 0xC0) == 0x80) {
+							base |= *p++ & 0x3F;
+							error = 0;
+						}
+					}
+				}
 			}
-		} else {
-			base = p[1];
-			p += 2;
+		} else if ((*p & 0xFE) == 0xFC) {
+			base = (*p++ & 0x01) << 30;
+			if (base && (*p & 0xC0) == 0x80) {
+				base |= (*p++ & 0x3F) << 24;
+				if ((*p & 0xC0) == 0x80) {
+					base |= (*p++ & 0x3F) << 18;
+					if ((*p & 0xC0) == 0x80) {
+						base |= (*p++ & 0x3F) << 12;
+						if ((*p & 0xC0) == 0x80) {
+							base |= (*p++ & 0x3F) << 6;
+							if ((*p & 0xC0) == 0x80) {
+								base |= *p++ & 0x3F;
+								error = 0;
+							}
+						}
+					}
+				}
+			}
+#endif
+#endif
 		}
-		if (*p != '\'') {
+		if (!error && q && *p != '\'')
 			error = 1;
+#ifdef ASCII_CHR
+		if (!error && base >= 128)
+			error = 1;
+#else
+		if (!error && (base >= 256 || base == 128))
+			error = 1;
+#endif
+		if (error)
 			p = (unsigned char *) src;
-		}
 	}
 	**dst = error ? chr_nil : (chr) base;
 	return p - (unsigned char *) src;
@@ -1166,12 +1270,15 @@ chrToStr(str *dst, int *len, chr *src)
 
 		*p++ = '\'';
 		if (*src & 0x80) {
-			*p++ = 0xC0 | ((*src >> 6) & 0x3);
+#ifdef ASCII_CHR
+			strcpy(*dst, "nil");
+			return 3;
+#else
+			*p++ = 0xC0 | ((*src >> 6) & 0x03);
 			*p++ = 0x80 | (*src & 0x3F);
-			*p++ = '\'';
-			*p = 0;
+#endif
 		} else {
-			if (0 <= *src && *src < ' ') {
+			if (*src < ' ' || *src == 127) {
 				snprintf(p, chrStrlen - 3,
 					 "\\%03o", * (unsigned char *) src);
 				p += 4;
@@ -1181,9 +1288,9 @@ chrToStr(str *dst, int *len, chr *src)
 			} else {
 				*p++ = *src;
 			}
-			*p++ = '\'';
-			*p = 0;
 		}
+		*p++ = '\'';
+		*p = 0;
 		return (int) (p - *dst);
 	}
 	return 1;
@@ -1193,7 +1300,13 @@ chr *
 chrRead(chr *a, stream *s, size_t cnt)
 {
 	stream_read(s, (char *) a, 1, cnt);
+#ifdef ASCII_CHR
+	/* only accept ASCII characters */
+	return stream_errnr(s) ? NULL : (*a & 0x80 ? NULL : a);
+#else
+	/* effectively read latin-1 (ISO-8859-1) character data */
 	return stream_errnr(s) ? NULL : a;
+#endif
 }
 
 int
@@ -1853,15 +1966,68 @@ GDKstrFromStr(unsigned char *dst, unsigned char *src, int len)
 	for (cur = src, n = 0; cur < end || escaped; cur++) {
 		/* first convert any \ escapes and store value in c */
 		if (escaped) {
-			if (*cur == 'n') {
+			switch (*cur) {
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+				/* \ with up to three octal digits */
+				c = base08(*cur);
+				if (num08(cur[1])) {
+					cur++;
+					c = mult08(c) + base08(*cur);
+					if (num08(cur[1])) {
+						cur++;
+						c = mult08(c) + base08(*cur);
+						/* if three digits, only look at lower 8 bits */
+						c &= 0377;
+					}
+				}
+				break;
+			case 'x':
+				/* \x with one or two hexadecimal digits */
+				if (num16(cur[1])) {
+					cur++;
+					c = base16(*cur);
+					if (num16(cur[1])) {
+						cur++;
+						c = mult16(c) + base16(*cur);
+					}
+				} else
+					c = 'x';
+				break;
+			case 'a':
+				c = '\a';
+				break;
+			case 'b':
+				c = '\b';
+				break;
+			case 'f':
+				c = '\f';
+				break;
+			case 'n':
 				c = '\n';
-			} else if (*cur == 't') {
+				break;
+			case 'r':
+				c = '\r';
+				break;
+			case 't':
 				c = '\t';
-			} else if ((cur[0] >= '0' && cur[0] <= '3') && (cur[1] >= '0' && cur[1] <= '7') && (cur[2] >= '0' && cur[2] <= '7')) {
-				c = ((cur[0] & 7) << 6) | ((cur[1] & 7) << 3) | (cur[2] & 7);
-				cur += 2;
-			} else {
+				break;
+			case '\0':
+				c = '\\';
+				break;
+			case '\'':
+			case '\\':
+				/* \' and \\ can be handled by the default case */
+			default:
+				/* unrecognized \ escape, just copy the backslashed character */
 				c = *cur;
+				break;
 			}
 			escaped = FALSE;
 		} else if (*cur == '\\') {
@@ -1969,10 +2135,17 @@ strFromStr(char *src, int *len, char **dst)
 Convert a GDK string value to something printable.
 @c
 /*
-#define allowed_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
+#define printable_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
 		         GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
 */
-#define allowed_chr(ch)	(!(0 < (ch) && (ch) < 32) && (ch) != '\377')
+/* all but control characters (in range 0 to 31) and DEL */
+#ifdef ASCII_CHR
+/* ASCII printable characters */
+#define printable_chr(ch)	(' ' <= (ch) && (ch) <= '~')
+#else
+/* everything except ASCII control characters */
+#define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
+#endif
 
 int
 strToStr(char **dst, int *len, char *src)
@@ -1991,7 +2164,22 @@ strToStr(char **dst, int *len, char *src)
 		for (end = 0; src[end]; end++)
 			if (src[end] == '\t' || src[end] == '\n' || src[end] == '\\' || src[end] == '"') {
 				sz += 2;
-			} else if (!allowed_chr(src[end])) {
+#ifndef ASCII_CHR
+			} else if (src[end] == (char) '\302' &&
+				   0200 <= ((int) src[end + 1] & 0377) &&
+				   ((int) src[end + 1] & 0377) <= 0237) {
+				/* Unicode control character (code
+				   point range U-00000080 through
+				   U-0000009F encoded in UTF-8 */
+				/* for the first one of the two UTF-8
+				   bytes we count a width of 7 and for
+				   the second one 1, together that's
+				   8, i.e. the width of two
+				   backslash-escaped octal coded
+				   characters */
+				sz += 7;
+#endif
+			} else if (!printable_chr(src[end])) {
 				sz += 4;
 			} else {
 				sz++;
@@ -2011,7 +2199,17 @@ strToStr(char **dst, int *len, char *src)
 			} else if (r[cur] == '"') {
 				s[l++] = '\\';
 				s[l++] = '"';
-			} else if (!allowed_chr(r[cur])) {
+			} else if (!printable_chr(r[cur])
+#ifndef ASCII_CHR
+				   || (r[cur] == (char) '\302' &&
+				       0200 <= ((int) r[cur + 1] & 0377) &&
+				       ((int) r[cur + 1] & 0377) <= 0237)
+				   || (cur > 0 &&
+				       r[cur - 1] == (char) '\302' &&
+				       0200 <= ((int) r[cur] & 0377) &&
+				       ((int) r[cur] & 0377) <= 0237)
+#endif
+				) {
 				sprintf(s + l, "\\%03o", (unsigned char) r[cur]);
 				l += 4;
 			} else {

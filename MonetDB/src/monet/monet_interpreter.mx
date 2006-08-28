@@ -1416,17 +1416,25 @@ interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
 			res->val.sval = ATOMnil(TYPE_str);
 		} else if (val->vtype == TYPE_chr) {
 			/* special case for chr -> str */
-			char *s = res->val.sval = GDKmalloc(3);
 			if (val->val.cval[0] & 0x80) {
-				/* interpret as latin-1 (ISO-8859-1) */
-				*s++ = 0xC0 | ((val->val.cval[0] >> 6) & 0x3);
-				*s++ = 0x80 | (val->val.cval[0] & 0x3F);
+				/* non-ASCII chr */
+#ifndef ASCII_CHR
+				if (val->val.cval[0] != chr_nil) {
+					char *s = res->val.sval = GDKmalloc(3);
+					*s++ = 0xC0 | ((val->val.cval[0] >> 6) & 0x03);
+					*s++ = 0x80 | (val->val.cval[0] & 0x3F);
+					*s++ = 0;
+					res->len = 3;
+				} else
+#endif
+					res->val.sval = ATOMnil(TYPE_str);
 			} else {
 				/* (7-bit) ASCII */
+				char *s = res->val.sval = GDKmalloc(2);
 				*s++ = val->val.cval[0];
+				*s++ = 0;
+				res->len = 2;
 			}
-			*s++ = 0;
-			res->len = s - res->val.sval;
 		} else {
 			char *s = 0;
 
@@ -1464,7 +1472,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			return -1;
 		b->T->dense = dense_bak;
 	} else {
-		int reduce = 0;
+		int reduce = 0;	/* reduce is set when conversion loses precision */
 
 		bn = BATnew(b->htype, tpe, BATcount(b));
 		if (bn == NULL)
@@ -1610,9 +1618,21 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 				v = GDKmalloc(len);
 				if (tpe == TYPE_chr) {
 					/* str => chr: just get first character */
+					chr *s, c;
+
 					BATloopFast(b, p, q, xx) {
-						/* accidentally works well on NILs */
-						bunfastins_nocheck(bn, r, BUNhead(b, p), BUNtvar(b, p), yy);
+						s = (chr *) BUNtvar(b, p);
+						if (*s & 0x80) {
+#ifndef ASCII_CHR
+							/* check whether the first UTF-8 char fits in an 8-bit value */
+							if ((*s & 0xFC) == 0xC0 && (s[1] & 0xC0) == 0x80)
+								c = ((s[0] & 0x03) << 6) | (s[1] & 0x3F);
+							else
+#endif
+								c = chr_nil;
+						} else
+							c = *s;
+						bunfastins_nocheck(bn, r, BUNhead(b, p), &c, yy);
 						r += yy;
 					}
 					reduce = 1; /* first character might be identical for several strings */
@@ -1629,22 +1649,35 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					reduce = 1; /* strings might only differ by (ignored) whitespace */
 				} else if (b->ttype == TYPE_chr) {
 					/* chr => str: do this efficiently */
-					char s[2];
+					chr s[3];
 
 					s[1] = 0;
+					s[2] = 0;
+					/*reduce = 0;*/ /* be optimistic... */
 					BATloopFast(b, p, q, xx) {
-						/* accidentally works well on NILs */
-						s[0] = *(char *) BUNtloc(b, p);
+						/* also works well on NILs */
+						s[0] = *(chr *) BUNtloc(b, p);
+						s[1] = 0;
+						if ((*s & 0x80) && *s != chr_nil) {
+							/* non-ASCII chr */
+#ifdef ASCII_CHR
+							s[0] = chr_nil; /* turn into nil */
+							reduce = 1; /* NILs destroy keyness */
+#else
+							s[1] = 0x80 | (s[0] & 0x3F);
+							s[0] = 0xC0 | ((s[0] >> 6) & 0x03);
+#endif
+						}
 						bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
 						r += yy;
 					}
-					/*reduce = 0;*/ /* this should be fine */
 				} else {
 					/* any => str: use tostr ADT routine */
 					int (*tostr) (str *, int *, ptr) = BATatoms[b->ttype].atomToStr;
 					int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
 					ptr nilptr = ATOMnilptr(b->ttype);
 
+					/*reduce = 0;*/ /* be optimistic... */
 					BATloopFast(b, p, q, xx) {
 						ptr t = BUNtail(b, p);
 
@@ -1658,7 +1691,6 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 							reduce = 1; /* NILs destroy keyness */
 						}
 					}
-					/*reduce = 0;*/ /* be optimistic... */
 				}
 			} else {
 				ptr s;
