@@ -27,6 +27,7 @@ lib_batstore = {
 		sql_catalog.mx \
 		res_table.mx
 
-	WINLIBS = ../../common/libsqlcommon -lbat -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
-	LIBS = $(MONETDB_LIBS)
+	# StM: Are these (still) required on Windows?
+	#WINLIBS = ../../common/libsqlcommon -lbat -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
+	#LIBS = $(MONETDB_LIBS)
 }
