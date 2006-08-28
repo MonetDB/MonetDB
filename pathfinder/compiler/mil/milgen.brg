@@ -1183,7 +1183,8 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:     empty_tbl */
         case 11:
             PFoops (OOPS_FATAL,
-                    "empty sequence should never occur in MIL generation.");
+                    "empty sequence should never occur in MIL generation."
+                    " (optimizations disabled?)");
             break;
 
         /* Rel:      attach (Rel) */
