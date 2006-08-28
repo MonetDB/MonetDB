@@ -1417,10 +1417,9 @@ clearVariable(MalBlkPtr mb, int varid)
 		GDKfree(v->name);
 	if (v->isaconstant)
 		VALclear(&v->value);
-	if (v->props){
+	if (v->props)
 		freePropertySet(v->props);
-		v->props= NULL;
-	}
+	v->props= NULL;
 	v->name = 0;
 	v->type = 0;
 	v->gdktype = 0;
@@ -1934,14 +1933,14 @@ setVarProperty(MalBlkPtr mb, int i, str name, str op, ValPtr cst)
 {
 	bit t = TRUE;
 
-	if (mb->var[i]->props == NULL)
-		mb->var[i]->props = newPropertySet();
+	if (getProps(i) == NULL)
+		getProps(i) = newPropertySet();
 
 	if (cst == NULL)
-		setProperty(mb->var[i]->props, name, "", TYPE_bit, &t);
+		setProperty(getProps(i), name, "", TYPE_bit, &t);
 
 	else
-		setProperty(mb->var[i]->props, name, op, cst->vtype, VALget(cst));
+		setProperty(getProps(i), name, op, cst->vtype, VALget(cst));
 }
 
 @+ Reverse programming
@@ -2071,7 +2070,7 @@ beginning of each line.
 
 @= showParam
         tpe= getTypeName(getArgType(mb,p,i));
-        ps= getVar(mb,getArg(p,i))->props;
+        ps= getProps(getArg(p,i));
         pstring= propertySet2str(ps);
         advance(t);
         sprintf(t,"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
@@ -2093,7 +2092,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	str t, tpe, pstring;
 	PropertySet ps = 0;
 
-	ps = getVar(mb, getArg(p, 0))->props;
+	ps = getProps(getArg(p, 0));
 	pstring = propertySet2str(ps);
 	t = s;
 	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
@@ -2210,7 +2209,7 @@ fillTarget(MalBlkPtr mb, InstrPtr p, char *t)
 	} else
 		nme = getArgName(mb, p, 0);
 	if (p->retc == 1) {
-		ps = getVar(mb, getArg(p, 0))->props;
+		ps = getProps(getArg(p, 0));
 		pstring = propertySet2str(ps);
 		sprintf(t, "%s%s ", nme, (pstring ? pstring : ""));
 		if (pstring) {
@@ -2233,7 +2232,7 @@ fillTarget(MalBlkPtr mb, InstrPtr p, char *t)
 		} else
 			nme = getArgName(mb, p, i);
 
-		ps = getVar(mb, getArg(p, i))->props;
+		ps = getProps(getArg(p, i));
 		pstring = propertySet2str(ps);
 		sprintf(t, "%s%s", nme, (pstring ? pstring : ""));
 		if (pstring) {
@@ -2312,7 +2311,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	case CMDcall:
 	case ASSIGNsymbol:
 		if (p->argc <= 1 && getFunctionId(p) == NULL) {
-			ps = getVar(mb, getArg(p, 0))->props;
+			ps = getProps(getArg(p, 0));
 			pstring = propertySet2str(ps);
 			if (getVar(mb, getArg(p, 0))->isudftype) {
 				str tpe = getTypeName(getVarType(mb, getArg(p, 0)));
@@ -2336,7 +2335,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 				*t++ = '(';
 
 			for (i = 0; i < p->retc; i++) {
-				ps = getVar(mb, getArg(p, i))->props;
+				ps = getProps(getArg(p, i));
 				pstring = propertySet2str(ps);
 				if (getVar(mb, getArg(p, i))->isudftype) {
 					str tpe = getTypeName(getVarType(mb, getArg(p, i)));

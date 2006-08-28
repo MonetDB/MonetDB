@@ -342,14 +342,11 @@ mal_export int isPropertyDefined(PropertySet ps, str nme);
 PropertySet
 newPropertySet()
 {
-	int i;
 	PropertySet ps;
 
-	ps = (PropertySet) GDKmalloc(sizeof(struct PROPSET));
+	ps = (PropertySet) GDKzalloc(sizeof(struct PROPSET));
 	ps->refcount = 0;
 	ps->maxlist = MAXPROPLIST;
-	for (i = 0; i < MAXPROPLIST; i++)
-		ps->prop[i] = 0;
 	return ps;
 }
 
@@ -388,12 +385,11 @@ freePropertySet(PropertySet ps)
 
 	for (i = 0; i < MAXPROPLIST; i++) {
 		p1 = ps->prop[i];
-		if (p1)
-			do {
-				p2 = p1->nxt;
-				GDKfree(p1);
-				p1 = p2;
-			} while (p2);
+		while(p1){
+			p2 = p1->nxt;
+			GDKfree(p1);
+			p1= p2;
+		}
 	}
 	GDKfree(ps);
 }
@@ -404,7 +400,7 @@ fndProperty(PropertySet ps, str nme)
 	Property pr;
 	int i;
 
-	if (ps == NULL)
+	if (ps == NULL || nme== NULL)
 		return NULL;
 	nme= getName(nme,strlen(nme));
 	for (i = 0; i < MAXPROPLIST; i++) {
