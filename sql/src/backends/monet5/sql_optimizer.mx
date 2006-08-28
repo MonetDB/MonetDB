@@ -114,6 +114,7 @@ factory structures.
 #include "opt_emptySet.h"
 #include "opt_crack.h"
 #include "opt_macro.h"
+#include "opt_modes.h"
 #include "opt_multiplex.h"
 #include "opt_peephole.h"
 #include "opt_reduce.h"
@@ -397,6 +398,7 @@ dead code. The should be removed.
 @c
 		OPTcostModel(mb,0,0);	 /* propagate cost distribution */
 		OPTemptySet(mb,0,0);	 /* remove empty results */
+		OPTmodes(mb,0,0);		/* reduce number of BAT copies */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 #endif
 		OPTcoercion(mb,0,0);	/* coercions */
