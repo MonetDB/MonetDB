@@ -512,6 +512,10 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	CMDbulk_rotate_xor_hash(&bn,hn,nbits,b);
 	BBPreleaseref(hn->batCacheid);
 	BBPreleaseref(b->batCacheid);
+	if(bn == NULL)
+		return throwMessage("mkey.bulk_rotate_xor_hash",
+			"result not available");
+
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
