@@ -163,9 +163,12 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getFunctionId(p) == sortTailRef  ||
 				getFunctionId(p) == sortrevRef  ||
 				getFunctionId(p) == sortrevTailRef  ||
-				getFunctionId(p) == projectRef  ||
-				getFunctionId(p) == kunionRef) {
+				getFunctionId(p) == projectRef  ){
 				@:newRows1(1, *c1)@
+			} else
+			if(	getFunctionId(p) == unionRef ||
+				getFunctionId(p) == kunionRef) {
+				@:newRows2(1,2, *c1+*c2,1)@
 			} else if (getFunctionId(p)== kdifferenceRef) {
 				@:newRows2(1, 2, *c1==0? 0: *c2==0? *c1: *c1 - *c2 < 0 ? 1 : *c1 - *c2+1)@
 			} else if (getFunctionId(p) ==joinRef ) {
