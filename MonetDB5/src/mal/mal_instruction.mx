@@ -1417,8 +1417,10 @@ clearVariable(MalBlkPtr mb, int varid)
 		GDKfree(v->name);
 	if (v->isaconstant)
 		VALclear(&v->value);
-	if (v->props)
+	if (v->props){
 		freePropertySet(v->props);
+		v->props= NULL;
+	}
 	v->name = 0;
 	v->type = 0;
 	v->gdktype = 0;
