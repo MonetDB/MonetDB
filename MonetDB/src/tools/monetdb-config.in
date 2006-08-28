@@ -45,7 +45,8 @@ Known values for OPTION are:
 
   --build		print monet build directory
   --source		print monet source directory
-  --libs		print Monet module linking information
+  --libs		print Monet library linking information
+  --mods		print Monet module linking information
   --cflags		print Monet module pre-processor and compiler flags
   --modpath             print default Monet module directory
   --classpath		print default Monet CLASSPATH
@@ -136,7 +137,11 @@ while test $# -gt 0; do
 
     --libs)
        	echo \
-		-L$libdir \
+		-L$libdir
+       	;;
+
+    --mods)
+       	echo \
 		-L$pkglibdir
        	;;
 

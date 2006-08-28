@@ -56,9 +56,9 @@ lib__pftijah = {
 		nexi_generate_plan.c
 
 	LIBS = \
-		$(PF_LIBS) $(MONETDB_LIBS) \
-		-lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+		$(PF_LIBS) \
+		$(MONETDB_LIBS) -lbat -lmonet -lstream \
+		$(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
 scripts_mil = {

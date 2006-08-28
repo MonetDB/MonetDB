@@ -47,9 +47,9 @@ lib__pf_support = {
                 serialize_sax.mx 
 
         LIBS = \
-                $(PF_LIBS) $(MONETDB_LIBS) \
-                -lbat -lmonet -lstream \
-                -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+                $(PF_LIBS) \
+                $(MONETDB_LIBS) -lbat -lmonet -lstream \
+                $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
 lib__pf_standoff = {
@@ -58,9 +58,9 @@ lib__pf_standoff = {
                 pf_standoff.mx 
 
         LIBS = \
-                $(PF_LIBS) $(MONETDB_LIBS) \
-                -lbat -lmonet -lstream \
-                -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
+                $(PF_LIBS) \
+                $(MONETDB_LIBS) -lbat -lmonet -lstream \
+                $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant 
 }
 
 lib__pathfinder = {
@@ -82,9 +82,9 @@ lib__pathfinder = {
                 ../compiler/mil/libmil \
                 ../compiler/mem/libmem \
                 ../compiler/libcompiler2 \
-                $(PF_LIBS) $(MONETDB_LIBS) \
-                -lbat -lmonet -lstream \
-                -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
+                $(PF_LIBS) \
+                $(MONETDB_LIBS) -lbat -lmonet -lstream \
+                $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
 lib__xrpc = {
@@ -94,9 +94,9 @@ lib__xrpc = {
                 xrpc.mx
 
         LIBS = \
-                   $(MONETDB_LIBS) $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
-                   -lbat -lmonet -lstream -lpthread \
-                   -l_streams -l_builtin -l_ascii_io
+                   $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
+                   $(MONETDB_LIBS) -lbat -lmonet -lstream -lpthread \
+                   $(MONETDB_MODS) -l_streams -l_builtin -l_ascii_io
 }
 
 scripts_mil = {

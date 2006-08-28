@@ -25,6 +25,7 @@ dnl check for monet
 have_monet=auto
 MONETDB_CFLAGS=""
 MONETDB_LIBS=""
+MONETDB_MODS=""
 MONETDB_MOD_PATH=""
 MONETDB_PREFIX="."
 if test "x$1" = "x"; then
@@ -59,6 +60,7 @@ if test "x$have_monet" != xno; then
     MONETDB_INCS=""
     MONETDB_INCLUDEDIR=""
     MONETDB_LIBS=""
+    MONETDB_MODS=""
     MONETDB_MOD_PATH=""
     MONETDB_PREFIX=""
   else
@@ -66,6 +68,7 @@ if test "x$have_monet" != xno; then
     MONETDB_INCS=`$MONETDB_CONFIG --includes`
     MONETDB_INCLUDEDIR=`$MONETDB_CONFIG --pkgincludedir`
     MONETDB_LIBS=`$MONETDB_CONFIG --libs`
+    MONETDB_MODS=`$MONETDB_CONFIG --mods`
     MONETDB_MOD_PATH=`$MONETDB_CONFIG --modpath`
     MONETDB_PREFIX=`$MONETDB_CONFIG --prefix`
     CLASSPATH="$CLASSPATH:`$MONETDB_CONFIG --classpath`"
@@ -75,6 +78,7 @@ AC_SUBST(MONETDB_CFLAGS)
 AC_SUBST(MONETDB_INCS)
 AC_SUBST(MONETDB_INCLUDEDIR)
 AC_SUBST(MONETDB_LIBS)
+AC_SUBST(MONETDB_MODS)
 AC_SUBST(MONETDB_MOD_PATH)
 AC_SUBST(MONETDB_PREFIX)
 AC_SUBST(CLASSPATH)
@@ -88,6 +92,7 @@ dnl check for monet5
 have_monet5=auto
 MONET5_CFLAGS=""
 MONET5_LIBS=""
+MONET5_MODS=""
 MONET5_MOD_PATH=""
 MONET5_PREFIX="."
 if test "x$1" = "x"; then
@@ -119,6 +124,7 @@ if test "x$have_monet5" != xno; then
     MONET5_INCS=""
     MONET5_INCLUDEDIR=""
     MONET5_LIBS=""
+    MONET5_MODS=""
     MONET5_MOD_PATH=""
     MONET5_PREFIX=""
   else
@@ -126,6 +132,7 @@ if test "x$have_monet5" != xno; then
     MONET5_INCS=`$MONET5_CONFIG --includes`
     MONET5_INCLUDEDIR=`$MONET5_CONFIG --pkgincludedir`
     MONET5_LIBS=`$MONET5_CONFIG --libs`
+    MONET5_MODS=`$MONET5_CONFIG --mods`
     MONET5_MOD_PATH=`$MONET5_CONFIG --modpath`
     MONET5_PREFIX=`$MONET5_CONFIG --prefix`
   fi
@@ -134,6 +141,7 @@ AC_SUBST(MONET5_CFLAGS)
 AC_SUBST(MONET5_INCS)
 AC_SUBST(MONET5_INCLUDEDIR)
 AC_SUBST(MONET5_LIBS)
+AC_SUBST(MONET5_MODS)
 AC_SUBST(MONET5_MOD_PATH)
 AC_SUBST(MONET5_PREFIX)
 AM_CONDITIONAL(HAVE_MONET5,test x$have_monet5 = xyes)
