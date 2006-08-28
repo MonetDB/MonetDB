@@ -424,12 +424,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushNil(mb, q, ht);
 			q = pushNil(mb, q, tt);
-			s->nr = getDestVar(q);
 
 			l = getDestVar(q);
 			q = newStmt1(mb, batRef, "setSequenceBase");
 			q = pushArgument(mb, q, l);
 			pushOid(mb,q,0);
+			s->nr = getDestVar(q);
 		} break;
 		case st_column:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);

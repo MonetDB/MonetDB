@@ -388,7 +388,7 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-#define EXPERIMENTAL
+/*#define EXPERIMENTAL */
 #ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
 		optimizerCheck(mb,"optimizer.SQLgetstatistics",1,0,0);
