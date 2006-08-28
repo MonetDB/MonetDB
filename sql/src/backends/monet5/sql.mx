@@ -45,7 +45,7 @@ address SQLrollback_wrap;
 
 command eval(cmd:str):str 
 address SQLstatement
-comment "Execute a single sql statement";
+comment "Compile and execute a single sql statement";
 
 command assert(b:bit,msg:str):void
 address SQLassert

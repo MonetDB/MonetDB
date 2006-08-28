@@ -1751,7 +1751,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 	curInstr = getInstrPtr(curBlk, 0);
 
-	assert(curBlk->stop == 1);
+	/* assert(curBlk->stop == 1); Don't know why it is used here*/
 
 	if (m->argc) { /* we shouldn't come here as we aren't caching statements */
 		int argc=0;
@@ -1778,6 +1778,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
+	pushEndInstruction(curBlk);
 	c->curprg->def = curBlk;
 }
 

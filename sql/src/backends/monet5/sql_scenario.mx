@@ -468,8 +468,8 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 }
 
 /* #define _SQL_COMPILE */
-str
-SQLstatementIntern(str *ret, str *expr, int execute)
+static str
+SQLstatementIntern(str *ret, str *expr, str nme, int execute)
 {
 	int err = 0;
 	mvc o, *m;
@@ -553,10 +553,10 @@ optimize and produce code.
 We don;t search the cache for a previous incarnation.
 @c
 	{	
-		int oldvtop = c->curprg->def->vtop;
-		int oldstop = c->curprg->def->stop;
+		Symbol oldsym= c->curprg;
 		stmt *s = sql_symbol2stmt(m);
 
+		MSinitClientPrg(c,"sql_cache",nme); 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
 			if( m->errstr)
@@ -564,37 +564,39 @@ We don;t search the cache for a previous incarnation.
 			else msg = throwMessage("SQLparser", "Semantic errors\n");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
+			/* restore the state */
+			freeSymbol(c->curprg);
+			c->curprg= oldsym;
 			goto endofcompile;
 		}
-		assert(s);
 		/* generate MAL code */
-		if (oldstop == 2) /* remove main.end */
-			c->curprg->def->stop = 1; 
-		if (oldstop == 3) /* recursive call to SQLstatement */
-			c->curprg->def->stop = 1; 
 		backend_callinline(sql, c, s );
-		pushEndInstruction(c->curprg->def);
+		addQueryToCache(c); 
 
-		chkTypes(c->nspace, c->curprg->def); /* resolve types */
+		if( c->curprg->def->errors){
+			/* restore the state */
+			freeSymbol(c->curprg);
+			c->curprg= oldsym;
+			goto endofcompile;
+		}
 
 #ifdef _SQL_COMPILE
+		stream_printf(c->fdout,"result of sql.eval()\n");
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
 
-		if (!c->curprg->def->errors && execute) {
+		if ( execute) {
 			backend *be = c->state[PARSER];
 			sql->out = NULL; /* no output */
 			c->state[PARSER] = sql;
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 			c->state[PARSER] = be;
 			MSresetInstructions(c->curprg->def, 1);
-			if (oldstop == 2) /* put main.end back */
-				pushEndInstruction(c->curprg->def); 
-			freeVariables(c->curprg->def, c->glb, oldvtop);
+			freeVariables(c->curprg->def, 0, 0);
 		}
 	}
 #ifdef _SQL_COMPILE
-	stream_printf(c->fdout, "#parse result %d\n", err);
+	stream_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
 @-
 We are done; a MAL procedure recides in the cache.
@@ -612,12 +614,12 @@ endofcompile:
 str
 SQLstatement(str *ret, str *expr)
 {
-	return SQLstatementIntern(ret,expr, TRUE);
+	return SQLstatementIntern(ret,expr, "SQLstatement", TRUE);
 }
 
 str
 SQLcompile(str *ret, str *expr){
-	return SQLstatementIntern(ret,expr, FALSE);
+	return SQLstatementIntern(ret,expr, "SQLcompile", FALSE);
 }
 
 static int
