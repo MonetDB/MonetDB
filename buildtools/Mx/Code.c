@@ -296,10 +296,15 @@ CodeSubBlk(char *sub, char **argv)
 	if (!s)
 		return s;
 	while (*s) {
-/* EXPAND */
-		if ((s[0] == MARK) && (s[-1] != '\\') && (('A' <= s[1]) && (s[1] <= 'Z'))) {
+/* EXPANDED ARGUMENT LIST */
+		if ((s[0] == MARK) && (s[-1] != '\\') && 
+				( (('A' <= s[1]) && (s[1] <= 'Z')) || s[1]=='0') ) {
 			s++;
-			for (a = argv[10+ *s- 'A']; a && *a;) {
+			if( *s == '0') 
+				a = argv[10];
+			else
+				a= argv[11+ *s- 'A'];
+			for (; a && *a;) {
 				if (pos++ == blk_size - 2)
 					goto outofmem;
 				*b++ = *a++;
