@@ -2787,6 +2787,9 @@ TBL_initclient(Client client, Client father)
 		i = TYPE_chr;
 		if (BUNins(client->atomtbl, "chr", &i, FALSE) == NULL)
 			assert(0);
+		i = TYPE_bte;
+		if (BUNins(client->atomtbl, "bte", &i, FALSE) == NULL)
+			assert(0);
 		i = TYPE_sht;
 		if (BUNins(client->atomtbl, "sht", &i, FALSE) == NULL)
 			assert(0);
@@ -2800,6 +2803,9 @@ TBL_initclient(Client client, Client father)
 			assert(0);
 		i = TYPE_oid;
 		if (BUNins(client->atomtbl, "oid", &i, FALSE) == NULL)
+			assert(0);
+		i = TYPE_wrd;
+		if (BUNins(client->atomtbl, "wrd", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_ptr;
 		if (BUNins(client->atomtbl, "ptr", &i, FALSE) == NULL)

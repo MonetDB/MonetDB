@@ -24,15 +24,28 @@
 .COMMAND rotate(int v, int nbits) : int = CMDrotate;
 	"left-rotate an int by nbits"
 
-.COMMAND hash(any v) : int = CMDhash; "compute a hash int number from any value"
-.COMMAND hash(bit v) : int = CMDhash_chr; ""
-.COMMAND hash(chr v) : int = CMDhash_chr; ""
-.COMMAND hash(sht v) : int = CMDhash_sht; ""
-.COMMAND hash(int v) : int = CMDhash_int; ""
-.COMMAND hash(flt v) : int = CMDhash_flt; ""
-.COMMAND hash(dbl v) : int = CMDhash_dbl; ""
-.COMMAND hash(lng v) : int = CMDhash_lng; ""
-.COMMAND hash(str v) : int = CMDhash_str; ""
+.COMMAND hash(any v) : int = CMDhash;
+	"compute a hash int number from any value"
+.COMMAND hash(bit v) : int = CMDhash_bte;
+	"compute a hash int number from a bit value"
+.COMMAND hash(chr v) : int = CMDhash_bte;
+	"compute a hash int number from a chr value"
+.COMMAND hash(bte v) : int = CMDhash_bte;
+	"compute a hash int number from a bte value"
+.COMMAND hash(sht v) : int = CMDhash_sht;
+	"compute a hash int number from a sht value"
+.COMMAND hash(int v) : int = CMDhash_int;
+	"compute a hash int number from a int value"
+.COMMAND hash(flt v) : int = CMDhash_flt;
+	"compute a hash int number from a flt value"
+.COMMAND hash(wrd v) : int = CMDhash_wrd;
+	"compute a hash int number from a wrd value"
+.COMMAND hash(dbl v) : int = CMDhash_dbl;
+	"compute a hash int number from a dbl value"
+.COMMAND hash(lng v) : int = CMDhash_lng;
+	"compute a hash int number from a lng value"
+.COMMAND hash(str v) : int = CMDhash_str;
+	"compute a hash int number from a str value"
 
 .COMMAND bulk_rotate_xor_hash(BAT[oid,int] h, int nbits, BAT[oid,any] b) : BAT[oid,int] = CMDbulk_rotate_xor_hash;
 	"pre:  h and b should be synced on head
@@ -280,23 +293,23 @@ CMDrotate(int *res, int *val, int *n)
 }
 
 int
-CMDhash_chr(int *res, chr *val)
+CMDhash_bte(int *res, bte *val)
 {
-	*res = *(chr *) val;
+	*res = *val;
 	return GDK_SUCCEED;
 }
 
 int
 CMDhash_sht(int *res, sht *val)
 {
-	*res = *(sht *) val;
+	*res = *val;
 	return GDK_SUCCEED;
 }
 
 int
 CMDhash_int(int *res, int *val)
 {
-	*res = *(int *) val;
+	*res = *val;
 	return GDK_SUCCEED;
 }
 
@@ -304,6 +317,17 @@ int
 CMDhash_flt(int *res, flt *val)
 {
 	*res = *(int *) val;
+	return GDK_SUCCEED;
+}
+
+int
+CMDhash_wrd(int *res, wrd *val)
+{
+#if SIZEOF_WRD == SIZEOF_INT
+	*res = (int) *val;
+#else
+	*res = (int) (*val >> 32) ^ (int) *val;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -339,6 +363,9 @@ CMDhash(int *res, ptr val, int tpe)
 		break;
 	case TYPE_chr:
 		code = *(chr *) val;
+		break;
+	case TYPE_bte:
+		code = *(bte *) val;
 		break;
 	case TYPE_sht:
 		code = *(sht *) val;
@@ -381,13 +408,13 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	} else if (*rotate < 0 || *rotate >= 32) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
-	} else if (tpe == TYPE_chr) {
-		chr *cur = (chr *) BUNtloc(b, BUNfirst(b));
-		chr *end = (chr *) BUNtloc(b, BUNlast(b));
+	} else if (tpe == TYPE_bte || tpe == TYPE_chr) {
+		bte *cur = (bte *) BUNtloc(b, BUNfirst(b));
+		bte *end = (bte *) BUNtloc(b, BUNlast(b));
 
 		while (cur < end) {
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
-			cur = (chr *) (((BUN) cur) + xx);
+			cur = (bte *) (((BUN) cur) + xx);
 			dst = (int *) (((BUN) dst) + yy);
 		}
 	} else if (tpe == TYPE_sht) {

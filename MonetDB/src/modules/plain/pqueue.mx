@@ -62,9 +62,11 @@ organized in the heap with respect to their values (tail column).
 @m
 @:mel_pqueue(any)@
 @:mel_pqueue(chr)@
+@:mel_pqueue(bte)@
 @:mel_pqueue(sht)@
 @:mel_pqueue(int)@
 @:mel_pqueue(oid)@
+@:mel_pqueue(wrd)@
 @:mel_pqueue(ptr)@
 @:mel_pqueue(lng)@
 @:mel_pqueue(flt)@
@@ -280,9 +282,11 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
   @:pqueueimpl_minmax(@1,max,@1,>)@
 @c
 @:pqueueimpl(chr)@
+@:pqueueimpl(bte)@
 @:pqueueimpl(sht)@
 @:pqueueimpl(int)@
 @:pqueueimpl(oid)@
+@:pqueueimpl(wrd)@
 @:pqueueimpl(ptr)@
 @:pqueueimpl(lng)@
 @:pqueueimpl(flt)@

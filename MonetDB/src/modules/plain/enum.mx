@@ -34,7 +34,7 @@ stored as something smaller. Encode and decode commands, as well
 as 'tostr' and 'fromstr' ADT functions, can be generated beforehand
 and use a mapping table to translate between the two representations.
 
-This module implements encodings using 'chr' (1-byte encoding),
+This module implements encodings using 'bte' (1-byte encoding),
 and 'sht' (2-byte encoding), using a dynamic check on cardinality.
 
 Further space optimizations into values smaller than a byte are
@@ -153,7 +153,7 @@ will even be the case for long 64-bit integers.
 #include "enum.proto.h"
 #include "enum.h"
 
-int enum_chr_shift = -(GDK_chr_min+1);	/* GDK_chr_min == GDK_chr_nil ==   -128 */
+int enum_bte_shift = -(GDK_bte_min+1);	/* GDK_bte_min == GDK_bte_nil ==   -128 */
 int enum_sht_shift = -(GDK_sht_min+1);	/* GDK_sht_min == GDK_sht_nil == -32768 */
 
 #define ENUM_CHK(x,y)									\
@@ -257,8 +257,8 @@ int enum_tpe[MAX_ENUM] = { -1 };
 @:imp(79)@
 
 struct {
-	int (*tochr) (str *, int *, ptr);
-	int (*fromchr) (str, int *, ptr *);
+	int (*tobte) (str *, int *, ptr);
+	int (*frombte) (str, int *, ptr *);
 	int (*tosht) (str *, int *, ptr);
 	int (*fromsht) (str, int *, ptr *);
 } enum_conv[MAX_ENUM] = {
@@ -345,9 +345,9 @@ struct {
 };
 
 @= def
-	{tostr@1chr, fromstr@1chr, tostr@1sht, fromstr@1sht,},
+	{tostr@1bte, fromstr@1bte, tostr@1sht, fromstr@1sht,},
 @= imp
-	@:template(@1,chr)@ @:template(@1,sht)@
+	@:template(@1,bte)@ @:template(@1,sht)@
 @= template
 static int
 tostr@1@2(char** dst, int* len, ptr src)
@@ -413,10 +413,10 @@ enum_load(int *retval, BAT *h)
 		if (enum_map[i] == 0) {
 			char *name = BATgetId(h);
 
-			if (BATcount(h) < 255) { /* without chr_nil ! */
-				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_chr);
-				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tochr);
-				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromchr);
+			if (BATcount(h) < 255) { /* without bte_nil ! */
+				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_bte);
+				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tobte);
+				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].frombte);
 			} else if (BATcount(h) < 65535) { /* without sht_nil ! */
 				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_sht);
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
@@ -480,13 +480,13 @@ enum_encode(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	}
 	*dsttpe = *enum_t;
 	p = BUNfnd(b, src);
-	if (ATOMstorage(*enum_t) == TYPE_chr) {
+	if (ATOMstorage(*enum_t) == TYPE_bte) {
 		if (p == NULL) {
-			/* chr_nil = -128 */
-			*(chr *) dst = chr_nil;
+			/* bte_nil = -128 */
+			*(bte *) dst = bte_nil;
 		} else {
-			/* shift 0..254 to -127..127 (chr is signed!) */ 
-			*(chr *) dst = (chr) (BUNindex(b, p) - enum_chr_shift);
+			/* shift 0..254 to -127..127 (bte is signed!) */ 
+			*(bte *) dst = (bte) (BUNindex(b, p) - enum_bte_shift);
 		}
 	} else {
 		if (p == NULL) {
@@ -521,13 +521,13 @@ enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		/* only sorted enum's are supported */
 		return GDK_FAIL;
 	}
-	if (ATOMstorage(*enum_t) == TYPE_chr) {
+	if (ATOMstorage(*enum_t) == TYPE_bte) {
 		if (p == NULL) {
-			/* chr_nil = -128 */
-			*(chr *) dst = chr_nil;
+			/* bte_nil = -128 */
+			*(bte *) dst = bte_nil;
 		} else {
-			/* shift 0..254 to -127..127 (chr is signed!) */ 
-			*(chr *) dst = (chr) (BUNindex(b, p) - enum_chr_shift);
+			/* shift 0..254 to -127..127 (bte is signed!) */ 
+			*(bte *) dst = (bte) (BUNindex(b, p) - enum_bte_shift);
 		}
 	} else {
 		if (p == NULL) {
@@ -558,13 +558,13 @@ enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		/* only sorted enum's are supported */
 		return GDK_FAIL;
 	}
-	if (ATOMstorage(*enum_t) == TYPE_chr) {
+	if (ATOMstorage(*enum_t) == TYPE_bte) {
 		if (p == NULL) {
-			/* chr_nil = -128 */
-			*(chr *) dst = chr_nil;
+			/* bte_nil = -128 */
+			*(bte *) dst = bte_nil;
 		} else {
-			/* shift 0..254 to -127..127 (chr is signed!) */ 
-			*(chr *) dst = (chr) (BUNindex(b, p) - enum_chr_shift);
+			/* shift 0..254 to -127..127 (bte is signed!) */ 
+			*(bte *) dst = (bte) (BUNindex(b, p) - enum_bte_shift);
 		}
 	} else {
 		if (p == NULL) {
@@ -589,12 +589,12 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		GDKerror("enum_decode: incompatible source type.\n");
 		return GDK_FAIL;
 	}
-	if (ATOMstorage(*enum_t) == TYPE_chr) {
-		if (*(chr *) src == chr_nil) {
+	if (ATOMstorage(*enum_t) == TYPE_bte) {
+		if (*(bte *) src == bte_nil) {
 			v = ATOMnilptr(b->htype);
 		} else {
 			/* shift -127..127 back to 0..254 */
-			v = BUNhead(b, BUNptr(b, *(chr*)src + enum_chr_shift));
+			v = BUNhead(b, BUNptr(b, *(bte*)src + enum_bte_shift));
 		}
 	} else {
 		if (*(sht *) src == sht_nil) {
@@ -669,34 +669,37 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 		GDKerror("enum_encode_multi: incompatible source type.\n");
 		return GDK_FAIL;
 	}
-	if (ATOMstorage(*enum_t) == TYPE_chr) {
+	if (ATOMstorage(*enum_t) == TYPE_bte) {
 		switch (ATOMstorage(src->ttype)) {
 		case TYPE_void:
 			GDKerror("enum_encode_multi: illegal tail type.\n");
 			return GDK_FAIL;
 		case TYPE_chr:
-			@:encode(chr,loc,_chr)@
+			@:encode(bte,loc,_chr)@
+
+		case TYPE_bte:
+			@:encode(bte,loc,_bte)@
 
 		case TYPE_sht:
-			@:encode(chr,loc,_sht)@
+			@:encode(bte,loc,_sht)@
 
 		case TYPE_int:
-			@:encode(chr,loc,_int)@
+			@:encode(bte,loc,_int)@
 
 		case TYPE_flt:
-			@:encode(chr,loc,_flt)@
+			@:encode(bte,loc,_flt)@
 
 		case TYPE_lng:
-			@:encode(chr,loc,_lng)@
+			@:encode(bte,loc,_lng)@
 
 		case TYPE_dbl:
-			@:encode(chr,loc,_dbl)@
+			@:encode(bte,loc,_dbl)@
 
 		default:
 			if (src->tvarsized) {
-			      @:encode(chr,var,_var)@
+			      @:encode(bte,var,_var)@
 			} else {
-			      @:encode(chr,loc,_loc)@
+			      @:encode(bte,loc,_loc)@
 			}
 		}
 	} else {
@@ -706,6 +709,9 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 			return GDK_FAIL;
 		case TYPE_chr:
 			@:encode(sht,loc,_chr)@
+
+		case TYPE_bte:
+			@:encode(sht,loc,_bte)@
 
 		case TYPE_sht:
 			@:encode(sht,loc,_sht)@
@@ -745,7 +751,7 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 		return GDK_FAIL;
 	BATloopFast(src, p, q, xx) {
 		@1 *idx = (@1*) BUNtloc(src,p);
-		if (*(@1*) idx == chr_nil) {
+		if (*(@1*) idx == @1_nil) {
 			w = nil;
 		} else {
 			/* shift (GDK_@1_min+1)..GDK_@1_max back to 0..(2*GDK_@1_max) */
@@ -768,8 +774,8 @@ enum_decode_multi(BAT **dst, int *enum_t, BAT *src)
 		GDKerror("enum_decode_multi: incompatible source type.\n");
 		return GDK_FAIL;
 	}
-	if (ATOMstorage(*enum_t) == TYPE_chr) {
-		@:decode(chr)@
+	if (ATOMstorage(*enum_t) == TYPE_bte) {
+		@:decode(bte)@
 	} else if (ATOMstorage(*enum_t) == TYPE_sht) {
 		@:decode(sht)@
 	} else {

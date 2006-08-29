@@ -867,6 +867,9 @@ unpack_setresult::gen_type_arg(ostream &o, const TypeArg &d)
 	case TYPE_CHR:
 		o << "cval[0] = chr_nil;\n";
 		break;
+	case TYPE_BTE:
+		o << "btval = bte_nil;\n";
+		break;
 	case TYPE_SHT:
 		o << "shval = sht_nil;\n";
 		break;
@@ -878,6 +881,9 @@ unpack_setresult::gen_type_arg(ostream &o, const TypeArg &d)
 		break;
 	case TYPE_OID:
 		o << "oval = oid_nil;\n";
+		break;
+	case TYPE_WRD:
+		o << "wval = wrd_nil;\n";
 		break;
 	case TYPE_FLT:
 		o << "fval = flt_nil;\n";
@@ -909,6 +915,9 @@ unpack_call::gen_type_arg(ostream &o, const TypeArg &d)
 	case TYPE_CHR:
 		o << "cval[0]";
 		break;
+	case TYPE_BTE:
+		o << "btval";
+		break;
 	case TYPE_SHT:
 		o << "shval";
 		break;
@@ -920,6 +929,9 @@ unpack_call::gen_type_arg(ostream &o, const TypeArg &d)
 		break;
 	case TYPE_OID:
 		o << "oval";
+		break;
+	case TYPE_WRD:
+		o << "wval";
 		break;
 	case TYPE_FLT:
 		o << "fval";

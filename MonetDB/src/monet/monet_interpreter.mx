@@ -1392,8 +1392,11 @@ interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
 	if (argc == 1) {
 		res->vtype = TYPE_int;
 		res->val.ival = tpe;
-	} else if ((tpe == val->vtype || (ATOMstorage(tpe) == ATOMstorage(val->vtype) && ATOMstorage(tpe) == TYPE_str &&	/* extra compared to trivial_cast above */
-					  (tpe != TYPE_str || BATatoms[val->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) && ((val->vtype) != TYPE_str || BATatoms[tpe].atomFromStr == BATatoms[TYPE_str].atomFromStr)))) {
+	} else if (tpe == val->vtype ||
+		   (ATOMstorage(tpe) == ATOMstorage(val->vtype) &&
+		    ATOMstorage(tpe) == TYPE_str && /* extra compared to trivial_cast above */
+		    (tpe != TYPE_str || BATatoms[val->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) &&
+		    ((val->vtype) != TYPE_str || BATatoms[tpe].atomFromStr == BATatoms[TYPE_str].atomFromStr))) {
 		VALcopy(res, val);
 		res->vtype = tpe;
 	} else if (val->vtype == TYPE_str) {
@@ -1484,8 +1487,11 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		if (BATcount(b) < 2) {
 			/* trivial case */
 			bn->tsorted = GDK_SORTED;
-		} else if (!(BATtordered(b) & 1)
-			   || b->ttype > TYPE_lng || tpe > TYPE_lng || b->ttype == TYPE_bit || tpe == TYPE_bit || b->ttype == TYPE_bat || tpe == TYPE_bat || b->ttype == TYPE_ptr || tpe == TYPE_ptr) {
+		} else if (!(BATtordered(b) & 1) ||
+			   b->ttype > TYPE_lng || tpe > TYPE_lng ||
+			   b->ttype == TYPE_bit || tpe == TYPE_bit ||
+			   b->ttype == TYPE_bat || tpe == TYPE_bat ||
+			   b->ttype == TYPE_ptr || tpe == TYPE_ptr) {
 			/* cases, where we
 			 * (1) know that the result will not be sorted
 			 * (2) cannot tell, whether the result will not be sorted
@@ -1519,8 +1525,8 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 				break;
 @c
 			@:interpret_batcast_overflow_case(chr)@
+			@:interpret_batcast_overflow_case(bte)@
 			@:interpret_batcast_overflow_case(sht)@
-
 #if SIZEOF_OID != SIZEOF_INT
 			@:interpret_batcast_overflow_case(int)@
 #endif
@@ -1542,25 +1548,39 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 @= interpret_batcast_source_switch
 		switch (b->ttype) {
 		@:interpret_batcast_source_case(sht,\
-			@:interpret_batcast_target_case(sht,chr)@)@
+			@:interpret_batcast_target_case(sht,chr)@\
+			@:interpret_batcast_target_case(sht,bte)@)@
 		@:interpret_batcast_source_case(int,\
 			@:interpret_batcast_target_case(int,chr)@\
+			@:interpret_batcast_target_case(int,bte)@\
 			@:interpret_batcast_target_case(int,sht)@)@
+		@:interpret_batcast_source_case(wrd,\
+			@:interpret_batcast_target_case(wrd,chr)@\
+			@:interpret_batcast_target_case(wrd,bte)@\
+			@:interpret_batcast_target_case(wrd,sht)@\
+			@:interpret_batcast_target_case(wrd,int)@\
+			@:interpret_batcast_target_case(wrd,oid)@)@
 		@:interpret_batcast_source_case(lng,\
 			@:interpret_batcast_target_case(lng,chr)@\
+			@:interpret_batcast_target_case(lng,bte)@\
 			@:interpret_batcast_target_case(lng,sht)@\
 			@:interpret_batcast_target_case(lng,int)@\
+			@:interpret_batcast_target_case(lng,wrd)@\
 			@:interpret_batcast_target_case(lng,oid)@)@
 		@:interpret_batcast_source_case(flt,\
 			@:interpret_batcast_target_case(flt,chr)@\
+			@:interpret_batcast_target_case(flt,bte)@\
 			@:interpret_batcast_target_case(flt,sht)@\
 			@:interpret_batcast_target_case(flt,int)@\
+			@:interpret_batcast_target_case(flt,wrd)@\
 			@:interpret_batcast_target_case(flt,oid)@\
 			@:interpret_batcast_target_case(flt,lng)@)@
 		@:interpret_batcast_source_case(dbl,\
 			@:interpret_batcast_target_case(dbl,chr)@\
+			@:interpret_batcast_target_case(dbl,bte)@\
 			@:interpret_batcast_target_case(dbl,sht)@\
 			@:interpret_batcast_target_case(dbl,int)@\
+			@:interpret_batcast_target_case(dbl,wrd)@\
 			@:interpret_batcast_target_case(dbl,oid)@\
 			@:interpret_batcast_target_case(dbl,lng)@\
 			@:interpret_batcast_target_case(dbl,flt)@)@
@@ -1995,14 +2015,18 @@ syntax trees and their corresponding parameter records (for head,tail
 substitution) are created.
 @= expand
 @:tuple_interpret(@1,@2,f,chval)@
+@:tuple_interpret(@1,@2,f,btval)@
 @:tuple_interpret(@1,@2,f,shval)@
 @:tuple_interpret(@1,@2,f,ival)@
+@:tuple_interpret(@1,@2,f,wval)@
 @:tuple_interpret(@1,@2,f,dval)@
 @:tuple_interpret(@1,@2,v,pval)@
 @:tuple_interpret(@1,@2,f,pval)@
 @:par_collect(@1,@2,f,chval)@
+@:par_collect(@1,@2,f,btval)@
 @:par_collect(@1,@2,f,shval)@
 @:par_collect(@1,@2,f,ival)@
+@:par_collect(@1,@2,f,wval)@
 @:par_collect(@1,@2,f,dval)@
 @:par_collect(@1,@2,v,pval)@
 @:par_collect(@1,@2,f,pval)@
@@ -2013,14 +2037,18 @@ substitution) are created.
 #define len_fv(p,x)	atmlen(p[1],x->t_len)
 #define len_ff(p,x)
 #define assign_chval(p,v)	p.cval[0] = *(chr*) v;
+#define assign_btval(p,v)	p.btval = *(bte*) v;
 #define assign_shval(p,v)	p.shval = *(sht*) v;
 #define assign_ival(p,v)	p.ival = *(int*) v;
+#define assign_wval(p,v)	p.wval = *(wrd*) v;
 #define assign_dval(p,v)	p.dval = *(dbl*) v;
 #define assign_pval(p,v)	p.pval = v;
 
 @:expand(f,chval)@
+@:expand(f,btval)@
 @:expand(f,shval)@
 @:expand(f,ival)@
+@:expand(f,wval)@
 @:expand(f,dval)@
 @:expand(v,pval)@
 @:expand(f,pval)@
@@ -2065,6 +2093,9 @@ interpret_fcn(int ht, int tt, int parallel)
 	case TYPE_chr:
 		@:switch_ht(fchval)@
 		break;
+	case TYPE_bte:
+		@:switch_ht(fbtval)@
+		break;
 	case TYPE_sht:
 		@:switch_ht(fshval)@
 		break;
@@ -2092,6 +2123,9 @@ interpret_fcn(int ht, int tt, int parallel)
 	switch (ATOMstorage(tt)) {
 	case TYPE_chr:
 		@:switch_tt(@1,fchval)@
+		break;
+	case TYPE_bte:
+		@:switch_tt(@1,fbtval)@
 		break;
 	case TYPE_sht:
 		@:switch_tt(@1,fshval)@

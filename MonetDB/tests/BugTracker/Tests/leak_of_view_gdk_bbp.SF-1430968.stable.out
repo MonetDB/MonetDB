@@ -35,6 +35,7 @@ while (i<10000) {
 	print_stats();
 	i:+=1;
 }
+quit();
 
 
 

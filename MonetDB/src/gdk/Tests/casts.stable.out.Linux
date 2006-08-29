@@ -43,6 +43,12 @@ int(false).print();
 int('a').print();
 [ 97 ]
 
+# from bte
+int(bte(1)).print();
+[ 1 ]
+int(bte(127)).print();
+[ 127 ]
+
 # from sht
 int(sht(1)).print();
 [ 1 ]
@@ -70,6 +76,22 @@ int(2147483647+2).print();
 # should this produce nil (overflow)?
 int(-2147483647 - 2).print();
 [ 2147483647 ]
+
+# from wrd
+int(wrd(1LL)).print();
+[ 1 ]
+int(wrd(2147483647LL)).print();
+[ 2147483647 ]
+int(wrd(2147483648LL)).print();
+[ nil ]
+int(wrd(2147483649LL)).print();
+[ nil ]
+int(wrd(-2147483647LL)).print();
+[ -2147483647 ]
+int(wrd(-2147483648LL)).print();
+[ nil ]
+int(wrd(-2147483649LL)).print();
+[ nil ]
 
 # from lng
 int(1LL).print();
@@ -199,6 +221,16 @@ bit('a').print();
 bit(chr(0)).print();
 [ false ]
 
+# from bte
+bit(bte(0)).print();
+[ false ]
+bit(bte(1)).print();
+[ true ]
+bit(bte(-1)).print();
+[ true ]
+bit(bte(96)).print();
+[ true ]
+
 # from sht
 bit(sht(0)).print();
 [ false ]
@@ -217,6 +249,16 @@ bit(1).print();
 bit(-1).print();
 [ true ]
 bit(4096).print();
+[ true ]
+
+# from wrd
+bit(wrd(0LL)).print();
+[ false ]
+bit(wrd(1LL)).print();
+[ true ]
+bit(wrd(-1LL)).print();
+[ true ]
+bit(wrd(4096LL)).print();
 [ true ]
 
 # from lng

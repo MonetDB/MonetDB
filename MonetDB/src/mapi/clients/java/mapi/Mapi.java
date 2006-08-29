@@ -1787,7 +1787,9 @@ public void sortColumn(int col){
 		    columns[col].columntype.equals("ptr") ||
 		    columns[col].columntype.equals("oid") ||
 		    columns[col].columntype.equals("void") ||
-		    columns[col].columntype.equals("sht") 
+		    columns[col].columntype.equals("sht") ||
+		    columns[col].columntype.equals("bte") ||
+		    columns[col].columntype.equals("wrd")
 		){
 			sortIntColumn(col);
 			return;

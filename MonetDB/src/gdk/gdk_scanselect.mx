@@ -111,6 +111,9 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #ifndef NOEXPAND_BIT
 #define NOEXPAND_BIT 1
 #endif
+#ifndef NOEXPAND_BTE
+#define NOEXPAND_BTE 1
+#endif
 #endif
 
 #ifdef NOEXPAND_INT
@@ -122,6 +125,9 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #endif
 #if SIZEOF_OID == SIZEOF_INT && !defined(NOEXPAND_OID)
 #define NOEXPAND_OID 1
+#endif
+#if SIZEOF_WRD == SIZEOF_INT && !defined(NOEXPAND_WRD)
+#define NOEXPAND_WRD 1
 #endif
 #if SIZEOF_PTR == SIZEOF_INT && !defined(NOEXPAND_PTR)
 #define NOEXPAND_PTR 1
@@ -135,6 +141,9 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #if SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_OID)
 #define NOEXPAND_OID 1
 #endif
+#if SIZEOF_WRD == SIZEOF_LNG && !defined(NOEXPAND_WRD)
+#define NOEXPAND_WRD 1
+#endif
 #if SIZEOF_PTR == SIZEOF_LNG && !defined(NOEXPAND_PTR)
 #define NOEXPAND_PTR 1
 #endif
@@ -147,6 +156,14 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 	} else
 #else
 #define ATOM_PUT_CHR(tpe,hp,dst,src)
+#endif
+#if defined(NOEXPAND_BTE) || defined(SKIP_TYPE_EXPANSIONS)
+#define ATOM_PUT_BTE(tpe,hp,dst,src)		\
+	if (tpe == TYPE_bte) {			\
+		*(bte*) dst = *(bte*) src;	\
+	} else
+#else
+#define ATOM_PUT_BTE(tpe,hp,dst,src)
 #endif
 #if defined(NOEXPAND_SHT) || defined(SKIP_TYPE_EXPANSIONS)
 #define ATOM_PUT_SHT(tpe,hp,dst,src)		\
@@ -237,6 +254,7 @@ Expand on tail type
 @= H_BUNfastins
 	@:T_BUNfastins(@1,@2,@3,void,VOID,void)@
 	@:T_BUNfastins(@1,@2,@3,chr,SIMPLE,chr)@
+	@:T_BUNfastins(@1,@2,@3,bte,SIMPLE,bte)@
 	@:T_BUNfastins(@1,@2,@3,sht,SIMPLE,sht)@
 	@:T_BUNfastins(@1,@2,@3,int,SIMPLE,int)@
 	@:T_BUNfastins(@1,@2,@3,lng,SIMPLE,lng)@
@@ -246,6 +264,7 @@ Expand on head type
 @h
 @:H_BUNfastins(void,VOID,void)@
 @:H_BUNfastins(chr,SIMPLE,chr)@
+@:H_BUNfastins(bte,SIMPLE,bte)@
 @:H_BUNfastins(sht,SIMPLE,sht)@
 @:H_BUNfastins(int,SIMPLE,int)@
 @:H_BUNfastins(lng,SIMPLE,lng)@
@@ -277,8 +296,10 @@ Type-mappers for convenience
 #if SIZEOF_OID == SIZEOF_INT
 @:HT_bunfastins_typemap(void,oid,int)@
 @:HT_bunfastins_typemap(chr,oid,int)@
+@:HT_bunfastins_typemap(bte,oid,int)@
 @:HT_bunfastins_typemap(sht,oid,int)@
 @:HT_bunfastins_typemap(int,oid,int)@
+@:HT_bunfastins_typemap(wrd,oid,int)@
 @:HT_bunfastins_typemap(lng,oid,int)@
 @:HT_bunfastins_typemap(flt,oid,int)@
 @:HT_bunfastins_typemap(dbl,oid,int)@
@@ -286,13 +307,37 @@ Type-mappers for convenience
 #else
 @:HT_bunfastins_typemap(void,oid,lng)@
 @:HT_bunfastins_typemap(chr,oid,lng)@
+@:HT_bunfastins_typemap(bte,oid,lng)@
 @:HT_bunfastins_typemap(sht,oid,lng)@
 @:HT_bunfastins_typemap(int,oid,lng)@
+@:HT_bunfastins_typemap(wrd,oid,lng)@
 @:HT_bunfastins_typemap(lng,oid,lng)@
 @:HT_bunfastins_typemap(flt,oid,lng)@
 @:HT_bunfastins_typemap(dbl,oid,lng)@
 @:HT_bunfastins_typemap(any,oid,lng)@
 #endif /* SIZEOF_OID == SIZEOF_INT */
+
+#if SIZEOF_WRD == SIZEOF_INT
+@:HT_bunfastins_typemap(void,wrd,int)@
+@:HT_bunfastins_typemap(chr,wrd,int)@
+/*@:HT_bunfastins_typemap(bte,wrd,int)@*/
+@:HT_bunfastins_typemap(sht,wrd,int)@
+@:HT_bunfastins_typemap(int,wrd,int)@
+@:HT_bunfastins_typemap(lng,wrd,int)@
+/*@:HT_bunfastins_typemap(flt,wrd,int)@*/
+/*@:HT_bunfastins_typemap(dbl,wrd,int)@*/
+@:HT_bunfastins_typemap(any,wrd,int)@
+#else
+@:HT_bunfastins_typemap(void,wrd,lng)@
+@:HT_bunfastins_typemap(chr,wrd,lng)@
+/*@:HT_bunfastins_typemap(bte,wrd,lng)@*/
+@:HT_bunfastins_typemap(sht,wrd,lng)@
+@:HT_bunfastins_typemap(int,wrd,lng)@
+@:HT_bunfastins_typemap(lng,wrd,lng)@
+/*@:HT_bunfastins_typemap(flt,wrd,lng)@*/
+/*@:HT_bunfastins_typemap(dbl,wrd,lng)@*/
+@:HT_bunfastins_typemap(any,wrd,lng)@
+#endif /* SIZEOF_WRD == SIZEOF_INT */
 @-
 For backward compatibility:
 (also to be move to gdk.mx and gdk_bat.mx, respectively)
@@ -481,6 +526,9 @@ Expand on output-head-type; usually inherited from input-head-type.
 #ifndef NOEXPAND_CHR
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(b,p),)@
 #endif	/* NOEXPAND_CHR */
+#ifndef NOEXPAND_BTE
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(b,p),)@
+#endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_SHT
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(b,p),)@
 #endif	/* NOEXPAND_SHT */
@@ -500,6 +548,11 @@ Expand on output-head-type; usually inherited from input-head-type.
 		@:seqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(b,p),)@
 	} else
 #endif	/* NOEXPAND_CHR */
+#ifndef NOEXPAND_BTE
+	if (AsHt == TYPE_bte) {
+		@:seqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(b,p),)@
+	} else
+#endif	/* NOEXPAND_BTE */
 #ifndef NOEXPAND_SHT
 	if (AsHt == TYPE_sht) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(b,p),)@
@@ -644,6 +697,9 @@ Adding test for v != nil for types where nil != MIN.
 #ifndef NOEXPAND_CHR
 	@:DEFseqscanIF(chr,chr,tloc,simple,chr,)@
 #endif
+#ifndef NOEXPAND_BTE
+	@:DEFseqscanIF(bte,bte,tloc,simple,bte,)@
+#endif
 #ifndef NOEXPAND_SHT
 	@:DEFseqscanIF(sht,sht,tloc,simple,sht,)@
 #endif
@@ -670,6 +726,11 @@ Adding test for v != nil for types where nil != MIN.
 		@:seqscanIF(chr,chr,tloc,simple,chr,)@
 	} else
 #endif	/* NOEXPAND_CHR */
+#ifndef NOEXPAND_BTE
+	if (AsTt == TYPE_bte) {
+		@:seqscanIF(bte,bte,tloc,simple,bte,)@
+	} else
+#endif	/* NOEXPAND_BTE */
 #ifndef NOEXPAND_SHT
 	if (AsTt == TYPE_sht) {
 		@:seqscanIF(sht,sht,tloc,simple,sht,)@

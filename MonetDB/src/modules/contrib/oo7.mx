@@ -890,10 +890,11 @@ closure_@1_@2_@3_@4( BAT *bn, BAT *delta )
 @
 
 @c
-@:closure(loc,simple,chr,_chr)@
+@:closure(loc,simple,bte,_bte)@
 @:closure(loc,simple,sht,_sht)@
 @:closure(loc,simple,int,_int)@
 @:closure(loc,simple,lng,_lng)@
+@:closure(loc,simple,wrd,_wrd)@
 @:closure(loc,simple,ptr,_ptr)@
 @:closure(loc,simple,oid,_oid)@
 @:closure(var,atom,tpe,var)@
@@ -913,11 +914,10 @@ BATclosure(BAT *b)
 	bn = BATnew(tpe, tpe, BATcount(delta));
 	bn->hsorted = bn->tsorted = 0;
 	switch (tpe) {
-	case TYPE_void:
-		break;
 	case TYPE_bit:
 	case TYPE_chr:
-		closure_loc_simple_chr__chr(bn, delta);
+	case TYPE_bte:
+		closure_loc_simple_bte__bte(bn, delta);
 		delta = NULL;
 		break;
 	case TYPE_sht:
@@ -927,6 +927,9 @@ BATclosure(BAT *b)
 	case TYPE_bat:
 	case TYPE_int:
 	case TYPE_flt:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		closure_loc_simple_int__int(bn, delta);
 		delta = NULL;
 		break;
@@ -940,6 +943,9 @@ BATclosure(BAT *b)
 		break;
 	case TYPE_dbl:
 	case TYPE_lng:
+#if SIZEOF_WRD != SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		closure_loc_simple_lng__lng(bn, delta);
 		delta = NULL;
 		break;

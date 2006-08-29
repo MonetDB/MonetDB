@@ -341,6 +341,7 @@ multiplex_copy_@1(ValPtr val, @1* v)
 }
 @c
 @:multiplex_copy(chr,cval[0])@
+@:multiplex_copy(bte,btval)@
 @:multiplex_copy(sht,shval)@
 @:multiplex_copy(int,ival)@
 @:multiplex_copy(lng,lval)@
@@ -364,6 +365,8 @@ multiplex_fcn(int tpe)
 	switch (ATOMstorage(tpe)) {
 	case TYPE_chr:
 		return (ColFcn) multiplex_copy_chr;
+	case TYPE_bte:
+		return (ColFcn) multiplex_copy_bte;
 	case TYPE_sht:
 		return (ColFcn) multiplex_copy_sht;
 #if SIZEOF_OID == SIZEOF_INT
@@ -738,18 +741,25 @@ in this implementation.
 	}
 
 @= BUNins_array_multiplex
-	if (buntrick == 0) {	   /* non-void head column */
+	switch (buntrick) {
+	case 0:	   /* non-void head column */
 		bunfastins_nocheck(@1, dst, @2, @3, bunsize);
-	} else if (buntrick == 4) {
-		*(int*) dst = *(int*) @3;
-	} else if (buntrick == 1) {
-		*(chr*) dst = *(chr*) @3;
-	} else if (buntrick == 2) {
+		break;
+	case 1:
+		*(bte*) dst = *(bte*) @3;
+		break;
+	case 2:
 		*(sht*) dst = *(sht*) @3;
-	} else if (buntrick == 8) {
+		break;
+	case 4:
+		*(int*) dst = *(int*) @3;
+		break;
+	case 8:
 		*(lng*) dst = *(lng*) @3;
-	} else {
+		break;
+	default:
 		memcpy(dst, @3, buntrick);
+		break;
 	}
 	dst += bunsize;
 
@@ -973,18 +983,25 @@ return a simple type.
 @= BUNins_merge_special
 	bunfastins(@1, @2, *(ptr*)@3);
 @= BUNins_merge_multiplex
-	if (replace == 0) {
+	switch (replace) {
+	case 0:
 		bunfastins(@1, @2, @3);
-	} else if (replace ==  4) {
-		*(int*) @4 = *(int*) @3;
-	} else if (replace ==  1) {
-		*(chr*) @4 = *(chr*) @3;
-	} else if (replace ==  2) {
+		break;
+	case 1:
+		*(bte*) @4 = *(bte*) @3;
+		break;
+	case 2:
 		*(sht*) @4 = *(sht*) @3;
-	} else if (replace ==  8) {
+		break;
+	case 4:
+		*(int*) @4 = *(int*) @3;
+		break;
+	case 8:
 		*(lng*) @4 = *(lng*) @3;
-	} else {
+		break;
+	default:
 		memcpy(@4, @3, replace);
+		break;
 	}
 @= mergeloop2
 	while (p1 < e1 && p2 < e2) {
@@ -1602,13 +1619,19 @@ it with the generic hashimpl anyway.
 optimized cases that use exec_opt and hence optimize_call
 @c
 		} else {
-			if (head_type == TYPE_int) {
+			switch (head_type) {
+			case TYPE_int:
 				@:getset_int(int)@
-			} else if (head_type == TYPE_sht) {
+				break;
+			case TYPE_sht:
 				@:getset_int(sht)@
-			} else if (head_type == TYPE_chr) {
-				@:getset_int(chr)@
-			} else {	/* (head_type == TYPE_void) */
+				break;
+			case TYPE_bte:
+			case TYPE_chr:
+				@:getset_int(bte)@
+				break;
+			default:
+				/* (head_type == TYPE_void) */
 				if (GDKdebug & 131072)
 					THRprintf(GDKout, "setaggr impl: void-optimized sort\n");
 				sqb = nested->hseqbase;
@@ -1628,6 +1651,7 @@ optimized cases that use exec_opt and hence optimize_call
 					BATsetcount(nested, nested->batBuns->free/xx);
 					@:exec_opt(&last)@
 				}
+				break;
 			}
 		}
 @= getset_int
@@ -1704,12 +1728,17 @@ we know that the head is oid (or a small version) here..
 	}
 
 @= getset_ins
-	if (head_type == TYPE_int) {
-		@:getset_ins_imp(int,@1)@
-	} else if (head_type == TYPE_sht) {
+	switch (head_type) {
+	case TYPE_chr:
+	case TYPE_bte:
+		@:getset_ins_imp(bte,@1)@
+		break;
+	case TYPE_sht:
 		@:getset_ins_imp(sht,@1)@
-	} else { /* (head_type == TYPE_chr) */
-		@:getset_ins_imp(chr,@1)@
+		break;
+	case TYPE_int:
+		@:getset_ins_imp(int,@1)@
+		break;
 	}
 	nested->hsorted = 0;
 @= getset_ins_imp
@@ -1833,7 +1862,7 @@ call and we have the additional knowledge (through the atom heap trick) that:
 	} else if (bunsize > SIZEOF_INT) {
 		memcpy(batbuns->base + batbuns->free, BUNtloc(b,@1), bunsize);
 	} else if (bunsize == 1) {
-		*(chr*) (batbuns->base + batbuns->free) = *(chr*) BUNtloc(b,@1);
+		*(bte*) (batbuns->base + batbuns->free) = *(bte*) BUNtloc(b,@1);
 	} else {
 		*(sht*) (batbuns->base + batbuns->free) = *(sht*) BUNtloc(b,@1);
 	}

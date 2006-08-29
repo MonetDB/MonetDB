@@ -16,8 +16,10 @@ print(i0 = 1 and i1 = 1);
 !ERROR: interpret: no matching MIL operator to 'and(int, bit)'.
 !MAYBE YOU MEAN:
 !	and(lng, lng) : lng
+!	and(wrd, wrd) : wrd
 !	and(int, int) : int
 !	and(sht, sht) : sht
+!	and(bte, bte) : bte
 !	and(chr, chr) : chr
 !	and(bit, bit) : bit
 !ERROR: interpret_params: =(param 2): evaluation error.

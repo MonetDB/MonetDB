@@ -27,10 +27,12 @@
 enum type_arg_types_t {
 	TYPE_BIT,
 	TYPE_CHR,
+	TYPE_BTE,
 	TYPE_SHT,
 	TYPE_INT,
 	TYPE_PTR,
 	TYPE_OID,
+	TYPE_WRD,
 	TYPE_FLT,
 	TYPE_DBL,
 	TYPE_LNG,
@@ -91,6 +93,8 @@ TypeArg::toString() const
 		return "bit"; 
 	case TYPE_CHR:
 		return "chr"; 
+	case TYPE_BTE:
+		return "bte";
 	case TYPE_SHT:
 		return "sht";
 	case TYPE_INT:
@@ -99,6 +103,8 @@ TypeArg::toString() const
 		return "ptr";
 	case TYPE_OID:
 		return "oid";
+	case TYPE_WRD:
+		return "wrd";
 	case TYPE_FLT:
 		return "flt";
 	case TYPE_DBL:
@@ -135,6 +141,9 @@ TypeArg::gen_type(ostream &o, int t)
 	case TYPE_CHR:
 		o << "chr";
 		break;
+	case TYPE_BTE:
+		o << "bte";
+		break;
 	case TYPE_SHT:
 		o << "sht";
 		break;
@@ -146,6 +155,9 @@ TypeArg::gen_type(ostream &o, int t)
 		break;
 	case TYPE_OID:
 		o << "oid";
+		break;
+	case TYPE_WRD:
+		o << "wrd";
 		break;
 	case TYPE_FLT:
 		o << "flt";

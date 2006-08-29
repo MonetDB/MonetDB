@@ -151,9 +151,13 @@ Implementation is either merge- or hash-based.
 	}
 @= elim_doubles
 	switch(ATOMstorage(b->htype)) {
-#ifndef NOEXPAND_BIT
-	case TYPE_bit:
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
 		@:elim(@1,loc,_chr,simple_CMP(h,BUNhloc(b,r),chr))@
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:elim(@1,loc,_bte,simple_CMP(h,BUNhloc(b,r),bte))@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
@@ -562,9 +566,13 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		@:voidcheck(@2,@1)@
 	} else {
 		switch(ATOMstorage(r->htype)) {
-#ifndef NOEXPAND_BIT
-			case TYPE_bit:
+#ifndef NOEXPAND_CHR
+			case TYPE_chr:
 				@:check(@2,loc,_chr,simple_CMP(h,h2,chr),@1)@
+#endif
+#ifndef NOEXPAND_BTE
+			case TYPE_bte:
+				@:check(@2,loc,_bte,simple_CMP(h,h2,bte),@1)@
 #endif
 #ifndef NOEXPAND_SHT
 			case TYPE_sht:
@@ -744,7 +752,7 @@ BAT@1union(BAT *l, BAT *r)
 	      BUNtail(l,BUNlast(l)-BUNsize(l)), BUNtail(r,BUNfirst(r))) < 0);
 
 	/* for now, only oid can be dense;
-	   later, sht, int, lng might become dense, too */
+	   later, bte, sht, int, wrd, lng might become dense, too */
 	switch (bn->htype) {
 	case TYPE_oid:
 		@:bndense(h,head,oid)@

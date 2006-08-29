@@ -274,6 +274,7 @@ batswap(BAT *b, int direction)
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_void:
 	case TYPE_chr:
+	case TYPE_bte:
 		break;
 	case TYPE_sht:
 		DELloop(b, p, q, xx) @:swap(short_int,sht,BUNhloc(b,p))@

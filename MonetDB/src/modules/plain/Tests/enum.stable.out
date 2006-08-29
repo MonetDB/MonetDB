@@ -31,7 +31,7 @@ print(a);
 [ 7,	  "apples"	  ]
 var fruit:= enum_create("fruit",a);
 print(fruit);
-[ 14 ]
+[ 16 ]
 var x:= encode(fruit,"apples");
 print(x);
 [ apples ]

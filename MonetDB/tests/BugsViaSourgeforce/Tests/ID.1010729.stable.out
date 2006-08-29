@@ -12,8 +12,8 @@ stdout of test 'ID.1010729` in directory 'tests/BugsViaSourgeforce` itself:
 var b := new(void, int).seqbase(0@0);
 b.append(1).append(2).append(3);
 
-# 11 is the type_identifier of 'str'
-[cast](b, 11).print();
+# 13 is the type_identifier of 'str'
+[cast](b, 13).print();
 #-----------------#
 # h	tmp_30	  # name
 # void	str	  # type

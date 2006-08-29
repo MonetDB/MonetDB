@@ -1481,7 +1481,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 	/* optimized versions are only tried if there is no head column to care
            about and the start of the values in the BAT is integer-aligned */
 	if (BUNsize(b) == ATOMsize(b->ttype) && (((size_t) p)&3) == 0) {
-		if (ATOMstorage(b->ttype) == TYPE_chr) {
+		if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
 			int *src = (int*) p;
 			/* treat 32 tuples = 32 (=2^5) bytes per iteration */
 			int *end = src + (((q-p) >> 5) << 3); 
@@ -1750,12 +1750,12 @@ rngs_oidselect(BAT **res, BAT *b, ...)
 	}
 	enum_table(&map, &tpe);
 	/* if (BUNsize(b) == ATOMsize(b->ttype)) { 
-		if (ATOMstorage(b->ttype) == TYPE_chr) {
+		if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
 			@:oidsel(@1,@2,@3,char,1)@
 		} else if (ATOMstorage(b->ttype) == TYPE_sht) {
 			@:oidsel(@1,@2,@3,short,2)@
 		}
-	} else */ if (BAThdense(b) && ATOMstorage(b->ttype) == TYPE_chr) {
+	} else */ if (BAThdense(b) && (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte)) {
 		int bs = BUNsize(b);
 		@:oidsel(@1,@2,@3,char,bs)@
 	} else if (BAThdense(b) && ATOMstorage(b->ttype) == TYPE_sht) {
@@ -1993,7 +1993,7 @@ rng_oidrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
 	@:check_enumbat(subsel_oid,b)@
 	enum_table(&map, &tpe);
 
-	if (ATOMstorage(b->ttype) == TYPE_chr) {
+	if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
 		@:oidref(@1,@2,char)@
 	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
 		@:oidref(@1,@2,short)@
@@ -2105,7 +2105,7 @@ bits_subhisto(BAT **res, BAT *b, ...)
 	}
 
 	/* the algorithm */
-	if (ATOMstorage(b->ttype) == TYPE_chr) {
+	if (ATOMstorage(b->ttype) == TYPE_chr || ATOMstorage(b->ttype) == TYPE_bte) {
 		@:@1_subhisto(char,@2,@3)@
 		@:end_subhisto(char,@2,@3)@
 	} else if (ATOMstorage(b->ttype) == TYPE_sht) {

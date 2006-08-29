@@ -28,13 +28,33 @@ test scripts were added.
 @m
 .MODULE aggr;
 
+.COMMAND {sum_bte}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,bte] = CMDaggr_sum_bte_bte;
+	"grouped tail sum"
+.COMMAND {sum_sht}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_bte_sht;
+	"grouped tail sum"
 .COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht_sht;
+	"grouped tail sum"
+.COMMAND {sum_int}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_bte_int;
 	"grouped tail sum"
 .COMMAND {sum_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int;
 	"grouped tail sum"
 .COMMAND {sum_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_int_int;
 	"grouped tail sum"
+.COMMAND {sum_wrd}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_sum_bte_wrd;
+	"grouped tail sum"
+.COMMAND {sum_wrd}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_sum_sht_wrd;
+	"grouped tail sum"
+.COMMAND {sum_wrd}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_sum_int_wrd;
+	"grouped tail sum"
+.COMMAND {sum_wrd}(BAT[oid,wrd] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_sum_wrd_wrd;
+	"grouped tail sum"
+.COMMAND {sum_lng}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_bte_lng;
+	"grouped tail sum"
+.COMMAND {sum_lng}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_sht_lng;
+	"grouped tail sum"
 .COMMAND {sum_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_int_lng;
+	"grouped tail sum"
+.COMMAND {sum_lng}(BAT[oid,wrd] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_wrd_lng;
 	"grouped tail sum"
 .COMMAND {sum_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_lng_lng;
 	"grouped tail sum"
@@ -45,13 +65,33 @@ test scripts were added.
 .COMMAND {sum_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl_dbl;
 	"grouped tail sum"
 
+.COMMAND {prod_bte}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,bte] = CMDaggr_prod_bte_bte;
+	"grouped tail product"
+.COMMAND {prod_sht}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_prod_bte_sht;
+	"grouped tail product"
 .COMMAND {prod_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_prod_sht_sht;
+	"grouped tail product"
+.COMMAND {prod_int}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_bte_int;
 	"grouped tail product"
 .COMMAND {prod_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_sht_int;
 	"grouped tail product"
 .COMMAND {prod_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_int_int;
 	"grouped tail product"
+.COMMAND {prod_wrd}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_prod_bte_wrd;
+	"grouped tail product"
+.COMMAND {prod_wrd}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_prod_sht_wrd;
+	"grouped tail product"
+.COMMAND {prod_wrd}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_prod_int_wrd;
+	"grouped tail product"
+.COMMAND {prod_wrd}(BAT[oid,wrd] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_prod_wrd_wrd;
+	"grouped tail product"
+.COMMAND {prod_lng}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_bte_lng;
+	"grouped tail product"
+.COMMAND {prod_lng}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_sht_lng;
+	"grouped tail product"
 .COMMAND {prod_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_int_lng;
+	"grouped tail product"
+.COMMAND {prod_lng}(BAT[oid,wrd] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_wrd_lng;
 	"grouped tail product"
 .COMMAND {prod_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_lng_lng;
 	"grouped tail product"
@@ -62,9 +102,13 @@ test scripts were added.
 .COMMAND {prod_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_dbl_dbl;
 	"grouped tail product"
 
+.COMMAND {avg}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_bte;
+	"grouped tail average"
 .COMMAND {avg}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_sht;
 	"grouped tail average"
 .COMMAND {avg}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_int;
+	"grouped tail average"
+.COMMAND {avg}(BAT[oid,wrd] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_wrd;
 	"grouped tail average"
 .COMMAND {avg}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_lng;
 	"grouped tail average"
@@ -73,9 +117,13 @@ test scripts were added.
 .COMMAND {avg}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_dbl;
 	"grouped tail average"
 
+.COMMAND {variance}(BAT[oid,bte] b, BAT[oid,any] e) : BAT[oid,bte] = CMDaggr_variance_bte;
+        "grouped tail variance"
 .COMMAND {variance}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_variance_sht;
         "grouped tail variance"
 .COMMAND {variance}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_variance_int;
+        "grouped tail variance"
+.COMMAND {variance}(BAT[oid,wrd] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_variance_wrd;
         "grouped tail variance"
 .COMMAND {variance}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_variance_lng;
         "grouped tail variance"
@@ -125,11 +173,17 @@ test scripts were added.
 	return 0;
     }
 
+    proc {sum}(BAT[oid, bte] b, bat[oid,any] e ) : BAT[oid,bte] {
+		return	 {sum_bte}(b,e);
+    }
     proc {sum}(BAT[oid, sht] b, bat[oid,any] e ) : BAT[oid,sht] {
 		return	 {sum_sht}(b,e);
     }
     proc {sum}(BAT[oid, int] b, bat[oid,any] e ) : BAT[oid,int] {
 		return	 {sum_int}(b,e);
+    }
+    proc {sum}(BAT[oid, wrd] b, bat[oid,any] e ) : BAT[oid,wrd] {
+		return	 {sum_wrd}(b,e);
     }
     proc {sum}(BAT[oid, lng] b, bat[oid,any] e ) : BAT[oid,lng] {
 		return	 {sum_lng}(b,e);
@@ -141,11 +195,17 @@ test scripts were added.
 		return	 {sum_dbl}(b,e);
     }
 
+    proc {prod}(BAT[oid, bte] b, bat[oid,any] e ) : BAT[oid,bte] {
+		return	 {prod_bte}(b,e);
+    }
     proc {prod}(BAT[oid, sht] b, bat[oid,any] e ) : BAT[oid,sht] {
 		return	 {prod_sht}(b,e);
     }
     proc {prod}(BAT[oid, int] b, bat[oid,any] e ) : BAT[oid,int] {
 		return	 {prod_int}(b,e);
+    }
+    proc {prod}(BAT[oid, wrd] b, bat[oid,any] e ) : BAT[oid,wrd] {
+		return	 {prod_wrd}(b,e);
     }
     proc {prod}(BAT[oid, lng] b, bat[oid,any] e ) : BAT[oid,lng] {
 		return	 {prod_lng}(b,e);
@@ -457,11 +517,20 @@ CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 	return GDK_SUCCEED;
 }
 @c
+@:arithsumprod(bte,tloc,bte)@
+@:arithsumprod(bte,tloc,sht)@
+@:arithsumprod(bte,tloc,int)@
+@:arithsumprod(bte,tloc,wrd)@
+@:arithsumprod(bte,tloc,lng)@
 @:arithsumprod(sht,tloc,sht)@
 @:arithsumprod(sht,tloc,int)@
+@:arithsumprod(sht,tloc,wrd)@
 @:arithsumprod(sht,tloc,lng)@
 @:arithsumprod(int,tloc,int)@
+@:arithsumprod(int,tloc,wrd)@
 @:arithsumprod(int,tloc,lng)@
+@:arithsumprod(wrd,tloc,wrd)@
+@:arithsumprod(wrd,tloc,lng)@
 @:arithsumprod(lng,tloc,lng)@
 @:arithsumprod(flt,tloc,flt)@
 @:arithsumprod(flt,tloc,dbl)@
@@ -522,8 +591,10 @@ CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 	return GDK_SUCCEED;
 }
 @c
+@:arithavg(bte,tloc)@
 @:arithavg(sht,tloc)@
 @:arithavg(int,tloc)@
+@:arithavg(wrd,tloc)@
 @:arithavg(lng,tloc)@
 @:arithavg(flt,tloc)@
 @:arithavg(dbl,tloc)@
@@ -609,7 +680,8 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	idx = 0;
 	BATloopFast(e, p, q, xx) {
 		if (cnt[idx] == int_nil) {
-			if (BUNfastins(bn, BUNhead(e,p), (ptr)&@1_nil) == NULL) {
+			@1 _nil = @1_nil;
+			if (BUNfastins(bn, BUNhead(e,p), (ptr)&_nil) == NULL) {
 				*ret = NULL;
 				break;
 			}
@@ -639,8 +711,10 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	return GDK_SUCCEED;
 }
 @c
+@:arithvar(bte)@
 @:arithvar(sht)@
 @:arithvar(int)@
+@:arithvar(wrd)@
 @:arithvar(lng)@
 @:arithvar(flt)@
 @:arithvar(dbl)@
@@ -966,6 +1040,10 @@ CMDsize(int *ret, BAT *b)
 		case TYPE_chr:
 			@:card_bound_tpe(simple,loc,chr,@1)@
 #endif
+#ifndef NOEXPAND_BTE
+		case TYPE_bte:
+			@:card_bound_tpe(simple,loc,bte,@1)@
+#endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:card_bound_tpe(simple,loc,sht,@1)@
@@ -999,12 +1077,12 @@ CMDcard(int *result, BAT *b, int *maxelements)
 		cursize = 1;
 	} else if (cursize > 1 && !b->tkey) {
 		cursize = BATgetprop_int(b, GDK_AGGR_CARD);
-		if (b->ttype == TYPE_chr && *maxelements > 256) {
+		if ((b->ttype == TYPE_chr || b->ttype == TYPE_bte) && *maxelements > 256) {
 			maxsize = 256;
 		} else if (b->ttype == TYPE_sht && *maxelements > 65536) {
 			maxsize = 65536;
 		} else if (cursize == int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b) & 1)) {
-			/* the recursive quick-look optimization does not make sense made for the sorted case */
+			/* the recursive quick-look optimization does not make sense for the sorted case */
 			maxsize = *maxelements / 10;
 			CMDcard(&cursize, b, &maxsize);	/* try your luck with a smaller limit... */
 			maxsize = *maxelements;

@@ -124,8 +124,8 @@ merge_getmem(MergeState *ms, ssize_t need)
 
 #define COPY(d,s,w) do {					\
 		switch (w) {					\
-		case sizeof(chr):				\
-			* (chr *) d = * (chr *) s;		\
+		case sizeof(bte):				\
+			* (bte *) d = * (bte *) s;		\
 			break;					\
 		case sizeof(sht):				\
 			* (sht *) d = * (sht *) s;		\
@@ -153,6 +153,8 @@ merge_getmem(MergeState *ms, ssize_t need)
 @c
 @:islt(chr,,<)@
 @:islt(chr,_rev,>)@
+@:islt(bte,,<)@
+@:islt(bte,_rev,>)@
 @:islt(sht,,<)@
 @:islt(sht,_rev,>)@
 @:islt(int,,<)@
@@ -739,6 +741,10 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 @:ssort(chr,)@
 @:ssort(chr,_rev)@
 #endif
+#ifndef NOEXPAND_BTE
+@:ssort(bte,)@
+@:ssort(bte,_rev)@
+#endif
 #ifndef NOEXPAND_SHT
 @:ssort(sht,)@
 @:ssort(sht,_rev)@
@@ -942,6 +948,11 @@ GDKssort@1(void *a, void *base, size_t nitems, int width, int tpe, int loc)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:do_ssort(chr,@1)@
+		break;
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:do_ssort(bte,@1)@
 		break;
 #endif
 #ifndef NOEXPAND_SHT

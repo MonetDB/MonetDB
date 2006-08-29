@@ -157,6 +157,8 @@ conversions = {
     "int": int,
     "lng": long,
     "sht": int,
+    "bte": int,
+    "wrd": long,
     "bit": bool,
     "chr": str,
     "flt": float,

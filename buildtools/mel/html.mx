@@ -283,6 +283,9 @@ html::gen_type_arg(ostream &o, const TypeArg &d)
 	case TYPE_CHR:
 		o << "chr";
 		break;
+	case TYPE_BTE:
+		o << "bte";
+		break;
 	case TYPE_SHT:
 		o << "sht";
 		break;
@@ -294,6 +297,9 @@ html::gen_type_arg(ostream &o, const TypeArg &d)
 		break;
 	case TYPE_OID:
 		o << "oid";
+		break;
+	case TYPE_WRD:
+		o << "wrd";
 		break;
 	case TYPE_FLT:
 		o << "flt";

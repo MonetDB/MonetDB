@@ -68,7 +68,7 @@ stderr of test 'variable_nesting.SF-1027421` in directory 'tests/BugDay_2005-11-
 # 11:23:37 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/home/sjoerd/etc/MonetDB.conf" --host=localhost --port=39280 < variable_nesting.SF-1027421.milC
 # 11:23:37 >  
 
-MAPI  = monetdb@localhost:36615
+MAPI  = monetdb@localhost:30185
 QUERY = var x := x + 1;
 ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !MAYBE YOU MEAN:
@@ -76,40 +76,68 @@ ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !	+(lng, dbl) : dbl
         !	+(lng, flt) : dbl
         !	+(lng, lng) : lng
+        !	+(lng, wrd) : lng
         !	+(lng, int) : lng
         !	+(lng, sht) : lng
+        !	+(lng, bte) : lng
         !	+(lng, chr) : lng
         !	+(dbl, dbl) : dbl
         !	+(dbl, flt) : dbl
         !	+(dbl, lng) : dbl
+        !	+(dbl, wrd) : dbl
         !	+(dbl, int) : dbl
         !	+(dbl, sht) : dbl
+        !	+(dbl, bte) : dbl
         !	+(dbl, chr) : dbl
         !	+(flt, dbl) : dbl
         !	+(flt, flt) : flt
         !	+(flt, lng) : flt
+        !	+(flt, wrd) : flt
         !	+(flt, int) : flt
         !	+(flt, sht) : flt
+        !	+(flt, bte) : flt
         !	+(flt, chr) : flt
+        !	+(wrd, dbl) : dbl
+        !	+(wrd, flt) : flt
+        !	+(wrd, lng) : lng
+        !	+(wrd, wrd) : wrd
+        !	+(wrd, int) : wrd
+        !	+(wrd, sht) : wrd
+        !	+(wrd, bte) : wrd
+        !	+(wrd, chr) : wrd
         !	+(int, dbl) : dbl
         !	+(int, flt) : flt
         !	+(int, lng) : lng
+        !	+(int, wrd) : wrd
         !	+(int, int) : int
         !	+(int, sht) : int
+        !	+(int, bte) : int
         !	+(int, chr) : int
         !	+(sht, dbl) : dbl
         !	+(sht, flt) : flt
         !	+(sht, lng) : lng
+        !	+(sht, wrd) : wrd
         !	+(sht, int) : int
         !	+(sht, sht) : sht
+        !	+(sht, bte) : sht
         !	+(sht, chr) : sht
+        !	+(bte, dbl) : dbl
+        !	+(bte, flt) : flt
+        !	+(bte, lng) : lng
+        !	+(bte, wrd) : wrd
+        !	+(bte, int) : int
+        !	+(bte, sht) : sht
+        !	+(bte, chr) : bte
+        !	+(bte, bte) : bte
         !	+(chr, dbl) : dbl
         !	+(chr, flt) : flt
         !	+(chr, lng) : lng
+        !	+(chr, wrd) : wrd
         !	+(chr, int) : int
         !	+(chr, sht) : sht
+        !	+(chr, bte) : bte
         !	+(chr, chr) : chr
-MAPI  = monetdb@localhost:36615
+MAPI  = monetdb@localhost:30185
 QUERY = var x; x := x + 1;
 ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !MAYBE YOU MEAN:
@@ -117,40 +145,68 @@ ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !	+(lng, dbl) : dbl
         !	+(lng, flt) : dbl
         !	+(lng, lng) : lng
+        !	+(lng, wrd) : lng
         !	+(lng, int) : lng
         !	+(lng, sht) : lng
+        !	+(lng, bte) : lng
         !	+(lng, chr) : lng
         !	+(dbl, dbl) : dbl
         !	+(dbl, flt) : dbl
         !	+(dbl, lng) : dbl
+        !	+(dbl, wrd) : dbl
         !	+(dbl, int) : dbl
         !	+(dbl, sht) : dbl
+        !	+(dbl, bte) : dbl
         !	+(dbl, chr) : dbl
         !	+(flt, dbl) : dbl
         !	+(flt, flt) : flt
         !	+(flt, lng) : flt
+        !	+(flt, wrd) : flt
         !	+(flt, int) : flt
         !	+(flt, sht) : flt
+        !	+(flt, bte) : flt
         !	+(flt, chr) : flt
+        !	+(wrd, dbl) : dbl
+        !	+(wrd, flt) : flt
+        !	+(wrd, lng) : lng
+        !	+(wrd, wrd) : wrd
+        !	+(wrd, int) : wrd
+        !	+(wrd, sht) : wrd
+        !	+(wrd, bte) : wrd
+        !	+(wrd, chr) : wrd
         !	+(int, dbl) : dbl
         !	+(int, flt) : flt
         !	+(int, lng) : lng
+        !	+(int, wrd) : wrd
         !	+(int, int) : int
         !	+(int, sht) : int
+        !	+(int, bte) : int
         !	+(int, chr) : int
         !	+(sht, dbl) : dbl
         !	+(sht, flt) : flt
         !	+(sht, lng) : lng
+        !	+(sht, wrd) : wrd
         !	+(sht, int) : int
         !	+(sht, sht) : sht
+        !	+(sht, bte) : sht
         !	+(sht, chr) : sht
+        !	+(bte, dbl) : dbl
+        !	+(bte, flt) : flt
+        !	+(bte, lng) : lng
+        !	+(bte, wrd) : wrd
+        !	+(bte, int) : int
+        !	+(bte, sht) : sht
+        !	+(bte, chr) : bte
+        !	+(bte, bte) : bte
         !	+(chr, dbl) : dbl
         !	+(chr, flt) : flt
         !	+(chr, lng) : lng
+        !	+(chr, wrd) : wrd
         !	+(chr, int) : int
         !	+(chr, sht) : sht
+        !	+(chr, bte) : bte
         !	+(chr, chr) : chr
-MAPI  = monetdb@localhost:36615
+MAPI  = monetdb@localhost:30185
 QUERY = { var a := a + 1; print(a); }
 ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !MAYBE YOU MEAN:
@@ -158,40 +214,68 @@ ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !	+(lng, dbl) : dbl
         !	+(lng, flt) : dbl
         !	+(lng, lng) : lng
+        !	+(lng, wrd) : lng
         !	+(lng, int) : lng
         !	+(lng, sht) : lng
+        !	+(lng, bte) : lng
         !	+(lng, chr) : lng
         !	+(dbl, dbl) : dbl
         !	+(dbl, flt) : dbl
         !	+(dbl, lng) : dbl
+        !	+(dbl, wrd) : dbl
         !	+(dbl, int) : dbl
         !	+(dbl, sht) : dbl
+        !	+(dbl, bte) : dbl
         !	+(dbl, chr) : dbl
         !	+(flt, dbl) : dbl
         !	+(flt, flt) : flt
         !	+(flt, lng) : flt
+        !	+(flt, wrd) : flt
         !	+(flt, int) : flt
         !	+(flt, sht) : flt
+        !	+(flt, bte) : flt
         !	+(flt, chr) : flt
+        !	+(wrd, dbl) : dbl
+        !	+(wrd, flt) : flt
+        !	+(wrd, lng) : lng
+        !	+(wrd, wrd) : wrd
+        !	+(wrd, int) : wrd
+        !	+(wrd, sht) : wrd
+        !	+(wrd, bte) : wrd
+        !	+(wrd, chr) : wrd
         !	+(int, dbl) : dbl
         !	+(int, flt) : flt
         !	+(int, lng) : lng
+        !	+(int, wrd) : wrd
         !	+(int, int) : int
         !	+(int, sht) : int
+        !	+(int, bte) : int
         !	+(int, chr) : int
         !	+(sht, dbl) : dbl
         !	+(sht, flt) : flt
         !	+(sht, lng) : lng
+        !	+(sht, wrd) : wrd
         !	+(sht, int) : int
         !	+(sht, sht) : sht
+        !	+(sht, bte) : sht
         !	+(sht, chr) : sht
+        !	+(bte, dbl) : dbl
+        !	+(bte, flt) : flt
+        !	+(bte, lng) : lng
+        !	+(bte, wrd) : wrd
+        !	+(bte, int) : int
+        !	+(bte, sht) : sht
+        !	+(bte, chr) : bte
+        !	+(bte, bte) : bte
         !	+(chr, dbl) : dbl
         !	+(chr, flt) : flt
         !	+(chr, lng) : lng
+        !	+(chr, wrd) : wrd
         !	+(chr, int) : int
         !	+(chr, sht) : sht
+        !	+(chr, bte) : bte
         !	+(chr, chr) : chr
-MAPI  = monetdb@localhost:36615
+MAPI  = monetdb@localhost:30185
 QUERY = { var a; a := a + 1; print(a); }
 ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !MAYBE YOU MEAN:
@@ -199,38 +283,66 @@ ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
         !	+(lng, dbl) : dbl
         !	+(lng, flt) : dbl
         !	+(lng, lng) : lng
+        !	+(lng, wrd) : lng
         !	+(lng, int) : lng
         !	+(lng, sht) : lng
+        !	+(lng, bte) : lng
         !	+(lng, chr) : lng
         !	+(dbl, dbl) : dbl
         !	+(dbl, flt) : dbl
         !	+(dbl, lng) : dbl
+        !	+(dbl, wrd) : dbl
         !	+(dbl, int) : dbl
         !	+(dbl, sht) : dbl
+        !	+(dbl, bte) : dbl
         !	+(dbl, chr) : dbl
         !	+(flt, dbl) : dbl
         !	+(flt, flt) : flt
         !	+(flt, lng) : flt
+        !	+(flt, wrd) : flt
         !	+(flt, int) : flt
         !	+(flt, sht) : flt
+        !	+(flt, bte) : flt
         !	+(flt, chr) : flt
+        !	+(wrd, dbl) : dbl
+        !	+(wrd, flt) : flt
+        !	+(wrd, lng) : lng
+        !	+(wrd, wrd) : wrd
+        !	+(wrd, int) : wrd
+        !	+(wrd, sht) : wrd
+        !	+(wrd, bte) : wrd
+        !	+(wrd, chr) : wrd
         !	+(int, dbl) : dbl
         !	+(int, flt) : flt
         !	+(int, lng) : lng
+        !	+(int, wrd) : wrd
         !	+(int, int) : int
         !	+(int, sht) : int
+        !	+(int, bte) : int
         !	+(int, chr) : int
         !	+(sht, dbl) : dbl
         !	+(sht, flt) : flt
         !	+(sht, lng) : lng
+        !	+(sht, wrd) : wrd
         !	+(sht, int) : int
         !	+(sht, sht) : sht
+        !	+(sht, bte) : sht
         !	+(sht, chr) : sht
+        !	+(bte, dbl) : dbl
+        !	+(bte, flt) : flt
+        !	+(bte, lng) : lng
+        !	+(bte, wrd) : wrd
+        !	+(bte, int) : int
+        !	+(bte, sht) : sht
+        !	+(bte, chr) : bte
+        !	+(bte, bte) : bte
         !	+(chr, dbl) : dbl
         !	+(chr, flt) : flt
         !	+(chr, lng) : lng
+        !	+(chr, wrd) : wrd
         !	+(chr, int) : int
         !	+(chr, sht) : sht
+        !	+(chr, bte) : bte
         !	+(chr, chr) : chr
 
 # 11:23:37 >  

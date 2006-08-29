@@ -495,7 +495,7 @@ Give the lowest tail value. Error on empty BATs."
 Give the highest tail value. Error on empty BATs."
 @+ Type-Specific Sum, Product, Max and Min
 @T
-For X $\in$ \{ sht,int,flt,dbl,lng \},	we define (using the {\em aggregate}
+For X $\in$ \{ bte,sht,int,wrd,flt,dbl,lng \},	we define (using the {\em aggregate}
 macro):
 \begin{itemize}
 \item .COMMAND sum(BAT[any,X] : X,
@@ -509,11 +509,20 @@ macro):
 @= sumprod_definition
 .COMMAND @1_@4 ( BAT[any,@2] ) : @4 = CMD@1_@2_@4; @3
 @= sumprod
+@:sumprod_definition(@1,bte,@2,bte)@
+@:sumprod_definition(@1,bte,@2,sht)@
+@:sumprod_definition(@1,bte,@2,int)@
+@:sumprod_definition(@1,bte,@2,wrd)@
+@:sumprod_definition(@1,bte,@2,lng)@
 @:sumprod_definition(@1,sht,@2,sht)@
 @:sumprod_definition(@1,sht,@2,int)@
+@:sumprod_definition(@1,sht,@2,wrd)@
 @:sumprod_definition(@1,sht,@2,lng)@
 @:sumprod_definition(@1,int,@2,int)@
+@:sumprod_definition(@1,int,@2,wrd)@
 @:sumprod_definition(@1,int,@2,lng)@
+@:sumprod_definition(@1,wrd,@2,wrd)@
+@:sumprod_definition(@1,wrd,@2,lng)@
 @:sumprod_definition(@1,lng,@2,lng)@
 @:sumprod_definition(@1,flt,@2,flt)@
 @:sumprod_definition(@1,flt,@2,dbl)@
@@ -524,8 +533,10 @@ macro):
 @= aggregate_definition
 .COMMAND @1 ( BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @= aggregate
+@:aggregate_definition(@1,bte,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
+@:aggregate_definition(@1,wrd,@2)@
 @:aggregate_definition(@1,flt,@2)@
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
@@ -1033,8 +1044,10 @@ that for the moment are defined as procs.
     proc sum( bat[any,@1] b ) : @1 { return sum_@1(b); }
     proc prod( bat[any,@1] b ) : @1 { return prod_@1(b); }
 @mil
+@:milsumprod(bte)@
 @:milsumprod(sht)@
 @:milsumprod(int)@
+@:milsumprod(wrd)@
 @:milsumprod(lng)@
 @:milsumprod(flt)@
 @:milsumprod(dbl)@
@@ -1049,8 +1062,10 @@ that for the moment are defined as procs.
     ADDHELP("avg", "manegold", "May 14 2003",
 	    "Gives the average of all tail values.", "algebra");
 @mil
+@:avg2(bte)@
 @:avg2(sht)@
 @:avg2(int)@
+@:avg2(wrd)@
 
 @= avg
     proc avg(BAT[any, @1] b) : dbl {
@@ -1430,6 +1445,9 @@ BAT@1(BAT *b, ptr aggr)
 		case TYPE_chr:
 			@:aggr@1(chr,loc,simple,chr,atom)@
 			break;
+		case TYPE_bte:
+			@:aggr@1(bte,loc,simple,bte,atom)@
+			break;
 		case TYPE_sht:
 			@:aggr@1(sht,loc,simple,sht,atom)@
 			break;
@@ -1461,28 +1479,48 @@ BAT@1(BAT *b, ptr aggr)
 @:BATaggr(min)@
 @:BATaggr(max)@
 
+@:sum_implementation(bte,bte,0)@
+@:sum_implementation(bte,sht,0)@
+@:sum_implementation(bte,int,0)@
+@:sum_implementation(bte,wrd,0)@
+@:sum_implementation(bte,lng,0)@
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
+@:sum_implementation(sht,wrd,0)@
 @:sum_implementation(sht,lng,0)@
 @:sum_implementation(int,int,0)@
+@:sum_implementation(int,wrd,0)@
 @:sum_implementation(int,lng,0)@
+@:sum_implementation(wrd,wrd,0)@
+@:sum_implementation(wrd,lng,0)@
 @:sum_implementation(lng,lng,0)@
 @:sum_implementation(flt,flt,0.0)@
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
 
+@:prod_implementation(bte,bte,1)@
+@:prod_implementation(bte,sht,1)@
+@:prod_implementation(bte,int,1)@
+@:prod_implementation(bte,wrd,1)@
+@:prod_implementation(bte,lng,1)@
 @:prod_implementation(sht,sht,1)@
 @:prod_implementation(sht,int,1)@
+@:prod_implementation(sht,wrd,1)@
 @:prod_implementation(sht,lng,1)@
 @:prod_implementation(int,int,1)@
+@:prod_implementation(int,wrd,1)@
 @:prod_implementation(int,lng,1)@
+@:prod_implementation(wrd,wrd,1)@
+@:prod_implementation(wrd,lng,1)@
 @:prod_implementation(lng,lng,1)@
 @:prod_implementation(flt,flt,1.0)@
 @:prod_implementation(flt,dbl,1.0)@
 @:prod_implementation(dbl,dbl,1.0)@
 
+@:aggregate_implementation(bte)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
+@:aggregate_implementation(wrd)@
 @:aggregate_implementation(flt)@
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
@@ -1979,7 +2017,7 @@ fetch(ptr ret, BAT *b, lng i)
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) BUNtail(b, @1);
 		} else if (_s == 1) {
-			*(chr*) ret = *(chr*) BUNtail(b, @1);
+			*(bte*) ret = *(bte*) BUNtail(b, @1);
 		} else if (_s == 2) {
 			*(sht*) ret = *(sht*) BUNtail(b, @1);
 		} else if (_s == 8) {
@@ -2108,6 +2146,9 @@ CMDr@1_@2(oid* ret, BAT *b, ptr v)
 		case TYPE_chr:
 			p = SORTfnd@4_chr(BATmirror(b),v);
 			break;
+		case TYPE_bte:
+			p = SORTfnd@4_bte(BATmirror(b),v);
+			break;
 		case TYPE_sht:
 			p = SORTfnd@4_sht(BATmirror(b),v);
 			break;
@@ -2163,6 +2204,9 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 		switch(ATOMstorage(b->htype)) {
 		case TYPE_chr:
 			p = SORTfnd@4_chr(BATmirror(b),v);
+			break;
+		case TYPE_bte:
+			p = SORTfnd@4_bte(BATmirror(b),v);
 			break;
 		case TYPE_sht:
 			p = SORTfnd@4_sht(BATmirror(b),v);

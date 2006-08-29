@@ -281,7 +281,7 @@ recognized automatically by MEL:
 
 {\small\begin{verbatim}
 atom ::=
-	VOID | BIT | CHR | SHT | INT | PTR | OID | FLT | DBL | LNG |
+	VOID | BIT | CHR | BTE | SHT | INT | OID | WRD | PTR | FLT | LNG | DBL | STR |
 	<ident: extension atom defined until now or in any used module> |
         BAT[atom,atom]
 
@@ -553,8 +553,8 @@ library on which on which MonetDB is built. GDK contains an extensive
 collection of relational operators on the binary model. It
 supports a standard collection of 
 @[<a href="../gdk/index.html#mod_1_5_1">atoms</a>@ 
-{\tt \{ void, bit, chr, sht, int,
-oid, flt, bat, lng, dbl, str \}}. All relational operators are
+{\tt \{ void, bit, chr, bte, sht, int,
+oid, wrd, flt, bat, lng, dbl, str \}}. All relational operators are
 optimized for these atoms and use the standard {\tt hash}.
 
 Of special interest is the section on how 
@@ -1120,7 +1120,7 @@ interpreter as being a {\tt BAT**}. You pass back the {\tt BAT*} BAT
 descriptor in it.
 
 \item[{\em internal atoms}] are all built-in MonetDB atoms except
-{\tt str} (that is \{{\small\tt bit, chr, sht, int, ptr, flt, lng, dbl}\}).
+{\tt str} (that is \{{\small\tt bit, chr, bte, sht, int, oid, wrd, ptr, flt, lng, dbl}\}).
 The first parameter is the supposed to point to already allocated storage. 
 You can just fill this storage with the return value.
 

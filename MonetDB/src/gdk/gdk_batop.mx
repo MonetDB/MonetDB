@@ -610,6 +610,11 @@ through is the "isnil" predicate). So we implement it here.
 		@:valselect(@1,_chr)@
 		break;
 #endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:valselect(@1,_bte)@
+		break;
+#endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:valselect(@1,_sht)@
@@ -1163,37 +1168,36 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:restrict1(simple,chr,loc)@
-
+		break;
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:restrict1(simple,bte,loc)@
 		break;
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:restrict1(simple,sht,loc)@
-
 		break;
 #endif
 #ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:restrict1(simple,int,loc)@
-
 		break;
 #endif
 #ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:restrict1(simple,flt,loc)@
-
 		break;
 #endif
 #ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:restrict1(simple,dbl,loc)@
-
 		break;
 #endif
 #ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:restrict1(simple,lng,loc)@
-
 		break;
 #endif
 	default:
@@ -1211,37 +1215,36 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
 			@:restrict2(simple,chr,var,loc)@
-
+			break;
+#endif
+#ifndef NOEXPAND_BTE
+		case TYPE_bte:
+			@:restrict2(simple,bte,var,loc)@
 			break;
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:restrict2(simple,sht,var,loc)@
-
 			break;
 #endif
 #ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:restrict2(simple,int,var,loc)@
-
 			break;
 #endif
 #ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:restrict2(simple,flt,var,loc)@
-
 			break;
 #endif
 #ifndef NOEXPAND_DBL
 		case TYPE_dbl:
 			@:restrict2(simple,dbl,var,loc)@
-
 			break;
 #endif
 #ifndef NOEXPAND_LNG
 		case TYPE_lng:
 			@:restrict2(simple,lng,var,loc)@
-
 			break;
 #endif
 		default:
@@ -1257,32 +1260,32 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
 			@:restrict2(simple,chr,loc,loc)@
-
+			break;
+#endif
+#ifndef NOEXPAND_BTE
+		case TYPE_bte:
+			@:restrict2(simple,bte,loc,loc)@
 			break;
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:restrict2(simple,sht,loc,loc)@
-
 			break;
 #endif
 #ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:restrict2(simple,int,loc,loc)@
-
 			break;
 #endif
 #ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:restrict2(simple,flt,loc,loc)@
-
 			break;
 #endif
 #if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
 		case TYPE_dbl:
 		case TYPE_lng:
 			@:restrict2(simple,lng,loc,loc)@
-
 			break;
 #endif
 		default:
@@ -1345,6 +1348,7 @@ chk_order@3_@1(@1*__r col)
 
 @= sort
 @:sort_tpe(chr,@5,@3)@
+@:sort_tpe(bte,@5,@3)@
 @:sort_tpe(sht,@5,@3)@
 @:sort_tpe(int,@5,@3)@
 @:sort_tpe(lng,@5,@3)@
@@ -1393,6 +1397,12 @@ BATordered@3(BAT* b)
 				if (!chk_order@3_chr((chr *) cur))
 					break;
 				cur += 128 * sizeof(chr);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_bte && BUNsize(b) == sizeof(bte)) {
+			while (cur + 128 * sizeof(bte) < end) {
+				if (!chk_order@3_bte((bte *) cur))
+					break;
+				cur += 128 * sizeof(bte);
 			}
 		} else if (ATOMstorage(b->htype) == TYPE_sht && BUNsize(b) == sizeof(sht)) {
 			while (cur + 128 * sizeof(sht) < end) {
@@ -1860,37 +1870,36 @@ that this routine also works efficiently on many buckets.
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
 			@:rangesplit(simple,loc,chr)@
-
+			break;
+#endif
+#ifndef NOEXPAND_BTE
+		case TYPE_bte:
+			@:rangesplit(simple,loc,bte)@
 			break;
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:rangesplit(simple,loc,sht)@
-
 			break;
 #endif
 #ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:rangesplit(simple,loc,int)@
-
 			break;
 #endif
 #ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:rangesplit(simple,loc,flt)@
-
 			break;
 #endif
 #ifndef NOEXPAND_DBL
 		case TYPE_dbl:
 			@:rangesplit(simple,loc,dbl)@
-
 			break;
 #endif
 #ifndef NOEXPAND_LNG
 		case TYPE_lng:
 			@:rangesplit(simple,loc,lng)@
-
 			break;
 #endif
 		default:
@@ -1899,7 +1908,6 @@ that this routine also works efficiently on many buckets.
 			} else {
 				@:rangesplit(atom,loc,tpe)@
 			}
-
 			break;
 		}
 		for (yy = 0; yy < n; yy++)
@@ -2219,6 +2227,11 @@ found@3@2:		(*(int*) BUNtloc(bn,r))++;
 		@:histoloop_inner(loc,_chr,simple,chr)@
 		break;
 #endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:histoloop_inner(loc,_bte,simple,bte)@
+		break;
+#endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:histoloop_inner(loc,_sht,simple,sht)@
@@ -2331,37 +2344,36 @@ BATcount_no_nil(BAT *b)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:cntloop(simple,loc,chr)@
-
+		break;
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:cntloop(simple,loc,bte)@
 		break;
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:cntloop(simple,loc,sht)@
-
 		break;
 #endif
 #ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:cntloop(simple,loc,int)@
-
 		break;
 #endif
 #ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:cntloop(simple,loc,flt)@
-
 		break;
 #endif
 #ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:cntloop(simple,loc,lng)@
-
 		break;
 #endif
 #ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:cntloop(simple,loc,dbl)@
-
 		break;
 #endif
 	default:

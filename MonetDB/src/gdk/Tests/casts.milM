@@ -19,6 +19,10 @@ int(false).print();
 # from chr
 int('a').print();
 
+# from bte
+int(bte(1)).print();
+int(bte(127)).print();
+
 # from sht
 int(sht(1)).print();
 int(sht(32767)).print();
@@ -35,6 +39,15 @@ int(-2147483647 - 1).print();
 int(2147483647+2).print();
 # should this produce nil (overflow)?
 int(-2147483647 - 2).print();
+
+# from wrd
+int(wrd(1LL)).print();
+int(wrd(2147483647LL)).print();
+int(wrd(2147483648LL)).print();
+int(wrd(2147483649LL)).print();
+int(wrd(-2147483647LL)).print();
+int(wrd(-2147483648LL)).print();
+int(wrd(-2147483649LL)).print();
 
 # from lng
 int(1LL).print();
@@ -108,6 +121,12 @@ bit(false).print();
 bit('a').print();
 bit(chr(0)).print();
 
+# from bte
+bit(bte(0)).print();
+bit(bte(1)).print();
+bit(bte(-1)).print();
+bit(bte(96)).print();
+
 # from sht
 bit(sht(0)).print();
 bit(sht(1)).print();
@@ -119,6 +138,12 @@ bit(0).print();
 bit(1).print();
 bit(-1).print();
 bit(4096).print();
+
+# from wrd
+bit(wrd(0LL)).print();
+bit(wrd(1LL)).print();
+bit(wrd(-1LL)).print();
+bit(wrd(4096LL)).print();
 
 # from lng
 bit(0LL).print();

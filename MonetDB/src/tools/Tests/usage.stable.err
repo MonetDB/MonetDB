@@ -10,7 +10,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-Usage: Mserver [ options ] [ script+ ]                   
+Usage: /ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/tools/.libs/lt-Mserver [ options ] [ script+ ]                   
 Options are:                                        
  -c <config_file>    | --config=<config_file>       
                        --dbname=<database_name>     
@@ -24,7 +24,7 @@ Options are:
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
 # 16:36:12 >  
 
-Usage: MapiClient [ options ]
+Usage: /ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/mapi/clients/C/.libs/lt-MapiClient [ options ]
 Options are:
  -b t/f      | --blocked=true/false /* blocked mode */
  -c config   | --config=file    /* config filename */

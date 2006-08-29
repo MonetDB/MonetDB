@@ -56,10 +56,24 @@ we use the following #defines for comparing atoms:
 @h
 #define bitStrlen	8
 #define chrStrlen	8
+#define bteStrlen	8
 #define shtStrlen	12
 #define intStrlen	24
+#if SIZEOF_OID == SIZEOF_INT
 #define oidStrlen	24
+#else
+#define oidStrlen	48
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+#define wrdStrlen	24
+#else
+#define wrdStrlen	48
+#endif
+#if SIZEOF_PTR == SIZEOF_INT
 #define ptrStrlen	24
+#else
+#define ptrStrlen	48
+#endif
 #define lngStrlen	48
 #define fltStrlen	48
 #define dblStrlen	96
@@ -123,6 +137,13 @@ void shtConvert(sht *s);
 int shtCmp(sht *r, sht *l);
 hash_t shtHash(sht *s);
 
+gdk_export int bteFromStr(str src, int *len, bte **dst);
+gdk_export int bteToStr(str *dst, int *len, bte *src);
+gdk_export bte *bteRead(bte *a, stream *s, size_t cnt);
+gdk_export int bteWrite(bte *a, stream *s, size_t cnt);
+int bteCmp(bte *r, bte *l);
+hash_t bteHash(bte *c);
+
 gdk_export int chrFromStr(str src, int *len, chr **dst);
 gdk_export int chrToStr(str *dst, int *len, chr *src);
 gdk_export chr *chrRead(chr *a, stream *s, size_t cnt);
@@ -174,6 +195,12 @@ chrCmp(chr *l, chr *r)
 }
 
 int
+bteCmp(bte *l, bte *r)
+{
+	return simple_CMP(l, r, bte);
+}
+
+int
 shtCmp(sht *l, sht *r)
 {
 	return simple_CMP(l, r, sht);
@@ -208,6 +235,12 @@ Return some positive integer derived from one atom value.
 @c
 hash_t
 chrHash(chr *v)
+{
+	return (hash_t) *(unsigned char *) v;
+}
+
+hash_t
+bteHash(bte *v)
 {
 	return (hash_t) *(unsigned char *) v;
 }
@@ -295,6 +328,15 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0,
 	 0, 0,
 	 0, 0},
+	{"bte", TYPE_bte, 1, sizeof(bte), sizeof(@`bte@7), 0, 0, (ptr) &bte_nil,
+	 (int (*)(str, int *, ptr *)) @`bteFromStr@5, (int (*)(str *, int *, ptr)) @`bteToStr@5,
+	 (void *(*)(void *, stream *, size_t)) bteRead, (int (*)(void *, stream *, size_t)) bteWrite,
+	 (int (*)(ptr, ptr)) bteCmp,
+	 (hash_t (*)(ptr)) bteHash, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
 	{"sht", TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, 0, (ptr) &sht_nil,
 	 (int (*)(str, int *, ptr *)) @`shtFromStr@5, (int (*)(str *, int *, ptr)) @`shtToStr@5,
 	 (void *(*)(void *, stream *, size_t)) shtRead, (int (*)(void *, stream *, size_t)) shtWrite,
@@ -332,6 +374,24 @@ atomDesc BATatoms[MAXATOMS] = {
 #else
 	 TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, 0, (ptr) &lng_nil,
 	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
+	 (int (*)(ptr, ptr)) lngCmp,
+	 (hash_t (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
+#endif
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"wrd",
+#if SIZEOF_WRD == SIZEOF_INT
+	 TYPE_int, 1, sizeof(wrd), sizeof(@`wrd@7), 0, 0, (ptr) &int_nil,
+	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
+	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (hash_t (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+#else
+	 TYPE_lng, 1, sizeof(wrd), sizeof(@`wrd@7), 0, 0, (ptr) &lng_nil,
+	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
 	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
 	 (int (*)(ptr, ptr)) lngCmp,
 	 (hash_t (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
@@ -667,6 +727,8 @@ The routine atomnil returns a pointer to the nil value representation.
 #define GDK_bit_min ((bit) 0)
 #define GDK_chr_max ((chr) SCHAR_MAX)
 #define GDK_chr_min ((chr) SCHAR_MIN)
+#define GDK_bte_max ((bte) SCHAR_MAX)
+#define GDK_bte_min ((bte) SCHAR_MIN)
 #define GDK_sht_max ((sht) SHRT_MAX)
 #define GDK_sht_min ((sht) SHRT_MIN)
 #define GDK_int_max INT_MAX
@@ -682,7 +744,8 @@ The routine atomnil returns a pointer to the nil value representation.
 
 /* representation of the nil */ 
 gdk_export const chr chr_nil;
-gdk_export const short sht_nil;
+gdk_export const bte bte_nil;
+gdk_export const sht sht_nil;
 gdk_export const int int_nil;
 gdk_export const flt flt_nil;
 gdk_export const dbl dbl_nil;
@@ -697,6 +760,15 @@ gdk_export const char str_nil[2];
 #define ptr_nil	((ptr) lng_nil)
 #endif
 #define bat_nil	((bat) int_nil)
+#if SIZEOF_WRD == SIZEOF_INT
+#define wrd_nil	((wrd) int_nil)
+#define GDK_wrd_max ((wrd) GDK_int_max)
+#define GDK_wrd_min ((wrd) GDK_int_min)
+#else
+#define wrd_nil	((wrd) lng_nil)
+#define GDK_wrd_max ((wrd) GDK_lng_max)
+#define GDK_wrd_min ((wrd) GDK_lng_min)
+#endif
 #if SIZEOF_OID == SIZEOF_INT
 #define oid_nil ((oid) GDK_int_min)
 #define GDK_oid_max ((oid) GDK_int_max)
@@ -708,6 +780,7 @@ gdk_export const char str_nil[2];
 #define void_nil	oid_nil
 @c
 const chr chr_nil = (chr) '\200';
+const bte bte_nil = GDK_bte_min;
 const sht sht_nil = GDK_sht_min;
 const int int_nil = GDK_int_min;
 const flt flt_nil = GDK_flt_min;
@@ -729,7 +802,7 @@ ATOMnil(int t)
 @}
 @- Derived types
 In all algorithms across GDK, you will find switches on the types
-( chr, sht, int, flt, dbl, lng, str). They respectively represent 
+( chr, bte, sht, int, wrd, flt, dbl, lng, str). They respectively represent 
 an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
 a 64-bit int, and a pointer-sized location of a char-buffer (ended by 
 a zero char).
@@ -791,12 +864,12 @@ the commit tremendously complicated.
 	ptr P3 = (ptr) (p3);						\
 	ptr P4 = (ptr) (p4);						\
 									\
-	if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)		\
+	if (t_ == TYPE_oid || t_ == TYPE_wrd || t_ == TYPE_ptr || t_ > TYPE_str)		\
 		t_ = ATOMstorage(t_);					\
 	if (t_ <= TYPE_bat) {						\
-		if (t_ <= TYPE_chr) {					\
+		if (t_ <= TYPE_bte) {					\
 			if (t_ != TYPE_void)				\
-				*(chr *) (P3) = *(chr *) (P4);		\
+				*(bte *) (P3) = *(bte *) (P4);		\
 		} else if (t_ == TYPE_sht) {				\
 			*(sht *) (P3) = *(sht *) (P4);			\
 		} else if (t_ == TYPE_bat) {				\
@@ -827,12 +900,12 @@ the commit tremendously complicated.
 {									\
 	int t_ = (P1);							\
 									\
-	if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)		\
+	if (t_ == TYPE_oid || t_ == TYPE_wrd || t_ == TYPE_ptr || t_ > TYPE_str)		\
 		t_ = ATOMstorage(t_);					\
 	if (t_ <= TYPE_bat) {						\
-		if (t_ <= TYPE_chr) {					\
+		if (t_ <= TYPE_bte) {					\
 			if (t_ != TYPE_void)				\
-				*(chr *) (P3) = *(chr *) (P4);		\
+				*(bte *) (P3) = *(bte *) (P4);		\
 		} else if (t_ == TYPE_sht) {				\
 			*(sht *) (P3) = *(sht *) (P4);			\
 		} else if (t_ == TYPE_bat) {				\
@@ -915,6 +988,10 @@ ATOMcmp(int t, ptr l, ptr r)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		return simple_CMP(l, r, chr);
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		return simple_CMP(l, r, bte);
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
@@ -1351,7 +1428,7 @@ bitToStr(char **dst, int *len, bit *src)
 {
 	@:atommem(char,6)@
 
-	if (*src == chr_nil) {
+	if (*src == bit_nil) {
 		strcpy(*dst, "nil");
 		return 3;
 	} else if (*src) {
@@ -1491,6 +1568,10 @@ int @1Write(@1 *a, stream *s, size_t cnt)
 	return stream_write@2Array(s, (@3*)a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 @c
+
+@:numfromstr(bte,3,127)@
+@:atomtostr(bte,"%hhd",bte)@
+@:atom_io(bte,Bte,bte)@
 
 @:numfromstr(sht,5,32767)@
 @:atomtostr(sht,"%hd",sht)@

@@ -60,7 +60,7 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 			e.print();
 			var bh := b.mark(0@0).reverse();
 			var bt := b.reverse().mark(0@0).reverse();
-			print(bh,bt,bt.[sht](),bt.[int](),bt.[lng](),bt.[flt](),bt.[dbl](),[decimal]([int](bt)),bt.[str]());
+			print(bh,bt,bt.[bte](),bt.[sht](),bt.[int](),bt.[wrd](),bt.[lng](),bt.[flt](),bt.[dbl](),[decimal]([int](bt)),bt.[str]());
 			printed := TRUE;
 		}
 		var tpe2 := tail(ab);
@@ -77,16 +77,16 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 
 module("decimal");
 var printed := FALSE;
-aggrtst(5,9,"sum","sht","int","lng","flt","dbl");
-aggrtst(5,9,"sum_lng","sht","int","lng");
+aggrtst(5,9,"sum","bte","sht","int","wrd","lng","flt","dbl");
+aggrtst(5,9,"sum_lng","bte","sht","int","wrd","lng");
 aggrtst(5,9,"sum_dbl","flt","dbl");
-aggrtst(5,9,"prod","sht","int","lng","flt","dbl");
-aggrtst(5,9,"prod_lng","sht","int","lng");
+aggrtst(5,9,"prod","bte","sht","int","wrd","lng","flt","dbl");
+aggrtst(5,9,"prod_lng","bte","sht","int","wrd","lng");
 aggrtst(5,9,"prod_dbl","flt","dbl");
-aggrtst(5,9,"avg","sht","int","lng","flt","dbl");
-aggrtst(5,9,"min","sht","int","lng","flt","dbl","decimal");
-aggrtst(5,9,"max","sht","int","lng","flt","dbl","decimal");
-aggrtst(5,9,"count","sht","int","lng","flt","dbl","decimal");
-aggrtst(5,9,"count_no_nil","sht","int","lng","flt","dbl","decimal");
-aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
+aggrtst(5,9,"avg","bte","sht","int","wrd","lng","flt","dbl");
+aggrtst(5,9,"min","bte","sht","int","wrd","lng","flt","dbl","decimal");
+aggrtst(5,9,"max","bte","sht","int","wrd","lng","flt","dbl","decimal");
+aggrtst(5,9,"count","bte","sht","int","wrd","lng","flt","dbl","decimal");
+aggrtst(5,9,"count_no_nil","bte","sht","int","wrd","lng","flt","dbl","decimal");
+aggrtst(5,9,"card","bte","sht","int","wrd","lng","flt","dbl","decimal");
 quit();

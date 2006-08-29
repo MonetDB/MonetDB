@@ -14,7 +14,7 @@ print('c');
 print("s");
 [ "s" ]
 print(type("s"));
-[ 11 ]
+[ 13 ]
 print(type('c'));
 [ 2 ]
 quit();

@@ -14,7 +14,7 @@ stdout of test 'mprof` in directory 'src/modules/contrib` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("mprof");
 test_mprof();
-[ 16 ]
+[ 18 ]
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:	  mprof_id	| clock	| utime_stime	  #
@@ -26,7 +26,7 @@ test_mprof();
 # BAT:	  mprof_id	| ru_usage		  #
 # (int)	  (str)		| (Rusage)		  #
 #-------------------------------------------------#
-[ 0,	  "abc",	  (0,1,0,0,0,0,0,0)	  ]
+[ 0,	  "abc",	  (0,2,0,0,0,0,0,0)	  ]
 [ 1,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #-------------------------------------------------#
 # BAT:	  mprof_id	| mallinfo		  #
@@ -41,23 +41,23 @@ test_mprof();
 # (int)	  (str)		| (int)	| (Tms)		  #
 #-------------------------------------------------#
 [ 0,	  "abc",	  0,	  (0,0)		  ]
-[ 1,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 1,	  "pmPrint",	  0,	  (1,0)	  ]
 [ 2,	  "xyz",	  0,	  (0,0)		  ]
 [ 3,	  "pmPrint",	  0,	  (0,0)		  ]
 #-------------------------------------------------#
 # BAT:	  mprof_id	| ru_usage		  #
 # (int)	  (str)		| (Rusage)		  #
 #-------------------------------------------------#
-[ 0,	  "abc",	  (0,1,0,0,0,0,0,0)	  ]
-[ 1,	  "pmPrint",	  (0,48,0,0,0,0,0,0)	  ]
-[ 2,	  "xyz",	  (0,0,0,0,0,0,0,0)	  ]
+[ 0,	  "abc",	  (0,2,0,0,0,0,0,0)	  ]
+[ 1,	  "pmPrint",	  (0,54,0,0,0,0,0,1)	  ]
+[ 2,	  "xyz",	  (0,1,0,0,0,0,0,0)	  ]
 [ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #---------------------------------------------------------#
 # BAT:	  mprof_id	| mallinfo			  #
 # (int)	  (str)		| (Mallinfo)			  #
 #---------------------------------------------------------#
 [ 0,	  "abc",	  (0,0,0,0,0,0,0,624)		  ]
-[ 1,	  "pmPrint",	  (143360,5,20,0,0,0,848,25632)	  ]
+[ 1,	  "pmPrint",	  (135168,-4,20,0,0,0,848,49392)  ]
 [ 2,	  "xyz",	  (0,0,-2,0,0,0,-128,416)	  ]
 [ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)		  ]
 #~EndVariableOutput~#
@@ -76,13 +76,13 @@ Label: abc called: 1
 Label: pmPrint called: 2
 		sum	avg	min	max
 	time	   0	   0	   0	   0
-	utime	   0	   0	   0	   0
+	utime	   1	   0	   0	   1
 	stime	   0	   0	   0	   0
 	inblock	   0	   0	   0	   0
 	oublock	   0	   0	   0	   0
 	majflt	   0	   0	   0	   0
-	cntxsw	   0	   0	   0	   0
-	arena	143360	71680	   0	143360
+	cntxsw	   1	   0	   0	   1
+	arena	135168	67584	   0	135168
 
 Label: xyz called: 1
 		sum	avg	min	max

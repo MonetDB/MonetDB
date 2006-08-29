@@ -32,7 +32,7 @@ without permission of the copyright owner. }
 (April 2005:) Niels HASH_MAX now indicates the end of the hash chain list 
 (Mar 2005:) Niels removed the histolink accelerator and changed to the grp atom
 
-(June 2001:) Arjen made the size of the hashtable parametric, which is needed
+(June 2001:) Arjen parameterized the size of the hashtable, which is needed
 for text corpora (many different clusters (>30000), widely varying size (Zipfian)).
 (May 2001:) Arjen added some minor changes to better handle `clustered' groups;
 for now, limited applicability to a derived property, using
@@ -338,7 +338,7 @@ In the unary group case, we optimized processing on 1-byte
 and 2-byte values by using direct mapping in an array instead of
 hashing.
 @c
-#define HASH_chr(p) ((hash_t) (*(unsigned char*) (p)))
+#define HASH_bte(p) ((hash_t) (*(unsigned char*) (p)))
 #define HASH_sht(p) ((hash_t) (*(unsigned short*) (p)))
 #define HASH_int(p) ((hash_t) *(unsigned int*) (p))
 #define HASH_lng(p) ((hash_t)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
@@ -551,19 +551,23 @@ tailtype(BAT *b, int str_trick)
 	int tpe = ATOMstorage(b->ttype);	/* standard type remappings */
 
 	/* more daring remappings possible under simple equality */
-	if (tpe == TYPE_flt) {
+	switch (tpe) {
+	case TYPE_chr:
+		return TYPE_bte;
+	case TYPE_flt:
 		return TYPE_int;
-	} else if (tpe == TYPE_dbl) {
+	case TYPE_dbl:
 		return TYPE_lng;
-	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((b->theap))) {
-		return TYPE_var;	/* string offsets are identifying integers */
+	case TYPE_str:
+		if (str_trick && GDK_ELIMDOUBLES((b->theap)))
+			return TYPE_var;	/* string offsets are identifying integers */
 	}
 	return tpe;
 }
 
 /* Generate both 'normal' CTgroup and clustered CTgroups */
 @= wrappedgroupinner
-@:group(chr,tloc,simple,@1,@2)@
+@:group(bte,tloc,simple,@1,@2)@
 @:group(sht,tloc,simple,@1,@2)@
 @:group(int,tloc,simple,@1,@2)@
 @:group(lng,tloc,simple,@1,@2)@
@@ -643,8 +647,8 @@ bits(int i)
 @= choosegroupSTANDARD
 	/* Choose appropriate @4 CTgroup implementation */
 	switch(@1) {
-	case TYPE_chr:
-		@?@5:returnvalue(@5)@ CTgroup_chr_@4_STANDARD(b,@2,@3);
+	case TYPE_bte:
+		@?@5:returnvalue(@5)@ CTgroup_bte_@4_STANDARD(b,@2,@3);
 		break;
 	case TYPE_sht:
 		@?@5:returnvalue(@5)@ CTgroup_sht_@4_STANDARD(b,@2,@3);
@@ -663,8 +667,8 @@ bits(int i)
 @= choosegroupCUSTOM
 	/* Choose appropriate @4 CTgroup implementation */
 	switch(@1) {
-	case TYPE_chr:
-		@?@5:returnvalue(@5)@ CTgroup_chr_@4_CUSTOM(mask,*rng,b,@2,@3);
+	case TYPE_bte:
+		@?@5:returnvalue(@5)@ CTgroup_bte_@4_CUSTOM(mask,*rng,b,@2,@3);
 		break;
 	case TYPE_sht:
 		@?@5:returnvalue(@5)@ CTgroup_sht_@4_CUSTOM(mask,*rng,b,@2,@3);
@@ -756,12 +760,12 @@ bunins_failed:
 
 /* Generate both 'normal' CTderive and clustered CTderive */
 @= wrappedderive
-@:derive(sync,chr,tloc,simple,@1)@
+@:derive(sync,bte,tloc,simple,@1)@
 @:derive(sync,sht,tloc,simple,@1)@
 @:derive(sync,int,tloc,simple,@1)@
 @:derive(sync,lng,tloc,simple,@1)@
 @:derive(sync,any,tail,atom,@1)@
-@:derive(hash,chr,tloc,simple,@1)@
+@:derive(hash,bte,tloc,simple,@1)@
 @:derive(hash,sht,tloc,simple,@1)@
 @:derive(hash,int,tloc,simple,@1)@
 @:derive(hash,lng,tloc,simple,@1)@
@@ -773,8 +777,8 @@ bunins_failed:
 @= choosederive
 	/* Choose appropriate (@1 && @2) CTderive implementation */
 	switch(tt) {
-	case TYPE_chr:
-		histo = CTderive_@1_chr_@2(ct_map,ct_histo,b,bn,m);
+	case TYPE_bte:
+		histo = CTderive_@1_bte_@2(ct_map,ct_histo,b,bn,m);
 		break;
 	case TYPE_sht:
 		histo = CTderive_@1_sht_@2(ct_map,ct_histo,b,bn,m);

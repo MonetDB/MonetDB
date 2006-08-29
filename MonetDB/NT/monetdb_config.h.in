@@ -566,6 +566,9 @@
 /* Define if you don't want to expand the bit type */
 /* #undef NOEXPAND_BIT */
 
+/* Define if you don't want to expand the bte type */
+/* #undef NOEXPAND_BTE */
+
 /* Define if you don't want to expand the chr type */
 /* #undef NOEXPAND_CHR */
 
@@ -592,6 +595,9 @@
 
 /* Define if you don't want to expand the str type */
 /* #undef NOEXPAND_STR */
+
+/* Define if you don't want to expand the wrd type */
+/* #undef NOEXPAND_WRD */
 
 /* Define if OpenSSL should not use Kerberos 5 */
 /* #undef OPENSSL_NO_KRB5 */
@@ -1221,6 +1227,9 @@
 /* Define if you don't want to expand the bit type */
 /* #undef NOEXPAND_BIT */
 
+/* Define if you don't want to expand the bte type */
+/* #undef NOEXPAND_BTE */
+
 /* Define if you don't want to expand the chr type */
 /* #undef NOEXPAND_CHR */
 
@@ -1247,6 +1256,9 @@
 
 /* Define if you don't want to expand the str type */
 /* #undef NOEXPAND_STR */
+
+/* Define if you don't want to expand the wrd type */
+/* #undef NOEXPAND_WRD */
 
 /* Define if OpenSSL should not use Kerberos 5 */
 /* #undef OPENSSL_NO_KRB5 */

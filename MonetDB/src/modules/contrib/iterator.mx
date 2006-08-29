@@ -157,7 +157,7 @@ point to the original BATs at the bottom of the tree.
     if (sz == 4) {\
         *(int*) (dst) = *(int*) (src);\
     } else if (sz == 1) {\
-        *(chr*) (dst) = *(chr*) (src);\
+        *(bte*) (dst) = *(bte*) (src);\
     } else if (sz == 8) {\
         *(lng*) (dst) = *(lng*) (src);\
     } else if (sz == 2) {\
@@ -452,11 +452,13 @@ typedef struct {
 /* the code expansions */
 @:select(any,any,tail,any,any)@
 @:select(chr,eq,tloc,simple,chr)@
+@:select(bte,eq,tloc,simple,bte)@
 @:select(sht,eq,tloc,simple,sht)@
 @:select(int,eq,tloc,simple,int)@
 @:select(lng,eq,tloc,simple,lng)@
 @:select(any,eq,tail,atom,b->ttype)@
 @:select(chr,rng,tloc,simple,chr)@
+@:select(bte,rng,tloc,simple,bte)@
 @:select(sht,rng,tloc,simple,sht)@
 @:select(int,rng,tloc,simple,int)@
 @:select(flt,rng,tloc,simple,flt)@
@@ -519,6 +521,9 @@ iter_select2(iter *res, iter *in, bit *t, str fcn, ptr p1, int t1, ptr p2, int t
 		case TYPE_chr:
 			nxt = SelectNext_chr_rng;
 			break;
+		case TYPE_bte:
+			nxt = SelectNext_bte_rng;
+			break;
 		case TYPE_sht:
 			nxt = SelectNext_sht_rng;
 			break;
@@ -541,6 +546,9 @@ iter_select2(iter *res, iter *in, bit *t, str fcn, ptr p1, int t1, ptr p2, int t
 		switch (ATOMstorage(input->result->ttype)) {
 		case TYPE_chr:
 			nxt = SelectNext_chr_eq;
+			break;
+		case TYPE_bte:
+			nxt = SelectNext_bte_eq;
 			break;
 		case TYPE_sht:
 			nxt = SelectNext_sht_eq;
@@ -600,7 +608,8 @@ typedef struct {
 } JoinHandle;
 
 @c
-#define iterator_hashchr(tpe,val,msk) ((var_t) ((unsigned char*) val)[0])
+#define iterator_hashbte(tpe,val,msk) ((var_t) ((unsigned char*) val)[0])
+#define iterator_hashchr(tpe,val,msk) iterator_hashbte(tpe,val,msk)
 #define iterator_hashsht(tpe,val,msk) (((var_t) ((unsigned short*) val)[0]) % msk)
 #define iterator_hashint(tpe,val,msk) (((var_t) ((unsigned int *) val)[0]) % msk)
 #define iterator_hashlng(tpe,val,msk) ((var_t)(((unsigned int *) val)[0]^((unsigned int *) val)[1]) % msk)
@@ -608,6 +617,7 @@ typedef struct {
 #define iterator_hashvar(tpe,val,msk) iterator_hashloc(tpe,val,msk)
 
 @:join(simple,chr,chr,loc)@
+@:join(simple,bte,bte,loc)@
 @:join(simple,sht,sht,loc)@
 @:join(simple,int,int,loc)@
 @:join(simple,lng,lng,loc)@
@@ -694,6 +704,9 @@ iter_join(iter *res, iter *input, BAT *inner)
 			case TYPE_chr:
 				nxt = JoinNext_chr;
 				break;
+			case TYPE_bte:
+				nxt = JoinNext_bte;
+				break;
 			case TYPE_sht:
 				nxt = JoinNext_sht;
 				break;
@@ -747,9 +760,9 @@ an ITER. We provide two implementations: a generic hash-based grouping and
 direct grouping on small integers (1-byte, 2-byte).
 
 \begin{verbatim}
-AGGREGATE-FCN     x   GROUPBY-TYPE    x   VALUE-TYPE  
-          {count} x {chr,sht,int,any}                           
-{max,min,sum,avg} x {chr,sht,int,any} x {chr,sht,int,flt,lng,dbl} 
+AGGREGATE-FCN     x     GROUPBY-TYPE      x     VALUE-TYPE  
+          {count} x {chr,bte,sht,int,any}                           
+{max,min,sum,avg} x {chr,bte,sht,int,any} x {chr,bte,sht,int,flt,lng,dbl} 
 \end{verbatim}
 
 We extract all 100 different implementation functions (1*4 + 4*4*6 = 100) from two 
@@ -811,8 +824,10 @@ groupby_fcn(str aggr, int valtpe, int grptpe)
 
 @= groupby_valtpe
 @:groupby_grptpe(@1,chr)@
+@:groupby_grptpe(@1,bte)@
 @:groupby_grptpe(@1,sht)@
 @:groupby_grptpe(@1,int)@
+@:groupby_grptpe(@1,wrd)@
 @:groupby_grptpe(@1,flt)@
 @:groupby_grptpe(@1,lng)@
 @:groupby_grptpe(@1,dbl)@
@@ -821,8 +836,10 @@ BATfcn groupby_fcn_@1(int valtpe, int grptpe) {
     BATfcn f = NULL;
     switch(valtpe) {
     case TYPE_chr: f = groupby_fcn_@1_chr(grptpe); break;
+    case TYPE_bte: f = groupby_fcn_@1_bte(grptpe); break;
     case TYPE_sht: f = groupby_fcn_@1_sht(grptpe); break;
     case TYPE_int: f = groupby_fcn_@1_int(grptpe); break;
+    case TYPE_wrd: f = groupby_fcn_@1_wrd(grptpe); break;
     case TYPE_flt: f = groupby_fcn_@1_flt(grptpe); break;
     case TYPE_lng: f = groupby_fcn_@1_lng(grptpe); break;
     case TYPE_dbl: f = groupby_fcn_@1_dbl(grptpe); break;
@@ -839,7 +856,7 @@ BATfcn groupby_fcn_@1(int valtpe, int grptpe) {
 BATfcn groupby_fcn_@1_@2(int grptpe) {
     BATfcn f = groupby_@1_@2_any;
     switch(grptpe) {
-    case TYPE_chr: f = groupby_@1_@2_char; break;
+    case TYPE_bte: f = groupby_@1_@2_char; break;
     case TYPE_sht: f = groupby_@1_@2_short; break;
     case TYPE_int: f = groupby_@1_@2_int; break;
     }

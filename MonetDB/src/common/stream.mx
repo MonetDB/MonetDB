@@ -90,6 +90,8 @@ stream_export int stream_init(void);
 	0 on error 
        !0 on success
  */
+stream_export int stream_readBte(stream *s, signed char *val);
+stream_export int stream_writeBte(stream *s, signed char val);
 stream_export int stream_readSht(stream *s, short *val);
 stream_export int stream_writeSht(stream *s, short val);
 stream_export int stream_readInt(stream *s, int *val);
@@ -97,6 +99,8 @@ stream_export int stream_writeInt(stream *s, int val);
 stream_export int stream_readLng(stream *s, lng *val);
 stream_export int stream_writeLng(stream *s, lng val);
 
+stream_export int stream_readBteArray(stream *s, signed char *val, size_t cnt);
+stream_export int stream_writeBteArray(stream *s, const signed char *val, size_t cnt);
 stream_export int stream_readShtArray(stream *s, short *val, size_t cnt);
 stream_export int stream_writeShtArray(stream *s, const short *val, size_t cnt);
 stream_export int stream_readIntArray(stream *s, int *val, size_t cnt);
@@ -2448,6 +2452,17 @@ stream_read@1(stream *s, @2 *val)
 }
 @c
 
+#define no_SWAP(x) x
+
+@:stream_readVal(Bte,signed char,no)@
+
+int
+stream_writeBte(stream *s, signed char val)
+{
+	if (!s || s->errnr) return(0);
+	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
+}
+
 @:stream_readVal(Sht,short,short_int)@
 
 int
@@ -2492,6 +2507,15 @@ stream_read@1Array(stream *s, @2 *val, size_t cnt)
 	return 1;
 }
 @c
+
+@:stream_readArray(Bte,signed char,no)@
+
+int
+stream_writeBteArray(stream *s, const signed char *val, size_t cnt)
+{
+	if (!s || s->errnr) return(0);
+	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
+}
 
 @:stream_readArray(Sht,short,short_int)@
 

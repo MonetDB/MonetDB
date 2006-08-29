@@ -83,8 +83,10 @@ Too many bugs.
 .COMMAND {_csum}(BAT[oid,@1] b) : BAT[oid,@1] = CMDclustered_sum_@1; 
 	"grouped tail sum"
 @m
+@:sum(bte)@
 @:sum(sht)@
 @:sum(int)@
+@:sum(wrd)@
 @:sum(lng)@
 @:sum(flt)@
 @:sum(dbl)@
@@ -100,8 +102,10 @@ Too many bugs.
           "Choose a different implementation if b is sorted on head.", 
           mod());
 @mil
+@:milsum(bte)@
 @:milsum(sht)@
 @:milsum(int)@
+@:milsum(wrd)@
 @:milsum(lng)@
 @:milsum(flt)@
 @:milsum(dbl)@
@@ -290,8 +294,10 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 	return GDK_SUCCEED;
 }
 @c
+@:sumcmd(bte)@
 @:sumcmd(sht)@
 @:sumcmd(int)@
+@:sumcmd(wrd)@
 @:sumcmd(lng)@
 @:sumcmd(flt)@
 @:sumcmd(dbl)@

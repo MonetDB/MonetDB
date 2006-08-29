@@ -264,37 +264,36 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:mergejoin(simple,loc,loc,chr)@;
-
+		break;
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:mergejoin(simple,loc,loc,bte)@;
 		break;
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:mergejoin(simple,loc,loc,sht)@;
-
 		break;
 #endif
 #ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:mergejoin(simple,loc,loc,int)@;
-
 		break;
 #endif
 #ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:mergejoin(simple,loc,loc,flt)@;
-
 		break;
 #endif
 #ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:mergejoin(simple,loc,loc,lng)@;
-
 		break;
 #endif
 #ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:mergejoin(simple,loc,loc,dbl)@;
-
 		break;
 #endif
 	default:
@@ -429,6 +428,10 @@ BAThashjoin(BAT *l, BAT *r, size_t estimate)
 	case TYPE_chr:
 		@:hashjoin(simple,chr,tloc)@
 #endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:hashjoin(simple,bte,tloc)@
+#endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:hashjoin(simple,sht,tloc)@
@@ -496,6 +499,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 #define T@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNtloc(r,r_cur))
 @c
 @:SIMPLEput(chr)@
+@:SIMPLEput(bte)@
 @:SIMPLEput(sht)@
 @:SIMPLEput(int)@
 @:SIMPLEput(lng)@
@@ -612,6 +616,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= fetchjoin2
 	@:fetchjoin(@1,chr)@
+	@:fetchjoin(@1,bte)@
 	@:fetchjoin(@1,sht)@
 	@:fetchjoin(@1,int)@
 	@:fetchjoin(@1,lng)@
@@ -619,6 +624,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	@:fetchjoin(@1,LATOM)@
 @c
 @:fetchjoin2(chr)@
+@:fetchjoin2(bte)@
 @:fetchjoin2(sht)@
 @:fetchjoin2(int)@
 @:fetchjoin2(lng)@
@@ -630,6 +636,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= fetchjoin_switch_rtt
 	if (ATOMstorage(rtt) == TYPE_chr) {
 		bn = @1fetchjoin_@2_chr(bn,l,r);
+	} else if (ATOMstorage(rtt) == TYPE_bte) {
+		bn = @1fetchjoin_@2_bte(bn,l,r);
 	} else if (ATOMstorage(rtt) == TYPE_sht) {
 		bn = @1fetchjoin_@2_sht(bn,l,r);
 	} else if (rtt != TYPE_bat &&
@@ -655,6 +663,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= fetchjoin_switch_lht
 	if (ATOMstorage(lht) == TYPE_chr) {
 		@:fetchjoin_switch_rtt(@1,chr)@
+	} else if (ATOMstorage(lht) == TYPE_bte) {
+		@:fetchjoin_switch_rtt(@1,bte)@
 	} else if (ATOMstorage(lht) == TYPE_sht) {
 		@:fetchjoin_switch_rtt(@1,sht)@
 	} else if (lht != TYPE_bat &&
@@ -910,6 +920,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 
 		if (ATOMstorage(tpe) == TYPE_chr) {
 			@:voidfetchjoin(tloc,chr,SIMPLE)@
+		} else if (ATOMstorage(tpe) == TYPE_bte) {
+			@:voidfetchjoin(tloc,bte,SIMPLE)@
 		} else if (ATOMstorage(tpe) == TYPE_sht) {
 			@:voidfetchjoin(tloc,sht,SIMPLE)@
 		} else if (tpe != TYPE_bat && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
@@ -1231,6 +1243,10 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 		case TYPE_chr:
 			@:outerjoinloop(simple,chr)@
 #endif
+#ifndef NOEXPAND_BTE
+		case TYPE_bte:
+			@:outerjoinloop(simple,bte)@
+#endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:outerjoinloop(simple,sht)@
@@ -1391,6 +1407,9 @@ static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
 #ifndef NOEXPAND_CHR
 	@:nlthetajoin_@1(chr,@2,@3)@
 #endif
+#ifndef NOEXPAND_BTE
+	@:nlthetajoin_@1(bte,@2,@3)@
+#endif
 #ifndef NOEXPAND_SHT
 	@:nlthetajoin_@1(sht,@2,@3)@
 #endif
@@ -1500,6 +1519,9 @@ BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2)
 	switch (ATOMstorage(r->htype)) {
 	case TYPE_chr:
 		@:bandjoin(chr)@
+
+	case TYPE_bte:
+		@:bandjoin(bte)@
 
 	case TYPE_sht:
 		@:bandjoin(sht)@
@@ -1641,6 +1663,10 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	case TYPE_chr:
 		@:binsemijoin(loc,chr,simple)@
 #endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:binsemijoin(loc,bte,simple)@
+#endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:binsemijoin(loc,sht,simple)@
@@ -1769,6 +1795,10 @@ BATrevsemijoin(BAT *l, BAT *r)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:revsemijoin(simple,chr,hloc)@
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:revsemijoin(simple,bte,hloc)@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
@@ -2036,6 +2066,7 @@ bunins_failed:
 }
 @= antijoin1
 	@:antijoin2(@1,chr)@
+	@:antijoin2(@1,bte)@
 	@:antijoin2(@1,sht)@
 	@:antijoin2(@1,int)@
 	@:antijoin2(@1,lng)@
@@ -2043,6 +2074,7 @@ bunins_failed:
 	@:antijoin2(@1,LATOM)@
 @c
 @:antijoin1(chr)@
+@:antijoin1(bte)@
 @:antijoin1(sht)@
 @:antijoin1(int)@
 @:antijoin1(lng)@
@@ -2058,6 +2090,8 @@ bunins_failed:
 
 	if (rts == TYPE_chr) {
 		bn = antijoin_@1_chr(bn,l,r);
+	} else if (rts == TYPE_bte) {
+		bn = antijoin_@1_bte(bn,l,r);
 	} else if (rts == TYPE_sht) {
 		bn = antijoin_@1_sht(bn,l,r);
 	} else if (rtt != TYPE_bat &&
@@ -2088,6 +2122,8 @@ bunins_failed:
 
 	if (lhs == TYPE_chr) {
 		@:antijoin_switch_rtt(chr)@
+	} else if (lhs == TYPE_bte) {
+		@:antijoin_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:antijoin_switch_rtt(sht)@
 	} else if (lht != TYPE_bat &&
@@ -2189,6 +2225,7 @@ bunins_failed:
 }
 @= cross1
 	@:cross2(@1,chr)@
+	@:cross2(@1,bte)@
 	@:cross2(@1,sht)@
 	@:cross2(@1,int)@
 	@:cross2(@1,lng)@
@@ -2196,6 +2233,7 @@ bunins_failed:
 	@:cross2(@1,LATOM)@
 @c
 @:cross1(chr)@
+@:cross1(bte)@
 @:cross1(sht)@
 @:cross1(int)@
 @:cross1(lng)@
@@ -2211,6 +2249,8 @@ bunins_failed:
 
 	if (rts == TYPE_chr) {
 		bn = cross_@1_chr(bn,l,r);
+	} else if (rts == TYPE_bte) {
+		bn = cross_@1_bte(bn,l,r);
 	} else if (rts == TYPE_sht) {
 		bn = cross_@1_sht(bn,l,r);
 	} else if (rtt != TYPE_bat &&
@@ -2241,6 +2281,8 @@ bunins_failed:
 
 	if (lhs == TYPE_chr) {
 		@:cross_switch_rtt(chr)@
+	} else if (lhs == TYPE_bte) {
+		@:cross_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:cross_switch_rtt(sht)@
 	} else if (lht != TYPE_bat &&

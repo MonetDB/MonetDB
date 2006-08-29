@@ -11,15 +11,15 @@ stdout of test 'return_types_of_head_and_tail.SF-701641` in directory 'tests/Bug
 # Visit http://monetdb.cwi.nl/ for further information.
 var x := new (oid, int);
 x.type().print();
-[ 4 ]
+[ 5 ]
 x.head().print();
 [ "oid" ]
 x.tail().print();
 [ "int" ]
 x.htype().print();
-[ 6 ]
+[ 7 ]
 x.ttype().print();
-[ 5 ]
+[ 6 ]
 quit();
 
 # 17:35:43 >  

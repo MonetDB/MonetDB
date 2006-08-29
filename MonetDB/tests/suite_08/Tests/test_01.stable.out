@@ -218,15 +218,17 @@ view_atom_name().print();
 [ 0,	  "void"  ]
 [ 1,	  "bit"	  ]
 [ 2,	  "chr"	  ]
-[ 3,	  "sht"	  ]
-[ 4,	  "BAT"	  ]
-[ 5,	  "int"	  ]
-[ 6,	  "oid"	  ]
-[ 7,	  "ptr"	  ]
-[ 8,	  "flt"	  ]
-[ 9,	  "dbl"	  ]
-[ 10,	  "lng"	  ]
-[ 11,	  "str"	  ]
+[ 3,	  "bte"	  ]
+[ 4,	  "sht"	  ]
+[ 5,	  "BAT"	  ]
+[ 6,	  "int"	  ]
+[ 7,	  "oid"	  ]
+[ 8,	  "wrd"	  ]
+[ 9,	  "ptr"	  ]
+[ 10,	  "flt"	  ]
+[ 11,	  "dbl"	  ]
+[ 12,	  "lng"	  ]
+[ 13,	  "str"	  ]
 
 # Pseudo bat with variable settings for GDK
 "view_gdk_env".print();
@@ -236,36 +238,36 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#-----------------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf"					  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/conf/MonetDB.conf"																																																																													  ]
 [ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																	  ]
-[ "gdk_version",	  "4.11.1"										  ]
-[ "monet_pid",		  "2834"										  ]
-[ "prefix",		  "/ufs/niels/scratch/Linux-x86_64"							  ]
-[ "exec_prefix",	  "/ufs/niels/scratch/Linux-x86_64"							  ]
+[ "gdk_version",	  "4.13.1"																																																																																				  ]
+[ "monet_pid",		  "4924"																																																																																				  ]
+[ "prefix",		  "/ufs/sjoerd/Monet-bte-wrd"																																																																																		  ]
+[ "exec_prefix",	  "/ufs/sjoerd/Monet-bte-wrd"																																																																																		  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm"					  ]
+[ "gdk_dbfarm",		  "/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/dbfarm"																																																																														  ]
 [ "gdk_debug",		  "10"							  ]
-[ "gdk_mem_bigsize",	  "137438953472"																			  ]
+[ "gdk_mem_bigsize",	  "1048576"																																																																																				  ]
 [ "gdk_vm_minsize",	  "137438953472"																			  ]
 [ "gdk_alloc_map",	  "no"										  ]
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin"	  ]
+[ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/plain:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/contrib:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/mnetcdf/.libs:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/modules/mnetcdf:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/mapi"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "30511"										  ]
+[ "mapi_port",		  "32190"																																																																																				  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_logdir",		  "/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log"					  ]
+[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/log"																																																																															  ]
 [ "gdk_embedded",	  "no"								  ]
-[ "pf_httpd_port",	  "8080"																				  ]
-[ "xquery_output",	  "dm"																																																																  ]
+[ "pf_httpd_port",	  "48080"																																																																																				  ]
+[ "xquery_output",	  "xml"																																																																																					  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
-[ "monet_cwd",		  "/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/mTests/tests/suite_08"	  ]
+[ "monet_cwd",		  "/ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/mTests/tests/suite_08"																																																																													  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -295,7 +297,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Feb  3 07:55:07 2006"	  ]
+[ 0,	  "Thu Aug 24 16:13:39 2006"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

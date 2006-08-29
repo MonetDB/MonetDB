@@ -270,7 +270,7 @@ Then retrieve variable specific information.
 	switch (xtype) {
 	case NC_BYTE:
 		BUNins(*out, "netCDF type", "BYTE", FALSE);
-		BUNins(*out, "MonetDB type", "chr", FALSE);
+		BUNins(*out, "MonetDB type", "bte", FALSE);
 		break;
 	case NC_CHAR:
 		BUNins(*out, "netCDF type", "CHAR", FALSE);
@@ -392,7 +392,7 @@ byte, char, short, int, float, and, double.
 @c
 
 void
-check_nil_schr(int ncid, int varid, char *p, long size)
+check_nil_bte(int ncid, int varid, char *p, long size)
 {
 	signed char fill_value;
 	int nc_status;
@@ -405,7 +405,7 @@ check_nil_schr(int ncid, int varid, char *p, long size)
 
 	for (i = 0; i < size; i++) {
 		if (fill_value == p[i]) {
-			p[i] = chr_nil;
+			p[i] = bte_nil;
 		}
 	}
 }
@@ -541,7 +541,7 @@ Then retrieve variable specific information.
 
 	switch (xtype) {
 	case NC_BYTE:
-		mtype = TYPE_chr;
+		mtype = TYPE_bte;
 		break;
 	case NC_CHAR:
 		mtype = TYPE_str;
@@ -604,7 +604,7 @@ Then retrieve variable specific information.
 
 	switch (xtype) {
 	case NC_BYTE:
-		check_nil_schr(*ncid, varid, (char *) p, size);
+		check_nil_bte(*ncid, varid, (char *) p, size);
 		break;
 	case NC_CHAR:
 		GDKerror("String arrays not yet implemented");
@@ -688,7 +688,7 @@ just produce an array of bat pointers.
 	}
 
 	switch (BATttype(data)) {
-	case TYPE_chr:
+	case TYPE_bte:
 		xtype = NC_BYTE;
 		break;
 	case TYPE_sht:
@@ -704,7 +704,7 @@ just produce an array of bat pointers.
 		xtype = NC_DOUBLE;
 		break;
 	default:
-		GDKerror("invalid data type: can only handle chr,sht,int,flt,dbl");
+		GDKerror("invalid data type: can only handle bte,sht,int,flt,dbl");
 		return GDK_FAIL;
 	}
 
@@ -755,7 +755,7 @@ just produce an array of bat pointers.
 
 	switch (xtype) {
 	case NC_BYTE:
-		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, (signed char *)&chr_nil);
+		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, (signed char *)&bte_nil);
 		break;
 	case NC_SHORT:
 		nc_status = nc_put_att_short(*ncid, varid, "_FillValue", NC_SHORT, 1, &sht_nil);
@@ -890,7 +890,7 @@ just produce an array of bat pointers.
 	}
 
 	switch (BATttype(data)) {
-	case TYPE_chr:
+	case TYPE_bte:
 		xtype = NC_BYTE;
 		break;
 	case TYPE_sht:
@@ -906,7 +906,7 @@ just produce an array of bat pointers.
 		xtype = NC_DOUBLE;
 		break;
 	default:
-		GDKerror("invalid data type: can only handle chr,sht,int,flt,dbl");
+		GDKerror("invalid data type: can only handle bte,sht,int,flt,dbl");
 		return GDK_FAIL;
 	}
 
@@ -925,7 +925,7 @@ just produce an array of bat pointers.
 
 	switch (xtype) {
 	case NC_BYTE:
-		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, (signed char *)&chr_nil);
+		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, (signed char *)&bte_nil);
 		break;
 	case NC_SHORT:
 		nc_status = nc_put_att_short(*ncid, varid, "_FillValue", NC_SHORT, 1, &sht_nil);

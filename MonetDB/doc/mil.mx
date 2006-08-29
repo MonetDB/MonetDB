@@ -66,6 +66,10 @@ Their meaning in that context is explained in the section on
 boolean values being either {\tt true} or {\tt false}.
 \item {\tt chr}\\
 character values, denoted like 'c' (standard) or '$\backslash$001' (octal).
+\item {\tt bte}\\
+tiny (1-byte) integers; in general represented as 8 bit integers.
+Since normal MIL uses standard integer notation for the INT type,
+tiny (1-byte) constant values must always be formulated as a cast: {\tt bte(42)}.
 \item {\tt sht}\\
 short integers; in general represented as 16 bit integers.
 Since normal MIL uses standard integer notation for the INT type,
@@ -74,6 +78,11 @@ short constant values must always be formulated as a cast: {\tt sht(42)}.
 normal integer values. Uses 32-bit representation.
 \item {\tt oid}\\
 unique numerical identifiers. The next section discusses these in detail.
+\item {\tt wrd}\\
+machine-word sized integers; in general represented as 32/64 bit integers
+on 32/64-bit systems.
+Since normal MIL uses standard integer notation for the INT type,
+word constant values must always be formulated as a cast from a long integer: {\tt wrd(42LL)}.
 
 \item {\tt ptr}\\
 pointers. Seldomly used. Some volatile representations (like stream pointers
@@ -123,7 +132,7 @@ More information about the internal layout of BATs is available in the
 @[<a href="../gdk/index.html#mod_1_3_0">technical documentation of GDK</a>@.
 
 @- Type Identifiers
-In MIL, type identifiers {@#void,bit,sht,int,bat,oid,ptr,flt,dbl,lng,str@}
+In MIL, type identifiers {@#void,bit,chr,bte,sht,int,bat,oid,wrd,ptr,flt,dbl,lng,str@}
 are just synonyms for integer type numbers. Just try @#int.print();@
 it will display an integer value. Type numbers may change over time
 (see the @[<a href="../mel/index.html">Monet Extension Language</a>@),
@@ -139,15 +148,17 @@ monet>monet_atomtbl.print();
 [ "void",  0      ]
 [ "bit",   1      ]
 [ "chr",   2      ]
-[ "sht",   3      ]
-[ "bat",   4      ]
-[ "int",   5      ]
-[ "oid",   6      ]
-[ "ptr",   7      ]
-[ "flt",   8      ]
-[ "dbl",   9      ]
-[ "lng",   10     ]
-[ "str",   11     ]
+[ "bte",   3      ]
+[ "sht",   4      ]
+[ "bat",   5      ]
+[ "int",   6      ]
+[ "oid",   7      ]
+[ "wrd",   8      ]
+[ "ptr",   9      ]
+[ "flt",   10     ]
+[ "dbl",   11     ]
+[ "lng",   12     ]
+[ "str",   13     ]
 >
 \end{verbatim}}
 
@@ -373,10 +384,14 @@ in the current context:
 [ "STORE_MEM",            "int",  "frozen",       "constant",     "0"                     ]
 [ "LNG_MIN",              "lng",  "frozen",       "constant",     "-9223372036854775807"  ]
 [ "LNG_MAX",              "lng",  "frozen",       "constant",     "9223372036854775807"   ]
+[ "WRD_MIN",              "wrd",  "frozen",       "constant",     INT_MIN/LNG_MIN on 32/64-bit systems ]
+[ "WRD_MAX",              "wrd",  "frozen",       "constant",     INT_MAX/LNG_MAX on 32/64-bit systems ]
 [ "INT_MIN",              "int",  "frozen",       "constant",     "-2147483647"           ]
 [ "INT_MAX",              "int",  "frozen",       "constant",     "2147483647"            ]
 [ "SHT_MIN",              "sht",  "frozen",       "constant",     "-32767"                ]
 [ "SHT_MAX",              "sht",  "frozen",       "constant",     "32767"                 ]
+[ "BTE_MIN",              "bte",  "frozen",       "constant",     "-127"                  ]
+[ "BTE_MAX",              "bte",  "frozen",       "constant",     "127"                   ]
 [ "CHR_MIN",              "chr",  "frozen",       "constant",     "'\201'"                ]
 [ "CHR_MAX",              "chr",  "frozen",       "constant",     "'\177'"                ]
 [ "RAND_MAX",             "int",  "frozen",       "constant",     "2147483647"            ]

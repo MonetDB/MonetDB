@@ -1103,6 +1103,10 @@ bit|bit,*|*,bit|*,bit,*|all)
 	AC_DEFINE(NOEXPAND_BIT, 1, [Define if you don't want to expand the bit type]);;
 esac
 case $enable_noexpand in
+bte|bte,*|*,bte|*,bte,*|all)
+	AC_DEFINE(NOEXPAND_BTE, 1, [Define if you don't want to expand the bte type]);;
+esac
+case $enable_noexpand in
 chr|chr,*|*,chr|*,chr,*|all)
 	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type]);;
 esac
@@ -1137,6 +1141,10 @@ esac
 case $enable_noexpand in
 str|str,*|*,str|*,str,*|all)
 	AC_DEFINE(NOEXPAND_STR, 1, [Define if you don't want to expand the str type]);;
+esac
+case $enable_noexpand in
+wrd|wrd,*|*,wrd|*,wrd,*|all)
+	AC_DEFINE(NOEXPAND_WRD, 1, [Define if you don't want to expand the wrd type]);;
 esac
 
 dnl --enable-debug

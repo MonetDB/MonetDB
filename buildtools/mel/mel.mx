@@ -311,6 +311,8 @@ type2str(int t)
 		return "bit";
 	case TYPE_CHR:
 		return "chr";
+	case TYPE_BTE:
+		return "bte";
 	case TYPE_SHT:
 		return "sht";
 	case TYPE_INT:
@@ -319,6 +321,8 @@ type2str(int t)
 		return "ptr";
 	case TYPE_OID:
 		return "oid";
+	case TYPE_WRD:
+		return "wrd";
 	case TYPE_FLT:
 		return "flt";
 	case TYPE_DBL:
@@ -669,10 +673,12 @@ YY_SPACES    	[\t\n ]*
 ("VOID"|"void")		  { return MEL_VOID;   				}
 ("BIT"|"bit")		  { yylval.i = TYPE_BIT; return MEL_TYPE;	}
 ("CHR"|"chr")		  { yylval.i = TYPE_CHR; return MEL_TYPE;	}
+("BTE"|"bte")		  { yylval.i = TYPE_BTE; return MEL_TYPE;	}
 ("SHT"|"sht")		  { yylval.i = TYPE_SHT; return MEL_TYPE;	}
 ("INT"|"int")		  { yylval.i = TYPE_INT; return MEL_TYPE;    	}
 ("PTR"|"ptr") 		  { yylval.i = TYPE_PTR; return MEL_TYPE;	}
 ("OID"|"oid")		  { yylval.i = TYPE_OID; return MEL_TYPE;	}
+("WRD"|"wrd")		  { yylval.i = TYPE_WRD; return MEL_TYPE;	}
 ("FLT"|"flt")		  { yylval.i = TYPE_FLT; return MEL_TYPE;	}
 ("DBL"|"dbl")		  { yylval.i = TYPE_DBL; return MEL_TYPE;	}
 ("LNG"|"lng")		  { yylval.i = TYPE_LNG; return MEL_TYPE; 	}

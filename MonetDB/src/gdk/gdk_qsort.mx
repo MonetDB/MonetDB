@@ -135,7 +135,7 @@ qsort is macro expanded in four dimensions:
 	in order to factor out a type-specific check, or a function call for each 
 	value comparison, we separate different qsort implementations by the comparison 
 	type, of which each has the comparison hard-coded. We factor out the types 
-	@{chr,sht,int,flt,lng,dbl,any@} (the latter uses an adt function call).
+	@{chr,bte,sht,int,wrd,flt,lng,dbl,any@} (the latter uses an adt function call).
 @item storage:2
 	denoted @{direct,offset@}, means whether the array to be sorted contains the 
 	(fixed-width) values itself, or whether it contains integer byte-offsets, that point 
@@ -173,6 +173,9 @@ typedef chr any;
 
 #ifndef NOEXPAND_CHR
 @:qsort_cmpdef(chr)@
+#endif
+#ifndef NOEXPAND_BTE
+@:qsort_cmpdef(bte)@
 #endif
 #ifndef NOEXPAND_SHT
 @:qsort_cmpdef(sht)@
@@ -359,6 +362,10 @@ GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
 		@:call_iterate_or_register_swapmethod(@1,chr)@
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:call_iterate_or_register_swapmethod(@1,bte)@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:

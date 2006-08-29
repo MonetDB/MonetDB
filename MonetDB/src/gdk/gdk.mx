@@ -98,6 +98,8 @@ The association can be defined over:
 @item chr:
 A single character (8 bits @strong{integer}s).
 DEPRECATED for storing text (Unicode not supported).
+@item bte:
+ Tiny (1-byte) integers (8-bit @strong{integer}s).
 @item sht:
  Short integers (16-bit @strong{integer}s).
 @item int:
@@ -105,6 +107,9 @@ DEPRECATED for storing text (Unicode not supported).
 @item oid:
  Unique @strong{long int} values uses as object identifier. Highest bit cleared always.
 	    Thus, oids-s are 31-bit numbers on 32-bit systems, and 63-bit numbers on 64-bit systems.
+@item wrd:
+ Machine-word sized integers
+ (32-bit on 32-bit systems, 64-bit on 64-bit systems).
 @item ptr:
 Memory pointer values. DEPRECATED.  Can only be stored in transient BATs.
 @item flt:
@@ -486,19 +491,22 @@ below.  The global variables should not be modified directly.
 #define TYPE_void	0
 #define TYPE_bit	1
 #define TYPE_chr	2
-#define TYPE_sht	3
-#define TYPE_bat	4	/* BAT id: index in BBPcache */
-#define TYPE_int	5
-#define TYPE_oid	6
-#define TYPE_ptr	7	/* C pointer! */
-#define TYPE_flt	8
-#define TYPE_dbl	9
-#define TYPE_lng	10
-#define TYPE_str	11
+#define TYPE_bte	3
+#define TYPE_sht	4
+#define TYPE_bat	5	/* BAT id: index in BBPcache */
+#define TYPE_int	6
+#define TYPE_oid	7
+#define TYPE_wrd	8
+#define TYPE_ptr	9	/* C pointer! */
+#define TYPE_flt	10
+#define TYPE_dbl	11
+#define TYPE_lng	12
+#define TYPE_str	13
 #define TYPE_any	255	/* limit types to <255! */
 
 typedef signed char bit;
 typedef signed char chr;
+typedef signed char bte;
 typedef short sht;
 #ifdef MONET_OID32
 #define SIZEOF_OID	SIZEOF_INT
@@ -507,6 +515,8 @@ typedef unsigned int oid;
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
 #endif
+#define SIZEOF_WRD      SIZEOF_SSIZE_T
+typedef ssize_t wrd;
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
 typedef float flt;
@@ -735,6 +745,8 @@ typedef struct {
 		int ival;
 		oid oval;
 		sht shval;
+		bte btval;
+		wrd wval;
 		chr cval[4];
 		flt fval;
 		ptr pval;
@@ -2691,6 +2703,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 @item HASHloop_chr
 @tab
  (BAT *b; Hash *h, size_t idx; char *value, BUN w)
+@item HASHloop_bte
+@tab
+ (BAT *b; Hash *h, size_t idx; bte *value, BUN w)
 @item HASHloop_sht
 @tab
  (BAT *b; Hash *h, size_t idx; sht *value, BUN w)
@@ -2706,6 +2721,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 @item HASHloop_oid
 @tab
  (BAT *b; Hash *h, size_t idx; oid *value, BUN w)
+@item HASHloop_wrd
+@tab
+ (BAT *b; Hash *h, size_t idx; wrd *value, BUN w)
 @item HASHloop_flt
 @tab
  (BAT *b; Hash *h, size_t idx; flt *value, BUN w)
@@ -2835,8 +2853,9 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @
 @{
 @h
-@:hashloop(bit,chr,simple,chr,hloc)@
+@:hashloop(bit,chr,simple,bte,hloc)@
 @:hashloop(chr,chr,simple,chr,hloc)@
+@:hashloop(bte,bte,simple,bte,hloc)@
 @:hashloop(sht,sht,simple,sht,hloc)@
 @:hashloop(int,int,simple,int,hloc)@
 
@@ -2844,6 +2863,11 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @:hashloop(oid,int,simple,int,hloc)@	/* OIDDEPEND */
 #else
 @:hashloop(oid,lng,simple,lng,hloc)@	/* OIDDEPEND */
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+@:hashloop(wrd,int,simple,int,hloc)@
+#else
+@:hashloop(wrd,lng,simple,lng,hloc)@
 #endif
 @:hashloop(bat,int,simple,int,hloc)@
 
@@ -2881,6 +2905,7 @@ The 's' finally is an integer denoting the bunsize, used for speed.
 @{
 @h
 @:sortloop(chr,chr,chr,simple,&chr_nil)@
+@:sortloop(bte,bte,bte,simple,&bte_nil)@
 @:sortloop(sht,sht,sht,simple,&sht_nil)@
 @:sortloop(int,int,int,simple,&int_nil)@
 @:sortloop(flt,flt,flt,simple,&flt_nil)@
@@ -2909,6 +2934,17 @@ The 's' finally is an integer denoting the bunsize, used for speed.
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v)
 #define SORTloop_oid(b,p,q,tl,th,s) SORTloop_lng(b,p,q,tl,th,s)
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+#define SORTfnd_wrd(b,v)	SORTfnd_int(b,v)
+#define SORTfndfirst_wrd(b,v)	SORTfndfirst_int(b,v)
+#define SORTfndlast_wrd(b,v)	SORTfndlast_int(b,v)
+#define SORTloop_wrd(b,p,q,tl,th,s) SORTloop_int(b,p,q,tl,th,s)
+#else
+#define SORTfnd_wrd(b,v)	SORTfnd_lng(b,v)
+#define SORTfndfirst_wrd(b,v)	SORTfndfirst_lng(b,v)
+#define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
+#define SORTloop_wrd(b,p,q,tl,th,s) SORTloop_lng(b,p,q,tl,th,s)
 #endif
 #define SORTloop_bit(b,p,q,tl,th,s) SORTloop_chr(b,p,q,tl,th,s)
 @

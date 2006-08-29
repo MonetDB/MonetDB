@@ -775,8 +775,8 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 			BUN cur = ht?BUNhloc(b, BUNfirst(b)):BUNtloc(b,BUNfirst(b));
 			int inc = BUNsize(b)/ATOMsize(tpe);
 			bn->batBuns->free = bunstocopy*ATOMsize(tpe);  
-			if (tpe == TYPE_chr) {
-				chr *src = (chr*) cur, *dst = (chr*) BUNfirst(bn);
+			if (tpe == TYPE_chr || tpe == TYPE_bte) {
+				bte *src = (bte*) cur, *dst = (bte*) BUNfirst(bn);
 				while(bunstocopy--) { *dst++ = *src; src += inc; }
 			} else if (tpe == TYPE_sht) {
 				sht *src = (sht*) cur, *dst = (sht*) BUNfirst(bn);
@@ -1563,6 +1563,9 @@ BUNfnd(BAT *b, ptr v)
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_chr:
 		HASHfnd_chr(r, b, v);
+		break;
+	case TYPE_bte:
+		HASHfnd_bte(r, b, v);
 		break;
 	case TYPE_sht:
 		HASHfnd_sht(r, b, v);
@@ -2629,6 +2632,10 @@ Merge scan check to see if head values are sorted (&key)
 	case TYPE_chr:
 		@:merge_disprove(simple,chr,loc)@
 #endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:merge_disprove(simple,bte,loc)@
+#endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:merge_disprove(simple,sht,loc)@
@@ -2718,6 +2725,10 @@ for determining which algebra commands set properties sub-optimally.
 #ifndef NOEXPAND_CHR
 					case TYPE_chr:
 						@:hash_disprove(_chr,loc)@
+#endif
+#ifndef NOEXPAND_BTE
+					case TYPE_bte:
+						@:hash_disprove(_bte,loc)@
 #endif
 #ifndef NOEXPAND_SHT
 					case TYPE_sht:
