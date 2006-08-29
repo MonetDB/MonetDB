@@ -515,7 +515,11 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 					dst->val.ival = @:valcheck_r(src->val.oval,int,lng)@;
 					break;
 				case TYPE_wrd:
+#if SIZEOF_WRD == SIZEOF_INT
+					dst->val.ival = (int) src->val.wval;
+#else
 					dst->val.ival = @:valcheck(src->val.wval,int,lng)@;
+#endif
 					break;
 				case TYPE_lng:
 					dst->val.ival = @:valcheck(src->val.lval,int,lng)@;
@@ -550,7 +554,11 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 					dst->val.oval = (oid) src->val.oval;
 					break;
 				case TYPE_wrd:
+#if SIZEOF_WRD == SIZEOF_OID
+					dst->val.oval = @:valcheck_l(src->val.wval,oid,lng)@;
+#else
 					dst->val.oval = @:valcheck(src->val.wval,oid,lng)@;
+#endif
 					break;
 				case TYPE_lng:
 					dst->val.oval = @:valcheck(src->val.lval,oid,lng)@;
@@ -588,7 +596,11 @@ VALconvert2(int typ, ValPtr src, ValPtr dst)
 					dst->val.wval = (wrd) src->val.wval;
 					break;
 				case TYPE_lng:
+#if SIZEOF_LNG == SIZEOF_WRD
+					dst->val.wval = (wrd) src->val.lval;
+#else
 					dst->val.wval = @:valcheck(src->val.lval,wrd,lng)@;
+#endif
 					break;
 				case TYPE_flt:
 					dst->val.wval = @:valcheck(src->val.fval,wrd,dbl)@;

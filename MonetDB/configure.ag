@@ -284,6 +284,7 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(void *)
 AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(ssize_t)
 AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_SIZEOF(long long)
