@@ -27,7 +27,7 @@ X_CFLAGS =
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
-STATIC_MODS = $(MONETDB_LIBS) \
+STATIC_MODS = $(MONETDB_MODS) \
 	-l_builtin -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_constant
 
 smallTOC_SHARED_MODS =	\
@@ -64,20 +64,20 @@ bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		-lbat -lmonet -lmutils -lstream
+		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream
 }
 
 lib_embeddedsql = {
 	SOURCES = embeddedclient.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		-lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
 }
 
 bin_Mbeddedsql = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		-lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
 }
 
 bin_embeddedExample = {
@@ -85,7 +85,7 @@ bin_embeddedExample = {
 	DIR = pkglibdir/Tests
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedsql \
-		-lbat -lmonet -lmutils -lstream -lMapi
+		$(MONETDB_LIBS) -lbat -lmonet -lmutils -lstream -lMapi
 }
 
 scripts_h = {

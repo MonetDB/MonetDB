@@ -487,9 +487,15 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 	mb->vtop = start;
 }
 
+ <<<<<<< sql_scenario.mx
 #define _SQL_COMPILE
 str
 SQLstatementIntern(str *ret, str *expr, int execute, int external_command)
+ =======
+/* #define _SQL_COMPILE */
+static str
+SQLstatementIntern(str *ret, str *expr, str nme, int execute)
+ >>>>>>> 1.197
 {
 	int err = 0;
 	mvc o, *m;
@@ -573,12 +579,17 @@ optimize and produce code.
 We don't search the cache for a previous incarnation.
 @c
 	{	
+ <<<<<<< sql_scenario.mx
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
 		InstrPtr *oldstmt = NULL;
 		int oldssize = 0;
+ =======
+		Symbol oldsym= c->curprg;
+ >>>>>>> 1.197
 		stmt *s = sql_symbol2stmt(m);
 
+		MSinitClientPrg(c,"sql_cache",nme); 
 		if (!s && (err = mvc_status(m))) {
 #ifdef _SQL_COMPILE
 			stream_printf(c->fdout, "%s\n", m->errstr);
@@ -588,10 +599,13 @@ We don't search the cache for a previous incarnation.
 			else msg = throwMessage("SQLparser", "Semantic errors\n");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
+			/* restore the state */
+			freeSymbol(c->curprg);
+			c->curprg= oldsym;
 			goto endofcompile;
 		}
-		assert(s);
 		/* generate MAL code */
+ <<<<<<< sql_scenario.mx
 		if (oldstop == 2) /* remove main.end */
 			c->curprg->def->stop = 1; 
 		if (oldstop > 2) { /* recursive call to SQLstatement, we need to save the statement */
@@ -601,16 +615,24 @@ We don't search the cache for a previous incarnation.
 			c->curprg->def->stop = 1;
 			c->curprg->def->stmt[0] = oldstmt[0];
 		}
+ =======
+ >>>>>>> 1.197
 		backend_callinline(sql, c, s );
-		pushEndInstruction(c->curprg->def);
+		addQueryToCache(c); 
 
-		chkTypes(c->nspace, c->curprg->def); /* resolve types */
+		if( c->curprg->def->errors){
+			/* restore the state */
+			freeSymbol(c->curprg);
+			c->curprg= oldsym;
+			goto endofcompile;
+		}
 
 #ifdef _SQL_COMPILE
+		stream_printf(c->fdout,"result of sql.eval()\n");
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
 
-		if (!c->curprg->def->errors && execute) {
+		if ( execute) {
 			backend *be = c->state[PARSER];
 			if(!external_command)
 				sql->out = NULL; /* no output */
@@ -618,6 +640,7 @@ We don't search the cache for a previous incarnation.
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 			c->state[PARSER] = be;
 			MSresetInstructions(c->curprg->def, 1);
+ <<<<<<< sql_scenario.mx
 			if (oldstop == 2) /* put main.end back */
 				pushEndInstruction(c->curprg->def); 
 			freeVariables(c->curprg->def, c->glb, oldvtop);
@@ -627,10 +650,14 @@ We don't search the cache for a previous incarnation.
 				c->curprg->def->ssize = oldssize;
 				c->curprg->def->stop = oldstop;
 			}
+ =======
+			freeVariables(c->curprg->def, 0, 0);
+			c->curprg= oldsym;
+ >>>>>>> 1.197
 		}
 	}
 #ifdef _SQL_COMPILE
-	stream_printf(c->fdout, "#parse result %d\n", err);
+	stream_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
 @-
 We are done; a MAL procedure recides in the cache.
@@ -650,12 +677,20 @@ endofcompile:
 str
 SQLstatement(str *ret, str *expr, int *external_command)
 {
+ <<<<<<< sql_scenario.mx
 	return SQLstatementIntern(ret,expr, TRUE, *external_command);
+ =======
+	return SQLstatementIntern(ret,expr, "SQLstatement", TRUE);
+ >>>>>>> 1.197
 }
 
 str
 SQLcompile(str *ret, str *expr){
+ <<<<<<< sql_scenario.mx
 	return SQLstatementIntern(ret,expr, FALSE, 0);
+ =======
+	return SQLstatementIntern(ret,expr, "SQLcompile", FALSE);
+ >>>>>>> 1.197
 }
 
 static int

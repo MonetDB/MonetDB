@@ -653,10 +653,10 @@ fi
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
 WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
 if [ "${os}${BITS}" = "Linux64" ] ; then
-	WHAT_CONFIGURE="$WHAT_CONFIGURE --libdir=${WHAT_PREFIX}/${libdir}"
+	WHAT_CONFIGURE="$WHAT_CONFIGURE --libdir='"'${prefix}'"/${libdir}'"
 fi
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
-eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
+eval "alias configure_${wh_t}=\"`echo "${WHAT_CONFIGURE}" | sed -e 's|\\$|\\\\\$|g'`\""
 eval "alias configure_${wh_t}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
@@ -700,7 +700,7 @@ EOF
 # set specific variables
 eval "${what}_BUILD=\"$WHAT_BUILD\" ; export ${what}_BUILD"
 eval "${what}_PREFIX=\"$WHAT_PREFIX\" ; export ${what}_PREFIX"
-eval "${what}_CONFIGURE=\"$WHAT_CONFIGURE\" ; export ${what}_CONFIGURE"
+eval "${what}_CONFIGURE=\"`echo "$WHAT_CONFIGURE" | sed -e 's|\\$|\\\\$|g'`\" ; export ${what}_CONFIGURE"
 
 # clean-up temporary variables
 wh_t='' ; unset wh_t

@@ -484,12 +484,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushNil(mb, q, ht);
 			q = pushNil(mb, q, tt);
-			s->nr = getDestVar(q);
 
 			l = getDestVar(q);
 			q = newStmt1(mb, batRef, "setSequenceBase");
 			q = pushArgument(mb, q, l);
 			pushOid(mb,q,0);
+			s->nr = getDestVar(q);
 		} break;
 		case st_column:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
@@ -1849,7 +1849,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 	curInstr = getInstrPtr(curBlk, 0);
 
-	assert(curBlk->stop == 1);
+	/* assert(curBlk->stop == 1); Don't know why it is used here*/
 
 	if (m->argc) { /* we shouldn't come here as we aren't caching statements */
 		int argc=0;
@@ -1876,7 +1876,11 @@ backend_callinline(backend *be, Client c, stmt *s )
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
+ <<<<<<< sql_gencode.mx
 	optimizeMalBlk(c, be, curBlk);
+ =======
+	pushEndInstruction(curBlk);
+ >>>>>>> 1.190
 	c->curprg->def = curBlk;
 }
 
@@ -1945,6 +1949,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 */
 
 	backend_dumpstmt(be, curBlk, s);
+	pushEndInstruction(curBlk);
+	setLifespan(curBlk);
 
 	if (cq){
 		be->Toptimize = GDKusec();
@@ -1958,7 +1964,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	}
 */
 
-	pushEndInstruction(curBlk);
 	curPrg = c->curprg;
 	if (c->backup) {
 		c->curprg = c->backup;
@@ -2042,8 +2047,9 @@ backend_create_func(backend *be, sql_func *f)
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
-	addQueryToCache(c);
 	pushEndInstruction(curBlk);
+	setLifespan(curBlk);
+	addQueryToCache(c);
 	if (c->backup) {
 		c->curprg = c->backup;
 		c->backup = 0;

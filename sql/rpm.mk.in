@@ -43,5 +43,8 @@ rpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
 	$(RPMBUILD) ${python} ${java} --define="buildsystem 1" --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
+	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
+	done
 
 	rm -rf $(rpmtopdir)/BUILD
