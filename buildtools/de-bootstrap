@@ -61,7 +61,7 @@ function RM () {
 	fi
 }
 
-RM -rf configure */autom4te.cache */build */{configure,depcomp,INSTALL,install-sh,missing,*_config.h.in,aclocal.m4,Makefile.in} `find . -name \*~ -o -name .\*~`
+RM -rf configure */autom4te.cache */build */{configure,depcomp,INSTALL,install-sh,missing,*_config.h.in,aclocal.m4,Makefile.in} `find .[^.]* [^_]* -name \*.class -o -name \*.orig -o -name \*.rej -o -name .cache -o -name .incs.\* -o -name \*.pyc -o -name \*~ -o -name .\*~ -o -name .#\* -o -name \*.bak | grep -v 'burg/Makefile.orig$'`
 
 echo '
 It might be a good idea to run "cvs -q diff --brief", now,
