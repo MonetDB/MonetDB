@@ -58,7 +58,7 @@ autoheader || exit 1
 autoconf || exit 1
 automake --add-missing -c -f || exit 1
 
-if [ -e configure.ac.orig_bootstrap ];
+if [ -f configure.ac.orig_bootstrap ];
 then
 	mv configure.ac.orig_bootstrap configure.ac
 fi
