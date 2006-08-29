@@ -218,6 +218,8 @@ test = (
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
                 # suspicious output/messages/errors? with Pathfinder on SuSE 9.3 !??:
                     r'^! /.*/bin/[Mm](?:server5?|apiClient|timeout):e+$',
+                # expected error message with varying path in pathfinder/tests/XRpc/basic/Tests/missing_param.stable.err
+                    r'^QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "/.*/tests/XRpc/basic_queries/Tests/basicfunctions.xq";$',
                  ])+')',  re.MULTILINE)
        )
 
