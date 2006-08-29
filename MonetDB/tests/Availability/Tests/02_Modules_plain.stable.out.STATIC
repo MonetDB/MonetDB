@@ -652,7 +652,7 @@ Module: "mapi"
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start() : void",							  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start(bit) : void",							  "not available"																																						  ]
-[ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '1' character."																																		  ]
+[ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '\\1' character."																																		  ]
 [ "mil_frontend",	  "COMMAND:   ",  "mil_frontend() : ptr",						  "create/return the mil_frontend"																									  ]
 [ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",							  "Read a string from <S> until a newline."																																			  ]
 [ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",						  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."																												  ]
