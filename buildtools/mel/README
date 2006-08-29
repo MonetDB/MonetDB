@@ -4,6 +4,7 @@ then do the usual sequence,
 	./configure [--prefix=<install-dir-prefix>]
 	make
 	make install
+(Note: We require GNU make, which might be called "gmake" on some systems.)
 
 Use
 	./configure --help

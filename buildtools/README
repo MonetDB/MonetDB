@@ -16,6 +16,7 @@ then do the usual sequence,
 	./configure [--prefix=<install-dir-prefix>]
 	make
 	make install
+(Note: We require GNU make, which might be called "gmake" on some systems.)
 
 To build the various tools in one go on Windows using the Microsoft
 compiler, simply run
