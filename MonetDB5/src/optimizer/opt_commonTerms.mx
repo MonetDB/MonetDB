@@ -165,7 +165,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					printInstruction(GDKout, mb, p, LIST_OPT_ALL);
 #endif
 					actions++;
-					i= OPTaliasStep(mb,i);
+					/* i= OPTaliasStep(mb,i); keep your focus */
 					goto nxtCommonSubExpression;
 				}
 			}

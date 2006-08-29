@@ -53,38 +53,40 @@ In a second pass we can then remove/keep them upon need.
 static int
 OPTmodesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int cnt, i, j,n;
-	InstrPtr q;
+	int i, j, k;
 	int actions = 0;
-	(void)stk;
+	InstrPtr *candidate;
+	int top=0;
+	(void) stk;
 
-	setLifespan(mb);
+	candidate= (InstrPtr*) alloca(sizeof(InstrPtr) * mb->stop);
+
 	for(i=0; i<mb->stop; i++){
-		q= getInstrPtr(mb,i);
-		if( getFunctionId(q)== setWriteModeRef && getModuleId(q)== batRef ){
-			cnt = 0;
-			/* most variables have a very short life span */
-			n= getEndLifespan(mb,getArg(q,0));
-			for(j= i+1; j<n; j++){
-				p= getInstrPtr(mb,j);
-				if( ( getFunctionId(p) == insertRef ||
-					  getFunctionId(p) == deleteRef ||
-					  getFunctionId(p) == appendRef ) &&
-					getModuleId(p)== batRef &&
-					getArg(p,1) == getArg(q,0)) 
-						cnt++;
-			}
-			if( cnt == 0) {
-				/* turn it into an alias */
-				setModuleId(q,NULL);
-				setFunctionId(q,NULL);
-				q->token= ASSIGNsymbol;
-				q->argc= 2;
-				q->fcn= NULL;
-				actions++;
-			} 
-		} 
+		p= getInstrPtr(mb,i);
+		if( getFunctionId(p)== setWriteModeRef && getModuleId(p)== batRef ){
+			candidate[top++] = p;
+		} else
+		if( getModuleId(p)== batRef &&
+			( getFunctionId(p) == insertRef ||
+			  getFunctionId(p) == deleteRef ||
+			  getFunctionId(p) == appendRef ) ){
+				for(j=k=0; j<top;j++)
+				if( getArg(p,1) != getArg(candidate[j],0) )
+					candidate[k++]= candidate[j];
+				top= k;
+		}
 	}
+	/* now remove all candidates */
+	for( j=0; j<top; j++){
+		p= candidate[j];
+		/* turn it into an alias */
+		setModuleId(p,NULL);
+		setFunctionId(p,NULL);
+		p->token= ASSIGNsymbol;
+		p->argc= 2;
+		p->fcn= NULL;
+		actions++;
+	} 
 #ifdef DEBUG_OPT_MODES
 	stream_printf(GDKout,"OPTIMIZE MODES\n");
 	printFunction(GDKout,mb,LIST_MAL_ALL);
