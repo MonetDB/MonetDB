@@ -59,6 +59,8 @@ extern int archived;
  */
 #define MARK		'@'
 
+/* maximum number of macro arguments, arbitrarily set */
+#define M_ARGS	30
 
 typedef enum {
 	Nop = 0,

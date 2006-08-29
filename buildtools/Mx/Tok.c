@@ -191,8 +191,6 @@ DbTok(Tok * t)
 
 /* Argument Handling
  */
-#define M_ARGS	10+'Z'-'A'
-
 char **
 MkArgv(char *str)
 {

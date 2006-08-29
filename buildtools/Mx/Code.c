@@ -296,23 +296,8 @@ CodeSubBlk(char *sub, char **argv)
 	if (!s)
 		return s;
 	while (*s) {
-/* EXPANDED ARGUMENT LIST */
-		if ((s[0] == MARK) && (s[-1] != '\\') && 
-				( (('A' <= s[1]) && (s[1] <= 'Z')) || s[1]=='0') ) {
-			s++;
-			if( *s == '0') 
-				a = argv[10];
-			else
-				a= argv[11+ *s- 'A'];
-			for (; a && *a;) {
-				if (pos++ == blk_size - 2)
-					goto outofmem;
-				*b++ = *a++;
-			}
-			s++;
-			
-		} else
-		if ((s[0] == MARK) && (s[-1] != '\\') && (('1' <= s[1]) && (s[1] <= '9'))) {
+		if (s[0] == MARK && s[-1] != '\\' && '1' <= s[1] && s[1] <= '9') {
+			/* argument @<digit> */
 			s++;
 			for (a = argv[*s - '0']; a && *a;) {
 				if (pos++ == blk_size - 2)
@@ -320,8 +305,38 @@ CodeSubBlk(char *sub, char **argv)
 				*b++ = *a++;
 			}
 			s++;
-		} else
+		} else if (s[0] == MARK && s[-1] != '\\' && s[1] == '[' && isdigit((int) s[2])) {
+			/* EXPANDED ARGUMENT LIST: @[<digit>+] */
+			char *olds = s;
+			int n = 0;
+			s += 2;	/* skip @[ */
+			n = 0;
+			while (isdigit((int) *s))
+				n = 10 * n + *s++ - '0';
+			if (*s != ']' || n >= M_ARGS) {
+				/* if @[<digit>+ not followed by ], just copy the whole thing */
+				s = olds;
+				goto copy;
+			}
+			if (n >= M_ARGS) {
+				Error("No more than %d arguments allowed.", M_ARGS);
+				exit(1);
+			}
+			if (n == 0) {
+				Error("Arguments start counting at 1, not 0.");
+				exit(1);
+			}
+			for (a = argv[n]; a && *a;) {
+				if (pos++ == blk_size - 2)
+					goto outofmem;
+				*b++ = *a++;
+			}
+			s++;
+			
+		} else {
+  copy:
 			*b++ = *s++;
+		}
 		if (pos++ == blk_size - 2)
 			goto outofmem;
 	}
