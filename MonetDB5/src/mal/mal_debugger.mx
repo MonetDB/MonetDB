@@ -74,6 +74,7 @@ list <fcn> -- list current program block
 List <fcn> -- list with type information
 var  <fcn>  -- print symbol table for module
 optimizer <idx>  -- display program after optimizer step
+optimizer <file> <idx>  -- safe program after optimizer step on a file
 print <var>    -- display value of a variable
 print <var> <cnt>[<first>] -- display BAT chunk
 info <var>     -- display bat variable properties
@@ -360,7 +361,7 @@ mal_export void printBBPinfo(stream *out);
 mal_export void resetOptimizerDebugger(void);
 mal_export void optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec);
 mal_export str optimizeMALBlock(MalBlkPtr mb);
-mal_export void showOptimizerStep(int i, int flg);
+mal_export void showOptimizerStep(str fnme, int i, int flg);
 mal_export void showOptimizerHistory(void);
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MAL_DEBUGGER_h */
@@ -1109,8 +1110,16 @@ signatures satisfying the pattern.
 
 			skipWord(cntxt, b);
 			if (*b) {
+				char fname[1024],*f = NULL;
+				if( !isdigit(*b) ){
+					/* dump to file */
+					f= fname;
+					while(!isspace(*b) && f< fname+1022) *f++= *b++;
+					*f= 0;
+					skipWord(cntxt,b);
+				}
 				idx = atoi(b);
-				showOptimizerStep(idx, flg);
+				showOptimizerStep(fname, idx, flg);
 			} else
 				showOptimizerHistory();
 			break;
@@ -1613,11 +1622,23 @@ resetOptimizerDebugger()
 }
 
 void
-showOptimizerStep(int i, int flg)
+showOptimizerStep(str fnme, int i, int flg)
 {
+	stream *out;
+	if( fnme == 0 || *fnme== 0)
+		out= GDKout;
+	else {
+		out= open_wastream(fnme);
+		if( out == NULL){
+			stream_printf(GDKout,"Could not create file '%s'\n",fnme);
+			return;
+		}
+		stream_printf(GDKout,"Result saved on '%s'\n",fnme);
+	}
 	if (i < optTop && optimizerHistory[i].mb) {
-		stream_printf(GDKout, "%s\n", optimizerHistory[i].title);
-		printFunction(GDKout, optimizerHistory[i].mb, flg);
+		stream_printf(out, "%s\n", optimizerHistory[i].title);
+		printFunction(out, optimizerHistory[i].mb, flg);
+		if(fnme) stream_close(out);
 	}
 }
 void
