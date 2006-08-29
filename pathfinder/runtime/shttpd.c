@@ -74,6 +74,7 @@ typedef int socklen_t;
 #include <process.h>
 #include <direct.h>
 #include <io.h>
+#include <errno.h>
 #define	ERRNO			GetLastError()
 typedef unsigned int		uint32_t;
 typedef unsigned short		uint16_t;
@@ -755,10 +756,8 @@ elog(enum err_level level, const char *fmt, ...)
 	char		msg[512];
 	size_t		n;
 
-#ifndef PETER 
 	if (INTOPT(OPT_DEBUG) == 0 && level == ERR_DEBUG)
 		return;
-#endif
 
 	n = strftime(msg, sizeof(msg),"%d/%b/%Y %H:%M:%S ", localtime(&now));
 
@@ -3035,7 +3034,7 @@ shttpd_init(const char *fname)
 			line[strlen(line) - 1] = '\0';
 
 			if (sscanf(line, "%s %s", var, val) != 2)
-				elog(ERR_FATAL, "%s: Bad line: [%s]", line);
+				elog(ERR_FATAL, "%s: Bad line: [%s]", fname, line);
 
 			/* Set the option */
 			for (opt = options; opt->sw != 0; opt++)
@@ -3066,8 +3065,14 @@ shttpd_init(const char *fname)
 		setopt(&options[OPT_LISTENPORT], "443", 0);
 
 	/* If document_root is not set, set it to current directory */
-	if (STROPT(OPT_DOCROOT) == NULL)
-		STROPT(OPT_DOCROOT) = getcwd(NULL, 0);
+	if (STROPT(OPT_DOCROOT) == NULL){
+        char tmp[8192];
+		STROPT(OPT_DOCROOT) = getcwd(tmp, 8192);
+        if (STROPT(OPT_DOCROOT) == NULL) {
+            elog(ERR_FATAL, "unable to set document_root: %s", strerror(errno));
+            return;  /* force abort */
+        }
+    }
 	assert(STROPT(OPT_DOCROOT) != NULL);
 
 	/* Open access log file */
@@ -3115,10 +3120,6 @@ shttpd_init(const char *fname)
 			elog(ERR_FATAL, "cannot open %s", STROPT(OPT_SSLCERT));
 	}
 #endif /* WITH_SSL */
-
-#ifdef PETER
-    errorlog = fopen("/tmp/t", "w");
-#endif
 }
 
 /*
