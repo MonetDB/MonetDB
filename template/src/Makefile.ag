@@ -22,7 +22,7 @@ INCLUDES = $(MONETDB_INCS)
 lib__example = {
 	DIR = libdir/MonetDB
 	SOURCES = example.mx
-	LIBS = $(MONETDB_LIBS) 
+	LIBS = $(MONETDB_MODS) 
 }
 
 scripts_mil = {
