@@ -1273,36 +1273,36 @@ overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
             arg = arg->child[1];
         }
 
-	if (fn->sig_count == 1) {
-	     for (a = 0, match = true; a < fn->arity; a++) {
-		  /* test if function has at least the same
-		     number of arguments as the tested function */
-		  if (arg->kind == c_nil)
-		  {
-		       match = false;
-		       break;
-		  }
+        if (fn->sig_count == 1) {
+            for (a = 0, match = true; a < fn->arity; a++) {
+                /* test if function has at least the same
+                   number of arguments as the tested function */
+                if (arg->kind == c_nil)
+                {
+                    match = false;
+                    break;
+                }
 
-		  match = match && PFty_promotable (arg->child[0]->type,
-						    (fn->sigs[0].par_ty)[a]);
-		  if (!match)
-		       break;
+                match = match && PFty_promotable (arg->child[0]->type,
+                        (fn->sigs[0].par_ty)[a]);
+                if (!match)
+                    break;
 
-		  arg = arg->child[1];
-		  assert (arg);
-	     }
+                arg = arg->child[1];
+                assert (arg);
+            }
 
-	     /* yes, return this function (its the most specific match) */
-	     /* and it has the same number of arguments */
-	     if (match && arg->kind == c_nil)
-		  return fn;
-	}
-	else
-	     /* function with multiple signatures (dynamic overloading).
-	      * Type checking is a little bit tricky and is done in
-	      * specific. We assume that this is always the right function.
-	      */
-	     return fn;
+            /* yes, return this function (its the most specific match) */
+            /* and it has the same number of arguments */
+            if (match && arg->kind == c_nil)
+                return fn;
+        }
+        else
+            /* function with multiple signatures (dynamic overloading).
+             * Type checking is a little bit tricky and is done in
+             * specific. We assume that this is always the right function.
+             */
+            return fn;
     }
  
     fun_not_found (qn, args);

@@ -803,9 +803,9 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
 
-	    L(p)->sem.apply.fun->sig_count = 1;
-	    L(p)->sem.apply.fun->sigs =  
-	        (PFfun_sig_t *) PFmalloc (sizeof (PFfun_sig_t));
+            L(p)->sem.apply.fun->sig_count = 1;
+            L(p)->sem.apply.fun->sigs =  
+                (PFfun_sig_t *) PFmalloc (sizeof (PFfun_sig_t));
 	    
             L(p)->sem.apply.fun->sigs[0].par_ty = parameter_types (LLL(p));
             L(p)->sem.apply.fun->sigs[0].ret_ty = C(LLR(p))->sem.type;
