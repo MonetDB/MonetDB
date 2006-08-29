@@ -1,6 +1,7 @@
 add_dbl
 add_int
 concatStr
+echoVoid
 missing_param
 multi_clnt
 returnAncestor
@@ -14,3 +15,7 @@ returnParent
 returnPreceding
 returnPrecedingSibling
 returnSelf
+testEmptySeq1
+testEmptySeq2
+testEmptySeq3
+testEmptySeq4

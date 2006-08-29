@@ -6052,13 +6052,13 @@ translateUDF (opt_t *f, int cur_level, int counter,
     if (apply.rpc_uri != NULL)
     {
         /* The extra parameter 'dst' of an RPC call is not listed in
-         * fun->params[], so translate it separately. */
+         * fun->params[], so translate it separately. 
+         * 'rpc_iter' contains the real total number of iterations. */
         milprintf(f, 
                 "\n# begin of translate the 'dst' param of RPC call\n"
-                "var rpc_vid  := bat(oid,oid);\n"
-                "var rpc_iter := bat(oid,oid);\n"
-                "var rpc_item := bat(oid,oid);\n"
-                "var rpc_dsts := bat(oid,str);\n");
+                "var rpc_iter := bat(void,oid).seqbase(0@0);\n"
+                "var rpc_item := bat(void,oid).seqbase(0@0);\n"
+                "var rpc_dsts := bat(void,str).seqbase(0@0);\n");
 
         dst_args = L(args);
         while (dst_args && dst_args->kind != c_nil){
@@ -6067,7 +6067,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 milprintf(f, 
                         "iter     := iter.materialize(ipik);\n"
                         "item     := item.materialize(ipik);\n"
-                        "rpc_vid  := rpc_vid.append(iter.project(oid(%iLL)));\n"
                         "rpc_iter := rpc_iter.append(iter);\n"
                         "rpc_item := rpc_item.append(item);\n",
                         i);
@@ -6076,8 +6075,12 @@ translateUDF (opt_t *f, int cur_level, int counter,
             i++;
             dst_args = R(dst_args);
         }
+        /* retrieve all destination strings from str_values as indicated
+         * in rpc_item, and assign each dst the right iteration nr. */
         milprintf(f, 
                 "rpc_dsts := rpc_item%s;\n"
+                /* rpc_dsts now becomes [oid,str], with the iter numbers
+                 * in its head column */
                 "rpc_dsts := rpc_iter.reverse().join(rpc_dsts);\n"
                 "# end of translate the 'dst' param of RPC call\n",
                 val_join(STR));
@@ -6162,10 +6165,19 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "\n"
                 "{ # begin of RPC call\n"
                 "  module(\"xrpc\");\n"
-                "  var nr_iters := count(rpc_iter); # a simple estimation\n"
-                "  var res := doLoopLiftedRPC(nr_iters, genType, \"%s\", \"%s\", \"%s\", ws, rpc_dsts,\n"
-                "                 fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,\n"
-                "                 int_values, dbl_values, dec_values, str_values);\n"
+                "  var iterc_total := count(int(rpc_iter));\n"
+                /* remove the base number of fun_vid-s, in XRPC request
+                 * message, we need the _position_ of each non-empty
+                 * parameters. */
+                "  fun_vid%03u := ([-](fun_vid%03u.[lng](), fun_base%03u)).[oid]();\n"
+                "  var res := doLoopLiftedRPC(genType,\n"
+                "                             \"%s\", \"%s\", \"%s\",\n"
+                "                             iterc_total, %d,\n"
+                "                             ws, rpc_dsts,\n"
+                "                             fun_vid%03u, fun_iter%03u,\n"
+                "                             fun_item%03u, fun_kind%03u,\n"
+                "                             int_values, dbl_values,\n"
+                "                             dec_values, str_values);\n"
 
                 "  iter := res.fetch(0);\n"
                 "  item := res.fetch(1);\n"
@@ -6181,7 +6193,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "    }\n"
                 "  }\n"
                 "} # end of RPC call\n",
-                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
+                counter, counter, counter,
+                apply.fun->qname.ns.uri, apply.rpc_uri,
+                apply.fun->qname.loc,    apply.fun->arity,
                 counter, counter, counter, counter);
     } else {
         /* call the proc */

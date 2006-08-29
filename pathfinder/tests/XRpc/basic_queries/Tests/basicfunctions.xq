@@ -6,21 +6,16 @@ declare function func:convert($v as xs:decimal?) as xs:decimal?
     2.20371 * $v
 };
 
-declare function func:testEmptySeq($v1 as xs:string*, $v2 as
-xs:anyNode*, $v3 as xs:integer*)
-{
-    ()
-};
-
-declare function func:add($v1 as xs:decimal, $v2 as xs:decimal*) as 
-xs:decimal* 
+declare function func:add($v1 as xs:decimal, 
+                          $v2 as xs:decimal*) as xs:decimal* 
 {
     let $res := $v1 
     for $i in $v2  
         return $res + $i 
 }; 
 
-declare function func:concatStr($v1 as xs:string, $v2 as xs:string) as xs:string
+declare function func:concatStr($v1 as xs:string, 
+                                $v2 as xs:string) as xs:string
 {
     concat($v1, $v2)
 };
@@ -89,4 +84,16 @@ declare function func:returnSelf($v as xs:anyNode*)
     as xs:anyNode*
 { 
     $v/self::node()
+};
+
+declare function func:echoVoid()
+{
+    ()
+};
+
+declare function func:echoVoidWithParams($v1 as xs:string*, 
+                                         $v2 as xs:anyNode*, 
+                                         $v3 as xs:integer*)
+{
+    ()
 };

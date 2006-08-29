@@ -1682,10 +1682,20 @@ xquery_sig_match(xquery_sig *sig, int argc, int* mincnt, int* maxcnt, int *argtp
     for(i=0; i < argc; i++) {
         if (mincnt[i] == 0 && !(sig->zero & (1<<i))) return 0; 
         if (maxcnt[i] > 1 && !(sig->multiple & (1<<i))) return 0; 
-        tpe[i] = argtpe[i];
-        while(sig->tpe[i] != tpe[i]) {
-            if (tpe[i] >= XQUERY_TYPES) return 0;
-            tpe[i] = xquery_types[tpe[i]].parent;
+        /* If (argtpe[i] == -1), then the actual value of this parameter
+         * is an empty sequence.
+         * If the actual value of this parameter is an empty sequence,
+         * and this parameter can be an empty sequence, we _should not_
+         * check the parameter type, instead, we copy the type
+         * information from the function signature into 'tpe' */
+        if (argtpe[i] == -1 && (sig->zero & (1<<i))) {
+            tpe[i] = sig->tpe[i];
+        } else {
+            tpe[i] = argtpe[i];
+            while(sig->tpe[i] != tpe[i]) {
+                if (tpe[i] >= XQUERY_TYPES) return 0;
+                tpe[i] = xquery_types[tpe[i]].parent;
+            }
         }
     }
     for(i=0; i< argc; i++) {
@@ -1842,11 +1852,10 @@ xquery_function_call(xquery_client *ctx,
     @:seqbase(loop000, oid_nil, "oid(nil)")@
 
     for(l=j=0; j<itercnt; j++) {
+        oid iter = j + 1;
+        @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
         for(i=0; i<argc; i++) {
-            oid item, vid = i + fun->vid, iter = j+1;
-            if (i == 0 && j > 0) {
-                @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
-            }
+            oid item, vid = i + fun->vid;
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
                 char c;
@@ -1907,7 +1916,7 @@ xquery_function_call(xquery_client *ctx,
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
 /*
-        if (strstr(*(ctx->genType), "rpcservertime") != NULL) {
+        if (strstr(*(ctx->genType), "rpcdtime") != NULL) {
            printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
            printf("\tTrans: %d msec\n", (*ctx->time_compile) );
            printf("\tShred: %d msec\n", (*ctx->time_shred) );
@@ -3094,7 +3103,7 @@ xquery_method(stream *out,
     ctx->mode = 0;
 
     if (rpctiming){
-        mode = "timing-rpcservertime-xml-noheader-soap-root-iter";
+        mode = "timing-rpcdtime-xml-noheader-soap-root-iter";
     }
     err = xquery_change_genType(ctx, mode);
     if (err) return err;

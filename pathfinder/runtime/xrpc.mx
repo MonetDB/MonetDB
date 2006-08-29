@@ -49,20 +49,22 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
 @- HTTP client function(s)
 @m
 .COMMAND http_post(
-        str mode,
-        str location,
+        str options,
+        str dst,
         str rpc_module,
         str rpc_uri,
         str rpc_method,
-        BAT[oid, bat] ws,
-        BAT[oid, oid] fun_vid,
-        BAT[oid, oid] fun_iter,
-        BAT[oid, oid] fun_item,
-        BAT[oid, int] fun_kind,
-        BAT[oid, lng] int_values,
-        BAT[oid, dbl] dbl_values,
-        BAT[oid, dbl] dec_values,
-        BAT[oid, str] str_values) : BAT[oid, bat] = CMDhttp_post;
+        lng itercnt,
+        int arity,
+        BAT[void, bat] ws,
+        BAT[void, oid] fun_vid,
+        BAT[void, oid] fun_iter,
+        BAT[void, oid] fun_item,
+        BAT[void, int] fun_kind,
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values,
+        BAT[void, dbl] dec_values,
+        BAT[void, str] str_values) : BAT[void, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
 .PRELUDE = xrpc_prelude;
@@ -100,22 +102,25 @@ Start XPRC receiver on the default port as specified in \"monet_environment\" by
 
 PROC rpc_client(
         str local_name,
-        str mode,
-        str location,
+        str options,
+        str dst,
         str rpc_module,
         str rpc_uri,
         str rpc_method,
-        BAT[oid, bat] ws,
-        BAT[oid, oid] fun_vid,
-        BAT[oid, oid] fun_iter,
-        BAT[oid, oid] fun_item,
-        BAT[oid, int] fun_kind,
-        BAT[oid, lng] int_values,
-        BAT[oid, dbl] dbl_values,
-        BAT[oid, dbl] dec_values,
-        BAT[oid, str] str_values) : oid {
+        lng iterc,
+        int arity,
+        BAT[void, bat] ws,
+        BAT[void, oid] fun_vid,
+        BAT[void, oid] fun_iter,
+        BAT[void, oid] fun_item,
+        BAT[void, int] fun_kind,
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values,
+        BAT[void, dbl] dec_values,
+        BAT[void, str] str_values) : oid {
 
-    var rpcres := http_post(mode, location, rpc_module, rpc_uri, rpc_method, ws, 
+    var rpcres := http_post(options, dst, rpc_module, rpc_uri, rpc_method,
+                            iterc, arity, ws, 
                             fun_vid,    fun_iter,   fun_item,   fun_kind,
                             int_values, dbl_values, dec_values, str_values);
 
@@ -131,21 +136,20 @@ PROC rpc_client(
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\
-Send a RPC request to the destination \"location\", save the reults in the WorkingSet and return the fragment-id of the new added document",
+Send a RPC request to the destination \"dst\", save the reults in the WorkingSet and return the fragment-id of the new added document",
 "xrpc");
 
 PROC get_rpc_res ( 
         oid cont, 
         str local_name, 
-        int nr_iters,
-        BAT[oid, bat] ws, 
-        BAT[oid, lng] int_values,
-        BAT[oid, dbl] dbl_values, 
-        BAT[oid, str] str_values) : BAT[void, bat]
+        BAT[void, bat] ws, 
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values, 
+        BAT[void, str] str_values) : BAT[void, bat]
 {
-    var res_iter := bat(void,oid,nr_iters).seqbase(0@0);
-    var res_item := bat(void,oid,nr_iters).seqbase(0@0);
-    var res_kind := bat(void,int,nr_iters).seqbase(0@0);
+    var res_iter := bat(void,oid).seqbase(0@0);
+    var res_item := bat(void,oid).seqbase(0@0);
+    var res_kind := bat(void,int).seqbase(0@0);
     
     # get values out of WS for later use
     var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
@@ -253,32 +257,28 @@ This proc is used to retrieve the return values of RPC call(s), which are tempor
 "xrpc");
 
 PROC doLoopLiftedRPC(
-        int nr_iters,
         str options,
         str rpc_module,
         str rpc_uri,
         str rpc_method,
-        BAT[oid,bat] ws,
-        BAT[oid,str] rpc_dsts,
-        BAT[oid,oid] fun_vid,
-        BAT[oid,oid] fun_iter,
-        BAT[oid,oid] fun_item,
-        BAT[oid,int] fun_kind,
-        BAT[oid,lng] int_values,
-        BAT[oid,dbl] dbl_values,
-        BAT[oid,dbl] dec_values,
-        BAT[oid,str] str_values) : BAT[void,bat]
+        lng iterc_total,
+        int arity,
+        BAT[void, bat] ws,
+        BAT[oid, str] rpc_dsts,
+        BAT[void, oid] fun_vid,
+        BAT[void, oid] fun_iter,
+        BAT[void, oid] fun_item,
+        BAT[void, int] fun_kind,
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values,
+        BAT[void, dbl] dec_values,
+        BAT[void, str] str_values) : BAT[void,bat]
 {
-    var rpc_timing := str(nil);
-    if (options.search("rpctime") >= 0) {
-        rpc_timing := "rpctime";
-    } else {
-        rpc_timing := "";
-    }
     var mylock := lock_create();
 
     var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);
     var steps := rpc_unq_dsts.count();
+    var iterc := iterc_total / steps; # we assume the same #iterations to each dst
     var rpc_results := bat(str,oid);
     var rpc_iter := bat(void,bat).seqbase(0@0);
 
@@ -306,8 +306,9 @@ PROC doLoopLiftedRPC(
 
         var rpc_err := CATCH(
         {
-            rpc_oid := rpc_client(local_name, rpc_timing, $t,
-                            rpc_module, rpc_uri, rpc_method, ws,
+            rpc_oid := rpc_client(local_name, options, $t,
+                            rpc_module, rpc_uri, rpc_method, 
+                            iterc, arity, ws,
                             fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst, 
                             int_values, dbl_values, dec_values, str_values);
         });
@@ -327,9 +328,11 @@ PROC doLoopLiftedRPC(
     }
     lock_destroy(mylock);
 
-    # retrieve results for this destination, and map the results back to the original iteration number
-    var proc_res := [get_rpc_res](rpc_results.tmark(0@0), rpc_results.hmark(0@0), nr_iters, const ws,
-                                  const int_values, const dbl_values, const str_values);
+    # retrieve results for this destination, and map the results back to
+    # the original iteration number
+    var proc_res := [get_rpc_res](rpc_results.tmark(0@0), rpc_results.hmark(0@0), 
+                                  const ws, const int_values, const dbl_values, 
+                                  const str_values);
     var res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
     var res_item := proc_res.[fetch](1);
     var res_kind := proc_res.[fetch](2);
@@ -441,7 +444,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 
 /* To prevent start the HTTP server twice */
 int rpcd_running = 0;
-int servertiming = 0;
+int rpcd_time = 0;
 
 #endif /* XQUERY_RPC_H */
 
@@ -451,23 +454,23 @@ int servertiming = 0;
 /* Create a HTTP client socket.
  * Returns the socket if succeeded, -1 otherwise.
  */
-static int setup_connection(str location, int port, int nr_retries) {
+static int setup_connection(str dst, int port, int nr_retries) {
     int i, ret, sock;
     struct in_addr addr;
     struct sockaddr_in sockaddr;
     struct hostent *resolv = NULL;
 
     errno = 0;
-    if (isdigit((int)location[0])) {
-        if ((i = inet_addr(location)) < 0) {
-            GDKerror("setup_connection: invalid IP address \"%s\"\n", location);
+    if (isdigit((int)dst[0])) {
+        if ((i = inet_addr(dst)) < 0) {
+            GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
             if (errno) GDKerror("setup_connection: %s\n", strerror(errno));
             return -1;
         }
         addr.s_addr = (unsigned) i;
     } else {
-        if (!(resolv = gethostbyname(location))) {
-            GDKerror("setup_connection: invalid IP address \"%s\"\n", location);
+        if (!(resolv = gethostbyname(dst))) {
+            GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
             if (errno) GDKerror("setup_connection: %s\n", strerror(errno));
             return -1;
         }
@@ -492,7 +495,7 @@ static int setup_connection(str location, int port, int nr_retries) {
        
     if (ret < 0) {
         GDKerror("setup_connection: could not setup connection with "
-                "%s:%d\n", location, port);
+                "%s:%d\n", dst, port);
         close(sock);
         return -1;
     }
@@ -624,7 +627,8 @@ static char* get_type(oid tnode_pre, oid *pre_prop, BAT *qn_loc, BAT* qn_prefix)
 }
 
 static int handle_rpc_request(struct shttpd_callback_arg *arg) {
-    int i = 0, j = 0, k = 0, off = 0, sock = -1, retval = GDK_FAIL;
+    int sock = -1, retval = GDK_FAIL;
+    size_t i = 0, j = 0, k = 0, off = 0; 
     char *strptr = NULL, *req_msg = NULL;
     char *module = NULL, *uri = NULL, *method = NULL;
     char errstr[1024];
@@ -646,7 +650,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
     /* used for invalidation of the pre_level and the pre_size values */
     oid l = 0, total_size;
-    unsigned int level_diff = 0; /* FIXME: should this variable be 'char'? */
+    unsigned int level_diff = 0;
 
     oid pre = 0, next_frag = 0;
     oid pnode_pre = 0, inode_pre = 0, tnode_pre = 0, vnode_pre = 0;
@@ -656,11 +660,11 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     int root_size = 0, pnode_size = 0, inode_size = 0, tnode_size = 0;
 
     int iterc = 0, argc = 0;
-    int **argcnt = NULL;    /* #items eash param/iter contains */
-    str *argval = NULL;     /* Stores all actual values sequetially. */
-    str *argtpe = NULL;     /* XQuery type of each argval */
-    int nr_args = 0;        /* #values arg_val currently contains */
-    int max_args = 0;       /* max #items in "argval", doubled if necessary */
+    int **argcnt = NULL; /* #items eash param/iter contains */
+    str *argval = NULL; /* Stores all actual values sequetially. */
+    str *argtpe = NULL; /* XQuery type of each argval */
+    size_t nr_args = 0; /* #values "argval" currently contains */
+    size_t max_args = GDK_int_max; /* max #values in "argval" */
     
     int time_servDeSeria = 0;
     
@@ -736,7 +740,6 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
             "XRPC request: \"SoapRpcRquest\" tag does not have a \"method\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-
     /* Calculate the number of iterations */
     iterc = count_node("iter", (pre+1), pre_size[0], pre_prop, pre_kind, qn_loc);
     if (iterc == 0) {
@@ -752,47 +755,56 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
     argcnt = GDKmalloc(iterc * sizeof(int*));
     if (!argcnt) {
-        snprintf(errstr, 1024, "Receiver internal error: not enough memory");
-        send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
+        snprintf(errstr, 1024, "Internal Receiver Error: not enough memory");
+        send_error(out, 1, "500 Internal Server Error", "env:Receiver", errstr);
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-    for (i = 0; i < iterc; i++) {
-        argcnt[i] = GDKmalloc(argc * sizeof(int));
+    for (i = 0; i < (unsigned)iterc; i++) {
+        /* we allocate _at least one_ argcnt for each parameter, so that
+         * we have a place to note that a function has zero parameter */
+        argcnt[i] = GDKmalloc((argc>0?argc:1) * sizeof(int));
         if (!argcnt[i]) {
-            snprintf(errstr, 1024, "Receiver internal error: not enough memory");
-            send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
+            snprintf(errstr, 1024, "Internal Receiver Error: not enough memory");
+            send_error(out, 1, "500 Internal Server Error", "env:Receiver", errstr);
             goto FINISH_HANDLE_RPC_REQUEST;
         }
+        argcnt[i][0] = 0;
+        for (j = 1; j < (unsigned)argc; j++) argcnt[i][j] = 0;
     }
     max_args = iterc * MAXPARAMS;
     argval = GDKmalloc(max_args * sizeof(char *));
     argtpe = GDKmalloc(max_args * sizeof(char *));
     if (!argval || !argtpe) {
-        snprintf(errstr, 1024, "Receiver internal error: not enough memory");
-        send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
+        snprintf(errstr, 1024, "Internal Receiver Error: not enough memory");
+        send_error(out, 1, "500 Internal Server Error", "env:Receiver", errstr);
         goto FINISH_HANDLE_RPC_REQUEST;
     }
    
     /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
     inode_pre = pre;
     root_size = pre_size[0];
-    for (i = 0; i < iterc; i++) {
+    for (i = 0; i < (unsigned)iterc; i++) {
         inode_pre  = get_node_pre("iter", (inode_pre + 1), root_size, pre_prop, pre_kind, qn_loc);
         inode_size = pre_size[inode_pre];
+        if (inode_size == 0) continue;
 
         pnode_pre = inode_pre;
-        for (j = 0; j < argc; j++) {
+        for (j = 0; j < (unsigned)argc; j++) {
             pnode_pre  = get_node_pre("param", (pnode_pre + 1), (inode_pre + inode_size), pre_prop, pre_kind, qn_loc);
             pnode_size = pre_size[pnode_pre];
+            if (pnode_size == 0) {
+                continue;
+            }
        
-            tnode_pre = pnode_pre + 1; argcnt[i][j] = 0; k = 1;
+            tnode_pre = pnode_pre + 1; k = 1;
             while(tnode_pre < (pnode_pre + pnode_size) && 
                     (tnode_pre = get_elem_pre(tnode_pre, (pnode_pre + pnode_size), pre_kind)) > 0){
                 tnode_size = pre_size[tnode_pre];
 
                 if (tnode_size <= 0) {
                     snprintf(errstr, 1024, "XRPC request [%s:%s]: "
-                            "iteration[%d]->parameter[%d]->value[%d] does not contain value\n",
+                            "iteration["SZFMT"]->parameter["SZFMT"]->value["SZFMT"]"
+                            "does not contain value\n",
                             module, method, (i + 1), (j + 1), k);
                     send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
                     goto FINISH_HANDLE_RPC_REQUEST;
@@ -808,8 +820,8 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 }
 
                 if ((argtpe[nr_args] = get_type(tnode_pre, pre_prop, qn_loc, qn_prefix)) == NULL) {
-                    snprintf(errstr, 1024, "Receiver internal error: not enough memory");
-                    send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
+                    snprintf(errstr, 1024, "Internal Receiver Error: not enough memory");
+                    send_error(out, 1, "500 Internal Server Error", "env:Receiver", errstr);
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
@@ -818,8 +830,8 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                     vnode_pre = get_elem_pre(vnode_pre, (tnode_pre + tnode_size), pre_kind);
                     argval[nr_args] = GDKmalloc(32);
                     if (!argval[nr_args]) {
-                        snprintf(errstr, 1024, "Receiver internal error: not enough memory");
-                        send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
+                        snprintf(errstr, 1024, "Internal Receiver Error: not enough memory");
+                        send_error(out, 1, "500 Internal Server Error", "env:Receiver", errstr);
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
                     snprintf(argval[nr_args], 32, OIDFMT, vnode_pre);
@@ -841,7 +853,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 } else {
                     if (pre_kind[vnode_pre] != PFTEXT) {
                         snprintf(errstr, 1024, "XRPC request [%s:%s]: "
-                                "iteration[%d]->parameter[%d]->value[\"%d\"] "
+                                "iteration["SZFMT"]->parameter["SZFMT"]->value["SZFMT"] "
                                 "of type[\"%s\"] is expected to have a simple value.\n",
                                 module, method, (i + 1), (j + 1), k, argtpe[nr_args]);
                         send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
@@ -860,18 +872,21 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     /* (start_invalidate > 0) => there is at least one node parameter in
      * the request message, so invalidate all pre_level and pre_size
      * values after the last node parameter, if any. */
+    /* this might not be necessary anymore */
+    /*
     if (start_invalidate > 0 && start_invalidate < total_size){
         for (l = start_invalidate; l < total_size; l++){
             pre_level[l] = pre_level[0];
             pre_size[l] = 0;
         }
     }
+    */
+
     /* Stop timing Server DeSerialisation */
     time_servDeSeria = GDKms() - time_servDeSeria;
 
     /* write out our response */
-    if (stream_printf(out,
-                "HTTP/1.1 200 OK\r\n"
+    if (stream_printf(out, "HTTP/1.1 200 OK\r\n"
                 "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
                 "<?xml version='1.0' ?>\n"
                 "<env:Envelope\n"
@@ -885,7 +900,9 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 module, uri, method) >= 0)
     {
         /* Start timing Server Application */
-        char *err = xquery_method(out, servertiming, module, uri, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
+        char *err = xquery_method(out, rpcd_time, module, uri, method,
+                                  argc, iterc, argcnt, argtpe, argval,
+                                  shredBAT);
         /* Start timing Server Application */
 
         if (err) {
@@ -895,7 +912,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
         stream_printf(out, "</XRPC-Result>\n</env:Body>\n</env:Envelope>\n");
     }
 
-    if (servertiming){
+    if (rpcd_time){
         printf("Server_DeSerialisation: %d msec\n", time_servDeSeria);
     }
 
@@ -904,18 +921,20 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
 FINISH_HANDLE_RPC_REQUEST:
     cleanup(out,0);
-    myfree(argcnt, i, iterc);
+    myfree(argcnt, i, (unsigned)iterc);
     myfree(argtpe, i, nr_args)
     if (argval) GDKfree(argval);
     return retval;
 }
 
 int CMDhttp_post(BAT **res,
-                 str mode,
-                 str location,
+                 str options,
+                 str dst,
                  str rpc_module,
                  str rpc_uri,
                  str rpc_method,
+                 lng* itercnt,
+                 int* arity,
                  BAT* ws,
                  BAT* fun_vid,
                  BAT* fun_iter,
@@ -936,11 +955,11 @@ int CMDhttp_post(BAT **res,
     BUN p_vid, p_iter, p_item, p_kind; /* Pointers to the current BUNs of the BATs. */
     str str_val = NULL;
 
-    oid i, a, nr_args = 0, max_args = 0;
-    oid argc = 0, argc_base = 0, my_argc = 0;
-    oid iterc = 0, iter_base = 0, my_iter = 0;
-    oid itemc = 0, arg_offset = 0;
-    oid **argcnt = NULL;    /* #items eash [iter][param] contains */
+    size_t i, a, nr_args = 0, max_args = 0;
+    size_t argc = *(size_t*)arity, my_argc = 0;
+    size_t iterc = *(size_t*)itercnt, my_iter = 0;
+    size_t arg_offset = 0;
+    int **argcnt = NULL;    /* #items eash [iter][param] contains */
 
     int time_clntSeria = 0;
     int time_clnt2Serv = 0;
@@ -966,11 +985,11 @@ int CMDhttp_post(BAT **res,
     ERRORcheck(!BAThdense(str_values),
                "http_post: head of BAT str_values must be dense.\n");
 
-    if ((strptr = strchr(location, (int)':')) != NULL) {
+    if ((strptr = strchr(dst, (int)':')) != NULL) {
         strptr[0] = '\0'; strptr++;
         port = atoi(strptr);
     }
-    if ((sock = setup_connection(location, port, NR_RETRIES)) < 0) {
+    if ((sock = setup_connection(dst, port, NR_RETRIES)) < 0) {
         goto FINISH_HTTP_POST;
     }
     if (!(out = socket_wastream(sock, "http_send"))) {
@@ -999,35 +1018,33 @@ int CMDhttp_post(BAT **res,
             "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
             "<env:Body>\n"
             "<XRPC-Request\n"
+            "    qid=\"%d\"\n"  /* temporarily, just a random number */
             "    module=\"%s\"\n"
             "    uri=\"%s\"\n"
             "    method=\"%s\">\n",
-            rpc_module, rpc_uri, rpc_method);
+            rand(), rpc_module, rpc_uri, rpc_method);
 
-    /* Find the number of parameters and iterations. */
-    argc  = *(oid*)BUNtail(fun_vid, BUNprev(fun_vid, BUNlast(fun_vid)) ) - *(oid*)BUNtail(fun_vid,BUNfirst(fun_vid)) + 1;
-    iterc = *(oid*)BUNtail(fun_iter,BUNprev(fun_iter,BUNlast(fun_iter)));
-
-    if (!(argcnt = GDKmalloc(iterc * sizeof(oid*)))) {
+    if (!(argcnt = GDKmalloc(iterc * sizeof(int*)))) {
         GDKerror("CMDhttp_post: failed to malloc argcnt\n");
         goto FINISH_HTTP_POST;
     }
     for (i = 0; i < iterc; i++) {
-        if (!(argcnt[i] = GDKmalloc(argc * sizeof(oid)))) {
-            GDKerror("CMDhttp_post: failed to malloc argcnt[" OIDFMT "]\n", i);
+        /* we allocate at least _one_ argcnt for each parameter, so that
+         * we have a place to note that a function has zero parameter */
+        if (!(argcnt[i] = GDKmalloc((argc>0?argc:1) * sizeof(int)))) {
+            GDKerror("CMDhttp_post: failed to malloc argcnt[" SZFMT "]\n", i);
             goto FINISH_HTTP_POST;
         }
-        for (a = 0; a < argc; a++) {
+        argcnt[i][0] = 0;
+        for (a = 1; a < argc; a++) {
             argcnt[i][a] = 0;
         }
     }
     max_args = iterc * MAXPARAMS;
 
-    /* Calculate the number of items contained by every parameter of
+    /* Calculate the number of values contained by every parameter of
      * every iteration. */
     i = a = 0; /* i: iter counter; a: arg counter */
-    iter_base = *(oid*) BUNtail(fun_iter, BUNfirst(fun_iter));
-    argc_base = *(oid*) BUNtail(fun_vid, BUNfirst(fun_vid));
     for (p_vid  = BUNfirst(fun_vid),  p_iter = BUNfirst(fun_iter),
          p_item = BUNfirst(fun_item), p_kind = BUNfirst(fun_kind);
 
@@ -1039,97 +1056,101 @@ int CMDhttp_post(BAT **res,
          p_item = BUNnext(fun_item, p_item),
          p_kind = BUNnext(fun_kind, p_kind)) {
 
+        i = *(size_t*) BUNtail(fun_iter, p_iter);
+        a = *(size_t*) BUNtail(fun_vid, p_vid);
+        argcnt[i-1][a]++;
+        nr_args++;
         if (nr_args == max_args) {
             GDKerror("CMDhttp_post: too many parameters.\n");
             goto FINISH_HTTP_POST;
         }
-
-        i = *(oid*) BUNtail(fun_iter, p_iter);
-        a = *(oid*) BUNtail(fun_vid, p_vid);
-        argcnt[i - iter_base][a - argc_base]++;
-        nr_args++;
     }
     max_args = nr_args; /* actual number of argval-s */
     nr_args = 0;
 
     for (my_iter = 0; my_iter < iterc; my_iter++) {
-        if (argcnt[my_iter][0] > 0) {
-            /* Enlarge the buffer is it is filled more than 80%.
-             * FIXME: is this really necessary? Or should we just return an
-             * error?
-             */
-            if (b->pos > (b->len * 0.8)) {
-                b->len *= 2;
-                b->buf = realloc(b->buf, b->len);
+        if (argc == 0) {
+            str2buf(b, "<iter/>\n");
+            continue;
+        }
+
+        /* Enlarge the buffer if it is filled more than 80%.
+         * FIXME: is this really necessary? Or should we just return an
+         * error?
+         */
+        if (b->pos > (b->len * 0.8)) {
+            b->len *= 2;
+            b->buf = realloc(b->buf, b->len);
+        }
+
+        /* start an iteration */
+        str2buf(b, "<iter>\n");
+        for (my_argc = 0; my_argc < argc; my_argc++) {
+            if (argcnt[my_iter][my_argc] == 0) {
+                str2buf(b, "<param/>\n");
+                continue;
             }
+            arg_offset = 0;
+            /* add the 'argcnt' of all arg-s before 'me': */
+            for (a = 0; a < my_argc; a++) {
+                for (i = 0; i < iterc; i++)
+                    arg_offset += argcnt[i][a];
+            }
+            /* add the 'argcnt' of iter-s before 'me': */
+            for (i = 0; i < my_iter; i++) {
+                arg_offset += argcnt[i][my_argc];
+            }
+            /* now 'arg_offset' contains the start position of the
+             * values of my_iter and my_argc in the fun_* BATs */
 
-            str2buf(b, "<iter>\n");
-
-            for (my_argc = 0; my_argc < argc; my_argc++) {
-                str2buf(b, "<param>\n");
-
-                arg_offset = 0;
-                /* add the 'argcnt' of all arg-s before 'me': */
-                for (a = 0; a < my_argc; a++) {
-                    for (i = 0; i < iterc; i++) {
-                        arg_offset += argcnt[i][a];
-                    }
-                }
-                /* add the 'argcnt' of iter-s before 'me': */
-                for (i = 0; i < my_iter; i++) {
-                    arg_offset += argcnt[i][my_argc];
-                }
-                /* now 'arg_offset' contains the index of the values and the
-                 * types of MY iter and MY argc in argval and argtpe */
-
-                for (itemc = 0; itemc < argcnt[my_iter][my_argc]; itemc++) {
-                    /* index into fun_item|fun_kind */
-                    a = arg_offset + itemc;
-                    type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
-                    if (type > WS_SIZE) {
-                        str2buf(b, "<xs:anyNode>\n");
-
-                        node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
-                                BUNhead(fun_item, BUNptr(fun_item, a)),
-                                BUNtail(fun_item, BUNptr(fun_item, a)), FALSE);
-                        node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
-                                BUNhead(fun_kind, BUNptr(fun_kind, a)),
-                                BUNtail(fun_kind, BUNptr(fun_kind, a)), FALSE);
-                        if (!(bs = buffer_wastream(b, "shred_node_param"))) {
-                            GDKerror("CMDhttp_post: failed to create buffer_wastream"
-                                    " to shred node parameter\n");
-                            goto FINISH_HTTP_POST;
-                        }
-                        THRsetdata(0, bs);
-                        xquery_print_result_main("xml-noheader-noroot", ws,
-                                node_item, node_kind, int_values,
-                                dbl_values, dec_values, str_values);
-                        THRsetdata(0, bak);
-
-                        str2buf(b, "</xs:anyNode>\n");
-                    } else if (type == BOOL) {
-                        value2buf(b, len, strptr, fun_item, a, i, TYPE_bit, int_values, "<xs:bool>", "</xs:bool>\n");
-                    } else if (type == INT) {
-                        value2buf(b, len, strptr, fun_item, a, i, TYPE_int, int_values, "<xs:integer>", "</xs:integer>\n");
-                    } else if (type == DEC) {
-                        value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:decimal>", "</xs:decimal>\n");
-                    } else if (type == DBL) {
-                        value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:double>", "</xs:double>\n");
-                    } else if (type == STR || type == U_A) {
-                        i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
-                        str_val = BUNtail(str_values, BUNptr(str_values, i));
-                        b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                                "<xs:string>\"%s\"</xs:string>\n", str_val);
-                    } else {
-                        GDKerror("CMDhttp_post: iter%d/param%d/item%d  has invalid type %d\n",
-                                my_iter, my_argc, i);
+            /* start a parameter */
+            str2buf(b, "<param>");
+            int k;
+            for (k= 0; k < argcnt[my_iter][my_argc]; k++) {
+                /* index into fun_item|fun_kind */
+                a = arg_offset + k;
+                type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
+                if (type > WS_SIZE) {
+                    str2buf(b, "<xs:anyNode>");
+                    node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
+                            BUNhead(fun_item, BUNptr(fun_item, a)),
+                            BUNtail(fun_item, BUNptr(fun_item, a)), FALSE);
+                    node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
+                            BUNhead(fun_kind, BUNptr(fun_kind, a)),
+                            BUNtail(fun_kind, BUNptr(fun_kind, a)), FALSE);
+                    if (!(bs = buffer_wastream(b, "shred_node_param"))) {
+                        GDKerror("CMDhttp_post: failed to create buffer_wastream"
+                                " to shred node parameter\n");
                         goto FINISH_HTTP_POST;
                     }
+                    THRsetdata(0, bs);
+                    xquery_print_result_main("xml-noheader-noroot", ws,
+                            node_item, node_kind, int_values,
+                            dbl_values, dec_values, str_values);
+                    THRsetdata(0, bak);
+                    str2buf(b, "</xs:anyNode>");
+                } else if (type == BOOL) {
+                    value2buf(b, len, strptr, fun_item, a, i, TYPE_bit, int_values, "<xs:bool>", "</xs:bool>");
+                } else if (type == INT) {
+                    value2buf(b, len, strptr, fun_item, a, i, TYPE_int, int_values, "<xs:integer>", "</xs:integer>");
+                } else if (type == DEC) {
+                    value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:decimal>", "</xs:decimal>");
+                } else if (type == DBL) {
+                    value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:double>", "</xs:double>");
+                } else if (type == STR || type == U_A) {
+                    i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    str_val = BUNtail(str_values, BUNptr(str_values, i));
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                            "<xs:string>\"%s\"</xs:string>", str_val);
+                } else {
+                    GDKerror("CMDhttp_post: iter%d/param%d/item%d  has invalid type %d\n",
+                            my_iter, my_argc, i);
+                    goto FINISH_HTTP_POST;
                 }
-                str2buf(b, "</param>\n");
             }
-            str2buf(b, "</iter>\n");
+            str2buf(b, "</param>\n");
         }
+        str2buf(b, "</iter>\n");
     }
     str2buf(b, "</XRPC-Request>\n</env:Body>\n</env:Envelope>\n");
     b->buf[b->pos] = 0;
@@ -1146,7 +1167,7 @@ int CMDhttp_post(BAT **res,
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
             "Content-Length: " SZFMT "\r\n\r\n"
             "%s",
-            HTTPD_FUNC, location, b->pos, b->buf);
+            HTTPD_FUNC, dst, b->pos, b->buf);
     if (bytes_sent < b->pos) {
         GDKerror("CMDhttp_post: failed to send XRPC request.");
         goto FINISH_HTTP_POST;
@@ -1221,7 +1242,7 @@ FINISH_HTTP_POST:
     }
 
     time_clntDeSeria = GDKms() - time_clntDeSeria;
-    if ((strstr(mode, "rpctime") != NULL) && (retval == GDK_SUCCEED)) {
+    if ((strstr(options, "rpctime") != NULL) && (retval == GDK_SUCCEED)) {
         printf("\n");
         printf("Client_Serialisation: %d msec\n", time_clntSeria);
         printf("Network_Client_2_Server: %d msec\n", time_clnt2Serv);
@@ -1243,10 +1264,10 @@ int CMDhttpd_start(int* port, str option) {
         return GDK_FAIL;
     }
     */
-    if (option && strstr(option, "rpcservertime") != NULL){
-        servertiming = 1;
+    if (option && strstr(option, "rpcdtime") != NULL){
+        rpcd_time = 1;
     } else {
-        servertiming = 0;
+        rpcd_time = 0;
     }
 
     if (!rpcd_running) {
