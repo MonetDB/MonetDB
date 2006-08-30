@@ -100,7 +100,7 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 .COMMAND {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggrX3_count3;
 	"grouped count; ignores nil values iff ignore_nils==TRUE"
 
-.COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_size;
+.COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggrX3_size;
 	"grouped count of true values"
 
 .END aggrX3;
@@ -130,11 +130,11 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
     ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
     "short-cut for {count}(b,g,e,TRUE)", "aggrX3");
 
-    proc size(BAT[any,bit] b) : int {
+    proc size(BAT[any,bit] b) : wrd {
 	var h := b.histogram();
 	if (h.exist(true))
-	    return h.find(true);
-	return 0;
+		return h.find(true).wrd(); # 64bit: when histogram() returns wrd, remove cast
+	return wrd(0);
     }
 
 @= sumprod_defaults
@@ -159,16 +159,16 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 @:sumprod_defaults(flt)@
 @:sumprod_defaults(dbl)@
 
-    proc card(BAT[any,any] b) : int {
-	return b.tunique().count();
+    proc card(BAT[any,any] b) : wrd {
+	return b.tunique().count().[wrd](); # 64bit: when count() returns wrd, remove cast
     }
 
-    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
-	return {count}(b.sunique(),e);
+    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,wrd] {
+	return {count}(b.sunique(),e).[wrd](); # 64bit: when count() returns wrd, remove cast
     }
 
-    proc {card}(BAT[oid,any] b, bat[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] {
-	return {count}(b.sunique(),g,e);
+    proc {card}(BAT[oid,any] b, bat[oid,oid] g, BAT[oid,any] e) : BAT[oid,wrd] {
+	return {count}(b.sunique(),g,e).[wrd](); # 64bit: when count() returns wrd, remove cast
     }
 
 @{
@@ -1074,8 +1074,8 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 int
 CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
-	int zero = 0;
+	BAT *bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
+	wrd zero = 0;
 	BUN p, q, r;
 	int xx;
 
@@ -1101,7 +1101,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 
 			BUNfndOID(r, bn, h);
 			if (r) {
-				int *dst = (int *) BUNtloc(bn, r);
+				wrd *dst = (wrd *) BUNtloc(bn, r);
 
 				(*dst)++;
 			}

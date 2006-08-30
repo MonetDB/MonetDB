@@ -882,9 +882,9 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		BATkey(BATmirror(bn), TRUE);
 	}
 	if (equi && tail) {
-		BATsetprop_int(bn, GDK_AGGR_CARD, BATcount(bn) > 0);
+		BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(bn) > 0));
 		if (b->ttype == TYPE_bit) {
-			BATsetprop_int(bn, GDK_AGGR_SIZE, (*(bit *) tl == TRUE) ? BATcount(bn) : 0);
+			BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) tl == TRUE) ? BATcount(bn) : 0);
 		}
 	}
 	if (equi && b->thash) {
@@ -1955,6 +1955,7 @@ BATmark(BAT *b, oid oid_base)
 BAT *
 BATnumber(BAT *b)
 {
+/* 64bit: BATnumber should return a [any,wrd] bat instead of [any,int] */
 	int i = 0, yy;
 	BAT *bn;
 	BUN r;
@@ -1968,7 +1969,7 @@ BATnumber(BAT *b)
 	yy = BUNsize(bn);
 	@:updateloop(bn,b,BUNnumber)@
 	ALIGNsetH(bn, b);
-	BATsetprop_int(bn, GDK_AGGR_CARD, i);
+	BATsetprop_wrd(bn, GDK_AGGR_CARD, i); /* 64bit: no (wrd) cast to remind us */
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
 	return bn;
@@ -1980,6 +1981,7 @@ BATnumber(BAT *b)
 BAT *
 BATgroup(BAT *b, int start, int incr, int grpsize)
 {
+/* 64bit: this should probably use wrd instead of int */
 	BUN p, q, r;
 	int ngroups = 1, i = 0, xx, yy;
 	BAT *bn;
@@ -2006,7 +2008,7 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 	}
 	if (i == 0)
 		ngroups--;
-	BATsetprop_int(bn, GDK_AGGR_CARD, ngroups);
+	BATsetprop_wrd(bn, GDK_AGGR_CARD, ngroups);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
 	return bn;
@@ -2045,9 +2047,9 @@ BATconst(BAT *b, int tailtype, ptr v)
 	}
 	ALIGNsetH(bn, b);
 	bn->tsorted = GDK_SORTED;
-	BATsetprop_int(bn, GDK_AGGR_CARD, BATcount(b) > 0);
+	BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(b) > 0));
 	if (tailtype == TYPE_bit) {
-		BATsetprop_int(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
+		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
 	}
 	return bn;
       bunins_failed:
@@ -2118,6 +2120,13 @@ BATgetprop_int(BAT *b, int idx)
 	return (p)?p->v.val.ival:int_nil;
 }
 
+wrd
+BATgetprop_wrd(BAT *b, int idx)
+{
+	PROPrec *p = BATgetprop(b, idx); 
+	return (p)?p->v.val.wval:wrd_nil;
+}
+
 const char *
 BATgetprop_str(BAT *b, int idx)
 {
@@ -2152,6 +2161,12 @@ void
 BATsetprop_int(BAT *b, int idx, int val)
 {
 	BATsetprop(b, idx, TYPE_int, &val);
+}
+
+void
+BATsetprop_wrd(BAT *b, int idx, wrd val)
+{
+	BATsetprop(b, idx, TYPE_wrd, &val);
 }
 
 void
@@ -2313,9 +2328,9 @@ by bulk copying the heap as well
 		bit trueval = TRUE;
 		BUN p = BUNfnd(bn, &trueval);
 
-		BATsetprop_int(b, GDK_AGGR_SIZE, p ? *(int *) BUNtloc(bn, p) : 0);
+		BATsetprop_wrd(b, GDK_AGGR_SIZE, p ? *(int *) BUNtloc(bn, p) : 0);
 	}
-	BATsetprop_int(b, GDK_AGGR_CARD, BATcount(bn));
+	BATsetprop_wrd(b, GDK_AGGR_CARD, BATcount(bn));
 	return bn;
 }
 

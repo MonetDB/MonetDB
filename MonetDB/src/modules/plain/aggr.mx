@@ -139,16 +139,16 @@ test scripts were added.
 
 .COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggr_count;
 	"grouped count; ignores nil values iff ignore_nils==TRUE"
-.COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_size;
+.COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggr_size;
 	"grouped count of true values"
 
-.COMMAND size(BAT[any,bit]) : int = CMDsize;
+.COMMAND size(BAT[any,bit]) : wrd = CMDsize;
         "return the number of true values in a tail column"
 .COMMAND hasNil(BAT[any,any]) : bit = CMDhasNil;
         "return if there is a nil value in the tail column"
-.COMMAND card(BAT[any,any]) : int = CMDcard_unlimited;
+.COMMAND card(BAT[any,any]) : wrd = CMDcard_unlimited;
         "return the number of different values in a tail column"
-.COMMAND card(BAT[any,any], int maxelements) : int = CMDcard;
+.COMMAND card(BAT[any,any], wrd maxelements) : wrd = CMDcard;
         "as card(b), but returns nil if card(b) > maxelements"
 
 .END aggr;
@@ -166,11 +166,11 @@ test scripts were added.
     ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
     "short-cut for {count}(b,e,TRUE)", "aggr");
 
-    proc size(BAT[any,bit] b) : int {
+    proc size(BAT[any,bit] b) : wrd {
 	var h := b.histogram();
 	if (h.exist(true))
-	    return h.find(true);
-	return 0;
+	    return h.find(true).wrd(); # 64bit: when histogram() returns wrd, remove cast
+	return wrd(0);
     }
 
     proc {sum}(BAT[oid, bte] b, bat[oid,any] e ) : BAT[oid,bte] {
@@ -216,8 +216,8 @@ test scripts were added.
     proc {prod}(BAT[oid, dbl] b, bat[oid,any] e ) : BAT[oid,dbl] {
 		return	 {prod_dbl}(b,e);
     }
-    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
-	return {count}(b.sunique(),e);
+    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,wrd] {
+	return {count}(b.sunique(),e).[wrd](); # 64bit: when count() returns wrd, remove cast
     }
 
     proc variance(BAT[any,any::1] b) : any::1 {
@@ -938,8 +938,8 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 int
 CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
-	int zero = 0;
+	BAT *bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
+	wrd zero = 0;
 	BUN p, q, r;
 	int xx;
 
@@ -965,7 +965,7 @@ CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 
 			BUNfndOID(r, bn, h);
 			if (r) {
-				int *dst = (int *) BUNtloc(bn, r);
+				wrd *dst = (wrd *) BUNtloc(bn, r);
 
 				(*dst)++;
 			}
@@ -976,17 +976,18 @@ CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 }
 
 int
-CMDsize(int *ret, BAT *b)
+CMDsize(wrd *ret, BAT *b)
 {
-	*ret = BATgetprop_int(b, GDK_AGGR_SIZE);
+	*ret = BATgetprop_wrd(b, GDK_AGGR_SIZE);
 	if (*ret < 0) {
 		bit *cur = (bit *) BUNtail(b, BUNfirst(b));
 		bit *end = (bit *) BUNtail(b, BUNlast(b));
-		int cnt, xx = BUNsize(b);
+		wrd cnt;
+		int xx = BUNsize(b);
 
 		for (cnt = 0; cur < end; cur += xx)
 			cnt += (*cur == TRUE);
-		BATsetprop_int(b, GDK_AGGR_SIZE, *ret = cnt);
+		BATsetprop_wrd(b, GDK_AGGR_SIZE, *ret = cnt);
 	}
 	return GDK_SUCCEED;
 }
@@ -1008,7 +1009,7 @@ CMDsize(int *ret, BAT *b)
 		}
 	} else {
 		/* default algorithm is hash based */
-		int yy = BUNindex(b, BUNfirst(b));
+		size_t yy = BUNindex(b, BUNfirst(b));
 		BAT *v = VIEWcreate(BATmirror(b));
 		Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
 		str nme = BBP_physical(v->batCacheid);
@@ -1069,25 +1070,25 @@ CMDsize(int *ret, BAT *b)
 @c
 
 int
-CMDcard(int *result, BAT *b, int *maxelements)
+CMDcard(wrd *result, BAT *b, wrd *maxelements)
 {
-	int maxsize = *maxelements, cursize = BATcount(b);
+	wrd maxsize = *maxelements, cursize = BATcount(b);
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		cursize = 1;
 	} else if (cursize > 1 && !b->tkey) {
-		cursize = BATgetprop_int(b, GDK_AGGR_CARD);
+		cursize = BATgetprop_wrd(b, GDK_AGGR_CARD);
 		if ((b->ttype == TYPE_chr || b->ttype == TYPE_bte) && *maxelements > 256) {
 			maxsize = 256;
 		} else if (b->ttype == TYPE_sht && *maxelements > 65536) {
 			maxsize = 65536;
-		} else if (cursize == int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b) & 1)) {
+		} else if (cursize == wrd_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b) & 1)) {
 			/* the recursive quick-look optimization does not make sense for the sorted case */
 			maxsize = *maxelements / 10;
 			CMDcard(&cursize, b, &maxsize);	/* try your luck with a smaller limit... */
 			maxsize = *maxelements;
 		}
-		if (cursize == int_nil) {
+		if (cursize == wrd_nil) {
 			BUN p, q, r;	/* if we could not figure out the cardinality by now, we must do real work.. :( */
 			int xx, tpe = b->ttype;
 
@@ -1096,7 +1097,7 @@ CMDcard(int *result, BAT *b, int *maxelements)
 			}
 #if 0
 #endif
-			if ((size_t) maxsize <= BATcount(b)) {
+			if (maxsize <= (ssize_t) BATcount(b)) {
 				@:card_bound(BOUNDED)@
 			} else {
 				maxsize = BATcount(b);	/* reducing maxsize limits memory consumption in hash table */
@@ -1105,17 +1106,17 @@ CMDcard(int *result, BAT *b, int *maxelements)
 		}
 	}
 	if (cursize <= *maxelements) {
-		BATsetprop_int(b, GDK_AGGR_CARD, *result = cursize);
+		BATsetprop_wrd(b, GDK_AGGR_CARD, *result = cursize);
 	} else {
-		*result = int_nil;
+		*result = wrd_nil;
 	}
 	return GDK_SUCCEED;
 }
 
 int
-CMDcard_unlimited(int *result, BAT *b)
+CMDcard_unlimited(wrd *result, BAT *b)
 {
-	int limit = BATcount(b);
+	wrd limit = (wrd) BATcount(b);
 
 	return CMDcard(result, b, &limit);
 }
