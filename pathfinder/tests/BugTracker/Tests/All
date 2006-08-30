@@ -26,3 +26,4 @@ where-clause.SF-1524344e
 modules_diamond_prepare
 modules_diamond.SF-1510975a
 modules_diamond.SF-1510975b
+wrong_result_duplication.SF-1549292
