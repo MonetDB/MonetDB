@@ -666,10 +666,12 @@ debugLifespan(MalBlkPtr mb)
 		VarPtr v = getVar(mb, i);
 
 		if (isTmpVar(mb, i))
-			printf("%c%d %d - %d scope=%d,%d\n", TMPMARKER, v->tmpindex, v->beginLifespan, v->endLifespan, v->scope, v->depth);
-
+			printf("%c%d ", TMPMARKER, v->tmpindex); 
 		else
-			printf("%s %d - %d scope= %d,%d\n", v->name, v->beginLifespan, v->endLifespan, v->scope, v->depth);
+			printf("%8s ", v->name);
+		printf("%d - %d  update %d scope= %d,%d\n", 
+			v->beginLifespan, v->endLifespan, 
+			v->lastUpdate, v->scope, v->depth);
 	}
 }
 void
@@ -691,7 +693,7 @@ setLifespan(MalBlkPtr mb)
 
 			if (v->beginLifespan == 0)
 				v->beginLifespan = pc;
-			if (k < p->retc)
+			if (k < p->retc && p->retc<p->argc)
 				v->lastUpdate= pc;
 			if (pc > v->endLifespan) {
 				/* end only if the beginLifspan falls in the same blk */

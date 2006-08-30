@@ -1110,16 +1110,18 @@ signatures satisfying the pattern.
 
 			skipWord(cntxt, b);
 			if (*b) {
-				char fname[1024],*f = NULL;
 				if( !isdigit(*b) ){
+					char fname[1024],*f = fname;
 					/* dump to file */
-					f= fname;
 					while(!isspace(*b) && f< fname+1022) *f++= *b++;
 					*f= 0;
 					skipWord(cntxt,b);
+					idx = atoi(b);
+					showOptimizerStep(fname, idx, flg);
+				} else {
+					idx = atoi(b);
+					showOptimizerStep(NULL, idx, flg);
 				}
-				idx = atoi(b);
-				showOptimizerStep(fname, idx, flg);
 			} else
 				showOptimizerHistory();
 			break;
