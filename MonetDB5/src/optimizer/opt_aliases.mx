@@ -74,45 +74,6 @@ They are marked as unsafe.
 
 opt_export int OPTaliasStep(MalBlkPtr mb, int pc);
 #endif
-@c
-
-@c
-#include "opt_aliases.h"
-@c
-static int
-OPTnxtAssignment(MalBlkPtr mb, int pc, int varid)
-{
-	int i, k, blkcount = 0, used = 0;
-	InstrPtr q;
-
-	for (i = pc; i < mb->stop && isAlife(mb, varid, i); i++) {
-		q = getInstrPtr(mb, i);
-		for (k = 0; k < q->retc; k++)
-			if (q->argv[k] == varid)
-				goto ARfound;
-		for (; k < q->argc; k++)
-			if (q->argv[k] == varid) {
-				used++;
-				if (!isInvariant(mb, pc, i, varid))
-					goto ARfound;
-			}
-		if (blockStart(q))
-			blkcount++;
-		if (blockExit(q))
-			blkcount--;
-		if (blockCntrl(q))
-			blkcount--;
-		if (blkcount < 0)
-			break;	/* it is part of a block */
-		if (blockCntrl(q))
-			blkcount++;
-	}
-	  ARfound:
-	if (blkcount || !used)
-		return pc - 1;
-	return i;
-}
-
 @-
 When you propagate an alias through the program, the properties
 maintained should also be updated. In particular, the lifespan
@@ -123,64 +84,61 @@ because MAL does not allow for nested expressions.
 Instructions changing the flow of control should also be ignored.
 In all other cases the target variables are potential candidates
 for alias removal.
+@-
+The new aliasremoval code performs a single scan through the
+code. We are currently only interested in simple V:=W
+expressions.
 @c
-int
-OPTaliasStep(MalBlkPtr mb, int pc)
-{
-	int k, kn = 0;
-	InstrPtr p;
+#include "opt_aliases.h"
+static int
+OPTisAlias(InstrPtr p){
+	if( p->token == ASSIGNsymbol &&
+		p->barrier == 0 && 
+		p->argc == 2 )
+		return TRUE;
+	return FALSE;
+}
 
-	p = getInstrPtr(mb, pc);
-	if (p == 0 || getModuleId(p) || getFunctionId(p))
-		return pc;
-	if (p->token != ASSIGNsymbol)
-		return pc;
-	if (blockStart(p) || blockExit(p) || blockCntrl(p))
-		return pc;
-
-	/* trap identity assignments */
-	if( getArg(p,0)== getArg(p,1) && p->argc == 2) 
-		kn = p->retc;
-	else
-	for (k = 0; k < p->retc; k++) {
-		int m;
-
-		m = OPTnxtAssignment(mb, pc + 1, p->argv[k]);
-		if (m != pc) {
-			replaceAlias(mb, pc + 1, m, p->argv[k], p->argv[p->retc + k]);
-			kn++;
-#ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(GDKout, "Delete alias assignment\n");
-			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-		}
-	}
-	/* delete the instruction if all targets have been replaced */
-	if (kn == p->retc && kn) {
-		/* all target variables pushed through */
-		removeInstruction(mb, p);
-		setLifespan(mb);
-		return pc - 1;
-	}
-	return pc;
+static void
+OPTremap(InstrPtr p, int *alias){
+	int i;
+	for(i=0;i<p->argc; i++)
+		getArg(p,i)= alias[getArg(p,i)];
 }
 
 static int
-OPTaliasesImplementation
-(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, oldstop;
+	int i,j=0,k=1, limit, actions=0;
+	int *alias;
 
 	(void) stk;
-#ifdef DEBUG_OPT_OPTIMIZER
-	stream_printf(GDKout, "start alias removal\n");
-	printFunction(GDKout, mb, LIST_MAL_ALL);
-#endif
+	alias= (int*) alloca(sizeof(int)* mb->vtop);
+	for(i=0; i<mb->vtop; i++) alias[i]=i;
+
 	setLifespan(mb);
-	oldstop= mb->stop;
-	for (i = 1; i < mb->stop; i++)
-		i = OPTaliasStep(mb, i);
-	return oldstop-mb->stop-(pci?1:0);
+	limit= mb->stop;
+	for (i = 1; i < limit; i++){
+		p= getInstrPtr(mb,i);
+		mb->stmt[k++]= p;
+		if( OPTisAlias(p)){
+			if( getLastUpdate(mb,getArg(p,0)) == i  &&
+				getBeginLifespan(mb,getArg(p,0)) == i  &&
+				getLastUpdate(mb,getArg(p,1)) < i ){
+				alias[getArg(p,0)]= alias[getArg(p,1)];
+				freeInstruction(p);
+				actions++;
+				k--;
+			}
+		} else if( p->barrier){
+			for(j=0; j<p->retc; j++){
+				alias[getArg(p,j)]= getArg(p,j);
+			}
+		} else
+			OPTremap(p,alias);
+	}
+	mb->stop= k;
+	return actions;
 }
 @include optimizerWrapper.mx
 @h

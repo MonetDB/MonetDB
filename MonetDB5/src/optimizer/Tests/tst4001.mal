@@ -12,6 +12,7 @@ end qry;
 t0:= alarm.usec();
 optimizer.aliases("user","qry");
 optimizer.commonTerms("user","qry");
+optimizer.aliases("user","qry");
 t1:= alarm.usec();
 t2:= t1-t0;
 io.print("execute");

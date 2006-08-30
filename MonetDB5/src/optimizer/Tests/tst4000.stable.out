@@ -37,13 +37,12 @@ function user.main():void;	# 0  (main:void)
     c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
 # identical until insert takes place 	# 5  (_9:str)
     d := algebra.select(b,0,100);	# 6 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_11:int)(_12:int)
-    e := d;	# 7 ALGselect (e:bat[:int,:int])<-(d:bat[:int,:int])
-# mapped onto one instruction 	# 8  (_14:str)
-    l := calc.+(24,27);	# 9 CALCbinaryADDintint (l:int)<-(_16:int)(_18:int)
-# mapped to l 	# 10  (_21:str)
-    l3 := calc.+(l,24);	# 11 CALCbinaryADDintint (l3:int)<-(l:int)(_16:int)
-# replace the alias 	# 12  (_23:str)
-end main;	# 13  
+# mapped onto one instruction 	# 7  (_14:str)
+    l := calc.+(24,27);	# 8 CALCbinaryADDintint (l:int)<-(_16:int)(_18:int)
+# mapped to l 	# 9  (_21:str)
+    l3 := calc.+(l,24);	# 10 CALCbinaryADDintint (l3:int)<-(l:int)(_16:int)
+# replace the alias 	# 11  (_23:str)
+end main;	# 12  
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

@@ -86,6 +86,9 @@ The search can be improved significantly by prefiltering.
 For, equality of instruction implies that
 all variables have been used before in a similar context.
 
+We should also immediately perform alias removal, because it
+creates opportunities for additional rewrites.
+
 Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
 
@@ -93,25 +96,47 @@ The last instruction signifies the end.
 static int
 OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, last;
+	int i, j, k, n=1, last;
 	InstrPtr p, q;
 	int actions = 0;
 	int filter[1024];
-	int *mask;
+	int *mask,*alias;
 	lng c;
 
 	(void) stk;
-	if( mb->errors) {
-		/* remove the CToptimizer request */
-		if (pci)
-			removeInstruction(mb, pci);
-		return 0;
-	}
+	(void) pci;
 	mask= (int *) alloca(mb->stop * sizeof(int));
 	memset((void*) filter, 0, 1024 * sizeof(int));
+
+	alias= (int*) alloca(sizeof(int)* mb->vtop);
+	for(i=0; i<mb->vtop; i++) alias[i]=i;
+
 	setLifespan(mb);
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
+		getInstrPtr(mb,n++)= p;
+@-
+First apply alias propagation, before considering a match.
+@c
+		if( p->token == ASSIGNsymbol && p->argc== 2 && p->barrier==0){
+			if( getLastUpdate(mb,getArg(p,0)) == i &&
+				getBeginLifespan(mb,getArg(p,0)) == i &&
+				getLastUpdate(mb,getArg(p,1)) < i){
+					alias[getArg(p,0)]= alias[getArg(p,1)];
+					freeInstruction(p);
+					n--;
+					continue;
+			}
+		} else if( p->barrier){
+			for(j=0; j<p->retc; j++)
+				alias[getArg(p,j)]= getArg(p,j);
+		} else {
+			for(j=0; j<p->argc; j++)
+				getArg(p,j)= alias[getArg(p,j)];
+		}
+@-
+Use a hash filter to speed up matching
+@c
 		c = p->argc;
 		for(j=p->retc; j<p->argc; j++){
 			c *= 4;
@@ -119,20 +144,27 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				c += getArg(p,j);
 		}
 		c &= 1023;
-		mask[i] = c;
+		mask[n-1] = c;
 		
 		if (filter[c] && p->retc != p->argc){
+@-
+We look back in the code base to determine a candidate for
+replacement. We don't have to look further back then the last
+relevant assignment. Beware, we may miss opportunities due to
+multiple occurrences of the same constant in the symbol table.
+@c
 			last=1;
 			for( j = p->retc; j<p->argc; j++)
-			if( getVar(mb,getArg(p,j))->beginLifespan > last )
-				last =getVar(mb,getArg(p,j))->beginLifespan;
-			for (j = i - 1; j >= last; j--) 
+			if( getBeginLifespan(mb,getArg(p,j)) > last )
+				last = getBeginLifespan(mb,getArg(p,j));
+
+			for (j = n - 2; j >= last-(i-(n-1)) && j>0; j--) 
 			if( mask[j] == c ){
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
-					goto nxtCommonSubExpression;
+					break;
 #ifdef DEBUG_OPT_COMMONTERMS
-				printInstruction(GDKout, mb, q, LIST_OPT_INSTR);
-				printInstruction(GDKout, mb, p, LIST_OPT_INSTR);
+				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 				printf("%d, %d  %d %d ", i, j, 
 					hasSameSignature(p, q), 
 					hasSameArguments(mb, p, q));
@@ -152,27 +184,33 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					) {
 #ifdef DEBUG_OPT_COMMONTERMS
 					stream_printf(GDKout, "Found a common expression " "%d <-> %d\n", j, i);
-					printInstruction(GDKout, mb, q, LIST_OPT_ALL);
-					printInstruction(GDKout, mb, p, LIST_OPT_ALL);
 #endif
 					clrFunction(p);
 					p->token = ASSIGNsymbol;
 					p->argc = p->retc + q->retc;
 					for (k = 0; k < q->retc; k++)
-						p->argv[p->retc + k] = q->argv[k];
+						p->argv[p->retc + k] =  q->argv[k];
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(GDKout, "common expression");
-					printInstruction(GDKout, mb, p, LIST_OPT_ALL);
+					stream_printf(GDKout, "common modified expression");
+					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 					actions++;
-					/* i= OPTaliasStep(mb,i); keep your focus */
-					goto nxtCommonSubExpression;
+					if( p->argc== 2 &&
+						getLastUpdate(mb,getArg(p,0)) == i &&
+						getBeginLifespan(mb,getArg(p,0)) == i &&
+						getLastUpdate(mb,getArg(p,1)) < i){
+							alias[getArg(p,0)]= alias[getArg(p,1)];
+							freeInstruction(p);
+							n--;
+					}
+					j= 0; /* end of search */
 				}
 			}
 		}
-		nxtCommonSubExpression:
-			filter[c ]= 1;
+		filter[c ]= 1;
 	}
+	getInstrPtr(mb,n++)= getInstrPtr(mb,i);
+	mb->stop= n;
 	return actions;
 }
 
