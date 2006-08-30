@@ -227,7 +227,7 @@ and analyse the data.
 #ifndef _DATACELL_DEF
 #define _DATACELL_DEF
 
-/* #define DEBUG_DATACELL */
+#define DEBUG_DATACELL
 
 #define MAXEVENTFIELDS 256
 
@@ -238,7 +238,7 @@ and analyse the data.
 #include "../modules/mal/tablet.h"
 #include "mal_exception.h"
 #include "mtime.h"
-#include "bat.h"
+#include "bat5.h"
 
 typedef enum { RECEPTOR, NUCLEUS, EMITTER } DATACELLKIND;
 
@@ -308,7 +308,6 @@ to restart sensor input collection between sessions.
 Furthermore, the BATs can be made accessible from the SQL frontend.
 @c
 #include "datacell.h"
-#include "bat.h"
 
 char *cellKind[] = { "receptor", "nucleus", "emitter", "pump" };
 
@@ -415,7 +414,7 @@ DCnewPump()
 	c->picture = NULL;
 	c->usedby = 0;
 	c->status = -1;		/* no thread yet */
-	c->lock = MT_create_lock();
+	MT_lock_init(&c->lock);
 
 	pumpindex++;
 	return c;
@@ -709,7 +708,7 @@ DCstamp(DCpump p)
 {
 	if (p->cols == 0) {
 		p->columns[0] = GDKstrdup("stamp");
-		p->types[0] = getTypeIndex("timestamp", 9, TYPE_int);
+		p->types[0] = getTypeIndex("timestamp", -1, TYPE_int);
 		p->private[0] = DCcontainer(p->types[0], 256);
 		p->public[0] = DCcontainer(p->types[0], 256);
 		p->cols++;
@@ -1329,7 +1328,6 @@ setStatus(str name, int status)
 Before you start updating the emitter public part it should be locked.
 It is released explicitedly.
 @c
-#include "bat.h"
 
 str
 DCkeep(int *ret, str *name, int *dst, int *src)
