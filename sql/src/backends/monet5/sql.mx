@@ -32,7 +32,7 @@ comment "Switch to processing SQL statements";
 
 command trace():void 
 address SQLtrace
-comment "enable/disable saving the sql statement traces (per client)";
+comment "Enable/disable saving the sql statement traces on a client basis.";
 
 command init():void
 address SQLinitEnvironment

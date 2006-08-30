@@ -155,7 +155,6 @@ SQLepilogue(void)
 	}
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	callString(mal_clients, "sabaoth.retreatScenario(\"sql\":str);", 0);
 	return MAL_SUCCEED;
 }
 
@@ -174,8 +173,7 @@ SQLinit(Client c)
 		return MAL_SUCCEED;
 	/* SQLinitialized == FALSE; */
 
-	be_funcs = GDKmalloc(sizeof(backend_functions));
-	memset((char *)be_funcs, '\0', sizeof(backend_functions));
+	be_funcs = GDKzalloc(sizeof(backend_functions));
 	be_funcs->fstack		= &monet5_freestack;
 	be_funcs->fcode			= &monet5_freecode;
 	be_funcs->finterpret	= &monet5_parse;
@@ -188,9 +186,8 @@ SQLinit(Client c)
 
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
-	if (mvc_init(FALSE, 0) < 0) {
+	if (mvc_init(FALSE, 0) < 0) 
 		return throwMessage("SQLinit", "Catalogue initialization failed");
-	}
 	SQLinitialized = TRUE;
 	return MAL_SUCCEED;
 }
@@ -202,10 +199,8 @@ SQLexit(Client c)
 	stream_printf(GDKout, "#SQLexit\n");
 #endif
 	(void) c;		/* not used */
-	if( SQLinitialized == FALSE){
-		return throwMessage("SQLexit",
-			"Catalogue not available\n");
-	}
+	if( SQLinitialized == FALSE)
+		return throwMessage("SQLexit", "Catalogue not available\n");
 	return MAL_SUCCEED;
 }
 
@@ -219,6 +214,13 @@ SQLtrace(int *ret)
 	return MAL_SUCCEED;
 }
 
+@-
+@= SQLglobal
+	name = @1;
+	r = stmt_var(_strdup(name), &ctype, 0, 1);
+	stack_push_var(sql, name, r);
+	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+@c
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, Client c, char *user, char *schema)
@@ -233,81 +235,41 @@ global_variables(mvc *sql, Client c, char *user, char *schema)
 	c->state[ENGINE] = mb; /* save global variable mal block */
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
- 	name = "debug";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("debug")@
 	v->value.val.ival = 0;
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 8, 0);
-	name = "explain";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("explain")@
 	v->value.val.sval = _strdup("");
 
 	sql_find_subtype(&ctype, typename, 1024, 0);
-	name = "current_schema";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("current_schema")@
 	v->value.val.sval = _strdup(schema);
 
-	name = "current_user";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("current_user")@
 	v->value.val.sval = _strdup(user);
 
-	name = "current_role";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("current_role")@
 	v->value.val.sval = _strdup(user);
 
-	name = "optimizer";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("optimizer")@
 	v->value.val.sval = "on";
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	name = "current_timezone";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("current_timezone")@
 	v->value.val.ival = 0;
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	name = "cache";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("cache")@
 	v->value.val.cval[0] = 1;
 
-	name = "profile";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("profile")@
 	v->value.val.cval[0] = 0;
 
-	name = "trace";
-	r = stmt_var(_strdup(name), &ctype, 0, 1);
-	stack_push_var(sql, name, r);
-
-	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	@:SQLglobal("trace")@
 	v->value.val.cval[0] = 0;
 
 	return 0;
@@ -440,11 +402,30 @@ SQLinitEnvironment(int *ret)
 	return SQLinitAdmin(MCgetClient());
 }
 @-
-The SQLstatement operation can be used by separate
+The cache with plans should be regularly be refreshed.
+@c
+void
+SQLcacheRefresh(mvc *m){
+	if( m && !m->session->active) {
+		int schema_changed = mvc_trans(m);
+		if (m->cache && (schema_changed || m->qc->id > 1000)) {
+			if (m->qc)
+				qc_destroy(m->qc);
+			m->qc = qc_create(m->clientid);
+		}
+	}
+}
+@-
+The SQLcompile operation can be used by separate
 front-ends to benefit from the SQL functionality.
 It expects a string and returns the name of the
 corresponding MAL block as it is known in the
 SQL_cache, where it can be picked up.
+The SQLstatement operation also executes the instruction.
+
+In both cases the SQL string is handled like an ordinary
+user query, following the same optimization paths and
+caching.
 @c
 
 static void
@@ -495,14 +476,7 @@ SQLstatementIntern(str *ret, str *expr, str nme, int execute)
 	initSQLreferences();
 	m = sql->mvc;
  	ac = m->session->auto_commit;
-	if( !m->session->active) {
-		int schema_changed = mvc_trans(m);
-		if (m->cache && (schema_changed || m->qc->id > 1000)) {
-			if (m->qc)
-				qc_destroy(m->qc);
-			m->qc = qc_create(m->clientid);
-		}
-	}
+	SQLcacheRefresh(m);
 	if (!m->sa)
 		m->sa = sa_create();
 	o = *m;
@@ -550,7 +524,7 @@ We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
 Now is the time to also perform the semantic analysis, 
 optimize and produce code.
-We don;t search the cache for a previous incarnation.
+We don;t search the cache for a previous incarnation yet.
 @c
 	{	
 		Symbol oldsym= c->curprg;
@@ -804,48 +778,32 @@ A future version may analyze the parameter settings in more detail.
 void
 SQLsetDebugger(Client c, mvc *m, int onoff)
 {
-	InstrPtr q;
-
 	if (m == 0 || m->mode != m_debug)
 		return;
 	c->itrace='n';
-	q = newInstruction(c->curprg->def,ASSIGNsymbol);
-	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
-	getModuleId(q) = putName("mdb",3);
 	if( onoff){
-		getFunctionId(q) = putName("start",5);
+		newStmt(c->curprg->def,"mdb","start");
 		c->debugOptimizer= TRUE;
 	} else {
-		getFunctionId(q) = putName("stop",4);
+		newStmt(c->curprg->def,"mdb","stop");
 		c->debugOptimizer= FALSE;
 	}
-	pushInstruction(c->curprg->def, q);
 }
 
 void
-SQLsetTrace(Client c, int onoff)
+SQLsetTimer(Client c, int onoff)
 {
 	InstrPtr q;
 
 	c->itrace='c';
-	q = newInstruction(c->curprg->def,ASSIGNsymbol);
-	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
-	getModuleId(q) = putName("mdb",3);
-	getFunctionId(q) = putName("setTimer",8);
+	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
-	pushInstruction(c->curprg->def, q);
 }
 
 void
 SQLshowPlan(Client c)
 {
-	InstrPtr q;
-
-	q = newInstruction(c->curprg->def,ASSIGNsymbol);
-	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
-	getModuleId(q) = putName("mdb",3);
-	getFunctionId(q) = putName("list",4);
-	pushInstruction(c->curprg->def, q);
+	newStmt(c->curprg->def,"mdb","list");
 }
 
 @-
@@ -881,14 +839,7 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	if (!m->session->active) {
-		int schema_changed = mvc_trans(m);
-		if (m->cache && (schema_changed || m->qc->id > 1000)) {
-			if (m->qc)
-				qc_destroy(m->qc);
-			m->qc = qc_create(m->clientid);
-		}
-	}
+	SQLcacheRefresh(m);
 	pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
@@ -995,7 +946,7 @@ produce code.
 	} else 
 	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
 		if( m->mode == m_trace || m->explain == m_trace)
-			SQLsetTrace(c, TRUE);
+			SQLsetTimer(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
 		if( m->mode != m_debug  && m->mode!= m_explain && m->mode!= m_trace)
@@ -1016,7 +967,7 @@ produce code.
 		if( m->explain== m_explain)
 			SQLshowPlan(c);
 		if( m->mode == m_trace || m->explain == m_trace)
-			SQLsetTrace(c, TRUE);
+			SQLsetTimer(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
 		if (m->mode != m_inplace && m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
@@ -1064,7 +1015,7 @@ In the final phase we add any debugging control
 	if( m->mode == m_debug ) 
 		SQLsetDebugger(c, m, FALSE);
 	if( m->mode == m_trace )
-		SQLsetTrace(c, FALSE);
+		SQLsetTimer(c, FALSE);
 
 	if (be->mvc->mode == m_profile ) {
 		be->qry = sql_escape_str(QUERY(m->scanner));

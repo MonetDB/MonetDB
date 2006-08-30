@@ -266,31 +266,50 @@ the cache when the underlying table is changed.
 }
 @-
 Cost-based optimization and semantic evaluations require statistics to work with.
-They should come from the SQL catalog and are included in the MAL program.
+They should come from the SQL catalog or the BATs themselves.
 The properties passed at this point are the number of rows. 
 A better way is to mark all BATs used as a constant, because that permits
 access to all properties. However, this creates unnecessary locking during stack
 initialization. Therfore, we store the BAT id as a property for the optimizer
 to work with. It can pick up the BAT if needed.
+
+Care should be taken in marking the delta bats as empty, because their
+purpose is to fill them during the query. Therefore, we keep track
+of all bound tables and mark them not-empty when a direct update
+takes place using append().
 @c
 void
 SQLgetStatistics(mvc *m,MalBlkPtr mb){
-	int i;
+	int i,j,k, actions=0;
 	lng rows; /* size;*/
 	InstrPtr p;
 	BAT *b;
 	str dbatRef = putName("bind_dbat",9);
+	lng clk= GDKusec();
+	int top= 0;
+	lng *count = (lng*) alloca(sizeof(lng)* mb->vtop);
+	int *bind = (int*) alloca(sizeof(int) * mb->vtop);
 
 	for(i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if( getModuleId(p)== sqlRef && getFunctionId(p)== bindRef ){
+		if( getModuleId(p)== sqlRef && 
+			( getFunctionId(p)== bindRef ||
+			  getFunctionId(p)== dbatRef ) ){
+			if( getFunctionId(p) == dbatRef)
+			b= mvc_bind_dbat(m, 
+				getVarConstant(mb, getArg(p,1)).val.sval,
+				getVarConstant(mb, getArg(p,2)).val.sval,
+				getVarConstant(mb, getArg(p,3)).val.ival);
+			else
 			b= mvc_bind(m, 
 				getVarConstant(mb, getArg(p,1)).val.sval,
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.sval,
 				getVarConstant(mb, getArg(p,4)).val.ival);
 			if( b ){
-				rows= BATcount(b);
+				actions++;
+				bind[top]= getArg(p,0);
+				count[top++]= rows= BATcount(b);
 				getVarConstant(mb, getArg(p,0)).val.bval= b->batCacheid;
 				if (mb->var[getArg(p,0)]->props == 0)
 					mb->var[getArg(p,0)]->props = newPropertySet();
@@ -307,31 +326,24 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb){
 #endif
 			}
 		} else
-		if( getModuleId(p)== sqlRef && getFunctionId(p)== dbatRef ){
-			b= mvc_bind_dbat(m, 
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
-				getVarConstant(mb, getArg(p,3)).val.ival);
-			if( b ){
-				/* deletion bats are 'never empty'  to avoid
-				  complex size propagation in the optimizer */
-				rows= BATcount(b)+1;
-				if (mb->var[getArg(p,0)]->props == 0)
-					mb->var[getArg(p,0)]->props = newPropertySet();
-				setProperty(getProps(getArg(p,0)),"rows", "=", TYPE_lng, &rows);
-				setProperty(getProps(getArg(p,0)),"bid", "=", TYPE_int, &b->batCacheid);
-
-				BBPunfix(b->batCacheid);
-#ifdef _SQL_OPTIMIZER_DEBUG
-				stream_printf(GDKout,"size of %s.%s.%s %d\n",
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
-				getVarConstant(mb, getArg(p,3)).val.sval,
-				getVarConstant(mb, getArg(p,4)).val.ival, rows);
-#endif
+		if( getModuleId(p)== batRef && getProps(k = getArg(p,1))  &&
+			( 	getFunctionId(p)== appendRef  || 
+				getFunctionId(p)== insertRef || 
+				getFunctionId(p)== deleteRef) ){
+@-
+See if we need to correct our judgement
+@c
+			for(j=0; j<top; j++)
+			if( bind[j] == k  && count[j]== 0 ){
+				actions++;
+				rows=1;
+				if (mb->var[k]->props == 0)
+					mb->var[k]->props = newPropertySet();
+				setProperty(getProps(k),"rows", "=", TYPE_lng, &rows);
 			}
 		}
 	}
+	optimizerCheck(mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
 
 
@@ -391,7 +403,6 @@ care of.
 #define EXPERIMENTAL 
 #ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
-		optimizerCheck(mb,"optimizer.SQLgetstatistics",1,0,0);
 @-
 Empty set removal may introduce both alias instructions and
 dead code. The should be removed.
