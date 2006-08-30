@@ -608,7 +608,7 @@ TBL_module_lookup(str module)
 int
 TBL_M_cinstalled(Client client, oid mid)
 {
-	int cid = client - monet_clients;
+	int cid = (int) (client - monet_clients);
 
 	return (!!(BUNlocate(BATmirror(TBL_mod_use), &cid, &mid)));
 }
@@ -1049,9 +1049,9 @@ TBL_getdir(void)
 			char *p;
 
 			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
-				i = p - mod_path;
+				i = (int) (p - mod_path);
 			} else {
-				i = strlen(mod_path);
+				i = (int) strlen(mod_path);
 			}
 			cur_dir = GDKmalloc(i + 1);
 			strncpy(cur_dir, mod_path, i);
@@ -1374,7 +1374,7 @@ and for the module it was defined in.
 void
 TBL_delproc(Client client, str nme)
 {
-	int i;
+	hash_t i;
 
 	TBL_M_lock(client);
 	if (BATprepareHash(client->fcntbl))
@@ -1629,7 +1629,7 @@ TBL_M_client_install(Client client, oid mid)
 static int
 countusage(Client client, oid mid)
 {
-	int xx, yy = 0, cid = client - monet_clients;
+	int xx, yy = 0, cid = (int) (client - monet_clients);
 	BUN p, q;
 
 	BATloopFast(TBL_mod_use, p, q, xx)
@@ -1663,7 +1663,7 @@ TBL_M_directloaded(Client client, oid mid, str module)
 static int
 TBL_M_clientrefs(oid mid, Client c)
 {
-	int xx, yy = 0, cid = c - monet_clients;
+	int xx, yy = 0, cid = (int) (c - monet_clients);
 	BUN p, q;
 
 	BATloopFast(TBL_mod_use, p, q, xx)
@@ -1695,7 +1695,7 @@ TBL_M_countref(oid mid)
 int
 TBL_M_incref(Client client, oid mid)
 {
-	int cid = client - monet_clients;
+	int cid = (int) (client - monet_clients);
 	int i = TBL_M_countref(mid);
 
 	if (BUNins(TBL_mod_use, &mid, &cid, FALSE) == NULL)
@@ -1711,7 +1711,7 @@ TBL_M_incref(Client client, oid mid)
 int
 TBL_M_decref(Client client, oid mid)
 {
-	int cid = client - monet_clients;
+	int cid = (int) (client - monet_clients);
 	int i = TBL_M_countref(mid);
 
 	if (i <= 0) {
@@ -1739,7 +1739,7 @@ TBL_M_decref(Client client, oid mid)
 void
 TBL_inc_mod_use(Client client, Client father)
 {
-	int cid = father - monet_clients;
+	int cid = (int) (father - monet_clients);
 	BAT *modules_used;
 	BUN p, q;
 	int xx;
@@ -1958,7 +1958,9 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 int
 TBL_module_atoms(Client client, oid mid, int **Tpes) 
 {
-	int j, i, mtpes = MAXATOMS, ntpes = 0;
+	hash_t i;
+	size_t j;
+	int mtpes = MAXATOMS, ntpes = 0;
 	int *tpes = (int *) GDKmalloc(mtpes * sizeof(int));
 	oid *midp = &mid;
 	char s[80], *nme, *r;
@@ -1984,9 +1986,10 @@ TBL_unloadmod(Client client, str module, int level)
 {
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	BAT *b, *fcntbl = BATmirror(client->fcntbl);
-	int refcnt = 0, j, (*addr) (void), ntpes, *tpes;
+	int refcnt = 0, (*addr) (void), ntpes, *tpes;
 	oid fid, *fidp = &fid, mid, *midp = &mid;
-	hash_t i;
+	hash_t j;
+	int i;
 	ptr hdl = NULL;
 	BUN p, q;
 	char *r;
@@ -2004,7 +2007,7 @@ Look up the module.
 @c
 	mid = TBL_module_lookup(module);
 	if (mid == 0) {
-		int cid = client - monet_clients;
+		int cid = (int) (client - monet_clients);
 		char s[80];
 
 		snprintf(s, sizeof(s), "_%s", module);
@@ -2020,7 +2023,7 @@ Look up the module.
 Check if it is in use already.
 @c
 	if (level == 0) {
-		int cid = client - monet_clients;
+		int cid = (int) (client - monet_clients);
 
 		r = BUNlocate(TBL_mod_use, &mid, &cid);
 		if (r == NULL) {
@@ -2066,12 +2069,12 @@ drop will go through;
 			}
 		} else {
 			/* delete all the C-modules's atoms and functions */
-			for (j = 0; j < ntpes; j++)
-				if (BUNdelHead(BATmirror(client->atomtbl), tpes + j, FALSE) == NULL)
+			for (i = 0; i < ntpes; i++)
+				if (BUNdelHead(BATmirror(client->atomtbl), tpes + i, FALSE) == NULL)
 					assert(0);
 			if (BATprepareHash(fcn_mid))
 				assert(0);
-			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
+			HASHloop_oid(fcn_mid, fcn_mid->hhash, j, midp, r) {
 				fid = *(oid *) BUNtail(fcn_mid, r);
 				BUNfndOID(r, fcntbl, fidp);
 				if (r && BUNdelete(fcntbl, r, FALSE) == NULL)
@@ -2846,7 +2849,7 @@ TBL_exitclient(Client client)
 {
 	BAT *b, *bn;
 	BUN p, q, r;
-	int xx, cid = client - monet_clients;
+	int xx, cid = (int) (client - monet_clients);
 
 #ifdef MKMODS
 	TEM_exitclient(client);

@@ -188,7 +188,7 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 		      @:pack_type(argv[i].vtype)@
 		}
 	}
-	monetsig_nbits(s) = bitoffset + ((wordptr - (s->words + 1)) << 5);
+	monetsig_nbits(s) = (sht) (bitoffset + ((wordptr - (s->words + 1)) << 5));
 	return 0;
 }
 
@@ -1291,7 +1291,7 @@ interpret_ident(int stk, YYSTREE lt, ValPtr res)
 	Myyexpand(lt, Myynode(TOK_IDENT, TYPE_int));
 	lt->token = TOK_FUNCTION;
 	lt->yyval.vtype = TYPE_str;
-	lt->yyval.len = 1 + strlen(lt->yyval.val.sval);
+	lt->yyval.len = 1 + (int) strlen(lt->yyval.val.sval);
 	return interpret(stk, lt, res);
 }
 

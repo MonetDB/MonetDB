@@ -1447,7 +1447,7 @@ unshare(bat parent)
 
 void
 BBPunshare(bat parent) {
-	return unshare(parent);
+	unshare(parent);
 }
 
 @- 
@@ -1740,7 +1740,7 @@ field where the candidates are sorted on.
 typedef struct {
 	int lastused;		/* bat lastused stamp; sort on this field */
 	bat bid;		/* bat id */
-	int cnt;		/* bat count */
+	ssize_t cnt;		/* bat count */
 	int next;		/* next position in list */
 } bbptrim_t;
 
@@ -1763,14 +1763,15 @@ BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 					/* when unloading for memory, treat small BATs with a preference over big ones.
 					 * rationale: I/O penalty for cache miss is relatively higher for small bats 
 					 */
-					int swap_first = 0, cnt = -1;
+					int swap_first = 0;
+					ssize_t cnt = -1;
 
 					if (b) {
 						cnt = BATcount(b);
 						swap_first = (cnt >= BBPSMALLBAT);
 					}
 
-					/* however, when we are looking to decrease the amount of descriptors,
+					/* however, when we are looking to decrease the number of descriptors,
 					 * try to put the small bats in front of the load list instead..
 					 */
 
@@ -1790,7 +1791,7 @@ BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 		int i;
 		GDKqsort(bbptrim, NULL, bbptrimlast, sizeof(bbptrim_t), TYPE_int, 0);
 		for (i = bbptrimfirst = 0; i < bbptrimlast; i++) {
-			MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: %11d%c %9d=%s\t(#%d)\n", BBPLASTUSED(bbptrim[i].lastused), (bbptrim[i].lastused & 0x80000000) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
+			MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: %11d%c %9d=%s\t(#" SSZFMT ")\n", BBPLASTUSED(bbptrim[i].lastused), (bbptrim[i].lastused & 0x80000000) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
 
 			bbptrim[i].next = i + 1;
 		}
@@ -1826,7 +1827,7 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 		MEMDEBUG if (b) {
 			THRprintf(GDKerr, "TRIMSELECT: candidate=%s BAT*=" PTRFMT "\n", BBPname(bbptrim[cur].bid), PTRFMTCAST(void *)b);
 
-			THRprintf(GDKerr, "            (cnt=%d, mode=%d, refs=%d, wait=%d, parent=%d, lastused=%d,%d,%d)\n", bbptrim[cur].cnt, b->batPersistence, BBP_refs(b->batCacheid), (BBP_status(b->batCacheid) & BBPWAITING) != 0, VIEWparent(b),
+			THRprintf(GDKerr, "            (cnt=" SSZFMT ", mode=%d, refs=%d, wait=%d, parent=%d, lastused=%d,%d,%d)\n", bbptrim[cur].cnt, b->batPersistence, BBP_refs(b->batCacheid), (BBP_status(b->batCacheid) & BBPWAITING) != 0, VIEWparent(b),
 				  BBP_lastused(b->batCacheid), BBPLASTUSED(bbptrim[cur].lastused), bbptrim[cur].lastused);
 		}
 		/* recheck if conditions encountered by trimscan in the past still hold */
@@ -2173,8 +2174,8 @@ BBPinitcache()
 	for(i = 0; i <= TYPE_str; i++) {
 		for(j = 0; j <= TYPE_str; j++) {
 			int bin = BATCACHE_BIN(i,j);
-			unsigned char bunwidth = ATOMsize(j);
-			unsigned char tailloc = ATOMsize(i);
+			short bunwidth = ATOMsize(j);
+			short tailloc = ATOMsize(i);
 			if (tailloc > bunwidth) {
 				bunwidth = tailloc + tailloc;
 			} else if (tailloc) {
@@ -2182,8 +2183,10 @@ BBPinitcache()
 			} else if (bunwidth == 0) {
 				bunwidth = 1;
 			}
-			batcache_widthbin[bin] = bunwidth;
-			batcache_locbin[bin] = tailloc;
+			assert(bunwidth < 256);
+			assert(tailloc < 256);
+			batcache_widthbin[bin] = (unsigned char) bunwidth;
+			batcache_locbin[bin] = (unsigned char) tailloc;
 		}
 	}
 	

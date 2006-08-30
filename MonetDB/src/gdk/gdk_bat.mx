@@ -1164,7 +1164,7 @@ BUNappend(BAT *b, ptr t, bit force)
 			}
 		} else if (b->tseqbase != oid_nil){ /* virtual ids */ 
 			if (b->tseqbase + BATcount(b) != *(oid*)t) {
-				int i = BATcount(b);
+				size_t i = BATcount(b);
 
 				b = BATmaterializet(b, BATcount(b)+1);
 				countonly=0;
@@ -2703,8 +2703,8 @@ for determining which algebra commands set properties sub-optimally.
 @c
 	if (disprove_key) {
 		if (p < q) {
-			int cnt = BATcount(b);
-			int lim = MIN(cnt, (mode & BATPROPS_ALL) ? GDK_int_max : 16000);
+			size_t cnt = BATcount(b);
+			size_t lim = MIN(cnt, (mode & BATPROPS_ALL) ? GDK_int_max : 16000);
 
 			q = BUNptr(b, yy + lim);
 			if (p < q) {
@@ -2747,7 +2747,7 @@ for determining which algebra commands set properties sub-optimally.
 					default:
 						@:hash_disprove(,ead)@
 					}
-					BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size %d\n", BBPname(b->batCacheid), lim);
+					BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size " SZFMT "\n", BBPname(b->batCacheid), lim);
 				}
 				BBPreclaim(bv);
 			}

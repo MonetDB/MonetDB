@@ -1193,11 +1193,11 @@ strEpilogue(void)
 		*(@2)++ = 0x80 | ((@1) & 0x3F);
 	}
 @c
-static INLINE int
+static INLINE wrd
 UTF8_strlen(str val)
 {
 	unsigned char *s = (unsigned char *) val;
-	int pos = 0;
+	wrd pos = 0;
 
 	while (*s) {
 		int c = *s++;
@@ -1206,32 +1206,32 @@ UTF8_strlen(str val)
 		if (c < 0xC0)
 			continue;
 		if (*s++ < 0x80)
-			return int_nil;
+			return wrd_nil;
 		if (c < 0xE0)
 			continue;
 		if (*s++ < 0x80)
-			return int_nil;
+			return wrd_nil;
 		if (c < 0xF0)
 			continue;
 		if (*s++ < 0x80)
-			return int_nil;
+			return wrd_nil;
 		if (c < 0xF8)
 			continue;
 		if (*s++ < 0x80)
-			return int_nil;
+			return wrd_nil;
 		if (c < 0xFC)
 			continue;
 		if (*s++ < 0x80)
-			return int_nil;
+			return wrd_nil;
 	}
 	return pos;
 }
 
-static INLINE int
+static INLINE wrd
 UTF8_strpos(str val, str end)
 {
 	unsigned char *s = (unsigned char *) val;
-	int pos = 0;
+	wrd pos = 0;
 
 	if (s > (unsigned char *) end) {
 		return -1;
@@ -1267,7 +1267,7 @@ UTF8_strpos(str val, str end)
 }
 
 static INLINE str
-UTF8_strtail(str val, int pos)
+UTF8_strtail(str val, wrd pos)
 {
 	unsigned char *s = (unsigned char *) val;
 
@@ -1323,8 +1323,7 @@ strConcat(str *res, str s, ptr val, int t)
 {
 	str valstr = NULL;
 	size_t l1;
-	int l2 = 0;
-	char buf[7], *p = buf;
+	int l2 = 0;		/* use int because of atomToStr */
 
 	RETURN_NIL_IF(strNil(s) || ATOMcmp(t, val, ATOMnilptr(t)) == 0, TYPE_str);
 	if (t <= 0)
@@ -1332,23 +1331,32 @@ strConcat(str *res, str s, ptr val, int t)
 	l1 = strlen(s);
 	if (t != TYPE_str) {
 		if (t == TYPE_chr) {
+			char buf[7], *p = buf;
+
 			/* put value in int to avoid warning from compiler */
-			l2 = * (char *) val;
+			if (* (chr *) val == chr_nil)
+				l2 = -1; /* indicate nil */
+			else
+				l2 = * (unsigned char *) val;
 			@:UTF8_PUTCHAR(l2,p)@
-			l2 = p - buf;
+			l2 = (int) (p - buf);
 			val = (ptr) buf;
 		} else {
 			BATatoms[t].atomToStr(&valstr, &l2, val);
 			val = (ptr) valstr;
 		}
 	} else {
-		l2 = strlen((str) val);
+		l2 = (int) strlen((str) val);
 	}
-	*res = (str) GDKmalloc(l1 + l2 + 1);
-	memcpy(*res, s, l1);
-	memcpy(*res + l1, (str) val, l2);
-	(*res)[l1 + l2] = '\0';
-	if (valstr)
+	if (* (str) val == chr_nil || *s == chr_nil)
+		*res = GDKstrdup(str_nil);
+	else {
+		*res = (str) GDKmalloc(l1 + l2 + 1);
+		memcpy(*res, s, l1);
+		memcpy(*res + l1, (str) val, l2);
+		(*res)[l1 + l2] = '\0';
+	}
+	if (valstr && (str) valstr != str_nil)
 		GDKfree(valstr);
 	return GDK_SUCCEED;
 }
@@ -1356,6 +1364,7 @@ strConcat(str *res, str s, ptr val, int t)
 int
 strLength(int *res, str s)
 {
+/* 64bit: should return wrd */
 	RETURN_NIL_IF(strNil(s), TYPE_int);
 	*res = UTF8_strlen(s);
 	return GDK_SUCCEED;
@@ -1364,6 +1373,7 @@ strLength(int *res, str s)
 int
 strBytes(int *res, str s)
 {
+/* 64bit: should return wrd */
 	*res = strlen(s);
 	return GDK_SUCCEED;
 }
@@ -1371,13 +1381,13 @@ strBytes(int *res, str s)
 int
 strTail(str *res, str s, int *offset)
 {
-	int off = *offset;
+	wrd off = *offset;
 
 	RETURN_NIL_IF(strNil(s) || off == int_nil, TYPE_str);
 	if (off < 0) {
-		int len = UTF8_strlen(s);
+		wrd len = UTF8_strlen(s);
 
-		RETURN_NIL_IF(len == int_nil, TYPE_str);
+		RETURN_NIL_IF(len == wrd_nil, TYPE_str);
 		off = len + off;
 		if (off < 0)
 			off = 0;
@@ -1389,12 +1399,13 @@ strTail(str *res, str s, int *offset)
 int
 strSubString(str *res, str s, int *offset, int *length)
 {
-	int len, off = *offset;
+/* 64bit: should have wrd args */
+	wrd len, off = *offset;
 
 	RETURN_NIL_IF(strNil(s) || off == int_nil || *length == int_nil, TYPE_str);
 	if (off < 0) {
 		len = UTF8_strlen(s);
-		RETURN_NIL_IF(len == int_nil, TYPE_str);
+		RETURN_NIL_IF(len == wrd_nil, TYPE_str);
 		off = len + off;
 		if (off < 0) {
 			*length += off;
@@ -1431,6 +1442,7 @@ strFromWChr(str *res, int *c)
 int
 strWChrAt(int *res, str val, int *at)
 {
+/* 64bit: should have wrd arg */
 	unsigned char *s = (unsigned char *) val;
 
 	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_chr);
@@ -1606,6 +1618,7 @@ strUpper(str *res, str s)
 int
 strStrSearch(int *res, str s, str s2)
 {
+/* 64bit: should return wrd */
 	char *p;
 
 	RETURN_NIL_IF(strNil(s) || strNil(s2), TYPE_int);
@@ -1619,6 +1632,7 @@ strStrSearch(int *res, str s, str s2)
 int
 strReverseStrSearch(int *res, str s, str s2)
 {
+/* 64bit: should return wrd */
 	size_t len, slen;
 	char *p, *q;
 	size_t i;
@@ -1642,6 +1656,7 @@ strReverseStrSearch(int *res, str s, str s2)
 int
 strChrSearch(int *res, str s, chr *c)
 {
+/* 64bit: should return wrd */
 	int i = (int) *c;
 	char buf[7], *p = buf;
 
@@ -1654,6 +1669,7 @@ strChrSearch(int *res, str s, chr *c)
 int
 strReverseChrSearch(int *res, str s, chr *c)
 {
+/* 64bit: should return wrd */
 	int i = (int) *c;
 	char buf[7], *p = buf;
 

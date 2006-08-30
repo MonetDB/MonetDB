@@ -700,7 +700,7 @@ decimal_fromstr(str buf, int *len, decimal **ret)
 		}
 	}
 	DECIMAL_DEBUG(*ret, FORMAT("decimal_fromstr(%s) result", buf), 1);
-	return cur - buf;
+	return (int) (cur - buf);
 }
 
 int
@@ -747,7 +747,7 @@ decimal_tostr(str *buf, int *len, decimal *v)
 		}
 	}
 	DECIMAL_DEBUG(v, FORMAT("decimal_tostr(->%s) input", *buf), 1);
-	return strlen(*buf);
+	return (int) strlen(*buf);
 }
 
 int

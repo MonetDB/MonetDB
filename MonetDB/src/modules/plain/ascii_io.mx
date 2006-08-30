@@ -282,7 +282,7 @@ extern void ASCIIdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t n
 @h
 ascii_io_export int ASCIIcreate_bats(ascii *as);
 ascii_io_export size_t ASCIIassign_BATs(ascii *as, BAT *bats);
-ascii_io_export int ASCIIload_file(ascii *as, bstream *b, stream *out);
+ascii_io_export ssize_t ASCIIload_file(ascii *as, bstream *b, stream *out);
 ascii_io_export BAT *ASCIIcollect_bats(ascii *as);
 ascii_io_export void ASCIIdestroy_format(ascii *as);
 ascii_io_export int ASCIIoutput_file(ascii *as, BAT *order, stream *s);
@@ -359,7 +359,7 @@ sep_dup(char *sep)
 ptr *
 ASCIIstrFrStr(ascii_io *c, char *s, char *e)
 {
-	int len = e-s+1;
+	int len = (int) (e - s + 1); /* 64bit: should check for overflow */
 
 	if (c->len < len){
 		c->len = len;
@@ -515,7 +515,7 @@ check_BATs(ascii *as)
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b;
-		int offset;
+		size_t offset;
 
 		b = fmt[i].c;
 		if (b == NULL)
@@ -868,7 +868,7 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_at
 }
 
 static INLINE int
-read_more(bstream *in, stream *out, int n)
+read_more(bstream *in, stream *out, size_t n)
 {
 	if (out) {
 		do {
@@ -892,7 +892,7 @@ read_more(bstream *in, stream *out, int n)
 }
 
 
-int
+ssize_t
 ASCIIload_file(ascii *as, bstream *b, stream *out)
 {
 	int res = 0, done = 0;
@@ -944,7 +944,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 				if (!done) {	/* nothing found in current buf
 						 * ie. need to enlarge
 						 */
-					int size = b->size;
+					size_t size = b->size;
 
 					if (b->pos == 0 || (b->len - b->pos > b->size >> 1))
 						size <<= 4;
@@ -971,7 +971,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 	as->nr = i;
 	if (res < 0)
 		return res;
-	return as->nr;
+	return (ssize_t) as->nr;
 }
 
 static

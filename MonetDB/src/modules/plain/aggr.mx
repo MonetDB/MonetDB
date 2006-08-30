@@ -607,9 +607,10 @@ TODO: add ALGODEBUG and optimize further?
 int
 CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 {
-	int nElements = BATcount(e);
+	size_t nElements = BATcount(e);
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);
-	int xx, off, idx=0;
+	int xx;
+	size_t off, idx = 0;
 	int *cnt ;
 	dbl *sum ;
 	dbl *sumsquares ;
@@ -658,7 +659,8 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 		if (*h != previousOid) {
 			previousOid = *h;
 			BUNfndOID(r,e,h);
-			if(!r) continue;
+			if (!r)
+				continue;
 			idx = BUNindex(e,r)-off;
 		}
 

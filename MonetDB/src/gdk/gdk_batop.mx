@@ -1343,7 +1343,7 @@ chk_order@3_@1(@1*__r col)
 		     (col[i+3] @2= col[i+2]) &
 		     (col[i+4] @2= col[i+3]);
 	}
-	return r;
+	return r != 0;
 }
 
 @= sort
@@ -1366,7 +1366,7 @@ chk_order@3_oid_oid(oid*__r col)
 		     (col[i+6] @5= col[i+4]) &
 		     (col[i+8] @5= col[i+6]);
 	}
-	return r;
+	return r != 0;
 }
 
 int

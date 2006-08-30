@@ -607,7 +607,7 @@ CTgroup_custom(grp *g,		/* put pointer to grp record here. */
 }
 
 static int 
-bits(int i)
+bits(size_t i)
 {
 	int sh;
 
@@ -694,7 +694,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 	BUN p, q, r, cp = BUNfirst(ct_map) - yy;
 	mapentry_t entry, *e;
 	BAT *map;
-	int n = bits(BATcount(ct_histo)),*N = &n;
+	int n = bits(BATcount(ct_histo)), *N = &n;
 	declare_@4
 	declare_mask_CUSTOM
 	int custom_rng = 1; /* expect small stuff, change to max(ct_histo) */

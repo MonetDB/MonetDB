@@ -1992,7 +1992,7 @@ GDK_find_thread(MT_Id pid)
 Thread
 THRnew(MT_Id pid, str name)
 {
-	MT_Id tid = 0;
+	int tid = 0;
 	Thread t;
 	Thread s = GDK_find_thread(pid);
 
@@ -2106,7 +2106,7 @@ THRinit(void)
 	THRdata[0] = (void *) file_wastream(stdout, "stdout");
 	THRdata[1] = (void *) file_rastream(stdin, "stdin");
 	for (i = 0; i < THREADS; i++) {
-		GDKthreads[i].tid = (MT_Id) (i + 1);
+		GDKthreads[i].tid = i + 1;
 	}
 	return 0;
 }

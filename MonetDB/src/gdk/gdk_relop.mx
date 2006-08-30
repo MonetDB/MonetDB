@@ -237,7 +237,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	int loc, var, hasnils = 0;
 
 	if (BATtordered(l) & 1) {
-		int i, logr = 4;
+		size_t i;
+		int logr = 4;
 
 		/* 4*log2(r.count) = estimation of the cost of binary search in units of scan comparisons */
 		for (i = BATcount(r); i > 0; logr++)
@@ -2568,8 +2569,8 @@ values are visited in order, merge algorithms may be employed).
 	}
 	lead_col->hi = lead_col->cur = BUNfirst(lead_col->b);
 	q = BUNlast(lead_col->b);
-	MULTIJOIN_KEY(status) = BAThkey(lead_col->b);
-	MULTIJOIN_LEAD(status) = lead_col - c;
+	MULTIJOIN_KEY(status) = (char) BAThkey(lead_col->b);
+	MULTIJOIN_LEAD(status) = (char) (lead_col - c);
 	MULTIJOIN_SYNCED(status) = 1;
 	if (algo == LEAD_TRAVERSE_SEQ && BAThkey(lead_col->b)) {
 		algo = (BAThordered(lead_col->b) & 1) ? LEAD_TRAVERSE_SSK : LEAD_TRAVERSE_SNK;

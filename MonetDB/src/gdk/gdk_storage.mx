@@ -271,20 +271,21 @@ at commit-time.
 		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
-			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)! */
+			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)!
+			   write() on Windows only takes int as size */
 			while (size > 0) {
 				/* circumvent problems by writing huge buffers in chunks <= 1GB */
-				int ret = write(fd, buf, MIN(1 << 30, size));
+				ssize_t ret = write(fd, buf, (unsigned) MIN(1 << 30, size));
 
 				if (ret < 0) {
-					err = ret;
-					GDKsyserror("GDKsave: error %d on: name=%s, ext=%s, mode=%d\n", err, nme, ext ? ext : "", mode);
+					err = -1;
+					GDKsyserror("GDKsave: error " SSZFMT " on: name=%s, ext=%s, mode=%d\n", ret, nme, ext ? ext : "", mode);
 					break;
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
+				IODEBUG THRprintf(GDKerr, "write(fd %d, buf " PTRFMT ", size %u) = " SSZFMT "\n", fd, PTRFMTCAST buf, (unsigned) MIN(1 << 30, size), ret);
 			}
-			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", PTRFMTCAST buf, size, fd, err);
 		} else {
 			err = -1;
 		}
@@ -323,9 +324,10 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 			ssize_t n_expected, n = 0;
 
 			if (ret) {
-				/* read in chunks, some OSs do not give you all at once */
+				/* read in chunks, some OSs do not give you all at once
+				   and Windows only accepts int */
 				for (n_expected = size; n_expected > 0; n_expected -= n) {
-					n = read(fd, dst, MIN(1 << 30, n_expected));
+					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
 
 					if (n <= 0)
@@ -349,7 +351,11 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
                     (maxsize < (size_t) st.st_size || 
 		    /* mmap storage is auto-extended here */
 		     ((fp = fopen(path, "rb+")) != NULL &&
-		      fseek(fp, (ssize_t) maxsize, SEEK_SET) >= 0 &&
+#ifdef _WIN64
+		      _fseeki64(fp, (ssize_t) maxsize, SEEK_SET) >= 0 &&
+#else
+		      fseek(fp, (long) maxsize, SEEK_SET) >= 0 &&
+#endif
 		      fputc('\n', fp) >= 0 &&
 		      fflush(fp) >= 0 &&
 		      fclose(fp) >= 0)))

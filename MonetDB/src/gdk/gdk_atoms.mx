@@ -163,7 +163,7 @@ gdk_export dbl *dblRead(dbl *a, stream *s, size_t cnt);
 gdk_export int dblWrite(dbl *a, stream *s, size_t cnt);
 int dblCmp(dbl *r, dbl *l);
 
-gdk_export int GDKstrFromStr(unsigned char *src, unsigned char *dst, int len);
+gdk_export ssize_t GDKstrFromStr(unsigned char *src, unsigned char *dst, ssize_t len);
 gdk_export int strFromStr(str src, int *len, str *dst);
 gdk_export int strToStr(str *dst, int *len, str src);
 gdk_export str strRead(str a, stream *s, size_t cnt);
@@ -1040,7 +1040,7 @@ ATOMprint(int t, ptr p, stream *s)
 			str buf = 0;
 			int sz = 0, l = (*tostr) (&buf, &sz, p);
 
-			l = stream_write(s, buf, l, 1);
+			l = (int) stream_write(s, buf, l, 1);
 			GDKfree(buf);
 			return l;
 		}
@@ -1330,7 +1330,7 @@ chrFromStr(char *src, int *len, chr **dst)
 			p = (unsigned char *) src;
 	}
 	**dst = error ? chr_nil : (chr) base;
-	return p - (unsigned char *) src;
+	return (int) (p - (unsigned char *) src);
 }
 
 
@@ -2035,8 +2035,8 @@ static int utf8chkmsk[] = {
 	0x7c000000,
 };
 
-int
-GDKstrFromStr(unsigned char *dst, unsigned char *src, int len)
+ssize_t
+GDKstrFromStr(unsigned char *dst, unsigned char *src, ssize_t len)
 {
 	unsigned char *p = dst, *cur = src, *end = src + len;
 	int escaped = FALSE, mask = 0, n, c, utf8char = 0;
@@ -2166,7 +2166,8 @@ int
 strFromStr(char *src, int *len, char **dst)
 {
 	unsigned char *p, *start = NULL, *cur = (unsigned char *) src;
-	int res, l = 1, escaped = FALSE;
+	ssize_t res;
+	int l = 1, escaped = FALSE;
 
 	while (GDKisspace(*cur))
 		cur++;
@@ -2201,8 +2202,9 @@ strFromStr(char *src, int *len, char **dst)
 		p = GDKmalloc(*len = l);
 	*dst = (char *) p;
 
+	assert(cur - start <= INT_MAX);	/* 64bit */
 	if ((res = GDKstrFromStr((unsigned char *) *dst, start, cur - start)) >= 0)
-		return res;
+		return (int) res;
 
   error:
 	if (*dst && *dst != str_nil)

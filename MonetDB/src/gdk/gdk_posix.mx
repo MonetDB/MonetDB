@@ -1211,6 +1211,7 @@ MT_mallinfo(void)
 	hinfo._pentry = NULL;
 	memset(&_ret, 0, sizeof(struct mallinfo));
 
+/* 64bit: mallinfo uses ints which won't work on 64 bit platforms */
 	while ((heapstatus = _heapwalk(&hinfo)) == _HEAPOK) {
 		_ret.arena += hinfo._size;
 		if (hinfo._size > MT_SMALLBLOCK) {
@@ -1284,7 +1285,7 @@ opendir(const char *dirname)
 {
 	DIR *result = NULL;
 	char *mask;
-	unsigned int k;
+	size_t k;
 
 	if (dirname == NULL)
 		return NULL;
@@ -1357,7 +1358,7 @@ readdir(DIR *dir)
 		}
 	}
 	strcpy(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName));
-	result.d_namelen = strlen(result.d_name);
+	result.d_namelen = (int) strlen(result.d_name);
 
 	return &result;
 }

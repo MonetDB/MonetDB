@@ -481,7 +481,7 @@ clrRequest(Request q)
 {
 	Request r;
 
-	q->ev_process = (MT_Id) -(int) q->ev_process;
+	q->ev_process = -q->ev_process;
 	q->ev_status = EVDONE;
 	r = q->ev_wakeup;
 

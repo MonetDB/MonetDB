@@ -194,11 +194,11 @@ blob_read(blob *a, stream *s, size_t cnt)
 void
 blob_write(blob *a, stream *s, size_t cnt)
 {
-	int len = blobsize(a->nitems);
+	size_t len = blobsize(a->nitems);
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (stream_writeInt(s, (int) len))
+	if (stream_writeInt(s, (int) len)) /* 64bit: check for overflow */
 		stream_write(s, (char *) a, len, 1);
 }
 
@@ -212,7 +212,7 @@ blob_convert(blob *b, int direction)
 int
 blob_length(blob *p)
 {
-	return (blobsize(p->nitems));
+	return blobsize(p->nitems); /* 64bit: check for overflow */
 }
 
 
@@ -223,6 +223,8 @@ blob_heap(Heap *heap, size_t capacity)
 }
 
 #ifndef OLDSTYLE
+static char hexit[] = "0123456789ABCDEF";
+
 int
 blob_tostr(str *tostr, int *l, blob *p)
 {
@@ -252,21 +254,13 @@ blob_tostr(str *tostr, int *l, blob *p)
 		int val = (p->data[i] >> 4) & 15;
 
 		*s++ = ' ';
-		if (val >= 10) {
-			*s++ = 'A' + val - 10;
-		} else {
-			*s++ = '0' + val;
-		}
+		*s++ = hexit[val];
 		val = p->data[i] & 15;
-		if (val >= 10) {
-			*s++ = 'A' + val - 10;
-		} else {
-			*s++ = '0' + val;
-		}
+		*s++ = hexit[val];
 	}
 	*s++ = ')';
 	*s = '\0';
-	return (s - *tostr);
+	return (int) (s - *tostr); /* 64bit: check for overflow */
 }
 
 /* SQL 99 compatible BLOB output string
@@ -301,20 +295,12 @@ sqlblob_tostr(str *tostr, int *l, blob *p)
 	for (i = 0; i < p->nitems; i++) {
 		int val = (p->data[i] >> 4) & 15;
 
-		if (val >= 10) {
-			*s++ = 'A' + val - 10;
-		} else {
-			*s++ = '0' + val;
-		}
+		*s++ = hexit[val];
 		val = p->data[i] & 15;
-		if (val >= 10) {
-			*s++ = 'A' + val - 10;
-		} else {
-			*s++ = '0' + val;
-		}
+		*s++ = hexit[val];
 	}
 	*s = '\0';
-	return (s - *tostr);
+	return (int) (s - *tostr); /* 64bit: check for overflow */
 }
 
 int
@@ -356,7 +342,7 @@ blob_fromstr(char *instr, int *l, blob **val)
 
 	if (*val == (blob *) NULL) {
 		*val = (blob *) GDKmalloc(nbytes);
-		*l = nbytes;
+		*l = (int) nbytes;
 	} else if (*l < 0 || (size_t) * l < nbytes) {
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
@@ -409,7 +395,7 @@ blob_fromstr(char *instr, int *l, blob **val)
 		GDKerror("blob_fromstr: Missing ')' in blob\n");
 	}
 
-	return s - instr;
+	return (int) (s - instr);
 }
 
 /* SQL 99 compatible BLOB input string
@@ -438,11 +424,11 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 
 	if (*val == (blob *) NULL) {
 		*val = (blob *) GDKmalloc(nbytes);
-		*l = nbytes;
+		*l = (int) nbytes;
 	} else if (*l < 0 || (size_t) * l < nbytes) {
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
-		*l = nbytes;
+		*l = (int) nbytes;
 	}
 	result = *val;
 	result->nitems = nitems;
@@ -477,7 +463,7 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 		result->data[i] = res;
 	}
 
-	return (s - instr);
+	return (int) (s - instr);
 }
 
 #else
@@ -676,7 +662,7 @@ toblob(blob **retval, str s)
 int
 blob_nitems(int *ret, blob *b)
 {
-	*ret = b->nitems;
+	*ret = (int) b->nitems;
 	return GDK_SUCCEED;
 }
 

@@ -237,7 +237,8 @@ log_write_format(logger *l, logformat *data)
 static char *
 log_read_string(logger *l)
 {
-	int len, nr;
+	int len;
+	ssize_t nr;
 	char *buf;
 
 	stream_readInt(l->log, &len);
@@ -245,7 +246,7 @@ log_read_string(logger *l)
 
 	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t)len) {
 		buf[len-1] = 0;
-		printf("ERROR: couldn't read name (%s) %d\n", buf, nr);
+		printf("ERROR: couldn't read name (%s) " SSZFMT "\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
@@ -283,7 +284,7 @@ log_read_insdel(logger *logger, logformat *l)
 		fprintf(stderr, "logger found log_read_insdel " SZFMT " %s %d\n", (size_t) l->bid, (l->flag == LOG_INSERT) ? "insert" : "delete", l->nr);
 
 	if (b) {
-		int cnt = BATcount(b);
+		size_t cnt = BATcount(b);
 		void *(*rh) (ptr, stream *, size_t) = BATatoms[b->htype].atomRead;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
 		void *hv = ATOMnil(b->htype);
@@ -335,7 +336,7 @@ log_read_updates(logger *logger, logformat *l)
 		fprintf(stderr, "logger found log_read_updates " SZFMT " update %d\n", (size_t) l->bid, l->nr);
 
 	if (ubat) {
-		int cnt = BATcount(ubat);
+		size_t cnt = BATcount(ubat);
 		void *(*rh) (ptr, stream *, size_t) = BATatoms[ubat->htype].atomRead;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[ubat->ttype].atomRead;
 		void *hv = ATOMnil(ubat->htype);

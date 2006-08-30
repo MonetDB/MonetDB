@@ -514,7 +514,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "      }\n";
 		o << "   }\n";
 		o << "   *buf = 0;\n";
-		o << "   return buf-(*dst);\n";
+		o << "   return (int) (buf - *dst);\n";
 		o << "}\n\n";
 		break;
 	case OP_FROMSTR:
@@ -537,7 +537,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "         (*dst)[i] = *buf;\n";
 		o << "      }\n";
 		o << "   }\n";
-		o << "   return buf-src;\n";
+		o << "   return (int) (buf - src);\n";
 		o << "}\n\n";
 		break;
 

@@ -116,8 +116,8 @@ BATsavedesc(BAT *b, str nme)
 					ATOMunknown_name(b->htype);
 		char *tatm = (b->ttype>=0)?ATOMname(b->ttype):
 					ATOMunknown_name(b->ttype);
-		int hlen = strlen(hatm) + 1; 
-		int tlen = strlen(tatm) + 1;
+		int hlen = (int) strlen(hatm) + 1; 
+		int tlen = (int) strlen(tatm) + 1;
 		int hvar = b->hvarsized && (b->htype != TYPE_void);
 		int tvar = b->tvarsized && (b->ttype != TYPE_void);
 

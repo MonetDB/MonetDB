@@ -2245,7 +2245,7 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 int
 CMDmerge(BAT **ret, BAT *b)
 {
-	int n = BATcount(b);
+	size_t n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_lng, TYPE_void, n);
 	BUN p, q;
 	int xx;
@@ -2275,9 +2275,9 @@ CMDmerge(BAT **ret, BAT *b)
 int
 CMDsplit(BAT **ret, BAT *b)
 {
-	int n = BATcount(b);
+	size_t n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_oid, TYPE_oid, n);
-	int i;
+	size_t i;
 	lng *r = (lng *) BUNhead(b, BUNfirst(b));
 
 	for (i = 0; i < n; i++, r++) {

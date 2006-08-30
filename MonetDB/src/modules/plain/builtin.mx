@@ -1280,7 +1280,7 @@ print_format(str format, ...)
 	if (ret == GDK_FAIL) {
 		return GDK_FAIL;
 	}
-	ret = stream_write(GDKout, s, strlen(s), 1);
+	ret = (int) stream_write(GDKout, s, strlen(s), 1);
 	GDKfree(s);
 	if (ret < 0) {
 		GDKsyserror("printf():");

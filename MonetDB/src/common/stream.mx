@@ -703,7 +703,7 @@ file_fsync(stream *s)
 
 	if (s->access == ST_WRITE &&
 #ifdef NATIVE_WIN32
-	    _commit(fileno(fp)) < 0
+	    _commit(_fileno(fp)) < 0
 #else
 	    fsync(fileno(fp)) < 0
 #endif
@@ -1377,7 +1377,8 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
-				     ((nr = send(s->stream_data.i, (void *) ((char *) buf + res), size - res, 0)) > 0)
+				     /* send works on int, make sure the argument fits */
+				     ((nr = send(s->stream_data.i, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
 				     ((nr = write(s->stream_data.i, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
@@ -1408,7 +1409,8 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
-				     ((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size - res, 0)) > 0)
+				     /* recv works on int, make sure the argument fits */
+				     ((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
 				     ((nr = read(s->stream_data.i, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
@@ -2161,7 +2163,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 		if (todo < n)
 			n = todo;
 		memcpy(s->buf + s->nr, buf, n);
-		s->nr += n;
+		s->nr += (unsigned) n;
 		todo -= n;
 		buf = (void *) ((char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
@@ -2320,7 +2322,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			buf = (void *) ((char *) buf + m);
 			cnt += m;
 			n -= m;
-			s->itotal -= m;
+			s->itotal -= (int) m;
 			todo -= m;
 		}
 
@@ -2588,7 +2590,7 @@ bstream_create(stream *s, size_t size)
 
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
-	b->mode = size;
+	b->mode = size;		/* 64bit: should check that size isn't too large and fits in an int */
 	if (size == 0)
 		size = BUFSIZ;
 	b->s = s;
@@ -2673,7 +2675,7 @@ bstream_readline(bstream *s)
 	if (size > s->size - s->len)
 		size = s->size - s->len;
 
-	if (fgets(s->buf + s->len, size, s->s->stream_data.p) == NULL)
+	if (fgets(s->buf + s->len, (int) size, s->s->stream_data.p) == NULL)
 		return -1;
 
 	rd = strlen(s->buf + s->len);
@@ -2696,7 +2698,7 @@ bstream_next(bstream *s)
 	} else if (s->s->read == file_read) {
 		return bstream_readline(s);
 	} else {
-		int sz = 0, rd;
+		ssize_t sz = 0, rd;
 
 		while ((rd = bstream_read(s, 1)) == 1 && s->buf[s->pos + sz] != '\n') {
 			sz += rd;

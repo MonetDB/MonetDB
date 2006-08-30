@@ -1788,13 +1788,14 @@ Making such bats persistent or appendable/writable, will force a true copy of th
 copy-on-write mmap heap to be made.
 @c
 static int
-copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt, int mode) {
+copy_segment(char* mmap, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt, int mode)
+{
 	int ret = 0;
 	if (cnt) {
 	        size_t xx = REMAP_PAGE_SIZE * BUNsize(b);
-		size_t src_off = ((size_t) src) * xx;
-		size_t dst_off = ((size_t) dst) * xx;
-		size_t nbytes  = ((size_t) cnt) * xx;
+		off_t src_off = (off_t) (src * xx); /* 64bit: could overflow */
+		size_t dst_off = dst * xx;
+		size_t nbytes  = cnt * xx;
 		size_t partial = (BUNlast(b) - BUNfirst(b)) - src_off;
 		if (!mmap) {
 			/* copy segment from master bat */
@@ -1872,7 +1873,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	BATloopFast(map, p, q, xx) {
 		oid id = *(oid*) BUNtail(map, p);
 		size_t idx = id >> 3;  
-		size_t mask = 1 << (id & 7);  
+		size_t mask = (size_t) 1 << (id & 7);  
  		if (id > max) {
 			GDKerror("remap: map index " SZFMT "@0 out of range [0@0," SZFMT "@0]\n", id, max);
 			GDKfree(chk);
@@ -1949,7 +1950,8 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 	/* go over all pages and copy them in segments that unite consecutively mapped pages */
 	for(xx=1; xx<cnt; xx++) {
 		if (pid[xx]-1 != pid[xx-1]) {
-			if (!copy_segment(mmap, bn, b, pid[zz], zz, xx-zz, mode)) break;
+			if (!copy_segment(mmap, bn, b, pid[zz], zz, xx-zz, mode))
+				break;
 			zz = xx;
 		}
 	}

@@ -392,15 +392,6 @@ An error at this stage normally lead to an abort.
 #ifndef WIFEXITED
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
-#ifdef NATIVE_WIN32
-#define unlink _unlink
-#ifdef _MSC_VER
-#define fileno _fileno
-#endif
-#define fdopen _fdopen
-#define putenv _putenv
-#define strdup _strdup
-#endif
 
 
 #ifdef __cplusplus
@@ -662,7 +653,7 @@ typedef struct {
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	BUN base;		/* base pointer in memory. */
-	sht storage;		/* storage status. */
+	char storage;		/* storage status. */
 	bit copied;		/* a copy of an existing map. */
 	chr padding;		/* not used. */
 	str filename;		/* file containing image of the heap */
@@ -2241,6 +2232,16 @@ gdk_export int GDKerrorCount(void);
 #include "gdk_desc.h"
 #include "gdk_utils.h"
 #include "gdk_bat.h"
+
+#ifdef NATIVE_WIN32
+#define unlink _unlink
+#ifdef _MSC_VER
+#define fileno _fileno
+#endif
+#define fdopen _fdopen
+#define putenv _putenv
+#define strdup _strdup
+#endif
 
 gdk_export MT_Lock GDKthreadLock;
 gdk_export MT_Lock GDKswapLock[BBPLOCKMASK + 1];

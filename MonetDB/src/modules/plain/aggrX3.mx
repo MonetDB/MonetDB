@@ -205,7 +205,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 {
 	REGISTER BUN _p = BUNlast(bn);
 	REGISTER int _bunsize = BUNsize(bn);
-	REGISTER int _cnt = BATcount(e);
+	REGISTER size_t _cnt = BATcount(e);
 
 	bn->tsorted = bn->hsorted = 0;
 	min = max = (oid) 0;

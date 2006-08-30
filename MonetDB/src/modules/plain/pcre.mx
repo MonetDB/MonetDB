@@ -630,7 +630,7 @@ int
 sql2pcre(str *r, str pat, str esc_str) 
 {
 	/* change the SQL wilcards into PCRE wildcards */
-	int len = strlen(pat);
+	int len = (int) strlen(pat);
 	int escaped = 0;
 	int hasWildcard = 0;
 	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);

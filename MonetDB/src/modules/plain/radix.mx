@@ -1907,7 +1907,7 @@ radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN o
 {
 	BUN lo_limit, hi_limit, cur;
 	size_t ntuples = BUNindex(b,end)-BUNindex(b,start);
-	size_t nchunks = 1<<nbits;
+	size_t nchunks = (size_t) 1 << nbits;
 	size_t chunksize = ntuples/nchunks;
 	size_t i;
 	size_t mask = (nchunks-1) << shift;
@@ -2053,7 +2053,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	}
 
 	while (--argc >= 0 && radix[argc] > 0) {
-		size_t i, h = 1 << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
+		size_t i, h = (size_t) 1 << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
 		size_t *dst = (size_t *) GDKmalloc(sizeof(size_t) * h);
 		size_t *cnt = (size_t *) GDKmalloc(sizeof(size_t) * h);
 		BAT *prev = bn, *lims = NULL;
@@ -2267,7 +2267,7 @@ radix setting for a certain BAT dataset (tail column).
 int
 M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 {
-	size_t mask = 1 << *radix;
+	size_t mask = (size_t) 1 << *radix;
 	int off = *shift;
 	BAT *bn = BATnew(TYPE_int, TYPE_int, mask);
 	int bunsize;
@@ -2289,7 +2289,7 @@ M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 		int cnt = 1;
 
 		while ((p += bunsize) < q) {
-			tcur = oid_RADIX(BUNtail(b, p), mask) >> off;
+			tcur = (int) (oid_RADIX(BUNtail(b, p), mask) >> off);
 			hcur = *(oid *) BUNhead(b, p);
 
 			if (tcur != tbak || hcur < hbak) {
@@ -2317,7 +2317,7 @@ M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 int
 M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 {
-	size_t mask = 1 << *radix;
+	size_t mask = (size_t) 1 << *radix;
 	int off = *shift;
 	BAT *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
 	size_t xx;

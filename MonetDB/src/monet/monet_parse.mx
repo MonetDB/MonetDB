@@ -201,7 +201,7 @@ static str ll_getstr(int quote, int *len);
 ({P}+) |
 ({C}*"=")	      { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
-			strcpy(t, yytext); /* copy yytext before unput */
+			strncpy(t, yytext, l+1);	 /* copy yytext before unput */
 			if (l > 1 || (*t != '~' && *t != '?' && *t != ':')) {
 				if (ll_resolution) {
 					TBLSEARCH(s, t, &i, FALSE, TRUE, FALSE);
@@ -218,7 +218,7 @@ static str ll_getstr(int quote, int *len);
 ({L}({L}|{D})*)	 {
 command:	      {	int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l + 1);
-			strcpy(t, yytext); /* copy yytext before unput */
+			strncpy(t, yytext, l + 1);	 /* copy yytext before unput */
 			if (ll_resolution) {
 				TBLSEARCH(s, t, &i, TRUE, TRUE, TRUE);
 				if (s != NULL) {
@@ -237,7 +237,7 @@ command:	      {	int i, l = (int) strlen(yytext);
 ("[:"{L}({L}|{D})*"=]") |
 ("{"{L}({L}|{D})*"}") { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
-			strcpy(t, yytext); /* copy yytext before unput */
+			strncpy(t, yytext, l + 1);	 /* copy yytext before unput */
 			if (ll_resolution) {
 				char cb = t[l-1];      /* save bracket */
 				TBLSEARCH(s, t, &i, TRUE, FALSE, FALSE);
@@ -250,8 +250,9 @@ command:	      {	int i, l = (int) strlen(yytext);
 					if (i == TOK_BUILTIN) {
 						GDKerror("yyparse: cannot use a %cBUILTIN%c()\n", *t, (*t=='[')?']':'}');
 					} else if (i != TOK_ASSIGNOP || *t == '[') {
-						str nme = (str) alloca((int)strlen(s)+3);
-						sprintf(nme, "%c%s%c", *t, s, cb);
+						size_t len = strlen(s) + 3;
+						str nme = (str) alloca((int)len);
+						snprintf(nme, len, "%c%s%c", *t, s, cb);
 						Function(i, nme);
 					}
 				}
@@ -1544,9 +1545,9 @@ ll_parserror(str msg)
 	*s++ = '\n';
 	*s = 0;
 	if (msg) {
-		sprintf(s, "! %s.\n", msg);
+		snprintf(s, sizeof(buf)-(s-buf), "! %s.\n", msg);
 	} else {
-		sprintf(s, "! "); s += 2;
+		snprintf(s, sizeof(buf)-(s-buf), "! "); s += 2;
 @-
 Inlining this is a non-solution which was forced upon me by the new
 makefiles. It effectively introduces the new requirement that all yaccs
@@ -1562,77 +1563,77 @@ should be the same. And they are not.. Sucker!
 				switch (yystate) {
 				case 3:	case 20: case 58:
 				case 60: case 181: case 183:
-					strcpy(s,"you forgot a closing ';'.\n");
+					strncpy(s,"you forgot a closing ';'.\n",sizeof(buf)-(s-buf));
 					break;
 				case 11: case 12:
-					strcpy(s,"identifier expected.\n");
+					strncpy(s,"identifier expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 13:
-					strcpy(s,"command name expected.\n");
+					strncpy(s,"command name expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 14:
-					strcpy(s,"procedure expected.\n");
+					strncpy(s,"procedure expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 18: case 19: case 46: case 47:
-					strcpy(s,"'(' expected.\n");
+					strncpy(s,"'(' expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 24: case 33: case 156:
-					strcpy(s,"command invocation missing.\n");
+					strncpy(s,"command invocation missing.\n",sizeof(buf)-(s-buf));
 					break;
 				case 36:
-					strcpy(s,"would a identifier or ../ be missing?\n");
+					strncpy(s,"would a identifier or ../ be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 48: case 51:
-					strcpy(s,"would a ';' or ',' be missing?\n");
+					strncpy(s,"would a ';' or ',' be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 52: case 105: case 108: case 149:
-					strcpy(s,"':=' expected.\n");
+					strncpy(s,"':=' expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 78: case 130: case 208: case 229: case 240: case 246:
-					strcpy(s,"']' expected.\n");
+					strncpy(s,"']' expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 79:
-					strcpy(s,"forgot to close a block?\n");
+					strncpy(s,"forgot to close a block?\n",sizeof(buf)-(s-buf));
 					break;
 				case 77: case 80: case 117: case 118:
-					strcpy(s,"')' expected.\n");
+					strncpy(s,"')' expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 87:
-					strcpy(s,"would a '~' or '?' be missing?\n");
+					strncpy(s,"would a '~' or '?' be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 95:
-					strcpy(s,"would '..' or ')' be missing?\n");
+					strncpy(s,"would '..' or ')' be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 96: case 97: case 182:
-					strcpy(s,"identifier or string missing.\n");
+					strncpy(s,"identifier or string missing.\n",sizeof(buf)-(s-buf));
 					break;
 				case 99: case 103: case 107: case 187:
-					strcpy(s,"identifier missing.\n");
+					strncpy(s,"identifier missing.\n",sizeof(buf)-(s-buf));
 					break;
 				case 129:
-					strcpy(s,"'~' expected.?\n");
+					strncpy(s,"'~' expected.?\n",sizeof(buf)-(s-buf));
 					break;
 				case 142: case 146: case 163:
 				case 152: case 202:
-					strcpy(s,"would a ')' or ',' be missing?\n");
+					strncpy(s,"would a ')' or ',' be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 155:
-					strcpy(s,"would a '@' or ';' be missing?\n");
+					strncpy(s,"would a '@' or ';' be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 170:
-					strcpy(s,"would a atom or ')' be missing?\n");
+					strncpy(s,"would a atom or ')' be missing?\n",sizeof(buf)-(s-buf));
 					break;
 				case 209:
-					strcpy(s,"':' expected.\n");
+					strncpy(s,"':' expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 217:
-					strcpy(s,"iterator expected.\n");
+					strncpy(s,"iterator expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 224: case 234: case 243:
-					strcpy(s,"atom name expected.\n");
+					strncpy(s,"atom name expected.\n",sizeof(buf)-(s-buf));
 					break;
 				case 239:
-					strcpy(s,"comma expected.\n");
+					strncpy(s,"comma expected.\n",sizeof(buf)-(s-buf));
 					break;
 				}
 			}
@@ -1641,7 +1642,7 @@ should be the same. And they are not.. Sucker!
 #endif
 #endif
 		if (*s == 0)
-			strcpy(s,"can't help you here, sorry.\n");
+			strncpy(s,"can't help you here, sorry.\n",sizeof(buf)-(s-buf));
 	}
 	GDKerror(buf);
 	ll_sugarnode = NULL;

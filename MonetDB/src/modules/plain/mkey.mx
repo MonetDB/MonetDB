@@ -292,6 +292,8 @@ CMDrotate(int *res, int *val, int *n)
 	return GDK_SUCCEED;
 }
 
+/* 64bit: the CMDhash functions should probably return wrd and use the
+ * same hash functions as the rest of MonetDB */
 int
 CMDhash_bte(int *res, bte *val)
 {
@@ -348,6 +350,8 @@ CMDhash_dbl(int *res, dbl *val)
 int
 CMDhash_str(int *res, str val)
 {
+/* 64bit: if CMDhash continues to return int, then this should
+ * probably be changed to not throw away the top bits of the result */
 	*res = strHash(val);
 	return GDK_SUCCEED;
 }
