@@ -88,7 +88,6 @@ typedef	DWORD			pthread_t;
 #define	vsnprintf		_vsnprintf
 #define	getcwd(x,y)		_getcwd(x,y)
 #define	mkdir(x,y)		_mkdir(x)
-/* #define	fstat(x,y)		_fstat(x,y) */
 #define	pthread_create(a,b,c,d)	CreateThread(0, 0, c, d, 0, a)
 #define	pthread_exit(x)		ExitThread(x)
 #define	pthread_detach(x)	0
@@ -3067,11 +3066,13 @@ shttpd_init(const char *fname)
 	/* If document_root is not set, set it to current directory */
 	if (STROPT(OPT_DOCROOT) == NULL){
         char tmp[8192];
-		STROPT(OPT_DOCROOT) = getcwd(tmp, 8192);
-        if (STROPT(OPT_DOCROOT) == NULL) {
+        char *docroot = NULL;
+		docroot = getcwd(tmp, 8192);
+        if (docroot == NULL) {
             elog(ERR_FATAL, "unable to set document_root: %s", strerror(errno));
             return;  /* force abort */
         }
+		STROPT(OPT_DOCROOT) = strdup(docroot);
     }
 	assert(STROPT(OPT_DOCROOT) != NULL);
 
