@@ -1852,10 +1852,11 @@ xquery_function_call(xquery_client *ctx,
     @:seqbase(loop000, oid_nil, "oid(nil)")@
 
     for(l=j=0; j<itercnt; j++) {
-        oid iter = j + 1;
-        @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
         for(i=0; i<argc; i++) {
-            oid item, vid = i + fun->vid;
+            oid item, vid = i + fun->vid, iter = j+1;
+            if (i == 0 && j > 0) {
+                @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
+            }
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
                 char c;
