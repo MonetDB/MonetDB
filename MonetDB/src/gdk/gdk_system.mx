@@ -129,7 +129,7 @@ gdk_export void    MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */
 /* to avoid address space fragmentation   */
-#define THREAD_STACK_SIZE	((size_t)  512*1024)
+#define THREAD_STACK_SIZE	((size_t)2*512*1024)
 #else
 /* "increased" stack size on 64-bit systems    */
 /* since some compilers seem to require this   */
