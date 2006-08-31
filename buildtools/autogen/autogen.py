@@ -90,7 +90,7 @@ class parser:
 def read_makefile(p, cwd):
     lineno = 0
     for line in fileinput.input(os.path.join(cwd, 'Makefile.ag')):
-        if line[0] != "#":
+        if line.lstrip()[0:1] != "#":
             for token in string.split(line):
                 p.parse(token, lineno, line)
             p.parse("\n", lineno, line)
