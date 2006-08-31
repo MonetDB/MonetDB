@@ -884,8 +884,8 @@ Module: "pcre"
 
 Module: "pqueue"
 
-[ 95 ]
-[ 95 ]
+[ 96 ]
+[ 96 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # tmp_35				tmp_36		tmp_37							tmp_40											  # name
 # str				str		str							str											  # type
@@ -926,7 +926,8 @@ Module: "pqueue"
 [ "pqueue_enqueue_min",		  "COMMAND:   ",  "pqueue_enqueue_min(BAT[oid,oid], oid, oid) : void",	  "Inserts element (oid,oid) in the min-pqueue"						  ]
 [ "pqueue_enqueue_min",		  "COMMAND:   ",  "pqueue_enqueue_min(BAT[oid,ptr], oid, ptr) : void",	  "Inserts element (oid,ptr) in the min-pqueue"						  ]
 [ "pqueue_enqueue_min",		  "COMMAND:   ",  "pqueue_enqueue_min(BAT[oid,sht], oid, sht) : void",	  "Inserts element (oid,sht) in the min-pqueue"						  ]
-[ "pqueue_init",		  "COMMAND:   ",  "pqueue_init(BAT[void,any::1], int) : BAT[oid,any::1]", "Creates an initially empty pqueue of bat a's tailtype with maximum size maxsize"	  ]
+[ "pqueue_init",		  "COMMAND:   ",  "pqueue_init(BAT[void,any::1], wrd) : BAT[oid,any::1]", "Creates an initially empty pqueue of bat a's tailtype with maximum size maxsize"	  ]
+[ "pqueue_init",		  "PROC:      ",  "pqueue_init(BAT[void,any::1], int) : BAT[oid,any::1]", "not available"									  ]
 [ "pqueue_peek",		  "PROC:      ",  "pqueue_peek(BAT[oid,any]) : any",			  "not available"									  ]
 [ "pqueue_topn",		  "PROC:      ",  "pqueue_topn(BAT[oid,any], int, int) : BAT[oid,any]",	  "not available"									  ]
 [ "pqueue_topn_max",		  "COMMAND:   ",  "pqueue_topn_max(BAT[oid,any], int) : BAT[oid,any]",	  "Return the topn elements of the bat t using a max-pqueue"				  ]

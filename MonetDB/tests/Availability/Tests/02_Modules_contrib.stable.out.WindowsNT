@@ -156,22 +156,27 @@ Module: "bitset"
 
 Module: "bitvector"
 
-[ 12 ]
-[ 12 ]
+[ 17 ]
+[ 17 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help							  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[allocate]",		  "COMMAND:   ",  "[allocate](int, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
+[ "[allocate]",		  "COMMAND:   ",  "[allocate](wrd, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
+[ "[allocate]",		  "PROC:      ",  "[allocate](int, bit) : BAT[void,lng]",		  "not available"					  ]
 [ "[and]",		  "COMMAND:   ",  "[and](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "Logically ANDs two bitvectors"			  ]
-[ "[clr]",		  "COMMAND:   ",  "[clr](BAT[any::1,lng], int) : void",			  "Clear a bit in a bitvector"				  ]
-[ "[count]",		  "COMMAND:   ",  "[count](BAT[void,lng]) : int",			  "Count the number of bits set"			  ]
+[ "[clr]",		  "COMMAND:   ",  "[clr](BAT[any::1,lng], wrd) : void",			  "Clear a bit in a bitvector"				  ]
+[ "[clr]",		  "PROC:      ",  "[clr](BAT[any::1,lng], int) : void",			  "not available"					  ]
+[ "[count]",		  "COMMAND:   ",  "[count](BAT[void,lng]) : wrd",			  "Count the number of bits set"			  ]
 [ "[decode]",		  "COMMAND:   ",  "[decode](BAT[void,lng]) : BAT[oid,oid]",		  "Decodes a bitvector into a real BAT"			  ]
 [ "[encode]",		  "COMMAND:   ",  "[encode](BAT[any::1,oid]) : BAT[void,lng]",		  "Encode a BAT with tail values into a bitvector"	  ]
-[ "[isclr]",		  "COMMAND:   ",  "[isclr](BAT[any::1,lng], int) : bit",		  "Is bit bnum not set?"				  ]
-[ "[isset]",		  "COMMAND:   ",  "[isset](BAT[any::1,lng], int) : bit",		  "Is bit bnum set?"					  ]
+[ "[isclr]",		  "COMMAND:   ",  "[isclr](BAT[any::1,lng], wrd) : bit",		  "Is bit bnum not set?"				  ]
+[ "[isclr]",		  "PROC:      ",  "[isclr](BAT[any::1,lng], int) : bit",		  "not available"					  ]
+[ "[isset]",		  "COMMAND:   ",  "[isset](BAT[any::1,lng], wrd) : bit",		  "Is bit bnum set?"					  ]
+[ "[isset]",		  "PROC:      ",  "[isset](BAT[any::1,lng], int) : bit",		  "not available"					  ]
 [ "[or]",		  "COMMAND:   ",  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
 [ "[prt]",		  "COMMAND:   ",  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
-[ "[set]",		  "COMMAND:   ",  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
+[ "[set]",		  "COMMAND:   ",  "[set](BAT[any::1,lng], wrd) : void",			  "Set a bit in a bitvector"				  ]
+[ "[set]",		  "PROC:      ",  "[set](BAT[any::1,lng], int) : void",			  "not available"					  ]
 [ "test_bitvector",	  "PROC:      ",  "test_bitvector() : void",				  "not available"					  ]
 
 Module: "color"
@@ -350,19 +355,24 @@ Module: "oo7"
 
 Module: "qt"
 
-[ 10 ]
-[ 10 ]
+[ 15 ]
+[ 15 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature																					| help																																																															  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[qt_cross_pre_select]",	  "COMMAND:   ",  "[qt_cross_pre_select](int, int, int) : BAT[oid,oid]",															  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
+[ "[allocate]",			  "PROC:      ",  "[allocate](int, bit) : BAT[void,lng]",																	  "not available"																																																													  ]
+[ "[clr]",			  "PROC:      ",  "[clr](BAT[any::1,lng], int) : void",																		  "not available"																																																													  ]
+[ "[isclr]",			  "PROC:      ",  "[isclr](BAT[any::1,lng], int) : bit",																	  "not available"																																																													  ]
+[ "[isset]",			  "PROC:      ",  "[isset](BAT[any::1,lng], int) : bit",																	  "not available"																																																													  ]
+[ "[qt_cross_pre_select]",	  "COMMAND:   ",  "[qt_cross_pre_select](int, int, wrd) : BAT[oid,oid]",															  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
 [ "[qt_debug]",			  "COMMAND:   ",  "[qt_debug](int) : void",																			  "Set debuging on/off"																																																													  ]
 [ "[qt_delcross]",		  "COMMAND:   ",  "[qt_delcross](int) : void",																			  "Delete a cross."																																																													  ]
 [ "[qt_ir_cluster]",		  "COMMAND:   ",  "[qt_ir_cluster](BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], int) : void",							  "Cluster all images in a set of bit vectors with 3 color transitions in\n  the Itten-Runge color space.  The clusters themselves are named \n  IR_[N|W]_C0_C1_C2"																																											  ]
 [ "[qt_makecross]",		  "COMMAND:   ",  "[qt_makecross](BAT[int,uchr], BAT[int,uchr], BAT[int,uchr], int) : int",													  "Construct a cross from a spot quad tree.  When IR space is set, the \n  cross is stored in IR color space."																																																		  ]
 [ "[qt_match]",			  "COMMAND:   ",  "[qt_match](int, oid, BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], BAT[oid,oid], BAT[oid,int], BAT[oid,int], int, flt) : void", "Look for a matching color cross, which is described by the cross \n  referenced by crossid, in the ID, H, S, and V table.  The requested quad\n  tree is presented in the tables qt_ioffs and qt_inum (offset and number\n  of features, respectively) at entry image_oid.  Fill in the r_* BATS\n  with matching images, number of colors and the IDs of the matched\n  features, respectively if more than or equal to the number of different\n  colors from the spot time the fraction match in the image."	  ]
-[ "[qt_pre_select]",		  "COMMAND:   ",  "[qt_pre_select](int, int, int) : BAT[oid,oid]",																  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
+[ "[qt_pre_select]",		  "COMMAND:   ",  "[qt_pre_select](int, int, wrd) : BAT[oid,oid]",																  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
 [ "[qt_stats]",			  "COMMAND:   ",  "[qt_stats](int, str) : void",																		  "Control statistics output"																																																												  ]
+[ "[set]",			  "PROC:      ",  "[set](BAT[any::1,lng], int) : void",																		  "not available"																																																													  ]
 [ "test_bitvector",		  "PROC:      ",  "test_bitvector() : void",																			  "not available"																																																													  ]
 [ "test_uchr",			  "PROC:      ",  "test_uchr() : void",																				  "not available"																																																													  ]
 

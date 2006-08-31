@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 951 ]
+[ 957 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 951 ]
+[ 957 ]
 
 var All:=0;
 
@@ -78,8 +78,8 @@ Static_mods@batloop() {
 
 Module: ""
 
-[ 61 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 67 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -122,13 +122,19 @@ Module: ""
 [ "repeat",		  "PROC:      ",  "repeat(str, int) : str",										  "not available"																																																													  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "not available"																																																													  ]
 [ "space",		  "PROC:      ",  "space(int) : str",											  "not available"																																																													  ]
+[ "string",		  "PROC:      ",  "string(str, int) : str",								  "not available"																																																																																															  ]
+[ "string",		  "PROC:      ",  "string(str, int, int) : str",							  "not available"																																																																																															  ]
 [ "stringinsert",	  "PROC:      ",  "stringinsert(str, int, int, str) : str",								  "not available"																																																													  ]
 [ "stringleft",		  "PROC:      ",  "stringleft(str, int) : str",										  "not available"																																																													  ]
+[ "stringleft",		  "PROC:      ",  "stringleft(str, wrd) : str",								  "not available"																																																																																															  ]
 [ "stringlength",	  "PROC:      ",  "stringlength(str) : int",										  "not available"																																																													  ]
 [ "stringreplace",	  "PROC:      ",  "stringreplace(str, str, str) : str",									  "not available"																																																													  ]
 [ "stringright",	  "PROC:      ",  "stringright(str, int) : str",									  "not available"																																																													  ]
+[ "stringright",	  "PROC:      ",  "stringright(str, wrd) : str",							  "not available"																																																																																															  ]
 [ "substring",		  "PROC:      ",  "substring(str, int) : str",										  "not available"																																																													  ]
 [ "substring",		  "PROC:      ",  "substring(str, int, int) : str",									  "not available"																																																													  ]
+[ "substring",		  "PROC:      ",  "substring(str, wrd) : str",								  "not available"																																																																																															  ]
+[ "substring",		  "PROC:      ",  "substring(str, wrd, wrd) : str",							  "not available"																																																																																															  ]
 [ "sum",		  "PROC:      ",  "sum(BAT[any,bte]) : bte",							  "not available"																																		  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,dbl]) : dbl",							  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,flt]) : flt",							  "not available"																																																													  ]
@@ -987,8 +993,8 @@ Module: "str"
 [ "split",	  "COMMAND:   ",  "split(str) : BAT[void,chr]",							  "Split the string s into separate chrs"																																																																							  ]
 [ "split",	  "COMMAND:   ",  "split(str, str) : BAT[void,str]",								  "Split the string s based on the seperator sep\nnote: the separator may not be an empty string."																																																								  ]
 [ "startsWith",	  "COMMAND:   ",  "startsWith(str, str) : bit",										  "Prefix check."																																																																										  ]
-[ "string",	  "COMMAND:   ",  "string(str, int) : str",										  "Return the tail s[offset..n] of a string s[0..n]."																																																																						  ]
-[ "string",	  "COMMAND:   ",  "string(str, int, int) : str",									  "Return substring s[offset..offset+count] of a string s[0..n]"																																																																				  ]
+[ "string",	  "COMMAND:   ",  "string(str, wrd) : str",								  "Return the tail s[offset..n] of a string s[0..n]."																																																																																											  ]
+[ "string",	  "COMMAND:   ",  "string(str, wrd, wrd) : str",							  "Return substring s[offset..offset+count] of a string s[0..n]"																																																																																									  ]
 [ "substitute",	  "COMMAND:   ",  "substitute(str, str, str, bit) : str",							  "Substitute first occurrence of substring 'src' by 'dst'.\nIff repeated = true this is repeated while 'src' can be found in the result string.\nIn order to prevent recursion and result strings of unlimited size, repeating\nis only done iff src is not a substring of dst."																										  ]
 [ "toLower",	  "COMMAND:   ",  "toLower(str) : str",											  "Convert a string to lower case."																																																																								  ]
 [ "toUpper",	  "COMMAND:   ",  "toUpper(str) : str",											  "Convert a string to upper case."																																																																								  ]
@@ -1096,7 +1102,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 951 ]
+[ 957 ]
 
 quit();
 

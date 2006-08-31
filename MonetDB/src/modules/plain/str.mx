@@ -68,7 +68,7 @@ we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
 @m
 .MODULE str;
 
-.COMMAND string( str s, int offset ) : str = strTail;
+.COMMAND string( str s, wrd offset ) : str = strTail;
 "Return the tail s[offset..n] of a string s[0..n]."
 .COMMAND string( str s, wrd offset, wrd count ) : str = strSubString;
 "Return substring s[offset..offset+count] of a string s[0..n]"
@@ -156,6 +156,9 @@ proc ascii( str s ) : int {
 	return unicodeAt(s,0);
 }
 
+proc string( str s, int offset ) : str {
+	return string(s, wrd(offset));
+}
 proc string( str s, int offset, int count ) : str {
 	return string(s, wrd(offset), wrd(count));
 }
@@ -1396,7 +1399,7 @@ strBytes(int *res, str s)
 }
 
 int
-strTail(str *res, str s, int *offset)
+strTail(str *res, str s, wrd *offset)
 {
 	wrd off = *offset;
 
