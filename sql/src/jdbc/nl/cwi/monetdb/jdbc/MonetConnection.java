@@ -1096,8 +1096,11 @@ public class MonetConnection implements Connection {
 	 * @return a String representing this Object
 	 */
 	public String toString() {
+		String language = "";
+		if (lang == LANG_XQUERY) language = "?language=xquery";
+		else if (lang == LANG_MIL) language = "?language=mil";
 		return("MonetDB Connection (jdbc:monetdb://" + hostname +
-				":" + port + "/" + database +") " + 
+				":" + port + "/" + database + language + ") " + 
 				(closed ? "connected" : "disconnected"));
 	}
 
