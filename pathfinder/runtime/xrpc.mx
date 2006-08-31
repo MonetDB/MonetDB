@@ -1222,7 +1222,8 @@ int CMDhttp_post(BAT **res,
     strptr = strstr(strptr, "<env:Envelope");
 
     if (CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL) {
-        GDKerror("CMDhttp_post: invalid XRPC response received\n");
+        GDKerror("CMDhttp_post: invalid XRPC response received:\n");
+        GDKerror("%s\n", strptr);
         goto FINISH_HTTP_POST;
     }
 
