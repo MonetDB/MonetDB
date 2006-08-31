@@ -248,8 +248,8 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
   size_t i, n = BATcount(t);
   oid idx = t->hseqbase;
 
-  if (*N < n)
-   	n = *N;
+  if ((size_t) *N < n)
+	  n = (size_t) *N;
   do_pqueue_init(H,t,n);
   v = (@1*)BUNtail(t,BUNfirst(t));
 
@@ -269,8 +269,8 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
   int bs = BUNsize(t);
   char *p = BUNfirst(t);
 
-  if (*N < n)
-   	n = *N;
+  if ((size_t) *N < n)
+	  n = (size_t) *N;
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, p+=bs) {
@@ -445,8 +445,8 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
   char *p = BUNfirst(t);
   int tpe = BATttype(t);
 
-  if (*N < n)
-   	n = *N;
+  if ((size_t) *N < n)
+   	n = (size_t) *N;
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, idx++, p+=bs) {
@@ -466,8 +466,8 @@ int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
   char *p = BUNfirst(t);
   int tpe = BATttype(t);
 
-  if (*N < n)
-   	n = *N;
+  if ((size_t) *N < n)
+   	n = (size_t) *N;
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, p+=bs) {

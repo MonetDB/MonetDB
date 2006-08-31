@@ -259,7 +259,7 @@ bitvector_decode(BAT **b_dst, BAT *b_src)
 
 		bf = *(lng *) BUNtail(b_src, p);
 		if (bf)
-			for (n = 0; n < sizeof(lng) * 8; n++)
+			for (n = 0; n < (int) sizeof(lng) * 8; n++)
 				if (bf & ((lng) 1 << n)) {
 					oid _soid = soid + n;
 
