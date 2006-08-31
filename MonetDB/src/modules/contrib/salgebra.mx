@@ -492,7 +492,7 @@ clusterhashByName(clusterhash *res, char *chname)
 int
 clusterhashFromStr(str src, int *len, clusterhash **dst)
 {
-	int l = strlen(src);
+	int l = (int) strlen(src); /* 64bit: assume string is not too long */
 
 	if (*len < clusterhash_size()) {
 		if (*dst)

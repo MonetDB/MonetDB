@@ -51,9 +51,9 @@ The generator can be loaded as a module into any running server.
 @c
 #include "gdk.h"
 
-char string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-char *rndstr;
-oid count;
+static char string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+static char *rndstr;
+/* static oid count; */
 
 void
 WISCinitRndStr(int u1)
@@ -200,7 +200,7 @@ WISCgenerator(str nme,		/* string: pointer to char. */
     )
 {
 	int u1, tmp;
-	oid u2;
+	oid count, u2;
 	int i;
 	BAT *b[16];
 
@@ -217,7 +217,7 @@ WISCgenerator(str nme,		/* string: pointer to char. */
 		BATrename(b[i], buf);
 		BATmode(b[i], PERSISTENT);
 	}
-	WISCinitUniq(count);
+	WISCinitUniq(*cnt);
 
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
@@ -225,7 +225,7 @@ WISCgenerator(str nme,		/* string: pointer to char. */
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u2;
+		tmp = (int) u2;
 		b[1] = BUNins(b[1], &u2, &tmp, FALSE);
 	}
 	for (u2 = 0; u2 != count; u2++) {

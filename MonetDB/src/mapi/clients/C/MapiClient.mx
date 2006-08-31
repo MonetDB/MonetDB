@@ -1207,7 +1207,7 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 	if (fgets(destination, maxlen, termin) == NULL)
 		destination[0] = '\0';
 
-	length = strlen(destination);
+	length = (int) strlen(destination);
 	if (length > 0 && destination[length - 1] != '\n') {
 		char buf[128];
 		int buflen;
@@ -1215,7 +1215,7 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		do {
 			if (fgets(buf, sizeof(buf), termin) == NULL)
 				break;
-			buflen = strlen(buf);
+			buflen = (int) strlen(buf);
 		} while (buflen > 0 && buf[buflen - 1] != '\n');
 	}
 

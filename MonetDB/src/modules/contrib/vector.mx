@@ -352,7 +352,7 @@ typedef struct {
         }
         *s++ = ')';
         *s = '\0';
-        return(s - *tostr);
+        return (int) (s - *tostr);
     }
 
     int atom_@1s_fromstr(str instr,int* l,@1s** val) {
@@ -371,12 +371,12 @@ typedef struct {
         if(*val == NULL) {
             *val = GDKmalloc(@1ssize(dim));
             (*val)->dimension = dim;
-            *l = @1ssize(dim);
+            *l = (int) @1ssize(dim);
         } else if (*l < (int)@1ssize(dim)) {
             GDKfree(*val);
             *val = GDKmalloc(@1ssize(dim));
             (*val)->dimension = dim;
-            *l = @1ssize(dim);
+            *l = (int) @1ssize(dim);
         }
         result = *val;
 
@@ -389,7 +389,7 @@ typedef struct {
             }
         }
 
-        return s-instr;
+        return (int) (s - instr);
     }
 
     @1s *atom_@1s_read(@1s* a, stream *s, size_t sz) {
@@ -465,7 +465,7 @@ typedef struct {
     }
 
     int atom_@1s_length(@1s* p) {
-        return(@1ssize(p->dimension));
+        return (int) @1ssize(p->dimension);
     }
 
     void atom_@1s_heap(Heap *heap, size_t capacity) {
@@ -1201,7 +1201,7 @@ dblv.print();
 
         *s++ = ')';
         *s = '\0';
-        return(s - *tostr);
+        return (int) (s - *tostr);
     }
 
     int atom_@1_vector@2_fromstr(str instr, int *l, @1_vector@2 **val) {
@@ -1234,7 +1234,7 @@ dblv.print();
             }
         }
 
-        return s - instr;
+        return (int) (s - instr);
     }
 
     @1_vector@2 *atom_@1_vector@2_read(@1_vector@2* a, stream *s, size_t sz) {

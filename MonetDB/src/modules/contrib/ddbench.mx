@@ -2126,7 +2126,7 @@ bits_subhisto(BAT **res, BAT *b, ...)
                 }
                 mask = 1; @2 cur@3++;
         }
-        n = 1 << (n&31);
+        n = (size_t) 1 << (n&31);
         while(mask != n) {
                 @2 if ((*cur@3)&mask) cnt@3[*src]++;
                 mask <<= 1; src++;

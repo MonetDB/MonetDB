@@ -168,7 +168,7 @@ main(int argc, char **av)
 			break;
 		}
 		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
-			int n = strlen(line);
+			int n = (int) strlen(line);
             		curlen += n;
             		if (curlen+1024 > maxlen) {
                			maxlen += 8*BUFSIZ;

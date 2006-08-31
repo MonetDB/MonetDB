@@ -73,11 +73,11 @@ in the head of the resulting table; the tail contains the matching IDs.
   the Itten-Runge color space.  The clusters themselves are named 
   IR_[N|W]_C0_C1_C2"
 
-.COMMAND [qt_pre_select](int crossid, int cspace, int nimages): 
+.COMMAND [qt_pre_select](int crossid, int cspace, wrd nimages): 
                          BAT[oid,oid] = qt_pre_select;
  "Select images that _may_ satisfy the cross's color transitions"
 
-.COMMAND [qt_cross_pre_select](int crossid, int cspace, int nimages): 
+.COMMAND [qt_cross_pre_select](int crossid, int cspace, wrd nimages): 
                                BAT[oid,oid] = qt_cross_pre_select;
  "Select images that _may_ satisfy the cross's color transitions"
 
@@ -209,9 +209,9 @@ static int get_color(gdk_uint32 hsv, colorspace_t cspace);
 static int get_nfeatures(zid_t lastid);
 static int same_color(int c1, int c2);
 static int idlevel(zid_t id);
-static int cluster(direction_t dir, BAT **clusters, int image, gdk_int16 *quadtree, int id);
+static int cluster(direction_t dir, BAT **clusters, wrd image, gdk_int16 *quadtree, int id);
 static int convert_to_itten_runge_bin(int color);
-static void publish(BAT **clusters, int c0, int c1, int c2, int image);
+static void publish(BAT **clusters, int c0, int c1, int c2, wrd image);
 
 static ptr st_search;		/* Time to search quad trees */
 static ptr st_bunins[3];	/* Time to perform a BUNins */
@@ -390,7 +390,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
 	}
 
 	if (BATcount(qt_hue) != BATcount(qt_sat) || BATcount(qt_hue) != BATcount(qt_val)) {
-		GDKerror("[qt_makecross]: (h) Table sizes %d, %d, %d\n", BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		GDKerror("[qt_makecross]: (h) Table sizes " SZFMT ", " SZFMT ", " SZFMT "\n", BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
 		return GDK_FAIL;
 	}
 
@@ -659,14 +659,14 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 	}
 
 	if (BATcount(qt_id) != BATcount(qt_hue) || BATcount(qt_id) != BATcount(qt_sat) || BATcount(qt_id) != BATcount(qt_val)) {
-		GDKerror("[qt_match]: Table sizes differ %d %d %d %d\n", BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		GDKerror("[qt_match]: Table sizes differ " SZFMT " " SZFMT " " SZFMT " " SZFMT "\n", BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
 		return GDK_FAIL;
 	}
 
 	/* Find the starting oid and the number of features in the quad tree */
 	_ioid = *(int *) BUNhead(qt_ioffs, BUNfirst(qt_ioffs));
 	if (_ioid != (oid) *(int *) BUNhead(qt_inum, BUNfirst(qt_inum)) || BATcount(qt_ioffs) != BATcount(qt_inum)) {
-		GDKerror("[qt_match]: Inconsistent IOFFS/INUM tables %d %d (head), count %d %d\n", _ioid, *(int *) BUNhead(qt_inum, BUNfirst(qt_inum)), BATcount(qt_ioffs), BATcount(qt_inum));
+		GDKerror("[qt_match]: Inconsistent IOFFS/INUM tables %d %d (head), count " SZFMT " " SZFMT "\n", _ioid, *(int *) BUNhead(qt_inum, BUNfirst(qt_inum)), BATcount(qt_ioffs), BATcount(qt_inum));
 		return GDK_FAIL;
 	}
 
@@ -685,7 +685,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 
 	/* Make sure the soid and eoid are part of the tables */
 	if (noid < 0 || soid >= BATcount(qt_id) || soid + noid > BATcount(qt_id)) {
-		GDKerror("[qt_match]: soid %d, eoid %d, table size %d\n", soid, soid + noid, BATcount(qt_id));
+		GDKerror("[qt_match]: soid %d, eoid %d, table size " SZFMT "\n", soid, soid + noid, BATcount(qt_id));
 		return GDK_FAIL;
 	}
 
@@ -1016,17 +1016,18 @@ match(direction_t direction, gdk_int16 *features, zid_t id, int *cstring, int ci
 int
 qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *persist)
 {
-	int n, nimages, nfeatures, id_size, hsv_size;
+	int n, nfeatures, id_size, hsv_size;
+	wrd nimages;
 	gdk_int16 *quadtree;
 	BUN inum_p, inum_q, ioffs_p, ioffs_q, ip, iq, hp, /*hq, */ sp, /*sq, */ vp /*,vq */ ;
 
 	/* Validity checks */
 	if (BATcount(qt_ioffs) != BATcount(qt_inum) || BATcount(qt_id) != BATcount(qt_hue) || BATcount(qt_id) != BATcount(qt_sat) || BATcount(qt_id) != BATcount(qt_val)) {
-		GDKerror("[qt_ir_cluster]: Table sizes differ %d %d %d %d %d %d\n", BATcount(qt_inum), BATcount(qt_ioffs), BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		GDKerror("[qt_ir_cluster]: Table sizes differ " SZFMT " " SZFMT " " SZFMT " " SZFMT " " SZFMT " " SZFMT "\n", BATcount(qt_inum), BATcount(qt_ioffs), BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
 		return GDK_FAIL;
 	}
 
-	nimages = BATcount(qt_inum);
+	nimages = (wrd) BATcount(qt_inum);
 	for (n = 0; n != NIRBINS * NIRBINS * NIRBINS; n++) {
 		char cname[128];
 		bit initial;
@@ -1063,7 +1064,8 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat,
 	hsv_size = BUNsize(qt_hue);
 	printf("id_size %d, hsv_size %d\n", id_size, hsv_size);
 	for (inum_p = BUNfirst(qt_inum), inum_q = BUNlast(qt_inum), ioffs_p = BUNfirst(qt_ioffs), ioffs_q = BUNlast(qt_ioffs); inum_p < inum_q && ioffs_p < ioffs_q; inum_p += BUNsize(qt_inum), ioffs_p += BUNsize(qt_ioffs)) {
-		int inum, ioffs, image, id, maxid;
+		int inum, ioffs, id, maxid;
+		wrd image;
 
 		if (*BUNhead(qt_inum, inum_p) != *BUNhead(qt_ioffs, ioffs_p)) {
 			GDKerror("[qt_ir_cluster]: INUM/IOFFS heads differ %d %d\n", *BUNhead(qt_inum, inum_p), *BUNhead(qt_ioffs, ioffs_p));
@@ -1071,11 +1073,11 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat,
 			return GDK_FAIL;
 		}
 
-		image = (inum_p - BUNfirst(qt_inum)) / BUNsize(qt_inum);
+		image = (wrd) ((inum_p - BUNfirst(qt_inum)) / BUNsize(qt_inum));
 		ioffs = *(int *) BUNtail(qt_ioffs, ioffs_p);
 		inum = *(int *) BUNtail(qt_inum, inum_p);
 
-		printf("Clustering image %d, ioffs %d, inum %d\n", image, ioffs, inum);
+		printf("Clustering image " SSZFMT ", ioffs %d, inum %d\n", (ssize_t) image, ioffs, inum);
 
 		/* Materialize the quad tree */
 		memset(quadtree, -1, nfeatures * sizeof(gdk_int16));
@@ -1097,7 +1099,8 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat,
 				maxid = id;
 		}
 
-		if (cluster(E, ir_wclusters, image, quadtree, maxid) != GDK_SUCCEED || cluster(N, ir_nclusters, image, quadtree, maxid) != GDK_SUCCEED) {
+		if (cluster(E, ir_wclusters, image, quadtree, maxid) != GDK_SUCCEED ||
+		    cluster(N, ir_nclusters, image, quadtree, maxid) != GDK_SUCCEED) {
 			GDKfree(quadtree);
 			return GDK_FAIL;
 		}
@@ -1116,7 +1119,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat,
 }
 
 static int
-cluster(direction_t direction, BAT **clusters, int image, gdk_int16 *quadtree, int id)
+cluster(direction_t direction, BAT **clusters, wrd image, gdk_int16 *quadtree, int id)
 {
 	/* Find all three color transitions in the quad tree */
 	for (; id >=0; id --) {
@@ -1168,7 +1171,7 @@ cluster(direction_t direction, BAT **clusters, int image, gdk_int16 *quadtree, i
 }
 
 static void
-publish(BAT **clusters, int c0, int c1, int c2, int image)
+publish(BAT **clusters, int c0, int c1, int c2, wrd image)
 {
 	int rv;
 
@@ -1178,9 +1181,10 @@ publish(BAT **clusters, int c0, int c1, int c2, int image)
 }
 
 int
-qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
+qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, wrd *nimages)
 {
-	int n, rv, nbits;
+	int n, rv;
+	wrd nbits;
 	cross_t *c;
 	BAT *bv, *_bv, *bv_cluster;
 	bit initial;
@@ -1199,18 +1203,18 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 	c->c_refs++;
 	MT_unset_lock(qt_lock, "qt_cross_pre_select");
 
-	printf("qt_cross_pre_select: allocating bitvector %d\n", *nimages);
+	printf("qt_cross_pre_select: allocating bitvector " SSZFMT "\n", (ssize_t) *nimages);
 	/* Analyze the spot and select the right bit-fields.  Allocate an 
 	   empty result bit field with all images selected */
 	initial = 1;
 	if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
-		GDKerror("[qt_cross_pre_select]: Cannot allocate empty bit vector of size %d\n", *nimages);
+		GDKerror("[qt_cross_pre_select]: Cannot allocate empty bit vector of size " SSZFMT "\n", (ssize_t) *nimages);
 		c->c_refs--;
 		return GDK_FAIL;
 	}
 
 	bitvector_count(&nbits, bv);
-	printf("qt_cross_pre_select: nimages %d\n", nbits);
+	printf("qt_cross_pre_select: nimages " SSZFMT "\n", (ssize_t) nbits);
 
 	if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || ir_wclusters[0] == NULL) {
 
@@ -1239,7 +1243,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 
 		if (1) {
 			bitvector_count(&nbits, bv);
-			printf("qt_cross_pre_select: (horizontal n %d) nimages %d\n", n, nbits);
+			printf("qt_cross_pre_select: (horizontal n %d) nimages " SSZFMT "\n", n, (ssize_t) nbits);
 		}
 	}
 
@@ -1258,7 +1262,7 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 
 		if (1) {
 			bitvector_count(&nbits, bv);
-			printf("qt_cross_pre_select: (vertical n %d) nimages %d\n", n, nbits);
+			printf("qt_cross_pre_select: (vertical n %d) nimages " SSZFMT "\n", n, (ssize_t) nbits);
 		}
 	}
 
@@ -1272,9 +1276,10 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 }
 
 int
-qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
+qt_pre_select(BAT **candidates, int *crossid, int *cspace, wrd *nimages)
 {
-	int n, rv, nbits, x, y;
+	int n, rv, x, y;
+	wrd nbits;
 	cross_t *c;
 	BAT *bv, *_bv, *bv_cluster;
 	bit initial;
@@ -1293,18 +1298,18 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 	c->c_refs++;
 	MT_unset_lock(qt_lock, "qt_pre_select");
 
-	printf("qt_pre_select: allocating bitvector %d\n", *nimages);
+	printf("qt_pre_select: allocating bitvector " SSZFMT "\n", (ssize_t) *nimages);
 	/* Analyze the spot and select the right bit-fields.  Allocate an 
 	   empty result bit field with all images selected */
 	initial = 1;
 	if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
-		GDKerror("[qt_pre_select]: Cannot allocate empty bit vector of size %d\n", *nimages);
+		GDKerror("[qt_pre_select]: Cannot allocate empty bit vector of size " SSZFMT "\n", (ssize_t) *nimages);
 		c->c_refs--;
 		return GDK_FAIL;
 	}
 
 	bitvector_count(&nbits, bv);
-	printf("qt_pre_select: nimages %d\n", nbits);
+	printf("qt_pre_select: nimages " SSZFMT "\n", (ssize_t) nbits);
 
 	if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || ir_wclusters[0] == NULL) {
 
@@ -1355,7 +1360,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 
 						if (1) {
 							bitvector_count(&nbits, bv);
-							printf("qt_pre_select: (horizontal y %d, x %d) nimages %d\n", y, x, nbits);
+							printf("qt_pre_select: (horizontal y %d, x %d) nimages " SSZFMT "\n", y, x, (ssize_t) nbits);
 						}
 					}
 				}
@@ -1415,7 +1420,7 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
 
 						if (1) {
 							bitvector_count(&nbits, bv);
-							printf("qt_pre_select: (vertical x %d, y %d) nimages %d\n", x, y, nbits);
+							printf("qt_pre_select: (vertical x %d, y %d) nimages " SSZFMT "\n", x, y, (ssize_t) nbits);
 						}
 					}
 				}

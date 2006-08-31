@@ -1759,6 +1759,7 @@ CMDtunique(BAT **result, BAT* b)
 int
 CMDcount(int *result, BAT *b)
 {
+/* 64bit: should return wrd */
 	*result = BATcount(b);
 	return GDK_SUCCEED;
 }
@@ -1766,6 +1767,7 @@ CMDcount(int *result, BAT *b)
 int
 CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
 {
+/* 64bit: should return wrd */
 	if (*ignore_nils)
 		*result = BATcount_no_nil(b);
 	else

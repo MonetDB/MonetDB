@@ -156,14 +156,14 @@ only one will be created.
 Some basic routines to open a remote socket, and to read
 data from them.
 @c
-static int
+static SOCKET
 socket_open(str host, int port, str fcn)
 {
 	struct sockaddr_in a;
 	struct hostent *hp;
 	struct sockaddr *addr = (struct sockaddr *) &a;
-	int fd;
-	SOCKLEN len = sizeof(a);
+	SOCKET fd;
+	socklen_t len = (socklen_t) sizeof(a);
 
 	memset(&a, 0, sizeof(a));
 	a.sin_family = AF_INET;
@@ -204,15 +204,15 @@ socket_open(str host, int port, str fcn)
 }
 
 static int
-socket_close(int sock)
+socket_close(SOCKET sock)
 {
 	int r = shutdown(sock, 2);
-	close(sock);
+	closesocket(sock);
 	return r;
 }
 
 static int
-socket_read(int fd, int size, char *dst, char *msg)
+socket_read(SOCKET fd, int size, char *dst, char *msg)
 {
 	int n, m;
 
@@ -233,7 +233,7 @@ socket_read(int fd, int size, char *dst, char *msg)
 }
 
 static int
-socket_write(int fd, int len, char *src, char *msg)
+socket_write(SOCKET fd, int len, char *src, char *msg)
 {
 	int ret = send(fd, src, len, 0);
 
@@ -248,7 +248,7 @@ socket_write(int fd, int len, char *src, char *msg)
 }
 
 static bit
-socket_gets(int fd, char **buf, int *len)
+socket_gets(SOCKET fd, char **buf, int *len)
 {
 	char *s = *buf, *end = *buf + *len;
 
@@ -261,7 +261,7 @@ socket_gets(int fd, char **buf, int *len)
 		FD_SET(fd, &fds);
 		tv.tv_sec = 0;
 		tv.tv_usec = 500;
-		retval = select(fd + 1, &fds, NULL, NULL, &tv);
+		retval = select((int) fd + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -585,7 +585,7 @@ typedef struct {
 	int valid;		/* is the connection still valid */
 	char hostname[128];	/* remote hostname */
 	int port;		/* remote listening thread port; -1 if none */
-	int sock;		/* socket number */
+	SOCKET sock;		/* socket number */
 	Thread waiter;		/* process id of waiter thread on this
 				 * connection */
 } conn_t;
@@ -704,17 +704,17 @@ conn_closeall(void)
 #define NM_LEN 80
 #define MAX_LINE 64
 static int
-TCPraise(int fd, str name)
+TCPraise(SOCKET fd, str name)
 {
 	char *errbuf = GDKerrbuf;
 
 	if (errbuf && *errbuf && *errbuf != *str_nil) {
-		int errlen = strlen(errbuf);
+		int errlen = (int) strlen(errbuf);
 		int msglen;
 		char *msg = (char *) alloca(errlen + NM_LEN + 32);
 
 		sprintf(msg, "err:%s:%d\n", name, errlen + 1);
-		msglen = strlen(msg);
+		msglen = (int) strlen(msg);
 		memcpy(msg + msglen, errbuf, errlen + 1);
 		*errbuf = '\0';
 		if (GDKdebug & 65536) {
@@ -754,7 +754,7 @@ conn_waiter(void *vi)
 
 	free(vi);		/* see comment in conn_insert */
 	if (thr) {
-		int fd = connections[i].sock;
+		SOCKET fd = connections[i].sock;
 		Client monetClient = forkClient(0, 1);
 
 		connections[i].waiter = thr;
@@ -801,7 +801,7 @@ the standard mechanism.
 					*errbuf = '\0';
 
 					if (asynchronous) {
-						int plen = strlen(p);
+						int plen = (int) strlen(p);
 						char *tmp = (char *) alloca(plen + 256);
 
 						p[plen - 1] = '\0';	/* remove trailing ';' */
@@ -823,12 +823,12 @@ the standard mechanism.
 					if (*errbuf) {
 						char msg[16384];
 						size_t len;
-						int fd = connections[i].sock;
+						SOCKET fd = connections[i].sock;
 
 						snprintf(msg, 16384, "err:%s:" SZFMT "\n", nm, strlen(errbuf) + 1);
 						len = strlen(msg);
 						memcpy(msg + len, errbuf, strlen(errbuf) + 1);
-						socket_write(fd, len + strlen(errbuf) + 1, msg, "error msg");
+						socket_write(fd, (int) (len + strlen(errbuf) + 1), msg, "error msg");
 					}
 #endif
 
@@ -1057,7 +1057,7 @@ hostname(void)
 static int listeners = 0, ports[MAX_LISTENERS] = { 0 };
 
 static int
-conn_insert(str host, int port, int me, int sock)
+conn_insert(str host, int port, int me, SOCKET sock)
 {
 	int i = 0;
 
@@ -1215,7 +1215,8 @@ int
 TCPlisten(int *port)
 {
 	struct sockaddr_in server, client;
-	int msgsock = -1, sock = socket(AF_INET, SOCK_STREAM, 0);
+	SOCKET msgsock = -1;
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	int port_no = 0, i, on = 1;
 	SOCKLEN server_len = (SOCKLEN) sizeof(server);
 	SOCKLEN client_len = (SOCKLEN) sizeof(client);
@@ -1280,13 +1281,13 @@ the listener heard something...
 			}
 #endif
 			if (socket_gets(msgsock, &line, &lineLength) == 0) {
-				close(msgsock);
+				closesocket(msgsock);
 				continue;
 			} else if (strncmp(line, "stop", 4) == 0) {
 @-
 This is the special command to shut down the listener.
 @c
-				close(msgsock);
+				closesocket(msgsock);
 				break;
 			} else if ((p = strchr(line, '\n')) != NULL) {
 				*p = 0;
@@ -1322,7 +1323,7 @@ Stop a TCP/IP server
 int
 TCPterminate(int *port)
 {
-	int fd = socket_open(hostname(), *port, "TCPterminate");
+	SOCKET fd = socket_open(hostname(), *port, "TCPterminate");
 
 	if (fd) {
 		socket_write(fd, 5, "stop\n", "TCPterminate");
@@ -1347,7 +1348,8 @@ Open a connection to another TCP/IP server.
 int
 TCPopen(int *retval, str address)
 {
-	int fd, i, port = TCPPORT;
+	SOCKET fd;
+	int i, port = TCPPORT;
 	char *p, host[128];
 
 	if ((p = strchr(address, ':')) != NULL) {
@@ -1420,7 +1422,7 @@ We really initiated a new connection
 @c
 		*retval = conn_insert(host, port, -1, fd);
 		sprintf(buf, "%s\n", hostname());
-		if (send(fd, buf, strlen(buf), 0) != (int) strlen(buf)) {
+		if (send(fd, buf, (int) strlen(buf), 0) != (int) strlen(buf)) {
 			GDKsyserror("conn_insert: could not communicate.\n");
 			conn_delete(*retval);
 			MT_unset_lock(TCPlock, "TCPopen");
@@ -1466,7 +1468,8 @@ TCPexport(int *conn_id,		/* pointer to integer. */
     )
 {
 	char buf[BIG_MESSAGE], *p;
-	int hdrlen, len = BIG_MESSAGE, fd;
+	int hdrlen, len = BIG_MESSAGE;
+	SOCKET fd;
 	size_t batlen;
 	int ret = GDK_SUCCEED;
 
@@ -1504,7 +1507,7 @@ TCPexport(int *conn_id,		/* pointer to integer. */
 		*p++ = '\n';
 		*p++ = 0;
 
-		hdrlen = strlen(buf);
+		hdrlen = (int) strlen(buf);
 		batlen = BUNlast(b) - BUNfirst(b);
 @-
 Small BATs are written in one go, large ones in parts.
@@ -1515,16 +1518,19 @@ Small BATs are written in one go, large ones in parts.
 			memcpy(buf + hdrlen, BUNfirst(b), batlen);
 			if (b->hheap) {
 				memcpy(buf + totlen, b->hheap->base, b->hheap->free);
-				totlen += b->hheap->free;
+				totlen += (int) b->hheap->free;	/* < BIG_MESSAGE */
 			}
 			if (b->theap) {
 				memcpy(buf + totlen, b->theap->base, b->theap->free);
-				totlen += b->theap->free;
+				totlen += (int) b->theap->free;	/* < BIG_MESSAGE */
 			}
 			if (socket_write(fd, totlen, buf, "small BAT") == 0) {
 				ret = GDK_FAIL;
 			}
-		} else if (socket_write(fd, strlen(buf), buf, "meta info") == 0 || socket_write(fd, batlen, BUNfirst(b), "BUN heap") == 0 || (b->hheap && socket_write(fd, b->hheap->free, b->hheap->base, "head heap") == 0) ||
+		} else if (socket_write(fd, (int) strlen(buf), buf, "meta info") == 0 ||
+			   /* 64bit: check for overflow of batlen and b->?heap->free */
+			   socket_write(fd, batlen, BUNfirst(b), "BUN heap") == 0 ||
+			   (b->hheap && socket_write(fd, b->hheap->free, b->hheap->base, "head heap") == 0) ||
 			   (b->theap && socket_write(fd, b->theap->free, b->theap->base, "tail heap") == 0)) {
 			ret = GDK_FAIL;
 		}
@@ -1536,7 +1542,7 @@ Small BATs are written in one go, large ones in parts.
 @c
 		len = ATOMextern(tpe) ? ATOMlen(tpe, val) : (int) sizeof(lng);
 		sprintf(buf, "%s:%s:%d\n", atom_name(tpe), name, len);
-		hdrlen = strlen(buf);
+		hdrlen = (int) strlen(buf);
 
 #ifndef WORDS_BIGENDIAN
 		ATOMconvert(tpe, val, CONV_HTON);
@@ -1676,7 +1682,8 @@ TCPmil(int *conn_id,		/* connection id */
 		GDKerror("TCPmil: invalid connection.\n");
 	} else {
 		char *q, *buf = (str) GDKmalloc(strlen(s) + 32);
-		int ok, fd = connections[*conn_id].sock;
+		int ok;
+		SOCKET fd = connections[*conn_id].sock;
 
 @- format 'mil:<name>:<mil-expr>'
 Compress the MIL command by removing all newlines and tabs.
@@ -1692,7 +1699,7 @@ Compress the MIL command by removing all newlines and tabs.
 @-
 just send it to the other end
 @c
-		ok = socket_write(fd, q - buf, buf, "MIL script");
+		ok = socket_write(fd, (int) (q - buf), buf, "MIL script");
 		GDKfree(buf);
 		if (!ok)
 			return GDK_FAIL;
@@ -1727,7 +1734,7 @@ INC_BUFLEN increases the size of the buf variable if needed.
 It move the cmd pointer to the "current" position.
 @c
 #define INC_BUFLEN(x) {\
-	int _l = totlen+x;\
+	int _l = totlen+(x);\
 	if (_l >= buflen) buf = GDKrealloc((ptr) buf, buflen = _l+4096);\
 	cmd = buf + totlen;\
 	totlen = _l;\
@@ -1742,7 +1749,7 @@ It move the cmd pointer to the "current" position.
 	} else {
 		int eval_id, ok = 0, nparam = 0, totlen = 0, buflen = 4096;
 		char *buf = (char*) GDKmalloc(buflen), *cmd=buf;
-		int fd = connections[*conn_id].sock;
+		SOCKET fd = connections[*conn_id].sock;
 		ptr val;
 
 		/* Find start in the pattern. */
@@ -1764,7 +1771,7 @@ It move the cmd pointer to the "current" position.
 		 * result.
 		 */
 		sprintf(cmd, "mil:%s:", id);
-		INC_BUFLEN(strlen(cmd));
+		INC_BUFLEN((int) strlen(cmd));
 
 		/* For all local parameters passed for substitution.....
 		 */
@@ -1804,11 +1811,11 @@ It move the cmd pointer to the "current" position.
 			 * send a cast from the standard type).
 			 */
 			if (tpe == TYPE_str) {
-				INC_BUFLEN(strlen(val)+2);
+				INC_BUFLEN((int) strlen(val)+2);
 				sprintf(cmd, "\"%s\"", (str) val);
 			} else if (ATOMstorage(tpe) == TYPE_str) {
 				str t = ATOMname(tpe);
-				INC_BUFLEN(strlen(t)+strlen(val)+4);
+				INC_BUFLEN((int) (strlen(t) + strlen(val) + 4));
 				sprintf(cmd, "%s(\"%s\")", t, (str) val);
 			} else if ((tpe == TYPE_bat) || ATOMextern(tpe)) {
 				char export_id[17];
@@ -1821,7 +1828,7 @@ It move the cmd pointer to the "current" position.
 			} else {
 				str s = NULL, t = ATOMname(tpe);
 				ATOMformat(ATOMstorage(tpe), val, &s);
-				INC_BUFLEN(strlen(s)+strlen(t)+2);
+				INC_BUFLEN((int) (strlen(s) + strlen(t) + 2));
 				sprintf(cmd, "%s(%s)", t, s);
 				GDKfree(s);
 			}
@@ -1833,13 +1840,13 @@ It move the cmd pointer to the "current" position.
 		 * (zero parameter functions don't need () in MIL). It is already
 		 * expected to be finished off with semicolon. Newline is added.
 		 */
-		INC_BUFLEN(strlen(fcn_cur)+1);
+		INC_BUFLEN((int) strlen(fcn_cur) + 1);
 		strcat(buf, fcn_cur);
 		strcat(buf, "\n");
 
 		/* Now we send it to the other end
 		 */
-		ok = socket_write(fd, strlen(buf), buf, "MIL command");
+		ok = socket_write(fd, (int) strlen(buf), buf, "MIL command");
 	fail:
 		GDKfree(buf);
 		if (!ok)
@@ -1896,7 +1903,7 @@ tuple table[TABLE_SIZE] = { 0 };
 
 main(void)
 {
-	int fd = socket_open(argv[1], atoi(argv[2]), "main");
+	SOCKET fd = socket_open(argv[1], atoi(argv[2]), "main");
 	FILE *fp = fopen(fd, "w");
 
 @-

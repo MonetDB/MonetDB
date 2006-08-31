@@ -1363,7 +1363,7 @@ static char *memincr = NULL;
 int
 view_gdk_mem(BAT **retval)
 {
-/* 64bit: should return a [str,wrd] bat */
+/* 64bit: should return a [str,wrd] bat, but then again, mallinfo returns ints */
 	struct mallinfo m;
 	BAT *b;
 	int i;

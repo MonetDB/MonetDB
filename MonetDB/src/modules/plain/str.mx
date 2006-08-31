@@ -70,7 +70,7 @@ we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
 
 .COMMAND string( str s, int offset ) : str = strTail;
 "Return the tail s[offset..n] of a string s[0..n]."
-.COMMAND string( str s, int offset, int count ) : str = strSubString;
+.COMMAND string( str s, wrd offset, wrd count ) : str = strSubString;
 "Return substring s[offset..offset+count] of a string s[0..n]"
 .OPERATOR (str) "+" (any) : str = strConcat;
 "Concatenate two strings."
@@ -156,19 +156,36 @@ proc ascii( str s ) : int {
 	return unicodeAt(s,0);
 }
 
-proc substring( str s, int start, int l ) : str {
+proc string( str s, int offset, int count ) : str {
+	return string(s, wrd(offset), wrd(count));
+}
+proc substring( str s, wrd start, wrd l ) : str {
 	if (start < 1) start := 1;
 	return string(s, start - 1, l);
 }
-proc substring( str s, int start ) : str {
+proc substring( str s, int start, int l ) : str {
+	if (start < 1) start := 1;
+	return string(s, wrd(start) - 1, wrd(l));
+}
+proc substring( str s, wrd start ) : str {
 	if (start < 1) start := 1;
 	return string(s, start - 1);
 }
-proc stringleft( str s, int cnt ) : str {
+proc substring( str s, int start ) : str {
+	if (start < 1) start := 1;
+	return string(s, wrd(start) - 1);
+}
+proc stringleft( str s, wrd cnt ) : str {
 	return string(s, 0, cnt );
 }
-proc stringright( str s, int cnt ) : str {
+proc stringleft( str s, int cnt ) : str {
+	return string(s, wrd(0), wrd(cnt) );
+}
+proc stringright( str s, wrd cnt ) : str {
 	return string(s, length(s) - cnt );
+}
+proc stringright( str s, int cnt ) : str {
+	return string(s, length(s) - wrd(cnt) );
 }
 # search for string s1 in s2
 proc locate( str s1, str s2 ) : int {
@@ -1397,12 +1414,11 @@ strTail(str *res, str s, int *offset)
 }
 
 int
-strSubString(str *res, str s, int *offset, int *length)
+strSubString(str *res, str s, wrd *offset, wrd *length)
 {
-/* 64bit: should have wrd args */
 	wrd len, off = *offset;
 
-	RETURN_NIL_IF(strNil(s) || off == int_nil || *length == int_nil, TYPE_str);
+	RETURN_NIL_IF(strNil(s) || off == wrd_nil || *length == wrd_nil, TYPE_str);
 	if (off < 0) {
 		len = UTF8_strlen(s);
 		RETURN_NIL_IF(len == wrd_nil, TYPE_str);

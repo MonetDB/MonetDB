@@ -29,20 +29,20 @@ support the operations AND and OR.
 @m
 .MODULE bitvector;
 
-.COMMAND [allocate](int nbits, bit initial): 
+.COMMAND [allocate](wrd nbits, bit initial): 
    BAT[void,lng] = bitvector_allocate;
  "Allocate a new and empty bitvector"
 
-.COMMAND [set](BAT[any::1,lng], int bnum) = bitvector_set;
+.COMMAND [set](BAT[any::1,lng], wrd bnum) = bitvector_set;
  "Set a bit in a bitvector"
 
-.COMMAND [isset](BAT[any::1,lng], int bnum): bit = bitvector_isset;
+.COMMAND [isset](BAT[any::1,lng], wrd bnum): bit = bitvector_isset;
  "Is bit bnum set?"
 
-.COMMAND [clr](BAT[any::1,lng], int bnum) = bitvector_clr;
+.COMMAND [clr](BAT[any::1,lng], wrd bnum) = bitvector_clr;
  "Clear a bit in a bitvector"
 
-.COMMAND [isclr](BAT[any::1,lng], int bnum): bit = bitvector_isclr;
+.COMMAND [isclr](BAT[any::1,lng], wrd bnum): bit = bitvector_isclr;
  "Is bit bnum not set?"
 
 .COMMAND [encode](BAT[any::1,oid]): BAT[void,lng] = bitvector_encode;
@@ -60,12 +60,28 @@ support the operations AND and OR.
 .COMMAND [prt](BAT[void,lng]) = bitvector_print;
  "Print a bitvector"
 
-.COMMAND [count](BAT[void,lng]): int = bitvector_count;
+.COMMAND [count](BAT[void,lng]): wrd = bitvector_count;
  "Count the number of bits set"
 
 .END bitvector;
 
 @mil
+proc [allocate](int nbits, bit initial): bat[void,lng] {
+    return [allocate](wrd(nbits), initial);
+}
+proc [set](bat[any::1,lng] b, int bnum): void {
+    [set](b, wrd(bnum));
+}
+proc [isset](bat[any::1,lng] b, int bnum): bit {
+    return [isset](b, wrd(bnum));
+}
+proc [clr](bat[any::1,lng] b, int bnum): void {
+    [clr](b, wrd(bnum));
+}
+proc [isclr](bat[any::1,lng] b, int bnum): bit {
+    return [isclr](b, wrd(bnum));
+}
+
 PROC test_bitvector() : void {
 
 	a := new(int,oid); 
@@ -104,12 +120,12 @@ PROC test_bitvector() : void {
 #define numentries(a, b)	(((a) + (b) - 1) / (b))
 
 bitvector_export int
-bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
+bitvector_allocate(BAT **b_dst, wrd *nbits, bit *initial)
 {
 	lng v;
-	int nentries, n;
+	size_t nentries, n;
 
-	nentries = numentries(*nbits, (int) sizeof(lng) * 8);
+	nentries = numentries(*nbits, sizeof(lng) * 8);
 	*b_dst = BATnew(TYPE_void, TYPE_lng, nentries);
 
 	v = (*initial) ? -1 : 0;
@@ -119,14 +135,14 @@ bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
 }
 
 bitvector_export int
-bitvector_set(BAT *b_src, int *bnum)
+bitvector_set(BAT *b_src, wrd *bnum)
 {
 	size_t entry;
 	lng *v;
 
-	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_set: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_set: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -137,14 +153,14 @@ bitvector_set(BAT *b_src, int *bnum)
 }
 
 bitvector_export int
-bitvector_isset(bit *rv, BAT *b_src, int *bnum)
+bitvector_isset(bit *rv, BAT *b_src, wrd *bnum)
 {
 	size_t entry;
 	lng v;
 
-	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_isset: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_isset: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -154,14 +170,14 @@ bitvector_isset(bit *rv, BAT *b_src, int *bnum)
 }
 
 bitvector_export int
-bitvector_clr(BAT *b_src, int *bnum)
+bitvector_clr(BAT *b_src, wrd *bnum)
 {
 	size_t entry;
 	lng *v;
 
-	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_clr: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_clr: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -172,14 +188,14 @@ bitvector_clr(BAT *b_src, int *bnum)
 }
 
 bitvector_export int
-bitvector_isclr(bit *rv, BAT *b_src, int *bnum)
+bitvector_isclr(bit *rv, BAT *b_src, wrd *bnum)
 {
 	size_t entry;
 	lng v;
 
-	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_isclr: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_isclr: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -192,32 +208,31 @@ bitvector_export int
 bitvector_encode(BAT **b_dst, BAT *b_src)
 {
 	lng bf;
-	int *nbits, lastentry, xx;
+	oid nbits, lastentry;
+	int xx;
 	BUN p, q;
 
 	if (b_src == NULL || b_src->ttype != TYPE_oid || BATorder(b_src) == NULL) {
 		GDKerror("bitvector_encode: No OID table.\n");
 		return GDK_FAIL;
 	}
-	nbits = (int *) BUNtail(b_src, BUNlast(b_src));
-	*nbits += 1;
-	*b_dst = BATnew(TYPE_void, TYPE_lng, numentries(*nbits, sizeof(lng) * 8));
-	lastentry = -1;
+	nbits = * (oid *) BUNtail(b_src, BUNlast(b_src)) + 1;
+	*b_dst = BATnew(TYPE_void, TYPE_lng, numentries(nbits, sizeof(lng) * 8));
+	lastentry = 0;
 	bf = 0;
 
 	BATloopFast(b_src, p, q, xx) {
-		int *bnum, entry;
+		oid *bnum, entry;
 
-		bnum = (int *) BUNtail(b_src, p);
+		bnum = (oid *) BUNtail(b_src, p);
 		entry = *bnum / ((int) sizeof(lng) * 8);
-		while (lastentry + 1 < entry) {
+		while (lastentry < entry) {
 			lastentry++;
 			BUNappend(*b_dst, (ptr) &bf, FALSE);
 			bf = 0;
 		}
 		bf |= ((lng) 1 << (*bnum % (sizeof(lng) * 8)));
 	}
-	lastentry++;
 	BUNappend(*b_dst, (ptr) &bf, FALSE);
 
 	return GDK_SUCCEED;
@@ -226,7 +241,7 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
 bitvector_export int
 bitvector_decode(BAT **b_dst, BAT *b_src)
 {
-	oid entry, soid;
+	oid soid;
 	BUN p, q;
 	int xx, n;
 
@@ -235,19 +250,20 @@ bitvector_decode(BAT **b_dst, BAT *b_src)
 		return GDK_FAIL;
 	}
 
-	*b_dst = BATnew(TYPE_oid, TYPE_oid, BATcount(b_src) * sizeof(lng) * 8);
-	entry = soid = 0;
+	*b_dst = BATnew(TYPE_void, TYPE_oid, BATcount(b_src) * sizeof(lng) * 8);
+	BATseqbase(*b_dst, (oid) 0);
+	BATkey(BATmirror(*b_dst), TRUE);
+	soid = 0;
 	BATloopFast(b_src, p, q, xx) {
 		lng bf;
 
 		bf = *(lng *) BUNtail(b_src, p);
 		if (bf)
-			for (n = 0; n != sizeof(lng) * 8; n++)
+			for (n = 0; n < sizeof(lng) * 8; n++)
 				if (bf & ((lng) 1 << n)) {
 					oid _soid = soid + n;
 
-					BUNins(*b_dst, (ptr) &entry, (ptr) &_soid, FALSE);
-					entry++;
+					BUNappend(*b_dst, (ptr) &_soid, FALSE);
 				}
 		soid += sizeof(lng) * 8;
 	}
@@ -285,19 +301,19 @@ bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 
 	assert(BUNsize(b_src1) == sizeof(lng));
 
-	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
+	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1));
 
 	p1 = BUNfirst(b_src1);
 	q1 = BUNlast(b_src1);
 	p2 = BUNfirst(b_src2);
 	q2 = BUNlast(b_src2);
 	for (; p1 < q1 && p2 < q2; p1 += sizeof(lng), p2 += sizeof(lng)) {
-		lng *v1, *v2;
+		lng v1, v2;
 
-		v1 = (lng *) BUNtail(b_src1, p1);
-		v2 = (lng *) BUNtail(b_src2, p2);
-		*v1 &= *v2;
-		BUNappend(*b_dst, (ptr) v1, FALSE);
+		v1 = * (lng *) BUNtail(b_src1, p1);
+		v2 = * (lng *) BUNtail(b_src2, p2);
+		v1 &= v2;
+		BUNappend(*b_dst, (ptr) &v1, FALSE);
 	}
 
 	/* No need to copy the tail */
@@ -316,19 +332,19 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 
 	assert(BUNsize(b_src1) == sizeof(lng));
 
-	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
+	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1));
 
 	p1 = BUNfirst(b_src1);
 	q1 = BUNlast(b_src1);
 	p2 = BUNfirst(b_src2);
 	q2 = BUNlast(b_src2);
 	for (; p1 < q1 && p2 < q2; p1 += sizeof(lng), p2 += sizeof(lng)) {
-		lng *v1, *v2;
+		lng v1, v2;
 
-		v1 = (lng *) BUNtail(b_src1, p1);
-		v2 = (lng *) BUNtail(b_src2, p2);
-		*v1 |= *v2;
-		BUNappend(*b_dst, (ptr) v1, FALSE);
+		v1 = * (lng *) BUNtail(b_src1, p1);
+		v2 = * (lng *) BUNtail(b_src2, p2);
+		v1 |= v2;
+		BUNappend(*b_dst, (ptr) &v1, FALSE);
 	}
 
 	/* Copy the tail, when required */
@@ -356,7 +372,7 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 }
 
 bitvector_export int
-bitvector_count(int *count, BAT *b_src)
+bitvector_count(wrd *count, BAT *b_src)
 {
 	BUN p, q;
 	int xx;

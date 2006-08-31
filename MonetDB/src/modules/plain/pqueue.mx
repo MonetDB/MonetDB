@@ -34,7 +34,7 @@ organized in the heap with respect to their values (tail column).
 @m
 .MODULE pqueue;
 
-  .COMMAND pqueue_init(BAT[void,any::1] a, int maxsize): BAT[oid,any::1] = 
+  .COMMAND pqueue_init(BAT[void,any::1] a, wrd maxsize): BAT[oid,any::1] = 
 	pqueue_init;
   "Creates an initially empty pqueue of bat a's tailtype with maximum size maxsize"
 
@@ -80,7 +80,7 @@ organized in the heap with respect to their values (tail column).
 #include "pqueue.proto.h"
   
 /*returns the parent of a pqueue position*/
-static INLINE int parent(int posel)
+static INLINE size_t parent(size_t posel)
 {
   if (posel%2) /*odd*/
         return posel/2;
@@ -89,12 +89,18 @@ static INLINE int parent(int posel)
 }
 
 /*initialize pqueue*/
-int 
-pqueue_init(BAT **h, BAT *b, int *maxsize)
+static void
+do_pqueue_init(BAT **h, BAT *b, size_t maxsize)
 {
-	*h = BATnew(TYPE_oid, b->ttype, *maxsize);
+	*h = BATnew(TYPE_oid, b->ttype, maxsize);
         if (*h)
                 (*h)->batDirty |= 2;
+}
+
+int 
+pqueue_init(BAT **h, BAT *b, wrd *maxsize)
+{
+	do_pqueue_init(h, b, (size_t) *maxsize);
   	return GDK_SUCCEED;
 }
 
@@ -108,7 +114,7 @@ int pqueue_enqueue_@1@2(BAT *h,
   BUN ins,cur;
   int hBUNsize;
 
-  int p, posel;
+  size_t p, posel;
   char ch;
   int i;
 
@@ -145,9 +151,9 @@ int pqueue_movedowntop_@1@2(BAT *h)
   BUN swp,cur;
   int hBUNsize;
 
-  int swap, num_elems;
+  size_t swap, num_elems;
 
-  int posel;
+  size_t posel;
   char ch;
   int i;
 
@@ -195,7 +201,7 @@ int pqueue_dequeue_@1@2(BAT *h)
   BUN hbase;
   int hBUNsize;
 
-  int num_elements;
+  size_t num_elements;
 
   if (!(num_elements = BATcount(h))) {
     GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
@@ -239,12 +245,12 @@ int pqueue_topreplace_@1@2(BAT *h,
 int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 {
   @1 *v;
-  int i, n = BATcount(t);
+  size_t i, n = BATcount(t);
   oid idx = t->hseqbase;
 
   if (*N < n)
    	n = *N;
-  pqueue_init(H,t,&n); 
+  do_pqueue_init(H,t,n);
   v = (@1*)BUNtail(t,BUNfirst(t));
 
   for(i=0; i<n; i++, idx++, v++) {
@@ -259,13 +265,13 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 
 int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 {
-  int i, n = BATcount(t);
+  size_t i, n = BATcount(t);
   int bs = BUNsize(t);
   char *p = BUNfirst(t);
 
   if (*N < n)
    	n = *N;
-  pqueue_init(H,t,&n); 
+  do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, p+=bs) {
 	pqueue_enqueue_@1@2(*H, (oid*)BUNhloc(t,p), (@1*)BUNtloc(t,p)); 
@@ -303,7 +309,7 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
   BUN ins,cur;
   int hBUNsize;
 
-  int p, posel;
+  size_t p, posel;
   char ch;
   int i;
 
@@ -341,9 +347,9 @@ int pqueue_movedowntop_any@1(BAT *h)
   int hBUNsize;
 
   int tpe = BATttype(h);
-  int swap, num_elems;
+  size_t swap, num_elems;
 
-  int posel;
+  size_t posel;
   char ch;
   int i;
 
@@ -394,7 +400,7 @@ int pqueue_dequeue_any@1(BAT *h)
   BUN hbase;
   int hBUNsize;
 
-  int num_elements;
+  size_t num_elements;
 
   if (!(num_elements = BATcount(h))) {
     GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
@@ -433,7 +439,7 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 
 int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 {
-  int i, n = BATcount(t);
+  size_t i, n = BATcount(t);
   oid idx = t->hseqbase;
   int bs = BUNsize(t);
   char *p = BUNfirst(t);
@@ -441,7 +447,7 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 
   if (*N < n)
    	n = *N;
-  pqueue_init(H,t,&n); 
+  do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, idx++, p+=bs) {
 	pqueue_enqueue_any@1(*H, &idx, BUNtvar(t,p), tpe); 
@@ -455,14 +461,14 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 
 int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
 {
-  int i, n = BATcount(t);
+  size_t i, n = BATcount(t);
   int bs = BUNsize(t);
   char *p = BUNfirst(t);
   int tpe = BATttype(t);
 
   if (*N < n)
    	n = *N;
-  pqueue_init(H,t,&n); 
+  do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, p+=bs) {
 	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(t,p), BUNtail(t,p), tpe); 
@@ -479,6 +485,10 @@ int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
 @:pqueueimpl_any(max,>)@
 
 @mil
+
+proc pqueue_init(BAT[void,any::1] a, int maxsize): BAT[oid,any::1] {
+	return pqueue_init(a, wrd(maxsize));
+}
 
 proc pqueue_peek( BAT[oid,any] h ) : any {
 	return h.fetch(0);

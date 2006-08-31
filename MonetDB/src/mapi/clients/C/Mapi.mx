@@ -1190,7 +1190,7 @@ mapi_error_str(Mapi mid)
 static void
 clean_print(char *msg, const char *prefix, FILE *fd)
 {
-	int len = strlen(prefix);
+	int len = (int) strlen(prefix);
 
 	while (msg && *msg) {
 		/* cut by line */
@@ -1902,8 +1902,8 @@ connect_to_server(Mapi mid)
 	struct sockaddr_un userver;
 #endif
 	struct sockaddr *serv;
-	size_t servsize;
-	int s;
+	socklen_t servsize;
+	SOCKET s;
 
 #ifdef HAVE_OPENSSL
 	SSL *ssl = NULL;
@@ -2873,7 +2873,7 @@ read_line(Mapi mid)
 				if (!nl)
 					nl = mid->blk.buf + mid->blk.end + 1;
 			}
-			mid->blk.end += len;
+			mid->blk.end += (int) len;
 		} else {
 			/* fetch one more line */
 			while (stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, 1) == 1) {
@@ -2895,7 +2895,7 @@ read_line(Mapi mid)
 	assert(nl);
 	*nl++ = 0;
 	reply = mid->blk.buf + mid->blk.nxt;
-	mid->blk.nxt = nl - mid->blk.buf;
+	mid->blk.nxt = (int) (nl - mid->blk.buf);
 
 	if (mid->trace == MAPI_TRACE)
 		printf("read_line:%s\n", reply);

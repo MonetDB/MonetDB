@@ -97,7 +97,7 @@ uchr_fromstr(char *uchrStr, int *len, uchr **c)
 	printf("  = *len: %d\n", *len);
 #endif
 
-	return p - uchrStr;
+	return (int) (p - uchrStr);
 }
 
 int
@@ -134,7 +134,7 @@ uchr_tostr(char **uchrStr, int *len, uchr *c)
 	printf("  = *uchrStr: %s\n", *uchrStr);
 	printf("  = *len: %d\n", *len);
 #endif
-	return strlen(*uchrStr);
+	return (int) strlen(*uchrStr);
 }
 
 @mil

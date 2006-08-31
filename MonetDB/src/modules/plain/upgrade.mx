@@ -330,7 +330,7 @@ fix_heap( BAT *b )
 int 
 copy_heap(int storage, char *dst, char *dir, char *src, char *ext) 
 {
-	int res;
+	size_t res;
 	FILE *srcfp, *dstfp;
 	char srcpath[PATHLENGTH], dstpath[PATHLENGTH];
 	char *buf;
@@ -355,7 +355,8 @@ copy_heap(int storage, char *dst, char *dir, char *src, char *ext)
 	buf = GDKmalloc(64*BUFSIZ);
 	while( (res = fread(buf, 1, 64*BUFSIZ, srcfp)) > 0) {
 		fwrite(buf, 1, res, dstfp);
-		if (res < (64*BUFSIZ)) break;
+		if (res < (64*BUFSIZ))
+			break;
 	}
 	fclose(dstfp);
 	fclose(srcfp);
@@ -408,7 +409,8 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	b->batBuns->filename = NULL;
 	b->hhash = b->thash = NULL;
 	b->hheap = b->theap = NULL;
-	b->void_tid = b->void_cnt = b->void_seq1 = b->void_seq2 = 0;
+	b->void_tid = b->void_cnt = 0;
+	b->void_seq1 = b->void_seq2 = 0;
 	
 	dst->B.dims.headtype = (chr) src.B.dims.headtype;
 	dst->B.dims.tailtype = (chr) src.B.dims.tailtype;
@@ -458,7 +460,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	dst->U.buns.free = src.U.buns.free;
 	dst->U.buns.size = src.U.buns.size;
 	dst->U.buns.base = NULL;
-	dst->U.buns.storage = src.U.buns.storage;
+	dst->U.buns.storage = (char) src.U.buns.storage;
 	dst->U.buns.copied = FALSE;
 	dst->U.buns.padding = 0;
 	dst->U.buns.filename = NULL;
@@ -479,7 +481,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		dst->H.vheap->free = src.H.heap.free;
 		dst->H.vheap->size = src.H.heap.size;
 		dst->H.vheap->base = NULL;
-		dst->H.vheap->storage = src.H.heap.storage;
+		dst->H.vheap->storage = (char) src.H.heap.storage;
 		dst->H.vheap->copied = FALSE;
 		dst->H.vheap->padding = 0;
 		dst->H.vheap->filename = NULL;
@@ -502,7 +504,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		dst->T.vheap->free = src.T.heap.free;
 		dst->T.vheap->size = src.T.heap.size;
 		dst->T.vheap->base = NULL;
-		dst->T.vheap->storage = src.T.heap.storage;
+		dst->T.vheap->storage = (char) src.T.heap.storage;
 		dst->T.vheap->copied = FALSE;
 		dst->T.vheap->padding = 0;
 		dst->T.vheap->filename = NULL;

@@ -216,7 +216,7 @@ url_getContext(str *retval, url Str1)
 		if (d)
 			strcpy(d, str_nil);
 	} else {
-		int i = strlen(Str1) - (s - Str1) + 1;
+		size_t i = strlen(Str1) - (s - Str1) + 1;
 
 		d = GDKmalloc(i);
 		if (d)

@@ -53,6 +53,13 @@ the various underlying storage types.
 #include <signal.h>
 #include <limits.h>
 
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef NATIVE_WIN32
+# include <winsock.h>
+#endif
+
 #ifdef NATIVE_WIN32
 #ifndef LIBSTREAM
 #define stream_export extern __declspec(dllimport)
@@ -158,10 +165,10 @@ stream_export void close_stream(stream *s);
 stream_export stream * open_urlstream(const char *url);
 #endif
 
-stream_export stream *socket_rstream(int socket, const char *name);
-stream_export stream *socket_wstream(int socket, const char *name);
-stream_export stream *socket_rastream(int socket, const char *name);
-stream_export stream *socket_wastream(int socket, const char *name);
+stream_export stream *socket_rstream(SOCKET socket, const char *name);
+stream_export stream *socket_wstream(SOCKET socket, const char *name);
+stream_export stream *socket_rastream(SOCKET socket, const char *name);
+stream_export stream *socket_wastream(SOCKET socket, const char *name);
 
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
@@ -266,10 +273,6 @@ typedef enum stream_errors {
 #include "stream.h"
 #include <string.h>
 
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-
 #ifdef HAVE_NETDB_H
 # include <sys/types.h>
 # include <netinet/in_systm.h>
@@ -314,6 +317,7 @@ struct stream {
 	union {
 		void *p;
 		int i;
+		SOCKET s;
 	} stream_data;
 	int errnr;
 	ssize_t (*read) (stream *s, void *buf, size_t elmsize, size_t cnt);
@@ -1378,9 +1382,9 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	while (res < size && (
 #ifdef NATIVE_WIN32
 				     /* send works on int, make sure the argument fits */
-				     ((nr = send(s->stream_data.i, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
+				     ((nr = send(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
-				     ((nr = write(s->stream_data.i, (void *) ((char *) buf + res), size - res)) > 0)
+				     ((nr = write(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
 				     || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
 	    ) {
@@ -1410,9 +1414,9 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	while (res < size && (
 #ifdef NATIVE_WIN32
 				     /* recv works on int, make sure the argument fits */
-				     ((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
+				     ((nr = recv(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
-				     ((nr = read(s->stream_data.i, (void *) ((char *) buf + res), size - res)) > 0)
+				     ((nr = read(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
 				     || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
 	    ) {
@@ -1445,16 +1449,10 @@ socket_readline(stream *s, void *buf, size_t maxcnt)
 }
 
 
-#ifdef NATIVE_WIN32
-#define s_close(s)	closesocket(s)
-#else
-#define s_close(s)	close(s)
-#endif
-
 static void
 socket_close(stream *s)
 {
-	int fd = s->stream_data.i;
+	SOCKET fd = s->stream_data.s;
 
 	if (fd >= 0) {
 		/* Related read/write (in/out, from/to) streams
@@ -1470,14 +1468,14 @@ socket_close(stream *s)
 #ifdef HAVE_SHUTDOWN
 			shutdown(fd, SHUT_RDWR);
 #endif
-			s_close(fd);
+			closesocket(fd);
 		}
 	}
-	s->stream_data.i = -1;
+	s->stream_data.s = -1;
 }
 
 static stream *
-socket_open(int socket, const char *name)
+socket_open(SOCKET socket, const char *name)
 {
 	stream *s;
 
@@ -1488,7 +1486,7 @@ socket_open(int socket, const char *name)
 	s->write = socket_write;
 	s->close = socket_close;
 	s->flush = NULL;
-	s->stream_data.i = socket;
+	s->stream_data.s = socket;
 
 	errno = 0;
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
@@ -1536,12 +1534,12 @@ socket_open(int socket, const char *name)
 }
 
 stream *
-socket_rstream(int socket, const char *name)
+socket_rstream(SOCKET socket, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_rstream %d %s\n", socket, name);
+	printf("socket_rstream " SSZFMT " %s\n", (ssize_t) socket, name);
 #endif
 	if ((s = socket_open(socket, name)) == NULL)
 		return NULL;
@@ -1552,12 +1550,12 @@ socket_rstream(int socket, const char *name)
 }
 
 stream *
-socket_wstream(int socket, const char *name)
+socket_wstream(SOCKET socket, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_wstream %d %s\n", socket, name);
+	printf("socket_wstream " SSZFMT " %s\n", (ssize_t) socket, name);
 #endif
 	if ((s = socket_open(socket, name)) == NULL)
 		return NULL;
@@ -1569,12 +1567,12 @@ socket_wstream(int socket, const char *name)
 }
 
 stream *
-socket_rastream(int socket, const char *name)
+socket_rastream(SOCKET socket, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_rastream %d %s\n", socket, name);
+	printf("socket_rastream " SSZFMT " %s\n", (ssize_t) socket, name);
 #endif
 	if ((s = socket_open(socket, name)) != NULL)
 		s->type = ST_ASCII;
@@ -1582,12 +1580,12 @@ socket_rastream(int socket, const char *name)
 }
 
 stream *
-socket_wastream(int socket, const char *name)
+socket_wastream(SOCKET socket, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_wastream %d %s\n", socket, name);
+	printf("socket_wastream " SSZFMT " %s\n", (ssize_t) socket, name);
 #endif
 	if ((s = socket_open(socket, name)) == NULL)
 		return NULL;

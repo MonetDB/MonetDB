@@ -152,8 +152,8 @@ levenshtein_impl(int *result, str s, str t, int *insdel_cost, int *replace_cost,
 	int diag2 = 0, cost2 = 0;
 
 	/* Step 1 */
-	n = strlen(s);
-	m = strlen(t);
+	n = (int) strlen(s);	/* 64bit: assume strings are less than 2 GB */
+	m = (int) strlen(t);
 	if (n == 0) {
 		return m;
 	}
@@ -830,9 +830,9 @@ fstrcmp_impl(dbl *ret, str string1, str string2, dbl *minimum)
 
 	/* set the info for each string.  */
 	string[0].data = string1;
-	string[0].data_length = strlen(string1);
+	string[0].data_length = (int) strlen(string1); /* 64bit: assume string not too long */
 	string[1].data = string2;
-	string[1].data_length = strlen(string2);
+	string[1].data_length = (int) strlen(string2); /* 64bit: assume string not too long */
 
 	/* short-circuit obvious comparisons */
 	if (string[0].data_length == 0 && string[1].data_length == 0) {

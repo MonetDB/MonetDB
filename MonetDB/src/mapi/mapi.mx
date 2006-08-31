@@ -203,11 +203,6 @@ mapi_export int active_clients(char *lang);
 #endif
 
 #define SOCKPTR struct sockaddr *
-#if HAVE_SOCKLEN_T
-#define SOCKLEN socklen_t
-#else
-#define SOCKLEN int
-#endif
 
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
@@ -404,7 +399,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 {
 	char *err;
 	mapi_client *mc;
-	int i = c - monet_clients;
+	int i = (int) (c - monet_clients);
 
 	mc = mapi_clients+i;
 	mc->frontend = f->nr;
@@ -480,7 +475,7 @@ static mapi_client *
 mapi_client_get(mapi_frontend *f, Client c )
 {
 	mapi_client *mc, *res = NULL;
-	int i = c - monet_clients;
+	int i = (int) (c - monet_clients);
 
 	MT_set_lock(mapi_cache_lock, "mapi_client_get");
 	mc = mapi_clients+i;
@@ -595,7 +590,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	char *user, *passwd = NULL, *lang = NULL, *mode = NULL, *db = NULL;
 	int blocked = 0;
 	char *challenge, *err;
-	int len;
+	ssize_t len;
 	mapi_client *fc = NULL;
 	mapi_frontend *f = NULL;
 	Client c;
@@ -704,14 +699,14 @@ int
 MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	struct sockaddr_in server;
-	int sock = -1;
+	SOCKET sock = -1;
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
-	int usock = -1;
+	SOCKET usock = -1;
 #endif
 	char *usockfile;
-	SOCKLEN length = 0;
+	socklen_t length = 0;
 	int on = 1;
 	int i = 0;
 
@@ -774,7 +769,7 @@ The port id should be obtained from the Homes file.
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
-		length = (SOCKLEN) sizeof(server);
+		length = (socklen_t) sizeof(server);
 		if (bind(sock, (SOCKPTR) &server, length) < 0) {
 			GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
 			return GDK_FAIL;
@@ -798,7 +793,7 @@ Get the new information for the server socket and start listening.
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
 
-		length = (SOCKLEN) sizeof(userver);
+		length = (socklen_t) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			GDKsyserror("MAPIlisten:binding to Unix socket (%s) failed\n", usockfile);
 			return GDK_FAIL;
@@ -814,7 +809,7 @@ Get the new information for the server socket and start listening.
 		int retval;
 		struct timeval tv;
 		fd_set fds;
-		int msgsock;
+		SOCKET msgsock;
 
 		FD_ZERO(&fds);
 		if (sock >= 0)
@@ -833,7 +828,7 @@ Get the new information for the server socket and start listening.
 		if (usock > sock)
 			msgsock = usock;
 #endif
-		retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
+		retval = select((int) msgsock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -846,7 +841,7 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
 					GDKsyserror("MAPIlisten:accept failed\n");
 					goto error;
@@ -855,7 +850,7 @@ Get the new information for the server socket and start listening.
 			}
 #ifdef HAVE_SYS_UN_H
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
-			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
 					GDKsyserror("MAPIlisten:accept failed\n");
 					goto error;
@@ -1038,10 +1033,10 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 #ifdef HAVE_OPENSSL
 	struct sockaddr_in server;
-	int sock = -1;
-	SOCKLEN length = 0;
+	SOCKET sock = -1;
+	socklen_t length = 0;
 	int on = 1;
-	int msgsock;
+	SOCKET msgsock;
 	int i = 0;
 
 	int port, *Port;
@@ -1116,7 +1111,7 @@ The port id should be obtained from the Homes file.
 
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
-	length = (SOCKLEN) sizeof(server);
+	length = (socklen_t) sizeof(server);
 	if (bind(sock, (SOCKPTR) & server, length) < 0) {
 		GDKsyserror("MAPIlistenSSL:binding to stream socket (%d) failed\n", port);
 		goto fail;
@@ -1153,7 +1148,7 @@ Get the new information for the server socket and start listening.
 			GDKsyserror("MAPIlistenSSL:select failed\n");
 			goto fail;
 		}
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlistenSSL:accept failed\n");
 				goto fail;
@@ -1260,8 +1255,8 @@ int
 stream_read_until(str *res, Stream *S, str stop)
 {
 	stream *s = *(stream **) S;
-	int slen = strlen(stop);
-	int len = 0;
+	ssize_t slen = strlen(stop);
+	ptrdiff_t len = 0;
 	char buf[BUFSIZ + 1], *start = buf;
 
 	while (stream_read(s, start, 1, 1) > 0) {
