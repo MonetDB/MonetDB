@@ -151,11 +151,11 @@ module 'xrpc'
 # signature																						  # name
 # str																							  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "doLoopLiftedRPC(int, str, str, str, str, BAT[oid,BAT], BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"		  ]
-[ "get_rpc_res(oid, str, int, BAT[oid,BAT], BAT[oid,lng], BAT[oid,dbl], BAT[oid,str]) : BAT[void,BAT]"															  ]
-[ "http_post(str, str, str, str, str, BAT[oid,BAT], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : BAT[oid,BAT]"	  ]
+[ "doLoopLiftedRPC(str, str, str, str, lng, int, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"		  ]
+[ "get_rpc_res(oid, str, BAT[void,BAT], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"															  ]
+[ "http_post(str, str, str, str, str, lng, int, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
 [ "httpd_start(int, str) : void"																				  ]
-[ "rpc_client(str, str, str, str, str, str, BAT[oid,BAT], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,str]) : oid"	  ]
+[ "rpc_client(str, str, str, str, str, str, lng, int, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : oid"	  ]
 [ "rpcd_start() : void"																				  ]
 [ "rpcd_start(int) : void"																			  ]
 [ "rpcd_start(int, str) : void"																			  ]
