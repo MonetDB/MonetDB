@@ -47,15 +47,18 @@ that return a BAT.
 "Returns the tail value 't' for which some [h,t] BUN exists in b.
  If no such BUN exists, an error occurs."
 
-.COMMAND position(BAT[any::1,any] b, any::1 val) : int = CMDposition;
+.COMMAND position(BAT[any::1,any] b, any::1 val) : wrd = CMDposition;
 "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.
  It gives an error if 'val' does not occur in b. "
 
-.COMMAND position(BAT[any::1,any::2] b, any::1 val, any::2 tval) : int = CMDpositionBUN;
+.COMMAND position(BAT[any::1,any::2] b, any::1 val, any::2 tval) : wrd = CMDpositionBUN;
 "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.
  It gives an error if 'val' does not occur in b. "
 
 .COMMAND fetch(BAT[any,any::1] b, lng x) : any::1 = CMDfetch;
+"Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
+
+.COMMAND fetch(BAT[any,any::1] b, wrd x) : any::1 = CMDfetch_wrd;
 "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
 
 .COMMAND fetch(BAT[any,any::1] b, int x) : any::1 = CMDfetch_int;
@@ -150,6 +153,10 @@ as substring in the tail."
 @m
 .COMMAND slice(BAT[any::1,any::2], lng x, lng y) :
 				BAT[any::1,any::2] =CMDslice;
+"Return the slice with the BUNs at position x till y."
+
+.COMMAND slice(BAT[any::1,any::2], wrd x, wrd y) :
+				BAT[any::1,any::2] =CMDslice_wrd;
 "Return the slice with the BUNs at position x till y."
 
 .COMMAND slice(BAT[any::1,any::2], int x, int y) :
@@ -1671,19 +1678,12 @@ CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
 }
 
 @-
-Let cut this text down with some Mx macro's
+Let's cut this text down with some Mx macros
 @= unary
 int
 CMD@1(BAT **result, BAT *b)
 {
 	return (*result = @2(b))?GDK_SUCCEED:GDK_FAIL;
-}
-@= unaryint
-int
-CMD@1(int *result, BAT *b)
-{
-	*result = @2(b);
-	return GDK_SUCCEED;
 }
 @= binary
 int
@@ -1715,7 +1715,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, 1)
 #define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
 
-@:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
 @:unary(histogram_rev,BAThistogram_rev)@
 @:unary(sort,BATsort)@
@@ -1758,12 +1757,19 @@ CMDtunique(BAT **result, BAT* b)
 }
 
 int
+CMDcount(int *result, BAT *b)
+{
+	*result = BATcount(b);
+	return GDK_SUCCEED;
+}
+
+int
 CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
 {
 	if (*ignore_nils)
-		*result = (int) BATcount_no_nil(b);
+		*result = BATcount_no_nil(b);
 	else
-		*result = (int) BATcount(b);
+		*result = BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -1949,6 +1955,12 @@ CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
 }
 
 int
+CMDslice_wrd(BAT **retval, BAT *b, wrd *start, wrd *end)
+{
+	return slice(retval, b, *start, *end);
+}
+
+int
 CMDslice_int(BAT **retval, BAT *b, int *start, int *end)
 {
 	return slice(retval, b, *start, *end);
@@ -1957,7 +1969,7 @@ CMDslice_int(BAT **retval, BAT *b, int *start, int *end)
 @- BUN Get/Fetch
 @c
 int
-CMDposition(int *retval, BAT *b, ptr val)
+CMDposition(wrd *retval, BAT *b, ptr val)
 {
 	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	ptr v = BUNfnd(b, p);
@@ -1971,7 +1983,7 @@ CMDposition(int *retval, BAT *b, ptr val)
 }
 
 int
-CMDpositionBUN(int *retval, BAT *b, ptr val, ptr tval)
+CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 {
 	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	ptr o = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) tval)->batCacheid : tval;
@@ -2032,6 +2044,12 @@ fetch(ptr ret, BAT *b, lng i)
 
 int
 CMDfetch(ptr ret, BAT *b, lng *pos)
+{
+	return fetch(ret, b, (size_t) *pos);
+}
+
+int
+CMDfetch_wrd(ptr ret, BAT *b, wrd *pos)
 {
 	return fetch(ret, b, (size_t) *pos);
 }

@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 949 ]
+[ 951 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 949 ]
+[ 951 ]
 
 var All:=0;
 
@@ -147,8 +147,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 147 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 149 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -174,6 +174,7 @@ Module: "algebra"
 [ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], int) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																					  ]
 [ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], lng) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																										  ]
 [ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], oid) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																					  ]
+[ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], wrd) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																																																							  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[int,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the integer head values of s"																													  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[oid,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the oid head values of s"																													  ]
 [ "find",	  "COMMAND:   ",  "find(BAT[any::1,any::2], any::1) : any::2",						  "Returns the tail value 't' for which some [h,t] BUN exists in b.\n If no such BUN exists, an error occurs."																								  ]
@@ -219,8 +220,8 @@ Module: "algebra"
 [ "neg_select",	  "PROC:      ",  "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]",			  "Returns all BUNs where not (*fcn)(tail,,..params..)"																															  ]
 [ "number",	  "COMMAND:   ",  "number(BAT[any::1,any]) : BAT[any::1,int]",						  "Produces a new BAT with identical head column, and consecutively\nincreasing integers (starting with 0) in the tail column."																						  ]
 [ "outerjoin",	  "COMMAND:   ",  "outerjoin(BAT[any::1,any::2], BAT[any::2,any::3], lng) : BAT[any::1,any::3]",	  "Returns all the result of a join, plus the BUNS formed NIL in\nthe tail and the head-values of 'outer' whose tail-value does\nnot match an head-value in 'inner'."																	  ]
-[ "position",	  "COMMAND:   ",  "position(BAT[any::1,any::2], any::1, any::2) : int",					  "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.\n It gives an error if 'val' does not occur in b. "																					  ]
-[ "position",	  "COMMAND:   ",  "position(BAT[any::1,any], any::1) : int",						  "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.\n It gives an error if 'val' does not occur in b. "																					  ]
+[ "position",			  "COMMAND:   ",  "position(BAT[any::1,any::2], any::1, any::2) : wrd",					  "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.\n It gives an error if 'val' does not occur in b. "																																																																																	  ]
+[ "position",			  "COMMAND:   ",  "position(BAT[any::1,any], any::1) : wrd",						  "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.\n It gives an error if 'val' does not occur in b. "																																																																																	  ]
 [ "prod_bte",			  "COMMAND:   ",  "prod_bte(BAT[any,bte]) : bte",							  "Gives the product of all tail values."																																																																																  ]
 [ "prod_dbl",	  "COMMAND:   ",  "prod_dbl(BAT[any,dbl]) : dbl",							  "Gives the product of all tail values."																																  ]
 [ "prod_dbl",	  "COMMAND:   ",  "prod_dbl(BAT[any,flt]) : dbl",							  "Gives the product of all tail values."																																  ]
@@ -256,6 +257,7 @@ Module: "algebra"
 [ "sintersect",			  "COMMAND:   ",  "sintersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the intersection taken over *both* columns of two BATs.\n Results in all BUNs of 'left' that are also in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."																																	  ]
 [ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																								  ]
 [ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], lng, lng) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																													  ]
+[ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], wrd, wrd) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																																																										  ]
 [ "sort",	  "COMMAND:   ",  "sort(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on ascending head values."																				  ]
 [ "sort_ht",			  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "sorts a BAT according to its head (primary) and tail values (secondary): `B.tsort().ssort();`"																																																  ]
 [ "sort_rev",	  "COMMAND:   ",  "sort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on descending head values."																				  ]
@@ -1094,7 +1096,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 949 ]
+[ 951 ]
 
 quit();
 
