@@ -1,0 +1,659 @@
+<!--
+  - @(#)Download.jsp 1.35 02/07/30 SMI
+  -
+  - Copyright (c) 1999, 2000, 2001, 2002 by Sun Microsystems, Inc
+  -->
+
+
+<!--
+  - $Id: sdlcJspHeader.jsp,v 1.6 2002/05/17 11:20:50 alfredc Exp $$Name: fbtag_sdlc_vDOT-Q406_20060525-055324 $ SMI
+  -
+  - Copyright (c) 1999, 2000, 2001, 2002 by Sun Microsystems, Inc
+  -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+
+<HTML><HEAD>
+<!--
+  - $Id: sdlcBrowserTitle.jsp,v 1.2 2002/05/15 14:14:38 jayh Exp $$Name: fbtag_sdlc_vDOT-Q406_20060525-055324 $ SMI
+  -
+  - Copyright (c) 1999, 2000, 2001, 2002 by Sun Microsystems, Inc
+  -->
+<TITLE>Download Center - Download</TITLE>
+
+
+
+<SCRIPT>
+
+<!--
+function displayWindow(url, width, height) {
+        var Win = window.open(url,"displayWindow",'width=' + width + ',height=' + height + ',resizable=yes,scrollbars=yes,menubar=yes,status=no' );
+}
+
+function submitForm() {
+  document.licenseForm.submit();
+}
+
+function validateLinkAction() {
+
+    len =  document.licenseForm.length;
+    loopValue = 0;
+    acceptStatus = "NotSelected";
+
+    while(loopValue < len) {
+        
+        elementType = document.licenseForm.elements[loopValue].type;
+        
+        if(elementType=="radio"){
+            
+            tempElement =document.licenseForm.elements[loopValue];
+
+            if(tempElement.checked == true){
+                
+                    if(tempElement.value =="Yes")
+                    acceptStatus = "Selected";
+            }
+        }
+        
+        loopValue++;
+    }
+    
+    if(  acceptStatus == "NotSelected" ){
+        alert("Sorry! In order to download this product, you must select \"Accept License Agreement\" \n on this page or on the Review License Agreement page.");
+        return false;
+    }
+
+    return true;
+}
+
+// return-->
+
+</SCRIPT>
+
+<!-- ================= -->
+<!-- SITE HEADER BEGIN -->
+<!-- ================= -->
+
+
+
+<!-- SDLC HEADER BEGIN -->
+<!-- META INFORMATION BEGIN -->
+
+<meta http-equiv="UrlId" content="com.sun.sunit.sdlc.content.DownloadPageInfo" >
+
+<!-- META INFORMATION END -->
+
+<!-- SDLC HEADER END -->
+
+
+
+
+<!-- JCP.ORG HEADER BEGIN -->
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" >
+<LINK REL="Stylesheet" TYPE="text/css" TITLE="JCPstyle" HREF="/ECom/docs/stylesheets/pacifico/jcpstyle.css">
+<!-- JCP.ORG HEADER END -->
+
+
+<!-- ================= -->
+<!-- SITE HEADER END   -->
+<!-- ================= -->
+
+</HEAD>
+
+<!-- begin jcp/jcp.topleft_nav.jsp -->
+
+
+
+
+
+
+
+
+
+<BODY text="#000000" vLink="#666666" aLink="#3366cc" link="#000099" bgColor="#ffffff">
+
+
+
+
+
+
+
+
+<!-- SiteCatalyst Custom Variables -->
+
+
+
+<script language="JavaScript">
+    var s_pageName=document.title
+    var s_channel="sdlc-app"
+
+</script>
+
+
+
+<TABLE cellSpacing=0 cellPadding=0 width="100%" border=0>
+  <TBODY>
+  <TR vAlign=top align=left>
+    <TD colSpan=2>
+
+      <!-- begin banner and quicklinks table -->
+      <TABLE cellSpacing=0 cellPadding=0 border=0>
+        <TBODY>
+        <TR vAlign=top align=left>
+          <TD width=209 rowSpan=2>
+            <A href="http://jcp.org/en/home">
+              <IMG width="185" height="90" alt="Java Community Process"
+               src="/ECom/docs/jcp_pics/2nd-banner-logo.gif" border=0>
+            </A>
+          </TD>
+          <TD colSpan=2>
+            <IMG height=92 alt=""
+            src="/ECom/docs/jcp_pics/2nd-banner-top.gif" width=532>
+          </TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left>
+            <IMG height=40 alt=""
+            src="/ECom/docs/jcp_pics/2nd-ban-sun-blank.gif" width=25>
+          </TD>
+          <TD vAlign=top align=left>
+            <FONT color="#666666" size=-1>Quick Links:</FONT>&nbsp;&nbsp;
+            <A href="http://jcp.org/en/whatsnew/jcp">
+            <FONT color="#660066" size=-1>What's New</FONT></A>&nbsp;&nbsp;
+            <A href="http://jcp.org/en/procedures/jcp2">
+            <FONT color="#660066" size=-1>JCP 2</FONT></A>&nbsp;&nbsp;
+            <A href="http://jcp.org/en/participation/membership">
+            <FONT color="#660066" size=-1>Membership</FONT></A>&nbsp;&nbsp;
+            <A href="http://jcp.org/en/resources/guide">
+            <FONT color="#660066" size=-1>Spec Lead Guide</FONT></A>&nbsp;&nbsp;
+            <A href="http://jcp.org/en/eg/my">
+            <FONT color="#660066" size=-1>Expert Group Log in</FONT></A>&nbsp;&nbsp;
+            <A href="http://java.sun.com/">
+            <FONT color="#660066" size=-1>java.sun.com</FONT></A>
+          </TD>
+        </TR>
+        </TBODY>
+      </TABLE>
+      <!-- end banner and quicklinks table -->
+
+    </TD>
+  </TR>
+  <TR>
+    <TD vAlign=top align=left width=230>
+    <form method="post" action="https://sdlc2b.sun.com:443/ECom/EComActionServlet/DownloadPage:~:com.sun.sunit.sdlc.content.DownloadPageInfo;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1">
+
+      <!-- begin left navigation table -->
+      <TABLE cellSpacing=0 cellPadding=0 width=240 border=0>
+        <TBODY>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/introduction/overview"><IMG height=50
+            alt=Introduction
+            src="/ECom/docs/jcp_pics/2nd-lnk-intro.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/jsr/overview"><IMG height=50
+            alt="JSRs: Java Specification Requests"
+            src="/ECom/docs/jcp_pics/2nd-lnk-jsr.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/whatsnew/jcp"><IMG height=50
+            alt="What's New"
+            src="/ECom/docs/jcp_pics/2nd-lnk-whatsnew.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/participation/overview"><IMG height=50
+            alt=Participation
+            src="/ECom/docs/jcp_pics/2nd-lnk-participa.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/procedures/overview"><IMG height=50
+            alt="JCP Procedures"
+            src="/ECom/docs/jcp_pics/2nd-lnk-jcp-proced.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/press/said"><IMG height=50
+            alt="Press &amp; Success"
+            src="/ECom/docs/jcp_pics/2nd-lnk-press-suc.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209 height=45><A TARGET="jcp_popup"
+            href="http://jcp.org/en/resources/contents"><IMG height=50
+            alt="Community Resources"
+            src="/ECom/docs/jcp_pics/2nd-lnk-communi.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        <TR>
+          <TD vAlign=top align=left width=209>
+          </TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+
+        <!-- begin SDLC dynamic navigation options -->
+
+
+
+        <TR>
+          <TD vAlign=top align=left width=209 height=9><A
+            href="https://sdlc2b.sun.com:443/ECom/EComActionServlet/DownloadPage:~:com.sun.sunit.sdlc.content.DownloadPageInfo;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1?updateRegistrationLink_49=&amp;NavbarGotoPage=UpdateUserPage&amp;NavbarAction=x" ><IMG height=16
+            alt="Update Registration"
+            src="/ECom/docs/jcp_pics/jcp-sdlc-reg.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+
+        <TR>
+          <TD vAlign=top align=left width=209 height=9><A
+            href="https://sdlc2b.sun.com:443/ECom/EComActionServlet/DownloadPage:~:com.sun.sunit.sdlc.content.DownloadPageInfo;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1?logOutLink_56=&amp;NavbarGotoPage=LoggedOutPage&amp;NavbarAction=x" ><IMG height=16
+            alt="Log Out"
+            src="/ECom/docs/jcp_pics/jcp-sdlc-logout.gif"
+            width=209 border=0></A></TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+
+
+
+
+
+
+
+<!-- BEGIN LOGIN/REGISTER COMPONENT -->
+
+<!-- END LOGIN/REGISTER COMPONENT -->
+
+  
+
+
+
+        <!-- end SDLC dynamic navigation options -->
+
+        <TR>
+          <TD vAlign=top align=left width=209>
+          </TD>
+          <TD vAlign=top align=left width=31>&nbsp;</TD>
+        </TR>
+        </TBODY>
+      </TABLE>
+      <!-- end left navigation table -->
+    </form>
+
+    </TD>
+    <TD vAlign=top align=left>
+
+      <!-- begin main content table -->
+
+      <p><div class="pagetitle">Download</div></p>
+
+<!-- end jcp/jcp.topleft_nav.jsp -->
+
+
+
+
+<!-- SDLC CONTENT HEADER BEGIN -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+
+    
+
+    
+    
+
+
+    
+    
+
+
+
+<!--
+  - $Id: UserGreeting.jsp,v 1.3 2006/03/21 13:36:29 sr160425 Exp $$Name: fbtag_sdlc_vDOT-Q406_20060525-055324 $ SMI
+  -
+  - This page to display user greeting message. Currently to be included in the
+  - common header(sdlcContentHeader). To display, the flag in EComContext has 
+  - to be set true. The flag is reset back in EComWebPageInfo process()
+  -
+  - Copyright (c) 1999, 2000, 2001, 2002 by Sun Microsystems, Inc
+  -->
+
+
+
+
+
+
+
+
+<!-- SDLC CONTENT HEADER END -->
+
+
+
+
+
+<!-- ============ -->
+<!-- MAIN CONTENT -->
+<!-- ============ -->
+
+
+<style type="text/css">
+.snumber {background:#FFFF66;color:#333300;text-transform:uppercase;font-family:monospace;font-weight:bold}
+</style >
+
+
+<A NAME="top"></A>
+
+
+<!-- insert part references here -->
+
+
+
+
+
+<H5> JSR-000221 - JDBC 4.0 Proposed Final Draft </H5>
+
+
+<script>
+   var s_events="prodView";
+   var s_eVar3="sdlc"
+   var s_products="Downloaded Products; JSR-000221 - JDBC 4.0 Proposed Final Draft"
+</script>
+
+<!-- Demo License if neeeded -->
+
+
+
+<!-- Serial numbers, if any, go here -->
+
+
+
+<!-- Begin Product Specific Text -->
+
+<DIV ALIGN="left">
+
+</DIV>
+<BR>
+
+<!-- End Product Specific Text -->
+
+<DIV>
+<SPAN CLASS="">NOTE:</SPAN>
+
+
+
+
+
+
+
+
+
+Carefully review the files listed below to select the ones you want, 
+then click the link(s) to download.
+
+
+
+If you don't complete your download, you may return to the Download
+Center anytime, sign in, then click the "Download/Order History" link
+on the left to continue.
+</DIV>
+
+<NOSCRIPT>
+<A HREF="http://www.sun.com/software/download/faq.html#dlonce"
+   TARGET="_blank">
+<B>Please see the Download Center FAQ to see how long it will
+take to download your file(s).</B>
+</A>
+<BR><BR>
+</NOSCRIPT>
+
+<P>For any download problems or questions, please see the
+<A HREF="http://www.sun.com/download/faq.html" TARGET="_blank">
+Download Center FAQ</A>.
+
+<BR>
+
+<SCRIPT>
+document.write("<A HREF=\"javascript:displayWindow('/ECom/docs/download-calc.html',700,325)\">")
+</SCRIPT>
+
+How long will the download take?
+
+
+<SCRIPT>
+document.write("</A>")
+document.write("<IMG SRC=\"/ECom/docs/sdlc_pics/popup.gif\" WIDTH=\"12\" HEIGHT=\"10\" BORDER=\"0\" ALT=\"Information Opens in a New Window\">")
+</SCRIPT>
+</p>
+<br>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr> 
+              <td class="grey3"><span class="sp5">&nbsp;</span></td>
+            </tr>
+</table>
+
+
+
+        <!-- Begin Platform Table -->
+        <BR>
+        <TABLE BORDER="1" CELLPADDING="3" CELLSPACING="0" WIDTH="100%" style="border-collapse:collapse">
+        <TR WIDTH="100%">
+              <TD COLSPAN="4" CLASS="black"><strong> Platform - JSR-000221 - JDBC 4.0 Proposed Final Draft</strong></TD>
+        </TR>
+
+
+
+
+
+        <TR>
+
+
+
+            <TD width="60%" ALIGN="left" CLASS="ltred">
+            JSR-000221 - JDBC 4.0 Proposed Final Draft - API Docs 
+            was downloaded completely at 8/31/06 2:21 AM.
+            See <A HREF="http://www.sun.com/download/faq.xml#q6" TARGET="_blank">FAQ</A> for more information.
+            </TD>
+            <TD width="30%" CLASS="ltred">jdbc-4_0-pfd-apidocs.zip</TD>
+            <TD align="right" width="10%" CLASS="ltred">766.97 KB</TD>
+
+            
+
+        </TR>
+
+
+
+
+
+
+        <TR>
+
+
+
+            <TD width="60%" ALIGN="left" CLASS="ltred">
+            JSR-000221 - JDBC 4.0 Proposed Final Draft - Spec 
+            was downloaded completely at 8/31/06 2:21 AM.
+            See <A HREF="http://www.sun.com/download/faq.xml#q6" TARGET="_blank">FAQ</A> for more information.
+            </TD>
+            <TD width="30%" CLASS="ltred">jdbc-4_0-pfd-spec.pdf</TD>
+            <TD align="right" width="10%" CLASS="ltred">1.73 MB</TD>
+
+            
+
+        </TR>
+
+
+
+
+        </TABLE>
+        <!-- End Platform Table -->
+
+    
+
+
+<BR>
+
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>    
+        <td class="grey3"><span class="sp5">&nbsp;</span></td>
+    </tr>
+</table>
+<BR>
+<B>Notes</B>
+<BR>        
+ - To ensure a successful download, we highly recommend using <A HREF="http://www.sun.com/download/sdm/index.xml">
+Sun Download Manager (SDM)</A>.<BR>
+ - If you don't complete your download, you may return to the Download Center anytime,
+sign in, then click the <A HREF="http://javashoplm.sun.com/ECom/docs/Welcome.jsp?TransactionId=viewOrders">"Download/Order History"</A> link on the left to continue.<BR>
+- For Customer Service, contact&nbsp;
+
+<a href="https://sdlc2b.sun.com:443/ECom/EComActionServlet/DownloadPage:~:com.sun.sunit.sdlc.content.DownloadPageInfo;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1;jsessionid=E6F5304E1F8E09CF47CECD0B5CE881F1?feedbackId_8=" >Download Center Customer Service.
+</a>
+
+
+
+<!-- =================== -->
+<!-- END OF MAIN CONTENT -->
+<!-- =================== -->
+
+
+<!-- CONTENT FOOTER BEGIN -->
+
+<!-- 
+  - The following paragraph forces JCP Template Expansion to full page width 
+  - under IE browsing: Bug 6275646.  Do not remove.
+  -->
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</p>
+
+<!-- begin jcp/jcp.bottom_nav.jsp -->            
+            <!-- end main content table -->
+      
+
+
+      <!-- begin footer/search table -->
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tbody>
+        <tr align="center">
+          <td colspan="3"><font size="-1">
+            <a href="http://jcp.org/en/introduction/overview">Introduction</a>&nbsp;|&nbsp;
+            <a href="http://jcp.org/en/jsr/overview">JSRs</a>&nbsp;|&nbsp;
+            <a href="http://jcp.org/en/whatsnew/jcp">What's New</a>&nbsp;|&nbsp;
+            <a href="http://jcp.org/en/participation/overview">Participation</a><BR>
+            <a href="http://jcp.org/en/procedures/overview">JCP Procedures</a>&nbsp;|&nbsp;
+            <a href="http://jcp.org/en/press/said">Press & Success</a>&nbsp;|&nbsp;
+            <a href="http://jcp.org/en/resources/contents">Community Resources</a>
+            </font>
+          </td>
+        </tr>
+        <tr>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td align="left" colspan="3">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              <tbody>
+              <tr valign="top">
+                <td align="left">
+                  <font size="-2">Site sponsored and powered by
+                  <a href="http://www.sun.com/">Sun Microsystems</a><BR>
+                  Copyright &copy; 1995-2006. All Rights Reserved.<BR>
+                  <a href="http://www.sun.com/share/text/termsofuse.html">Terms of Use</a>.
+                  <a href="http://www.sun.com/privacy/">Privacy Policy</a>.</font>
+                </td>
+                <td align="right">
+                  <a href="http://www.sun.com/">
+                  <img src="/ECom/docs/jcp_pics/lgsun.gif" width="64" height="30" border="0" alt=""></a>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+      <!-- end footer/search table   -->
+    </TD>
+  </TR>
+  </TBODY>
+</TABLE>
+
+<!-- Begin SiteCatalyst code version: G.5. -->
+    <script language="JavaScript" src="/ECom/docs/s_code_remote.js"></script> 
+<!-- End SiteCatalyst code version: G.5. -->
+
+
+</BODY>
+<!-- end jcp/jcp.bottom_nav.jsp -->            
+
+
+
+
+
+
+<!-- NAV/BODY/FOOT END -->
+</HTML>
