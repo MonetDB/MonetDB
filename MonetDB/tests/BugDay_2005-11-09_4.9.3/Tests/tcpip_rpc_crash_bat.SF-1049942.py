@@ -2,16 +2,20 @@
 import os, time, sys
 
 class Popen:
-	def __init__(self, cmd):
-		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
+    def __init__(self, cmd):
+        if os.name == 'nt':
+            bufsize = -1
+        else:
+            bufsize = 0
+        self.stdin,self.stdout = os.popen2(cmd, 't', bufsize)
 
 def server_start(x,dbname):
     srvcmd = '%s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
-    return Popen(srvcmd);
+    return Popen(srvcmd)
 
 def server_stop(srv):
     r = srv.stdout.read()
-    sys.stdout.write(r);
+    sys.stdout.write(r)
     srv.stdout.close()
     srv.stdin.close()
 
@@ -58,10 +62,10 @@ def main():
     srv2.stdin.write(script_2)
     srv1.stdin.write(script_1)
  
-    srv1.stdin.write("quit();\n");
-    srv2.stdin.write("quit();\n");
+    srv1.stdin.write("quit();\n")
+    srv2.stdin.write("quit();\n")
 
-    server_stop(srv1);
-    server_stop(srv2);
+    server_stop(srv1)
+    server_stop(srv2)
 
 main()
