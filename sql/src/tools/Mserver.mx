@@ -206,7 +206,7 @@ Monet_init(opt *set, int setlen)
 		lng max_mem_bigsize = GDK_mem_maxsize/16;
 
 		/* sanity check to avoid memory fragmentation */
-		GDK_mem_bigsize = MIN(max_mem_bigsize, strtol(p, NULL, 10));
+		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtol(p, NULL, 10));
 	}
 	if ((p = GDKgetenv("gdk_vm_minsize"))) {
 		/* when allocating HUGE regions, switch from vmalloc() to mmap() on a real file */
@@ -214,7 +214,7 @@ Monet_init(opt *set, int setlen)
 		lng max_vm_minsize = ((lng)GDK_mem_maxsize*sizeof(void*)*sizeof(void*))/128;
 
 		/* sanity check to avoid running out of swap space */
-		GDK_vm_minsize = MIN(max_vm_minsize, strtol(p, NULL, 10));
+		GDK_vm_minsize = (size_t) MIN(max_vm_minsize, strtol(p, NULL, 10));
 	}
 	if (GDKgetenv_isyes("gdk_embedded")) {
 		GDKembedded = 1;
