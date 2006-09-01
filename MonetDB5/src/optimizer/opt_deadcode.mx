@@ -51,7 +51,7 @@ The dead code removal trims this program to the following short block:
 @end verbatim
 
 A refinement of the dead code comes from using arguments
-that cease to exist due to actions taken by an optimizer.
+that ceased to exist due to actions taken by an optimizer.
 For example, in the snippet below the @code{rangePush} optimizer
 may conclude that variable V31 becomes empty and simply
 injects a 'dead' variable by dropping the assignment statement.
@@ -109,11 +109,12 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		se = p->token == ENDsymbol;
 		if( p->token != NOOPsymbol)
-		for (k = 0; k < p->retc; k++)
+		for (k = 0; k < p->retc; k++){
 			if( isVarUsed(mb,getArg(p,k)) ){
 				se++;
 				break;
 			}
+		}
 
 		if (se || hasSideEffects(p, FALSE)) {
 			mb->stmt[j] = p;

@@ -100,109 +100,47 @@ OPTpeepholeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	actions = 0;
-	do {
-		doit = 0;
+	doit = 0;
+	setLifespan(mb);
+	limit = mb->stop;
+	old = mb->stmt;
+
+	newMalBlkStmt(mb, mb->stop);
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		q = i < limit - 1 ? old[i + 1] : 0;
+		if (q && match(p, batRef, reverseRef) && 
+					match(q, batRef, reverseRef) && 
+					getArg(p, 0) == getArg(q, 1) && 
+					getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
+#ifdef DEBUG_OPT_PEEPHOLE
+			printf("PEEPHOLE reverse-reverse\n");
+			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+			printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+#endif
+			r = newInstruction(mb,ASSIGNsymbol);
+			getArg(r, 0) = getArg(q, 0);
+			pushArgument(mb, r, getArg(p, 1));
+			freeInstruction(p);
+			freeInstruction(q);
+			pushInstruction(mb, r);
+			i++;
+			actions++;
+			doit++;
+		} else if (match(p, "optimizer", "peephole"))
+			freeInstruction(p);
+		else
+			pushInstruction(mb, p);
+	}
+	GDKfree(old);
+	if (doit) {
+		chkProgram(MCgetClient()->nspace, mb);
 		setLifespan(mb);
-		limit = mb->stop;
-		old = mb->stmt;
-
-		newMalBlkStmt(mb, mb->stop);
-		for (i = 0; i < limit; i++) {
-			p = old[i];
-			q = i < limit - 1 ? old[i + 1] : 0;
-			if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && 
-				match(p, "calc", "oid") && 
-				isConstant(mb, getArg(p, 1)) && 
-				getVar(mb,getArg(p,1))->value.val.oval == 0){
-				if (match(q, "algebra", "markT") || 
-					match(q, "algebra", "markH")) {
 #ifdef DEBUG_OPT_PEEPHOLE
-					printf("PEEPHOLE 0\n");
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-					printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+		stream_printf(GDKout, "PEEPHOLE %d\n", doit);
+		printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
-					freeInstruction(p);
-					q->argc--;
-					pushInstruction(mb, q);
-					i++;
-					doit++;
-				}
-/* INVALID FOR THE TIME
-			} else if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && 
-						match(p, "algebra", "markT") && 
-						match(q, batRef, reverseRef)
-			) {
-#ifdef DEBUG_OPT_PEEPHOLE
-				printf("PEEPHOLE 1\n");
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-#endif
-
-				getArg(q, 1) = getArg(p, 1);
-				setModuleId(q, putName("algebra", 7));
-				setFunctionId(q, putName("markH", 5));
-				pushInstruction(mb, q);
-				freeInstruction(p);
-				i++;
-				doit++;
-			} else if (q && match(p, "algebra", "markH") && match(q, "algebra", "join")
-			) {
-#ifdef DEBUG_OPT_PEEPHOLE
-				printf("PEEPHOLE markH-join\n");
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-#endif
-				if (getArg(p, 1) == getArg(q, 2)) {
-					r = newInstruction(mb,ASSIGNsymbol);
-					getArg(r, 0) = getArg(q, 0);
-					pushArgument(mb, r, getArg(q, 2));
-					freeInstruction(q);
-					pushInstruction(mb, p);
-					pushInstruction(mb, r);
-					i++;
-					doit++;
-					actions++;
-				} else
-					pushInstruction(mb, p);
-*/
-			} else if (q && match(p, batRef, reverseRef) && 
-						match(q, batRef, reverseRef) && 
-						getArg(p, 0) == getArg(q, 1) && 
-						getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
-#ifdef DEBUG_OPT_PEEPHOLE
-				printf("PEEPHOLE reverse-reverse\n");
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-#endif
-				r = newInstruction(mb,ASSIGNsymbol);
-				getArg(r, 0) = getArg(q, 0);
-				pushArgument(mb, r, getArg(p, 1));
-				freeInstruction(p);
-				freeInstruction(q);
-				pushInstruction(mb, r);
-				i++;
-				actions++;
-				doit++;
-			} else if (match(p, "optimizer", "peephole"))
-				freeInstruction(p);
-			else
-				pushInstruction(mb, p);
-		}
-		GDKfree(old);
-		if (doit) {
-			chkProgram(MCgetClient()->nspace, mb);
-			setLifespan(mb);
-		}
-#ifdef DEBUG_OPT_PEEPHOLE
-		if (doit) {
-			stream_printf(GDKout, "PEEPHOLE %d\n", doit);
-			printFunction(GDKout, mb, LIST_MAL_ALL);
-		}
-#endif
-	} while (doit);
-#ifdef DEBUG_OPT_PEEPHOLE
-	printFunction(GDKout, mb, LIST_MAL_ALL);
-#endif
+	}
 	return actions;
 }
 

@@ -77,10 +77,9 @@ comment "Estimate the cost of a relational expression";
 #include "mal.h"
 #include <math.h>
 #include "mal_interpreter.h"
+#include "mal_properties.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
-
-#define getProps(Y) mb->var[Y]->props
 
 #endif /* _OPT_COSTMODEL_H_ */
 @-
@@ -185,6 +184,7 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (getModuleId(p) ==batRef) {
 			if (getFunctionId(p) == reverseRef ||
 				getFunctionId(p) == setWriteModeRef  ||
+				getFunctionId(p) ==hashRef  ||
 				getFunctionId(p) == mirrorRef) {
 				@:newRows1(1, *c1)@
 			} else if (	getFunctionId(p) == appendRef ||

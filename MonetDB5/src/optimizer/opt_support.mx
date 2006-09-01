@@ -1126,14 +1126,6 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
 	}
-/*
-	if (idcmp("prelude", getFunctionId(p)) == 0)
-		return TRUE;
-	if (idcmp("destroy", getFunctionId(p)) == 0)
-		return TRUE;
-	if (idcmp("keep", getFunctionId(p)) == 0)
-		return TRUE;
-*/
 	if (strict && getFunctionId(p)==newRef)
 		return TRUE;
 	return FALSE;
