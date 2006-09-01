@@ -24,7 +24,7 @@
 
 @NO_X_CFLAGS@
 
-INCLUDES = -I../common -I../gdk 
+INCLUDES = -I../common -I../gdk $(PTHREAD_INCS)
 
 YFLAGS = -d
 
