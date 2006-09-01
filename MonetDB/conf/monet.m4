@@ -512,10 +512,11 @@ yes-*-*)
 	dnl  #1599: declaration hides variable 
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
-	dnl  that icc 8.1 does not like; since the problem only occurs with
-	dnl  sql/src/server/sql_parser.mx, we "mis-use" the NO_INLINE_CFLAGS
+	dnl  that icc does not like; since the problem only occurs with
+	dnl  sql/src/server/sql_parser.mx & amdb/src/lang/parser.y, 
+	dnl  we "mis-use" the NO_INLINE_CFLAGS 
 	dnl  to disable the respective warning as locally as possible
-	dnl  (see also sql/src/server/Makefile.ag).
+	dnl  (see also sql/src/server/Makefile.ag & amdb/src/lang/Makefile.ag).
 	case "`bison -V | head -n1`" in
 	*2.0*)
 		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -wd592"
