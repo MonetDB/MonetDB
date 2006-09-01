@@ -337,6 +337,10 @@ if [ "${os}" = "SunOS" -a "${hw}" = "i86pc" ] ; then
 	softpath="/opt/csw"
 	binpath="$softpath/bin:${binpath}"
 	libpath="$softpath/lib:${libpath}"
+	# ld & ar
+	binpath="/opt/sfw/lib/bin:${binpath}"
+	# php 5.1.2 & gcc 3.4.5
+	binpath="/opt/csw/php5/bin:/opt/csw/gcc3/bin:${binpath}"
 fi
 
 if [ "${os}" = "SunOS" -a "${hw}" != "i86pc" ] ; then
