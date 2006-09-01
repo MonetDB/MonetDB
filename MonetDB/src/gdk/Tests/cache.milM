@@ -51,7 +51,7 @@ test_batcache(100,300);
 var t1 := time() - t;
 dir("tmp");
 
-bbp_batcache_minsize(0LL);
+bbp_batcache_minsize(wrd(0));
 t := time();
 test_batcache(100,300);
 var t2 := time() - t;

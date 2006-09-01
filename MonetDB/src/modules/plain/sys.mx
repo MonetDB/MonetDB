@@ -168,7 +168,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 .COMMAND check_bbp_size() : lng = check_bbp_size;
 	"Walk the BBP directories, delete leftovers and return total size"
 
-.COMMAND bbp_batcache_minsize(lng minsize) : lng = bbp_batcache_minsize;
+.COMMAND bbp_batcache_minsize(wrd minsize) : wrd = bbp_batcache_minsize;
 	"set the minimum size (BUN count) for bats to be cached"
 
 @- GDK status
@@ -1871,7 +1871,7 @@ vm_trim(lng *lim)
 	return GDK_SUCCEED;
 }
 
-int bbp_batcache_minsize(lng *ret, lng* val) {
+int bbp_batcache_minsize(wrd *ret, wrd* val) {
 	*ret = BBPrecycle_minsize(*val);
 	return GDK_SUCCEED;
 }

@@ -120,7 +120,7 @@ gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, str nme);
 gdk_export BAT * BBPrecycle(int ht, int tt, ssize_t cap);
-gdk_export lng BBPrecycle_minsize(lng);
+gdk_export wrd BBPrecycle_minsize(wrd);
 
 /* query interface */
 gdk_export bat BBPindex(str nme);
@@ -2102,10 +2102,10 @@ main ideas:
 and then benchmark the d*mn thing (also missing in the previous exercise) :
 
 module(alarm);
-bbp_batcache_minsize(256LL);
+bbp_batcache_minsize(wrd(256));
 { var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); }
 [ 490 ]
-bbp_batcache_minsize(0LL);
+bbp_batcache_minsize(wrd(0));
 { var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); }
 [ 847 ]
 
@@ -2428,9 +2428,11 @@ BBPrecycle(int ht, int tt, ssize_t cap)
 }
 
 /* query and change the minimum bat size to cache */
-lng BBPrecycle_minsize(lng val) {
+wrd
+BBPrecycle_minsize(wrd val)
+{
 	gdk_set_lock(GDKcacheLock, "BBPrecycle_minsize");
-	if (val != lng_nil) {
+	if (val != wrd_nil) {
 		/* flush the cache */
 		while(batcache_first >= 0) {
 			batcache_int i = batcache_del();
@@ -2439,7 +2441,7 @@ lng BBPrecycle_minsize(lng val) {
 		}
 		batcache_minsize = val; 
 	}
-	val = batcache_minsize;
+	val = (wrd) batcache_minsize;
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle_minsize");
 	return val;
 }

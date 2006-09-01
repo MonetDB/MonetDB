@@ -2704,8 +2704,9 @@ for determining which algebra commands set properties sub-optimally.
 	if (disprove_key) {
 		if (p < q) {
 			size_t cnt = BATcount(b);
-			size_t lim = MIN(cnt, (mode & BATPROPS_ALL) ? GDK_int_max : 16000);
+			size_t lim = (size_t) ((mode & BATPROPS_ALL) ? GDK_int_max : 16000);
 
+			lim = MIN(cnt, lim);
 			q = BUNptr(b, yy + lim);
 			if (p < q) {
 				BAT *bv = VIEWcreate(b);
