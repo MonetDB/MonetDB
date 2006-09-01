@@ -297,8 +297,8 @@ Module: "iterator"
 
 Module: "malalgebra"
 
-[ 26 ]
-[ 26 ]
+[ 30 ]
+[ 30 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																													  # name
 # str			str		str										str																													  # type
@@ -319,16 +319,20 @@ Module: "malalgebra"
 [ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,void]",			  "Like standard 'uselect(b, low, high);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
 [ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,void]",	  "Like standard 'uselect(b, low, high, l_in, h_in);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."								  ]
 [ "test_malalgebra",	  "PROC:      ",  "test_malalgebra() : void",							  "not available"						  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,bte]) : BAT[oid,bte]",						  "grouped tail sum"																																																		  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,int]) : BAT[oid,int]",					  "grouped tail sum"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,wrd]) : BAT[oid,wrd]",						  "grouped tail sum"																																																		  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,bte]) : BAT[oid,bte]",						  "Choose a different implementation if b is sorted on head."																																													  ]
 [ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
 [ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "Choose a different implementation if b is sorted on head."	  ]
 [ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "Choose a different implementation if b is sorted on head."	  ]
 [ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "Choose a different implementation if b is sorted on head."	  ]
 [ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,wrd]) : BAT[oid,wrd]",						  "Choose a different implementation if b is sorted on head."																																													  ]
 
 Module: "mel"
 

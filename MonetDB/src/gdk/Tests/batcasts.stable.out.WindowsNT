@@ -1074,36 +1074,36 @@ b.append("1.0");
 b.append("1e0");
 b.append("1e1");
 b.append("1e10");
-b.append("1e+010");
-b.append("1e-010");
+b.append("1e+10");
+b.append("1e-10");
 b.append("1.e0");
 b.append("1.e1");
 b.append("1.e10");
-b.append("1.e+010");
-b.append("1.e-010");
+b.append("1.e+10");
+b.append("1.e-10");
 b.append("1.0e0");
 b.append("1.0e1");
 b.append("1.0e10");
-b.append("1.0e+010");
-b.append("1.0e-010");
+b.append("1.0e+10");
+b.append("1.0e-10");
 b.append("-0.0");
 b.append("-0.1");
 b.append("-1.0");
 b.append("-1e0");
 b.append("-1e1");
 b.append("-1e10");
-b.append("-1e+010");
-b.append("-1e-010");
+b.append("-1e+10");
+b.append("-1e-10");
 b.append("-1.e0");
 b.append("-1.e1");
 b.append("-1.e10");
-b.append("-1.e+010");
-b.append("-1.e-010");
+b.append("-1.e+10");
+b.append("-1.e-10");
 b.append("-1.0e0");
 b.append("-1.0e1");
 b.append("-1.0e10");
-b.append("-1.0e+010");
-b.append("-1.0e-010");
+b.append("-1.0e+10");
+b.append("-1.0e-10");
 b.append("1E0");
 b.append("1E1");
 b.append("1E10");
@@ -1425,36 +1425,36 @@ b.append("1.0");
 b.append("1e0");
 b.append("1e1");
 b.append("1e10");
-b.append("1e+010");
-b.append("1e-010");
+b.append("1e+10");
+b.append("1e-10");
 b.append("1.e0");
 b.append("1.e1");
 b.append("1.e10");
-b.append("1.e+010");
-b.append("1.e-010");
+b.append("1.e+10");
+b.append("1.e-10");
 b.append("1.0e0");
 b.append("1.0e1");
 b.append("1.0e10");
-b.append("1.0e+010");
-b.append("1.0e-010");
+b.append("1.0e+10");
+b.append("1.0e-10");
 b.append("-0.0");
 b.append("-0.1");
 b.append("-1.0");
 b.append("-1e0");
 b.append("-1e1");
 b.append("-1e10");
-b.append("-1e+010");
-b.append("-1e-010");
+b.append("-1e+10");
+b.append("-1e-10");
 b.append("-1.e0");
 b.append("-1.e1");
 b.append("-1.e10");
-b.append("-1.e+010");
-b.append("-1.e-010");
+b.append("-1.e+10");
+b.append("-1.e-10");
 b.append("-1.0e0");
 b.append("-1.0e1");
 b.append("-1.0e10");
-b.append("-1.0e+010");
-b.append("-1.0e-010");
+b.append("-1.0e+10");
+b.append("-1.0e-10");
 b.append("1E0");
 b.append("1E1");
 b.append("1E10");
@@ -1604,14 +1604,14 @@ b.[dbl]().print();
 [ nil,	-3.4028234670000002e+038	  ]
 [ nil,	-3.4028234660000002e+038	  ]
 [ nil,	-3.4028234660000002e+038	  ]
-[ nil,	1.7976931348623157e+0308	  ]
-[ nil,	1.7976931348623157e+0308	  ]
+[ nil,	  1.7976931348623157e+308	  ]
+[ nil,	  1.7976931348623157e+308	  ]
 [ nil,	nil	  ]
 [ nil,	nil	  ]
-[ nil,	1.7976931348623157e+0308	  ]
-[ nil,	1.7976931348623157e+0308	  ]
-[ nil,	1.7976931348623157e+0308	  ]
-[ nil,	1.7976931348623157e+0308	  ]
+[ nil,	  1.7976931348623157e+308	  ]
+[ nil,	  1.7976931348623157e+308	  ]
+[ nil,	  1.7976931348623157e+308	  ]
+[ nil,	  1.7976931348623157e+308	  ]
 [ nil,	nil	  ]
 [ nil,	nil	  ]
 [ nil,	nil	  ]
