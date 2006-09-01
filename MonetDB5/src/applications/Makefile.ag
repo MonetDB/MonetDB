@@ -18,4 +18,4 @@
 
 # This directory contains applications modules shipped with MonetDB
 
-SUBDIRS = #datacell
+SUBDIRS = # datacell
