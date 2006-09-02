@@ -512,6 +512,9 @@ create_module(mvc *sql, dlist *qname, char *opt_internal_name)
 	/* TODO parse and use authorization, now modules are owned by
 	   USER_MONETDB 
 	 */
+
+	if (mvc_bind_schema(sql, mname)) 
+		return sql_error(sql, 02, "CREATE MODULE: name '%s' already in use", mname);
 	mvc_create_schema(sql, mname, USER_MONETDB, opt_internal_name);
 	return stmt_none();
 }
@@ -520,7 +523,15 @@ static stmt *
 drop_module(mvc *sql, dlist *qname)
 {
 	char *mname = qname_table(qname);
+	sql_schema *s = mvc_bind_schema(sql, mname);
 
+	if (!s) {
+		return sql_error(sql, 02, "DROP MODULE: name %s does not exist", mname);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_error(sql, 02, "DROP MODULE: access denied for %s to module ;'%s'", backend_get_string(sql, "user"), s->base.name);
+	} else if (strcmp(mname, "sys") == 0 || strcmp(mname, "tmp") == 0) {
+		return sql_error(sql, 02, "DROP MODULE: access denied for '%s'", mname);
+	}
 	mvc_drop_schema(sql, mname);
 	return stmt_none();
 }
@@ -681,15 +692,17 @@ drop_view(mvc *sql, dlist *qname)
 
 	t = mvc_bind_table(sql, ss, tname);
 
-	if (!schema_privs(sql->role_id, ss)) 
+	if (!schema_privs(sql->role_id, ss)) {  
 		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema '%s'", backend_get_string(sql, "user"), ss->base.name);
-	if (!t) {
+	} else if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
-	} else if (isView(t)) {
+	} else if (!isView(t)) {
+		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
+	} else if (t->system) {
+		return sql_error(sql, 02, "DROP VIEW: cannot drop system view '%s'", tname);
+	} else {
 		mvc_drop_table(sql, ss, t->base.name, 0);
 		return stmt_none();
-	} else {
-		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
 	}
 }
 
@@ -1290,6 +1303,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
 		if (cs_size(&t->columns) <= 1)
 			return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
+		if (t->system)
+			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
 		mvc_drop_column(sql, t, cname);
 		res = stmt_none();
 	} break;
@@ -1396,6 +1411,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
+	node *n, *m;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "DROP TABLE: no such schema '%s'", sname);
@@ -1408,13 +1424,16 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
 	}
-	if (!t) 
+	if (!t) { 
 		return sql_error(sql, 02, "DROP TABLE: no such table '%s'", tname);
-	if (!schema_privs(sql->role_id, s)) 
+	} else if (!isTable(t)) {
+		return sql_error(sql, 02, "DROP TABLE: cannot drop VIEW '%s'", tname);
+	} else if (t->system) {
+		return sql_error(sql, 02, "DROP TABLE: cannot drop system table '%s'", tname);
+	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
+	}
 	if (t->keys.set) {
-		node *n;
-
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
 
@@ -1438,33 +1457,27 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 			}
 		}
 	}
-	if (isTable(t)) {
-		node *n, *m;
+	for (n = t->s->tables.set->h; n; n = n->next) {
+		sql_table *ot = n->data;
 
-		for (n = t->s->tables.set->h; n; n = n->next) {
-			sql_table *ot = n->data;
+		/* Each view must have a query, so no NULL check.  */
+		if (isView(ot)) {
+			scope *scp = scope_open(NULL);
+			stmt *s = scope_sqlparse(sql, scp, ot->query);
 
-			/* Each view must have a query, so no NULL check.  */
-			if (isView(ot)) {
-				scope *scp = scope_open(NULL);
-				stmt *s = scope_sqlparse(sql, scp, ot->query);
+			for (m = scp->bases->h; m; m = m->next) {
+				sql_table *ut = m->data;
 
-				for (m = scp->bases->h; m; m = m->next) {
-					sql_table *ut = m->data;
-
-					if (ut == t) {
-						return sql_error(sql, 02, "DROP TABLE: unable to drop table '%s', views depend on it", tname);
-					}
+				if (ut == t) {
+					return sql_error(sql, 02, "DROP TABLE: unable to drop table '%s', views depend on it", tname);
 				}
-				stmt_destroy(s);
-				scope_close(scp);
 			}
+			stmt_destroy(s);
+			scope_close(scp);
 		}
-		mvc_drop_table(sql, s, t->base.name, drop_action);
-		return stmt_none();
-	} else {
-		return sql_error(sql, 02, "DROP TABLE: cannot drop VIEW '%s'", tname);
 	}
+	mvc_drop_table(sql, s, t->base.name, drop_action);
+	return stmt_none();
 }
 
 static stmt *
@@ -1548,7 +1561,7 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 
 	(void) dropaction;
 	if (!s) {
-		return sql_error(sql, 02, "Drop Schema name %s does not exist", name);
+		return sql_error(sql, 02, "DROP SCHEMA: name %s does not exist", name);
 	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP SCHEMA: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
