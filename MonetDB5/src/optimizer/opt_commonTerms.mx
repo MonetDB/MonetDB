@@ -128,9 +128,6 @@ First apply alias propagation, before considering a match.
 					n--;
 					continue;
 			}
-		} else if( p->barrier){
-			for(j=0; j<p->retc; j++)
-				alias[getArg(p,j)]= getArg(p,j);
 		} else {
 			for(j=0; j<p->argc; j++)
 				getArg(p,j)= alias[getArg(p,j)];

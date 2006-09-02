@@ -94,7 +94,7 @@ static int
 OPTisAlias(InstrPtr p){
 	if( p->token == ASSIGNsymbol &&
 		p->barrier == 0 && 
-		p->argc == 2 )
+		p->argc == 2)
 		return TRUE;
 	return FALSE;
 }
@@ -109,7 +109,7 @@ OPTremap(InstrPtr p, int *alias){
 static int
 OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j=0,k=1, limit, actions=0;
+	int i,k=1, limit, actions=0;
 	int *alias;
 
 	(void) stk;
@@ -129,10 +129,6 @@ OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				freeInstruction(p);
 				actions++;
 				k--;
-			}
-		} else if( p->barrier){
-			for(j=0; j<p->retc; j++){
-				alias[getArg(p,j)]= getArg(p,j);
 			}
 		} else
 			OPTremap(p,alias);
