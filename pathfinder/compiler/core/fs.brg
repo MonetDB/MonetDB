@@ -2860,7 +2860,14 @@ reduce (PFpnode_t * p, int goalnt)
 
             *(PFapply_t **) PFarray_add (funs) = &p->sem.apply;
             *(PFcnode_t **) PFarray_add (args) = nil ();
-            *(unsigned short *) PFarray_add (arg_num) = 0;
+
+            if (p->sem.apply.rpc_uri != NULL) {
+                /* tread the magic leading URL string parameter of an
+                 * XRPC function call as the -1st argument */
+                *(short *) PFarray_add (arg_num) = -1;
+            } else {
+                *(short *) PFarray_add (arg_num) = 0;
+            }
 
             /*
              * Functions `fn:id', `fn:idref' with one argument
@@ -2911,7 +2918,7 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t      *v        = new_var (NULL);
             PFfun_t      *fun;
             PFty_t        expected;
-            unsigned int  param_num;
+            int  param_num;
             PFfun_t      *implicit = NULL;
             PFcnode_t    *converted = NULL;
 
@@ -2927,14 +2934,14 @@ reduce (PFpnode_t * p, int goalnt)
 
             /* count arguments (parse tree is in reverse order
                - therefore increase argument after other arguments) */
-            param_num = (*(unsigned short *) PFarray_top (arg_num))++;
+            param_num = (*(short*) PFarray_top (arg_num))++;
 
 
             /* What function are we actually talking about? */
             fun = (*(PFapply_t **) PFarray_top (funs))->fun;
 
-	    /* no dynamic overloading here */
-	    assert (fun->sig_count == 1);
+            /* no dynamic overloading here */
+            assert (fun->sig_count == 1);
 
             /*
              * There's exactly one function that allows an arbitrary
@@ -2943,11 +2950,16 @@ reduce (PFpnode_t * p, int goalnt)
              * use atomic? instead.
              */
             if (PFqname_eq (fun->qname,
-                            PFqname (PFns_fn, "concat")) == 0)
+                            PFqname (PFns_fn, "concat")) == 0) {
                 expected = PFty_opt (PFty_atomic ());
-            else
+            } else if (param_num == -1) {
+                /* this is the magic leading URL string parameter of an
+                 * XRPC function call, its expected type is string. */
+                expected = PFty_opt (PFty_xs_string ());
+            } else {
                 /* look up expected argument type */
                 expected = fun->sigs[0].par_ty[param_num];
+            }
 
             /*
              * Apply function conversion rules (XQuery 3.1.5.)
@@ -4109,7 +4121,7 @@ PFfs (PFpnode_t *r)
     args = PFarray (sizeof (PFcnode_t *));
 
     /* initially, there nothing on the current argument number stack */
-    arg_num = PFarray (sizeof (unsigned short));
+    arg_num = PFarray (sizeof (short));
 
     /* initially, the context item is undefined */
     fs_dot = NULL;
