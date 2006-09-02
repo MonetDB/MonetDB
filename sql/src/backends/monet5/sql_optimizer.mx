@@ -400,22 +400,22 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-#define EXPERIMENTAL 
+/*#define EXPERIMENTAL */
 #ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
 @-
 Empty set removal may introduce both alias instructions and
 dead code. The should be removed.
 @c
-		OPTcostModel(mb,0,0);	 /* propagate cost distribution */
-		OPTemptySet(mb,0,0);	 /* remove empty results */
-		OPTmodes(mb,0,0);		/* reduce number of BAT copies */
+		OPTcostModel(mb,0,0);	/* propagate cost distribution */
+		OPTemptySet(mb,0,0);	/* remove empty results */
+		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 #endif
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTcommonTerms(mb,0,0);	/* common terms */
-		OPTdeadcode(mb, 0, 0);	 /* dead code removal */
+		OPTdeadcode(mb, 0, 0);	/* dead code removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
 
 
