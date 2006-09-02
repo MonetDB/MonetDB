@@ -509,7 +509,11 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 		"Cannot access descriptor");
     }
 
-	CMDbulk_rotate_xor_hash(&bn,hn,nbits,b);
+	if( CMDbulk_rotate_xor_hash(&bn,hn,nbits,b) == GDK_FAIL){
+		BBPreleaseref(hn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+        return throwMessage("mkey.bulk_rotate_xor_hash", "command failed");
+	}
 	BBPreleaseref(hn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	*ret= bn->batCacheid;
