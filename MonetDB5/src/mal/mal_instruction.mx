@@ -532,7 +532,7 @@ mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.
              (X)->barrier == CATCHsymbol )))
 #define blockExit(X) (X)->barrier == EXITsymbol
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
-             (X)->barrier== REDOsymbol  )
+             (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
 
 mal_export void strBeforeCall(ValPtr v, ValPtr bak);
 mal_export void strAfterCall(ValPtr v, ValPtr bak);
