@@ -1173,12 +1173,14 @@ load_type(sql_trans *tr, sql_schema * s, BAT *types, BUN j)
 static sql_table *
 schema_get_table(sql_schema *s, oid id)
 {
-	node *n;
+	if (s) {
+		node *n;
 
-	for (n=s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-		if (t->base.id == id)
-			return t;
+		for (n=s->tables.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			if (t->base.id == id)
+				return t;
+		}
 	}
 	return NULL;
 }
