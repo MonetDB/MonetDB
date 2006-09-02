@@ -1335,8 +1335,8 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 static char *
 oidtostr(oid i)
 {
-	int len = 32;
-	static char bf[32];
+	int len = 48;
+	static char bf[48];
 	char *p = bf;
 
 	(void) OIDtoStr(&p, &len, &i);
