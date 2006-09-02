@@ -751,26 +751,30 @@ stmt_hash( mvc *sql, list *l )
 	sql_subtype *it;
 	stmt *h = NULL;
 	stmt *bits = stmt_atom_int(1 + 31/list_length(l));
+	stmt *o = NULL;
 
 	it = sql_bind_localtype("int");
 	for (m = l->h; m; m = m->next) {
-		stmt *s = stmt_dup(m->data);
+		stmt *tmp, *s = stmt_dup(m->data);
 
 		if (h) {
 			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", it, it, tail_type(s), it);
 
+			tmp = stmt_join(stmt_dup(o), s, cmp_equal);
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
 				stmt_dup(bits)), 
-				s)), 
+				tmp)), 
 				xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, it);
-			h = stmt_unop(s, hf);
+			o = stmt_mark(stmt_reverse(stmt_dup(s)), 40); 
+			tmp = stmt_mark(s, 40); 
+			h = stmt_unop(tmp, hf);
 		}
 	}
 	stmt_destroy(bits);
-	return h;
+	return stmt_join(stmt_reverse(o), h, cmp_equal);
 }
 
 static stmt *
