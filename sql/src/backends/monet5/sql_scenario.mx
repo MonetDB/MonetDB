@@ -964,14 +964,16 @@ produce code.
 		}
 		assert(s);
 		/* generate and call the MAL code */
-		if( m->explain== m_explain)
+		if( m->explain == m_explain)
 			SQLshowPlan(c);
 		if( m->mode == m_trace || m->explain == m_trace)
 			SQLsetTimer(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
-		if (m->mode != m_inplace && m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
+		if ((m->mode != m_inplace && m->mode != m_prepare && !m->cache && m->mode!= m_explain) || s->type == st_none){
 			backend_callinline(be, c, s );
+			if( m->mode == m_inplace)
+				m->mode = m_normal; 
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc, 

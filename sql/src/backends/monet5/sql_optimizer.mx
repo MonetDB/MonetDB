@@ -411,6 +411,7 @@ dead code. The should be removed.
 		OPTemptySet(mb,0,0);	/* remove empty results */
 		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
 		OPTaliases(mb, 0, 0);	/* alias removal */
+
 #endif
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */

@@ -1692,9 +1692,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}	break;
 		case st_return: {
 			int c = _dumpstmt(sql,mb, s->op1.stval);
-			q = newAssignment(mb);
+			int tt = tail_type(s->op1.stval)->type->localtype;
+			q = newInstruction(mb,RETURNsymbol);
+			getArg(q,0)= newTmpVariable(mb, tt);
 			pushArgument(mb,q,c);
-			q->barrier= RETURNsymbol;
+			pushInstruction(mb, q);
 		}	break;
 		case st_assign: {
 			int r = _dumpstmt(sql,mb, s->op2.stval);
@@ -1751,8 +1753,6 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 	curInstr = getInstrPtr(curBlk, 0);
 
-	/* assert(curBlk->stop == 1); Don't know why it is used here*/
-
 	if (m->argc) { /* we shouldn't come here as we aren't caching statements */
 		int argc=0;
 		char arg[32];
@@ -1787,7 +1787,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 {
 	mvc *m = be->mvc;
 	MalBlkPtr curBlk = 0;
-	Symbol curPrg = 0;
+	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0;
 	char arg[32];
@@ -1797,7 +1797,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	str msg, profile;
 */
 
-	c->backup = c->curprg;
+	backup = c->curprg;
 
 	/* later we change this to a factory ? */
 	if (cq) 
@@ -1863,10 +1863,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 */
 
 	curPrg = c->curprg;
-	if (c->backup) {
-		c->curprg = c->backup;
-		c->backup = 0;
-	}
+	if (backup) 
+		c->curprg = backup;
 	return curPrg;
 }
 
@@ -1908,6 +1906,7 @@ backend_create_func(backend *be, sql_func *f)
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Client c = be->client;
+	Symbol backup = NULL;
 	stmt *s;
 
 	/* nothing to do for internal and ready functions */
@@ -1917,7 +1916,7 @@ backend_create_func(backend *be, sql_func *f)
 	s = sqlparse_intern(m, f->imp, m_prepare);
 	assert(s);
 
-	c->backup = c->curprg;
+	backup = c->curprg;
 	c->curprg = newFunction(putName(f->base.name,strlen(f->base.name)), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
@@ -1948,10 +1947,8 @@ backend_create_func(backend *be, sql_func *f)
 	pushEndInstruction(curBlk);
 	setLifespan(curBlk);
 	addQueryToCache(c);
-	if (c->backup) {
-		c->curprg = c->backup;
-		c->backup = 0;
-	}
+	if (backup) 
+		c->curprg = backup;
 }
 
 char *monet5_get_string(mvc *m, char *name)
