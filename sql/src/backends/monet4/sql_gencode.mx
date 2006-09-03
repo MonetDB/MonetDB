@@ -1736,7 +1736,7 @@ int backend_dump(backend *be, cq *q, stmt *s)
 	mvc *c = be->mvc;
 	char *cmd = NULL;
 
-	if (!c->cache) {
+	if (!c->cache || s->type == st_none) {
 		int nr = 1;
 
 		backend_dumpstmt(s, &nr, be);
