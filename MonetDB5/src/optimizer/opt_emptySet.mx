@@ -238,6 +238,13 @@ sequences to filter and replace calls with empty arguments.
 						actions++;
 						break;
 					}
+					if( getModuleId(p) == mkeyRef){
+						if( getFunctionId(p) == bulk_rotate_xor_hashRef &&
+						empty[getArg(p,1)] && empty[getArg(p,2)]){
+							freeInstruction(p);
+							k--;
+						}
+					}
 					/* CONTINUE WITH THETA JOIN */
 				}
 			}

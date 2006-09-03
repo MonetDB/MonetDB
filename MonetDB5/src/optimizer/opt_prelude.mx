@@ -60,6 +60,7 @@ opt_export  str lookupRef;
 opt_export  str markHRef;
 opt_export  str markTRef;
 opt_export  str matRef;
+opt_export  str mkeyRef;
 opt_export  str mmathRef;
 opt_export  str maxRef;
 opt_export  str mdbRef;
@@ -101,6 +102,7 @@ opt_export  str uselectRef;
 opt_export  str unpackRef;
 opt_export  str unsafeRef;
 opt_export  str bind_dbatRef;
+opt_export	str bulk_rotate_xor_hashRef;
 
 opt_export void optimizerInit(void);
 #endif
@@ -146,6 +148,7 @@ str lookupRef;
 str markTRef;
 str markHRef;
 str matRef;
+str mkeyRef;
 str mmathRef;
 str maxRef;
 str mdbRef;
@@ -187,6 +190,7 @@ str uselectRef;
 str unpackRef;
 str unsafeRef;
 str bind_dbatRef;
+str bulk_rotate_xor_hashRef;
 
 
 void optimizerInit(){
@@ -229,6 +233,7 @@ void optimizerInit(){
 		markTRef = putName("markT",5);
 		markHRef = putName("markH",5);
 		matRef = putName("mat",3);
+		mkeyRef = putName("mkey",4);
 		mmathRef = putName("mmath",5);
 		maxRef = putName("max",3);
 		mdbRef = putName("mdb",3);
@@ -269,5 +274,6 @@ void optimizerInit(){
 		sunionRef= putName("sunion",6);
 		unionRef= putName("union",5);
 		bind_dbatRef = putName("bind_dbat",9);
+		bulk_rotate_xor_hashRef = putName("bulk_rotate_xor_hash",20);
 	}
 }
