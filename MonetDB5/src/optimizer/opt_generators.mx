@@ -195,8 +195,7 @@ code immediately.
 @-
 Some instructions are easy to deal with
 @c
-		if( p->token == IGNOREsymbol ||
-			p->token== NOOPsymbol || 
+		if( p->token== NOOPsymbol || 
 			p->token== REMsymbol){
 			pushInstruction(mb,p);
 			continue;

@@ -54,7 +54,7 @@ end main;	# 12
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
-[ 0 ]
+[ 2 ]
 function user.main():void;
 # the first test for macro expansions and inversions 
     io.print("test expansion");
