@@ -824,7 +824,6 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		if( p->token == IGNOREsymbol) continue;
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
 			if( isConstant(mb, l) || isTypeVar(mb,l) ){

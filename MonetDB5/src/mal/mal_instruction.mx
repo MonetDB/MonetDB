@@ -2377,9 +2377,6 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		else
 			sprintf(t, "# ");
 		break;
-	case IGNOREsymbol:
-		*s = 0;
-		return s;
 	default:
 		sprintf(t, " ?%d? ", p->token);
 	}

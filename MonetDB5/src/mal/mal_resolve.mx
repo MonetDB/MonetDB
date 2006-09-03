@@ -641,7 +641,6 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 			p->typechk = MIN(p->typechk,typeKind(mb,p,0));
 		return;
 	}
-	if( p->token == IGNOREsymbol) return;
 	if( getFunctionId(p) && getModuleId(p)){
 #ifdef DEBUG_MAL_RESOLVE
 		tracefcn= idcmp(getFunctionId(p),traceFcnName)==0;

@@ -80,7 +80,6 @@ derived from the parser to avoid a loop in the define-structure.
 
 #define ASSIGNsymbol    40	/* interpreter entry points */
 #define ENDsymbol       41
-#define IGNOREsymbol   42	/* propagation of comments */
 #define NOOPsymbol      43	/* no operation required */
 
 #define COMMANDsymbol   61	/* these tokens should be the last group !! */
