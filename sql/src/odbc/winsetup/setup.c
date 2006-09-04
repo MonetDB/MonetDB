@@ -16,6 +16,9 @@
  * All Rights Reserved.
  */
 
+/* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#define _CRT_SECURE_NO_DEPRECATE 1
+
 #include "sql_config.h"
 #include <windows.h>
 #include <stdio.h>
@@ -111,7 +114,7 @@ MergeFromProfileString(const char *dsn, char **datap, const char *entry, const c
 	*datap = strdup(buf);
 }
 
-static INT CALLBACK
+static INT_PTR CALLBACK
 DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static struct data *datap;

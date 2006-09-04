@@ -53,12 +53,12 @@ SQLForeignKeys_(ODBCStmt *stmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalog
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szPKTableName, nPKTableNameLength, addStmtError, stmt);
-	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
+	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szPKTableName, nPKTableNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szFKTableName, nFKTableNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODCBDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nPKCatalogNameLength, szPKCatalogName, nPKSchemaNameLength, szPKSchemaName, nPKTableNameLength, szPKTableName, nFKCatalogNameLength, szFKCatalogName, nFKSchemaNameLength,

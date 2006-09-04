@@ -458,7 +458,7 @@ parseoptionalbracketednumber(char **svalp, SQLINTEGER *slenp, int *val1p, int *v
 	val = strtol(sval, &eptr, 10);
 	if (eptr == sval)
 		return SQL_ERROR;
-	slen -= eptr - sval;
+	slen -= (int) (eptr - sval);
 	sval = eptr;
 	*val1p = (int) val;
 	while (slen > 0 && isspace((int) *sval)) {
@@ -477,7 +477,7 @@ parseoptionalbracketednumber(char **svalp, SQLINTEGER *slenp, int *val1p, int *v
 		val = strtol(sval, &eptr, 10);
 		if (eptr == sval)
 			return SQL_ERROR;
-		slen -= eptr - sval;
+		slen -= (int) (eptr - sval);
 		sval = eptr;
 		*val2p = val;
 	}
@@ -495,7 +495,7 @@ static SQLRETURN
 parsemonthintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival)
 {
 	char *sval = *svalp;
-	int slen = slenp ? *slenp : strlen(sval);
+	int slen = slenp ? *slenp : (int) strlen(sval);
 	char *eptr;
 	long val1 = -1, val2 = -1;
 	int leadingprecision;
@@ -533,7 +533,7 @@ parsemonthintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *i
 	val1 = strtol(sval, &eptr, 10);
 	if (eptr == sval)
 		return SQL_ERROR;
-	leadingprecision = eptr - sval;
+	leadingprecision = (int) (eptr - sval);
 	slen -= leadingprecision;
 	sval = eptr;
 	while (isspace((int) *sval)) {
@@ -554,7 +554,7 @@ parsemonthintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *i
 			return SQL_ERROR;
 		if (eptr - sval > 2)
 			return SQL_ERROR;
-		slen -= eptr - sval;
+		slen -= (int) (eptr - sval);
 		sval = eptr;
 		while (isspace((int) *sval)) {
 			slen--;
@@ -647,7 +647,7 @@ static SQLRETURN
 parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival, int *secprecp)
 {
 	char *sval = *svalp;
-	int slen = slenp ? *slenp : strlen(sval);
+	int slen = slenp ? *slenp : (int) strlen(sval);
 	char *eptr;
 	int leadingprecision;
 	int secondprecision = 0;
@@ -687,7 +687,7 @@ parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *
 	(void) strtol(sval, &eptr, 10);	/* we parse the actual value again later */
 	if (eptr == sval)
 		return SQL_ERROR;
-	leadingprecision = eptr - sval;
+	leadingprecision = (int) (eptr - sval);
 
 	ival->interval_type = (SQLINTERVAL)0; /* unknown as yet */
 	ival->intval.day_second.day = 0;
@@ -1152,7 +1152,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 
 		default:
 		case SQL_CHAR:
-			copyString(data, ptr, buflen, lenp, addStmtError, stmt);
+			copyString(data, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt);
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
@@ -1219,7 +1219,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 					snprintf(data, buflen, "%.*g", i - 1, fval);
 					/* max space that would have
 					   been needed */
-					sz = strlen(data) + 17 - i;
+					sz = (int) strlen(data) + 17 - i;
 					/* String data, right-truncated */
 					addStmtError(stmt, "01004", NULL, 0);
 					break;
@@ -2309,7 +2309,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	case SQL_C_BINARY:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
 		sval = (char *) ptr;
-		fixODBCstring(sval, slen, addStmtError, stmt);
+		fixODBCstring(sval, slen, SQLINTEGER, addStmtError, stmt);
 		break;
 #ifdef WITH_WCHAR
 	case SQL_C_WCHAR:

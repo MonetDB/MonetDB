@@ -189,7 +189,7 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER b
 		return NULL;
 	}
 	if (length == SQL_NTS)
-		length = strlen((const char *) s);
+		length = (SQLINTEGER) strlen((const char *) s);
 	else if (length < 0)
 		return "Invalid length parameter";
 
@@ -282,7 +282,7 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 				p++;
 				fr = strtoul(p, &e, 10);
 				if (e > p) {
-					pr = e - p;
+					pr = (int) (e - p);
 					p = e;
 				} else
 					goto skip;
@@ -297,8 +297,8 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 			else
 				snprintf(buf, sizeof(buf), "TIMESTAMP '%u-%u-%u %u:%u:%u'",
 					 yr, mt, dy, hr, mn, sc);
-			n = q - nquery;
-			pr = p - q;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
@@ -313,7 +313,7 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 				p++;
 				fr = strtoul(p, &e, 10);
 				if (e > p) {
-					pr = e - p;
+					pr = (int) (e - p);
 					p = e;
 				} else
 					goto skip;
@@ -328,8 +328,8 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 			else
 				snprintf(buf, sizeof(buf), "TIME '%u:%u:%u'",
 					 hr, mn, sc);
-			n = q - nquery;
-			pr = p - q;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
@@ -340,8 +340,8 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 			pr = 0;
 			snprintf(buf, sizeof(buf), "DATE '%u-%u-%u'",
 					 yr, mt, dy);
-			n = q - nquery;
-			pr = p - q;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);

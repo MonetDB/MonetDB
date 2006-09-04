@@ -105,6 +105,12 @@ typedef int ssize_t;
 typedef long ssize_t;
 
 #define HAVE_SSIZE_T 1
+#else
+#ifdef _WIN64
+typedef __int64 ssize_t;
+
+#define HAVE_SSIZE_T 1
+#endif
 #endif
 #endif
 #endif

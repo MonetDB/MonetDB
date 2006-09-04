@@ -49,10 +49,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 	char *query = NULL;
 
 	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
-	fixODBCstring(szTableType, nTableTypeLength, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szTableType, nTableTypeLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName ? (char *) szCatalogName : "", nSchemaNameLength, szSchemaName ? (char *) szSchemaName : "", nTableNameLength, szTableName ? (char *) szTableName : "",

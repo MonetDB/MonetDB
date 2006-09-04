@@ -575,7 +575,7 @@ load_keycolumn(sql_trans *tr, BAT *columns, BUN j, sql_key *k)
 static sql_key *
 load_key(sql_trans *tr, BAT *keys, BUN j, sql_table *t)
 {
-	int ccnt;
+	size_t ccnt;
 	BAT *cols, *rcols;
 	BAT *key_id = get_bat(bm, "sys_keys_id");
 	BAT *key_tpe = get_bat(bm, "sys_keys_type");
@@ -708,7 +708,7 @@ static sql_idx *
 load_idx(sql_trans *tr, BAT *idxs, BUN j, sql_table *t)
 {
 	char bname[BUFSIZ];
-	int ccnt;
+	size_t ccnt;
 	BAT *b;
 	BAT *cols, *rcols;
 	BAT *idx_id = get_bat(bm, "sys_idxs_id");
@@ -829,7 +829,7 @@ load_triggercolumn(sql_trans *tr, BAT *columns, BUN j, sql_trigger * i)
 static sql_trigger *
 load_trigger(sql_trans *tr, BAT *triggers, BUN j, sql_table *t)
 {
-	int ccnt;
+	size_t ccnt;
 	BAT *cols, *rcols;
 	BAT *trigger_id = get_bat(bm, "sys_triggers_id");
 	BAT *trigger_name = get_bat(bm, "sys_triggers_name");
@@ -1001,7 +1001,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	ptr lid = BUNhead(tables, j);
 	BAT *cols, *rcols, *keys, *rkeys, *idxs, *ridxs, *triggers, *rtriggers;
 	BUN p, q;
-	int ccnt;
+	size_t ccnt;
 	BAT *column_table = get_bat(bm, "sys__columns_table_id");
 	BAT *column_number = get_bat(bm, "sys__columns_number");
 	BAT *key_table = get_bat(bm, "sys_keys_table_id");

@@ -76,7 +76,7 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSqlStr, nSqlStrLength, addStmtError, stmt);
+	fixODBCstring(szSqlStr, nSqlStrLength, SQLINTEGER, addStmtError, stmt);
 	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
 	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
 	   {fn scalar-function} etc. ) to MonetDB SQL syntax */

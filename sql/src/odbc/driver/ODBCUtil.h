@@ -60,12 +60,12 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
  * accordingly.  If str == NULL, set len to 0.
  * We can still make a distinction between str = "", len = 0 and str = NULL.
  */
-#define fixODBCstring(str, len, errfunc, hdl)				\
+#define fixODBCstring(str, len, lent, errfunc, hdl)				\
 	do {								\
 		if (str == NULL)					\
 			len = 0;					\
 		if (len == SQL_NTS)					\
-			len = str ? strlen((char*)str) : 0;		\
+			len = (lent) (str ? strlen((char*)str) : 0);	\
 		else if (len == SQL_NULL_DATA) {			\
 			str = NULL;					\
 			len = 0;					\
@@ -88,20 +88,20 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
    actual string length is to be stored. */
-#define copyString(str, buf, len, lenp, errfunc, hdl)			\
+#define copyString(str, buf, len, lenp, lent, errfunc, hdl)		\
 	do {								\
-		size_t _l;						\
+		lent _l;						\
 		if ((len) < 0) {					\
 			/* Invalid string or buffer length */		\
 			errfunc((hdl), "HY090", NULL, 0);		\
 			return SQL_ERROR;				\
 		}							\
-		_l = (str) ? strlen((char *) (str)) : 0;		\
+		_l = (str) ? (lent) strlen((char *) (str)) : 0;		\
 		if (buf)						\
 			strncpy((char *) (buf), (str) ? (char *) (str) : "", (len)); \
 		if (lenp)						\
 			*(lenp) = _l;					\
-		if ((buf) == NULL || _l >= (size_t) (len))		\
+		if ((buf) == NULL || _l >= (len))			\
 			/* String data, right-truncated */		\
 			errfunc((hdl), "01004", NULL, 0);		\
 	} while (0)

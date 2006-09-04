@@ -119,7 +119,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 	}
 	assert(!dbc->Connected);
 
-	fixODBCstring(szConnStrIn, nConnStrIn, addDbcError, dbc);
+	fixODBCstring(szConnStrIn, nConnStrIn, SQLSMALLINT, addDbcError, dbc);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" %hu\n", nConnStrIn, (char*)szConnStrIn, nDriverCompletion);
@@ -241,8 +241,12 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 
 		/* calculate how much space was needed */
 		if (pnConnStrOut)
-			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT")
-			    + 5 + (uid ? strlen(uid) + 5 : 0) + (pwd ? strlen(pwd) + 5 : 0) + (host ? strlen(host) + 6 : 0) + (port ? port + 6 : 0) + (database ? strlen(database) + 10 : 0);
+			*pnConnStrOut = (int) (strlen(dsn ? dsn : "DEFAULT") + 5 +
+					       (uid ? strlen(uid) + 5 : 0) +
+					       (pwd ? strlen(pwd) + 5 : 0) +
+					       (host ? strlen(host) + 6 : 0) +
+					       (port ? port + 6 : 0) +
+					       (database ? strlen(database) + 10 : 0));
 
 		/* if it didn't fit, say so */
 		if (cbConnStrOutMax < 0) {

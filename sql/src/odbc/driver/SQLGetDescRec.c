@@ -80,7 +80,7 @@ SQLGetDescRec_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLCHAR *Name, SQLSMALL
 		*Nullable = rec->sql_desc_nullable;
 
 	if (isID(desc)) {
-		copyString(rec->sql_desc_name, Name, BufferLength, StringLength, addDescError, desc);
+		copyString(rec->sql_desc_name, Name, BufferLength, StringLength, SQLSMALLINT, addDescError, desc);
 	}
 
 	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

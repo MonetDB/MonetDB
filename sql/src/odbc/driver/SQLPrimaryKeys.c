@@ -52,9 +52,9 @@ SQLPrimaryKeys_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogName
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt);
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (szTableName == NULL) {

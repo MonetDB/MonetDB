@@ -85,7 +85,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 		*(SQLUINTEGER *) ValuePtr = SQL_OPT_TRACE_OFF;
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:
-		copyString(dbc->dbname, ValuePtr, BufferLength, StringLength, addDbcError, dbc);
+		copyString(dbc->dbname, ValuePtr, BufferLength, StringLength, SQLINTEGER, addDbcError, dbc);
 		break;
 
 /* TODO: implement all the other Connection Attributes */

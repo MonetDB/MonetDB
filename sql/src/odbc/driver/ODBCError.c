@@ -50,7 +50,7 @@ struct tODBCError {
 };
 
 const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver 1.0]";
-const int ODBCErrorMsgPrefixLength = sizeof(ODBCErrorMsgPrefix) - 1;
+const int ODBCErrorMsgPrefixLength = (int) sizeof(ODBCErrorMsgPrefix) - 1;
 
 /*
  * Local utility function which retuns the standard ODBC/ISO error

@@ -53,9 +53,9 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 	char *query = NULL;
 	char *query_end = NULL;
 
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %hd %hu\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nScope, nNullable);

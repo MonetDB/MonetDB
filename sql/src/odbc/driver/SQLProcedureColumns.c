@@ -46,10 +46,10 @@
 static SQLRETURN
 SQLProcedureColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
-	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nProcNameLength, (char*)szProcName, nColumnNameLength, (char*)szColumnName);

@@ -48,7 +48,7 @@ SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, 
 	ODBCError *err;
 	SQLRETURN retCode;
 	char *msg;
-	size_t msgLen;
+	SQLSMALLINT msgLen;
 
 	switch (handleType) {
 	case SQL_HANDLE_ENV:
@@ -107,7 +107,7 @@ SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, 
 		*nativeErrorPtr = getNativeErrorCode(err);
 
 	msg = getMessage(err);
-	msgLen = msg ? strlen(msg) : 0;
+	msgLen = msg ? (SQLSMALLINT) strlen(msg) : 0;
 	retCode = SQL_SUCCESS;
 
 	if (messageText && bufferLength > 0) {

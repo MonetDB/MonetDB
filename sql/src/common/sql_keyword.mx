@@ -35,7 +35,7 @@ keyword_key(char *k, int *l)
 		h += (*k - 'a');
 		k++;
 	}
-	*l = k - s;
+	*l = (int) (k - s);
 	h <<= 4;
 	h += *l;
 	return (h < 0) ? -h : h;

@@ -52,9 +52,9 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 	char *query = NULL;
 	char *query_end = NULL;
 
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %hu %hu\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nUnique, nReserved);

@@ -280,8 +280,7 @@
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 
 /* Define to 1 if the system has the type `ssize_t'. */
-#define HAVE_SSIZE_T 1
-typedef int ssize_t;
+/* #undef HAVE_SSIZE_T */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 /* #undef HAVE_STDINT_H */
@@ -433,11 +432,22 @@ typedef int ssize_t;
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
+#ifdef _WIN64
+/* The size of a `size_t', as computed by sizeof. */
+#define SIZEOF_SIZE_T 8
+
+/* The size of a `void *', as computed by sizeof. */
+#define SIZEOF_VOID_P 8
+#else
 /* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
 
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
+#endif
+
+/* The size of a `ssize_t', as computed by sizeof. */
+#define SIZEOF_SSIZE_T SIZEOF_SIZE_T
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be

@@ -43,7 +43,7 @@
 static SQLRETURN
 SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 {
-	fixODBCstring(szCursor, nCursorLength, addStmtError, stmt);
+	fixODBCstring(szCursor, nCursorLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\"\n", nCursorLength, (char*)szCursor);

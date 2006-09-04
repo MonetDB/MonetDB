@@ -44,7 +44,7 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHA
 {
 	char *query;
 
-	fixODBCstring(szSqlStrIn, cbSqlStrIn, addStmtError, stmt);
+	fixODBCstring(szSqlStrIn, cbSqlStrIn, SQLINTEGER, addStmtError, stmt);
 
 	if (szSqlStrIn == NULL) {
 		/* Invalid use of null pointer */
@@ -56,7 +56,7 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHA
 #endif
 
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn, stmt->noScan);
-	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
+	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr, SQLINTEGER, addStmtError, stmt);
 	free(query);
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

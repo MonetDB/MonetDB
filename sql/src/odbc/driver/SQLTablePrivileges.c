@@ -46,9 +46,9 @@
 static SQLRETURN
 SQLTablePrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName);

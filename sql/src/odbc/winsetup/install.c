@@ -91,7 +91,7 @@ CheckIfFileExists(const char *filepath, const char *filename)
 }
 
 static BOOL
-GetFileVersion(char *filepath, char *version, size_t maxversionlen)
+GetFileVersion(char *filepath, char *version, int maxversionlen)
 {
 	DWORD handle = 0;
 	DWORD versioninfosize;
@@ -135,7 +135,7 @@ GetFileVersion(char *filepath, char *version, size_t maxversionlen)
 		return FALSE;
 	}
 
-	if (lstrlen(versionstr) >= (int) maxversionlen)
+	if (lstrlen(versionstr) >= maxversionlen)
 		lstrcpyn(version, versionstr, maxversionlen - 1);
 	else
 		lstrcpy(version, versionstr);
@@ -159,7 +159,7 @@ VersionCheckCopyFile(const char *srcpath, const char *dstpath, const char *filen
 	snprintf(dstfile, sizeof(dstfile), "%s\\%s", dstpath, filename);
 
 	if (CheckIfFileExists(dstpath, filename)) {
-		if (!GetFileVersion(srcfile, srcfileVersion, sizeof(srcfileVersion)) || !GetFileVersion(dstfile, dstfileVersion, sizeof(dstfileVersion)))
+		if (!GetFileVersion(srcfile, srcfileVersion, sizeof(srcfileVersion)) || !GetFileVersion(dstfile, dstfileVersion, (int) sizeof(dstfileVersion)))
 			return FALSE;
 
 		if (strcmp(dstfileVersion, srcfileVersion) >= 0) {

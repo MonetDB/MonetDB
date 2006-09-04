@@ -71,7 +71,7 @@ SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLI
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
 	/* now copy the data */
-	copyString(rec->sql_desc_name, szColName, nColNameMax, pnColNameLength, addStmtError, stmt);
+	copyString(rec->sql_desc_name, szColName, nColNameMax, pnColNameLength, SQLSMALLINT, addStmtError, stmt);
 
 	if (pnSQLDataType)
 		*pnSQLDataType = rec->sql_desc_concise_type;

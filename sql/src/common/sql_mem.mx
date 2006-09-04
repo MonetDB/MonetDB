@@ -126,7 +126,7 @@ void sa_destroy( sql_allocator *sa )
 	GDKfree(sa);
 }
 
-char *sa_strndup( sql_allocator *sa, const char *s, int l) 
+char *sa_strndup( sql_allocator *sa, const char *s, size_t l) 
 { 
 	char *r = sa_alloc(sa, l+1); 
 

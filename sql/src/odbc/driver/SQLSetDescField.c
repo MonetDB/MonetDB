@@ -194,7 +194,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 		return SQL_SUCCESS;
 	case SQL_DESC_NAME:
 		if (isID(desc)) {
-			fixODBCstring(Value, BufferLength, addDescError, desc);
+			fixODBCstring(Value, BufferLength, SQLINTEGER, addDescError, desc);
 			if (rec->sql_desc_name != NULL)
 				free(rec->sql_desc_name);
 			rec->sql_desc_name = (SQLCHAR *) dupODBCstring((SQLCHAR *) Value, (size_t) BufferLength);

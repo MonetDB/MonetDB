@@ -94,10 +94,10 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 	char *query = NULL;
 	char *query_end = NULL;
 
-	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
-	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
-	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nColumnNameLength, (char*)szColumnName);

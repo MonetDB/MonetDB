@@ -74,8 +74,8 @@ toLower(const char *s)
 char *
 strconcat(const char *s1, const char *s2)
 {
-	int i, j, l1 = strlen(s1);
-	int l2 = strlen(s2) + 1;
+	size_t i, j, l1 = strlen(s1);
+	size_t l2 = strlen(s2) + 1;
 	char *new_s = NEW_ARRAY(char, l1 + l2);
 
 	for (i = 0; i < l1; i++) {
@@ -139,7 +139,7 @@ sql2str(char *s)
 char *
 sql_strdup(char *s)
 {
-	int l = strlen(s);
+	size_t l = strlen(s);
 	char *r = NEW_ARRAY(char, l);
 
 	memcpy(r, s + 1, l - 2);
@@ -150,7 +150,7 @@ sql_strdup(char *s)
 char *
 sql_escape_str(char *s)
 {
-	int l = strlen(s);
+	size_t l = strlen(s);
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
 
 	res = r;
@@ -167,7 +167,7 @@ sql_escape_str(char *s)
 char *
 sql_escape_ident(char *s)
 {
-	int l = strlen(s);
+	size_t l = strlen(s);
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
 
 	res = r;

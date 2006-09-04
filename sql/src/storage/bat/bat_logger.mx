@@ -182,16 +182,17 @@ log_write_format(logger *l, logformat *data)
 static char *
 log_read_string(logger *l)
 {
-	int len, nr;
+	int len;
+	ssize_t nr;
 	char *buf;
 
 	if (!stream_readInt(l->log, &len))
 		return NULL;
 	buf = NEW_ARRAY(char, len);
 
-	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t)len) {
+	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len-1] = 0;
-		printf("!ERROR: couldn't read name (%s) %d\n", buf, nr);
+		printf("!ERROR: couldn't read name (%s) " SSZFMT "\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
@@ -202,10 +203,11 @@ log_read_string(logger *l)
 static int
 log_write_string(logger *l, char *n)
 {
-	int len = strlen(n) + 1;	/* log including EOS */
+	int len = (int) strlen(n) + 1;	/* log including EOS */
 
 	assert(len > 1);
-	if (!stream_writeInt(l->log, len) || stream_write(l->log, n, 1, len) != (ssize_t) len)
+	if (!stream_writeInt(l->log, len) ||
+	    stream_write(l->log, n, 1, len) != (ssize_t) len)
 		return SQL_ERR;
 	return SQL_OK;
 }

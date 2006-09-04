@@ -101,11 +101,11 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 		return SQL_SUCCESS;
 	case SQL_DESC_BASE_COLUMN_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_base_column_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_base_column_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_BASE_TABLE_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_base_table_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_base_table_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_CASE_SENSITIVE:
 		if (isID(desc))
@@ -113,7 +113,7 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 		return SQL_SUCCESS;
 	case SQL_DESC_CATALOG_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_catalog_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_catalog_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_CONCISE_TYPE:
 		*(SQLSMALLINT *) Value = rec->sql_desc_concise_type;
@@ -142,26 +142,26 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 		return SQL_SUCCESS;
 	case SQL_DESC_LABEL:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_label, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_label, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LENGTH:
 		*(SQLUINTEGER *) Value = rec->sql_desc_length;
 		return SQL_SUCCESS;
 	case SQL_DESC_LITERAL_PREFIX:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_literal_prefix, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_literal_prefix, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LITERAL_SUFFIX:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_literal_suffix, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_literal_suffix, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		if (isID(desc))
-			copyString(rec->sql_desc_local_type_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_local_type_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_NAME:
 		if (isID(desc))
-			copyString(rec->sql_desc_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_NULLABLE:
 		if (isID(desc))
@@ -193,7 +193,7 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 		return SQL_SUCCESS;
 	case SQL_DESC_SCHEMA_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_schema_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_schema_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_SEARCHABLE:
 		if (isIRD(desc))
@@ -201,14 +201,14 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 		return SQL_SUCCESS;
 	case SQL_DESC_TABLE_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_table_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_table_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_TYPE:
 		*(SQLSMALLINT *) Value = rec->sql_desc_type;
 		return SQL_SUCCESS;
 	case SQL_DESC_TYPE_NAME:
 		if (isID(desc))
-			copyString(rec->sql_desc_type_name, Value, BufferLength, StringLength, addDescError, desc);
+			copyString(rec->sql_desc_type_name, Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_UNNAMED:
 		if (isID(desc))
