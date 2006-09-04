@@ -424,7 +424,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
     len = b->len - b->pos;                                                              \
     strptr = b->buf + b->pos;                                                           \
     i = *(oid*)BUNtail(fun_item, BUNptr(fun_item, off));                                \
-    b->pos += BATatoms[v_type].atomToStr(&strptr, &len, BUNptr(v_cont, i));             \
+    b->pos += BATatoms[v_type].atomToStr(&strptr, &len, BUNtail(v_cont, BUNptr(v_cont, i)));             \
     str2buf(b, end_tag);                                                                \
     }
 
@@ -1141,7 +1141,7 @@ int CMDhttp_post(BAT **res,
                 } else if (type == BOOL) {
                     value2buf(b, len, strptr, fun_item, a, i, TYPE_bit, int_values, "<xs:bool>", "</xs:bool>");
                 } else if (type == INT) {
-                    value2buf(b, len, strptr, fun_item, a, i, TYPE_int, int_values, "<xs:integer>", "</xs:integer>");
+                    value2buf(b, len, strptr, fun_item, a, i, TYPE_lng, int_values, "<xs:integer>", "</xs:integer>");
                 } else if (type == DEC) {
                     value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:decimal>", "</xs:decimal>");
                 } else if (type == DBL) {
