@@ -61,14 +61,12 @@ mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
 mal_export str runMALsequence( malTask *task);
-mal_export void runMALtask(malTask *task);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
-mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 
 #define VALcopy2(lhs,rhs) if( (rhs)->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 #endif /*  _MAL_INTERPRET_H*/
@@ -77,6 +75,7 @@ mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 
+static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -165,6 +164,19 @@ void showErrors() {
 		*cntxt->errbuf = '\0';
 	}
 }
+@-
+Copy the constant values onto the stack frame
+@= initStack
+	for(i= @1; i< mb->vtop; i++)
+	if( isConstant(mb,i) > 0 ){
+		lhs = &stk->stk[i];
+		rhs = &getVarConstant(mb,i);
+		VALcopy2(lhs,rhs);
+	} else {
+		lhs = &stk->stk[i];
+		lhs->vtype = getVarGDKType(mb,i);
+	}
+@c
 
 MalStkPtr
 prepareMALstack(MalBlkPtr mb){
@@ -178,15 +190,7 @@ prepareMALstack(MalBlkPtr mb){
 	stk->stksize= mb->vsize;
 	stk->blk= mb;
 
-	for(i= 1; i< mb->vtop; i++)
-	if( isConstant(mb,i) > 0 ){
-		lhs = &stk->stk[i];
-		rhs = &getVarConstant(mb,i);
-		VALcopy2(lhs,rhs);
-	} else {
-		lhs = &stk->stk[i];
-		lhs->vtype = getVarGDKType(mb,i);
-	}
+	@:initStack(1)@
 	return stk;
 }
 
@@ -283,15 +287,7 @@ use. The stack value is cleared to avoid misinterpretation of left-over
 information. Since a stack frame may contain values of a previous call,
 we should first remove garbage. 
 @c
-	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
-	if( isConstant(mb,i) > 0 ){
-		lhs = &stk->stk[i];
-		rhs = &getVarConstant(mb,i);
-		VALcopy2(lhs,rhs);
-	} else {
-		lhs = &stk->stk[i];
-		lhs->vtype = getVarGDKType(mb,i);
-	}
+	@:initStack((env && mbcaller)?pci->argc:1)@
 #ifdef STACKTRACE
 	stream_printf(GDKout,"Stack before loop\n");
 	printStack(GDKout,mb,stk); 
@@ -403,16 +399,7 @@ all arguments and return values.
 			stk->stksize= mb->vsize;
 			stk->blk= mb;
 			stk->up = 0;
-			/* initialize the stack */
-			for(i= p->argc; i< mb->vtop; i++)
-			if( isConstant(mb,i) > 0){
-				lhs = &stk->stk[i];
-				rhs = &getVarConstant(mb,i);
-				VALcopy2(lhs,rhs);
-			} else {
-				lhs = &stk->stk[i];
-				lhs->vtype = getVarGDKType(mb,i);
-			}
+			@:initStack(p->argc)@
 			stk->keepAlive = TRUE;
 			*env= stk;
 		} else stk = *env;
@@ -526,29 +513,6 @@ MALevalExit:
 			"Exception not catched", "");
 	}
 	return ret;
-}
-void runMALtask(malTask *task){
-	ValPtr v;
-#ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"create childs in stk %d %d %d\n", 
-	    (void *) task, task->stk->shares, &task->stk->shares);
-	stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
-	stream_printf(GDKout," task->mb = %d\n",task->mb);
-	stream_printf(GDKout," task->stk = %d\n",task->stk);
-	stream_printf(GDKout," task->startpc = %d\n",task->startpc);
-	stream_printf(GDKout," task->stoppc = %d\n",task->stoppc);
-	stream_printf(GDKout," task->env = %d\n",task->env);
-	stream_printf(GDKout," task->pcicaller = %d\n",
-	                task->pcicaller);
-	stream_printf(GDKout," task->pci = %d\n",task->pci);
-	stream_printf(GDKout,"childs sets return variable %d \n",
-	    getDestVar(task->pci));
-	stream_printf(GDKout,"start parallel sequence\n");
-#endif
-	v= &task->stk->stk[ getDestVar(task->pci)];
-	v->val.ival=  (int) MT_getpid();
-	runMALsequence(task);
-	GDKfree(task);
 }
 @+ Safeguarding
 The physical stack for each thread is an operating system parameter.
@@ -696,10 +660,6 @@ possible change in the control flow.
 	    /* Return from factory involves cleanup */
 
 	    if( getInstrPtr(mb,0)->token == FACTORYsymbol){
-/*
-	        ret= returnFactory(mb, pci, stkpc);
-	        goto MALeve
-*/
 			yieldResult(mb,pci,stkpc);
 			shutdownFactory(mb);
 			goto MALevalExit;
@@ -763,7 +723,7 @@ cause errors in multi-assignment statements.
 The linkage between MAL interpreter and compiled C-routines
 is kept as simple as possible.
 Basically we distinguish four kinds of calling conventions:
-CMDcall, FCNcall, THRDcall, and  PATcall.
+CMDcall, FCNcall, FACcall, and  PATcall.
 The FCNcall indicates calling a MAL procedure, which leads
 to a recursive call to the interpreter. 
 
@@ -846,6 +806,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			} 
 		} 
 	}
+	/* Provide debugging support */
 	if( GDKdebug & 10 ){
 		BAT *b;
 		str oldmsg =0;
@@ -1138,30 +1099,7 @@ starts with the exception identifer, followed by contextual details.
 @{
 
 @= exceptionHndlr
-if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
-	stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
-#ifdef HAVE_SYS_RESOURCE_H
-	if( cntxt->ioFlag){
-		getrusage(RUSAGE_SELF, &cntxt->resource);
-		if(	cntxt->resource.ru_inblock - oldinblock 
-		 ||	cntxt->resource.ru_oublock - oldoublock ) {
-			stream_printf(cntxt->fdout,"# %3d R",
-				cntxt->resource.ru_inblock- oldinblock);
-			stream_printf(cntxt->fdout," %3d W",
-				cntxt->resource.ru_oublock- oldoublock);
-		}
-	}
-#endif
-	if( cntxt->memoryFlag){
-		cntxt->memory= MT_mallinfo();
-		if( cntxt->memory.arena- oldMemory.arena > 0)
-			stream_printf(cntxt->fdout,"# %6d bytes",
-				cntxt->memory.arena-oldMemory.arena );
-	}
-	printTraceCall(cntxt,mb,stk,stkpc);
-	cntxt->timer = GDKusec();
-}
-
+	@:timingHndlr@
 if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	int symid= -1;
@@ -1402,4 +1340,29 @@ See @url{The MAL Profiler} for more details.
 			profilerEvent(cntxt->nspace,mb,stk,stkpc);
 	}
 #endif
+
+@= timingHndlr
+if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
+	stream_printf(cntxt->fdout,"#%6d usec",GDKusec()-cntxt->timer);
+#ifdef HAVE_SYS_RESOURCE_H
+	if( cntxt->ioFlag){
+		getrusage(RUSAGE_SELF, &cntxt->resource);
+		if(	cntxt->resource.ru_inblock - oldinblock 
+		 ||	cntxt->resource.ru_oublock - oldoublock ) {
+			stream_printf(cntxt->fdout,"# %3d R",
+				cntxt->resource.ru_inblock- oldinblock);
+			stream_printf(cntxt->fdout," %3d W",
+				cntxt->resource.ru_oublock- oldoublock);
+		}
+	}
+#endif
+	if( cntxt->memoryFlag){
+		cntxt->memory= MT_mallinfo();
+		if( cntxt->memory.arena- oldMemory.arena > 0)
+			stream_printf(cntxt->fdout,"# %6d bytes",
+				cntxt->memory.arena-oldMemory.arena );
+	}
+	printTraceCall(cntxt,mb,stk,stkpc);
+	cntxt->timer = GDKusec();
+}
 @}
