@@ -483,7 +483,10 @@ MALrestart:
 			if( oldtimer)
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
-	        if( stk->cmd == 'x') goto MALevalExit;
+	        if( stk->cmd == 'x') {
+				stkpc = mb->stop;
+				continue;
+			}
 			if( oldtimer ) {
 				/* ignore debugger waiting time*/
 				t= GDKusec()-t;
@@ -495,9 +498,109 @@ MALrestart:
 			}
 	    }
 
+		@:beginProfile@
 	    @:MALinterpret@
+		@:MALflowofcontrol@
+		@:endProfile@
 	}
-MALevalExit:
+	@:MALwrapup@
+	return ret;
+}
+@}
+@-
+The alternative is to execute the instructions using a
+dataflow interpreter. It only works on a code
+sequence that does not include flow of control
+statements and, ideally, consist of expensive
+BAT operations.
+The flow interpreter selects cheap instructions
+using a simple costfunction based on the size
+of the BATs involved.
+The dataflow portion should be identified by
+a separate optimizer, calling dataflow.start()
+and dataflow.exit() to mark the subsequence.
+@{
+@c
+str runMALdataflow( malTask *task)
+{   
+	Client cntxt= task->cntxt; 
+	MalBlkPtr mb= task->mb; 
+	MalStkPtr stk= task->stk;
+	/* MalStkPtr env= task->env;*/
+	/* InstrPtr pcicaller= task->pcicaller;*/
+
+	ValPtr lhs,rhs,v;
+	int stkpc,i,k; 
+	InstrPtr pci=0; 
+	int stkexception;
+	str ret=0;
+	int stamp= -1;
+	int backup[MAXARG];
+	str sbackup[MAXARG];
+	lng oldtimer=0;
+	int oldinblock=0;
+	int oldoublock=0;
+	struct mallinfo oldMemory;
+#ifdef HAVE_SYS_RESOURCE_H
+	struct rusage oldResource;
+#endif
+	@:performanceVariables@
+
+	if( cntxt->timerFlag)
+		oldtimer= cntxt->timer= GDKusec();
+	oldMemory.arena= 0;
+@-
+Construct the flow relation ship and collect
+the eligible instructions.
+@c
+	/* select the first eligible instruction */
+	stkpc = task->startpc;
+	stkexception = -1;
+	while(stkpc < mb->stop && stkpc != task->stoppc ){
+	    pci = getInstrPtr(mb,stkpc);
+	    if( stk->cmd  ) {
+			lng t=0;
+			if( oldtimer)
+				t= GDKusec();
+			mdbStep(cntxt,mb,stk,stkpc);
+	        if( stk->cmd == 'x') {
+				stkpc= mb->stop;
+				continue;
+			}
+			if( oldtimer ) {
+				/* ignore debugger waiting time*/
+				t= GDKusec()-t;
+				oldtimer += t;
+#ifdef HAVE_SYS_RESOURCE_H
+				getrusage(RUSAGE_SELF, &oldResource);
+#endif
+				oldMemory= MT_mallinfo();
+			}
+	    }
+
+		@:beginProfile@
+		ret = 0;
+@-
+The number of instructions allowed is severely
+limited.
+@c
+		switch( pci->token){
+		case ASSIGNsymbol: @:assignStmt@ break;
+		case PATcall: @:patterncall@ break;
+		case CMDcall: @:commandcall@ break;
+		case FACcall: @:factorycall@ break;
+		case FCNcall: @:functioncall@ break;
+		}
+		/* we don't allow sequential flow control here */
+		@:endProfile@
+		/* select the next instruction */
+		stkpc++;
+	}
+	@:MALwrapup@
+	return ret;
+}
+@-
+@= MALwrapup
 	if( stkexception >= 0) {
 		if( ret )
 			ret= appendException(mb,mb->stop-1,
@@ -512,8 +615,6 @@ MALevalExit:
 			ret= appendException(mb,mb->stop-1,MALexception, 
 			"Exception not catched", "");
 	}
-	return ret;
-}
 @+ Safeguarding
 The physical stack for each thread is an operating system parameter.
 We do not want recursive programs crashing the server, so once in
@@ -547,7 +648,6 @@ elements in the value stack.
 @+ The major switch
 
 @= MALinterpret
-	@:beginProfile@
 	ret = 0;
 	switch( pci->token){
 	case ASSIGNsymbol: @:assignStmt@ break;
@@ -566,14 +666,14 @@ elements in the value stack.
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollector(mb, stk, TRUE);
 	    @:endProfile@
-	    goto MALevalExit;
+		stkpc= mb->stop;
+	    continue;
 	default:
 	    GDKerror("ERROR:MALeval:unkown operation\n");
 	    @:endProfile@
-	    goto MALevalExit;
+		stkpc= mb->stop;
+	    continue;
 	}
-	@:MALflowofcontrol@
-	@:endProfile@
 @-
 After the expression has been evaluated we should check for a
 possible change in the control flow. 
@@ -662,8 +762,7 @@ possible change in the control flow.
 	    if( getInstrPtr(mb,0)->token == FACTORYsymbol){
 			yieldResult(mb,pci,stkpc);
 			shutdownFactory(mb);
-			goto MALevalExit;
-	    }
+	    } else
 	    /* a fake multi-assignment */
 	    if( env != NULL && pcicaller != NULL){
 	        InstrPtr pp=pci;
@@ -681,10 +780,11 @@ possible change in the control flow.
 			/* reset the clock */
 			if( oldtimer)
 				cntxt->timer= oldtimer;
-	        goto MALevalExit;
-	    } 
-	    @:endProfile@
-	    goto MALevalExit;
+	    } else { 
+			@:endProfile@
+		}
+	    stkpc= mb->stop;
+		continue;
 	default:
 	    stkpc++; 
 	}
@@ -714,6 +814,7 @@ cause errors in multi-assignment statements.
 	}
 	@:restoreTarget@
 	ret = 0;
+	@:exceptionHndlr@
 }
 @}
 @-
@@ -915,7 +1016,7 @@ the bind(namespace, batname, mode) operation. [todo]
 	        "too many arguments for command call\n");
 	}
 	@:restoreTarget@
-	@:resultParameter@
+	@:exceptionHndlr@
 }
 @-
 @= patterncall
@@ -926,7 +1027,7 @@ the bind(namespace, batname, mode) operation. [todo]
 		@:safeTarget@
 	    ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:restoreTarget@
-	    @:resultParameter@
+	    @:exceptionHndlr@
 	}
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -940,7 +1041,7 @@ non-returned values.
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
 	@:restoreTarget@
-	@:resultParameter@
+	@:exceptionHndlr@
 }
 @-
 Factory calls are more involved. At this stage it is a synchrononous
@@ -952,19 +1053,12 @@ Factory calls should deal with the reference counting.
 	        "reference to MAL function missing\n");
 	else
 	    ret= runFactory(cntxt,pci->blk,mb,stk,pci);
-	@:resultParameter@
+	@:exceptionHndlr@
 @-
 The type dispatching table in getArgValue can be removed if we 
 determine at compile time the address offset within a ValRecord. 
 We leave this optimization for the future, it leads to about 10%
 improvement (100ms for 1M calls).
-@-
-Upon return of the function we may be interested in the result
-and we have to do some housekeeping, such as string length adjustment.
-
-@-
-@= resultParameter
-	@:exceptionHndlr@
 
 @+ Flow of control statements
 Each assignment (function call) may be part of the initialization
@@ -1026,7 +1120,10 @@ reaching end of function block.
 	if( stk->cmd == 'C') {
 		stk->cmd = 'n';
 		mdbStep(cntxt,mb,stk,stkpc);
-		if( stk->cmd == 'x') goto MALevalExit;
+		if( stk->cmd == 'x') {
+			stkpc = mb->stop;
+			continue;
+		}
 	}
 	/* skip to catch block or end */
 	for( ; stkpc<mb->stop; stkpc++){
@@ -1039,7 +1136,7 @@ reaching end of function block.
 	} }
 	if( stkpc== mb->stop) {
 	    @:endProfile@ 
-	    goto MALevalExit;
+		continue;
 	}
 @-
 Each time we enter a barrier block, we could keep its position in the
@@ -1107,11 +1204,15 @@ if( ret != MAL_SUCCEED ) {
 	    stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
 		stk->cmd='n';
 		mdbStep(cntxt,mb,stk,stkpc);
-		if( stk->cmd == 'x' ) goto MALevalExit;
-		if( stk->cmd == 'q' ) goto MALevalExit;
+		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
+			stkpc= mb->stop;
+			continue;
+		}
 		if( stk->cmd == 'r') {
 			stk->cmd = 'n';
-			goto MALrestart;
+			stkpc = task->startpc;
+			stkexception = -1;
+			continue;
 		}
 	}
 	if(ret ) msg= strchr(ret,':');
@@ -1136,7 +1237,8 @@ if( ret != MAL_SUCCEED ) {
 	stkexception = symid; 
 	if( symid == -1){
 	    @:endProfile@
-	    goto MALevalExit;
+		stkpc= mb->stop;
+		continue;
 	}
 	msg++;
 	/* assure correct variable type */
