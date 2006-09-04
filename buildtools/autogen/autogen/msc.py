@@ -321,99 +321,99 @@ def needbuilttool(deplist):
     return 0
 
 def msc_dep(fd, tar, deplist, msc):
-            t = msc_translate_ext(tar)
-            b, ext = split_filename(t)
-            tf = msc_translate_file(t, msc)
-            sep = tf + ": "
-            _in = []
-            for d in deplist:
-                if not os.path.isabs(d):
-                    dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d, msc)), msc)
-                    if dep[-3:] == '.in':
-                        if dep not in msc['_IN']:
-                            _in.append((d[:-3], dep))
-                        dep = d[:-3]
-                    if dep != t:
-                        fd.write('%s"%s"' % (sep, dep))
-                        sep = " "
-                else:
-                    print "!WARNING: dropped absolute dependency " + d
-            if sep == " ":
-                fd.write("\n")
-                if tf+'.mx.in' in deplist:
-                    fd.write('\t$(MX) $(MXFLAGS) -x sh "%s.mx"\n' % tf)
-            for x, y in _in:
-                # TODO
-                # replace this hack by something like configure ...
-                fd.write('%s: "%s"\n' % (x, y))
-                fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (y, x))
-                msc['_IN'].append(y)
-            getsrc = ""
-            src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
-            if os.path.split(src)[0]:
-                getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, os.path.split(src)[1])
-            if ext == "tab.h":
-                fd.write(getsrc)
-                x, de = split_filename(deplist[0])
-                if de == 'y':
-                    fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-                    fd.write("\t$(DEL) y.tab.c\n")
-                    fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
-                else:
-                    fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
-                    fd.write("\t$(DEL) y.tab.c\n")
-                    fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
-            if ext == "tab.c":
-                fd.write(getsrc)
-                fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-                fd.write('\t$(MV) y.tab.c "%s.tab.c"\n' % b)
-                fd.write("\t$(DEL) y.tab.h\n")
-            if ext == "yy.c":
-                fd.write(getsrc)
-                fd.write('\t$(LEX) $(LFLAGS) "%s.l"\n' % b)
-                # either lex.yy.c or lex.$(PARSERNAME).c gets generated
-                fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c"\n' % b)
-                fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c"\n' % b)
+    t = msc_translate_ext(tar)
+    b, ext = split_filename(t)
+    tf = msc_translate_file(t, msc)
+    sep = tf + ": "
+    _in = []
+    for d in deplist:
+        if not os.path.isabs(d):
+            dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d, msc)), msc)
+            if dep[-3:] == '.in':
+                if dep not in msc['_IN']:
+                    _in.append((d[:-3], dep))
+                dep = d[:-3]
+            if dep != t:
+                fd.write('%s"%s"' % (sep, dep))
+                sep = " "
+        else:
+            print "!WARNING: dropped absolute dependency " + d
+    if sep == " ":
+        fd.write("\n")
+        if tf+'.mx.in' in deplist:
+            fd.write('\t$(MX) $(MXFLAGS) -x sh "%s.mx"\n' % tf)
+    for x, y in _in:
+        # TODO
+        # replace this hack by something like configure ...
+        fd.write('%s: "%s"\n' % (x, y))
+        fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (y, x))
+        msc['_IN'].append(y)
+    getsrc = ""
+    src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
+    if os.path.split(src)[0]:
+        getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, os.path.split(src)[1])
+    if ext == "tab.h":
+        fd.write(getsrc)
+        x, de = split_filename(deplist[0])
+        if de == 'y':
+            fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
+            fd.write("\t$(DEL) y.tab.c\n")
+            fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
+        else:
+            fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
+            fd.write("\t$(DEL) y.tab.c\n")
+            fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
+    if ext == "tab.c":
+        fd.write(getsrc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
+        fd.write('\t$(MV) y.tab.c "%s.tab.c"\n' % b)
+        fd.write("\t$(DEL) y.tab.h\n")
+    if ext == "yy.c":
+        fd.write(getsrc)
+        fd.write('\t$(LEX) $(LFLAGS) "%s.l"\n' % b)
+        # either lex.yy.c or lex.$(PARSERNAME).c gets generated
+        fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c"\n' % b)
+        fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c"\n' % b)
 
-            if ext == "glue.c":
-                fd.write(getsrc)
-                fd.write('\t$(MEL) $(INCLUDES) -o "%s" -glue "%s.m"\n' % (t, b))
-            if ext == "proto.h":
-                fd.write(getsrc)
-                fd.write('\t$(MEL) $(INCLUDES) -o "%s" -proto "%s.m"\n' % (t, b))
-            if ext == "mil":
-                fd.write(getsrc)
-                if b+".tmpmil" in deplist:
-                    fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
-                    fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
-                    fd.write('\tif not exist .libs $(MKDIR) .libs\n')
-                    fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))
-            if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
-                target, name = msc_find_target(tar, msc)
-                if name[0] == '_':
-                    name = name[1:]
-                if target == "LIB":
-                    d, dext = split_filename(deplist[0])
-                    if dext in ("c", "glue.c", "yy.c", "tab.c"):
-                        # -DCOMPILE_DL_%s is for PHP extensions
-                        fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
-                                 (name, name, t, src))
-            if ext == 'py' and deplist[0].endswith('.py.i'):
-                fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
-            if ext == 'py.c' and deplist[0].endswith('.py.i'):
-                fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
-            if ext == 'res':
-                fd.write("\t$(RC) -fo%s %s\n" % (t, src))
+    if ext == "glue.c":
+        fd.write(getsrc)
+        fd.write('\t$(MEL) $(INCLUDES) -o "%s" -glue "%s.m"\n' % (t, b))
+    if ext == "proto.h":
+        fd.write(getsrc)
+        fd.write('\t$(MEL) $(INCLUDES) -o "%s" -proto "%s.m"\n' % (t, b))
+    if ext == "mil":
+        fd.write(getsrc)
+        if b+".tmpmil" in deplist:
+            fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
+            fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
+            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
+            fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))
+    if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
+        target, name = msc_find_target(tar, msc)
+        if name[0] == '_':
+            name = name[1:]
+        if target == "LIB":
+            d, dext = split_filename(deplist[0])
+            if dext in ("c", "glue.c", "yy.c", "tab.c"):
+                # -DCOMPILE_DL_%s is for PHP extensions
+                fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
+                         (name, name, t, src))
+    if ext == 'py' and deplist[0].endswith('.py.i'):
+        fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
+    if ext == 'py.c' and deplist[0].endswith('.py.i'):
+        fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
+    if ext == 'res':
+        fd.write("\t$(RC) -fo%s %s\n" % (t, src))
 
 def msc_deps(fd, deps, objext, msc):
     if not msc['DEPS']:
         fd.write("!IFDEF NEED_MX\n")
         for t, deplist in deps.items():
-            if (needbuilttool(deplist)):
+            if needbuilttool(deplist):
                 msc_dep(fd, t, deplist, msc)
         fd.write("!ENDIF #NEED_MX\n")
         for t, deplist in deps.items():
-            if (not(needbuilttool(deplist))):
+            if not needbuilttool(deplist):
                 msc_dep(fd, t, deplist, msc)
 	
     msc['DEPS'].append("DONE")
@@ -435,7 +435,7 @@ def msc_scripts(fd, var, scripts, msc):
         s,ext2 = rsplit_filename(script)
         if not ext2 in ext:
             continue
-        if (script, script, '', sd, 0) in msc['INSTALL']:
+        if msc['INSTALL'].has_key(script):
             continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
@@ -448,9 +448,20 @@ def msc_scripts(fd, var, scripts, msc):
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
             fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
             fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
-        if script != 'mprof.mil' and script != 'monetdb.py':
-            msc['INSTALL'].append((script, script, '', sd, 0))
-            msc['SCRIPTS'].append(script)
+        if scripts.has_key('COND'):
+            condname = '+'.join(scripts['COND'])
+            mkname = script.replace('.', '_')
+            fd.write('!IFDEF %s\n' % condname)
+            fd.write('C_%s = %s\n' % (mkname, script))
+            fd.write('!ELSE\n')
+            fd.write('C_%s =\n' % mkname)
+            fd.write('!ENDIF\n')
+            cscript = '$(C_%s)' % mkname
+        else:
+            cscript = script
+            condname = ''
+        msc['INSTALL'][script] = cscript, '', sd, '', condname
+        msc['SCRIPTS'].append(cscript)
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
 
@@ -479,7 +490,7 @@ def msc_headers(fd, var, headers, msc):
 ##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
                 fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
-            msc['INSTALL'].append((header, header, '', sd, 0))
+            msc['INSTALL'][header] = header, '', sd, '', ''
 
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
@@ -501,7 +512,7 @@ def msc_binary(fd, var, binmap, msc):
                 elif os.path.isfile(os.path.join(msc['cwd'], i)):
                     fd.write('%s: "$(SRCDIR)\\%s"\n' % (i, i))
                     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
-                msc['INSTALL'].append((i, i, '', '$(bindir)', 0))
+                msc['INSTALL'][i] = i, '', '$(bindir)', '', ''
         else: # link
             src = binmap[0][4:]
             fd.write('%s: "%s"\n' % (name, src))
@@ -512,7 +523,7 @@ def msc_binary(fd, var, binmap, msc):
                 ext = ''
             else:
                 ext = '.exe'
-            msc['INSTALL'].append((name, src, ext, '$(bindir)', 0))
+            msc['INSTALL'][name] = src + ext, ext, '$(bindir)', '', ''
             msc['SCRIPTS'].append(name)
         return
 
@@ -729,16 +740,38 @@ def msc_library(fd, var, libmap, msc):
         scripts_ext = libmap['SCRIPTS']
 
     v = sep + libname
+    makedll = pref + v + dll
     if libmap.has_key('NOINST'):
-        msc['NLIBS'].append(pref + v + '.lib')
+        makelib = pref + v + '.lib'
     else:
-        msc['LIBS'].append(pref + v + dll)
-        if ld != 'LIBDIR':
-            msc['INSTALL'].append((pref + v, pref + v, dll, ld, instlib))
+        makelib = makedll
+    if libmap.has_key('COND'):
+        condname = '+'.join(libmap['COND'])
+        mkname = (pref + v).replace('.', '_')
+        fd.write('!IFDEF %s\n' % condname)
+        fd.write('C_%s_dll = %s%s.dll\n' % (mkname, pref, v))
+        fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
+        fd.write('!ELSE\n')
+        fd.write('C_%s_dll =\n' % mkname)
+        fd.write('C_%s_lib =\n' % mkname)
+        fd.write('!ENDIF\n')
+        makelib = '$(C_%s)' % makelib.replace('.', '_')
+        makedll = '$(C_%s_dll)' % mkname
+    else:
+        condname = ''
+
+    if libmap.has_key('NOINST'):
+        msc['NLIBS'].append(makelib)
+    else:
+        msc['LIBS'].append(makelib)
+        if instlib:
+            i = pref + v + '.lib'
         else:
-            msc['INSTALL'].append((pref + v, pref + v,
-                                   dll, '$(%sdir)' % lib.replace('-', '_'),
-                                   instlib))
+            i = ''
+        if ld != 'LIBDIR':
+            msc['INSTALL'][pref + v] = makedll, dll, ld, i, condname
+        else:
+            msc['INSTALL'][pref + v] = makedll, dll, '$(%sdir)' % lib.replace('-', '_'), i, condname
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
@@ -840,8 +873,7 @@ def msc_libs(fd, var, libsmap, msc):
         msc['EXTRA_DIST'].append(libsrc)
         v = sep + libname
         msc['LIBS'].append('lib' + v + '.dll')
-        msc['INSTALL'].append(('lib' + v, 'lib' + v, '.dll',
-                               ld, 1))
+        msc['INSTALL']['lib' + v] = 'lib' + v + '.dll', '.dll', ld, 'lib' + v + '.lib', ''
 
         dlib = []
         if libsmap.has_key(libname + "_DLIBS"):
@@ -952,7 +984,7 @@ def msc_ant(fd, var, ant, msc):
     for file in ant['FILES']:
         sfile = file.replace(".", "_")
     	fd.write('%s: %s_ant_target\n' % (file, target))
-        msc['INSTALL'].append((file,file,'',jd,None))
+        msc['INSTALL'][file] = file, '', jd, '', ''
 
     fd.write("\n!ELSE\n\n")
 
@@ -1008,7 +1040,7 @@ def output(tree, cwd, topdir):
     msc['SCRIPTS'] = []
     msc['BINS'] = []
     msc['HDRS'] = []
-    msc['INSTALL'] = []
+    msc['INSTALL'] = {}
     msc['LIBDIR'] = 'lib'
     msc['TREE'] = tree
     msc['cwd'] = cwd
@@ -1077,11 +1109,17 @@ def output(tree, cwd, topdir):
     fd.write("all-msc:")
     if msc['LIBS']:
         for v in msc['LIBS']:
-            fd.write(' "%s"' % v)
+            if v[:1] == '$':
+                fd.write(' %s' % v)
+            else:
+                fd.write(' "%s"' % v)
 
     if msc['NLIBS']:
         for v in msc['NLIBS']:
-            fd.write(' "%s"' % v)
+            if v[:1] == '$':
+                fd.write(' %s' % v)
+            else:
+                fd.write(' "%s"' % v)
 
     if msc['BINS']:
         for v in msc['BINS']:
@@ -1089,19 +1127,25 @@ def output(tree, cwd, topdir):
 
     if msc['SCRIPTS']:
         for v in msc['SCRIPTS']:
-            fd.write(' "%s"' % v)
+            if v[:1] == '$':
+                fd.write(' %s' % v)
+            else:
+                fd.write(' "%s"' % v)
 
     fd.write("\n")
 
     fd.write("check-msc: all-msc")
     if msc['INSTALL']:
-        for dst, src, ext, dir, instlib in msc['INSTALL']:
-            fd.write(' "%s%s"' % (src, ext))
+        for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
+            if src[:1] == '$':
+                fd.write(' %s' % src)
+            else:
+                fd.write(' "%s"' % src)
     fd.write("\n")
 
     fd.write("install-msc: install-exec install-data\n")
     l = []
-    for dst, src, ext, dir, instlib in msc['INSTALL']:
+    for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
         l.append(dst)
 
     fd.write("install-exec: %s %s\n" % (
@@ -1113,15 +1157,21 @@ def output(tree, cwd, topdir):
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v.replace('-','_'), v.replace('-','_')))
             fd.write('\t$(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v.replace('-','_')))
     if msc['INSTALL']:
-        for dst, src, ext, dir, instlib in msc['INSTALL']:
+        for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
             if not dir:
                 continue
-            fd.write('install_%s: "%s%s" "%s"\n' % (dst, src, ext, dir))
-            fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, dir, dst, ext))
+            if cond:
+                fd.write('!IFDEF %s\n' % cond)
+            fd.write('install_%s: "%s" "%s"\n' % (dst, src, dir))
+            fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (src, dir, dst, ext))
             if instlib:
-                fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', dir, dst, '.lib'))
+                fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (instlib, dir, dst, '.lib'))
+            if cond:
+                fd.write('!ELSE\n')
+                fd.write('install_%s:\n' % dst)
+                fd.write('!ENDIF\n')
         td = {}
-        for dst, src, ext, dir, instlib in msc['INSTALL']:
+        for dst, (src, ext, dir, instlib, cond) in msc['INSTALL'].items():
             if not dir:
                 continue
             if not td.has_key(dir):
