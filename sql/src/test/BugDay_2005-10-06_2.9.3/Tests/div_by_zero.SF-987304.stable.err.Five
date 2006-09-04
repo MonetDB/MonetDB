@@ -70,7 +70,7 @@ stderr of test 'div_by_zero.SF-987304` in directory 'src/test/BugDay_2005-10-06_
 
 MAPI  = monetdb@localhost:49127
 QUERY = select 1/0;
-ERROR = !ERROR: calc./:: Division by zero
+ERROR = !ERROR: calc./: Division by zero
 MAPI  = monetdb@localhost:49127
 QUERY = select x/y from a;
 ERROR = !ERROR: batcalc./: Division by zero
