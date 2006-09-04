@@ -1213,7 +1213,8 @@ int CMDhttp_post(BAT **res,
         goto FINISH_HTTP_POST;
     }
     
-    b->len = b->pos;
+    b->len = b->pos + 1;
+    assert(strlen(b->buf) < b->len);
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
     if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0' ) {
