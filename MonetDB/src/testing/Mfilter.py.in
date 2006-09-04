@@ -218,8 +218,6 @@ test = (
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
                 # suspicious output/messages/errors? with Pathfinder on SuSE 9.3 !??:
                     r'^! /.*/bin/[Mm](?:server5?|apiClient|timeout):e+$',
-                # expected error message with varying path in pathfinder/tests/XRpc/basic/Tests/missing_param.stable.err
-                    r'^QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "/.*/tests/XRpc/basic_queries/Tests/basicfunctions.xq";$',
                  ])+')',  re.MULTILINE)
        )
 
@@ -249,6 +247,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r"^(illegal reference to context node: at )(.*)(: )(``.'' is unbound|position information not available)(.*)\n",				# 21: 5
     r'^(variable\(s\) out of scope or unknown: at )(.*)\n',											# 22: 2
     r'^(bad usage of XML namespaces: at )(.*)\n',												# 23: 2
+    r'^(QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at ")(/.*)(/tests/XRpc/basic_queries/Tests/basicfunctions.xq";)\n',	# 24: 3
     r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',											# 02: 3
     r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',		# 20: 3
 ])+')',  re.MULTILINE)
@@ -276,6 +275,7 @@ norm_out = (
     None, '...', None, '...', None,									# 21: 5
     None, '...',											# 22: 2
     None, '...',											# 23: 2
+    None, '$TSTSRCBASE', None,										# 24: 3
     None, '...', None,											# 02: 3
     '=ERROR', None, '\n#',										# 20: 3
 ##    '=ERROR', None, '''
