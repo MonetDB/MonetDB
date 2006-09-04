@@ -74,7 +74,7 @@ else
 	# which of monet, sql, xml, acoi, template, ... we are.
 	wh_t="`basename $base`"
 fi
-what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]' | tr '.-' '_'`"
+what="`echo ${wh_t} | tr '[a-z]' '[A-Z]' | tr '.-' '_'`"
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
