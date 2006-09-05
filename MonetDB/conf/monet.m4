@@ -191,8 +191,8 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		    icc_ver="`$CC -dumpversion 2>/dev/null`"
 		    case $icc_ver in
-		    8.*)	CC="icc -no-gcc";;
-		    9.*)	CC="icc -no-gcc";;
+		    8.*)	CC="$CC -no-gcc";;
+		    9.*)	CC="$CC -no-gcc";;
 		    esac
 		    ;;
 		esac
