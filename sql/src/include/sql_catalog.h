@@ -215,17 +215,17 @@ typedef struct pbat {
 	char *nme;
 	oid  base; 	/* hseqbase, columns aren't dense ranges */
 	int  clustered; /* stable bats could be clustered */
-	oid  bid;  
+	int  bid;  
 
-	oid  ubid; /* updates per pbat ? */
+	int  ubid; /* updates per pbat ? */
 } pbat;
 
 typedef struct sql_bat {
 	char *name;		/* name of the main bat */
 	char *uname;		/* name of updates bat */
-	oid bid;
-	oid ibid;		/* bat with inserts */
-	oid ubid;		/* bat with updates */
+	int bid;
+	int ibid;		/* bat with inserts */
+	int ubid;		/* bat with updates */
 } sql_bat;
 
 typedef enum key_type {
@@ -373,7 +373,7 @@ typedef struct sql_table {
 
 	int cleared;		/* cleared in the current transaction */
 	char *dname;		/* name of the persistent deletes bat */
-	oid dbid;		/* bat with deletes */
+	int dbid;		/* bat with deletes */
 
 	struct sql_schema *s;
 } sql_table;
