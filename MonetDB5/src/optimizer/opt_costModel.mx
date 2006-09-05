@@ -170,11 +170,11 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				@:newRows2(1,2, *c1+*c2,1)@
 			} else if (getFunctionId(p)== kdifferenceRef) {
 				@:newRows2(1, 2, *c1==0? 0: *c2==0? *c1: *c1 - *c2 < 0 ? 1 : *c1 - *c2+1)@
-			} else if (getFunctionId(p) ==joinRef ) {
+			} else if (getFunctionId(p) == joinRef ) {
 				/* assume 1-1 joins */
 				@:newRows2(1, 2, *c1 < *c2 ? *c1 : *c2)@
-			} else if ( getFunctionId(p) == selectRef ||
-						getFunctionId(p) == uselectRef) {
+			} else if (getFunctionId(p) == selectRef ||
+				   getFunctionId(p) == uselectRef) {
 				@:newRows1(1, *c1 > 100 ? *c1 / 2 +1: *c1)@
 			} else if (getFunctionId(p) == crossRef) {
 				@:newRows2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2 +1))@
@@ -183,12 +183,12 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else if (getModuleId(p) ==batRef) {
 			if (getFunctionId(p) == reverseRef ||
-				getFunctionId(p) == setWriteModeRef  ||
-				getFunctionId(p) ==hashRef  ||
-				getFunctionId(p) == mirrorRef) {
+			    getFunctionId(p) == setWriteModeRef  ||
+			    getFunctionId(p) == hashRef  ||
+			    getFunctionId(p) == mirrorRef) {
 				@:newRows1(1, *c1)@
-			} else if (	getFunctionId(p) == appendRef ||
-						getFunctionId(p) == insertRef ){
+			} else if (getFunctionId(p) == appendRef ||
+				   getFunctionId(p) == insertRef ){
 @-
 Updates are a little more complicated, because you have to
 propagate changes in the expected size up the expression tree.
@@ -211,7 +211,7 @@ an initially empty insertion BAT.
 					@:newRows(1,1, *c1 +1,1)@ 
 					OPTbackpropagate(mb,i,getArg(p,1));
 				}
-			} else if (	getFunctionId(p) == deleteRef){
+			} else if (getFunctionId(p) == deleteRef){
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* delete BAT */
 					@:newRows(1,2, (*c1 - *c2 ==0? 1: *c1-*c2),1)@ 

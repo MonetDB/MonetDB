@@ -31,10 +31,10 @@ opt_export  str batcalcRef;
 opt_export  str batstrRef;
 opt_export  str bbpRef;
 opt_export  str bindRef;
-opt_export	str bstreamsRef;
-opt_export  str evalRef;
 opt_export  str bindidxRef;
 opt_export  str binddbatRef;
+opt_export  str bstreamsRef;
+opt_export  str evalRef;
 opt_export  str calcRef;
 opt_export  str countRef;
 opt_export  str crossRef;
@@ -101,8 +101,6 @@ opt_export  str tuniqueRef;
 opt_export  str uselectRef;
 opt_export  str unpackRef;
 opt_export  str unsafeRef;
-opt_export  str bind_dbatRef;
-opt_export	str bulk_rotate_xor_hashRef;
 
 opt_export void optimizerInit(void);
 #endif
@@ -189,9 +187,6 @@ str tuniqueRef;
 str uselectRef;
 str unpackRef;
 str unsafeRef;
-str bind_dbatRef;
-str bulk_rotate_xor_hashRef;
-
 
 void optimizerInit(){
 	if(batRef == NULL){
@@ -273,7 +268,5 @@ void optimizerInit(){
 		unsafeRef = putName("unsafe",6);
 		sunionRef= putName("sunion",6);
 		unionRef= putName("union",5);
-		bind_dbatRef = putName("bind_dbat",9);
-		bulk_rotate_xor_hashRef = putName("bulk_rotate_xor_hash",20);
 	}
 }
