@@ -179,19 +179,11 @@ Double bind operations should also be eliminated.
 		if ( (getFunctionId(p) == bindRef || 
 			getFunctionId(p) == bindidxRef) && 
 			getModuleId(p) == sqlRef) {
-			/*
-			int arg = getArg(p,4);
-			if (getVarConstant(mb,arg).val.ival == 0) 
-			*/
-				ns[k++] = p;
+			ns[k++] = p;
 		}
 		if ( getFunctionId(p) == binddbatRef && 
 		     getModuleId(p) == sqlRef) {
-			/*
-			int arg = getArg(p,3);
-			if (getVarConstant(mb,arg).val.ival == 0) 
-			*/
-				ns[k++] = p;
+			ns[k++] = p;
 		}
 	}
 @-
@@ -209,22 +201,14 @@ instructions, producing a syntactic correct MAL program again.
 		int doit = 1;
 
 		p = getInstrPtr(mb, i);
-		if ( (getFunctionId(p) == bindRef || 
-					getFunctionId(p) == bindidxRef) &&
-				getModuleId(p) == sqlRef) {
-			/*
-			int arg = getArg(p,4);
-			if (getVarConstant(mb,arg).val.ival == 0) 
-			*/
-				doit = 0;
+		if ( getModuleId(p) == sqlRef &&
+		     (getFunctionId(p) == bindRef || 
+		      getFunctionId(p) == bindidxRef)) {
+			doit = 0;
 		}
-		if ( getFunctionId(p) == binddbatRef && 
-		     getModuleId(p) == sqlRef) {
-			/*
-			int arg = getArg(p,3);
-			if (getVarConstant(mb,arg).val.ival == 0) 
-			*/
-				doit = 0;
+		if ( getModuleId(p) == sqlRef &&
+		     getFunctionId(p) == binddbatRef ) {
+			doit = 0;
 		}
 		if (doit)
 			ns[k++] = p;
@@ -293,15 +277,23 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb){
 	for(i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( getModuleId(p)== sqlRef && 
-			( getFunctionId(p)== bindRef ||
-			  getFunctionId(p)== dbatRef ) ){
+		    (getFunctionId(p)== bindRef ||
+		     getFunctionId(p)== bindidxRef ||
+		     getFunctionId(p)== dbatRef ) ){
+
 			if( getFunctionId(p) == dbatRef)
-			b= mvc_bind_dbat(m, 
+				b= mvc_bind_dbat(m, 
 				getVarConstant(mb, getArg(p,1)).val.sval,
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.ival);
+			else if( getFunctionId(p) == bindidxRef)
+				b= mvc_bind_idxbat(m, 
+				getVarConstant(mb, getArg(p,1)).val.sval,
+				getVarConstant(mb, getArg(p,2)).val.sval,
+				getVarConstant(mb, getArg(p,3)).val.sval,
+				getVarConstant(mb, getArg(p,4)).val.ival);
 			else
-			b= mvc_bind(m, 
+				b= mvc_bind(m, 
 				getVarConstant(mb, getArg(p,1)).val.sval,
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.sval,
@@ -317,19 +309,12 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb){
 				setProperty(getProps(getArg(p,0)),"bid", "=", TYPE_int, &b->batCacheid);
 
 				BBPunfix(b->batCacheid);
-#ifdef _SQL_OPTIMIZER_DEBUG
-				stream_printf(GDKout,"size of %s.%s.%s %d\n",
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
-				getVarConstant(mb, getArg(p,3)).val.sval,
-				getVarConstant(mb, getArg(p,4)).val.ival, rows);
-#endif
 			}
-		} else
-		if( getModuleId(p)== batRef && getProps(k = getArg(p,1))  &&
-			( 	getFunctionId(p)== appendRef  || 
-				getFunctionId(p)== insertRef || 
-				getFunctionId(p)== deleteRef) ){
+		} else if( getModuleId(p)== batRef && 
+		    	   getProps(k = getArg(p,1)) &&
+		       (getFunctionId(p)== appendRef || 
+			getFunctionId(p)== insertRef || 
+			getFunctionId(p)== deleteRef)  ){
 @-
 See if we need to correct our judgement
 @c
@@ -400,25 +385,19 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-/*#define EXPERIMENTAL */
+
+#define EXPERIMENTAL 
 #ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
-@-
-Empty set removal may introduce both alias instructions and
-dead code. The should be removed.
-@c
 		OPTcostModel(mb,0,0);	/* propagate cost distribution */
 		OPTemptySet(mb,0,0);	/* remove empty results */
 		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
-		OPTaliases(mb, 0, 0);	/* alias removal */
-
 #endif
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTcommonTerms(mb,0,0);	/* common terms */
 		OPTdeadcode(mb, 0, 0);	/* dead code removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
-
 
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		/* OPTcrack(mb,0,0); too early !!*/

@@ -58,9 +58,5 @@ lib_sqlserver = {
 		rel_select.mx \
 		rel_bin.mx \
 		rel_dump.mx
-
-	# StM: Are these (still) required on Windows?
-	#WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
-	#LIBS = $(MONET5_LIBS) $(MONETDB_LIBS)
 }
 
