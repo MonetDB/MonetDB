@@ -454,25 +454,138 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		return ret;
 }
 @}
-@-
-The alternative is to execute the instructions using a
-dataflow interpreter. It only works on a code
-sequence that does not include flow of control
-statements and, ideally, consist of expensive
-BAT operations.
-The flow interpreter selects cheap instructions
-using a simple costfunction based on the size
-of the BATs involved.
-The dataflow portion should be identified by
-a separate optimizer, calling dataflow.start()
-and dataflow.exit() to mark the subsequence.
+@- Out of order execution
+The alternative is to execute the instructions out of order
+using a dataflow dependencies. It only works on a code
+sequence that does not include additional (implicit) flow of control
+statements and, ideally, consist of expensive BAT operations.
+The dataflow interpreter selects cheap instructions
+using a simple costfunction based on the size of the BATs involved.
+
+The dataflow portion is identified as a guarded block,
+whose entry is controlled by the function language.dataflow();
+This way the function can inform the caller to skip the block
+when dataflow execution was performed.
 @{
-@c
+@h
+mal_export str startMALdataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+@c
+str
+startMALdataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret;
+	str msg= MAL_SUCCEED;
+
+	ret= (int*) getArgReference(stk,pci,0); 
+	if( pci == NULL || stk == NULL){
+		*ret = 1; /* ignore dataflow request */
+		return MAL_SUCCEED;
+	}
+	msg= runMALdataflow(MCgetClient(), mb, getPC(mb,pci), pci->jump, stk,0,0);
+	if( msg == MAL_SUCCEED)
+		*ret = 0;
+	return MAL_SUCCEED;
+}
+
+typedef struct{
+	InstrPtr p;
+	int pending;
+	lng	cost;
+} *FlowStep, FlowStepRec;
+
+#define DEBUG_FLOW
+@-
+The cost of a flow step depends on availability of its
+arguments and the total size of the BATs being accessed.
+@c
+lng
+MALflowCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int i,bid;
+	lng cost=0;
+	BAT *b;
+	for(i= p->retc; i<p->argc; i++)
+	if( isaBatType(getArgType(mb,p,i)) &&
+		(bid= ABS(stk->stk[getArg(p,i)].val.bval)) ){
+		b= BATdescriptor(bid);
+		if( b == NULL) continue;
+		cost += BATcount(b);
+		BBPreleaseref(bid);
+	}
+	return cost;
+}
+void
+addMALflowStep(FlowStep flow, int top, char *pending, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int j;
+	flow[top].p= p;
+	flow[top].pending= 0L;
+
+	for(j=p->retc; j< p->argc; j++)
+		flow[top].pending+= pending[getArg(p,j)];
+	
+	for(j=0; j<p->retc; j++)
+		pending[getArg(p,j)]= 1;
+	
+	flow[top].cost=  MALflowCost(mb, stk,p);
+#ifdef DEBUG_FLOW
+	stream_printf(GDKout,"#[%d]cost %d ",top,flow[top].cost);
+	stream_printf(GDKout,"pending %d",flow[top].pending);
+	printInstruction(GDKout,mb,p, 0);
+#endif
+}
+
+void
+dropMALflowStep(FlowStep flow, int first, int last, char *pending, MalBlkPtr mb, MalStkPtr stk){
+	int i,j;
+	InstrPtr p= flow[first].p;
+#ifdef DEBUG_FLOW
+		stream_printf(GDKout,"#adjust %d ",first);
+		printInstruction(GDKout,mb,p, 0);
+#endif
+	for(j=0; j<p->retc; j++)
+		pending[getArg(p,j)]= 0;
+
+	for(i=first+1; i<last; i++){
+		flow[i].cost=  MALflowCost(mb, stk,flow[i].p);
+		flow[i].pending= 0;
+		for(j=flow[i].p->retc; j< flow[i].p->argc; j++){
+			flow[i].pending+= pending[getArg(flow[i].p,j)];
+		}
+#ifdef DEBUG_FLOW
+		stream_printf(GDKout,"#adjust %d cost %d ",i,flow[i].cost);
+		stream_printf(GDKout,"pending %d",flow[i].pending);
+		printInstruction(GDKout,mb,flow[i].p, 0);
+#endif
+	}
+}
+@-
+We simply move a cheap instruction into the front of the queue.
+@c
+void
+nxtMALflowStep(FlowStep flow, int first, int last, MalBlkPtr mb){
+	int i;
+	FlowStepRec f;
+
+	for( i= first; i<last; i++)
+	if( flow[i].pending == 0 && flow[first].cost > flow[i].cost){
+		f= flow[first];
+		flow[first]= flow[i];
+		flow[i]= f;
+	}
+#ifdef DEBUG_FLOW
+	stream_printf(GDKout,"#next instruction %d: cost %d pending %d\n",
+		first, flow[first].cost,flow[first].pending);
+	printInstruction(GDKout,mb,flow[first].p, 0);
+#endif
+}
+
+
+str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
 	ValPtr lhs,rhs,v;
-	int stkpc,i,k; 
+	int stkpc,i,k,n; 
 	InstrPtr pci=0; 
 	int stkexception;
 	str ret=0;
@@ -487,9 +600,24 @@ mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	struct rusage oldResource;
 #endif
 	@:performanceVariables@
-
 	(void) env;
-	(void) pcicaller;
+	(void)pcicaller;
+
+@-
+First step is to collect all instructions into a multistack.
+The instructions are sorted by dependency on enabled input
+arguments.
+@c
+	FlowStep flow;
+	char *pending;
+
+	assert(stoppc > startpc);
+	flow= (FlowStep) alloca(sizeof(FlowStepRec) * (stoppc-startpc+1));
+	pending= (char*) alloca(sizeof(mb->vtop));
+	memset((char*) pending, 0, sizeof(mb->vtop));
+
+	for(n=0, i= startpc+1; i<stoppc; i++,n++)
+		addMALflowStep(flow,n,pending, mb,stk,getInstrPtr(mb,i));
 
 	if( cntxt->timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
@@ -499,15 +627,16 @@ Construct the flow relation ship and collect
 the eligible instructions. [TODO]
 @c
 	/* select the first eligible instruction */
-	stkpc = startpc;
+	stkpc= -1;
 	stkexception = -1;
-	while(stkpc < mb->stop && stkpc != stoppc ){
-		pci = getInstrPtr(mb,stkpc);
+	while( ++stkpc < n ){
+		nxtMALflowStep(flow, stkpc,n,mb);
+		pci = flow[stkpc].p;
 		if( stk->cmd  ) {
 			lng t=0;
 			if( oldtimer)
 				t= GDKusec();
-			mdbStep(cntxt,mb,stk,stkpc);
+			mdbStep(cntxt,mb,stk,getPC(mb,pci));
 			if( stk->cmd == 'x') {
 				stkpc= mb->stop;
 				continue;
@@ -524,7 +653,7 @@ the eligible instructions. [TODO]
 		}
 
 		@:beginProfile@
-			ret = 0;
+		ret = 0;
 @-
 The number of instructions allowed is severely
 limited.
@@ -537,9 +666,8 @@ limited.
 		case FCNcall: @:functioncall@ break;
 		}
 		/* we don't allow sequential flow control here */
+		dropMALflowStep(flow,stkpc,n,pending,mb,stk);
 		@:endProfile@
-		/* select the next instruction */
-		stkpc++;
 	}
 	@:MALwrapup@
 	return ret;
