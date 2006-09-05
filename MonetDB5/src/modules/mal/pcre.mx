@@ -74,6 +74,10 @@ comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with
 command replace(orig:bat[:any_1,:str],pat:str,repl:str,flag:str):bat[:any_1,:str]
 address PCREreplace_bat_wrap;
 
+command pcre_quote(s:str):str 
+address PCREquote
+comment "Return a PCRE pattern string that matches the argument exactly."
+
 command sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre
 comment "Convert a SQL like pattern with the given escape character into a PCRE pattern.";
@@ -119,6 +123,7 @@ mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
 mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
 mal_export str PCREselect(int *res, str *pattern, int *bid);
 mal_export str PCREmatch(bit *ret, str *val, str *pat);
+mal_export str PCREquote(str *r, str *v);
 mal_export int pcre_tostr(str *tostr, int *l, pcre * p);
 mal_export int pcre_fromstr(str instr, int *l, pcre ** val);
 mal_export int pcre_nequal(pcre * l, pcre * r);
@@ -208,7 +213,7 @@ pcre_match(bit *ret, str *val, str *pat)
 	(void) ret;
 	(void) val;
 	(void) pat;
-	return throwMessage("pcre.select", "Library missing\n");
+	return throwMessage("pcre.match", "Library missing\n");
 }
 #else
 
@@ -602,6 +607,28 @@ pcre_match(bit *ret, str *val, str *pat)
 #endif
 
 int
+pcre_quote(str *res, str s)
+{
+	str p;
+
+	*res = p = GDKmalloc(strlen(s) * 2 + 1); /* certainly long enough */
+	if (p == NULL)
+		return GDK_FAIL;
+	/* quote all non-alphanumeric ASCII characters (i.e. leave
+	   non-ASCII and alphanumeric alone) */
+	while (*s) {
+		if (!((*s & 0x80) != 0 ||
+		      ('a' <= *s && *s <= 'z') ||
+		      ('A' <= *s && *s <= 'Z') ||
+		      ('0' <= *s && *s <= '9')))
+			*p++ = '\\';
+		*p++ = *s++;
+	}
+	*p = 0;
+	return GDK_SUCCEED;
+}
+
+int
 pcre_tostr(str *tostr, int *l, pcre * p)
 {
 	(void) tostr;
@@ -679,10 +706,10 @@ int
 sql2pcre(str *r, str pat, str esc_str) 
 {
 	/* change the SQL wilcards into PCRE wildcards */
-	int len = strlen(pat);
+	int len = (int) strlen(pat);
 	int escaped = 0;
 	int hasWildcard = 0;
-	char *ppat = GDKmalloc(MAX(3,len*2)+1);
+	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
 	int esc = esc_str[0]; /* should change to utf8_convert() */
 	int specials = 0;
 
@@ -891,10 +918,20 @@ PCREmatch(bit *ret, str *val, str *pat)
 }
 
 str
+PCREquote(str *ret, str *val)
+{
+	if (pcre_quote(ret, *val) == GDK_FAIL) {
+		return throwMessage("pcre.quote", "Quote failed");
+	}
+	return MAL_SUCCEED;
+}
+
+
+str
 PCREsql2pcre(str *ret, str *pat, str *esc)
 {
 	if (sql2pcre(ret, *pat, *esc) == GDK_FAIL)
-		throwMessage("pcre.sql2pcre", "Pattern convert failed");
+		return throwMessage("pcre.sql2pcre", "Pattern convert failed");
 	return MAL_SUCCEED;
 } 
 
