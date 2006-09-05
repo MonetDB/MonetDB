@@ -41,10 +41,10 @@
 
 #define copyDiagString(str, buf, len, lenp)				\
 		do {							\
-			ssize_t _l;					\
+			SQLSMALLINT _l;					\
 			if (len < 0)					\
 				return SQL_ERROR;			\
-			_l = str ? strlen((char *) str) : 0;		\
+			_l = str ? (SQLSMALLINT) strlen((char *) str) : 0; \
 			if (buf)					\
 				strncpy((char *) buf, str ? (char *) str : "", len); \
 			if (lenp)					\

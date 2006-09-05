@@ -32,7 +32,7 @@ extern int mvc_export_operation(mvc *m, stream *s);
 extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q);
-extern int mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr);
+extern int mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr);
 
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
@@ -654,7 +654,7 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 }
 
 static int
-mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, unsigned int offset, unsigned int nr)
+mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, size_t nr)
 {
 	char *sep = ",\t";
 	char *rsep = "\t]\n";
@@ -749,7 +749,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 				if (p) count = strlen((char *) p);
 				else count = 4;
 			}
-			ok = mvc_send_int(s, count);
+			ok = mvc_send_lng(s, (lng) count);
 		}
 	} else if (eclass == EC_NUM) {
 		count = 0;
@@ -782,7 +782,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 				count = 4;
 			}
 		}
-		ok = mvc_send_int(s, count);
+		ok = mvc_send_lng(s, (lng) count);
 	/* the following two could be done once by taking the
 	   max value and calculating the number of digits from that
 	   value, instead of the maximum values taken now, which
@@ -799,7 +799,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		count = 1 + digits;
 		if (scale > 0)
 			count += 1;
-		ok = mvc_send_int(s, count);
+		ok = mvc_send_lng(s, (lng) count);
 	} else if (eclass == EC_DATE) {
 		ok = mvc_send_int(s, 10);
 	} else if (eclass == EC_TIME) {
@@ -808,14 +808,14 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 			count += 6;	/* +03:30 */
 		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
-		ok = mvc_send_int(s, count);
+		ok = mvc_send_lng(s, (lng) count);
 	} else if (eclass == EC_TIMESTAMP) {
 		count = 10 + 1 + 8;
 		if (scale)	/* time zone */
 			count += 6;		/* +03:30 */
 		if (digits)	/* fractional seconds precision */
 			count += digits;
-		ok = mvc_send_int(s, count);
+		ok = mvc_send_lng(s, (lng) count);
 	} else if (eclass == EC_BIT) {
 		ok = mvc_send_int(s, 5);	/* max(strlen("true"), strlen("false")) */
 	} else {
@@ -935,7 +935,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		count = BATcount(order);
 	} else
 		count = 1;
-	if (!mvc_send_int(s, count) ||
+	if (!mvc_send_lng(s, (lng) count) ||
 			stream_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
@@ -952,7 +952,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		return export_error(order);
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
-		int len = strlen(c->tn);
+		size_t len = strlen(c->tn);
 
 		if (len && stream_write(s, c->tn, len, 1) != 1)
 			return export_error(order);
@@ -1013,7 +1013,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 }
 
 int
-mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr)
+mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr)
 {
 	int res = 0;
 	res_table *t = res_tables_find(m->results, res_id);
@@ -1047,12 +1047,12 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 		return export_error(order);
 
 	/* row count */
-	if (!mvc_send_int(s, cnt) || 
+	if (!mvc_send_lng(s, (lng) cnt) || 
 			stream_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* block offset */
-	if (!mvc_send_int(s, offset)) 
+	if (!mvc_send_lng(s, (lng) offset)) 
 		return export_error(order);
 
 	if (stream_write(s, "\n", 1, 1) != 1)

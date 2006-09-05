@@ -607,8 +607,8 @@ int str_2dec_@1( @1 *res, str val, int *d, int *sc )
 {
 	char *s = strip_extra_zeros(val);
 	char *dot = strchr(s, '.');
-	int digits = strlen(s) - 1;
-	int scale = digits - (dot-s);
+	int digits = _strlen(s) - 1;
+	int scale = digits - (int) (dot-s);
 	lng value = 0;
 
 	if (!dot) {
@@ -713,7 +713,7 @@ str_cast(str *res, mvc *M, int *eclass, int *d, int *s, int *has_tz, ptr v, int 
 		r = GDKmalloc(sz);
 		sz = convert2str(m, *eclass, *d, *s, *has_tz, v, tpe, &r, *len);
 	} else {
-		sz = strlen(v);
+		sz = _strlen(v);
 		if (*len == 0 || sz <= *len) 
 			r = GDKstrdup(v);
 	}

@@ -126,11 +126,9 @@ sql_update_var(mvc *m, char *name)
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = backend_get_number(m, "cache");
 	}  else if (strcmp(name,"profile") == 0){
-		int flag = backend_get_number(m, "profile");
-		m->explain= flag? m_profile:m_normal;
+		m->explain= backend_get_number(m, "profile")? m_profile:m_normal;
 	}  else if (strcmp(name,"trace") == 0){
-		int flag = backend_get_number(m, "trace");
-		m->explain= flag? m_trace:m_normal;
+		m->explain= backend_get_number(m, "trace")? m_trace:m_normal;
 	}
 	return GDK_SUCCEED;
 }

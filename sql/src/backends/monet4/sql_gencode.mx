@@ -242,9 +242,9 @@ mvc_dump_1(backend *sql, stmt *s, char *name, int *nr)
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf(buf, buflen,
-			      "var s%d := mvc_%s(myc, s%d);\n",
-			      -s->nr, name, o1);
+	int len = snprintf(buf, buflen,
+			   "var s%d := mvc_%s(myc, s%d);\n",
+			   -s->nr, name, o1);
 
 	assert(len <= buflen);
 	dump(sql, buf, len, -s->nr);
@@ -259,9 +259,9 @@ mvc_dump_2(backend *sql, stmt *s, char *name, int *nr)
 	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf(buf, buflen,
-			      "var s%d := mvc_%s(myc, s%d, s%d);\n",
-			      -s->nr, name, o1, o2);
+	int len = snprintf(buf, buflen,
+			   "var s%d := mvc_%s(myc, s%d, s%d);\n",
+			   -s->nr, name, o1, o2);
 
 	assert(len <= buflen);
 	dump(sql, buf, len, -s->nr);
@@ -276,9 +276,9 @@ dump_1(backend *sql, stmt *s, char *name, int *nr)
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf(buf, buflen,
-			      "var s%d := s%d.%s();\n",
-			      -s->nr, o1, name);
+	int len = snprintf(buf, buflen,
+			   "var s%d := s%d.%s();\n",
+			   -s->nr, o1, name);
 
 	assert(len <= buflen);
 	dump(sql, buf, len, -s->nr);
@@ -293,9 +293,9 @@ dump_2(backend *sql, stmt *s, char *name, int *nr)
 	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf(buf, buflen,
-			      "var s%d := %s(s%d, s%d);\n",
-			      -s->nr, name, o1, o2);
+	int len = snprintf(buf, buflen,
+			   "var s%d := %s(s%d, s%d);\n",
+			   -s->nr, name, o1, o2);
 
 	assert(len <= buflen);
 	dump(sql, buf, len, -s->nr);
@@ -312,9 +312,9 @@ dump_3(backend *sql, stmt *s, char *name, int *nr)
 	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf(buf, buflen,
-			      "var s%d := %s(s%d, s%d, s%d);\n",
-			      -s->nr, name, o1, o2, o3);
+	int len = snprintf(buf, buflen,
+			   "var s%d := %s(s%d, s%d, s%d);\n",
+			   -s->nr, name, o1, o2, o3);
 
 	assert(len <= buflen);
 	dump(sql, buf, len, -s->nr);
@@ -329,7 +329,7 @@ static int
 backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 {
 	char *buf = NULL;
-	size_t len = 0;
+	int len = 0;
 	node *n;
 
 	assert(*nr);
@@ -1179,9 +1179,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_affected_rows: {
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			char *buf = NEW_ARRAY(char, SMALLBUFSIZ);
-			size_t len = snprintf(buf, SMALLBUFSIZ,
-			    "var s%d := mvc_affected_rows(myc, Output, s%d);\n",
-			    	-s->nr, l);
+			int len = snprintf(buf, SMALLBUFSIZ,
+					   "var s%d := mvc_affected_rows(myc, Output, s%d);\n",
+					   -s->nr, l);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
@@ -1462,7 +1462,7 @@ backend_dumpstmt(stmt *s, int *nr, backend *sql)
 	stream_write(sql->out, "{\n", 2, 1);
 	if (mvc_debug_on(c, 2 + 1024 + 2048)) {
 		char *t0 = "var t00 := time();\n";
-		int l = strlen(t0);
+		size_t l = strlen(t0);
 
 		stream_write(sql->out, t0, 1, l);
 	}
@@ -1587,7 +1587,7 @@ monet4_interpret(Cntxt procstk, mvc *c, char *name, int *err)
 int backend_call( backend *be, mvc *c, cq *q ) 
 {
 	int err = 0;
-	Cntxt procstk = backend_newstack(be->mvc->session->stk);
+	Cntxt procstk = backend_newstack((Cntxt) be->mvc->session->stk);
 	YYSTREE callnode;
 
 	be->mvc->type = q->type;
@@ -1670,7 +1670,7 @@ monet4_parse(backend_stack stack, char *cmd)
 
 char *monet4_get_string(mvc *m, char *name)
 {
-	Cntxt c = m->session->stk;
+	Cntxt c = (Cntxt) m->session->stk;
         Variable v = VARfind(&c, name);
 	if (v != NULL) 
 		if (v->binding.vtype == TYPE_str) 
@@ -1680,7 +1680,7 @@ char *monet4_get_string(mvc *m, char *name)
 
 void monet4_set_string(mvc *m, char *name, char *val)
 {
-	Cntxt c = m->session->stk;
+	Cntxt c = (Cntxt) m->session->stk;
         Variable v = VARfind(&c, name);
 	if (v != NULL && v->binding.vtype == TYPE_str) {
 		if (v->binding.val.sval != NULL)
@@ -1692,7 +1692,7 @@ void monet4_set_string(mvc *m, char *name, char *val)
 
 lng monet4_get_number(mvc *m, char *name)
 {
-	Cntxt c = m->session->stk;
+	Cntxt c = (Cntxt) m->session->stk;
         Variable v = VARfind(&c, name);
 	if (v != NULL) {
 		if (v->binding.vtype == TYPE_lng) 
@@ -1711,15 +1711,15 @@ lng monet4_get_number(mvc *m, char *name)
 
 void monet4_set_number(mvc *m, char *name, lng val)
 {
-	Cntxt c = m->session->stk;
+	Cntxt c = (Cntxt) m->session->stk;
         Variable v = VARfind(&c, name);
 	if (v != NULL) {
 		if (v->binding.vtype == TYPE_lng) 
 			v->binding.val.lval = val;
 		if (v->binding.vtype == TYPE_int) 
-			v->binding.val.ival = val;
+			v->binding.val.ival = (int) val;
 		if (v->binding.vtype == TYPE_sht) 
-			v->binding.val.shval = val;
+			v->binding.val.shval = (sht) val;
 		if (v->binding.vtype == TYPE_bit) {
 			if (val)
 				v->binding.val.cval[0] = 1;
@@ -1746,7 +1746,7 @@ int backend_dump(backend *be, cq *q, stmt *s)
 	cmd = buffer_get_buf(be->outbuf);
 	stream_flush(be->out);
 
-	err = backend_parse(c->session->stk, cmd);
+	err = backend_parse((Cntxt) c->session->stk, cmd);
 
 	/* beware to use free instead of _DELETE
 	 * as the stream library is built without
@@ -1799,7 +1799,7 @@ backend_create_func(backend *be, sql_func *f)
 	cmd = buffer_get_buf(be->outbuf);
 	stream_flush(be->out);
 
-	(void)backend_parse(c->session->stk, cmd);
+	(void)backend_parse((Cntxt) c->session->stk, cmd);
 
 /* #define PSM_DEBUG */
 #ifdef PSM_DEBUG

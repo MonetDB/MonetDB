@@ -3407,7 +3407,7 @@ literal:
 		{ char *s = strip_extra_zeros($1);
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
-		  int scale = digits - (dot-s);
+		  int scale = digits - (int) (dot-s);
 		  lng value = decimal_from_str(s);
 		  sql_subtype t;
 
