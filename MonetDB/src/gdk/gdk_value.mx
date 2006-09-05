@@ -678,7 +678,7 @@ VALconvert(int typ, ValPtr t)
 		VALclear(t);
 	/* and finally copy the result */
 	*t = dst;
-	return p;
+	return p == ILLEGALVALUE ? p : 	VALptr(t);
 }
 
 @}
