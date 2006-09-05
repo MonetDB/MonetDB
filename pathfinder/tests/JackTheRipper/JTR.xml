@@ -269,7 +269,7 @@
         <inspector>
             <name> Inspector Edmund Reid</name>
             <picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
-        </inspector
+        </inspector>
     </scene>
       
     <scene>
@@ -407,7 +407,7 @@
             <diction>.</diction>
         </witness>
         <doctor>
-        <name>Dr. Timothy Robert Killeen </doctor>
+        <name>Dr. Timothy Robert Killeen </name></doctor>
        <inspector>
             <name> Inspector Edmund Reid</name>
             <picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
@@ -601,7 +601,7 @@
         <inspector>
             <name> Inspector Edmund Reid</name>
             <picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
-    </inspector
+    </inspector>
      <inspector>
             <name>Sir Robert Anderson</name>
             <picture>http://www.casebook.org/images/police_and.jpg</picture>
@@ -654,7 +654,7 @@
         <inspector>
             <name> Chief Inspector Donald Swanson </name>
             <picture>http://www.casebook.org/images/police_sut.jpg</picture>
-    	</inspector
+    	</inspector>
     </scene>
         
     <scene>
@@ -744,7 +744,7 @@
     <suspect>
             <name>Joseph Barnett</name>
             <picture>http://www.casebook.org/images/barnett2.jpg</picture>
-            <victim> Mary Kelly</victim
+            <victim> Mary Kelly</victim>
             <notes>was not described as a Ripper suspect until the 1970s</notes>
     </suspect>
      
@@ -1026,7 +1026,7 @@
             
     <inspector>
             <name> Inspector John Spratling</name>
-            <picturehttp://www.casebook.org/images/police_sag.jpg></picture>
+            <picture>http://www.casebook.org/images/police_sag.jpg></picture>
     </inspector>
             
     <inspector>
