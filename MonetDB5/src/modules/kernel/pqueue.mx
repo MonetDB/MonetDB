@@ -136,7 +136,7 @@ do_pqueue_init(BAT **h, BAT *b, size_t maxsize)
 }
 
 int 
-pqueue_init(BAT **h, BAT *b, wrd *maxsize)
+pqueue_init(BAT **h, BAT *b, int *maxsize)
 {
 	do_pqueue_init(h, b, (size_t) *maxsize);
   	return GDK_SUCCEED;
