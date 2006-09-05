@@ -40,15 +40,6 @@ which provides for storage access to global variables and modules.
 Activation of a thread requires construction of the argument list
 to be passed by a handle.
 @h
-typedef struct{
-	Client cntxt; 
-	MalBlkPtr mb; 
-	MalStkPtr stk; 
-	int startpc,stoppc; 
-	MalStkPtr env;
-	InstrPtr pcicaller;
-	InstrPtr pci;
-} malTask;
 
 /*#define DEBUG_MAL_INTERPRETER */
 /*#define DEBUG_MAL_PARALLEL */
@@ -59,8 +50,8 @@ mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
 			MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
-mal_export str runMALsequence( malTask *task);
+mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, 
+	ValPtr argv[], char debug);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
@@ -75,6 +66,10 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 
+static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
+		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+static str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
@@ -200,7 +195,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	int i;
 	ValPtr lhs,rhs;
 	InstrPtr pci=0;
-	malTask task;
 	str ret;
 
 	if( mb->errors){
@@ -288,32 +282,14 @@ information. Since a stack frame may contain values of a previous call,
 we should first remove garbage. 
 @c
 	@:initStack((env && mbcaller)?pci->argc:1)@
-#ifdef STACKTRACE
-	stream_printf(GDKout,"Stack before loop\n");
-	printStack(GDKout,mb,stk); 
-#endif
-
-	task.cntxt= cntxt; 
-	task.mb= mb; 
-	task.stk=stk; 
-	task.startpc=startpc; 
-	task.stoppc = 0; /* continue to end */
-	task.env=env;
-	task.pcicaller=pcicaller;
-	task.pci= 0;
 
 	if(stk->cmd  && env && stk->cmd!='f') stk->cmd = env->cmd ;
-	ret= runMALsequence(&task);
+	ret = runMALsequence(cntxt, mb, startpc,  0, stk, env, pcicaller);
 
-	/* pass the debug mode */
+	/* pass the new debug mode to the caller */
 	if(stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
-#ifdef STACKTRACE
-	stream_printf(GDKout,"Stack after loop\n");
-	printStack(GDKout,mb,stk); 
-#endif
-	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
+	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(mb,stk, env != stk);
-	}
 	return ret;
 }
 @-
@@ -330,30 +306,16 @@ to enforce a completely different execution order.
 str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
-	malTask task;
 	str ret;
-	task.cntxt= cntxt;
-	task.mb= mb;
-	task.stk=stk;
-	task.startpc=startpc;
-	task.stoppc=stoppc;
-	task.env=env;
-	task.pcicaller=pcicaller;
-	task.pci= 0;
 
 	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
 
-	ret= runMALsequence(&task);
+	ret = runMALsequence(cntxt, mb, startpc,  stoppc, stk, env, pcicaller);
 
-	/* pass the debug mode */
+	/* pass the new debug mode to the caller */
 	if(env && stk->cmd!='f') env->cmd = stk->cmd;
-#ifdef STACKTRACE
-	stream_printf(GDKout,"Stack after loop\n");
-	printStack(GDKout,mb,stk); 
-#endif
-	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
+	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(mb,stk,env!=stk);
-	}
 	return ret;
 }
 @-
@@ -366,7 +328,6 @@ The call does not return values, they are ignored.
 @c
 str 
 callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
-	malTask task;
 	MalStkPtr stk;
 	str ret;
 	int i;
@@ -380,13 +341,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	switch( p->token){
 	case FUNCTIONsymbol:
 	case FCNcall:
-		task.cntxt= cntxt;
-		task.mb= mb;
-		task.startpc=1;
-		task.stoppc= 0;
-		task.env=0;
-		task.pcicaller=0;
-		task.pci= 0;
 @-
 Prepare the stack frame for this operation. Copy all the arguments
 in place. We assume that the caller has supplied pointers for
@@ -416,12 +370,11 @@ all arguments and return values.
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 		stk->cmd = debug;
-		task.stk=stk;
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"start evaluation\n");
 #endif
-		ret= runMALsequence(&task);
+		ret = runMALsequence(cntxt, mb, 1,  0, stk, 0, 0);
 
 #ifdef STACKTRACE
 		stream_printf(GDKout,"Stack after loop\n");
@@ -444,14 +397,9 @@ The core of the interpreter is presented next. It takes the context information
 and starts the interpretation at the designated instruction.
 Note that the stack frame is aligned and initialized in the enclosing routine.
 @c
-str runMALsequence( malTask *task)
+str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
+		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
-	Client cntxt= task->cntxt; 
-	MalBlkPtr mb= task->mb; 
-	MalStkPtr stk= task->stk;
-	MalStkPtr env= task->env;
-	InstrPtr pcicaller= task->pcicaller;
-
 	ValPtr lhs,rhs,v;
 	int stkpc,i,k; 
 	InstrPtr pci=0; 
@@ -473,9 +421,9 @@ str runMALsequence( malTask *task)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
 		
-	stkpc = task->startpc;
+	stkpc = startpc;
 	stkexception = -1;
-	while(stkpc < mb->stop && stkpc != task->stoppc ){
+	while(stkpc < mb->stop && stkpc != stoppc ){
 	    pci = getInstrPtr(mb,stkpc);
 	    if( stk->cmd  ) {
 			lng t=0;
@@ -520,14 +468,9 @@ a separate optimizer, calling dataflow.start()
 and dataflow.exit() to mark the subsequence.
 @{
 @c
-str runMALdataflow( malTask *task)
+mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
-	Client cntxt= task->cntxt; 
-	MalBlkPtr mb= task->mb; 
-	MalStkPtr stk= task->stk;
-	/* MalStkPtr env= task->env;*/
-	/* InstrPtr pcicaller= task->pcicaller;*/
-
 	ValPtr lhs,rhs,v;
 	int stkpc,i,k; 
 	InstrPtr pci=0; 
@@ -545,17 +488,20 @@ str runMALdataflow( malTask *task)
 #endif
 	@:performanceVariables@
 
+	(void) env;
+	(void) pcicaller;
+
 	if( cntxt->timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
 @-
 Construct the flow relation ship and collect
-the eligible instructions.
+the eligible instructions. [TODO]
 @c
 	/* select the first eligible instruction */
-	stkpc = task->startpc;
+	stkpc = startpc;
 	stkexception = -1;
-	while(stkpc < mb->stop && stkpc != task->stoppc ){
+	while(stkpc < mb->stop && stkpc != stoppc ){
 	    pci = getInstrPtr(mb,stkpc);
 	    if( stk->cmd  ) {
 			lng t=0;
@@ -1209,7 +1155,7 @@ if( ret != MAL_SUCCEED ) {
 		}
 		if( stk->cmd == 'r') {
 			stk->cmd = 'n';
-			stkpc = task->startpc;
+			stkpc = startpc;
 			stkexception = -1;
 			continue;
 		}
