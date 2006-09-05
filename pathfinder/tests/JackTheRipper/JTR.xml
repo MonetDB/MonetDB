@@ -16,7 +16,7 @@
         <timeline>
         <event>
             <time>11:00 PM</time>  Polly is seen walking down Whitechapel Road, she is probably soliciting trade.
-        </event>>
+        </event>
         <event>     
             <time>12:30 AM</time> She is seen leaving the Frying Pan Public House at the corner of Brick Lane and Thrawl Street. She returns to the lodging house at 18 Thrawl Street.
         </event> 
@@ -26,7 +26,7 @@
         <event> 
             <time>2:30 AM</time>She meets Emily Holland, who was returning from watching the Shadwell Dry Dock fire, outside of a grocer's shop on the corner of Whitechapel Road and Osborn Street. Polly had come down Osborn Street. Holland describes her as "very drunk and staggered against the wall." Holland calls attention to the church clock striking 2:30. Polly tells Emily that she had had her doss money three times that day and had drunk it away. She says she will return to Flower and Dean Street where she could share a bed with a man after one more attempt to find trade. "I've had my doss money three times today and spent it." She says, "It won't be long before I'm back." The two women talk for seven or eight minutes. Polly leaves walking east down Whitechapel Road.
                     At the time, the services of a destitute prostitute like Polly Nichols could be had for 2 or 3 pence or a stale loaf of bread. 3 pence was the going rate as that was the price of a large glass of gin.
-        </event>>
+        </event>
         <event>  
             <time>3:15 AM</time>P.C. John Thain, 96J, passes down Buck's Row on his beat. He sees nothing unusual. At approximately the same time Sgt. Kerby passes down Bucks Row and reports the same.
         </event>
@@ -343,7 +343,7 @@
             <name></name>
             <picture></picture>
         </inspector>
-'   </scene>
+    </scene>
     
     <scene>
         <victim>
@@ -407,7 +407,8 @@
             <diction>.</diction>
         </witness>
         <doctor>
-        <name>Dr. Timothy Robert Killeen </name></doctor>
+			<name>Dr. Timothy Robert Killeen</name>
+		</doctor>
        <inspector>
             <name> Inspector Edmund Reid</name>
             <picture>http://www.casebook.org/images/police_edmund_reid.jpg</picture>
@@ -1026,7 +1027,7 @@
             
     <inspector>
             <name> Inspector John Spratling</name>
-            <picture>http://www.casebook.org/images/police_sag.jpg></picture>
+            <picture>http://www.casebook.org/images/police_sag.jpg</picture>
     </inspector>
             
     <inspector>
