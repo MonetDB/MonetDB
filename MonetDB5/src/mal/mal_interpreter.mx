@@ -473,7 +473,6 @@ str runMALsequence( malTask *task)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
 		
-MALrestart:
 	stkpc = task->startpc;
 	stkexception = -1;
 	while(stkpc < mb->stop && stkpc != task->stoppc ){
