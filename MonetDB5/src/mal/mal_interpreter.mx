@@ -424,13 +424,13 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	stkpc = startpc;
 	stkexception = -1;
 	while(stkpc < mb->stop && stkpc != stoppc ){
-	    pci = getInstrPtr(mb,stkpc);
-	    if( stk->cmd  ) {
+		pci = getInstrPtr(mb,stkpc);
+		if( stk->cmd  ) {
 			lng t=0;
 			if( oldtimer)
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
-	        if( stk->cmd == 'x') {
+			if( stk->cmd == 'x') {
 				stkpc = mb->stop;
 				continue;
 			}
@@ -443,15 +443,15 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 #endif
 				oldMemory= MT_mallinfo();
 			}
-	    }
+		}
 
 		@:beginProfile@
-	    @:MALinterpret@
-		@:MALflowofcontrol@
-		@:endProfile@
+			@:MALinterpret@
+			@:MALflowofcontrol@
+			@:endProfile@
 	}
 	@:MALwrapup@
-	return ret;
+		return ret;
 }
 @}
 @-
@@ -502,13 +502,13 @@ the eligible instructions. [TODO]
 	stkpc = startpc;
 	stkexception = -1;
 	while(stkpc < mb->stop && stkpc != stoppc ){
-	    pci = getInstrPtr(mb,stkpc);
-	    if( stk->cmd  ) {
+		pci = getInstrPtr(mb,stkpc);
+		if( stk->cmd  ) {
 			lng t=0;
 			if( oldtimer)
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
-	        if( stk->cmd == 'x') {
+			if( stk->cmd == 'x') {
 				stkpc= mb->stop;
 				continue;
 			}
@@ -521,10 +521,10 @@ the eligible instructions. [TODO]
 #endif
 				oldMemory= MT_mallinfo();
 			}
-	    }
+		}
 
 		@:beginProfile@
-		ret = 0;
+			ret = 0;
 @-
 The number of instructions allowed is severely
 limited.
@@ -547,18 +547,20 @@ limited.
 @-
 @= MALwrapup
 	if( stkexception >= 0) {
-		if( ret )
+		if( ret ) {
 			ret= appendException(mb,mb->stop-1,
-				getVarName(mb,stkexception),
-				"Exception not catched", ret);
-		else
-	    if(stk->stk[stkexception].vtype== TYPE_str)
-			ret= appendException(mb,mb->stop-1,MALexception, 
-			"Exception not catched", 
-	        stk->stk[stkexception].val.sval);
-		else
-			ret= appendException(mb,mb->stop-1,MALexception, 
-			"Exception not catched", "");
+					getVarName(mb,stkexception),
+					"Exception not catched", ret);
+		} else {
+			if(stk->stk[stkexception].vtype== TYPE_str) {
+				ret= appendException(mb,mb->stop-1,MALexception, 
+						"Exception not catched", 
+						stk->stk[stkexception].val.sval);
+			} else {
+				ret= appendException(mb,mb->stop-1,MALexception, 
+						"Exception not catched", "");
+			}
+		}
 	}
 @+ Safeguarding
 The physical stack for each thread is an operating system parameter.
@@ -572,9 +574,9 @@ of by limiting the depth of a function calls.
 @= safeguardStack
 /* Expensive? 70 msec for 1M calls another solution is needed.*/
 	if (stk->stkdepth > (size_t) 50 * 1024 && THRhighwater()) {
-	    GDKerror("interpret: running out of "
-	     "physical stack space!\n");
-	return raiseException(mb,0,"Interpreter","Stack overflow");
+		GDKerror("interpret: running out of "
+				"physical stack space!\n");
+		return raiseException(mb,0,"Interpreter","Stack overflow");
 	}
 
 @+ The interpreter loop
@@ -602,137 +604,137 @@ elements in the value stack.
 	case FCNcall: @:functioncall@ break;
 	case NOOPsymbol:
 	case REMsymbol:
-	    break;
+		break;
 	case ENDsymbol: 
-	    if( getInstrPtr(mb,0)->token == FACTORYsymbol)
-	        ret= shutdownFactory(mb);
+		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
+			ret= shutdownFactory(mb);
 		if( oldtimer)
 			cntxt->timer= oldtimer;
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollector(mb, stk, TRUE);
-	    @:endProfile@
+		@:endProfile@
 		stkpc= mb->stop;
-	    continue;
+		continue;
 	default:
-	    GDKerror("ERROR:MALeval:unkown operation\n");
-	    @:endProfile@
+		GDKerror("ERROR:MALeval:unkown operation\n");
+		@:endProfile@
 		stkpc= mb->stop;
-	    continue;
+		continue;
 	}
 @-
 After the expression has been evaluated we should check for a
 possible change in the control flow. 
 @= MALflowofcontrol
-	switch(pci->barrier){
+switch(pci->barrier){
 	case BARRIERsymbol:
-	    @:barrierControl@ stkpc++;
-	    break;
+		@:barrierControl@ stkpc++;
+		break;
 	case LEAVEsymbol:
 	case REDOsymbol:
-	    v= &stk->stk[getDestVar(pci)];
-	    /* skip to end of barrier, depending on the type */
-	    switch(v->vtype){
-	    case TYPE_bit:
-	        if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
-	            stkpc= pci->jump; 
-	        else stkpc++;
-	        break;
-	    case TYPE_chr:
-	        if( v->val.cval[0] )
-	            stkpc= pci->jump; 
-	        else stkpc++;
-	        break;
-	    case TYPE_str:
-	        if( v->len > 0 && v->val.pval!= str_nil )
-	            stkpc= pci->jump; 
-	        else stkpc++;
-	        break;
-	    case TYPE_sht:
-	        if( v->val.shval >= 0 && v->val.shval!= sht_nil )
-	            stkpc= pci->jump; 
-	        else stkpc++;
-	        break;
-	    case TYPE_bat:
-	        if( v->val.bval > 0 )
-	            stkpc= pci->jump; 
-	        else stkpc++;
-	        break;
-	    case TYPE_int:
-	        if( v->val.ival >= 0 && v->val.ival!= int_nil )
-	            stkpc= pci->jump; 
-	        else stkpc++;
-	        break;
-	    case TYPE_lng:
-	        if( v->val.lval >= 0 && v->val.lval!= lng_nil)
-	            stkpc= pci->jump; 
-	        else 
-	    default:
-	            stkpc++;
-	    }
-	    break;
+		v= &stk->stk[getDestVar(pci)];
+		/* skip to end of barrier, depending on the type */
+		switch(v->vtype){
+			case TYPE_bit:
+				if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_chr:
+				if( v->val.cval[0] )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_str:
+				if( v->len > 0 && v->val.pval!= str_nil )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_sht:
+				if( v->val.shval >= 0 && v->val.shval!= sht_nil )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_bat:
+				if( v->val.bval > 0 )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_int:
+				if( v->val.ival >= 0 && v->val.ival!= int_nil )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_lng:
+				if( v->val.lval >= 0 && v->val.lval!= lng_nil)
+					stkpc= pci->jump; 
+				else 
+			default:
+					stkpc++;
+		}
+		break;
 	case CATCHsymbol:
-	    /* catch blocks are skipped unless 
-	       searched for explicitly*/
-	    if(stkexception < 0) { 
-	        stkpc= pci->jump; 
-	        break;
-	    }
-	    stkexception = -1;
-	    stkpc++; 
-	    break;
+		/* catch blocks are skipped unless 
+		   searched for explicitly*/
+		if(stkexception < 0) { 
+			stkpc= pci->jump; 
+			break;
+		}
+		stkexception = -1;
+		stkpc++; 
+		break;
 	case EXITsymbol:
-	    if( getDestVar(pci) == stkexception) 
-	        stkexception = -1; 
-	    stkpc++; 
-	    break;
+		if( getDestVar(pci) == stkexception) 
+			stkexception = -1; 
+		stkpc++; 
+		break;
 	case RAISEsymbol:
-	    stkexception = getDestVar(pci);
-	    if( getVarType(mb, getDestVar(pci))== TYPE_str){
-	        ret= raiseException(mb, stkpc, 
-	            getVarName(mb, getDestVar(pci)), 
-	            stk->stk[getDestVar(pci)].val.sval);
-	    } else
-	        ret= raiseException(mb,stkpc, 
-	            getVarName(mb, getDestVar(pci)), 
-	            "Exception raised\n");
-	    @:skipToCatch(stkexception)@
-	    break;
+		stkexception = getDestVar(pci);
+		if( getVarType(mb, getDestVar(pci))== TYPE_str){
+			ret= raiseException(mb, stkpc, 
+					getVarName(mb, getDestVar(pci)), 
+					stk->stk[getDestVar(pci)].val.sval);
+		} else
+			ret= raiseException(mb,stkpc, 
+					getVarName(mb, getDestVar(pci)), 
+					"Exception raised\n");
+		@:skipToCatch(stkexception)@
+			break;
 	case YIELDsymbol: /* to be defined */
 		if( oldtimer)
 			cntxt->timer= oldtimer;
-	    return yieldFactory( mb, pci, stkpc);
+		return yieldFactory( mb, pci, stkpc);
 	case RETURNsymbol:
-	    /* Return from factory involves cleanup */
+		/* Return from factory involves cleanup */
 
-	    if( getInstrPtr(mb,0)->token == FACTORYsymbol){
+		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
 			yieldResult(mb,pci,stkpc);
 			shutdownFactory(mb);
-	    } else
-	    /* a fake multi-assignment */
-	    if( env != NULL && pcicaller != NULL){
-	        InstrPtr pp=pci;
-	        @:endProfile@
-	        pci= pcicaller;
-	        for(i=0;i < pci->retc; i++){
-	            rhs = &stk->stk[pp->argv[i]];
-	            lhs = &env->stk[pci->argv[i]];
-	            VALcopy2(lhs,rhs);
-				if( lhs->vtype == TYPE_bat )
-					BBPincref(lhs->val.br.id, TRUE); 
-	        }
-	        if( garbageControl(getInstrPtr(mb,0)) )
-	            garbageCollector(mb, stk, TRUE);
-			/* reset the clock */
-			if( oldtimer)
-				cntxt->timer= oldtimer;
-	    } else { 
-			@:endProfile@
-		}
-	    stkpc= mb->stop;
+		} else
+			/* a fake multi-assignment */
+			if( env != NULL && pcicaller != NULL){
+				InstrPtr pp=pci;
+				@:endProfile@
+				pci= pcicaller;
+				for(i=0;i < pci->retc; i++){
+					rhs = &stk->stk[pp->argv[i]];
+					lhs = &env->stk[pci->argv[i]];
+					VALcopy2(lhs,rhs);
+					if( lhs->vtype == TYPE_bat )
+						BBPincref(lhs->val.br.id, TRUE); 
+				}
+				if( garbageControl(getInstrPtr(mb,0)) )
+					garbageCollector(mb, stk, TRUE);
+				/* reset the clock */
+				if( oldtimer)
+					cntxt->timer= oldtimer;
+			} else { 
+				@:endProfile@
+			}
+		stkpc= mb->stop;
 		continue;
 	default:
-	    stkpc++; 
-	}
+		stkpc++; 
+}
 
 @+ Assignment command
 The assignment statement copies values around on the stack frame,
@@ -751,9 +753,9 @@ cause errors in multi-assignment statements.
 {	
 	@:safeTarget@
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
-	    lhs = &stk->stk[pci->argv[k]];
-	    rhs = &stk->stk[pci->argv[i]];
-	    VALcopy2(lhs,rhs);
+		lhs = &stk->stk[pci->argv[k]];
+		rhs = &stk->stk[pci->argv[i]];
+		VALcopy2(lhs,rhs);
 		if( lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.br.id, TRUE);
 	}
@@ -859,7 +861,7 @@ the bind(namespace, batname, mode) operation. [todo]
 
 		for( i=0; i< pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
-		    stk->stk[getArg(pci,i)].val.br.id ){
+				stk->stk[getArg(pci,i)].val.br.id ){
 			b= BATdescriptor(stk->stk[getArg(pci,i)].val.br.id);
 			if( b == NULL)
 				continue;
@@ -899,25 +901,25 @@ the bind(namespace, batname, mode) operation. [todo]
 	case 2 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1)); 
-	            break;
+			 break;
 	case 3 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
 			(ptr) getArgReference(stk,pci,2)); 
-	            break;
+			 break;
 	case 4 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
 			(ptr) getArgReference(stk,pci,2),
 			(ptr) getArgReference(stk,pci,3)); 
-	            break;
+			 break;
 	case 5 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
 			(ptr) getArgReference(stk,pci,2),
 			(ptr) getArgReference(stk,pci,3), 
 			(ptr) getArgReference(stk,pci,4)); 
-	            break;
+			 break;
 	case 6 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
@@ -925,7 +927,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			(ptr) getArgReference(stk,pci,3),
 			(ptr) getArgReference(stk,pci,4),
 			(ptr) getArgReference(stk,pci,5)); 
-	            break;
+			 break;
 	case 7 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
@@ -934,7 +936,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			(ptr) getArgReference(stk,pci,4),
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6)); 
-	            break;
+			 break;
 	case 8 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
@@ -944,7 +946,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6),
 			(ptr) getArgReference(stk,pci,7)); 
-	            break;
+			 break;
 	case 9 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
@@ -955,10 +957,10 @@ the bind(namespace, batname, mode) operation. [todo]
 			(ptr) getArgReference(stk,pci,6),
 			(ptr) getArgReference(stk,pci,7),
 			(ptr) getArgReference(stk,pci,8)); 
-	            break;
+			 break;
 	default:
-	    ret= raiseException(mb,stkpc,MALexception,
-	        "too many arguments for command call\n");
+		ret= raiseException(mb,stkpc,MALexception,
+				"too many arguments for command call\n");
 	}
 	@:restoreTarget@
 	@:exceptionHndlr@
@@ -966,13 +968,13 @@ the bind(namespace, batname, mode) operation. [todo]
 @-
 @= patterncall
 	if( pci->fcn== NULL)
-	    ret= raiseException(mb,stkpc,MALexception,
-	        "address of pattern missing\n");
+		ret= raiseException(mb,stkpc,MALexception,
+				"address of pattern missing\n");
 	else {
 		@:safeTarget@
-	    ret = (str) (*pci->fcn)(mb,stk,pci);
+		ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:restoreTarget@
-	    @:exceptionHndlr@
+		@:exceptionHndlr@
 	}
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -994,10 +996,10 @@ call to the factory manager.
 Factory calls should deal with the reference counting.
 @= factorycall
 	if( pci->blk== NULL)
-	    ret= raiseException(mb,stkpc,MALexception,
-	        "reference to MAL function missing\n");
+		ret= raiseException(mb,stkpc,MALexception,
+				"reference to MAL function missing\n");
 	else
-	    ret= runFactory(cntxt,pci->blk,mb,stk,pci);
+		ret= runFactory(cntxt,pci->blk,mb,stk,pci);
 	@:exceptionHndlr@
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -1016,43 +1018,43 @@ labeled statemtent. This might be optimized later.
 {   v= &stk->stk[getDestVar(pci)];
 	/* skip to end of barrier, depends on the type */
 	switch(v->vtype){
-	case TYPE_bit:
-	    if( v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
-	        stkpc= pci->jump;
-	    break;
-	case TYPE_chr:
-	    if( v->val.cval[0] == chr_nil )
-	        stkpc= pci->jump;
-	    break;
-	case TYPE_oid:
-	    if( v->val.oval == oid_nil )
-	        stkpc= pci->jump;
-	    break;
-	case TYPE_sht:
-	    if( v->val.shval < 0 || v->val.shval == sht_nil)
-	        stkpc= pci->jump; 
-	    break;
-	case TYPE_int:
-	    if( v->val.ival < 0 || v->val.ival == int_nil)
-	        stkpc= pci->jump; 
-	    break;
-	case TYPE_lng:
-	    if( v->val.lval < 0 || v->val.lval == lng_nil)
-	        stkpc= pci->jump; 
-	    break;
-	case TYPE_flt:
-	case TYPE_dbl:
-	    if( v->val.dval < 0 || v->val.dval == dbl_nil)
-	        stkpc= pci->jump; 
-	    break;
-	case TYPE_str:
-	    if( v->len == 0 || v->val.pval == str_nil)
-	        stkpc= pci->jump; 
-	    break;
-	default:
-	    ret= raiseException(mb,stkpc,
-	            getVarName(mb, getDestVar(pci)), 
-	        "Unknown barrier type\n");
+		case TYPE_bit:
+			if( v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
+				stkpc= pci->jump;
+			break;
+		case TYPE_chr:
+			if( v->val.cval[0] == chr_nil )
+				stkpc= pci->jump;
+			break;
+		case TYPE_oid:
+			if( v->val.oval == oid_nil )
+				stkpc= pci->jump;
+			break;
+		case TYPE_sht:
+			if( v->val.shval < 0 || v->val.shval == sht_nil)
+				stkpc= pci->jump; 
+			break;
+		case TYPE_int:
+			if( v->val.ival < 0 || v->val.ival == int_nil)
+				stkpc= pci->jump; 
+			break;
+		case TYPE_lng:
+			if( v->val.lval < 0 || v->val.lval == lng_nil)
+				stkpc= pci->jump; 
+			break;
+		case TYPE_flt:
+		case TYPE_dbl:
+			if( v->val.dval < 0 || v->val.dval == dbl_nil)
+				stkpc= pci->jump; 
+			break;
+		case TYPE_str:
+			if( v->len == 0 || v->val.pval == str_nil)
+				stkpc= pci->jump; 
+			break;
+		default:
+			ret= raiseException(mb,stkpc,
+					getVarName(mb, getDestVar(pci)), 
+					"Unknown barrier type\n");
 	}
 }
 
@@ -1072,16 +1074,17 @@ reaching end of function block.
 	}
 	/* skip to catch block or end */
 	for( ; stkpc<mb->stop; stkpc++){
-	InstrPtr l= getInstrPtr(mb,stkpc);
-	if( l->barrier == CATCHsymbol ){
-	    int j= -1;
-	    for(j=0;j<l->retc; j++)
-	    if( getArg(l,j) == @1) break;
-	    if(j>=0) break;
-	} }
+		InstrPtr l= getInstrPtr(mb,stkpc);
+		if( l->barrier == CATCHsymbol ){
+			int j= -1;
+			for(j=0;j<l->retc; j++)
+				if( getArg(l,j) == @1) break;
+			if(j>=0) break;
+		}
+	}
 	if( stkpc== mb->stop) {
-	    @:endProfile@ 
-		continue;
+		@:endProfile@ 
+			continue;
 	}
 @-
 Each time we enter a barrier block, we could keep its position in the
@@ -1146,7 +1149,7 @@ if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	int symid= -1;
 	if( stk->cmd  ) {
-	    stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
+		stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
 		stk->cmd='n';
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
@@ -1162,26 +1165,26 @@ if( ret != MAL_SUCCEED ) {
 	}
 	if(ret ) msg= strchr(ret,':');
 	if( msg) {
-	    *msg= 0;
-	    symid = findVariableLength(mb,ret,msg-ret);
-	    *msg=':';
+		*msg= 0;
+		symid = findVariableLength(mb,ret,msg-ret);
+		*msg=':';
 	} else {
-	    if( ret == MAL_SUCCEED){
-	        if( cntxt->errbuf){
-	            ret= msg= GDKstrdup(cntxt->errbuf);
-	            *cntxt->errbuf= 0;
-	        } else ret= msg = GDKstrdup("unspecified error\n");
-	        symid = findVariable(mb,"GDKerror");
-	    } else {
-	        stkexception = getDestVar(pci);
-	        stkpc++;
-	        @:endProfile@
-	        continue;
-	    }
+		if( ret == MAL_SUCCEED){
+			if( cntxt->errbuf){
+				ret= msg= GDKstrdup(cntxt->errbuf);
+				*cntxt->errbuf= 0;
+			} else ret= msg = GDKstrdup("unspecified error\n");
+			symid = findVariable(mb,"GDKerror");
+		} else {
+			stkexception = getDestVar(pci);
+			stkpc++;
+			@:endProfile@
+			continue;
+		}
 	}
 	stkexception = symid; 
 	if( symid == -1){
-	    @:endProfile@
+		@:endProfile@
 		stkpc= mb->stop;
 		continue;
 	}
@@ -1189,14 +1192,14 @@ if( ret != MAL_SUCCEED ) {
 	/* assure correct variable type */
 	nxt= (str) setDynamicType(mb,getVar(mb,symid),TYPE_str,stkpc);
 	if( nxt == 0){
-	    v=  &stk->stk[symid];
-	    if( getVarType(mb,symid) == TYPE_any)
-	        setVarType(mb, symid, TYPE_str);
-	    v->vtype = TYPE_str;
-	    v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
-	    v->len= strlen(v->val.pval);
-	    GDKfree(ret);
-	    ret = 0;
+		v=  &stk->stk[symid];
+		if( getVarType(mb,symid) == TYPE_any)
+			setVarType(mb, symid, TYPE_str);
+		v->vtype = TYPE_str;
+		v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
+		v->len= strlen(v->val.pval);
+		GDKfree(ret);
+		ret = 0;
 	} else GDKfree(nxt);
 	/* position yourself at the catch instruction for further decisions */
 	@:skipToCatch(symid)@
@@ -1212,7 +1215,7 @@ str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 	if( v->type ==tpe) return 0;
 	if( v->type == TYPE_any) return 0;
 	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
-	    v->name, getTypeName(v->type), getTypeName(tpe));
+			v->name, getTypeName(v->type), getTypeName(tpe));
 	return raiseException(mb,pc, "typeException",buf);
 }
 
@@ -1269,15 +1272,15 @@ All references should be logical.
 @-
 @{
 @c
-	    int bid= ABS(v->val.bval);
-	    /* printf("garbage collecting: %d lrefs=%d refs=%d\n",
-	        bid, BBP_lrefs(bid),BBP_refs(bid));*/
-	    v->val.bval =0;
+		int bid= ABS(v->val.bval);
+		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
+		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
+		v->val.bval =0;
 		if( bid == 0 ) return;
-	    if( BBP_lrefs(bid) )
-	        BBPdecref(bid,TRUE);
+		if( BBP_lrefs(bid) )
+			BBPdecref(bid,TRUE);
+		}
 	}
-}
 @-
 @}
 
@@ -1306,11 +1309,11 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
 	printStack(GDKout,mb,stk,0);
 #endif
 	for(k=0;k<mb->vtop; k++) {
-	    if(isVarGarbage(mb,k) && (flag || isTmpVar(mb,k) )){
-	        garbageElement(v= &stk->stk[k]);
-	        v->vtype= TYPE_int;
-	        v->val.ival= int_nil;
-	    }
+		if(isVarGarbage(mb,k) && (flag || isTmpVar(mb,k) )){
+			garbageElement(v= &stk->stk[k]);
+			v->vtype= TYPE_int;
+			v->val.ival= int_nil;
+		}
 	}
 #ifdef STACKTRACE
 	stream_printf(GDKout,"--->stack after garbage collector\n");
@@ -1362,27 +1365,27 @@ See @url{The MAL Profiler} for more details.
 @= beginProfile
 #ifdef MALprofiler
 	if( malProfileMode == 0)
-	    /* mostly true */;
+		/* mostly true */;
 	else {
 		if( mb->profiler== NULL)
 			initProfiler(mb);
-	    mb->profiler[stkpc].clk= GDKusec();
-	    time(&mb->profiler[stkpc].clock);
+		mb->profiler[stkpc].clk= GDKusec();
+		time(&mb->profiler[stkpc].clock);
 #ifdef HAVE_TIMES
-	    times(&mb->profiler[stkpc].timer);
+		times(&mb->profiler[stkpc].timer);
 #endif
 	}
 #endif
 @= endProfile
 #ifdef MALprofiler
 	if( malProfileMode == 0)
-	    /* mostly true */;
+		/* mostly true */;
 	else{
 		if( mb->profiler== NULL)
 			initProfiler(mb);
-	    newclk= GDKusec();
-	    mb->profiler[stkpc].counter++;
-	    mb->profiler[stkpc].ticks += (long) (newclk - mb->profiler[stkpc].clk);
+		newclk= GDKusec();
+		mb->profiler[stkpc].counter++;
+		mb->profiler[stkpc].ticks += (long) (newclk - mb->profiler[stkpc].clk);
 		if( mb->profiler[stkpc].clk)
 			profilerEvent(cntxt->nspace,mb,stk,stkpc);
 	}
