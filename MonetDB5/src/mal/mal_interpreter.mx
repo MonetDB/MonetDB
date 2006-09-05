@@ -48,6 +48,8 @@ mal_export void showErrors(void);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
 			MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
+mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, 
@@ -67,8 +69,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_type.h"
 
 static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
-		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-static str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 @-
