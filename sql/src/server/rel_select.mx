@@ -3292,7 +3292,7 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 	case SQL_NEXT:{
 		char *seq = se->data.sval;
-		int len = strlen(seq);
+		int len = _strlen(seq);
 		/* NOTE: this is a dirty hack to disable the existence check on
 		 *       inline generated sequences, as they don't exist yet,
 		 *       but eventually will be.  We recognise this situation if

@@ -386,7 +386,7 @@ care of.
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 
-#define EXPERIMENTAL 
+/*#define EXPERIMENTAL */
 #ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
 		OPTcostModel(mb,0,0);	/* propagate cost distribution */

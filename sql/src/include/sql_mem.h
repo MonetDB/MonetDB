@@ -85,4 +85,6 @@ extern char *sa_strdup( sql_allocator *sa, const char *s);
 #define SA_NEW( sa, type ) ((type*)sa_alloc( sa, sizeof(type)) )
 #define SA_NEW_ARRAY( sa, type, size ) (type*)sa_alloc( sa, ((size)*sizeof(type)))
 
+#define _strlen(s) (int)strlen(s)
+
 #endif /*_MEM_H_*/

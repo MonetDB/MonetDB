@@ -800,7 +800,7 @@ drop_user(mvc *sql, char *user)
 static stmt *
 alter_user(mvc *sql, char *user, char *passwd, char *schema)
 {
-	int schema_id = 0;
+	sqlid schema_id = 0;
 
 	if (backend_find_user(sql, user) < 0)
 		return sql_error(sql, 02, "ALTER USER: no such user '%s'", user);

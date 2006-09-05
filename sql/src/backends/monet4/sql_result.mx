@@ -436,7 +436,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 
 			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? _strdup(sep) : _strdup(rsep);
-			fmt[i].seplen = (int) strlen(fmt[i].sep);
+			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].type = col->type.type->base.name;
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
@@ -677,7 +677,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, unsigned int offse
 
 	fmt[0].c = NULL;
 	fmt[0].sep = _strdup("[ ");
-	fmt[0].seplen = (int) strlen(fmt[0].sep);
+	fmt[0].seplen = _strlen(fmt[0].sep);
 
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
@@ -688,7 +688,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, unsigned int offse
 		fmt[i].c = BATdescriptor(c->b);
 		fmt[i].name = NULL;
 		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
-		fmt[i].seplen = (int) strlen(fmt[i].sep);
+		fmt[i].seplen = _strlen(fmt[i].sep);
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;

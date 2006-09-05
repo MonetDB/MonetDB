@@ -135,7 +135,7 @@ atom_string(sql_subtype *tpe, char *val, int destroy)
 		a->destroy = destroy;
 		a->isnull = 0;
 		a->data.val.sval = val;
-		a->data.len = strlen(a->data.val.sval);
+		a->data.len = (int)strlen(a->data.val.sval);
 	}
 
 	if (atom_debug)
@@ -186,7 +186,7 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 			a->destroy = destroy;
 			a->isnull = 0;
 			a->data.val.sval = sql2str(val);
-			a->data.len = strlen(a->data.val.sval);
+			a->data.len = (int)strlen(a->data.val.sval);
 		} else { 
 			int res = ATOMfromstr(type, &p, &a->data.len, val);
 

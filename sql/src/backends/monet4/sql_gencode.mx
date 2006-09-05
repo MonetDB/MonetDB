@@ -81,7 +81,7 @@ write_head(backend *sql, int nr)
 
 	if (mvc_debug_on(sql->mvc, 2)) {
 		char *t0 = "var t0 := usec();\n";
-		int l = strlen(t0);
+		int l = _strlen(t0);
 
 		stream_write(sql->out, t0, 1, l);
 	}
@@ -101,7 +101,7 @@ write_tail(backend *sql, int nr)
 }
 
 static void
-write_part(backend *sql, char *buf, int len)
+write_part(backend *sql, char *buf, size_t len)
 {
 	buf[len] = '\0';
 	stream_write(sql->out, buf, 1, len);
@@ -115,7 +115,7 @@ write_command(backend *sql, char *buf)
 {
 	if (mvc_debug_on(sql->mvc, 1024 + 2048)) {
 		char *s = _strdup(buf), *c = s;
-		int ll = strlen(s) + 64, l = 0;
+		int ll = _strlen(s) + 64, l = 0;
 		char *v = NEW_ARRAY(char, ll);
 
 		while ((c = strchr(c, '"')))
@@ -187,7 +187,7 @@ static void
 dump(backend *sql, char *buf, int len, int nr)
 {
 	if (len == -1)
-		len = strlen(buf);
+		len = _strlen(buf);
 	write_head(sql, nr);
 	write_command(sql, buf);
 	write_part(sql, buf, len);

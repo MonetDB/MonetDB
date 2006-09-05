@@ -722,7 +722,7 @@ set_statement:
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
-	        sql_find_subtype(&t, "char", strlen($4), 0 );
+	        sql_find_subtype(&t, "char", _strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
@@ -730,7 +730,7 @@ set_statement:
   |	set SCHEMA ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", strlen($3), 0 );
+		sql_find_subtype(&t, "char", _strlen($3), 0 );
 		append_string(l, sa_strdup(SA, "current_schema"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
@@ -738,7 +738,7 @@ set_statement:
   |	set user '=' ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", strlen($4), 0 );
+		sql_find_subtype(&t, "char", _strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
@@ -746,7 +746,7 @@ set_statement:
   |	set ROLE ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", strlen($3), 0);
+		sql_find_subtype(&t, "char", _strlen($3), 0);
 		append_string(l, sa_strdup(SA, "current_role"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
@@ -2908,7 +2908,7 @@ atom_exp:
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |  atom ESCAPE string
  	{ char *s = sql2str($3);
-	  if (strlen(s) != 1) {
+	  if (_strlen(s) != 1) {
 		char buf[BUFSIZ];
 		snprintf(buf, BUFSIZ, "ESCAPE must be one character");
 		yyerror(buf);
@@ -3366,12 +3366,12 @@ user:
 literal:
     string
 		{ char *s = sql2str($1);
-		  int len = strlen(s);
+		  int len = _strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
  |  sqlINT
-		{ int digits = strlen($1), err = 0, len = sizeof(lng);
+		{ int digits = _strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value;
 		  sql_subtype t;
 
@@ -3406,7 +3406,7 @@ literal:
  |  INTNUM
 		{ char *s = strip_extra_zeros($1);
 		  char *dot = strchr(s, '.');
-		  int digits = strlen(s) - 1;
+		  int digits = _strlen(s) - 1;
 		  int scale = digits - (dot-s);
 		  lng value = decimal_from_str(s);
 		  sql_subtype t;

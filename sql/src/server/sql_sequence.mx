@@ -132,7 +132,7 @@ sql_create_seq(
 		sq = scope_subquery(sql, NULL, query);
 		assert(sq);
 		tmp = start = _strdup(QUERY(sql->scanner) + sql->scanner.as - 1);
-		tmp += strlen(start);
+		tmp += _strlen(start);
 		while (*tmp != ';' && tmp >= start) tmp--;
 		*tmp = '\0';
 
@@ -240,7 +240,7 @@ sql_alter_seq(
 		sq = scope_subquery(sql, NULL, query);
 		assert(sq);
 		tmp = cur = _strdup(QUERY(sql->scanner) + sql->scanner.as - 1);
-		tmp += strlen(cur);
+		tmp += _strlen(cur);
 		while (*tmp != ';' && tmp >= cur) tmp--;
 		*tmp = '\0';
 

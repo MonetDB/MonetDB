@@ -245,7 +245,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	stmt *sq;
 	buffer *b;
 	char *n;
-	int len = strlen(query);
+	int len = _strlen(query);
 	stream *buf;
 
 	m->qc = NULL;
@@ -301,7 +301,7 @@ sqlparse_intern(mvc *m, char *query, modes_t mode)
 	stmt *sq = NULL;
 	buffer *b;
 	char *n;
-	int len = strlen(query);
+	int len = _strlen(query);
 	stream *buf;
 
 	m->qc = NULL;
@@ -873,7 +873,7 @@ char * toUpper(char *dest, const char *src)
 		return(dest);
 	}
 
-	len = strlen(src);
+	len = _strlen(src);
 	for (i = 0; i < len; i++)
 		dest[i] = (char)toupper((int)src[i]);
 	

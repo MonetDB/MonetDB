@@ -77,7 +77,7 @@ rel_parse(mvc *m, char *query)
 	sql_rel *rel;
 	buffer *b;
 	char *n;
-	int len = strlen(query);
+	int len = _strlen(query);
 
 	m->qc = NULL;
 

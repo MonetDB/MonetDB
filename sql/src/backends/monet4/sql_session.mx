@@ -510,7 +510,7 @@ mvc_sql(mvc *m, char *cmd)
 	Variable mvc, output;
 	buffer *b;
 	char *n;
-	int len = strlen(cmd);
+	int len = _strlen(cmd);
 
 	sql = backend_create(m, 1);
 
@@ -611,7 +611,7 @@ sql_variables(Cntxt stk, YYSTREE lt, ValPtr res)
 static int
 global_variables(mvc *sql, char *user, char *schema)
 {
-	Cntxt stk = sql->session->stk;
+	Cntxt stk = (Cntxt)sql->session->stk;
 	Variable v;
 	sql_subtype ctype;
 	char *typename;

@@ -694,7 +694,7 @@ load_idxcolumn(sql_trans *tr, BAT *columns, BUN j, sql_idx * i)
 	(void)tr;
 	kc->c = c;
 	if (i->type == unique) 
-		c->unique = BATcount(columns);
+		c->unique = (BATcount(columns)>0);
 	kc->trunc = trunc;
 	list_append(i->columns, kc);
 
@@ -3255,7 +3255,7 @@ rollforward_drop_column(sql_trans *tr, sql_column *c)
 	int ok = SQL_OK;
 
 	if (c->bat.bid && c->bat.ubid) {
-		oid bid;
+		bm_bid bid;
 
 		if (tr->parent == gtrans) {
 			ok = log_bat_transient(logger, c->bat.name);
@@ -3281,7 +3281,7 @@ rollforward_drop_idx(sql_trans *tr, sql_idx * i)
 	int ok = SQL_OK;
 
 	if (i->bat.bid && i->bat.ubid) {
-		oid bid;
+		bm_bid bid;
 		if (tr->parent == gtrans) {
 			ok = log_bat_transient(logger, i->bat.name);
 
@@ -3336,7 +3336,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 
 	if (isTable(t) && !isTempTable(t)) {
 		if (tr->parent == gtrans) {
-			oid bid;
+			bm_bid bid;
 
 			ok = log_bat_transient(logger, t->dname);
 

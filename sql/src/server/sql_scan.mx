@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public License
+@' tHE COntents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -538,7 +538,7 @@ scanner_string(mvc *c, int quote)
 
 	lc->started = 1;
 	while (cur != EOF) {
-		unsigned int pos = rs->pos + lc->yycur;
+		unsigned int pos = (int)rs->pos + lc->yycur;
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
 			if (cur != '\\')
@@ -546,7 +546,7 @@ scanner_string(mvc *c, int quote)
 			else
 				escape = !escape;
 		}
-		lc->yycur = pos - rs->pos;
+		lc->yycur = pos - (int)rs->pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[pos] == quote) {
 			rs->buf[pos - 1] = '\\';
@@ -560,7 +560,7 @@ scanner_string(mvc *c, int quote)
 		lc->yycur--;	/* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
-			if (lc->rs->len >= lc->rs->pos + lc->yycur + 1) {
+			if (lc->rs->len >= (int)lc->rs->pos + lc->yycur + 1) {
 				(void) sql_error(c, 2, "NULL byte in string");
 				return LEX_ERROR;
 			}
@@ -842,7 +842,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	lc->yylast = lc->yyval;
 	token = tokenize(c, scanner_getc(lc));
 
-	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
+	yylval->sval = (lc->rs->buf + (int)lc->rs->pos + lc->yysval);
 
 	/* This is needed as ALIAS and aTYPE get defined to late, see
 	   sql_keyword.mx */
@@ -883,7 +883,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	int pos;
 
 	/* store position for when view's query ends */
-	pos = lc->rs->pos + lc->yycur;
+	pos = (int)lc->rs->pos + lc->yycur;
 
 	token = sql_get_next_token(yylval, parm);
 	

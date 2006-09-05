@@ -404,7 +404,7 @@ stmt_atom_string(char *S)
 	char *s = sql2str(S);
 	sql_subtype t; 
 
-	sql_find_subtype(&t, "varchar", strlen(s), 0);
+	sql_find_subtype(&t, "varchar", _strlen(s), 0);
 	return stmt_atom(atom_string(&t, s, 1));
 }
 
@@ -1964,11 +1964,11 @@ stmt_list_nrcols(list *l)
 static char *
 func_name(char *n1, char *n2)
 {
-	int l1 = strlen(n1), l2; 
+	int l1 = _strlen(n1), l2; 
 
 	if (!n2)
 		return _strdup(n1);
-	l2 = strlen(n2);
+	l2 = _strlen(n2);
 
 	if (l2 > 16) {		/* only support short names */
 		char *ns = NEW_ARRAY(char, l2 + 1);
@@ -2111,7 +2111,7 @@ table_name(stmt *st)
 		return NULL;
 
 	case st_atom:
-		if (st->op1.aval->data.vtype == TYPE_str && st->op1.aval->data.val.sval && strlen(st->op1.aval->data.val.sval))
+		if (st->op1.aval->data.vtype == TYPE_str && st->op1.aval->data.val.sval && _strlen(st->op1.aval->data.val.sval))
 			return atom2string(st->op1.aval);
 
 	case st_var:
