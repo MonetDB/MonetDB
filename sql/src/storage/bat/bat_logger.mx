@@ -215,7 +215,7 @@ log_write_string(logger *l, char *n)
 static void
 log_read_clear(logger *logger, char *name)
 {
-	oid bid = bm_find_bat(logger->bm, name);
+	bm_bid bid = bm_find_bat(logger->bm, name);
 	BAT *b = bat_descriptor(bid, "log_read_clear");
 
 	if (logger->debug & 1)
@@ -230,7 +230,7 @@ log_read_clear(logger *logger, char *name)
 static void
 log_read_updates(logger *logger, logformat *l, char *name)
 {
-	oid bid = bm_find_bat(logger->bm, name);
+	bm_bid bid = bm_find_bat(logger->bm, name);
 	BAT *b = bat_descriptor(bid,  "log_read_updates");
 
 	if (logger->debug & 1)
@@ -281,7 +281,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 static void
 log_read_destroy(logger *logger, char *name)
 {
-	oid bid = bm_find_bat(logger->bm, name);
+	bm_bid bid = bm_find_bat(logger->bm, name);
 
 	if (bid)
 		bm_del_bat(logger->bm, bid);
@@ -341,7 +341,7 @@ log_read_create(logger *logger, char *name)
 static void
 log_read_use(logger *logger, logformat *l, char *name)
 {
-	oid bid = l->nr;
+	bm_bid bid = l->nr;
 	BAT *b = bat_descriptor(bid, "log_read_use");
 	
 	if (!b) {
@@ -828,7 +828,7 @@ log_bat(logger *logger, BAT *b, char *name)
 		return SQL_OK;
 	}
 
-	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
+	l.nr = (int)(BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted));
 	logger->changes += l.nr;
 
 	if (l.nr) {
@@ -854,7 +854,7 @@ log_bat(logger *logger, BAT *b, char *name)
 		if (logger->debug)
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
 	}
-	l.nr = BUNindex(b, b->batFirst) - BUNindex(b, b->batDeleted);
+	l.nr = (int)(BUNindex(b, b->batFirst) - BUNindex(b, b->batDeleted));
 	logger->changes += l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {

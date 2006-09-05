@@ -35,6 +35,8 @@ content, the deleted and inserted can then be found using the delta status.
 
 #define SQLBATSIZE 0
 
+typedef int bm_bid;
+
 extern void bat_destroy(BAT *b);
 extern BAT *bat_descriptor(bat bid, char *func);
 extern BAT *bat_copy(BAT *b, char *func);
@@ -52,10 +54,10 @@ extern void bm_abort(struct bm *bm );
 extern void bm_set_oid(struct bm *bm, int id );
 extern int  bm_get_oid(struct bm *bm );
 
-extern oid bm_add_bat(struct bm *bm, BAT *b, char *name);
-extern void bm_del_bat(struct bm *bm, oid bid);
+extern bm_bid bm_add_bat(struct bm *bm, BAT *b, char *name);
+extern void bm_del_bat(struct bm *bm, bm_bid bid);
 
-extern oid bm_find_bat(struct bm *bm, char *name);
+extern bm_bid bm_find_bat(struct bm *bm, char *name);
 
 #endif /*_SQL_BM_H_*/
 @c
@@ -66,9 +68,9 @@ extern oid bm_find_bat(struct bm *bm, char *name);
 /* #define RENAME */
 
 typedef struct bm {
-	/* Store oids to circumvent trouble with reference counting */
+	/* Store bm_bids (ints) to circumvent trouble with reference counting */
 	int debug;
-	BAT *bat_name;		/*      [ oid, str ]   */
+	BAT *bat_name;		/*      [ int, str ]   */
 } bm;
 
 static int bm_debug = 0;
@@ -162,12 +164,12 @@ int bm_subcommit( BAT * catalog )
 	BATseqbase(n,0);
 	/* first loop over deleted then over current and new */
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		bat col = *(oid*)BUNhead(b,p);
+		bat col = *(bm_bid*)BUNhead(b,p);
 		str name = BBPname(col);
 		BUNappend(n, name, FALSE);
 	}
 	BATloop(b, p, q) {
-		bat col = *(oid*)BUNhead(b,p);
+		bat col = *(bm_bid*)BUNhead(b,p);
 		str name = BBPname(col);
 		BUNappend(n, name, FALSE);
 	}
@@ -187,8 +189,8 @@ bm_create(int debug)
 
 	bm->debug = debug;
 	if (sql_catalog == 0) {
-		oid bid = 0;
-		bm->bat_name = bm_create_bat(TYPE_oid, TYPE_str, SQLBATSIZE);
+		bm_bid bid = 0;
+		bm->bat_name = bm_create_bat(TYPE_int, TYPE_str, SQLBATSIZE);
 		if (bm->debug)
 			printf("create sql_catalog\n");
 		BATmode(bm->bat_name, PERSISTENT);
@@ -206,7 +208,7 @@ bm_create(int debug)
 
 		bm->bat_name = b;
 		BATloop(b, p, q) {
-			bat bid = *(oid *) BUNhead(b, p);
+			bat bid = *(bm_bid *) BUNhead(b, p);
 
 			bat_incref(bid, TRUE, "bm_create");
 		}
@@ -223,14 +225,14 @@ bm_destroy(bm *bm)
 	/* destroy the deleted */
 /* would be an error ....
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		bat bid = *(oid *) BUNhead(b, p);
+		bat bid = *(bm_bid *) BUNhead(b, p);
 
 		bat_decref(bid, TRUE);
 	}
 */
 	/* free resources */
 	BATloop(b, p, q) {
-		bat bid = *(oid *) BUNhead(b, p);
+		bat bid = *(bm_bid *) BUNhead(b, p);
 
 		bat_decref(bid, TRUE);
 	}
@@ -249,7 +251,7 @@ bm_commit(bm *bm)
 
 	/* remove the destroyed bats */
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
-		bat bid = *(oid *) BUNhead(b, p);
+		bat bid = *(bm_bid *) BUNhead(b, p);
 		BAT *b = bat_descriptor(bid, "bm_commit");
 
 		BATmode(b, TRANSIENT);
@@ -258,7 +260,7 @@ bm_commit(bm *bm)
 	}
 
 	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
-		oid bid = *(oid *) BUNhead(b, p);
+		bm_bid bid = *(bm_bid *) BUNhead(b, p);
 		BAT *b = bat_descriptor(bid, "bm_commit");
 
 		BATmode(b, PERSISTENT);
@@ -277,12 +279,12 @@ bm_abort(bm *bm)
 
 	/* remove the created bats */
 	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
-		bat bid = *(oid *) BUNhead(b, p);
+		bat bid = *(bm_bid *) BUNhead(b, p);
 
 		bat_decref(bid, TRUE);
 	}
 	for (p = BUNfirst(b); p < b->batInserted; p = BUNnext(b, p)) {
-		oid bid = *(oid *) BUNhead(b, p);
+		bm_bid bid = *(bm_bid *) BUNhead(b, p);
 		BAT *b = bat_descriptor(bid, "bm_abort");
 
 		BATundo(b);
@@ -292,10 +294,10 @@ bm_abort(bm *bm)
 	BATundo(bm->bat_name);
 }
 
-oid
+bm_bid
 bm_add_bat(bm *bm, BAT *b, char *name)
 {
-	oid bid = bm_find_bat(bm, name);
+	bm_bid bid = bm_find_bat(bm, name);
 
 	if (bid) {
 		if (bid != b->batCacheid) 
@@ -312,19 +314,19 @@ bm_add_bat(bm *bm, BAT *b, char *name)
 }
 
 void
-bm_del_bat(bm *bm, oid bid)
+bm_del_bat(bm *bm, bm_bid bid)
 {
 	BUNdelHead(bm->bat_name, &bid, FALSE);
 }
 
-oid
+bm_bid
 bm_find_bat(bm *bm, char *name)
 {
 	BAT *r_bat_name = BATmirror(bm->bat_name);
-	oid res = 0;
+	bm_bid res = 0;
 	BUN p = BUNfnd(r_bat_name, name);
 
 	if (p) 
-		res = *(oid *) BUNtail(r_bat_name, p);
+		res = *(bm_bid *) BUNtail(r_bat_name, p);
 	return res;
 }

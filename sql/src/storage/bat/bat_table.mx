@@ -253,7 +253,7 @@ int
 table_check(sql_trans *tr, sql_table *t)
 {
 	node *n = cs_first_node(&t->columns);
-	int cnt = -1;
+	ssize_t cnt = -1;
 
 	(void)tr;
 	for (; n; n = n->next) {
@@ -265,7 +265,7 @@ table_check(sql_trans *tr, sql_table *t)
 			cnt = BATcount(b);
 		} else if (cnt != BATcount(b)) {
 			assert(0);
-			return (cnt - BATcount(b));
+			return (int)(cnt - BATcount(b));
 		}
 		bat_destroy(b);
 	}

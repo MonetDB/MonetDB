@@ -21,8 +21,7 @@
 #define BATSTORE_H
 
 #include "sql_storage.h"
-
-#include <gdk.h>
+#include "bat_bm.h"
 
 #define isNew(x)  (x->base.flag == TR_NEW)
 #define isTemp(x) (isNew(x)||x->t->persistence!=SQL_PERSIST)
@@ -49,20 +48,19 @@ extern BAT *append_ubat(sql_trans *tr, sql_column *c, int access, BAT *b);
 extern BAT *append_idx(sql_trans *tr, sql_idx * i, int access, BAT *b);
 extern BAT *append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *b);
 
-extern BAT *temp_descriptor(oid b);
+extern BAT *temp_descriptor(bm_bid b);
 
 #endif /*BATSTORE_H */
 @c
 #include "bat_store.h"
 #include <bat.h>
 #include "bat_logger.h"
-#include "bat_bm.h"
 #include "sql_types.h"
 #include "sql_backend.h"
 #include "bat_sequence.h"
 
-/* version 03.01.00 of catalog */
-#define CATALOG_VERSION 30100
+/* version 03.02.00 of catalog */
+#define CATALOG_VERSION 30200
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock;
@@ -95,18 +93,18 @@ static int timestamp () {
 }
 
 static void
-temp_destroy(oid b)
+temp_destroy(bm_bid b)
 {
 	BBPdecref(b, TRUE);
 }
 
 static void
-temp_dup(oid b)
+temp_dup(bm_bid b)
 {
 	BBPincref(b, TRUE);
 }
 
-static oid
+static bm_bid
 temp_create(BAT *b)
 {
 	temp_dup(b->batCacheid);
@@ -114,21 +112,21 @@ temp_create(BAT *b)
 }
 
 BAT *
-temp_descriptor(oid b)
+temp_descriptor(bm_bid b)
 {
 	return BATdescriptor((bat) b);
 }
 
-static oid
-temp_copy(oid b, int temp)
+static bm_bid
+temp_copy(bm_bid b, int temp)
 {
 /* make a copy of b, if temp is set only create a empty bat */
 	BAT *o = temp_descriptor(b);
 	BAT *c;
-	oid r;
+	bm_bid r;
 
 	if (bs_debug&4)
-		fprintf(stderr, "temp_copy " OIDFMT "\n", b);
+		fprintf(stderr, "temp_copy %d\n", b);
 
 	if (!temp) {
 		c = bat_copy(o, "temp_copy");
@@ -539,7 +537,7 @@ tr_flag(sql_base * b, int flag)
 static BAT *
 get_bat(struct bm *bm, char *name)
 {
-	oid bid = bm_find_bat(bm, name);
+	bm_bid bid = bm_find_bat(bm, name);
 
 	if (bid) {
 		BAT *b = temp_descriptor(bid);
@@ -2723,12 +2721,11 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 		temp_dup(c->bat.bid);
 
 	if (bs_debug&2) {
-		fprintf(stderr, "column_dup %s.%s (%d) " 
-				OIDFMT " " OIDFMT " " OIDFMT, 
+		fprintf(stderr, "column_dup %s.%s (%d) %d %d %d",
 				c->t->base.name, c->base.name, c->base.flag,
 				c->bat.ibid, c->bat.bid, c->bat.ubid
 				);
-		fprintf(stderr, " <- (%d) " OIDFMT " " OIDFMT " " OIDFMT "\n", 
+		fprintf(stderr, " <- (%d) %d %d %d\n",
 				oc->base.flag, 
 				oc->bat.ibid, oc->bat.bid, oc->bat.ubid
 				);
@@ -3899,13 +3896,11 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		bat_destroy(pu);
 		fc->base.wtime = fc->base.rtime = 0;
 		if (bs_debug) {
-			fprintf(stderr, "reset_column %s.%s (%d) " 
-				OIDFMT " " OIDFMT " " OIDFMT, 
+			fprintf(stderr, "reset_column %s.%s (%d) %d %d %d", 
 				fc->t->base.name, fc->base.name, fc->base.flag,
 				fc->bat.ibid, fc->bat.bid, fc->bat.ubid
 				);
-			fprintf(stderr, " <- (%d) " 
-				OIDFMT " " OIDFMT " " OIDFMT, 
+			fprintf(stderr, " <- (%d) %d %d %d", 
 				pfc->base.flag, 
 				pfc->bat.ibid, pfc->bat.bid, pfc->bat.ubid
 				);
