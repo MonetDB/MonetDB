@@ -1472,7 +1472,7 @@ CMDrename(bit *retval, BAT *b, str s)
 		}
 	}
 
- 	ret = BATname(b, s);
+	ret = BATname(b, s);
 	*retval = FALSE;
 	if (ret == 1) {
 		GDKerror("CMDrename: identifier expected: %s\n", s);

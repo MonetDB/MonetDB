@@ -26,10 +26,6 @@ with  just  a  few  differences.  The  current  implementation of PCRE
 port  for  UTF-8  encoded  strings.   However,  this support has to be
 explicitly enabled; it is not the default.
 
-\begin{center}
-ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
-\end{center}
-
 
 @+ Module Definition
 @m
@@ -58,6 +54,9 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 
 .COMMAND pcre_uselect(str pattern, BAT[any::1,str] strs) : BAT[any::1,void] = pcre_uselect;
    "Select tuples based on the pattern, only returning the head"
+
+.COMMAND pcre_match(str s, str pat) : bit = pcre_match;
+   "POSIX pattern matching against a string"
 
 .COMMAND pcre_replace(str origin_str, str pattern, str replacement, str flags) : str = pcre_replace;
    "Replace _all_ matches of \"pattern\" in \"origin_str\" with\
@@ -90,10 +89,15 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 .END pcre;
 
 @{
+@-
+\begin{center}
+ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
+\end{center}
+
 @+ Implementation
 @c
-
 #include <monetdb_config.h>
+
 
 #ifndef HAVE_LIBPCRE
 
@@ -172,8 +176,18 @@ pcre_exit(void)
 {
 }
 
+int
+pcre_match(bit *ret, str *val, str *pat)
+{
+	(void) ret;
+	(void) val;
+	(void) pat;
+	GDKerror("pcre_match() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
+}
 #else
 
+#include <regex.h>
 #include <pcre.h>
 #include "pcre.proto.h"
 
@@ -527,6 +541,21 @@ pcre_init(void)
 void
 pcre_exit(void)
 {
+}
+
+int
+pcre_match(bit *ret, str val, str pat)
+{
+	regex_t prg;
+	int error = regcomp(&prg, pat, REG_EXTENDED | REG_NOSUB);
+
+	if (error < 0) {
+		GDKerror("pcre.match", "Compilation of regular expression failed");
+		return GDK_FAIL;
+	}
+	error = regexec(&prg, val, 0, 0, 0);
+	*ret = (error == 0);
+	return GDK_SUCCEED;
 }
 #endif
 

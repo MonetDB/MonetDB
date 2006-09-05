@@ -83,9 +83,9 @@ organized in the heap with respect to their values (tail column).
 static INLINE size_t parent(size_t posel)
 {
   if (posel%2) /*odd*/
-        return posel/2;
+	return posel/2;
   else
-    return (posel-1)/2;
+	return (posel-1)/2;
 }
 
 /*initialize pqueue*/
@@ -126,19 +126,19 @@ int pqueue_enqueue_@1@2(BAT *h,
   ins = hbase+posel*hBUNsize;
   
   while(posel >0) {
-    p=parent(posel);
-    cur = hbase+p*hBUNsize;
-    if (*(@3 *)BUNtloc(h,ins) @4 *(@3 *)BUNtloc(h,cur)) {
-      /* swap element with its parent */
+	p=parent(posel);
+	cur = hbase+p*hBUNsize;
+	if (*(@3 *)BUNtloc(h,ins) @4 *(@3 *)BUNtloc(h,cur)) {
+	  /* swap element with its parent */
 	  for(i=0; i<hBUNsize; i++){
 		ch= cur[i]; cur[i]= ins[i]; ins[i]= ch;
 	  }
-      
-      ins = cur;
-      posel = parent(posel);
-    }
-    else break;
+	  ins = cur;
+	  posel = parent(posel);
+	}
+	else break;
   }
+  h->hsorted = h->tsorted = FALSE;
   
   return GDK_SUCCEED;
 }
@@ -165,32 +165,28 @@ int pqueue_movedowntop_@1@2(BAT *h)
   posel = 0;
   
   /*while posel is not a leaf and pqueue[posel].tail > any of childen*/
-  while (posel*2+1 < num_elems) /*there exists a left son*/
-    {
-      if (posel*2+2< num_elems) /*there exists a right son*/
-        {
+  while (posel*2+1 < num_elems) { /*there exists a left son*/
+	if (posel*2+2< num_elems) { /*there exists a right son*/
 	  if (*(@3 *)BUNtloc(h,hbase+(posel*2+1)*hBUNsize) @4
 	      *(@3 *)BUNtloc(h,hbase+(posel*2+2)*hBUNsize))
-	    swap = posel*2+1;
+		swap = posel*2+1;
 	  else
-	    swap = posel*2+2;
-	}
-      else
-	swap = posel*2+1;
+		swap = posel*2+2;
+	} else
+		swap = posel*2+1;
 
-      swp = hbase+swap*hBUNsize;
+	swp = hbase+swap*hBUNsize;
 
-      if (*(@3 *)BUNtloc(h,swp) @4 *(@3 *)BUNtloc(h,cur))
-        {
+	if (*(@3 *)BUNtloc(h,swp) @4 *(@3 *)BUNtloc(h,cur)) {
 	  /*swap elements*/
 	  for(i=0; i<hBUNsize; i++){
 		ch= cur[i]; cur[i]= swp[i]; swp[i]= ch;
 	  }
 	  cur = swp;
 	  posel = swap;
-        }
-      else break;
-    }
+	} else 
+		break;
+  }
 
   return GDK_SUCCEED;
 }
@@ -232,9 +228,9 @@ int pqueue_topreplace_@1@2(BAT *h,
   hbase = BUNfirst(h);
 
   if (*(@3 *)BUNtloc(h,hbase) @4 *el) {
-    memcpy(BUNhloc(h,hbase), idx, sizeof(oid));
-    memcpy(BUNtloc(h,hbase), el, sizeof(@3));
-    pqueue_movedowntop_@1@2(h);
+	memcpy(BUNhloc(h,hbase), idx, sizeof(oid));
+	memcpy(BUNtloc(h,hbase), el, sizeof(@3));
+	pqueue_movedowntop_@1@2(h);
   }
   
   return GDK_SUCCEED;
@@ -321,17 +317,17 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
   ins = hbase+posel*hBUNsize;
   
   while(posel >0) {
-    p=parent(posel);
-    cur = hbase+p*hBUNsize;
-    if (atom_CMP(BUNtail(h,ins), BUNtail(h,cur), tpe) @2 0 ) {
-      /* swap element with its parent */
+	p=parent(posel);
+	cur = hbase+p*hBUNsize;
+	if (atom_CMP(BUNtail(h,ins), BUNtail(h,cur), tpe) @2 0 ) {
+	  /* swap element with its parent */
 	  for(i=0; i<hBUNsize; i++){
 		ch= cur[i]; cur[i]=ins[i]; ins[i]=ch;
 	  }
-      ins = cur;
-      posel = parent(posel);
-    }
-    else break;
+	  ins = cur;
+	  posel = parent(posel);
+	}
+	else break;
   }
   h->hsorted = h->tsorted = FALSE;
   
@@ -361,34 +357,30 @@ int pqueue_movedowntop_any@1(BAT *h)
   posel = 0;
   
   /*while posel is not a leaf and pqueue[posel].tail > any of childen*/
-  while (posel*2+1 < num_elems) /*there exists a left son*/
-    {
-      if (posel*2+2< num_elems) /*there exists a right son*/
-        {
+  while (posel*2+1 < num_elems) { /*there exists a left son*/
+	if (posel*2+2< num_elems) { /*there exists a right son*/
 	  if (atom_CMP(
 		BUNtail(h,hbase+(posel*2+1)*hBUNsize),
-	       	BUNtail(h,hbase+(posel*2+2)*hBUNsize), tpe) @2 0 ) {
-	    swap = posel*2+1;
+		BUNtail(h,hbase+(posel*2+2)*hBUNsize), tpe) @2 0 ) {
+		swap = posel*2+1;
 	  } else {
-	    swap = posel*2+2;
+		swap = posel*2+2;
 	  }
-	}
-      else
-	swap = posel*2+1;
+	} else
+		swap = posel*2+1;
 
-      swp = hbase+swap*hBUNsize;
+	swp = hbase+swap*hBUNsize;
 
-      if (atom_CMP( BUNtail(h,swp), BUNtail(h,cur), tpe) @2 0 )
-        {
-	  /*swap elements*/
+	if (atom_CMP( BUNtail(h,swp), BUNtail(h,cur), tpe) @2 0 ) {
+		/*swap elements*/
 		for(i=0;i<hBUNsize; i++){
 			ch= cur[i]; cur[i]=swp[i]; swp[i]=ch;
 		}
 	  cur = swp;
 	  posel = swap;
-        }
-      else break;
-    }
+	} else 
+		break;
+  }
   h->hsorted = h->tsorted = FALSE;
 
   return GDK_SUCCEED;
@@ -403,8 +395,8 @@ int pqueue_dequeue_any@1(BAT *h)
   size_t num_elements;
 
   if (!(num_elements = BATcount(h))) {
-    GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
-    return GDK_FAIL;
+	GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
+	return GDK_FAIL;
   }
 
   hbase = BUNfirst(h);
@@ -429,9 +421,10 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
   hbase = BUNfirst(h);
 
   if (atom_CMP(BUNtail(h,hbase), el, tpe) @2 0) {
-    BUNinplace(h, hbase, idx, el, 0);
-    *(oid*)hbase = *idx;
-    pqueue_movedowntop_any@1(h);
+	BUNinplace(h, hbase, idx, el, 0);
+	*(oid*)hbase = *idx;
+	pqueue_movedowntop_any@1(h);
+    	h->hsorted = h->tsorted = FALSE;
   }
   
   return GDK_SUCCEED;
