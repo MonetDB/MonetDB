@@ -177,7 +177,7 @@ pcre_exit(void)
 }
 
 int
-pcre_match(bit *ret, str *val, str *pat)
+pcre_match(bit *ret, str val, str pat)
 {
 	(void) ret;
 	(void) val;
