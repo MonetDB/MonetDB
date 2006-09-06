@@ -3,11 +3,11 @@
 	<scene>
 		<victim>
 			<name>Mary Ann Walker</name>
-			<dob>18450826</dob>
+			<date-of-birth>1845-08-26</date-of-birth>
 			<length>5'12"</length>
 			<eyes> brown</eyes>
 			<hair>brown hair turning grey</hair>      
-			<died>18880831</died>
+			<date>1888-08-31</date>
 			<location>Buck's Row by Charles Cross</location>
 			<picture>http://www.casebook.org/images/victims_nichols.jpg</picture>
 			<features>
@@ -111,11 +111,11 @@
 	<scene>
 		<victim>
 			<name>Annie Chapman</name> 
-			<dob>184109</dob>
+			<date-of-birth>1841-09</date-of-birth>
 			<length>5'</length>
 			<eyes>blue</eyes>
 			<hair>dark brown, wavy</hair>      
-			<died>18880908</died>
+			<date>1888-09-08</date>
 			<location>29 Hanbury Street</location>
 			<picture>http://www.casebook.org/images/victims_chapman.jpg</picture>
 			<features> Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose</features>
@@ -150,11 +150,11 @@
 	<scene>
 		<victim>
 			<name>Elisabeth Stride</name>
-			<dob>18431127</dob>
+			<date-of-birth>1843-11-27</date-of-birth>
 			<length>5'5"</length>
 			<eyes>light gray</eyes>
 			<hair>curly dark brown</hair>      
-			<died>18880930</died>
+			<date>1888-09-30</date>
 			<location>Berner Street (Henriques Street today)</location>
 			<picture>http://www.casebook.org/images/victims_stride.jpg</picture>
 			<features> pale complexion, all the teeth in her lower left jaw were missing
@@ -214,11 +214,11 @@
 	<scene>
 		<victim>
 			<name>Catherine Eddowes</name>
-			<dob>18420414</dob>
+			<date-of-birth>1842-04-14</date-of-birth>
 			<length>5'</length>
 			<eyes>hazel</eyes>
 			<hair>dark auburn</hair>      
-			<died>18880930</died>
+			<date>1888-09-30</date>
 			<location>Mitre Square</location>
 			<picture>http://www.casebook.org/images/eddowes1.jpg</picture>
 			<features> She has a tattoo in blue ink on her left forearm "TC."</features>
@@ -253,11 +253,11 @@
 	<scene>
 		<victim>
 			<name> Mary Jane Kelly</name>
-			<dob>around 1863</dob>
+			<date-of-birth>around 1863</date-of-birth>
 			<length>5'7"</length>
 			<eyes>blue</eyes>
 			<hair>blonde</hair>      
-			<died>18881109</died>
+			<date>1888-11-09</date>
 			<location>13 Miller's Court</location>
 			<picture>http://www.casebook.org/images/victims_kelly.jpg</picture>
 			<features> a fair complexion. "Said to have been possessed of considerable personal attractions." (McNaughten) She was last seen wearing a linsey frock and a red shawl pulled around her shoulders. She was bare headed. Detective Constable Walter Dew claimed to know Kelly well by sight and says that she was attractive and paraded around, usually in the company of two or three friends. He says she always wore a spotlessly clean white apron.
@@ -297,11 +297,11 @@
 	<scene>
 		<victim>
 			<name>"Fairy Fay"</name>
-			<dob>unknown</dob>
+			<date-of-birth>unknown</date-of-birth>
 			<length>unknown</length>
 			<eyes>unknown</eyes>
 			<hair>unknown</hair>      
-			<died>18871226</died>
+			<date>1887-12-26</date>
 			<location>the alleys of Commercial Road</location>
 			<picture>http://www.casebook.org/images/victims_fairy.jpg</picture>
 			<features>not recorded
@@ -327,11 +327,11 @@
 	<scene>
 		<victim>
 			<name>Annie Millwood</name>
-			<dob>1850</dob>
+			<date-of-birth>1850</date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18880215</died>
+			<date>1888-02-15</date>
 			<location>White's Row, Spitalfields</location>
 			<picture>http://www.casebook.org/images/victims_millwood.jpg</picture>
 			<features> 
@@ -364,11 +364,11 @@
 	<scene>
 		<victim>
 			<name>Ada Wilson</name>
-			<dob></dob>
+			<date-of-birth></date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>(survived the attack on 18882803)</died>
+			<date>(survived the attack on 1888-28-03)</date>
 			<location>19 Maidman Street</location>
 			<picture>http://www.casebook.org/images/victims_wilson.jpg</picture>
 			<features> 
@@ -400,11 +400,11 @@
 	<scene>
 		<victim>
 			<name>Emma Smith</name>
-			<dob>1843</dob>
+			<date-of-birth>1843</date-of-birth>
 			<length></length>
 			<eyes></eyes>
 			<hair></hair>      
-			<died>18880303</died>
+			<date>1888-03-03</date>
 			<location>just outside Taylor Brothers Mustard and Cocoa Mill which was on the north-east corner of the Wentworth/Old Montague Street crossroads</location>
 			<picture>http://www.casebook.org/images/victims_smith.jpg</picture>
 			<features> 
@@ -437,11 +437,11 @@
 	<scene>
 		<victim>
 			<name>Martha Tabram</name>
-			<dob>18490510</dob>
+			<date-of-birth>1849-05-10</date-of-birth>
 			<length></length>
 			<eyes></eyes>
 			<hair></hair>      
-			<died>18880807</died>
+			<date>1888-08-07</date>
 			<location>George Yard, a narrow north-south alley connecting Wentworth Street and Whitechapel High Street</location>
 			<picture>http://www.casebook.org/images/victims_tabram.jpg</picture>
 			<features> 
@@ -470,11 +470,11 @@
 	<scene>
 		<victim>
 			<name>Whitehall Mystery</name>
-			<dob></dob>
+			<date-of-birth></date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18881003</died>
+			<date>1888-10-03</date>
 			<location>a vault soon to become a section of the cellar of New Scotland Yard</location>
 			<picture>http://www.casebook.org/images/victims_whitehall.jpg</picture>
 			<features> the headless and limbless torso of a woman
@@ -507,11 +507,11 @@
 	<scene>
 		<victim>
 			<name>Annie Farmer</name>
-			<dob>1848</dob>
+			<date-of-birth>1848</date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>(survived the attack on 18881120)</died>
+			<date>(survived the attack on 1888-11-20)</date>
 			<location></location>
 			<picture>http://www.casebook.org/images/victims_farmer.jpg</picture>
 			<features> 
@@ -544,11 +544,11 @@
 	<scene>
 		<victim>
 			<name>Rose Mylett</name>
-			<dob>1862</dob>
+			<date-of-birth>1862</date-of-birth>
 			<length></length>
-			'           <eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18881220</died>
+			<date>1888-12-20</date>
 			<location>the yard between 184 and 186 Poplar High Street, in Clarke's Yard</location>
 			<picture>http://www.casebook.org/images/victims_mylett.jpg</picture>
 			<features> 
@@ -589,11 +589,11 @@
 	<scene>
 		<victim>
 			<name>Elisabeth Jackson</name>
-			<dob></dob>
+			<date-of-birth></date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>188906</died>
+			<date>1889-06</date>
 			<location>the Thames </location>
 			<picture>http://www.casebook.org/images/victims_jackson.jpg</picture>
 			<features> 
@@ -626,11 +626,11 @@
 	<scene>
 		<victim>
 			<name>Alice MacKenzie</name>
-			<dob>1849</dob>
+			<date-of-birth>1849</date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18890717</died>
+			<date>1889-07-17</date>
 			<location>Castle Alley</location>
 			<picture>http://www.casebook.org/images/victims_mckenzie.jpg</picture>
 			<features> as a freckle-faced woman with a penchant for both smoke and drink. Her left thumb was also injured in what was no doubt some sort of industrial accident. 
@@ -668,11 +668,11 @@
 	<scene>
 		<victim>
 			<name>Pinchin Street Murder, possibly Lydia Hart</name>
-			<dob></dob>
+			<date-of-birth></date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18890910</died>
+			<date>1889-09-10</date>
 			<location>under a railway arch in Pinchin Street</location>
 			<picture>http://www.casebook.org/images/victims_pinchin.jpg</picture>
 			<features> body, missing both head and legs
@@ -713,11 +713,11 @@
 	<scene>
 		<victim>
 			<name>Frances Coles</name>
-			<dob>1865</dob>
+			<date-of-birth>1865</date-of-birth>
 			<length></length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18910213</died>
+			<date>1891-02-13</date>
 			<location>Swallow Gardens  </location>
 			<picture>http://www.casebook.org/images/victims_coles.jpg</picture>
 			<features> is often heralded as the prettiest of all the murder victims
@@ -752,11 +752,11 @@
 	<scene>
 		<victim>
 			<name>Carrie Brown</name>
-			<dob></dob>
+			<date-of-birth></date-of-birth>
 			<length>5'8"</length>
-			<eyes> </eyes>
+			<eyes></eyes>
 			<hair></hair>      
-			<died>18910424</died>
+			<date>1891-04-24</date>
 			<location> the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.</location>
 			<picture>http://www.casebook.org/images/victims_brown.jpg</picture>
 			<features></features>
@@ -818,7 +818,7 @@
 		<name>Lewis Carroll</name>
 		<picture>http://www.casebook.org/images/suspect_carroll.jpg</picture>
 		<notes>a very unlikely suspect</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
@@ -832,35 +832,35 @@
 		<name>Dr. Thomas Neill Cream </name>
 		<picture>http://www.casebook.org/suspects/cream.html</picture>
 		<notes>did commit murders, but by poisoning</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Frederick Bailey Deeming</name>
 		<picture>http://www.casebook.org/images/suspect_deem.jpg</picture>
 		<notes>The only two links he may have had with the Whitechapel murders were (1) his insanity and (2) his method of killing his family</notes>
-		<victim> </victim>'
+		<victim></victim>'
 	</suspect>
 
 	<suspect>
 		<name>Montague John Druitt </name>
 		<picture>http://www.casebook.org/images/suspect_druitt.jpg</picture>
 		<notes>He is considered by many to be the number one suspect in the case, yet there is little evidence</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Fogelma</name>
 		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
 		<notes>no outside evidence to corroborate the story told by the Empire News</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>George Hutchinson (Br.)</name>
 		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
 		<notes>Police at the time interviewed him but did not seem to consider him a suspect</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
@@ -874,7 +874,7 @@
 		<name> James Kelly</name>
 		<picture>http://www.casebook.org/images/suspect_jkell.jpg</picture>
 		<notes>there are some reasons in favour of and some against suspecting him</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
@@ -888,7 +888,7 @@
 		<name> Aaron Kosminski</name>
 		<picture>http://www.casebook.org/images/suspect_kosm.jpg</picture>
 		<notes>According to Anderson and Swanson, identified by a witness as the Ripper, but no charges were brought against him due to the witness's reluctance to testify against "a fellow Jew." Known to have been insane.</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
@@ -902,42 +902,42 @@
 		<name>The Lodger (Frances Tumblety)</name>
 		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
 		<notes>a very strong suspect</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name> James Maybrick</name>
 		<picture>http://www.casebook.org/images/suspect_may.jpg</picture>
 		<notes>The mysterious emergence of the so-called Maybrick journal in 1992 however, immediately thrust him to the forefront of credible Ripper suspects.</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name> Michael Ostrog</name>
 		<picture>http://www.casebook.org/images/suspect_ost.jpg</picture>
 		<notes>Mentioned for the first time as a suspect in 1894,in 1994 a lot of information was published making him a prime suspect</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name> Dr. Alexander Pedachenko</name>
 		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
 		<notes>may never have existed</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name> The Royal Conspiracy</name>
 		<picture>http://www.casebook.org/images/suspec'_royal.jpg</picture>
 		<notes>a fascinating tapestry of conspiracy involving virtually every person who has ever been a Ripper suspect plus a few new ones</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Walter Sickert</name>
 		<picture>http://www.casebook.org/images/suspect_sickert.jpg</picture>
 		<notes>a valid suspect since the 1990s</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 
@@ -945,49 +945,49 @@
 		<name> James Kenneth Stephen</name>
 		<picture>http://www.casebook.org/images/suspect_jkstep.jpg</picture>
 		<notes>Known misogynist and lunatic but no connections with the East End</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name> R. D´Onston Stephenson</name>
 		<picture>http://www.casebook.org/images/suspect_dons.jpg</picture>
 		<notes>Known to have had an extraordinary interest in the murders. Wrote numerous articles and letters on the matter. Resided in the East End.</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name> Alois Szemeredy</name>
 		<picture>http://www.casebook.org/images/suspect_szemeredy.jpg</picture>
 		<notes>from Buenos Aires, suspected of the Jack the Ripper- and other murders</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Francis Thompson</name>
 		<picture>http://www.casebook.org/images/suspect_thompson.jpg</picture>
 		<notes>At 29, Thompson was the right age to fit the Ripper descriptions, and we know he had some medical training. He was also said to carry a dissecting scalpel around with him, which he claimed he used to shave</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Frances Tumblety</name>
 		<picture>http://www.casebook.org/images/suspect_tumb.jpg</picture>
 		<notes>There is a strong case to be made that he was indeed the Batty Street Lodger</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Nikolay Vasiliev</name>
 		<picture>http://www.casebook.org/images/suspect_lodge.jpg</picture>
 		<notes>an elusive legend, which probably had some basis in reality, but was mostly embellished by the journalists who wrote it up</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 	<suspect>
 		<name>Dr. John Williams</name>
 		<picture>http://www.casebook.org/images/dr-john-williams.jpg</picture>
 		<notes>there is very little to suggest that he was Jack the Ripper</notes>
-		<victim> </victim>
+		<victim></victim>
 	</suspect>
 
 
