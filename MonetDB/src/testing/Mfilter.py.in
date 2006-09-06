@@ -91,6 +91,8 @@ test = (
                     r'^! Cannot stat file /proc/[0-9]+/fd/[0-9]+: (?:No such file or directory|Permission denied)$',
                 # Pathfinder: extra error messages that occur only with assertions enabled
                     r'^[ \t]*!# halted in .*, line [0-9]+$',
+                # suspicious output/messages/errors? most probably triggered by MkillUsers, but apparently not causing any harm:
+                    r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
@@ -216,8 +218,6 @@ test = (
                     r'^! (?:SQL|MAPI)PORT was not properly released by Mserver !$',
                 # ld warnings on IRIX64:
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
-                # suspicious output/messages/errors? with Pathfinder !??:
-                    r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
                  ])+')',  re.MULTILINE)
        )
 
