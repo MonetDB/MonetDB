@@ -93,10 +93,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			       "cast(null as varchar(1)) as table_cat, "
 			       "cast('' as varchar(1)) as table_schem, "
 			       "cast('' as varchar(1)) as table_name, "
-			       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
-			       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
-			       "when t.\"istable\" = false then cast('VIEW' as varchar(20)) "
-			       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
+			       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
+			       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
+			       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
+			       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
 			       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
 			       "cast('' as varchar(1)) as remarks "
 			       "from sys.\"tables\" t order by table_type");
@@ -114,11 +114,11 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 		       "cast(null as varchar(1)) as table_cat, "
 		       "s.\"name\" as table_schem, "
 		       "t.\"name\" as table_name, "
-		       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
+		       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
 		       
-		       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
-		       "when t.\"istable\" = false then cast('VIEW' as varchar(20)) "
-		       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
+		       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
+		       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
+		       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
 		       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
 		       "cast('' as varchar(1)) as remarks "
 		       "from sys.\"schemas\" s, sys.\"tables\" t "
@@ -167,13 +167,13 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 					}
 					buf[j] = 0;
 					if (strcmp(buf, "VIEW") == 0)
-						strcpy(query_end, " or t.\"istable\" = false");
+						strcpy(query_end, " or t.\"type\" = 1");
 					else if (strcmp(buf, "TABLE") == 0)
-						strcpy(query_end, " or t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0");
+						strcpy(query_end, " or t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0");
 					else if (strcmp(buf, "SYSTEM TABLE") == 0)
-						strcpy(query_end, " or t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0");
+						strcpy(query_end, " or t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0");
 					else if (strcmp(buf, "LOCAL TEMPORARY") == 0)
-						strcpy(query_end, " or t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1");
+						strcpy(query_end, " or t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1");
 					query_end += strlen(query_end);
 					j = 0;
 				} else if (j < 17 && szTableType[i] != '\'' && (j > 0 || szTableType[i] != ' '))
