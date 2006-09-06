@@ -860,7 +860,8 @@ doFile(Mapi mid, const char *file, int skipequals)
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 			/* in case of xquery; do the whole file in one go */
-			if (skipequals && !feof(fp)) continue;
+			if (skipequals && !feof(fp))
+				continue;
 		}
 
 		assert(hdl != NULL);
@@ -933,13 +934,14 @@ showCommands(void)
 }
 
 static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_error)
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_error, int xquery)
 {
 	char *line = NULL;
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
+	int sent = 0;		/* whether we sent any data to the server */
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1105,6 +1107,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		}
 		if (length > 0) {
 			assert(hdl != NULL);
+			sent = 1;
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
@@ -1116,11 +1119,18 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   If the server still wants more (shouldn't
 			   happen according to the protocol) we break
 			   out of the loop (via the continue).  The
-			   assertion at the end will then go off. */
-			if (mapi_query_done(hdl) == MMORE) {
+			   assertion at the end will then go off.
+
+			   Note that XQuery is weird: we continue
+			   sending more until we reach end-of-file,
+			   and *then* we send the mapi_query_done.  To
+			   exit, you need to send an end-of-file
+			   again. */
+			if (xquery || mapi_query_done(hdl) == MMORE) {
 			   	if (line != NULL) {
 					continue;	/* get more data */
 			   	} else if (mapi_query_done(hdl) == MMORE) {
+					assert(!xquery); /* XQuery never sends MMORE */
 					hdl = NULL;
 					continue;	/* done */
 				}
@@ -1154,7 +1164,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			mapi_close_handle(hdl);
 			hdl = NULL;
 		}
-	} while (line != NULL);
+		/* for XQuery, only exit when end-of-file and we
+		   didn't send any data */
+	} while (line != NULL || (xquery && sent));
 	/* reached on end of file */
 	assert(hdl == NULL);
 	return 0;
@@ -1529,10 +1541,7 @@ main(int argc, char **argv)
 		if (input && strcmp(language, "xquery") == 0) {
 			mapi_stream_into(mid, input, colname);
 		}
-		if (strcmp(language, "xquery") == 0)
-			c = doFile(mid, NULL, 1);
-		else
-			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error);
+		c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error, strcmp(language, "xquery") == 0);
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
 			deinit_readline();
