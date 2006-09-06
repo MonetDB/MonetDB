@@ -41,7 +41,11 @@
 
 
 static SQLRETURN
-SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+SQLTables_(ODBCStmt *stmt,
+	   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	   SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
 {
 	RETCODE rc;
 
@@ -55,7 +59,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 	fixODBCstring(szTableType, nTableTypeLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName ? (char *) szCatalogName : "", nSchemaNameLength, szSchemaName ? (char *) szSchemaName : "", nTableNameLength, szTableName ? (char *) szTableName : "",
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
+		nCatalogNameLength, szCatalogName ? (char *) szCatalogName : "",
+		nSchemaNameLength, szSchemaName ? (char *) szSchemaName : "",
+		nTableNameLength, szTableName ? (char *) szTableName : "",
 		nTableTypeLength, szTableType ? (char *) szTableType : "");
 #endif
 
@@ -68,7 +75,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 	 */
 
 	/* Check first on the special cases */
-	if (nSchemaNameLength == 0 && nTableNameLength == 0 && szCatalogName && strcmp((char *) szCatalogName, SQL_ALL_CATALOGS) == 0) {
+	if (nSchemaNameLength == 0 &&
+	    nTableNameLength == 0 &&
+	    szCatalogName &&
+	    strcmp((char *) szCatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set
 		   will be empty. */
@@ -79,7 +89,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			       "cast('' as varchar(1)) as table_type, "
 			       "cast('' as varchar(1)) as remarks "
 			       "where 0 = 1");
-	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 && szSchemaName && strcmp((char *) szSchemaName, SQL_ALL_SCHEMAS) == 0) {
+	} else if (nCatalogNameLength == 0 &&
+		   nTableNameLength == 0 &&
+		   szSchemaName &&
+		   strcmp((char *) szSchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
 		query = strdup("select cast(null as varchar(1)) as table_cat, "
 			       "name as table_schem, "
@@ -87,7 +100,11 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			       "cast('' as varchar(1)) as table_type, "
 			       "cast('' as varchar(1)) as remarks "
 			       "from sys.\"schemas\" order by table_schem");
-	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 && nTableNameLength == 0 && szTableType && strcmp((char *) szTableType, SQL_ALL_TABLE_TYPES) == 0) {
+	} else if (nCatalogNameLength == 0 &&
+		   nSchemaNameLength == 0 &&
+		   nTableNameLength == 0 &&
+		   szTableType &&
+		   strcmp((char *) szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select distinct "
 			       "cast(null as varchar(1)) as table_cat, "
@@ -139,7 +156,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped. Check it
 			   and maybe convert it. */
-			sprintf(query_end, " and s.\"name\" %s '%.*s'", memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=", nSchemaNameLength, (char*)szSchemaName);
+			sprintf(query_end, " and s.\"name\" %s '%.*s'",
+				memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=",
+				nSchemaNameLength,
+				(char*)szSchemaName);
 			query_end += strlen(query_end);
 		}
 
@@ -148,7 +168,10 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped.  Check
 			   it and may be convert it. */
-			sprintf(query_end, " and t.\"name\" %s '%.*s'", memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=", nTableNameLength, (char*)szTableName);
+			sprintf(query_end, " and t.\"name\" %s '%.*s'",
+				memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=",
+				nTableNameLength,
+				(char*)szTableName);
 			query_end += strlen(query_end);
 		}
 
@@ -169,11 +192,11 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 					if (strcmp(buf, "VIEW") == 0)
 						strcpy(query_end, " or t.\"type\" = 1");
 					else if (strcmp(buf, "TABLE") == 0)
-						strcpy(query_end, " or t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0");
+						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0)");
 					else if (strcmp(buf, "SYSTEM TABLE") == 0)
-						strcpy(query_end, " or t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0");
+						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0)");
 					else if (strcmp(buf, "LOCAL TEMPORARY") == 0)
-						strcpy(query_end, " or t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1");
+						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1)");
 					query_end += strlen(query_end);
 					j = 0;
 				} else if (j < 17 && szTableType[i] != '\'' && (j > 0 || szTableType[i] != ' '))
@@ -185,8 +208,7 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 
 		/* add the ordering */
 		strcpy(query_end,
-		       " order by table_type, "
-		       "table_schem, table_name");
+		       " order by table_type, table_schem, table_name");
 		query_end += strlen(query_end);
 		assert(query_end - query < 1000 + nSchemaNameLength + nTableNameLength + nTableTypeLength);
 	}
@@ -201,7 +223,11 @@ SQLTables_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 }
 
 SQLRETURN SQL_API
-SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+SQLTables(SQLHSTMT hStmt,
+	  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	  SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -214,18 +240,34 @@ SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength
 
 	clearStmtErrors(stmt);
 
-	return SQLTables_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szTableType, nTableTypeLength);
+	return SQLTables_(stmt,
+			  szCatalogName, nCatalogNameLength,
+			  szSchemaName, nSchemaNameLength,
+			  szTableName, nTableNameLength,
+			  szTableType, nTableTypeLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLTablesA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+SQLTablesA(SQLHSTMT hStmt,
+	   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	   SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
 {
-	return SQLTables(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szTableType, nTableTypeLength);
+	return SQLTables(hStmt,
+			 szCatalogName, nCatalogNameLength,
+			 szSchemaName, nSchemaNameLength,
+			 szTableName, nTableNameLength,
+			 szTableType, nTableTypeLength);
 }
 
 SQLRETURN SQL_API
-SQLTablesW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength, SQLWCHAR * szTableType, SQLSMALLINT nTableTypeLength)
+SQLTablesW(SQLHSTMT hStmt,
+	   SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength,
+	   SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength,
+	   SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength,
+	   SQLWCHAR * szTableType, SQLSMALLINT nTableTypeLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;
