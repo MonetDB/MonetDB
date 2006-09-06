@@ -61,6 +61,7 @@ typedef struct expression {
  
 typedef enum operator_type {
 	op_basetable,
+	op_table,
 	op_project,
 	op_select,
 	op_join,

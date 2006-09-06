@@ -56,8 +56,9 @@ typedef enum stmt_type {
 	st_basetable,	
 	st_table,		/* some functions return a table */
 	st_temp,		/* temporal bat */
-	st_bat,
+	st_rs_column,
 	st_column,		/* relational column result */
+	st_bat,
 	st_dbat,
 	st_idxbat,
 	st_const,
@@ -90,7 +91,6 @@ typedef enum stmt_type {
 	st_intersect,
 	st_union,
 
-	st_find,
 	st_bulkinsert,
 	st_append,
 	st_insert,
@@ -195,8 +195,10 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_parent(s)		((s)->op2.stval)
 #define ptable_statements(s)	((s)->op3.stval)
 
-extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_column(stmt *i, stmt *basetable);	/* relational column */
+extern stmt *stmt_rs_column(stmt *result_set, stmt *v, sql_subtype *tpe);
+
+extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_tbat(sql_table *t, int access);
 extern stmt *stmt_idxbat(sql_idx * i, int access);
 
@@ -239,7 +241,6 @@ extern stmt *stmt_sets(list *s1);
 extern stmt *stmt_ptable(stmt *p);
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 
-extern stmt *stmt_find(stmt *b, stmt *v, sql_column *c);
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
 
 extern stmt *stmt_append(stmt *c, stmt *values);
@@ -323,9 +324,11 @@ st_type2string(st_type type)
 		ST(basetable);
 		ST(table);
 		ST(temp);
-		ST(bat);
 
+		ST(rs_column);
 		ST(column);
+
+		ST(bat);
 		ST(dbat);
 		ST(idxbat);
 
@@ -361,7 +364,6 @@ st_type2string(st_type type)
 		ST(intersect);
 		ST(union);
 
-		ST(find);
 		ST(bulkinsert);
 		ST(append);
 		ST(insert);
@@ -601,7 +603,7 @@ stmt_destroy(stmt *s)
 		case st_insert:
 		case st_replace:
 		case st_pivot:
-		case st_find:
+		case st_rs_column:
 		case st_sql:
 		case st_seq_next:
 
@@ -876,7 +878,7 @@ stmt_temp(sql_subtype *t)
 }
 
 stmt *
-stmt_column(stmt *op1, stmt *basetable)
+stmt_column(stmt *op1, stmt *table)
 {
 	stmt *s = stmt_create(st_column);
 
@@ -886,7 +888,7 @@ stmt_column(stmt *op1, stmt *basetable)
 		s->nrcols = 1;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
-	s->h = basetable;	/* oid's used from this basetable */
+	s->h = table;	/* oid's used from this table */
 	return s;
 }
 
@@ -1395,18 +1397,17 @@ stmt_union(stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_find(stmt *b, stmt *v, sql_column *c)
+stmt_rs_column(stmt *rs, stmt *name, sql_subtype *tpe)
 {
-	stmt *s = stmt_create(st_find);
+	stmt *s = stmt_create(st_rs_column);
 
-	assert(c);
-	s->op1.stval = b;
-	s->op2.stval = v;
-	s->op4.cval = c;
+	s->op1.stval = rs;
+	s->op2.stval = name;
+	s->op4.typeval = *tpe;
 	s->nrcols = 1;
 	s->key = 0;
-	s->h = stmt_dup(b->h);
-	s->t = stmt_dup(b->t);
+	s->h = NULL;
+	s->t = NULL;
 	return s;
 }
 
@@ -1848,9 +1849,8 @@ tail_type(stmt *st)
 		return atom_type(st->op1.aval);
 	case st_convert:
 	case st_temp:
+	case st_rs_column:
 		return &st->op4.typeval;
-	case st_find:
-		return &st->op4.cval->type;
 	case st_var:
 		if (st->op2.typeval.type)
 			return &st->op2.typeval;
@@ -1905,6 +1905,7 @@ head_type(stmt *st)
 	case st_temp:
 	case st_bat:
 	case st_const:
+	case st_rs_column:
 		return sql_bind_localtype("oid");
 		/* return NULL; oid */
 
@@ -1912,9 +1913,6 @@ head_type(stmt *st)
 		return tail_type(st->op1.stval);
 	case st_atom:
 		return atom_type(st->op1.aval);
-	case st_find:
-		return head_type(st->op2.stval);
-
 	default:
 		fprintf(stderr, "missing head type %u: %s\n", st->type, st_type2string(st->type));
 		return NULL;
@@ -1999,6 +1997,7 @@ column_name(stmt *st)
 	case st_join:
 	case st_outerjoin:
 	case st_derive:
+	case st_rs_column:
 		return column_name(st->op2.stval);
 
 	case st_mirror:
@@ -2413,7 +2412,7 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_append: case st_insert: case st_replace:
 		case st_exception:
 		case st_pivot:
-	  	case st_find:
+	  	case st_rs_column:
 		case st_sql:
 
 		/* simple case of statements of only statements */

@@ -422,8 +422,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlis
 		if (restype && !has_return(b)) 
 			return sql_error(sql, 01, "Missing return statement");
 
-		/* in prepare mode we instanciate the function */
-		if (sql->mode == m_prepare) {
+		/* in execute mode we instanciate the function */
+		if (sql->mode == m_execute) {
 			return b;
 		} else {
 			stmt_destroy(b);

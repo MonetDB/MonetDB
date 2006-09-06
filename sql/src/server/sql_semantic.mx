@@ -339,9 +339,9 @@ sqlparse_intern(mvc *m, char *query, modes_t mode)
 				"internal query: %s", query);
 	} else {
 		/* should use scope_subquery, but that doesn't handle
-		   psm (so for mode m_prepare) we use semantic
+		   psm (so for mode m_execute) we use semantic
 		*/
-		if (mode == m_prepare)
+		if (mode == m_execute)
 			sq = semantic(m, NULL, m->sym);
 		else
 			sq = scope_subquery(m, NULL, m->sym);

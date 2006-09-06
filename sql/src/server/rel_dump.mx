@@ -185,6 +185,15 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			exps_print(sql, rel->exps, depth, 1);
 		}
 		break;
+	case op_table:
+		if (rel->name) {
+			print_indent(sql, depth);
+			printf("table(%s)", rel->name);
+		}
+		if (rel->exps) {
+			exps_print(sql, rel->exps, depth, 1);
+		}
+		break;
 	case op_join: 
 	case op_left: 
 	case op_right: 

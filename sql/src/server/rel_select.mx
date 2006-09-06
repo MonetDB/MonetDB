@@ -633,6 +633,12 @@ rel_bind_path_( mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 			found = 1;
 		}
 		break;
+	case op_table:
+		if (e->l && rel->name && strcmp(e->l, rel->name) != 0)
+			return 0;
+		if (rel->exps && exps_bind_column(rel->exps, e->r)) 
+			found = 1;
+		break;
 	case op_basetable: 
 	    {
 		node *cn;
@@ -703,6 +709,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname )
 		return exps;
 	case op_groupby:
 	case op_project:
+	case op_table:
 		if (rel->exps) {
 			node *en;
 
@@ -784,6 +791,9 @@ rel_copy( sql_rel *i )
 	case op_basetable:
 		rel->l = i->l;
 		break;
+	case op_table:
+		rel->l = exp_dup(i->l); 
+		break;
 	case op_groupby:
 		rel->l = rel_copy(i->l);
 		if (i->r)
@@ -820,6 +830,21 @@ rel_basetable(sql_table *t, char *tname)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = list_length(t->columns.set);
+	return rel;
+}
+
+static sql_rel *
+rel_table_func(char *tname, sql_exp *f, list *exps) 
+{
+	sql_rel *rel = rel_create();
+
+	rel->name = (tname)?_strdup(tname):NULL;
+	rel->l = f;
+	rel->r = NULL;
+	rel->op = op_table;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = list_length(exps);
 	return rel;
 }
 
@@ -1390,7 +1415,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 			*p = rel;
 			l = rel_bind_column_(sql, p, rel->l, cname);
 			if (l && r && !r->subquery) {
-				(void) sql_error(sql, 02, "SELECT: identifier %s ambiguous", cname);
+				(void) sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", cname);
 				return NULL;
 			}
 		}
@@ -1400,12 +1425,13 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	}
 	case op_groupby:
 	case op_project:
+	case op_table:
 		if (rel->exps && exps_bind_column(rel->exps, cname))
 			return rel;
 		*p = rel;
 		if (rel->processed)
 			return NULL;
-		if (rel->l)
+		if (rel->l && rel->op != op_table)
 			return rel_bind_column_(sql, p, rel->l, cname );
 		break;
 	case op_basetable:
@@ -1464,7 +1490,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
 		return rel_rename_column(sql, rel, cname);
 	}
 
-	if (is_project(rel->op)) {
+	if (is_project(rel->op) || rel->op == op_table) {
 		if (rel->exps) {
 			sql_exp *e = exps_bind_column(rel->exps, cname);
 			if (e)
@@ -1514,7 +1540,31 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname )
 }
 
 
+static sql_rel *
+rel_table_func_named(mvc *sql, sql_rel *rel, symbol *query)
+{
+	list *exps = NULL;
+	sql_subtype *st = NULL;
+	node *m;
 
+	sql_exp *e = rel_value_exp(sql, &rel, query->data.lval->h->data.sym, sql_from);
+	char *tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
+
+	if (!e)
+		return NULL;
+
+	/* colum or table function */
+	st = exp_subtype(e);
+	assert(st->comp_type);
+
+	/* foreach column add column name */
+	exps = new_exp_list();
+	for (m = st->comp_type->columns.set->h; m; m = m->next) {
+		sql_column *c = m->data;
+		append(exps, exp_column(NULL, c->base.name, &c->type ));
+	}
+	return rel_table_func(tname, e, exps);
+}
 
 static sql_rel *
 table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
@@ -1533,6 +1583,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		if (!s)
 			s = cur_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
+		/* TODO: search path */
 		if (!t && !sname) {
 			s = tmp_schema(sql);
 			t = mvc_bind_table(sql, s, tname);
@@ -1564,21 +1615,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		}
 		return rel_basetable(t, tname);
 	} else if (tableref->token == SQL_TABLE) {
-		/* not sure this is valid SQL, (func_ref table_name)! */
-		symbol *ts = tableref->data.lval->h->data.sym;
-		sql_exp *e = rel_value_exp(sql, &rel, ts, sql_from);
-		char *tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
-
-		if (!e)
-			return NULL;
-		if (e->type != e_relation) {
-			exp_destroy(e);
-			return sql_error(sql, 02, "No relation returned by table reference %s", tname);
-		}
-		rel = e->l;
-		e->l = NULL;
-		rel_set_name(rel, tname); 
-		return rel;
+		return rel_table_func_named(sql, rel, tableref);
 	} else if (tableref->token == SQL_SELECT) {
 		return rel_subquery_optname(sql, rel, tableref, sql_from);
 	} else {
@@ -3222,6 +3259,17 @@ rel_cast(mvc *sql, sql_rel *rel, symbol *se, int f)
 	return NULL;
 }
 
+sql_exp *
+rel_table_func_exp(mvc *sql, sql_rel *rel, symbol *sym, int f ) 
+{
+	sql_rel *r = rel_subquery(sql, rel, sym, f);
+
+	if (!r)
+		return NULL;
+	/* todo administer that its a table call */
+	return exp_relation(r);
+}
+
 
 static sql_exp *
 rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
@@ -3271,6 +3319,11 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 			return rel_lastexp(sql, r);
 		return NULL;
 	}
+	case SQL_TABLE:  /* turn a subquery into a tabular result */
+	{
+		return rel_table_func_exp(sql, *rel, se->data.sym, f);
+	}
+		break;
 	case SQL_PARAMETER:{
 		char n[BUFSIZ];
 
@@ -3349,7 +3402,7 @@ rel_table_exp(mvc *sql, sql_rel *rel, symbol *column_e )
 		if (r) 
 			return rel_projections(sql, r, tname );
 		return sql_error(sql, 02, 
-			"Column expression Table %s unknown", tname);
+			"Column expression Table '%s' unknown", tname);
 	}
 	return NULL;
 }

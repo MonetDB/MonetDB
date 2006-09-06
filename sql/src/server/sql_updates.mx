@@ -1110,7 +1110,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 static stmt *
 sql_bulkinsert(mvc *sql, scope *scp, sql_table *t, char *tsep, char *rsep, char *filename, int nr)
 {
-	stmt *bats = NULL;
+	stmt *rs = NULL;
 	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
 	node *n;
 	int i, len = 0;
@@ -1119,16 +1119,17 @@ sql_bulkinsert(mvc *sql, scope *scp, sql_table *t, char *tsep, char *rsep, char 
 
 	scp = scope_open(scp);
 	tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
-	bats = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), fname, nr);
+	rs = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), fname, nr);
 	len = list_length(t->columns.set);
 	inserts = NEW_ARRAY(stmt *, len);
 
 	for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 		sql_column *c = n->data;
 
-		inserts[i] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), stmt_find(stmt_dup(bats), stmt_atom_string(_strdup(c->base.name)), c));
+		inserts[i] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), 
+				stmt_rs_column(stmt_dup(rs), stmt_atom_string(_strdup(c->base.name)), &c->type));
 	}
-	stmt_destroy(bats);
+	stmt_destroy(rs);
 	res = sql_insert(sql, t, inserts, len, 1);
 	scp = scope_close(scp);
 	cleanup_stmts(inserts, len);

@@ -103,7 +103,7 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 	for (m = st->comp_type->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
 		char *cname = _strdup(c->base.name);
-		stmt *sc = stmt_find(stmt_dup(sq), stmt_atom_string(cname), c);
+		stmt *sc = stmt_rs_column(stmt_dup(sq), stmt_atom_string(cname), &c->type);
 
 		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
 		sc = stmt_column(sc, stmt_dup(sq));
