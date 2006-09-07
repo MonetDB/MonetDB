@@ -2764,6 +2764,8 @@ MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
 
 @-
 The comparison implementations are relatively straightforward.
+@= compareDef
+mtime_export str MTIME@3_@1(int *ret, @3 *v, @3 *w);
 @= compareImpl
 str MTIME@3_@1(int *ret, @3 *v, @3 *w){
 	    if( *v== @3_nil || *w== @3_nil)
@@ -2771,6 +2773,14 @@ str MTIME@3_@1(int *ret, @3 *v, @3 *w){
 	    else    *ret = *v @2 *w;
 	return MAL_SUCCEED;
 }
+@= compareDefAll
+mtime_export str MTIME@1_isnil(int *ret, @1 *v);
+	    @:compareDef(EQ,==,@1)@
+	    @:compareDef(NEQ,!=,@1)@
+	    @:compareDef(LT,<,@1)@
+	    @:compareDef(LE,<=,@1)@
+	    @:compareDef(GT,>,@1)@
+	    @:compareDef(GE,>=,@1)@
 @= compareAll
 str MTIME@1_isnil(int *ret, @1 *v){
 	*ret= *v == @1_nil;
@@ -2782,6 +2792,8 @@ str MTIME@1_isnil(int *ret, @1 *v){
 	    @:compareImpl(LE,<=,@1)@
 	    @:compareImpl(GT,>,@1)@
 	    @:compareImpl(GE,>=,@1)@
+@h
+@:compareDefAll(date)@
 @c
 @:compareAll(date)@
 @:compareAll(daytime)@

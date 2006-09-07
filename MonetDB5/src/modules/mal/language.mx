@@ -84,6 +84,11 @@ pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
 address MALassertTriple
 comment "Assertion test";
 
+pattern dataflow():int
+address MALstartDataflow
+comment "The current guarded block is executed using
+dataflow control ";
+
 command register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string and register it as a MAL function";
@@ -119,6 +124,7 @@ mal_export str MALassertOid(int *ret, oid *val, str *msg);
 mal_export str MALassertSht(int *ret, sht *val, str *msg);
 mal_export str MALassertInt(int *ret, int *val, str *msg);
 mal_export str MALassertLng(int *ret, lng *val, str *msg);
+mal_export str MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help);
 mal_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDevalFile(int *ret, str *fnme);
@@ -213,6 +219,24 @@ CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	callString(MCgetClient(), *s, FALSE);
 	return MAL_SUCCEED;
 }
+
+str
+MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret;
+	str msg= MAL_SUCCEED;
+
+	ret= (int*) getArgReference(stk,pci,0);
+	if( pci == NULL || stk == NULL){
+		*ret = 1; /* ignore dataflow request */
+		return MAL_SUCCEED;
+	}
+	msg= runMALdataflow(MCgetClient(), mb, getPC(mb,pci), pci->jump, stk,0,0);
+	if( msg == MAL_SUCCEED)
+		*ret = 0;
+	return MAL_SUCCEED;
+}
+
 
 str 
 CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){

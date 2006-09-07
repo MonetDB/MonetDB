@@ -27,121 +27,120 @@ aligned on the head. Moreover, the head of the BATs
 are limited to :void, which can be cheaply realized using
 the GRPsplit operation.
 @mal
-module batstr;
-command str(b:bat[:void,:str]):bat[:void,:str]
+command batcalc.str(b:bat[:void,:str]):bat[:void,:str]
 address STRbattostr
 comment "Identity mapping for string bats";
 
-command length( s:bat[:void,:str] ) :bat[:void,:int]
+command batcalc.length( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatLength
 comment "Return the length of a string.";
 
-command bytes( s:bat[:void,:str] ) :bat[:void,:int]
+command batcalc.bytes( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-command match(b:bat[:void,:str], pat:str):bat[:void,:bit]
+command batcalc.match(b:bat[:void,:str], pat:str):bat[:void,:bit]
 address STRbatmatchCst
 comment "POSIX pattern matching against a string BAT";
 
-command ==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
+command batcalc.==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatEqual
 comment "Equate a bat of strings against each other";
-command ==( l:bat[:void,:str], r:str) :bat[:void,:bit]
+command batcalc.==( l:bat[:void,:str], r:str) :bat[:void,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
-command !=( l:bat[:void,:str], r:bat[:oid,:str]) :bat[:void,:bit]
+command batcalc.!=( l:bat[:void,:str], r:bat[:oid,:str]) :bat[:void,:bit]
 address STRbatNotEqual
 comment "Equate a bat of strings against each other";
-command !=( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
+command batcalc.!=( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatNotEqual
 comment "Equate a bat of strings against each other";
-command !=( l:bat[:void,:str], r:str) :bat[:void,:bit]
+command batcalc.!=( l:bat[:void,:str], r:str) :bat[:void,:bit]
 address STRbatNotEqualCst
 comment "Equate a bat of strings against a singleton";
 
-command toLower( s:bat[:void,:str] ) :bat[:void,:str]
+command batcalc.toLower( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatLower
 comment "Convert a string to lower case.";
-command toUpper( s:bat[:void,:str] ) :bat[:void,:str]
+command batcalc.toUpper( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatUpper
 comment "Convert a string to upper case.";
 
-command trim( s:bat[:void,:str] ) :bat[:void,:str]
+command batcalc.trim( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatStrip
 comment "Strip whitespaces around a string.";
-command ltrim( s:bat[:void,:str] ) :bat[:void,:str]
+command batcalc.ltrim( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatLtrim
 comment "Strip whitespaces from start of a string.";
-command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
+command batcalc.rtrim( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatRtrim
 comment "Strip whitespaces from end of a string.";
 
-command startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:bit]
+command batcalc.startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:bit]
 address STRbatPrefix
 comment "Prefix check.";
-command startsWith(s:bat[:void,:str],prefix:str):bat[:void,:bit]
+command batcalc.startsWith(s:bat[:void,:str],prefix:str):bat[:void,:bit]
 address STRbatPrefixcst
 comment "Prefix check.";
 
-command endsWith( s:bat[:void,:str], suffix:bat[:void,:str] ) :bat[:void,:bit]
+command batcalc.endsWith( s:bat[:void,:str], suffix:bat[:void,:str] ) :bat[:void,:bit]
 address STRbatSuffix
 comment "Suffix check.";
-command endsWith( s:bat[:void,:str], suffix:str ) :bat[:void,:bit]
+command batcalc.endsWith( s:bat[:void,:str], suffix:str ) :bat[:void,:bit]
 address STRbatSuffixcst
 comment "Suffix check.";
 
-command search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
+command batcalc.search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
 address STRbatstrSearch
 comment "Search for a substring. Returns position, -1 if not found.";
-command search( s:bat[:void,:str], c:str ) :bat[:void,:int]
+command batcalc.search( s:bat[:void,:str], c:str ) :bat[:void,:int]
 address STRbatstrSearchcst
 comment "Search for a substring. Returns position, -1 if not found.";
 
-command r_search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
+command batcalc.r_search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
 address STRbatRstrSearch
 comment "Reverse search for a substring. Returns position, -1 if not found.";
-command r_search( s:bat[:void,:str], c:str ) :bat[:void,:int]
+command batcalc.r_search( s:bat[:void,:str], c:str ) :bat[:void,:int]
 address STRbatRstrSearchcst
 comment "Reverse search for a substring. Returns position, -1 if not found.";
 
-command +( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
+command batcalc.+( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
 address STRbatConcat
 comment "Concatenate two strings.";
-command +( l:bat[:void,:str], r:str) :bat[:void,:str]
+command batcalc.+( l:bat[:void,:str], r:str) :bat[:void,:str]
 address STRbatConcatcst
 comment "Concatenate a string to a bat of strings.";
-command +( l:str, r:bat[:void,:str]) :bat[:void,:str]
+command batcalc.+( l:str, r:bat[:void,:str]) :bat[:void,:str]
 address STRcstConcatbat
 comment "Concatenate two strings.";
 
-command string(b:bat[:void,:str],offset:bat[:void,:int]) :bat[:void,:str]
+command batcalc.string(b:bat[:void,:str],offset:bat[:void,:int]) :bat[:void,:str]
 address STRbatTail
 comment "Return the tail s[offset..n] of a string s[0..n].";
-command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
+command batcalc.string(b:bat[:void,:str],offset:int) :bat[:void,:str]
 address STRbatTailcst
 comment "Return the tail s[offset..n] of a string s[0..n].";
 
-command chrAt( s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:chr]
+command batcalc.chrAt( s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:chr]
 address STRbatChrAt
 comment "String array lookup operation.";
-command chrAt( s:bat[:void,:str], index:int) :bat[:void,:chr]
+command batcalc.chrAt( s:bat[:void,:str], index:int) :bat[:void,:chr]
 address STRbatChrAtcst
 comment "String array lookup operation.";
 
-command unicodeAt(s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:int]
+command batcalc.unicodeAt(s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:int]
 address STRbatWChrAt
 comment "get a unicode character (as an int) from a string position.";
-command unicodeAt(s:bat[:void,:str], index:int) :bat[:void,:int]
+command batcalc.unicodeAt(s:bat[:void,:str], index:int) :bat[:void,:int]
 address STRbatWChrAtcst
 comment "get a unicode character (as an int) from a string position.";
 
-command string(s:bat[:void,:str],offset:int,count:int):bat[:void,:str]
+command batcalc.string(s:bat[:void,:str],offset:int,count:int):bat[:void,:str]
 address STRbatSubStringcst
 comment "Return substring s[offset..offset+count] of a string s[0..n]";
 
-command substitute(s:bat[:void,:str],src:str,dst:str,rep:bit):bat[:void,:str]
+command batcalc.substitute(s:bat[:void,:str],src:str,dst:str,rep:bit):bat[:void,:str]
 address STRbatSubstitutecst
 comment "Substitute first occurrence of 'src' by
 	'dst'.  Iff repeated = true this is
@@ -151,10 +150,10 @@ comment "Substitute first occurrence of 'src' by
 	size, repeating is only done iff src is
 	not a substring of dst.";
 
-command like(s:bat[:any_1,:str],pat:str,esc:str):bat[:any_1,:void]
+command batcalc.like(s:bat[:any_1,:str],pat:str,esc:str):bat[:any_1,:void]
 address STRbatlike
 comment "Perform SQL like operation against a string bat";
-command like(s:bat[:any_1,:str],pat:str):bat[:any_1,:void]
+command batcalc.like(s:bat[:any_1,:str],pat:str):bat[:any_1,:void]
 address STRbatlike2
 comment "Perform SQL like operation against a string bat";
 @+ Implementation

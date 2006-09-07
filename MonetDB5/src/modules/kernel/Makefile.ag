@@ -9,7 +9,17 @@ MTSAFE
 lib__batstr = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = batstr.mx
+	SOURCES = batstr.mx 
+	HEADERS = h
+	#SCRIPTS = mil ""
+	LIBS = ../atoms/lib_str $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+}
+lib__batmtime = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = batmtime.mx
 	HEADERS = h
 	#SCRIPTS = mil ""
 	LIBS = ../atoms/lib_str $(MONETDB_LIBS) -lbat -lstream \
@@ -83,7 +93,7 @@ lib__logger = {
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx \
+		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
 		batcolor.mx batcalc.mx batmath.mx group.mx aggr.mx array.mx \
 		counters.mx logger.mx pqueue.mx mkey.mx microbenchmark.mx
 }
