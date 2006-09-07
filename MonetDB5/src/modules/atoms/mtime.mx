@@ -1001,7 +1001,6 @@ mtime_export int TYPE_timestamp;
 mtime_export int TYPE_tzone;
 mtime_export int TYPE_rule;
 
-#endif /* _MONETTIME_H_ */
 @+ Defines
 @c
 str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
@@ -2794,6 +2793,9 @@ str MTIME@1_isnil(int *ret, @1 *v){
 	    @:compareImpl(GE,>=,@1)@
 @h
 @:compareDefAll(date)@
+@:compareDefAll(daytime)@
+
+#endif /* _MONETTIME_H_ */
 @c
 @:compareAll(date)@
 @:compareAll(daytime)@
