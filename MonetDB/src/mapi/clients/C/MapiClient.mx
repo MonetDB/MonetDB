@@ -808,7 +808,7 @@ dump_tables(Mapi mid)
 		}
 
 static int
-doFile(Mapi mid, const char *file, int skipequals)
+doFile(Mapi mid, const char *file, int xquery)
 {
 	FILE *fp;
 	char *buf = NULL;
@@ -860,7 +860,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 			CHECK_RESULT(mid, hdl, buf, continue);
 
 			/* in case of xquery; do the whole file in one go */
-			if (skipequals && !feof(fp))
+			if (xquery && !feof(fp))
 				continue;
 		}
 
@@ -888,12 +888,12 @@ doFile(Mapi mid, const char *file, int skipequals)
 					mapi_rows_affected(hdl));
 			} else {
 				while ((reply = mapi_fetch_line(hdl)) != NULL) {
-					if (*reply == '=' && skipequals)
+					if (xquery && *reply == '=')
 						reply++;
 					fprintf(toConsole, "%s\n", reply);
 				}
 			}
-		} while ((rc = mapi_next_result(hdl)) == 1);
+		} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
@@ -1152,9 +1152,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						mapi_rows_affected(hdl));
 				} else {
 					while ((reply = mapi_fetch_line(hdl)) != NULL)
+						if (xquery && *reply == '=')
+							reply++;
 						fprintf(toConsole, "%s\n", reply);
 				}
-			} while ((rc = mapi_next_result(hdl)) == 1);
+			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
 			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 				continue;	/* get more data */
 

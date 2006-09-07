@@ -189,6 +189,7 @@ section.
 @item mapi_get_trace()	@tab	Get trace flag
 @item mapi_get_user()	@tab	Current user name
 @item mapi_next_result()	@tab	Go to next result set
+@item mapi_needmore()	@tab	Return whether more data is needed
 @item mapi_ping()	@tab	Test server for accessibility
 @item mapi_prepare()	@tab	Prepare a query for execution
 @item mapi_prepare_array()	@tab	Prepare a query for execution using arguments
@@ -1015,6 +1016,7 @@ mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export char *mapi_result_error(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
+mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
 mapi_export int mapi_more_results(MapiHdl hdl);
 mapi_export MapiHdl mapi_new_handle(Mapi mid);
 mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
@@ -1526,6 +1528,12 @@ mapi_next_result(MapiHdl hdl)
 		     hdl->result->errorstr != NULL))
 			return 1;
 	}
+	return hdl->needmore ? MMORE : MOK;
+}
+
+MapiMsg
+mapi_needmore(MapiHdl hdl)
+{
 	return hdl->needmore ? MMORE : MOK;
 }
 
@@ -3836,6 +3844,8 @@ mapi_fetch_line(MapiHdl hdl)
 	    result->querytype == Q_TABLE &&
 	    result->row_count > 0 &&
 	    result->cache.first + result->cache.tuplecount < result->row_count) {
+		if (hdl->needmore) /* escalate */
+			return NULL;
 		if (hdl->mid->active != NULL)
 			read_into_cache(hdl->mid->active, 0);
 		hdl->mid->active = hdl;
