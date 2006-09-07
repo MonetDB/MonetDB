@@ -3,8 +3,8 @@ bat.setSequenceBase(b,0@0);
 bat.append(b,"hello");
 bat.append(b,"goodbye");
 
-z1:= batstr.match(b,"hel");
+z1:= batcalc.match(b,"hel");
 io.print(z1);
 
-z2:= batstr.match(b,".*[ly].*");
+z2:= batcalc.match(b,".*[ly].*");
 io.print(z2);

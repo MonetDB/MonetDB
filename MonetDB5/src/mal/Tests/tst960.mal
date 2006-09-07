@@ -8,34 +8,34 @@ bat.append(S,"new");
 bat.append(S,"world");
 io.print(S);
 
-L:= batstr.length(S);
+L:= batcalc.length(S);
 io.print(L);
-L:= batstr.bytes(S);
+L:= batcalc.bytes(S);
 io.print(L);
 
-B:= batstr.==(S,"hello");
+B:= batcalc.==(S,"hello");
 io.print(B);
 
-B:= batstr.match(S,"hello");
+B:= batcalc.match(S,"hello");
 io.print(B);
 
-U:= batstr.toUpper(S);
+U:= batcalc.toUpper(S);
 io.print(U);
 
-l:= batstr.toLower(U);
+l:= batcalc.toLower(U);
 io.print(l);
 
-trim:= batstr.trim(S); 
+trim:= batcalc.trim(S); 
 io.print(trim);
-ltrim:= batstr.ltrim(S); 
+ltrim:= batcalc.ltrim(S); 
 io.print(ltrim);
-rtrim:= batstr.rtrim(S); 
+rtrim:= batcalc.rtrim(S); 
 io.print(rtrim);
 
 io.print("Start searches");
-srch:= batstr.search(S,"hello"); 
+srch:= batcalc.search(S,"hello"); 
 io.print(srch);
-srch:= batstr.search(S,S); 
+srch:= batcalc.search(S,S); 
 io.print(srch);
-plus:= batstr.+(S,S); 
+plus:= batcalc.+(S,S); 
 io.print(plus);
