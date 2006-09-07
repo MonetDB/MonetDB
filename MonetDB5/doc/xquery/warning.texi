@@ -1,7 +1,0 @@
-@ifset XQmanual
-@cartouche
-The functionally and results shown on this page depend on
-the MonetDB Version 4 server. 
-The roll forward to Version 5 is being planned.
-@end cartouche
-@end ifset
