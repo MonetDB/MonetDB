@@ -2581,16 +2581,6 @@ compute_rule_foryear(date *ret, rule *val, int *year)
 	return GDK_SUCCEED;
 }
 
-@= isnil
-int @1_isnil(bit *retval, @1 *val)
-{
-	*retval = *val == @1_nil;
-	return GDK_SUCCEED;
-}
-@c
-@:isnil(date)@
-@:isnil(daytime)@
-
 @= compare
 int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 {
@@ -2764,16 +2754,16 @@ MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
 @-
 The comparison implementations are relatively straightforward.
 @= compareDef
-mtime_export str MTIME@3_@1(int *ret, @3 *v, @3 *w);
+mtime_export str MTIME@3_@1(bit *ret, @3 *v, @3 *w);
 @= compareImpl
-str MTIME@3_@1(int *ret, @3 *v, @3 *w){
+str MTIME@3_@1(bit *ret, @3 *v, @3 *w){
 	    if( *v== @3_nil || *w== @3_nil)
 	            *ret= bit_nil;
 	    else    *ret = *v @2 *w;
 	return MAL_SUCCEED;
 }
 @= compareDefAll
-mtime_export str MTIME@1_isnil(int *ret, @1 *v);
+mtime_export str MTIME@1_isnil(bit *ret, @1 *v);
 	    @:compareDef(EQ,==,@1)@
 	    @:compareDef(NEQ,!=,@1)@
 	    @:compareDef(LT,<,@1)@
@@ -2781,7 +2771,7 @@ mtime_export str MTIME@1_isnil(int *ret, @1 *v);
 	    @:compareDef(GT,>,@1)@
 	    @:compareDef(GE,>=,@1)@
 @= compareAll
-str MTIME@1_isnil(int *ret, @1 *v){
+str MTIME@1_isnil(bit *ret, @1 *v){
 	*ret= *v == @1_nil;
 	return MAL_SUCCEED;
 }
