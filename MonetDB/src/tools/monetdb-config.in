@@ -63,7 +63,7 @@ EOF
 }
 
 if test $# -eq 0; then
-    usage 1
+    usage 1 >&2
 fi
 
 cflags=false
@@ -149,8 +149,7 @@ while test $# -gt 0; do
         ;;
 
     *)
-	usage
-	exit 1
+	usage 1 >&2
 	;;
     esac
     shift
