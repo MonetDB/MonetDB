@@ -468,27 +468,9 @@ This way the function can inform the caller to skip the block
 when dataflow execution was performed.
 @{
 @h
-mal_export str startMALdataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 @c
-str
-startMALdataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret;
-	str msg= MAL_SUCCEED;
-
-	ret= (int*) getArgReference(stk,pci,0); 
-	if( pci == NULL || stk == NULL){
-		*ret = 1; /* ignore dataflow request */
-		return MAL_SUCCEED;
-	}
-	msg= runMALdataflow(MCgetClient(), mb, getPC(mb,pci), pci->jump, stk,0,0);
-	if( msg == MAL_SUCCEED)
-		*ret = 0;
-	return MAL_SUCCEED;
-}
-
 typedef struct{
 	InstrPtr p;
 	int pending;

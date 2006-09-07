@@ -1244,9 +1244,10 @@ This scheme is intended for just-in-time compilation.
 			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr, 
 			findModule(cntxt->nspace, putName(modnme,strlen(modnme))) );
-		curInstr->fcn = getAddressFromLib(cntxt->nspace,nme);
+		curInstr->fcn = getAddressFromLib(
+			findModule(cntxt->nspace, putName(modnme,strlen(modnme))),nme );
 		if( curInstr->fcn == NULL)
-			curInstr->fcn = getAddress(cntxt->nspace->name,nme, 0);
+			curInstr->fcn = getAddress(modnme,nme, 0);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
 			malAtomProperty(curBlk, curInstr);
