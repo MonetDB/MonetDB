@@ -103,15 +103,15 @@ mal_export str MTIME@1bat_@3(int *ret, int *l, @1 *r);
 mal_export str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst);
 
 @= implCmpOp
-str MTIME@1bat_@3(int *ret, int *l, @1 *r)
+str MTIME@1bat_@3(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
 	int xx,yy;
-	@1 v, *vp= &v;
+	bit v, *vp = &v;
 
 	prepareOperand2(left,l,right,r,"batcalc.@2");
 	@:chkSize(left,right,CMDcompare@1)@
-	prepareResult2(bn,left,right,TYPE_@1,"batcalc.@2");
+	prepareResult2(bn,left,right,TYPE_bit,"batcalc.@2");
 
 	o = BUNfirst(left);
 	p = BUNfirst(right);
@@ -120,8 +120,8 @@ str MTIME@1bat_@3(int *ret, int *l, @1 *r)
 	yy = BUNsize(right);
 	while(p<q) {
 		ptr h = BUNhead(left,o);
-		ptr tl = BUNtail(left,o);
-		ptr tr = BUNtail(right,p);
+		@1 *tl = (@1*)BUNtail(left,o);
+		@1 *tr = (@1*)BUNtail(right,p);
 		MTIME@1_@3(vp, tl, tr);
 		bunfastins(bn, h, vp);
 		o += xx;
@@ -142,10 +142,10 @@ str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
 {   BAT *bn, *left;
 	BUN p,q;
 	int xx;
-	@1 v, *vp= &v;
+	bit v, *vp= &v;
 
 	prepareOperand(left,l,"batcalc.@2");
-	prepareResult(bn,left,TYPE_@1,"batcalc.@2");
+	prepareResult(bn,left,TYPE_bit,"batcalc.@2");
 
 	p = BUNfirst(left);
 	q = BUNlast(left);
