@@ -248,6 +248,9 @@ an initially empty insertion BAT.
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(costModel)@
+@-
+The costModel does not change the program properties,
+which means we can skip the expensive defensive tests.
 @c
-@:wrapOptimizer(costModel,OPT_CHECK_ALL)@
+@:wrapOptimizer(costModel,0)@
 @}

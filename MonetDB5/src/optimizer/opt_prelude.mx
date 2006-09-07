@@ -23,6 +23,7 @@ These definitions are handy to have around in the optimizer
 #include "opt_support.h"
 
 opt_export  str aggrRef;
+opt_export  str alarmRef;
 opt_export  str algebraRef;
 opt_export  str appendRef;
 opt_export  str avgRef;
@@ -37,6 +38,7 @@ opt_export  str bstreamsRef;
 opt_export  str evalRef;
 opt_export  str calcRef;
 opt_export  str countRef;
+opt_export	str columnRef;
 opt_export  str crossRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
@@ -57,6 +59,8 @@ opt_export  str kdifferenceRef;
 opt_export  str kunionRef;
 opt_export  str likeselectRef;
 opt_export  str lookupRef;
+opt_export  str lockRef;
+opt_export	str semaRef;
 opt_export  str markHRef;
 opt_export  str markTRef;
 opt_export  str matRef;
@@ -109,6 +113,7 @@ opt_export void optimizerInit(void);
 #include "opt_prelude.h"
 
 str aggrRef;
+str alarmRef;
 str algebraRef;
 str appendRef;
 str avgRef;
@@ -123,6 +128,7 @@ str binddbatRef;
 str bstreamsRef;
 str calcRef;
 str countRef;
+str columnRef;
 str crossRef;
 str deleteRef;
 str depositRef;
@@ -143,6 +149,8 @@ str kdifferenceRef;
 str kunionRef;
 str likeselectRef;
 str lookupRef;
+str lockRef;
+str semaRef;
 str markTRef;
 str markHRef;
 str matRef;
@@ -191,6 +199,7 @@ str unsafeRef;
 void optimizerInit(){
 	if(batRef == NULL){
 		aggrRef = putName("aggr",4);
+		alarmRef = putName("alarm",5);
 		algebraRef = putName("algebra",7);
 		appendRef = putName("append",6);
 		avgRef = putName("avg",3);
@@ -205,6 +214,7 @@ void optimizerInit(){
 		binddbatRef = putName("bind_dbat",9);
 		calcRef = putName("calc",4);
 		countRef = putName("count",5);
+		columnRef = putName("column",6);
 		crossRef = putName("cross",5);
 		deleteRef = putName("delete",6);
 		depositRef = putName("deposit",7);
@@ -225,6 +235,7 @@ void optimizerInit(){
 		kunionRef= putName("kunion",6);
 		likeselectRef = putName("likeselect",10);
 		lookupRef = putName("lookup",6);
+		lockRef = putName("lock",4);
 		markTRef = putName("markT",5);
 		markHRef = putName("markH",5);
 		matRef = putName("mat",3);
@@ -252,6 +263,7 @@ void optimizerInit(){
 		rsColumnRef = putName("rsColumn",8);
 		selectRef = putName("select",6);
 		semijoinRef = putName("semijoin",8);
+		semaRef = putName("sema",4);
 		setAccessRef = putName("setAccess",9);
 		setWriteModeRef= putName("setWriteMode",12);
 		sortRef = putName("sort",4);

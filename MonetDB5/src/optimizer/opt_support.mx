@@ -1113,7 +1113,10 @@ hasSideEffects(InstrPtr p, int strict)
 	if( getModuleId(p) == ioRef ||
 		getModuleId(p) == bstreamsRef ||
 		getModuleId(p) == bstreamsRef ||
-		getModuleId(p) == mdbRef)
+		getModuleId(p) == mdbRef ||
+		getModuleId(p) == lockRef ||
+		getModuleId(p) == semaRef ||
+		getModuleId(p) == alarmRef)
 			return TRUE;
 
 	if( getModuleId(p) == sqlRef){
