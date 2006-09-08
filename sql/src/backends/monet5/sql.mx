@@ -237,11 +237,6 @@ command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
 address bathash_wrap 
 comment "calculate a hash value";
 
-#command batstr.hash( b:bat[:void,:str] ) :bat[:void,:int]
-#address bathash_wrap 
-#comment "calculate a hash value";
-
-
 command calc.timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;
 command calc.timestamp(d:timestamp):timestamp

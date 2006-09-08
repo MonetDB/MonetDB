@@ -113,6 +113,7 @@ factory structures.
 #include "opt_deadcode.h"
 #include "opt_emptySet.h"
 #include "opt_crack.h"
+#include "opt_garbageCollector.h"
 #include "opt_macro.h"
 #include "opt_modes.h"
 #include "opt_multiplex.h"
@@ -385,8 +386,7 @@ care of.
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-
-/*#define EXPERIMENTAL */
+#define EXPERIMENTAL
 #ifdef EXPERIMENTAL
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb);
 		OPTcostModel(mb,0,0);	/* propagate cost distribution */
@@ -398,6 +398,7 @@ care of.
 		OPTcommonTerms(mb,0,0);	/* common terms */
 		OPTdeadcode(mb, 0, 0);	/* dead code removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
+		OPTgarbageCollector(mb,0,0);	/* free BAT space quickly */
 
 		/* FXoptimizer(mb, 0, 0);	 factory code */
 		/* OPTcrack(mb,0,0); too early !!*/
