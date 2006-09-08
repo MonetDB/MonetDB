@@ -1447,7 +1447,7 @@ unshare(bat parent)
 
 void
 BBPunshare(bat parent) {
-	return unshare(parent);
+	unshare(parent);
 }
 
 @- 
