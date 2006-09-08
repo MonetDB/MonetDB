@@ -589,12 +589,20 @@ endofcompile:
 str
 SQLstatement(str *ret, str *expr)
 {
-	return SQLstatementIntern(ret,expr, "SQLstatement", TRUE);
+	str msg;
+	msg= SQLstatementIntern(ret,expr, "SQLstatement", TRUE);
+	if( msg == MAL_SUCCEED)
+		*ret= GDKstrdup("SQLstatement");
+	return msg;
 }
 
 str
 SQLcompile(str *ret, str *expr){
-	return SQLstatementIntern(ret,expr, "SQLcompile", FALSE);
+	str msg;
+	msg= SQLstatementIntern(ret,expr, "SQLcompile", FALSE);
+	if( msg == MAL_SUCCEED)
+		*ret= GDKstrdup("SQLcompile");
+	return msg;
 }
 
 static int
