@@ -220,6 +220,7 @@ SQLtrace(int *ret)
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
 	v = getVar(mb, newVariable(mb, name, ctype.type->localtype));
+	v->value.vtype = ctype.type->localtype;
 @c
 /* initialize the global variable, ie make mvc point to these */
 static int
