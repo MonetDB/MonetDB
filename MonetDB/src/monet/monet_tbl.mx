@@ -1475,7 +1475,7 @@ TBL_protect()
 
 	MT_init_lock(TBL_protector);
 	MT_init_lock(TBL_writelock);
-	MT_init_lock(TBL_barrier);
+	MT_init_sema(TBL_barrier, 0);
 }
 void
 TBL_init(void)
