@@ -102,7 +102,7 @@ dir();
 [ "monet_mod_proc",	  "str",  "oid",  110,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_use",	  "oid",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_var",	  "str",  "ptr",  56,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_unicode_case",	  "int",  "int",  940,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 
 table(mmn().reverse().sort().reverse().col_name("static modules"));
 #-----------------#
