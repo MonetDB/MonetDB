@@ -1151,10 +1151,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					fprintf(toConsole, "[ %d\t]\n",
 						mapi_rows_affected(hdl));
 				} else {
-					while ((reply = mapi_fetch_line(hdl)) != NULL)
+					while ((reply = mapi_fetch_line(hdl)) != NULL) {
 						if (xquery && *reply == '=')
 							reply++;
 						fprintf(toConsole, "%s\n", reply);
+					}
 				}
 			} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
 			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
