@@ -1260,7 +1260,7 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
-      goto bunins_failed;
+      /*goto bunins_failed;*/
       bunins_failed:
 	BATmmap_unpin(r);
 	BBPreclaim(bn);
@@ -2029,7 +2029,7 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATsetcount(bn,bn->batBuns->free/bn_sz);
 	return bn;
 
-	goto bunins_failed;
+	/*goto bunins_failed;*/
 bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
@@ -2182,7 +2182,7 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATsetcount(bn,bn->batBuns->free/bn_sz);
 	return bn;
  	     
-	goto bunins_failed;
+	/*goto bunins_failed;*/
 bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
