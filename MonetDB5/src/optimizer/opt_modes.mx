@@ -45,6 +45,8 @@ The implementation strategy is currently quite simple.
 We make a scan to identify all setWriteModes and see if
 they are later indeed to target of a function with side
 effects.
+We should also remember the BATs that are already been set
+writable, to avoid subsequent calls.[todo]
 In a second pass we can then remove/keep them upon need.
 @c
 #include "opt_modes.h"
@@ -56,15 +58,27 @@ OPTmodesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, j, k;
 	int actions = 0;
 	InstrPtr *candidate;
+	int *writeable;
 	int top=0;
 	(void) stk;
 
 	candidate= (InstrPtr*) alloca(sizeof(InstrPtr) * mb->stop);
+	writeable= (int*) alloca(sizeof(int) * mb->vtop);
+	memset((char *)writeable,0, sizeof(int)*mb->vtop);
 
 	for(i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( getFunctionId(p)== setWriteModeRef && getModuleId(p)== batRef ){
-			candidate[top++] = p;
+			if( writeable[getArg(p,1)] ){
+				writeable[getArg(p,0)]= writeable[getArg(p,1)];
+				p->token= ASSIGNsymbol;
+				setModuleId(p,NULL);
+				setFunctionId(p,NULL);
+				p->argc=2;
+			} else{
+				candidate[top++] = p;
+				writeable[getArg(p,0)]= getArg(p,0);
+			}
 		} else
 		if( getModuleId(p)== batRef &&
 			( getFunctionId(p) == insertRef ||
