@@ -51,9 +51,9 @@ extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 
 static void rel_destroy(sql_rel *rel);
 
-static sql_exp *rel_unop_(mvc *sql, sql_exp *l, char *fname);
-static sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname);
-static sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, char *fname);
+static sql_exp *rel_unop_(mvc *sql, sql_exp *l, sql_schema *s, char *fname);
+static sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname);
+static sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, sql_schema *s, char *fname);
 
 static void 
 rel_destroy_(sql_rel *rel)
@@ -1941,7 +1941,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 			compare_op = "like";
 		if (compare_op[0] == 'n') 
 			compare_op = "not_like";
-		e = rel_binop_(sql, ls, rs, compare_op);
+		e = rel_binop_(sql, ls, rs, NULL, compare_op);
 
 		if (!e)
 			return NULL;
@@ -2098,9 +2098,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		if (!ls || !rs)
 			return NULL;
 		if (sc->token == SQL_OR)
-			return rel_binop_(sql, ls, rs, "or");
+			return rel_binop_(sql, ls, rs, NULL, "or");
 		else
-			return rel_binop_(sql, ls, rs, "and");
+			return rel_binop_(sql, ls, rs, NULL, "and");
 	}
 	case SQL_COMPARE:
 	{
@@ -2117,7 +2117,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			rs = rel_value_exp(sql, rel, ro, f);
 			if (!rs) 
 				return NULL;
-			return rel_binop_(sql, ls, rs, compare_op);
+			return rel_binop_(sql, ls, rs, NULL, compare_op);
 		} else {
 			/* first try without current relation, too see if there
 		   	are correlations with the outer relation */
@@ -2144,7 +2144,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				exp_destroy(ls);
 				return NULL;
 			}
-			return rel_binop_(sql, ls, rs, compare_op);
+			return rel_binop_(sql, ls, rs, NULL, compare_op);
 		}
 	}
 	/* Set Member ship */
@@ -2240,9 +2240,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			if (f >= sql_sel)
 				(*rel)->op = op_left;
 			*rel = rel_project(sql, *rel, left_exps);
-			e = rel_unop_(sql, r, "isnull");
+			e = rel_unop_(sql, r, NULL, "isnull");
 			if (sc->token == SQL_IN) 
-				return rel_unop_(sql, e, "not");
+				return rel_unop_(sql, e, NULL, "not");
 			return e;
 		}
 		return NULL;
@@ -2284,12 +2284,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		}
 		if (sc->token == SQL_LIKE) {
 			if (ee)
-				return rel_nop_(sql, le, re, ee, "like");
-			return rel_binop_(sql, le, re, "like");
+				return rel_nop_(sql, le, re, ee, NULL, "like");
+			return rel_binop_(sql, le, re, NULL, "like");
 		} else {
 			if (ee)
-				return rel_nop_(sql, le, re, ee, "not_like");
-			return rel_binop_(sql, le, re, "not_like");
+				return rel_nop_(sql, le, re, ee, NULL, "not_like");
+			return rel_binop_(sql, le, re, NULL, "not_like");
 		}
 	}
 	case SQL_BETWEEN:
@@ -2336,15 +2336,15 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		}
 
 		if (sc->token == SQL_NOT_BETWEEN) {
-			e1 = rel_binop_(sql, le, re1, "<");
-			e2 = rel_binop_(sql, exp_dup(le), re2, ">");
+			e1 = rel_binop_(sql, le, re1, NULL, "<");
+			e2 = rel_binop_(sql, exp_dup(le), re2, NULL, ">");
 		} else {
-			e1 = rel_binop_(sql, le, re1, ">=");
-			e2 = rel_binop_(sql, exp_dup(le), re2, "<=");
+			e1 = rel_binop_(sql, le, re1, NULL, ">=");
+			e2 = rel_binop_(sql, exp_dup(le), re2, NULL, "<=");
 		}
 		if (!e1 || !e2)
 			return NULL;
-		return rel_binop_(sql, e1, e2, "and");
+		return rel_binop_(sql, e1, e2, NULL, "and");
 	}
 	case SQL_NULL:
 	case SQL_NOT_NULL:
@@ -2354,14 +2354,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		le = rel_unop_(sql, le, "isnull");
+		le = rel_unop_(sql, le, NULL, "isnull");
 		if (sc->token != SQL_NULL) 
-			le = rel_unop_(sql, le, "not");
+			le = rel_unop_(sql, le, NULL, "not");
 		return le;
 	}
 	case SQL_NOT: { 
 		sql_exp *le = rel_logical_value_exp(sql, rel, sc->data.sym, f);
-		return rel_unop_(sql, le, "not");
+		return rel_unop_(sql, le, NULL, "not");
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
@@ -2523,7 +2523,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel_join_add_exp(rel, e);
 			if (sc->token == SQL_NOT_IN) {
 				rel->op = op_left;
-				e = rel_unop_(sql, r, "isnull");
+				e = rel_unop_(sql, r, NULL, "isnull");
 				r = exp_atom_bool(1);
 				e = exp_compare( e, r, cmp_equal);
 				rel = rel_select(rel, e);
@@ -2675,7 +2675,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		le = rel_unop_(sql, le, "isnull");
+		le = rel_unop_(sql, le, NULL, "isnull");
 		re = exp_atom_bool(1);
 		if (sc->token == SQL_NULL) 
 			le = exp_compare( le, re, cmp_equal);
@@ -2705,8 +2705,12 @@ rel_op(mvc *sql, symbol *se )
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	sql_schema *s = sql->session->schema;
 
-	f = sql_bind_func(sql->session->schema, fname, NULL, NULL);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	f = sql_bind_func(s, fname, NULL, NULL);
 	if (f) {
 		return exp_op(NULL, f);
 	} else {
@@ -2717,17 +2721,19 @@ rel_op(mvc *sql, symbol *se )
 }
 
 static sql_exp *
-rel_unop_(mvc *sql, sql_exp *e, char *fname)
+rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname)
 {
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
 
+	if (!s)
+		s = sql->session->schema;
 	t = exp_subtype(e);
-	f = sql_bind_func(sql->session->schema, fname, t, NULL);
+	f = sql_bind_func(s, fname, t, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->session->schema, fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(s, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		e = rel_check_type(sql, &a->type, e, type_equal);
@@ -2769,16 +2775,20 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 {
 	dnode *l = se->data.lval->h;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	sql_schema *s = sql->session->schema;
 	sql_exp *e = rel_value_exp(sql, rel, l->next->data.sym, fs);
 
 	if (!e)
 		return NULL;
-	return rel_unop_(sql, e, fname);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	return rel_unop_(sql, e, s, fname);
 }
 
 
 static sql_exp *
-rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
+rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname)
 {
 	sql_exp *res = NULL;
 	sql_subtype *t1, *t2;
@@ -2787,9 +2797,11 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	t1 = exp_subtype(l);
 	t2 = exp_subtype(r);
 
-	f = sql_bind_func(sql->session->schema, fname, t1, t2);
+	if (!s)
+		s = sql->session->schema;
+	f = sql_bind_func(s, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(sql->session->schema, fname, t2, t1);
+		f = sql_bind_func(s, fname, t2, t1);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -2814,7 +2826,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	} else {
 		int digits = t1->digits + t2->digits;
 
-		if ((f = sql_bind_member(sql->session->schema, fname, t1, 2)) != NULL) {
+		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
@@ -2826,7 +2838,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 			/* try operators */
 			t1 = exp_subtype(l);
 			t2 = exp_subtype(r);
-			f = sql_bind_func(sql->session->schema, fname, t1, t2);
+			f = sql_bind_func(s, fname, t1, t2);
 			if (f) {
 				if (f->func->res.scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
@@ -2859,6 +2871,8 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	dnode *dl = se->data.lval->h;
 	sql_exp *l, *r;
 	char *fname = qname_fname(dl->data.lval); 
+	char *sname = qname_schema(dl->data.lval);
+	sql_schema *s = sql->session->schema;
 
 	sql->depth++;
 	if (sql->depth > SQLMAXDEPTH)
@@ -2876,11 +2890,13 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 	}
 
-	return rel_binop_(sql, l, r, fname);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	return rel_binop_(sql, l, r, s, fname);
 }
 
 static sql_exp *
-rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, char *fname)
+rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_schema *s, char *fname)
 {
 	list *tl = list_create(NULL);
 	sql_subfunc *f = NULL;
@@ -2889,7 +2905,9 @@ rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, char *fname)
 	append(tl, exp_subtype(a2));
 	append(tl, exp_subtype(a3));
 
-	f = sql_bind_func_(sql->session->schema, fname, tl);
+	if (!s)
+		s = sql->session->schema;
+	f = sql_bind_func_(s, fname, tl);
 	list_destroy(tl);
 	if (f)
 		return exp_op3(a1,a2,a3,f);
@@ -2905,6 +2923,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 	list *tl = list_create(NULL);
 	sql_subfunc *f = NULL;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	sql_schema *s = sql->session->schema;
 
 	for (; ops; ops = ops->next) {
 		sql_exp *e = rel_value_exp(sql, rel, ops->data.sym, fs);
@@ -2916,11 +2936,13 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 		append(exps, e);
 		append(tl, exp_subtype(e));
 	}
-	f = sql_bind_func_(sql->session->schema, fname, tl);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	f = sql_bind_func_(s, fname, tl);
 	list_destroy(tl);
 	if (f) {
 		return exp_op(exps, f);
-	} else if ((f = sql_bind_member(sql->session->schema, fname, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
+	} else if ((f = sql_bind_member(s, fname, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
 		node *n, *m;
 		list *nexps = new_exp_list();
 
@@ -3050,7 +3072,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			e1 = rel_value_exp(sql, rel, dn->data.sym, f);
 			e2 = rel_value_exp(sql, rel, dn->next->data.sym, f);
 			if (e1 && e2) {
-				cond = rel_binop_(sql, exp_dup(e1), e2, "=");
+				cond = rel_binop_(sql, exp_dup(e1), e2, NULL, "=");
 				result = exp_atom(atom_general(exp_subtype(e1), NULL, 0));
 				else_exp = e1;	/* ELSE case */
 			} else {
@@ -3066,7 +3088,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 
 			if (cond) {
 				result = exp_dup(cond);
-				cond = rel_binop_(sql, cond, exp_atom(atom_general(exp_subtype(cond), NULL, 0)), "<>" );
+				cond = rel_binop_(sql, cond, exp_atom(atom_general(exp_subtype(cond), NULL, 0)), NULL, "<>" );
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
@@ -3076,7 +3098,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 				sql_exp *r = rel_value_exp(sql, rel, when->h->data.sym, f);
 				if (!l || !r)
 					return NULL;
-				cond = rel_binop_(sql, l, r, "=");
+				cond = rel_binop_(sql, l, r, NULL, "=");
 			} else {
 				/* binary value exp (TODO check result type?) */
 				cond = rel_value_exp(sql, rel, when->h->data.sym, sql_search);
@@ -3112,7 +3134,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 
 			if (cond) {
 				result = exp_dup(cond);
-				cond = rel_binop_(sql, cond, exp_atom(atom_general(exp_subtype(cond), NULL, 0)), "<>");
+				cond = rel_binop_(sql, cond, exp_atom(atom_general(exp_subtype(cond), NULL, 0)), NULL, "<>");
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
@@ -3120,7 +3142,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			if (opt_cond) {
 				sql_exp *l = rel_value_exp(sql, rel, opt_cond, f);
 				sql_exp *r = rel_value_exp(sql, rel, when->h->data.sym, f);
-				cond = rel_binop_(sql, l, r, "=");
+				cond = rel_binop_(sql, l, r, NULL, "=");
 				if (!l || !r)
 					return NULL;
 			} else {
@@ -3196,7 +3218,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			return NULL;
 		}
 
-		res = rel_nop_(sql, cond, result, res, "ifthenelse" );
+		res = rel_nop_(sql, cond, result, res, NULL, "ifthenelse" );
 		if (!res) { 
 			list_destroy(conds);
 			list_destroy(results);
@@ -3652,7 +3674,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 				rel->l = outer;
 			}
 			e = exp_dup(outer->exps->h->data);
-			e = rel_unop_(sql, e, "identity");
+			e = rel_unop_(sql, e, NULL, "identity");
 			rel_project_add_exp(sql, outer, e);
 			e = rel_project_label_exp(sql, outer, e);
 			groupby_cols = new_exp_list();

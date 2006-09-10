@@ -740,6 +740,8 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	list *tl = list_create(NULL);
 	sql_subfunc *f = NULL;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	sql_schema *s = sql->session->schema;
 
 	for (; ops; ops = ops->next) {
 		stmt *op = sql_value_exp(sql, scp, ops->data.sym, grp, subset, fs);
@@ -751,12 +753,14 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		list_append(sl, op);
 		list_append(tl, tail_type(op));
 	}
-	f = sql_bind_func_(sql->session->schema, fname, tl);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	f = sql_bind_func_(s, fname, tl);
 	list_destroy(tl);
 	if (f) {
 		return stmt_Nop(stmt_list(sl), f);
 	} else {
-		if ((f = sql_bind_member(sql->session->schema, fname, tail_type(sl->h->data), list_length(sl))) != NULL) {
+		if ((f = sql_bind_member(s, fname, tail_type(sl->h->data), list_length(sl))) != NULL) {
 			node *n, *m;
 			list *nsl = create_stmt_list();
 
@@ -787,7 +791,7 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 }
 
 static stmt *
-sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
+sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 {
 	stmt *res = NULL;
 	sql_subtype *t1, *t2;
@@ -796,14 +800,16 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 	t1 = tail_type(ls);
 	t2 = tail_type(rs);
 
+	if (!s)
+		s = sql->session->schema;
 	/* input from different tables requires an extra cross-product! */
 	if (ls->nrcols > 0 && rs->nrcols > 0 && ls->h != rs->h) {
 		ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
 		rs = stmt_join(scope_find_pivot(scp, rs->h), rs, cmp_equal);
 	}
-	f = sql_bind_func(sql->session->schema, fname, t1, t2);
+	f = sql_bind_func(s, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(sql->session->schema, fname, t2, t1);
+		f = sql_bind_func(s, fname, t2, t1);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -828,7 +834,7 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 	} else {
 		int digits = t1->digits + t2->digits;
 
-		if ((f = sql_bind_member(sql->session->schema, fname, t1, 2)) != NULL) {
+		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
@@ -840,7 +846,7 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
-			f = sql_bind_func(sql->session->schema, fname, t1, t2);
+			f = sql_bind_func(s, fname, t1, t2);
 			if (f) {
 				if (f->func->res.scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
@@ -911,6 +917,8 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	dnode *l = se->data.lval->h;
 	stmt *ls, *rs;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	sql_schema *s = sql->session->schema;
 
 	sql->depth++;
 	if (sql->depth > SQL_MAXDEPTH)
@@ -950,7 +958,9 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 	}
 
-	return sql_binop_(sql, scp, fname, ls, rs);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	return sql_binop_(sql, scp, s, fname, ls, rs);
 }
 
 static stmt *
@@ -959,8 +969,12 @@ sql_op(mvc *sql, symbol *se)
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
+	sql_schema *s = sql->session->schema;
 
-	f = sql_bind_func(sql->session->schema, fname, NULL, NULL);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	f = sql_bind_func(s, fname, NULL, NULL);
 	if (f) {
 		return stmt_op(f);
 	} else {
@@ -975,18 +989,22 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 {
 	dnode *l = se->data.lval->h;
 	char *fname = qname_fname(l->data.lval); 
+	char *sname = qname_schema(l->data.lval);
 	sql_subfunc *f = NULL;
 	sql_subtype *rt = NULL;
 	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, fs);
+	sql_schema *s = sql->session->schema;
 
 	if (!rs)
 		return NULL;
 	rt = tail_type(rs);
-	f = sql_bind_func(sql->session->schema, fname, rt, NULL);
+	if (sname) 
+		s = mvc_bind_schema(sql, sname);
+	f = sql_bind_func(s, fname, rt, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->session->schema, fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(s, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);
@@ -1019,6 +1037,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	stmt *s = NULL;
 	char *aggrstr = l->h->data.sval; 
 	int remove_nils = 0; 
+	sql_schema *schema = sql->session->schema;
 
 	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
@@ -1030,7 +1049,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
 		}
 		if (grp) {
-			a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
+			a = sql_bind_aggr(schema, aggrstr, NULL);
 			return stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a);
 		}
 		cv = scope_first_column(scp);
@@ -1046,7 +1065,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 				s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 				s = stmt_unique(s, NULL);
 			}
-			a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
+			a = sql_bind_aggr(schema, aggrstr, NULL);
 			return stmt_aggr(stmt_alias(s,NULL,_strdup("")),NULL,a);
 		} else if (!cv) { /* count(*) without from */
 			/* if we have a where (boolean only) */
@@ -1070,7 +1089,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	}
 	if (!s)
 		return NULL;
-	a = sql_bind_aggr(sql->session->schema, aggrstr, tail_type(s));
+	a = sql_bind_aggr(schema, aggrstr, tail_type(s));
 	if (a) {
 		/* type may have changed, ie. need to 
 			fix_scale (avg(dec(sht)) -> double */
@@ -1654,7 +1673,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
 			rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
 
-			s = sql_binop_(sql, NULL, "sql_sub", ls, rs);
+			s = sql_binop_(sql, NULL, NULL, "sql_sub", ls, rs);
 			s = stmt_select(s, stmt_atom_int(0), cmp_gt);
 
 			/* A ids */
@@ -1760,7 +1779,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
 			rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
 
-			s = sql_binop_(sql, NULL, "sql_min", ls, rs);
+			s = sql_binop_(sql, NULL, NULL, "sql_min", ls, rs);
 			/* A ids */
 			s = stmt_join(stmt_reverse(lm), s, cmp_equal);
 			/* now we have gid,cnt, blowup to full groupsizes */
@@ -2102,7 +2121,7 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 	}
 	/* predicate case ? */
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0)) {
-		return sql_binop_(sql, NULL, compare_op, ls, rs);
+		return sql_binop_(sql, NULL, NULL, compare_op, ls, rs);
 	}
 	if (ls->nrcols > 0 && rs->nrcols > 0) {
 		join = 1;
@@ -2322,7 +2341,7 @@ sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 	}
 
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0))
-		return sql_binop_(sql, NULL, "and", ls, rs);
+		return sql_binop_(sql, NULL, NULL, "and", ls, rs);
 
 	if (f >= sql_search)
 		return stmt_semijoin(ls, rs);
