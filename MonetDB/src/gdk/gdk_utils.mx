@@ -503,7 +503,7 @@ GDKmem_heapinuse(void)
 volatile int GDK_heapcheck_last = 0;
 int mallinfo_ok = 1;
 
-INLINE void
+static INLINE void
 GDKmem_heapcheck(int t)
 {
 	/* correct heap estimate with the real thing */
