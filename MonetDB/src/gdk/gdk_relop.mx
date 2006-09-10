@@ -1259,11 +1259,12 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	}
 	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
-	# Just to silence compilers (Intel's icc) that otherwise might
-	# complain about "declared but never referenced" labels
-	# (condition should never be true).
-	# (A "dead" goto between the return and the label makes (other)
-	# compilers (Sun) complain about never reached code...)
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
 	if (!bn)
 		goto bunins_failed;
 	return bn;
@@ -2035,11 +2036,12 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	bn->batBuns->free = dst - bn->batBuns->base;
 	BATsetcount(bn,bn->batBuns->free/bn_sz);
 
-	# Just to silence compilers (Intel's icc) that otherwise might
-	# complain about "declared but never referenced" labels
-	# (condition should never be true).
-	# (A "dead" goto between the return and the label makes (other)
-	# compilers (Sun) complain about never reached code...)
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
 	if (!bn)
 		goto bunins_failed;
 	return bn;
@@ -2195,11 +2197,12 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 	bn->batBuns->free = dst - bn->batBuns->base;
 	BATsetcount(bn,bn->batBuns->free/bn_sz);
 
-	# Just to silence compilers (Intel's icc) that otherwise might
-	# complain about "declared but never referenced" labels
-	# (condition should never be true).
-	# (A "dead" goto between the return and the label makes (other)
-	# compilers (Sun) complain about never reached code...)
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
 	if (!bn)
 		goto bunins_failed;
 	return bn;
