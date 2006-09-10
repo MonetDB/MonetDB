@@ -30,3 +30,4 @@ sequence_not_stored_2.SF-1509894
 sequence_not_stored_3.SF-1509894
 groupby_with_alias.SF-1520575
 drop_system_tables.SF-1550768
+set_operation_coersions.SF-1543216
