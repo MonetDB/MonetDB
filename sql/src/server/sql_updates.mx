@@ -62,7 +62,7 @@ insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
 		if (!a)
 			return(NULL);
 			
-		if (!(n = check_types(sql, &c->type, a, type_dyncheck))) {
+		if (!(n = check_types(sql, &c->type, a, type_equal))) {
 			return NULL;
 		}
 		return n;
@@ -1033,7 +1033,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 
 			for (n = s->op1.lval->h, m = collist->h; n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
-				stmt *ins = check_types(sql, &c->type, stmt_dup(n->data), type_dyncheck);
+				stmt *ins = check_types(sql, &c->type, stmt_dup(n->data), type_equal);
 
 				if (!ins) {
 					stmt_destroy(s);
@@ -1292,7 +1292,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 			} else
 				v = stmt_atom(atom_general(&c->type, NULL, 0));
 
-			if (!v || (v = check_types(sql, &c->type, v, type_dyncheck)) == NULL) {
+			if (!v || (v = check_types(sql, &c->type, v, type_equal)) == NULL) {
 				stmt_destroy(s);
 				list_destroy(l);
 				cleanup_stmts(updates, len);

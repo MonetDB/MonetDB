@@ -192,21 +192,25 @@ int bits2digits(int bits)
 	return 19;
 }
 
+/* 0 cannot convert */
+/* 1 set operations have very limited coersion rules */
+/* 2 automatic coersion (could still require dynamic checks for overflow) */
+/* 3 casts are allowed (requires dynamic checks) (sofar not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
 /* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_TABLE */	{ 0, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0 },
-/* EC_CHAR */	{ 1, 1, 1, 2, 1, 0, 1, 1, 1, 1, 1, 1, 1 },
-/* EC_STRING */	{ 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 },
-/* EC_BLOB */	{ 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 2, 2, 1, 1, 0, 1, 0 },
-/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 2, 0, 0, 0, 1, 1, 1 },
-/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 1, 0, 0, 0 },
-/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 0, 0, 0 },
-/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2, 0 },
-/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2 }
+/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0 },
+/* EC_CHAR */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_STRING */	{ 2, 2, 2, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0 },
+/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1 },
+/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0 },
+/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0 },
+/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0 },
+/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1 }
 };
 
 int sql_type_convert (int from, int to) 

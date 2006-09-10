@@ -835,7 +835,7 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 			rs = check_types(sql, &a->type, rs, type_equal);
 			if (rs)
 				return stmt_binop(ls, rs, f);
-		} else if (convert_types(sql, &ls, &rs, 1) >= 0) {
+		} else if (convert_types(sql, &ls, &rs, 1, type_equal) >= 0) {
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
@@ -1351,7 +1351,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 					stmt_destroy(s);
 				return sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", tv1->tname, tv2->tname, nm);
 			}
-			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
+			if ((convert_types(sql, &ls, &rs, 1, type_equal) < 0)) {
 				if (ls)
 					stmt_destroy(ls);
 				if (rs)
@@ -1379,7 +1379,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			stmt *ls = stmt_dup(m->data);
 			stmt *rs = stmt_dup(m->next->data);
 
-			if ((!rs) || (!ls) || (convert_types(sql, &ls, &rs, 1) < 0)) {
+			if ((!rs) || (!ls) || (convert_types(sql, &ls, &rs, 1, type_equal) < 0)) {
 				if (ls)
 					stmt_destroy(ls);
 				if (rs)
@@ -1554,7 +1554,7 @@ sql_union(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 			stmt *rs = stmt_dup(rc->s);
 			stmt *ls = stmt_dup(lc->s);
 
-			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
+			if ((convert_types(sql, &ls, &rs, 1, type_set) < 0)) {
 				if (ls)
 					stmt_destroy(ls);
 				if (rs)
@@ -1626,7 +1626,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			stmt *l = stmt_dup(lc->s);
 			stmt *r = stmt_dup(rc->s);
 
-			if ((convert_types(sql, &l, &r, 1) < 0)) {
+			if ((convert_types(sql, &l, &r, 1, type_set) < 0)) {
 				if (l)
 					stmt_destroy(l);
 				if (r)
@@ -1736,7 +1736,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			stmt *l = stmt_dup(lc->s);
 			stmt *r = stmt_dup(rc->s);
 
-			if ((convert_types(sql, &l, &r, 1) < 0)) {
+			if ((convert_types(sql, &l, &r, 1, type_set) < 0)) {
 				if (l)
 					stmt_destroy(l);
 				if (r)
@@ -2091,7 +2091,7 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 	if (!ls || !rs)
 		return NULL;
 
-	if (convert_types(sql, &ls, &rs, 1) < 0) {
+	if (convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
 		if (ls)
 			stmt_destroy(ls);
 		if (rs)
