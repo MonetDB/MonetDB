@@ -342,8 +342,16 @@ Hence, we skip some type-expansions in this very case.
 @= seqscanEpilogue
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
+	
+	# Just to silence compilers (Intel's icc) that otherwise might
+	# complain about "declared but never referenced" labels
+	# (condition should never be true).
+	# (A "dead" goto between the return and the label makes (other)
+	# compilers (Sun) complain about never reached code...)
+	if (!bn)
+		goto bunins_failed;
 	return bn;
-	/*goto bunins_failed;*/
+
 bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
