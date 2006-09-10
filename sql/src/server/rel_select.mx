@@ -1750,7 +1750,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
 }
 
 static sql_exp * 
-rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int typecheck)
+rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 {
 	sql_subtype *fromtype = exp_subtype(exp);
 	
@@ -1759,14 +1759,14 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int typecheck)
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {
 		int c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
-		if (!c) { 
+		if (!c || 
+		   (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)){
 			exp_destroy(exp);
 			exp = NULL;
 		} else {
 			exp = exp_convert(exp, fromtype, t);
 		}
 	}
-	(void)typecheck;
 	if (!exp) {
 		sql_exp *res = sql_error(
 			sql, 03,
@@ -1870,7 +1870,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 }
 
 static int 
-rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing)
+rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
 {
 	sql_exp *ls = *L;
 	sql_exp *rs = *R;
@@ -1896,16 +1896,16 @@ rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing)
 			supertype(&super, r, i);
 			if (scale_fixing) {
 				/* convert ls to super type */
-				ls = rel_check_type(sql, &super, ls, type_equal);
+				ls = rel_check_type(sql, &super, ls, tpe);
 				/* convert rs to super type */
-				rs = rel_check_type(sql, &super, rs, type_equal);
+				rs = rel_check_type(sql, &super, rs, tpe);
 			} else {
 				/* convert ls to super type */
 				super.scale = lt->scale;
-				ls = rel_check_type(sql, &super, ls, type_equal);
+				ls = rel_check_type(sql, &super, ls, tpe);
 				/* convert rs to super type */
 				super.scale = rt->scale;
-				rs = rel_check_type(sql, &super, rs, type_equal);
+				rs = rel_check_type(sql, &super, rs, tpe);
 			}
 		}
 		*L = ls;
@@ -1927,7 +1927,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 	if (!ls || !rs)
 		return NULL;
 
-	if (rel_convert_types(sql, &ls, &rs, 1) < 0) {
+	if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
 		if (ls)
 			exp_destroy(ls);
 		if (rs)
@@ -2228,7 +2228,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			r = rel_project_firstcolumn(sql, right);
 			rel_setsubquery(right);
 			*rel = rel_crossproduct(left, right, op_join);
-			if (rel_convert_types(sql, &l, &r, 1) < 0) {
+			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				if (l)
 					exp_destroy(l);
 				if (r)
@@ -2504,7 +2504,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			r = rel_project_firstcolumn(sql, right);
 			rel_setsubquery(right);
 			rel = rel_crossproduct(left, right, op_join);
-			if (rel_convert_types(sql, &l, &r, 1) < 0) {
+			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				if (l)
 					exp_destroy(l);
 				if (r)
@@ -2704,7 +2704,7 @@ rel_op(mvc *sql, symbol *se )
 {
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
-	char *fname = l->data.sval;
+	char *fname = qname_fname(l->data.lval); 
 
 	f = sql_bind_func(sql->session->schema, fname, NULL, NULL);
 	if (f) {
@@ -2768,7 +2768,7 @@ static sql_exp *
 rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 {
 	dnode *l = se->data.lval->h;
-	char *fname = l->data.sval;
+	char *fname = qname_fname(l->data.lval); 
 	sql_exp *e = rel_value_exp(sql, rel, l->next->data.sym, fs);
 
 	if (!e)
@@ -2822,7 +2822,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 			r = rel_check_type(sql, &a->type, r, type_equal);
 			if (r)
 				return exp_binop(l, r, f);
-		} else if (rel_convert_types(sql, &l, &r, 1/*fix scale*/) >= 0){
+		} else if (rel_convert_types(sql, &l, &r, 1/*fix scale*/, type_equal) >= 0){
 			/* try operators */
 			t1 = exp_subtype(l);
 			t2 = exp_subtype(r);
@@ -2858,6 +2858,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
 	dnode *dl = se->data.lval->h;
 	sql_exp *l, *r;
+	char *fname = qname_fname(dl->data.lval); 
 
 	sql->depth++;
 	if (sql->depth > SQLMAXDEPTH)
@@ -2875,7 +2876,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 	}
 
-	return rel_binop_(sql, l, r, dl->data.sval);
+	return rel_binop_(sql, l, r, fname);
 }
 
 static sql_exp *
@@ -2903,6 +2904,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 	list *exps = new_exp_list();
 	list *tl = list_create(NULL);
 	sql_subfunc *f = NULL;
+	char *fname = qname_fname(l->data.lval); 
 
 	for (; ops; ops = ops->next) {
 		sql_exp *e = rel_value_exp(sql, rel, ops->data.sym, fs);
@@ -2914,11 +2916,11 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 		append(exps, e);
 		append(tl, exp_subtype(e));
 	}
-	f = sql_bind_func_(sql->session->schema, l->data.sval, tl);
+	f = sql_bind_func_(sql->session->schema, fname, tl);
 	list_destroy(tl);
 	if (f) {
 		return exp_op(exps, f);
-	} else if ((f = sql_bind_member(sql->session->schema, l->data.sval, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
+	} else if ((f = sql_bind_member(sql->session->schema, fname, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
 		node *n, *m;
 		list *nexps = new_exp_list();
 
@@ -2943,7 +2945,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs)
 		}
 	}
 	list_destroy(exps);
-	return sql_error(sql, 02, "SELECT: no such operator '%s'", l->data.sval);
+	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
 static sql_exp *
@@ -2978,12 +2980,12 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 
 	if (f == sql_where && !groupby) 
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval));
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
 	
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 
 		if (strcmp(aggrstr, "count") != 0) {
-			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), l->h->data.sval);
+			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
 		}
 		a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a 
@@ -3022,7 +3024,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		char *type = exp_subtype(e)->type->sqlname;
 
 		exp_destroy(e);
-		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), l->h->data.sval, type);
+		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
 	return NULL;
 }
@@ -3858,7 +3860,7 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 			sql_exp *le = exp_dup(n->data), *lb = le;
 			sql_exp *re = exp_dup(m->data), *rb = re;
 
-			if ((rel_convert_types(sql, &le, &re, 1) < 0)) {
+			if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0)) {
 				if (le)
 					exp_destroy(le);
 				if (re)

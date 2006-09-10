@@ -406,6 +406,7 @@ int yydebug=1;
 	atom_commalist
 	row_commalist
 	qname
+	qfunc
 	routine_name
 	ordering_spec_commalist
 	opt_schema_element_list
@@ -754,9 +755,8 @@ set_statement:
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
 		append_string(l, sa_strdup(SA, "current_timezone"));
-		append_symbol(l, _symbol_create_list( SQL_OP,
-			append_string( L(),
-				sa_strdup(SA, "local_timezone"))));
+		append_symbol(l, _symbol_create_list( SQL_OP, append_list(L(),
+			append_string( L(), sa_strdup(SA, "local_timezone")))));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
@@ -2978,31 +2978,36 @@ simple_scalar_exp:
     value_exp
  |  scalar_exp '+' scalar_exp
 			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "sql_add"));
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "sql_add")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp
 			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "sql_sub"));
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "sql_sub")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "sql_mul"));
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "sql_mul")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '/' scalar_exp
 			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "sql_div"));
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "sql_div")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '%' scalar_exp
 			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "mod"));
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mod")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3010,7 +3015,8 @@ simple_scalar_exp:
 			{ $$ = $2; }
  |  '-' scalar_exp %prec UMINUS 
 			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "sql_neg"));
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "sql_neg")));
 	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 	{ $$ = $2; }
@@ -3044,26 +3050,32 @@ var_ref:
  ;
 
 func_ref:
-    func_ident '(' ')'
+    qfunc '(' ')'
 	{ dlist *l = L();
-  	  append_string(l, $1);
+  	  append_list(l, $1);
 	  $$ = _symbol_create_list( SQL_OP, l ); }
-|   func_ident '(' scalar_exp ')'
+|   qfunc '(' scalar_exp ')'
 	{ dlist *l = L();
-  	  append_string(l, $1);
+  	  append_list(l, $1);
   	  append_symbol(l, $3);
 	  $$ = _symbol_create_list( SQL_UNOP, l ); }
-|   func_ident '(' scalar_exp ',' scalar_exp ')'
+|   qfunc '(' scalar_exp ',' scalar_exp ')'
 	{ dlist *l = L();
-  	  append_string(l, $1);
+  	  append_list(l, $1);
   	  append_symbol(l, $3);
   	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_BINOP, l ); }
-|   func_ident '(' scalar_exp_list2 ')'
+|   qfunc '(' scalar_exp_list2 ')'
 	{ dlist *l = L();
-  	  append_string(l, $1);
+  	  append_list(l, $1);
   	  append_list(l, $3);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ ;
+
+qfunc:
+	func_ident		{ $$ = append_string(L(), $1); }
+ |      ident '.' func_ident	{ $$ = append_string(
+					append_string(L(), $1), $3);}
  ;
 
 func_ident:
@@ -3077,28 +3089,34 @@ datetime_funcs:
     EXTRACT '(' datetime_field FROM scalar_exp ')'
 			{ dlist *l = L();
 			  const char *ident = datetime_field((itype)$3);
-  		  	  append_string(l, sa_strdup(SA, ident));
+			  append_list(l,
+  		  	  	append_string(L(), sa_strdup(SA, ident)));
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  CURRENT_DATE opt_brackets
  			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "current_date"));
+			  append_list(l,
+			  	append_string(L(), sa_strdup(SA, "current_date")));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  CURRENT_TIME opt_brackets
  			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "current_time"));
+			  append_list(l,
+			  	append_string(L(), sa_strdup(SA, "current_time")));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  CURRENT_TIMESTAMP opt_brackets
  			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "current_timestamp"));
+			  append_list(l,
+			  	append_string(L(), sa_strdup(SA, "current_timestamp")));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  LOCALTIME opt_brackets
  			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "localtime"));
+			  append_list(l,
+			  	append_string(L(), sa_strdup(SA, "localtime")));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  LOCALTIMESTAMP opt_brackets
  			{ dlist *l = L();
-			  append_string(l, sa_strdup(SA, "localtimestamp"));
+			  append_list(l,
+			  	append_string(L(), sa_strdup(SA, "localtimestamp")));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  ;
 
@@ -3111,7 +3129,8 @@ string_funcs:
     SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')'
 			{ dlist *l = L();
 			  dlist *ops = L();
-  		  	  append_string(l, sa_strdup(SA, "substring"));
+  		  	  append_list(l,
+				append_string(L(), sa_strdup(SA, "substring")));
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -3120,7 +3139,8 @@ string_funcs:
   | SUBSTRING '(' scalar_exp ',' scalar_exp ',' scalar_exp ')'
 			{ dlist *l = L();
 			  dlist *ops = L();
-  		  	  append_string(l, sa_strdup(SA, "substring"));
+  		  	  append_list(l,
+  		  	  	append_string(L(), sa_strdup(SA, "substring")));
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -3128,25 +3148,29 @@ string_funcs:
 		  	  $$ = _symbol_create_list( SQL_NOP, l ); }
   | SUBSTRING '(' scalar_exp FROM scalar_exp ')'
 			{ dlist *l = L();
-  		  	  append_string(l, sa_strdup(SA, "substring"));
+  		  	  append_list(l,
+  		  	  	append_string(L(), sa_strdup(SA, "substring")));
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
   | SUBSTRING '(' scalar_exp ',' scalar_exp ')'
 			{ dlist *l = L();
-  		  	  append_string(l, sa_strdup(SA, "substring"));
+  		  	  append_list(l,
+  		  	  	append_string(L(), sa_strdup(SA, "substring")));
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
   | POSITION '(' scalar_exp sqlIN scalar_exp ')'
 			{ dlist *l = L();
-  		  	  append_string(l, sa_strdup(SA, "locate"));
+  		  	  append_list(l,
+  		  	  	append_string(L(), sa_strdup(SA, "locate")));
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
   | scalar_exp CONCATSTRING scalar_exp
 			{ dlist *l = L();
-  		  	  append_string(l, sa_strdup(SA, "concat"));
+  		  	  append_list(l,
+  		  	  	append_string(L(), sa_strdup(SA, "concat")));
   		  	  append_symbol(l, $1);
   		  	  append_symbol(l, $3);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }

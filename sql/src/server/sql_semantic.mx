@@ -37,6 +37,8 @@ extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 extern char *qname_schema(dlist *qname);
 extern char *qname_table(dlist *qname);
+#define qname_fname(qname) qname_table(qname)
+
 extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
 
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
@@ -912,7 +914,7 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h;
 		dnode *ops = lst->next->data.lval->h;
-		char *op = lst->data.sval;
+		char *op = qname_fname(lst->data.lval);
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
 		for (; ops; ops = ops->next) {
@@ -926,7 +928,7 @@ char *symbol2string(mvc *sql, symbol *se)
 	} break;
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
-		char *op = lst->data.sval;
+		char *op = qname_fname(lst->data.lval);
 		char *l = symbol2string(sql, lst->next->data.sym);
 		char *r = symbol2string(sql, lst->next->next->data.sym);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s,%s)", op, l, r); 
@@ -935,12 +937,12 @@ char *symbol2string(mvc *sql, symbol *se)
 	} break;
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
-		char *op = lst->data.sval;
+		char *op = qname_fname(lst->data.lval);
 		len = snprintf( buf+len, BUFSIZ-len, "%s()", op ); 
 	} break;
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
-		char *op = lst->data.sval;
+		char *op = qname_fname(lst->data.lval);
 		char *l = symbol2string(sql, lst->next->data.sym);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
 		_DELETE(l);

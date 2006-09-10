@@ -396,6 +396,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlis
 	char *fname = qname_table(qname);
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy);
+
 	/* TODO handle schema */
 	sql_subtype *restype = result_type(sql, fname, res);
 
