@@ -10,7 +10,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/tools/.libs/lt-Mserver [ options ] [ script+ ]                   
+Usage: /ufs/sjoerd/src/MonetDB/devel/MonetDB/Linux/src/tools/.libs/lt-Mserver [ options ] [ script+ ]                   
 Options are:                                        
  -c <config_file>    | --config=<config_file>       
                        --dbname=<database_name>     
@@ -24,12 +24,11 @@ Options are:
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
 # 16:36:12 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/bte-wrd/MonetDB/Linux/src/mapi/clients/C/.libs/lt-MapiClient [ options ]
+Usage: /ufs/sjoerd/src/MonetDB/devel/MonetDB/Linux/src/mapi/clients/C/.libs/lt-MapiClient [ options ]
 Options are:
  -b t/f      | --blocked=true/false /* blocked mode */
  -c config   | --config=file    /* config filename */
  -C colname  | --collection=name /* collection name */
- -D          | --dump           /* dump sql database */
  -e          | --error          /* exit on error */
  -H          | --history        /* load/save cmdline history (default off) */
  -h hostname | --host=hostname  /* host to connect to */
@@ -63,7 +62,23 @@ Options are:
 --port port
 	port to connect to (default: 50000)
 
-# 16:36:12 >  
-# 16:36:12 >  Done.
-# 16:36:12 >  
+# 15:14:07 >  
+# 15:14:07 >  Mtimeout -timeout 60 msqldump -?
+# 15:14:07 >  
+
+Usage: /ufs/sjoerd/src/MonetDB/devel/MonetDB/Linux/src/mapi/clients/C/.libs/lt-msqldump [ options ]
+Options are:
+ -c config   | --config=file    /* config filename */
+ -h hostname | --host=hostname  /* host to connect to */
+ -P passwd   | --passwd=passwd  /* password */
+ -p portnr   | --port=portnr    /* port to connect to */
+ -d database | --database=database /* database to connect to */
+ -q          | --quiet          /* don't print welcome message */
+ -t          | --trace          /* trace mapi network interaction */
+ -u user     | --user=user      /* user id */
+ -?          | --help           /* show this usage message */
+
+# 15:14:07 >  
+# 15:14:07 >  Done.
+# 15:14:07 >  
 
