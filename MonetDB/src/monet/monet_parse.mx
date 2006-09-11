@@ -1518,7 +1518,7 @@ we should also copy the input.
 void
 ll_parserror(str msg)
 {
-	static char buf[1024];
+	char buf[4096];
 	char *s=buf, *t, *l = ll_lastline();
 	size_t i = strlen(GDKERROR);
 
@@ -1532,6 +1532,7 @@ ll_parserror(str msg)
 		if (*t == '%')
 			*s++ = '%';
 		*s++ = *t;
+                if (s-buf > 2000) break;
 	}
 	*s++ = '"';
 	*s++ = '\n';
