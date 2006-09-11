@@ -59,7 +59,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			// make the env map, insert all entries from env()
 			envs = new HashMap();
 			ResultSet env = getStmt().executeQuery(
-					"SELECT \"name\", \"value\" FROM env() as env");
+					"SELECT \"name\", \"value\" FROM sys.env() as env");
 			while (env.next()) {
 				envs.put(env.getString("name"), env.getString("value"));
 			}
