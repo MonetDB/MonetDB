@@ -530,7 +530,7 @@ We don;t search the cache for a previous incarnation yet.
 @c
 	{	
 		Symbol oldsym= c->curprg;
-		stmt *s = sql_symbol2stmt(m);
+		stmt *s = sql_symbol2stmt(m, m->sym);
 
 		MSinitClientPrg(c,"sql_cache",nme); 
 		if (!s && (err = mvc_status(m))) {
@@ -964,7 +964,7 @@ produce code.
 	} else {
 		stmt *s;
 
-		s = sql_symbol2stmt(m);
+		s = sql_symbol2stmt(m, m->sym);
 
 		if (s==0 || (err = mvc_status(m))) {
 			msg = throwMessage("SQLparser", m->errstr);
@@ -1188,12 +1188,13 @@ backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, ln
 	return msg;
 }
 
+str SQLrecompile(Client c, backend *be);
+
 str
-SQLengine(Client c)
+SQLengineIntern(Client c, backend *be) 
 {
 	str msg = MAL_SUCCEED;
 	MalStkPtr oldglb = c->glb;
-	backend *be = ((backend *) c->state[PARSER]);
 	char oldlang= be->language;
 	mvc *m = be->mvc;
 	lng T0=0;
@@ -1257,7 +1258,15 @@ environment.
 
 cleanup_engine:
     	if (msg) {
-        	GDKerror(msg);
+		if (strcmp(msg, "MALexception:mal.assert:emptySet") == 0) {
+			resetMalBlk( c->curprg->def, 1);
+			/* resetInstructions(c->curprg->def, 1);*/
+			freeVariables(c->curprg->def, c->glb, be->vtop);
+			be->language = oldlang;
+			c->glb = oldglb;
+			return SQLrecompile(c, be);
+		} else
+        		GDKerror(msg);
         	showErrors();
 		m->session->status = -10;
     	}
@@ -1281,6 +1290,43 @@ unless auto_commit has been set.
 	}
 
 	return msg;
+}
+
+str
+SQLrecompile(Client c, backend *be) 
+{
+	stmt *s;
+	int ret = 0;
+	mvc *m = be->mvc;
+
+	int oldvtop = c->curprg->def->vtop;
+	int oldstop = c->curprg->def->stop;
+
+	SQLCacheRemove(&ret, &be->q->name);
+	s = sql_symbol2stmt(m, be->q->s);
+	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
+	be->q->stk = 0;
+	stmt_destroy(s);
+
+	pushEndInstruction(c->curprg->def);
+
+	chkTypes(c->nspace, c->curprg->def); /* resolve types */
+	if (c->curprg->def->errors) {
+		showErrors();
+		/* restore the state */
+		resetMalBlk(c->curprg->def, oldstop);
+		freeVariables(c->curprg->def, c->glb, oldvtop);
+		c->curprg->def->errors = 0;
+		return throwMessage("SQLrecompile", "Semantic errors\n");
+	}
+	return SQLengineIntern(c, be);
+}
+
+str
+SQLengine(Client c)
+{
+	backend *be = ((backend *) c->state[PARSER]);
+	return SQLengineIntern(c, be);
 }
 
 @-

@@ -1248,6 +1248,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int output_type_needed = 0;
 			
 			/* some aggr functions require bigger outputs types */
+			/* TODO: cut-off seems to fail sometimes */
 			if (tpe &&
 			    (s->op4.aggrval->aggr->res.type->localtype > 
 			    tpe->type->localtype || 
@@ -1257,13 +1258,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* Cut off the type information.
 			   	It should be handled by the type resolver
 			 	*/
-			}
-/* always cut-off the time information, because the test above is incorrect */
 				c = strchr(aggrfunc, '_');
 				if (c) {
 					output_type_needed = 1;
 					*c = 0;
 				}
+			}
 
 			@:SQLprelude@
 			if (s->flag) { 

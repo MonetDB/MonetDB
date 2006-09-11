@@ -697,7 +697,7 @@ extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
 
 extern int sqlcleanup(mvc *c, int err);
-extern stmt *sql_symbol2stmt(mvc *c);
+extern stmt *sql_symbol2stmt(mvc *c, symbol *sym);
 
 extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
@@ -755,14 +755,14 @@ from the statement cache. Compile and optimize it for later
 consumption, e.g. display
 @c
 stmt *
-sql_symbol2stmt(mvc *c)
+sql_symbol2stmt(mvc *c, symbol *sym)
 {
 	stmt *s = NULL;
 
 	if (mvc_debug_on(c,16384)) {
 		sql_rel *r;
 		printf("# semantic relational algebra\n");
-		r = rel_semantic(c, c->sym);
+		r = rel_semantic(c, sym);
 		if (!r) {
 			if (c->errstr[0]) {
 				printf("# %s\n", c->errstr);
@@ -770,7 +770,7 @@ sql_symbol2stmt(mvc *c)
 			} else {
 				c->session->status = 0;
 				printf("# falling back to direct mode \n");
-				s = semantic(c, NULL, c->sym);
+				s = semantic(c, NULL, sym);
 			}
 		} else {
 			s = rel_bin(c, r);
@@ -786,7 +786,7 @@ sql_symbol2stmt(mvc *c)
 		}
 	}  else {
 		/*printf("# semantic binary algebra\n");*/
-		s = semantic(c, NULL, c->sym);
+		s = semantic(c, NULL, sym);
 	}
 
 	if (s){
