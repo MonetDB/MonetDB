@@ -364,7 +364,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_mem_bigsize");
-	set[i].value = strdup("1048576");
+	set[i].value = strdup("262144");
 	i++;
 	/*
 	 * gdk_vm_minsize will be set/limited to
