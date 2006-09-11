@@ -434,7 +434,7 @@
 PFalg_atom_t
 PFalg_lit_nat (nat value)
 {
-    return (PFalg_atom_t) { .type = aat_nat, .val = { .nat = value },
+    return (PFalg_atom_t) { .type = aat_nat, .val = { .nat_ = value }, 
                             .special = amm_normal };
 }
 
@@ -458,7 +458,7 @@ PFalg_lit_str (char *value)
 PFalg_atom_t
 PFalg_lit_dec (float value)
 {
-    return (PFalg_atom_t) { .type = aat_dec, .val = { .dec = value },
+    return (PFalg_atom_t) { .type = aat_dec, .val = { .dec_ = value },
                             .special = amm_normal };
 }
 
@@ -625,11 +625,11 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         return a.special - b.special;
 
     switch (a.type) {
-        case aat_nat:   return (a.val.nat == b.val.nat ? 0
-                                : (a.val.nat < b.val.nat ? -1 : 1));
+        case aat_nat:   return (a.val.nat_ == b.val.nat_ ? 0
+                                : (a.val.nat_ < b.val.nat_ ? -1 : 1));
         case aat_int:   return a.val.int_ - b.val.int_;
         case aat_str:   return strcmp (a.val.str, b.val.str);
-        case aat_dec:   return a.val.dec - b.val.dec;
+        case aat_dec:   return a.val.dec_ - b.val.dec_;
         case aat_dbl:   return a.val.dbl - b.val.dbl;
         case aat_bln:   return a.val.bln - b.val.bln;
         case aat_qname: return PFqname_eq (a.val.qname, b.val.qname);

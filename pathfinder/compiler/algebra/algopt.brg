@@ -577,7 +577,7 @@ reduce (PFla_op_t *p, int goalnt)
                 LL(LL(p))->schema.items[0].name == att_ord &&
                 LL(LL(p))->sem.lit_tbl.tuples[0].count == 1 &&
                 LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
-                LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat == 1 &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat_ == 1 &&
                 /*
                                               ord
                   compare with base relation: --- 
@@ -588,7 +588,7 @@ reduce (PFla_op_t *p, int goalnt)
                 RL(LL(p))->schema.items[0].name == att_ord &&
                 RL(LL(p))->sem.lit_tbl.tuples[0].count == 1 &&
                 RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
-                RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat == 2 &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat_ == 2 &&
                 /* compare loop relations */
                 LRL(LL(p)) == RRL(LL(p)) &&
                 /* ckeck schema of literal table */
@@ -611,7 +611,7 @@ reduce (PFla_op_t *p, int goalnt)
                 {
                     tuples[i] = LRR(LL(p))->sem.lit_tbl.tuples[i];
                     /* set new position value (starting from 1) */
-                    tuples[i].atoms[0].val.nat = i + 1; 
+                    tuples[i].atoms[0].val.nat_ = i + 1; 
                 }
                 /* copy tuples of second literal table */
                 for (j = 0; j < RRR(LL(p))->sem.lit_tbl.count; j++)
@@ -619,7 +619,7 @@ reduce (PFla_op_t *p, int goalnt)
                     tuples[i+j] = RRR(LL(p))->sem.lit_tbl.tuples[j];
                     /* set new position value 
                        (starting from next free position: i+1) */
-                    tuples[i+j].atoms[0].val.nat = i + j + 1;
+                    tuples[i+j].atoms[0].val.nat_ = i + j + 1;
                 }
 
                 /* cross (loop, lit_tbl (tuples) */

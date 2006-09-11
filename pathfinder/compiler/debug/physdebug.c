@@ -633,7 +633,7 @@ literal (PFalg_atom_t a)
     switch (a.type) {
 
         case aat_nat:
-            PFarray_printf (s, "#%u", a.val.nat);
+            PFarray_printf (s, "#%u", a.val.nat_);
             break;
 
         case aat_int:
@@ -645,7 +645,7 @@ literal (PFalg_atom_t a)
             break;
 
         case aat_dec:
-            PFarray_printf (s, "%g", a.val.dec);
+            PFarray_printf (s, "%g", a.val.dec_);
             break;
 
         case aat_dbl:

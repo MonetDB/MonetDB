@@ -3236,10 +3236,10 @@ literal (PFalg_atom_t atom)
     else
         switch (atom.type) {
 
-            case aat_nat:  return lit_oid (atom.val.nat);
+            case aat_nat:  return lit_oid (atom.val.nat_);
             case aat_int:  return lit_lng (atom.val.int_);
             case aat_str:  return lit_str (atom.val.str);
-            case aat_dec:  return lit_dbl (atom.val.dec);
+            case aat_dec:  return lit_dbl (atom.val.dec_);
             case aat_dbl:  return lit_dbl (atom.val.dbl);
             case aat_bln:  return lit_bit (atom.val.bln);
             case aat_qname:  

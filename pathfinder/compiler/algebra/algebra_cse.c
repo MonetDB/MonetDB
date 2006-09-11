@@ -79,7 +79,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
         switch (a.atoms[i].type) {
             /* if type is nat, compare nat member of union */
             case aat_nat:
-                if (a.atoms[i].val.nat != b.atoms[i].val.nat)
+                if (a.atoms[i].val.nat_ != b.atoms[i].val.nat_)
                     mismatch = true;
                 break;
             /* if type is int, compare int member of union */
@@ -94,7 +94,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 break;
             /* if type is float, compare float member of union */
             case aat_dec:
-                if (a.atoms[i].val.dec != b.atoms[i].val.dec)
+                if (a.atoms[i].val.dec_ != b.atoms[i].val.dec_)
                     mismatch = true;
                 break;
             /* if type is double, compare double member of union */
@@ -177,7 +177,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 a->sem.lit_tbl.count == 1 &&
                 a->sem.lit_tbl.tuples[0].count == 1 &&
                 a->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
-                a->sem.lit_tbl.tuples[0].atoms[0].val.nat == 1)
+                a->sem.lit_tbl.tuples[0].atoms[0].val.nat_ == 1)
                 return false;
 
             return true;
