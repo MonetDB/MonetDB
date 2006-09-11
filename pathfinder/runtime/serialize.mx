@@ -1391,7 +1391,7 @@ ws_documentIndex (BAT* ws, str docName)
         BUN p;
         HASHfnd_str(p, open_name, docName);
         if (p) {
-            off_t idx = BUNindex(open_name, p) - BUNindex(open_name, BUNfirst(open_name));
+            size_t idx = BUNindex(open_name, p) - BUNindex(open_name, BUNfirst(open_name));
             p = BUNptr(open_cont, BUNindex(open_cont, BUNfirst(open_cont)) + idx);
             if (p < BUNlast(open_cont)) {
                 res = *(oid*) BUNtail(open_cont, p); 

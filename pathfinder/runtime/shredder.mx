@@ -305,7 +305,7 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
 typedef struct shredBAT {
     shredBATdef     *def; /* pointer to static properties */
     oid             dupl; /* the number of duplicate BUNins so far */
-    off_t           size; /* current maximum size of the BAT */
+    size_t          size; /* current maximum size of the BAT */
     BAT             *bat; /* the physical BAT */
     size_t     abortSize; /* size previous to shredding */ 
     size_t      heapSize; /* size of string tail heap(->free) */
@@ -359,10 +359,10 @@ typedef struct shredCtxStruct {
     int      content;            /* content ptr in char buff */
     char     *content_buf;       /* character buffer */
     /* */
-    off_t    fileSize;           /* size of the input file */
-    off_t    estSize;            /* extimated number of pre nodes */
+    size_t   fileSize;           /* size of the input file */
+    size_t   estSize;            /* extimated number of pre nodes */
     shredBAT dstBAT[SHRED_BATS]; /* all the result BATs */
-    off_t    pageFree;           /* number of tuples per page to leave empty */
+    size_t   pageFree;           /* number of tuples per page to leave empty */
 
     /* attributes for shred into collection */
     int      updatable;           /* boolean: is nid-rid-pre the identity mapping? */
@@ -409,8 +409,8 @@ shredBAT_setcount(shredBAT *sb,
 }
 
 
-static off_t 
-shredBAT_newsize(shredBAT *sb, off_t newsize)
+static size_t 
+shredBAT_newsize(shredBAT *sb, size_t newsize)
 {
     newsize = MAX(sb->size, newsize) + MAX(BATTINY, newsize/4);
     if (sb->def->table == PRE_SIZE && (newsize & REMAP_PAGE_MASK)) { 
@@ -434,7 +434,7 @@ shredBAT_newsize(shredBAT *sb, off_t newsize)
 
 static int 
 shredBAT_extend(shredBAT *sb, 
-                off_t newsize)
+                size_t newsize)
 {
     sb->size = newsize;
     if (sb->bat->ttype == TYPE_void) {
@@ -526,7 +526,7 @@ emit_tuple(shredCtxStruct* shredCtx,
 
     /* make sure the rid_* and nid_* bats have enough room */
     if (pre >= shredCtx->dstBAT[PRE_SIZE].size) {
-        off_t newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
+        size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
         if (!(newsize &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_SIZE], newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_LEVEL], newsize) &&
@@ -541,7 +541,7 @@ emit_tuple(shredCtxStruct* shredCtx,
     if (shredCtx->updatable) {
         if (nid != oid_nil) {
             if (nid >= shredCtx->dstBAT[NID_RID].size) {
-                off_t newsize = shredBAT_newsize(&shredCtx->dstBAT[NID_RID], nid);
+                size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[NID_RID], nid);
                 if (newsize == 0 || !shredBAT_extend(&shredCtx->dstBAT[NID_RID], newsize)) {
                     return GDK_FAIL;
                 }
@@ -939,7 +939,7 @@ shred_start_element(void *xmlCtx,
             BAILOUT(shredCtx);
         }
         if (nattr >= shredCtx->dstBAT[ATTR_OWN].size) {
-            off_t newsize = shredBAT_newsize(&shredCtx->dstBAT[ATTR_OWN], nattr);
+            size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[ATTR_OWN], nattr);
             if (!(newsize &&
                   shredBAT_extend(&shredCtx->dstBAT[ATTR_OWN],  newsize) &&
                   shredBAT_extend(&shredCtx->dstBAT[ATTR_QN],   newsize) &&
@@ -1355,8 +1355,8 @@ shredder_free(shredCtxStruct *shredCtx,
 
 static shredCtxStruct*
 shredder_create(char *location, 
-                off_t fileSize, 
-                off_t pageFree, 
+                size_t fileSize, 
+                size_t pageFree, 
                 struct serializeFunStruct *serFun, 
                 struct XqueryCtx *serCtx, 
                 BAT *docBAT,
@@ -1375,7 +1375,7 @@ shredder_create(char *location,
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;
-    shredCtx->estSize   = MIN(MAX(BATTINY, fileSize/20), INT_MAX);
+    shredCtx->estSize   = (size_t) MIN(MAX(BATTINY, fileSize/20), INT_MAX);
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
@@ -1725,13 +1725,13 @@ shred(BAT *docBAT,
     }
 
     /* compute amount of free nodes per block from a percentage(opt string param) */
-    off_t pageFree = percentage;
+    size_t pageFree = percentage;
     if (percentage < 0 || percentage > 99) {
         GDKerror("shred: free-space percentage should be from range [0,99].\n");
         return GDK_FAIL;
     }
 
-    off_t estimatedSize = DEFAULT_ESTIMATE;
+    size_t estimatedSize = DEFAULT_ESTIMATE;
     if (location) {
         struct stat statbuf;
         if (!isURL(location)) {
