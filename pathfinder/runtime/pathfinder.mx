@@ -44,7 +44,6 @@
 @m
 .MODULE pathfinder;
 
-.USE streams;
 .USE pf_support;
 
 .COMMAND xquery_frontend() : ptr = xquery_frontend;
@@ -64,7 +63,6 @@
 .END pathfinder;
 @mil
 module(mapi);       # remote client access
-module(monettime); 
 
 # standoff extensions
 var standoff := false;
@@ -81,7 +79,7 @@ PROC pfstart(bit open, lng sz) : void {
         if (not(mapi_running())) {
                 mapi_listen(
                         int(monet_environment.find("mapi_port")), 
-                        str(nil), 
+                        str_nil, 
                         5, 
                         open).fork();
         }
@@ -107,62 +105,148 @@ PROC xquery_server_start() : void {
         xquery_server_start(false);
 }
 
-#############################################
-# User-level document management functions:
+
+# The XML Meta-Database #############################################################
 #
-# - shred_doc
-# - delete_doc
-# - delete_all_docs
+# Global information on persistent stored XML collections:
+# - collection_name   BAT[oid,name]             coll-ID / collection name 
+# - collection_size   BAT[oid,lng]              coll-ID / size in bytes
 #
-# Each imported XML-document is stored as a collection of persistent BATs 
-# whose name starts with the name of the BAT and ends with the document ID. 
-# The execution of an XQuery is not performed on the persistent BATs, but on 
-# the transient 'working set', a global document collection represented
-# by the ws-BAT.
+# A collection may contain one ore more XML documents:
+# - doc_collection    BAT[oid,oid]          document-ID / coll-ID 
+# - doc_name          BAT[oid,str]          document-ID / document name
+# - doc_location      BAT[oid,str]          document-ID / document URI
+# - doc_timestamp     BAT[oid,timestamp]    document-ID / end-of-cache-time (nil if none)
+# - doc_undo          BAT[oid,int]          document-ID / query-ID that created it (TRANSIENT) 
 #
-# Each collection contains the following rid_* BATs from which the pre_* BATs can be reconstructed:
-# - map_pid     : BAT[oid,oid]  64K tuple page-id / and its page index in the rid_table
-# - rid_size    : BAT[oid,int]  rid-value of node / and its descendant size,
-# - rid_level   : BAT[oid,chr]  rid-value of node / and its level,
-# - rid_prop    : BAT[oid,oid]  rid-value of node / and property ID,
-# - rid_kind    : BAT[oid,chr]  rid-value of node / and node kind,
+# some runtime (TRANSIENT) information is also kept on collections, by name: 
+# - colname_shredlock BAT[str,lock]     collection name / append-lock
+# - colname_runtime   BAT[str,bat]      collection name / index+locking structures 
+# - colname_pins      BAT[str,int]      collection name / query-ID using it 
+#
+# Meta-information controlling the cache:
+# - uri_lifetime      BAT[str,lng]          URI prefix  / time-to-live (seconds), 
+#                                                         nil if not to be cached 
+# these tables are protected by the pf_short lock.
+
+# Document Containers ##############################################################
+#
+# Each imported XML-document (collection) is stored in a series of persistent 
+# BATs (columns) whose name starts with the collection ID and ends with the 
+# column name. The full set of these bats is called a 'document container'.
+# Thus, each document collection maps on a single persistent document container
+# (a set of bats). At run-time, multiple isolated copies (containers) for a certain
+# collection may be open. Each query also creates a temporary 'transient document
+# container' consisting of transient BATs, which holds only nodes that are
+# constructed in the query.
+#
+# Each document container contains the following rid_* BATs from which the pre_* 
+# BATs are derived:
+# - map_pid            BAT[void,oid] 64K tuple page-id / its page index in the rid_table
+# - nid_rid            BAT[void,oid]        stable NID / RID 
+# - rid_size           BAT[void,int]               RID / #descendants,
+# - rid_level          BAT[void,chr]               RID / distance from root,
+# - rid_prop           BAT[void,oid]               RID / property-ID,
+# - rid_kind           BAT[void,chr]               RID / node kind (determins prop_* column)
+# - rid_nid            BAT[void,oid]               RID / stable NID 
+# - frag_root          BAT[oid,oid]        document-ID / root NID
 #                              
-# NOTE: page indices start at oid(0). by putting the rid_* phyisical pages in the 
-#       order specified by map_pid we get the original pre_* tables back.
+# NOTE: read-only collections do not have a persistent NID_RID nor a MAP_PID bats.
+#       For them RID=PRE=NID in all cases. This is also true for the transient document 
+#       container. For them NID_RID and MAP_PID are BAT[void,void] views. In their case,
+#       the RID-PRE-NID transformations (leftfetchjoin/swizzle) are zero-cost.
 #
-# - qn_ns        : BAT[oid,str]  property ID / and name space (elements and attributes),
-# - qn_loc       : BAT[oid,str]  property ID / and local name (elements and attributes),
-# - prop_text    : BAT[oid,str]  property ID / and text,
-# - prop_com     : BAT[oid,str]  property ID / and comment,
-# - prop_ins     : BAT[oid,str]  property ID / and processing instruction,
-# - prop_tgt     : BAT[oid,str]  property ID / and processing instruction target,
+# NOTE: MAP_PID page indices start at oid(0). by putting the rid_* phyisical pages 
+#       in the order specified by MAP_PID we get the original pre_* tables back.
 #
-# - attr_own  : BAT[oid,oid]  attribute ID / pre-value of owner
-# - attr_qn   : BAT[oid,oid]  attribute ID / and qname/property ID
-# - attr_prop : BAT[oid,oid]  attribute ID / value ID
+# qn_* tables contain qualified names (elements, attributes). 
+# They are double-eliminated on (prefix_uri_loc) and we keep a histogram statistic 
+# on them, that is used fror indexing only 'relatively infrequent' qnames:
+# - qn_prefix_uri_loc: BAT[void,str]          qname-ID / prefix:uri:loc
+# - qn_uri_loc         BAT[void,str]          qname-ID / uri:loc only
+# - qn_prefix          BAT[void,str]          qname-ID / prefix
+# - qn_ns              BAT[void,str]          qname-ID / namespace URI
+# - qn_loc             BAT[void,str]          qname-ID / local name (e.g. element name)
+# - qn_histogram       BAT[void,lng]          qname-ID / occurence count (estimate)
 #
-# - prop_val  : BAT[oid,str]  value ID / value of attribute nodes
+# the prop_* bats are independent (varying sizes for each kind) and keep UTF-8 string data
+# - prop_text          BAT[void,str]       property-ID / text,
+# - prop_com           BAT[void,str]       property-ID / comment,
+# - prop_ins           BAT[void,str]       property-ID / processing instruction,
+# - prop_tgt           BAT[void,str]       property-ID / processing instruction target,
+# - prop_val           BAT[void,str]       property-ID / string value of attribute node
 #
-# Global information on persistent stored documents:
-# - doc_name      : BAT[oid,str]        document ID / document name
-# - doc_height    : BAT[oid,int]        document ID / height of document
-# - doc_size      : BAT[oid,lng]        document ID / size in bytes
-# - doc_timestamp : BAT[oid,timestamp]  document ID / end-of-cache-time (nil if none)
-# - uri_lifetime  : BAT[str,lng]        URI prefix  / time-to-live (seconds), nil if not to be cached 
-# 
-# Information on documents/containers in the working set:
-# - PRE_CONT       BAT[void,BAT[void,oid]] list of bats with containers
-#                  oids for each pre value (copied in element construction)
-# - ATTR_CONT      BAT[void,BAT[void,oid]] list of bats with containers
-#                  oids for each attr value (copied in element/attribute construction)
-# - CONT_COLL      BAT[void,oid] container-ID / collection-ID
-#                  (starts with 1@0 because WS is first 'loaded' document
-# - HEIGTH         BAT[void,int] enumeration of the containers / maximal
-#                  depth of the container (starts with 0@0 - WS)
-# - CONT_DOCID     BAT[oid,oid] container-ID / docid (this is local to ws, NOT a key to doc_* tables) 
+# the attr_* bats contain attribute data:
+# - attr_own           BAT[void,oid]      attribute-ID / NID of owner
+# - attr_qn            BAT[void,oid]      attribute-ID / and qname-ID
+# - attr_prop          BAT[void,oid]      attribute-ID / property-ID (for prop_val)
 #
-# - DOCID_OID      BAT[void,oid] docid / persistent document-ID (the key to the doc_* tables)
-# - DOCID_NAME     BAT[void,str] docid / document name
+# attr_prop stores the values separately to allow "shallow copying", where in a transient 
+# document container, an attribute is both defined (qname) and its value stored (prop_val) 
+# in a different collection (see PRE_CONT and ATTR_CONT below).
+
+
+# The Working Set #################################################################
+#
+# A "working set" contains all XML data currently accessible a running query;
+# each running XQuery has its own working set. 
+#
+# Thus, for each bat in a document container, the working set contains a bat-of-bats.
+# It contains one entry for each loaded container.
+#
+# For updatable collections, the  bats in the working set used for query execution 
+# are *views* on the persistent bats, to provide isolation.
+# - for the pre/post table pages from the rid_* are remapped into isolcate pre_* bats
+# - all other container bats are copy-on-write mmap views on the masters
+#   (mmap is only used for bug heaps; small heaps are malloced copies)
+# - the working set also contains all masters. Update queries need access
+#   to the masters when they commit. The master column of "X" is called "_X".
+# - for read-only collections (including all documents shredded on-the-fly)
+#   there is no difference between the queryable bats and the masters.
+#
+# The working set can have multiple documents open. Those multiple documents
+# may stem from a single, or multiple collections. The code is optimized to deal
+# with huge numers of (small) documents from s single collection efficiently. 
+#
+# Each open collection has a corresponding container in the working set,
+# administered in a table:
+# - CONT_COLL          BAT[void,oid]      container-ID / collection-ID 
+# - CONT_NAME          BAT[void,str]      container-ID / collection-ID 
+#                                                       (both nil for transient container)
+# - CONT_RUNTIME       BAT[void,bat]      container-ID / index bat
+#                                                       (empty for transient container)
+# the idea behind having NAME and RUNTIME (from collection_name and colname_runtime) 
+# replicated inside the ws besides the collection -ID (with which those could be looked up)
+# is that during the query we want to limit taking the pf_short lock to do that each time.
+#
+# since each container can contain multiple documents, these are in a separate table:
+# - OPEN_CONT          BAT[void,oid]        open-docid / container-ID 
+# - OPEN_NAME          BAT[void,str]        open-docid / document name
+# - OPEN_DOCID         BAT[void,oid]        open-docid / persistent document-ID 
+#
+# NOTE: when the query starts, a first, empty container is created, the
+#       'transient document container'. It has container-ID (cont) 0.
+#
+# NOTE: open temporary shredded documents that are not cached have both 
+#       _COLL and _DOCID fields set to TEMP_DOC (0@0). These fields may
+#       thus not be unique when multiple such documents are open!
+#
+# For each container, the working set contains two extra virtual bats:
+# - PRE_CONT           BAT[void,BAT[void,oid]] 
+#                      list of bats with containers oids for each pre value 
+#                      (copied in element construction)
+# - ATTR_CONT          BAT[void,BAT[void,oid]] 
+#                      list of bats with containers oids for each attr value 
+#                      (copied in element/attribute construction)
+#
+# These bats are *constant* (i.e. have an identical value for each tuple)
+# for all shredded documents, hence they are not stored on disk (we create a
+# view when they are loaded instead). Their function is to allow shallow copying 
+# in the transient document container.  i.e. for the transient container, these 
+# bats are not views, and their CONT values refer to other containers.
+
+
+module(pf_support); 
 
 @- ws definition
 
@@ -184,139 +268,123 @@ their versions with '_' copies/views. The latter ones
 are used for querying, as they provide isolation against
 concurrent updates.
 
-         name       number  htp  ttp  col[H,T]    col-seqbase 
-         ========   ======  ===  ===  ==========  ===========
+         name           number  htp  ttp  col[H,T]    col-seqbase 
+         ========       ======  ===  ===  ==========  ===========
 @= ws
-@:@1_ws(PRE_SIZE,       0, void, bat, void,  int, PRE_BASE)@
-@:@1_ws(PRE_LEVEL,      1, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_PROP,       2, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_KIND,       3, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_NID,        4, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(WS_FRAG,        5, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(MAP_PID,        6, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(NID_RID,        7, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(QN_URI,         8, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_PREFIX,      9, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC,        10, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_TEXT,     11, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_COM,      12, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_INS,      13, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_TGT,      14, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_VAL,      15, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(ID_NID,        16, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(IDREF_NID,     17, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(ATTR_OWN,      18, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_QN,       19, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_PROP,     20, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(QN_PREFIX_URI, 21, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC_URI,    22, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(KND_NID_0,     23, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_0,    24, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_1,     25, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_2,     26, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_3,     27, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_3,    28, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_4,     29, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(REGION_PRE,    30, void, bat, void,  oid, oid(nil))@
-@:@1_ws(REGION_START,  31, void, bat, void,  lng, oid(nil))@
-@:@1_ws(REGION_END,    32, void, bat, void,  lng, oid(nil))@
-@:@1_ws(PRE_CONT,      33, void, void,void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_CONT,     34, void, void,void,  oid, PRE_BASE)@
-@:@1_ws(HEIGHT,        35, void, int, void, void, oid(nil))@
-@:@1_ws(DOCID_NAME,    36, void, str, void, void, oid(nil))@
-@:@1_ws(DOCID_OID,     37, void, oid, void, void, oid(nil))@
-@:@1_ws(CONT_DOCID,    38, oid,  oid, void, void, oid(nil))@
-@:@1_ws(CONT_COLL,     39, void, oid, void, void, oid(nil))@
-@:@1_ws(_RID_SIZE,     40, void, bat, void,  int, PRE_BASE)@
-@:@1_ws(_RID_LEVEL,    41, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(_RID_PROP,     42, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_RID_KIND,     43, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(_RID_NID,      44, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_WS_FRAG,      45, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_MAP_PID,      46, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_NID_RID,      47, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_QN_URI,       48, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_PREFIX,    49, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_LOC,       50, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_TEXT,    51, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_COM,     52, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_INS,     53, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_TGT,     54, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_VAL,     55, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_ID_NID,       56, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(_IDREF_NID,    57, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(_ATTR_OWN,     58, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_ATTR_QN,      59, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_ATTR_PROP,    60, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_QN_PREFIX_URI,61, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_LOC_URI,   62, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_KND_NID_0,    63, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_PROP_0,   64, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_1,    65, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_2,    66, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_3,    67, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_PROP_3,   68, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_4,    69, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_REGION_PRE,   70, void, bat, void,  oid, oid(nil))@
-@:@1_ws(_REGION_START, 71, void, bat, void,  lng, oid(nil))@
-@:@1_ws(_REGION_END,   72, void, bat, void,  lng, oid(nil))@
+@:ws_@1(MAP_PID,            0, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(PRE_SIZE,           1, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(PRE_LEVEL,          2, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(PRE_PROP,           3, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(PRE_KIND,           4, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(PRE_NID,            5, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(NID_RID,            6, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(FRAG_ROOT,          7, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(QN_HISTOGRAM,       8, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(QN_PREFIX_URI_LOC,  9, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(QN_URI_LOC,        10, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(QN_PREFIX,         11, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(QN_URI,            12, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(QN_LOC,            13, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(PROP_TEXT,         14, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(PROP_COM,          15, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(PROP_INS,          16, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(PROP_TGT,          17, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(PROP_VAL,          18, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(ID_NID,            19, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(IDREF_NID,         20, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(ATTR_OWN,          21, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_QN,           22, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_PROP,         23, void, bat, void,  oid, PRE_BASE)@
 
+@:ws_@1(NID_QN,            24, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(NID_QN_DEL,        25, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(NID_QN_INS,        26, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(REGION_PRE,        27, void, bat, void,  oid, oid_nil)@
+@:ws_@1(REGION_START,      28, void, bat, void,  lng, oid_nil)@
+@:ws_@1(REGION_END,        29, void, bat, void,  lng, oid_nil)@
+@:ws_@1(PRE_CONT,          30, void, void,void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_CONT,         31, void, void,void,  oid, PRE_BASE)@
+@:ws_@1(OPEN_NAME,         32, void, str, void, void, oid_nil)@
+@:ws_@1(OPEN_DOCID,        33, void, oid, void, void, oid_nil)@
+@:ws_@1(OPEN_CONT,         34, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_COLL,         35, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_NAME,         36, void, str, void, void, oid_nil)@
+@:ws_@1(CONT_RUNTIME,      37, void, bat, void, void, oid_nil)@
+
+@:ws_@1(_MAP_PID,          38, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         39, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        30, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         41, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         42, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          43, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          44, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        45, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     46, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,47, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       48, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        49, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           50, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           51, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        52, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         53, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         54, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         55, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         56, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ID_NID,           57, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_IDREF_NID,        58, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_ATTR_OWN,         59, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          60, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        61, void, bat, void,  oid, PRE_BASE)@
 @-
+The bottop segment are the master copies of the top segment.
+The middle segment is private to the query.
+
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
-@= decl
-@:@1_decl_ws(WS_SIZE, 60)@
-@:@1_decl_ws(QNAME,    2)@
-@:@1_decl_ws(BOOL,     3)@
-@:@1_decl_ws(INT,      4)@
-@:@1_decl_ws(DEC,      5)@
-@:@1_decl_ws(DBL,      6)@
-@:@1_decl_ws(STR,      7)@
-@:@1_decl_ws(U_A,      8)@
-@:@1_decl_ws(ATOMIC,  31)@
-@:@1_decl_ws(NODE,    32)@
-@:@1_decl_ws(ELEM,    33)@
-@:@1_decl_ws(ATTR,    34)@
+@= ws_decl
+@:ws_@1_decl(WS_SIZE, 72)@
+@:ws_@1_decl(QNAME,    2)@
+@:ws_@1_decl(BOOL,     3)@
+@:ws_@1_decl(INT,      4)@
+@:ws_@1_decl(DEC,      5)@
+@:ws_@1_decl(DBL,      6)@
+@:ws_@1_decl(STR,      7)@
+@:ws_@1_decl(U_A,      8)@
+@:ws_@1_decl(ATOMIC,  31)@
+@:ws_@1_decl(NODE,    32)@
+@:ws_@1_decl(ATTR,    33)@
+@:ws_@1_decl(ELEM,    34)@
 
-@= mil_decl_ws
+@= ws_mil_decl
 const @1 := @2;
 @mil
 @:ws(mil_decl)@
-@:decl(mil)@
+@:ws_decl(mil)@
 
-# DEFINITION of constants concerning the data model
-const PRE_BASE := 0@0;
-const ELEMENT := chr(0);
-const TEXT := chr(1);
-const COMMENT := chr(2);
-const PI := chr(3);
-const DOCUMENT := chr(4);
-const WS := 0@0;
+# KIND constants, carefully chosen
+# atomic value items can be retrieved with 'kind.select(int_nil,ATOMIC)'
+# NODE is not a type but all node types can be retrieved with 'kind.select(NODE,int_nil)'
+const ELEMENT          := chr(0);
+const TEXT             := chr(1);
+const COMMENT          := chr(2);
+const PI               := chr(3);
+const DOCUMENT         := chr(4);
 
-const KND_NID  := new(chr,int,5);
-const KND_PROP := new(chr,int,2);
-{
-    var knd := ELEMENT;
-    var idx := KND_NID_0;
-    while ( knd <= DOCUMENT ) {
-        KND_NID.insert(knd,idx);
-        idx :+= 1;
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-            KND_PROP.insert(knd,idx);
-            idx :+= 1;
-        }
-        knd :+= chr(1);
-    }
-}
-KND_NID .access(BAT_READ);
-KND_PROP.access(BAT_READ);
+# zero
+const WS               := 0@0; # first container in ws = transient doc container
+const PRE_BASE         := 0@0; # all our PRE bats start at 0 (the super-root)
+const TEMP_DOC         := 0@0; # doc/coll key that is never used for persistent docs
 
-# ATOMIC is not a type but all atomic types
-# can be retrieved with 'select(int(nil),ATOMIC)'
-
-# NODE is not a type but all node types
-# can be retrieved with 'select(NODE,int(nil))'
-
+# slots in the col_runtime bats
+const RT_LOCK_FREELIST := 0;
+const RT_NID_FREELIST  := 1;
+const RT_NID_QN        := 2;
+const RT_NID_QN_INS    := 3;
+const RT_NID_QN_DEL    := 4;
+const RT_NID_QN_UNQ    := 5;
+const RT_REGION_PRE    := 6;
+const RT_REGION_START  := 7;
+const RT_REGION_END    := 8;
 
 @- shared BATs
 
@@ -325,141 +393,273 @@ command to get a global lock handle for synchronization. However, BATs are globa
 shared. This mechanism is used to share the global data structures (each XQuery session has its own
 MIL variables, but these point to the same global BATs).
 
-@= create_ws
-    ws_nme.append(toLower("@1"));
-    ws_tpe.append(@4);
-    ws_htp.append(@5);
-    ws_ttp.append(@6);
-    ws_seq.append(@7);
+@= ws_nme
+    .append(toLower("@1"))
+@= ws_tpe
+    .append(@4)
+@= ws_htp
+    .append(@5)
+@= ws_ttp
+    .append(@6)
+@= ws_seq
+    .append(@7)
 @mil
 # get a handle to the global lock
-var pf_lock := pflock(); 
+var pf_short  := pflock(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
+var pf_wal    := pflock(1); # lock that must be held while wirting into the WAL
 
-# the set of document collections
-var collection_name; # collection name 
-var doc_name;        # document name
-var doc_location;    # document URI
-var doc_collection;  # collection-id 
-var doc_root;        # root oid in collection 
-var doc_height;      # height of document
-var doc_size;        # document size in bytes
-var doc_timestamp;   # caching limit (nil if none)
+# the set of document collections (may only be accessed holding pf_short)
+var collection_name;  # bat[oid,str] collection name 
+var collection_size;  # bat[oid,lng] collection size in bytes
 
-const TEMP_DOC := 0@0; # reversed for temp docs (invalid key for doc table)
+var doc_collection;   # bat[oid,oid] collection-id 
+var doc_name;         # bat[oid,str] document name
+var doc_location;     # bat[oid,str] document URI
+var doc_timestamp;    # bat[oid,timestamp] caching limit (nil if none)
+var doc_undo;         # bat[oid,int] contains ws that created this document (TRANSIENT)
 
-# caching rules
-var uri_lifetime; 
+var uri_lifetime;     # caching rules
 
-# (logical) document usage
-var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
-var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
+# runtime collection acccess control (TRANSIENT)
+var colname_pins;     # bat[str,int] queries (ws number) that are using a collection (negative numbers are shreds)
+var colname_shredlock;# bat[str,int] (single) query that is shredding into a collection 
+var colname_runtime;  # bat[str,bat] runtime index/lock bat-of-bat 
 
-# (physical) collection usage
-var coll_lock;  # bat[oid,lock] used by append_page() to ensure unique pages are given out size
-var coll_free;  # bat[oid,bat]  per document a list with all free pages smaller than the master size
+                      # empty pages to append onto rid_* master bats
+var empty_page;       # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
+var empty_bat;        # bat[void,oid] 
+var empty_runtime;    # bat[lock,bat] 
 
-# empty pages to append onto rid_* master bats
-var empty_page;  # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
+                      # the ws_* bats contain a recipe for creating a new ws
+var ws_nme;           # name (prefix) of ws entry as persistent bat
+var ws_tpe;           # type of ws entry (often bat)
+var ws_htp;           # (if tpe=bat) head-type of nested bat
+var ws_ttp;           # (if tpe=bat) tail-type of nested bat
+var ws_seq;           # (if tpe=bat) seqbase of nested bat
+var ws_col;           # all ws entries that are real bats, and their names
+var ws_dsk;           # of those, all persistent bats on disk for a document container , and their names
+var ws_rid;           # of those, all master rid_* bats, and their (remapped) pre_* views
+var ws_mem;           # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
 
-# the ws_* bats contain a recipe for creating a new ws
-var ws_nme; # name (prefix) of ws entry as persistent bat
-var ws_tpe; # type of ws entry (often bat)
-var ws_htp; # (if tpe=bat) head-type of nested bat
-var ws_ttp; # (if tpe=bat) tail-type of nested bat
-var ws_seq; # (if tpe=bat) seqbase of nested bat
-var ws_col; # all ws entries that are real bats, and their names
-var ws_dsk; # of those, all persistent bats on disk for a document container , and their names
-var ws_rid; # of those, all master rid_* bats, and their (remapped) pre_* views
-var ws_mem; # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
-var ws_shr; # all bats delivered by shredder, and their future persistent names
-
-# initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
+# initialize global variables (use BBP as global mechanism to discover initialization)
 # note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
-lock_set(pf_lock);
+lock_set(pf_short);
 if (isnil(CATCH(bat("doc_name").count()))) {
     collection_name  := bat("collection_name");
+    collection_size  := bat("collection_size");
+    doc_collection   := bat("doc_collection");
     doc_name         := bat("doc_name");
     doc_location     := bat("doc_location");
-    doc_collection   := bat("doc_collection");
-    doc_root         := bat("doc_root");
     doc_timestamp    := bat("doc_timestamp");
-    doc_height       := bat("doc_height");
-    doc_size         := bat("doc_size");
     uri_lifetime     := bat("uri_lifetime");
 } else {
     # create doc_name table in case it does not exist
-    (collection_name := new(oid,str).persists(true)).bbpname("collection_name");
-    (doc_name        := new(oid,str).persists(true)).bbpname("doc_name");
-    (doc_location    := new(oid,str).persists(true)).bbpname("doc_location");
-    (doc_collection  := new(oid,oid).persists(true)).bbpname("doc_collection");
-    (doc_root        := new(oid,oid).insert(0@0,0@0).persists(true)).bbpname("doc_root");
-    (doc_timestamp   := new(oid,timestamp).persists(true)).bbpname("doc_timestamp");
-    (doc_height      := new(oid,int).persists(true)).bbpname("doc_height");
-    (doc_size        := new(oid,lng).persists(true)).bbpname("doc_size");
-    (uri_lifetime    := new(str,lng).persists(true)).bbpname("uri_lifetime");
+    collection_name := new(oid,str).persists(true).rename("collection_name");
+    collection_size := new(oid,lng).persists(true).rename("collection_size");
+    doc_collection  := new(oid,oid).persists(true).rename("doc_collection");
+    doc_name        := new(oid,str).persists(true).rename("doc_name");
+    doc_location    := new(oid,str).persists(true).rename("doc_location");
+    doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
+    uri_lifetime    := new(str,lng).persists(true).rename("uri_lifetime");
 }
-if (not(doc_height.exist(TEMP_DOC))) {
-    doc_height.insert(TEMP_DOC, 1000); # hack: store next oid as in invalid TEMP_DOC tuple
+if (not(doc_collection.exist(TEMP_DOC))) {
+    doc_collection.insert(TEMP_DOC, 1000@0); # hack: store next oid as in invalid TEMP_DOC tuple
 }
-if (isnil(CATCH(bat("doc_query").count()))) {
-    doc_query  := bat("doc_query"); 
-    doc_sema   := bat("doc_sema"); 
-    coll_lock  := bat("coll_lock"); 
-    coll_free  := bat("coll_free"); 
-    empty_page := bat("empty_page"); 
-    ws_nme     := bat("ws_bat");
-    ws_tpe     := bat("ws_tpe"); 
-    ws_htp     := bat("ws_htp");
-    ws_ttp     := bat("ws_ttp");
-    ws_seq     := bat("ws_seq");
-    ws_col     := bat("ws_col");
-    ws_dsk     := bat("ws_dsk");
-    ws_rid     := bat("ws_rid");
-    ws_mem     := bat("ws_mem");
-    ws_shr     := bat("ws_shr");
+if (isnil(CATCH(bat("doc_undo").count()))) {
+    doc_undo         := bat("doc_undo"); 
+    colname_shredlock:= bat("colname_shredlock"); 
+    colname_runtime  := bat("colname_runtime"); 
+    colname_pins     := bat("colname_pins"); 
+    empty_page       := bat("empty_page"); 
+    empty_bat        := bat("empty_bat"); 
+    empty_runtime    := bat("empty_runtime"); 
+    ws_nme           := bat("ws_bat");
+    ws_tpe           := bat("ws_tpe"); 
+    ws_htp           := bat("ws_htp");
+    ws_ttp           := bat("ws_ttp");
+    ws_seq           := bat("ws_seq");
+    ws_col           := bat("ws_col");
+    ws_dsk           := bat("ws_dsk");
+    ws_rid           := bat("ws_rid");
+    ws_mem           := bat("ws_mem");
 } else {
-    (doc_query := new(oid,int)).bbpname("doc_query"); 
-    (doc_sema  := new(oid,monet_atomtbl.find("sema"))).bbpname("doc_sema"); 
-    (coll_lock := new(oid,monet_atomtbl.find("lock"))).bbpname("coll_lock"); 
-    (coll_free := new(oid,bat)).bbpname("coll_free"); 
-    (empty_page:= new(void,int,REMAP_PAGE_SIZE)).bbpname("empty_page"); 
+    doc_undo         := bat(oid,int).rename("doc_undo"); 
+    colname_pins     := bat(str,int).rename("colname_pins"); 
+    colname_runtime  := bat(str,bat).rename("colname_runtime"); 
+    colname_shredlock:= bat(str,lock).rename("colname_shredlock"); 
+    empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
+    empty_bat        := bat(void,oid).rename("empty_bat"); 
+    empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
 
-    var m := int(nil), i := int(REMAP_PAGE_SIZE);
+    var m := int_nil, i := int(REMAP_PAGE_SIZE);
     var bak := debugmask();
     debugmask(0);
-    while((i :-= 1) >= 0) {
-        empty_page.append(nilor(i, m));
-    }
+    while((i :-= 1) >= 0) { empty_page.append(nilor(i, m)); }
     debugmask(bak);
     empty_page.seqbase(0@0).access(BAT_READ);
 
-    ws_nme := bat(void,str,WS_SIZE);
-    ws_tpe := bat(void,int,WS_SIZE);
-    ws_htp := bat(void,int,WS_SIZE);
-    ws_ttp := bat(void,int,WS_SIZE);
-    ws_seq := bat(void,oid,WS_SIZE);
-    @:ws(create)@
-    ws_nme.seqbase(0@0).access(BAT_READ).bbpname("ws_nme");
-    ws_tpe.seqbase(0@0).access(BAT_READ).bbpname("ws_tpe");
-    ws_htp.seqbase(0@0).access(BAT_READ).bbpname("ws_htp");
-    ws_ttp.seqbase(0@0).access(BAT_READ).bbpname("ws_ttp");
-    ws_seq.seqbase(0@0).access(BAT_READ).bbpname("ws_seq");
+    ws_nme := bat(void,str,WS_SIZE)@:ws(nme)@.seqbase(0@0).access(BAT_READ).rename("ws_nme");
+    ws_tpe := bat(void,int,WS_SIZE)@:ws(tpe)@.seqbase(0@0).access(BAT_READ).rename("ws_tpe");
+    ws_htp := bat(void,int,WS_SIZE)@:ws(htp)@.seqbase(0@0).access(BAT_READ).rename("ws_htp");
+    ws_ttp := bat(void,int,WS_SIZE)@:ws(ttp)@.seqbase(0@0).access(BAT_READ).rename("ws_ttp");
+    ws_seq := bat(void,oid,WS_SIZE)@:ws(seq)@.seqbase(0@0).access(BAT_READ).rename("ws_seq");
+    ws_col := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme).rename("ws_col");
+    ws_dsk := ws_nme.reverse().ord_select(oid(_MAP_PID), oid_nil).reverse().rename("ws_dsk");
+    ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE));
+    ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
+    ws_mem := ws_mem.slice(NID_RID, INT_MAX).rename("ws_mem");
 
-    ws_col := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
-    ws_col.bbpname("ws_col");
-    ws_dsk := ws_nme.reverse().ord_select(oid(_RID_SIZE), oid(nil)).reverse();
-    ws_dsk.bbpname("ws_dsk");
-    ws_rid := [int](ws_dsk.mirror().ord_select(oid(_RID_SIZE), oid(_RID_NID))).[-](_RID_SIZE - PRE_SIZE).[oid]();
-    ws_rid.bbpname("ws_rid");
-    ws_mem := [int](ws_dsk.mirror().ord_select(oid(_WS_FRAG), oid(nil))).[-](_RID_SIZE - PRE_SIZE).[oid]();
-    ws_mem.bbpname("ws_mem");
-    ws_shr := [+]("_", reverse(reverse(ws_col).ord_select(oid(nil), oid(PRE_CONT - 1))).[substitute]("pre_", "rid_", false));
-    ws_shr.bbpname("ws_shr");
+    # silently clean up the repository
+    collection_cleanup(_collection_cleanup());
+    var garbage := [oid](view_bbp_name().select("0","999999999999999999").reverse().mirror()).tdiff(reverse(collection_name));
+    if (bit(count(garbage))) {
+        garbage@batloop() { CATCH(bat($h).persists(false)); }
+        commit();
+    }
 }
-lock_unset(pf_lock);
+lock_unset(pf_short);
 
 
-PROC ws_bat(oid id, int tpe, int htp, int ttp, oid seq) : BAT[void,any]
+@+ locking approach
+@T
+MonetDB/XQuery uses optimistic concurrency control with snapshot
+isolation, so updates do not use locks as such. Instead, conflicting queries
+are aborted at commit time. 
+
+Still, some locking still needs to be done, to prevent crashes.
+Monet BATs may never be modified (e.g. from MIL) while other  
+concurrent queries are reading them (e.g. from MIL). This holds
+both from the meta-bats, as well as the data bats.
+
+Right from the start, I have opted for a policy that allows as much
+concurrency as possible.
+
+@- short lock
+
+There is a short lock (pf_short) that protects access to the collection_*,
+doc_* and colname_* meta-tables. Note that the fn:add_doc(), fn:del_doc()
+as well as  the fn:doc() which leads to implicit shredding and caching
+modify these tables. All types of queries read them. Thus all reads and
+writes to these tables need to be locked, whth the short lock. 
+
+It is good practice to carry out all work while holding the short lock inside 
+a CATCH(). Otherwise a run-time error may leave the short lock taken and the 
+whole system blocked forever.  Thus, all MIL PROCs X() that need the lock, 
+have a worker function _X() that is called inside the locked execution:
+
+PROC X() : void {
+    lock_set(pf_short);
+    var err := CATCH(_X());
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+}
+
+As a general convention all MIL PROCs _X(), i.e. whose name starts with and
+underscore, assume the pf_short lock is taken.
+
+@- collection lock 
+
+Apart from the short lock, each XML collection (i.e. document container) has 
+its own lock. These locks can be found via the colname_runtime BAT[str,bat]. 
+Its head contains collection names. Its tail a so-colled 'runtime' BAT[lock,bat]. 
+The first entry (named RT_LOCK_FREELIST ) in this runtime-BAT is 
+[coll_lock,pagefree], where 'coll_lock' is the collection lock and 
+'pagefree' is a BAT[oid,void] that contains a list of free pages.
+
+The other entries in the runtime-BAT relate to indices on the collection.
+More information can be found in the NID_QN section. Also, the StandOff
+extensions use entries in the runtime-BAT.
+
+The collection lock can be used to get exclusive access to the master
+bats of a collection. This is required when:
+- a collection is opened and isolated copies of the master bats need to 
+  be made. This includes the time taken for any nsloc index construction,
+  which must be done on the master copies.
+- while an incremental shred operation is *extending* the bat collection 
+  -- though it is not needed while shredding in general.
+- while applying the updates of a committed transaction to the master bat.
+  note that in a commit, first all locks of all documents must be acquired
+  (in ascending order - to prevent deadlock), then all changes commited. 
+
+Similar to the short_doc PROC naming convention, __X() PROCs, i.e.
+with double underscore are those that execute while holding a collection
+lock.
+
+@- shred lock 
+
+Note that we will not use the collection lock while shredding (fn:add_doc())
+continuously, only when extending the master bats. The code of shredding is 
+carefully screened only to touch *new* parts of the BATs thus not affecting 
+the master copies in places that are ahred with ongoing queries. BAT-extends 
+must be locked with the collection lock, as these may lead to base-relocations,
+that affect other users of the master bats.
+
+However, we must ensure that only one shred into the same collection is
+happening at a time, as both need exclusive append access. For this
+purpose, an extra shred-lock in the colname_shredlock BAT[str,lock] is taken 
+by shred operations.
+
+@- collection pins
+
+Deleting documents simply marks them as unused by changing document and
+collection names to nil. This ensures that newly eneering queries will
+never find and thus use those documents. When the last document in a 
+collection is deleted, the collection should be removed. Only then, the BAT 
+resources may be freed.
+
+Here all concurreny issues are avoided by awaiting a moment of absolute
+silence, i.e. when no query is using the collection. For this reason all 
+document using functions (fn:doc() but also fn:add_doc()) put a sol-called 
+'pin' on the collection they are intending to manipulate.  These pins are 
+gathered in the BAT[str,int] colname_pins (it contains document names and 
+ws=query-IDs). This BAT is also used for recording which queries currently
+hold a shredlock. This is marked by storing the *negated* ws-id. The
+catcher routine for all queries (ws_destroy) takes care of properly
+releasing these locks while cleaning up.
+
+@- WAL lock 
+
+For committing, queries write into the WAL. The WAL is therefore also
+protected by a separate WAL lock (similar but separate to the short lock).
+@mil
+PROC _shredlock_set(str colname, 
+                    int ws) : void
+{
+   # xlocks use a string collection key as it may not yet exist in the table
+   if (not(colname_shredlock.exist(colname))) 
+       colname_shredlock.insert(colname, lock_create());
+
+   var shred_lock := colname_shredlock.find(colname);
+   lock_unset(pf_short);
+   lock_set(shred_lock); # can take a long time, do so with short lock released 
+   lock_set(pf_short);
+   colname_pins.insert(colname, -(ws));
+}
+
+PROC _shredlock_unset(str colname, 
+                      int ws) : void
+{
+   # xlocks use a string collection key as it may not yet exist in the table
+   var shred_lock := colname_shredlock.find(colname);
+   lock_unset(shred_lock);
+   colname_pins.delete(colname, -(ws));
+}
+
+@+ working sets
+
+The working set is the run-time context of a query. For each collection, two
+sets of bats are visible: updatable bats and masters. The masters
+have names in the working set that start with an underscore.
+
+When a working-set is destroyed, we take care to release all
+collection locks and pins. These may be open as the query may have terminated
+early with an error (these are caught and ws_destroy() is executed always).
+@mil
+PROC ws_bat(oid id, 
+            int tpe, 
+            int htp, 
+            int ttp, 
+            oid seq) : BAT[void,any]
 {
     if ((ttp != void) and (int(id) < _RID_SIZE)) { # a bat of bats (persistent or view)
         var b := bat(htp,ttp,10000);
@@ -469,316 +669,1108 @@ PROC ws_bat(oid id, int tpe, int htp, int ttp, oid seq) : BAT[void,any]
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
-PROC create_ws () : BAT[void,bat]
+PROC ws_create() : BAT[void,bat]
 {
     # only instantiates the default views of the ws-bats (not the master bats)
     var ws := [ws_bat](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
 
-    # fill the constant bats with initial values
-    ws.fetch(CONT_COLL).seqbase(1@0);       # no entry for transient container
-    ws.fetch(HEIGHT).seqbase(0@0).append(0);
+    # the temporary document container has some bogus values here
+    ws.fetch(CONT_COLL).seqbase(0@0).insert(0@0,oid_nil);
+    ws.fetch(CONT_NAME).seqbase(0@0).insert(0@0,str_nil);
+    ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,empty_runtime);
 
     # add identical bat references as 'master' bats just to make the transient container complete  
-    [append](mirror(ws_rid).leftfetchjoin(ws), [fetch](ws_rid.leftfetchjoin(ws), 0));
-    [append](mirror(ws_mem).leftfetchjoin(ws), [fetch](ws_mem.leftfetchjoin(ws), 0));
+    mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
+    mirror(ws_mem).leftfetchjoin(ws).[insert](0@0, [fetch](ws_mem.leftfetchjoin(ws), 0));
 
     return ws.access(BAT_READ);
 }
 
-PROC destroy_ws_locked(BAT[void,bat] ws) : void
+PROC _ws_destroy(int ws) : BAT[void,str]
 {
-    doc_query.select(int(ws))@batloop() {
-        var doc_oid := $h;
-        var coll_oid := doc_collection.find($h);
+    # check for failed doc_adds (should happen infrequently - we don't care about performance)
+    var del := doc_undo.uselect(ws).project(str_nil);
+    if (count(del) > 0) _del_doc_replace(del, del); # delete them again
 
-        doc_query.delete(doc_oid, int(ws));
-        if (not(reverse(doc_collection).join(doc_query).exist(coll_oid))) {
-            coll_lock.find(coll_oid).lock_destroy();
-            coll_lock.delete(coll_oid);
-            coll_free.delete(coll_oid);
+    # release all claimed locks (error recovery)
+    colname_pins.uselect(-(ws))@batloop() _shredlock_unset($h, ws);
+    reverse(colname_pins).delete(ws);
+ 
+    # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
+    var cursize := sum(doc_timestamp.select(timestamp_nil,timestamp_nil).mirror().join(collection_size));
+    var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
+    if (cursize > maxsize) delete_all_docs(true);
+
+    return _collection_cleanup(); # garbage collect empty collections
+}
+
+PROC ws_destroy(int ws) : void
+{
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_short);
+    var commitBAT, err := CATCH(commitBAT := _ws_destroy(ws));
+    lock_unset(pf_short);
+    if (not(isnil(err))) {
+        printf("%s\n!ERROR: ws_destroy: query cleanup failed, Mserver must be restarted.\n", err);
+        exit(); # ws_destroy *must must* succeed, it frees all hanging locks etc
+    }
+    collection_cleanup(commitBAT);
+}
+
+# add a collection to the working set
+PROC __ws_addcoll(BAT[void,bat] ws, 
+                  BAT[lock,bat] runtime, 
+                  BAT[str,bat] docBAT, 
+                  str colname, 
+                  oid coll_oid) : oid
+{
+    # get map, pre and mem from the master bats
+    var dsk := docBAT.tmark(oid(_MAP_PID));
+    var map_pid := dsk.fetch(MAP_PID);
+    var pre, mem, isolate := (ttype(map_pid) = oid);
+    
+    if (isolate) {
+        # on each document load, we update the free page list (i.e. garbage collection)
+        var free_pages := map_pid.ord_uselect(oid_nil).access(BAT_WRITE); # list of free pages
+        var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+        runtime.replace(coll_lock, free_pages);
+
+        # sort the non-nil entries of map to get used-page-list (avoids sorting using positional insert trick)
+        var map := map_pid.slice(0,count(map_pid)-(1+count(free_pages))).copy().access(BAT_WRITE);
+        map.replace(map_pid.reverse()).access(BAT_READ);
+
+        # use the map to get transaction isolation: pre's are remapped logical views, and mem are rcopy logical views
+        #pre := [remap](reverse(ws_rid).leftjoin(dsk), const map, false);
+        #mem := [rcopy](reverse(ws_mem).leftjoin(dsk)); 
+        pre := bat(oid,bat);
+        reverse(ws_rid).leftjoin(dsk)@batloop() {
+            pre.insert($h, remap($t, map, false));
         }
-        if (not(doc_query.exist(doc_oid))) {
-            if (doc_sema.exist(doc_oid)) {
-                sema_up(doc_sema.find(doc_oid));
+        mem := bat(oid,bat);
+        reverse(ws_mem).leftjoin(dsk)@batloop() {
+            mem.insert($h, rcopy($t));
+        }
+    } else {
+        # read-only doc; no isolation needed 
+        pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
+        mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
+    }
+
+    # register new container in ws, and append all bats to it
+    var cont := oid(count(ws.fetch(CONT_COLL)));
+    var cont_bat := constant2bat(cont);
+    ws.fetch(MAP_PID).append(map_pid);
+    ws.slice(PRE_SIZE,PRE_NID).[append](pre);
+    ws.slice(NID_RID,ATTR_PROP).[append](mem);
+    ws.fetch(CONT_COLL).append(coll_oid);
+    ws.fetch(CONT_NAME).append(colname);
+    ws.fetch(CONT_RUNTIME).append(runtime);
+    ws.fetch(PRE_CONT).append(cont_bat);
+    ws.fetch(ATTR_CONT).append(cont_bat);
+    mirror(ws_dsk).leftfetchjoin(ws).[append](dsk);
+
+    # initialize runtime on first load (this involves full table scans and may cost)
+    var idx, ins, del;
+    if (count(runtime) > RT_NID_QN) {
+        idx := runtime.fetch(RT_NID_QN);
+        ins := runtime.fetch(RT_NID_QN_INS);
+        del := runtime.fetch(RT_NID_QN_DEL);
+    } else {
+        # create the NID_QN index
+        var cnt := ws.fetch(QN_HISTOGRAM).fetch(cont);
+        var nid := ws.fetch(PRE_NID).fetch(cont);
+        var knd := ws.fetch(PRE_KIND).fetch(cont);
+        var prp := ws.fetch(PRE_PROP).fetch(cont);
+        var sel := ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd)));
+        idx := __runtime_index(nid, knd, prp, sel.mirror(), 0@0, isolate);
+        ins := empty_bat;
+        del := empty_bat;
+        if (runtime != empty_runtime) { # a non temporary document
+            var free_nids := empty_bat;
+            if (isolate) { # new writable empty bats
+                free_nids := dsk.fetch(PRE_NID).uselect(oid_nil).access(BAT_WRITE); 
+                ins := bat(oid,oid);
+                del := bat(oid,oid);
+            }
+            runtime.insert(lock_nil,free_nids);
+            runtime.insert(lock_nil,idx);
+            runtime.insert(lock_nil,ins);
+            runtime.insert(lock_nil,del);
+        }
+    }
+    if (isolate) { # copy ins/del for isolation
+        ins := ins.copy().access(BAT_WRITE);
+        del := del.copy().access(BAT_WRITE);
+    }
+    ws.fetch(NID_QN).append(idx);
+    ws.fetch(NID_QN_INS).append(ins);
+    ws.fetch(NID_QN_DEL).append(del);
+
+    # add dummy region indices
+    ws.fetch(REGION_PRE).append(empty_bat);
+    ws.fetch(REGION_START).append(empty_bat);
+    ws.fetch(REGION_END).append(empty_bat);
+    return cont;
+}
+
+PROC ws_addcoll(BAT[void,bat] ws, 
+                BAT[str,bat] docBAT, 
+                str name, oid 
+                coll_oid) : oid
+{
+    var err, cont, coll_lock, runtime := empty_runtime;
+
+    if (coll_oid != TEMP_DOC) {
+         lock_set(pf_short);
+         err := CATCH(coll_lock := reverse(runtime := _runtime_get(collection_name.find(coll_oid))).fetch(RT_LOCK_FREELIST));
+         lock_unset(pf_short);
+         if (not(isnil(err))) ERROR(err);
+
+         lock_set(coll_lock); # never lock a collection inside the short lock
+    }
+    err := CATCH(cont := __ws_addcoll(ws, runtime, docBAT, name, coll_oid));
+    if (coll_oid != TEMP_DOC) {
+        lock_unset(coll_lock); # release lock acquired for updatable bats
+    }
+    if (not(isnil(err))) ERROR(err);
+
+    return cont;
+}
+
+
+@+ Collection Free-Lists and Indexing
+
+These run-time structures are available in the colname_runtime meta 
+BAT[str,bat]. For non-loaded collections, this BAT does not contain
+any data. It only gets an entry the first time a collection is loaded.
+Currently, this entry remains RAM resident from then on.
+
+TODO: memory garbage collection..
+
+The runtime-BATs are BAT[lock,bat]s, in which order does matter. We fetch
+BUNs by position using RT_* constants. The idea is to store per
+collection a number of specific locks and index structures (BATs).
+
+  fetch constant    runtime tuple 
+  ================= ==========
+0 RT_LOCK_FREELIST [lock,bat] 
+  the lock and a BAT with a list of free page ids.
+1 RT_NID_FREELIST [lock,bat] 
+  nil lock and a BAT with a list of free NIDs
+2 RT_NID_QN        [nil, bat] 
+  the main BAT[oid,oid] object shared by all concurrent queries
+3 RT_NID_QN_INS    [nil, bat] 
+  a private BAT[oid,oid] with all nodes that got this QN  during this query
+4 RT_NID_QN_DEL    [nil, bat] 
+  a private BAT[oid,oid] with all nodes that no longer have this QN since this query.
+5 RT_NID_QN_UNQ    [nil, bat] 
+  a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
+
+The first entry head holds a collection lock (coll_lock, in much of the
+MIL code). It is used to guard the master BAT images, while isolated
+copies are created for read-queries. Update-queries and shred-docs
+acquire this lock when committing resp. extending these master bats. 
+
+The first entry tail holds a page-free list.
+The second entry tail holds a NIF-free list.
+Both are used when a document is being extended by an uopdate query.
+
+@- NID_QN index
+
+The NID_QN indices does use the collection lock for all its maintenance and
+query actions. The bulk of the data is in the shared NID_QN master bat (thus 
+taking coll_lock is required when accessing it).  The NID_QN index does not 
+use any additional locks, so the other head values are nil.
+
+The NID_QN index is a dynamic, adaptive non-persistent index on NSLOC that
+can deliver NID candidate lists. These NIDs must be translated into RIDs
+(leftfetchjoin), then swizzled, then (finally) sorted, in order to serve
+as input for loop-lifted staircase join (SCJ).
+
+As sorting is on the menu always, the length of the candidate list M
+should be small wrt the document size N (i.e. MlogM < N), otherwise the whole
+purpose of indexing is defeated and a loop-lifted staircase join that does
+a full O(N) scan is more efficient.
+
+Thus, the idea is to solely index those QN items that are small. For this
+purpose the shredder now keeps statistics on M in QN_HISTOGRAM.
+Notice that in incremental shreds, the decision which qnames to shred 
+is made on the first document. Problem is we want incremental indexes,
+thus qnames that were kept out of the index should stay out.
+
+The index is non-persistent as in update scenarios it may be big and is 
+not ordered, which would make checkpointing it expensive. Instead,
+it appears in the runtime-BAT,kept in the colname_runtime meta-BAT.
+
+Isolation in the NID_QN index is provided by committing in the _INS and _DEL 
+master bats, which are not seen by any concurrent queries. If there are no 
+concurrent queries, _INS and _DEL are flushed with the new changes into the 
+NID_QN master.
+@mil
+# get a handle to the runtime-BAT (and create it if not there yet)
+PROC _runtime_get(str colname) : BAT[lock,bat] 
+{
+    if (not(colname_runtime.exist(colname)))
+        colname_runtime.insert(colname, bat(lock,bat).insert(lock_create(),empty_bat));
+    return colname_runtime.find(colname);
+}
+
+
+# double-underscore __X() means we must have the RT_LOCK_FREELIST of this collection
+
+# this computes a new NID_QN index for a suffix of the PRE-table
+PROC __runtime_index(BAT[void,oid] nid, 
+                     BAT[void,chr] knd, 
+                     BAT[void,oid] prp, 
+                     BAT[oid,oid]  sel, 
+                     oid pre, bit updatable) : BAT[oid,oid] 
+{
+    # compute the index bat for all nodes of the document from 'pre' on
+        knd := knd.reverse().ord_select(pre,oid_nil).reverse(); # limit to a certain pre-range
+    var idx := knd.ord_uselect(ELEMENT).mirror(); # get [pre,pre] (some false non-ELEM hits)
+        idx := idx.leftfetchjoin(prp);            # get [pre,qn], in pre-order
+        idx := reverse(idx.leftjoin(sel));        # get [qn,pre], in pre-order
+        idx := idx.leftfetchjoin(nid);            # [qn,nid] still in pre-order
+    if (updatable)
+        idx := idx.access(BAT_WRITE);
+    else
+        idx := idx.ssort();                       # [qn,nid] now lexico-ordered (thanks to stable-sort)
+    return idx; # [qn,nid]
+}
+
+# worker function to handle inserts and deletes in the index
+PROC __runtime_maintain(int ws, 
+                        str colname, 
+                       BAT[lock,bat] runtime, 
+                       BAT[oid,oid] ins, 
+                       BAT[oid,oid] del,
+                       BAT[void,oid] delpages) : void
+{
+    var others := colname_pins.ord_uselect(colname).access(BAT_WRITE).delete(ws);
+    if (count(others) > 0) {
+        runtime.fetch(RT_NID_QN_INS).insert(idx);
+        runtime.fetch(RT_NID_QN_DEL).insert(del);
+    } else {
+        # coast is clear, unite als ins, all del and apply them to the master
+        ins := runtime.fetch(RT_NID_QN_INS).insert(ins);
+        del := runtime.fetch(RT_NID_QN_DEL).insert(del);
+        runtime.fetch(RT_NID_QN_INS).insert(ins).deleteBuns(del);
+        ins.delete();
+        del.delete();
+    }
+    runtime.fetch(RT_LOCK_FREELIST).append(delpages);
+}
+
+# used by shred: incremental shred on an already index document must maintain it (i.e. add new nodes)
+PROC __runtime_addchunk(int ws, 
+                        str colname, 
+                        BAT[lock,bat] runtime, 
+                        BAT[void,oid] nid, 
+                        BAT[void,chr] knd, 
+                        BAT[void,oid] prp, 
+                        oid pre,
+                        bit updatable) : void 
+{
+    if (count(runtime) > RT_NID_QN) { # only maintain if the index is instantiated now anyway
+        var idx := __runtime_index(nid, knd, prp, runtime.fetch(RT_NID_QN_UNQ), pre, updatable);
+        __runtime_maintain(ws, colname, runtime, idx, empty_bat, empty_bat);
+    }
+}
+
+
+PROC __runtime_lookup(BAT[lock,bat] runtime,
+                      BAT[oid,oid] ins,
+                      BAT[oid,oid] del,
+                      BAT[oid,oid] qn_ids) : bat[void,oid] 
+{
+    var res, valid := false;
+    if (count(runtime) > RT_NID_QN) { 
+        # do lookup using the index
+        var ins, del, idx := runtime.fetch(RT_NID_QN);
+        if (count(qn_ids) = 1) {
+            var qn_id := qn_ids.fetch(0);
+            res := idx.select(qn_id);
+            ins := runtime.fetch(RT_NID_QN_INS).select(qn_id);
+            del := runtime.fetch(RT_NID_QN_DEL).select(qn_id);
+            valid := bit(count(res) + count(ins) + count(del));
+        } else {
+            res := idx.join(qn_ids);
+            ins := runtime.fetch(RT_NID_QN_INS).join(qn_ids);
+            del := runtime.fetch(RT_NID_QN_DEL).join(qn_ids);
+            valid := (count(qn_ids.tdiff(res).tdiff(ins).tdiff(del)) = 0);
+        }
+        if (bit(count(ins) + count(del))) {
+            # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
+            res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
+        } 
+    }
+    if (not(valid)) ERROR("index_lookup: qn_nid not indexed");
+    return res;
+}
+
+PROC __runtime_newpage(BAT[lock,bat] runtime) : oid 
+{
+    var free_pages := runtime.fetch(RT_LOCK_FREELIST);
+    var i := count(free_pages);
+    
+    # re-use a page from the list; or -if empty- append a new page
+    if (i > 0) {
+        last_pid := reverse(free_pages).fetch(i - 1);
+        free_pages.delete(last_pid);
+        return last_pid;
+    }
+    return oid_nil;
+}
+
+PROC __runtime_newrids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void] 
+{
+    var free_nids := runtime.fetch(RT_NID_FREELIST);
+    var i := count(free_nids);
+    
+    # re-use a page from the list; or -if empty- append a new page
+    if (i > 0) {
+        var ret := free_nids.slice(i + 1 - cnt,cnt).copy();
+        free_nids.delete(ret);
+        return ret;
+    }
+    return bat(oid,void);
+}
+
+@- exported runtime support API 
+
+ws_update  - maintain indices after updates
+ws_lookup  - use the index to lookup nodes by qname
+ws_newpage - allocate a new page, during an update
+ws_newrids - allocate a new rids, during an update
+@mil
+# proc to call from the update code: acquire locks and add new nodes and remove deleted ones
+PROC ws_update(BAT[void,bat] ws, 
+               oid cont,  
+               BAT[lock,bat] runtime, 
+               BAT[oid,oid] ins, 
+               BAT[oid,oid] del,
+               BAT[void,oid] delpages) : void 
+{
+    var colname := ws.fetch(CONT_NAME).fetch(cont);
+    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
+    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+
+    # maintain the index while holding the collection lock
+    lock_set(coll_lock); # never take a collcetion lock inside the short lock
+    var err := CATCH(__runtime_maintain(int(ws), colname, runtime, ins, del));
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
+}
+
+# proc to call from the SCJ with nsloc test: acquire locks and get a candidate list using the index
+PROC ws_lookup(BAT[void,bat] ws, 
+               oid cont, 
+               BAT[oid,oid] qn_ids) : bat[void,oid] 
+{
+    if (count(qn_ids) = 0) return empty_bat; # unknown qnames => empty result
+
+    var colname := ws.fetch(CONT_NAME).fetch(cont);
+    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
+    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+
+    # get the lock and runtime inside the short lock
+    lock_set(coll_lock);
+    var res, err := CATCH(res := __runtime_lookup(runtime, ins, del, qn_ids));
+    lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
+
+    # SCJ must catch error and use sequential post-filter instead.
+    return res.hmark(oid_nil);
+}
+
+PROC ws_newpage(BAT[void,bat] ws, 
+                oid cont) : oid 
+{
+    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
+    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+
+    # if there is a free page, then this is easy
+    lock_unset(coll_lock);
+    var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
+    lock_unset(coll_lock);
+
+    if (isnil(err) and isnil(page_id)) {
+        # no free page: we must physically extend the rid_* table 
+        var colname := ws.fetch(CONT_NAME).find(cont);
+
+        # get the shredlock, as we need append-exclusive access 
+        lock_set(pf_short);
+        err := CATCH(_shredlock_set(colname, int(ws)));
+        lock_unset(pf_short);
+
+        if (isnil(err)) {
+            var rid_size  := ws.fetch(_RID_SIZE).find(cont);
+            var rid_level := ws.fetch(_RID_LEVEL).find(cont);
+            var rid_prop  := ws.fetch(_RID_PROP).find(cont);
+            var rid_kind  := ws.fetch(_RID_KIND).find(cont);
+            var rid_nid   := ws.fetch(_RID_NID).find(cont);
+            var map_pid   := ws.fetch(_MAP_PID).find(cont);
+            var rid_cnt   := count(rid_size);
+            var new_pid   := 1 + ((rid_cnt - 1) >> REMAP_PAGE_BITS);
+            var last_pid  := new_pid + (new_pid/16);
+
+            var empty_page_chr := empty_page.project(chr_nil);
+            var empty_page_oid := empty_page.project(oid_nil);
+
+            # take care to fill out the last page (should happen only for small documents)
+            var lastpage_size := and(lng(rid_cnt),REMAP_PAGE_MASK);
+            if (lastpage_size > 0LL) {
+                rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+                rid_level.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+                rid_kind.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+                rid_prop.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+                rid_nid.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+            }
+            page_id := oid(new_pid);
+
+            # append (possibly multiple) new pages. We directly allocate 6% (1/16) free space
+            while(new_pid <= last_pid) {
+                rid_size.append(empty_page, true);
+                rid_level.append(empty_page_chr, true);
+                rid_kind.append(empty_page_chr, true);
+                rid_prop.append(empty_page_oid, true);
+                rid_nid.append(empty_page_oid, true);
+                map_pid.append(oid_nil); # add page as unused to map_pid
+                new_pid :+= 1;
+            }
+
+            lock_set(pf_short);
+            err := CATCH(_shredlock_unset(colname, int(ws)));
+            lock_unset(pf_short);
+
+            # add extra created pages to the freelist
+            new_pid := int(page_id);
+            if (isnil(err) and (new_pid < last_pid)) {
+                var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
+                var newpids := bat(void,oid);
+                while((new_pid :+= 1) < last_pid) newpids.append(oid(new_pid)); 
+                lock_set(coll_lock);
+                err := CATCH(pages_free.insert(newpids));
+                lock_unset(coll_lock);
             }
         }
     }
-    # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-    var cursize := sum(doc_timestamp.select(timestamp(nil),timestamp(nil)).mirror().join(doc_size));
-    var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
-
-    if (cursize > maxsize) {
-        delete_all_docs_locked(true);
-    }
-}
-
-PROC destroy_ws(BAT[void,bat] ws) : void
-{
-    var err;
-
-    if (type(doc_query) != bat) { return; }
-
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(destroy_ws_locked(ws));
-    lock_unset(pf_lock);
-
-    if (not(isnil(err))) { ERROR(err); }
-}
-
-PROC ws_newpage_locked(BAT[void,bat] ws, oid cont) : oid {
-    var coll_oid := ws.fetch(CONT_COLL).find(cont);
-    var rid_size  := ws.fetch(_RID_SIZE).find(cont);
-    var rid_level := ws.fetch(_RID_LEVEL).find(cont);
-    var rid_prop  := ws.fetch(_RID_PROP).find(cont);
-    var rid_kind  := ws.fetch(_RID_KIND).find(cont);
-    var rid_nid   := ws.fetch(_RID_NID).find(cont);
-    var free_pages, i := 0;
-    var rid_cnt := count(rid_size);
-    var last_pid := 1 + (rid_cnt = 0).ifthenelse(0, (rid_cnt - 1) >> REMAP_PAGE_BITS);
-    
-    # obtain a free-list of pages
-    if (coll_free.exist(coll_oid)) {
-        free_pages := coll_free.find(coll_oid);
-    } else {
-        free_pages := reverse(ws.fetch(MAP_PID).find(cont).uselect(oid(nil))).access(BAT_WRITE);
-        coll_free.insert(coll_oid, free_pages);
-    }
-
-    # re-use a page from the list; or -if empty- append a new page
-    i := count(free_pages);
-    if (i > 0) {
-        last_pid := free_pages.fetch(i - 1);
-        free_pages.reverse().delete(last_pid);
-    } else {
-        # append a page to the master rid_* table
-        var empty_page_chr := empty_page.project(chr(nil));
-        var empty_page_oid := empty_page.project(oid(nil));
-        var lastpage_size := and(lng(rid_cnt),REMAP_PAGE_MASK);
-        if (lastpage_size > 0LL) {
-            # take care to fill out the last page (if not yet full)
-            rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_level.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_kind.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_prop.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_nid.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-        }
-        # append the new page
-        rid_size.append(empty_page, true);
-        rid_level.append(empty_page_chr, true);
-        rid_kind.append(empty_page_chr, true);
-        rid_prop.append(empty_page_oid, true);
-        rid_nid.append(empty_page_oid, true);
-    }
-    return oid(last_pid);
-}
-
-PROC ws_newpage(BAT[void,bat] ws, oid cont) : oid {
-    var page_lock := coll_lock.find(ws.fetch(CONT_COLL).find(cont));
-    var page_id;
-
-    lock_set(page_lock);
-    var err := CATCH(page_id := ws_newpage_locked(ws, cont));
-    lock_unset(page_lock);
-
     if (not(isnil(err))) ERROR("ws_newpage: " + err);
     return page_id;
 } 
 
-PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, str collection, timestamp ts, int ws, int height) : void 
+# append a new page. when the page is at the end; we 
+PROC ws_newrids(BAT[void,bat] ws, 
+                oid cont,
+                int cnt) : oid 
+{
+    var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
+    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+
+    # if there is a free page, then this is easy
+    lock_unset(coll_lock);
+    var newrids := empty_bat, err := CATCH(newrids := __runtime_newrids(runtime, cnt));
+    lock_unset(coll_lock);
+
+    if (isnil(err) and bit(cnt :-= count(newrids))) {
+        # not enough free rids page: we must physically extend the nid_rid table 
+        var colname := ws.fetch(CONT_NAME).find(cont);
+
+        # get the shredlock, as we need append-exclusive access  
+        lock_set(pf_short);
+        err := CATCH(_shredlock_set(colname, int(ws)));
+        lock_unset(pf_short);
+
+        if (isnil(err)) {
+            var nid_rid := ws.fetch(_NID_RID).find(cont);
+            var nid_cnt := count(nid_rid);
+            var nid_tgt := nid_cnt + cnt + (nid_cnt/16);
+            var nid_off := nid_cnt;
+            while(nid_cnt < nid_tgt) {
+                nid_rid.append(empty_page_oid);
+                nid_cnt :+= REMAP_PAGE_SIZE;
+            }
+            reverse(newrids).append(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1));
+
+            lock_set(pf_short);
+            err := CATCH(_shredlock_unset(colname, int(ws)));
+            lock_unset(pf_short);
+
+            if (isnil(err) and (nid_cnt > nid_off)) {
+                # add extra created NIDs to the freelist
+                lock_set(coll_lock);
+                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(nid_rid.slice(nid_off,nid_cnt - 1)));
+                lock_unset(coll_lock);
+            }
+        }
+    }
+    if (not(isnil(err))) ERROR("ws_newpage: " + err);
+    return newrids;
+} 
+
+
+@- commit stuff 
+
+Update queries use the WAL for committing their changes rapidly in a single bulk I/O.
+They leave the modified master BATs dirty.
+
+A checkpointing mechanism flushes the BATs to disk periodically (or forced when under 
+memory pressure -- but performance-wise it is better to do it pro-actively).
+
+The shredding of new documents uses checkpointing (i.e. direct flush and no WAL) 
+directly. This is a reason why update-queries may not contain fn:add_doc() or fn:del_doc()
+statements; such queries would need two different kinds of commits, making them non-atomic.
+@mil
+PROC pf_checkpoint(BAT[void,str] commitBAT) : bit 
+{
+    if (count(commitBAT) = 0) return false;
+    commitBAT := commitBAT.access(BAT_WRITE);
+    commitBAT.append("collection_name");
+    commitBAT.append("collection_size");
+    commitBAT.append("doc_name");
+    commitBAT.append("doc_location");
+    commitBAT.append("doc_collection");
+    commitBAT.append("doc_timestamp");
+    if (not(subcommit(commitBAT))) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+    return true;
+}
+
+
+@- adding documents
+
+The XQuery call fn:doc() is translated into ws_doc() MIL proc. It is optimized
+to be able to handle a large collection of document names that all reside
+in the same collection very quickly, i.e. in loop-lifted, bulk fashion.
+When multiple collections are involved, things go one-at-a-time, thus more slowly. 
+
+The decision process which documents are new and must be shredded (and x-locked)
+and which are available (and need only pinning) is done inside the locked phase of
+wd_doc(). Care was taken to allow large sets of documents that reside in a single
+collection to be opened quickly (i.e. using the proper bulk primitives).
+@mil
+PROC _ws_doc(BAT[void,str] idx_names, 
+             BAT[void,str] idx_filenames, 
+             BAT[void,timestamp] idx_timestamps, # inout param
+             BAT[void,str] idx_colname,    # out param  
+             BAT[void,oid] idx_coll,       # out param
+             BAT[void,oid] idx_doc,        # out param
+             int ws) : void
+{
+    # get all the doc-id, coll-id's and collection names of known documents. The ones with nil-tail are unknown.
+    idx_doc.append(idx_names.outerjoin(reverse(doc_name)));
+    idx_doc.replace(idx_doc.ord_uselect(oid_nil).mirror().leftfetchjoin(idx_names).join(reverse(doc_location)));
+    idx_coll.append(idx_doc.outerjoin(doc_collection));
+    idx_colname.append(idx_coll.outerjoin(collection_name));
+
+    # of the non-nil doc-ids, try to get non-nil timestamps
+    var idx_lim := idx_doc.ord_select(oid_nil,oid_nil).leftjoin(doc_timestamp).ord_select(timestamp_nil,timestamp_nil);
+    var sel_lim := idx_lim.tmark(0@0);
+    var sel_idx := idx_lim.hmark(0@0);
+
+    # check the timestamps
+    var sel_del := [>](sel_idx.leftfetchjoin(idx_timestamps), sel_lim).ord_uselect(true);
+    if (count(sel_del) > 0) # delete stale documents
+       del_doc_base(bit_nil, mirror(sel_del).leftfetchjoin(sel_idx).leftfetchjoin(idx_names),ws);
+
+    # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
+    var idx_idx := idx_doc.ord_uselect(oid_nil).mirror();
+    var idx_ts := idx_idx.leftfetchjoin(idx_filenames).ord_uselect(str_nil).mirror().leftfetchjoin(idx_timestamps);
+    idx_ts@batloop() { # URI (filename = nil)
+        var b := [startsWith](idx_names.find($h), mirror(uri_lifetime)).uselect(true);
+        var lifetime := lng_nil;
+        if (b.count() > 0) {
+            var matchlen := [length](mirror(b));
+            lifetime :=  *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
+        }
+        # this may set ts to nil; such URIs are never cached (and thus do not need to be persistent)
+        idx_timestamps.replace($h, add($t,lifetime));
+    }
+
+    # pin all collections of already available documents (once)
+    colname_pins.insert(idx_doc.join(doc_collection).join(collection_name).tunique().project(ws)); 
+}
+
+# fn:doc() support, optimized for loop-lifted execution (e.g. quickly open thousands of documents from a few collections)
+PROC ws_doc(BAT[void,bat] ws, 
+            BAT[void,str] idx_names) : BAT[oid,int]
+{
+    var idx_filenames := copy(idx_names := idx_names.tmark(0@0)).access(BAT_WRITE);
+
+    # create filenames from URIs (str_nil if not a filename-URI)
+    { var selidx_isurl  := [search](idx_names, "://").ord_select(0,int_nil);
+      var selidx_match  := selidx_isurl.ord_uselect(4).mirror().leftfetchjoin(idx_names);
+      var selidx_isfile := [startsWith](selidx_match, "file").ord_uselect(true).mirror().leftfetchjoin(idx_names).[string](7);
+      var selidx_isFILE := [startsWith](selidx_match, "FILE").ord_uselect(true).mirror().leftfetchjoin(idx_names).[string](7);
+      idx_filenames.replace(selidx_isurl.project(str_nil)).replace(selidx_isfile).replace(selidx_isFILE).access(BAT_READ); }
+
+    # get the actual timestamp of the document cached in the database. 
+    var idx_timestamps := idx_filenames.project(current_timestamp()).access(BAT_WRITE);
+    idx_timestamps.replace([lastmod_time](idx_filenames.select(str_nil,str_nil)).select(timestamp_nil,timestamp_nil));
+
+    # get the lock and pin all existing documents; return info from meta tables in (idx_colname, idx_coll, idx_doc)
+    var idx_colname := bat(void,str).seqbase(0@0);
+    var idx_coll    := bat(void,oid).seqbase(0@0);
+    var idx_doc     := bat(void,oid).seqbase(0@0);
+    lock_set(pf_short);
+    var err := CATCH(_ws_doc(idx_names,idx_filenames,idx_timestamps,idx_colname,idx_coll,idx_doc,int(ws)));
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+
+    # add all available but not-yet-present collections to the ws
+    var coll_colname := reverse(idx_coll.select(oid_nil,oid_nil).tdiff(ws.fetch(CONT_COLL))).kunique().leftfetchjoin(idx_colname);
+    coll_colname@batloop() {
+        var docBAT := [bat]([+](str(int($h)), ws_dsk).reverse().mirror()); # get master bats
+        ws_addcoll(ws, docBAT, $t, $h); # collections are loaded one-by-one
+    }
+
+    # all still unknown documents (if any) are shredded one-by-one into separate temporary collections
+    var selidx_names := idx_doc.ord_uselect(oid_nil);
+    if (bit(count(selidx_names))) {
+        selidx_names := selidx_names.mirror().leftfetchjoin(idx_names).reverse().kunique().reverse();
+        var commitBAT := bat(void,str);
+        selidx_names@batloop() {
+            # note that due to caching rules, some temporary documents (e.g. file URLs) become persistent
+            var ts       := idx_timestamps.find($h);
+            var doCommit := not(isnil(ts));
+            var colname  := "::" + str(int(ws)) + "::" + $t; # unique name contains ws identfier (MT unique)
+            var name     := bat(void,str).append(colname).seqbase(0@0).access(BAT_READ);
+            var location := bat(void,str).append($t).seqbase(0@0).access(BAT_READ);
+            var docBAT   := bat(str,bat); 
+            var coll_oid := shred_into_docBAT(docBAT, location, name, colname, oid_nil, empty_runtime, doCommit, lng(0), ts, stream_nil, int(ws));
+            var cont     := ws_addcoll(ws, docBAT, colname, coll_oid);
+            if (doCommit) commitBAT.append([bbpname](docBAT).tmark(0@0));
+            idx_coll.replace($h, coll_oid);
+            idx_doc.replace($h, coll_oid);
+        }
+        # commit the new collections 
+        pf_checkpoint(commitBAT);
+        lock_set(pf_short);
+        doc_undo.delete(doc_undo.select(int(ws))); # if these remain, ws_destroy() would remove the new documents
+        lock_unset(pf_short);
+    }
+
+    # add in bulk all documents to the ws (could be thousands of them!!)
+    var selidx_doc   := idx_doc.tdiff(ws.fetch(OPEN_DOCID)).reverse().kunique().reverse();
+    var selidx_cont  := selidx_doc.mirror().leftfetchjoin(idx_coll).leftjoin(reverse(ws.fetch(CONT_COLL)));
+    var selidx_names := selidx_doc.mirror().leftfetchjoin(idx_names);
+    ws.fetch(OPEN_DOCID).append(selidx_doc);
+    ws.fetch(OPEN_CONT).append(selidx_cont);
+    ws.fetch(OPEN_NAME).append(selidx_names);
+    ws.fetch(OPEN_NAME).reverse().accbuild("hash");
+
+    # return the resulting [rootpre,cont] combinations
+    var idx_cont := idx_coll.leftjoin(reverse(ws.fetch(CONT_COLL))).tmark(0@0);
+    var idx_root := idx_cont.project(oid_nil).access(BAT_WRITE);
+    tunique(idx_cont)@batloop() {
+        var frag_root  := ws.fetch(FRAG_ROOT).fetch($h);
+        var nid_rid    := ws.fetch(NID_RID).fetch($h);
+        var map_pid    := ws.fetch(MAP_PID).fetch($h);
+        var selidx_nid := mirror(idx_cont.ord_uselect($h)).leftfetchjoin(idx_doc).leftjoin(frag_root);
+        idx_root.replace(selidx_nid.leftfetchjoin(nid_rid).[swizzle](map_pid));
+    }
+    return reverse(idx_root).leftfetchjoin(idx_cont);
+}
+
+
+@- shredding documents
+
+Documents are shredded one-at-a-time, even if we must shred a sequence of documents into the same
+collection. It is implemented by shred_url(). Note that shred_url() adds the resulting
+new document container to the BAT-of-BATs that is passed in as first parameter. If this
+BAT-of-BATs already contains a document container, the XML document is added to this collection.
+
+Some care is taken to give out unique document oids. The collection-oid is that of the first document
+that belongs to it. The number is stored persistently (HACK) in a special bun in doc_collection.
+
+The do_add_doc() is a loop-lifted document management function. It may only occur in read-only
+queries (i.e. not intermingled with updates). This is because we use checkpointing for
+shredding (and not the WAL). We cannot use both mechanisms and still have an atomic operation.
+
+The shred_doc_base() operator it depends on is made atomic by adding all new documents to a "doc_undo"
+bat. Only if everything succeeds, the entries are removed from there. Otherwise, in ws_destroy(), 
+all documents mentioned in "doc_undo" are deleted again. 
+
+The shred_doc() operation is the MIL document management interface. It uses a "phony" working
+set identifier derived from the MIL client-id.
+@mil
+# update the doc_* and collection_* tables while holding the short lock
+PROC _shred_into_docBAT(BAT[str,bat] docBAT, 
+                        BAT[void,str] idx_location, 
+                        BAT[void,str] idx_name, 
+                        str colname, 
+                        oid coll_oid, 
+                        timestamp ts, 
+                        int ws) : oid
 {
     # get a new persistent doc id
-    var doc_id := doc_height.find(TEMP_DOC);
-    var ws_frag := docBAT.find("_ws_frag"); 
-    var doc_oid := oid(doc_id);
+    var doc_oid    := doc_collection.find(TEMP_DOC);
+    var doc_id     := lng(doc_oid);
+    var doc_id_new := doc_id + lng(count(idx_location));
+    if (doc_id_new > lng(2000000000)) 
+        ERROR("_shred_doc: out of document id's. Export all documents, and shred them into a new database\n");
+    doc_collection.replace(TEMP_DOC, oid(doc_id_new));
+
+    if (bit(count(doc_name.tintersect(idx_name)))) 
+        ERROR("_shred_doc: document names should be globally unique\n");
 
     # determine the collection id for this doc
-    var coll_oid := doc_oid;
-    if (collection_name.texist(collection)) {
-        coll_oid := reverse(collection_name).find(collection);
+    if (isnil(coll_oid)) {
+        coll_oid := doc_oid;
+        if (collection_name.texist(colname)) ERROR("_shred_doc: collection name should be globally unique\n");
+        collection_name.insert(coll_oid, colname);
+        collection_size.insert(coll_oid, sum([batsize](docBAT)));
+        [persists]([rename](docBAT, [+](str(int(coll_oid)), mirror(docBAT))), true);
     } else {
-        collection_name.insert(coll_oid, collection);
+        collection_size.replace(coll_oid, sum([batsize](docBAT)));
     }
 
-    # add to meta table
-    doc_name.insert(doc_oid, name);
-    doc_location.insert(doc_oid, location);
-    doc_timestamp.insert(doc_oid, ts);
-    doc_height.insert(doc_oid, height);
-    doc_size.insert(doc_oid, sum([batsize](docBAT)));
-    doc_collection.insert(doc_oid, coll_oid);
-    doc_root.insert(doc_oid, ws_frag.fetch(count(ws_frag) - 1)); # last fragment
+    # all documents to the doc_* table
+    var docid_location := idx_location.tmark(doc_oid);
+    var docid_name     := idx_name.tmark(doc_oid);
+    doc_name.insert(docid_name);
+    doc_location.insert(docid_location);
+    doc_timestamp.insert(docid_name.project(ts));
+    doc_collection.insert(docid_name.project(coll_oid));
+    if (not(colname.startsWith("::"))) doc_undo.insert(docid_name.project(ws));
 
-    # rename all new bats with the doc id as suffix
-    [rename](docBAT, [+](str(int(coll_oid)), mirror(docBAT)));
-    [persists](docBAT, true);
-
-    # set the next persistent doc id
-    while ((doc_id :+= 1) > 1000000000) {
-        # if the id has overflown, we look for an unused id (unlikely to occur ever)
-        if (not(isnil(CATCH(bat(str(doc_id) + "_rid_size"))))) break;
-        if (doc_id > 2000000000) doc_id := 1000000000; # keep cycling to find one
-    }
-    doc_height.replace(TEMP_DOC, doc_id);
-
-    # add the meta table to the commit set 
-    docBAT.insert(str(nil),collection_name);
-    docBAT.insert(str(nil),doc_name);
-    docBAT.insert(str(nil),doc_location);
-    docBAT.insert(str(nil),doc_collection);
-    docBAT.insert(str(nil),doc_root);
-    docBAT.insert(str(nil),doc_timestamp);
-    docBAT.insert(str(nil),doc_height);
-    docBAT.insert(str(nil),doc_size);
-    docBAT := [bbpname](docBAT);
-    if (not(subcommit(docBAT))) 
-        ERROR("shred_doc(%s) : commit failed\n", name);
-
-    if (not(isnil(ws))) {
-        pin_doc(doc_oid, ws);
-    }
-}
-
-PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
-{
-    # insert all bats from shredBAT in docBAT
-    [insert](const docBAT, ws_shr, shredBAT);
-
-    # these are simple concatenations (to accelerate combined lookup)
-    # the replace is because we use this slot for transferring the docseq_pre
-    # bat from the shredder to the MIL routines. This is very ugly but I tried
-    # to delete the tail of ths shredBAT bat and this did not work. JF
-    docBAT.insert("_qn_prefix_uri", docBAT.find("_qn_prefix").[+](str('\1')).[+](docBAT.find("_qn_uri")));
-    docBAT.insert("_qn_loc_uri",    docBAT.find("_qn_loc").[+](str('\1')).[+](docBAT.find("_qn_uri")));
-
-    # mapping between immutable node-id's and pre-order ranks (pre==rid, just after shredding)
-    var pre_nid := docBAT.find("_rid_nid");
-
-    # create our indices
-    var knd := ELEMENT;
-    var kinds := docBAT.find("_rid_kind").splitkind();
-    while ( knd <= DOCUMENT ) {
-        var knd_no  := str(chr(48 + knd));
-        var knd_pre := kinds.fetch(int(knd)).hmark(PRE_BASE).chk_order();
-        var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
-        if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
-            ERROR("pathfinder.mx: index_doc(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
-                  htype(knd_nid), head(knd_nid));
-        }
-        docBAT.insert("_knd_nid_" + knd_no, knd_nid);
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-            var knd_prop := knd_pre.leftfetchjoin(docBAT.find("_rid_prop")).chk_order();
-            if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
-                ERROR("pathfinder.mx: index_doc(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
-                      htype(knd_prop), head(knd_prop));
-            }
-            docBAT.insert("_knd_prop_" + knd_no, knd_prop);
-        }
-        knd :+= chr(1);
-    }
-    docBAT := docBAT.access(BAT_READ);
-    return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
+    return doc_oid;
 }
 
 
-PROC shred_doc_index(BAT[oid,bat] shredRES, BAT[str,bat] docBAT, str location, str name, str collection, bit doCommit, timestamp ts, int ws) : int
+# finish the master bats while holding the collection lock
+PROC __shred_into_docBAT(BAT[str,bat] docBAT, 
+                         str colname, 
+                         oid doc_oid, 
+                         BAT[lock,bat] runtime,
+                         oid pre, 
+                         bit updatable, 
+                         int ws) : void
 {
-    var err, exists := false;
+    # finish shred by setting the new (densely ascending doc_oids in FRAG_ROOT (in order)
+    var root_frag := reverse(docBAT.fetch(FRAG_ROOT));
+    root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(doc_oid), true);
 
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(exists := doc_name.texist(name));
-    lock_unset(pf_lock);
+    # index the new document(s)
+    __runtime_addchunk(ws, colname, runtime, docBAT.fetch(PRE_NID), docBAT.fetch(PRE_KIND), docBAT.fetch(PRE_PROP), pre, updatable);
+}
 
-    if (not(isnil(err))) ERROR(err);
-    else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
 
-    # add indices to the shredded doc, and find out maximum doc height
-    var height := index_doc(shredRES, docBAT);
+# main shredder may shred many documents into a single collection
+PROC shred_into_docBAT(BAT[str,bat] docBAT, 
+                       BAT[void,str] location, 
+                       BAT[void,str] name, 
+                       str colname, 
+                       oid coll_oid, 
+                       BAT[lock,bat] runtime,
+                       bit doCommit, 
+                       lng pageFree, 
+                       timestamp ts, 
+                       Stream s,
+                       int ws) : oid
+{
+    var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+    var doc_oid := TEMP_DOC;
+    var pre := 0@0;
+    if (count(docBAT) > 0) pre := oid(count(docBAT.fetch(PRE_SIZE))); 
 
-#[StandOff] [FIXME: OBSOLETE CODE], we do not use persistent region-indices anymore
-    # TODO: remove REGION_PRE, REGION_START and REGION_END from document-bats
-    #if (standoff) {
-    #    print("# extracting regions...\n");
-    #    docBAT := region_extract(docBAT, "lng");
-    #} else {
-       var r_nid, r_start, r_end;
-       (r_nid := bat(void, oid).seqbase(0@0)).bbpname("_region_pre");
-       (r_start := bat(void, lng).seqbase(0@0)).bbpname("_region_start");
-       (r_end := bat(void, lng).seqbase(0@0)).bbpname("_region_end");
-       docBAT.access(BAT_WRITE).insert("_region_pre",r_nid); 
-       docBAT.access(BAT_WRITE).insert("_region_start",r_start); 
-       docBAT.access(BAT_WRITE).insert("_region_end",r_end); 
-    #}
-#[/StandOff]
-    if (collection != name) {
-        # TODO: modify shredder such that it adds to the bats rather than creating new ones 
-        #       also think of rebuilding/extending to the indices!
-        ERROR("shredding of multi-document collections is not yet implemented");
-    } 
+    if (isnil(s)) { 
+        # shred multiple documents into a single collection (maybe empty at first)
+        [shred_url](const docBAT, location, pageFree, coll_lock);
+    } else {
+        # shred from a stream (a single document assumed here)
+        shred_stream(docBAT, s, pageFree, coll_lock);
+    }
+
     if (doCommit) {
-        [save](docBAT.[access](BAT_WRITE).[access](BAT_READ)); # flush to disk before locking
-        [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 4*int(REMAP_PAGE_SIZE)), STORE_MEM, STORE_MMAP));
+        [save](docBAT); 
 
         # add doc to the database locked
-        lock_set(pf_lock);
-        err := CATCH(shred_doc_locked(docBAT, location, name, collection, ts, ws, height));
-        lock_unset(pf_lock);
+        lock_set(pf_short);
+        var err := CATCH(doc_oid := _shred_into_docBAT(docBAT, location, name, colname, coll_oid, ts, ws));
+        lock_unset(pf_short);
+        if (not(isnil(err))) ERROR(err);
 
+        # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
+        if (not(isnil(coll_lock))) lock_set(coll_lock); # never lock a collection inside the short lock
+        err := CATCH(__shred_into_docBAT(docBAT, colname, doc_oid, runtime, pre, >(pageFree,0LL), ws));
+        if (not(isnil(coll_lock))) lock_unset(coll_lock);
         if (not(isnil(err))) ERROR(err);
     }
-    return height;
+    return doc_oid;
 }
 
-PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection, bit doCommit, str opt, timestamp ts, int ws) : int
-{
-    var shredRES;
 
-    if (false) {
-      var docseq := bat(str,str,4);
-      docseq.insert(location,"");
-      # docseq.insert("/home/flokstra/scripts/DATA/foo.xml","");
-      shredRES := shred2collection(docseq,opt);
-      # docseq_pre is a [void,oid] BAT containing the document_pre numbers of
-      # the documents in the docseq BAT in the same order.
-      var docseq_pre := shredRES.fetch(ATTR_PROP+1);
-    } else {
-      shredRES := shred2bats(location,"",opt);
+PROC _shred_doc_base(BAT[oid,str] selidx_coll,
+                     BAT[void,str] idx_names, 
+                     BAT[void,str] idx_colnames, 
+                     int ws) : BAT[oid,bat]
+{
+    # claim exclusive access to all collections
+    var selidx_coll := reverse(reverse(idx_colnames).kunique().sort());
+    [_shredlock_set](selidx_coll, ws); 
+
+    # now that we have access, check consistency
+    var conflicts := mirror(reverse(idx_names)).join(reverse(doc_name));
+    if (count(conflicts) > 0) {
+        conflicts := conflicts.outerjoin(doc_collection).outerjoin(collection_name);
+        ERROR("shred_doc: document %s already exists in collection %s (%d such errors)!\n", 
+            reverse(conflicts).fetch(0), conflicts.fetch(0), count(conflicts));
     }
-    return shred_doc_index(shredRES, docBAT, location, name, collection, doCommit, ts, ws);
+
+    # look up the locks and coll_oids while inside the short lock, and return these for later use
+    [_runtime_get](selidx_coll);
+    return reverse(mirror(reverse(idx_colnames)).outerjoin(reverse(collection_name))).outerjoin(colname_runtime);
 }
 
-PROC shred_stream( str docname, str colname, bat[oid,bat] shredRES) : int
+PROC shred_doc_base(BAT[void,str] idx_locations, 
+                    BAT[void,str] idx_names, 
+                    BAT[void,str] idx_colnames, 
+                    BAT[void,lng] pageFrees, 
+                    Stream s,
+                    int ws) : int 
 {
-    var docBAT := bat(str,bat,WS_SIZE);
-    return shred_doc_index(shredRES, docBAT, "", docname, colname, true, timestamp(nil), int(nil));
+    var pivot, err, nr := 0;
+    var selidx_colname := idx_colnames;
+    if (count(selidx_colname) > 0)
+        selidx_colname := reverse(reverse(idx_colnames).kunique().sort());
+
+    lock_set(pf_short);
+    err := CATCH(pivot := _shred_doc_base(selidx_colname, idx_names, idx_colnames, ws));
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+    var idx_runtime := pivot.tmark(0@0);
+    var idx_colloid := pivot.hmark(0@0);
+
+print(idx_locations,idx_names,idx_colnames,idx_colloid,idx_runtime);
+
+    var commitBAT := bat(void,str);
+    selidx_colname@batloop(){
+        # process collections one-by one
+        var colname  := $t;
+        var coll_oid := idx_colloid.find($h);
+        var runtime  := idx_runtime.find($h);
+        var idx      := idx_colnames.ord_uselect(colname).hmark(0@0);  
+        var docBAT;
+
+        if (isnil(coll_oid)) {
+            docBAT := bat(str,bat); # new collection
+        } else {
+            docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror()); # append to existing 
+
+        }
+        # now shred all documents for one collection
+        shred_into_docBAT(docBAT, 
+                          idx.leftfetchjoin(idx_locations),
+                          idx.leftfetchjoin(idx_names),
+                          colname, coll_oid, runtime, true, percentage, timestamp_nil, s, ws);
+
+        commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
+    }
+    if (pf_checkpoint(commitBAT)) {
+        lock_set(pf_short);
+        var doc_done := doc_undo.select(ws);
+        doc_undo.delete(doc_done);
+        lock_unset(pf_short);
+        nr := count(doc_done);
+    }
+    return nr;
 }
 
-PROC shred_doc_base(str location, str name, str collection, bit doCommit, str opt) : void
+PROC shred_stream(Stream s,
+                  str name,
+                  str colname,
+                  lng pageFree) : void
+{
+    var names := bat(void,str).insert(name).access(BAT_READ).seqbase(0@0);
+    var ws := 2000000000 + clientid();
+    var err := CATCH(shred_doc_base(s, names, names, names.project(colname), names.project(pageFree), s));
+    ws_destroy(ws); 
+    if (not(isnil(err))) ERROR(err);
+}
+
+@- deleting documents
+
+To make document deletes atomic, we first just set the document names to nil in the
+administrative interface and commit that (using a partial checkpoint). 
+
+Collections without any non-nil document names are garbage-collected periodically.
+This happens at start-up and at times when the system detects that no queries are 
+running (this is triggered by the last leaving query in ws_destroy()).
+@mil
+# additional knowledge is that at this time, no queries are active!
+PROC _collection_cleanup() : BAT[void,str]
+{
+    var commitBAT := bat(void,str);
+    var cnt := {count_no_nil}(reverse(doc_collection).leftjoin(doc_name), collection_name);
+    var del := cnt.uselect(0).mirror().join(collection_name);
+    del@batloop() {
+        var coll_oid := $h;
+        var doc_oids := doc_collection.uselect(coll_oid);
+
+        if (not(colname_pins.exist($t))) {
+            # delete all documents from the collection
+            doc_collection.delete(doc_oids);
+            doc_name.delete(doc_oids);
+            doc_location.delete(doc_oids);
+            doc_timestamp.delete(doc_oids);
+
+            # delete empty collection 
+            if (colname_runtime.exist($t)) {
+                var runtime := colname_runtime.find($t);
+                var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+                coll_lock.lock_destroy();
+                colname_runtime.delete($t);
+            }
+            colname_shredlock.reverse().select($t)@batloop() lock_destroy($h);
+            colname_shredlock.delete($t);
+            colname_pins.delete($t);
+
+            collection_name.delete(coll_oid); 
+            collection_size.delete(coll_oid);
+
+            commitBAT.insert([+](str(int(coll_oid)), ws_dsk).tmark(oid_nil));
+         }
+    }
+    return commitBAT.seqbase(0@0).access(BAT_READ); # return a list of garbage bats
+}
+
+PROC collection_cleanup(BAT[void,str] delBAT) : void
+{
+    # rename the bats so even in case of failure they don't bother us directly anymore
+    var commitBAT := bat(void,str,count(delBAT));
+    delBAT@batloop() {
+        if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
+    }
+    pf_checkpoint(commitBAT);
+}
+
+PROC _del_doc_replace(BAT[oid,str] bak_locations, 
+                      BAT[oid,str] bak_names) : void 
+{
+    doc_location.replace(bak_locations);
+    doc_name.replace(bak_names);
+}
+
+PROC _del_doc(bit cachedOnly,  
+              BAT[any,str] names, # dummy param iff not(isnil(cachedOnly)) 
+              BAT[oid,str] bak_locations, 
+              BAT[oid,str] bak_names, 
+              int ws) : void
+{
+    var del := doc_timestamp; # select all at first
+    if (isnil(cachedOnly)) {
+        del := reverse(names.outerjoin(reverse(doc_name)));
+        if (del.exist(oid_nil)) {
+            ERROR("delete_doc(%s): document not found in database (%d such errors)!\n", 
+                                   names.find(del.find(oid_nil)), 
+                                   count(reverse(del).uselect(oid_nil)));
+        }
+        del := kunique(del);
+    } else if (cachedOnly) {
+        del := del.uselect(timestamp_nil,timestamp_nil);
+    } 
+    del := del.project(str_nil);
+    bak_locations.insert(mirror(del).join(doc_location));
+    bak_names.insert(mirror(del).join(doc_name));
+    _del_doc_replace(del, del);
+}
+
+PROC del_doc_base(bit cachedOnly, 
+                  BAT[any,str] names, 
+                  int ws) : void
+{
+    var bak_locations := bat(oid,str);
+    var bak_names := bat(oid,str);
+    var err;
+
+    lock_set(pf_short);
+    err := CATCH(_del_doc(cachedOnly, names, bak_locations, bak_names, ws));
+    if (not(isnil(err))) {
+        var fatal := CATCH(_del_doc_replace(bak_locations, bak_names));
+        if (not(isnil(fatal))) {
+             printf("%s\n!ERROR: del_doc: in-memory recovery failed, Mserver must be restarted.\n", fatal);
+             exit(); # recover *must must* succeed
+        }
+    }
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+
+    # now here is our commit: flush 2 bat descs and BBP.dir
+    var commitBAT := bat(void,str).append("doc_name").append("doc_location");
+    if (not(subcommit(commitBAT))) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+}
+
+@+ Document Management Interfaces
+
+The fn:add_doc, fn:del_doc XQuery builtin functions are implemented
+in loop-lifted form by the following MIL PROCs.
+
+Note that ws_doc (previous) is similarly called from XQuery for fn:doc()
+and may also lead to on-the-fly document shredding.
+
+@- XQuery Document Management Interface
+@mil
+PROC do_add_doc(BAT[void,bat] ws, 
+                BAT[void,oid] item, 
+                BAT[void,int] kind, 
+                BAT[void,lng] int_values, 
+                BAT[void,str] str_values) : void
+{
+    var locations := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(str_values);
+    var names := [+](locations.mirror().[lng](), 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var colnames := [+](locations.mirror().[lng](), 2).[oid]().leftfetchjoin(item).leftfetchjoin(str_values);
+    var percentages := [+](locations.mirror().[lng](), 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values);
+    shred_doc_base(stream_nil, locations.tmark(0@0), names.tmark(0@0), colnames.tmark(0@0), percentages.tmark(0@0), int(ws));
+}
+
+PROC do_del_doc(BAT[void,bat] ws, 
+                BAT[void,oid] item, 
+                BAT[void,int] kind, 
+                BAT[void,lng] int_values, 
+                BAT[void,str] str_values) : void
+{
+    del_doc_base(bit_nil, item.leftfetchjoin(str_values), int(ws));
+}
+
+
+@- MIL Document Management Interface
+
+This is the old MIL administrative interface, now superseded by the 
+new {fn:add_doc(),fn:del_doc()} XQuery built-ins. It can continue to exist.
+@mil
+PROC shred_doc(BAT[void,str] locations, 
+               BAT[void,str] names, 
+               BAT[void,str] colnames, 
+               BAT[void,lng] pageFrees) : void
 {
     var us := usec();
-    var docBAT := bat(str,bat,WS_SIZE);
-    shred_doc_impl(docBAT, location, name, collection, doCommit, opt, timestamp(nil), int(nil));
+    var ws := 2000000000 + clientid();
+    var nr, err := CATCH(nr := shred_doc_base(locations.tmark(0@0), 
+                                              names.tmark(0@0), 
+                                              colnames.tmark(0@0), 
+                                              pageFrees.tmark(0@0), 
+                                              stream_nil, ws));
+    ws_destroy(ws); 
+    if (not(isnil(err))) ERROR(err);
     var ms := (us := usec() - us) / 1000;
-    if ( doCommit ) {
-        printf("# Shredded XML doc(\"%s\"), total time after commit=%lld.%03llds\n", name, /(ms,1000),%(ms,1000));
-    } else {
-        printf("# Shredded XML doc(\"%s\") uncommitted, total time =%lld.%03llds\n", name, /(ms,1000),%(ms,1000));
-    }
-}
-PROC shred_doc_base(str location, str name, bit doCommit, str opt) : void
-{
-    shred_doc_base(location, name, name, doCommit, opt); 
+    printf("%c Shredded %d XML documents, total time after commit=%lld.%03llds\n", chr(35), nr, /(ms,1000),%(ms,1000));
 }
 
-PROC shred_doc(str location, str name) : void
+PROC shred_doc(str location, 
+               str name, 
+               str colname, 
+               lng percentage) : void
 {
-    shred_doc_base(location, name, true, "0");
+    shred_doc(bat(void,str).append(location).seqbase(0@0), 
+              bat(void,str).append(name).seqbase(0@0), 
+              bat(void,str).append(colname).seqbase(0@0), 
+              bat(void,lng).append(percentage).seqbase(0@0)); 
 }
 
-PROC shred_doc(str location, str name, int perc) : void
+PROC shred_doc(str location, 
+               str name) : void
 {
-    shred_doc_base(location, name, true, str(perc));
+    shred_doc(location, name, name, 0LL);
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
 "PARAMETERS:\n\
@@ -788,83 +1780,11 @@ DESCRIPTION:\n\
 Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
 "pathfinder");
 
-PROC delete_doc_locked(oid doc_oid) : bit
-{
-    var docBAT := new(void,str,WS_SIZE);
-
-    if (doc_sema.exist(doc_oid)) {
-        # somebody else is deleting the same doc!
-        while(doc_sema.exist(doc_oid)) {
-            lock_unset(pf_lock);
-            sleep(1);
-            lock_set(pf_lock);
-        }
-        return; # now he is done
-    }
-    # we will delete it
-    while (doc_query.exist(doc_oid)) {
-        var sem := sema_create(0);
-        doc_sema.insert(doc_oid, sem);
-
-        lock_unset(pf_lock);
-        sema_down(sem); # wait for the users to go away 
-        lock_set(pf_lock);
-
-        sema_destroy(sem);
-        doc_sema.delete(doc_oid, sem);
-    }
-
-    var coll_oid := doc_collection.find(doc_oid);
-    doc_name.delete(doc_oid);
-    doc_location.delete(doc_oid);
-    doc_collection.delete(doc_oid);
-    doc_root.delete(doc_oid);
-    doc_timestamp.delete(doc_oid);
-    doc_height.delete(doc_oid);
-    doc_size.delete(doc_oid);
-
-    if (not(doc_collection.texist(coll_oid))) {
-        collection_name.delete(coll_oid); # delete empty collection (kludge?)
-
-        # docBAT becomes [name,bat]
-        docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror());
-
-        # rename the bats so even in case of failure they don't bother us directly anymore
-        [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
-
-        # remove them from the repository
-        [persists](docBAT, false);
-    }
-
-    # also commit the meta bats
-    docBAT := [bbpname](docBAT).access(BAT_WRITE);
-    docBAT.insert(str(nil), "doc_name");
-    docBAT.insert(str(nil), "doc_location");
-    docBAT.insert(str(nil), "doc_collection");
-    docBAT.insert(str(nil), "doc_root");
-    docBAT.insert(str(nil), "doc_timestamp");
-    docBAT.insert(str(nil), "doc_height");
-    docBAT.insert(str(nil), "doc_size");
-    return subcommit(docBAT);
-}
-
 PROC delete_doc(str name) : void
 {
-    var err, exists := false;
-
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(exists := doc_name.texist(name));
-    lock_unset(pf_lock);
-
-    if (not(isnil(err))) ERROR(err);
-    else if (not(exists)) ERROR("delete_doc(%s): document not found in database!\n", name);
-
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(delete_doc_locked(doc_name.reverse().find(name)));
-    lock_unset(pf_lock);
-
+    var ws := 2000000000 + clientid();
+    var err := CATCH(del_doc_base(bit_nil, bat(void,str).append(name), ws));
+    ws_destroy(ws);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
@@ -874,24 +1794,13 @@ DESCRIPTION:\n\
 delete the persistent BATS that store the document.",
 "pathfinder");
 
-PROC delete_all_docs_locked(bit cachedOnly) : void
-{
-    doc_timestamp.copy()@batloop() {
-        if (not(and(cachedOnly, isnil($t))))
-            delete_doc_locked($h);
-    }
-}
-
 PROC delete_all_docs(bit cachedOnly) : void
 {
-    var err, b := bat(timestamp,str);
-
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(delete_all_docs_locked(cachedOnly));
-    lock_unset(pf_lock);
-
+    var ws := 2000000000 + clientid();
+    var err := CATCH(del_doc_base(cachedOnly, doc_name, ws));
+    ws_destroy(ws);
     if (not(isnil(err))) ERROR(err);
+    
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
 "DESCRIPTION:\n\
@@ -901,167 +1810,9 @@ with parameter FALSE, also the (explicitely) shredded documents are deleted.",
 "pathfinder");
 
 
-PROC pin_doc(oid doc_oid, int ws) : void 
-{
-    # pin the document on this working set (must hold lock!)
-    doc_query.insert(doc_oid, int(ws));
-    var coll_oid := doc_collection.find(doc_oid);
-    if (not(coll_lock.exist(coll_oid))) {
-          coll_lock.insert(coll_oid, lock_create());
-    }
-}
 
+@- MIL Interface for the Document Cache
 
-# get filename if the URI is a file; else return str(nil)
-PROC doc_filename(str name) : str
-{
-    var uri_idx := -1;
-    if (startsWith(name, "file://") or startsWith(name, "FILE://")) {
-        name := string(name, 7);
-     } else if (search(name, "://") >= 0) {
-        return str(nil);
-     }
-     return name;
-}
-
-# get the actual timestamp of the document cached in the database
-PROC doc_curtime(str filename) : timestamp {
-    var ts := current_timestamp();
-    if (not(isnil(filename))) {
-        # a file: get lastmodification time
-        var tts, err := CATCH(tts := lastmod_time(filename));
-        if (isnil(err)) ts := tts;
-    }
-    return ts;
-}
-
-PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oid coll_oid, int height) : oid
-{
-    var cont, docid := oid(count(ws.fetch(DOCID_OID)));
-
-    if (ws.fetch(CONT_COLL).texist(coll_oid)) {
-        # collection is already part of the working set
-        cont := reverse(ws.fetch(CONT_COLL)).find(coll_oid);
-    } else {
-        # add the collection to the working set
-        var pre, mem, dsk, dst := ws_col.mirror().leftfetchjoin(ws);
-
-        if (doc_oid = TEMP_DOC) { 
-            # temporary shredded (read-only) doc; no isolation needed 
-            coll_oid := TEMP_DOC;                     # must pass oid(nil) for TEMP_DOCs!!
-            dsk := ws_dsk.leftjoin(docBAT);           # doc has just been shredded into docBAT
-            pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
-            mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
-        } else {
-            # here we get transaction isolation: pre's are remapped views, and mem are normal views
-            dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
-            var map_pid := dsk.find(oid(_MAP_PID)).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
-            pre := [remap](reverse(ws_rid).leftjoin(dsk), const map_pid, false);
-            mem := [rcopy](reverse(ws_mem).leftjoin(dsk));
-        }
-        # use the ws_* bats to add all bats to the working set in a multiplex
-        [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
-
-        # create views for the container-id (which is constant within a doc)
-        ws.fetch(CONT_COLL).append(coll_oid);
-        cont := oid(count(ws.fetch(CONT_COLL)));
-
-        var cont_bat := constant2bat(cont);
-        ws.fetch(PRE_CONT).append(cont_bat);
-        ws.fetch(ATTR_CONT).append(cont_bat);
-
-        if (isnil(height))
-            height := ws.fetch(PRE_LEVEL).max().int() + 1;
-        ws.fetch(HEIGHT).append(height);
-    }
-    if (not(ws.fetch(DOCID_NAME).texist(name))) {
-        # add the document to the working set
-        ws.fetch(DOCID_OID).append(doc_oid);
-        ws.fetch(DOCID_NAME).insert(docid, name);            
-        ws.fetch(CONT_DOCID).insert(cont, docid);            
-    }
-    return cont;
-}
-
-
-PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
-{
-    var doc_oid := oid(nil);
-    # check if the document already existed
-    if (doc_name.texist(name)) {
-        doc_oid := doc_name.reverse().find(name);
-    } else if (doc_location.texist(name)) {
-        # existed as cached location (URI): must check timestamp
-        doc_oid := doc_location.reverse().find(name);
-    }
-    if (not(isnil(doc_oid))) {
-        var lim := doc_timestamp.find(doc_oid);
-        if (not(isnil(lim))) { # a nil limit means the doc never expires
-            if  (ts > lim) {
-                delete_doc_locked(doc_oid); # remove outdated document from the cache
-                return oid(nil);
-            }
-        }
-        pin_doc(doc_oid, ws); # GOT IT! make sure nobody can delete it
-     }
-     return doc_oid;
-}
-
-PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : timestamp
-{
-    if (isnil(doc_oid) and isnil(filename)) {
-        # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
-        var b := [startsWith](name, mirror(uri_lifetime)).uselect(true);
-        var lifetime := lng(nil);
-        if (b.count() > 0) {
-            var matchlen := [length](mirror(b));
-            lifetime :=  *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
-        }
-        # this may set ts to nil; such URIs are never cached (and thus do not need to be persistent)
-        ts := ts.add(lifetime);
-    }
-    return ts;
-}
-
-PROC add_doc(BAT[void,bat] ws, str name) : int
-{
-    var time_shred := 0; 
-    var filename := doc_filename(name);
-    var t := time();
-    var coll_oid := oid(nil);
-    var doc_oid := oid(nil);
-    var ts := doc_curtime(filename);
-    var err;
-
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(doc_oid := add_doc_locked(name,ts,int(ws)));
-    if (isnil(err)) err := CATCH(ts := lifetime_doc_locked(name,filename,doc_oid,ts));
-    lock_unset(pf_lock);
-    if (not(isnil(err))) ERROR(err);
-    var docBAT := new(str,bat,WS_SIZE);
-    var doCommit := true;
-    var height;
-
-    if (isnil(doc_oid)) {
-        if (isnil(ts)) {
-            doc_oid := TEMP_DOC;
-            doCommit := false;
-        }
-        height := shred_doc_impl(docBAT, name, name, name, doCommit, "0", ts, int(ws));
-        time_shred :+= time() - t;
-    }
-    if (isnil(doc_oid) or (doc_oid != TEMP_DOC)) {
-        doc_oid := doc_name.reverse().find(name);
-        coll_oid := doc_collection.find(doc_oid);
-        height := doc_height.find(doc_oid);
-    }
-    add_docbat(ws, docBAT, name, doc_oid, coll_oid, height);
-    return time_shred;
-}
-
-
-@- xml document cache
 When fn:doc() is used with a previously unseen URI, it is shredded on the fly and placed into 
 the xml document cache (see text below). A number of procs are provided to monitor
 and control the behavior of the cache.
@@ -1080,7 +1831,7 @@ For other URIs, *lifetime rules* determine how long documents can stay in the ca
 Each lifetime rule consists of a URI prefix and the registered seconds of lifetime.\n\
 \n\
 The rule with longest prefix that matches an URI counts. Specifying a lifetime\n\
-of 'int(nil)' seconds means that the URI will *not* be cached at all.\n\
+of 'int_nil' seconds means that the URI will *not* be cached at all.\n\
 This is also the default if no prefix matches an URI.\n\
 \n\
 The name of a cached document is the same as its location (URI). For explicitly\n\
@@ -1088,59 +1839,71 @@ shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and
 may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
 cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
 
-PROC xmlcache_add_rule(str uri, any lifetime) : void {
+PROC xmlcache_add_rule(str uri, 
+                       any lifetime) : void 
+{
     xmlcache_add_rule(uri, lng(lifetime)); 
 }
-PROC xmlcache_add_rule(str uri, lng lifetime) : void {
-    lock_set(pf_lock);
+
+PROC xmlcache_add_rule(str uri, 
+                       lng lifetime) : void 
+{
+    lock_set(pf_short);
     var err := CATCH({ uri_lifetime.delete(uri); uri_lifetime.insert(uri, lifetime); });
-    lock_unset(pf_lock);
+    lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
 "DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
-PROC xmlcache_del_rule(str uri) : void {
-    lock_set(pf_lock);
-    var err := CATCH({ uri_lifetime.delete(uri);});
-    lock_unset(pf_lock);
+PROC xmlcache_del_rule(str uri) : void 
+{
+    lock_set(pf_short);
+    var err := CATCH(uri_lifetime.delete(uri));
+    lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
 "DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
-PROC xmlcache_print_rules() : void {
-    lock_set(pf_lock);
+PROC xmlcache_print_rules() : void 
+{
+    lock_set(pf_short);
     var err := CATCH({  table(uri_lifetime.hmark(0@0).col_name("URI-prefix"), uri_lifetime.tmark(0@0).col_name("liftime-secs")); });
-    lock_unset(pf_lock);
+    lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 "DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
 
-PROC xmlcache_print() : void {
-    lock_set(pf_lock);
-    var err := CATCH({  table( doc_name.col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size"), doc_timestamp.select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
-    lock_unset(pf_lock);
+PROC xmlcache_print() : void 
+{
+    lock_set(pf_short);
+    var err := CATCH({  table( doc_name.col_name("alias"), doc_location.col_name("URI"), collection_size.col_name("size"), doc_timestamp.select(timestamp_nil,timestamp_nil).col_name("valid-thru")); });
+    lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print", "boncz", "May 2005",
         "DESCRIPTION:\nshows the actual content of the XML document cache.\n\n" + xmlcache_help,  "pathfinder");
 
-PROC xmldb_print() : void {
-    lock_set(pf_lock);
-    var err := CATCH({  table( tsort(mirror(doc_timestamp.uselect(timestamp(nil))).join(doc_collection).join(collection_name)).col_name("collection"), doc_name.col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size")); });
-    lock_unset(pf_lock);
+PROC xmldb_print() : void 
+{
+    lock_set(pf_short);
+    var err := CATCH({  table( tsort(mirror(doc_timestamp.uselect(timestamp_nil)).join(doc_collection).join(collection_name)).col_name("collection"), doc_name.col_name("alias"), doc_location.col_name("URI")); });
+    lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmldb_print", "boncz", "May 2005",
 "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
 
-@= c_decl_ws
+
+@= ws_c_decl
 #define @1 @2
 @h
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
+
+#define XML_DEPTH_MAX 128
 
 #include <monet.h>
 #include <monettime.h>
@@ -1151,11 +1914,12 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 #include <mapi.h>
 #include <sys.h>
 #include <pathfinder.proto.h>
+#include <pf_support.proto.h>
 
 #define is_fake_project(b) (((b)->htype==TYPE_void) && (BATcount(b)==1) && ((b)->hseqbase==oid_nil))
 
 @:ws(c_decl)@
-@:decl(c)@
+@:ws_decl(c)@
 
 #define XTRACT_KIND(X)     (X & 63)
 #define XTRACT_CONT(X)     (X >> 6)
@@ -1845,11 +2609,11 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
-    @:seqbase(fun_vid000, oid_nil, "oid(nil)")@
-    @:seqbase(fun_iter000, oid_nil, "oid(nil)")@
-    @:seqbase(fun_kind000, oid_nil, "oid(nil)")@
-    @:seqbase(fun_item000, oid_nil, "oid(nil)")@
-    @:seqbase(loop000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_vid000, oid_nil, "oid_nil")@
+    @:seqbase(fun_iter000, oid_nil, "oid_nil")@
+    @:seqbase(fun_kind000, oid_nil, "oid_nil")@
+    @:seqbase(fun_item000, oid_nil, "oid_nil")@
+    @:seqbase(loop000, oid_nil, "oid_nil")@
 
     for(l=j=0; j<itercnt; j++) {
         for(i=0; i<argc; i++) {
@@ -2505,15 +3269,16 @@ xquery_parse_string(char *src,
     while(*p) {
         if (escape) {
             if (p[0] == sep2) escape = 0;
-            if (q < r) *q++ = *p; p++;
+            if (q+1 > r) return src; /* no room */
+            *q++ = *p; p++;
         } else {
-            if (p[0] == sep1) {
-                break;
-            } else if (p[0] == sep2) {
+            if (p[0] == sep1) break;
+            if (q+1 > r) return src; /* no room */
+            if (p[0] == sep2) {
                 if (p[1] == sep1 && p[2] == sep1 && p[3] == sep2) {
-                    if (q < r) *q++ = sep1; p += 4;
+                    *q++ = sep1; p += 4;
                 } else {
-                    if (q < r) *q++ = *p; p++;
+                    *q++ = *p; p++;
                     escape = 1;
                 }
             } else if (p[0] == '&') {
@@ -2530,7 +3295,7 @@ xquery_parse_string(char *src,
                             break;
                         }
                     }
-                    if (q < r) *q++ = (char) v;
+                    *q++ = (char) v;
                 } else if (p[1] == '#') {
                     unsigned long v = 0; 
                     for(p+=2; *p; p++) {
@@ -2540,20 +3305,53 @@ xquery_parse_string(char *src,
                             break;
                         }
                     }
-                    if (q < r) *q++ = (char) v;
+                    /* UTF8 generation */
+                    if (v < 0x80) {
+                        *q++ = v; /* ahh! ascii */
+                    } else if (v < 0x800) {
+                        if (q+2 > r) return src; 
+                        *q++ = 0xC0 | (v >> 6);
+                        *q++ = 0x80 | (v & 0x3F);
+                    } else if (v < 0x10000) {
+                        if (q+3 > r) return src; 
+                        *q++ = 0xE0 | (v >> 12);
+                        *q++ = 0x80 | ((v >> 6) & 0x3F);
+                        *q++ = 0x80 | (v & 0x3F);
+                    } else if (v < 0x200000) {
+                        if (q+4 > r) return src; 
+                        *q++ = 0xF0 | (v >> 18);
+                        *q++ = 0x80 | ((v >> 12) & 0x3F);
+                        *q++ = 0x80 | ((v >> 6) & 0x3F);
+                        *q++ = 0x80 | (v & 0x3F);
+                    } else if (v < 0x4000000) {
+                        if (q+5 > r) return src; 
+                        *q++ = 0xF8 | (v >> 24);
+                        *q++ = 0x80 | ((v >> 18) & 0x3F);
+                        *q++ = 0x80 | ((v >> 12) & 0x3F);
+                        *q++ = 0x80 | ((v >> 6) & 0x3F);
+                        *q++ = 0x80 | (v & 0x3F);
+                    } else /* if (v < 0x80000000) */ {
+                        if (q+6 > r) return src; 
+                        *q++ = 0xFC | (v >> 30);
+                        *q++ = 0x80 | ((v >> 24) & 0x3F);
+                        *q++ = 0x80 | ((v >> 18) & 0x3F);
+                        *q++ = 0x80 | ((v >> 12) & 0x3F);
+                        *q++ = 0x80 | ((v >> 6) & 0x3F);
+                        *q++ = 0x80 | (v & 0x3F);
+                    }
                 } else if (p[1] == 'l' && p[2] == 't' && p[3] == ';') {
-                    if (q < r) *q++ = '<'; p += 4;
+                    *q++ = '<'; p += 4;
                 } else if (p[1] == 'g' && p[2] == 't' && p[3] == ';') {
-                    if (q < r) *q++ = '<'; p += 4;
+                    *q++ = '<'; p += 4;
                 } else if (p[1] == 'a' && p[2] == 'm' && p[3] == 'p' && p[4] == ';') {
-                    if (q < r) *q++ = '&'; p += 5;
+                    *q++ = '&'; p += 5;
                 } else if (p[1] == 'q' && p[2] == 'u' && p[3] == 'o' && p[4] == 't' && p[5] == ';') {
-                    if (q < r) *q++ = '"'; p += 6;
+                    *q++ = '"'; p += 6;
                 } else if (p[1] == 'a' && p[2] == 'p' && p[3] == 'o' && p[4] == 's' && p[5] == ';') {
-                    if (q < r) *q++ = '\''; p += 6;
+                    *q++ = '\''; p += 6;
                 }
             } else {
-                if (q < r) *q++ = *p; p++;
+                *q++ = *p++; /* just copy a byte */
             }
         }
     }
@@ -2890,11 +3688,10 @@ xquery_client_engine(mapi_client *fc )
                             ctx->mode |= XQ_DEBUG;
                         break;
                 case 'c': { /* shred from stream */
-                        int i;
-                        BAT *res;
+                        int i, perc=0;
                         char *dname, *cname;
-
                         p += sizeof("copy ")-1;
+
                         /* start shredder (first character should be skipped) */
                         if (!fc->c->blocked && 
                                 stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0) {
@@ -2910,25 +3707,24 @@ xquery_client_engine(mapi_client *fc )
                                 xquery_client_end(ctx, "malloc failure"); 
                                 return;
                         }
-                        cname = strchr(dname, ' ');
-                        if (cname) 
-                                *cname++ = 0;
-                        else /* default collection name is the document name */
+                        cname = strchr(dname, ',');
+                        if (cname == NULL)  { 
+                                /* default collection name is the document name */
                                 cname = dname; 
-                        shred_stream2bats(&res /* result bats */, in, NULL);
+                        } else {
+                                char *percStr = strchr(cname+1, ',');
+                                *cname++ = 0;
+                                if (percStr) perc=atoi(percStr+1);
+                        }
 
                         /* insert into document collection (p is name)*/
-
-                        /* taking the easy way, dump to string */
-                        i=snprintf(ctx->buf, ctx->buflen, "shred_stream(\"%s\", \"%s\", bat(%d));\n", dname, cname, res->batCacheid);
-                        if (i<0 || xquery_mil_exec(ctx, ctx->buf)<0) {
+                        snprintf(ctx->buf, ctx->buflen, "shred_stream(Stream(" LLFMT "LL), \"%s\", \"%s\", %d);\n", (lng) in, dname, cname, perc);
+                        i = xquery_mil_exec(ctx, ctx->buf); /* use MIL to add it to the repository */
+                        GDKfree(dname);
+                        if (i < 0) {
                                 xquery_client_end(ctx, "shred_stream failed"); 
-                                BBPunfix(BBPcacheid(res));
-                                GDKfree(dname);
                                 return;
                         }
-                        BBPunfix(BBPcacheid(res));
-                        GDKfree(dname);
                         break;
                     }
                 }
@@ -3076,16 +3872,16 @@ CMDxquery(Cntxt stk,
  * call a method in a temporary xquery client context
  */  
 char*
-xquery_method(stream *out, 
+xquery_method(stream *out,
               int rpctiming,
-              char* module, 
-              char* uri, 
-              char *method, 
-              int argc, 
-              int itercnt, 
-              int** argcnt, 
-              str* argtpe, 
-              str* argval, 
+              char* module,
+              char* uri,
+              char *method,
+              int argc,
+              int itercnt,
+              int** argcnt,
+              str* argtpe,
+              str* argval,
               BAT* shredBAT)
 {
     int msec = GDKms();
@@ -3096,10 +3892,10 @@ xquery_method(stream *out,
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
 
-    if (mc == NULL || mc->fc == NULL) 
+    if (mc == NULL || mc->fc == NULL)
         return "xquery_method: out of client slots.\n";
 
-    ctx = mc->fc; 
+    ctx = mc->fc;
     ctx->fderr = GDKerr;
     ctx->mode = 0;
 
@@ -3151,9 +3947,9 @@ extern void xmlInitThreads(void);
 bat *
 xquery_prelude(void)
 {
-    MT_lock_init(&pf_compiler_lock);
-    MT_lock_init(&pf_module_lock);
-    MT_lock_init(&pf_cache_lock);
+    MT_init_lock(pf_compiler_lock);
+    MT_init_lock(pf_module_lock);
+    MT_init_lock(pf_cache_lock);
 
     xmlInitThreads();
    

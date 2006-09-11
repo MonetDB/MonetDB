@@ -56,7 +56,7 @@
 
 /* FOLLOWING STEP */
 int
-PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *height, int *upperbound)
+PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *upperbound)
 {
 @= init
     char *name = "PF_@1_void";
@@ -75,8 +75,8 @@ PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
     int *size = ((int*) BUNfirst(pre_size)) - pre_size->hseqbase;
 
     ALGODEBUG
-        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
-                          name, BATcount(pre_size), BATcount(ctx), *height);
+        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns\n",
+                          name, BATcount(pre_size), BATcount(ctx));
 
     /* --------------------------- special cases --------------------------- */
     if (!(BAThordered(ctx) & 1))
@@ -147,7 +147,7 @@ PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
 
 /* PRECEDING STEP */
 int
-PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *height, int *upperbound)
+PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *upperbound)
 {
     @:init(preceding)@
 

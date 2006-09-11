@@ -139,7 +139,7 @@ typedef struct XqueryCtx {
     void*       driverWs;  /* optional driver workspace */
     
     BAT*        ws;        /* working set BAT */
-    int         wsFrags;   /* The number of containers in the working set */
+    int         wsConts;   /* The number of containers in the working set */
     wsBatDescr *wsMatrix;  /* the direct references to BATs collected in ws */
     
     XmlNsFrame *nsTop;     /* top of the namespace stack */
@@ -425,7 +425,7 @@ xmlNsInit (XmlNsFrame** top)
 static XmlNsFrame *
 xmlNsPush (XmlNsFrame** top, char* prefix, char* uri)
 {
-    XmlNsFrame* fp = (XmlNsFrame*) malloc (sizeof (XmlNsFrame));
+    XmlNsFrame* fp = (XmlNsFrame*) GDKmalloc (sizeof (XmlNsFrame));
 
     if ( fp ) {
 #ifdef DEBUGNS
@@ -466,9 +466,9 @@ xmlNsPop2 (XmlNsFrame** top, XmlNsFrame* newTop)
                       "+NS:-popping(\"%s\",\"%s\")\n",
                       old->prefix, old->uri);
 #endif
-        free(old->prefix);
-        free(old->uri);
-        free(old);
+        GDKfree(old->prefix);
+        GDKfree(old->uri);
+        GDKfree(old);
     }
     
     *top = newTop;
@@ -681,13 +681,13 @@ check@1AttrNsChange (XqueryCtx* ctx,
 
     /* no alternatives left - generate new prefix */
     int i = 1;
-    char *newPrefix = (char *) malloc (strlen (prefix) + sizeof ("_000"));
+    char *newPrefix = (char *) GDKmalloc (strlen (prefix) + sizeof ("_000"));
     sprintf (newPrefix, "%s_%i", prefix, i);
     
     /* check if new prefix is unused (and generate new one if used) */
     while (xmlNsUriFind (&ctx->nsTop, newPrefix)) {
         i++;
-        if (i == 1000) { free (newPrefix); return PROBLEM; }
+        if (i == 1000) { GDKfree (newPrefix); return PROBLEM; }
         sprintf (newPrefix, "%s_%i", prefix, i);
     }
         
@@ -696,18 +696,18 @@ check@1AttrNsChange (XqueryCtx* ctx,
 
     if ( !(xnf = xmlNsPush (&ctx->nsTop, newPrefix, uri)) ) {
         fatal_err(ctx,"xmlNsPush: out of memory\n");
-        { free (newPrefix); return PROBLEM; }
+        { GDKfree (newPrefix); return PROBLEM; }
     }
     /* generate the xmlns:xxx=uri tag */
     if (!ctx->driverFun->@2 (ctx, "xmlns", newPrefix, uri))
-        { free (newPrefix); return PROBLEM; }
+        { GDKfree (newPrefix); return PROBLEM; }
 
     @5 /* link the current namespace entry to the active element node */
         
     if (!ctx->driverFun->@2 (ctx, newPrefix, loc, val))
-        { free (newPrefix); return PROBLEM; }
+        { GDKfree (newPrefix); return PROBLEM; }
 
-    free (newPrefix);
+    GDKfree (newPrefix);
 
     return SUCCESS;
 }        
@@ -729,7 +729,7 @@ check@1AttrNsChange (XqueryCtx* ctx,
  * initializes all other data structures.
  */
 
-#define CHECKWSMI(CTX,F,B) if (((F)>=CTX->wsFrags)||((B)>=WS_BATS)) \
+#define CHECKWSMI(CTX,F,B) if (((F)>=CTX->wsConts)||((B)>=WS_BATS)) \
     { fatal_err (CTX,"WSbat [%d,%d] out of range.",F,B); return PROBLEM; }
 #define WSMI(F,B) ((F)*WS_BATS+B)
 
@@ -752,14 +752,12 @@ initWsMatrix(XqueryCtx* ctx)
         return PROBLEM;
     }
 
-    ctx->wsFrags = BATcount(batbat);
+    ctx->wsConts = BATcount(batbat);
     BBPunfix( BBPcacheid( batbat ) );
-    if ( !( ctx->wsMatrix = (wsBatDescr*) malloc(ctx->wsFrags*
-                                                 WS_BATS*
-                                                 sizeof(wsBatDescr))) ) {
+    if ( !( ctx->wsMatrix = (wsBatDescr*) GDKmalloc(ctx->wsConts*WS_BATS*sizeof(wsBatDescr))) ) {
         return PROBLEM;
     }
-    for(int i=0; i<ctx->wsFrags; i++) {
+    for(int i=0; i<ctx->wsConts; i++) {
         for(int j=0; j<WS_BATS; j++) {
          CHECKWSMI(ctx,i,j);
          wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
@@ -768,8 +766,8 @@ initWsMatrix(XqueryCtx* ctx)
         }
     }
 #ifdef DEBUGWS
-    stream_printf(GDKerr, "+ initWsMatrix(wsFrags=%d, wsBats=%d).\n",
-                  ctx->wsFrags, ctx->wsBats);
+    stream_printf(GDKerr, "+ initWsMatrix(wsConts=%d, wsBats=%d).\n",
+                  ctx->wsConts, ctx->wsBats);
 #endif
 
     return SUCCESS;
@@ -778,7 +776,7 @@ initWsMatrix(XqueryCtx* ctx)
 static bool
 disposeWsMatrix(XqueryCtx* ctx)
 {
-    for(int i=0; i<ctx->wsFrags; i++) {
+    for(int i=0; i<ctx->wsConts; i++) {
         for(int j=0; j<WS_BATS; j++) {
          CHECKWSMI(ctx,i,j);
          wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
@@ -1226,6 +1224,8 @@ createWsContext (XqueryCtx*        ctx,
 {
     char *restag = NULL;
     
+    memset(ctx, 0, sizeof(XqueryCtx));
+
     /* store the working set ws */
     ctx->ws = ws;
     
@@ -1374,48 +1374,33 @@ wsADMbat (BAT* ws, oid o)
 static int
 ws_documentIndex (BAT* ws, str docName)
 {
-    /* INCOMPLETE, updated algorith for the extra CONT_DOCID indirection.
-     * but am not really sure if all is ok now. PeterB ?????
-     */
-    
-    BAT* docid_name;
-    if ( !(docid_name=wsADMbat(ws,DOCID_NAME)) ) {
-        fatal_err(0,"ws_documentIndex: unable to find DOCID_NAME in WS");
+    int res = PROBLEM;
+    BAT* open_name;
+    if ( !(open_name=wsADMbat(ws,OPEN_NAME)) ) {
+        fatal_err(0,"ws_documentIndex: unable to find CONT_NAME in WS");
         return PROBLEM;
     }
-
-    BAT* cont_docid;
-    if ( !(cont_docid=wsADMbat(ws,CONT_DOCID)) ) {
-        fatal_err(0,"ws_documentIndex: unable to find CONT_DOCID in WS");
+    BAT* open_cont;
+    if ( !(open_cont=wsADMbat(ws,OPEN_CONT)) ) {
+        fatal_err(0,"ws_documentIndex: unable to find CONT_COLLID in WS");
+        BBPunfix( BBPcacheid( open_name ) );
         return PROBLEM;
     }
-   
-    BUN p, q;
-    BATloop(docid_name, p, q) {
-        str docNm = (str)BUNtail(docid_name, p);
-
-        if ( strcmp(docName,docNm) == 0 ) {
-            int res;
-            BUN b;
-            oid docId = *(oid*)BUNhead(docid_name, p);
-            BAT* mcd  = BATmirror(cont_docid);
-
-            if ( (b=BUNfnd(mcd,&docId)) ) {
-                res = *(oid*)BUNtail(mcd,b);
-            } else {
-                fatal_err(0,
-                          "ws_documentIndex: unable to find "
-                          "%d@0 in CONT_DOCID", docId);
-                res = 0;
+    open_name = BATmirror(open_name);
+    if (!BATprepareHash(open_name)) {
+        BUN p;
+        HASHfnd_str(p, open_name, docName);
+        if (p) {
+            off_t idx = BUNindex(open_name, p) - BUNindex(open_name, BUNfirst(open_name));
+            p = BUNptr(open_cont, BUNindex(open_cont, BUNfirst(open_cont)) + idx);
+            if (p < BUNlast(open_cont)) {
+                res = *(oid*) BUNtail(open_cont, p); 
             }
-            BBPunfix( BBPcacheid( docid_name ) );
-            BBPunfix( BBPcacheid( cont_docid ) );
-            return res;
         }
     }
-    BBPunfix( BBPcacheid( docid_name ) );
-    BBPunfix( BBPcacheid( cont_docid ) );
-    return -1;
+    BBPunfix( BBPcacheid( open_name ) );
+    BBPunfix( BBPcacheid( open_cont ) );
+    return res;
 }
 
 int
@@ -1428,36 +1413,28 @@ xquery_print_doc_DRIVER (
 {
     TIMER_START();
     int docIndex = ws_documentIndex(ws,docName);
-    
-    if (!docIndex)
-        return GDK_FAIL;
-    else if ( docIndex < 0 ) {
-        GDKwarning("serialize.mx:xquery_print_doc_main: "
-                   "unable to find document \"%s\" in working set!\n",
-                   docName);
-        return GDK_SUCCEED;
-    } 
-
-    ptr res;
-    XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-    if ( !createWsContext(ctx,ws,mode,driverFun,driverArg) )
-        return GDK_FAIL;
-
-    if ( !ctx->driverFun->handle_startDocument(ctx) )
-        return GDK_FAIL;
-        
-    getWsValue(res, ctx, docIndex, PRE_SIZE, 0 /* start */);
-    if ( !emitNodesInRange (ctx, 0/*start*/,  *(int*) res, NULL, docIndex))
-        return GDK_FAIL;
-    if ( !ctx->driverFun->handle_endDocument(ctx) )
-        return GDK_FAIL;
-
-    if ( !disposeWsContext(ctx) )
-        return GDK_FAIL;
-
+    int res = GDK_FAIL;
+    if (!docIndex) {
+        GDKerror("serialize.mx: unable to find document \"%s\" in working set!\n", docName);
+    } else { 
+        XqueryCtx  ctx_struct, *ctx = &ctx_struct;
+        if (createWsContext(ctx,ws,mode,driverFun,driverArg)) {
+            if (ctx->driverFun->handle_startDocument(ctx)) {
+                ptr p;
+                getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
+                if (emitNodesInRange (ctx, 0/*start*/,  *(int*) p, NULL, docIndex)) {
+                    if (ctx->driverFun->handle_endDocument(ctx)) {
+                        res = GDK_SUCCEED;
+                    }
+                }
+            }
+        }
+        if (!disposeWsContext(ctx)) {
+            res = GDK_FAIL;
+        }
+    }
     TIMER_STOP("# serialization of \"%s\"",docName);
-
-    return GDK_SUCCEED;
+    return res;
 }
 
 int

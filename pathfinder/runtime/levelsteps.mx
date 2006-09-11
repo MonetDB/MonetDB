@@ -34,6 +34,7 @@
 *
 */
 #include <gdk.h>
+#include "pathfinder.h"
 
 /**
  * This file contains all axis step algoritms that work mainly on the
@@ -91,7 +92,7 @@
 PARAMETERS: function name
 @= lev_head
 int
-PFlev_@1 (BAT **result, BAT *pre_level, BAT *ctx, int *height, int *upperbound)
+PFlev_@1 (BAT **result, BAT *pre_level, BAT *ctx, int *upperbound)
 {
     /* --------------------------- declaration ----------------------------- */
 
@@ -144,12 +145,12 @@ PARAMETERS: search level
     search_level = level[level_cur]@1;
 
     /* stack for context set nodes will never grow over height of doc. tree */
-    stack = GDKmalloc(sizeof(chr) * (*height));
+    stack = GDKmalloc(sizeof(chr) * XML_DEPTH_MAX);
     stack_top = 0;
 
     ALGODEBUG
-        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
-                          name, BATcount(pre_level), BATcount(ctx), *height);
+        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns\n",
+                          name, BATcount(pre_level), BATcount(ctx));
 
     level_cur++;
     while (level[level_cur] == chr_nil && (int)level_cur <= (int)level_last)
@@ -182,12 +183,12 @@ PARAMETERS: search level
     search_level = level[level_cur]@1;
 
     /* stack for context set nodes will never grow over height of doc. tree */
-    stack = GDKmalloc(sizeof(chr) * (*height));
+    stack = GDKmalloc(sizeof(chr) * XML_DEPTH_MAX);
     stack_top = 0;
 
     ALGODEBUG
-        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
-                          name, BATcount(pre_level), BATcount(ctx), *height);
+        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns\n",
+                          name, BATcount(pre_level), BATcount(ctx));
 
     level_cur--;
     while (level[level_cur] == chr_nil && (int)level_cur >= (int)level_last)

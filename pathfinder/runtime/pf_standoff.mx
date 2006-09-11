@@ -790,9 +790,6 @@ PROC @1(BAT[oid,oid] iter, BAT[oid,oid] ctx, oid cont, BAT[oid,bat] ws, int orde
     var region_pre := ws.fetch(REGION_PRE).find(cont);
     var region_start := ws.fetch(REGION_START).find(cont);
     var region_end := ws.fetch(REGION_END).find(cont);
-    
-    var heights := ws.fetch(HEIGHT).fetch(cont);
-
     var unq := {count}(iter.reverse(), iter.tunique());
 
     var result := bat(oid,oid);
@@ -942,7 +939,7 @@ PROC standoff_@1_@2(BAT[void,oid] void_DOCnodes,
 		var cont := pre_cont.fetch(0);
 		pre_cont := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(cont);
-		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
+		    qn_nsloc := qn_nsloc.ord_uselect(loc+":"+ns);
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
 			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
@@ -965,7 +962,7 @@ PROC standoff_@1_@2(BAT[void,oid] void_DOCnodes,
 		var X_nsloc  := mposjoin(X_prop, X_cont, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
 		    X_cont   := nil;
-		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
+		var _X       := X_nsloc.ord_uselect(loc+":"+ns).reverse();
 		    X_nsloc  := nil;
 		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
                 if ( not(ordered(reverse(cands))) ) {

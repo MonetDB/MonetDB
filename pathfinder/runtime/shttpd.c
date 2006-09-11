@@ -119,6 +119,7 @@ typedef struct DIR {
 #include <dirent.h>
 #define	DIRSEP			'/'
 #define	O_BINARY		0
+#define closesocket(a)          close(a)
 #define	ERRNO			errno
 #define	WINAPI
 #define	LPTHREAD_START_ROUTINE	void * (*) (void *)

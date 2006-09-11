@@ -1930,14 +1930,14 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_cont, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_cont, ws.fetch(PRE_CONT)), "
-                                             "ws.fetch(QN_LOC_URI));\n"
-                    "temp1 := temp_str.ord_uselect(\"%s\"+str('\\1')+\"%s\").hmark(0@0);\n"
+                                             "ws.fetch(QN_URI_LOC));\n"
+                    "temp1 := temp_str.ord_uselect(\"%s:%s\").hmark(0@0);\n"
                     "temp_str := nil;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
-                    loc,ns);
+                    ns,loc);
         }
         else if (loc)
         {
@@ -2275,30 +2275,25 @@ castQName (opt_t *f, int rc)
     milprintf(f,
             /* string name is only translated into local name, because
                no URIs for the namespace are available */
-            "var prop_id := ws.fetch(QN_PREFIX_URI).fetch(WS).ord_uselect(\"\"+str('\\1')+\"\").mirror();\n"
-            "var prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
-            "prop_id := nil;\n"
+            "var prop_name := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);\n"
 
             /* find all strings which are not in the qnames of the WS */
-            "var str_oid := reverse(oid_str.tdiff(prop_name));\n"
-            "oid_str := nil;\n"
+            "oid_str := [+](\"::\", oid_str);\n"
+            "oid_str := oid_str.tdiff(prop_name).tmark(0@0);\n"
             "prop_name := nil;\n"
-            "oid_str := str_oid.mark(oid(ws.fetch(QN_LOC).fetch(WS).count())).reverse();\n"
-            "str_oid := nil;\n"
             /* add the strings as local part of the qname into the working set */
-            "ws.fetch(QN_LOC).fetch(WS).insert(oid_str);\n"
-            "var oid_str_ := oid_str.project(\"\");\n"
-            "ws.fetch(QN_URI).fetch(WS).insert(oid_str_);\n"
-            "ws.fetch(QN_PREFIX).fetch(WS).insert(oid_str_);\n"
-            "oid_str_ := oid_str_.[+](str('\\1')+\"\");\n"
-            "ws.fetch(QN_PREFIX_URI).fetch(WS).insert(oid_str_);\n"
-            "oid_str_ := oid_str.[+](oid_str_);\n"
-            "ws.fetch(QN_LOC_URI).fetch(WS).insert(oid_str_);\n"
-            "oid_str_ := nil;\n"
+            "ws.fetch(QN_LOC).fetch(WS).append(oid_str);\n"
+            "oid_str := [+](\":\",oid_str);\n"
+            "ws.fetch(QN_URI_LOC).fetch(WS).append(oid_str);\n"
+            "oid_str := [+](\":\",oid_str);\n"
+            "ws.fetch(QN_PREFIX_URI_LOC).fetch(WS).append(oid_str);\n"
+            "oid_str := oid_str.project(\"\");\n"
+            "ws.fetch(QN_URI).fetch(WS).append(oid_str);\n"
+            "ws.fetch(QN_PREFIX).fetch(WS).append(oid_str);\n"
             "oid_str := nil;\n"
 
             /* get all the possible matching names from the updated working set */
-            "prop_id := ws.fetch(QN_PREFIX_URI).fetch(WS).ord_uselect(\"\"+str('\\1')+\"\").mirror();\n"
+            "prop_id := ws.fetch(QN_PREFIX_URI).fetch(WS).ord_uselect(\":\").mirror();\n"
             "prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil;\n"
 
@@ -2403,7 +2398,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* use iter, qn and cont to find unique combinations */
                 "if (_r_attr_iter.count() != 0) { # test uniqueness\n"
                 "var sorting := _r_attr_iter.tsort();\n"
-                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_cont,ws.fetch(QN_LOC_URI)));\n"
+                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_cont,ws.fetch(QN_URI_LOC)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "sorting := nil;\n"
                 /* test uniqueness */
@@ -2556,14 +2551,6 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "[int](content_kind), content_prop, content_pre, content_cont_pre);\n"
                 */
     
-                /* get the maximum level of the new constructed nodes
-                   and set the maximum of the working set */
-                "{\n"
-                "var height := int(content_level.max()) + 1;\n"
-                "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), height));\n"
-                "height := nil;\n"
-                "}\n"
-    
                 /* calculate the sizes for the root nodes */
                 "var contentRoot_size := mposjoin(node_items, node_conts, "
                                                  "ws.fetch(PRE_SIZE)).[+](1);\n"
@@ -2699,25 +2686,6 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);\n"
                 "ws.fetch(PRE_CONT).fetch(WS).insert(root_cont);\n"
-                "{\n"
-                "  var knd := ELEMENT;\n"
-                "  while ( knd <= DOCUMENT ) {\n"
-                "    var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(WS);\n"
-                "    var sqb := oid(int(seqbase(knd_nid)) + count(knd_nid));\n"
-                "    var knd_nid_ := root_kind.ord_uselect(knd).mark(sqb).reverse().chk_order();\n"
-                "    knd_nid.insert(knd_nid_);\n"
-                "    if ( (knd = ELEMENT) or (knd = PI) ) {\n"
-                "      var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(WS);\n"
-                "      var knd_prop_ := knd_nid.leftjoin(root_prop).chk_order();\n"
-                "      if ((htype(knd_prop_) != 0) or (head(knd_prop_) != \"void\")) {\n"
-                "          ERROR(\"milprint_summer.c: loop_liftedElemConstr(1): htype(knd_prop_) = %%d, head(knd_prop_) = %%s !\\n\",\n"
-                "                htype(knd_prop_), head(knd_prop_));\n"
-                "      }\n"
-                "      knd_prop.insert(knd_prop_);\n"
-                "    }\n"
-                "    knd :+= chr(1);\n"
-                "  }\n"
-                "}\n"
     
                 /* printing output for debugging purposes */
                 /*
@@ -2736,14 +2704,11 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "root_kind := nil;\n"
                 "root_cont := nil;\n"
     
-                /* adding the new constructed roots to the WS_FRAG bat of the
+                /* adding the new constructed roots to the FRAG_ROOT bat of the
                    working set, that a following (preceding) step can check
                    the fragment boundaries */
-                "{  # adding new fragments to the WS_FRAG bat\n"
-                "var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));\n"
-                "var new_pres := roots.tmark(seqb);\n"
-                "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
-                "}\n"
+                "# adding new fragments to the _FRAG_ROOT bat\n"
+                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(roots.project(oid_nil)));\n"
                );
     
                 /* return the root elements in iter|pos|item|kind representation */
@@ -2811,16 +2776,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var attr_qn_ := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN));\n"
                 "var attr_qn_cont := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_CONT));\n"
                 "var sorting := attr_iter.tsort();\n"
-                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_cont,ws.fetch(QN_LOC_URI)));\n"
+                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_cont,ws.fetch(QN_URI_LOC)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "attr_qn_ := nil;\n"
                 "sorting := nil;\n"
-                /* 
-                "var unq_attrs := CTgroup(attr_iter).CTmap()"
-                                 ".CTgroup(mposjoin(attr_item, attr_cont, ws.fetch(ATTR_QN))).CTmap()"
-                                 ".CTgroup(mposjoin(attr_item, attr_cont, ws.fetch(ATTR_CONT)))"
-                                 ".CTextend();\n"
-                */
                 /* test uniqueness */
                 "if (unq_attrs.count() != attr_iter.count())\n"
                 "{\n"
@@ -2924,35 +2883,11 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "ws.fetch(PRE_KIND).fetch(WS).insert(_elem_kind);\n"
             "ws.fetch(PRE_PROP).fetch(WS).insert(_elem_prop);\n"
             "ws.fetch(PRE_CONT).fetch(WS).insert(_elem_cont);\n"
-            "{\n"
-            "  var knd := ELEMENT;\n"
-            "  while ( knd <= DOCUMENT ) {\n"
-            "    var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(WS);\n"
-            "    var sqb := oid(int(seqbase(knd_nid)) + count(knd_nid));\n"
-            "    var knd_nid_ := _elem_kind.ord_uselect(knd).mark(sqb).reverse().chk_order();\n"
-            "    knd_nid.insert(knd_nid_);\n"
-            "    if ( (knd = ELEMENT) or (knd = PI) ) {\n"
-            "      var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(WS);\n"
-            "      var knd_prop_ := knd_nid.leftjoin(_elem_prop).chk_order();\n"
-            "      if ((htype(knd_prop_) != 0) or (head(knd_prop_) != \"void\")) {\n"
-            "          ERROR(\"milprint_summer.c: loop_liftedElemConstr(1): htype(knd_prop_) = %%d, head(knd_prop_) = %%s !\\n\",\n"
-            "                htype(knd_prop_), head(knd_prop_));\n"
-            "      }\n"
-            "      knd_prop.insert(knd_prop_);\n"
-            "    }\n"
-            "    knd :+= chr(1);\n"
-            "  }\n"
-            "}\n"
+
             /* save the new roots for creation of the intermediate result */
             "var roots := _elem_level.ord_uselect(chr(0));\n"
             "roots := roots.hmark(0@0);\n"
 
-            /* get the maximum level of the new constructed nodes
-               and set the maximum of the working set */
-            "{\n"
-            "var height := int(_elem_level.max());\n"
-            "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), height));\n"
-            "}\n"
             /* resetting the temporary variables */
             "_elem_level := nil;\n"
             "_elem_size := nil;\n"
@@ -2960,14 +2895,12 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "_elem_kind := nil;\n"
             "_elem_cont := nil;\n"
 
-            /* adding the new constructed roots to the WS_FRAG bat of the
+            /* adding the new constructed roots to the FRAG_ROOT bat of the
                working set, that a following (preceding) step can check
                the fragment boundaries */
-            "{  # adding new fragments to the WS_FRAG bat\n"
-            "var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));\n"
-            "var new_pres := roots.tmark(seqb);\n"
-            "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
-            "}\n"
+            "# adding new fragments to the _FRAG_ROOT bat\n"
+            "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(roots.project(oid_nil)));\n"
+
             /* return the root elements in iter|pos|item|kind representation */
             /* should contain for each iter exactly 1 root element
                unless there is a thinking error */
@@ -3176,23 +3109,13 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "}\n"
                 "item := item%s.mark(seqb);\n"
                 "kind := ELEM;\n"
-                "} # end of adding new strings to text node content and create new nodes\n"
        
-                /* adding the new constructed roots to the WS_FRAG bat of the
-                   working set, that a following (preceding) step can check
-               the fragment boundaries */
-                "{ # adding new fragments to the WS_FRAG bat\n"
-                "var seqb := ws.fetch(WS_FRAG).fetch(WS).count();\n"
-                "seqb := oid(seqb);\n"
-                "var new_pres := item.tmark(seqb);\n"
-                "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
-                /* get the maximum level of the new constructed nodes
-                   and set the maximum of the working set */
-                "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));\n",
+                /* add the new constructed roots to the FRAG_ROOT bat of the working set, and adapt max height */ 
+                "ws.fetch(FRAG_ROOT).fetch(WS).insert(reverse(item.project(oid_nil)));\n",
                 kind_str(rc));
     }
     milprintf(f,
-            "} # end of adding new fragments to the WS_FRAG bat\n");
+            "} # end of adding new strings to text node content and create new nodes\n");
 
 }
 
@@ -3999,7 +3922,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
             "if (bit(count(emptyseqs))) {\n"
             "  item := loop%03u.tmark(oid(nil)).outerjoin(reverse(iter)).outerjoin(item).seqbase(0@0);\n"
             "  iter := loop%03u.tmark(0@0);\n"
-            "  ipik := iter;\n"
+            "  ipik := item;\n"
             "  item.access(BAT_WRITE).replace(emptyseqs.project(0@0)).access(BAT_READ);\n"
             "}\n", cur_level, cur_level);
 
@@ -6235,16 +6158,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOCID_NAME))@batloop () {\n"
-                "    time_shred :+= add_doc(ws, $t);\n"
-                "}\n"
-                "item := item%s.leftjoin(reverse(ws.fetch(DOCID_NAME))); # get doc-oids first\n"
-                "kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);\n"
-                "item := item.leftfetchjoin(ws.fetch(DOCID_OID)).leftjoin(doc_root).tmark(0@0);\n"
-                "} # end of translate fn:doc (string?) as document?\n",
-                item_ext,
-                (rc)?"":val_join(STR),
-                (rc)?item_ext:val_join(STR));
+                "  var t := time();\n"
+                "  var r := ws_doc(ws, item%s);\n"
+                "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
+                "  item  := r.hmark(0@0);\n"
+                "  time_shred :+= time() - t;\n"
+                "} # end of translate fn:doc (string?) as document?\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
@@ -6333,55 +6252,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # fn:root ()\n"
                 "var cont := kind.get_container();\n"
-                /* get pre values for attributes */
-                "kind := kind.materialize(ipik);\n"
-                "var attr := kind.get_type(ATTR).hmark(0@0);\n"
-                "if (attr.count() != 0) {\n"
-                "var attr_cont := attr.leftfetchjoin(cont);\n"
-                "var attr_item := attr.leftfetchjoin(item);\n"
-                "var attr_iter := attr.leftfetchjoin(iter);\n"
-                "attr := nil;\n"
-                "var attr_pre := mposjoin(attr_item, attr_cont, ws.fetch(ATTR_OWN));\n"
-                "attr_item := nil;\n"
-                "attr_cont := nil;\n"
-                "var elem := kind.get_type(ELEM).hmark(0@0);\n"
-                "var elem_item := elem.leftfetchjoin(item);\n"
-                "var elem_iter := elem.leftfetchjoin(iter);\n"
-                "elem := nil;\n"
-                "var res_mu := merged_union(elem_iter, attr_iter, elem_iter, attr_pre);\n"
-                "item := res_mu.fetch(1);\n" /* CONST? */
-                "}\n"
-
-                "var transient_nodes := cont.ord_uselect(WS).hmark(0@0);\n"
-                /* retrieve only transient nodes */
-                "if (transient_nodes.count() = iter.count()) {\n"
-                "item := leftthetajoin(item, "
-                                      "ws.fetch(WS_FRAG).fetch(WS).reverse().mirror(), "
-                                      "GE).{max}();\n"
-                "item := item.tmark(0@0);\n"
-                /* retrieve only document nodes */
-                "} else { if (transient_nodes.count() = 0) {\n"
-                "item := 0@0;\n"
-                /* retrieve transient and document nodes */
-                "} else {\n"
-                "var t_item := transient_nodes.leftfetchjoin(item);\n"
-                "var t_iter := transient_nodes.leftfetchjoin(iter);\n"
-                "t_item := leftthetajoin(t_item, "
-                                        "ws.fetch(WS_FRAG).fetch(WS).reverse().mirror(), "
-                                        "GE).{max}();\n"
-                "t_item := t_item.tmark(0@0);\n"
-
-                "var doc_nodes := cont.ord_uselect(WS,nil,false,false).hmark(0@0);\n"
-                "var d_iter := doc_nodes.leftfetchjoin(iter);\n"
-                "var d_kind := doc_nodes.leftfetchjoin(kind);\n"
-
-                "var res_mu := merged_union(d_iter, t_iter, 0@0, t_item, d_kind, ELEM);\n"
-                "iter := res_mu.fetch(0);\n" /* CONST? */
-                "ipik := iter;\n"
-                "pos := 0;\n"
-                "item := res_mu.fetch(1);\n"
-                "kind := res_mu.fetch(2);\n"
-                "} }\n"
+                "item := get_root(ws, item, kind, cont);\n"
+                "kind := set_kind(cont,NODE);\n"
                 "} # end of fn:root ()\n");
         return NORMAL;
     }
@@ -7742,7 +7614,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"        var xdoc_name := bat(\"tj_\" + coll + \"_doc_name\");\n"
 		"        var xdoc_firstpre := bat(\"tj_\" + coll + \"_doc_firstpre\");\n"
 		"        var xpfpre := bat(\"tj_\" + coll + \"_pfpre\");\n"
-		"        var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+		"        var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
                 "        startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
 	        "    } else {\n"
                 "    startNodes := new(void,oid); }\n"
@@ -7761,12 +7633,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
                 "    item := item.join(pfpre).sort().tmark();\n"
                 "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
-                "    var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
+                "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
 		"    [add_doc](const ws, docs_to_load);\n"
 		"    docs_to_load := nil;\n"
 		"    loaded_docs := nil;\n"
-                "    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+		"    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
                 "    var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
                 "    frag := frag.join(fid_pffid).sort().tmark();\n");
 
@@ -8289,26 +8161,22 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 
             milprintf(f,
                     "{ # tagname-translation\n"
-                    "var propID := ws.fetch(QN_PREFIX_URI).fetch(WS)"
-                        ".ord_uselect(\"%s\"+str('\\1')+\"%s\").mirror();\n"
-                    "var prop_str := propID"
-                        ".leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
-                    "var itemID;\n",
-                    prefix, uri);
-
-            milprintf(f,
-                    "if (prop_str.texist(\"%s\"))\n"
-                    "{\n"
-                    "itemID := prop_str.reverse().find(\"%s\");\n"
+                    "var props := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);\n"
+                    "if (props.texist(\"%s:%s:%s\")) {\n"
+                    "    itemID := props.reverse().find(\"%s:%s:%s\");\n"
                     "} else { "
-                    "itemID := oid(ws.fetch(QN_LOC).fetch(WS).count());\n"
-                    "ws.fetch(QN_URI).fetch(WS).insert(itemID,\"%s\");\n"
-                    "ws.fetch(QN_PREFIX).fetch(WS).insert(itemID,\"%s\");\n"
-                    "ws.fetch(QN_LOC).fetch(WS).insert(itemID,\"%s\");\n"
-                    "ws.fetch(QN_PREFIX_URI).fetch(WS).insert(itemID,\"%s\"+str('\\1')+\"%s\");\n"
-                    "ws.fetch(QN_LOC_URI).fetch(WS).insert(itemID,\"%s\"+str('\\1')+\"%s\");\n"
+                    "    itemID := oid(props.count());\n"
+                    "    ws.fetch(QN_PREFIX).fetch(WS).insert(itemID,\"%s\");\n"
+                    "    ws.fetch(QN_URI).fetch(WS).insert(itemID,\"%s\");\n"
+                    "    ws.fetch(QN_LOC).fetch(WS).insert(itemID,\"%s\");\n"
+                    "    ws.fetch(QN_PREFIX_URI_LOC).fetch(WS).insert(itemID,\"%s:%s:%s\");\n"
+                    "    ws.fetch(QN_URI_LOC).fetch(WS).insert(itemID,\"%s:%s\");\n"
                     "}\nprop_str := nil;\n",
-                    loc, loc, uri, prefix, loc, prefix, uri, loc, uri);
+                    prefix, uri, loc, 
+                    prefix, uri, loc, 
+                    prefix, uri, loc, 
+                    prefix, uri, loc, 
+                    uri, loc);
 
             /* translateConst needs a bound variable itemID */
             translateConst (f, cur_level, "QNAME");
@@ -10681,7 +10549,7 @@ const char* PFstartMIL(void) {
         "time_exec := time();\n"
         "\n"
         "var err := CATCH({\n"
-        "  ws := create_ws();\n"
+        "  ws := ws_create();\n"
         "\n"
         "  # get full picture on var_usage (and sort it)\n"
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
@@ -10739,7 +10607,7 @@ static const char* _PFstopMIL(int statement_type) {
     }
     strcat(buf,
            "});\n"
-           "destroy_ws(ws);\n"
+           "ws_destroy(ws);\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
            "if (genType.startsWith(\"timing\"))\n"

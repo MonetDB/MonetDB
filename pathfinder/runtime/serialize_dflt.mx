@@ -93,7 +93,7 @@ typedef struct dflt_ws_t dflt_ws_t;
 static dflt_ws_t *
 new_dflt_ws ()
 {
-    dflt_ws_t *dflt_ws_ = malloc (sizeof (dflt_ws_t));
+    dflt_ws_t *dflt_ws_ = GDKmalloc (sizeof (dflt_ws_t));
 
     for(int i = 0; i < UCHAR_MAX; i++)
         /* special character mapping table */
@@ -286,7 +286,7 @@ esc_init (XqueryCtx* ctx, char* args, char *restag)
 static bool
 dflt_cleanup (XqueryCtx* ctx)
 {
-    free (dflt_ws);
+    GDKfree (dflt_ws);
 
     return SUCCESS;
 }
