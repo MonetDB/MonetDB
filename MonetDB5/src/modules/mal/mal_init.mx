@@ -85,6 +85,7 @@ include mat;
 include inspect;
 include manual;
 include language;
+include constraints;
 include mserver;
 
 include profiler;

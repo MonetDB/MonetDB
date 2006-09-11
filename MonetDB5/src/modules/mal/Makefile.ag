@@ -9,7 +9,7 @@ LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-		chopper.mx language.mx box.mx \
+		chopper.mx constraints.mx language.mx box.mx \
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  pbm.mx \
@@ -155,7 +155,7 @@ lib__statistics = {
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = language.mx mal_init.mx box.mx bbp.mx \
+	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx crackers.mx mal_io.mx \
 		chopper.mx clients.mx \
