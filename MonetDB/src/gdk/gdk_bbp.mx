@@ -2566,11 +2566,7 @@ static int
 heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 {
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on .priv heap modes */
-	if (hp->storage == STORE_MMAP) {
-		return 0;	/* memory mapped heaps under append need not be backed up! */
-	} else if (file_exists(dstdir, nme, ext)) {
-		return 0;	/* dont overwrite heap with the committed state already in dstdir */
-	} else if (hp->filename && hp->storage == STORE_PRIV) {
+	if (hp->filename && hp->storage == STORE_PRIV) {
 		long_str path;
 		struct stat st;
 
@@ -2587,7 +2583,9 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 			strcpy(kill_ext, ext);
 			strcat(kill_ext, ".kill");
 			GDKfilepath(path, dstdir, nme, kill_ext);
-			if ((fp = fopen(path, "w")) != NULL) {
+			fp = fopen(path, "w");
+			IODEBUG THRprintf(GDKerr, "open %s = %d\n", path, fp?0:-1);
+			if (fp != NULL) {
 				fclose(fp);
 				return 0;
 			} else {
@@ -2683,37 +2681,30 @@ BBPbackup(BAT *b, bit subcommit)
 	strcpy(nme, ++s);
 	srcdir[s - srcdir] = 0;
 
-	if (b->batDirty || b->batDirtydesc) {
-		/* if a backup exists we are done */
-		if (!file_exists(BAKDIR, nme, "desc")) 
-			ret |= file_move(srcdir, subcommit?SUBDIR:BAKDIR, nme, "desc");
-		if (ret & 1)
-			return -1;
+        if ((b->batDirty || b->batDirtydesc) && !file_exists(BAKDIR, nme, "desc")) {
+                /* file will be saved (is dirty), move the old image into backup */
+        	ret |= file_move(srcdir, subcommit?SUBDIR:BAKDIR, nme, "desc");
+	} else if (subcommit && (b->batDirty || b->batDirtydesc || file_exists(BAKDIR, nme, "desc"))) {
+                /* file is clean. move the backup into the subcommit dir (commit should eliminate backup) */
+		ret |= file_move(BAKDIR, SUBDIR, nme, "desc");
+        }
+	if (ret & 1) return -1;
+@= backup
+	if (b->@2 && b->@2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
+		str ext = (b->@2->filename && b->@2->storage == STORE_PRIV)?"@1.kill":"@1";
+		if ((@3) && !file_exists(BAKDIR, nme, ext)) { 
+                	/* file will be saved (is dirty), move the old image into backup */
+		        ret |= heap_move(b->@2, srcdir, subcommit?SUBDIR:BAKDIR, nme, "@1");
+       		} else if (subcommit && ((@3) || file_exists(BAKDIR, nme, ext))) {
+                	/* file is clean. move the backup into the subcommit dir (commit should eliminate backup) */
+			ret |= file_move(BAKDIR, SUBDIR, nme, ext);
+		}
+		if (ret & 1) return -1;
 	}
-	if (b->batDirty || b->batDirtybuns) {
-		if (subcommit && file_exists(BAKDIR, nme, "buns"))
-			ret |= file_move(BAKDIR, SUBDIR, nme, "buns");
-		else  
-			ret |= heap_move(b->batBuns, srcdir, subcommit?SUBDIR:BAKDIR, nme, "buns");
-		if (ret & 1)
-			return -1;
-	}
-	if ((b->batDirty || b->hheapdirty) && b->htype && b->hvarsized) {
-		if (subcommit && file_exists(BAKDIR, nme, "hheap"))
-			ret |= file_move(BAKDIR, SUBDIR, nme, "hheap");
-		else  
-			ret |= heap_move(b->hheap, srcdir, subcommit?SUBDIR:BAKDIR, nme, "hheap");
-		if (ret & 1)
-			return -1;
-	}
-	if ((b->batDirty || b->theapdirty) && b->ttype && b->tvarsized) {
-		if (subcommit && file_exists(BAKDIR, nme, "theap"))
-			ret |= file_move(BAKDIR, SUBDIR, nme, "theap");
-		else  
-			ret |= heap_move(b->theap, srcdir, subcommit?SUBDIR:BAKDIR, nme, "theap");
-		if (ret & 1)
-			return -1;
-	}
+@c
+        @:backup(buns,batBuns, b->batDirty || b->batDirtybuns)@
+        @:backup(hheap,hheap, (b->batDirty || b->hheapdirty) && b->htype && b->hvarsized)@
+        @:backup(theap,theap, (b->batDirty || b->theapdirty) && b->ttype && b->tvarsized)@
 	return 0;
 }
 @}

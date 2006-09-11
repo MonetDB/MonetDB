@@ -70,11 +70,6 @@ static int prelude(int cnt, bat* subcommit) {
 			}
 			if (b) {
 				BATcommit(b);
-
-				/* for subcommits, we try to save new bats before the next phase (BBPsync) */
-				if (subcommit && b->batPersistence == PERSISTENT && (BBP_status(bid) & BBPNEW)) {
-					if (BATsave(b) == NULL) return -1;
-				}
 			}
 		}
 	}
