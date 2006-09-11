@@ -208,14 +208,21 @@ static int
 log_read_format(logger *l, logformat *data)
 {
 	int res = 1;
+#if SIZEOF_OID == SIZEOF_INT 
+	int tmp = 0;
+#else
+	lng tmp = 0;
+#endif
 
 	if (stream_read(l->log, &data->flag, 1, 1) != 1)
 		return 0;
 	res = stream_readInt(l->log, &data->nr);
 #if SIZEOF_OID == SIZEOF_INT 
-	res = stream_readInt(l->log, (int *) &data->bid);
+	tmp = (int)data->bid;
+	res = stream_readInt(l->log, &tmp);
 #else
-	res = stream_readLng(l->log, (lng*)&data->bid);
+	tmp = (lng)data->bid;
+	res = stream_readLng(l->log, &tmp);
 #endif
 	return res;
 }
