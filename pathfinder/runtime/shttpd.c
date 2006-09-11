@@ -224,7 +224,7 @@ struct conn {
 	time_t		birth;		/* Creation time */
 	time_t		expire;		/* Expiration time */
 	time_t		ims;		/* If-Modified-Since: */
-	int		sock;		/* Remote socket */
+	SOCKET		sock;		/* Remote socket */
 	int		reqlen;		/* Request length */
 	unsigned	status;
 	unsigned	http_method;	/* HTTP method */
@@ -259,8 +259,8 @@ struct conn {
 
 	int		rfd;		/* Opened read file descr */
 	int		wfd;		/* Opened write file descr */
-	int		cgisock;	/* Socket to CGI script */
-	int		dummy[2];	/* Used to fake IO */
+	SOCKET		cgisock;	/* Socket to CGI script */
+	SOCKET		dummy[2];	/* Used to fake IO */
 	struct stat	st;		/* Stats of requested file */
 	DIR		*dirp;		/* Opened directory */
 	unsigned char	flags;		/* Flags */
@@ -276,7 +276,7 @@ struct conn {
 
 #ifdef _WIN32
 	HANDLE		hChild;		/* Spawned CGI process */
-	int		childsock;	/* Child's socket */
+	SOCKET		childsock;	/* Child's socket */
 #endif /* _WIN32 */
 };
 
@@ -399,12 +399,12 @@ static int	ncasecmp(register const char *, register const char *, size_t);
 static char	*mystrdup(const char *str);
 static int	myopen(const char *path, int flags, int mode);
 static int	mystat(const char *path, struct stat *stp);
-static int	mysocketpair(int sp[2]);
+static int	mysocketpair(SOCKET sp[2]);
 static int	setdummy(struct conn *c);
 static void	disconnect(struct conn *c, struct conn *prev);
 static int	writeremote(struct conn *c, const char *buf, size_t len);
 static int	readremote(struct conn *c, char *buf, size_t len);
-static int	nonblock(int fd);
+static int	nonblock(SOCKET fd);
 static void	newconnection(shttpd_socket* ctx, int sock, struct usa *);
 static int	getreqlen(const char *buf, size_t buflen);
 static void	log_access(const struct conn *c);
@@ -869,10 +869,11 @@ mystat(const char *path, struct stat *stp)
  * Return 0 on success, -1 on error
  */
 static int
-mysocketpair(int sp[2])
+mysocketpair(SOCKET sp[2])
 {
 	struct sockaddr_in	sa;
-	int			sock, ret = -1;
+	SOCKET			sock;
+	int			ret = -1;
 	socklen_t		len = sizeof(sa);
 
 	(void) memset(&sa, 0, sizeof(sa));
@@ -1080,7 +1081,7 @@ readremote(struct conn *c, char *buf, size_t len)
  * Return 0 if success, or -1
  */
 static int
-nonblock(int fd)
+nonblock(SOCKET fd)
 {
 #ifdef	_WIN32
 	unsigned long	on = 1;
@@ -1108,7 +1109,8 @@ shttpd_socket
 shttpd_open_port(int port)
 {
     shttpd_socket ret;
-	int		sock, on = 1;
+    SOCKET		sock;
+    int			on = 1;
 	struct usa	sa;
 
     memset(&ret, 0, sizeof(shttpd_socket));
@@ -2219,10 +2221,10 @@ checkauth(struct conn *c, const char *file)
 static int
 redirect(struct conn *c, char *prog, char *envblk, char **envp)
 {
-	int			pair[2];
+	SOCKET			pair[2];
 	char			dir[FILENAME_MAX], *p;
 #ifdef _WIN32
-	int			sock;	/* non-inheritable copy */
+	SOCKET			sock;	/* non-inheritable copy */
 	char			cmdline[FILENAME_MAX], line[FILENAME_MAX];
 	FILE			*fp;
 	STARTUPINFO		si;

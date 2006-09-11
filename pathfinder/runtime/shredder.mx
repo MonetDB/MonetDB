@@ -259,7 +259,7 @@ typedef struct shredBAT {
     shredBATdef     *def; /* pointer to static properties */
     oid             cnt;  /* current #of elements in the BAT */
     oid             dupl; /* the number of duplicate BUNins so far */
-    off_t           size; /* current maximum size of the BAT */
+    size_t          size; /* current maximum size of the BAT */
     BAT             *bat; /* the physical BAT */
     /* */
     union { /* cast to perform direct indexex insert in [void,any] BATs */
@@ -313,12 +313,12 @@ typedef struct shredCtxStruct {
     int         content;	    /* content ptr in char buff */
     char        *content_buf;   /* character buffer */
     /* */
-    off_t       fileSize;       /* size of the input file */
-    off_t       estSize;        /* extimated number of pre nodes */
+    size_t      fileSize;       /* size of the input file */
+    size_t      estSize;        /* extimated number of pre nodes */
     shredBAT    dstBAT[SHRED_BATS]; /* all the result BATs */
     BAT*        pfxlocBAT;      /* the BAT to compress NS and LOC */
     int         pfxlocDUPL;     /* the number of duplicates pfxlocs */
-    off_t       pageFree;       /* number of tuples per page to leave empty */
+    size_t      pageFree;       /* number of tuples per page to leave empty */
     				/* */
     specAttrDbStr	specAttrDb;	/* the database containing the 
                                  * ID|IDREF|IDREFS attributes
@@ -337,7 +337,7 @@ typedef struct shredCtxStruct {
 #define MINCHUNK        1024
 
 
-static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pageFree, struct serializeFunStruct* serFun, struct XqueryCtx* serCtx) {
+static shredCtxStruct *createShredCtx(char* location, size_t fileSize, size_t pageFree, struct serializeFunStruct* serFun, struct XqueryCtx* serCtx) {
     int i;
 
     shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
@@ -669,7 +669,7 @@ int isURL(char* location) {
 
 #define DEFAULT_ESTIMATE	1048576
 
-off_t  fileSize(char* location) {
+size_t fileSize(char* location) {
     /* buffer for file I/O status */
     struct stat statbuf;
 
@@ -677,12 +677,12 @@ off_t  fileSize(char* location) {
         if (stat (location, &statbuf) < 0) {
             GDKerror("shredder.mx:fileSize: cannot stat `%s': %s\n",
                     location, strerror (errno));
-            return ~(off_t)0;
+            return ~(size_t)0;
         } else
             return statbuf.st_size;
     } else {
         /* INCOMPLETE, return an estimate of the size of the XML file */
-        return ~(off_t)DEFAULT_ESTIMATE;
+        return ~(size_t)DEFAULT_ESTIMATE;
     }
 }
 
@@ -738,15 +738,15 @@ shred_doc_or_docseq(
         return GDK_FAIL;
     }
 
-    off_t estimatedSize;
+    size_t estimatedSize;
 
     if ( docseq == NULL ) {
         if (strcmp(buffer, str_nil) != 0)
             estimatedSize = strlen(buffer);
-        else if ( (estimatedSize = fileSize(location)) == ~(off_t)0 )
+        else if ( (estimatedSize = fileSize(location)) == ~(size_t)0 )
             return GDK_FAIL;
     } else {
-        estimatedSize = (off_t)DEFAULT_ESTIMATE;
+        estimatedSize = (size_t)DEFAULT_ESTIMATE;
     }
 
     if ( !(shredCtx = createShredCtx(location,estimatedSize,pageFree,serFun,serCtx)) )
@@ -825,10 +825,10 @@ EXTshred_and_index_doc(str location, str opt, struct serializeFunStruct* serFun,
     return shred_doc_or_docseq(NULL,location,"",NULL,NULL,opt,serFun,serCtx);
 }
 
-#define CHECK_BAT_SIZE(SB,I)    if ( ((off_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return oid_nil; 
+#define CHECK_BAT_SIZE(SB,I)    if ( ((size_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return oid_nil; 
 
-static int incrBATsize(shredBAT* sb, off_t i) {
-    off_t maxsize = MAX(sb->size,i), newsize = maxsize+MAX(MINCHUNK,maxsize/4);
+static int incrBATsize(shredBAT* sb, size_t i) {
+    size_t maxsize = MAX(sb->size,i), newsize = maxsize+MAX(MINCHUNK,maxsize/4);
 
     /* first check if the number of BUN's < INT_MAX. If this was the case
      * and the previous time INT_MAX was returned this means the BAT cannot
