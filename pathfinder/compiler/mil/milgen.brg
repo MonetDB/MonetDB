@@ -2052,12 +2052,12 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* Rel:      num_neg (Rel) */
         case 60:
-            return unary_op (PFmil_mneg, p);
+            unary_op (PFmil_mneg, p);
             break;
 
         /* Rel:      bool_not (Rel) */
         case 61:
-            return unary_op (PFmil_mnot, p);
+            unary_op (PFmil_mnot, p);
             break;
 
         /* Rel:      bool_and (Rel) */
@@ -3810,7 +3810,7 @@ bin_arith (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
     assert (ty == aat_int || ty == aat_dec || ty == aat_dbl ||
             ty == aat_str);
 
-    return bin_op (op, p, ty, ty);
+    bin_op (op, p, ty, ty);
 }
 
 /**
@@ -3884,9 +3884,9 @@ bin_comp (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
 
     if (ty & ~aat_node) {
         assert (ty == aat_int || ty == aat_dec || ty == aat_dbl || ty == aat_str);
-        return bin_op (op, p, ty, aat_bln);
+        bin_op (op, p, ty, aat_bln);
     } else if (ty == aat_pnode) {
-        return node_comp (op, p);
+        node_comp (op, p);
     } else
         PFoops (OOPS_FATAL,
                 "Mil implementation of binary comparison for type %i unknown",
@@ -3905,7 +3905,7 @@ bin_bool (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
     assert (ty == type_of (L(p), p->sem.binary.att2));
     assert (ty == aat_bln);
 
-    return bin_op (op, p, ty, aat_bln);
+    bin_op (op, p, ty, aat_bln);
 }
 
 /**
@@ -3956,7 +3956,7 @@ bin_arith_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     assert (ty == aat_int || ty == aat_dec || ty == aat_dbl);
     assert (ty == p->sem.bin_atom.att2.type);
 
-    return bin_op_atom (op, p, ty, ty);
+    bin_op_atom (op, p, ty, ty);
 }
 
 static void
@@ -3968,7 +3968,7 @@ bin_comp_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     assert (ty == aat_int || ty == aat_dec || ty == aat_dbl || ty == aat_str);
     assert (ty == p->sem.bin_atom.att2.type);
 
-    return bin_op_atom (op, p, ty, aat_bln);
+    bin_op_atom (op, p, ty, aat_bln);
 }
 
 static void
@@ -3980,7 +3980,7 @@ bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     assert (ty == aat_bln);
     assert (ty == p->sem.bin_atom.att2.type);
 
-    return bin_op_atom (op, p, ty, aat_bln);
+    bin_op_atom (op, p, ty, aat_bln);
 }
 
 /**
