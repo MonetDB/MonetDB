@@ -485,6 +485,7 @@ SQLstatementIntern(str *ret, str *expr, str nme, int execute)
 	sql = backend_create(m, c);
 	m->qc = NULL;
 	m->cache = 0;
+	m->user_id = m->role_id = USER_MONETDB;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
