@@ -17,7 +17,6 @@
 # All Rights Reserved.
 
 SQL='MapiClient -lsql -umonetdb -Pmonetdb'
-SQL1='MapiClient -lsq -uromulo -Promulo'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
@@ -66,6 +65,3 @@ $SQL < marcin3.sql
 echo "cast_str2num"
 $SQL < cast_str2num.sql
 
-echo "internStmt"
-$SQL < internStmt_1.sql
-$SQL1 < internStmt_2.sql
