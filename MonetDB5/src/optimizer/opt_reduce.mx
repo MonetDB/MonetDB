@@ -108,7 +108,8 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* build the use table */
 	for(i=0; i<mb->stop; i++){
 		q= getInstrPtr(mb,i);
-		for(j= 0; j<q->argc; j++)
+
+		for(j=0; j<q->argc; j++)
 			used[getArg(q,j)]= 1;
 	}
 	/* build the alias table */

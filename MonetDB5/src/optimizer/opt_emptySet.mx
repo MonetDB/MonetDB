@@ -108,7 +108,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 static int
 ESevaluate(MalBlkPtr mb, char *empty)
 {
-	int i, j, k, actions = 0;
+	int i, j, actions = 0;
 	InstrPtr p;
 	str likeRef = getName("like", 4);
 	str existRef = getName("exist", 5);
@@ -120,32 +120,37 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	str kintersectRef = getName("kintersect", 10);
 	str fragmentRef = getName("fragment", 8);
 
+	int limit = mb->stop;
+	InstrPtr *old = mb->stmt;
+
+	newMalBlkStmt(mb, mb->stop); /* a new statement stack */
+
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
-	for (i = k = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb,i);
-		mb->stmt[k++] = p;
+	for (i = 0; i < limit; i++) {
+		char *f;
+		p = old[i];
+
+		pushInstruction(mb,p);
 @-
 The bulk of the intelligence lies in inspecting calling
 sequences to filter and replace calls with empty arguments.
 @c
-		for (j = p->retc; j < p->argc; j++)
+ 		f = getFunctionId(p);
+		if (getModuleId(p) == sqlRef && 
+		    empty[getArg(p,0)] &&
+		   (f == bindRef || f == bindidxRef || f == binddbatRef)){
+			InstrPtr q;
+
+			q = newStmt(mb, "constraints", "emptySet");
+			q = pushArgument(mb, q, getArg(p,0) );
+			continue;
+		} 
+
+		for (j = p->retc; j < p->argc; j++) {
+
 			if (empty[getArg(p, j)]) {
-				char *f = getFunctionId(p);
 				/* decode operations */
-				if (getModuleId(p) == batRef) {
-					if (f == insertRef || 
-					    f == deleteRef || 
-					    f == appendRef) {
-						if (j == 2) {
-							/* represents an empty bulk update */
-							/* which does not produce a result */
-							freeInstruction(p);
-							k--;
-						}
-					}
-					break;
-				} 
 				if (getModuleId(p)== algebraRef) {
 					if (f == existRef) {
 						/* always false */
@@ -157,9 +162,6 @@ sequences to filter and replace calls with empty arguments.
 						actions++;
 						break;
 					} 
-					/*if ( f == uselectRef )
-						change into project(nil) 
-					*/
 					if ( f == selectRef || 
 					     f == tuniqueRef || 
 					     f == likeRef  || 
@@ -196,21 +198,11 @@ sequences to filter and replace calls with empty arguments.
 						}
 						break;
 					} 
-					if (f == countRef) {
-						/* count propagation */
-						setModuleId(p, NULL);
-						setFunctionId(p, NULL);
-						p->argc = 1;
-						p->token = ASSIGNsymbol;
-						pushLng(mb,p,0);
-						actions++;
-						break;
-					}
-					/* CONTINUE WITH THETA JOIN */
 				}
 			}
+		}
 	}
-	mb->stop= k;
+	GDKfree(old);
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);

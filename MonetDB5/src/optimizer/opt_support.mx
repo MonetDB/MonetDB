@@ -1126,6 +1126,10 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p) == resultSetRef) return FALSE;
 		return TRUE;
 	}
+	if( getModuleId(p) == languageRef){
+		if( getFunctionId(p) == assertRef) return TRUE;
+		return FALSE;
+	}
 	if( getModuleId(p) == mserverRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
