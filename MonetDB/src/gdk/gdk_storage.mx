@@ -336,11 +336,14 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 				}
 				if (n_expected > 0) { 
 					GDKfree(ret);
+					GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext?ext:"", (size_t) n_expected);
 					ret = NULL; 
 				}
 			}
 			close(fd);
-		}
+		} else {
+			GDKsyserror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext?ext:"");
+                }
 	} else {
 		char path[PATHLENGTH];
 		struct stat st;
@@ -364,7 +367,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 			if (mode == STORE_PRIV) mod |= MMAP_COPY;
 			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize, (void *) 0);
 			if (ret == (char *) -1L) {
-				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext ? ext : "");
+				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
 				ret = NULL;
 			}
 			IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
