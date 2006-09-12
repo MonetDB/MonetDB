@@ -262,6 +262,9 @@ Care should be taken in marking the delta bats as empty, because their
 purpose is to fill them during the query. Therefore, we keep track
 of all bound tables and mark them not-empty when a direct update
 takes place using append().
+
+The bind operations are also moved into the front to ensure
+binding errors and assertions to be tested quickly.
 @c
 int
 SQLgetStatistics(mvc *m,MalBlkPtr mb)
@@ -271,8 +274,10 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb)
 	BAT *b;
 	lng clk = GDKusec();
 	lng *count = (lng*) alloca(sizeof(lng)* mb->vtop);
+	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
+	int n=1,rtop=0;
 
-	for(i=0; i<mb->stop; i++){
+	for(i=1; i<mb->stop; i++){
 		InstrPtr p = getInstrPtr(mb,i);
 		char *f = getFunctionId(p);
 
@@ -283,6 +288,7 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb)
 		if( getModuleId(p)== sqlRef && 
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
 
+			mb->stmt[n++]=p;
 			if( f == binddbatRef)
 				b= mvc_bind_dbat(m, 
 				getVarConstant(mb, getArg(p,1)).val.sval,
@@ -318,11 +324,16 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb)
 		} else if( getModuleId(p) == sqlRef && 
 		    (f == appendRef || f == appendidxRef) ){
 			res = 1;
+			rest[rtop++]= p;
 		} else if (getModuleId(p) == batRef &&
 		    (f == appendRef || f == insertRef || deleteRef) ){
 			res = 1;
-		}
+			rest[rtop++]= p;
+		} else
+			rest[rtop++]= p;
 	}
+	/* move remainder again into place */
+	memcpy((char*)(mb->stmt+n),(char*)rest, sizeof(InstrPtr)*rtop);
 	optimizerCheck(mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 	return res;
 }
