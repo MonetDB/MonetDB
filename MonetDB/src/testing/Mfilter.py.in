@@ -60,7 +60,7 @@ test = (
 ##                    r"^Mcreatedb: using default dbdir ",
 ##                    r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$",
 ##                    r"^Mcreatedb: database .* has been initialized succesfully!$",
-                      r"^[Uu]sage: (?:/.*/)?(?:lt-)?(?:Mserver|MapiClient)(?: \[ options \])?(?: \[ script\+ \])? *$",
+                      r"^[Uu]sage: (?:/.*/)?(?:lt-)?(?:Mserver|MapiClient|msqldump)(?: \[ options \])?(?: \[ script\+ \])? *$",
                       r"^!WARNING: GDKlockHome: created directory .*$",
                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$",
                       r"^!WARNING: BBPdir: initializing BBP.$",
