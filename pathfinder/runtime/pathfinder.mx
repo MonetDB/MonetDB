@@ -66,8 +66,9 @@ module(mapi);       # remote client access
 
 # standoff extensions
 var standoff := false;
-if (monet_environment.exist("standoff"))
+if (monet_environment.exist("standoff")) {
      standoff := =(monet_environment.find("standoff"),"enabled"); 
+}
 
 if (standoff) {
     module("pf_standoff");
@@ -246,8 +247,6 @@ PROC xquery_server_start() : void {
 # bats are not views, and their CONT values refer to other containers.
 
 
-module(pf_support); 
-
 @- ws definition
 
 This macro is used for the MIL const defs, the C const defs,
@@ -313,7 +312,7 @@ concurrent updates.
 
 @:ws_@1(_MAP_PID,          38, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(_RID_SIZE,         39, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        30, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        40, void, bat, void,  chr, PRE_BASE)@
 @:ws_@1(_RID_PROP,         41, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(_RID_KIND,         42, void, bat, void,  chr, PRE_BASE)@
 @:ws_@1(_RID_NID,          43, void, bat, void,  oid, PRE_BASE)@
@@ -815,8 +814,7 @@ PROC __ws_addcoll(BAT[void,bat] ws,
 
 PROC ws_addcoll(BAT[void,bat] ws, 
                 BAT[str,bat] docBAT, 
-                str name, oid 
-                coll_oid) : oid
+                str name, oid coll_oid) : oid
 {
     var err, cont, coll_lock, runtime := empty_runtime;
 

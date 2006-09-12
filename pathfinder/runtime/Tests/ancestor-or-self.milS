@@ -1,6 +1,6 @@
 module(pathfinder);
 
-var ws := create_ws();
+var ws := ws_create();
 add_doc(ws, "foo.xml");
 add_doc(ws, "http://bstore1.example.com/bib.xml");
                                                                                                                                                              

@@ -406,7 +406,6 @@ module("monettime");
 module("lock");
 
 # global constants using in the MIL translation
-const empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 const empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);
 const EMPTY_STRING := 0@0;
 const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
