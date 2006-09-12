@@ -311,44 +311,16 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb)
 				setProperty(getProps(k),"bid", "=", TYPE_int, &b->batCacheid);
 
 				BBPunfix(b->batCacheid);
-			}
-		} else if( getModuleId(p)== sqlRef && 
-		    (f == appendRef || f == appendidxRef) ){
-			res = 1;
-			count[getArg(p,0)] = count[getArg(p,1)] + 1;
-		} else if (getModuleId(p)== algebraRef) { 
-			if ((f == selectRef || f == uselectRef ||
-			     f == markTRef || f == markHRef ||
-			     f == tuniqueRef || 
-			     f == sortRef || f == sortTailRef || 
-			     f == sortHTRef || f == sortTHRef || 
-			     f == semijoinRef ||
-			     f == differenceRef || f == kdifferenceRef))
-				count[getArg(p,0)] = count[getArg(p,1)];
-			else if (f == sunionRef || f == kunionRef || 
-				 f == unionRef || f == joinRef ||
-				 f == crossRef)
-				count[getArg(p,0)] = count[getArg(p,1)] +
-						     count[getArg(p,2)]; 
-		} else if (getModuleId(p)== batcalcRef) {
-				count[getArg(p,0)] = count[getArg(p,1)];
-		} else if (getModuleId(p)== batRef) {
-			if (f == reverseRef || f == mirrorRef)
-				count[getArg(p,0)] = count[getArg(p,1)];
-			else if (f == appendRef || f == insertRef || deleteRef){
-				res = 1;
-				count[getArg(p,0)] = count[getArg(p,1)] + 1;
-			}
-		}
-		if (p->retc) {
-			k = getArg(p,0);
-			if (count[k] != -1) {
-				lng rows = count[k];
-				if (mb->var[k]->props == 0)
-					mb->var[k]->props = newPropertySet();
+
 				setProperty(getProps(k),"rows", "=", TYPE_lng, &rows);
 				actions++;
 			}
+		} else if( getModuleId(p) == sqlRef && 
+		    (f == appendRef || f == appendidxRef) ){
+			res = 1;
+		} else if (getModuleId(p) == batRef &&
+		    (f == appendRef || f == insertRef || deleteRef) ){
+			res = 1;
 		}
 	}
 	optimizerCheck(mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
@@ -410,8 +382,10 @@ care of.
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 		/* if there are no updates, do the emptySet optimizer */
-		if (!SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb)) 
+		if (!SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb)) {
+			OPTcostModel(mb,0,0); /* propagate costs */
 			OPTemptySet(mb,0,0);  /* remove empty results */
+		}
 		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
 
 		OPTcoercion(mb,0,0);	/* coercions */

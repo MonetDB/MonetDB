@@ -194,7 +194,7 @@ The dump_cols produces a sequence of instructions for
 the front-end to prepare presentation of a result table (bat).
 @c
 void
-dump_cols(MalBlkPtr mb, list *l)
+dump_cols(MalBlkPtr mb, list *l, int result_set)
 {
 	node *n;
 	InstrPtr q;
@@ -205,6 +205,7 @@ dump_cols(MalBlkPtr mb, list *l)
 		char *ncn = sql_escape_ident(cn);
 
 		q = newStmt2(mb, batRef, insertRef);
+		q = pushArgument(mb, q, result_set);
 		q = pushStr(mb, q, ncn);
 		q = pushArgument(mb, q, c->nr);
 		_DELETE(ncn);
@@ -1616,7 +1617,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 				q = pushNil(mb, q, TYPE_str);
 				q = pushNil(mb, q, TYPE_bat);
-				dump_cols(mb, l);
+				dump_cols(mb, l, s->nr);
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
 				q = pushStr(mb, q, "not a valid output list\n");
@@ -1688,7 +1689,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int c = _dumpstmt(sql,mb, s->op1.stval);
 			int tt = tail_type(s->op1.stval)->type->localtype;
 			q = newInstruction(mb,RETURNsymbol);
-			getArg(q,0)= newTmpVariable(mb, tt);
+			if (tt == TYPE_bat) {
+				tt = newBatType(TYPE_str,TYPE_bat);
+				getArg(q,0)= newTmpVariable(mb, tt);
+			} else {
+				getArg(q,0)= newTmpVariable(mb, tt);
+			}
 			pushArgument(mb,q,c);
 			pushInstruction(mb, q);
 		}	break;

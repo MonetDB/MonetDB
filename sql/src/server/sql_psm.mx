@@ -365,6 +365,7 @@ result_type(mvc *sql, char *fname, symbol *res )
 			sql_subtype *ct = &n->next->data.typeval;
 		    	mvc_create_column(sql, tbl, n->data.sval, ct);
 		}
+		_DELETE(tnme);
 
 		sql_find_subtype(t, "table", 0, 0);
 		t->comp_type = tbl;

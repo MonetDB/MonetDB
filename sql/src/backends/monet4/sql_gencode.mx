@@ -1790,7 +1790,7 @@ backend_create_func(backend *be, sql_func *f)
 
 	(void)backend_parse((Cntxt) c->session->stk, cmd);
 
-/*#define PSM_DEBUG */
+/* #define PSM_DEBUG */
 #ifdef PSM_DEBUG
 	fprintf(stdout, "%s\n", cmd);
 	fflush(stdout);

@@ -650,7 +650,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 				return NULL;
 			}
 			tname = table_name(r);
-			r = stmt_alias(r, tname, c->base.name);
+			r = stmt_alias(r, tname, _strdup(c->base.name));
 			list_append(l, r);
 		}
 		stmt_destroy(s);
@@ -673,7 +673,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 		c = ct->columns.set->h->data;
 		r = check_types(sql, &c->type, tab, tpe);
 		tname = table_name(r);
-		r = stmt_alias(r, tname, c->base.name);
+		r = stmt_alias(r, tname, _strdup(c->base.name));
 		return stmt_table(r, temp);
 	}
 	stmt_destroy(s);

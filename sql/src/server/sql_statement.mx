@@ -1855,6 +1855,8 @@ tail_type(stmt *st)
 		if (st->op2.typeval.type)
 			return &st->op2.typeval;
 		return NULL;
+	case st_table:
+		return sql_bind_localtype("bat");
 	case st_relselect:
 	default:
 		fprintf(stderr, "missing tail type %u: %s\n", st->type, st_type2string(st->type));

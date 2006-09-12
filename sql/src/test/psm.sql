@@ -64,3 +64,14 @@ end;
 select my_searchcase(1);
 select my_searchcase(2);
 select my_searchcase(3);
+
+CREATE FUNCTION fWedgeV3(x1 float,y1 float, z1 float, x2 float, y2 float, z2 float)
+RETURNS TABLE (x float, y float, z float)
+     RETURN TABLE(SELECT
+        (y1*z2 - y2*z1) as x,
+        (x2*z1 - x1*z2) as y,
+        (x1*y2 - x2*y1) as z);
+
+select * from fWedgeV3(cast (1.0 as float), cast (1.0 as float), cast (1.0 as float), cast (1.0 as float), cast (1.0 as float), cast (1.0 as float)) fla;
+
+
