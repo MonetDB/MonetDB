@@ -202,6 +202,7 @@ rm -fr $RPM_BUILD_ROOT
 %files client
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/MapiClient* 
+%{prefix}/bin/msqldump* 
 %{_libdir}/libmutils.*
 %{_libdir}/libMapi.* 
 %{_libdir}/libstream.*
