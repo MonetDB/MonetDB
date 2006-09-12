@@ -559,7 +559,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 	FILE *fp;
 	char filename[BUFSIZ];
 	char bak[BUFSIZ];
-	bat sql_log = BBPindex("sql_log");
+	bm_bid sql_log = 0;
 
 	logger->debug = debug;
 	logger->changes = 0;
@@ -572,6 +572,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 	logger->dir = _strdup(filename);
 	logger->log = NULL;
 	logger->bm = bm;
+	sql_log = bm_find_bat(logger->bm, "sql_log");
 	if (sql_log == 0) {
 		logger->sql_log = bat_new(TYPE_oid, TYPE_int, 1, "logger_new");
 		BATmode(logger->sql_log, PERSISTENT);
