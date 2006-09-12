@@ -1460,11 +1460,14 @@ explicitly.
 			    (nxt && ATOMcmp(tt, t, BUNt@1(b,nxt)) > 0)) {
 				b->tsorted = FALSE;
 				b->T->nosorted = pit;
-			} else if (b->ttype != TYPE_void && b->tdense &&
-				   ((prv && 1 + *(oid*) BUNtloc(b,prv) != *(oid*) t) ||
-				    (nxt && *(oid*) BUNtloc(b,nxt) != 1 + *(oid*) t))) {
-				b->tdense = FALSE;
-				b->T->nodense = pit;
+			} else if (b->ttype != TYPE_void && b->tdense) {
+				if (((prv && 1 + *(oid*) BUNtloc(b,prv) != *(oid*) t) ||
+				     (nxt && *(oid*) BUNtloc(b,nxt) != 1 + *(oid*) t))) {
+					b->tdense = FALSE;
+					b->T->nodense = pit;
+				} else if (!prv && !nxt) {
+					bm->hseqbase = b->tseqbase = *(oid*)t;
+				}
 			}
 		} else {
 			if ((prv && ATOMcmp(tt, t, BUNt@1(b,prv)) > 0) ||
@@ -2506,6 +2509,9 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 @c
 	if (tpe == TYPE_void) {
 		return b;
+	}
+	if (yy > xx && BAThdense(b) && b->htype == TYPE_oid && *(oid*)BUNhloc(b,BUNfirst(b)) != b->hseqbase) {
+		GDKerror("BATpropcheck: BAT %s(%d) seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n", BATgetId(b), b->batCacheid, b->hseqbase, *(oid*)BUNhloc(b, BUNfirst(b)));
 	}
 	if (yy + 1 >= xx) {
 		if (ATOMlinear(tpe) && !(b->hsorted & 1)) {
