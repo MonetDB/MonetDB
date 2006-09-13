@@ -6159,7 +6159,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
                 "  var t := time();\n"
-                "  var r := ws_doc(ws, item%s);\n"
+                "  var r := ws_doc(ws, bat(void,str,1).append(item%s));\n"
                 "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
                 "  item  := r.hmark(0@0);\n"
                 "  time_shred :+= time() - t;\n"
@@ -7635,7 +7635,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
                 "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
-		"    [add_doc](const ws, docs_to_load);\n"
+		"    ws_doc(ws, docs_to_load);\n"
 		"    docs_to_load := nil;\n"
 		"    loaded_docs := nil;\n"
 		"    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"

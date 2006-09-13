@@ -12,8 +12,8 @@ stdout of test 'preceding-sibling` in directory 'runtime` itself:
 module(pathfinder);
 
 var ws := create_ws();
-add_doc(ws, "foo.xml");
-add_doc(ws, "http://bstore1.example.com/bib.xml");
+ws_doc(ws, bat(void,str,1).append("foo.xml"));
+ws_doc(ws, bat(void,str,1).append("http://bstore1.example.com/bib.xml"));
                                                                                                                                                              
 var iter := bat(void,oid).seqbase(0@0).append(1@0).append(1@0).append(1@0).append(2@0).append(2@0).append(3@0);
 var item := bat(void,oid).seqbase(0@0).append(4@0).append(21@0).append(26@0).append(26@0).append(44@0).append(4@0);

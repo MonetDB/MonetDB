@@ -1757,7 +1757,7 @@ PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 	if (not(bat("doc_name").reverse().exist(doc))) {
 		shred_doc(url,doc);
 	}
-	add_doc(ws,doc);
+	ws_doc(ws, bat(void,str,1).append(doc));
         
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
