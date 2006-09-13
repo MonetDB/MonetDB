@@ -235,7 +235,7 @@ literal (PFalg_atom_t a)
     switch (a.type) {
 
         case aat_nat:
-            PFarray_printf (s, "#%u", a.val.nat);
+            PFarray_printf (s, "#%u", a.val.nat_);
             break;
 
         case aat_int:
@@ -248,7 +248,7 @@ literal (PFalg_atom_t a)
             break;
 
         case aat_dec:
-            PFarray_printf (s, "%g", a.val.dec);
+            PFarray_printf (s, "%g", a.val.dec_);
             break;
 
         case aat_dbl:
@@ -288,7 +288,7 @@ xml_literal (PFalg_atom_t a)
         PFarray_printf (
            s, "<value type=\"%s\">%u</value>",
            atomtype[a.type],
-           a.val.nat);
+           a.val.nat_);
     else if (a.type == aat_int)
         PFarray_printf (
            s, "<value type=\"%s\">%i</value>",
@@ -303,7 +303,7 @@ xml_literal (PFalg_atom_t a)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
            atomtype[a.type],
-           a.val.dec);
+           a.val.dec_);
     else if (a.type == aat_dbl)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
