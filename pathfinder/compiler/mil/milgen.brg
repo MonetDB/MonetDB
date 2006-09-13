@@ -4114,7 +4114,7 @@ bin_comp (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
     assert (ty == type_of (L(p), p->sem.binary.att2));
 
     if (ty & ~aat_node) {
-        assert (ty == aat_int || ty == aat_dec_ ||
+        assert (ty == aat_int || ty == aat_dec ||
                 ty == aat_dbl || ty == aat_str);
         bin_op (op, p, ty, aat_bln);
     } else if (ty == aat_pnode) {
