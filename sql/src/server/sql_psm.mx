@@ -325,7 +325,7 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 			}
 			break;
 		case SQL_SELECT: /* row selections (into variables) */
-			res = sql_subquery(sql, scp, s, 1);
+			res = scope_subquery(sql, scp, s);
 			break;
 		default:
 			res = sql_error(sql, 01, 
