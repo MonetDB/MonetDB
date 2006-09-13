@@ -877,7 +877,7 @@ shred_start_element(void *xmlCtx,
 
     /* descend one level */
     if (shredCtx->level++ >= XML_DEPTH_MAX) {
-        GDKerror("shred_start_element: max document nesting exceeded:(MAX == %d)\n", XML_DEPTH_MAX);
+        GDKerror("shred_start_element: max document nesting exceeded: %d > MAX == %d\n", shredCtx->level, XML_DEPTH_MAX);
         BAILOUT(shredCtx);
     }
 
