@@ -298,6 +298,7 @@ dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
 NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
+CFLAGS_NO_OPT="-O0"
 case "$GCC-$CC-$host_os" in
 yes-*-*)
 	dnl  GNU (gcc/g++)
@@ -547,7 +548,7 @@ aix*)
         dnl  With "-On" (n>0), compilation of monet_multiplex.mx fails on sara's solo with
         dnl  "Assembler: /tmp/cc8qluZf.s: line 33198: Displacement must be divisible by 4.".
         dnl  Likewise, the MIL parser does not work correctly, unless compile monet_parse.yy.c
-        dnl  without optimization (i.e., with "-O0").
+        dnl  without optimization (i.e., with "$(CFLAGS_NO_OPT)").
         dnl  Hence:
         NO_OPTIMIZE_FILES="monet_multiplex.mx monet_parse.yy.mx"
         ;;
@@ -1195,7 +1196,9 @@ if test "x$enable_optim" = xyes; then
       *irix*)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
                       ;;
-      *-sun-solaris*) CFLAGS="$CFLAGS -xO5";;
+      *-sun-solaris*) CFLAGS="$CFLAGS -xO5"
+                      CFLAGS_NO_OPT="-xO0"
+                      ;;
       *aix*)          CFLAGS="$CFLAGS -O3"
                       NO_INLINE_CFLAGS="-qnooptimize"
                       ;;
@@ -1203,6 +1206,7 @@ if test "x$enable_optim" = xyes; then
     fi
   fi
 fi
+AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
