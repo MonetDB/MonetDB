@@ -9748,7 +9748,7 @@ static int test_join_pattern(PFcnode_t *for_node,
     fst_reflist = collect_vars(fst_inner, active_vlist, fst_reflist);
     /* search for-loop variable in first argument */
     found_in_fst = 0;
-    max_lev_fst = 0;
+    max_lev_fst = cur_level >= UDF_LEV ? UDF_LEV : 0;
     for (i = 0; i < PFarray_last (fst_reflist); i++)
     {
         if ((*(var_info **) PFarray_at (fst_reflist, i))->act_lev == cur_level+1)
@@ -9775,7 +9775,7 @@ static int test_join_pattern(PFcnode_t *for_node,
     snd_reflist = collect_vars(snd_inner, active_vlist, snd_reflist);
     /* search for-loop variable in second argument */
     found_in_snd = 0;
-    max_lev_snd = 0;
+    max_lev_snd = cur_level >= UDF_LEV ? UDF_LEV : 0;
     for (i = 0; i < PFarray_last (snd_reflist); i++)
     {
         if ((*(var_info **) PFarray_at (snd_reflist, i))->act_lev == cur_level+1)
