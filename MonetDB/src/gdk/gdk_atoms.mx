@@ -98,7 +98,6 @@ gdk_export int lngToStr(str *dst, int *len, lng *src);
 gdk_export lng *lngRead(lng *a, stream *s, size_t cnt);
 gdk_export int lngWrite(lng *a, stream *s, size_t cnt);
 int lngCmp(lng *r, lng *l);
-void lngConvert(lng *s);
 hash_t lngHash(lng *l);
 
 gdk_export int intFromStr(str src, int *len, int **dst);
@@ -106,7 +105,6 @@ gdk_export int intToStr(str *dst, int *len, int *src);
 gdk_export int *intRead(int *a, stream *s, size_t cnt);
 gdk_export int intWrite(int *a, stream *s, size_t cnt);
 gdk_export int intCmp(int *r, int *l);
-void intConvert(int *s);
 hash_t intHash(int *i);
 
 gdk_export int batFromStr(str src, int *len, bat **dst);
@@ -133,7 +131,6 @@ gdk_export int shtFromStr(str src, int *len, sht **dst);
 gdk_export int shtToStr(str *dst, int *len, sht *src);
 gdk_export sht *shtRead(sht *a, stream *s, size_t cnt);
 gdk_export int shtWrite(sht *a, stream *s, size_t cnt);
-void shtConvert(sht *s);
 int shtCmp(sht *r, sht *l);
 hash_t shtHash(sht *s);
 
@@ -265,27 +262,27 @@ lngHash(lng *v)
 
 @+ Standard Atoms
 @c
-INLINE void
+static INLINE void
 shtConvert(sht *s)
 {
 	*s = short_int_SWAP(*s);
 }
-INLINE void
+static INLINE void
 intConvert(int *s)
 {
 	*s = normal_int_SWAP(*s);
 }
-INLINE void
+static INLINE void
 lngConvert(lng *s)
 {
 	*s = long_long_SWAP(*s);
 }
-INLINE int
+static INLINE int
 batFix(bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
-INLINE int
+static INLINE int
 batUnfix(bat *b)
 {
 	return BBPdecref(*b, TRUE);

@@ -289,7 +289,13 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
 
 AC_TRY_COMPILE([$ac_includes_default
-#include <malloc.h>], [struct mallinfo m;], AC_DEFINE(HAVE_STRUCT_MALLINFO, 1, [Define if you have struct mallinfo]))
+#include <malloc.h>], [struct mallinfo m;], AC_DEFINE(HAVE_STRUCT_MALLINFO, 1, [Define if you have struct mallinfo])
+AC_TRY_COMPILE([$ac_includes_default
+#include <malloc.h>], [struct mallinfo m = {0};
+/* compilers that don't like <0 comparisons on unsigned data *
+ * will fail here (but then not in src/gdk/gdk_utils.mx)     */
+int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your mallinfo struct has signed elements])
+))
 AC_CACHE_CHECK(for _sys_siglist, mn_cv_have__sys_siglist, [
 AC_TRY_LINK([$ac_includes_default], [printf("%s\n", _sys_siglist[0]);], mn_cv_have__sys_siglist=yes, mn_cv_have__sys_siglist=no)])
 if test $mn_cv_have__sys_siglist = yes; then

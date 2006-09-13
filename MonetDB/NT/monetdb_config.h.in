@@ -435,6 +435,9 @@
 /* Define if you have struct mallinfo */
 /* #undef HAVE_STRUCT_MALLINFO */
 
+/* Define if your mallinfo struct has signed elements */
+/* #undef HAVE_SIGNED_MALLINFO */
+
 /* Define to 1 if `tm_zone' is member of `struct tm'. */
 /* #undef HAVE_STRUCT_TM_TM_ZONE */
 

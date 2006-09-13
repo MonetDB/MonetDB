@@ -17,7 +17,7 @@
 INCLUDES = -I../../common -I../../gdk -I../../monet $(HWCOUNTERS_INCS) 
 MTSAFE
 
-CFLAGS = -O0
+CFLAGS = $(CFLAGS_NO_OPT)
 
 EXTRA_DIST = calib_analyse.c  calib_main.c  calib_print.c  calib_run.c \
 	calib_common.c   calib_plot.c  calib_smp.c
