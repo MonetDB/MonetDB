@@ -1152,26 +1152,26 @@ if (postfilter) {
         @:postfilter(PROP_TGT,tgt,ELEMENT)@
 @= kind_post
         if (postfilter) {
-               tmp_res := result_part_item.leftjoin(pre_kind).ord_uselect(@1).hmark(0@0);
-	       @:mapping_code@
+      		var pre_kind := ws.fetch(PRE_KIND).find(contID);
+               	tmp_res := result_part_item.leftjoin(pre_kind).ord_uselect(@1).hmark(0@0);
+	       	@:mapping_code@
         }
 @= no_pre
 	cands := ws.fetch(PRE_SIZE).fetch(contID).mirror(); # no selection: cands is everything
 @= kind_pre
       { cands := ws.fetch(PRE_KIND).fetch(contID); kind_test := kind; }
 @= nsloc_pre
-      { var nsloc := ns + ":" + loc; @:prefilter(nsloc,QN_URI_LOC,@1,@2,@3,@4)@ }
+      { var nsloc := ns + ":" + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
 @= loc_pre
-      { @:prefilter(loc,QN_LOC,@1,@2,@3,@4)@ }
+      { @:prefilter(loc,QN_LOC)@ }
 @= ns_pre
-      { @:prefilter(ns,QN_NS,@1,@2,@3,@4)@ }
+      { @:prefilter(ns,QN_URI)@ }
 @= prefilter
 	       cands := ws.fetch(PRE_SIZE).fetch(contID);
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
 	if (is_constant(pre_cont)) {
-		var qn_sel := ws.fetch(@6).fetch(contID).ord_uselect(@5);
-		var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(contID);
-                if (isnil(CATCH(cands := ws_lookup(ws, contID, qn_sel)))) {
+		var qn_sel := ws.fetch(@2).fetch(contID).ord_uselect(@1);
+                if (isnil(CATCH(cands := ws_lookup(ws, contID, qn_sel.mirror())))) {
 	        	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
 	        	var nid_rid  := ws.fetch(NID_RID).fetch(contID);
                 	cands := cands.leftfetchjoin(nid_rid).[swizzle](map_pid); # free in readonly case

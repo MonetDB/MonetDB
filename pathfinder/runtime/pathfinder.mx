@@ -978,14 +978,12 @@ PROC __runtime_addchunk(int ws,
 
 
 PROC __runtime_lookup(BAT[lock,bat] runtime,
-                      BAT[oid,oid] ins,
-                      BAT[oid,oid] del,
                       BAT[oid,oid] qn_ids) : bat[void,oid] 
 {
     var res, valid := false;
     if (count(runtime) > RT_NID_QN) { 
         # do lookup using the index
-        var ins, del, idx := runtime.fetch(RT_NID_QN);
+        var ins, del, idx := runtime.fetch(RT_NID_QN).reverse();
         if (count(qn_ids) = 1) {
             var qn_id := qn_ids.fetch(0);
             res := idx.select(qn_id);
@@ -1074,7 +1072,7 @@ PROC ws_lookup(BAT[void,bat] ws,
 
     # get the lock and runtime inside the short lock
     lock_set(coll_lock);
-    var res, err := CATCH(res := __runtime_lookup(runtime, ins, del, qn_ids));
+    var res, err := CATCH(res := __runtime_lookup(runtime, qn_ids));
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
 
@@ -1539,8 +1537,6 @@ PROC shred_doc_base(BAT[void,str] idx_locations,
     if (not(isnil(err))) ERROR(err);
     var idx_runtime := pivot.tmark(0@0);
     var idx_colloid := pivot.hmark(0@0);
-
-print(idx_locations,idx_names,idx_colnames,idx_colloid,idx_runtime);
 
     var commitBAT := bat(void,str);
     selidx_colname@batloop(){
