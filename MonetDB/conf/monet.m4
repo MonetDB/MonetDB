@@ -1612,11 +1612,15 @@ dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 
 dnl function needs to be compiled with the correct header
 
+AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
+
 if test "x$have_setsockopt" = xno; then
   save_LIBS="$LIBS"
   LIBS="$LIBS -lws2_32"
 AC_MSG_CHECKING(for setsockopt in winsock2)
-AC_TRY_LINK([#include <winsock2.h>],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
+AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
 AC_MSG_RESULT($have_setsockopt)
   LIBS="$save_LIBS"
 fi
@@ -1626,7 +1630,13 @@ AC_CHECK_TYPE(socklen_t,
 	AC_DEFINE(socklen_t,int,[type used by connect]),
 	[#include <sys/types.h>
 #include <sys/socket.h>])
-AC_CHECK_FUNC(closesocket, [], AC_DEFINE(closesocket,close,[function to close a socket]))
+save_LIBS="$LIBS"
+LIBS="$LIBS $SOCKET_LIBS"
+AC_MSG_CHECKING(for closesocket)
+AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[closesocket((SOCKET)0);], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no);AC_DEFINE(closesocket,close,[function to close a socket])])
+LIBS="$save_LIBS"
 
 AC_SUBST(SOCKET_LIBS)
 

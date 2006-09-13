@@ -187,7 +187,6 @@ pcre_match(bit *ret, str val, str pat)
 }
 #else
 
-#include <regex.h>
 #include <pcre.h>
 #include "pcre.proto.h"
 
@@ -533,8 +532,8 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 bat *
 pcre_init(void)
 {
-	pcre_malloc = &my_pcre_malloc;
-	pcre_free = &my_pcre_free;
+	pcre_malloc = my_pcre_malloc;
+	pcre_free = my_pcre_free;
 	return NULL;
 }
 
@@ -546,15 +545,15 @@ pcre_exit(void)
 int
 pcre_match(bit *ret, str val, str pat)
 {
-	regex_t prg;
-	int error = regcomp(&prg, pat, REG_EXTENDED | REG_NOSUB);
+	const char err[BUFSIZ], *err_p = err;
+	int errpos = 0;
+	pcre *re;
 
-	if (error < 0) {
-		GDKerror("pcre.match", "Compilation of regular expression failed");
+	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 		return GDK_FAIL;
 	}
-	error = regexec(&prg, val, 0, 0, 0);
-	*ret = (error == 0);
+	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0) >= 0;
 	return GDK_SUCCEED;
 }
 #endif
