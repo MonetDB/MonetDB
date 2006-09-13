@@ -8162,6 +8162,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             milprintf(f,
                     "{ # tagname-translation\n"
                     "var props := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);\n"
+                    "var itemID;\n"
                     "if (props.texist(\"%s:%s:%s\")) {\n"
                     "    itemID := props.reverse().find(\"%s:%s:%s\");\n"
                     "} else { "
