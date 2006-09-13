@@ -10607,7 +10607,7 @@ static const char* _PFstopMIL(int statement_type) {
     }
     strcat(buf,
            "});\n"
-           "ws_destroy(ws);\n"
+           "ws_destroy(int(ws));\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
            "if (genType.startsWith(\"timing\"))\n"

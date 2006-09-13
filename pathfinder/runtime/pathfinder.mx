@@ -63,6 +63,7 @@
 .END pathfinder;
 @mil
 module(mapi);       # remote client access
+module(pf_support);
 
 # standoff extensions
 var standoff := false;
@@ -1275,7 +1276,7 @@ PROC _ws_doc(BAT[void,str] idx_names,
     var idx_ts := idx_idx.leftfetchjoin(idx_filenames).ord_uselect(str_nil).mirror().leftfetchjoin(idx_timestamps);
     idx_ts@batloop() { # URI (filename = nil)
         var b := [startsWith](idx_names.find($h), mirror(uri_lifetime)).uselect(true);
-        var lifetime := lng_nil;
+        var lifetime := lng(nil);
         if (b.count() > 0) {
             var matchlen := [length](mirror(b));
             lifetime :=  *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
