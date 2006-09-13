@@ -226,6 +226,7 @@ have changed since my proposal.
 	TSTTRGBASE	$MONETDB_PREFIX				base for test output
 	MAPICLIENT	MapiClient -lmil			mapi-client program	`)
 	SQLCLIENT	MapiClient -lsql			sql-client program	`)
+	SQLDUMP	        msqldump				sql-dump program	`)
 	XQUERYCLIENT	MapiClient -lxquery -oxml		xquery-client program	`)
 
     `) Alternative Mapi-, SQL-, & XQUERY- client programs need to accept (or ignore)
@@ -253,6 +254,7 @@ have changed since my proposal.
 	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR --set mapi_port=$MAPIPORT --set sql_port=$SQLPORT --set xquery_port=$XQUERYPORT --set monet_prompt= --trace"
 	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
+	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
 	XQUERY_CLIENT	"$MTIMEOUT $XQUERYCLIENT -u monetdb -P monetdb --host=$HOST --port=$XQUERYPORT"
 	MAPIPORT	the MAPI   port (random number between 30000 and 39999)
 	SQLPORT		the SQL    port (random number between 40000 and 49999)
