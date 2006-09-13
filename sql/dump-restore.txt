@@ -26,7 +26,7 @@ therefore using an absolute path name is highly recommended.]
 It is also possible to dump from the command line.  Start a SQL
 Server, and then issue the command
 
-	MapiClient -lsql -umonetdb -Pmonetdb --dump > dump.sql
+	msqldump -umonetdb -Pmonetdb > dump.sql
 
 This command will connect to the SQL Server and dump the database into
 the file dump.sql in the current directory.
