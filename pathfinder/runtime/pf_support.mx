@@ -5682,9 +5682,7 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
                 .hmark(0@0);
 
     # load all remaining documents into the working set
-    docs@batloop() {
-        add_doc(ws, $t);
-    }
+    ws_doc(ws, docs);
 
     # The working set now contains all documents we need.
 
