@@ -488,7 +488,7 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
     colname_runtime  := bat(str,bat).rename("colname_runtime"); 
     colname_shredlock:= bat(str,lock).rename("colname_shredlock"); 
     empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
-    empty_bat        := bat(void,oid).rename("empty_bat"); 
+    empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
     empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
 
     var m := int_nil, i := int(REMAP_PAGE_SIZE);
