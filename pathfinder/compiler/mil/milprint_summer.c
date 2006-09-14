@@ -1912,7 +1912,7 @@ loop_liftedSCJ (opt_t *f,
         if (kind)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(%s))).hmark(0@0);\n"
+                    "var temp1 := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND)).ord_uselect(%s).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1922,7 +1922,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND)).ord_uselect(ELEMENT).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1942,7 +1942,7 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND)).ord_uselect(ELEMENT).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1962,7 +1962,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_cont, ws.fetch(PRE_NID)), oid_cont, ws.fetch(KND_NID.find(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND)).ord_uselect(ELEMENT).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_cont := temp1.leftfetchjoin(oid_cont);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2278,8 +2278,10 @@ castQName (opt_t *f, int rc)
             "var prop_name := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);\n"
 
             /* find all strings which are not in the qnames of the WS */
-            "oid_str := [+](\"::\", oid_str);\n"
-            "oid_str := oid_str.tdiff(prop_name).tmark(0@0);\n"
+            "var oid_str_ := [+](\"::\", oid_str);\n"
+            "oid_str_ := oid_str_.tdiff(prop_name);\n"
+            "oid_str := oid_str.fetch(oid_str_).tmark(0@0);\n"
+            "oid_str_ := nil;\n"
             "prop_name := nil;\n"
             /* add the strings as local part of the qname into the working set */
             "ws.fetch(QN_LOC).fetch(WS).append(oid_str);\n"
@@ -2293,7 +2295,8 @@ castQName (opt_t *f, int rc)
             "oid_str := nil;\n"
 
             /* get all the possible matching names from the updated working set */
-            "prop_id := ws.fetch(QN_PREFIX_URI).fetch(WS).ord_uselect(\":\").mirror();\n"
+            "var prop_id := ws.fetch(QN_PREFIX).fetch(WS).ord_uselect(\"\");\n"
+            "prop_id := prop_id.mirror().leftfetchjoin(ws.fetch(QN_URI).fetch(WS)).ord_uselect(\"\"));\n"
             "prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil;\n"
 
@@ -3102,11 +3105,6 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
                 "ws.fetch(PRE_CONT).fetch(WS).insert(newPre_prop.project(WS));\n"
-                "{\n"
-                "  var knd_nid := ws.fetch(KND_NID.find(TEXT)).fetch(WS);\n"
-                "  var knd_nid_ := newPre_prop.reverse().chk_order();\n"
-                "  knd_nid.append(knd_nid_);\n"
-                "}\n"
                 "item := item%s.mark(seqb);\n"
                 "kind := ELEM;\n"
        

@@ -198,21 +198,6 @@ print("res_scj");  [print](res_scj);
     ws.fetch(PRE_NID).fetch(WS).append(root_kind.mirror());
     ws.fetch(NID_RID).fetch(WS).append(root_kind.mirror());
 
-    # update indexes
-    {
-      var pre_nid := ws.fetch(PRE_NID).fetch(WS);
-      var knd := ELEMENT;
-      while ( knd <= DOCUMENT ) {
-        var knd_nid := root_kind.ord_uselect(knd).reverse().chk_order();
-        ws.fetch(KND_NID.find(knd)).fetch(WS).append(knd_nid);
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-          var knd_prop := knd_nid.leftfetchjoin(root_prop).chk_order();
-          ws.fetch(KND_PROP.find(knd)).fetch(WS).append(knd_prop);
-        }
-        knd :+= chr(1);
-      }
-    }
-
     # save the new roots for creation of the intermediate result
     var roots := root_level.ord_uselect(chr(0));
     # (note that all operations are order preserving and ``mark''
@@ -426,7 +411,7 @@ var a0000;
 var unused;
 var ws;
 unused := nil;
-ws := create_ws ();
+ws := ws_create ();
 a0000 := new (void, oid).seqbase (0@0);
 a0000.append (1@0);
 a0000.access (BAT_READ);
