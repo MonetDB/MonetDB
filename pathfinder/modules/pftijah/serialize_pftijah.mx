@@ -281,6 +281,7 @@ typedef struct tijahContextStruct {
 	int preExpansion;	/* estimation for #TijahPre/PfPre */
 	char* stemmer;	/* name of the stemmer used for this collection */
 	tjStemCtx* stemCtx;
+	char	checkStopWords;
 } tjCtx;
 
 #define DOEMIT(TJCTX)	((TJCTX)->selTagDepth)
@@ -362,14 +363,20 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
         }
         if ( (termOid = tj_termOid(tjctx, term)) == oid_nil )
     	    return 0;
-        if ( (tjPre = tj_add2plane(tjctx, termOid)) == oid_nil )
-    	    return 0;
+	if ( termOid ) { /* term is not a stopword */
+            if ( (tjPre = tj_add2plane(tjctx, termOid)) == oid_nil )
+    	        return 0;
 
-        if ( insertPreSize(tjctx,tjPre,0) < 0 )
-       	    return -1;
+            if ( insertPreSize(tjctx,tjPre,0) < 0 )
+       	        return -1;
 #ifdef TJ_TRACE
-        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TERM: \"%s\", termoid=%d, tjPre=%d\n",tjctx->name,term,termOid,tjPre);
+            if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TERM: \"%s\", termoid=%d, tjPre=%d\n",tjctx->name,term,termOid,tjPre);
 #endif
+         } else {
+#ifdef TJ_TRACE
+            if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:STOPWORD: \"%s\"\n",tjctx->name,term);
+#endif
+	 }
      }
      return 1;
 }
@@ -483,6 +490,8 @@ getBAT(BAT* batbat, int i) {
 	return res;
 }
 
+static const char* stopwordMarker = "#STOPWORD#";
+
 static tjCtx*
 loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	tjCtx* res;
@@ -525,6 +534,14 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	res->name = (char*)str_name;
 
 	/* */
+        res->checkStopWords = 1;
+	str str_stopw = readCollParam(res,"stopwords");
+	if ( str_stopw ) {
+	    if (  (strcmp(str_stopw,"false") == 0) || (strcmp(str_stopw,"off")==0) )
+	        res->checkStopWords = 0;
+	}
+
+
 	str str_stemmer = readCollParam(res,"stemmer");
 
 	if ( str_stemmer != str_nil ) 
@@ -539,6 +556,28 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	 * And finally ensure there are accellerators on the Term and Tag dictionaries
 	 */
 	res->hm_globalTerm = BATmirror(res->b_globalTerm);
+	if ( res->n_globalTerm == 0 ) {
+	     oid zero = 0;
+	     if ( !BUNins(res->b_globalTerm, &zero, (str)stopwordMarker, FALSE)){
+	             return NULL;
+	     }
+	     res->n_globalTerm++;
+#ifdef TJ_TRACE
+	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:INSERTED STOPWORDMARKER IN GLOBALTERM\n",res->name);
+#endif
+	     if ( res->checkStopWords ) {
+		 for(int i=0; res->stemCtx->stopWords[i]; i++) {
+		     str sw = (str)res->stemCtx->stopWords[i];
+	             if ( !BUNins(res->b_globalTerm, &zero, sw, FALSE)){
+	                 return NULL;
+	             }
+#ifdef TJ_TRACE
+	             if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:ADDED STOPWORD \"%s\" to GLOBALTERM\n",res->name,sw);
+#endif
+		     }
+	             res->n_globalTerm++;
+	     }
+	}
 	if ( res->b_globalTerm->thash == NULL ) {
 #ifdef TJ_TRACE
 	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTERM\n",res->name);
@@ -795,7 +834,7 @@ pftijah_handle_characters(XqueryCtx* ctx, str ch) {
         res = useStrtokScanner(tjctx,(char*)ch);
 #endif
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters() end\n");
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters() end\n",tjctx->name);
 #endif
     return res;
 }
