@@ -18,7 +18,7 @@ var docname := "symm.xml";
 var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);
 var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);
 var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append("");
-var ws := create_ws();
+var ws := ws_create();
 ws_doc(ws, bat(void,str,1).append(docname));
 var item := docname.leftjoin(reverse(ws.fetch(DOCID_NAME)));
 var kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);

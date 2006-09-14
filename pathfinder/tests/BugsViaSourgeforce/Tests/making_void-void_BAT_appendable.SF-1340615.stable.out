@@ -73,7 +73,7 @@ var a0000;
 var unused;
 var ws;
 unused := nil;
-ws := create_ws ();
+ws := ws_create ();
 a0000 := new (void, oid).seqbase (0@0);
 a0000.append (1@0);
 a0000.access (BAT_READ);

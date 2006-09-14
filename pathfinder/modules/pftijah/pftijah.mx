@@ -1753,7 +1753,7 @@ PROC tj_url2Collection(str doc, str url, str selTagList) : void
 
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 {
-	var ws := create_ws();
+	var ws := ws_create();
 	if (not(bat("doc_name").reverse().exist(doc))) {
 		shred_doc(url,doc);
 	}
