@@ -593,7 +593,7 @@ only_eqjoin_refs (PFla_op_t *root,
  *
  *                  ( 3 )                            ( 4 )
  */
-static void
+static bool
 modify_semijoin_proxy (PFla_op_t *root,
                        PFla_op_t *proxy_entry,
                        PFla_op_t *proxy_exit,
@@ -616,7 +616,7 @@ modify_semijoin_proxy (PFla_op_t *root,
     if (!(leaf_ref = join_resolve_conflicts (proxy_entry,
                                              proxy_exit,
                                              conflict_list)))
-        return;
+        return false;
 
     /* If the proxy exit is referenced from outside the proxy as well
        and the references are NOT equi-joins we can not remove the
@@ -625,7 +625,7 @@ modify_semijoin_proxy (PFla_op_t *root,
        and give up. */
     if (leaf_ref == MULTIPLE &&
         ! only_eqjoin_refs (root, proxy_entry, proxy_exit))
-        return;
+        return false;
 
     /* check for the remaining part of the pattern */
     lp = L(proxy_entry);
@@ -802,6 +802,8 @@ modify_semijoin_proxy (PFla_op_t *root,
     *(PFla_op_t **) PFarray_add (checked_nodes) = L(new_number);
     *(PFla_op_t **) PFarray_add (checked_nodes) = R(L(new_number));
     *(PFla_op_t **) PFarray_add (checked_nodes) = L(L(R(R(L(new_number)))));
+
+    return true;
 }
 
 
@@ -948,7 +950,7 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
  *            ( 1 )                    ( 2 )
  *
  */
-static void
+static bool
 generate_join_proxy (PFla_op_t *root,
                      PFla_op_t *proxy_entry,
                      PFla_op_t *proxy_exit,
@@ -979,13 +981,13 @@ generate_join_proxy (PFla_op_t *root,
     if (!join_resolve_conflicts (proxy_entry,
                                  proxy_exit,
                                  conflict_list))
-        return;
+        return false;
 
     /* Discard proxies with rownum operators as these would probably never
        benefit from the rewrites based on proxies. In addition checking the
        usage of the rownum column requires quite some work. */
     if (proxy_exit->kind == la_rownum)
-        return;
+        return false;
 
     /* assign unique names to track the names inside the proxy body */
     PFprop_infer_unq_names (proxy_entry);
@@ -1182,6 +1184,7 @@ generate_join_proxy (PFla_op_t *root,
     *(PFla_op_t **) PFarray_add (checked_nodes) = L(entry_op);
     *(PFla_op_t **) PFarray_add (checked_nodes) = L(R(L(entry_op)));
 
+    return true;
 }
 
 
@@ -1251,6 +1254,12 @@ proxy_unnest_exit (PFla_op_t *proxy, PFla_op_t *entry)
     PFla_op_t *p;
 
     if (proxy->kind != la_proxy || proxy->sem.proxy.kind != 1)
+        return false;
+
+    /* FIXME: temporarily disable rewrite if a cross product
+       is placed underneath. The two proxies might be completely
+       independent. */
+    if (L(proxy->sem.proxy.base1)->kind == la_cross)
         return false;
 
     p = L(entry->sem.proxy.base1);
@@ -1523,7 +1532,7 @@ collect_mappings (PFla_op_t *p,
  *
  *            ( 1 )
  */
-static void
+static bool
 unnest_proxy (PFla_op_t *root,
               PFla_op_t *proxy1,
               PFla_op_t *proxy2,
@@ -1532,8 +1541,7 @@ unnest_proxy (PFla_op_t *root,
               PFarray_t *checked_nodes)
 {
     /* additional references to the nodes of the pattern */
-    /* (StM: To pacify icc, I commented-out the (yet?) unused "mid_proxy_base".) */
-    PFla_op_t *mid_proxy, /**mid_proxy_base,*/ *proxy1_base, *proxy2_base;
+    PFla_op_t *mid_proxy, *proxy1_base, *proxy2_base;
     /* temporary nodes */
     PFla_op_t *p;
     /* newly constructed operators */
@@ -1575,13 +1583,13 @@ unnest_proxy (PFla_op_t *root,
        are referenced from outside the pattern. */
     if (!proxy_unnest_resolve_conflicts (proxy1,
                                          conflict_list))
-        return;
+        return false;
 
     /* Ensure that the 'upper' proxy is not completely
        independent. (Otherwise the mvd optimization will
        rewrite it.) */
     if (!proxy1->sem.proxy.req_cols.count)
-        return;
+        return false;
 
     /* collect all required columns of the entry proxy */
     icols = 0;
@@ -1598,7 +1606,7 @@ unnest_proxy (PFla_op_t *root,
         if (PFprop_icol (proxy2->prop, cur_col))
             for (j = 0; j < proxy2->sem.proxy.new_cols.count; j++)
                 if (cur_col == proxy2->sem.proxy.new_cols.atts[j])
-                    return;
+                    return false;
     }
 
     /**
@@ -1606,8 +1614,6 @@ unnest_proxy (PFla_op_t *root,
      *  - the base of the 'upper' proxy (proxy1)
      *  - the base of the 'lower' proxy (proxy2)
      *  - the beginning of the intermediate proxy (mid_proxy)
-     *  - the end of the intermediate proxy (mid_proxy_base)
-     *    (StM: To pacify icc, I commented-out the (yet?) unused "mid_proxy_base".)
      */
     proxy1_base = proxy1->sem.proxy.base1;
     proxy2_base = proxy2->sem.proxy.base1;
@@ -1615,8 +1621,6 @@ unnest_proxy (PFla_op_t *root,
 
     p = mid_proxy;
     while (p != proxy2) {
-        /*mid_proxy_base = p;*/
-
         if (p->kind == la_doc_access)
             p = R(p);
         else
@@ -1646,7 +1650,7 @@ unnest_proxy (PFla_op_t *root,
        the columns required by the upper proxy. */
     for (i = 0; i < req_count; i++)
         if (!req_col_names[i].old)
-            return;
+            return false;
 
     /* dummy initialization */
     map_col_new = map_col_old = att_NULL;
@@ -1667,7 +1671,7 @@ unnest_proxy (PFla_op_t *root,
     }
     /* There is no 'free' column that can be used
        to transport the key information. */
-    if (i == req_count) return;
+    if (i == req_count) return false;
 
 
 
@@ -1787,7 +1791,7 @@ unnest_proxy (PFla_op_t *root,
             top1_proj[top1_proj_count++] = L(proxy1)->sem.proj.items[i];
         else
             for (j = 0; j < proxy1->sem.proxy.new_cols.count; j++)
-                if (proxy1->sem.proxy.new_cols.atts[i] == cur_col) {
+                if (proxy1->sem.proxy.new_cols.atts[j] == cur_col) {
                     top1_proj[top1_proj_count++] = L(proxy1)->sem.proj.items[i];
                     break;
                 }
@@ -1817,6 +1821,8 @@ unnest_proxy (PFla_op_t *root,
                        num_col2),
                    proxy1->schema.count,
                    top_proj);
+
+    return true;
 }
 
 
@@ -1978,12 +1984,12 @@ find_conflicts (PFla_op_t *p, PFarray_t *conflict_list)
  * Worker for PFintro_proxies. For each kind of proxy this worker looks
  * up all possible proxy nodes and generates them whenever possible.
  */
-static void
+static bool
 intro_proxy_kind (PFla_op_t *root,
                   void (* prepare_traversal) (PFla_op_t *),
                   bool (* entry_criterion) (PFla_op_t *),
                   bool (* exit_criterion) (PFla_op_t *, PFla_op_t *),
-                  void (* generate_proxy) (PFla_op_t *, PFla_op_t *,
+                  bool (* generate_proxy) (PFla_op_t *, PFla_op_t *,
                                            PFla_op_t *, PFarray_t *,
                                            PFarray_t *, PFarray_t *),
                   PFarray_t *checked_nodes)
@@ -1993,6 +1999,7 @@ intro_proxy_kind (PFla_op_t *root,
     PFarray_t *conflict_list = PFarray (sizeof (PFla_op_t *));
 
     bool found_proxy = true;
+    bool rewrote_proxy = false;
 
     while (found_proxy) {
         found_proxy = false;
@@ -2043,13 +2050,16 @@ intro_proxy_kind (PFla_op_t *root,
 
         /* generate a new proxy operator using all the information
            gathered. */
-        generate_proxy (root,
-                        proxy_entry,
-                        proxy_exit,
-                        conflict_list,
-                        exit_refs,
-                        checked_nodes);
+        rewrote_proxy = generate_proxy (root,
+                                        proxy_entry,
+                                        proxy_exit,
+                                        conflict_list,
+                                        exit_refs,
+                                        checked_nodes)
+                        || rewrote_proxy;
     }
+
+    return rewrote_proxy;
 }
 
 /**
@@ -2062,24 +2072,26 @@ PFintro_proxies (PFla_op_t *root)
 
     /* find proxies and rewrite them in one go.
        They are based on semi-join - number/rownum pairs */
-    intro_proxy_kind (root,
-                      join_prepare,
-                      semijoin_entry,
-                      semijoin_exit,
-                      modify_semijoin_proxy,
-                      checked_nodes);
+    if (intro_proxy_kind (root,
+                          join_prepare,
+                          semijoin_entry,
+                          semijoin_exit,
+                          modify_semijoin_proxy,
+                          checked_nodes))
+        return root;
 
     /* As we match the same nodes (equi-joins) again we need to reset
        the list of checked nodes */
     PFarray_last (checked_nodes) = 0;
 
     /* generate proxies consisting of equi-join - number/rownum pairs */
-    intro_proxy_kind (root,
-                      join_prepare,
-                      join_entry,
-                      join_exit,
-                      generate_join_proxy,
-                      checked_nodes);
+    if (!intro_proxy_kind (root,
+                           join_prepare,
+                           join_entry,
+                           join_exit,
+                           generate_join_proxy,
+                           checked_nodes))
+        return root;
 
     /* As we match different nodes the current list is of no importance */
     PFarray_last (checked_nodes) = 0;
