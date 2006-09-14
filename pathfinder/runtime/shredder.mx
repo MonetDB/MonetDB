@@ -932,7 +932,7 @@ shred_start_element(void *xmlCtx,
         /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
         val_id = shredBAT_append_str(shredCtx, PROP_VAL,(char*)a_val);
         qn_id  = handle_pfx_uri_loc(shredCtx, (char*) a_pfx, (char*) a_uri, (char*) a_tag);
-        oid ownerPre = node.nid;
+        oid ownerPre = shredCtx->nnode_nid;
 
         /* insert attribute tuple */
         oid nattr = shredCtx->nnode_attr++; 
