@@ -1183,6 +1183,7 @@ PROC ws_newnids(BAT[void,bat] ws,
             var nid_cnt := count(nid_rid);
             var nid_tgt := nid_cnt + cnt + (nid_cnt/16);
             var nid_off := nid_cnt;
+            var empty_page_oid := empty_page.project(oid_nil);
             while(nid_cnt < nid_tgt) {
                 nid_rid.append(empty_page_oid);
                 nid_cnt :+= REMAP_PAGE_SIZE;
