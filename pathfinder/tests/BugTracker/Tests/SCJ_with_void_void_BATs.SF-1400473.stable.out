@@ -276,7 +276,7 @@ print("res_scj");  [print](res_scj);
         var sorting := aiter.tsort();
         sorting := sorting.CTrefine(mposjoin(attr_qn,
                                              attr_frag,
-                                             ws.fetch(QN_LOC_URI)));
+                                             ws.fetch(QN_URI_LOC)));
         var unq_attrs := sorting.tunique();
         sorting := nil;
         # test uniqueness

@@ -938,8 +938,8 @@ PROC standoff_@1_@2(BAT[void,oid] void_DOCnodes,
 	if (is_constant(pre_cont)) {
 		var cont := pre_cont.fetch(0);
 		pre_cont := nil;
-		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(cont);
-		    qn_nsloc := qn_nsloc.ord_uselect(loc+":"+ns);
+		var qn_nsloc := ws.fetch(QN_URI_LOC).fetch(cont);
+		    qn_nsloc := qn_nsloc.ord_uselect(ns+":"+loc);
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
 			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
@@ -959,10 +959,10 @@ PROC standoff_@1_@2(BAT[void,oid] void_DOCnodes,
 		    pre_prop := nil;
 		var X_cont   := pre_cont.tmark(0@0);
 		    pre_cont := nil;
-		var X_nsloc  := mposjoin(X_prop, X_cont, ws.fetch(QN_LOC_URI));
+		var X_nsloc  := mposjoin(X_prop, X_cont, ws.fetch(QN_URI_LOC));
 		    X_prop   := nil;
 		    X_cont   := nil;
-		var _X       := X_nsloc.ord_uselect(loc+":"+ns).reverse();
+		var _X       := X_nsloc.ord_uselect(ns+":"+loc).reverse();
 		    X_nsloc  := nil;
 		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
                 if ( not(ordered(reverse(cands))) ) {
