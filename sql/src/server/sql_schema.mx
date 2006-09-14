@@ -790,10 +790,8 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 static stmt *
 drop_user(mvc *sql, char *user)
 {
-	if (backend_find_user(sql, user) < 0)
+	if(sql_drop_user(sql, user) == FALSE)
 		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
-
-	sql_drop_user(sql, user);
 	return stmt_none();
 }
 

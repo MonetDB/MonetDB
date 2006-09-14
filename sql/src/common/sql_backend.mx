@@ -51,7 +51,7 @@ typedef void (*set_string_fptr)(ptr mvc, char *name, char *val);
 typedef void (*set_number_fptr)(ptr mvc, char *name, lng val);
 
 typedef char *(*create_user_fptr) (list *l, char *user, char *passwd, char *fullname, sqlid schema_id, sqlid grantor_id);
-typedef char *(*drop_user_fptr) (char *user);
+typedef char *(*drop_user_fptr) (ptr mvc, char *user);
 typedef int  (*find_user_fptr) (ptr m, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
@@ -84,7 +84,7 @@ extern void backend_set_string(ptr mvc, char *name, char *val);
 extern void backend_set_number(ptr mvc, char *name, lng val);
 
 extern char *backend_create_user(list *l, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor);
-extern char *backend_drop_user(char *user);
+extern char *backend_drop_user(ptr mvc, char *user);
 extern int  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
@@ -173,11 +173,11 @@ backend_create_user(list *l, char *user, char *passwd, char *fullname, sqlid def
 }
 
 char *
-backend_drop_user(char *user)
+backend_drop_user(ptr mvc, char *user)
 {
 	assert(be_funcs != NULL);
 	if (be_funcs->fduser != NULL)
-		return(be_funcs->fduser(user));
+		return(be_funcs->fduser(mvc,user));
 	return(NULL);
 }
 
