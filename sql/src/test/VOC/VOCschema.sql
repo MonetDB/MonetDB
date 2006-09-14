@@ -30,4 +30,3 @@ create table voyage(
 -- 	<callatcape><arrival>27-05-1783</arrival><departure>12-06-1783</departure></callatcape>
 -- 	<destination><arrival>06-08-1783</arrival><harbour>Batavia</harbour></destination>
 -- </voyage>
-commit;
