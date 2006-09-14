@@ -200,6 +200,8 @@ attrDB_insert(idrefAttrDBStr *adb,
               char *aTag, 
               int type) 
 {
+    specAttrStr *sas = NULL;
+
     adb->doCheck = 1; /* signal database is in use */
     if (attrDB_find(adb, oTag, aTag)) {
         GDKerror("attrDB_insert: idrefAttrDB(%s, %s, %d) is duplicate.\n", oTag, aTag, type);
@@ -221,7 +223,7 @@ attrDB_insert(idrefAttrDBStr *adb,
         adb->specAttr     = newb;
         adb->max_specAttr = newsz;
     }
-    specAttrStr *sas = &adb->specAttr[adb->n_specAttr - 1];
+    sas = &adb->specAttr[adb->n_specAttr - 1];
     sas->type     = type;
     sas->ownerTag = GDKstrdup(oTag);
     sas->attrTag  = GDKstrdup(aTag);
