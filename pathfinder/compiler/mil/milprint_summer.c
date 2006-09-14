@@ -2296,7 +2296,7 @@ castQName (opt_t *f, int rc)
 
             /* get all the possible matching names from the updated working set */
             "var prop_id := ws.fetch(QN_PREFIX).fetch(WS).ord_uselect(\"\");\n"
-            "prop_id := prop_id.mirror().leftfetchjoin(ws.fetch(QN_URI).fetch(WS)).ord_uselect(\"\"));\n"
+            "prop_id := prop_id.mirror().leftfetchjoin(ws.fetch(QN_URI).fetch(WS)).ord_uselect(\"\");\n"
             "prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil;\n"
 
