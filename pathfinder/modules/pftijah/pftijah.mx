@@ -243,7 +243,7 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs 
     # if we pass items as the iteration argument
-    var void_desc := ll_descendant(iters, items, pre_size, candidates, collHeight, false, false, min(iters), max(iters), false);
+    var void_desc := ll_descendant(iters, items, pre_size, candidates, collHeight, false, false, min(iters), max(iters), false, chr(nil));
     
     # Map back the ancestors
     var anc_desc  := anc.mark(oid(0)).join(void_desc);
@@ -754,7 +754,7 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
 						 bat("tj_" + collName + "_size"), 
 						 cands, 
 						 collHeight, 
-						 false, false, min(iter), max(iter), false);
+						 false, false, min(iter), max(iter), false, chr(nil));
                var t7 := time();
 	       cands := nil;
 	       tid_pre := nil;
@@ -797,7 +797,7 @@ PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :
 					bat("tj_" + collName + "_size"), 
 					cands, 
 					collHeight, 
-					false, false, min(iter), max(iter), false);
+					false, false, min(iter), max(iter), false, chr(nil));
      elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
      var elem_tid := elem_termpre.join(tid_pre.reverse());
      elem_termpre := nil;
@@ -1202,7 +1202,7 @@ PROC size_term( bat[oid,any] region ) : bat[oid,dbl] :=
     # Check the order of the items:
     items.chk_order();
     
-    var res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    var res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false, chr(nil));
     
     var result := [dbl]({count}(res));
    

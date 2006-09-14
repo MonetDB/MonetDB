@@ -142,7 +142,7 @@ int dbat_finalize(dbat* dbat) {
 int dbat_extend(dbat* dbat, int i) {
     /* size_t newsize = MAX(dbat->max_sz+MAX(MINCHUNK,dbat->max_sz/4),(size_t)i);*/
 
-    size_t newsize = MAX(MIN(MAX(MINCHUNK,dbat->max_sz*2),dbat->max_sz+MAXCHUNK),(size_t)i);
+    size_t newsize = MAX(MIN(MAX(MINCHUNK,dbat->max_sz*2),(size_t)(dbat->max_sz+MAXCHUNK)),(size_t)i);
 
     /* first check if the number of BUN's < INT_MAX. If this was the case
      * and the previous time INT_MAX was returned this means the BAT cannot
