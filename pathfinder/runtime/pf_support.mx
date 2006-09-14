@@ -2613,7 +2613,7 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
         # (required semantics)
 
         # get NID values for new nodes
-        var newnids := ws_newrids(ws, doccont, insertsize).hmark(0@0); # [idx,NID]
+        var newnids := ws_newnids(ws, doccont, insertsize).hmark(0@0); # [idx,NID]
         var newnididx := 0@0;
 
         var insert_pre_size := ws.fetch(PRE_SIZE).find(insertcont);
