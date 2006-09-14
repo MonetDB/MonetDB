@@ -98,16 +98,6 @@ print("res_scj");  [print](res_scj);
             # as well as content_pre_frag
             var content_pre_frag := res_frag;
             
-        # get the maximum level of the new constructed nodes
-        # and set the maximum of the working set
-        {
-            var height := int(content_level.max()) + 1;
-            ws.fetch(HEIGHT).replace(WS, 
-                                     max(ws.fetch(HEIGHT).fetch(WS),
-                                         height));
-            height := nil;
-        }
-            
         root_iter := qn_iter.chk_order();
         # calculate the sizes for the root nodes
         root_size := {count}(content_iter.reverse(), qn_iter.reverse(), FALSE).tmark(seqbase(qn_iter));
@@ -215,11 +205,7 @@ print("res_scj");  [print](res_scj);
     # working set, that a following (preceding) step can check
     # the fragment boundaries
     {
-        var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));
-        var new_pre_values := roots.tmark(seqb);
-        seqb := nil;
-        ws.fetch(WS_FRAG).fetch(WS).insert(new_pre_values);
-        new_pre_values := nil;
+        reverse(ws.fetch(FRAG_ROOT).fetch(WS)).insert(reverse(roots).project(oid_nil));
     }
 
     # ----------------------------------
