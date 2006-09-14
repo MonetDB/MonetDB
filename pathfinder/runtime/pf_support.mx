@@ -1352,106 +1352,6 @@ PROC loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @- update primitives
 @mil
 
-PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat] ws) : BAT[bat,bat] {
-    var res := nil;
-    
-    if ( isnil(seqbase(item)) or isnil(seqbase(kind)) ) {
-        ERROR("delete_nodes: heads of item & kind must not be NIL!");
-        return res;
-    }
-    if ( (count(item) != count(kind)) or (seqbase(item) != seqbase(kind)) ) {
-        ERROR("delete_nodes: heads of item & kind must be aligned!");
-        return res;
-    }
-    if (count(item) = 0) {
-        res := new(bat,bat,0).access(BAT_READ);
-    } else {
-        var bit30 := 1<<30;
-        var order :=  3; # input & output of location step is sorted on item
-        var cols  := 13; # number of PRE_* columns and *NID* indices to be updated: 
-                         # PRE_{SIZE,LEVEL,KIND,PROP,NID}, NID_RID, KND_{NID_[0-4],PROP_{0,3}}
-        var cont  := kind.get_container();
-            kind  := nil;
-        var uCont := cont.tunique().sort();
-            res   := new(bat, bat, cols * count(uCont));
-	uCont@batloop () {
-	    var contID  := $h;
-            var pre_size := ws.fetch(PRE_SIZE).fetch(contID);
-            if (count(pre_size) > 0) {
-                var conts := cont.ord_uselect(contID).project(nil).reverse();
-                if (count(conts) > 0) {
-                    var items    := conts.leftfetchjoin(item).reverse().sort().mark(0@0).reverse();
-                        conts    := nil;
-                    var iters    := items.project(0@0); # we don\'t care about iters, here
-                    var cands    := pre_size.project(nil).reverse().chk_order();
-                    var descs    := descendant_or_self (iters, items, contID, ws, order, cands);
-                        cands    := nil;
-                        iters    := nil;
-                        items    := nil;
-                    var pre_     := descs.reverse().project(nil).chk_order();
-                        descs    := nil;
-
-                        res      := res.insert(ws.fetch(PRE_SIZE ).fetch(contID), delete_nodes_prepare_pre_size(pre_size, pre_));
-                        pre_size := nil;
-                    var pre_chr  := pre_.[chr]();
-                        res      := res.insert(ws.fetch(PRE_LEVEL).fetch(contID), pre_chr);
-                        res      := res.insert(ws.fetch(PRE_KIND ).fetch(contID), pre_chr);
-                        pre_chr  := nil;
-                        res      := res.insert(ws.fetch(PRE_PROP ).fetch(contID), pre_);
-                        res      := res.insert(ws.fetch(PRE_NID  ).fetch(contID), pre_);
-                    var pre_nid  := ws.fetch(PRE_NID).fetch(contID);
-                    var nid_     := pre_.reverse().leftfetchjoin(pre_nid).reverse().sort();
-                        pre_     := nil;
-                        pre_nid  := nil;
-                        res      := res.insert(ws.fetch(NID_RID  ).fetch(contID), nid_);
-                }
-            }
-        }
-        res := res.access(BAT_READ);
-    }
-    return res;
-}
-ADDHELP("delete_nodes_prepare", "manegold", "Aug 26 2005",
-"PARAMETERS:\n\
- BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
- BAT[void,oid] kind (encoded container-id of nodes that are to be deleted)\n\
- BAT[void,bat] ws (working set)\n\
-RESULT:\n\
- BAT[bat,bat] BAT of BAT-pairs ('dst','src')\n\
-DESCRIPTION:\n\
- Given a list of nodes (item) to be deleted and their container-id (encoded in kind),\n\
- delete_nodes_prepare() finds all decendants of the nodes that have to be deleted,\n\
- and returns a BAT of BAT-pairs ('dst','src'), where\n\
- 'dst' is the (persistent) BAT that has to be updated, and\n\
- 'src' contains the new values.\n\
- (We don't care about iters, here.)",
-"pf_support");
-
-PROC delete_nodes_execute (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat] ws) : void {
-    var res := delete_nodes_prepare(item, kind, ws);
-    
-    if (not(isnil(res))) {
-        #if (commit_update_log(res)) { # FIXME/TODO #
-            var dst := res.mark(0@0).reverse();
-            var src := res.reverse().mark(0@0).reverse();
-            [replace](dst, src, TRUE);
-        #}
-    }
-}
-ADDHELP("delete_nodes_execute", "manegold", "Aug 26 2005",
-"PARAMETERS:\n\
- BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
- BAT[void,oid] kind (encoded container-id of nodes that are to be deleted)\n\
- BAT[void,bat] ws (working set)\n\
-DESCRIPTION:\n\
- Given a list of nodes (item) to be deleted and their container-id (encoded in kind),\n\
- delete_nodes_execute() calls delete_nodes_prepare()\n\
- to calculate all BATs that have to be updates and their new values.\n\
- The updates are then first committed to the log\n\
- before they are applied to the BATs.\n\
- (We don't care about iters, here.)",
-"pf_support");
-
 # the UPDATE_INSERT_* commands MUST be consecutive, the
 # UPDATE_INSERT_LAST and UPDATE_INSERT_BEFORE commands also MUST be
 # consecutive
@@ -1588,7 +1488,7 @@ PROC movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid cont, oid from, i
     return replacements;        # not moving, so nothing to do
 
 # The picture shows the layout of the tables and what the important
-# variables represent.  When delta > 0, data the data is moved down (and
+# variables represent.  When delta > 0, the data is moved down (and
 # thus the hole is moved up).
 #
 #       delta > 0 (moving down)                delta < 0 (moving up)
@@ -2249,6 +2149,7 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
   if (elems.count() > 0) {
     # insert new nodes
     elems := elems.mirror(); # [i,i]
+    # one at a time
     elems.leftjoin(update_insert_node_item)@batloop() {
 #       if (debug) printf("\nstart of loop for argument %%d\n", int($h));
       var insertcont := batcont.fetch($h);
@@ -2711,24 +2612,9 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
         # only look at unedited version of to-be-inserted document
         # (required semantics)
 
-        # find NID value for new node (highest existing plus one)
-        var docnidnew := oid_nil;
-        if (nid_rid.count() > 0) {
-          docnidnew := nid_rid.reverse().max();
-        }
-        if (nid_rid_update.count() > 0) {
-          var tmp := nid_rid_update.reverse().max();
-          if (isnil(docnidnew)) {
-            docnidnew := tmp;
-          } else if (docnidnew < tmp) {
-            docnidnew := tmp;
-          }
-        }
-        if (isnil(docnidnew)) {
-          docnidnew := 0@0;           # should not happen: no NIDs used
-        } else {
-          docnidnew := oid(lng(docnidnew) + 1);
-        }
+        # get NID values for new nodes
+        var newnids := ws_newrids(ws, doccont, insertsize).hmark(0@0); # [idx,NID]
+        var newnididx := 0@0;
 
         var insert_pre_size := ws.fetch(PRE_SIZE).find(insertcont);
         var insert_pre_level := ws.fetch(PRE_LEVEL).find(insertcont);
@@ -2771,6 +2657,7 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
           # if we're inserting a text node, we may have to merge
           # consecutive text nodes
           # we remember the position in a hacky place
+          # note, insertsize == 1 in this case
           var texts;
           if (replacements.exist(replacements)) {
             texts := replacements.find(replacements);
@@ -2778,7 +2665,7 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
             texts := new(oid, oid);
             replacements := replacements.insert(replacements, texts);
           }
-          texts.insert(doccont, docnidnew);
+          texts.insert(doccont, newnids.find(newnididx));
         }
 
         # do the actual insert: copy the data from the source document
@@ -2812,8 +2699,8 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
               lastdata := docs.reverse().max();
             }
           }
-          var insnnids := inskind.uselect(chr_nil, chr_nil).mark(docnidnew); # PRE-New NID
-          docnidnew := oid(lng(docnidnew) + insnnids.count());
+          var insnnids := inskind.uselect(chr_nil, chr_nil).mark(newnididx).join(newnids); # PRE-New NID
+          newnididx := oid(wrd(newnididx) + insnnids.count());
           if (not(samedoc)) {
             insprop := insprop.copy().access(BAT_WRITE);
             if (texts.count() > 0) {

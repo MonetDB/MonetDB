@@ -1019,7 +1019,7 @@ PROC __runtime_newpage(BAT[lock,bat] runtime) : oid
     return oid_nil;
 }
 
-PROC __runtime_newrids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void] 
+PROC __runtime_newnids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void]
 {
     var free_nids := runtime.fetch(RT_NID_FREELIST);
     var i := count(free_nids);
@@ -1038,7 +1038,7 @@ PROC __runtime_newrids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void]
 ws_update  - maintain indices after updates
 ws_lookup  - use the index to lookup nodes by qname
 ws_newpage - allocate a new page, during an update
-ws_newrids - allocate a new rids, during an update
+ws_newnids - allocate a new nids, during an update
 @mil
 # proc to call from the update code: acquire locks and add new nodes and remove deleted ones
 PROC ws_update(BAT[void,bat] ws, 
@@ -1080,6 +1080,7 @@ PROC ws_lookup(BAT[void,bat] ws,
     return res.hmark(oid_nil);
 }
 
+# append a new page. when the page is at the end; we 
 PROC ws_newpage(BAT[void,bat] ws, 
                 oid cont) : oid 
 {
@@ -1156,21 +1157,20 @@ PROC ws_newpage(BAT[void,bat] ws,
     return page_id;
 } 
 
-# append a new page. when the page is at the end; we 
-PROC ws_newrids(BAT[void,bat] ws, 
+# return free NID values in the head
+PROC ws_newnids(BAT[void,bat] ws, 
                 oid cont,
-                int cnt) : oid 
+                int cnt) : BAT[oid,void]
 {
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
-    # if there is a free page, then this is easy
     lock_unset(coll_lock);
-    var newrids := empty_bat, err := CATCH(newrids := __runtime_newrids(runtime, cnt));
+    var newnids := empty_bat, err := CATCH(newnids := __runtime_newnids(runtime, cnt));
     lock_unset(coll_lock);
 
-    if (isnil(err) and bit(cnt :-= count(newrids))) {
-        # not enough free rids page: we must physically extend the nid_rid table 
+    if (isnil(err) and bit(cnt :-= count(newnids))) {
+        # not enough free nids page: we must physically extend the nid_rid table 
         var colname := ws.fetch(CONT_NAME).find(cont);
 
         # get the shredlock, as we need append-exclusive access  
@@ -1187,7 +1187,7 @@ PROC ws_newrids(BAT[void,bat] ws,
                 nid_rid.append(empty_page_oid);
                 nid_cnt :+= REMAP_PAGE_SIZE;
             }
-            reverse(newrids).append(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1));
+            reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
 
             lock_set(pf_short);
             err := CATCH(_shredlock_unset(colname, int(ws)));
@@ -1196,13 +1196,13 @@ PROC ws_newrids(BAT[void,bat] ws,
             if (isnil(err) and (nid_cnt > nid_off)) {
                 # add extra created NIDs to the freelist
                 lock_set(coll_lock);
-                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(nid_rid.slice(nid_off,nid_cnt - 1)));
+                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(reverse(nid_rid.slice(nid_off,nid_cnt - 1))));
                 lock_unset(coll_lock);
             }
         }
     }
     if (not(isnil(err))) ERROR("ws_newpage: " + err);
-    return newrids;
+    return newnids;
 } 
 
 
