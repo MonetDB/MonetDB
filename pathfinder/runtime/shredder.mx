@@ -211,7 +211,7 @@ attrDB_insert(idrefAttrDBStr *adb,
     aTag = GDKstrdup(aTag);
     if (oTag == NULL || aTag == NULL) goto error;
 
-    if (adb->n_specAttr >= adb->max_specAttr) {
+    if (++adb->n_specAttr >= adb->max_specAttr) {
         int newsz =(adb->max_specAttr?(adb->max_specAttr*2):ADB_STARTSIZE);
 
         specAttrStr *newb =(specAttrStr*)GDKmalloc(newsz*sizeof(specAttrStr));
