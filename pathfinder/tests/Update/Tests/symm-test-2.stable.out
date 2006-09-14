@@ -69,7 +69,7 @@ Recommendation
 </type>
 </document>
 </documents></XQueryResult>
-destroy_ws(ws);
+ws_destroy(int(ws));
 ;
 printf("\nDone..\n");
 

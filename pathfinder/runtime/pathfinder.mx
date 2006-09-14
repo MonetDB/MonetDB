@@ -1579,7 +1579,7 @@ PROC shred_stream(Stream s,
     var names := bat(void,str).insert(name).access(BAT_READ).seqbase(0@0);
     var ws := 2000000000 + clientid();
     var err := CATCH(shred_doc_base(s, names, names, names.project(colname), names.project(pageFree), s));
-    ws_destroy(ws); 
+    ws_destroy(int(ws)); 
     if (not(isnil(err))) ERROR(err);
 }
 
@@ -1745,7 +1745,7 @@ PROC shred_doc(BAT[void,str] locations,
                                               colnames.tmark(0@0), 
                                               pageFrees.tmark(0@0), 
                                               stream_nil, ws));
-    ws_destroy(ws); 
+    ws_destroy(int(ws)); 
     if (not(isnil(err))) ERROR(err);
     var ms := (us := usec() - us) / 1000;
     printf("%c Shredded %d XML documents, total time after commit=%lld.%03llds\n", chr(35), nr, /(ms,1000),%(ms,1000));
@@ -1779,7 +1779,7 @@ PROC delete_doc(str name) : void
 {
     var ws := 2000000000 + clientid();
     var err := CATCH(del_doc_base(bit_nil, bat(void,str).append(name), ws));
-    ws_destroy(ws);
+    ws_destroy(int(ws));
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
@@ -1793,7 +1793,7 @@ PROC delete_all_docs(bit cachedOnly) : void
 {
     var ws := 2000000000 + clientid();
     var err := CATCH(del_doc_base(cachedOnly, doc_name, ws));
-    ws_destroy(ws);
+    ws_destroy(int(ws));
     if (not(isnil(err))) ERROR(err);
     
 }

@@ -1763,7 +1763,7 @@ PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 	bat("tj_globalTags").access(BAT_WRITE);
         
 	tj_add2collection(tj_collection(collName),ws,doc,selTagList);
-	destroy_ws(ws);
+	ws_destroy(int(ws));
 	var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(doc));
         
         var coll_oid := bat("tj_collName").reverse().find(collName);

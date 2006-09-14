@@ -10128,7 +10128,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="9998" copyright="CWI" attribute="attribute value">element content 9998</element>
 <element author="Sjoerd Mullender" title="test element" attr="9999" copyright="CWI" attribute="attribute value">element content 9999</element>
 </document></XQueryResult>
-destroy_ws(ws);
+ws_destroy(int(ws));
 ;
 printf("\nDone..\n");
 
