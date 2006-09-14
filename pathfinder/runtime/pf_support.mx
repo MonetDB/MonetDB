@@ -5575,7 +5575,7 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 
     # pick the according cont value for each document requested
     var ret_cont := item.leftjoin(reverse(ws.fetch(OPEN_NAME)))
-                        .leftfetchjoin(ws.fetch(DOCID_CONT))
+                        .leftfetchjoin(ws.fetch(OPEN_CONT))
                         .tmark(0@0);
 
     # pre values will all be zero
