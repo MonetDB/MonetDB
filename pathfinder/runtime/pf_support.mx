@@ -5715,7 +5715,7 @@ NOTE: the working set 'ws' is changed as side effect!",
 PROC add_qname (str prefix, str uri, str local, BAT[void,BAT] ws) : oid
 {
     var props := ws.fetch(QN_PREFIX_URI_LOC).fetch(WS);
-    var key := prefix + ":" + uri + ":" + loc;
+    var key := prefix + ":" + uri + ":" + local;
     var itemID := oid(count(props));
     if (not(isnil(CATCH(itemID := reverse(props).find(key))))) {
         props.insert(itemID, key);
