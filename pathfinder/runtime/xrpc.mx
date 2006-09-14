@@ -205,7 +205,7 @@ PROC get_rpc_res (
                     } else if (tpe = "anyNode"){
                         res_iter.append(oid(itercnt));
                         res_item.append(pre_nid.fetch($h));
-                        i := set_kind(local_name.leftjoin(reverse(ws.fetch(DOCID_NAME))).leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);
+                        i := set_kind(local_name.leftjoin(reverse(ws.fetch(OPEN_NAME))).leftjoin(reverse(ws.fetch(OPEN_CONT))).tmark(0@0), ELEM);
                         res_kind.append(i);
                         tpe := ""; # clean up type info
                     }
