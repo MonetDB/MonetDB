@@ -139,7 +139,7 @@ monet4_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 	return TRUE;
 }
 
-char *
+int
 monet4_drop_user(ptr _mvc, char * user)
 {
 	ssize_t rid;
@@ -150,9 +150,9 @@ monet4_drop_user(ptr _mvc, char * user)
 
 	rid = column_find_row(m->session->tr, users_name, user, NULL);
 	if (rid < 0)
-		return NULL;
+		return FALSE;
 	table_delete(m->session->tr, users, rid);
-	return user;	
+	return TRUE;	
 }
 
 void

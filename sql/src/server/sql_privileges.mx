@@ -229,7 +229,7 @@ sql_alter_user(mvc *m, str user, str passwd, sqlid schema_id)
 int
 sql_drop_user(mvc *m, str user)
 {
-	if (backend_drop_user(m,user) == NULL)
+	if (backend_drop_user(m,user) == FALSE)
 		return FALSE;
 	return sql_drop_role(m, user);
 }
