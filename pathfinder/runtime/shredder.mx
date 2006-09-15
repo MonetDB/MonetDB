@@ -1653,7 +1653,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     for(i=PRE_SIZE; i<=PRE_NID; i++) {
         shredBAT_setcount(&shredCtx->dstBAT[i], newsize);
     }
-    shredBAT_setcount(&shredCtx->dstBAT[NID_RID], shredCtx->nnode_nid);
+    shredBAT_setcount(&shredCtx->dstBAT[NID_RID], shredCtx->nnode_nid+1);
     for(i=ATTR_OWN; i<=ATTR_PROP; i++) {
         shredBAT_setcount(&shredCtx->dstBAT[i], shredCtx->nnode_attr);
     }
