@@ -271,7 +271,7 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
 
-	void *p;
+	void *p=0;
 
 	str schema = NULL;
 	str username = NULL;
