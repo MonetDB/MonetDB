@@ -10567,9 +10567,10 @@ const char* PFstartMIL(void) {
 
 const char* PFdocbatMIL(void) {
     return  
-        " var docBAT := new(str,bat,WS_SIZE);\n"
-        " var height := index_doc(bat(shredBAT), docBAT);\n"
-        " add_docbat(ws, docBAT, \"\", TEMP_DOC, oid(nil), height);\n";
+        /* StM: analogous to runtime/xrpc.mx's PROC rpc_client() --- 
+         * not sure, whether this is correct ...
+         */
+        " ws_addcoll(ws, bat(str,bat,WS_SIZE), \"\", TEMP_DOC);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
