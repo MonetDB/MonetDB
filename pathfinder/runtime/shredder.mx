@@ -1780,6 +1780,7 @@ CMDshred_url(BAT *docBAT,
              lng *percentage,
              lock *collLock)
 {
+    assert(percentage);
     return shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL, collLock);
 }
 
@@ -1789,6 +1790,7 @@ CMDshred_str(BAT *docBAT,
              lng *percentage,
              lock *collLock)
 {
+    assert(percentage);
     return shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL, collLock);
 }
 
@@ -1798,7 +1800,8 @@ CMDshred_stream(BAT *docBAT,
                 lng *percentage,
                 lock *collLock)
 {
-    stream *s = (stream*) ((*fp && *(ptr*) fp != ptr_nil)?*fp:NULL);
+    stream *s = (stream*) ((fp && *(ptr*) fp != ptr_nil)?*fp:NULL);
+    assert(percentage);
     return shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL, collLock);
 }
 @c
