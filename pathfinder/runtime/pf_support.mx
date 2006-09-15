@@ -858,7 +858,7 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 		ERROR("@1(0): heads of iter & item/ctx must not be NIL!");
 	}
 	if ( (count(iter) != count(item)) or (seqbase(iter) != seqbase(item)) ) {
-		ERROR("@1(1): heads of iter & item/ctx must be aligned!");
+		ERROR("@1(1): heads of iter & item/ctx must be aligned (count(iter)="+str(count(iter))+", count(item)="+str(count(item))+", seqbase(iter)="+str(seqbase(iter))+", seqbase(item)="+str(seqbase(item))+") !");
 	}
 	@:chk_order(@1(3),0,iter)@
 	@:chk_order(@1(4),1,item)@
