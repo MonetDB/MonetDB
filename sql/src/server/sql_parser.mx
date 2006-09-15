@@ -1783,13 +1783,13 @@ routine_body:
 	procedure_statement 
 		{ $$ = L(); append_symbol( $$, $1); }
  |  BEGIN
-	procedure_statement_list
+	procedure_statement_list procedure_statement SCOLON 
     END
-		{ $$ = $2; }
+		{ $$ = append_symbol($2,$3); }
  |  BEGIN ATOMIC
-	procedure_statement_list
+	procedure_statement_list procedure_statement SCOLON 
     END
-		{ $$ = $3; }
+		{ $$ = append_symbol($3,$4); }
  ;
 
 /* change into compound statement 
@@ -1804,9 +1804,9 @@ routine_body:
 */
 
 procedure_statement_list:
-    procedure_statement SCOLON 	{ $$ = append_symbol(L(), $1); }
+    /* empty*/ 	 { $$ = L(); }
  |  procedure_statement_list 
-    procedure_statement SCOLON 	{ $$ = append_symbol($1, $2); }
+    procedure_statement SCOLON 	{ $$ = append_symbol($1,$2);}
  ;
 
 procedure_statement:
@@ -2970,7 +2970,7 @@ existence_test:
  ;
 
 subquery:
-	select_with_parens
+	simple_select
  ;
 
 	/* simple_scalar expressions */
