@@ -1,3 +1,6 @@
-select boatname from voyage;
-select distinct boatname from voyage;
+START TRANSACTION;
 
+select boatname from "voyages";
+select distinct boatname from "voyages";
+
+commit;
