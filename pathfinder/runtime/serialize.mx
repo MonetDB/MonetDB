@@ -434,8 +434,8 @@ xmlNsPush (XmlNsFrame** top, char* prefix, char* uri)
         fp->prefix = NULL;
         fp->uri    = NULL;
 
-        if ( prefix && !(fp->prefix = strdup(prefix)) ) return NULL;
-        if ( uri    && !(fp->uri    = strdup(uri))    ) return NULL;
+        if ( prefix && !(fp->prefix = GDKstrdup(prefix)) ) return NULL;
+        if ( uri    && !(fp->uri    = GDKstrdup(uri))    ) return NULL;
 
         fp ->next  = NULL;
         if ( *top ) {
