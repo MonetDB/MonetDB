@@ -272,6 +272,8 @@ mal_export int strIconv(str *res, str org, str f, str t);
 mal_export int strSubstitute(str *res, str s, str src, str dst, bit *g);
 mal_export str STRfindUnescapedOccurrence(str b, str c, str esc);
 mal_export int STRlike(str s, str pat, str esc);
+mal_export str STRsubstringTail(str *ret, str *s, int *start);
+mal_export str STRsubstring(str *ret, str *s, int *start, int *l);
 #endif /* __string_H__ */
 @}
 
