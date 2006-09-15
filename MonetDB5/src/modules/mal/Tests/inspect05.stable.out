@@ -511,6 +511,7 @@ end main;	# 11
 [ "suspend",				  "command",	  "mserver",	  "():void ",														  "SERVERsuspend;"				  ]
 [ "stop",				  "command",	  "mserver",	  "():void ",														  "SERVERstop;"					  ]
 [ "trace",				  "command",	  "mserver",	  "(mid:int,flag:int):void ",												  "SERVERtrace;"				  ]
+[ "emptySet",			  "command",	  "constraints",  "(b:bat[:any_1,:any_2]):void ",												  "CemptySet;"					  ]
 [ "assert",				  "pattern",	  "language",	  "(v:any_1,pname:str,oper:str,val:any_2):void ",									  "MALassertTriple;"				  ]
 [ "assert",				  "command",	  "language",	  "(v:oid,term:str):void ",												  "MALassertOid;"				  ]
 [ "assert",				  "command",	  "language",	  "(v:str,term:str):void ",												  "MALassertStr;"				  ]
