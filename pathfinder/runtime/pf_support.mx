@@ -3072,9 +3072,9 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
 {
   var qn_pref_uri_loc := ws.fetch(_QN_PREFIX_URI_LOC).find(cont);
 
-  var qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
+  var qn_map := pref_uri_loc.outerjoin(qn_pref_uri_loc.reverse());
   if (add) {
-    var miss := qnbat.uselect(oid_nil);
+    var miss := qn_map.uselect(oid_nil);
     if (miss.count() > 0) {
       # get the unique missing strings and append them
       var _pref_uri_loc := reverse(miss).join(pref_uri_loc).tunique().tmark(0@0);
