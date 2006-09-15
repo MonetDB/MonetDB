@@ -623,6 +623,7 @@ static char* get_type(oid tnode_pre, oid *pre_prop, BAT *qn_loc, BAT* qn_prefix)
 }
 
 static int handle_rpc_request(struct shttpd_callback_arg *arg) {
+    lng percentage = 0;
     int sock = -1, retval = GDK_FAIL;
     size_t i = 0, j = 0, k = 0, off = 0; 
     char *strptr = NULL, *req_msg = NULL;
@@ -690,7 +691,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     }
 
     shredBAT = BATnew(TYPE_str, TYPE_bat, 32);
-    if (shredBAT == NULL || CMDshred_str(shredBAT, strptr, 0, NULL) == GDK_FAIL) {
+    if (shredBAT == NULL || CMDshred_str(shredBAT, strptr, &percentage, NULL) == GDK_FAIL) {
         if (shredBAT) BBPreclaim(shredBAT);
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XRPC request: bad XML structure, could not shred\n");
@@ -941,6 +942,7 @@ int CMDhttp_post(BAT **res,
                  BAT* dbl_values,
                  BAT* dec_values,
                  BAT* str_values) {
+    lng percentage = 0;
     int len, ret, sock = -1, port = HTTP_PORT, retval = GDK_FAIL;
     int type = 0; /* param type in C */
     buffer *b = NULL;
@@ -1230,7 +1232,7 @@ int CMDhttp_post(BAT **res,
     /* Retrieve the SOAP Envelope from the response message */
     strptr = strstr(strptr, "<env:Envelope");
     shredBAT = BATnew(TYPE_str, TYPE_bat, 32);
-    if (shredBAT == NULL || CMDshred_str(shredBAT, strptr, 0, NULL)  == GDK_FAIL) {
+    if (shredBAT == NULL || CMDshred_str(shredBAT, strptr, &percentage, NULL)  == GDK_FAIL) {
         if (shredBAT) BBPreclaim(shredBAT);
         GDKerror("CMDhttp_post: invalid XRPC response received\n");
         GDKerror("%s\n", strptr);
