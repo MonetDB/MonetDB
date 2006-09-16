@@ -5569,26 +5569,14 @@ void pf_support_epilogue() {
 @mil
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
-    # consider each document only once
-    var docs := item.tunique().hmark(0@0);
-
-    # throw out documents we already have in the working set
-    docs := docs.reverse()
-                .kdiff(reverse(ws.fetch(OPEN_NAME)))
-                .hmark(0@0);
-
-    # load all remaining documents into the working set
-    ws_doc(ws, docs);
-
-    # The working set now contains all documents we need.
+    # load all requested documents into the working set
+    var r := ws_doc(ws, item);
 
     # pick the according cont value for each document requested
-    var ret_cont := item.leftjoin(reverse(ws.fetch(OPEN_NAME)))
-                        .leftfetchjoin(ws.fetch(OPEN_CONT))
-                        .tmark(0@0);
+    var ret_cont := r.tmark(0@0);
 
-    # pre values will all be zero
-    var ret_item := ret_cont.project(0@0);
+    # pick the according root-pre value for each document requested
+    var ret_item := r.hmark(0@0);
 
     # return result as a BAT of BATs
     return new (void, BAT).append(ws)
