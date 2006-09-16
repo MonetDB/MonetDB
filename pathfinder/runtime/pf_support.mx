@@ -1050,6 +1050,15 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 {
     # "order" is not (yet?) used, here.
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    # upwards steps cannot yet cope with the new "root" ("collection"?) node;
+    # hence, for now, we remove it, here;
+    # eventually, the upwards step implementation should be fixed accordingly.
+    if (count(pre_sizes) > 1) {
+        var pre_kinds := ws.fetch(PRE_KIND).fetch(frag);
+        if (pre_kinds.fetch(0) = COLLECTION) {
+            pre_sizes := pre_sizes.slice(1,1+pre_sizes.fetch(1));
+        }
+    }
     var res := ll_@1(iter, ctx, pre_sizes);
     return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 }
