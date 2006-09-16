@@ -1121,7 +1121,7 @@ if (postfilter) {
 	var pre_prop := ws.fetch(PRE_PROP).fetch(contID);
 	if (is_constant(pre_cont)) {
                 # determine a sel [qnid,qnid] of qualifying nslocs (i.e. prop IDs)
-		var sel := ws.fetch(@1).fetch(contID).ord_uselect(@2).mirror();
+		var sel := ws.fetch(@1).fetch(bat2constant(pre_cont)).ord_uselect(@2).mirror();
 
                 # first join on prop, getting some false hits for non ELEMENT nodes
                 tmp_res := result_part_item.leftfetchjoin(pre_prop).leftjoin(sel).hmark(0@0);
@@ -1179,7 +1179,7 @@ if (postfilter) {
 	       cands := ws.fetch(PRE_SIZE).fetch(contID);
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
 	if (is_constant(pre_cont)) {
-		var qn_sel := ws.fetch(@2).fetch(contID).ord_uselect(@1);
+		var qn_sel := ws.fetch(@2).fetch(bat2constant(pre_cont)).ord_uselect(@1);
                 if (isnil(CATCH(cands := ws_lookup(ws, contID, qn_sel.mirror())))) {
 	        	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
 	        	var nid_rid  := ws.fetch(NID_RID).fetch(contID);
