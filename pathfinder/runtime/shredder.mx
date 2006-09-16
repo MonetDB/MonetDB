@@ -1622,7 +1622,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     BAT *map_pid =shredCtx->dstBAT[MAP_PID].bat;
 
     /* adapt super node size */
-    shredCtx->dstBAT[PRE_SIZE].cast.oidCAST[0] = shredCtx->nnode_pre-1;
+    shredCtx->dstBAT[PRE_SIZE].cast.intCAST[0] = (int)(shredCtx->nnode_pre-1);
 
     /* fill the MAP_PID bat with an identity mapping */
     if (map_pid->ttype == TYPE_void) {
