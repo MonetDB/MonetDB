@@ -814,6 +814,9 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
                 case 4 /* DOCUMENT */:
                     item_start = "<result:document>";
                     break;
+                case 5 /* COLLECTION */:
+                    /* nothing to be done, here */
+                    break;
                 default:
                     return PROBLEM;
                     break;
@@ -864,6 +867,9 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
                     break;
                 case 4 /* DOCUMENT */:
                     item_end = "</result:document>";
+                    break;
+                case 5 /* COLLECTION */:
+                    /* nothing to be done, here */
                     break;
                 default:
                     return PROBLEM;

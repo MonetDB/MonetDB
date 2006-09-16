@@ -1170,6 +1170,11 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
                     /* all callbacks are triggered in caller function */
                     break;
                 }
+            case (char)5:
+                {   /* COLLECTION */
+                    /* nothing to be done, here */
+                    break;
+                }
             default:
                 fatal_err (ctx,
                            "Unknow kind %d IN xquery_node_print",

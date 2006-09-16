@@ -369,6 +369,7 @@ const TEXT             := chr(1);
 const COMMENT          := chr(2);
 const PI               := chr(3);
 const DOCUMENT         := chr(4);
+const COLLECTION       := chr(5);
 
 # zero
 const WS               := 0@0; # first container in ws = transient doc container
