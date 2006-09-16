@@ -1162,7 +1162,7 @@ if (postfilter) {
 @= kind_post
         if (postfilter) {
       		var pre_kind := ws.fetch(PRE_KIND).find(contID);
-               	tmp_res := result_part_item.leftjoin(pre_kind).ord_uselect(@1).hmark(0@0);
+               	tmp_res := result_part_item.leftfetchjoin(pre_kind).ord_uselect(@1).hmark(0@0);
 	       	@:mapping_code@
         }
 @= no_pre
@@ -1967,7 +1967,7 @@ PROC do_update_rename(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
       var list := econts.ord_uselect(cont).mirror(); # [i,i]
       var epres := list.leftjoin(eitem); # [i,PRE]
-      var ekinds := epres.leftjoin(pre_kind); # [i,KIND]
+      var ekinds := epres.leftfetchjoin(pre_kind); # [i,KIND]
       var esplit := ekinds.splitkind();
       var eelem := esplit.fetch(int(ELEMENT)).mirror(); # [i,i] element node in current container
       var epi := esplit.fetch(int(PI)).mirror(); # [i,i] processing instruction node in current container
@@ -2039,7 +2039,7 @@ PROC do_update_replace(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid
 
       var list := econts.ord_uselect(cont).mirror(); # [i,i] current container
       var epres := list.leftjoin(eitem); # [i,PRE]
-      var ekinds := epres.leftjoin(pre_kind); # [i,KIND]
+      var ekinds := epres.leftfetchjoin(pre_kind); # [i,KIND]
       var esplit := ekinds.splitkind();
       var etext := esplit.fetch(int(TEXT)).mirror(); # [i,i] text node in current container
       var ecomment := esplit.fetch(int(COMMENT)).mirror(); # [i,i] comment node in current container
