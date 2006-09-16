@@ -1176,7 +1176,7 @@ if (postfilter) {
 @= ns_pre
       { @:prefilter(ns,QN_URI)@ }
 @= prefilter
-	       cands := ws.fetch(PRE_SIZE).fetch(contID);
+	       cands := ws.fetch(PRE_SIZE).fetch(contID).mirror();
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
 	if (is_constant(pre_cont)) {
 		var qn_sel := ws.fetch(@2).fetch(bat2constant(pre_cont)).ord_uselect(@1);
