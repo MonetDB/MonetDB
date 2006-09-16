@@ -932,7 +932,7 @@ shred_start_element(void *xmlCtx,
         /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
         val_id = shredBAT_append_str(shredCtx, PROP_VAL,(char*)a_val);
         qn_id  = handle_pfx_uri_loc(shredCtx, (char*) a_pfx, (char*) a_uri, (char*) a_tag);
-        oid ownerPre = shredCtx->nnode_nid;
+        oid ownerPre = node.nid;
 
         /* insert attribute tuple */
         oid nattr = shredCtx->nnode_attr++; 
@@ -1554,8 +1554,8 @@ shredder_create(char *location,
         {
             shredCtx->nnode_pre--; /* walk back over unused space */
         }
+        shredCtx->nnode_nid = BATcount(shredCtx->dstBAT[NID_RID].bat);
     }
-    shredCtx->nnode_nid = BATcount(shredCtx->dstBAT[NID_RID].bat);
     shredCtx->pre_nid = shredCtx->nnode_pre - shredCtx->nnode_nid;
 
     /* log start of fragment */
@@ -1653,7 +1653,8 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     for(i=PRE_SIZE; i<=PRE_NID; i++) {
         shredBAT_setcount(&shredCtx->dstBAT[i], newsize);
     }
-    shredBAT_setcount(&shredCtx->dstBAT[NID_RID], shredCtx->nnode_nid+1);
+    assert((shredCtx->updatable && shredCtx->nnode_nid <= newsize) || (!shredCtx->updatable && shredCtx->nnode_nid == newsize));
+    shredBAT_setcount(&shredCtx->dstBAT[NID_RID], shredCtx->nnode_nid);
     for(i=ATTR_OWN; i<=ATTR_PROP; i++) {
         shredBAT_setcount(&shredCtx->dstBAT[i], shredCtx->nnode_attr);
     }
