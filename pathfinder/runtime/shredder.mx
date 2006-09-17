@@ -718,7 +718,7 @@ handle_idref(shredCtxStruct *shredCtx,
     while(*src) {
         char *end, *dst = shredCtx->val; /* points into shredCtx->val_prefix that already contains '<rootnid>_' prefix */
 
-        while(*src && !ISSPACE(*src)) src++; /* skip spaces */
+        while(*src && ISSPACE(*src)) src++; /* skip spaces */
 
         /* copy '<ID>' until space or EOS */
         for(end = src+PFSHRED_BUFLEN; *src && !ISSPACE(*src); src++) 
