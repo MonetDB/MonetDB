@@ -1443,7 +1443,10 @@ typedef struct { oid l,r; } dst_t;
 @:nlthetajoin_tpe(impl,eq,==)@
 BAT *
 BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
-	int optimize = (l->htype == TYPE_oid || BAThdense(l)) && (r->ttype == TYPE_oid || BATtdense(r));
+	int optimize = (l->htype == TYPE_oid || BAThdense(l)) && (r->ttype == TYPE_oid || BATtdense(r)) \
+	               /* the follwoing might be trivial cases,
+	                * but the "optimized" nlthetajoin implementation cannot handle them, yet ... */
+	               && l->ttype != TYPE_void && r->htype != TYPE_void;
 	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate+128);
 	int lo = 0, hi = 0;
 
