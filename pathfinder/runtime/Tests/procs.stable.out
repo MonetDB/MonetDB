@@ -145,7 +145,7 @@ procs();
 [ "get_container(int) : oid"																  ]
 [ "get_mapi_port() : int"																  ]
 [ "get_root(BAT[oid,BAT], BAT[void,oid], BAT[void,int], BAT[void,oid]) : BAT[void,oid]"								  ]
-[ "get_root(BAT[oid,BAT], BAT[void,oid], int, oid) : oid"											  ]
+[ "get_root(BAT[oid,BAT], BAT[void,oid], int, oid) : BAT[void,oid]"										  ]
 [ "get_root(BAT[oid,BAT], oid, int, oid) : oid"													  ]
 [ "get_rpc_res(oid, str, BAT[void,BAT], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"															  ]
 [ "get_type(BAT[void,int], int) : BAT[oid,void]"													  ]
