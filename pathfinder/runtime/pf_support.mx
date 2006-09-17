@@ -1183,7 +1183,7 @@ if (postfilter) {
 @= ns_post
         @:postfilter(QN_URI,ns,ELEMENT)@
 @= target_post
-        @:postfilter(PROP_TGT,tgt,ELEMENT)@
+        @:postfilter(PROP_TGT,tgt,PI)@
 @= kind_post
         if (postfilter) {
       		var pre_kind := ws.fetch(PRE_KIND).find(contID);
