@@ -6157,7 +6157,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
                 "  var t := time();\n"
-                "  var r := ws_doc(ws, bat(void,str,1).append(item%s));\n"
+                "  var r := ws_doc(ws, item%s.materialize(ipik));\n"
                 "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
                 "  item  := r.hmark(0@0);\n"
                 "  time_shred :+= time() - t;\n"
