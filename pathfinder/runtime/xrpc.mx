@@ -64,7 +64,7 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values,
         BAT[void, dbl] dec_values,
-        BAT[void, str] str_values) : BAT[void, bat] = CMDhttp_post;
+        BAT[void, str] str_values) : BAT[str, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
 .PRELUDE = xrpc_prelude;
@@ -128,7 +128,7 @@ PROC rpc_client(
     if (options.search("rpctime") >= 0) {
         printf("\nMIL_Client_DeSerialisation_Start: %lld msec\n", time_milClntDeSeriaStart);
     }
-    return ws_addcoll(ws, bat(str,bat,WS_SIZE), local_name, TEMP_DOC);
+    return ws_addcoll(ws, rpcres, local_name, TEMP_DOC);
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\

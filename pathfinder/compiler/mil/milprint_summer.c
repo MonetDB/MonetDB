@@ -10566,11 +10566,8 @@ const char* PFstartMIL(void) {
 }
 
 const char* PFdocbatMIL(void) {
-    return  
-        /* StM: analogous to runtime/xrpc.mx's PROC rpc_client() --- 
-         * not sure, whether this is correct ...
-         */
-        " ws_addcoll(ws, bat(str,bat,WS_SIZE), \"\", TEMP_DOC);\n";
+    /* NjN why isn't this moved to the pathfinder.mx file */
+    return  " ws_addcoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
