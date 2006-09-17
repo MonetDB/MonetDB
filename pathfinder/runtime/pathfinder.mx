@@ -1780,7 +1780,7 @@ Shred xml document to the internal Pathfinder format, (analog to import_doc())."
 PROC delete_doc(str name) : void
 {
     var ws := 2000000000 + clientid();
-    var err := CATCH(del_doc_base(bit_nil, bat(void,str).append(name), ws));
+    var err := CATCH(del_doc_base(bit_nil, bat(void,str).seqbase(0@0).append(name), ws));
     ws_destroy(int(ws));
     if (not(isnil(err))) ERROR(err);
 }
