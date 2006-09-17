@@ -535,9 +535,9 @@ chunked thetajoin A.K.A. blocked nested-loops (by hand, by taking slices).
 @mil
 PROC replace_root(BAT[void,oid] result, BAT[oid,oid] frag_item, BAT[oid,oid] frag_frag) : void
 {
-	# MonetDB bogus: avoid materialized cartesian product in thetajoin using blocked nested loop
+        # MonetDB bogus: avoid materialized cartesian product in thetajoin using blocked nested loop
         var delta := 100000 / count(frag_frag); # generate 100K intermediate tuples max
-	var cur := 0, end := count(frag_item);
+        var cur := 0, end := count(frag_item);
         while(cur < end) {
             result.replace(leftthetajoin(frag_item.slice(cur, cur+delta), frag_frag, GE).{max}());
             cur :+= delta + 1;
@@ -546,49 +546,74 @@ PROC replace_root(BAT[void,oid] result, BAT[oid,oid] frag_item, BAT[oid,oid] fra
 
 PROC get_root(BAT[oid,bat] ws, oid item, int kind, oid cont) : oid
 {
-	if (kind.is_type(ATTR)) { # convert attributes to a pre
-		item := ws.fetch(ATTR_OWN).fetch(cont).find(item);
-	}
-	var nid_rid   := ws.fetch(NID_RID).fetch(cont);
-	var map_pid   := ws.fetch(MAP_PID).fetch(cont);
+        var nid_rid   := ws.fetch(NID_RID).fetch(cont);
+        var map_pid   := ws.fetch(MAP_PID).fetch(cont);
         var frag_root := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
-        return max(frag_root.select(oid_nil,item));
+
+        if (kind.is_type(ATTR)) { # convert attributes to a pre
+                item := ws.fetch(ATTR_OWN).fetch(cont).find(item);
+                item := nid_rid.find(item).swizzle(map_pid);
+        }
+
+        item := max(frag_root.select(oid_nil,item));
+        return item;
 }
 
-PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, int kind, oid cont) : oid
+PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, int kind, oid cont) : BAT[void,oid]
 {
-	var seqbase := item.seqbase();
-	if (kind.is_type(ATTR)) { # convert attributes to a pre
-		item := item.leftjoin(ws.fetch(ATTR_OWN).fetch(cont)).tmark(seqbase);
-	}
-	var nid_rid   := ws.fetch(NID_RID).fetch(cont);
-	var map_pid   := ws.fetch(MAP_PID).fetch(cont);
+        if ((count(item) = 1)) {
+        	# short-cut to avoid some extra work...
+		var root := bat(void,oid).seqbase(seqbase(item));
+		root.append(get_root(ws, item.fetch(0), kind, cont));
+                return root.access(BAT_READ);
+        }
+
+        var seqbase := item.seqbase();
+        var nid_rid   := ws.fetch(NID_RID).fetch(cont);
+        var map_pid   := ws.fetch(MAP_PID).fetch(cont);
         var frag_root := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
 
+        if (kind.is_type(ATTR)) { # convert attributes to a pre
+                item := item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch(cont));
+                item := item.leftfetchjoin(nid_rid).[swizzle](map_pid);
+                item := item.tmark(seqbase);
+        }
+
         var result := item.copy().access(BAT_WRITE);
-	replace_root(result, item, mirror(reverse(frag_root)));
+        replace_root(result, item, mirror(reverse(frag_root)));
         return result.access(BAT_READ).tmark(seqbase);
 }
 
 PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,oid] cont) : BAT[void,oid] 
 {
-	var seqbase := item.seqbase();
-        var result := item.copy().access(BAT_WRITE);
-        var attr := kind.get_type(ATTR).hmark(0@0);
-        if (attr.count() != 0) { # convert attributes to a pre
-                var attr_pre := mposjoin(attr.leftfetchjoin(cont), attr.leftfetchjoin(item), ws.fetch(ATTR_OWN));
-		result.replace(attr.leftfetchjoin(attr_pre));
+        if ((count(kind) = 1) and (count(cont) = 1)) {
+        	# short-cut avoid some extra work...
+                return get_root(ws, item, kind.fetch(0), cont.fetch(0));
         }
+
+        var seqbase := item.seqbase();
+        var result := item.copy().access(BAT_WRITE);
+
+        var attr_cont := kind.get_type(ATTR).mirror().leftfetchjoin(cont);
 
         # look up root fragment
         var conts := cont.tunique();
         conts@batloop() {
-	        var nid_rid   := ws.fetch(NID_RID).fetch($t);
-	        var map_pid   := ws.fetch(MAP_PID).fetch($t);
-                var frag_root := ws.fetch(FRAG_ROOT).fetch($t).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
-		var frag_item := cont.ord_uselect($t).leftfetchjoin(result);
-	        replace_root(result, frag_item, mirror(reverse(frag_root)));
-	}
+                var nid_rid   := ws.fetch(NID_RID).fetch($h);
+                var map_pid   := ws.fetch(MAP_PID).fetch($h);
+                var frag_root := ws.fetch(FRAG_ROOT).fetch($h).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
+                var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
+                var attr_item := attr_cont.ord_select($h);
+                if (count(attr_item) > 0) {
+                    attr_item := attr_item.mirror().leftfetchjoin(item);
+                    attr_item := attr_item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch($h));
+                    attr_item := attr_item.leftfetchjoin(nid_rid).[swizzle](map_pid);
+                    result.replace(attr_item);
+                }
+                var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
+                replace_root(result, frag_item, mirror(reverse(frag_root)));
+                var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
+        }
         return result.access(BAT_READ).tmark(seqbase);
 }
 
