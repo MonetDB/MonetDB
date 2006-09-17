@@ -1325,9 +1325,10 @@ PROC ws_doc(BAT[void,bat] ws,
     # all still unknown documents (if any) are shredded one-by-one into separate temporary collections
     var selidx_names := idx_doc.ord_uselect(oid_nil);
     if (bit(count(selidx_names))) {
-        selidx_names := selidx_names.mirror().leftfetchjoin(idx_names).reverse().kunique().reverse();
+        selidx_names := selidx_names.mirror().leftfetchjoin(idx_names);
+        var selidx_unames := selidx_names.reverse().kunique().reverse();
         var commitBAT := bat(void,str);
-        selidx_names@batloop() {
+        selidx_unames@batloop() {
             # note that due to caching rules, some temporary documents (e.g. file URLs) become persistent
             var ts       := idx_timestamps.find($h);
             var doCommit := not(isnil(ts));
@@ -1338,8 +1339,11 @@ PROC ws_doc(BAT[void,bat] ws,
             var coll_oid := shred_into_docBAT(docBAT, location, name, colname, oid_nil, empty_runtime, doCommit, lng(0), ts, stream_nil, int(ws));
             var cont     := ws_addcoll(ws, docBAT, colname, coll_oid);
             if (doCommit) commitBAT.append([bbpname](docBAT).tmark(0@0));
-            idx_coll.replace($h, coll_oid);
-            idx_doc.replace($h, coll_oid);
+            var idx_repl := selidx_names.uselect($t);
+            idx_colname.replace(idx_repl.project(colname));
+            idx_repl     := idx_repl.project(coll_oid);
+            idx_coll.replace(idx_repl);
+            idx_doc.replace(idx_repl);
         }
         # commit the new collections 
         pf_checkpoint(commitBAT);
