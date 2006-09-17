@@ -1575,7 +1575,7 @@ shredder_create(char *location,
      *(aka, shredCtx->val, that is shredCtx->val points *into* shredCtx->val_prefix).
      */
     char buf[32], *src=buf;
-    sprintf(buf, OIDFMT "_", shredCtx->nnode_nid);
+    sprintf(buf, OIDFMT "@0_", shredCtx->nnode_nid); /* added "@0" saves one cast from oid to str in MIL */
     shredCtx->val = shredCtx->val_prefix = (char*) GDKmalloc(1+strlen(buf)+PFSHRED_BUFLEN);
     shredCtx->lifo =                    (node_t *) GDKmalloc((XML_DEPTH_MAX+1) * sizeof(node_t));
     shredCtx->content_buf =                (char*) GDKmalloc(PFSHRED_STRLEN_MAX);

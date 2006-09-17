@@ -4803,6 +4803,15 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "var oid_iter := strings.hmark(0@0).leftfetchjoin(iter%03u);\n"
             "strings := nil;\n"
             "var oid_map := oid_iter.leftjoin(iter.reverse());\n"
+            /* To comply with XQuery semantics in multi-doc collections, the ID/IDREF identifiers 
+             * must be specific to each document in a collection. Our solution is to prefix
+             * the ids by the document root NID (as a string, and followed by a '_').
+             */
+            "var root := get_root(ws, item, kind, cont);\n"
+            "root := mposjoin(root, cont, ws.fetch(PRE_NID));\n"
+            "root := oid_map.leftfetchjoin(root);\n"
+            "id_str := [str](root) [+] \"_\" [+] id_str;\n"
+            "root := nil;\n"
             "cont := oid_map.leftfetchjoin(cont);\n"
             "oid_map := nil;\n"
             /* get id nodes */
