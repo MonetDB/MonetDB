@@ -2970,7 +2970,7 @@ existence_test:
  ;
 
 subquery:
-	simple_select
+	select_with_parens
  ;
 
 	/* simple_scalar expressions */
