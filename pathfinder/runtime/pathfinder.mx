@@ -127,7 +127,7 @@ PROC xquery_server_start() : void {
 # - rid_prop    : BAT[oid,oid]  rid-value of node / and property ID,
 # - rid_kind    : BAT[oid,chr]  rid-value of node / and node kind,
 #                              
-# NOTE: page indices start at oid(0). by putting the rid_* phyisical pages in the 
+# NOTE: page indices start at oid(0). by putting the rid_* physical pages in the 
 #       order specified by map_pid we get the original pre_* tables back.
 #
 # - qn_ns        : BAT[oid,str]  property ID / and name space (elements and attributes),
@@ -174,13 +174,15 @@ We define a table with the column name, its number,
 the type of data (typically again a bat), and if
 so the head and tail type of that bat.
 
+# start obsolete???
 actually the field 'tpe' is taken to be bat *always*, 
 EXCEPT when (child-T == void)
 
 ('tpe' = void means it is a view; without persistent name)
+# end obsolete???
 
 All ws entries starting with '_' are master bats, whereas 
-their versions with '_' copies/views. The latter ones
+their versions without '_' are copies/views. The latter ones
 are used for querying, as they provide isolation against
 concurrent updates.
 
@@ -263,6 +265,8 @@ concurrent updates.
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
+TODO (Wouter): remove _REGION_PRE, _REGION_START and _REGION_END from above list
+
 
 @= decl
 @:@1_decl_ws(WS_SIZE, 60)@
@@ -283,6 +287,12 @@ const @1 := @2;
 @mil
 @:ws(mil_decl)@
 @:decl(mil)@
+
+# ATOMIC is not a type but all atomic types
+# can be retrieved with 'select(int(nil),ATOMIC)'
+
+# NODE is not a type but all node types
+# can be retrieved with 'select(NODE,int(nil))'
 
 # DEFINITION of constants concerning the data model
 const PRE_BASE := 0@0;
@@ -310,13 +320,6 @@ const KND_PROP := new(chr,int,2);
 }
 KND_NID .access(BAT_READ);
 KND_PROP.access(BAT_READ);
-
-# ATOMIC is not a type but all atomic types
-# can be retrieved with 'select(int(nil),ATOMIC)'
-
-# NODE is not a type but all node types
-# can be retrieved with 'select(NODE,int(nil))'
-
 
 @- shared BATs
 
@@ -399,7 +402,7 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     (uri_lifetime    := new(str,lng).persists(true)).bbpname("uri_lifetime");
 }
 if (not(doc_height.exist(TEMP_DOC))) {
-    doc_height.insert(TEMP_DOC, 1000); # hack: store next oid as in invalid TEMP_DOC tuple
+    doc_height.insert(TEMP_DOC, 1000); # hack: store next oid as an invalid TEMP_DOC tuple
 }
 if (isnil(CATCH(bat("doc_query").count()))) {
     doc_query  := bat("doc_query"); 
@@ -901,9 +904,9 @@ with parameter FALSE, also the (explicitely) shredded documents are deleted.",
 "pathfinder");
 
 
+# pin the document on this working set (must hold lock!)
 PROC pin_doc(oid doc_oid, int ws) : void 
 {
-    # pin the document on this working set (must hold lock!)
     doc_query.insert(doc_oid, int(ws));
     var coll_oid := doc_collection.find(doc_oid);
     if (not(coll_lock.exist(coll_oid))) {
@@ -935,6 +938,9 @@ PROC doc_curtime(str filename) : timestamp {
     return ts;
 }
 
+# 'add_docbat' adds the document specified by (doc_oid, coll_oid, name) to the working set?
+# if doc_oid==TEMP_DOC, then the document that has to be added to the ws is expected to be 
+# in docBAT.
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oid coll_oid, int height) : oid
 {
     var cont, docid := oid(count(ws.fetch(DOCID_OID)));
@@ -977,13 +983,16 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oi
     if (not(ws.fetch(DOCID_NAME).texist(name))) {
         # add the document to the working set
         ws.fetch(DOCID_OID).append(doc_oid);
-        ws.fetch(DOCID_NAME).insert(docid, name);            
-        ws.fetch(CONT_DOCID).insert(cont, docid);            
+        ws.fetch(DOCID_NAME).insert(docid, name);
+        ws.fetch(CONT_DOCID).insert(cont, docid);
     }
     return cont;
 }
 
-
+# finds the document 'name', and
+# deletes it if it is a cached document that is outdated,
+# otherwise pins it down (so that it cant be deleted by others)
+# and returns its doc_oid.
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
     var doc_oid := oid(nil);
@@ -1023,6 +1032,8 @@ PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : ti
     return ts;
 }
 
+# adds the doc identified by the URL 'name' to the working set
+# returns the time it took to shred it.
 PROC add_doc(BAT[void,bat] ws, str name) : int
 {
     var time_shred := 0; 
@@ -1304,7 +1315,7 @@ typedef struct _xquery_loaded_module {
     int nslen;
 } xquery_loaded_module;
 
-/* cached MIL client + Xquery specific context */
+/* cached MIL client + XQuery specific context */
 typedef struct {
     bit initialized;
 
