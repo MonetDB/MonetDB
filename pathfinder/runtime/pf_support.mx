@@ -1121,13 +1121,13 @@ if (postfilter) {
 	var pre_prop := ws.fetch(PRE_PROP).fetch(contID);
 	if (is_constant(pre_cont)) {
                 # determine a sel [qnid,qnid] of qualifying nslocs (i.e. prop IDs)
-		var sel := ws.fetch(@1).fetch(bat2constant(pre_cont)).ord_uselect(@2).mirror();
+		var sel := ws.fetch(@1).fetch(bat2constant(pre_cont)).ord_uselect(@2);
 
                 # first join on prop, getting some false hits for non ELEMENT nodes
                 tmp_res := result_part_item.leftfetchjoin(pre_prop).leftjoin(sel).hmark(0@0);
 
                 # remove false hits
-                tmp_res := tmp_res.leftfetchjoin(result_part_item).leftfetchjoin(pre_kind).ord_uselect(@3).hmark(0@0);
+                tmp_res := tmp_res.leftfetchjoin(result_part_item).leftfetchjoin(pre_kind).ord_uselect(@3).hmark(0@0).leftfetchjoin(tmp_res);
         } else {
                 # the cont value refers back to multiple different containers (XPath step in transient doc container)
 
