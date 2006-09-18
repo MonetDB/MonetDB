@@ -2160,7 +2160,11 @@ drop_statement:
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
-
+ | DROP FUNCTION qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  |  DROP VIEW qname	  { $$ = _symbol_create_list( SQL_DROP_VIEW, $3 ); }
  |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
  |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
@@ -3020,6 +3024,7 @@ simple_scalar_exp:
 	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 	{ $$ = $2; }
+ |  subquery	%prec UMINUS
  ;
 
 scalar_exp:

@@ -4287,6 +4287,26 @@ sys_drop_table(sql_trans *tr, sql_table *t)
 		tr->schema_updates ++;
 }
 
+
+static void
+sys_drop_func(sql_trans *tr, sql_func *func)
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sys_tab_func = find_sql_table(syss, "functions");
+	sql_table *sys_tab_args = find_sql_table(syss, "args");
+	sql_column *sys_func_col = find_sql_column(sys_tab_func, "id");
+	sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
+	oid rid_func = column_find_row(tr, sys_func_col, &func->base.id, NULL);
+	oid rid_args = column_find_row(tr, sys_args_col, &func->base.id, NULL);
+
+	assert(rid_func != -1);
+	assert(rid_args != -1);
+	table_delete(tr, sys_tab_func, rid_func);
+	table_delete(tr, sys_tab_args, rid_args);
+
+	tr->schema_updates ++;
+}
+
 static void
 sys_drop_tables(sql_trans *tr, sql_schema *s)
 {
@@ -4369,6 +4389,24 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	return t;
+}
+
+
+void
+sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int cascade)
+{
+	node *n = find_sql_func_node(s, name);
+	sql_func *func = n->data;
+
+	(void) cascade;		/* Stefan: unused!? */
+
+	sys_drop_func(tr, func);
+
+	func->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	tr->schema_updates ++;
+	cs_del(&s->funcs, n, func->base.flag);
+
+	/* TODO cascade, ie. remove al references to this table */
 }
 
 sql_schema *

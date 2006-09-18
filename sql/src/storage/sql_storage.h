@@ -62,6 +62,8 @@ extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqln
 
 extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *impl);
 
+extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int cascade);
+
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, char *opt_mod);
 extern void sql_trans_drop_schema(sql_trans *tr, char *sname);
 

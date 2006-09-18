@@ -1,14 +1,14 @@
-stderr of test 'internStmt_1` in directory 'src/test` itself:
+stderr of test 'Skyserver` in directory 'src/test/Skyserver` itself:
 
 
-# 16:52:42 >  
-# 16:52:42 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dblogs" --set mapi_port=38475 --set monet_prompt= --trace "--dbname=mTests_." --dbinit='include sql;' ; echo ; echo Over..
-# 16:52:42 >  
+# 18:20:19 >  
+# 18:20:19 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dblogs" --set mapi_port=36458 --set monet_prompt= --trace "--dbname=mTests_src_test_Skyserver" --dbinit='include sql;' ; echo ; echo Over..
+# 18:20:19 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.13.1
-# builtin opt 	monet_pid = 10626
+# builtin opt 	monet_pid = 19671
 # builtin opt 	prefix = /ufs/goncalve/scratch/MonetDB/monetdb4
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -57,16 +57,16 @@ stderr of test 'internStmt_1` in directory 'src/test` itself:
 # cmdline opt 	monet_mod_path = /ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5
 # cmdline opt 	gdk_dbfarm = /ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dblogs
-# cmdline opt 	mapi_port = 38475
+# cmdline opt 	mapi_port = 36458
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_.
+# cmdline opt 	gdk_dbname = mTests_src_test_Skyserver
 
-# 16:52:42 >  
-# 16:52:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38475  < internStmt_1.sql
-# 16:52:42 >  
+# 18:20:19 >  
+# 18:20:19 >  Mtimeout -timeout 60 ./Skyserver.SQL Skyserver 
+# 18:20:19 >  
 
 
-# 16:52:42 >  
-# 16:52:42 >  Done.
-# 16:52:42 >  
+# 18:20:22 >  
+# 18:20:22 >  Done.
+# 18:20:22 >  
 
