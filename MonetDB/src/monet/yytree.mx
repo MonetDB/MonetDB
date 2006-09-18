@@ -784,27 +784,72 @@ yyprint(YYSTREE yytree, unsigned int level)
 
 	strcpy(tpe, "void");
 	if (!yytree->noyyval) {
+		p = NULL;
 		switch (yytree->yyval.vtype) {
 		case TYPE_int:
 			strcpy(tpe, "int");
 			break;
+		case TYPE_wrd:
+			strcpy(tpe, "wrd");
+			p = num;
+			sprintf(num, LLFMT, (lng) yytree->yyval.val.wval);
+			break;
+		case TYPE_sht:
+			strcpy(tpe, "sht");
+			p = num;
+			sprintf(num, "%d", yytree->yyval.val.shval);
+			break;
+		case TYPE_bte:
+			strcpy(tpe, "bte");
+			p = num;
+			sprintf(num, "%d", yytree->yyval.val.btval);
+			break;
 		case TYPE_chr:
 			strcpy(tpe, "chr");
+			p = num;
+			sprintf(num, yytree->yyval.val.cval[0] < ' ' || yytree->yyval.val.cval[0] > '~' ? "'\\%03o'" : "%c", yytree->yyval.val.cval[0]);
 			break;
 		case TYPE_bit:
 			strcpy(tpe, "bit");
+			p = yytree->yyval.val.cval[0] ? "true" : "false";
 			break;
 		case TYPE_oid:
 			strcpy(tpe, "oid");
+			p = num;
+#if SIZEOF_OID == SIZEOF_INT
+			sprintf(num, "%d@0", (int) yytree->yyval.val.oval);
+#else
+			sprintf(num, LLFMT "@0", (lng) yytree->yyval.val.oval);
+#endif
 			break;
 		case TYPE_str:
 			strcpy(tpe, "str");
+			if (yytree->yyval.val.sval) {
+				p = yytree->yyval.val.sval;
+			} else {
+				p = num;
+				strcpy(num, "<null>");
+			}
 			break;
 		case TYPE_ptr:
 			strcpy(tpe, "ptr");
+			p = num;
+			sprintf(num, PTRFMT, yytree->yyval.val.pval);
 			break;
 		case TYPE_flt:
 			strcpy(tpe, "flt");
+			p = num;
+			sprintf(num, "%g", yytree->yyval.val.fval);
+			break;
+		case TYPE_dbl:
+			strcpy(tpe, "dbl");
+			p = num;
+			sprintf(num, "%g", yytree->yyval.val.dval);
+			break;
+		case TYPE_lng:
+			strcpy(tpe, "lng");
+			p = num;
+			sprintf(num, LLFMT, yytree->yyval.val.lval);
 			break;
 		case TYPE_bat:
 			strcpy(tpe, "bat");
@@ -812,16 +857,9 @@ yyprint(YYSTREE yytree, unsigned int level)
 		default:
 			sprintf(tpe, "extended%d", yytree->yyval.vtype);
 		}
-		if (yytree->yyval.vtype != TYPE_str) {
+		if (p == NULL) {
 			p = num;
 			sprintf(num, "%d", yytree->yyval.val.ival);
-		} else {
-			if (yytree->yyval.val.sval) {
-				p = yytree->yyval.val.sval;
-			} else {
-				p = num;
-				strcpy(num, "<null>");
-			}
 		}
 	}
 	printf("%s [%s][%s]\n", LEXNAME(yytree->token), tpe, p);
