@@ -400,20 +400,19 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlis
 	sql_schema *s = NULL;
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy);
+	sql_subtype *restype;
+	int instantiate = (sql->mode == m_execute);
 
-	/* TODO handle schema */
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE FUNCTION: no such schema '%s'", sname);
 	if(s == NULL)
 		s = cur_schema(sql);
-	sql_subtype *restype = result_type(sql, fname, res);
+	restype = result_type(sql, fname, res);
 	
-	/* TODO check if the function exists allready */
-	if (schema_bind_func(sql, s, fname)) {
+	if (!instantiate && schema_bind_func(sql, s, fname)) {
 		return sql_error(sql, 02, "CREATE FUNCTION: name '%s' already in use", fname);
 	
-	/* TODO check if we are allowed to add this function */
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!instantiate && !schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "CREATE FUNCTION: insufficient privileges for user '%s' in schema '%s'", backend_get_string(sql, "user"), s->base.name);
 	} else {
 	 	if (params) 
@@ -435,8 +434,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlis
 			if (restype && !has_return(b)) 
 				return sql_error(sql, 01, "Missing return statement");
 
-			/* in execute mode we instanciate the function */
-			if (sql->mode == m_execute) {
+			/* in execute mode we instantiate the function */
+			if (instantiate) {
 				return b;
 			} else {
 				stmt_destroy(b);
