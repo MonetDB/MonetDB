@@ -154,7 +154,7 @@ would just set the string name of the timezone.
 @+ Time/date comparison 
 
 @= compareGrp
-command =(v:@1,w:@1):bit 
+command ==(v:@1,w:@1):bit 
 address MTIME@1_EQ
 comment "Equality of two @1s";
 command !=(v:@1,w:@1):bit 
@@ -172,10 +172,29 @@ comment "Equality of two @1s";
 command >=(v:@1,w:@1):bit 
 address MTIME@1_GE
 comment "Equality of two @1s";
-
 command isnil(v:@1):bit 
 address MTIME@1_isnil
 comment "Nil test for @1 value";
+
+module mtime;
+command calc.==(v:@1,w:@1):bit 
+address MTIME@1_EQ
+comment "Equality of two @1s";
+command calc.!=(v:@1,w:@1):bit 
+address MTIME@1_NEQ
+comment "Equality of two @1s";
+command calc.<(v:@1,w:@1):bit 
+address MTIME@1_LT
+comment "Equality of two @1s";
+command calc.<=(v:@1,w:@1):bit 
+address MTIME@1_LE
+comment "Equality of two @1s";
+command calc.>(v:@1,w:@1):bit 
+address MTIME@1_GT
+comment "Equality of two @1s";
+command calc.>=(v:@1,w:@1):bit 
+address MTIME@1_GE
+comment "Equality of two @1s";
 command calc.isnil(v:@1):bit 
 address MTIME@1_isnil
 comment "Nil test for @1 value";
@@ -222,6 +241,7 @@ command fromstr() :date
 address date_fromstr;
 command tostr() :str 
 address date_tostr;
+
 @:compareGrp(date)@
 @+ Daytime atom
 @T
@@ -246,6 +266,7 @@ command fromstr():daytime
 address daytime_tz_fromstr;
 command tostr():str 
 address daytime_tostr;
+
 @:compareGrp(daytime)@
 
 @+ Timestamp

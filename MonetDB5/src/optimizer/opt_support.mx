@@ -1130,6 +1130,8 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p) == assertRef) return TRUE;
 		return FALSE;
 	}
+	if (getModuleId(p) == constraintsRef)
+		return TRUE;
 	if( getModuleId(p) == mserverRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;

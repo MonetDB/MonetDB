@@ -142,7 +142,7 @@ sequences to filter and replace calls with empty arguments.
 		   (f == bindRef || f == bindidxRef || f == binddbatRef)){
 			InstrPtr q;
 
-			q = newStmt(mb, "constraints", "emptySet");
+			q = newStmt1(mb, constraintsRef, "emptySet");
 			q = pushArgument(mb, q, getArg(p,0) );
 			continue;
 		} 

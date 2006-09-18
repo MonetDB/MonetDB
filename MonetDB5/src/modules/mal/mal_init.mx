@@ -39,14 +39,6 @@ include alarm;
 include mmath;
 include streams;
 
-#atom extensions
-include blob;
-include color;
-include str;
-include url;
-include mtime; 
-include inet;
-
 # the kernel stuff to make it work
 include bat5;
 include batExtensions;
@@ -60,6 +52,14 @@ include aggr;
 include array;
 include pqueue;
 include mkey;
+
+#atom extensions
+include blob;
+include color;
+include str;
+include url;
+include mtime; 
+include inet;
 
 # the hardwired multiplex extensions
 include batmath;
