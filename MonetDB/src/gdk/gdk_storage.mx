@@ -579,6 +579,8 @@ BATload_intern(bat i)
 		if (ret < 0) {
 			return NULL;
 		}
+	} else {
+		b->batBuns->base = (char *) 1;
 	}
 
 	/* LOAD head heap */

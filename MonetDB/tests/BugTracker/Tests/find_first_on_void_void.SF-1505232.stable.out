@@ -21,6 +21,8 @@ a.find(0@0).print();
 [ 0@0 ]
 a.find(1@0).print();
 [ 1@0 ]
+a.rename("test1505232").persists(true);
+commit();
 quit();
 
 # 09:56:06 >  
