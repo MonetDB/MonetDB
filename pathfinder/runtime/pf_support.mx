@@ -41,17 +41,17 @@ implementation on top of MonetDB within the "Pathfinder" project.
 .COMMAND shred_url(BAT[str,bat], str url, lng percentage, lock l) : void = CMDshred_url;
 "PARAMETERS:
 url - document locates at this uri is shredded. 
-percentage - a number [0,100] indicating teh amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
+percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
 .COMMAND shred_str(BAT[str,bat], str buffer, lng percentage, lock l) : void = CMDshred_str;
 "PARAMETERS:
 buffer - the XML string to shred. 
-percentage - a number [0,100] indicating teh amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
+percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
 .COMMAND shred_stream(BAT[str,bat], Stream s, lng percentage, lock l) : void = CMDshred_stream;
 "PARAMETERS:
 s - XML input stream. 
-percentage - a number [0,100] indicating teh amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
+percentage - a number [0,100] indicating the amount of free space to reserve for updates. percentage=0 leads to a read-only document!" 
 
 
 @- XML print functions (serialize.mx)
@@ -3104,26 +3104,26 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
 
 PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add) : bat[oid,oid]
 {
-  var qn_pref_uri_loc := ws.fetch(_QN_PREFIX_URI_LOC).find(cont);
+  var qn_prefix_uri_loc := ws.fetch(_QN_PREFIX_URI_LOC).find(cont);
 
-  var qn_map := pref_uri_loc.outerjoin(qn_pref_uri_loc.reverse());
+  var qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
   if (add) {
     var miss := qn_map.uselect(oid_nil);
     if (miss.count() > 0) {
       # get the unique missing strings and append them
-      var _pref_uri_loc := reverse(miss).join(pref_uri_loc).tunique().tmark(0@0);
-      var _split := splitbat(miss, ":");
-      var _pref  := _pref_uri_loc.fetch(0);
-      var _uri   := _pref_uri_loc.fetch(1);
-      var _loc   := _pref_uri_loc.fetch(2);
-      ws.fetch(_QN_LOC).find(cont).append(_loc);
-      ws.fetch(_QN_URI).find(cont).append(_uri);
-      ws.fetch(_QN_PREFIX).find(cont).append(_pref);
-      ws.fetch(_QN_URI_LOC).find(cont).append([+]([+](_uri, ":"), _loc));
-      qn_pref_uri_loc.append(_pref_uri_loc); 
+      var _pref_uri_loc := reverse(miss).join(pref_uri_loc).tunique().mark(0@0).reverse();
+      var _split := splitbat(_pref_uri_loc, ":");
+      var _pref  := _split.fetch(0);
+      var _uri   := _split.fetch(1);
+      var _loc   := _split.fetch(2);
+      ws.fetch(_QN_LOC).find(cont).append(_loc, true);
+      ws.fetch(_QN_URI).find(cont).append(_uri, true);
+      ws.fetch(_QN_PREFIX).find(cont).append(_pref, true);
+      ws.fetch(_QN_URI_LOC).find(cont).append([+]([+](_uri, ":"), _loc), true);
+      qn_prefix_uri_loc.append(_pref_uri_loc, true); 
 
       # recalculate map now
-      qn_map := pref_uri_loc.outerjoin(qn_pref_uri_loc.reverse());
+      qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
     }
   }
   return qn_map;

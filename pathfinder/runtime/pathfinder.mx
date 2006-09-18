@@ -1186,8 +1186,8 @@ PROC ws_newnids(BAT[void,bat] ws,
             var nid_off := nid_cnt;
             var empty_page_oid := empty_page.project(oid_nil);
             while(nid_cnt < nid_tgt) {
-                nid_rid.append(empty_page_oid);
-                nid_cnt :+= REMAP_PAGE_SIZE;
+                nid_rid.append(empty_page_oid, true);
+                nid_cnt :+= int(REMAP_PAGE_SIZE);
             }
             reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
 
