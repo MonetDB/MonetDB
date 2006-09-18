@@ -469,9 +469,9 @@ drop_func(mvc *sql, dlist *qname)
 		func = schema_bind_func(sql, s, name);
 	}
 	if (!func)  
-		return sql_error(sql, 02, "DROP FUNC: no such function '%s'", name);
+		return sql_error(sql, 02, "DROP FUNCTION: no such function '%s'", name);
 	if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP FUNC: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
+		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
 	}
 	mvc_drop_func(sql, s, name, 0);
 
