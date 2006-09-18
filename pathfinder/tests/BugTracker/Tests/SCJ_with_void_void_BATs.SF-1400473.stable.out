@@ -1234,7 +1234,7 @@ a0030 := elem_constr (a0000, a0031, a0047, a0049, a0048, new (void, oid).seqbase
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
-[ nil,	  0@0	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	void	  # type
@@ -1841,7 +1841,7 @@ a0045 := elem_constr (a0000, a0056, a0072, a0074, a0073, new (void, oid).seqbase
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
-[ nil,	  0@0	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	void	  # type
@@ -2232,7 +2232,7 @@ a0006 := elem_constr (a0000, a0009, a0077, a0079, a0078, new (void, oid).seqbase
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
-[ nil,	  0@0	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	void	  # type
@@ -2554,7 +2554,7 @@ a0004 := elem_constr (a0000, a0005, a0025, a0077, a0075, new (void, oid).seqbase
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
-[ nil,	  0@0	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	void	  # type
