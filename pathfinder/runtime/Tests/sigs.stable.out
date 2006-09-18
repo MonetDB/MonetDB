@@ -153,7 +153,7 @@ module 'xrpc'
 # signature																						  # name
 # str																							  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "http_post(str, str, str, str, str, lng, int, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
+[ "http_post(str, str, str, str, str, lng, int, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[str,BAT]"	  ]
 [ "httpd_start(int, str) : void"																				  ]
 
 quit();
