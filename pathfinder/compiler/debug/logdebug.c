@@ -908,6 +908,47 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                     n->node_id,
                     xml_id[n->kind]);
 
+    /*
+     * Print schema information for the current algebra expression
+     *
+     * Format:
+     *
+     *   <schema>
+     *     <column name='iter' type='nat'/>
+     *     <column name='item' type='int str'/>
+     *     ...
+     *   </schema>
+     */
+    PFarray_printf (xml, "    <schema>\n");
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+        PFarray_printf (xml, "      <col name='%s' types='",
+                        PFatt_str (n->schema.items[i].name));
+        for (PFalg_simple_type_t t = 1; t; t <<= 1) {
+            if (t & n->schema.items[i].type) {
+                switch (t) {
+                    case aat_nat:    PFarray_printf (xml, "nat");    break;
+                    case aat_int:    PFarray_printf (xml, "int");    break;
+                    case aat_str:    PFarray_printf (xml, "str");    break;
+                    case aat_dec:    PFarray_printf (xml, "dec");    break;
+                    case aat_dbl:    PFarray_printf (xml, "dbl");    break;
+                    case aat_bln:    PFarray_printf (xml, "bln");    break;
+                    case aat_qname:  PFarray_printf (xml, "qname");  break;
+                    case aat_uA:     PFarray_printf (xml, "uA");     break;
+                    case aat_node:   PFarray_printf (xml, "node");   break;
+                    case aat_anode:  PFarray_printf (xml, "anode");  break;
+                    case aat_attr:   PFarray_printf (xml, "attr");   break;
+                    case aat_afrag:  PFarray_printf (xml, "afrag");  break;
+                    case aat_pnode:  PFarray_printf (xml, "pnode");  break;
+                    case aat_pre:    PFarray_printf (xml, "pre");    break;
+                    case aat_pfrag:  PFarray_printf (xml, "pfrag");  break;
+                }
+                PFarray_printf (xml, " ");
+            }
+        }
+        PFarray_printf (xml, "'/>\n");
+    }
+    PFarray_printf (xml, "    </schema>\n");
+
     if (PFstate.format) {
 
         char *fmt = PFstate.format;

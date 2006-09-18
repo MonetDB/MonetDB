@@ -920,8 +920,8 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 FINISH_HANDLE_RPC_REQUEST:
     cleanup(out,0);
     myfree(argcnt, i, (unsigned)iterc);
-    myfree(argtpe, i, nr_args)
-    if (argval) GDKfree(argval);
+    myfree(argtpe, i, nr_args);
+    myfree(argval, i, nr_args);
     return retval;
 }
 

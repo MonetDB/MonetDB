@@ -383,6 +383,29 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
             } else {
                 return_all = FALSE;
             }
+        
+        } else if ( strcmp(optName,"preprocessing_type") == 0 ) {
+            if ( strcasecmp(optVal,"PLAIN") == 0 ) 
+                preproc_type = PLAIN;
+            else if ( strcasecmp(optVal,"NO_MODIFIER") == 0 ) 
+                preproc_type = NO_MODIFIER;
+            else if ( strcasecmp(optVal,"VAGUE_NO_PHRASE") == 0 ) 
+                preproc_type = VAGUE_NO_PHRASE;
+            else if ( strcasecmp(optVal,"STRICT_NO_PHRASE") == 0 ) 
+                preproc_type = STRICT_NO_PHRASE;
+            else if ( strcasecmp(optVal,"VAGUE") == 0 ) 
+                preproc_type = VAGUE_MODIF;
+            else if ( strcasecmp(optVal,"STRICT") == 0 ) 
+                preproc_type = STRICT_MODIF;
+              
+        } else if ( strcmp(optName,"generator_type") == 0 ) {
+            if ( strcasecmp(optVal,"BASIC") == 0 ) 
+                rewrite_type = BASIC;
+            if ( strcasecmp(optVal,"SIMPLE") == 0 ) 
+                rewrite_type = SIMPLE;
+            if ( strcasecmp(optVal,"ADVANCED") == 0 ) 
+                rewrite_type = ADVANCED;
+        
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
@@ -446,7 +469,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
       query_num = atoi(optarg);
       qnum_set = TRUE;
       break;
-
+/*
     case 'p':
 
       if (strcmp(optarg,"plain") == 0 || strcmp(optarg,"PLAIN") == 0) {
@@ -485,7 +508,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 	return 0;
       }
       break;
-
+*/
     case 's' :
 
       if (strcmp(optarg,"no") == 0 || strcmp(optarg,"NO") == 0) {
@@ -561,7 +584,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
       rmifname_set = TRUE;
 
       break;
-
+/*
     case 'g' :
 
       if (strcmp(optarg,"basic") == 0 || strcmp(optarg,"BASIC") == 0) {
@@ -582,7 +605,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
       }
 
       break;
-
+*/
     case 'b':
 
       if (strcmp(optarg,"zero") == 0 || strcmp(optarg,"ZERO") == 0) {
@@ -699,24 +722,24 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
       query_num = 1;
       LOGPRINTF(LOGFILE,"\tStart topic number is 1.\n");
     }
-
+/*
     if (!pptype_set) {
       preproc_type = PLAIN;
       pptype_set = TRUE;
       scale_on = FALSE;
       LOGPRINTF(LOGFILE,"\tPreprocessing type is plain - removes phrases and modifiers.\n");
     }
-
+*/
     if(!ptype_set) {
       processing_type = NO_STOP_STEM;
       LOGPRINTF(LOGFILE,"\tProcessing does not perform stop word removal and stemming.\n");
     }
-
+/*
     if(!rewrite_set) {
       rewrite_type = BASIC;
       LOGPRINTF(LOGFILE,"\tRewriting type is \"BASIC\".\n");
     }
-
+*/
     if(!language_set) {
        language_type = ENGLISH;
        LOGPRINTF(LOGFILE,"\tLanguage is English.\n");
@@ -727,12 +750,12 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
        algebra_type = ASPECT;
        LOGPRINTF(LOGFILE,"\tAlgebra type is \"ASPECT\".\n");
     }*/
-
+/*
     if(!base_set) {
        base_type = ONE;
        LOGPRINTF(LOGFILE,"\tDefault region score is 1.0.\n");
     }
-
+*/
     if (!restable_set) {
       strcpy(res_table, "topic");
       LOGPRINTF(LOGFILE,"\tResult MIL table name is \"topic\".\n");

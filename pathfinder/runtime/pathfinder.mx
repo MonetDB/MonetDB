@@ -3886,8 +3886,8 @@ xquery_method(stream *out,
               BAT* shredBAT)
 {
     int msec = GDKms();
-    MT_Id XQthread_id = THRgettid();
-    Thread XQthread = THRget(XQthread_id);
+    MT_Id XQthread_id = THRgettid(), old_tid;
+    Thread XQthread = THRget(XQthread_id), old_thread;
     char *err, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
     stream *s = NULL;
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
@@ -3906,6 +3906,8 @@ xquery_method(stream *out,
     err = xquery_change_genType(ctx, mode);
     if (err) return err;
 
+    old_tid = mc->t;
+    old_thread = mc->thread;
     mc->t = XQthread_id;
     mc->thread = XQthread;
     monetSetChannel(XQthread, GDKin, out);
@@ -3936,8 +3938,12 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, GDKout);
 
     xquery_client_end(ctx, NULL);
+    mc->t = old_tid;
+    mc->thread = old_thread;
+	mc->c->fdin = NULL;
+	mc->c->fdout = NULL;
+
     mc->inuse = 0;
-    mc->t = ~(MT_Id)0;
     return err;
 }
 
