@@ -1119,7 +1119,7 @@ int CMDhttp_post(BAT **res,
                 /* index into fun_item|fun_kind */
                 a = arg_offset + k;
                 type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
-                if (type > WS_SIZE) {
+                if (type == ELEM || type > WS_SIZE) {
                     str2buf(b, "<xs:anyNode>");
                     node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
                             BUNhead(fun_item, BUNptr(fun_item, a)),
