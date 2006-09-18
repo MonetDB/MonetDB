@@ -1604,43 +1604,57 @@ AC_CHECK_FUNCS(mallopt mallinfo)
 LIBS="$save_LIBS"
 
 SOCKET_LIBS=""
-AC_CHECK_FUNC(gethostbyname_r, [], [
-  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
-    AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
-
 have_setsockopt=no
-AC_CHECK_FUNC(setsockopt, [], 
-  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
+case $host_os in
+*mingw*)
+	AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
+	save_LIBS="$LIBS"
+	LIBS="$LIBS -lws2_32"
+	AC_MSG_CHECKING(for setsockopt in winsock2)
+	AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
+	AC_MSG_RESULT($have_setsockopt)
+	LIBS="$save_LIBS"
+	;;
+*)
+	AC_CHECK_FUNC(gethostbyname_r, [], [
+	  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
+	    AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
+	;;
+esac
+
+
+if test "x$have_setsockopt" = xno; then
+	AC_CHECK_FUNC(setsockopt, [], 
+	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
+fi
 
 dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 
 dnl function needs to be compiled with the correct header
-
-AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
-
-if test "x$have_setsockopt" = xno; then
-  save_LIBS="$LIBS"
-  LIBS="$LIBS -lws2_32"
-AC_MSG_CHECKING(for setsockopt in winsock2)
-AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
-AC_MSG_RESULT($have_setsockopt)
-  LIBS="$save_LIBS"
-fi
 AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]))
 AC_CHECK_TYPE(socklen_t,
 	AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]),
 	AC_DEFINE(socklen_t,int,[type used by connect]),
 	[#include <sys/types.h>
 #include <sys/socket.h>])
-save_LIBS="$LIBS"
-LIBS="$LIBS $SOCKET_LIBS"
-AC_MSG_CHECKING(for closesocket)
-AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+
+case $host_os in
+*mingw*)
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $SOCKET_LIBS"
+	AC_MSG_CHECKING(for closesocket)
+	AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #endif],[closesocket((SOCKET)0);], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no);AC_DEFINE(closesocket,close,[function to close a socket])])
-LIBS="$save_LIBS"
+	LIBS="$save_LIBS"
+	;;
+*)
+	dnl don't check for closesocket on Cygwin: it'll be found but we don't want to use it
+	AC_DEFINE(closesocket,close,[function to close a socket])
+	;;
+esac
 
 AC_SUBST(SOCKET_LIBS)
 
