@@ -724,7 +724,7 @@ push_selects_down(mvc *c, list *con)
 			list *esels = list_select(sels, n->data, (fcmp) &stmt_cmp_head_tail, (fdup) &stmt_dup);
 			stmt *sel = stmt_relselect(esels);
 
-			/* todo check for foreign key selects */
+			/* TODO check for primary/foreign key selects */
 			list_append(rsel, sel);
 		}
 		list_destroy(dsels);

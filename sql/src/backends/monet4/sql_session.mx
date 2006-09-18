@@ -617,6 +617,11 @@ global_variables(mvc *sql, char *user, char *schema)
 	char *typename;
 	char *name;
 	stmt *r = NULL;
+	char *debug_str = GDKgetenv("sql_debug");
+	int debug = 0;
+
+	if (debug_str) 
+		debug = strtol(debug_str,NULL,10);
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -626,7 +631,7 @@ global_variables(mvc *sql, char *user, char *schema)
 
 	v = VARnew(stk, name);
 	v->binding.vtype = ctype.type->localtype;
-	v->binding.val.ival = 0;
+	v->binding.val.ival = debug;
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 8, 0);

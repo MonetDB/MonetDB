@@ -1,11 +1,11 @@
-create module url EXTERNAL NAME url;
+CREATE module url EXTERNAL NAME url
 
 CREATE TYPE url EXTERNAL NAME url;
 
-create table url_test ( theUrl url, name string );
-insert into url_test values ( url 'http://monetdb.cwi.nl/', 'MonetDB');
+CREATE table url_test ( theUrl url, name string );
+INSERT into url_test values ( url 'http://monetdb.cwi.nl/', 'MonetDB');
 
-select * from url_test;
+--select * from url_test;
 
 CREATE function getAnchor( theUrl url ) RETURNS STRING 
 	EXTERNAL NAME 'getAnchor';
@@ -42,4 +42,5 @@ CREATE function newurl(protocol STRING, hostname STRING, file STRING)
 	RETURNS url 
 	EXTERNAL NAME 'newurl';
 
+END module;
 COMMIT;

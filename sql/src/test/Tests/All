@@ -68,3 +68,5 @@ null-byte-hang
 orderby_limit
 
 psm
+
+outerref_in_selection

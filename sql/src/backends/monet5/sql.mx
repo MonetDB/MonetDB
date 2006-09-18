@@ -241,42 +241,11 @@ command calc.timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;
 command calc.timestamp(d:timestamp):timestamp
 address MTIMEtimestamp_timestamp;
-command calc.==(a:timestamp,b:timestamp):bit
-address MTIMEtimestamp_EQ;
-command calc.!=(a:timestamp,b:timestamp):bit
-address MTIMEtimestamp_NEQ;
-command calc.<(a:timestamp,b:timestamp):bit
-address MTIMEtimestamp_LT;
-command calc.<=(a:timestamp,b:timestamp):bit
-address MTIMEtimestamp_LE;
-command calc.>(a:timestamp,b:timestamp):bit
-address MTIMEtimestamp_GT;
-command calc.>=(a:timestamp,b:timestamp):bit
-address MTIMEtimestamp_GE;
-command calc.isnil(v:timestamp):bit
-address MTIMEtimestamp_isnil
-        comment "Nil test for timestamp value";
-
 
 command calc.date(s:str):date
 address MTIMEdate_fromstr;
 command calc.date(d:date):date
 address MTIMEdate_date;
-command calc.==(a:date,b:date):bit
-address MTIMEdate_EQ;
-command calc.!=(a:date,b:date):bit
-address MTIMEdate_NEQ;
-command calc.<(a:date,b:date):bit
-address MTIMEdate_LT;
-command calc.<=(a:date,b:date):bit
-address MTIMEdate_LE;
-command calc.>(a:date,b:date):bit
-address MTIMEdate_GT;
-command calc.>=(a:date,b:date):bit
-address MTIMEdate_GE;
-command calc.isnil(v:date):bit
-address MTIMEdate_isnil
-        comment "Nil test for date1 value";
 command calc.current_date():date
 address MTIMEcurrent_date;
 
@@ -505,10 +474,12 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(lng)@
 
 @= mal_castfromstr
-#address CALCstr2@1
 command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "cast to @1";
+command calc.str( v:@1 ) :str 
+address SQL@1_2_str
+comment "cast @1 to str";
 @mal
 @:mal_castfromstr(flt)@
 @:mal_castfromstr(dbl)@

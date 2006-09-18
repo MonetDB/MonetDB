@@ -505,9 +505,10 @@ revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant
 
 
 static stmt *
-create_module(mvc *sql, dlist *qname, char *opt_internal_name)
+create_module(mvc *sql, dlist *qname, char *opt_internal_name, dlist *stmts)
 {
 	char *mname = qname_table(qname);
+	dnode *n;
 
 	/* TODO parse and use authorization, now modules are owned by
 	   USER_MONETDB 
@@ -516,6 +517,18 @@ create_module(mvc *sql, dlist *qname, char *opt_internal_name)
 	if (mvc_bind_schema(sql, mname)) 
 		return sql_error(sql, 02, "CREATE MODULE: name '%s' already in use", mname);
 	mvc_create_schema(sql, mname, USER_MONETDB, opt_internal_name);
+	if (stmts) {
+		list *l = create_stmt_list();
+		for (n=stmts->h; n; n = n->next) {
+			stmt *s = semantic(sql, NULL, n->data.sym);
+			if (!s) {
+				list_destroy(l);
+				return NULL;
+			}
+			list_append(l, s);
+		}
+		return stmt_list(l);
+	}
 	return stmt_none();
 }
 
@@ -541,7 +554,11 @@ create_type(mvc *sql, dlist *qname, char *impl)
 {
 	char *tname = qname_table(qname);
 
-	mvc_create_type(sql, sql->session->schema, tname, 0, 0, 0, impl);
+	if (!mvc_create_type(sql, sql->session->schema, tname, 0, 0, 0, impl)) {
+		if (impl)
+			return sql_error(sql, 02, "CREATE TYPE: unknown external type '%s'", impl);
+		return NULL;
+	}
 	return stmt_none();
 }
 
@@ -1749,7 +1766,11 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_module(sql, l->h->data.lval, l->h->next->data.sval);
+		ret = create_module(sql, 
+			l->h->data.lval, 
+			l->h->next->data.sval, 
+			l->h->next->next->next->next->data.lval 
+		);
 		sql->type = Q_SCHEMA;
 	}
 		break;

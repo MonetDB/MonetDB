@@ -1204,13 +1204,20 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	case SQL_SELECT:{
 		stmt *s = scope_subquery(sql, scp, se);
 
-		if (s && s->type == st_list && list_length(s->op1.lval) == 1) {
-			stmt *t = stmt_dup(s->op1.lval->h->data);
-
-			stmt_destroy(s);
-			s = t;
-			s->aggr = 1;	/* single value */
+		/* make a single (column) out of a subquery,
+		   we do it here instead of all places where the
+		   subquery result is used
+		 */
+		if (s && s->type == st_list) {
+			/* single value */
+		 	if (list_length(s->op1.lval) == 1) {
+				stmt *t = stmt_dup(s->op1.lval->h->data);
+				stmt_destroy(s);
+				s = t;
+				s->aggr = 1;	
+			}
 		}
+
 		return s;
 	}
 	case SQL_TABLE:  /* turn a subquery into a tabular result */
@@ -2065,7 +2072,17 @@ _column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, in
 		return NULL;
 	/* AS name */
 	if (s && l->h->next->data.sval) {
-
+		/* flatten subqueries */
+		if (s->type == st_list && 
+		    list_length(s->op1.lval) == 2 && f == sql_sel) {
+			stmt *h, *v = stmt_dup(s->op1.lval->h->data);
+			stmt *o = stmt_dup(s->op1.lval->h->next->data);
+			stmt_destroy(s);
+			s = stmt_join(stmt_reverse(o), v, cmp_equal);
+			h = stmt_dup(s->h->t);
+			stmt_destroy(s->h);
+			s->h = h;
+		}
 		s = stmt_alias(s, table_name(s), _strdup(l->h->next->data.sval));
 		scope_add_alias(scp, stmt_dup(s), l->h->next->data.sval);
 	}

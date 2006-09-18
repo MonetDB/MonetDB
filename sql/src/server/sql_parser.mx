@@ -253,6 +253,7 @@ int yydebug=1;
 	schema_element
 	delete_stmt
 	copyfrom_stmt
+	module_stmt
 	table_def
 	view_def
 	view_as
@@ -260,6 +261,7 @@ int yydebug=1;
 	module_def
 	type_def
 	func_def
+	invoked_routine
 	index_def
 	seq_def
 	all_or_any_predicate
@@ -452,8 +454,8 @@ int yydebug=1;
 	variable_list
 	opt_module_character_set_specification
 	character_set_specification
-	opt_temporary_table_declarations
-	invoked_routines
+	opt_module_stmts
+	module_stmts
 	routine_body
 	table_function_column_list
 	select_target_list
@@ -1688,8 +1690,7 @@ module_def:
 	opt_external_name /* MONETDB extension */
 	opt_module_character_set_specification
 	opt_path_specification
-	opt_temporary_table_declarations
-	invoked_routines 
+	opt_module_stmts
     END MODULE
 			{ dlist *l = L();
 				append_list(l, $3);
@@ -1697,7 +1698,6 @@ module_def:
 				append_list(l, $5);
 				append_symbol(l, $6);
 				append_list(l, $7);
-				append_list(l, $8);
 			  $$ = _symbol_create_list( SQL_CREATE_MODULE, l ); }
  ;
 
@@ -1726,20 +1726,27 @@ opt_module_character_set_specification:
 
 character_set_specification: qname ;
 
-opt_temporary_table_declarations:
-	table_def		
+module_stmt:
+	type_def
+   |    table_def 	
+   |    invoked_routine
+   ;
+
+opt_module_stmts:
+	/* empty */ 	{ $$ = NULL; }
+   | 	module_stmts
+   ;
+
+module_stmts:
+	module_stmt SCOLON		
 		{ $$ = L(); append_symbol($$, $1); }
-    |   opt_temporary_table_declarations table_def
+    |   module_stmts module_stmt SCOLON
 		{ $$ = $1; append_symbol($$, $2); }
     ;
 
-invoked_routines:
-	func_def SCOLON
-		{ $$ = L(); append_symbol($$, $1); }
-    |   declare func_def SCOLON
-		{ $$ = L(); append_symbol($$, $2); }
-    |	invoked_routines func_def SCOLON 	
-		{ $$ = $1; append_symbol($$, $2); }
+invoked_routine:
+	func_def 
+    |   declare func_def 	{ $$ = $2; }
     ;
 
 func_def:

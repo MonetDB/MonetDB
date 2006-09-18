@@ -266,14 +266,11 @@ takes place using append().
 The bind operations are also moved into the front to ensure
 binding errors and assertions to be tested quickly.
 @c
-int
-SQLgetStatistics(mvc *m,MalBlkPtr mb)
+static void
+SQLgetStatistics(mvc *m, MalBlkPtr mb)
 {
-	int res = 0;
-	int i,j,k, actions=0;
-	BAT *b;
+	int i, actions = 0;
 	lng clk = GDKusec();
-	lng *count = (lng*) alloca(sizeof(lng)* mb->vtop);
 	InstrPtr *rest= (InstrPtr*) alloca(sizeof(InstrPtr)*mb->stop);
 	int n=1,rtop=0;
 
@@ -281,61 +278,53 @@ SQLgetStatistics(mvc *m,MalBlkPtr mb)
 		InstrPtr p = getInstrPtr(mb,i);
 		char *f = getFunctionId(p);
 
-		/* default counts */
-		for (j = 0; j<p->retc; j++)
-			count[getArg(p,j)] = -1;
-
-		if( getModuleId(p)== sqlRef && 
+		if( getModuleId(p) == sqlRef && 
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
-
-			mb->stmt[n++]=p;
-			if( f == binddbatRef)
-				b= mvc_bind_dbat(m, 
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
+			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
+			int not_null = 0;
+			BAT *b;
+			mb->stmt[n++] = p;
+			if( f == binddbatRef) {
+				b= mvc_bind_dbat(m, sname, tname,
 				getVarConstant(mb, getArg(p,3)).val.ival);
-			else if( f == bindidxRef)
-				b= mvc_bind_idxbat(m, 
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
+			} else if( f == bindidxRef) {
+				b= mvc_bind_idxbat(m, sname, tname,
 				getVarConstant(mb, getArg(p,3)).val.sval,
 				getVarConstant(mb, getArg(p,4)).val.ival);
-			else
-				b= mvc_bind(m, 
-				getVarConstant(mb, getArg(p,1)).val.sval,
-				getVarConstant(mb, getArg(p,2)).val.sval,
-				getVarConstant(mb, getArg(p,3)).val.sval,
+			} else {
+				char *cname =
+				    getVarConstant(mb, getArg(p,3)).val.sval;
+				sql_schema *s = mvc_bind_schema(m, sname);
+				sql_table *t = mvc_bind_table(m, s, tname);
+				sql_column *c = mvc_bind_column(m, t, cname);
+
+				b= mvc_bind(m, sname, tname, cname,
 				getVarConstant(mb, getArg(p,4)).val.ival);
+				not_null = c->null;
+			}	
 			if( b ) {
 				lng rows = BATcount(b);
+				int k = getArg(p,0);
+				bit t = TRUE;
 
-				k = getArg(p,0);
-				count[k] = rows; 
 				getVarConstant(mb, k).val.bval = b->batCacheid;
 				if (mb->var[k]->props == 0)
 					mb->var[k]->props = newPropertySet();
 				setProperty(getProps(k),"bid", "=", TYPE_int, &b->batCacheid);
-
-				BBPunfix(b->batCacheid);
-
 				setProperty(getProps(k),"rows", "=", TYPE_lng, &rows);
+				if (not_null)
+					setProperty(getProps(k),"not_nil", "=", TYPE_bit, &t);
+				BBPunfix(b->batCacheid);
 				actions++;
 			}
-		} else if( getModuleId(p) == sqlRef && 
-		    (f == appendRef || f == appendidxRef) ){
-			res = 1;
+		} else {
 			rest[rtop++]= p;
-		} else if (getModuleId(p) == batRef &&
-		    (f == appendRef || f == insertRef || deleteRef) ){
-			res = 1;
-			rest[rtop++]= p;
-		} else
-			rest[rtop++]= p;
+		}
 	}
 	/* move remainder again into place */
 	memcpy((char*)(mb->stmt+n),(char*)rest, sizeof(InstrPtr)*rtop);
 	optimizerCheck(mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
-	return res;
 }
 
 
@@ -393,10 +382,9 @@ care of.
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 		/* if there are no updates, do the emptySet optimizer */
-		if (!SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb)) {
-			OPTcostModel(mb,0,0); /* propagate costs */
-			OPTemptySet(mb,0,0);  /* remove empty results */
-		}
+		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb); 
+		OPTcostModel(mb,0,0); /* propagate costs */
+		OPTemptySet(mb,0,0);  /* remove empty results */
 		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
 
 		OPTcoercion(mb,0,0);	/* coercions */

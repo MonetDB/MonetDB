@@ -777,6 +777,7 @@ stmt_hash( mvc *sql, list *l )
 	return stmt_join(stmt_reverse(o), h, cmp_equal);
 }
 
+/* TODO find out if the columns have an (hash) index */
 static stmt *
 reljoin( mvc *sql, list *l1, list *l2 )
 {

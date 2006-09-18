@@ -27,4 +27,4 @@ if [ $# -eq 1 ]; then
 fi
 
 $SQL < VOCschema.sql
-cat load.sql | sed -e s+PWD+$PWD+ | $SQL
+cat load.sql | sed -e s+PWD+$PWD+ | $SQL 
