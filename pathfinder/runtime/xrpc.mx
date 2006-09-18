@@ -1212,7 +1212,8 @@ int CMDhttp_post(BAT **res,
         goto FINISH_HTTP_POST;
     }
     
-    b->len = b->pos;
+    b->len = b->pos + 1;
+    assert(strlen(b->buf) < b->len);
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     /* the HTTP header starts with "HTTP/1.1 nnn...", after the first
      * whitespace character, it is the 3-digits return code */
