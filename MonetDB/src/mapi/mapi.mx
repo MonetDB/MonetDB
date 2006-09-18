@@ -243,7 +243,7 @@ exit_client_cache()
 {
 	int i;
 
-	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	MT_set_lock(mapi_cache_lock, "exit_client_cache");
 	for(i=0; i<=MAXCLIENTS; i++) { 
 		if (mapi_clients[i].frontend != MAX_FRONTENDS) { 
 			/* no active client killing jet */
@@ -253,7 +253,7 @@ exit_client_cache()
 			MT_up_sema(fc->s, "exit_client_cache");
 		}
 	}
-	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	MT_unset_lock(mapi_cache_lock, "exit_client_cache");
 	/* wait for clients to finish */
 	while(nr_mapi_clients > 0) 
 		MT_sleep_ms(1000);	
@@ -355,7 +355,7 @@ mapi_client_end(mapi_client *fc)
 {
 	Variable v;
 	
-        for(v=monet_cntxt[fc->stk].var; v != fc->lastvar; v = v->next){
+    for(v=monet_cntxt[fc->stk].var; v != fc->lastvar; v = v->next){
 		ATOMunfix(v->binding.vtype, VALptr(&v->binding));
 		VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
 		VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
@@ -381,7 +381,7 @@ mapi_client_free(mapi_client *fc)
 	fc->c->mode = BLOCKMODE;
 	closeClient(fc->c, 0);
 
-	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	MT_set_lock(mapi_cache_lock, "mapi_client_free");
 	f->clients --;
 	nr_mapi_clients --;
 
@@ -389,7 +389,7 @@ mapi_client_free(mapi_client *fc)
 	fc->frontend = MAX_FRONTENDS;
 	fc->inuse = 0;
 
-	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	MT_unset_lock(mapi_cache_lock, "mapi_client_free");
 	if (fc->thread)
 		THRdel(fc->thread); 
 }
@@ -426,14 +426,14 @@ mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *s)
 	char *mp = GDKgetenv("monet_prompt");
 	Client c = NULL;
 	
-	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	MT_set_lock(mapi_cache_lock, "mapi_client_alloc");
 	if (nr_mapi_clients < MAXCLIENTS) 
  		c = initClient("mapi", mp, FALSE);
 		if (c) {
 			f->clients ++;
 			nr_mapi_clients ++;
 		}
-	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	MT_unset_lock(mapi_cache_lock, "mapi_client_alloc");
 	if (c == 0) {
 		if (s) {
 			stream_printf(s, "!ERROR: failed to init client\n");
