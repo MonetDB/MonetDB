@@ -3719,7 +3719,7 @@ xquery_client_engine(mapi_client *fc )
                         }
 
                         /* insert into document collection (p is name)*/
-                        snprintf(ctx->buf, ctx->buflen, "shred_stream(Stream(" LLFMT "LL), \"%s\", \"%s\", %d);\n", (lng) in, dname, cname, perc);
+                        snprintf(ctx->buf, ctx->buflen, "shred_stream(Stream(" SZFMT "LL), \"%s\", \"%s\", %d);\n", (size_t) in, dname, cname, perc);
                         i = xquery_mil_exec(ctx, ctx->buf); /* use MIL to add it to the repository */
                         GDKfree(dname);
                         if (i < 0) {
