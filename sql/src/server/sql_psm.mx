@@ -440,10 +440,10 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlis
 			} else {
 				stmt_destroy(b);
 				sql_destroy_params(sql);
-				mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, q);
+				mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, NULL, q);
 			}
 		} else {
-			mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, impl);
+			mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, NULL, impl);
 		}
 	}
 	return stmt_none();

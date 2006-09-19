@@ -188,7 +188,7 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-function calc.sql_environment():bat[:str,:bat];
+function sql_environment():bat[:str,:bat];
 	b := bat.new(:str,:bat,2);
 	e := inspect.getEnvironment();
 	n := algebra.markT(e, 0:oid);
@@ -199,11 +199,11 @@ function calc.sql_environment():bat[:str,:bat];
 	return b;
 end sql_environment;
 
-command calc.sql_variables():bat[:str,:bat]
+command sql_variables():bat[:str,:bat]
 address sql_variables
 comment "return the table with session variables";
 
-command calc.db_users() :bat[:str,:bat]
+command db_users() :bat[:str,:bat]
 address db_users_wrap
 comment "return table of users with sql scenario";
 

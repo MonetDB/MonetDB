@@ -60,7 +60,7 @@ extern int sql_trans_commit(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, int scale, int radix, char *impl);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *impl);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *mod, char *impl);
 
 extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int cascade);
 

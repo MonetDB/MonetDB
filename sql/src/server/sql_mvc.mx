@@ -134,7 +134,7 @@ extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *impl);
+extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl);
 extern void mvc_drop_func(mvc *c, sql_schema *s, char *name, int cascade);
 
 extern void mvc_drop_schema(mvc *c, char *name);
@@ -845,14 +845,14 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *impl)
+mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_func %s\n", name);
 
-	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, impl);
+	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, mod, impl);
 	sql->type = Q_SCHEMA;
 	return f;
 }
