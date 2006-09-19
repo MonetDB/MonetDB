@@ -19,6 +19,10 @@
 #include <monet_options.h>
 #include "embeddedclient.h"
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 /* stolen piece */
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
