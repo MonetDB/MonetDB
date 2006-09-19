@@ -45,9 +45,9 @@ BEGIN
     	DECLARE bit int, mask bigint, out varchar(2000);
     	SET bit=32;
 	SET out ='';
-	WHILE bit > 0 DO
+	WHILE (bit > 0) DO
 		SET bit = bit-1;
-		SET mask = power(cast(2 as bigint),bit);
+	    	SET mask = left_shift(cast(1 as bigint),bit);
 		CASE 
 			WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
 			ELSE SET out = out + (coalesce((select name from PhotoStatus where value=mask),'')+' ');
@@ -73,7 +73,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
 		ELSE SET out = out + (coalesce((select name from PrimTarget where value=mask),'')+' ');
@@ -108,7 +108,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
 		ELSE SET out = out + (coalesce((select name from SecTarget where value=mask),'')+' ');
@@ -134,7 +134,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(2,bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
 		ELSE SET out = out + (coalesce((select name from InsideMask where value=mask),'')+' ');
@@ -160,7 +160,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + '';
 		ELSE SET out = out + (coalesce((select name from SpecZWarning where value=mask),'')+' ');
@@ -186,7 +186,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
 		ELSE SET out = out + (coalesce((select name from ImageMask where value=mask),'')+' ');
@@ -213,7 +213,7 @@ BEGIN
     WHILE (bit>0)
 	BEGIN
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + '';
 		ELSE SET out = out + (coalesce((select name from TiMask where value=mask),'')+' ');
@@ -475,7 +475,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
 		ELSE SET out = out + (coalesce((select name from FieldMask where value=mask),'')+' ');
@@ -492,7 +492,7 @@ BEGIN
     SET out ='';
     WHILE (bit>0) DO
 	    SET bit = bit-1;
-	    SET mask = power(cast(2 as bigint),bit);
+	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
 		WHEN (bit_and(mask,value)=0) THEN SET out = out + '';
 		ELSE SET out = out + (coalesce((select name from PhotoFlags where value=mask),'')+' ');
