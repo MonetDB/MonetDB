@@ -96,6 +96,7 @@ at the end of the optimization attempt.
 		mb->errors= olderrnr;
 		getInstrPtr(mb,i)= q;
 		freeInstruction(p);
+		p=q;
 	} 
 	actions++;
 	#ifdef DEBUG_OPT_OPTIMIZER
