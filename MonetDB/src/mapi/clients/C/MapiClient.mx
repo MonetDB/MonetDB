@@ -181,6 +181,11 @@ doRequest(Mapi mid, const char *buf, int interactive)
 		mapi_explain(mid, stderr);
 		return 1;
 	}
+	if (mapi_result_error(hdl)) {
+		mapi_explain_result(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
