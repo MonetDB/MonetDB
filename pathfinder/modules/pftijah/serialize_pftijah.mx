@@ -58,6 +58,8 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 #include "serialize_pftijah.h"
 #include "pftijah_stem.h"
 
+#include "shredder.h"
+
 /************************************************
  *
  * The fast direct BAT interface
@@ -939,10 +941,9 @@ struct serializeFunStruct pftijahSerializeFun = {
  *
  */
 
-extern int EXTshred_and_index_doc(str location, str opt, struct serializeFunStruct* serFun, void* serCtx);
-
 static int
 MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+	BAT* docBAT;
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
@@ -979,7 +980,13 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CALL INDEXING SHREDDER\n",tjctx->name);
 #endif
 	    XqueryCtx xqctx;
-            if ( EXTshred_and_index_doc(docName, (str)"", &pftijahSerializeFun, &xqctx) == GDK_FAIL)
+	    /* StM:
+	     * changed the original `EXTshred_and_index_doc(docName, (str)"", &pftijahSerializeFun, &xqctx)` into this;
+	     * it compiles and loads, but I have now idea, whether it does work;
+	     * especially the last parameter (lock *collLock) should most probably not be NULL
+	     * (atleast if we desire any consistent concurrency) ...
+	     */
+	    if ( shred(docBAT=BATnew(TYPE_str,TYPE_bat,30), docName, NULL, NULL, 0, &pftijahSerializeFun, &xqctx, NULL) == GDK_FAIL)
 	    	 return GDK_FAIL;
 	} else {
 #ifdef TJ_TRACE

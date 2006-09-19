@@ -33,14 +33,15 @@
 #ifndef SHREDDER_H
 #define SHREDDER_H
 
+#include "serialize.h" /* for struct serializeFunStruct & struct XqueryCtx */
+
+/* for PFtijah */
+pf_support_export int shred(BAT *docBAT, str location, str buffer, stream *s, lng percentage, struct serializeFunStruct *serFun, struct XqueryCtx *serCtx, lock *collLock);
+
 /* MIL commands to shred XML from a {uri,string,stream}. */
 pf_support_export int CMDshred_url(BAT *docBAT, str location, lng *percentage, lock* collLock);
 pf_support_export int CMDshred_str(BAT *docBAT, str buffer, lng *percentage, lock* collLock);
 pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, lock* collLock);
-
-/* TIJAH backward compatibility. I recommend calling shreds() directly */ 
-#define EXTshred_and_index_doc(docBAT,location,opt,serFun,serCtx)\
-        shred(*docBAT=BATnew(TYPE_str,TYPE_bat,30),location,NULL,NULL,0,serFun,serCtx,NULL)
 
 #endif /* SHREDDER_H */
 @c
@@ -63,7 +64,6 @@ pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, l
 #include <pf_config.h>
 #include "pathfinder.h"
 #include "pf_support.h"
-#include "serialize.h"
 #include "shredder.h"
 
 /**
