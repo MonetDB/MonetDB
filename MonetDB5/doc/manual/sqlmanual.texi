@@ -132,6 +132,9 @@ using the
 @node iSQL-Viewer, Development Roadmap, DbVisualizer, Data Management Tools
 @include Assets/iSQL-Viewer.texi
 
+@node HenPlus JDBC shell tool 
+@include Assets/HenPlus.texi
+
 @node Development Roadmap, SQL Roadmap, iSQL-Viewer, Top
 @include Assets/Roadmap.texi
 @menu
