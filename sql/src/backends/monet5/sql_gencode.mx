@@ -332,6 +332,9 @@ multiplexN(MalBlkPtr mb, char *name)
 	if (strcmp(name,"calc.rotate_xor_hash") == 0) {
 		q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
 	} 
+	if (strcmp(name,"calc.substring") == 0) {
+		q = newStmt(mb, "batcalc", "substring");
+	}
 	return q;
 }
 
