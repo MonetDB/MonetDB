@@ -64,8 +64,9 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
       }
       return NULL;
   }
-  else 
+  else {
       return &parserCtx->milBUFF[0];
+  }
 }
 
 int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
