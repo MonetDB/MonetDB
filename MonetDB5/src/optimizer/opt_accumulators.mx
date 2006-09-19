@@ -61,37 +61,48 @@ comment "Replace calculations with accumulator model";
 
 #endif
 
+@-
+While we progress through the program, we should
+also built the alias file to propagate the
+accumulator names.
 @c
 #include "opt_accumulators.h"
 
 static int
-OPTvalidInstruction(InstrPtr p){
-	if (getModuleId(p)== batcalcRef )
-		return strcmp(getFunctionId(p),"init") != 0;
-	if (getModuleId(p) && strcmp(getModuleId(p), "array") == 0)
-			return strcmp(getFunctionId(p),"grid") != 0;
-	if (getModuleId(p)== batcalcRef)
-		return 0;
-	return 0;
-}
-
-static int
 OPTaccumulatorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, a, b, valid;
-	InstrPtr p;
+	int i,j, a, b, valid;
+	InstrPtr p,q;
 	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
 	char *olderr;
 	int errlen, actions = 0;
 	int olderrnr = mb->errors;
+	int *alias;
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	setLifespan(mb);
+	alias= (int*) alloca(sizeof(int)*mb->vtop);
+	memset(alias,0, sizeof(int)* mb->vtop);
 @-
 Safe the errors encountered sofar. They have to be reset
 at the end of the optimization attempt.
+@= patchInstruction
+	mb->errors = 0;
+	typeChecker(scope, mb, p, TRUE);
+	if (p->typechk == TYPE_UNKNOWN) {
+		/* reset instruction */
+		mb->errors= olderrnr;
+		getInstrPtr(mb,i)= q;
+		freeInstruction(p);
+	} 
+	actions++;
+	#ifdef DEBUG_OPT_OPTIMIZER
+					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+	#endif
+	goto remAlias;
+@-
 @c
 	errlen = strlen(cntxt->errbuf) + 1;
 	olderr = alloca(errlen);
@@ -100,19 +111,29 @@ at the end of the optimization attempt.
 	if (errlen)
 		strncpy(cntxt->errbuf, olderr, errlen);
 
+	p= getInstrPtr(mb,0);
+	for(j=0; j<p->argc;j++)
+		alias[getArg(p,j)]= getArg(p,j);
+
 	for (i = 1; i < mb->stop; i++) {
 		VarPtr v;
-
 		p = getInstrPtr(mb, i);
-		if (getModuleId(p) == NULL)
-			continue;
-		if( !OPTvalidInstruction(p) ) continue;
+@-
+First remap all variables upon need
+@c
+		for(j=p->retc; j<p->argc; j++)
+		if( alias[getArg(p,j)] )
+			getArg(p,j)= alias[getArg(p,j)];
 
-		if (p->argc == 3) {
+		if( getModuleId(p) != batcalcRef ) 
+			goto remAlias;
+
+		if (p->retc==1  && p->argc == 3) {
 			/* binary/unary operation, check first argument */
-			v = getVar(mb, a = getArg(p, 1));
 			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i) continue;
+			if( getLastUpdate(mb,b) != i) 
+				goto remAlias;
+			v = getVar(mb, a = getArg(p, 1));
 			valid= getEndLifespan(mb,a) <= i;
 
 #ifdef DEBUG_OPT_OPTIMIZER
@@ -122,30 +143,18 @@ at the end of the optimization attempt.
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 			if (isaBatType(v->type) && valid){
+				q= copyInstruction(p);
 				pushArgument(mb, p, getArg(p,2));
 				setArg(p,2,getArg(p,1));
 				setArg(p,1,a);
 				setArg(p,0,newTmpVariable(mb,TYPE_any));
-
-				mb->errors = 0;
-				typeChecker(scope, mb, p, TRUE);
-				if (p->typechk == TYPE_UNKNOWN) {
-					/* reset instruction */
-					mb->errors= olderrnr;
-					setArg(p,0,getArg(p,1));
-					setArg(p,1,getArg(p,2));
-					setArg(p,2,a);
-					p->argc--;
-					typeChecker(scope, mb, p, TRUE);
-				} else if (a != b)
-					replaceAlias(mb, i + 1, mb->stop, b, a);
 #ifdef DEBUG_OPT_OPTIMIZER
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-				actions++;
-				continue;
+
+				@:patchInstruction(setArg(p,2,a))@
 			}
-			/* continue with binary version */
+			/* continue with binary version looking at second argument */
 			v = getVar(mb, a = getArg(p, 2));
 			valid= getEndLifespan(mb,a) <= i;
 #ifdef DEBUG_OPT_OPTIMIZER
@@ -153,34 +162,19 @@ at the end of the optimization attempt.
 				i, b,getArg(p,1),a, valid, isaBatType(v->type));
 #endif
 			if (isaBatType(v->type) && valid){
+				q= copyInstruction(p);
 				pushArgument(mb, p, getArg(p,2));
 				setArg(p,2,getArg(p,1));
 				setArg(p,1,a);
 				setArg(p,0,newTmpVariable(mb,TYPE_any));
 
-				mb->errors = 0;
-				typeChecker(scope, mb, p, TRUE);
-				if (p->typechk == TYPE_UNKNOWN) {
-					/* reset instruction */
-					mb->errors = olderrnr;
-					setArg(p,0,getArg(p,1));
-					setArg(p,1,getArg(p,2));
-					setArg(p,2,a);
-					p->argc--;
-					typeChecker(scope, mb, p, TRUE);
-				} else if (a != b)
-					replaceAlias(mb, i + 1, mb->stop, b, a);
-#ifdef DEBUG_OPT_OPTIMIZER
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-				actions++;
-				continue;
+				@:patchInstruction(setArg(p,2,a))@
 			}
-		} else if (p->argc == 2) {
-			/* binary/unary operation, check first argument  and return type */
+		} else if (p->retc==1 && p->argc == 2) {
+			/* unary operation, check first argument  and return type */
 			v = getVar(mb, a = getArg(p, 1));
 			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i) continue;
+			if( getLastUpdate(mb,b) != i) goto remAlias;
 			valid= getEndLifespan(mb,a) <= i;
 
 			if (isaBatType(v->type)  && valid){
@@ -188,23 +182,18 @@ at the end of the optimization attempt.
 				stream_printf(GDKout, "Found unary accumulation candidate\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
+				q= copyInstruction(p);
 				pushArgument(mb, p, a);
 				setArg(p,1,getArg(p,0));
 				setArg(p,0,newTmpVariable(mb,TYPE_any));
 
-				mb->errors = 0;
-				typeChecker(scope, mb, p, TRUE);
-				if (p->typechk == TYPE_UNKNOWN) {
-					/* reset instruction */
-					mb->errors = olderrnr;
-					setArg(p,0,getArg(p,1));
-					setArg(p,1,getArg(p,2));
-					p->argc--;
-					typeChecker(scope, mb, p, TRUE);
-				} else if (a != b)
-					replaceAlias(mb, i + 1, mb->stop, b, a);
-				actions++;
+				@:patchInstruction((void) a)@
 			}
+		} else {
+		remAlias:
+			for(j=0;j< p->retc; j++)
+			if( alias[getArg(p,j)] == 0)
+				alias[getArg(p,j)]= getArg(p,j);
 		}
 	}
 	if (errlen)
