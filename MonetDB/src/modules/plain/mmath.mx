@@ -143,6 +143,8 @@ proc exp(flt f) : flt	{return flt(exp(dbl(f)));}
 proc log(flt f) : flt	{return flt(log(dbl(f)));}
 proc log10(flt f) : flt {return flt(log10(dbl(f)));}
 
+proc pi() : dbl 	{return M_PI; }
+
 @{
 @h
 #ifndef __MMATH_H__
