@@ -27,7 +27,7 @@ elif [ "${THIS%/*}" != "$THIS" ] ; then
 	SRC="$PWD/${THIS%/*}"
 fi
 BUILD="$PWD"
-PREFIX="/usr"
+PREFIX="/usr/local"
 for i; do
     case "$i" in
     --prefix=*)
