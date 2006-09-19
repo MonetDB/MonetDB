@@ -1241,6 +1241,7 @@ PROC ws_newnids(BAT[void,bat] ws,
                 nid_rid.append(empty_page_oid, true);
                 nid_cnt :+= int(REMAP_PAGE_SIZE);
             }
+            newnids := newnids.access(BAT_WRITE);
             reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
 
             lock_set(pf_short);
