@@ -3090,7 +3090,7 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
   var newidlist := idbat.uselect(oid_nil);
   if (newidlist.count() > 0) {
     # insert missing strings, first figure out unique combinations
-    var instgtunique := newidlist.mirror().join(instgtbat).tunique().reverse();
+    var instgtunique := newidlist.mirror().join(instgtbat).tunique().reverse().seqbase(0@0);
     # then extract instruction and target
     var instgtuniquesplit := instgtunique.splitbat(":");
     # and finally add them to respective BATs
