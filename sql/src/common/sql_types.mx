@@ -1299,7 +1299,6 @@ sqltypeinit(void)
 		sql_create_func("sql_pos", "+", *t, NULL, *t, INOUT);
 		sql_create_func("abs", "abs", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("sign", "sign", *t, NULL, *t, SCALE_FIX);
-		sql_create_func("power", "pow", *t, *t, *t, SCALE_FIX);
 		sql_create_func("degrees", "deg", *t, NULL, *t, SCALE_NONE);
 		sql_create_func("radians", "rad", *t, NULL, *t, SCALE_NONE);
 		/* scale fixing for all numbers */
@@ -1340,6 +1339,7 @@ sqltypeinit(void)
 	}
 
 	for (t = floats; t < dates; t++) {
+		sql_create_func("power", "pow", *t, *t, *t, SCALE_FIX);
 		sql_create_func("floor", "floor", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("ceil", "ceil", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("ceiling", "ceil", *t, NULL, *t, SCALE_FIX);	/* JDBC */

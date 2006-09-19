@@ -505,51 +505,6 @@ revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant
 
 
 static stmt *
-create_module(mvc *sql, dlist *qname, char *opt_internal_name, dlist *stmts)
-{
-	char *mname = qname_table(qname);
-	dnode *n;
-
-	/* TODO parse and use authorization, now modules are owned by
-	   USER_MONETDB 
-	 */
-
-	if (mvc_bind_schema(sql, mname)) 
-		return sql_error(sql, 02, "CREATE MODULE: name '%s' already in use", mname);
-	mvc_create_schema(sql, mname, USER_MONETDB, opt_internal_name);
-	if (stmts) {
-		list *l = create_stmt_list();
-		for (n=stmts->h; n; n = n->next) {
-			stmt *s = semantic(sql, NULL, n->data.sym);
-			if (!s) {
-				list_destroy(l);
-				return NULL;
-			}
-			list_append(l, s);
-		}
-		return stmt_list(l);
-	}
-	return stmt_none();
-}
-
-static stmt *
-drop_module(mvc *sql, dlist *qname)
-{
-	char *mname = qname_table(qname);
-	sql_schema *s = mvc_bind_schema(sql, mname);
-
-	if (!s) {
-		return sql_error(sql, 02, "DROP MODULE: name %s does not exist", mname);
-	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP MODULE: access denied for %s to module ;'%s'", backend_get_string(sql, "user"), s->base.name);
-	} else if (strcmp(mname, "sys") == 0 || strcmp(mname, "tmp") == 0) {
-		return sql_error(sql, 02, "DROP MODULE: access denied for '%s'", mname);
-	}
-	mvc_drop_schema(sql, mname);
-	return stmt_none();
-}
-
-static stmt *
 create_type(mvc *sql, dlist *qname, char *impl)
 {
 	char *tname = qname_table(qname);
@@ -1541,7 +1496,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		return sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
 	} else {
 		list *table_elements = create_stmt_list();
-		sql_schema *ss = mvc_create_schema(sql, name, auth_id, NULL);
+		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
 
 		dnode *n = schema_elements->h;
 
@@ -1761,28 +1716,6 @@ schemas(mvc *sql, symbol *s)
 		/* grantor ? */
 		sql->type = Q_SCHEMA;
 	} break;
-
-	case SQL_CREATE_MODULE:
-	{
-		dlist *l = s->data.lval;
-
-		ret = create_module(sql, 
-			l->h->data.lval, 
-			l->h->next->data.sval, 
-			l->h->next->next->next->next->data.lval 
-		);
-		sql->type = Q_SCHEMA;
-	}
-		break;
-
-	case SQL_DROP_MODULE:
-	{
-		dlist *l = s->data.lval;
-
-		ret = drop_module(sql, l);
-		sql->type = Q_SCHEMA;
-	}
-		break;
 
 	case SQL_CREATE_TYPE:
 	{

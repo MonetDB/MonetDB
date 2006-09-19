@@ -138,7 +138,7 @@ extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args
 extern void mvc_drop_func(mvc *c, sql_schema *s, char *name, int cascade);
 
 extern void mvc_drop_schema(mvc *c, char *name);
-extern sql_schema *mvc_create_schema(mvc *c, char *name, int auth_id, char *opt_mod);
+extern sql_schema *mvc_create_schema(mvc *c, char *name, int auth_id);
 extern size_t mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, char *name, int cascade);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
@@ -869,14 +869,14 @@ mvc_drop_func(mvc *m, sql_schema *s, char *name, int cascade)
 
 
 sql_schema *
-mvc_create_schema(mvc *m, char *name, int auth_id, char *opt_mod)
+mvc_create_schema(mvc *m, char *name, int auth_id)
 {
 	sql_schema *s = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_schema %s %d\n", name, auth_id);
 
-	s = sql_trans_create_schema(m->session->tr, name, auth_id, opt_mod);
+	s = sql_trans_create_schema(m->session->tr, name, auth_id);
 	m->type = Q_SCHEMA;
 	return s;
 }

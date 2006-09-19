@@ -39,7 +39,6 @@ typedef enum tokens {
 	SQL_CREATE_INDEX,
 	SQL_CREATE_ROLE,
 	SQL_CREATE_USER,
-	SQL_CREATE_MODULE,
 	SQL_CREATE_TYPE,
 	SQL_CREATE_FUNC,
 	SQL_CREATE_SEQ,
@@ -50,7 +49,6 @@ typedef enum tokens {
 	SQL_DROP_INDEX,
 	SQL_DROP_ROLE,
 	SQL_DROP_USER,
-	SQL_DROP_MODULE,
 	SQL_DROP_TYPE,
 	SQL_DROP_FUNC,
 	SQL_DROP_SEQ,
@@ -253,15 +251,12 @@ int yydebug=1;
 	schema_element
 	delete_stmt
 	copyfrom_stmt
-	module_stmt
 	table_def
 	view_def
 	view_as
 	role_def
-	module_def
 	type_def
 	func_def
-	invoked_routine
 	index_def
 	seq_def
 	all_or_any_predicate
@@ -386,7 +381,6 @@ int yydebug=1;
 	varchar
 	clob
 	blob
-	opt_external_name
 	external_name
 	opt_begin_label
 	opt_end_label
@@ -452,10 +446,6 @@ int yydebug=1;
 	when_search_statements
 	case_opt_else_statement
 	variable_list
-	opt_module_character_set_specification
-	character_set_specification
-	opt_module_stmts
-	module_stmts
 	routine_body
 	table_function_column_list
 	select_target_list
@@ -581,7 +571,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TEMPORARY
 %token<sval> AS ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
-%token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
+%token TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
 %token ARE NAMES CALL LANGUAGE SQL
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
@@ -1021,7 +1011,6 @@ create_statement:
    role_def 
  | table_def 
  | view_def
- | module_def
  | type_def
  | func_def
  | index_def
@@ -1685,22 +1674,6 @@ column_commalist_parens:
    '(' ident_commalist ')'	{ $$ = $2; }
  ;
 
-module_def:
-    create MODULE qname 
-	opt_external_name /* MONETDB extension */
-	opt_module_character_set_specification
-	opt_path_specification
-	opt_module_stmts
-    END MODULE
-			{ dlist *l = L();
-				append_list(l, $3);
-				append_string(l, $4);
-				append_list(l, $5);
-				append_symbol(l, $6);
-				append_list(l, $7);
-			  $$ = _symbol_create_list( SQL_CREATE_MODULE, l ); }
- ;
-
 type_def:
     create TYPE qname external_name
 			{ dlist *l = L();
@@ -1709,45 +1682,9 @@ type_def:
 			  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
  ;
 
-opt_external_name:
-	/* empty */		{ $$ = NULL; }
- |	external_name 		
- ;
-
 external_name:
     EXTERNAL sqlNAME ident 	{ $$ = $3; }
  ;
-
-opt_module_character_set_specification: 
-	/* empty */	{ $$ = NULL; }
-   |    NAMES ARE character_set_specification
-			{ $$ = $3; }
-   ;
-
-character_set_specification: qname ;
-
-module_stmt:
-	type_def
-   |    table_def 	
-   |    invoked_routine
-   ;
-
-opt_module_stmts:
-	/* empty */ 	{ $$ = NULL; }
-   | 	module_stmts
-   ;
-
-module_stmts:
-	module_stmt SCOLON		
-		{ $$ = L(); append_symbol($$, $1); }
-    |   module_stmts module_stmt SCOLON
-		{ $$ = $1; append_symbol($$, $2); }
-    ;
-
-invoked_routine:
-	func_def 
-    |   declare func_def 	{ $$ = $2; }
-    ;
 
 func_def:
     create FUNCTION qname
@@ -1876,6 +1813,7 @@ return_statement:
 
 return_value:
       simple_scalar_exp
+   |  subquery	%prec UMINUS
    |  search_condition
    |  TABLE select_with_parens	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $2); }
@@ -2176,7 +2114,6 @@ drop_statement:
  |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
  |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
- |  DROP MODULE qname	  { $$ = _symbol_create_list( SQL_DROP_MODULE, $3 ); }
  |  DROP TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
  ;
 
@@ -3031,7 +2968,6 @@ simple_scalar_exp:
 	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 	{ $$ = $2; }
- |  subquery	%prec UMINUS
  ;
 
 scalar_exp:
@@ -3869,7 +3805,7 @@ data_type:
 			 	sql_find_subtype(&$$, $1, $3, $5);
 			  }
 			}
- | IDENT	{ mvc *m = (mvc*)parm;
+ | IDENT		{ mvc *m = (mvc*)parm;
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
 				char buf[BUFSIZ];
@@ -3950,7 +3886,6 @@ ident:
 
 non_reserved_word:  /* (lexicographically sorted for convenience) */
   LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
-| MODULE	{ $$ = sa_strdup(SA, "module"); }	/* sloppy: officially reserved */
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
 | OBJECT	{ $$ = sa_strdup(SA, "object"); }	/* sloppy: officially reserved */
 | PASSWORD	{ $$ = sa_strdup(SA, "password"); }	/* neither reserved nor non-reserv. */
@@ -4087,8 +4022,6 @@ char *token2string(int token)
 		return "Create ROLE";
 	case SQL_CREATE_USER:
 		return "Create USER";
-	case SQL_CREATE_MODULE:
-		return "Create MODULE";
 	case SQL_CREATE_TYPE:
 		return "Create TYPE";
 	case SQL_CREATE_FUNC:
@@ -4103,8 +4036,6 @@ char *token2string(int token)
 		return "Drop ROLE";
 	case SQL_DROP_USER:
 		return "Drop USER";
-	case SQL_DROP_MODULE:
-		return "Drop MODULE";
 	case SQL_DROP_TYPE:
 		return "Drop TYPE";
 	case SQL_DROP_FUNC:

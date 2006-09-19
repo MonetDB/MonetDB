@@ -159,8 +159,6 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_GRANT_ROLES:
 	case SQL_GRANT:
 	case SQL_REVOKE:
-	case SQL_CREATE_MODULE:
-	case SQL_DROP_MODULE:
 	case SQL_CREATE_TYPE:
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
