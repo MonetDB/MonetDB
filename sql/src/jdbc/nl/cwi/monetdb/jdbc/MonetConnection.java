@@ -1107,9 +1107,10 @@ public class MonetConnection implements Connection {
 	//== end methods of interface Connection
 
 	/**
-	 * Sends the given string to MonetDB, making sure there is a prompt
-	 * before and after the command has sent. All possible returned
-	 * information is discarded.
+	 * Sends the given string to MonetDB as regular statement, making
+	 * sure there is a prompt after the command is sent.  All possible
+	 * returned information is discarded.  Encountered errors are
+	 * reported.
 	 *
 	 * @param command the exact string to send to MonetDB
 	 * @throws SQLException if an IO exception or a database error occurs
@@ -1126,6 +1127,15 @@ public class MonetConnection implements Connection {
 		}
 	}
 
+	/**
+	 * Sends the given string to MonetDB as control statement, making
+	 * sure there is a prompt after the command is sent.  All possible
+	 * returned information is discarded.  Encountered errors are
+	 * reported.
+	 *
+	 * @param command the exact string to send to MonetDB
+	 * @throws SQLException if an IO exception or a database error occurs
+	 */
 	void sendControlCommand(String command) throws SQLException {
 		// send X command
 		synchronized (monet) {
@@ -1139,21 +1149,37 @@ public class MonetConnection implements Connection {
 		}
 	}
 
-	void copyToServer(String in, String name) throws SQLException {
+	/**
+	 * Sends the given string to MonetDB as data; it is sent using a
+	 * special Xcopy mode of the server, allowing not to make any
+	 * changes to the given in String.  A Response is returned, just
+	 * like for a normal query.
+	 *
+	 * @param in the exact string to send to MonetDB
+	 * @param name the name to associate to the data in in
+	 * @return A Response object, or null if no response
+	 * @throws SQLException if a database error occurs
+	 */
+	Response copyToServer(String in, String name) throws SQLException {
 		synchronized (monet) {
+			// tell server we're going to "copy" data over to be
+			// stored under the given name
+			// TODO: maybe in the future add support for a second
+			// name which is a convenience "alias" (e.g. in XQuery)
+			sendControlCommand("copy " + name);
+			// the server is waiting for data to come
+			String[] templ = new String[3];	// empty on everything
+			ResponseList l = new ResponseList(
+					0,
+					0,
+					ResultSet.FETCH_FORWARD,
+					ResultSet.CONCUR_READ_ONLY
+			);
 			try {
-				// tell server we're going to "copy" data over to be
-				// stored under the given name
-				// TODO: maybe in the future add support for a second
-				// name which is a convenience "alias" (e.g. in XQuery)
-				sendControlCommand("copy " + name);
-				// the server is waiting for data to come
-				String[] templ = new String[3];	// empty on everything
-				monet.writeLine(templ, in);
-				String error = monet.waitForPrompt();
-				if (error != null) throw new SQLException(error);
-			} catch (IOException e) {
-				throw new SQLException(e.getMessage());
+				l.executeQuery(templ, in);
+				return(l.getNextResponse()); // don't you love Java?
+			} finally {
+				l.close();
 			}
 		}
 	}
@@ -2071,7 +2097,7 @@ public class MonetConnection implements Connection {
 		 * @param the query to execute
 		 * @throws SQLException if a database error occurs
 		 */
-		private void executeQuery(String[] templ, String query)
+		void executeQuery(String[] templ, String query)
 			throws SQLException
 		{
 			boolean sendThreadInUse = false;
@@ -2491,6 +2517,7 @@ public class MonetConnection implements Connection {
  * thread dies as well, printing the reason for dying to the standard
  * error stream.
  */
+// {{{
 class MonetEmbeddedInstance extends Thread {
 	private String error;
 	private final String[] cmdarray;
@@ -2625,5 +2652,6 @@ class MonetEmbeddedInstance extends Thread {
 		}
 	}
 }
+// }}}
 
 // vim: foldmethod=marker:
