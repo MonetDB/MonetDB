@@ -87,16 +87,6 @@ print("res_scj");  [print](res_scj);
             # as well as content_pre_frag
             var content_pre_frag := res_frag;
             
-        # get the maximum level of the new constructed nodes
-        # and set the maximum of the working set
-        {
-            var height := int(content_level.max()) + 1;
-            ws.fetch(HEIGHT).replace(WS, 
-                                     max(ws.fetch(HEIGHT).fetch(WS),
-                                         height));
-            height := nil;
-        }
-            
         root_iter := qn_iter.chk_order();
         # calculate the sizes for the root nodes
         root_size := {count}(content_iter.reverse(), qn_iter.reverse(), FALSE).tmark(seqbase(qn_iter));
@@ -187,21 +177,6 @@ print("res_scj");  [print](res_scj);
     ws.fetch(PRE_NID).fetch(WS).append(root_kind.mirror());
     ws.fetch(NID_RID).fetch(WS).append(root_kind.mirror());
 
-    # update indexes
-    {
-      var pre_nid := ws.fetch(PRE_NID).fetch(WS);
-      var knd := ELEMENT;
-      while ( knd <= DOCUMENT ) {
-        var knd_nid := root_kind.ord_uselect(knd).reverse().chk_order();
-        ws.fetch(KND_NID.find(knd)).fetch(WS).append(knd_nid);
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-          var knd_prop := knd_nid.leftfetchjoin(root_prop).chk_order();
-          ws.fetch(KND_PROP.find(knd)).fetch(WS).append(knd_prop);
-        }
-        knd :+= chr(1);
-      }
-    }
-
     # save the new roots for creation of the intermediate result
     var roots := root_level.ord_uselect(chr(0));
     # (note that all operations are order preserving and ``mark''
@@ -219,11 +194,7 @@ print("res_scj");  [print](res_scj);
     # working set, that a following (preceding) step can check
     # the fragment boundaries
     {
-        var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));
-        var new_pre_values := roots.tmark(seqb);
-        seqb := nil;
-        ws.fetch(WS_FRAG).fetch(WS).insert(new_pre_values);
-        new_pre_values := nil;
+        reverse(ws.fetch(FRAG_ROOT).fetch(WS)).insert(reverse(roots).project(oid_nil));
     }
 
     # ----------------------------------
@@ -280,7 +251,7 @@ print("res_scj");  [print](res_scj);
         var sorting := aiter.tsort();
         sorting := sorting.CTrefine(mposjoin(attr_qn,
                                              attr_frag,
-                                             ws.fetch(QN_LOC_URI)));
+                                             ws.fetch(QN_URI_LOC)));
         var unq_attrs := sorting.tunique();
         sorting := nil;
         # test uniqueness
@@ -415,7 +386,7 @@ var a0000;
 var unused;
 var ws;
 unused := nil;
-ws := create_ws ();
+ws := ws_create ();
 a0000 := new (void, oid).seqbase (0@0);
 a0000.append (1@0);
 a0000.access (BAT_READ);

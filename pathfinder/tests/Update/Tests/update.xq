@@ -27,7 +27,7 @@ for $elem in $testdoc/document/element
 		do replace value of exactly-one($elem/@xyzzy) with "hgulp",
 		do replace value of exactly-one($elem/@dummy) with "bar")
 ,
-do delete ($testdoc/@title, $testdoc/@copyright, $testdoc/@foo)
+do delete ($testdoc/document/@title, $testdoc/document/@copyright, $testdoc/document/@foo)
 ,
 (: test changing comment value with the following test:
 -- new text

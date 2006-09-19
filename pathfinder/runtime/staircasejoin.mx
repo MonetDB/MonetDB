@@ -94,7 +94,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 @= scj_head
 int
-PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound)
+PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *upperbound)
 {
     /* --------------------------- declaration ----------------------------- */
 
@@ -133,8 +133,8 @@ PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
     size = ((int*) BUNfirst(pre_size)) - pre_size->hseqbase;
 
     ALGODEBUG
-        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
-                          name, BATcount(pre_size), BATcount(ctx), *height);
+        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns\n",
+                          name, BATcount(pre_size), BATcount(ctx));
 
 @= scj_anc
     /* ---------------------------- main part ----------------------------- 

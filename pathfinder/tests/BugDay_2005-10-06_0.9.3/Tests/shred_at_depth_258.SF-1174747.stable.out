@@ -15,10 +15,24 @@ module("unix");
 var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/BugDay_2005-10-06_0.9.3/Tests";
 
 shred_doc(TSTSRCDIR + "/" + "shred_err02.xml", "shred_err02.xml");
-# Shredded XML doc("shred_err02.xml"), total time after commit=0.097s
+# Elapsed time = 001ms 198us [008us/node]
+# Shredded 1 XML documents, total time after commit=0.014s
+xquery("count(doc(\"shred_err02.xml\")//a)").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>128</XQueryResult>
 shred_doc(TSTSRCDIR + "/" + "shred_err01.xml", "shred_err01.xml");
-!ERROR: shredder.mx:shred_start_element: max document nesting exceeded:(MAX==256)
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred_start_element: max document nesting exceeded: 129 > MAX == 128
+!ERROR: CMDshred_url: operation failed.
+xquery("count(doc(\"shred_err01.xml\")//a)").printf();
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `shred_err01.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
+!ERROR: interpret: no matching MIL operator to 'printf(void)'.
+!MAYBE YOU MEAN:
+!	printf(str, ..any..) : void
 quit();
 
 # 11:48:49 >  

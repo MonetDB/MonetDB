@@ -37,15 +37,15 @@ The new loop-lifted variants depend on the 'size' column which allows
 for skipping. Using  'level', this is not possible.
 
 @verbatim
-(time in msec)            10MB          100MB           1GB
-STEP                    single  multi   single  multi   single  multi
-=====================================================================
-old-parent                   5    646       12  45344       79    DNF
-new-parent                   5      7       10     27       72    249
-old-ancestor                 5    452       11  44962       66    DNF
-new-ancestor                 5      7       15     37      114    376 
-old-ancestor-or-self         6    454       19  44653      132    DNF
-new-ancestor-or-self         5      9       19     47      167    480
+(time in msec)          10MB            100MB           1GB
+    STEP                single  multi   single  multi   single  multi
+    =================================================================
+old parent                   5    646       12  45344       79    DNF
+new parent                   5      7       10     27       72    249
+old ancestor                 5    452       11  44962       66    DNF
+new ancestor                 5      7       15     37      114    376 
+old ancestor-or-self         6    454       19  44653      132    DNF
+new ancestor-or-self         5      9       19     47      167    480
 
 single: count(doc("auctionsX.xml")/descendant::person/STEP::*)
 multi:  count(for $x in doc("auctionsX.xml")/descendant::person return $x/STEP::*)
@@ -146,17 +146,17 @@ ll_upwards_@1(                            /* OUTPUT: */
         oid* bounds, oid** iter_stack,    /* - per iter bound */ 
                                           /* DOCUMENT: */
         unsigned int* pre_size,           /* - pre_size column */
-        oid root, oid limit, int height,  /* - valid range of pre ids in the document */
+        oid root, oid limit,              /* - valid range of pre ids in the document */
                                           /* INPUT: */
         oid min_iter,                     /* - minimum iter */      
         duple* context, oid context_size) /* - the context array and its size */
 {  
-    /* NOTE: for paritioning in ancestor, we need an initial bound smaller than the 
+    /* NOTE: for partitioning in ancestor, we need an initial bound smaller than the 
      * root to compare with pre values on the stack. for that reason, the stack 
      * contains pre values INCREMENTED BY ONE. 
      * THUS: when putting a pre on the stack, add 1, when reading from it subtract 1.
      */
-    oid *stack = (oid*) alloca((height+1)*sizeof(oid)); /* STACK CONTAINS pre+1 NUMBERS */ 
+    oid buf[XML_DEPTH_MAX+1], *stack=buf; /* STACK CONTAINS pre+1 NUMBERS */ 
     oid pre = root;  
     oid cur = 0;  
     int depth = 0;  
@@ -185,7 +185,7 @@ ll_upwards_@1(                            /* OUTPUT: */
             /* next context node is in the descendants: go find it */
             stack[depth++] = pre+1;
             pre = skipholes(pre+1, pre_size);
-  	    if (depth == height || pre > limit) break; /* SANITY */
+  	    if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
 
         } else if (depth == 0) {
 
@@ -222,7 +222,6 @@ ll_upwards(               /* RESULT: */
         BAT *ctx_bat,     /* - [void,oid] bat, synced with iter_bat */
                           /* DOCUMENT: */
         BAT *size_bat,    /* - [void,int] bat, doc representation with holes */ 
-        int height,       /* - document height */
         str axis) 
 { 
     oid root = *(oid*) BUNhead(size_bat, BUNfirst(size_bat));
@@ -323,11 +322,11 @@ ll_upwards(               /* RESULT: */
     /* go do the staircase join */
     if (axis == LL_UPWARDS_PARENT) {
         /* iter_stack contains for each depth an array[iter], allocated in bulk */
-        oid **iter_stack = (oid**) alloca(height*sizeof(oid*)); 
-        oid *buf = (oid*) GDKmalloc((m=height*niters)*sizeof(oid)); 
+        oid *iter_stack[XML_DEPTH_MAX];
+        oid *buf = (oid*) GDKmalloc((m=XML_DEPTH_MAX*niters)*sizeof(oid)); 
         if (buf) {
              /* initialize it, filled will all nil */
-             for(i=0; i<(size_t) height; i++) iter_stack[i] = buf + i*niters;
+             for(i=0; i<(size_t) XML_DEPTH_MAX; i++) iter_stack[i] = buf + i*niters;
              for(i=0; i<m; i++) buf[i] = oid_nil;
 
             /* bounds will contain offsets into the result for each iter */
@@ -342,7 +341,7 @@ ll_upwards(               /* RESULT: */
                     context_result = (duple*) BUNfirst(bn), n, 
                     bounds, iter_stack+1, 
                     pre_size,
-                    root, root+BATcount(size_bat), height, 
+                    root, root+BATcount(size_bat), 
                     min_iter, context, n))
                 {
                     /* filter out duplicates and non-existing fragment roots (represented by oid_nils) */
@@ -372,7 +371,7 @@ ll_upwards(               /* RESULT: */
                  context_result, n, 
                  bounds, NULL,
                  pre_size,
-                 root, root+BATcount(size_bat), height, 
+                 root, root+BATcount(size_bat), 
                  min_iter, context, n))
         {
             /* count the hits per-iter, by examining hitcnt (context_result.iter) of each context node.
@@ -411,7 +410,7 @@ ll_upwards(               /* RESULT: */
                         context_result, m,
                         (oid*) BUNfirst(bn), NULL, /* HACK, pass result as bounds */ 
                         pre_size,
-                        root, root+BATcount(size_bat), height, 
+                        root, root+BATcount(size_bat), 
                         min_iter, context, n)) 
                 {
                     status = GDK_SUCCEED;
@@ -444,16 +443,16 @@ ll_upwards(               /* RESULT: */
 }
 
 int
-PFll_parent(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int *height) { 
-    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, 1 + *height, LL_UPWARDS_PARENT);
+PFll_parent(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, LL_UPWARDS_PARENT);
 }
 
 int
-PFll_ancestor(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int *height) { 
-    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, 1 + *height, LL_UPWARDS_ANCESTOR);
+PFll_ancestor(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, LL_UPWARDS_ANCESTOR);
 }
 
 int
-PFll_ancestor_or_self(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int *height) { 
-    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, 1 + *height, LL_UPWARDS_ANCESTOR_SELF);
+PFll_ancestor_or_self(BAT **ret, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size) { 
+    return ll_upwards(ret, iter_bat, ctx_bat, pre_size, LL_UPWARDS_ANCESTOR_SELF);
 }

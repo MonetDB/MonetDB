@@ -12,39 +12,46 @@ stdout of test 'shred_doc_with_space.SF-1211372` in directory 'tests/BugDay_2005
 module(pathfinder);
 
 shred_doc("does_not_exist.xml","does_not_exist.0");
-!ERROR: I/O warning : failed to load external entity "does_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("does_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `does_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 shred_doc("/does_not_exist.xml","does_not_exist.1");
-!ERROR: I/O warning : failed to load external entity "/does_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("/does_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `/does_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 shred_doc("/Documents and Settings/does_not_exist.xml","does_not_exist.2");
-!ERROR: I/O warning : failed to load external entity "/Documents%20and%20Settings/does_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("/Documents and Settings/does_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `/Documents and Settings/does_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 shred_doc("c:\does_not_exist.xml","does_not_exist.3");
-!ERROR: I/O warning : failed to load external entity "c:does_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("c:does_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `c:does_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 shred_doc("c:\Documents and Settings\does_not_exist.xml","does_not_exist.4");
-!ERROR: I/O warning : failed to load external entity "c%3ADocuments%20and%20Settingsdoes_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("c:Documents and Settingsdoes_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `c:Documents and Settingsdoes_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 shred_doc("c:\\does_not_exist.xml","does_not_exist.5");
-!ERROR: I/O warning : failed to load external entity "c%3A%5Cdoes_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("c:\does_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `c:\does_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 shred_doc("c:\\Documents and Settings\\does_not_exist.xml","does_not_exist.6");
-!ERROR: I/O warning : failed to load external entity "c%3A%5CDocuments%20and%20Settings%5Cdoes_not_exist.xml"
-!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("c:\Documents and Settings\does_not_exist.xml") failed
-!ERROR: CMDshred2bats: operation failed.
+!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+!ERROR: [shred_url]: first error was:
+!ERROR: shred: cannot stat `c:\Documents and Settings\does_not_exist.xml': No such file or directory
+!ERROR: CMDshred_url: operation failed.
 
 quit();
 

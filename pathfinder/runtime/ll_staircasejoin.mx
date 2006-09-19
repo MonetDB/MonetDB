@@ -95,19 +95,18 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 @= ll_proto
 static int
-ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
-	int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test);
+ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
+	oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test);
 @
 @= ll_head
 int
 PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-	 int *_height, bit *_one_iter, bit *_one_ctx,
+	 bit *_one_iter, bit *_one_ctx,
 	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order, chr *_kind_test)
 {
     /* --------------------------- declarations ---------------------------- */
 
     char *name = "PFll_@1";
-    int height = *_height;
     bit one_iter = *_one_iter;
     bit one_ctx  = *_one_ctx;
     oid min_iter = *_min_iter;
@@ -318,8 +317,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
             @:ll_return(GDK_FAIL)@
         }
 
-        if (ll_@1(&res, iter_bat, ctx_bat, cand_bat, size,
-                  height, min_iter, max_iter, no_iter_order, self, kind, kind_test) == GDK_FAIL )
+        if (ll_@1(&res, iter_bat, ctx_bat, cand_bat, size, 
+                  min_iter, max_iter, no_iter_order, self, kind, kind_test) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -411,8 +410,8 @@ struct stack_item_C {
 };
 
 static int
-ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
-             int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test)
+ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
+             oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test)
 {
     BAT *res = *result;
     si_C *stack = 0;
@@ -429,9 +428,9 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
     (void)self;
 
     /* stack for context set nodes will never grow over height of doc. tree */
-    stack = (si_C*)GDKmalloc(sizeof(si_C) * (height + 1));
+    stack = (si_C*)GDKmalloc(sizeof(si_C) * (XML_DEPTH_MAX + 1));
     if (stack == NULL) {
-        GDKerror("ll_child: could not allocate stack of size %d.\n", sizeof(si_C) * (height + 1));
+        GDKerror("ll_child: could not allocate stack of size %d.\n", sizeof(si_C) * (XML_DEPTH_MAX + 1));
         return GDK_FAIL;
     }
     stack_top = 0;
@@ -608,8 +607,8 @@ struct stack_item_D {
 #define onstack_get(b)	(onstack[(b)>>OST_shift] &   (((OST)1)<<((b)&OST_mask)))
 
 static int
-ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *size,
-                  int height, oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test)
+ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
+                oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test)
 {
     BAT *res = *result;
     int bs_res = BUNsize(res);
@@ -626,8 +625,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int *s
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
     
-    (void)height;
-
     if (cand_bat) {
         bs_cnd  = BUNsize(cand_bat);
         cnd_bun = BUNtloc(cand_bat, BUNfirst(cand_bat));

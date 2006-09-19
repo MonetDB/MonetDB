@@ -68,9 +68,6 @@ stderr of test 'empty.SF-1331808` in directory 'tests/BugDay_2005-12-19_0.9.3` i
 # 22:41:18 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=53058 empty.SF-1331808.xq
 # 22:41:18 >  
 
-syntax error, unexpected $end on line 1
-parse error: XQuery parsing failed
-# halted in /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/compiler/parser/parser.y (PFparse), line 2440
 
 # 22:41:18 >  
 # 22:41:18 >  Done.

@@ -1836,17 +1836,17 @@ PROC tj_url2Collection(str doc, str url, str selTagList) : void
 
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 {
-	var ws := create_ws();
+	var ws := ws_create();
 	if (not(bat("doc_name").reverse().exist(doc))) {
 		shred_doc(url,doc);
 	}
-	add_doc(ws,doc);
+	ws_doc(ws, bat(void,str,1).append(doc));
         
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
         
 	tj_add2collection(tj_collection(collName),ws,doc,selTagList);
-	destroy_ws(ws);
+	ws_destroy(int(ws));
 	var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(doc));
         
         var coll_oid := bat("tj_collName").reverse().find(collName);
@@ -1982,11 +1982,8 @@ PROC align_frag() : void :=
 {
 	var needed_docs := bat("tj_" + collName + "_doc_name").semijoin(frag.tunique());
 	var loaded_docs := ws.fetch(DOC_LOADED).reverse();
-	needed_docs@batloop()
-	{
-		if (not(loaded_docs.exist($t))) {
-			ws.add_doc($t); }
-	}
+	var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
+	ws_doc(ws, docs_to_load);
 	var fid_pffid := needed_docs.join(ws.fetch(DOC_LOADED).reverse());
 	frag := frag.join(fid_pffid).sort().tmark(0@0);
 	kind := set_kind(frag, ELEM);

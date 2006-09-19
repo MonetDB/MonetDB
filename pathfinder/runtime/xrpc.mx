@@ -64,7 +64,7 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values,
         BAT[void, dbl] dec_values,
-        BAT[void, str] str_values) : BAT[void, bat] = CMDhttp_post;
+        BAT[void, str] str_values) : BAT[str, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
 .PRELUDE = xrpc_prelude;
@@ -128,11 +128,7 @@ PROC rpc_client(
     if (options.search("rpctime") >= 0) {
         printf("\nMIL_Client_DeSerialisation_Start: %lld msec\n", time_milClntDeSeriaStart);
     }
-
-    var docBAT := bat(str,bat,WS_SIZE);
-    var height := index_doc(rpcres,docBAT);
-    var cntoid := add_docbat(ws, docBAT, local_name, TEMP_DOC, oid(nil), height);
-    return cntoid;
+    return ws_addcoll(ws, rpcres, local_name, TEMP_DOC);
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\
@@ -208,8 +204,8 @@ PROC get_rpc_res (
                         }
                     } else if (tpe = "anyNode"){
                         res_iter.append(oid(itercnt));
-                        res_item.append(pre_nid.fetch($h));
-                        i := set_kind(local_name.leftjoin(reverse(ws.fetch(DOCID_NAME))).leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);
+                        res_item.append(pre_nid.find($h));
+                        i := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
                         res_kind.append(i);
                         tpe := ""; # clean up type info
                     }
@@ -627,6 +623,7 @@ static char* get_type(oid tnode_pre, oid *pre_prop, BAT *qn_loc, BAT* qn_prefix)
 }
 
 static int handle_rpc_request(struct shttpd_callback_arg *arg) {
+    lng percentage = 0;
     int sock = -1, retval = GDK_FAIL;
     size_t i = 0, j = 0, k = 0, off = 0; 
     char *strptr = NULL, *req_msg = NULL;
@@ -636,7 +633,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
     /* pointers to the temporarily shredded BATs and to the values in
      * shredBAT */
-    BAT *shredBAT = NULL, *ws_frag = NULL;
+    BAT *shredBAT = NULL, *frag_root = NULL;
     BAT *qn_loc = NULL, *qn_prefix = NULL, *prop_val = NULL;
     int nattrs = 0, *pre_size = NULL;
     char *pre_level = NULL, *pre_kind = NULL, *text_base = NULL;
@@ -693,7 +690,9 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 "XRPC request: bad XML structure\n");
     }
 
-    if ((CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL)) {
+    shredBAT = BATnew(TYPE_str, TYPE_bat, 32);
+    if (shredBAT == NULL || CMDshred_str(shredBAT, strptr, &percentage, NULL) == GDK_FAIL) {
+        if (shredBAT) BBPreclaim(shredBAT);
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XRPC request: bad XML structure, could not shred\n");
         goto FINISH_HANDLE_RPC_REQUEST;
@@ -709,8 +708,8 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     qn_loc    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_LOC))   );
     qn_prefix = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_PREFIX)));
     text_base = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT, off+PROP_TEXT)))->theap->base;
-    ws_frag   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+WS_FRAG)));
-    ws_frag   = BATsetaccess(ws_frag, BAT_APPEND);
+    frag_root = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+FRAG_ROOT)));
+    frag_root = BATsetaccess(frag_root, BAT_APPEND);
     total_size = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
     attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_OWN) )));
     attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_QN)  )));
@@ -838,10 +837,10 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                     }
                     snprintf(argval[nr_args], 32, OIDFMT, vnode_pre);
 
-                    ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre, TRUE);
+                    frag_root = BUNappend(frag_root, (ptr)&vnode_pre, TRUE);
                     oid next_frag = vnode_pre + pre_size[vnode_pre] + 1;
                     if (next_frag < total_size){
-                        ws_frag = BUNappend(ws_frag, (ptr)&next_frag, TRUE);
+                        frag_root = BUNappend(frag_root, (ptr)&next_frag, TRUE);
                     }
                     for (l = start_invalidate; l < vnode_pre; l++) {
                         pre_level[l] = pre_level[0];
@@ -908,7 +907,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
             send_error(out, 0, "", "env:Sender", err);
             goto FINISH_HANDLE_RPC_REQUEST;
         }
-        stream_printf(out, "</XRPC-Result>\n</env:Body>\n</env:Envelope>\n\0");
+        stream_printf(out, "</XRPC-Result>\n</env:Body>\n</env:Envelope>\n");
     }
 
     if (rpcd_time){
@@ -943,6 +942,7 @@ int CMDhttp_post(BAT **res,
                  BAT* dbl_values,
                  BAT* dec_values,
                  BAT* str_values) {
+    lng percentage = 0;
     int len, ret, sock = -1, port = HTTP_PORT, retval = GDK_FAIL;
     int type = 0; /* param type in C */
     buffer *b = NULL;
@@ -1232,8 +1232,10 @@ int CMDhttp_post(BAT **res,
 
     /* Retrieve the SOAP Envelope from the response message */
     strptr = strstr(strptr, "<env:Envelope");
-    if (CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL) {
-        GDKerror("CMDhttp_post: invalid XRPC response received:\n");
+    shredBAT = BATnew(TYPE_str, TYPE_bat, 32);
+    if (shredBAT == NULL || CMDshred_str(shredBAT, strptr, &percentage, NULL)  == GDK_FAIL) {
+        if (shredBAT) BBPreclaim(shredBAT);
+        GDKerror("CMDhttp_post: invalid XRPC response received\n");
         GDKerror("%s\n", strptr);
         goto FINISH_HTTP_POST;
     }
