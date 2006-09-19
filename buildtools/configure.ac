@@ -46,8 +46,6 @@ if [ ! "`type -p python`" ] ; then
 	exit 1
 fi
 
-set -x
-
 # Create "Meta-Makefile" ...
 cat $SRC/Makefile.in \
  | sed -e 's|@SRC@|'"$SRC"'|g' \
