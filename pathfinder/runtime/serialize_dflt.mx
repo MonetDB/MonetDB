@@ -771,7 +771,7 @@ typed_xml_seqEnd (XqueryCtx* ctx)
 static bool
 typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
 {
-    char *item_start;
+    char *item_start = 0;
     (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
@@ -837,7 +837,7 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
 static bool
 typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 {
-    char *item_end;
+    char *item_end = 0;
     (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
@@ -897,7 +897,7 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 static bool
 soap_xml_seqItemStart (XqueryCtx* ctx, int kind)
 {
-    char *item_start;
+    char *item_start = 0;
     (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
@@ -933,7 +933,7 @@ soap_xml_seqItemStart (XqueryCtx* ctx, int kind)
 static bool
 soap_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 {
-    char *item_end;
+    char *item_end = 0;
     (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
