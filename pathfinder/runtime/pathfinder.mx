@@ -153,10 +153,9 @@ PROC xquery_server_start() : void {
 # - rid_nid            BAT[void,oid]               RID / stable NID 
 # - frag_root          BAT[oid,oid]        document-ID / root NID
 #                              
-# NOTE: read-only collections do not have a persistent NID_RID nor a MAP_PID bats.
-#       For them RID=PRE=NID in all cases. This is also true for the transient document 
-#       container. For them NID_RID and MAP_PID are BAT[void,void] views. In their case,
-#       the RID-PRE-NID transformations (leftfetchjoin/swizzle) are zero-cost.
+# NOTE: read-only collections have NID_RID and MAP_PID as BAT[void,void] views. 
+#       For them RID=PRE=NID in all cases, the RID-PRE-NID transformations (leftfetchjoin/ 
+#       siwzzle) are zero-cost. This is also true for the transient document container. 
 #
 # NOTE: MAP_PID page indices start at oid(0). by putting the rid_* phyisical pages 
 #       in the order specified by MAP_PID we get the original pre_* tables back.
@@ -198,9 +197,9 @@ PROC xquery_server_start() : void {
 #
 # For updatable collections, the  bats in the working set used for query execution 
 # are *views* on the persistent bats, to provide isolation.
-# - for the pre/post table pages from the rid_* are remapped into isolcate pre_* bats
+# - for the pre/post table pages from the rid_* are remapped into isolate pre_* bats
 # - all other container bats are copy-on-write mmap views on the masters
-#   (mmap is only used for bug heaps; small heaps are malloced copies)
+#   (mmap is only used for big heaps; small heaps are malloced copies)
 # - the working set also contains all masters. Update queries need access
 #   to the masters when they commit. The master column of "X" is called "_X".
 # - for read-only collections (including all documents shredded on-the-fly)
@@ -520,12 +519,60 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
 }
 lock_unset(pf_short);
 
+# scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
+PROC _collection_cleanup() : BAT[void,str]
+{
+    var commitBAT := bat(void,str);
+    var cnt := {count_no_nil}(reverse(doc_collection).leftjoin(doc_name), collection_name);
+    var del := cnt.uselect(0).mirror().join(collection_name);
+    del@batloop() {
+        var coll_oid := $h;
+        var doc_oids := doc_collection.uselect(coll_oid);
+
+        # only do something if this collection is not pinned!!
+        if (not(colname_pins.exist($t))) {
+            # delete all documents from the collection
+            doc_collection.delete(doc_oids);
+            doc_name.delete(doc_oids);
+            doc_location.delete(doc_oids);
+            doc_timestamp.delete(doc_oids);
+
+            # delete empty collection 
+            if (colname_runtime.exist($t)) {
+                var runtime := colname_runtime.find($t);
+                var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
+                coll_lock.lock_destroy();
+                colname_runtime.delete($t);
+            }
+            colname_shredlock.reverse().select($t)@batloop() lock_destroy($h);
+            colname_shredlock.delete($t);
+            colname_pins.delete($t);
+
+            collection_name.delete(coll_oid); 
+            collection_size.delete(coll_oid);
+
+            commitBAT.insert([+](str(int(coll_oid)), ws_dsk).tmark(oid_nil));
+         }
+    }
+    return commitBAT.seqbase(0@0).access(BAT_READ); # return a list of garbage bats
+}
+
+# make a list of victim bats transient, the commit (slow - done outside the short lock)
+PROC collection_cleanup(BAT[void,str] delBAT) : void
+{
+    var commitBAT := bat(void,str,count(delBAT));
+    delBAT@batloop() {
+        if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
+    }
+    pf_checkpoint(commitBAT);
+}
+
 
 @+ locking approach
 @T
 MonetDB/XQuery uses optimistic concurrency control with snapshot
-isolation, so updates do not use locks as such. Instead, conflicting queries
-are aborted at commit time. 
+isolation, so updates do not use locks as such. Instead, conflicting 
+queries are aborted at commit time. 
 
 Still, some locking still needs to be done, to prevent crashes.
 Monet BATs may never be modified (e.g. from MIL) while other  
@@ -872,7 +919,7 @@ copies are created for read-queries. Update-queries and shred-docs
 acquire this lock when committing resp. extending these master bats. 
 
 The first entry tail holds a page-free list.
-The second entry tail holds a NIF-free list.
+The second entry tail holds a NID-free list.
 Both are used when a document is being extended by an uopdate query.
 
 @- NID_QN index
@@ -894,13 +941,18 @@ a full O(N) scan is more efficient.
 
 Thus, the idea is to solely index those QN items that are small. For this
 purpose the shredder now keeps statistics on M in QN_HISTOGRAM.
-Notice that in incremental shreds, the decision which qnames to shred 
-is made on the first document. Problem is we want incremental indexes,
-thus qnames that were kept out of the index should stay out.
+Notice that in incremental shreds, the decision which qnames to index 
+is made on the first document. With incremental shreds, qnames that were 
+kept out of the index will stay out, even if they turn out to be frequent 
+in ater shredded documents. Thi is necessary because *if* the index
+contains info about a qn, it should be complete info.
 
 The index is non-persistent as in update scenarios it may be big and is 
-not ordered, which would make checkpointing it expensive. Instead,
-it appears in the runtime-BAT,kept in the colname_runtime meta-BAT.
+not ordered, which would make checkpointing it expensive. Now our checkpoint
+costs are in the order of the updated volume (the checkpointed index cost
+would be  in the order of the document collection, instead).
+Therefore, it is stored in the runtime-BAT, reachable for new queries
+via the colname_runtime meta-BAT.
 
 Isolation in the NID_QN index is provided by committing in the _INS and _DEL 
 master bats, which are not seen by any concurrent queries. If there are no 
@@ -931,8 +983,8 @@ PROC __runtime_index(BAT[void,oid] nid,
         idx := idx.leftfetchjoin(prp);            # get [pre,qn], in pre-order
         idx := reverse(idx.leftjoin(sel));        # get [qn,pre], in pre-order
         idx := idx.leftfetchjoin(nid);            # [qn,nid] still in pre-order
-    if (updatable)
-        idx := idx.access(BAT_WRITE);
+    if (updatable) 
+        idx := idx.access(BAT_WRITE).accbuild("hash");
     else
         idx := idx.ssort();                       # [qn,nid] now lexico-ordered (thanks to stable-sort)
     return idx; # [qn,nid]
@@ -1385,16 +1437,9 @@ BAT-of-BATs already contains a document container, the XML document is added to 
 Some care is taken to give out unique document oids. The collection-oid is that of the first document
 that belongs to it. The number is stored persistently (HACK) in a special bun in doc_collection.
 
-The do_add_doc() is a loop-lifted document management function. It may only occur in read-only
-queries (i.e. not intermingled with updates). This is because we use checkpointing for
-shredding (and not the WAL). We cannot use both mechanisms and still have an atomic operation.
-
 The shred_doc_base() operator it depends on is made atomic by adding all new documents to a "doc_undo"
 bat. Only if everything succeeds, the entries are removed from there. Otherwise, in ws_destroy(), 
 all documents mentioned in "doc_undo" are deleted again. 
-
-The shred_doc() operation is the MIL document management interface. It uses a "phony" working
-set identifier derived from the MIL client-id.
 @mil
 # update the doc_* and collection_* tables while holding the short lock
 PROC _shred_into_docBAT(BAT[str,bat] docBAT, 
@@ -1598,53 +1643,6 @@ Collections without any non-nil document names are garbage-collected periodicall
 This happens at start-up and at times when the system detects that no queries are 
 running (this is triggered by the last leaving query in ws_destroy()).
 @mil
-# additional knowledge is that at this time, no queries are active!
-PROC _collection_cleanup() : BAT[void,str]
-{
-    var commitBAT := bat(void,str);
-    var cnt := {count_no_nil}(reverse(doc_collection).leftjoin(doc_name), collection_name);
-    var del := cnt.uselect(0).mirror().join(collection_name);
-    del@batloop() {
-        var coll_oid := $h;
-        var doc_oids := doc_collection.uselect(coll_oid);
-
-        if (not(colname_pins.exist($t))) {
-            # delete all documents from the collection
-            doc_collection.delete(doc_oids);
-            doc_name.delete(doc_oids);
-            doc_location.delete(doc_oids);
-            doc_timestamp.delete(doc_oids);
-
-            # delete empty collection 
-            if (colname_runtime.exist($t)) {
-                var runtime := colname_runtime.find($t);
-                var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-                coll_lock.lock_destroy();
-                colname_runtime.delete($t);
-            }
-            colname_shredlock.reverse().select($t)@batloop() lock_destroy($h);
-            colname_shredlock.delete($t);
-            colname_pins.delete($t);
-
-            collection_name.delete(coll_oid); 
-            collection_size.delete(coll_oid);
-
-            commitBAT.insert([+](str(int(coll_oid)), ws_dsk).tmark(oid_nil));
-         }
-    }
-    return commitBAT.seqbase(0@0).access(BAT_READ); # return a list of garbage bats
-}
-
-PROC collection_cleanup(BAT[void,str] delBAT) : void
-{
-    # rename the bats so even in case of failure they don't bother us directly anymore
-    var commitBAT := bat(void,str,count(delBAT));
-    delBAT@batloop() {
-        if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
-    }
-    pf_checkpoint(commitBAT);
-}
-
 PROC _del_doc_replace(BAT[oid,str] bak_locations, 
                       BAT[oid,str] bak_names) : void 
 {
@@ -1710,6 +1708,13 @@ Note that ws_doc (previous) is similarly called from XQuery for fn:doc()
 and may also lead to on-the-fly document shredding.
 
 @- XQuery Document Management Interface
+
+The do_add_doc() is a loop-lifted document management function. It may only occur in read-only
+queries (i.e. not intermingled with updates). This is because we use checkpointing for
+shredding (and not the WAL). We cannot use both mechanisms and still have an atomic operation.
+
+TODO: integrate do_add_doc and do_deldoc() in s single primitive processes a list
+      of fn:add_doc() and fn:del_doc() calls (Sjoerd?).
 @mil
 PROC do_add_doc(BAT[void,bat] ws, 
                 BAT[void,oid] item, 
@@ -1738,6 +1743,9 @@ PROC do_del_doc(BAT[void,bat] ws,
 
 This is the old MIL administrative interface, now superseded by the 
 new {fn:add_doc(),fn:del_doc()} XQuery built-ins. It can continue to exist.
+
+The shred_doc() operation is the MIL document management interface. It uses a "phony" working
+set identifier derived from the MIL client-id.
 @mil
 PROC shred_doc(BAT[void,str] locations, 
                BAT[void,str] names, 
