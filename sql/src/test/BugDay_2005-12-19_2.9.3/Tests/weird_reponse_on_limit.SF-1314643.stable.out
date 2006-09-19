@@ -1,19 +1,19 @@
 stdout of test 'weird_reponse_on_limit.SF-1314643` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
 
 
-# 16:41:21 >  
-# 16:41:21 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./SQL/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=39078 --set sql_port=43223 --set xquery_port=50211 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 16:41:21 >  
+# 18:23:00 >  
+# 18:23:00 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=39605 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit='include sql;' ; echo ; echo Over..
+# 18:23:00 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_BugDay_2005-12-19_2.9.3
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -25,13 +25,13 @@ Over..
 # id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
 # int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 # 4,	7,	4,	1,	1,	5,	1,	1 # length
-[ 4458,	"schemas",	4457,	NULL,	0,	true,	0,	0	]
+[ 4455,	"schemas",	4454,	NULL,	0,	true,	0,	0	]
 # sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 # id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
 # int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 # 4,	7,	4,	1,	1,	5,	1,	1 # length
-[ 4458,	"schemas",	4457,	NULL,	0,	true,	0,	0	]
-[ 4463,	"types",	4457,	NULL,	0,	true,	0,	0	]
+[ 4455,	"schemas",	4454,	NULL,	0,	true,	0,	0	]
+[ 4459,	"types",	4454,	NULL,	0,	true,	0,	0	]
 
 # 20:53:46 >  
 # 20:53:46 >  Done.

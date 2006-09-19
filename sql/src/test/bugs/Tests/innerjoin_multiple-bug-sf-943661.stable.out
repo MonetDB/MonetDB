@@ -1,14 +1,19 @@
 stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'src/test/bugs` itself:
 
 
-# 21:25:52 >  
-# 21:25:52 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=35114 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="include sql;" ; echo ; echo Over..
-# 21:25:52 >  
+# 16:15:42 >  
+# 16:15:42 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=34115 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit='include sql;' ; echo ; echo Over..
+# 16:15:42 >  
 
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_bugs
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -39,6 +44,7 @@ Over..
 [ "sys",	"functions",	"aggr"	]
 [ "sys",	"functions",	"func"	]
 [ "sys",	"functions",	"id"	]
+[ "sys",	"functions",	"mod"	]
 [ "sys",	"functions",	"name"	]
 [ "sys",	"functions",	"schema_id"	]
 [ "sys",	"functions",	"sql"	]
@@ -101,6 +107,7 @@ Over..
 [ "sys",	"functions",	"aggr"	]
 [ "sys",	"functions",	"func"	]
 [ "sys",	"functions",	"id"	]
+[ "sys",	"functions",	"mod"	]
 [ "sys",	"functions",	"name"	]
 [ "sys",	"functions",	"schema_id"	]
 [ "sys",	"functions",	"sql"	]

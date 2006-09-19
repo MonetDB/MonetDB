@@ -1,14 +1,19 @@
 stdout of test 'CrashMe_SQL_server_crash-2.SF-921673` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 16:24:19 >  
-# 16:24:19 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=34879 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="include sql;" ; echo ; echo Over..
-# 16:24:19 >  
+# 17:22:43 >  
+# 17:22:43 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=37839 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit='include sql;' ; echo ; echo Over..
+# 17:22:43 >  
 
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_BugDay_2005-10-06_2.9.3
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -39,9 +44,10 @@ Over..
 [ NULL,	"sys",	"functions",	"id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"name",	"varchar",	256,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"func",	"varchar",	8196,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
-[ NULL,	"sys",	"functions",	"sql",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
-[ NULL,	"sys",	"functions",	"aggr",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	5,	NULL,	NULL,	NULL	]
-[ NULL,	"sys",	"functions",	"schema_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"functions",	"mod",	"varchar",	8196,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"functions",	"sql",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	5,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"functions",	"aggr",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"functions",	"schema_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	7,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keycolumns",	"id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keycolumns",	"column",	"varchar",	1024,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keycolumns",	"trunc",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]

@@ -123,6 +123,7 @@ extern sql_func *sql_create_func_(char *name, char *mod, char *imp, list *ops, s
 extern sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res);
 
 extern char *sql_func_imp(sql_func *f);
+extern char *sql_func_mod(sql_func *f);
 extern int is_sqlfunc(sql_func *f);
 
 extern void types_init(int debug);
@@ -569,6 +570,14 @@ sql_func_imp(sql_func *f)
 		return f->base.name;
 	else
 		return f->imp;
+}
+
+char *
+sql_func_mod(sql_func *f)
+{
+	if (f->sql)
+		return NULL;
+	return f->mod;
 }
 
 int
@@ -1090,7 +1099,7 @@ sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 	base_init(&t->base, store_next_oid(), TR_OLD, n=toLower(name));
 	_DELETE(n);
 	t->imp = _strdup(imp);
-	t->mod = NULL;
+	t->mod = _strdup("SQL");
 	t->ops = ops;
 	if (res)	
 		t->res = *res;

@@ -59,8 +59,8 @@ extern BAT *temp_descriptor(bm_bid b);
 #include "sql_backend.h"
 #include "bat_sequence.h"
 
-/* version 03.02.00 of catalog */
-#define CATALOG_VERSION 30200
+/* version 03.02.01 of catalog */
+#define CATALOG_VERSION 30201
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock;
@@ -1222,6 +1222,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	BAT *func_id = get_bat(bm, "sys_functions_id");
 	BAT *func_name = get_bat(bm, "sys_functions_name");
 	BAT *func_func = get_bat(bm, "sys_functions_func");
+	BAT *func_mod = get_bat(bm, "sys_functions_mod");
 	BAT *func_sql = get_bat(bm, "sys_functions_sql");
 	BAT *func_aggr = get_bat(bm, "sys_functions_aggr");
 	BAT *arg_func_id = get_bat(bm, "sys_args_func_id");
@@ -1230,8 +1231,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 
 	base_init(&t->base, *(sqlid *) bun_find(func_id, lid), TR_OLD, bun_find(func_name, lid));
 	t->imp = _strdup((char *) bun_find(func_func, lid));
-	/* todo save module */
-	t->mod = NULL;
+	t->mod = _strdup((char *) bun_find(func_mod, lid));
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
 	t->res.type = NULL;
@@ -1269,6 +1269,7 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	bat_destroy(func_id);
 	bat_destroy(func_name);
 	bat_destroy(func_func);
+	bat_destroy(func_mod);
 	bat_destroy(func_sql);
 	bat_destroy(func_aggr);
 	bat_destroy(arg_func_id);
@@ -1818,12 +1819,14 @@ bs_init_func(struct bm *bm)
 	BAT *func_id = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_id"), TYPE_int);
 	BAT *func_name = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_name"), TYPE_str);
 	BAT *func_func = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_func"), TYPE_str);
+	BAT *func_mod = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_mod"), TYPE_str);
 	BAT *func_sql = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
 	BAT *func_aggr = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
 	BAT *func_schema_id = sys_bat(bm, Ccc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
 	BAT *U_func_id = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_id"), TYPE_int);
 	BAT *U_func_name = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_name"), TYPE_str);
 	BAT *U_func_func = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_func"), TYPE_str);
+	BAT *U_func_mod = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_mod"), TYPE_str);
 	BAT *U_func_sql = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
 	BAT *U_func_aggr = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
 	BAT *U_func_schema_id = sys_bat(bm, Ucc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
@@ -1857,6 +1860,7 @@ bs_init_func(struct bm *bm)
 			BUNins(func_id, &rid, &f->base.id, FALSE);
 			BUNins(func_name, &rid, f->base.name, FALSE);
 			BUNins(func_func, &rid, f->imp, FALSE);
+			BUNins(func_mod, &rid, f->mod, FALSE);
 			BUNins(func_sql, &rid, &sql, FALSE);
 			BUNins(func_aggr, &rid, &F, FALSE);
 			BUNins(func_schema_id, &rid, &zero, FALSE);
@@ -1903,6 +1907,7 @@ bs_init_func(struct bm *bm)
 			BUNins(func_id, &rid, &aggr->base.id, FALSE);
 			BUNins(func_name, &rid, aggr->base.name, FALSE);
 			BUNins(func_func, &rid, aggr->imp, FALSE);
+			BUNins(func_mod, &rid, aggr->mod, FALSE);
 			BUNins(func_sql, &rid, &F, FALSE);
 			BUNins(func_aggr, &rid, &T, FALSE);
 			BUNins(func_schema_id, &rid, &zero, FALSE);
@@ -1935,12 +1940,14 @@ bs_init_func(struct bm *bm)
 	bat_destroy(func_id);
 	bat_destroy(func_name);
 	bat_destroy(func_func);
+	bat_destroy(func_mod);
 	bat_destroy(func_sql);
 	bat_destroy(func_aggr);
 	bat_destroy(func_schema_id);
 	bat_destroy(U_func_id);
 	bat_destroy(U_func_name);
 	bat_destroy(U_func_func);
+	bat_destroy(U_func_mod);
 	bat_destroy(U_func_sql);
 	bat_destroy(U_func_aggr);
 	bat_destroy(U_func_schema_id);
@@ -2233,6 +2240,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
 		bootstrap_create_column(tr, t, "func", "varchar", 8196);
+		bootstrap_create_column(tr, t, "mod", "varchar", 8196);
 		/* sql or database internal */
 		bootstrap_create_column(tr, t, "sql", "boolean", 1);
 		/* aggr or func */
@@ -2791,9 +2799,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	base_init(&f->base, of->base.id, tr_flag(&of->base, flag), of->base.name);
 
 	f->imp = _strdup(of->imp);
-	f->mod = NULL;
-	if (of->mod)
-		f->mod = _strdup(of->mod);
+	f->mod = _strdup(of->mod);
 	f->sql = of->sql;
 	f->aggr = of->aggr;
 	f->ops = list_create(of->ops->destroy);
@@ -4315,7 +4321,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 
 	base_init(&t->base, next_oid(), TR_NEW, func);
 	t->imp = _strdup(impl);
-	t->mod = NULL;
+	t->mod = _strdup("SQL"); /* TODO pass module name */
 	t->sql = sql;
 	t->aggr = aggr;
 	t->ops = list_dup(args, (fdup)&arg_dup);
@@ -4325,7 +4331,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, &t->sql, &t->aggr, &s->base.id);
+	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &t->sql, &t->aggr, &s->base.id);
 	if (t->res.type) {
 		char *name = "result";
 		oid id = next_oid();
