@@ -119,8 +119,8 @@ command log(x:dbl)   	  :dbl
 address MATHunary_LOGdbl
 comment "The log(x) function returns the natural logarithm of x.";
 
-#command log10(x:flt)    :flt 
-#address MATHunary_LOG10flt;
+command log10(x:flt)    :flt 
+address MATHunary_LOG10flt;
 command log10(x:dbl)    :dbl 
 address MATHunary_LOG10dbl
 comment "The log10(x) function returns the base-10 logarithm of x.";
@@ -194,6 +194,12 @@ comment "return a random number";
 command srand(seed:int) :void 
 address MATHsrandint
 comment "initialize the rand() function with a seed";
+
+function mmath.pi():dbl;
+	pi := 3.14159265358979323846:dbl;
+	return pi;
+end pi;
+
 @{
 @-
 The constants defined in math.h are defined in const.mx
