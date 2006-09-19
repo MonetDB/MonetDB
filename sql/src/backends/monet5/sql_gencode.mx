@@ -67,6 +67,9 @@ sql_export void monet5_set_number(mvc *m, char *name, lng val);
 #include "opt_prelude.h"
 #include "mal_builder.h"
 
+#include <sql_optimize.h>
+#include <sql_rel2bin.h>
+
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static void backend_create_func(backend *be, sql_func *f);
 
@@ -1917,6 +1920,13 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	f->sql++;
 	s = sqlparse_intern(m, f->imp, m_execute);
+	if (s) {
+		stmt *opt;
+		opt = optimize(m, s);
+		stmt_destroy(s);
+		s = rel2bin(m, opt);
+		stmt_destroy(opt);
+	}
 	assert(s);
 
 	backup = c->curprg;

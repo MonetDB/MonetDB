@@ -1265,11 +1265,6 @@ optimize(mvc *c, stmt *s)
 	case st_seq_next:
 	case st_table_clear:
 
-	case st_while:
-	case st_if:
-	case st_return:
-	case st_assign:
-
 		s->optimized = 1;
 		return stmt_dup(s);
 
@@ -1351,6 +1346,10 @@ optimize(mvc *c, stmt *s)
 	case st_Nop:
 	case st_convert:
 
+	case st_while:
+	case st_if:
+	case st_return:
+
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
 			stmt *ns = optimize(c, os);
@@ -1376,6 +1375,18 @@ optimize(mvc *c, stmt *s)
 				s->op3.stval = ns;
 				stmt_destroy(os);
 			}
+		}
+		s->optimized = 1;
+		return stmt_dup(s);
+
+	case st_assign:
+		if (s->op2.stval) {
+			stmt *os = s->op2.stval;
+			stmt *ns = optimize(c, os);
+
+			assert(ns != s);
+			s->op2.stval = ns;
+			stmt_destroy(os);
 		}
 		s->optimized = 1;
 		return stmt_dup(s);

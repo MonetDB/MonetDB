@@ -151,6 +151,7 @@ typedef struct sql_aggr {
 	sql_base base;
 
 	char *imp;
+	char *mod;
 	sql_subtype tpe;
 	sql_subtype res;
 	int nr;
@@ -178,6 +179,7 @@ typedef struct sql_func {
 	sql_base base;
 
 	char *imp;
+	char *mod;
 	list *ops;		/* param list */
 	sql_subtype res;
 	/* res.scale

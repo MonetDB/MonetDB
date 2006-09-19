@@ -1230,6 +1230,8 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 
 	base_init(&t->base, *(sqlid *) bun_find(func_id, lid), TR_OLD, bun_find(func_name, lid));
 	t->imp = _strdup((char *) bun_find(func_func, lid));
+	/* todo save module */
+	t->mod = NULL;
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
 	t->res.type = NULL;
@@ -2789,6 +2791,9 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	base_init(&f->base, of->base.id, tr_flag(&of->base, flag), of->base.name);
 
 	f->imp = _strdup(of->imp);
+	f->mod = NULL;
+	if (of->mod)
+		f->mod = _strdup(of->mod);
 	f->sql = of->sql;
 	f->aggr = of->aggr;
 	f->ops = list_create(of->ops->destroy);
@@ -4310,6 +4315,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 
 	base_init(&t->base, next_oid(), TR_NEW, func);
 	t->imp = _strdup(impl);
+	t->mod = NULL;
 	t->sql = sql;
 	t->aggr = aggr;
 	t->ops = list_dup(args, (fdup)&arg_dup);

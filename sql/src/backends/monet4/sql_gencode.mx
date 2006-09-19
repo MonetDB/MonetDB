@@ -57,6 +57,9 @@ sql_server_export void monet4_set_number(mvc *m, char *name, lng val);
 #include <sql_result.h>
 #include <sql_semantic.h>
 
+#include <sql_optimize.h>
+#include <sql_rel2bin.h>
+
 static int backend_dumpstmt(stmt *s, int *nr, backend *sql);
 static int backend_dumpstmt_(stmt *s, int *nr, backend *sql);
 static void backend_create_func(backend *be, sql_func *f);
@@ -1759,6 +1762,13 @@ backend_create_func(backend *be, sql_func *f)
 	f->sql++;
 	be = backend_create(c, 0);
 	s = sqlparse_intern(c, f->imp, m_execute);
+	if (s) {
+		stmt *opt;
+		opt = optimize(c, s);
+		stmt_destroy(s);
+		s = rel2bin(c, opt);
+		stmt_destroy(opt);
+	}
 	assert(s);
 
 	i = snprintf(buf, BUFSIZ, "proc %s (", f->base.name);
