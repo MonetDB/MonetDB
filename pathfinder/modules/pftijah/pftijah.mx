@@ -99,6 +99,7 @@ the join algorithm comes down to a repeated slice and insert operation.
 .END pftijah;
 @mil
 module("pathfinder");
+module("monettime");
 
 ###
 # This file contains implementations of some of the SRA operators 
@@ -203,6 +204,33 @@ PROC tj_setScoreBase(int default) : void :=
 	scoreBase := default;
 }
 
+
+var equivalences := new(str,str);
+PROC tj_initEquivalences() : void := 
+{
+    equivalences := new(str,str);
+}
+
+PROC tj_addEquivalenceClass( bat elements ) : void := 
+{
+    # Create cross product of class elements
+    var class := eqclass.reverse().cross( eqclass );
+    # Append to equivalences table
+    equivalences := equivalences.insert( class );
+}
+
+var tracefile_handle := nil;
+PROC tj_trace( str s ) : void := 
+{
+    if ( not( tracefile = "" ) ) {
+        if ( isnil( tracefile_handle ) )
+            tracefile_handle := open_wastream(tracefile);
+        
+        tracefile_handle.stream_write( sprintf( "%d %s\n", int(msec()/1000), s ) );
+        tracefile_handle.stream_flush();
+    }
+}
+
 const virtRoot := 0@0;
 
 
@@ -227,6 +255,8 @@ PROC anc_desc( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 ##
 PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
 {
+    if ( trace ) tj_trace( "BEGIN anc_desc_llscj" );
+    
     # Items contains the context nodes for the descendant step: 
     # this is the right side argument to contained_by.
     # The table must be [void,oid], so:
@@ -252,6 +282,7 @@ PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
     items := nil;
     pre_size := nil;
     
+    if ( trace ) tj_trace( "END   anc_desc_llscj" );
     return anc_desc;
 }
 
@@ -428,7 +459,7 @@ PROC select_node() : bat[oid,dbl] :=
 ##
 PROC select_node(str name) : bat[oid,dbl] :=
 {
-    var start_time := time();
+    if ( trace ) tj_trace( sprintf("BEGIN select_node('%s')", name) );
 
     var tids := bat("tj_globalTags").select(name);
     if (tids.count() = 0) return new(oid,dbl);
@@ -438,8 +469,7 @@ PROC select_node(str name) : bat[oid,dbl] :=
     				  bat("tj_" + collName + "_Tags") );
     result := result.reverse().sort().project(dbl(scoreBase)); 
 
-    var end_time := time();
-    if (DEBUG) printf( "select_node: \t\t%d ms\n", end_time - start_time );
+    if ( trace ) tj_trace( sprintf("END   select_node('%s')", name) );
     return result;
 }
 
@@ -454,8 +484,31 @@ PROC select_node(str name) : bat[oid,dbl] :=
 ##
 PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
 {
-    if ( e_class ) printf( "WARNING: equivalences are not yet supported!\n" );
-    return select_node(name);
+    if ( trace ) tj_trace( sprintf("BEGIN select_node('%s',%d)", name, e_class) );
+    
+    if ( e_class ) {
+        var names := equivalences.uselect( name ).reverse();
+        if ( count( names ) = 0 ) {
+            # Apparently, there were no equivalent tags (not even the tag itself)
+            #names := new(void,str).seqbase(oid(0));
+            #names.append(name);
+            return select_node(name);
+        }
+        
+        var tids := bat("tj_globalTags").join(names.reverse()).mark(0@0).sort().reverse();
+        
+        var result := indexfetchjoin( tids,
+                        bat("tj_" + collName + "_TagIndex"),
+                        bat("tj_" + collName + "_Tags") );
+        result := result.reverse().sort().project(dbl(scoreBase)); 
+        
+        
+        if ( trace ) tj_trace( sprintf("END   select_node('%s',%d)", name, e_class) );
+        return result;
+    } else {
+        if ( trace ) tj_trace( sprintf(" END select_node('%s',%d)", name, e_class) );
+        return select_node(name);
+    }
 }
 
 
@@ -467,7 +520,7 @@ PROC select_node(str name, bit e_class) : bat[oid,dbl] :=
 ##
 PROC select_term(str name) : bat[oid,dbl] :=
 {
-    var start_time := time();
+    if ( trace ) tj_trace( sprintf("BEGIN select_term('%s')", name) );
     # 
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
     var term    := tj_normalizeTerm( name, stemmer );
@@ -480,8 +533,8 @@ PROC select_term(str name) : bat[oid,dbl] :=
     				  bat("tj_" + collName + "_Terms") );
     result := result.reverse().sort().project(dbl(scoreBase)); 
     
-    var end_time := time();
-    if (DEBUG) printf( "select_term: \t\t%d ms\n", end_time - start_time );
+
+    if ( trace ) tj_trace( sprintf("END   select_term('%s')", name) );
     return result;
 }
 
@@ -510,7 +563,7 @@ PROC select_term(str name, int stemming) : bat[oid,dbl] :=
 ##
 PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 {
-    var start_time := time();
+    if ( trace ) tj_trace( "BEGIN select_phrase" );
     # Select the term positions from the global term dictionary. 
    
     var tid := terms.fetch(0);
@@ -532,8 +585,7 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
     
     res := res.sort().project(dbl(scoreBase)); 
     
-    var end_time := time();
-    if (DEBUG) printf( "select_phrase: \t\t%d ms\n", end_time - start_time );
+    if ( trace ) tj_trace( "END   select_phrase" );
     return res;
 }
 
@@ -559,7 +611,7 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 #####################################
 PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 {
-    var start_time := time();
+    if ( trace ) tj_trace( "BEGIN contained_by_2" );
     
     # Check for the virtual root
     if ( not( bat("tj_"+collName+"_size").exist(0@0) ) ) {
@@ -579,8 +631,7 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     # Attach the scores to the resulting nodes again:
     var result := anc_desc.reverse().mirror().join(left);
     
-    var end_time := time();
-    if (DEBUG) printf( "contained_by: \t\t%d ms\n", end_time - start_time );
+    if ( trace ) tj_trace( "END   contained_by_2" );
     return result;
 }
 
@@ -594,6 +645,7 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 ##
 PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
+    if ( trace ) tj_trace( "BEGIN contained_by_1" );
     if ( not( bat("tj_"+collName+"_size").exist(0@0) ) ) {
         # Exceptions for root in argument. The case 
         # of region sets containing the root is not handled
@@ -607,6 +659,8 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
     var pre_size := load( "tj_" + collName + "_size");    
     var desc     := scj_desc( pre_size, ctx, collHeight, count(pre_size) );
     var result   := nodes( desc ).project( dbl(scoreBase) );
+    
+    if ( trace ) tj_trace( "END  contained_by_1" );
     return result;
 }
 
@@ -627,7 +681,7 @@ PROC contained_by(bat[oid,dbl] region) : bat[oid,dbl] :=
 #####################################
 PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 {
-    var start_time := time();
+    if ( trace ) tj_trace( "BEGIN containing_2" );
     
     # Check for the virtual root
     if ( not( bat("tj_"+collName+"_size").exist(0@0) ) ) {
@@ -647,8 +701,7 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     # Attach the scores to the resulting nodes again:
     var result := anc_desc.mirror().kunique().join(left);
     
-    var end_time := time();
-    if (DEBUG) printf( "containing: \t\t%d ms\n", end_time - start_time );
+    if ( trace ) tj_trace( "END   containing_2" );
     return result;
 }
 
@@ -659,6 +712,7 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 
 PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR_batloop_anc" );
      var terms := Qterms_to_void_tid( Qterms );
      if (terms.count() = 0) {return new(oid,dbl);}
      var t1 := time();
@@ -714,11 +768,14 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,str] Qterms, fl
         printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
         fflush(stdout());
      }
+     
+     if ( trace ) tj_trace( "END  p_containing_q_NLLR_batloop_anc" );
      return res;
 }
 
 PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR_batloop" );
      var terms := Qterms_to_void_tid( Qterms );
      if (terms.count() = 0) {return new(oid,dbl);}
      var t1 := time();
@@ -784,11 +841,13 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,str] Qterms, flt lm
         printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
         fflush(stdout());
      }
+     if ( trace ) tj_trace( "END   p_containing_q_NLLR_batloop" );
      return res;
 }
 
 PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
+    if ( trace ) tj_trace( "BEGIN _containing_desc" );    
      var elems := left.hmark(0@0);
      var cands := tid_pre.tmark(0@0);
      var iter := elems.mirror();
@@ -801,11 +860,13 @@ PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :
      elem_termpre := elem_termpre.reverse().leftfetchjoin(elems).reverse();
      var elem_tid := elem_termpre.join(tid_pre.reverse());
      elem_termpre := nil;
+     if ( trace ) tj_trace( "END   _containing_desc" );    
      return elem_tid;
 }
 
 PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
+    if ( trace ) tj_trace( "BEGIN _containing_anc" );    
      var tmp_pre := tid_pre.tmark(0@0);
      var elems := ll_ancestor(tmp_pre, 
                               tmp_pre, 
@@ -815,6 +876,8 @@ PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
      elems := elems.semijoin(left);
      var elem_tid := elems.join(tid_pre.reverse());
      var elems := nil;
+     
+     print( "END   _containing_anc" );
      return elem_tid;
 }
 
@@ -830,6 +893,7 @@ PROC collTermCount(str col, bat[void,oid] terms) : bat[oid,int] :=
 
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
+    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
      # fetch term occurrences and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms );
      var tid_frq := collTermCount(background_collName, terms);
@@ -887,6 +951,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
      
      res := res.[/](terms.count()).[+](left);
+     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      return res;
 }
 
@@ -915,7 +980,8 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
 ##
 PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int size_type) : bat[oid,dbl] := 
 {
-    var start_time := time();
+    if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_ASPECT" );
+    
     var lambda;
     var m_lambda;
     var forgnd_prob := new(oid,dbl,ENTITY_NUM);
@@ -971,8 +1037,8 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
         res_reg := [*](left, [+]([*](lambda,forgnd_prob),*(m_lambda,bckgnd_prob)));
     
     
-    var end_time := time();
-    if (DEBUG) printf( "p_containing_t_LMs: \t%d ms\n", end_time - start_time );
+    
+    if ( trace ) tj_trace( "END   p_containing_t_LMs_ASPECT" );
     return res_reg;
 }
 
@@ -1022,6 +1088,7 @@ PROC p_containing_t_LMs(bat[oid,dbl] left, bat[oid,dbl] right, flt lmbd, int siz
 ##
 PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat[oid,dbl]
 {   
+    if ( trace ) tj_trace( "BEGIN p_containing_t_LMs_COARSE" );
     # To follow the naming in the formula above, context regions are named "documents".
     # For each term we need:
     #  - foreground probability (first term). This depends on the context region
@@ -1111,7 +1178,7 @@ PROC p_containing_q_LMs(bat[oid,dbl] ctx, bat[void,str] Qterms, bat modifiers, f
         # Add the scores to the context set (this should have scores 1, so multiplying is OK)
         res := [*](ctx, res);
     }
-    
+    if ( trace ) tj_trace( "END   p_containing_t_LMs_COARSE" );
     return res;
 }
 
@@ -1182,7 +1249,9 @@ PROC reg_freq(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,db
 # Calculate the term size of the region: how many terms does it contain?
 PROC size_term( bat[oid,any] region ) : bat[oid,dbl] := 
 {
+    if ( trace ) tj_trace( "BEGIN size_term" );
     # For now, we use size_term = size_entity
+    if ( trace ) tj_trace( "END   size_term" );
     return size_entity( region );
     var start_time := time();
     
@@ -1208,6 +1277,7 @@ PROC size_term( bat[oid,any] region ) : bat[oid,dbl] :=
    
     var end_time := time();
     if (DEBUG) printf( "size_term: \t\t%d ms\n", end_time - start_time );
+    if ( trace ) tj_trace( "END   size_term" );
     return result;
 }
 
@@ -1234,6 +1304,7 @@ PROC size_entity( bat[oid,any] region ) : bat[oid,dbl] :=
 
 PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
 {
+    if ( trace ) tj_trace( "BEGIN p_contained_by_sum_1" );
     # Candidates: all nodes
     var candidates := select_node();
 
@@ -1251,14 +1322,15 @@ PROC p_contained_by_sum(bat[oid,dbl] region) : bat[oid,dbl] :=
     var reg_score := {sum}(ctx_res.reverse().join(region));
 
     var res_reg := ctx.join(reg_score);
-
+    
+    if ( trace ) tj_trace( "END   p_contained_by_sum_1" );
     return res_reg;
 }
 
 
 PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] := 
 {
-
+    if ( trace ) tj_trace( "BEGIN p_contained_by_sum_2" );
     var ctx_res := anc_desc( right, left );
     
     var reg_score;
@@ -1274,13 +1346,14 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
 	else if (scoreBase = 1)
 		res_reg := [*](left, reg_score);
 
+    if ( trace ) tj_trace( "END   p_contained_by_sum_2" );
 	return res_reg;
-
 }
 
 
 PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : bat[oid,dbl] :=
 {
+    if ( trace ) tj_trace( "BEGIN p_containing_wsumd" );
     var ctx := left.project(dbl(0));
     var size_reg;
     var reg_score;
@@ -1315,6 +1388,7 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
     else if (scoreBase = 1)
         res_reg := [*](left, reg_score);
 
+    if ( trace ) tj_trace( "END   p_containing_wsumd" );
     return res_reg;
 }
 
@@ -1326,7 +1400,7 @@ PROC p_containing_wsumd(bat[oid,dbl] left, bat[oid,dbl] right, int size_type) : 
 PROC union(bat left, bat right) : bat :=
 {
 
-	return left.kunion(right);
+	return left.kunion(right).sort();
 
 }
 
@@ -1334,7 +1408,7 @@ PROC union(bat left, bat right) : bat :=
 PROC intersect(bat left, bat right) : bat := 
 {
 
-	return left.kintersect(right);
+	return left.kintersect(right).sort();
 
 }
 
@@ -1465,6 +1539,9 @@ PROC and_prob(bat left, bat right) : bat :=
 
 PROC near_val(bat region, int command, str value) : bat :=
 {
+    print( "Sorry, near_val is not yet supported" );
+    return region;
+
     var r_value;
     var reg_res := new(oid,dbl,ENTITY_NUM);
     var reg_tmp := new(oid,oid,ENTITY_NUM);
@@ -1566,10 +1643,16 @@ PROC prior_ls(bat region, int size_type) : bat :=
 	var ctx_size := new(oid,dbl,ENTITY_NUM);
 	var res_reg := new(oid,dbl,ENTITY_NUM);
 
-	if (size_type = SIZE_ENTITY)
+	if (size_type = SIZE_ENTITY) {
 		ctx_size := size_entity(region);
-	else if (size_type = SIZE_TERM)
+        # Make sure sizes are not zero      
+        ctx_size := [+](ctx_size, dbl(0.5));
+	} else if (size_type = SIZE_TERM) {
 		ctx_size := size_term(region);
+        # Make sure sizes are not zero      
+        ctx_size := [+](ctx_size, dbl(0.5));
+    }      
+    
 
 	res_reg := [+]([log](region.select(dbl(0),dbl(nil),false,false)),[log](ctx_size));
 	res_reg := [-](region.select(dbl(0)).project(min(res_reg)),dbl(1)).kunion(res_reg);

@@ -156,6 +156,8 @@ int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
   /* */
   setNEXIscanstring(parserCtx->queryText);
   nexiparse();
+  // Manually terminate the query, otherwise the rewriter gets confused
+  fprintf(parserCtx->commandFILE, "%d\n", QUERY_END);
   /* */
   fclose(parserCtx->commandFILE);
   fclose(parserCtx->tokenFILE);

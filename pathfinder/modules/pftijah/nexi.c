@@ -217,15 +217,17 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     txt_retr_model->and_comb    = AND_PROD;
     txt_retr_model->up_prop     = UP_WSUMD;
     txt_retr_model->down_prop   = DOWN_SUM;
-    strcpy(txt_retr_model->e_class, "TRUE");
+    //strcpy(txt_retr_model->e_class, "TRUE");
     strcpy(txt_retr_model->e_class, "FALSE");
     txt_retr_model->stemming    = TRUE;
     txt_retr_model->size_type   = SIZE_TERM;
     txt_retr_model->param1      = 0.8;
     txt_retr_model->param2      = 0.5;
     txt_retr_model->param3      = 0;
-    txt_retr_model->prior_type  = NO_PRIOR;
-    txt_retr_model->prior_size  = 0;
+    //txt_retr_model->prior_type  = NO_PRIOR;
+    txt_retr_model->prior_type  = LENGTH_PRIOR;    
+    //txt_retr_model->prior_size  = 0;
+    txt_retr_model->prior_size  = 2;
     strcpy(txt_retr_model->context, "");
     txt_retr_model->extra       = 0.0;
     txt_retr_model->next        = NULL;
@@ -243,6 +245,8 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     base_type           = ZERO;
     return_all          = FALSE;
     
+    bool eq_init        = FALSE;
+    
     /* startup of argument options */
     MILPRINTF(MILOUT, "var startNodes := nil;\n");
     if ( use_startNodes ) {
@@ -251,7 +255,10 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
         MILPRINTF(MILOUT, "  bat(\"%s\").persists(false);\n", startNodes_name);
         MILPRINTF(MILOUT, "}\n" );
     } 
-
+    
+    MILPRINTF(MILOUT, "var trace     := FALSE;\n" );
+    MILPRINTF(MILOUT, "var tracefile := \"\";\n" );
+    
     BUN p, q;
     BATloop(optbat, p, q) {
         str optName = (str)BUNhead(optbat,p);
@@ -406,10 +413,37 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
             if ( strcasecmp(optVal,"ADVANCED") == 0 ) 
                 rewrite_type = ADVANCED;
         
+        } else if ( strstr( optName, "equivalence_class" ) ) {
+            if ( !eq_init ) {
+                MILPRINTF(MILOUT, "tj_initEquivalences();\n" );
+                eq_init = TRUE;
+            } 
+            MILPRINTF(MILOUT, "var eqclass := new(void, str).seqbase(oid(0));\n" );
+            char delims[] = ", ";
+            char *result = NULL;
+            result = strtok( optVal, delims );
+            while( result != NULL ) {
+                MILPRINTF(MILOUT, "eqclass.append(\"%s\");\n", result );
+                result = strtok( NULL, delims );
+            }
+            MILPRINTF(MILOUT, "tj_addEquivalenceClass( eqclass );\n" );
+            
+        } else if ( strcmp(optName,"use_equivalences") == 0 ) {
+            if ( strcasecmp(optVal,"TRUE") == 0 ) { 
+                strcpy(txt_retr_model->e_class, "TRUE");
+            } else {
+                strcpy(txt_retr_model->e_class, "FALSE");
+            }
+            
+        } else if ( strcmp(optName,"sra_tracefile") == 0 ) {
+            MILPRINTF(MILOUT, "trace     := TRUE;\n" );
+            MILPRINTF(MILOUT, "tracefile := \"%s\";\n", optVal );
+            
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
     }
+    
     
     // Some special cases for NLLR, since:
     //  - NLLR is log-based (therefore requiring different combination and propagation operators)
