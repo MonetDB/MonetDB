@@ -74,6 +74,10 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 %%
 
+"\'" {    // Ignore quotes for now
+          char_number++;
+     }
+
 " " { char_number++; }
 
 "\r" { char_number++; }
@@ -81,8 +85,8 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 "\n"    {
           line_number++;
           char_number = 1;
-	  WRITE_COMMAND(QUERY_END);
-          return yytext[0];
+	  //WRITE_COMMAND(QUERY_END);
+          //return yytext[0];
         }
 
 "about" {

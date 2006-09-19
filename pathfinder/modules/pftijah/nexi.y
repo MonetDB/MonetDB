@@ -54,15 +54,20 @@ void nexierror(char *err) /* 'yyerror()' called by yyparse in error */
 
 %%/* Grammar rules and actions */
 
-input: /* empty */
+/*input:
        | input line
-       ;
+       ;*/
 
-line: '\n'
+/*line: '\n'
       | co '\n'  { query_type = CO; CO_number++; }
       | cas '\n' { query_type = CAS; CAS_number++; }
       | co ';'  { query_type = CO; CO_number++; }
       | cas ';' { query_type = CAS; CAS_number++; }
+;*/
+
+input:
+      | co { query_type = CO; CO_number++; }
+      | cas { query_type = CAS; CAS_number++; }
 ;
 
 cas: path cas_filter | path cas_filter path | path cas_filter path cas_filter;
@@ -137,7 +142,9 @@ loc_step: '\\' word | '\\' word '.' word; */
 int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
 {
   rep_err = FALSE;
-
+  char_number = 1;
+  line_number = 1;
+  
   if ( !(parserCtx->commandFILE = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"a")) ) {
       sprintf(&parserCtx->errBUFF[0],"Error: cannot create command file for writing.\n");
       return FALSE;
@@ -155,7 +162,7 @@ int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
 
   if ((query_type == CO && CAS_number == 0) || (query_type == CAS && CO_number == 0)) {
     if (rep_err) {
-      sprintf(&parserCtx->errBUFF[0],"Cannot generate query plans.\n");
+      sprintf(&parserCtx->errBUFF[0],"Cannot generate query plans for query '%s'.\n", parserCtx->queryText);
       return (!rep_err);
     }
     else {
