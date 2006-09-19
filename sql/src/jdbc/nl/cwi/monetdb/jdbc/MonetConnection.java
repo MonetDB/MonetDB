@@ -1139,6 +1139,25 @@ public class MonetConnection implements Connection {
 		}
 	}
 
+	void copyToServer(String in, String name) throws SQLException {
+		synchronized (monet) {
+			try {
+				// tell server we're going to "copy" data over to be
+				// stored under the given name
+				// TODO: maybe in the future add support for a second
+				// name which is a convenience "alias" (e.g. in XQuery)
+				sendControlCommand("copy " + name);
+				// the server is waiting for data to come
+				String[] templ = new String[3];	// empty on everything
+				monet.writeLine(templ, in);
+				String error = monet.waitForPrompt();
+				if (error != null) throw new SQLException(error);
+			} catch (IOException e) {
+				throw new SQLException(e.getMessage());
+			}
+		}
+	}
+
 	/**
 	 * Adds a warning to the pile of warnings this Connection object
 	 * has.  If there were no warnings (or clearWarnings was called)
