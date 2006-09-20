@@ -1111,8 +1111,20 @@ CMDordered(bit *result, BAT *input)
 int
 CMDchk_order(BAT **result, BAT *input)
 {
-	BATordered(input);
-	BATordered(BATmirror(input));
+	PROPDEBUG {
+            /* only with -d8 actually check */
+            BATordered(BATmirror(input));
+            if (!(BATtordered(input)&1)) {
+		GDKerror("chk_order(%s): tail was not ordered.\n", BBP_logical(input->batCacheid));
+	        return GDK_FAIL;
+            }
+        }
+
+	/* mark tail sorted */
+        if (!(BATtordered(input)&1)) {
+            input->tsorted = GDK_SORTED;
+	    input->batDirtydesc = TRUE;
+        }
 	BBPfix(input->batCacheid);
 	*result = input;
 	return GDK_SUCCEED;
