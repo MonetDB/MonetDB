@@ -1239,6 +1239,7 @@ sqltypeinit(void)
 		sql_create_func(">=", "calc", ">=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<", "calc", "<", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<=", "calc", "<=", ts[i], ts[i], BIT, SCALE_FIX);
+		sql_create_aggr("zero_or_one", "sql", "zero_or_one", ts[i], ts[i]);
 		sql_create_aggr("exist", "aggr", "exist", ts[i], BIT);
 		sql_create_aggr("not_exist", "aggr", "not_exist", ts[i], BIT);
 		/* needed for relational version */
@@ -1274,8 +1275,10 @@ sqltypeinit(void)
 		sql_create_aggr("sum", "aggr", nm2, *(t + 1), *(t + 2));
 		sql_create_aggr("sum", "aggr", nm2, *(t + 2), *(t + 2));
 	}
-	for (t = numerical+1; t < floats; t++) 
+	for (t = numerical+1; t < floats; t++) {
 		sql_create_aggr("avg", "aggr", "avg", *(t), DBL);
+		sql_create_func("mod", "calc", "%", *t, *t, *t, SCALE_FIX);
+	}
 
 	for (t = floats; t < dates; t++) {
 		sql_subtype *r = NULL;
@@ -1286,6 +1289,8 @@ sqltypeinit(void)
 		r = sql_bind_localtype(lt);
 		sql_create_aggr("sum", "aggr", buf, *t, r->type);
 		sql_create_aggr("avg", "aggr", "avg", *t, DBL);
+
+		sql_create_func("mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
 	}
 
 	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, INT);
@@ -1304,7 +1309,6 @@ sqltypeinit(void)
 		sql_create_func("sql_add", "calc", "+", *t, *t, *t, SCALE_FIX);
 		sql_create_func("sql_mul", "calc", "*", *t, *t, *t, SCALE_ADD);
 		sql_create_func("sql_div", "calc", "/", *t, *t, *t, SCALE_SUB);
-		sql_create_func("mod", "calc", "%", *t, *t, *t, SCALE_FIX);
 		sql_create_func("bit_and", "calc", "and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("bit_or", "calc", "or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("bit_xor", "calc", "xor", *t, *t, *t, SCALE_FIX);
@@ -1314,10 +1318,7 @@ sqltypeinit(void)
 		sql_create_func("sql_neg", "calc", "-", *t, NULL, *t, INOUT);
 		sql_create_func("sql_pos", "calc", "+", *t, NULL, *t, INOUT);
 		sql_create_func("abs", "calc", "abs", *t, NULL, *t, SCALE_FIX);
-		/* SIGN to be implemented */
 		sql_create_func("sign", "calc", "sign", *t, NULL, *t, SCALE_FIX);
-		sql_create_func("degrees", "mmath", "deg", *t, NULL, *t, SCALE_NONE);
-		sql_create_func("radians", "mmath", "rad", *t, NULL, *t, SCALE_NONE);
 		/* scale fixing for all numbers */
 		sql_create_func("scale_up", "calc", "*", *t, lt->type, *t, SCALE_NONE);
 		sql_create_func("scale_down", "sql", "round", *t, lt->type, *t, SCALE_NONE);
