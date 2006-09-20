@@ -114,7 +114,13 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				se++;
 				break;
 			} else
-			if( getModuleId(p)== batcalcRef){
+			if( k==0 && getModuleId(p)== batcalcRef &&
+				((p->argc==4 &&
+					(getArg(p,1)==getArg(p,3) || getArg(p,1)==getArg(p,2)) 
+			 	) ||
+				(p->argc==3 && (getArg(p,1)==getArg(p,2)) 
+			 	))
+			){
 				/* accumulators have side effects */
 				se++;
 			}
