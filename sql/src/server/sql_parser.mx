@@ -513,7 +513,7 @@ int yydebug=1;
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
 	IDENT aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
-	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
+	ALL ANY SOME GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
 	SMALLINT BIGINT sqlINTEGER
@@ -576,7 +576,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
-%token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO
+%token PASSWORD GRANT REVOKE ROLE ADMIN INTO
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
@@ -1813,7 +1813,7 @@ return_statement:
 
 return_value:
       simple_scalar_exp
-   |  subquery	%prec UMINUS
+   |  subquery	%prec UMINUS	/* single value */
    |  search_condition
    |  TABLE select_with_parens	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $2); }
