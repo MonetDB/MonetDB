@@ -438,8 +438,8 @@ protectMonet(void)
 		MT_init_lock(monet_parserLock);
 		MT_init_lock(monet_notifyLock);
 		MT_init_lock(monet_voidLock);
-                MT_init_sema(monet_available, 0);
-                MT_init_sema(monet_forksync, 0);
+		MT_init_sema(monet_available, 0);
+		MT_init_sema(monet_forksync, 0);
 		MT_init_lock(profilerLock);
 		TBL_protect();
 		GDKprotect();
