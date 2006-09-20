@@ -113,6 +113,10 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( isVarUsed(mb,getArg(p,k)) ){
 				se++;
 				break;
+			} else
+			if( getModuleId(p)== batcalcRef){
+				/* accumulators have side effects */
+				se++;
 			}
 		}
 
