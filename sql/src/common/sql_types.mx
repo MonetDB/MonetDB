@@ -1171,7 +1171,7 @@ sqltypeinit(void)
 	int i;
 
 	sql_type *ts[100];
-	sql_type **misc, **strings, **numerical;
+	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
 	sql_type *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE; 
@@ -1180,7 +1180,6 @@ sqltypeinit(void)
 	t = ts;
 	*t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
 
-	misc = t;
 	BIT = *t++ = sql_create_type("BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(BIT->sqlname, "BOOL");
 
