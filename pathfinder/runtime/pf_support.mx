@@ -1211,7 +1211,7 @@ if (postfilter) {
                 	    cands := cands.[swizzle](map_pid); 
                 	    cands := cands.tsort(); 
                         } else {
-                	    cands.reverse().chk_order(); # TODO: can we avoid a scan here?
+                	    cands.chk_order(); # TODO: can we avoid a scan here?
                         }
 	                if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
                                 var min_cand := min(cands);

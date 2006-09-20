@@ -924,7 +924,7 @@ Both are used when a document is being extended by an uopdate query.
 
 @- NID_QN index
 
-The NID_QN indices does use the collection lock for all its maintenance and
+The NID_QN index uses the collection lock for all its maintenance and
 query actions. The bulk of the data is in the shared NID_QN master bat (thus 
 taking coll_lock is required when accessing it).  The NID_QN index does not 
 use any additional locks, so the other head values are nil.
@@ -986,7 +986,7 @@ PROC __runtime_index(BAT[void,oid] nid,
     if (updatable) 
         (idx := idx.access(BAT_WRITE)).accbuild("hash");
     else
-        idx := idx.ssort();                       # [qn,nid] now lexico-ordered (thanks to stable-sort)
+        idx := idx.ssort().access(BAT_READ);      # [qn,nid] now lexico-ordered (thanks to stable-sort)
     return idx; # [qn,nid]
 }
 
