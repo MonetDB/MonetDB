@@ -460,14 +460,6 @@ set_vm_maxsize(lng *num)
 		}
 		@4 += sz; tot += sz;
 	}
-@= heap
-if (@2) {
-	sz = HEAP@1size(@3);
-	if (sz > *minsize) {
-		sprintf(buf, "@4/%s", s); 
-		BUNins(bn, buf, &sz, FALSE);
-	} @4 += sz; tot += sz;
-}
 @c
 
 mal_export str SYSmem_usage(int *ret, lng *minsize);
@@ -777,6 +769,9 @@ SYSgdkThread(int *ret)
 Collect the database and their access permissions for inspection.
 Note, this code base should be changed for the Windows setting.
 @c
+#ifndef F_OK
+#define F_OK 0
+#endif
 str SYSgetDatabases(int *ret)
 {
 	BAT *b;
@@ -791,10 +786,10 @@ str SYSgetDatabases(int *ret)
 	d= opendir("..");
 	while ( (e=readdir(d)) != NULL){
 		if( *e->d_name == '.') continue;
-		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
+		snprintf(buf,PATHLENGTH,"..%c%s",DIR_SEP,e->d_name);
 		db= opendir(buf);
 		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"../%s/.gdk_lock",e->d_name);
+			snprintf(buf,PATHLENGTH,"..%c%s%c.gdk_lock",DIR_SEP,e->d_name,DIR_SEP);
 			f= fopen(buf,"r");
 			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
 				sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
@@ -802,7 +797,7 @@ str SYSgetDatabases(int *ret)
 				snprintf(buf,PATHLENGTH,"/proc/%d",pid);
 				fclose(f);
 			} else
-				snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
+				snprintf(buf,PATHLENGTH,"..%c%s%c.mguardian.pid",DIR_SEP,e->d_name,DIR_SEP);
 			/* not water-proof, PID can exist, and be alive, but not an
 			   mserver, need to check process name */
 			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"), FALSE);
@@ -832,10 +827,10 @@ str SYSgetPorts(int *ret, str *lang)
 	d= opendir("..");
 	while ( (e=readdir(d)) != NULL){
 		if( *e->d_name == '.') continue;
-		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
+		snprintf(buf,PATHLENGTH,"..%c%s",DIR_SEP,e->d_name);
 		db= opendir(buf);
 		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"../%s/.%s.port",e->d_name,llang);
+			snprintf(buf,PATHLENGTH,"..%c%s%c.%s.port",DIR_SEP,e->d_name,DIR_SEP,llang);
 			f= fopen(buf,"r");
 			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
 				port= (int) strtol(buf,NULL,10);

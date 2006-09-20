@@ -284,7 +284,7 @@ typedef int ssize_t;
 
 /* Define to 1 if you have the `strcasecmp' function. */
 #define HAVE_STRCASECMP 1
-#define strcasecmp(x,y) stricmp(x,y)
+/* #define strcasecmp(x,y) stricmp(x,y) -- defined in monetdb_config.h */
 
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1

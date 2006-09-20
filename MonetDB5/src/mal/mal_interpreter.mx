@@ -409,10 +409,10 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	int backup[MAXARG];
 	str sbackup[MAXARG];
 	lng oldtimer=0;
-	int oldinblock=0;
-	int oldoublock=0;
 	struct mallinfo oldMemory;
 #ifdef HAVE_SYS_RESOURCE_H
+	int oldinblock=0;
+	int oldoublock=0;
 	struct rusage oldResource;
 #endif
 	@:performanceVariables@
@@ -575,16 +575,13 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	int backup[MAXARG];
 	str sbackup[MAXARG];
 	lng oldtimer=0;
-	int oldinblock=0;
-	int oldoublock=0;
 	struct mallinfo oldMemory;
 #ifdef HAVE_SYS_RESOURCE_H
+	int oldinblock=0;
+	int oldoublock=0;
 	struct rusage oldResource;
 #endif
 	@:performanceVariables@
-	(void) env;
-	(void)pcicaller;
-
 @-
 First step is to collect all instructions into a multistack.
 The instructions are sorted by dependency on enabled input
@@ -592,6 +589,9 @@ arguments.
 @c
 	FlowStep flow;
 	char *pending;
+
+	(void) env;
+	(void)pcicaller;
 
 	assert(stoppc > startpc);
 	flow= (FlowStep) alloca(sizeof(FlowStepRec) * (stoppc-startpc+1));

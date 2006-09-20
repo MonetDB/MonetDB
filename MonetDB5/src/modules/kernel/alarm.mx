@@ -350,7 +350,11 @@ Wrapping the Version 4 code base
 void
 ALARMinitTimer(int sec, int usec)
 {
+	(void) sec;
+	(void) usec;
+#ifdef SIGALRM
 	CLKinitTimer(sec, usec);
+#endif
 }
 
 #ifdef SIGALRM

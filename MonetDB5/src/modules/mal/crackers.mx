@@ -1123,20 +1123,27 @@ void
 addOne_@1(int i, @1 *value, lng index, BUN p)
 {
 	BAT *b;
-        if ((b = BATdescriptor(Index[i].cid)) == NULL) {
-                fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
-		return;
-        }
+	int xx;
+	BUN ph;
+	BUN pt;
+	BUN wh;
+	BUN wt;
+	BUN rh, rt;
 
-	int xx = BUNsize(b);
+	if ((b = BATdescriptor(Index[i].cid)) == NULL) {
+		fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
+		return;
+	}
+
+	xx = BUNsize(b);
 	if (BATcount(b) == 0){
 		@:insertIndexElement(@1,BUNhloc(b, BUNfirst(b)), BUNtloc(b, BUNfirst(b)), index, *value)@
 		return; 		
 	}
 	/*todo: check BAT size*/
 
-	BUN ph = BUNhloc(b, p);
-	BUN pt = BUNtloc(b, p);
+	ph = BUNhloc(b, p);
+	pt = BUNtloc(b, p);
 	
 	if (p == BUNlast(b)){ /*Insert at the end if everything is smaller than the new value*/
 		@:insertIndexElement(@1, ph, pt, index, *value)@
@@ -1144,9 +1151,9 @@ addOne_@1(int i, @1 *value, lng index, BUN p)
 	}
 
 	/*Else we have to sift some buns to put the new one to the right position*/
-	BUN wh = BUNhloc(b, BUNlast(b));
-	BUN wt = BUNtloc(b, BUNlast(b));
-	BUN rh = wh - xx, rt = wt - xx;
+	wh = BUNhloc(b, BUNlast(b));
+	wt = BUNtloc(b, BUNlast(b));
+	rh = wh - xx, rt = wt - xx;
 	if (@2_EQ(pt,value,@3@1) && index > 0){ /*negative index values inidicate non inclusive bounds so they should be always first*/
 		ph += xx;
 		pt += xx;

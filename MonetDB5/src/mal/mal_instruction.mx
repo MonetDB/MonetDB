@@ -2256,7 +2256,8 @@ fillTarget(MalBlkPtr mb, InstrPtr p, char *t)
 str
 instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 {
-	int i, len = 0, tab = 4;
+	int i, tab = 4;
+	size_t len = 0;
 	str s, t, nme;
 	int low, high;
 	char nmebuf[PATHLENGTH];
@@ -2465,7 +2466,7 @@ Dump the type and value information.
 	}
 	advance(t);
 	/* sprintf(t,"\n"); */
-	if (t - s > len)
+	if (t > s + len)
 		GDKfatal("instruction2str:");
 	return s;
 }

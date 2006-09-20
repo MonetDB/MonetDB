@@ -207,17 +207,17 @@ pcre_exit(void)
 {
 }
 
-str
-pcre_match(bit *ret, str *val, str *pat)
+int
+pcre_match(bit *ret, str val, str pat)
 {
 	(void) ret;
 	(void) val;
 	(void) pat;
-	return throwMessage("pcre.match", "Library missing\n");
+	GDKerror("pcre_match() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
 }
 #else
 
-#include <regex.h>
 #include <pcre.h>
 
 mal_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
@@ -582,8 +582,8 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 str 
 pcre_init(void)
 {
-	pcre_malloc = &my_pcre_malloc;
-	pcre_free = &my_pcre_free;
+	pcre_malloc = my_pcre_malloc;
+	pcre_free = my_pcre_free;
 	return NULL;
 }
 
@@ -592,17 +592,19 @@ pcre_exit(void)
 {
 }
 
-str
-pcre_match(bit *ret, str *val, str *pat)
+int
+pcre_match(bit *ret, str val, str pat)
 {
-	regex_t prg;
-	int error = regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
+	const char err[BUFSIZ], *err_p = err;
+	int errpos = 0;
+	pcre *re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL);
 
-	if (error < 0)
-		return throwMessage("pcre.match", "Compilation of regular expression failed");
-	error = regexec(&prg, *val, 0, 0, 0);
-	*ret = (error == 0);
-	return MAL_SUCCEED;
+	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
+		return GDK_FAIL;
+	}
+	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0) >= 0;
+	return GDK_SUCCEED;
 }
 #endif
 
@@ -914,7 +916,10 @@ PCREuselect(int *res, str *pattern, int *bid)
 str
 PCREmatch(bit *ret, str *val, str *pat)
 {
-	return pcre_match(ret, val, pat);
+	if (pcre_match(ret, *val, *pat) == GDK_FAIL) {
+		return throwMessage("pcre.match", "Match failed");
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -947,7 +952,7 @@ PCRElike3(bit *ret, str *s, str *pat, str *esc)
 			if (strcmp(*s, *pat) == 0)
 				*ret = TRUE;
 		} else {
-			r = pcre_match(ret, s, &ppat);
+			r = PCREmatch(ret, s, &ppat);
 		}
 	}
 	if (ppat)

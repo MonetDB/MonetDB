@@ -85,8 +85,15 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 @-
 @c
 #include "mal_authorize.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_CRYPT_H
 #include <crypt.h>
+#else
+#if defined(HAVE_CRYPT) && defined(__MINGW32__)
+_CRTIMP char * __cdecl crypt(const char *key, const char *salt);
+#endif
 #endif
 #ifdef HAVE_OPENSSL
 #include <openssl/sha.h>

@@ -592,37 +592,29 @@ str
 boxFileName(Box box, str backup)
 {
 	char boxfile[PATHLENGTH];
-	int i = 0;
-	stream *f;
+	size_t i = 0;
 
-	snprintf(boxfile, PATHLENGTH, "%s/%s/box", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
-	if (access(boxfile, R_OK) <0) {
-		mkdir(boxfile,0755);
-		if( (f= open_wstream(boxfile)) )
-			close_stream(f);
-		else {
-			GDKerror("boxFileName:can not create box directory\n");
-			return NULL;
-		}
+	snprintf(boxfile, PATHLENGTH, "%s%c%s%cbox", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+	if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
+		GDKerror("boxFileName:can not create box directory\n");
+		return NULL;
 	}
 	i = strlen(boxfile);
 	if (backup) {
-		snprintf(boxfile + i, PATHLENGTH - i, "/%s/", backup);
-		if (access(boxfile, R_OK) <0) {
-			mkdir(boxfile,0755);
-			if( (f= open_wstream(boxfile)) )
-				close_stream(f);
-			else {
-				GDKerror("boxFileName:can not create box directory\n");
-				return NULL;
-			}
+		snprintf(boxfile + i, PATHLENGTH - i, "%c%s", DIR_SEP, backup);
+		if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
+			GDKerror("boxFileName:can not create box directory\n");
+			return NULL;
 		}
-		i = strlen(boxfile);
+		i += strlen(backup) + 1;
 	}
-	snprintf(boxfile + i, PATHLENGTH - i, "/%s.box", box->name);
+	snprintf(boxfile + i, PATHLENGTH - i, "%c%s.box", DIR_SEP, box->name);
 	return GDKstrdup(boxfile);
 }
 
+#ifndef R_OK
+#define R_OK 4
+#endif
 stream *
 prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 {
@@ -708,20 +700,16 @@ saveBox(Box box, int flag)
 Loading a box is equivalent to reading a script.
 Beware to execute it into its own context.
 @c
-#ifndef R_OK
-#define R_OK 4
-#endif
-
 void
 loadBox(str name)
 {
 	char boxfile[PATHLENGTH];
-	int i = 0;
+	size_t i = 0;
 
-	snprintf(boxfile, PATHLENGTH, "%s/%s/box/", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	snprintf(boxfile, PATHLENGTH, "%s%c%s%cbox", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
 	mkdir(boxfile,0755); /* ignore errors */
 	i = strlen(boxfile);
-	snprintf(boxfile + i, PATHLENGTH - i, "%s.box", name);
+	snprintf(boxfile + i, PATHLENGTH - i, "%c%s.box", DIR_SEP, name);
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
 #endif

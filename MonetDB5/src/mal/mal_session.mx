@@ -59,7 +59,7 @@ mal_export int MALcommentsOnly(MalBlkPtr mb);
 #include "mal_namespace.h"
 #include "mal_readline.h"
 #include "mal_authorize.h"
-#include <dirent.h>	/* for opendir and friends */
+#include <gdk.h>	/* for opendir and friends */
 
 int
 malBootstrap()
