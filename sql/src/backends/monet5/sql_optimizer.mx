@@ -106,6 +106,7 @@ factory structures.
 
 #include "opt_prelude.h"
 #include "opt_support.h"
+#include "opt_accumulators.h"
 #include "opt_aliases.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
@@ -384,12 +385,13 @@ care of.
 		/* if there are no updates, do the emptySet optimizer */
 		SQLgetStatistics(((mvc *) c->state[OPTIMIZE]),mb); 
 		OPTcostModel(mb,0,0); /* propagate costs */
+		OPTcoercion(mb,0,0);	/* coercions */
 		OPTemptySet(mb,0,0);  /* remove empty results */
 		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
 
-		OPTcoercion(mb,0,0);	/* coercions */
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTcommonTerms(mb,0,0);	/* common terms */
+		OPTaccumulators(mb,0,0); /* safe space by overwriting bats */
 		OPTdeadcode(mb, 0, 0);	/* dead code removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
 		OPTgarbageCollector(mb,0,0);	/* free BAT space quickly */
