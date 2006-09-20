@@ -1629,7 +1629,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     if (map_pid->ttype == TYPE_void) {
         shredBAT_setcount(&shredCtx->dstBAT[MAP_PID], p);
     } else {
-        for(i=BATcount(map_pid); i<= p; i++) {
+        for(i=BATcount(map_pid); i< p; i++) {
             if (BUNfastins(map_pid, &i, &i) == NULL) { 
                 GDKerror("shredder_finalize: could not append to MAP_PID!\n");
                 return GDK_FAIL;
