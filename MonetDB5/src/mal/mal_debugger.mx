@@ -1590,8 +1590,10 @@ optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec)
 	if (optTop + 1 == MAXSTEPS){
 		/* drop oldest */
 		int i;
-		GDKfree(optimizerHistory[0].title);
-		freeMalBlk(optimizerHistory[0].mb);
+		if( optimizerHistory[0].title)
+			GDKfree(optimizerHistory[0].title);
+		if( optimizerHistory[0].mb)
+			freeMalBlk(optimizerHistory[0].mb);
 		for(i=0;i<optTop; i++){
 		optimizerHistory[i].title = optimizerHistory[i+1].title;
 		optimizerHistory[i].actions = optimizerHistory[i+1].actions;
