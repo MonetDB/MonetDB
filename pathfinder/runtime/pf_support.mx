@@ -1825,12 +1825,11 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       var update_node_kind := [oid]([+]([lng](rename_update.mirror()), 1)).leftfetchjoin(kind);
       var update_rename := [oid]([+]([lng](rename_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-      # now select all the unique nodes (both item and container must be
+      # now select all the unique nodes (both item and kind must be
       # the same), and when there are multiple occurences, select the
       # *last*.
       if (update_node_item.count() > 1) {
-        var update_node_cont := update_node_kind.get_container();
-        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap().tunique().mirror();
+        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_kind.access(BAT_WRITE).revert()).CTmap().tunique().mirror();
         update_node_item := update_node_unique.leftjoin(update_node_item);
         update_node_kind := update_node_unique.leftjoin(update_node_kind);
         update_rename := update_node_unique.leftjoin(update_rename);
@@ -1853,12 +1852,11 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       var update_node_kind := [oid]([+]([lng](replace_update.mirror()), 1)).leftfetchjoin(kind);
       var update_replace := [oid]([+]([lng](replace_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-      # now select all the unique nodes (both item and container must be
+      # now select all the unique nodes (both item and kind must be
       # the same), and when there are multiple occurences, select the
       # *last*.
       if (update_node_item.count() > 1) {
-        var update_node_cont := update_node_kind.get_container();
-        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap().tunique().mirror();
+        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_kind.access(BAT_WRITE).revert()).CTmap().tunique().mirror();
         update_node_item := update_node_unique.leftjoin(update_node_item);
         update_node_kind := update_node_unique.leftjoin(update_node_kind);
         update_replace := update_node_unique.leftjoin(update_replace);
@@ -1912,11 +1910,10 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       var update_node_item := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(kind);
 
-      # now select all the unique nodes (both item and container must be
+      # now select all the unique nodes (both item and kind must be
       # the same).
       if (update_node_item.count() > 1) {
-        var update_node_cont := update_node_kind.get_container();
-        var update_node_unique := update_node_item.CTgroup().CTderive(update_node_cont).CTmap().tunique().mirror();
+        var update_node_unique := update_node_item.CTgroup().CTderive(update_node_kind).CTmap().tunique().mirror();
         update_node_item := update_node_unique.leftjoin(update_node_item);
         update_node_kind := update_node_unique.leftjoin(update_node_kind);
       }
@@ -2034,9 +2031,9 @@ PROC do_update_replace(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid
   }
 
   if (attrs.count() > 0) {
-    attrs := attrs.mirror();
-    var aitem := attrs.leftjoin(update_node_item).tmark(0@0); # [i,ATID]
-    var aconts := attrs.leftjoin(conts).tmark(0@0); # [i,CONT]
+    attrs := attrs.mirror(); # [i,i]
+    var aitem := attrs.leftjoin(update_node_item); # [i,ATID]
+    var aconts := attrs.leftjoin(conts); # [i,CONT]
     aconts.tunique()@batloop() {
       var cont := $h;
       var list := aconts.ord_uselect(cont).mirror(); # [i,i]
