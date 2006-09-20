@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../common ../gdk ../monet ../modules/plain ../mapi/clients/C $(PTHREAD_INCS)
+INCLUDES = ../common ../gdk ../monet ../modules/plain ../mapi/clients/C
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 

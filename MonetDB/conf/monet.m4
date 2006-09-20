@@ -1435,12 +1435,11 @@ if test "x$have_pthread" != xno; then
 fi
 if test "x$have_pthread" != xno; then
 	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
+	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
 else
 	PTHREAD_LIBS=""
-	PTHREAD_INCS=""
 fi
 AC_SUBST(PTHREAD_LIBS)
-AC_SUBST(PTHREAD_INCS)
 
 dnl libreadline
 have_readline=auto

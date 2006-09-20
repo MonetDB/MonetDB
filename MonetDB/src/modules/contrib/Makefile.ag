@@ -15,8 +15,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../common -I../../gdk -I../../monet -I../plain \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
-	$(PTHREAD_INCS)
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 
 MTSAFE
 

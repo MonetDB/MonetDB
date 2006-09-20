@@ -16,7 +16,7 @@
 
 INCLUDES = -I../common -I../gdk -I../monet \
 	   -I../modules/plain -I../modules/plain/stream \
-	   $(OPENSSL_INCS) $(PTHREAD_INCS)
+	   $(OPENSSL_INCS)
 
 SUBDIRS = clients examples
 
