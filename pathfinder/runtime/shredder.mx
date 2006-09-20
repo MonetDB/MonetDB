@@ -1739,7 +1739,7 @@ shred(BAT *docBAT,
     if (location) {
         struct stat statbuf;
         if (!isURL(location)) {
-            if (stat(location, &statbuf) < 0) {
+            if (stat(location, &statbuf) < 0 || (statbuf.st_mode & S_IFDIR)) {
                 GDKerror("shred: cannot stat `%s': %s\n", location, strerror(errno));
                 return GDK_FAIL;
             } 

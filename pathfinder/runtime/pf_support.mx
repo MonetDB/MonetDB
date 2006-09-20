@@ -847,9 +847,6 @@ PROC ll_htordered_unique_thetajoin( int mode,
 @= chk_order
 	if ( and(order,1) = @2 ) {
 		@3 := @3.chk_order(); # just in case...
-		if ( not(ordered(reverse(@3))) ) {
-			ERROR("@1: tail of @3 must be sorted!");
-		}
 	}
 @
 @= one_iter_many_items
@@ -1207,10 +1204,15 @@ if (postfilter) {
 		var qn_sel := ws.fetch(@2).fetch(bat2constant(pre_cont)).ord_uselect(@1);
                 if (isnil(CATCH(cands := ws_lookup(ws, contID, qn_sel.mirror())))) {
 	        	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
-	        	var nid_rid  := ws.fetch(NID_RID).fetch(contID);
-                	cands := cands.leftfetchjoin(nid_rid).[swizzle](map_pid); # free in readonly case
-                	cands.reverse().chk_order(); # TODO: can we avoid a scan here?
-                	cands := cands.tsort(); # ouch! but should be a view in the readonly case
+                        var isolate := (ttype(map_pid) = oid);
+                        if (isolate) {
+	        	    var nid_rid  := ws.fetch(NID_RID).fetch(contID);
+                	    cands := cands.leftfetchjoin(nid_rid);
+                	    cands := cands.[swizzle](map_pid); 
+                	    cands := cands.tsort(); 
+                        } else {
+                	    cands.reverse().chk_order(); # TODO: can we avoid a scan here?
+                        }
 	                if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
                                 var min_cand := min(cands);
                                 var min_item := min(result_part_item);
