@@ -984,7 +984,7 @@ PROC __runtime_index(BAT[void,oid] nid,
         idx := reverse(idx.leftjoin(sel));        # get [qn,pre], in pre-order
         idx := idx.leftfetchjoin(nid);            # [qn,nid] still in pre-order
     if (updatable) 
-        idx := idx.access(BAT_WRITE).accbuild("hash");
+        (idx := idx.access(BAT_WRITE)).accbuild("hash");
     else
         idx := idx.ssort();                       # [qn,nid] now lexico-ordered (thanks to stable-sort)
     return idx; # [qn,nid]
