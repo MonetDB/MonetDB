@@ -75,9 +75,7 @@ OPTaccumulatorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p,q;
 	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
-	char *olderr;
-	int errlen, actions = 0;
-	int olderrnr = mb->errors;
+	int actions = 0;
 	int *alias;
 
 	(void) pci;
@@ -89,29 +87,24 @@ OPTaccumulatorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Safe the errors encountered sofar. They have to be reset
 at the end of the optimization attempt.
 @= patchInstruction
-	mb->errors = 0;
 	typeChecker(scope, mb, p, TRUE);
-	if (p->typechk == TYPE_UNKNOWN) {
+	if (mb->errors || p->typechk == TYPE_UNKNOWN) {
 		/* reset instruction */
-		mb->errors= olderrnr;
+		mb->errors= 0;
+		cntxt->errbuf[0]=0;
 		getInstrPtr(mb,i)= q;
 		freeInstruction(p);
 		p=q;
-	} 
-	actions++;
-	#ifdef DEBUG_OPT_OPTIMIZER
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-	#endif
+	} else {
+		alias[b]= a;
+		actions++;
+	}
+#ifdef DEBUG_OPT_OPTIMIZER
+				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+#endif
 	goto remAlias;
 @-
 @c
-	errlen = strlen(cntxt->errbuf) + 1;
-	olderr = alloca(errlen);
-	if (errlen)
-		strncpy(olderr, cntxt->errbuf, errlen);
-	if (errlen)
-		strncpy(cntxt->errbuf, olderr, errlen);
-
 	p= getInstrPtr(mb,0);
 	for(j=0; j<p->argc;j++)
 		alias[getArg(p,j)]= getArg(p,j);
@@ -136,6 +129,11 @@ First remap all variables upon need
 				goto remAlias;
 			v = getVar(mb, a = getArg(p, 1));
 			valid= getEndLifespan(mb,a) <= i;
+			if( !valid){
+				/* continue with binary version looking at second argument */
+				v = getVar(mb, a = getArg(p, 2));
+				valid= getEndLifespan(mb,a) <= i;
+			}
 
 #ifdef DEBUG_OPT_OPTIMIZER
 			stream_printf(GDKout, "Found accumulation candidate ");
@@ -143,32 +141,12 @@ First remap all variables upon need
 				i, b,a,getArg(p,2), valid, isaBatType(v->type));
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-			if (isaBatType(v->type) && valid){
+			if (isaBatType(v->type) &&  v->type == getVarType(mb,b) && valid){
 				q= copyInstruction(p);
 				pushArgument(mb, p, getArg(p,2));
 				setArg(p,2,getArg(p,1));
 				setArg(p,1,a);
 				setArg(p,0,newTmpVariable(mb,TYPE_any));
-#ifdef DEBUG_OPT_OPTIMIZER
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
-
-				@:patchInstruction(setArg(p,2,a))@
-			}
-			/* continue with binary version looking at second argument */
-			v = getVar(mb, a = getArg(p, 2));
-			valid= getEndLifespan(mb,a) <= i;
-#ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
-				i, b,getArg(p,1),a, valid, isaBatType(v->type));
-#endif
-			if (isaBatType(v->type) && valid){
-				q= copyInstruction(p);
-				pushArgument(mb, p, getArg(p,2));
-				setArg(p,2,getArg(p,1));
-				setArg(p,1,a);
-				setArg(p,0,newTmpVariable(mb,TYPE_any));
-
 				@:patchInstruction(setArg(p,2,a))@
 			}
 		} else if (p->retc==1 && p->argc == 2) {
@@ -178,7 +156,7 @@ First remap all variables upon need
 			if( getLastUpdate(mb,b) != i) goto remAlias;
 			valid= getEndLifespan(mb,a) <= i;
 
-			if (isaBatType(v->type)  && valid){
+			if (isaBatType(v->type)  && v->type== getVarType(mb,b) && valid){
 #ifdef DEBUG_OPT_OPTIMIZER
 				stream_printf(GDKout, "Found unary accumulation candidate\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
@@ -197,8 +175,6 @@ First remap all variables upon need
 				alias[getArg(p,j)]= getArg(p,j);
 		}
 	}
-	if (errlen)
-		strncpy(cntxt->errbuf, olderr, errlen);
 	return actions;
 }
 
