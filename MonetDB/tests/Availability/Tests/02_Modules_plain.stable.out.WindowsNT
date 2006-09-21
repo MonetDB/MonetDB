@@ -811,8 +811,8 @@ Module: "mkey"
 
 Module: "mmath"
 
-[ 38 ]
-[ 38 ]
+[ 39 ]
+[ 39 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature			help																																											  # name
 # str			str		str				str																																											  # type
@@ -843,6 +843,7 @@ Module: "mmath"
 [ "log",		  "PROC:      ",  "log(flt) : flt",		  "not available"																																									  ]
 [ "log10",		  "COMMAND:   ",  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
 [ "log10",		  "PROC:      ",  "log10(flt) : flt",		  "not available"																																									  ]
+[ "pi",			  "PROC:      ",  "pi() : dbl",			  "not available"																																									  ]
 [ "pow",		  "COMMAND:   ",  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
 [ "round",		  "COMMAND:   ",  "round(dbl, int) : dbl",	  "The round(n, m) returns n rounded to m places to the right of the\ndecimal point; if m is omitted, to 0 places. m can be negative to\nround off digits left of the decimal point. m must be an integer."																		  ]
 [ "sin",		  "COMMAND:   ",  "sin(dbl) : dbl",		  "The sin(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]

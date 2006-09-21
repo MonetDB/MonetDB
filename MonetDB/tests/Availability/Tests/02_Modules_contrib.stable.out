@@ -454,8 +454,8 @@ Module: "uchr"
 
 Module: "vector"
 
-[ 139 ]
-[ 139 ]
+[ 140 ]
+[ 140 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature							| help												  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -567,6 +567,7 @@ Module: "vector"
 [ "normalize",			  "COMMAND:   ",  "normalize(dbls) : dbls",					  "Normalizes vector"										  ]
 [ "normalize",			  "COMMAND:   ",  "normalize(flts) : flts",					  "Normalizes vector"										  ]
 [ "normalize",			  "COMMAND:   ",  "normalize(ints) : flts",					  "Normalizes vector"										  ]
+[ "pi",				  "PROC:      ",  "pi() : dbl",							  "not available"										  ]
 [ "sin",			  "PROC:      ",  "sin(flt) : flt",						  "not available"										  ]
 [ "sinh",			  "PROC:      ",  "sinh(flt) : flt",						  "not available"										  ]
 [ "sqrt",			  "PROC:      ",  "sqrt(flt) : flt",						  "not available"										  ]
