@@ -63,8 +63,6 @@ public class MonetConnection implements Connection {
 	private final String username;
 	/** The password to use when authenticating */
 	private final String password;
-	/** The language which is used */
-	private final int lang;
 	/** A connection to Mserver using a TCP socket */
 	private final MonetSocketBlockMode monet;
 
@@ -101,6 +99,8 @@ public class MonetConnection implements Connection {
 	final static int LANG_MIL = 2;
 	/** an unknown language */
 	final static int LANG_UNKNOWN = -1;
+	/** The language which is used */
+	final int lang;
 
 	/** Query types (copied from sql_query.mx) */
 	final static int Q_PARSE	= '0';
@@ -1162,10 +1162,15 @@ public class MonetConnection implements Connection {
 	 */
 	Response copyToServer(String in, String name) throws SQLException {
 		synchronized (monet) {
-			// tell server we're going to "copy" data over to be
-			// stored under the given name
 			// TODO: maybe in the future add support for a second
 			// name which is a convenience "alias" (e.g. in XQuery)
+			// tell server we're going to "copy" data over to be
+			// stored under the given name, make up something if the
+			// caller doesn't know it too
+			if (name == null) {
+				name = "doc_" + System.currentTimeMillis() + ".xml";
+				addWarning("adding new document with name " + name);
+			}
 			sendControlCommand("copy " + name);
 			// the server is waiting for data to come
 			String[] templ = new String[3];	// empty on everything
