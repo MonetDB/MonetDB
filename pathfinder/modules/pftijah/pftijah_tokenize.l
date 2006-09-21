@@ -1,13 +1,9 @@
 %option noyywrap
 %option never-interactive
 %option prefix="pftijah_tokenize"
+%option nounput
 %{
 
-#include <ctype.h>
-#include <gdk.h>
-#include <pathfinder.h>
-#include <pf_support.h>
-#include <serialize.h>
 #include "serialize_pftijah.h"
 
 static char *c, *e;

@@ -15,31 +15,31 @@
 #include <string.h>
 #include "nexi.h"
 
-int DutchStem( word )
-   char *word;  /* in/out: the word stemmed */
-{
+int DutchStem(char *word ) {
    (void)word;
-   fprintf(stderr,"DutchStem: not implemented yet.\n");
-   exit(0);
+   if ( 1 ) {
+     fprintf(stderr,"DutchStem: not implemented yet.\n");
+     exit(0);
+   } else
+     return 0;
+
 }
 
-int Stem( word )
-   char *word;  /* in/out: the word stemmed */
-{
+int Stem( char *word ) {
    (void)word;
-   fprintf(stderr,"Stem: not implemented yet.\n");
-   exit(0);
+   if ( 1 ) {
+     fprintf(stderr,"Stem: not implemented yet.\n");
+     exit(0);
+   } else
+     return 0;
 }
 
 bool StopWord(char *term, int language) {
 
   bool comp;
   char st_ls[30];
-  int num_term;
 
   FILE *stop_list_file = NULL;
-
-  num_term = 0;
 
   if (language == ENGLISH)
     stop_list_file = fopen(myfileName(WORKDIR,"english_stop_list.sl"),"r");

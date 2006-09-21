@@ -392,7 +392,7 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
 
 const char* obsoleteNexiChars = " \t\n\r,:;&*%$#!@=";
 
-static int 
+int 
 useStrtokScanner(tjCtx* tjctx, char* s)
 {
     char *t;
@@ -416,7 +416,7 @@ useStrtokScanner(tjCtx* tjctx, char* s)
  */
 
 
-static int
+int
 handle_sizeHint(XqueryCtx* ctx, int hinted_size) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
@@ -655,6 +655,7 @@ tijahDocIndex(tjCtx* ctx, str docName) {
 }
 
 
+#ifdef TJ_TRACE
 /*
  * Timer stuff decl 
  */
@@ -689,6 +690,7 @@ timer_str (long elapsed)
 
     return tm;
 }
+#endif
 
 /*
  *
@@ -943,18 +945,17 @@ struct serializeFunStruct pftijahSerializeFun = {
 
 static int
 MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
-	BAT* docBAT;
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: CMDtj_add2collection(%s)\n",docName);
-#endif
 	/* timing */
 	struct timeval now;
 	long start, stop;
 	/* start timer */
 	(void) gettimeofday (&now, 0);
 	start = now.tv_sec * 1000000 + now.tv_usec;
+#endif
 
 	if ( !(tjctx = loadTijahContext(tjCtx_BAT, selTagList)) )
 		return GDK_FAIL;
@@ -986,7 +987,7 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	     * especially the last parameter (lock *collLock) should most probably not be NULL
 	     * (atleast if we desire any consistent concurrency) ...
 	     */
-	    if ( shred(docBAT=BATnew(TYPE_str,TYPE_bat,30), docName, NULL, NULL, 0, &pftijahSerializeFun, &xqctx, NULL) == GDK_FAIL)
+	    if ( shred(BATnew(TYPE_str,TYPE_bat,30), docName, NULL, NULL, 0, &pftijahSerializeFun, &xqctx, NULL) == GDK_FAIL)
 	    	 return GDK_FAIL;
 	} else {
 #ifdef TJ_TRACE
@@ -1012,10 +1013,9 @@ MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str s
 	if ( 0 && !handle_doc_height(tjctx) )
 	    return GDK_FAIL;
 	/* read elapsed time */
+#ifdef TJ_TRACE
 	gettimeofday (&now, 0);
 	stop = now.tv_sec * 1000000 + now.tv_usec;
-
-#ifdef TJ_TRACE
 	if ( TJ_TRACE ) {
 		stream_printf(GDKout,"C[%s]:TIMINGS & SIZES\n",tjctx->name);
 		stream_printf(GDKout,"C[%s]:add2collection[](%s) time=%s \n",

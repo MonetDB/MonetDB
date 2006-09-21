@@ -132,7 +132,7 @@ image: Q_IMAGE;
 
 loc_step: '\\' word | '\\' word '.' word; */
 
-/* img_name: '\\' word '.' word; */
+img_name: '\\' word '.' word  { if (1) { YYERROR; } else { YYABORT; } /* pacify icc compiler ? */ } ;
 
 %%
 

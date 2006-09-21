@@ -1,6 +1,7 @@
 %option noyywrap
 %option never-interactive
 %option prefix="nexi"
+%option nounput
 %{
 /*
 
@@ -20,7 +21,7 @@
 #include "serialize_pftijah.h"
 
 int c;
-extern int yylval;
+extern YYSTYPE yylval;
 extern int line_number;
 extern int char_number;
 

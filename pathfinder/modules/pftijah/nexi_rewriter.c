@@ -591,7 +591,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
   char tok_var[30];
 
   int command_num, mcommand_num, icommand_num;
-  int term_num, mterm_num, iterm_num;
+  /* int term_num, mterm_num, iterm_num; */
 
   /* files that store parser command and token output */
   FILE *command_file_pre;
@@ -621,9 +621,9 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
   command_num = 0;
   mcommand_num = 0;
   icommand_num =0;
-  term_num = 0;
-  mterm_num = 0;
-  iterm_num = 0;
+  /* term_num = 0; */
+  /* mterm_num = 0; */
+  /* iterm_num = 0; */
 
   term_sp = 0;
   mterm_sp = 0;
@@ -711,7 +711,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 
 	    command_num = com_sp;
 	    com_sp = 0;
-	    term_num = term_sp;
+	    /* term_num = term_sp; */
 	    term_sp = 0;
 
 	    while (com_sp < command_num) {
@@ -870,7 +870,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 	    
 	      command_num = com_sp;
 	      com_sp = 0;
-	      term_num = term_sp;
+	      /* term_num = term_sp; */
 	      term_sp = 0;
 	    
 	      while (com_sp < command_num) {
@@ -1047,7 +1047,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 
 	mcommand_num = mcom_sp;
 	mcom_sp = 0;
-	mterm_num = mterm_sp;
+	/* mterm_num = mterm_sp; */
 	mterm_sp = 0;
 
 	while (mcom_sp < mcommand_num) {
@@ -1086,7 +1086,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 	    
 	    icommand_num = icom_sp;
 	    icom_sp = icom_sp_mid;
-	    iterm_num = iterm_sp;
+	    /* iterm_num = iterm_sp; */
 	    iterm_sp = iterm_sp_mid;
 
 	    while (icom_sp < icommand_num) {
@@ -1138,7 +1138,7 @@ int CAStoCPlan(int query_num, int type, bool rm_set) {
 	    
 	    icommand_num = icom_sp_mid - 1;
 	    icom_sp = 0;
-	    iterm_num = iterm_sp_mid;
+	    /* iterm_num = iterm_sp_mid; */
 	    iterm_sp = 0;
 	    
 	    while (icom_sp < icommand_num) {

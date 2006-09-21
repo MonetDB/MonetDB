@@ -96,14 +96,14 @@ char *unquote(char *q_term) {
 
 char *split_terms(char *adj_term){
 
-  int cnt, new_cnt;
+  int cnt;
   char *t_term;
 
 
   int c_len = strlen(adj_term);
 
   cnt = 2;
-  new_cnt = 0;
+  /* new_cnt = 0; */
 
   t_term = term_cut;
 
@@ -151,8 +151,8 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
   int com_sp;
 
   /* operator number count */
-  unsigned int com_num;
-  unsigned int com_nr_left = 0, com_nr_right = 0;
+  int com_num;
+  int com_nr_left = 0, com_nr_right = 0;
   float score_mul;
   int modifier;
 

@@ -653,6 +653,6 @@ tjStemCtx* getStemmingContext(char* name) {
 	    res = & nostemming;
 	}
 	return res;
-};
+}
 
 /* vim:set shiftwidth=4 expandtab: */

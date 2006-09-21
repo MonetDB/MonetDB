@@ -120,7 +120,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   char mil_fname[FILENAME_SIZE];
   char background_collection[20] = "";
   /* pointer to SRA command tree structure */
-  command_tree **p_command_array, **CAS_plan_gen();
+  command_tree **p_command_array; extern command_tree **CAS_plan_gen();
 
   /* for the retrieval models and for the relevance feedback */
   int qnum_tmp;
@@ -146,10 +146,10 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 
   int rmi_number;
   int rmi_qnumber;
-  unsigned int rmi_model;
+  int rmi_model;
   char rmi_descriptor[TERM_LENGTH];
   char rmi_attr_name[TERM_LENGTH];
-  unsigned int rmi_computation;
+  int rmi_computation;
 
   int rf_number;
   int rf_qnumber;
@@ -1339,6 +1339,9 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   rel_feedback = NULL;
   free(rel_feedback);
 
+  if ( query_set ) {
+     /* make icc compiler happy */
+  }
   return 1;
 }
 
@@ -1350,6 +1353,6 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 char* myfileName(char* dirName, char* fileName) {
     static char buff[FILENAME_SIZE];
     char * userName = getenv( "USER" );
-    sprintf(buff,"%s/%s_%d_%s",dirName,userName,getpid(),fileName);
+    sprintf(buff,"%s/%s_%d_%s",dirName,userName,(int)getpid(),fileName);
     return &buff[0];
 }

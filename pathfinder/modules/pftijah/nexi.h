@@ -210,7 +210,6 @@
 #define P_ADJ_NOT 91
 
 /* types for algebra operators (commands) */
-/* typedef unsigned int command; */
 typedef int command;
 typedef int bool;
 
@@ -236,15 +235,15 @@ struct command_tree {
 typedef struct struct_RMT struct_RMT;
 struct struct_RMT {
   int qnumber;
-  unsigned int model;
-  unsigned int or_comb;
-  unsigned int and_comb;
-  unsigned int up_prop;
-  unsigned int down_prop;
+  int model;
+  int or_comb;
+  int and_comb;
+  int up_prop;
+  int down_prop;
   char e_class[TERM_LENGTH];
   char exp_class[TERM_LENGTH];
   bool stemming;
-  unsigned int size_type;
+  int size_type;
   float param1;
   float param2;
   int param3;
@@ -262,10 +261,10 @@ struct struct_RMT {
 typedef struct struct_RMI struct_RMI;
 struct struct_RMI {
   int qnumber;
-  unsigned int model;
+  int model;
   char descriptor[TERM_LENGTH];
   char attr_name[TERM_LENGTH];
-  unsigned int computation;
+  int computation;
   struct_RMI *next;
 };
 

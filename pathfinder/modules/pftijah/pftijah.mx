@@ -2317,7 +2317,7 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	oid t, *ind;
 	BUN p, q;
         int x, j, i = 0;
-	bit one_tid = FALSE;
+	/* bit one_tid = FALSE; */
     
 	/* --------------------------- checks ---------------------------------- */
 	
@@ -2325,7 +2325,7 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	BATcheck(index, name);
 	BATcheck(pre, name);
 	
-        if (BATcount(tid) <= 1) one_tid = TRUE;
+        /* if (BATcount(tid) <= 1) one_tid = TRUE; */
 	
 	if (!(BATtordered(tid) & 1))
 	{
