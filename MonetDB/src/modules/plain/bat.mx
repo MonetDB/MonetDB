@@ -327,6 +327,9 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND chk_order(BAT[any::1,any::2]) : BAT[any::1,any::2] = CMDchk_order;
 "Infer the sortedness property (or not) of both head and tail."
 
+.COMMAND assert_order(BAT[any::1,any::2]) : BAT[any::1,any::2] = CMDassert_order;
+"Assert the sortedness property of tail."
+
 .COMMAND batsize(str batname) : lng = CMDbatsize_str;
 "A version of BATsize that does not require loading the BAT."
 
@@ -1111,11 +1114,21 @@ CMDordered(bit *result, BAT *input)
 int
 CMDchk_order(BAT **result, BAT *input)
 {
+        BATordered(input);
+        BATordered(BATmirror(input));
+        BBPfix(input->batCacheid);
+        *result = input;
+        return GDK_SUCCEED;
+}
+
+int
+CMDassert_order(BAT **result, BAT *input)
+{
 	PROPDEBUG {
             /* only with -d8 actually check */
             BATordered(BATmirror(input));
             if (!(BATtordered(input)&1)) {
-		GDKerror("chk_order(%s): tail was not ordered.\n", BBP_logical(input->batCacheid));
+		GDKerror("assert_order(%s): tail was not ordered.\n", BBP_logical(input->batCacheid));
 	        return GDK_FAIL;
             }
         }
