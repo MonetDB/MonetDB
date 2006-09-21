@@ -34,8 +34,8 @@ bat("a").info().reverse().select("theap.storage").reverse().print();
 #-------------------------------------------------#
 # t			tmp_31			  # name
 # str			str			  # type
-#-------------------------------------------------#
-[ "theap.storage",	  "memory mapped"	  ]
+#-----------------------------------------#
+[ "theap.storage",	  "malloced"	  ]
 
 [int](bat("a").mirror());
 var e := [str]([int](bat("a").mirror()));
