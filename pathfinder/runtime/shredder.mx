@@ -521,7 +521,7 @@ emit_tuple(shredCtxStruct* shredCtx,
 #else
         if ((shredCtx->nnode_pre&65535) == 0) {
             MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
-            MT_sleep_ns(1); 
+            MT_sleep_ms(1); 
             MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
         }
 #endif
