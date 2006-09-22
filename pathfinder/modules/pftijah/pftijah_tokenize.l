@@ -3,6 +3,7 @@
 %option prefix="pftijah_tokenize"
 %option nounput
 %{
+#include <pf_config.h>
 
 #include "serialize_pftijah.h"
 

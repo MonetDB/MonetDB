@@ -42,6 +42,7 @@ extern int serialize_pftijah_options_DRIVER(
         BAT*			strVAL);
 
 @c
+#include <pf_config.h>
 
 /*******************************************
  * serialize_pftijah_option.c : Tijah options serialization

@@ -2003,6 +2003,8 @@ extern int pftijah_debug;
 #endif
 
 @c
+#include <pf_config.h>
+
 #include <monet.h>
 #include <gdk.h>
 

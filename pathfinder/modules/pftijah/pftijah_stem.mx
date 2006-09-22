@@ -41,6 +41,7 @@ typedef struct tijahStemmingStruct {
 extern tjStemCtx* getStemmingContext(char* name);
 
 @c
+#include <pf_config.h>
 
 /*******************************************
  * pftijah_stem.c : stemming support for pftijah

@@ -8,6 +8,8 @@
      Procedures for rewriting internal query representation
 */
 
+#include <pf_config.h>
+
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>

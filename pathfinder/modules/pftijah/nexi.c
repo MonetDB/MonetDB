@@ -8,6 +8,9 @@
      Main module for generating logical query plans and MIL query plans from NEXI queries
 
 */
+
+#include <pf_config.h>
+
 #include <monet.h>
 #include <gdk.h>
 

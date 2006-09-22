@@ -28,9 +28,6 @@
 @t serialize_pftijah
 
 @h
-
-#include <gdk.h>
-
 struct tijahContextStruct;
 
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);
@@ -43,6 +40,7 @@ extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
 extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
 
 @c
+#include <pf_config.h>
 
 /* #define TJ_TRACE 1 */
 
@@ -50,6 +48,8 @@ extern int CMDtj_normalizeTerm(char** res, str term, str stemmer);
  * serialize_pftijah.c : XML serialization
  *
  */
+
+/*#include <gdk.h>*/
 
 #include "serialize.h"
 /* contains dummy callback functions */
