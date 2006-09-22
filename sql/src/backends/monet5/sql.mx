@@ -262,6 +262,8 @@ command calc.daytime(t:timestamp) :daytime
 address MTIMEtimestamp_extract_daytime_default;
 command calc.date(t:timestamp) :date
 address MTIMEtimestamp_extract_date_default;
+command calc.timestamp(d:date) :timestamp
+address MTIMEtimestamp_create_from_date;
 
 # string 
 command calc.toLower( s:str ) :str address STRLower;

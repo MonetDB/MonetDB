@@ -17,7 +17,6 @@
 SWIGFLAGS = -DHAVE_LONG_LONG $(INCLUDES)
 INCLUDES = ../include $(PYTHON_INCS) 
 
-_odbc_la_LDFLAGS = -module
 X_CFLAGS =
 
 lib_odbc = {

@@ -94,9 +94,6 @@ scripts_h = {
 	SOURCES = embeddedclient.mx
 }
 
-# we need this flag to allow for a name that does not start with "lib"
-_monetdb_la_LDFLAGS = -module
-
 lib_monetdb = {
 	COND = HAVE_PYTHON_SWIG
 	PREFIX =

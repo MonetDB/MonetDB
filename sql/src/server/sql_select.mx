@@ -728,9 +728,16 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 				l = stmt_binop(l, stmt_atom_int(tpe->digits), c);
 		}
 	}
-	if (l)
-		return check_types(sql, tpe, l, type_cast);
-	return NULL;
+	if (l) {
+		sql_type *ltpe = tail_type(l)->type;
+		l = check_types(sql, tpe, l, type_cast);
+		if (!l) {
+			/* we overwrite the error here */
+			sql->errstr[0] = 0;
+			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe->sqlname, tpe->type->sqlname );
+		}
+	}
+	return l;
 }
 
 static stmt *
