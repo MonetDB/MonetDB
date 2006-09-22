@@ -484,6 +484,9 @@ comment "creates a timestamp from (date, daytime,timezone) parameters.";
 command timestamp(d:date,dt:daytime) :timestamp 
 address MTIMEtimestamp_create_default 
 comment "creates a timestamp from (d,dt) parameters (in the local timezone).";
+command timestamp(d:date) :timestamp 
+address MTIMEtimestamp_create_from_date 
+comment "creates a timestamp from (d,00:00:00) parameters (in the local timezone).";
 
 command rule(s:str):zrule
 address MTIMErule_fromstr
@@ -919,6 +922,7 @@ mtime_export str MTIMEtimestamp_fromstr(timestamp *ret, str *d);
 mtime_export str MTIMEtimestamp_timestamp(timestamp *d, timestamp *s);
 mtime_export str MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z);
 mtime_export str MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t);
+mtime_export str MTIMEtimestamp_create_from_date(timestamp *ret, date *d);
 mtime_export str MTIMEdate_extract_year(int *ret, date *v);
 mtime_export str MTIMEdate_extract_month(int *ret, date *v);
 mtime_export str MTIMEdate_extract_day(int *ret, date *v);
@@ -2074,6 +2078,13 @@ timestamp_create_default(timestamp *ret, date *d, daytime *t)
 	return timestamp_create(ret, d, t, &tzone_local);
 }
 
+int
+timestamp_create_from_date(timestamp *ret, date *d)
+{
+	daytime t = totime(0,0,0,0);
+	return timestamp_create(ret, d, &t, &tzone_local);
+}
+
 /* extracts year from date (value between -5867411 and +5867411). */
 int
 date_extract_year(int *ret, date *v)
@@ -3073,6 +3084,13 @@ str
 MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t)
 {
 	return MTIMEtimestamp_create(ret, d, t, &tzone_local);
+}
+
+str
+MTIMEtimestamp_create_from_date(timestamp *ret, date *d)
+{
+	daytime t = totime(0,0,0,0);
+	return MTIMEtimestamp_create(ret, d, &t, &tzone_local);
 }
 
 str
