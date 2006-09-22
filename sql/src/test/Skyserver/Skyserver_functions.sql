@@ -50,14 +50,11 @@ BEGIN
 	    	SET mask = left_shift(cast(1 as bigint),bit);
 		CASE 
 			WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
-			ELSE SET out = out || COALESCE((select name from PhotoStatus where value=mask),'')||' ';
+			ELSE SET out = out || (COALESCE((select name from PhotoStatus where value=mask),'')||' ');
 	    	END CASE;
 	END WHILE;
     	RETURN out;
 END;
-
-select fPhotoStatusN(cast (17 as int));
-
 
 CREATE FUNCTION fPhotoStatus(pname varchar(40)) 
 RETURNS int 
@@ -77,8 +74,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
-		ELSE SET out = out + (coalesce((select name from PrimTarget where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		ELSE SET out = out || (coalesce((select name from PrimTarget where value=mask),'')||' ');
 	    END CASE;
     END WHILE;
     RETURN out;
@@ -112,8 +109,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
-		ELSE SET out = out + (coalesce((select name from SecTarget where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		ELSE SET out = out || (coalesce((select name from SecTarget where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
@@ -138,8 +135,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
-		ELSE SET out = out + (coalesce((select name from InsideMask where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		ELSE SET out = out || (coalesce((select name from InsideMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
@@ -164,8 +161,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + '';
-		ELSE SET out = out + (coalesce((select name from SpecZWarning where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || '';
+		ELSE SET out = out || (coalesce((select name from SpecZWarning where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
@@ -190,8 +187,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
-		ELSE SET out = out + (coalesce((select name from ImageMask where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		ELSE SET out = out || (coalesce((select name from ImageMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
@@ -212,15 +209,14 @@ BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
     SET bit=32;
     SET out ='';
-    WHILE (bit>0)
-	BEGIN
+    WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + '';
-		ELSE SET out = out + (coalesce((select name from TiMask where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || '';
+		ELSE SET out = out || (coalesce((select name from TiMask where value=mask),'')||' ');
 	    END CASE;
-	END WHILE;
+    END WHILE;
     RETURN out;
 END;
 
@@ -278,22 +274,21 @@ RETURN ( SELECT value
 	);
 END;
 
-CREATE FUNCTION fFieldQualityN(value int)
-CREATE FUNCTION fFieldQualityN(value int)
+CREATE FUNCTION fFieldQualityN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM FieldQuality
-	WHERE value = @value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fFieldQuality(name varchar(40))
+CREATE FUNCTION fFieldQuality(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM FieldQuality
-	WHERE name = UPPER(@name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
@@ -479,8 +474,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
-		ELSE SET out = out + (coalesce((select name from FieldMask where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		ELSE SET out = out || (coalesce((select name from FieldMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
@@ -496,8 +491,8 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(1 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out + '';
-		ELSE SET out = out + (coalesce((select name from PhotoFlags where value=mask),'')+' ');
+		WHEN (bit_and(mask,value)=0) THEN SET out = out || '';
+		ELSE SET out = out || (coalesce((select name from PhotoFlags where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;

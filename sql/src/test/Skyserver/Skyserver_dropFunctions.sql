@@ -25,7 +25,6 @@ DROP FUNCTION fPhotoType;
 DROP FUNCTION fMaskTypeN;
 DROP FUNCTION fMaskType;
 DROP FUNCTION fFieldQualityN;
-DROP FUNCTION fFieldQualityN;
 DROP FUNCTION fFieldQuality;
 DROP FUNCTION fPspStatus;
 DROP FUNCTION fPspStatusN;

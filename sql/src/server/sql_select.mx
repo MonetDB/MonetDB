@@ -515,8 +515,13 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			if (cond && subset && subset->nrcols && cond->nrcols == 0)
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
+				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subtype *tp = tail_type(cond);
+				sql_subfunc *isnul, *not;
+				isnul = sql_bind_func_result(sql->session->schema, "isnull", tp, NULL, bt);
+				not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
 				result = stmt_dup(cond);
-				cond = sql_compare(sql, cond, stmt_atom(atom_general(tail_type(cond), NULL, 0)), "<>", sql_search);
+				cond = stmt_unop(stmt_unop(cond, isnul), not);
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
