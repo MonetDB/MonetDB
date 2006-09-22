@@ -22,9 +22,8 @@ int DutchStem(char *word ) {
    if ( 1 ) {
      fprintf(stderr,"DutchStem: not implemented yet.\n");
      exit(0);
-   } else
-     return 0;
-
+   }
+   return 0;
 }
 
 int Stem( char *word ) {
@@ -32,8 +31,8 @@ int Stem( char *word ) {
    if ( 1 ) {
      fprintf(stderr,"Stem: not implemented yet.\n");
      exit(0);
-   } else
-     return 0;
+   }
+   return 0;
 }
 
 bool StopWord(char *term, int language) {

@@ -140,9 +140,6 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
   (void)sxqxl_fname;
   (void)phrase_in;
 
-  /* return result */
-  int result;
-
   /* operator count */
   int op_num;
 
@@ -177,12 +174,10 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
   command_tree *p_com;
   int op_number[STACK_MAX];
   int op_newnum[STACK_MAX];
-  bool op_touched[STACK_MAX];
-  command_tree *p_new_op[STACK_MAX];
 
   /* pointers for command tree structure */
   command_tree **p_com_array;
-  command_tree *p1_command, *p2_command;
+  command_tree *p1_command;
 
   /* variable for avoiding numerical problems */
   bool set_reset;
@@ -233,9 +228,6 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
        MILPRINTF(MILOUT,"printf(\"# tijah-mil-exec: start computation.\\n\");\n");
   }
   while (p1_command != NULL) {
-
-    p2_command = p1_command;
-
     op_num = 0;
     com_sp = 0;
     com_num = 0;
@@ -244,8 +236,6 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
     for (i=0; i<STACK_MAX; i++) {
       op_number[i] = 0;
       op_newnum[i] = 0;
-      p_new_op[i] = NULL;
-      op_touched[i] = FALSE;
     }
 
     set_reset = FALSE;
@@ -253,7 +243,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
     topic_num++;
 
     /* performing tree traversal with optimization of SRA query plan */
-    result = tree_traverse_opt(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
+    tree_traverse_opt(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
 
     com_sp++;
     PUSH_COMMAND(NULL);

@@ -72,6 +72,17 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF
   }
 }
 
+extern command_tree **CAS_plan_gen(
+	int query_num,
+	int topic_type,
+	struct_RMT *txt_retr_model,
+	struct_RF *rel_feedback,
+	bool alg_type,
+	char *mil_fname,
+	char *log_fname,
+	char *result_name,
+	bool scale_on);
+
 int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 {
   /* input argument options */
@@ -123,7 +134,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   char mil_fname[FILENAME_SIZE];
   char background_collection[20] = "";
   /* pointer to SRA command tree structure */
-  command_tree **p_command_array; extern command_tree **CAS_plan_gen();
+  command_tree **p_command_array;
 
   /* for the retrieval models and for the relevance feedback */
   int qnum_tmp;

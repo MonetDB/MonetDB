@@ -54,20 +54,10 @@ void nexierror(char *err) /* 'yyerror()' called by yyparse in error */
 
 %%/* Grammar rules and actions */
 
-/*input:
-       | input line
-       ;*/
-
-/*line: '\n'
-      | co '\n'  { query_type = CO; CO_number++; }
-      | cas '\n' { query_type = CAS; CAS_number++; }
-      | co ';'  { query_type = CO; CO_number++; }
-      | cas ';' { query_type = CAS; CAS_number++; }
-;*/
-
 input:
       | co { query_type = CO; CO_number++; }
       | cas { query_type = CAS; CAS_number++; }
+      | Q_LESS { /* dummy error */ if (1) { YYERROR; } else { YYABORT; } /* pacify icc compiler ? */ } ;
 ;
 
 cas: path cas_filter | path cas_filter path | path cas_filter path cas_filter;
@@ -131,8 +121,6 @@ image: Q_IMAGE;
 /* location: '\\' loc_step | location '\\' loc_step;
 
 loc_step: '\\' word | '\\' word '.' word; */
-
-img_name: '\\' word '.' word  { if (1) { YYERROR; } else { YYABORT; } /* pacify icc compiler ? */ } ;
 
 %%
 
