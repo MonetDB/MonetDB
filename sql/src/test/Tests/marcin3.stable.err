@@ -59,7 +59,7 @@ QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
 ERROR = !SELECT: cannot use non GROUP BY column 'val' in query results without an aggregate function
 MAPI  = monetdb@localhost:32040
 QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
-ERROR = !SELECT: identifier 'valsum' unknown or ambiguous
+ERROR = !SELECT: identifier 'valsum' unknown
 
 # 21:15:41 >  
 # 21:15:41 >  Done.

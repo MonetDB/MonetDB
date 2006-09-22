@@ -1653,10 +1653,16 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		return NULL;
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
+		int var = (stack_find_var(sql, name) != NULL);
 		
 		exp = rel_bind_column(sql, rel, name);
-		if (!exp && (exp = rel_var_ref(sql, name, 0)) == NULL)
-			return NULL;
+		if (exp && var) 
+			return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+		if (!exp && var)
+			return rel_var_ref(sql, name, 0);
+		if (!exp && !var)
+			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+		
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;

@@ -303,13 +303,24 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			if (!cv)
 				return sql_error(sql, 02, "SELECT: ROWID column used without table reference");
 			return stmt_mirror(stmt_dup(cv->s));
-		} else if (!(cs = scope_bind(scp, NULL, name))) {
-			/* maybe simple param */
+		} else {
 			sql_arg *a = sql_bind_param(sql, name);
-			if (!a) {
-				return sql_var_ref(sql, name, 0);
-			} else {
+			stmt *s = stack_find_var(sql, name);
+			cs = scope_bind(scp, NULL, name);
+
+			if (cs) {
+				if (a || s) {
+					stmt_destroy(cs);
+					return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+				}
+			} else if (a) {
+				if (s) 
+					return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
 				cs = stmt_var(_strdup(a->name), &a->type, 0, 0);
+			} else if (s) {
+				cs = sql_var_ref(sql, name, 0);
+			} else {
+				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
 			}
 		}
 	} else if (dlist_length(l) == 2) {
