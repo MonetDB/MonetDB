@@ -585,6 +585,9 @@ One day we should introduce the concept of locale, and hook here.
 	# unix-time (epoch) support: seconds since 1-jan-1970 GMT
 	const EPOCH := timestamp(date(1970,1,1),daytime(0,0,0,0),tzone("GMT"));
 
+	proc timestamp(date d) : timestamp {
+		return timestamp(d, daytime(0,0,0,0), tzone("GMT"));
+	}
 	proc timestamp(int secs) : timestamp{
 		return EPOCH.add(lng(secs) * lng(1000));
 	}
