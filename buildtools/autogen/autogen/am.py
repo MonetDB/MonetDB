@@ -195,11 +195,11 @@ def am_find_ins(am, map):
         if ext == 'in':
             am['OutList'].append(am['CWD']+t)
 
-def am_additional_flags(name, sep, type, list, am):
+def am_additional_flags(name, sep, type, list, am, pref = 'lib'):
     if type == "BIN":
         add = am_normalize(name)+"_LDFLAGS ="
     elif type == "LIB":
-        add = "lib"+sep+name+"_la_LDFLAGS ="
+        add = pref+sep+name+"_la_LDFLAGS ="
     else:
         add = name + " ="
     for l in list:
@@ -677,6 +677,8 @@ def am_library(fd, var, libmap, am):
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
     ldflags = []
+    if sep == '_':
+        ldflags.append('-module')
     if libmap.has_key("LDFLAGS"):
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)
@@ -716,9 +718,9 @@ def am_library(fd, var, libmap, am):
     fd.write(srcs + "\n")
 
     if deps:
-        fd.write(am_additional_deps(libname, sep, "LIB", deps, am))
+        fd.write(am_additional_deps(libname, sep, "LIB", deps, am, pref))
     if ldflags:
-        fd.write(am_additional_flags(libname, sep, "LIB", ldflags, am))
+        fd.write(am_additional_flags(libname, sep, "LIB", ldflags, am, pref))
 
     if len(SCRIPTS) > 0:
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))
@@ -774,6 +776,8 @@ def am_libs(fd, var, libsmap, am):
             _libs += libsmap["LDFLAGS"];
         if len(_libs) > 0:
             fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
+        if sep == '_':
+            fd.write(am_additional_flags(libname, sep, "LIB", ['-module'], am))
 
         nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
         srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
