@@ -44,12 +44,12 @@ A dummy module is needed to load properly.
 #include <sql_mvc.h>
 #include <mal_function.h>
 
-sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
-sql_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
-sql_export void backend_callinline(backend *be, Client c, stmt *s);
-sql_export void backend_call(backend *be, Client c, cq *q);
-sql_export void initSQLreferences(void);
-sql_export str backend_name(cq *cq);
+sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
+sql5_export void backend_callinline(backend *be, Client c, stmt *s);
+sql5_export void backend_call(backend *be, Client c, cq *q);
+sql5_export void initSQLreferences(void);
+sql5_export str backend_name(cq *cq);
 
 #endif /* _SQL2MAL_H */
 @c

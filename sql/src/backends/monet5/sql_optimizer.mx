@@ -86,9 +86,9 @@ str.iconv
 
 /* #define _SQL_OPTIMIZER_DEBUG  */
 
-sql_export void addQueryToCache(Client c);
-sql_export str SQLoptimizer(Client c);
-sql_export void SQLsetAccessMode(Client c);
+sql5_export void addQueryToCache(Client c);
+sql5_export str SQLoptimizer(Client c);
+sql5_export void SQLsetAccessMode(Client c);
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
