@@ -416,7 +416,8 @@ useStrtokScanner(tjCtx* tjctx, char* s)
  */
 
 
-int
+#ifdef notused
+static int
 handle_sizeHint(XqueryCtx* ctx, int hinted_size) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
@@ -428,6 +429,7 @@ handle_sizeHint(XqueryCtx* ctx, int hinted_size) {
     	return 0;
     return 1;
 }
+#endif
 
 const char* delchars2 = " \t\n\r,";
 

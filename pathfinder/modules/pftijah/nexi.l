@@ -63,6 +63,17 @@ extern int char_number;
 #define WRITE_COMMAND(COMMAND) fprintf(parserCtx->commandFILE, "%d\n", COMMAND)
 #define WRITE_TOKEN(TOKEN)     fprintf(parserCtx->tokenFILE, "%s\n", TOKEN)
 
+/* This hack is to prevent problems with flex 2.5.33 and lower on Debian and
+ * Gentoo systems. When flex.2.5.4 and hiher is obligatory this define
+ * may be removed
+ */
+#ifndef YY_INPUT
+#define YY_INPUT(buf,result,max_size) \
+	if ( ((result = fread( buf, 1, max_size, yyin )) == 0) \
+		  && ferror( yyin ) ) \
+		YY_FATAL_ERROR( "input in flex scanner failed" );
+#endif
+
 %}
 
 LETTER [a-zA-Z]

@@ -182,7 +182,6 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   FILE *rmi_file;
   FILE *rf_file;
 
-
   /* input argument options */
   interact_set = FALSE;
   pptype_set = FALSE;
@@ -1339,9 +1338,8 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   rel_feedback = NULL;
   free(rel_feedback);
 
-  if ( query_set ) {
-     /* make icc compiler happy */
-  }
+  (void)query_set;
+
   return 1;
 }
 
