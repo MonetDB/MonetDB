@@ -523,6 +523,13 @@ yes-*-*)
 		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -wd592"
 		dnl  # 592: variable "." is used before its value is set
 	esac
+	
+	dnl  Some versions of flex & bison seem to generate code that icc does not like;
+	dnl  we "mis-use" the NO_INLINE_CFLAGS to disable the respective warning as
+	dnl  locally as possible via "-wd177"
+	dnl  (#177: label "." was declared but never referenced)
+	dnl  (see also pathfinder/modules/pftijah/Makefile.ag).
+	NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -wd177"
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
