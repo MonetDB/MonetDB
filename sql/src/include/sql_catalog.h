@@ -458,7 +458,7 @@ extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
 
 extern node *find_sql_type_node(sql_schema * s, char *tname);
 extern sql_type *find_sql_type(sql_schema * s, char *tname);
-extern sql_type *sql_trans_bind_type(sql_trans *tr, char *name);
+extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 
 extern node *find_sql_func_node(sql_schema * s, char *tname);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);

@@ -140,7 +140,7 @@ find_sql_type(sql_schema * s, char *tname)
 }
 
 sql_type *
-sql_trans_bind_type(sql_trans *tr, char *name)
+sql_trans_bind_type(sql_trans *tr, sql_schema *c, char *name)
 {
 	node *n;
 	sql_type *t = NULL;
@@ -151,16 +151,13 @@ sql_trans_bind_type(sql_trans *tr, char *name)
 
 			t = find_sql_type(s, name);
 		}
-/*
-	if (!t && tr->schema)
-		t = find_sql_type(tr->schema, name);
-*/
+
+	if (!t && c)
+		t = find_sql_type(c, name);
+
 	if (!t)
 		return NULL;
-	/*
-	   t->base.rtime = tr->rtime;
-	 */
-
+	/* t->base.rtime = tr->rtime; */
 	return t;
 }
 

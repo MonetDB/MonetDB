@@ -918,7 +918,7 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 	sz = *(int *) bun_find(column_type_digits, lid);
 	d = *(int *) bun_find(column_type_scale, lid);
 	if (!sql_find_subtype(&c->type, tpe, sz, d))
-		sql_init_subtype(&c->type, sql_trans_bind_type(tr, tpe), sz, d);
+		sql_init_subtype(&c->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
 	def = (char *) bun_find(column_default, lid);
 	c->def = NULL;
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
@@ -1199,7 +1199,7 @@ load_arg(sql_trans *tr, sql_func * f, BAT *args, BUN j)
 	digits = *(int *) bun_find(arg_type_digits, lid);
 	scale = *(int *) bun_find(arg_type_scale, lid);
 	if (!sql_find_subtype(&a->type, tpe, digits, scale))
-		sql_init_subtype(&a->type, sql_trans_bind_type(tr, tpe), digits, scale);
+		sql_init_subtype(&a->type, sql_trans_bind_type(tr, f->s, tpe), digits, scale);
 
 	/* complex (table) types */
 	if (a->type.type->localtype == TYPE_bat) 
@@ -1306,14 +1306,7 @@ load_schema(sql_trans *tr, BAT *schemas, BUN j)
 	if (bs_debug)
 		fprintf(stderr, "load schema %s %d\n", s->base.name, s->base.id);
 
-	tables = BATselect(table_schema, (ptr) &s->base.id, (ptr) &s->base.id);
-	ptables = BATkdiff(tables, BATmirror(D_tables));
-	bat_destroy(tables);
-
-	BATloop(ptables, p, q) 
-	    	cs_add(&s->tables, load_table(tr, s, ptables, p), TR_OLD);
-	bat_destroy(ptables);
-
+	/* first load simple types */
 	types = BATselect(type_schema, (ptr) &s->base.id, (ptr) &s->base.id);
 	if (D_types) {
 		BAT *ptypes = BATkdiff(types, BATmirror(D_types));
@@ -1325,6 +1318,16 @@ load_schema(sql_trans *tr, BAT *schemas, BUN j)
 	    cs_add(&s->types, load_type(tr, s, types, p), TR_OLD);
 	bat_destroy(types);
 
+	/* second tables (and complex types) */
+	tables = BATselect(table_schema, (ptr) &s->base.id, (ptr) &s->base.id);
+	ptables = BATkdiff(tables, BATmirror(D_tables));
+	bat_destroy(tables);
+
+	BATloop(ptables, p, q) 
+	    	cs_add(&s->tables, load_table(tr, s, ptables, p), TR_OLD);
+	bat_destroy(ptables);
+
+	/* last functions which could use these types */
 	funcs = BATselect(func_schema, (ptr) &s->base.id, (ptr) &s->base.id);
 	if (D_funcs) {
 		BAT *pfuncs = BATkdiff(funcs, BATmirror(D_funcs));
