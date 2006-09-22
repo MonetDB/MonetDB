@@ -101,21 +101,31 @@ urlbox.prelude();
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-mal_export str URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef WIN32
+#ifndef LIBURLBOX
+#define urlbox_export extern __declspec(dllimport)
+#else
+#define urlbox_export extern __declspec(dllexport)
+#endif
+#else
+#define urlbox_export extern
+#endif
+
+urlbox_export str URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _URL_BOX_H */
 
 @- Module initializaton

@@ -187,40 +187,50 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "bat5.h"
 #include "algebra.h"
 
-mal_export str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpbind2(int *ret, str *hnme, str *tnme);
-mal_export str CMDbbpbindindex(int *ret, int *bid);
-mal_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpNames(int *ret);
-mal_export str CMDbbpName(str *ret, int *bid);
-mal_export str CMDbbpRNames(int *ret);
-mal_export str CMDbbpCount(int *ret);
-mal_export str CMDbbpLocation(int *ret);
-mal_export str CMDbbpHeat(int *ret);
-mal_export str CMDbbpDirty(int *ret);
-mal_export str CMDbbpStatus(int *ret);
-mal_export str CMDbbpKind(int *ret);
-mal_export str CMDbbpRefCount(int *ret);
-mal_export str CMDbbpLRefCount(int *ret);
-mal_export str CMDgetBATrefcnt(int *res, int *bid);
-mal_export str CMDgetBATlrefcnt(int *res, int *bid);
-mal_export str CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef WIN32
+#ifndef LIBBBP
+#define bbp_export extern __declspec(dllimport)
+#else
+#define bbp_export extern __declspec(dllexport)
+#endif
+#else
+#define bbp_export extern
+#endif
+
+bbp_export str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpbind2(int *ret, str *hnme, str *tnme);
+bbp_export str CMDbbpbindindex(int *ret, int *bid);
+bbp_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpNames(int *ret);
+bbp_export str CMDbbpName(str *ret, int *bid);
+bbp_export str CMDbbpRNames(int *ret);
+bbp_export str CMDbbpCount(int *ret);
+bbp_export str CMDbbpLocation(int *ret);
+bbp_export str CMDbbpHeat(int *ret);
+bbp_export str CMDbbpDirty(int *ret);
+bbp_export str CMDbbpStatus(int *ret);
+bbp_export str CMDbbpKind(int *ret);
+bbp_export str CMDbbpRefCount(int *ret);
+bbp_export str CMDbbpLRefCount(int *ret);
+bbp_export str CMDgetBATrefcnt(int *res, int *bid);
+bbp_export str CMDgetBATlrefcnt(int *res, int *bid);
+bbp_export str CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 Access to a box calls for resolving the first parameter
@@ -983,7 +993,7 @@ CMDgetBATlrefcnt(int *res, int *bid)
 
 @-
 @= headtailProperty
-mal_export str CMDbbp@2( int *ret);
+bbp_export str CMDbbp@2( int *ret);
 str CMDbbp@2( int *ret){
 	BAT	*b,*bn;
 	int	i;

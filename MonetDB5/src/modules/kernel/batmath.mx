@@ -75,6 +75,16 @@ module batmath;
 #include "mal_exception.h"
 #include "batmath.h"
 
+#ifdef WIN32
+#ifndef LIBBATMATH
+#define batmath_export extern __declspec(dllimport)
+#else
+#define batmath_export extern __declspec(dllexport)
+#endif
+#else
+#define batmath_export extern
+#endif
+
 BAT *
 BATMATHresult(BAT *b, int tpe)
 {
@@ -90,7 +100,7 @@ BATMATHresult(BAT *b, int tpe)
 
 @-
 @= scienceFcnImpl
-mal_export str CMDscience_@1(int *ret, int *bid);
+batmath_export str CMDscience_@1(int *ret, int *bid);
 str CMDscience_@1(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
@@ -116,7 +126,7 @@ bunins_failed:
 }
 /* You don;t have to materialize the oids.
 This is taken care upon access */
-mal_export str CMDsciencevoid_@1(int *ret, int *bid);
+batmath_export str CMDsciencevoid_@1(int *ret, int *bid);
 str CMDsciencevoid_@1(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
@@ -145,7 +155,7 @@ bunins_failed:
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
-mal_export str CMDscience_@1(int *ret, int *bid, @2 *d);
+batmath_export str CMDscience_@1(int *ret, int *bid, @2 *d);
 str CMDscience_@1(int *ret, int *bid, @2 *d){
 	BAT *b,*bn;
 	int xx;

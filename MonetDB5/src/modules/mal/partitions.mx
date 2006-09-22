@@ -186,41 +186,51 @@ as a handle.
 #include "partitions.h"
 #include "bat5.h"
 
-mal_export int BPTfindGrp(int bid);
-mal_export void BPTresize(int size);
-mal_export str BPTdump(void);
-mal_export str BPTprelude(int *ret);
-mal_export str BPTepilogue(int *ret);
-mal_export str BPTopen(void);
-mal_export str BPTclose(void);
-mal_export str BPTdestroy(void);
-mal_export str BPTtake(int *ret, int *idx);
-mal_export int BPTfindGrp(int bid);
-mal_export int BPTfindPartition(int bid, int pid);
-mal_export str BPTdeposit(int *ret, int *bid);
-mal_export str BPTdeposit2(int *ret, int *bid, int *pid);
-mal_export str BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap);
-mal_export str BPTgetRange(oid *first, oid *last, int *bid);
-mal_export str BPTgetLastPartition(int *ret, int *bid);
-mal_export str BPTdiscard(int *ret, int *bid);
-mal_export str BPTdiscardAll(int *ret);
-mal_export str BPTtoString(int *ret, int *bid);
-mal_export str BPTreleaseAll(int *ret, int *bid);
-mal_export str BPTrelease(int *ret, int *bid);
-mal_export str BPTnewIteratorBase(int *ret);
-mal_export str BPThasMoreElementsBase(int *ret);
-mal_export str BPTnewIterator(int *res, int *pid, int *bid);
-mal_export str BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *
+#ifdef WIN32
+#ifndef LIBPARTITIONS
+#define partitions_export extern __declspec(dllimport)
+#else
+#define partitions_export extern __declspec(dllexport)
+#endif
+#else
+#define partitions_export extern
+#endif
+
+partitions_export int BPTfindGrp(int bid);
+partitions_export void BPTresize(int size);
+partitions_export str BPTdump(void);
+partitions_export str BPTprelude(int *ret);
+partitions_export str BPTepilogue(int *ret);
+partitions_export str BPTopen(void);
+partitions_export str BPTclose(void);
+partitions_export str BPTdestroy(void);
+partitions_export str BPTtake(int *ret, int *idx);
+partitions_export int BPTfindGrp(int bid);
+partitions_export int BPTfindPartition(int bid, int pid);
+partitions_export str BPTdeposit(int *ret, int *bid);
+partitions_export str BPTdeposit2(int *ret, int *bid, int *pid);
+partitions_export str BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap);
+partitions_export str BPTgetRange(oid *first, oid *last, int *bid);
+partitions_export str BPTgetLastPartition(int *ret, int *bid);
+partitions_export str BPTdiscard(int *ret, int *bid);
+partitions_export str BPTdiscardAll(int *ret);
+partitions_export str BPTtoString(int *ret, int *bid);
+partitions_export str BPTreleaseAll(int *ret, int *bid);
+partitions_export str BPTrelease(int *ret, int *bid);
+partitions_export str BPTnewIteratorBase(int *ret);
+partitions_export str BPThasMoreElementsBase(int *ret);
+partitions_export str BPTnewIterator(int *res, int *pid, int *bid);
+partitions_export str BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *
 last);
-mal_export str BPThasMoreElements(int *res, int *pid, int *bid);
-mal_export str BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last);
-mal_export str BPTsetCapacity(int *ret, int *bid, int *val);
-mal_export str BPTinsert_void_bun(int *ret, int *bid, ptr val);
-mal_export str BPTinsert(int *ret, int *bid, ptr h, ptr t);
-mal_export str BPTinsertBAT(int *ret, int *bid, int *bnid);
-mal_export str BPTdelete_oid(int *ret, int *bid, oid *h);
-mal_export str BPTcompress(int *ret, int *bid);
-mal_export str BPTdeleteBAT(int *ret, int *bid, int *bnid);
+partitions_export str BPThasMoreElements(int *res, int *pid, int *bid);
+partitions_export str BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last);
+partitions_export str BPTsetCapacity(int *ret, int *bid, int *val);
+partitions_export str BPTinsert_void_bun(int *ret, int *bid, ptr val);
+partitions_export str BPTinsert(int *ret, int *bid, ptr h, ptr t);
+partitions_export str BPTinsertBAT(int *ret, int *bid, int *bnid);
+partitions_export str BPTdelete_oid(int *ret, int *bid, oid *h);
+partitions_export str BPTcompress(int *ret, int *bid);
+partitions_export str BPTdeleteBAT(int *ret, int *bid, int *bnid);
 
 typedef struct {
 	bat bid;		/* group bat identifier */

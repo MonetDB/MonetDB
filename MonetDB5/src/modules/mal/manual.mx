@@ -75,14 +75,24 @@ comment "Produces a manual with help lines grouped by module.";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-mal_export str MANUALcreate(int *ret, str *fname, str *mod, int *recursive);
-mal_export str MANUALcreateSection1(int *ret, str *mod);
-mal_export str MANUALcreate2(int *ret, str *fname, str *mod, int *recursive);
-mal_export str MANUALcreate1(int *ret, str *mod);
-mal_export str MANUALcreate0(int *ret);
-mal_export str MANUALsearch(int *ret, str *mod);
-mal_export str MANUALcompletion(int *ret, str *text);
-mal_export str MANUALhelp(int *ret, str *text);
+#ifdef WIN32
+#ifndef LIBMANUAL
+#define manual_export extern __declspec(dllimport)
+#else
+#define manual_export extern __declspec(dllexport)
+#endif
+#else
+#define manual_export extern
+#endif
+
+manual_export str MANUALcreate(int *ret, str *fname, str *mod, int *recursive);
+manual_export str MANUALcreateSection1(int *ret, str *mod);
+manual_export str MANUALcreate2(int *ret, str *fname, str *mod, int *recursive);
+manual_export str MANUALcreate1(int *ret, str *mod);
+manual_export str MANUALcreate0(int *ret);
+manual_export str MANUALsearch(int *ret, str *mod);
+manual_export str MANUALcompletion(int *ret, str *text);
+manual_export str MANUALhelp(int *ret, str *text);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.

@@ -117,21 +117,31 @@ comment "Merge the instructions stored in the
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-mal_export str CMDraise(str *ret, str *msg);
-mal_export str MALassertBit(int *ret, bit *val, str *msg);
-mal_export str MALassertStr(int *ret, str *val, str *msg);
-mal_export str MALassertOid(int *ret, oid *val, str *msg);
-mal_export str MALassertSht(int *ret, sht *val, str *msg);
-mal_export str MALassertInt(int *ret, int *val, str *msg);
-mal_export str MALassertLng(int *ret, lng *val, str *msg);
-mal_export str MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help);
-mal_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDevalFile(int *ret, str *fnme);
-mal_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDdebug(int *ret, int *flg);
-mal_export str CMDsetCwd(str *ret, str *fnme);
+#ifdef WIN32
+#ifndef LIBLANGUAGE
+#define language_export extern __declspec(dllimport)
+#else
+#define language_export extern __declspec(dllexport)
+#endif
+#else
+#define language_export extern
+#endif
+
+language_export str CMDraise(str *ret, str *msg);
+language_export str MALassertBit(int *ret, bit *val, str *msg);
+language_export str MALassertStr(int *ret, str *val, str *msg);
+language_export str MALassertOid(int *ret, oid *val, str *msg);
+language_export str MALassertSht(int *ret, sht *val, str *msg);
+language_export str MALassertInt(int *ret, int *val, str *msg);
+language_export str MALassertLng(int *ret, lng *val, str *msg);
+language_export str MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help);
+language_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDevalFile(int *ret, str *fnme);
+language_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDdebug(int *ret, int *flg);
+language_export str CMDsetCwd(str *ret, str *fnme);
 #endif /* _LANGUAGE_H */
 @c
 
@@ -351,7 +361,7 @@ to simplify data-flow analysis.
 
 We assume that the range boundaries comply with the underlying domain.
 @= newRange
-mal_export str RNGnewRange_@1(bit *res, @1 *i, @1 *first);
+language_export str RNGnewRange_@1(bit *res, @1 *i, @1 *first);
 str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 	*res = TRUE;
 	*i= *first;
@@ -359,7 +369,7 @@ str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 }
 
 @= nextElement
-mal_export str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last);
+language_export str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last);
 str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 	@1 v = *i;
 	v = v + *step;

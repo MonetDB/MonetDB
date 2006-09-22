@@ -105,17 +105,27 @@ armada.prelude();
 #include <mal_exception.h>
 #include <inet.h>
 
-mal_export str ARMADAprelude(int *ret);
-mal_export str ARMADAepilogue(int *ret);
+#ifdef WIN32
+#ifndef LIBARMADA
+#define armada_export extern __declspec(dllimport)
+#else
+#define armada_export extern __declspec(dllexport)
+#endif
+#else
+#define armada_export extern
+#endif
 
-mal_export str ARMADAaddStep(int *ret, str *func, oid *site);
-mal_export str ARMADAfindStep(int *ret, str *func, oid *site);
-mal_export str ARMADAaddTrail(int *ret, int *pre, int *step);
-mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
-mal_export str ARMADAgetStep(str *ret, int *step);
-mal_export str ARMADAgetTrail(str *ret, int *trail);
-mal_export str ARMADAaddSite(oid *ret, inet *host, int *port, str *chain, str *key);
-mal_export str ARMADAfindSite(oid *ret, inet *host, int *port, str *chain);
+armada_export str ARMADAprelude(int *ret);
+armada_export str ARMADAepilogue(int *ret);
+
+armada_export str ARMADAaddStep(int *ret, str *func, oid *site);
+armada_export str ARMADAfindStep(int *ret, str *func, oid *site);
+armada_export str ARMADAaddTrail(int *ret, int *pre, int *step);
+armada_export str ARMADAaddTrailBAT(int *ret, int *steps);
+armada_export str ARMADAgetStep(str *ret, int *step);
+armada_export str ARMADAgetTrail(str *ret, int *trail);
+armada_export str ARMADAaddSite(oid *ret, inet *host, int *port, str *chain, str *key);
+armada_export str ARMADAfindSite(oid *ret, inet *host, int *port, str *chain);
 
 static void ARMADAinit(void);
 static void ARMADAexit(void);

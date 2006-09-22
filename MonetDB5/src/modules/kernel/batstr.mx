@@ -180,6 +180,16 @@ comment "Perform SQL like operation against a string bat";
 #include <iconv.h>
 #endif
 
+#ifdef WIN32
+#ifndef LIBBATSTR
+#define batstr_export extern __declspec(dllimport)
+#else
+#define batstr_export extern __declspec(dllexport)
+#endif
+#else
+#define batstr_export extern
+#endif
+
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
 		return throwMessage("batstr." Z, "Cannot access descriptor");
@@ -217,11 +227,11 @@ comment "Perform SQL like operation against a string bat";
 	BBPkeepref(*(X));\
 	BBPreleaseref(Z->batCacheid);
 
-mal_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
-mal_export str STRbatsubstring(int *ret, int *bid, int *start, int *length);
+batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
+batstr_export str STRbatsubstring(int *ret, int *bid, int *start, int *length);
 
 @= BATint
-mal_export str STRbat@1(int *ret, int *l);
+batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
@@ -253,7 +263,7 @@ bunins_failed:
 @:BATint(Bytes,strBytes,str)@
 
 @= BATstr
-mal_export str STRbat@1(int *ret, int *l);
+batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
@@ -289,7 +299,7 @@ bunins_failed:
 @-
 @c
 @= STRbatcstcmp
-mal_export str STRbat@2Cst(int *ret, int *l, str *cst);
+batstr_export str STRbat@2Cst(int *ret, int *l, str *cst);
 str
 STRbat@2Cst(int *ret, int *l, str *cst)
 {
@@ -332,7 +342,7 @@ implementation for shifted window arithmetic as well.
 	return throwMessage("batcalc.@3", "requires bats of identical size");
 @c
 @= STRbatcmp
-mal_export str STRbat@2(int *ret, int *l, int *r);
+batstr_export str STRbat@2(int *ret, int *l, int *r);
 str
 STRbat@2(int *ret, int *l, int *r)
 {
@@ -377,7 +387,7 @@ bunins_failed:
 @:STRbatcmp(!=,NotEqual,GDK_SORTED)@
 
 @= binarySTR
-mal_export str STRbat@1(int *ret, int *l, int *r);
+batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
@@ -413,7 +423,7 @@ bunins_failed:
 	return throwMessage("batstr." @5, "bunins failed");
 }
 
-mal_export str STRbat@1cst(int *ret, int *l, @3 *cst);
+batstr_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
 {   BAT *bn, *left;
 	BUN p,q;
@@ -442,7 +452,7 @@ bunins_failed:
 	return throwMessage("batstr"@5, "bunins failed");
 }
 @= binarySTRstr
-mal_export str STRbat@1(int *ret, int *l, int *r);
+batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
@@ -478,7 +488,7 @@ bunins_failed:
 	return throwMessage("batstr." @5, "bunins failed");
 }
 
-mal_export str STRbat@1cst(int *ret, int *l, @3 *cst);
+batstr_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
 {   BAT *bn, *left;
 	BUN p,q;
@@ -507,7 +517,7 @@ bunins_failed:
 	return throwMessage("batstr"@5, "bunins failed");
 }
 
-mal_export str STRcst@1bat(int *ret, @3 *cst, int *r);
+batstr_export str STRcst@1bat(int *ret, @3 *cst, int *r);
 str STRcst@1bat(int *ret, @3 *cst, int *r)
 {   BAT *bn, *right;
 	BUN p,q;
@@ -545,7 +555,7 @@ bunins_failed:
 @:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
 @:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
 
-mal_export str STRbattostr(int *ret, int *bid);
+batstr_export str STRbattostr(int *ret, int *bid);
 str
 STRbattostr(int *ret, int *bid)
 {
@@ -553,7 +563,7 @@ STRbattostr(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
+batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 str
 STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 {
@@ -584,7 +594,7 @@ bunins_failed:
 	return throwMessage("batstr.subString", "bunins failed");
 }
 
-mal_export str STRbatmatchCst(int *ret, int *bid, str *pat);
+batstr_export str STRbatmatchCst(int *ret, int *bid, str *pat);
 str
 STRbatmatchCst(int *ret, int *bid, str *pat)
 {
@@ -701,7 +711,7 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str STRbatsubstring(int *ret, int *l, int *r, int *t);
+batstr_export str STRbatsubstring(int *ret, int *l, int *r, int *t);
 str STRbatsubstring(int *ret, int *l, int *r, int *t)
 {   BAT *bn, *left, *start, *length;
 	BUN os,ol,ps,qs;

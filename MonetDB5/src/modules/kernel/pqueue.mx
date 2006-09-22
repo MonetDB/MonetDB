@@ -109,11 +109,21 @@ comment "Return the topn elements of the bat t using a @1-pqueue";
 
 #include "mal.h"
 
-mal_export str PQinit(int *ret, int *bid, int *maxsize);
+#ifdef WIN32
+#ifndef LIBPQUEUE
+#define pqueue_export extern __declspec(dllimport)
+#else
+#define pqueue_export extern __declspec(dllexport)
+#endif
+#else
+#define pqueue_export extern
+#endif
+
+pqueue_export str PQinit(int *ret, int *bid, int *maxsize);
 
 #endif /* _PQUEUE */
 @c
-#include "mal.h"
+#include "pqueue.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
@@ -613,8 +623,6 @@ PROC test_pqueue() : void {
 @-
 The M5 wrapper code
 @c
-#include "mal.h"
-
 str
 PQinit(int *ret, int *bid, int *maxsize){
 	BAT *b,*bn;
@@ -628,7 +636,7 @@ PQinit(int *ret, int *bid, int *maxsize){
 }
 @-
 @= PQimpl1
-mal_export str PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el);
+pqueue_export str PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el);
 str
 PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	BAT *b;
@@ -639,7 +647,7 @@ PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	return MAL_SUCCEED;
 }
 
-mal_export str PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el);
+pqueue_export str PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el);
 str
 PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	BAT *b;
@@ -651,7 +659,7 @@ PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 }
 
 @= PQimpl2
-mal_export str PQmovedowntop_@1@2(int *ret, int *bid);
+pqueue_export str PQmovedowntop_@1@2(int *ret, int *bid);
 str
 PQmovedowntop_@1@2(int *ret, int *bid){
 	BAT *b;
@@ -662,7 +670,7 @@ PQmovedowntop_@1@2(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
-mal_export str PQdequeue_@1@2(int *ret, int *bid);
+pqueue_export str PQdequeue_@1@2(int *ret, int *bid);
 str
 PQdequeue_@1@2(int *ret, int *bid){
 	BAT *b;
@@ -674,7 +682,7 @@ PQdequeue_@1@2(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
-mal_export str PQtopn_void@1@2(int *ret, int *bid, int *N);
+pqueue_export str PQtopn_void@1@2(int *ret, int *bid, int *N);
 str
 PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;
@@ -693,7 +701,7 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BBPreleaseref(b->batCacheid);
 	return throwMessage("pqueue.topN","Failed to create BAT");
 }
-mal_export str PQtopn_@1@2(int *ret, int *bid, int *N);
+pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
 str
 PQtopn_@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;

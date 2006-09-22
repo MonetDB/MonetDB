@@ -152,7 +152,7 @@ comment "Returns a string representation of the current function
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBMDB
 #define mdb_export extern __declspec(dllimport)
 #else
@@ -166,8 +166,8 @@ mdb_export str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str MDBgetDebug(int *ret);
-mal_export str MDBsetDebug(int *ret, int *flg);
+mdb_export str MDBgetDebug(int *ret);
+mdb_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(int *ret, bit *flag);
 mdb_export str MDBsetMemory(int *ret, bit *flag);

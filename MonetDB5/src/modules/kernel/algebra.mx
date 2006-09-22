@@ -771,7 +771,7 @@ different situations as conditions.
 #include <gdk.h>
 #include "mal_exception.h"
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBALGEBRA
 #define algebra_export extern __declspec(dllimport)
 #else
@@ -1772,7 +1772,7 @@ The routines below assumes that the caller knows what type
 is large enough to prevent overflow.
 
 @= ALGsum_implementation
-mal_export str ALGsum_@1_@2(@2* res, int *bid) ;
+algebra_export str ALGsum_@1_@2(@2* res, int *bid) ;
 str ALGsum_@1_@2(@2* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1785,7 +1785,7 @@ str ALGsum_@1_@2(@2* res, int *bid) {
 }
 
 @= ALGprod_implementation
-mal_export str ALGprod_@1_@2(@2* res, int *bid) ;
+algebra_export str ALGprod_@1_@2(@2* res, int *bid) ;
 str ALGprod_@1_@2(@2* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1835,7 +1835,7 @@ str ALGavg_@1(dbl *res, int *bid) {
 @:avg_impl(dbl)@
 @-
 @= ALGaggregate_implementation
-mal_export str ALGmin_@1(@1* res, int *bid) ;
+algebra_export str ALGmin_@1(@1* res, int *bid) ;
 str ALGmin_@1(@1* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1848,7 +1848,7 @@ str ALGmin_@1(@1* res, int *bid) {
 	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.min", "GDKerror");
 }
-mal_export str ALGmax_@1(@1* res, int *bid) ;
+algebra_export str ALGmax_@1(@1* res, int *bid) ;
 str ALGmax_@1(@1* res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1868,7 +1868,7 @@ str ALGmax_@1(@1* res, int *bid) {
 @:ALGaggregate_implementation(dbl)@
 @:ALGaggregate_implementation(lng)@
 
-mal_export str ALGminany(ptr result, int *bid);
+algebra_export str ALGminany(ptr result, int *bid);
 str
 ALGminany(ptr result, int *bid)
 {
@@ -1885,7 +1885,7 @@ ALGminany(ptr result, int *bid)
 	return throwMessage("algebra.min", "GDKerror");
 }
 
-mal_export str ALGmaxany(ptr result, int *bid);
+algebra_export str ALGmaxany(ptr result, int *bid);
 str
 ALGmaxany(ptr result, int *bid)
 {
@@ -1903,7 +1903,7 @@ ALGmaxany(ptr result, int *bid)
 }
 
 
-mal_export str ALGtopN(int *res, int *bid, lng *top);
+algebra_export str ALGtopN(int *res, int *bid, lng *top);
 str
 ALGtopN(int *res, int *bid, lng *top)
 {
@@ -1919,7 +1919,7 @@ ALGtopN(int *res, int *bid, lng *top)
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str ALGgroupby(int *res, int *bid);
+algebra_export str ALGgroupby(int *res, int *bid);
 str
 ALGgroupby(int *res, int *bid)
 {
@@ -1942,7 +1942,7 @@ ALGgroupby(int *res, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGcard(lng *result, int *bid);
+algebra_export str ALGcard(lng *result, int *bid);
 str
 ALGcard(lng *result, int *bid)
 {
@@ -1961,7 +1961,7 @@ ALGcard(lng *result, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGBATminimum(ptr *result, int *bid);
+algebra_export str ALGBATminimum(ptr *result, int *bid);
 str
 ALGBATminimum(ptr *result, int *bid)
 {
@@ -1975,7 +1975,7 @@ ALGBATminimum(ptr *result, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGBATmaximum(ptr *result, int *bid);
+algebra_export str ALGBATmaximum(ptr *result, int *bid);
 str
 ALGBATmaximum(ptr *result, int *bid)
 {
@@ -1989,7 +1989,7 @@ ALGBATmaximum(ptr *result, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGselect1(int *result, int *bid, ptr value);
+algebra_export str ALGselect1(int *result, int *bid, ptr value);
 str
 ALGselect1(int *result, int *bid, ptr value)
 {
@@ -2010,7 +2010,7 @@ ALGselect1(int *result, int *bid, ptr value)
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-mal_export str ALGselect1Head(int *result, int *bid, ptr value);
+algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
 str
 ALGselect1Head(int *result, int *bid, ptr value)
 {
@@ -2033,7 +2033,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-mal_export str ALGuselect1(int *result, int *bid, ptr value);
+algebra_export str ALGuselect1(int *result, int *bid, ptr value);
 str
 ALGuselect1(int *result, int *bid, ptr value)
 {
@@ -2054,7 +2054,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 	return throwMessage("algebra.uselect", "GDKerror");
 }
 
-mal_export str ALGselect(int *result, int *bid, ptr low, ptr high);
+algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
 str
 ALGselect(int *result, int *bid, ptr low, ptr high)
 {
@@ -2076,7 +2076,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-mal_export str ALGselectHead(int *result, int *bid, ptr low, ptr high);
+algebra_export str ALGselectHead(int *result, int *bid, ptr low, ptr high);
 str
 ALGselectHead(int *result, int *bid, ptr low, ptr high)
 {
@@ -2100,7 +2100,7 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-mal_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
+algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
 str
 ALGuselect(int *result, int *bid, ptr low, ptr high)
 {
@@ -2122,7 +2122,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	return throwMessage("algebra.uselect", "GDKerror");
 }
 
-mal_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
+algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 str
 ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 {
@@ -2144,7 +2144,7 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-mal_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
+algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 str
 ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 {
@@ -2168,7 +2168,7 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-mal_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
+algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 str
 ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 {
@@ -2190,7 +2190,7 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	return throwMessage("algebra.uselect", "GDKerror");
 }
 
-mal_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
+algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
 str
 ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 {
@@ -2214,7 +2214,7 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	return throwMessage("algebra.fragment", "GDKerror");
 }
 
-mal_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
+algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 str
 ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 {
@@ -2245,14 +2245,14 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 	return throwMessage("algebra.thetajoin", "GDKerror");
 }
 
-mal_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
+algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 str
 ALGthetajoin(int *result, int *lid, int *rid, int *opc)
 {
 	return ALGthetajoinEstimate(result, lid, rid, opc, (ptr)&lng_nil);
 }
 
-mal_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
+algebra_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
 str
 ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 {
@@ -2280,7 +2280,7 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 @-
 Let cut this text down with some Mx macro's
 @= ALGunary
-mal_export str ALG@1(int *result, int *bid);
+algebra_export str ALG@1(int *result, int *bid);
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -2297,7 +2297,7 @@ str ALG@1(int *result, int *bid) {
 	return throwMessage("algebra.@1", "GDKerror");
 }
 @= ALGunaryint
-mal_export str ALG@1(int *result, int *bid);
+algebra_export str ALG@1(int *result, int *bid);
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn= NULL;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -2314,7 +2314,7 @@ str ALG@1(int *result, int *bid) {
 	return MAL_SUCCEED;
 }
 @= ALGbinary
-mal_export str ALG@1(int *result, int *lid, int *rid) ;
+algebra_export str ALG@1(int *result, int *lid, int *rid) ;
 str ALG@1(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn= NULL;
 	if( (left= BATdescriptor(*lid)) == NULL ){
@@ -2336,7 +2336,7 @@ str ALG@1(int *result, int *lid, int *rid) {
 	return throwMessage("algebra.@1", "GDKerror");
 }
 @= ALGbinaryint
-mal_export str ALG@1(int *result, int* bid, int *param) ;
+algebra_export str ALG@1(int *result, int* bid, int *param) ;
 str ALG@1(int *result, int* bid, int *param) {
 	BAT *b, *bn= NULL;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -2353,7 +2353,7 @@ str ALG@1(int *result, int* bid, int *param) {
 	return throwMessage("algebra.@1", "GDKerror");
 }
 @= ALGbinaryestimate
-mal_export str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate);
+algebra_export str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate);
 str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	BAT *left, *right,*bn=NULL;
 	if( (left= BATdescriptor(*lid)) == NULL ){
@@ -2379,7 +2379,7 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	}
 	return throwMessage("algebra.@1", "GDKerror");
 }
-mal_export str ALG@1(int *result, int* lid, int *rid);
+algebra_export str ALG@1(int *result, int* lid, int *rid);
 str ALG@1(int *result, int* lid, int *rid) {
 	lng estimate= lng_nil;
 	return ALG@1estimate(result,lid,rid,&estimate);
@@ -2408,7 +2408,7 @@ str ALG@1(int *result, int* lid, int *rid) {
 @:ALGbinaryint(sample)@
 
 /* add item missing in the kernel */
-mal_export str ALGtunique(int *result, int *bid);
+algebra_export str ALGtunique(int *result, int *bid);
 str
 ALGtunique(int *result, int *bid)
 {
@@ -2429,7 +2429,7 @@ ALGtunique(int *result, int *bid)
 	return throwMessage("algebra.tunique", "GDKerror");
 }
 
-mal_export str ALGtsort(int *result, int *bid);
+algebra_export str ALGtsort(int *result, int *bid);
 str
 ALGtsort(int *result, int *bid)
 {
@@ -2449,7 +2449,7 @@ ALGtsort(int *result, int *bid)
 	}
 	return throwMessage("algebra.tsort", "GDKerror");
 }
-mal_export str ALGtsort_rev(int *result, int *bid);
+algebra_export str ALGtsort_rev(int *result, int *bid);
 str
 ALGtsort_rev(int *result, int *bid)
 {
@@ -2470,7 +2470,7 @@ ALGtsort_rev(int *result, int *bid)
 	return throwMessage("algebra.tsort", "GDKerror");
 }
 
-mal_export str ALGhsort(int *result, int *bid);
+algebra_export str ALGhsort(int *result, int *bid);
 str
 ALGhsort(int *result, int *bid)
 {
@@ -2490,7 +2490,7 @@ ALGhsort(int *result, int *bid)
 	return throwMessage("algebra.hsort", "GDKerror");
 }
 
-mal_export str ALGhsort_rev(int *result, int *bid);
+algebra_export str ALGhsort_rev(int *result, int *bid);
 str
 ALGhsort_rev(int *result, int *bid)
 {
@@ -2509,7 +2509,7 @@ ALGhsort_rev(int *result, int *bid)
 	}
 	return throwMessage("algebra.tsort", "GDKerror");
 }
-mal_export str ALGhtsort(int *result, int *lid);
+algebra_export str ALGhtsort(int *result, int *lid);
 str
 ALGhtsort(int *result, int *lid)
 {
@@ -2534,7 +2534,7 @@ ALGhtsort(int *result, int *lid)
 	return throwMessage("algebra.htsort", "GDKerror: tsort failed");
 }
 
-mal_export str ALGthsort(int *result, int *lid);
+algebra_export str ALGthsort(int *result, int *lid);
 str
 ALGthsort(int *result, int *lid)
 {
@@ -2560,7 +2560,7 @@ ALGthsort(int *result, int *lid)
 	return throwMessage("algebra.thsort", "GDKerror: tsort failed");
 }
 
-mal_export str ALGssort(int *result, int *bid);
+algebra_export str ALGssort(int *result, int *bid);
 str
 ALGssort(int *result, int *bid)
 {
@@ -2580,7 +2580,7 @@ ALGssort(int *result, int *bid)
 	return throwMessage("algebra.ssort", "GDKerror");
 }
 
-mal_export str ALGssort_rev(int *result, int *bid);
+algebra_export str ALGssort_rev(int *result, int *bid);
 str
 ALGssort_rev(int *result, int *bid)
 {
@@ -2600,7 +2600,7 @@ ALGssort_rev(int *result, int *bid)
 	return throwMessage("algebra.ssort_rev", "GDKerror");
 }
 
-mal_export str ALGrevert(int *result, int *bid);
+algebra_export str ALGrevert(int *result, int *bid);
 str
 ALGrevert(int *result, int *bid)
 {
@@ -2617,7 +2617,7 @@ ALGrevert(int *result, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGcount_bat(int *result, int *bid);
+algebra_export str ALGcount_bat(int *result, int *bid);
 str
 ALGcount_bat(int *result, int *bid)
 {
@@ -2633,7 +2633,7 @@ ALGcount_bat(int *result, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGcount_nil(int *result, int *bid, bit *ignore_nils);
+algebra_export str ALGcount_nil(int *result, int *bid, bit *ignore_nils);
 str
 ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 {
@@ -2652,7 +2652,7 @@ ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGcount_no_nil(int *result, int *bid);
+algebra_export str ALGcount_no_nil(int *result, int *bid);
 str
 ALGcount_no_nil(int *result, int *bid)
 {
@@ -2661,7 +2661,7 @@ ALGcount_no_nil(int *result, int *bid)
 	return ALGcount_nil(result, bid, &ignore_nils);
 }
 
-mal_export str ALGtmark(int *result, int *bid, oid *base);
+algebra_export str ALGtmark(int *result, int *bid, oid *base);
 str
 ALGtmark(int *result, int *bid, oid *base)
 {
@@ -2681,7 +2681,7 @@ ALGtmark(int *result, int *bid, oid *base)
 	return throwMessage("algebra.markT", "marking group failed");
 }
 
-mal_export str ALGtmark_default(int *result, int *bid);
+algebra_export str ALGtmark_default(int *result, int *bid);
 str
 ALGtmark_default(int *result, int *bid)
 {
@@ -2690,7 +2690,7 @@ ALGtmark_default(int *result, int *bid)
 	return ALGtmark(result, bid, &o);
 }
 
-mal_export str ALGmarkHead(int *result, int *bid, oid *base);
+algebra_export str ALGmarkHead(int *result, int *bid, oid *base);
 str
 ALGmarkHead(int *result, int *bid, oid *base)
 {
@@ -2712,7 +2712,7 @@ ALGmarkHead(int *result, int *bid, oid *base)
 	return throwMessage("algebra.markH", "marking group failed");
 }
 
-mal_export str ALGmarkHead_default(int *result, int *bid);
+algebra_export str ALGmarkHead_default(int *result, int *bid);
 str
 ALGmarkHead_default(int *result, int *bid)
 {
@@ -2721,7 +2721,7 @@ ALGmarkHead_default(int *result, int *bid)
 	return ALGmarkHead(result, bid, &o);
 }
 
-mal_export str ALGhashsplit(int *result, int *bid, int *nfrag);
+algebra_export str ALGhashsplit(int *result, int *bid, int *nfrag);
 str
 ALGhashsplit(int *result, int *bid, int *nfrag)
 {
@@ -2741,7 +2741,7 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 	return throwMessage("algebra.hashsplit", "GDKerror");
 }
 
-mal_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
+algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 str
 ALGuhashsplit(int *result, int *bid, int *nfrag)
 {
@@ -2761,7 +2761,7 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 	return throwMessage("algebra.uhashsplit", "GDKerror");
 }
 
-mal_export str ALGrangesplit(int *result, int *bid, int *nfrag);
+algebra_export str ALGrangesplit(int *result, int *bid, int *nfrag);
 str
 ALGrangesplit(int *result, int *bid, int *nfrag)
 {
@@ -2781,7 +2781,7 @@ ALGrangesplit(int *result, int *bid, int *nfrag)
 	return throwMessage("algebra.rangesplit", "GDKerror");
 }
 
-mal_export str ALGurangesplit(int *result, int *bid, int *nfrag);
+algebra_export str ALGurangesplit(int *result, int *bid, int *nfrag);
 str
 ALGurangesplit(int *result, int *bid, int *nfrag)
 {
@@ -2801,7 +2801,7 @@ ALGurangesplit(int *result, int *bid, int *nfrag)
 	return throwMessage("algebra.urangesplit", "GDKerror");
 }
 
-mal_export str ALGhistogram_rev(int *result, int *bid);
+algebra_export str ALGhistogram_rev(int *result, int *bid);
 str
 ALGhistogram_rev(int *result, int *bid)
 {
@@ -2822,7 +2822,7 @@ ALGhistogram_rev(int *result, int *bid)
 	return throwMessage("algebra.histogram", "GDKerror");
 }
 
-mal_export str ALGlike(int *ret, int *bid, str *k);
+algebra_export str ALGlike(int *ret, int *bid, str *k);
 str
 ALGlike(int *ret, int *bid, str *k)
 {
@@ -2842,7 +2842,7 @@ ALGlike(int *ret, int *bid, str *k)
 	return throwMessage("algebra.like", "GDKerror");
 }
 
-mal_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
+algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
 str
 ALGslice(int *ret, bat *bid, lng *start, lng *end)
 {
@@ -2862,7 +2862,7 @@ ALGslice(int *ret, bat *bid, lng *start, lng *end)
 	return throwMessage("algebra.slice", "GDKerror");
 }
 
-mal_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
+algebra_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
 str
 ALGslice_int(int *ret, bat *bid, int *start, int *end)
 {
@@ -2874,7 +2874,7 @@ ALGslice_int(int *ret, bat *bid, int *start, int *end)
 
 @- BUN Get/Fetch
 @c
-mal_export str ALGposition(int *retval, int *bid, ptr val);
+algebra_export str ALGposition(int *retval, int *bid, ptr val);
 str
 ALGposition(int *retval, int *bid, ptr val)
 {
@@ -2889,7 +2889,7 @@ ALGposition(int *retval, int *bid, ptr val)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval);
+algebra_export str ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval);
 str
 ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval)
 {
@@ -2905,7 +2905,7 @@ ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval)
 	return MAL_SUCCEED;
 }
 
-mal_export str doALGfetch(ptr ret, BAT *b, lng *pos);
+algebra_export str doALGfetch(ptr ret, BAT *b, lng *pos);
 str
 doALGfetch(ptr ret, BAT *b, lng *pos)
 {
@@ -2947,7 +2947,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGfetch(ptr ret, int *bid, lng *pos);
+algebra_export str ALGfetch(ptr ret, int *bid, lng *pos);
 str
 ALGfetch(ptr ret, int *bid, lng *pos)
 {
@@ -2962,7 +2962,7 @@ ALGfetch(ptr ret, int *bid, lng *pos)
 	return msg;
 }
 
-mal_export str ALGfetchoid(int *ret, int *bid, oid *pos);
+algebra_export str ALGfetchoid(int *ret, int *bid, oid *pos);
 str
 ALGfetchoid(int *ret, int *bid, oid *pos)
 {
@@ -2972,7 +2972,7 @@ ALGfetchoid(int *ret, int *bid, oid *pos)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGfetchint(int *ret, int *bid, int *pos);
+algebra_export str ALGfetchint(int *ret, int *bid, int *pos);
 str
 ALGfetchint(int *ret, int *bid, int *pos)
 {
@@ -2981,7 +2981,7 @@ ALGfetchint(int *ret, int *bid, int *pos)
 	return ALGfetch(ret, bid, &o);
 }
 
-mal_export str ALGfetchbat(int *ret, int *bid, int *sid);
+algebra_export str ALGfetchbat(int *ret, int *bid, int *sid);
 str
 ALGfetchbat(int *ret, int *bid, int *sid)
 {
@@ -3008,7 +3008,7 @@ ALGfetchbat(int *ret, int *bid, int *sid)
 
 }
 
-mal_export str ALGexist(bit *ret, int *bid, ptr val);
+algebra_export str ALGexist(bit *ret, int *bid, ptr val);
 str
 ALGexist(bit *ret, int *bid, ptr val)
 {
@@ -3023,7 +3023,7 @@ ALGexist(bit *ret, int *bid, ptr val)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval);
+algebra_export str ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval);
 str
 ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
 {
@@ -3039,7 +3039,7 @@ ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGfind(ptr ret, int *bid, ptr val);
+algebra_export str ALGfind(ptr ret, int *bid, ptr val);
 str
 ALGfind(ptr ret, int *bid, ptr val)
 {
@@ -3058,7 +3058,7 @@ ALGfind(ptr ret, int *bid, ptr val)
 }
 
 
-mal_export str ALGhashjoin(int *result, int *lid, int *rid);
+algebra_export str ALGhashjoin(int *result, int *lid, int *rid);
 str
 ALGhashjoin(int *result, int *lid, int *rid)
 {
@@ -3092,7 +3092,7 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	return throwMessage("algebra.hashjoin", "can not perform a hashjoin");
 }
 
-mal_export str ALGmergejoin(int *result, int *lid, int *rid);
+algebra_export str ALGmergejoin(int *result, int *lid, int *rid);
 str
 ALGmergejoin(int *result, int *lid, int *rid)
 {
@@ -3122,7 +3122,7 @@ ALGmergejoin(int *result, int *lid, int *rid)
 	return throwMessage("algebra.mergejoin", "can not perform a mergejoin");
 }
 
-mal_export str ALGindexjoin(int *result, int *lid, int *rid);
+algebra_export str ALGindexjoin(int *result, int *lid, int *rid);
 str
 ALGindexjoin(int *result, int *lid, int *rid)
 {

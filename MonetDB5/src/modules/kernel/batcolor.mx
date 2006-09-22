@@ -103,6 +103,16 @@ comment	"Extracts Cb(blue color) component from a color atom";
 #include <color.h>
 #include "mal_exception.h"
 
+#ifdef WIN32
+#ifndef LIBBATCOLOR
+#define batcolor_export extern __declspec(dllimport)
+#else
+#define batcolor_export extern __declspec(dllexport)
+#endif
+#else
+#define batcolor_export extern
+#endif
+
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
 #endif
@@ -136,7 +146,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 	BBPkeepref(*(X));\
 	BBPreleaseref(Z->batCacheid);
 @= BATwalk
-mal_export str CLRbat@1(int *ret, int *l);
+batcolor_export str CLRbat@1(int *ret, int *l);
 str CLRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
@@ -187,7 +197,7 @@ bunins_failed:
 A few triple versions.
 
 @= BATwalk3
-mal_export str CLRbat@1(int *ret, int *l, int *bid2, int *bid3);
+batcolor_export str CLRbat@1(int *ret, int *l, int *bid2, int *bid3);
 str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 {   BAT *bn, *b2,*b3, *b;
 	BUN p,q,p2,p3;

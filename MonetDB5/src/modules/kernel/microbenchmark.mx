@@ -38,8 +38,18 @@ comment "Create a BAT with a normal integer distribution";
 #ifdef _MBM_H_
 #include <mal.h>
 
-mal_export str MBMuniform(int *ret, oid *base, int *size, int *domain);
-mal_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean);
+#ifdef WIN32
+#ifndef LIBMICROBENCHMARK
+#define mb_export extern __declspec(dllimport)
+#else
+#define mb_export extern __declspec(dllexport)
+#endif
+#else
+#define mb_export extern
+#endif
+
+mb_export str MBMuniform(int *ret, oid *base, int *size, int *domain);
+mb_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean);
 
 #endif /* _MBM_H_ */
 @c

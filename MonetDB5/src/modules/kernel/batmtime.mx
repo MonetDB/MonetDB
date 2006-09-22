@@ -54,6 +54,16 @@ comment "Compare a bat of @1 against a singleton";
 #include "mal_exception.h"
 #include "mtime.h"
 
+#ifdef WIN32
+#ifndef LIBBATMTIME
+#define batmtime_export extern __declspec(dllimport)
+#else
+#define batmtime_export extern __declspec(dllexport)
+#endif
+#else
+#define batmtime_export extern
+#endif
+
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
 		return throwMessage("batstr." Z, "Cannot access descriptor");
@@ -99,8 +109,8 @@ implementation for shifted window arithmetic as well.
 	return throwMessage("batcalc.@3", "requires bats of identical size");
 
 @= implDef
-mal_export str MTIME@1bat_@3(int *ret, int *l, @1 *r);
-mal_export str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst);
+batmtime_export str MTIME@1bat_@3(int *ret, int *l, @1 *r);
+batmtime_export str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst);
 
 @= implCmpOp
 str MTIME@1bat_@3(int *ret, int *l, int *r)

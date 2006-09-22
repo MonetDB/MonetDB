@@ -2098,9 +2098,20 @@ The remainder is a wrapper around the V4 code base.
 @c
 #include "mal.h"
 #include "mal_exception.h"
+
+#ifdef WIN32
+#ifndef LIBAGGR
+#define aggr_export extern __declspec(dllimport)
+#else
+#define aggr_export extern __declspec(dllexport)
+#endif
+#else
+#define aggr_export extern
+#endif
+
 @-
 @= AX3sum
-mal_export str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid);
+aggr_export str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid);
 str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	BAT *bn;
@@ -2127,7 +2138,7 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 @-
 
 @= AX3prod
-mal_export str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid);
+aggr_export str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid);
 str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
@@ -2170,7 +2181,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 
 @-
 @= AX3arithavg
-mal_export str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid);
+aggr_export str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid);
 str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
@@ -2203,7 +2214,7 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 
 @- "Extremes" (Min & Max)
 @= AX3extreme
-mal_export str AX3aggrX3_@1(int *ret, int *bid, int *eid);
+aggr_export str AX3aggrX3_@1(int *ret, int *bid, int *eid);
 str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	BAT *b, *e, *bn;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -2232,7 +2243,7 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 
 @- Count
 @c
-mal_export str AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils);
+aggr_export str AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils);
 str
 AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 {
@@ -2261,7 +2272,7 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 
 @- Size
 @c
-mal_export str AX3aggrX3_size(int *retid, int *bid, int *eid);
+aggr_export str AX3aggrX3_size(int *retid, int *bid, int *eid);
 str
 AX3aggrX3_size(int *retid, int *bid, int *eid)
 {
@@ -2290,7 +2301,7 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 
 @- Sum & Average & Prod	
 @= AX3arithsum3
-mal_export str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid);
+aggr_export str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid);
 str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g, *e;
 	BAT *bn;
@@ -2323,7 +2334,7 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 }
 @-
 @= AX3prod3
-mal_export str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid);
+aggr_export str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid);
 str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g, *e;
 	BAT *bn;
@@ -2372,7 +2383,7 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 @:AX3sumprod3(dbl,dbl)@
 
 @= AX3arithavg3
-mal_export str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid);
+aggr_export str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid);
 str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e;
 	BAT *bn;
@@ -2413,7 +2424,7 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 @- "Extremes" (Min & Max)
 @c
 @= AX3extreme3
-mal_export str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid);
+aggr_export str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid);
 str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e, *bn;
 
@@ -2447,7 +2458,7 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 @:AX3extreme3(min,<)@
 @:AX3extreme3(max,>)@
 
-mal_export str AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils);
+aggr_export str AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils);
 str
 AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 {
@@ -2483,7 +2494,7 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 @-
 The remainder contains the few MIL proc translations 
 @c
-mal_export str AX3aggrX3_count3Nils(int *retid, int *bid, int *gid, int *eid);
+aggr_export str AX3aggrX3_count3Nils(int *retid, int *bid, int *gid, int *eid);
 str
 AX3aggrX3_count3Nils(int *retid, int *bid, int *gid, int *eid)
 {
@@ -2491,7 +2502,7 @@ AX3aggrX3_count3Nils(int *retid, int *bid, int *gid, int *eid)
 	return AX3aggrX3_count3(retid, bid, gid, eid, &ignore_nils);
 }
 
-mal_export str AX3count_no_nil3(int *retid, int *bid, int *gid, int *eid);
+aggr_export str AX3count_no_nil3(int *retid, int *bid, int *gid, int *eid);
 str 
 AX3count_no_nil3(int *retid, int *bid, int *gid, int *eid)
 {
@@ -2499,7 +2510,7 @@ AX3count_no_nil3(int *retid, int *bid, int *gid, int *eid)
 	return AX3aggrX3_count3(retid, bid, gid, eid, &ignore_nils);
 }
 
-mal_export str AX3aggrX3_count2Nils(int *retid, int *bid, int *eid);
+aggr_export str AX3aggrX3_count2Nils(int *retid, int *bid, int *eid);
 str
 AX3aggrX3_count2Nils(int *retid, int *bid, int *eid)
 {
@@ -2507,7 +2518,7 @@ AX3aggrX3_count2Nils(int *retid, int *bid, int *eid)
 	return AX3aggrX3_count(retid, bid, eid, &ignore_nils);
 }
 
-mal_export str AX3count_no_nil2(int *retid, int *bid, int *eid);
+aggr_export str AX3count_no_nil2(int *retid, int *bid, int *eid);
 str
 AX3count_no_nil2(int *retid, int *bid, int *eid)
 {

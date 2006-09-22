@@ -96,18 +96,28 @@ const.prelude();
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 
-mal_export str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef WIN32
+#ifndef LIBCONST
+#define const_export extern __declspec(dllimport)
+#else
+#define const_export extern __declspec(dllexport)
+#endif
+#else
+#define const_export extern
+#endif
+
+const_export str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _CONST_H */
 @- Module initializaton
 The content of this box my only be changed by the Administrator.

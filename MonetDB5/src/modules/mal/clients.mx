@@ -88,29 +88,39 @@ detailed information.
 #define _CLIENTS_H
 #include "mal.h"
 
-mal_export str CLTsetListing(int *ret, int *flag);
-mal_export str CLTgetClientId(int *ret);
-mal_export str CLTgetScenario(str *ret);
-mal_export str CLTsetScenario(str *ret, str *nme);
-mal_export str CLTusers(int *ret);
-mal_export str CLTsetHistory(int *ret, str *fname);
-mal_export str CLTexit(int *ret);
-mal_export str CLTquit(int *ret, int *timeout);
-mal_export str CLTquitDefault(int *ret);
-mal_export str CLTLogin(int *ret);
-mal_export str CLTInfo(int *ret);
+#ifdef WIN32
+#ifndef LIBCLIENTS
+#define clients_export extern __declspec(dllimport)
+#else
+#define clients_export extern __declspec(dllexport)
+#endif
+#else
+#define clients_export extern
+#endif
 
-mal_export str CLTtrace(int *res, int *flg);
-mal_export str CLTstop(int *ret, str *nme);
+clients_export str CLTsetListing(int *ret, int *flag);
+clients_export str CLTgetClientId(int *ret);
+clients_export str CLTgetScenario(str *ret);
+clients_export str CLTsetScenario(str *ret, str *nme);
+clients_export str CLTusers(int *ret);
+clients_export str CLTsetHistory(int *ret, str *fname);
+clients_export str CLTexit(int *ret);
+clients_export str CLTquit(int *ret, int *timeout);
+clients_export str CLTquitDefault(int *ret);
+clients_export str CLTLogin(int *ret);
+clients_export str CLTInfo(int *ret);
 
-mal_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
-mal_export str CLTremoveUser(int *ret, str *usr);
-mal_export str CLTchangePassword(int *ret, str *old, str *new);
-mal_export str CLTsetPassword(int *ret, str *usr, str *new);
-mal_export str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc);
-mal_export str CLTaddScenario(int *ret, str *usr, str *sc);
-mal_export str CLTremoveScenario(int *ret, str *usr, str *sc);
-mal_export str CLTgetUsers(bat *ret, bat *scens);
+clients_export str CLTtrace(int *res, int *flg);
+clients_export str CLTstop(int *ret, str *nme);
+
+clients_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
+clients_export str CLTremoveUser(int *ret, str *usr);
+clients_export str CLTchangePassword(int *ret, str *old, str *new);
+clients_export str CLTsetPassword(int *ret, str *usr, str *new);
+clients_export str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc);
+clients_export str CLTaddScenario(int *ret, str *usr, str *sc);
+clients_export str CLTremoveScenario(int *ret, str *usr, str *sc);
+clients_export str CLTgetUsers(bat *ret, bat *scens);
 
 #endif /* _CLIENTS_H */
 @c

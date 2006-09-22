@@ -335,6 +335,16 @@ ultra fast.
 
 /*#define DEBUG_CRACKERS*/
 
+#ifdef WIN32
+#ifndef LIBCRACKERS
+#define crackers_export extern __declspec(dllimport)
+#else
+#define crackers_export extern __declspec(dllexport)
+#endif
+#else
+#define crackers_export extern
+#endif
+
 typedef struct {
 	int bid;   /* the cracked bat */
 	int cbid;  /* the copy on which we actually crack */
@@ -366,21 +376,21 @@ typedef struct {
 	bit 		mergeFromTheEnd;
 } CrackTreeIndex;
 
-mal_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
-mal_export str CRKselectValue(int *vid, int *bid, int *value);
-mal_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
-mal_export str CRKuselectValue(int *vid, int *bid, int *value);
+crackers_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
+crackers_export str CRKselectValue(int *vid, int *bid, int *value);
+crackers_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
+crackers_export str CRKuselectValue(int *vid, int *bid, int *value);
 
-mal_export str CRKprintCrackerIndex(int *k, int *bid);
-mal_export str CRKprintCrackerBAT(int *k, int *bid);
-mal_export str CRKprintCrackerInsertions(int *k, int *bid);
-mal_export str CRKmergeInsertions_Forget(int *k, int *bid, int *new);
-mal_export str CRKmergeInsertions_OnNeed(int *k, int *bid, int *new, bit *deleteNodes);
-mal_export str CRKmergeInsertionsB_OnNeed(int *k, int *bid, int *new);
-mal_export str CRKmergeInsertions_OnNeedGradually(int *k, int *bid, int *new, bit *deleteNodes);
-mal_export str CRKmergeInsertionsB_OnNeedGradually(int *k, int *bid, int *new);
-mal_export str CRKmergeInsertions_OnNeedGraduallyRipple(int *k, int *bid, int *new, bit *deleteNodes);
-mal_export str CRKmergeInsertionsB_OnNeedGraduallyRipple(int *k, int *bid, int *new);
+crackers_export str CRKprintCrackerIndex(int *k, int *bid);
+crackers_export str CRKprintCrackerBAT(int *k, int *bid);
+crackers_export str CRKprintCrackerInsertions(int *k, int *bid);
+crackers_export str CRKmergeInsertions_Forget(int *k, int *bid, int *new);
+crackers_export str CRKmergeInsertions_OnNeed(int *k, int *bid, int *new, bit *deleteNodes);
+crackers_export str CRKmergeInsertionsB_OnNeed(int *k, int *bid, int *new);
+crackers_export str CRKmergeInsertions_OnNeedGradually(int *k, int *bid, int *new, bit *deleteNodes);
+crackers_export str CRKmergeInsertionsB_OnNeedGradually(int *k, int *bid, int *new);
+crackers_export str CRKmergeInsertions_OnNeedGraduallyRipple(int *k, int *bid, int *new, bit *deleteNodes);
+crackers_export str CRKmergeInsertionsB_OnNeedGraduallyRipple(int *k, int *bid, int *new);
 #endif /* _CRACKERS_H */
 
 @c
@@ -2798,14 +2808,14 @@ printf("\n -------Rippled %lld tuples \n", insDone+extendedIns);
 	return MAL_SUCCEED;
 }
 
-mal_export str CRKmergeInsertions_Force_@1(int *k, int *bid, int *new, bit *deleteNodes);
+crackers_export str CRKmergeInsertions_Force_@1(int *k, int *bid, int *new, bit *deleteNodes);
 str
 CRKmergeInsertions_Force_@1(int *k, int *bid, int *new, bit *deleteNodes){
 	(void) k;
 	return mergeInsertions_@1(bid, new, 0, *deleteNodes);
 }
 
-mal_export str CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new);
+crackers_export str CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new);
 str
 CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 	(void) k;
@@ -2853,7 +2863,7 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 	return MAL_SUCCEED;
 }
 
-mal_export str CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new);
+crackers_export str CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new);
 str
 CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new){
 	(void)k;
@@ -3235,7 +3245,7 @@ verifyCrackerIndex_@1(int *bid){
 	return MAL_SUCCEED;
 }
 
-mal_export str CRKverifyCrackerIndex_@1(int *k, int *bid);
+crackers_export str CRKverifyCrackerIndex_@1(int *k, int *bid);
 str
 CRKverifyCrackerIndex_@1(int *k, int *bid){
 	(void) k;		
@@ -4466,7 +4476,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 @
 
 @= SelectFunctions
-mal_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 str
 CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
 {		
@@ -4489,7 +4499,7 @@ CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit 
         return throwMessage("crackers.CRKselectBounds_@1", "case not handled");
 }
 
-mal_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 str
 CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
 {
@@ -4684,8 +4694,8 @@ JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isFor
 @
 
 @= JoinSelectFunctions
-mal_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
-mal_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
+crackers_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
+crackers_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
 
 str
 CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left)

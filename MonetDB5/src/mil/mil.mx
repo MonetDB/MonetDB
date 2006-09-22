@@ -68,7 +68,7 @@ mil.prelude();
 #include "mal_session.h"
 #include "mal_parser.h"
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBMIL
 #define mil_export extern __declspec(dllimport)
 #else

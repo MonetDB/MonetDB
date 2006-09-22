@@ -69,14 +69,24 @@ comment "Close a factory";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-mal_export str FCTgetPlants(int *ret);
-mal_export str FCTgetCaller(int *ret);
-mal_export str FCTgetOwners(int *ret);
-mal_export str FCTgetTimeStampIn(int *ret);
-mal_export str FCTgetTimeStampOut(int *ret);
-mal_export str FCTsetLocation(int *ret, str *loc);
-mal_export str FCTgetLocations(int *ret);
-mal_export str FCTshutdown(int *ret, str *mod, str *fcn);
+#ifdef WIN32
+#ifndef LIBFACTORY
+#define factory_export extern __declspec(dllimport)
+#else
+#define factory_export extern __declspec(dllexport)
+#endif
+#else
+#define factory_export extern
+#endif
+
+factory_export str FCTgetPlants(int *ret);
+factory_export str FCTgetCaller(int *ret);
+factory_export str FCTgetOwners(int *ret);
+factory_export str FCTgetTimeStampIn(int *ret);
+factory_export str FCTgetTimeStampOut(int *ret);
+factory_export str FCTsetLocation(int *ret, str *loc);
+factory_export str FCTgetLocations(int *ret);
+factory_export str FCTshutdown(int *ret, str *mod, str *fcn);
 #endif /* _FACTORY_H */
 @c
 #include "factory.h"

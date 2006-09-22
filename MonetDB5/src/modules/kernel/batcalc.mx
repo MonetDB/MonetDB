@@ -427,6 +427,16 @@ address CMDconvertvoid_oid_oid;
 #include "math.h"
 #include "mal_exception.h"
 
+#ifdef WIN32
+#ifndef LIBBATCALC
+#define batcalc_export extern __declspec(dllimport)
+#else
+#define batcalc_export extern __declspec(dllexport)
+#endif
+#else
+#define batcalc_export extern
+#endif
+
 #define NULLTST
 @-
 The accumulator operators are relatively straight forward,
@@ -566,7 +576,7 @@ The similar code base is produced for dealing with a constant argument.
 	}
 }
 @= arithmeticImpl
-mal_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
+batcalc_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 	char *res = MAL_SUCCEED;
@@ -599,7 +609,7 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	return res;
 }
 
-mal_export str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r);
+batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r);
 str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 	char *res = MAL_SUCCEED;
@@ -630,7 +640,7 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	return res;
 }
 
-mal_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
+batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -664,7 +674,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	BBPreleaseref(left->batCacheid);
 	return res;
 }
-mal_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -695,7 +705,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	return res;
 }
 
-mal_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
+batcalc_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -735,7 +745,7 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	BBPreleaseref(left->batCacheid);
 	return res;
 }
-mal_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
+batcalc_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
 str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -792,7 +802,7 @@ void bat@1filler(BAT *dst, @1 cst, size_t cap){
 	dst->tsorted = GDK_SORTED;
 	BBPkeepref(dst->batCacheid);
 }
-mal_export str CMDbat@1init(int *ret, int *l, @1 *cst);
+batcalc_export str CMDbat@1init(int *ret, int *l, @1 *cst);
 str CMDbat@1init(int *ret, int *l, @1 *cst) {
 	BAT *left, *dst;
 	if( (left= BATdescriptor(*l)) == NULL ){
@@ -811,7 +821,7 @@ str CMDbat@1init(int *ret, int *l, @1 *cst) {
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
-mal_export str CMD@1init_int(int *ret, int *size, @1 *cst);
+batcalc_export str CMD@1init_int(int *ret, int *size, @1 *cst);
 str CMD@1init_int(int *ret, int *size, @1 *cst) {
 	BAT *dst;
 	size_t s= *size;
@@ -825,7 +835,7 @@ str CMD@1init_int(int *ret, int *size, @1 *cst) {
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
-mal_export str CMD@1init_lng(int *ret, lng *size, @1 *cst);
+batcalc_export str CMD@1init_lng(int *ret, lng *size, @1 *cst);
 str CMD@1init_lng(int *ret, lng *size, @1 *cst) {
 	BAT *dst;
 	size_t s= (size_t) *size;
@@ -839,7 +849,7 @@ str CMD@1init_lng(int *ret, lng *size, @1 *cst) {
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
-mal_export str CMD@1init_sht(int *ret, sht *size, @1 *cst);
+batcalc_export str CMD@1init_sht(int *ret, sht *size, @1 *cst);
 str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 	BAT *dst;
 	size_t s= *size;
@@ -965,7 +975,7 @@ define here the necessary implementations separately by copying
 the arithmeticImpl block and removing elements not required.
 @c
 @= numeric_funcs
-mal_export str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right);
+batcalc_export str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right);
 str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right)
 {	size_t s1,s2,s3;
 	ptr p1,p2,p3, hend;
@@ -984,7 +994,7 @@ str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r);
+batcalc_export str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
@@ -1016,7 +1026,7 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 	return msg;
 }
 
-mal_export str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r);
+batcalc_export str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r);
 str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
@@ -1046,7 +1056,7 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	BBPreleaseref(right->batCacheid);
 	return msg;
 }
-mal_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
+batcalc_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -1078,7 +1088,7 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
+batcalc_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -1109,7 +1119,7 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	BBPreleaseref(left->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
+batcalc_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -1148,7 +1158,7 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	BBPreleaseref(left->batCacheid);
 	return res;
 }
-mal_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
+batcalc_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
 str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -1219,7 +1229,7 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 Unary accummulators are only indirectly called. They can not
 always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
-mal_export str CMDunaryAccum@1(int *ret,int *did, int *bid);
+batcalc_export str CMDunaryAccum@1(int *ret,int *did, int *bid);
 str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	BAT *b,*dst;
 	size_t s1,s2;
@@ -1250,7 +1260,7 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDunary@1(int *ret, int *bid);
+batcalc_export str CMDunary@1(int *ret, int *bid);
 str CMDunary@1(int *ret, int *bid){
 	BAT *b,*dst;
 	str msg;
@@ -1301,7 +1311,7 @@ The structure of this code is copied from the arithmetic scheme.
 		p2= (ptr)( ((char *)p2) + s2);
 	}
 @= compareImpl
-mal_export str compareaccum@1(BAT *dst, BAT *left, BAT *right);
+batcalc_export str compareaccum@1(BAT *dst, BAT *left, BAT *right);
 str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 	size_t s1,s2,s3;
 	ptr p1,p2,p3, hend;
@@ -1323,7 +1333,7 @@ str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 	}
 	return MAL_SUCCEED;
 }
-mal_export str CMDcmp@1(int *ret, int *l, int *r);
+batcalc_export str CMDcmp@1(int *ret, int *l, int *r);
 str CMDcmp@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 	size_t s1,xx;
@@ -1364,7 +1374,7 @@ bunins_failed:
 	return msg;
 }
 
-mal_export str CMDcmpaccum@1(int *ret, int *d, int *l, int *r);
+batcalc_export str CMDcmpaccum@1(int *ret, int *d, int *l, int *r);
 str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
@@ -1395,7 +1405,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 	return msg;
 }
 @= cmpCstImpl
-mal_export str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst);
+batcalc_export str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst);
 str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	size_t s1,s2;
@@ -1431,7 +1441,7 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDcmp@1cst(int *ret, int *l, void *cst);
+batcalc_export str CMDcmp@1cst(int *ret, int *l, void *cst);
 str CMDcmp@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	size_t s1,xx;
@@ -1488,7 +1498,7 @@ The expanded code for the binary and boolean operations.
 @:cmpCstImpl(AND,&&)@
 @:cmpCstImpl(OR,||)@
 
-mal_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
+batcalc_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
 str
 CMDbitbataccumNOT(int *ret, int *d, int *l)
 {
@@ -1525,7 +1535,7 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbitbatNOT(int *ret, int *l);
+batcalc_export str CMDbitbatNOT(int *ret, int *l);
 str
 CMDbitbatNOT(int *ret, int *l)
 {
@@ -1574,7 +1584,7 @@ The different coercion implementations exploit the fact
 that many coercions are simply space enlargers.
 The others effectively may loose information.
 @= Idempotent
-mal_export str CMDconvert@1_@1(int *ret, int *bid);
+batcalc_export str CMDconvert@1_@1(int *ret, int *bid);
 str CMDconvert@1_@1(int *ret, int *bid){
 	BAT *b, *bn;
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1591,7 +1601,7 @@ str CMDconvert@1_@1(int *ret, int *bid){
 }
 @-
 @= Enlarge
-mal_export str CMDconvert@1_@2Enlarge(int *ret, int *bid);
+batcalc_export str CMDconvert@1_@2Enlarge(int *ret, int *bid);
 str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
@@ -1625,7 +1635,7 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 @= General
-mal_export str CMDconvert@1_@2(int *ret, int *bid);
+batcalc_export str CMDconvert@1_@2(int *ret, int *bid);
 str CMDconvert@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
@@ -1716,7 +1726,7 @@ The lengthly list of coercions options could have been generated.
 @:General(dbl,oid)@
 
 @h
-mal_export str CMDconvertstr_int(int *ret, int *bid);
+batcalc_export str CMDconvertstr_int(int *ret, int *bid);
 @c
 str
 CMDconvertstr_int(int *ret, int *bid)
@@ -1751,7 +1761,7 @@ CMDconvertstr_int(int *ret, int *bid)
 }
 
 @h
-mal_export str CMDconvertOIDclass(int *ret, int *bid);
+batcalc_export str CMDconvertOIDclass(int *ret, int *bid);
 @c
 str
 CMDconvertOIDclass(int *ret, int *bid)
@@ -1770,7 +1780,7 @@ CMDconvertOIDclass(int *ret, int *bid)
 /* You don;t have to materialize the oids.
 This is taken care upon access */
 @h
-mal_export str CMDconvertvoid_oid_oid(int *ret, int *bid);
+batcalc_export str CMDconvertvoid_oid_oid(int *ret, int *bid);
 @c
 str
 CMDconvertvoid_oid_oid(int *ret, int *bid)
@@ -1787,7 +1797,7 @@ CMDconvertvoid_oid_oid(int *ret, int *bid)
 }
 
 @h
-mal_export str CMDconvertvoid_int_oid(int *ret, int *bid);
+batcalc_export str CMDconvertvoid_int_oid(int *ret, int *bid);
 @c
 str
 CMDconvertvoid_int_oid(int *ret, int *bid)
@@ -1838,7 +1848,7 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 #endif
 
 }
-mal_export str CMDconvertstr_bit(int *ret, int *bid);
+batcalc_export str CMDconvertstr_bit(int *ret, int *bid);
 str
 CMDconvertstr_bit(int *ret, int *bid)
 {
@@ -1879,7 +1889,7 @@ CMDconvertstr_bit(int *ret, int *bid)
 @- IfThenElse
 The conditional multiplex operations .
 @c
-mal_export str CMDifThen(int *ret, int *iid, int *tid);
+batcalc_export str CMDifThen(int *ret, int *iid, int *tid);
 str
 CMDifThen(int *ret, int *iid, int *tid)
 {
@@ -1932,7 +1942,7 @@ CMDifThen(int *ret, int *iid, int *tid)
 @-
 The constant versions are typed by the parser
 @= ifthencstImpl
-mal_export str CMDifThenCst_@1(int *ret, int *iid, ptr *eid);
+batcalc_export str CMDifThenCst_@1(int *ret, int *iid, ptr *eid);
 str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 	BAT *ib, *bn;
 	int xx;
@@ -1971,7 +1981,7 @@ bunins_failed:
 	BBPreleaseref(ib->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid);
+batcalc_export str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid);
 str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 	BAT *ib, *bn;
 	int xx;
@@ -2009,7 +2019,7 @@ bunins_failed:
 	BBPreleaseref(ib->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDprojecthead_@1(int *ret,ptr *val, int *iid);
+batcalc_export str CMDprojecthead_@1(int *ret,ptr *val, int *iid);
 str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 	BAT *ib, *bn;
 	int xx;
@@ -2032,7 +2042,7 @@ bunins_failed:
 	BBPreleaseref(ib->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDprojecttail_@1(int *ret,int *iid, ptr *val);
+batcalc_export str CMDprojecttail_@1(int *ret,int *iid, ptr *val);
 str CMDprojecttail_@1(int *ret,int *iid, ptr *val){
 	BAT *ib, *bn;
 	int xx;
@@ -2068,7 +2078,7 @@ bunins_failed:
 @:ifthencstImpl(chr)@
 @:ifthencstImpl(bit)@
 
-mal_export str CMDifThenElse(int *ret, int *iid, int *tid, int *eid);
+batcalc_export str CMDifThenElse(int *ret, int *iid, int *tid, int *eid);
 str
 CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 {
@@ -2124,7 +2134,7 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid);
+batcalc_export str CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid);
 str
 CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 {
@@ -2175,7 +2185,7 @@ CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val);
+batcalc_export str CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val);
 str
 CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 {

@@ -368,12 +368,12 @@ pre presented on the screen directly.
 
 #ifdef NATIVE_WIN32
 #ifndef LIBTABLET
-#define t_export extern __declspec(dllimport)
+#define tablet_export extern __declspec(dllimport)
 #else
-#define t_export extern __declspec(dllexport)
+#define tablet_export extern __declspec(dllexport)
 #endif
 #else
-#define t_export extern
+#define tablet_export extern
 #endif
 
 typedef ptr *(*frStr) (void *extra, int type, char *s, char *e, char quote);
@@ -431,16 +431,6 @@ typedef struct Table_t {
 	Column columns[1];
 } Tablet;
 
-#ifdef _MSC_VER
-#ifndef LIBTABLET
-#define tablet_export extern __declspec(dllimport)
-#else
-#define tablet_export extern __declspec(dllexport)
-#endif
-#else
-#define tablet_export extern
-#endif
-
 tablet_export BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
 tablet_export BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr);
 tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
@@ -469,60 +459,60 @@ tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, p
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat
 
-t_export str TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABsetProperties(int *ret, str *prop);
-t_export str TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABfinishReport(int *ret);
-t_export str TABsetStream(int *ret, stream **s);
-t_export str TABsetPivot(int *ret, int *bid);
-t_export str TABsetDelimiter(int *ret, str *sep);
-t_export str TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-t_export str TABsetColumnName(int *ret, int *idx, str *s);
-t_export str TABsetTableBracket(int *ret, str *lbrk, str *rbrk);
-t_export str TABsetRowBracket(int *ret, str *lbrk, str *rbrk);
-t_export str TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk);
-t_export str TABsetColumnNull(int *ret, int *idx, str *nullstr);
-t_export str TABsetColumnWidth(int *ret, int *idx, int *width);
-t_export str TABsetColumnPosition(int *ret, int *idx, int *first, int *width);
+tablet_export str TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetProperties(int *ret, str *prop);
+tablet_export str TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABfinishReport(int *ret);
+tablet_export str TABsetStream(int *ret, stream **s);
+tablet_export str TABsetPivot(int *ret, int *bid);
+tablet_export str TABsetDelimiter(int *ret, str *sep);
+tablet_export str TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnName(int *ret, int *idx, str *s);
+tablet_export str TABsetTableBracket(int *ret, str *lbrk, str *rbrk);
+tablet_export str TABsetRowBracket(int *ret, str *lbrk, str *rbrk);
+tablet_export str TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk);
+tablet_export str TABsetColumnNull(int *ret, int *idx, str *nullstr);
+tablet_export str TABsetColumnWidth(int *ret, int *idx, int *width);
+tablet_export str TABsetColumnPosition(int *ret, int *idx, int *first, int *width);
 
-t_export str TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec);
-t_export str TABfirstPage(int *ret);
-t_export str TABlastPage(int *ret);
-t_export str TABnextPage(int *ret);
-t_export str TABprevPage(int *ret);
-t_export str TABgetPage(int *ret, int *pnr);
-t_export str TABgetPageCnt(int *ret);
-t_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
-t_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
-t_export void TABLETdestroy_format(Tablet * as);
-t_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-t_export int TABLETcreate_bats(Tablet * as);
-t_export BAT * TABLETcollect_bats(Tablet * as);
-t_export int TABLETload_file(Tablet * as, bstream *b, stream *out);
-t_export BAT * TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
-t_export BAT * TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr);
-t_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
-t_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
-t_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
-t_export int init_tablet(int *debug);
-t_export int tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *nr);
-t_export int tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void
+tablet_export str TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec);
+tablet_export str TABfirstPage(int *ret);
+tablet_export str TABlastPage(int *ret);
+tablet_export str TABnextPage(int *ret);
+tablet_export str TABprevPage(int *ret);
+tablet_export str TABgetPage(int *ret, int *pnr);
+tablet_export str TABgetPageCnt(int *ret);
+tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
+tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
+tablet_export void TABLETdestroy_format(Tablet * as);
+tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
+tablet_export int TABLETcreate_bats(Tablet * as);
+tablet_export BAT * TABLETcollect_bats(Tablet * as);
+tablet_export int TABLETload_file(Tablet * as, bstream *b, stream *out);
+tablet_export BAT * TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
+tablet_export BAT * TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr);
+tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
+tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
+tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
+tablet_export int init_tablet(int *debug);
+tablet_export int tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *nr);
+tablet_export int tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void
 **s, int *nr);
-t_export int tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *
+tablet_export int tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *
 nr);
-t_export int tablet_output(BAT *order, BAT *seps, BAT *bats, void **s);
-t_export str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, int *nr);
-t_export str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str
+tablet_export int tablet_output(BAT *order, BAT *seps, BAT *bats, void **s);
+tablet_export str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, int *nr);
+tablet_export str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str
 *filename, int *nr);
-t_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
-t_export str CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s);
-t_export void TABshowHeader(Tablet * t);
-t_export void TABshowRow(Tablet * t);
-t_export void TABshowRange(Tablet * t, lng first, lng last);
+tablet_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
+tablet_export str CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s);
+tablet_export void TABshowHeader(Tablet * t);
+tablet_export void TABshowRow(Tablet * t);
+tablet_export void TABshowRange(Tablet * t, lng first, lng last);
 
 static void makeTableSpace(int rnr, unsigned int acnt);
 static str bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k);

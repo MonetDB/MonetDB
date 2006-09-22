@@ -304,7 +304,7 @@ QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 @-
 @= macroOptimizer
-mal_export str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;
@@ -339,7 +339,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	chkDeclarations(mb,TRUE);
 	return msg;
 }
-mal_export str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;
@@ -370,7 +370,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	chkDeclarations(mb,TRUE);
 	return msg;
 }
-mal_export str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;

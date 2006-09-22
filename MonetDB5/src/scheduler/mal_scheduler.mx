@@ -158,8 +158,8 @@ struct {
 	int cpuload;		/* hard to get */
 } runtime;
 
-#ifdef _MSC_VER
-#ifndef LIBSCHED
+#ifdef WIN32
+#ifndef LIBMAL_SCHEDULER
 #define sched_export extern __declspec(dllimport)
 #else
 #define sched_export extern __declspec(dllexport)

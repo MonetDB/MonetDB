@@ -234,8 +234,18 @@ This will be collected at the start of the scheduler call
 and is available as global information.
 
 @c
-mal_export str meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name);
+#ifdef WIN32
+#ifndef LIBMAL_MES
+#define mal_mes_export extern __declspec(dllimport)
+#else
+#define mal_mes_export extern __declspec(dllexport)
+#endif
+#else
+#define mal_mes_export extern
+#endif
+
+mal_mes_export str meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_mes_export str meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name);
 
 str
 meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)

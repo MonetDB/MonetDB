@@ -101,23 +101,7 @@ typedef struct blob {
 
 #define sqlblob blob
 
-#ifdef _MSC_VER
-#ifndef LIBATOMS
-#define atoms_export extern __declspec(dllimport)
-#else
-#define atoms_export extern __declspec(dllexport)
-#endif
-#else
-#define atoms_export extern
-#endif
-
-atoms_export size_t blobsize(size_t nitems);
-
-#endif /* __BLOB_H__ */
-@c
-#include "blob.h"
-
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBBLOB
 #define blob_export extern __declspec(dllimport)
 #else
@@ -126,6 +110,12 @@ atoms_export size_t blobsize(size_t nitems);
 #else
 #define blob_export extern
 #endif
+
+blob_export size_t blobsize(size_t nitems);
+
+#endif /* __BLOB_H__ */
+@c
+#include "blob.h"
 
 blob_export int BLOBtostr(str *tostr, int *l, blob *pin);
 blob_export int BLOBfromstr(char *instr, int *l, blob **val);

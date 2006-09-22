@@ -115,21 +115,31 @@ Compatibility code wrappers
 
 #ifdef _MIL_UTILS_H
 #define _MIL_UTILS_H
-mal_export str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILutils_prelude();
-mal_export str MILinsert_bun(int *r, int *bid, ptr h, ptr t);
-mal_export str MILinsert_void_bun(int *r, int *bid, ptr t);
+#ifdef WIN32
+#ifndef LIBMIL_UTILS
+#define mil_utils_export extern __declspec(dllimport)
+#else
+#define mil_utils_export extern __declspec(dllexport)
+#endif
+#else
+#define mil_utils_export extern
+#endif
+
+mil_utils_export str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mil_utils_export str MILutils_prelude();
+mil_utils_export str MILinsert_bun(int *r, int *bid, ptr h, ptr t);
+mil_utils_export str MILinsert_void_bun(int *r, int *bid, ptr t);
 #endif
 
 str

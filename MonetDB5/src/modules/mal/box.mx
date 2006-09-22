@@ -69,17 +69,28 @@ comment "Retrieve the names of all boxes.";
 @h
 #ifndef __BOX_H
 #define __BOX_H
-mal_export str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str BOXgetBoxNames(int *bid);
-mal_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#ifdef WIN32
+#ifndef LIBBOX
+#define box_export extern __declspec(dllimport)
+#else
+#define box_export extern __declspec(dllexport)
+#endif
+#else
+#define box_export extern
+#endif
+
+box_export str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXgetBoxNames(int *bid);
+box_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* __BOX_H */
 @c
 #include "mal_exception.h"

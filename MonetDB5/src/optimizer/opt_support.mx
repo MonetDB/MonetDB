@@ -448,7 +448,7 @@ comment "Handle simple replacements";
 
 /* #define DEBUG_OPT_OPTIMIZER     show partial result */
 
-#ifdef _MSC_VER
+#ifdef WIN32
 #ifndef LIBOPTIMIZER
 #define opt_export extern __declspec(dllimport)
 #else

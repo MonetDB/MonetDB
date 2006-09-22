@@ -30,7 +30,17 @@ comment "Check if the bat is empty";
 #define _CONSTRAINTS_H
 
 
-mal_export str CemptySet(int *k, int *bid);
+#ifdef WIN32
+#ifndef LIBCONSTRAINTS
+#define constraints_export extern __declspec(dllimport)
+#else
+#define constraints_export extern __declspec(dllexport)
+#endif
+#else
+#define constraints_export extern
+#endif
+
+constraints_export str CemptySet(int *k, int *bid);
 
 #endif /* _CONSTRAINTS_H */
 
