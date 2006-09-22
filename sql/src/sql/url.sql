@@ -1,42 +1,41 @@
 
 CREATE TYPE url EXTERNAL NAME url;
 
---CREATE table url_test ( theUrl url, name string )
---declare local temporary table ...
---INSERT into url_test values ( url 'http://monetdb.cwi.nl/', 'MonetDB')
---select * from url_test;
+CREATE table url_test ( theUrl url, name string );
+INSERT into url_test values ( url 'http://monetdb.cwi.nl/', 'MonetDB');
+select * from url_test;
 
 CREATE function getAnchor( theUrl url ) RETURNS STRING 
-	EXTERNAL NAME 'getAnchor';
+	EXTERNAL NAME url."getAnchor";
 CREATE function getBasename(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getBasename';
+	EXTERNAL NAME url."getBasename";
 CREATE function getContent(theUrl url)   RETURNS STRING       
-	EXTERNAL NAME 'getContent';
+	EXTERNAL NAME url."getContent";
 CREATE function getContext(theUrl url)   RETURNS STRING       
-	EXTERNAL NAME 'getContext';
+	EXTERNAL NAME url."getContext";
 CREATE function getDomain(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getDomain';
+	EXTERNAL NAME url."getDomain";
 CREATE function getExtension(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getExtension';
+	EXTERNAL NAME url."getExtension";
 CREATE function getFile(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getFile';
+	EXTERNAL NAME url."getFile";
 CREATE function getHost(theUrl url)   RETURNS STRING       
-	EXTERNAL NAME 'getHost';
+	EXTERNAL NAME url."getHost";
 CREATE function getPort(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getPort';
+	EXTERNAL NAME url."getPort";
 CREATE function getProtocol(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getProtocol';
+	EXTERNAL NAME url."getProtocol";
 CREATE function getQuery(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getQuery';
+	EXTERNAL NAME url."getQuery";
 CREATE function getUser(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getUser';
+	EXTERNAL NAME url."getUser";
 CREATE function getRobotURL(theUrl url) RETURNS STRING       
-	EXTERNAL NAME 'getRobotURL';
+	EXTERNAL NAME url."getRobotURL";
 CREATE function isaURL(theUrl url) RETURNS BOOL
-	EXTERNAL NAME 'isaURL';
+	EXTERNAL NAME url."isaURL";
 CREATE function newurl(protocol STRING, hostname STRING,port INT, file STRING) 
 	RETURNS url       
-	EXTERNAL NAME 'newurl';
+	EXTERNAL NAME url."newurl";
 CREATE function newurl(protocol STRING, hostname STRING, file STRING) 
 	RETURNS url 
-	EXTERNAL NAME 'newurl';
+	EXTERNAL NAME url."newurl";

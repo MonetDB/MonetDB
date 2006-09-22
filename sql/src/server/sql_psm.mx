@@ -401,7 +401,7 @@ has_return(stmt *s )
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlist *body)
+create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -455,8 +455,9 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlis
 				*/
 			}
 		} else {
-			/* TODO fix module name */
-			mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, "sql_cache", impl);
+			char *fmod = qname_module(ext_name);
+			char *fnme = qname_fname(ext_name);
+			mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, fmod, fnme );
 		}
 	}
 	return stmt_none();
@@ -501,7 +502,7 @@ psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

@@ -381,7 +381,6 @@ int yydebug=1;
 	varchar
 	clob
 	blob
-	external_name
 	opt_begin_label
 	opt_end_label
 	target_specification
@@ -449,6 +448,7 @@ int yydebug=1;
 	routine_body
 	table_function_column_list
 	select_target_list
+	external_function_name
 
 %type <ival>
 	drop_action
@@ -1675,27 +1675,27 @@ column_commalist_parens:
  ;
 
 type_def:
-    create TYPE qname external_name
+    create TYPE qname EXTERNAL sqlNAME ident
 			{ dlist *l = L();
 				append_list(l, $3);
-				append_string(l, $4);
+				append_string(l, $6);
 			  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
  ;
 
-external_name:
-    EXTERNAL sqlNAME ident 	{ $$ = $3; }
+external_function_name:
+	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    external_name
+    EXTERNAL sqlNAME external_function_name 	
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
 				append_symbol(f, $8);
-				append_string(f, $9);
+				append_list(f, $11);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |
