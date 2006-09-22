@@ -217,6 +217,8 @@ static char *mal_commands[] = {
     0
 };
 
+#ifdef illegal_ESC_binding
+/* see also init_readline() below */
 static int mal_help(int cnt, int key){
 	char *name, *c, buf[BUFSIZ];
 	int seekpos=0,rowcount;
@@ -252,6 +254,8 @@ static int mal_help(int cnt, int key){
 	}
 	return key;
 }
+#endif
+
 static char *
 mal_command_generator(const char *text, int state)
 {
@@ -349,7 +353,9 @@ init_readline(Mapi mid, char *lang, int save_history)
 		rl_attempted_completion_function = mil_completion;
 	} else if (strcmp(language, "mal") == 0) {
 		/* recognize the help function, should react to <FCN2> */
-		/* rl_bind_key('\033', mal_help); */
+#ifdef illegal_ESC_binding
+		rl_bind_key('\033', mal_help);
+#endif
 		rl_attempted_completion_function = mal_completion;
 	}
 
