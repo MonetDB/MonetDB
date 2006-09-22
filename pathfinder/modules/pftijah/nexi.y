@@ -13,9 +13,7 @@
 
 #include <pf_config.h>
 
-#include <math.h>
 #include <stdio.h>
-#include <ctype.h>
 #include "nexi.h"
 
 #define CO 1

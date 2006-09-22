@@ -14,11 +14,9 @@
 */
 #include <pf_config.h>
 
-#include <stdio.h>
 #include <string.h>
 #include "nexi.h"
 #include "nexi.tab.h"
-#include "serialize_pftijah.h"
 
 int c;
 extern YYSTYPE yylval;
