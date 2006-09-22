@@ -49,12 +49,14 @@ BEGIN
 		SET bit = bit-1;
 	    	SET mask = left_shift(cast(1 as bigint),bit);
 		CASE 
-			WHEN (bit_and(mask,value)=0) THEN SET out = out + ''; 
-			ELSE SET out = out + (coalesce((select name from PhotoStatus where value=mask),'')+' ');
+			WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+			ELSE SET out = out || COALESCE((select name from PhotoStatus where value=mask),'')||' ';
 	    	END CASE;
 	END WHILE;
     	RETURN out;
 END;
+
+select fPhotoStatusN(cast (17 as int));
 
 
 CREATE FUNCTION fPhotoStatus(pname varchar(40)) 

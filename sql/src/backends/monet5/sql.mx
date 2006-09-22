@@ -82,11 +82,11 @@ easier to later re-use part of the catalog code in a separately.
 @mal
 
 pattern setVariable( varname:str, value:any_1 ):void
-address mvc_set_var_wrap
+address setVariable
 comment "Set the value of a session variable";
 
 pattern getVariable( varname:str ):any_1
-address mvc_get_var_wrap
+address getVariable
 comment "Get the value of a session variable";
 
 command nextValue( sequence:str ):lng
@@ -188,6 +188,10 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
+command zero_or_one( col:bat[:any_2,:any_1]) :any_1
+address zero_or_one
+comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+
 function sql_environment():bat[:str,:bat];
 	b := bat.new(:str,:bat,2);
 	e := inspect.getEnvironment();
@@ -237,131 +241,27 @@ command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
 address bathash_wrap 
 comment "calculate a hash value";
 
-command calc.timestamp(s:str):timestamp
-address MTIMEtimestamp_fromstr;
-command calc.timestamp(d:timestamp):timestamp
-address MTIMEtimestamp_timestamp;
-
+# date
 command calc.date(s:str):date
 address MTIMEdate_fromstr;
 command calc.date(d:date):date
 address MTIMEdate_date;
-command calc.current_date():date
-address MTIMEcurrent_date;
-
-command calc.timestamp_sub_sec_interval(t:timestamp,s:lng):timestamp address MTIMEtimestamp_sub_sec_interval_lng_wrap;
-command calc.timestamp_add_sec_interval(t:timestamp,s:lng):timestamp address MTIMEtimestamp_add_sec_interval_lng_wrap;
-command calc.timestamp_sub_month_interval(t:timestamp,s:int):timestamp address MTIMEtimestamp_sub_month_interval_wrap;
-command calc.timestamp_add_month_interval(t:timestamp,s:int):timestamp address MTIMEtimestamp_add_month_interval_wrap;
-
-command calc.time_add_sec_interval(t:daytime,s:lng):daytime address MTIMEtime_add_sec_interval_wrap;
-command calc.time_sub_sec_interval(t:daytime,s:lng):daytime address MTIMEtime_sub_sec_interval_wrap;
-command calc.date_sub_sec_interval(t:date,s:int):date address MTIMEdate_sub_sec_interval_wrap;
-command calc.date_sub_sec_interval(t:date,s:lng):date address MTIMEdate_sub_sec_interval_lng_wrap;
-command calc.date_add_sec_interval(t:date,s:int):date address MTIMEdate_add_sec_interval_wrap;
-command calc.date_add_sec_interval(t:date,s:lng):date address MTIMEdate_add_sec_interval_lng_wrap;
-command calc.date_add_month_interval(t:date,s:int):date address MTIMEdate_add_month_interval_wrap;
-
-
-command calc.year(d:date) :int
-address MTIMEdate_extract_year;
-command calc.year(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdate_extract_year_bulk;;
-
-command calc.month(d:date) :int
-address MTIMEdate_extract_month;
-command calc.month(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdate_extract_month_bulk;;
-
-command calc.day(d:date) :int
-address MTIMEdate_extract_day;
-command calc.day(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdate_extract_day_bulk;;
 
 # daytime
 command calc.daytime(d:daytime):daytime
 address MTIMEdaytime2daytime;
 command calc.daytime(s:lng):daytime
 address MTIMEsecs2daytime;
-command calc.hours(h:daytime) :int
-address MTIMEdaytime_extract_hours;
-command calc.hours(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdaytime_extract_hours_bulk;;
-
-command calc.minutes(d:daytime) :int
-address MTIMEdaytime_extract_minutes;
-command calc.minutes(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdaytime_extract_minutes_bulk;;
-command calc.seconds(d:daytime) :int
-address MTIMEdaytime_extract_seconds;
-command calc.seconds(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdaytime_extract_seconds_bulk;;
-
-command calc.milliseconds(d:daytime) :int
-address MTIMEdaytime_extract_milliseconds;
-command calc.milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
-address MTIMEdaytime_extract_milliseconds_bulk;;
-command calc.isnil(v:daytime):bit
-address MTIMEdaytime_isnil
-        comment "Nil test for daytime value";
 
 # timestamp
+command calc.timestamp(s:str):timestamp
+address MTIMEtimestamp_fromstr;
 command calc.timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 command calc.daytime(t:timestamp) :daytime
 address MTIMEtimestamp_extract_daytime_default;
-command calc.daytime(t:timestamp, v:timezone) :daytime
-address MTIMEtimestamp_extract_daytime;
-
 command calc.date(t:timestamp) :date
 address MTIMEtimestamp_extract_date_default;
-command calc.date(t:timestamp,v:timezone) :date
-address MTIMEtimestamp_extract_date;
-
-# timezone
-command calc.local_timezone() :lng address MTIMElocal_timezone;
-command calc.timezone(name:str):timezone address MTIMEtimezone;
-
-command calc.start_dst(t:timezone) :zrule address MTIMEtzone_extract_start;
-command calc.end_dst(t:timezone) :zrule address MTIMEtzone_extract_end;
-command calc.minutes(t:timezone) :int address MTIMEtzone_extract_minutes;
-
-# zrule
-command calc.month(t:zrule) :int address MTIMErule_extract_month;
-command calc.day(t:zrule) :int	address MTIMErule_extract_day;
-command calc.weekday(t:zrule) :int address MTIMErule_extract_weekday;
-command calc.minutes(t:zrule) :int address MTIMErule_extract_minutes;
-
-#SQL specific time support functions
-command calc.current_timestamp() :timestamp address MTIMEcurrent_timestamp;
-command calc.current_date() :date address MTIMEcurrent_date;
-command calc.current_time() :daytime address MTIMEcurrent_time;
-
-# utility functions (for SQL) for direct extraction of fields from timestamps
-command calc.year(t:timestamp) :int address MTIMEtimestamp_year;
-command calc.month(t:timestamp) :int address MTIMEtimestamp_month;
-command calc.day(t:timestamp) :int address MTIMEtimestamp_day;
-command calc.hours(t:timestamp) :int address MTIMEtimestamp_hours;
-command calc.minutes(t:timestamp) :int address MTIMEtimestamp_minutes;
-command calc.seconds(t:timestamp) :int address MTIMEtimestamp_seconds;
-command calc.milliseconds(t:timestamp) :int address MTIMEtimestamp_milliseconds;
-
-command calc.year(months:int) :int address MTIMEsql_year;
-command calc.month(months:int) :int address MTIMEsql_month;
-command calc.day(secs:lng) :int address MTIMEsql_day;
-command calc.hours(secs:lng) :int address MTIMEsql_hours;
-command calc.minutes(secs:lng) :int address MTIMEsql_minutes;
-command calc.seconds(secs:lng) :int address MTIMEsql_seconds;
-
-command calc.addyears(value:date, years:int) :date address MTIMEdate_addyears;
-command calc.addmonths(value:date, months:int) :date address MTIMEdate_addmonths;
-command calc.adddays(value:date, days:int) :date address MTIMEdate_adddays;
-command calc.diff(val1:date, val2:date) :int address MTIMEdate_diff; 
-command calc.dayofyear(d:date) :int address MTIMEdate_extract_dayofyear;
-command calc.weekofyear(d:date) :int address MTIMEdate_extract_weekofyear;
-command calc.dayofweek(d:date) :int address MTIMEdate_extract_dayofweek;
-command calc.add(v:timestamp, msecs:lng) :timestamp address MTIMEtimestamp_add; 
-command calc.diff(val1:timestamp, val2:timestamp) :lng address MTIMEtimestamp_diff;
 
 # string 
 command calc.toLower( s:str ) :str address STRLower;
@@ -384,35 +284,6 @@ address STRsuffix;
 
 command calc.stringlength( s:str ) :int 
 address STRstringLength;
-
-# math 
-command calc.acos(x:flt):flt address MATHunary_ACOSflt;
-command calc.acos(x:dbl):dbl address MATHunary_ACOSdbl;
-command calc.asin(x:flt):flt address MATHunary_ASINflt;
-command calc.asin(x:dbl):dbl address MATHunary_ASINdbl;
-command calc.atan(x:flt):flt address MATHunary_ATANflt;
-command calc.atan(x:dbl):dbl address MATHunary_ATANdbl;
-command calc.atan2(x:flt,y:flt):flt address MATHbinary_ATAN2flt;
-command calc.atan2(x:dbl,y:dbl):dbl address MATHbinary_ATAN2dbl;
-command calc.cos(x:flt):flt address MATHunary_COSflt;
-command calc.cos(x:dbl):dbl address MATHunary_COSdbl;
-command calc.sin(x:flt):flt address MATHunary_SINflt;
-command calc.sin(x:dbl):dbl address MATHunary_SINdbl;
-command calc.tan(x:flt):flt address MATHunary_TANflt;
-command calc.tan(x:dbl):dbl address MATHunary_TANdbl;
-command calc.cosh(x:flt):flt address MATHunary_COSHflt;
-command calc.cosh(x:dbl):dbl address MATHunary_COSHdbl;
-command calc.sinh(x:flt):flt address MATHunary_SINHflt;
-command calc.sinh(x:dbl):dbl address MATHunary_SINHdbl;
-command calc.tanh(x:flt):flt address MATHunary_TANHflt;
-command calc.tanh(x:dbl):dbl address MATHunary_TANHdbl;
-command calc.exp(x:flt):flt address MATHunary_EXPflt;
-command calc.exp(x:dbl):dbl address MATHunary_EXPdbl;
-command calc.log(x:dbl):dbl address MATHunary_LOGdbl;
-command calc.log10(x:dbl):dbl address MATHunary_LOG10dbl;
-#/* TODO */
-command calc.floor(y:flt):flt address MATHunary_FLOORflt;
-command calc.floor(y:dbl):dbl address MATHunary_FLOORdbl;
 
 @- SQL functions
 The SQL functions are all recognized by their module name.
@@ -857,17 +728,14 @@ SQLrollback_wrap(int *ret){
 	return MAL_SUCCEED;
 }
 
-/* mvc_set_var_wrap(int *ret, str *name, any value) */
+/* setVariable(int *ret, str *name, any value) */
 str
-mvc_set_var_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m;
 	int mtype = getArgType(mb, pci, 2);
-	str name   = *(str *) getArgReference(stk, pci, 1);
-	MalBlkPtr gmb = MCgetClient()->state[ENGINE]; 
+	str varname   = *(str *) getArgReference(stk, pci, 1);
 	str msg = getContext(&m, NULL);
-	int varid;
-	VarRecord *dst;
 	ValRecord *src;
 
 	if (msg)
@@ -875,45 +743,42 @@ mvc_set_var_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (mtype < 0 || mtype >= 255)
 		return throwMessage("sql.setVariable", "failed");
-	varid = findVariable(gmb, name);
-	if (varid < 0) 
-		return throwMessage("sql.setVariable", "not found");
-	if (getVarType(gmb, varid) != mtype)
-		return throwMessage("sql.setVariable", "type mismatch");
-	dst = getVar(gmb, varid);
 	src = &stk->stk[getArg(pci, 2)];
-	VALcopy(&dst->value,src);
-	if (sql_update_var(m, name) != GDK_SUCCEED)
+	if (stack_find_var(m, varname)) {
+		stack_set_var(m, varname, src);
+	} else {
+		char buf[BUFSIZ];
+		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
+		return throwMessage("sql.setVariable", buf);
+	}
+	if (sql_update_var(m, varname) != GDK_SUCCEED)
 		return throwException(MALEXCEPTION, "sql.setVariable", "error");
 	return MAL_SUCCEED;
 }
 
-/* mvc_get_var_wrap(int *ret, str *name) */
+/* getVariable(int *ret, str *name) */
 str
-mvc_get_var_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m;
 	int mtype = getArgType(mb, pci, 0);
-	str name   = *(str *) getArgReference(stk, pci, 1);
-	MalBlkPtr gmb = MCgetClient()->state[ENGINE]; 
+	str varname   = *(str *) getArgReference(stk, pci, 1);
 	str msg = getContext(&m, NULL);
-	int varid;
-	ValRecord *dst;
-	VarRecord *src;
+	ValRecord *dst, *src;
 
 	if (msg)
 		return msg;
 
 	if (mtype < 0 || mtype >= 255)
 		return throwMessage("sql.getVariable", "failed");
-	varid = findVariable(gmb, name);
-	if (varid < 0) 
-		return throwMessage("sql.getVariable", "not found");
-	if (getVarType(gmb, varid) != mtype)
-		return throwMessage("sql.getVariable", "type mismatch");
+	src = stack_get_var(m, varname);
+	if (!src) {
+		char buf[BUFSIZ];
+		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
+		return throwMessage("sql.getVariable", buf);
+	}
 	dst = &stk->stk[getArg(pci, 0)];
-	src = getVar(gmb, varid);
-	VALcopy(dst,&src->value);
+	VALcopy(dst,src);
 	return MAL_SUCCEED;
 }
 
@@ -1388,6 +1253,49 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, in
 	*res = b->batCacheid;
 	BBPincref( *res, TRUE);
 	BBPunfix(*res);
+	return MAL_SUCCEED;
+}
+
+str
+zero_or_one(ptr ret, int *bid) 
+{
+	BAT *b;
+	int c, _s;
+	ptr p;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("sql.zero_or_one", "Cannot access descriptor");
+	}
+	c = BATcount(b);
+	if (c == 0) {
+		p = ATOMnilptr(b->ttype);
+	} else if (c == 1) {
+		p = BUNtail(b,BUNfirst(b));
+	} else {
+		char buf[BUFSIZ];
+
+		p = NULL;
+                snprintf(buf, BUFSIZ, "cardinality violation (%d>1)", c);
+		return throwMessage("sql.zero_or_one", buf);
+	}
+	_s = ATOMsize(ATOMtype(b->ttype));
+	BBPreleaseref(b->batCacheid);
+	if (ATOMvarsized(b->ttype)) {
+		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
+	} else if (b->ttype == TYPE_bat) {
+		bat bid = *(bat*)p;
+		*(BAT**) ret = BATdescriptor(bid);
+	} else if (_s == 4) {
+		*(int*) ret = *(int*)p;
+	} else if (_s == 1) {
+		*(bte*) ret = *(bte*)p;
+	} else if (_s == 2) {
+		*(sht*) ret = *(sht*)p;
+	} else if (_s == 8) {
+		*(lng*) ret = *(lng*)p;
+	} else {
+		memcpy(ret, p, _s);
+	}
 	return MAL_SUCCEED;
 }
 

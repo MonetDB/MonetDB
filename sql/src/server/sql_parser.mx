@@ -220,7 +220,7 @@ extern int sqlparse(void *);
 /* reentrant parser */
 %pure_parser
 %union {
-	int		ival,operation,bval;
+	lng		ival,operation,bval;
 	double		fval;
 	char *		sval;
 	symbol*		sym;
@@ -1690,12 +1690,12 @@ func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    EXTERNAL sqlNAME string
+    external_name
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
 				append_symbol(f, $8);
-				append_string(f, $11);
+				append_string(f, $9);
 				append_list(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |
@@ -3740,7 +3740,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "scale (%d) should be less than precision (%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "scale (%lld) should be less than precision (%lld)", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -3766,7 +3766,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "precision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(%lld) should be less than number of digits(%lld)", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -3797,7 +3797,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "precision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(%lld) should be less than number of digits(%lld)", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
@@ -3948,7 +3948,7 @@ intval:
 		  if (tpe->type->localtype == TYPE_lng ||
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ) {
-			$$ = backend_get_number(m, name);
+			$$ = stack_get_number(m, name);
 		  } else {
 			char buf[BUFSIZ];
 

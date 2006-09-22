@@ -327,9 +327,9 @@ monet5_user_get_def_schema(mvc *m, oid user)
 		return NULL;
 	}
 	/* reset the user and schema names */
-	backend_set_string(m, "current_schema", schema);
-	backend_set_string(m, "current_user", username);
-	backend_set_string(m, "current_role", username);
+	stack_set_string(m, "current_schema", schema);
+	stack_set_string(m, "current_user", username);
+	stack_set_string(m, "current_role", username);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }

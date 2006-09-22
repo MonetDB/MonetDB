@@ -57,7 +57,8 @@ insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
 		return stmt_atom(a);
 	} else {
 		stmt *n = NULL;
-		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel);
+		exp_kind ek = {type_value, card_value, FALSE};
+		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel, ek);
 
 		if (!a)
 			return(NULL);
@@ -941,7 +942,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", backend_get_string(sql, "user"), tname);
+		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", stack_get_string(sql, "user"), tname);
 	}
 	if (columns) {
 		dnode *n;
@@ -1288,7 +1289,8 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 			}
 			a = assignment->h->next->data.sym;
 			if (a) {
-				v = sql_value_exp(sql, scp, a, NULL, s, sql_sel);
+				exp_kind ek = {type_value, card_column, FALSE};
+				v = sql_value_exp(sql, scp, a, NULL, s, sql_sel, ek);
 			} else
 				v = stmt_atom(atom_general(&c->type, NULL, 0));
 
@@ -1472,7 +1474,7 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	}
 	if (!table_privs(sql, t, PRIV_DELETE)) {
-		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", backend_get_string(sql, "user"), tname);
+		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "user"), tname);
 	} else {
 		tvar *tv = NULL;
 		stmt *s = NULL;

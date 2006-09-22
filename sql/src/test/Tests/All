@@ -70,3 +70,4 @@ orderby_limit
 psm
 
 outerref_in_selection
+session_vars

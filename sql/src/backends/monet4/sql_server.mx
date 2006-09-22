@@ -66,8 +66,13 @@ access after being logged in.
 	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
 
-	.COMMAND mvc_update_var( mvc m, str varname ) = mvc_update_var_wrap;
-		"update a session variable in the mvc structure"
+
+	.COMMAND declareVariable( mvc m, str varname, any::1 nl ) = declareVariable;
+		"Declare a new session variable in the mvc structure"
+	.COMMAND getVariable( mvc m, str varname ) : any::1 = getVariable;
+		"Get a session variable from the mvc structure"
+	.COMMAND setVariable( mvc m, str varname, any::1 val ) = setVariable;
+		"Set the value of a session variable in the mvc structure"
 
 	.COMMAND mvc_next_value( mvc m, str sequence ) : lng = mvc_next_value;
 		"return the next value of the sequence"
@@ -219,6 +224,8 @@ stream.
 	.BUILTIN sql_variables() : ptr = sql_variables;
 		"return the table with session variables"
 
+	.COMMAND zero_or_one( BAT[any,any::1] b) : any::1 = zero_or_one; "if b contains exactly one value return this. Incase of more raise an exception else return nil"
+
 .END sql_server;
 
 @-
@@ -306,10 +313,6 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	be_funcs->fstack = &monet4_freestack;
 	be_funcs->fcode = &monet4_freecode;
 	be_funcs->finterpret = &monet4_parse;
-	be_funcs->fget_string = (get_string_fptr)&monet4_get_string;
-	be_funcs->fget_number = (get_number_fptr)&monet4_get_number;
-	be_funcs->fset_string = (set_string_fptr)&monet4_set_string;
-	be_funcs->fset_number = (set_number_fptr)&monet4_set_number;
 	monet4_user_init(be_funcs);
 	backend_init(be_funcs);	/* we probably leak be_funcs here */
 	CNTXTclient(stk, &father);
@@ -344,10 +347,55 @@ mvc_sql_wrap(mvc *c, str cmd)
 }
 
 int
-mvc_update_var_wrap(mvc *c, str varname)
+declareVariable(mvc* M, str varname, ptr value, int type)
 {
-	return sql_update_var(*(mvc **) c, varname);
+	mvc *m = *(mvc**)M;
+	ValRecord src;
+
+	/* var should be there allready */
+	VALset(&src, type, value);
+	stack_set_var(m, varname, &src);
+	return GDK_SUCCEED;
 }
+
+int
+setVariable(mvc* M, str varname, ptr value, int type)
+{
+	mvc *m = *(mvc**)M;
+	ValRecord src;
+
+	VALset(&src, type, value);
+	if (stack_find_var(m, varname)) 
+		stack_set_var(m, varname, &src);
+	else
+		return GDKerror("setVariable: variable '%s' unknown", varname);
+	if (sql_update_var(m, varname) != GDK_SUCCEED)
+		return GDKerror("setVariable: updating variable '%s' failed", varname);
+	return GDK_SUCCEED;
+}
+
+int
+getVariable(ptr value, int *type, mvc* M, str varname)
+{
+	mvc *m = *(mvc**)M;
+	ValRecord *v = stack_get_var(m, varname);
+
+	if (!v) 
+		return GDKerror("getVariable: variable '%s' unknown", varname);
+
+	*type = v->vtype;
+	if (ATOMextern(v->vtype) == 0) {
+		ptr p = VALptr(v);
+		memcpy(value, p, ATOMlen(v->vtype, p));
+	} else if (v->vtype >= TYPE_str && ATOMstorage(v->vtype) == TYPE_str) {
+		*(str*)value = GDKstrdup(v->val.sval);
+	} else {
+		*(ptr*)value = GDKmalloc(v->len);
+		memcpy(*(ptr*)value, v->val.pval, v->len);
+	}
+	return GDK_SUCCEED;
+}
+
 
 int
 mvc_next_value(lng *res, mvc *c, str seq)
@@ -1105,6 +1153,40 @@ int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 @:c_interval(sht)@
 @:c_interval(int)@
 @:c_interval(lng)@
+
+int zero_or_one(ptr ret, BAT* b) 
+{
+	ptr p;
+	int c = BATcount(b);
+	int _s = ATOMsize(ATOMtype(b->ttype));
+
+	if (c == 0) {
+		p = ATOMnilptr(b->ttype);
+	} else if (c == 1) {
+		p = BUNtail(b,BUNfirst(b));
+	} else {
+		p = NULL;
+		GDKerror("cardinality violation (%d>1)", c);
+		return GDK_FAIL;
+	}
+	if (ATOMvarsized(b->ttype)) {
+		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
+	} else if (b->ttype == TYPE_bat) {
+		bat bid = *(bat*)p;
+		*(BAT**) ret = BATdescriptor(bid);
+	} else if (_s == 4) {
+		*(int*) ret = *(int*)p;
+	} else if (_s == 1) {
+		*(bte*) ret = *(bte*)p;
+	} else if (_s == 2) {
+		*(sht*) ret = *(sht*)p;
+	} else if (_s == 8) {
+		*(lng*) ret = *(lng*)p;
+	} else {
+		memcpy(ret, p, _s);
+	}
+	return GDK_SUCCEED;
+}
 
 @-
 An SQL session needs a minimal set of modules, shown below.

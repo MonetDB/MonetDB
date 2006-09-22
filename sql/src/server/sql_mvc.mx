@@ -55,6 +55,7 @@ typedef enum modes_t {
 typedef struct sql_var {
 	struct stmt *s;
 	char *name;
+	ValRecord value;
 } sql_var;
 
 typedef struct mvc {
@@ -172,6 +173,14 @@ extern struct stmt *stack_find_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
 extern int stack_find_frame(mvc *sql, char *name);
+
+extern ValRecord * stack_get_var(mvc *sql, char *name);
+extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
+
+extern str stack_get_string(mvc *sql, char *name);
+extern void stack_set_string(mvc *sql, char *name, str v);
+extern lng stack_get_number(mvc *sql, char *name);
+extern void stack_set_number(mvc *sql, char *name, lng v);
 
 #endif /*_SQL_MVC_H*/
 @c
@@ -570,19 +579,19 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars)
 	m->role_id = m->user_id = -1;
 	m->mode = m_normal;
 	if (m->explain != m_normal)
-		backend_set_number(m, "explain", m_normal);
+		stack_set_number(m, "explain", m_normal);
 	m->explain = m_normal;
 	if (m->reply_size != 100)
-		backend_set_number(m, "reply_size", 100);
+		stack_set_number(m, "reply_size", 100);
 	m->reply_size = 100;
 	if (m->timezone != 0)
-		backend_set_number(m, "current_timezone", 0);
+		stack_set_number(m, "current_timezone", 0);
 	m->timezone = 0;
 	if (m->debug != 0)
-		backend_set_number(m, "debug", 0);
+		stack_set_number(m, "debug", 0);
 	m->debug = 0;
 	if (m->cache != 1)
-		backend_set_number(m, "cache", 1);
+		stack_set_number(m, "cache", 1);
 	m->cache = 1;
 
 	m->depth = 0;
@@ -1099,7 +1108,34 @@ stack_push_var(mvc *sql, char *name, stmt *var)
 	}
 	sql->vars[sql->topvars].s = stmt_dup(var);
 	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].value.vtype = 0;
 	sql->topvars++;
+}
+
+void
+stack_set_var(mvc *sql, char *name, ValRecord *v)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0) {
+			VALclear(&sql->vars[i].value);
+			VALcopy(&sql->vars[i].value, v);
+		}
+	}
+}
+
+ValRecord *
+stack_get_var(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0) {
+			return &sql->vars[i].value;
+		}
+	}
+	return NULL;
 }
 
 void 
@@ -1111,6 +1147,7 @@ stack_push_frame(mvc *sql, char *name)
 	}
 	sql->vars[sql->topvars].s = NULL;
 	sql->vars[sql->topvars].name = NULL;
+	sql->vars[sql->topvars].value.vtype = 0;
 	if (name)
 		sql->vars[sql->topvars].name = _strdup(name);
 	sql->topvars++;
@@ -1123,8 +1160,10 @@ stack_pop_frame(mvc *sql)
 	while(sql->vars[--sql->topvars].s) {
 		stmt_destroy(sql->vars[sql->topvars].s);
 		_DELETE(sql->vars[sql->topvars].name);
+		sql->vars[sql->topvars].value.vtype = 0;
+		VALclear(&sql->vars[sql->topvars].value);
 	}
-	if (sql->topvars && sql->vars[sql->topvars].name)
+	if (sql->topvars && sql->vars[sql->topvars].name) 
 		_DELETE(sql->vars[sql->topvars].name);
 	sql->frame--;
 }
@@ -1169,3 +1208,65 @@ stack_find_frame(mvc *sql, char *name)
 	return 0;
 }
 
+void
+stack_set_string(mvc *sql, char *name, char *val)
+{
+	ValRecord *v = stack_get_var(sql, name);
+
+	if (v != NULL) {
+		if (v->val.sval)
+			_DELETE(v->val.sval);
+		v->val.sval = _strdup(val);
+	}
+}
+
+str
+stack_get_string(mvc *sql, char *name)
+{
+	ValRecord *v = stack_get_var(sql, name);
+
+	if (!v || v->vtype != TYPE_str)
+		return NULL;
+	return v->val.sval;
+}
+
+void
+stack_set_number(mvc *sql, char *name, lng val)
+{
+	ValRecord *v = stack_get_var(sql, name);
+
+	if (v != NULL) {
+		if (v->vtype == TYPE_lng) 
+			v->val.lval = val;
+		if (v->vtype == TYPE_int) 
+			v->val.lval = (int) val;
+		if (v->vtype == TYPE_sht) 
+			v->val.lval = (sht) val;
+		if (v->vtype == TYPE_bit) {
+			if (val)
+				v->val.cval[0] = 1;
+			else 
+				v->val.cval[0] = 0;
+		}
+	}
+}
+
+lng
+stack_get_number(mvc *sql, char *name)
+{
+	ValRecord *v = stack_get_var(sql, name);
+
+	if (v != NULL) {
+		if (v->vtype == TYPE_lng) 
+			return v->val.lval;
+		if (v->vtype == TYPE_int) 
+			return v->val.ival;
+		if (v->vtype == TYPE_sht) 
+			return v->val.shval;
+		if (v->vtype == TYPE_bit) 
+			if (v->val.cval[0])
+				return 1;
+			return 0;
+	}
+	return 0;
+}

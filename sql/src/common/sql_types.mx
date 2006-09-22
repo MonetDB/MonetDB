@@ -575,8 +575,6 @@ sql_func_imp(sql_func *f)
 char *
 sql_func_mod(sql_func *f)
 {
-	if (f->sql)
-		return NULL;
 	return f->mod;
 }
 

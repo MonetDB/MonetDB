@@ -4320,11 +4320,9 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	int number = 0;
 
 	base_init(&t->base, next_oid(), TR_NEW, func);
+	assert(impl && mod);
 	t->imp = _strdup(impl);
-	if (mod)
-		t->mod = _strdup(mod); 
-	else
-		t->mod = _strdup("SQL"); 
+	t->mod = _strdup(mod); 
 	t->sql = sql;
 	t->aggr = aggr;
 	t->ops = list_dup(args, (fdup)&arg_dup);
