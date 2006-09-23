@@ -639,7 +639,7 @@ mvc_destroy(mvc *m)
 sql_type *
 mvc_bind_type(mvc *sql, char *name)
 {
-	sql_type *t = sql_trans_bind_type(sql->session->tr, name);
+	sql_type *t = sql_trans_bind_type(sql->session->tr, NULL, name);
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_type %s\n", name);
