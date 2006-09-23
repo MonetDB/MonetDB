@@ -134,7 +134,10 @@ First remap all variables upon need
 				v = getVar(mb, a = getArg(p, 2));
 				valid= getEndLifespan(mb,a) <= i;
 			}
-
+@-
+Beware, we may only use temporary BATs as accumulators, otherwise
+we corrupt the database.
+@c
 #ifdef DEBUG_OPT_OPTIMIZER
 			stream_printf(GDKout, "Found accumulation candidate ");
 			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
