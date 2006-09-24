@@ -56,6 +56,7 @@ lib_sqlserver = {
 		sql_psm.mx \  
 		rel_semantic.mx \
 		rel_select.mx \
+		rel_optimizer.mx \
 		rel_bin.mx \
 		rel_dump.mx
 }

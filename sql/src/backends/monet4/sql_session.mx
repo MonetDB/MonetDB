@@ -53,6 +53,7 @@ extern ptr sql_frontend(void);
 #include "sql_gencode.h"	/* for backend_dump() */
 #include <sql_semantic.h>
 #include <rel_semantic.h>
+#include <rel_optimizer.h>
 #include <rel_bin.h>
 #include <sql_optimize.h>
 #include <sql_privileges.h>
@@ -64,6 +65,7 @@ extern ptr sql_frontend(void);
 #include <bat/res_table.h>
 #include <mapi.h>
 
+static int SQLdebug = 0;
 static int keep_trace = 0;
 
 int
@@ -132,6 +134,7 @@ sql_symbol2stmt(mvc *c)
 				s = semantic(c, NULL, c->sym);
 			}
 		} else {
+			r = rel_optimizer(c, r);
 			s = rel_bin(c, r);
 			if (s){
 				stmt *opt;
@@ -615,13 +618,9 @@ global_variables(mvc *sql, char *user, char *schema)
 	char *typename;
 	char *name;
 	stmt *r = NULL;
-	char *debug_str = GDKgetenv("sql_debug");
-	int debug = 0, sec = 0;
+	int sec = 0;
 	bit T = TRUE, F = FALSE;
 	ValRecord src;
-
-	if (debug_str) 
-		debug = strtol(debug_str,NULL,10);
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -629,7 +628,7 @@ global_variables(mvc *sql, char *user, char *schema)
 
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &debug));
+	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &sql->debug));
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 8, 0);
@@ -768,7 +767,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(0, (backend_stack) stk, rs, out);
+	m = mvc_create(0, (backend_stack) stk, SQLdebug, rs, out);
 	if (!m) {
 		GDKerror("Couldn't start sqlconsole");
 		return GDK_FAIL;
@@ -811,7 +810,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 static char *
 sql_client_alloc(mapi_client *fc)
 {
-	mvc *m = mvc_create(0, (backend_stack)fc->stk, NULL, NULL);
+	mvc *m = mvc_create(0, (backend_stack)fc->stk, SQLdebug, NULL, NULL);
 	backend *be = backend_create(m, 0);
 	Variable v;
 
@@ -847,7 +846,7 @@ sql_client_init(mapi_client *fc)
 	Variable v;
 
 	rs = bstream_create(fc->c->fdin, fc->c->blocked ? (128 * BLOCK) : 0);
-	mvc_reset(m, rs, fc->c->fdout, 10);
+	mvc_reset(m, rs, fc->c->fdout, SQLdebug, 10);
 	schema = mvc_login(m, fc->c->user, fc->c->passwd);
 	if (!schema) {
 		char *res = "schema authorization error";
@@ -929,6 +928,7 @@ sql_client_free(mapi_client *fc)
 ptr
 sql_frontend(void)
 {
+	char *debug_str = GDKgetenv("sql_debug");
 	char *m_clients = GDKgetenv("mapi_clients"); 
 	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
 	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
@@ -938,6 +938,9 @@ sql_frontend(void)
 	f->f_init  = sql_client_init;
 	f->f_free  = sql_client_free;
 	f->f_engine  = sql_client_engine; /* read/parse/execute loop */
+
+	if (debug_str) 
+		SQLdebug = strtol(debug_str,NULL,10);
 	return (ptr)f;
 }
 
@@ -953,7 +956,7 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(0, (backend_stack) stk, rs, out);
+	m = mvc_create(0, (backend_stack) stk, SQLdebug, rs, out);
 
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;

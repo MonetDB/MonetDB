@@ -103,8 +103,8 @@ extern int mvc_init(int debug, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 
-extern mvc *mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws);
-extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars);
+extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
+extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -223,7 +223,7 @@ mvc_init(int debug, backend_stack stk)
 	if (first) {
 		sql_schema *s;
 		sql_table *t;
-		mvc *m = mvc_create(0, stk, NULL, NULL);
+		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
 
 		/* disable caching */
 		m->cache = 0;
@@ -495,7 +495,7 @@ mvc_release(mvc *m, char *name)
 }
 
 mvc *
-mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
+mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 {
 	mvc *m;
 
@@ -525,7 +525,7 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->mode = m_normal;
 	m->explain = m_normal;
 	m->reply_size = 100;
-	m->debug = 0;
+	m->debug = debug;
 	m->cache = 1;
 
 	m->depth = 0;
@@ -545,7 +545,7 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 }
 
 void
-mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars)
+mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 {
 	sql_trans *tr;
 
@@ -587,9 +587,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars)
 	if (m->timezone != 0)
 		stack_set_number(m, "current_timezone", 0);
 	m->timezone = 0;
-	if (m->debug != 0)
-		stack_set_number(m, "debug", 0);
-	m->debug = 0;
+	if (m->debug != debug)
+		stack_set_number(m, "debug", debug);
+	m->debug = debug;
 	if (m->cache != 1)
 		stack_set_number(m, "cache", 1);
 	m->cache = 1;
