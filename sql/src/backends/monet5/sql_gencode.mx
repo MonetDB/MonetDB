@@ -805,6 +805,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 				s->nr = getDestVar(q);
 				@:SQLpostlude@
+				break;
 			}
 
 			q = newStmt1(mb, algebraRef, cmd);

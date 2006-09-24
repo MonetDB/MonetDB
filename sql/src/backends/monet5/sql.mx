@@ -559,6 +559,7 @@ First introduce the routines to be called by the front-end.
 #include <bat/res_table.h>
 #include <bat/bat_sequence.h>
 #include <sql_datetime.h>
+#include <rel_optimizer.h>
 #include <rel_bin.h>
 
 backend *
@@ -617,6 +618,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 				s = semantic(c, NULL, sym);
 			}
 		} else {
+			r = rel_optimizer(c, r);
 			s = rel_bin(c, r);
 			if (s){
 				stmt *opt;
@@ -678,29 +680,10 @@ getContext(mvc **c, backend **b )
 {
 	Client _client = MCgetClient();
 
-	if (_client == NULL ) {
+	if (_client == NULL ) 
 		return throwMessage("mvc","Can not access client record");
-	} 
-	if ( _client->state[PARSER] == NULL) {
+	if (_client->state[PARSER] == NULL || _client->state[OPTIMIZE] == NULL)
 		return throwMessage("mvc","PARSER not initialized\n");
-	}
-	if ( _client->state[OPTIMIZE] == NULL) {
-		assert(0);	/* Fabian: this looks like very dirty and wrong code to me */
-		str schema = NULL;
-		backend *be = _client->state[PARSER];
-
-		(void)be; /* Fabian: what is the use of declaring a variable, never using it, but telling the compiler to shut up? */
-		printf("#Re-establish context for client not expected\n");
-		_client->state[OPTIMIZE] = mvc_create(0,0,NULL,GDKout);
-		/* Fabian: should not GDKstrdup and should not use mvc_login
-		schema = mvc_login( _client->state[OPTIMIZE], 
-				GDKstrdup("monetdb"), GDKstrdup("monetdb") );
-		*/
-		if( !schema)
-			return throwMessage("getContext","unknown schema for monetdb\n");
-		else
-			_DELETE(schema);
-	}
 	*c = ((mvc *) _client ->state[OPTIMIZE]); 
 	if (b)
 		*b = ((backend*) _client->state[PARSER]);
