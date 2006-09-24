@@ -78,8 +78,7 @@ we update its context descriptor to denote an SQL scenario.
 #include <mtime.h>
 #include "optimizer.h"
 
-static int SQLinitialized = 0;
-static int SQLdebug = 0;
+static int SQLinitialized;
 
 static void
 monet5_freestack(backend_stack stk)
@@ -162,7 +161,6 @@ SQLepilogue(void)
 str
 SQLinit(Client c)
 {
-	char *debug_str = GDKgetenv("sql_debug");
 	char *gmt = "GMT";
 	tzone tz;
 	backend_functions *be_funcs;
@@ -186,8 +184,6 @@ SQLinit(Client c)
 	(void) tz;
 	if (mvc_init(FALSE, 0) < 0) 
 		return throwMessage("SQLinit", "Catalogue initialization failed");
-	if (debug_str) 
-		SQLdebug = strtol(debug_str,NULL,10);
 	SQLinitialized = TRUE;
 	return MAL_SUCCEED;
 }
@@ -229,9 +225,13 @@ global_variables(mvc *sql, char *user, char *schema)
 	char *typename;
 	char *name;
 	stmt *r = NULL;
+	char *debug_str = GDKgetenv("sql_debug");
 	int debug = 0, sec = 0;
 	bit T = TRUE, F = FALSE;
 	ValRecord src;
+
+	if (debug_str) 
+		debug = strtol(debug_str,NULL,10);
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -287,7 +287,7 @@ SQLinitAdmin(Client c)
 		return msg;
 	
 	if ((backend *) c->state[PARSER] == 0) {
-		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
+		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		/* replace user name with client record setting later on */
 		global_variables(m, "monetdb", "sys");
 		schema = monet5_user_get_def_schema(m, (oid)0);
@@ -321,7 +321,7 @@ SQLinitClient(Client c)
 		return msg;
 	
 	if ((backend *) c->state[PARSER] == 0) {
-		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
+		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 
 		global_variables(m, "monetdb", "sys");
 		/* pass through credentials of the user if not console */
