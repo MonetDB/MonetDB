@@ -559,7 +559,6 @@ First introduce the routines to be called by the front-end.
 #include <bat/res_table.h>
 #include <bat/bat_sequence.h>
 #include <sql_datetime.h>
-#include <rel_optimizer.h>
 #include <rel_bin.h>
 
 backend *
@@ -618,7 +617,6 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 				s = semantic(c, NULL, sym);
 			}
 		} else {
-			r = rel_optimizer(c, r);
 			s = rel_bin(c, r);
 			if (s){
 				stmt *opt;
