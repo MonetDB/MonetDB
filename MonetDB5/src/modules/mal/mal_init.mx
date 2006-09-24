@@ -106,6 +106,7 @@ include opt_factorize;
 include opt_garbageCollector;
 include opt_generators;
 include opt_inliners;
+include opt_joinPath;
 include opt_macro;
 include opt_multiplex;
 include opt_multiTable;
