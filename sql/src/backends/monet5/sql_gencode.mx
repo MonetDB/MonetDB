@@ -802,6 +802,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    atom_null(s->op3.stval->op1.aval) 
 			) {
 				q = newStmt1(mb, algebraRef, "selectNotNil");
+				q = pushArgument(mb, q, l);
 				s->nr = getDestVar(q);
 				@:SQLpostlude@
 			}
