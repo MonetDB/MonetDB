@@ -131,6 +131,9 @@ comment "Select all BUNs of a BAT with a certain
 	possible (it should be properly casted, 
 	e.g.:int(nil)).";
 
+command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address ALGselectNotNil
+comment "Select all not-nil values";
 @-
 The second group uses the head to perform the range selection.
 @mal
@@ -2066,6 +2069,33 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
 	CMDselect(&bn, b, low, high);
+	BBPreleaseref(b->batCacheid);
+	if (bn) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.select", "GDKerror");
+}
+@c
+algebra_export str ALGselectNotNil(int *result, int *bid);
+str
+ALGselectNotNil(int *result, int *bid)
+{
+	BAT *b, *bn = NULL;
+	ptr low,high;
+	bit bound=FALSE;
+
+	if ((b = BATdescriptor(*bid)) == NULL) 
+		return throwMessage("algebra.selectNotNil", "Cannot access descriptor");
+
+	low=high= ATOMnilptr(b->ttype);
+	if( BATcount_no_nil(b) != BATcount(b) )
+		CMDselect_(&bn, b, low, high, &bound, &bound);
+	else
+		bn= BATrcopy(b);
+
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
