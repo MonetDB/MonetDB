@@ -173,6 +173,9 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (getFunctionId(p) == joinRef ) {
 				/* assume 1-1 joins */
 				@:newRows2(1, 2, *c1 < *c2 ? *c1 : *c2)@
+			} else if (getFunctionId(p) == semijoinRef ) {
+				/* assume 1-1 semijoins */
+				@:newRows2(1, 2, *c1 < *c2 ? *c1 : *c2)@
 			} else if (getFunctionId(p) == selectRef ||
 				   getFunctionId(p) == uselectRef) {
 				@:newRows1(1, *c1 > 100 ? *c1 / 2 +1: *c1)@
@@ -181,7 +184,12 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (getFunctionId(p) == tuniqueRef ) {
 				@:newRows1(1, *c1 < 50 ? *c1 : *c1 / 10+1)@
 			}
-		} else if (getModuleId(p) ==batRef) {
+		} else if (getModuleId(p) == batcalcRef) {
+			if( isaBatType(getArgType(mb,p,1)) )
+				@:newRows1(1, *c1)@
+			else
+				@:newRows1(2, *c2)@
+		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == reverseRef ||
 			    getFunctionId(p) == setWriteModeRef  ||
 			    getFunctionId(p) == hashRef  ||
