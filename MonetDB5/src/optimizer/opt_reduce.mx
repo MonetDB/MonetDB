@@ -74,11 +74,11 @@ void MRconstant(MalBlkPtr mb){
 		for(j=0; j<top; j++)
 		if( getVarType(mb,i) == getVarType(mb,cst[j]) &&
 			ATOMcmp(getVarType(mb,i),
-				 VALget(&getVar(mb,i)->value),
-				 VALget(&getVar(mb,cst[j])->value)) == 0){
-			alias[i]= cst[j];
-			break;
-		}
+			VALget(&getVar(mb,i)->value),
+			VALget(&getVar(mb,cst[j])->value)) == 0){
+				alias[i]= cst[j];
+				break;
+			}
 		cst[top++]= i;
 	}
 	for( i=0; i< mb->stop; i++){
@@ -100,8 +100,8 @@ OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	vars = (int *) alloca(mb->vtop * sizeof(int));
 	used= (int *) alloca(mb->vtop * sizeof(int));
-	for( i=0; i< mb->vtop; i++)
-		vars[i]= used[i]=0;
+	memset((char*) vars, 0, mb->vtop * sizeof(int));
+	memset((char*) used, 0, mb->vtop * sizeof(int));
 
 	/* reduce constant list */
 	MRconstant(mb);

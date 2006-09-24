@@ -150,32 +150,37 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pushInstruction(mb, p);
 		for (j = p->retc; j < p->argc; j++) {
 			v = getVar(mb, getArg(p, j));
-			/* avoid duplicate releases */
-			done = 0;
-			for (k = j - 1; k >= p->retc; k--)
-				if (getArg(p, j) == getArg(p, k))
-					done++;
+			if (v->endLifespan == i && isaBatType(getArgType(mb, p, j))) {
+				/* avoid duplicate releases */
+				done = 0;
+				for (k = j - 1; k >= p->retc; k--)
+					if (getArg(p, j) == getArg(p, k))
+						done++;
 
-			if (done == 0 && v->endLifespan == i && isaBatType(getArgType(mb, p, j))) {
-/* 			printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);*/
-				if (getVarScope(mb, getArg(p, j)) == blk) {
-					@:releaseBAT()@
-					actions++;
+				if (done == 0 ){
+#ifdef DEBUG_OPT_GARBAGE
+				printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);
+#endif
+					if (getVarScope(mb, getArg(p, j)) == blk) {
+						@:releaseBAT()@
+						actions++;
+					}
 				}
 			}
-		}
-		if (blockStart(p)) {
-			blk++;
-			if (top < MAXDEPTH - 2) {
-			} else {
-				mb->errors++;
-				GDKerror("optimizer.garbageCollector:Too deeply nested MAL program\n");
+			if (blockStart(p)) {
+				blk++;
+				if (top < MAXDEPTH - 2) {
+				} else {
+					mb->errors++;
+					GDKerror("optimizer.garbageCollector:"
+							 "Too deeply nested MAL program\n");
+				}
 			}
+			if (blockExit(p))
+				if (top > 0) {
+					top--;
+				}
 		}
-		if (blockExit(p))
-			if (top > 0) {
-				top--;
-			}
 
 	}
 #ifdef DEBUG_OPT_GARBAGE
