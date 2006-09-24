@@ -68,23 +68,20 @@ static int
 OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0;
-	int *pc;
+	int *pc, *used;
 	str joinPathRef = putName("joinPath",8);
 	InstrPtr q,r;
 
 	(void) stk;
 	pc= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */
 	memset((char*) pc, 0, sizeof(int)* mb->vtop);
+	used= (int*) alloca(sizeof(int)* mb->vtop); /* to find last assignment */
+	memset((char*) used, 0, sizeof(int)* mb->vtop);
 
 	for (i = 1; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		for(j=0; j< p->retc; j++){
+		for(j=0; j< p->retc; j++)
 			pc[getArg(p,j)]= i;
-#ifdef DEBUG_OPT_JOINPATH 
-			stream_printf(GDKout,"last of %d is  pc %d\n", getArg(p,j),i);
-			printInstruction(GDKout,mb, p, LIST_MAL_ALL);
-#endif
-		}
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== joinRef ){
 @-
 Try to expand each of its argument list
@@ -92,7 +89,7 @@ Try to expand each of its argument list
 			q= copyInstruction(p);
 			q->argc=1;
 			for(j=p->retc; j<p->argc; j++)
-			if( pc[getArg(p,j)] ){
+			if( pc[getArg(p,j)] && used[getArg(p,j)]==0 ){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 #ifdef DEBUG_OPT_JOINPATH 
 				stream_printf(GDKout,"expand with \n");
@@ -116,9 +113,13 @@ Try to expand each of its argument list
 				setFunctionId(q,joinPathRef);
 				getInstrPtr(mb,i)=q;
 				freeInstruction(p);
+				p=q;
 				actions++;
 			}
 		}
+		/* remember its latest use */
+		for(j=p->retc; j<p->argc; j++)
+			used[getArg(p,j)]= i;
 	}
 	return actions;
 }
