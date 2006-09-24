@@ -63,12 +63,6 @@ routines, i.e. those not covered by the current backend.
 The most important one is the multi-path join, which should
 be optimized to reduce a potential exploding size/
 @mal
-
-pattern algebra.joinPath(b:bat[:any_1,:any_2], 
-        aliasRemoval:bat[:any_2,:any_3]...):bat[:any_1,:any_3]
-address QOTjoinPath
-comment "Evaluate a join path.";
-
 optimizer.prelude();
 @{
 @+ Dummy code 
@@ -91,7 +85,6 @@ opt_export str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export size_t QOTjoinEstimate(BAT *l, BAT *r);
-opt_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _OPTIMIZER_H */
 @c
@@ -229,79 +222,6 @@ QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-@-
-The join path optimizer takes a join sequence and
-attempts to minimize the intermediate result.
-The choice depends on a good estimate of intermediate
-results.
-For the time being, we use a simplistic model, based
-on the assumption that most joins are foreign key joins anyway.
-@c
-size_t
-QOTjoinEstimate(BAT *l, BAT *r)
-{
-	size_t lc, rc;
-
-	lc = BATcount(l);
-	rc = BATcount(r);
-	return MIN(lc, rc);
-}
-
-str
-QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *joins[MAXARG], *b = 0;
-	size_t estimate, e;
-	int top, i, j, ret = 0, *bid;
-
-	(void) mb;
-	(void) ret;
-	top = 0;
-	for (i = pci->retc; i < pci->argc; i++) {
-		bid = (int *) getArgReference(stk, pci, i);
-#ifdef OPTIMIZER_DEBUG
-		printf("bid %d\n", *bid);
-#endif
-		if ((b = BATdescriptor(*bid)) == NULL) {
-			return throwMessage("algebra.joinPath", "Cannot access descriptor");
-		}
-
-		joins[top++] = b;
-	}
-	/* solve the join by pairing the smallest first */
-	while (top > 2) {
-		j = 0;
-		estimate = BATcount(joins[0]);
-		for (i = 1; i < top - 1; i++) {
-			e = QOTjoinEstimate(joins[i], joins[i + 1]);
-			if (e < estimate) {
-				estimate = e;
-				j = i;
-			}
-		}
-#ifdef OPTIMIZER_DEBUG
-		printf("join %d and %d\n", joins[j]->batCacheid, joins[j + 1]->batCacheid);
-#endif
-		b = BATjoin(joins[j], joins[j + 1], estimate);
-		BBPunfix(joins[j]->batCacheid);
-		BBPunfix(joins[j + 1]->batCacheid);
-		joins[j] = b;
-		for (i = j + 1; i < top; i++)
-			joins[i] = joins[i + 1];
-		top--;
-	}
-#ifdef OPTIMIZER_DEBUG
-	printf("join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
-#endif
-	estimate = BATcount(joins[0]);
-	b = BATjoin(joins[0], joins[1], estimate);
-	BBPunfix(joins[0]->batCacheid);
-	BBPunfix(joins[1]->batCacheid);
-
-	BBPfix(b->batCacheid);
-	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
-	return NULL;
-}
 @-
 @= macroOptimizer
 opt_export str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
