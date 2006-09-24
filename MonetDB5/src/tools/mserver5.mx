@@ -181,7 +181,7 @@ a global structure for other components to extract information.
 @c
 #define BSIZE 8192
 
-void
+int
 monet_init(opt *set, int setlen)
 {
 	char *p;
@@ -197,7 +197,7 @@ monet_init(opt *set, int setlen)
 		fprintf(stderr, "Error, no database name or directory\n");
 		if (n)
 			free(n);
-		return;
+		return 0;
 	}
 
 	if(strlen(dbfarmval) >= BSIZE)
@@ -211,7 +211,7 @@ monet_init(opt *set, int setlen)
 	/* determine Monet's kernel settings */
 	if (!GDKinit(dbname, buf,  strcasecmp(alloc_map, "yes") == 0) ) {
 		free(n);
-		return;
+		return 0;
 	}
 
 @-
@@ -272,6 +272,7 @@ monet_options.mx.in
 	monet_hello(set, setlen);
 	/* you don't need the commandline arguments anymore */
 	mo_free_options(set, setlen);
+	return 1;
 }
 
 int
@@ -448,8 +449,7 @@ faster system start.
 	else
 		mo_print_options(set, setlen);
 #endif
-	monet_init(set, setlen);
-	if (mal_init())
+	if( monet_init(set, setlen) == 0 || mal_init())
 		return 0;
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables()) != MAL_SUCCEED)
