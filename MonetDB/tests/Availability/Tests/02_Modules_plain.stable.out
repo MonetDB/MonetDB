@@ -861,8 +861,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 118 ]
-[ 118 ]
+[ 119 ]
+[ 119 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature														| help													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -970,6 +970,7 @@ Module: "monettime"
 [ "time_sub_sec_interval",	  "PROC:      ",  "time_sub_sec_interval(daytime, lng) : daytime",									  "not available"											  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime) : timestamp",										  "creates a timestamp from (date,daytime) parameters (in the local timezone)."				  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime, tzone) : timestamp",									  "creates a timestamp from (date,daytime,tzone) parameters (!DS2.2)."					  ]
+[ "timestamp",			  "PROC:      ",  "timestamp(date) : timestamp",											  "not available"											  ]
 [ "timestamp",			  "PROC:      ",  "timestamp(int) : timestamp",												  "not available"											  ]
 [ "timestamp",			  "PROC:      ",  "timestamp(lng) : timestamp",												  "not available"											  ]
 [ "timestamp_add_sec_interval",	  "PROC:      ",  "timestamp_add_sec_interval(timestamp, lng) : timestamp",								  "not available"											  ]
