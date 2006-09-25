@@ -177,6 +177,10 @@ char *p_id[]  = {
     , [p_modify]            = "modify"
     , [p_transbinds]        = "transbinds"
     , [p_stmt_ty]           = "stmt_ty"
+
+    /* Pathfinder extension: recursion */
+    , [p_recursion]         = "recursion"
+    , [p_seed]              = "seed"
 };
 
 /** Names of XPath axes */

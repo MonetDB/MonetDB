@@ -206,6 +206,8 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    modify         = 123
 %term    transbinds     = 124
 %term    stmt_ty        = 125
+%term    recursion      = 126
+%term    seed           = 127
 
 %%
 
@@ -602,6 +604,17 @@ NewNameExpr:            ExprSingle                                  = 228 (10);
 
 /* statement type for updating functions */
 SequenceType:           seq_ty (stmt_ty (nil))                      = 229 (10);
+
+/* Pathfinder extension: recursion */
+ExprSingle:             RecursiveExpr                               = 230 (10);
+
+RecursiveExpr:          recursion (
+                            var_type (Var, OptTypeDeclForRec),
+                            seed (ExprSingle, ExprSingle))          = 231 (10);
+
+OptTypeDeclForRec:      nil                                         = 232 (10);
+OptTypeDeclForRec:      SequenceType                                = 233 (10);
+/* end of recursion extension */
 
 %%
 
@@ -3901,6 +3914,58 @@ reduce (PFpnode_t * p, int goalnt)
              * statement type for updating user-defined functions.
              */
             C(p) = seqtype (PFty_star (PFty_stmt ()));
+            break;
+
+        /* ExprSingle:             RecursiveExpr */
+        case 230:
+            break;
+
+        /* RecursiveExpr:          recursion (
+                                       var_type (Var, OptTypeDeclForRec),
+                                       seed (ExprSingle, ExprSingle)) */
+        case 231:
+        {
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
+
+            /*
+             * with $var [as type1] seeded by expr1 recurse expr2
+             *
+             * Both expressions must evaluate to a subtype of type1
+             * (we allow empty sequences for expr2, though).  If
+             * absent, type1 defaults to `node*'.  The static type
+             * of the overall expression is type1.
+             */
+            C(p) = flwr (let (letbind (var (v1), C(RL(p))),
+                         let (letbind (var (v2),
+                                       proof (subty (var (v1), C(LR(p))),
+                                              seqcast (C(LR(p)), var (v1)))),
+                              nil ())),
+                         recursion (C(LL(p)),
+                                    seed (var (v2),
+                                          proof (
+                                              subty (
+                                                  C(RR(p)),
+                                                  seqtype (
+                                                      PFty_opt (
+                                                          C(LR(p))->sem.type))),
+                                                 C(RR(p))))));
+        } break;
+
+        /* OptTypeDeclForRec:      nil */
+        case 232:
+            /*
+             * If no type is given in an
+             *
+             *   with $x [as type] seeded by e1 return e2
+             *
+             * expression, we default to node*
+             */
+            C(p) = seqtype (PFty_star (PFty_node ()));
+            break;
+
+        /* OptTypeDeclForRec:      SequenceType */
+        case 233:
             break;
 
         default:

@@ -436,6 +436,40 @@ scope (PFpnode_t *n)
          */
         break;
 
+        /*
+         * Recursion expression (a Pathfinder extension)
+         *
+         * with $v [as t] seeded by e1 return e2
+         *
+         *               recursion
+         *              /         \
+         *         var_type       seed
+         *          /    \        /  \
+         *         v      t      e1  e2
+         *
+         * (1) scope-check e1
+         * (2) create a new scope
+         * (3) add variable v to it
+         * (4) scope-check e2
+         * (5) close the scope
+         */
+    case p_recursion:
+
+        assert (n->child[0]->kind == p_var_type);
+        assert (n->child[1]->kind == p_seed);
+
+        /* (1) */
+        scope (n->child[1]->child[0]);
+        /* (2) */
+        PFscope_open (var_env);
+        /* (3) */
+        push (n->child[0]->child[0]);
+        /* (4) */
+        scope (n->child[1]->child[1]);
+        /* (5) */
+        PFscope_close (var_env);
+        break;
+
     default:
         /*
          * For all other cases just traverse the whole tree recursively.

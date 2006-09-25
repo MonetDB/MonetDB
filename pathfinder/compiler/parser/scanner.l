@@ -450,23 +450,10 @@ WhiteSpaceChar                   [\x20\x09\x0d\x0a]
 MinimalChar                      [\x09\x0a\x0d\x20\x21\x24-\x25\x28\x2a-\x2c\x2e-\x3b\x3d-\x7a\x7c\x7e\x7f]|[\xc0-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf][\x80-\xbf]|[\xf0-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf]
 Char                             {MinimalChar}|[-{}<&'"#)]
 
-/* We have a minor problem here.
-   A colon at the end of the comment (e.g., `(: foo ::)') leads to
-   a parse error in Pathfinder.  */
-/*
-ExprComment                      "(:"([^(:]|"("[^:]|":"[^)])*":)"
-*/
 PragmaContentChar                {MinimalChar}|[-{}<'"]
 PragmaContent                    ({PragmaContentChar}|"#"({PragmaContentChar}|"#")|({PragmaContentChar}|")")")")*
-/*
-PragmaContent                    {PragmaContentChar}*
-PragmaContent                    ([^#)]|"#"[^)]|[^#]")")*
-*/
 
 /* whitespace/comments in compound keywords */
-/* comments are stripped away by YY_INPUT()
-_                                ({S}|{ExprComment})+
-*/
 _                                {S}
 
 %%
@@ -531,6 +518,10 @@ _                                {S}
 "let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
 "some"{_}"$"                       { gotoState (VARNAME); yield (some_dollar); }
 "every"{_}"$"                      { gotoState (VARNAME); yield (every_dollar);}
+
+"with"{_}"$"                       { /* Pathfinder extension: recursion */
+                                     gotoState (VARNAME); yield (with_dollar); }
+
 "typeswitch"{_}?"("/[^:]           { yield (typeswitch_lparen); }
 "if"{_}?"("/[^:]                   { yield (if_lparen); }
 "+"                                { yield (plus); /* unary plus */ }
@@ -699,6 +690,9 @@ _                                {S}
 "let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
 "in"                               { gotoState (DEFAULT); yield (in_); }
 
+"seeded"{_}"by"                    { /* Pathfinder extension: recursion */
+                                     gotoState (DEFAULT); yield (seeded_by); }
+
 "{"                                { pushState (OPERATOR);
                                      gotoState (DEFAULT);
                                      yield (lbrace); }
@@ -706,6 +700,10 @@ _                                {S}
 ";"                                { gotoState (DEFAULT); yield (semicolon); }
 ","                                { gotoState (DEFAULT); yield (comma); }
 "return"                           { gotoState (DEFAULT); yield (return_); }
+
+"recurse"                          { /* Pathfinder extension: recursion */
+                                     gotoState (DEFAULT); yield (recurse); }
+
 "where"                            { gotoState (DEFAULT); yield (where); }
 "order"{_}"by"                     { gotoState (DEFAULT); yield (order_by); }
 "stable"{_}"order"{_}"by"          { gotoState (DEFAULT);

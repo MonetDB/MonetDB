@@ -961,6 +961,47 @@ PFcore_tag (PFqname_t qn)
 }
 
 /**
+ * Create a new core tree node that represents a
+ *
+ * @verbatim
+      with $var seeded by expr recurse expr
+@endverbatim
+ *
+ * expression (this is a Pathfinder extension).  The first argument
+ * must be a variable name, the second argument a @c seed node that
+ * pairs the seed and the return expression.
+ *
+ * @param var          A core expression that represents the variable
+ *                     used for recursion; must be of type @c c_var.
+ * @param seed_recurse A core expression standing for the `seed' and
+ *                     `recurse' parts of the expression.  Must be of
+ *                     type @c c_seed.
+ */
+PFcnode_t *
+PFcore_recursion (const PFcnode_t *var, const PFcnode_t *seed_recurse)
+{
+    assert (var->kind == c_var);
+    assert (seed_recurse->kind == c_seed);
+
+    return PFcore_wire2 (c_recursion, var, seed_recurse);
+}
+
+/**
+ * Create a new core tree node that represents the
+ *
+ * @verbatim
+      seeded by expr recurse expr
+@endverbatim
+ *
+ * part of a recursive expression (this is a Pathfinder extension).
+ */
+PFcnode_t *
+PFcore_seed (const PFcnode_t *seed, const PFcnode_t *recurse)
+{
+    return PFcore_wire2 (c_seed, seed, recurse);
+}
+
+/**
  * Function declaration in the list of declarations
  * (see #PFcore_fun_decls).
  */

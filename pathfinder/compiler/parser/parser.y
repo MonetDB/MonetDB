@@ -407,6 +407,8 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token rbrace                          "}"
 %token rbrace_rbrace                   "}}"
 %token rbracket                        "]"
+/* Pathfinder extension: recursion */
+%token recurse                         "recurse"
 /* [BURKOWSKI] */
 %token reject_narrow_colon_colon       "reject-narrow::"
 %token reject_wide_colon_colon         "reject-wide::"
@@ -417,6 +419,8 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
+/* Pathfinder extension: recursion */
+%token seeded_by                       "seeded by"
 /* [BURKOWKSI] */
 %token select_narrow_colon_colon       "select-narrow::"
 %token select_wide_colon_colon         "select-wide::"
@@ -443,6 +447,8 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token validate_strict_lbrace          "validate strict {"
 %token where                           "where"
 %token with                            "with"
+/* Pathfinder extension: recursion */
+%token with_dollar                     "with $"
 %token xml_comment_end                 "-->"
 %token xml_comment_start               "<!--"
 %token xquery_version                  "xquery version"
@@ -663,6 +669,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                QuantifiedExpr
                QueryBody 
                RangeExpr
+               RecursiveExpr                /* PF extension */
                RelativePathExpr
                RenameExpr
                ReplaceExpr
@@ -670,6 +677,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                ReverseStep
                SchemaAttributeTest
                SchemaElementTest
+               SeedVar                      /* PF extension */
                SequenceType
                Setter
                SingleType
@@ -1378,6 +1386,7 @@ ExprSingle                : FLWORExpr       { $$ = $1; }
                           | ReplaceExpr     { $$ = $1; }
                           | TransformExpr   { $$ = $1; }
                           | OrExpr          { $$ = $1; }
+                          | RecursiveExpr   { $$ = $1; }
                           ;
 
 /* [33] */
@@ -2736,6 +2745,19 @@ TransformBinding_         : VarName ":=" ExprSingle
                                      p_wire2 (p_var_type, @1, $1, nil (@1)),
                                      $3); }
                           ;
+
+/* Pathfinder extension: recursion */
+RecursiveExpr             : "with $" SeedVar "seeded by" ExprSingle
+                            "recurse" ExprSingle
+                            { $$ = wire2 (p_recursion, @$,
+                                     $2,
+                                     wire2 (p_seed, @$, $4, $6)); }
+                          ;
+
+SeedVar                   : VarName OptTypeDeclaration_
+                            { $$ = wire2 (p_var_type, @$, $1, $2); }
+                          ;
+/* end of the Pathfinder recursion extension */
 
 %%
 

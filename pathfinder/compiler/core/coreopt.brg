@@ -194,6 +194,10 @@ static PFarray_t *var_env[HASH_BUCKETS];
 %term param              = 58 /**< function declaration parameter */
 %term cast               = 59 /**< XQuery `cast as' operation */
 
+/* Pathfinder extension: recursion */
+%term recursion          = 60 /**< Pathfinder extension: recursion */
+%term seed               = 61 /**< Pathfinder extension: recursion */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -321,6 +325,9 @@ ParamList:          params (FunParam, ParamList)                =  72 (10);
 FunctionBody:       CoreExpr                                    =  73 (10);
                                                                      
 FunParam:           param (SequenceType, var)                   =  74 (10);
+
+/* Pathfinder extension: recursion */
+CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  75 (10);
 
 %%
 

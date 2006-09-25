@@ -159,6 +159,10 @@ enum PFctype_t {
   , c_param              = 58 /**< function declaration parameter */
   , c_cast               = 59 /**< function declaration parameter */
 
+  /* Pathfinder extension: recursion */
+  , c_recursion          = 60 /**< "with $v seeded by..." expression */
+  , c_seed               = 61
+
 };
 
 /** Core tree node type indicators */
@@ -289,6 +293,9 @@ PFcnode_t *PFcore_params (const PFcnode_t *param, const PFcnode_t *params);
 PFcnode_t *PFcore_param (const PFcnode_t *type, const PFcnode_t *var);
 PFcnode_t *PFcore_cast (const PFcnode_t *type, const PFcnode_t *expr);
 
+PFcnode_t *PFcore_recursion (const PFcnode_t *var,
+                             const PFcnode_t *seed_recurse);
+PFcnode_t *PFcore_seed (const PFcnode_t *seed, const PFcnode_t *recurse);
 
 PFfun_t *PFcore_function (PFqname_t);
 PFcnode_t *PFcore_apply (PFapply_t *, const PFcnode_t *);

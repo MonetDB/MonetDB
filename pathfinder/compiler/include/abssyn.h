@@ -178,6 +178,10 @@ enum PFptype_t {
     , p_modify           = 123  /**< modify and return parts of transform */
     , p_transbinds       = 124  /**< variable bindings in a "transform" */
     , p_stmt_ty          = 125  /**< "item" type `stmt' (funct. decls.) */
+
+    /* Pathfinder extension: recursion */
+    , p_recursion        = 126  /**< "with $xx seeded by..." expression */
+    , p_seed             = 127  /**< seed and return expr of a recursive expr */
 };
 
 typedef enum PFptype_t PFptype_t;

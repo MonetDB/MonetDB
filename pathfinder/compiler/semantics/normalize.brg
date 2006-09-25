@@ -195,6 +195,8 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    modify         = 123
 %term    transbinds     = 124
 %term    stmt_ty        = 125
+%term    recursion      = 126
+%term    seed           = 127
 
 %%
 
@@ -584,6 +586,14 @@ FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (stmt_ty (nil))),
                                   external)                         = 242 (10);
+
+/* Pathfinder extension: recursion */
+ExprSingle:             RecursiveExpr                               = 243 (10);
+
+RecursiveExpr:          recursion (
+                            var_type (varref, OptTypeDeclaration_),
+                            seed (ExprSingle, ExprSingle))          = 244 (10);
+/* end of recursion extension */
 
 %%
 

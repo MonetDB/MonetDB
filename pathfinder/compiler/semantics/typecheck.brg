@@ -158,6 +158,10 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term param              = 58 /**< function declaration parameter */
 %term cast               = 59 /**< XQuery `cast as' operation */
 
+/* Pathfinder extension: recursion */
+%term recursion          = 60 /**< Pathfinder extension: recursion */
+%term seed               = 61 /**< Pathfinder extension: recursion */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -276,6 +280,9 @@ FunctionBody:       CoreExpr                                    =  72 (10);
 
 FunParam:           param (SequenceType, var)                   =  73 (10);
 
+/* Pathfinder extension: recursion */
+CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  74 (10);
+
 %%
 
 /*
@@ -372,6 +379,9 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
         case 8:
+
+        /* CoreExpr:           recursion (var, seed (Atom, CoreExpr)) */
+        case 74:
 
             break;
 
@@ -1166,6 +1176,55 @@ reduce (PFcnode_t * p, int goalnt)
              */
             TY(R(p)) = TY(L(p));
             TY(R(p)->sem.var) = TY(L(p));
+            break;
+
+        /* CoreExpr:           recursion (var, seed (Atom, CoreExpr)) */
+        case 74:
+            /* TOPDOWN */
+
+            /*
+             * Reduce the seed expression first.  We made sure that
+             * the static type of the seed expression will be the type
+             * given in the `with $var as ...' part of the input query
+             * (or the default type `node*') in the translation to
+             * Core.
+             */
+            reduce (kids[0], nts[0]);
+
+            /*
+             * Now attach this type to the recursion variable
+             */
+            TY(L(p)) = TY(RL(p));
+            TY(L(p)->sem.var) = TY(RL(p));
+
+            /*
+             * Of course, that same type must also be a node type
+             */
+            if (! PFty_subtype (TY(RL(p)), PFty_star (PFty_node ())))
+                PFoops (OOPS_TYPECHECK,
+                        "recursion is only possible on node types "
+                        "(got %s)", PFty_str (TY(RL(p))));
+
+            /*
+             * The type must also allow more than one node
+             */
+            if (! PFty_subtype (PFty_plus (TY(RL(p))), TY(RL(p))))
+                PFoops (OOPS_TYPECHECK,
+                        "the type given in a recursive expression "
+                        "must allow sequences of length greater than one "
+                        "(got %s)", PFty_str (TY(RL(p))));
+
+            /*
+             * Now we are ready to type-check the recursion body
+             * (which may use the variable)
+             */
+            reduce (kids[1], nts[1]);
+
+            /*
+             * The same type is also the type of the overall expression.
+             */
+            TY(p) = TY(RL(p));
+
             break;
 
         default:

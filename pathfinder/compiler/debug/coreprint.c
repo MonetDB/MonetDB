@@ -128,6 +128,10 @@ char *c_id[]  = {
   , [c_param]              = "param"
   , [c_cast]               = "cast"
 
+  /* Pathfinder extensions: recursion */
+  , [c_recursion]          = "recursion"
+  , [c_seed]               = "seed"
+
 };
 
 /** Current node id */
