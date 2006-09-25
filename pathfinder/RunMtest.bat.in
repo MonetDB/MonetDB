@@ -9,7 +9,7 @@ goto end
 set builddir=@MONETDB_BUILD@
 set srcdir=@MONETDB_SOURCE@
 
-set MOD_PATH=%builddir%\runtime;@MONETDB_PREFIX@\lib\MonetDB
+set MOD_PATH=%builddir%\runtime;%builddir%\modules\pftijah;@MONETDB_PREFIX@\lib\MonetDB
 
 set PATH=%builddir%\compiler;@MONETDB_PREFIX@\bin;@MONETDB_PREFIX@\lib;%PATH%
 set PATH=%MOD_PATH%;%PATH%
