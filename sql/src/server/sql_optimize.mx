@@ -1256,7 +1256,6 @@ optimize(mvc *c, stmt *s)
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:
-	case st_table:
 	case st_idxbat:
 
 	case st_atom:
@@ -1349,6 +1348,7 @@ optimize(mvc *c, stmt *s)
 	case st_while:
 	case st_if:
 	case st_return:
+	case st_table:
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;

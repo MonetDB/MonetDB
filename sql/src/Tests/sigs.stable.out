@@ -39,6 +39,7 @@ module 'sql_server'
 [ "dbl(sht, int, int) : dbl"						  ]
 [ "dbl(str) : dbl"							  ]
 [ "declareVariable(mvc, str, any::1) : void"						  ]
+[ "dump_cache() : ptr "									  ]
 [ "flt(int) : flt"							  ]
 [ "flt(int, int) : flt"							  ]
 [ "flt(int, int, int) : flt"						  ]

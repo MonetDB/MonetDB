@@ -3232,10 +3232,14 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs || !tail_type(cs)) {
-			if (cs) stmt_destroy(cs);
 			list_destroy(sl);
-			sql_select_cleanup(sql, s, subset, NULL);
+			sql_select_cleanup(sql, cs, subset, NULL);
 			return sql_error(sql, 02, "SELECT: subquery result missing");
+		}
+		if (tail_type(cs)->comp_type) {
+			list_destroy(sl);
+			sql_select_cleanup(sql, cs, subset, NULL);
+			return sql_error(sql, 02, "SELECT: subquery returns a table");
 		}
 		list_append(sl, cs);
 		aggr |= cs->aggr;

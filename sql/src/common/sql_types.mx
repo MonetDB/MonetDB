@@ -151,15 +151,7 @@ static void sqltypeinit(void);
 
 int digits2bits(int digits) 
 {
-	if (digits == 1)
-		return 3;
-	else if (digits <= 2)
-		return 6;
-	else if (digits <= 3)
-		return 9;
-	else if (digits <= 4)
-		return 13;
-	else if (digits < 5) 
+	if (digits < 5) 
 		return 16;
 	else if (digits < 10) 
 		return 32;

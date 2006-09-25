@@ -211,6 +211,10 @@ command db_users() :bat[:str,:bat]
 address db_users_wrap
 comment "return table of users with sql scenario";
 
+command dump_cache() :bat[:str,:bat]
+address dump_cache
+comment "dump the content of the query cache";
+
 @- SQL function aliases
 The code generate should identify the precise module
 target for all functions. This creates quite some
@@ -1982,3 +1986,36 @@ second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 @:c_interval(sht)@
 @:c_interval(int)@
 @:c_interval(lng)@
+
+str
+dump_cache(int *r)
+{
+	mvc *m;
+	str msg = getContext(&m, NULL);
+	int cnt; 
+	BAT *t, *query, *count;
+	cq *q = NULL;
+
+	if (msg)
+		return msg;
+	cnt = m->qc->id; 
+ 	t = BATnew(TYPE_str, TYPE_bat, 1);
+	query = BATnew(TYPE_void, TYPE_str, cnt);
+	query->hseqbase = 0;
+	count = BATnew(TYPE_void, TYPE_int, cnt);
+	count->hseqbase = 0;
+	BUNins(t, "query", &query->batCacheid, FALSE);
+	BUNins(t, "count", &count->batCacheid, FALSE);
+
+	for(q = m->qc->q; q; q = q->next) {
+		BUNappend(query, q->codestring, FALSE);
+		BUNappend(count, &q->count, FALSE);
+	}
+
+	BBPunfix(query->batCacheid);
+	BBPunfix(count->batCacheid);
+	*r = t->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+

@@ -976,7 +976,7 @@ produce code.
 					  m->argc,
 					  m->scanner.key,/* the statement hash key */
 					  m->type,/* the type of the statement */
-					  NULL);
+					  sql_escape_str(QUERY(m->scanner)));
 
 			be->q->code = 
 				(backend_code)backend_dumpproc(be, c, be->q, s);

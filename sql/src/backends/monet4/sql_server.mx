@@ -224,6 +224,9 @@ stream.
 	.BUILTIN sql_variables() : ptr = sql_variables;
 		"return the table with session variables"
 
+	.BUILTIN dump_cache() : ptr = dump_cache;
+		"dump the query cache"
+
 	.COMMAND zero_or_one( BAT[any,any::1] b) : any::1 = zero_or_one; "if b contains exactly one value return this. Incase of more raise an exception else return nil"
 
 .END sql_server;
