@@ -3376,7 +3376,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = strip_extra_zeros($1);
+		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
@@ -3930,7 +3930,7 @@ name_commalist:
  ;
 
 intval:
-	sqlINT	{ $$ = strtol($1,&$1,10); }
+	sqlINT	{ $$ = strtol($1,NULL,10); }
  |	IDENT	{ mvc *m = (mvc*)parm;
 		  char *name = $1;
 		  sql_subtype *tpe;

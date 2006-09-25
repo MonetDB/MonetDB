@@ -431,7 +431,7 @@ care of.
 
 		OPTaliases(mb, 0, 0);	/* alias removal */
 		OPTcommonTerms(mb,0,0);	/* common terms */
-		OPTaccumulators(mb,0,0); /* safe space by overwriting bats */
+		/*OPTaccumulators(mb,0,0); safe space by overwriting bats */
 		OPTdeadcode(mb, 0, 0);	/* dead code removal */
 		OPTreduce(mb,0,0);	/* reduce stack space */
 		OPTgarbageCollector(mb,0,0);	/* free BAT space quickly */
