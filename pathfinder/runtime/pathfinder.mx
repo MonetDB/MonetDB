@@ -1628,7 +1628,7 @@ PROC shred_stream(Stream s,
                   str colname,
                   lng pageFree) : void
 {
-    var names := bat(void,str).insert(name).access(BAT_READ).seqbase(0@0);
+    var names := bat(void,str).append(name).access(BAT_READ).seqbase(0@0);
     var ws := 2000000000 + clientid();
     var err := CATCH(shred_doc_base(s, names, names, names.project(colname), names.project(pageFree), s));
     ws_destroy(int(ws)); 
