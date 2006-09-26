@@ -1077,7 +1077,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
     if (count(pre_sizes) > 1) {
         var pre_kinds := ws.fetch(PRE_KIND).fetch(cont);
         if (pre_kinds.fetch(0) = COLLECTION) {
-            pre_sizes := pre_sizes.slice(1,1+pre_sizes.fetch(1));
+            pre_sizes := pre_sizes.slice(1,count(pre_sizes));
         }
     }
     var res := ll_@1(iter, ctx, pre_sizes);
