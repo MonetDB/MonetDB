@@ -2093,8 +2093,9 @@ PROC do_update_replace(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid
         if (props.count() > 0) {
           var eins := props.mirror().leftjoin(update_replace); # [i,ins]
           var etgt := props.leftjoin(prop_tgt); # [i,tgt]
-          var nprops := add_pi_bulk(ws, cont, etgt, eins); # [i,new PROPID]
-          rid_prop_update := rid_prop_update.replace(nprops);
+          var elvalid := add_pi_bulk(ws, cont, etgt, eins); # [i,new PROPID]
+          var upd := erids.reverse().join(elvalid); # [RID,PROPID]
+          rid_prop_update := rid_prop_update.replace(upd);
           epi := epi.kdiff(props); # only do the remaining ones
         }
         if (epi.count() > 0) {
