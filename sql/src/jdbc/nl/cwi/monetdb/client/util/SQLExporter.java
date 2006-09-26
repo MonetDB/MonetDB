@@ -395,9 +395,12 @@ public class SQLExporter extends Exporter {
 		int[] width = new int[md.getColumnCount()];
 		for (int j = 0; j < md.getColumnCount(); j++) {
 			if (md.getColumnDisplaySize(j + 1) == 0) {
-				width[j] = Math.max("<NULL>".length(), md.getColumnLabel(j + 1).length());
+				width[j] = md.getColumnLabel(j + 1).length();
 			} else {
 				width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnLabel(j + 1).length());
+			}
+			if (md.isNullable(j + 1) != ResultSetMetaData.columnNoNulls) {
+				width[j] = Math.max("<NULL>".length(), width[j]);
 			}
 		}
 
