@@ -1630,7 +1630,7 @@ PROC shred_stream(Stream s,
 {
     var names := bat(void,str).append(name).access(BAT_READ).seqbase(0@0);
     var ws := 2000000000 + clientid();
-    var err := CATCH(shred_doc_base(s, names, names, names.project(colname), names.project(pageFree), s));
+    var err := CATCH(shred_doc_base(names, names, names.project(colname), names.project(pageFree), s, ws));
     ws_destroy(int(ws)); 
     if (not(isnil(err))) ERROR(err);
 }
