@@ -367,6 +367,8 @@ struct Node{
         int	      height;
 	bit	      head;
 	bit	      deleted;
+        struct Node  *previous;
+	bit 	      isPreviousSmaller;	
 };
 
 typedef struct {
@@ -419,7 +421,7 @@ static CrackIndex *Index;
 static CrackTreeIndex *TreeIndex;
 bit IndexType = 1; /* 1 used for tree index, 0 used for bat index */
 int IndexEntries = 220000; /* initial size used for the bat that stores index values*/
-
+bit INSERTIONS_COSTS = FALSE;
 /* temp variables, used to test effect of stop updating the index, they operate only on one cracker bat */
 int IndexSize = 0;
 int IndexStop = 250000;
@@ -434,13 +436,27 @@ Height(struct Node * x){
 
 struct Node *
 SingleRotateLeft(int m, struct Node * node){
-        struct Node * l;
+        struct Node * l, *lr;
 	int nodeLh,nodeRh,lh;
 
         l = node->left;
+	lr = l->right;
         node->left = l->right;
         l->right = node;
-	
+
+	if (node->previous == NULL)
+		l->previous = NULL;
+	else {
+		l->previous = node->previous;
+		l->isPreviousSmaller = node->isPreviousSmaller;
+        }
+
+	node->previous = l;
+	node->isPreviousSmaller = TRUE;
+	if (lr != NULL) {
+		lr->previous = node;
+		lr->isPreviousSmaller = FALSE;
+	}
 	if (node->head == TRUE){
 		node->head = FALSE;
 		l->head = TRUE;
@@ -459,12 +475,28 @@ SingleRotateLeft(int m, struct Node * node){
 
 struct Node *
 SingleRotateRight(int m, struct Node * node){
-        struct Node * r;
+        struct Node * r, *rl;
 	int nodeLh,nodeRh,rh;
 
         r = node->right;
+	rl =  r->left;
+
         node->right = r->left;
         r->left = node;
+
+	if (node->previous == NULL)
+		r->previous = NULL;
+	else {
+		r->previous = node->previous;
+		r->isPreviousSmaller = node->isPreviousSmaller;
+	}
+	node->previous = r;
+	node->isPreviousSmaller = FALSE;
+
+	if (rl != NULL){
+		rl->previous = node;
+		rl->isPreviousSmaller = TRUE;
+	}
 
 	if (node->head == TRUE){
 		node->head = FALSE;
@@ -611,6 +643,35 @@ getNextPosition(struct Node * current, BAT *b, BUN base, int xx, lng next){
         return *(lng*)BUNhloc(b,base + ((res->position) * xx));
 }  
 
+struct Node *
+findPreviousPieceWalkingBack(struct Node * node){
+	struct Node * res = NULL, *current = node;
+
+	if (current->left != NULL)
+                res= getP(current->left);
+	if (res != NULL) 
+		return res;
+
+	/* if nothing in the current branch we have to move back */
+	while (res == NULL) {
+		if (current->previous == NULL) 
+			return NULL;
+		while  (current->isPreviousSmaller == FALSE){
+			current = current->previous;
+			if (current->previous == NULL)
+                        	return NULL;
+		}
+		current = current->previous;
+
+		if (current->deleted == FALSE)
+			res = current;
+		else if (current->left != NULL)
+                	res= getP(current->left);
+	}
+	
+	return res;
+}
+
 @= TreeOperations
 
 bit
@@ -721,7 +782,6 @@ GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, int xx,
 		return GetHgh_@1(x, inclusive, current->left, b, base, xx, p1, p2, previous, *(lng*)BUNhloc(b, cur));	
 }
 
-
 struct Node *
 InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPosition, struct Node * current, BAT * b, BUN base, int xx){
 	
@@ -739,6 +799,8 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 		current->right = NULL;
 		current->head = FALSE;
 		current->deleted = FALSE;
+		current->previous = NULL;
+		current->isPreviousSmaller = FALSE;
 		goto end;
         }
 
@@ -792,6 +854,8 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
                 	return NULL;
 
 		current->left = temp;
+		temp->previous = current;
+		temp->isPreviousSmaller = FALSE;
 
                 if ( Height(current->left) - Height(current->right) == 2 ){
 		        Lchild = base + ((current->left->position) * xx);
@@ -809,6 +873,9 @@ InsertTree_@1(int m, int indexPosition, @1 value, bit inclusive, lng crackPositi
 			return NULL;
 
                 current->right = temp; 
+		temp->previous = current;
+		temp->isPreviousSmaller = TRUE;
+
 
                 if ( Height(current->right) - Height(current->left) == 2 ){
 			Rchild = base + ((current->right->position) * xx);
@@ -1174,6 +1241,7 @@ addTreeIndex_@1(int m, @1 *value, bit inclusive, lng index, BAT * b)
                 TreeIndex[m].Tree->right = NULL;		
                 TreeIndex[m].Tree->head = TRUE;	
                 TreeIndex[m].Tree->deleted = FALSE;	
+                TreeIndex[m].Tree->previous = NULL;	
 
                 return;             
         }
@@ -2609,6 +2677,10 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 	lng prevPos, prevcrsize, insertions, remainingIns, buns;
 	int pieces = 0;
 	int movements = 0;
+	lng TstartSearchAVL, TendSearchAVL;
+	lng TotalSearchAVL = 0;
+	bit first = TRUE;
+	struct Node *prevNode =NULL;
 
 	/*BUN wh,wt;
 	lng copy;*/
@@ -2672,8 +2744,19 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 @
 @= mergeInsertionsFromTheEndBodyII
 	/* Here tthe actual merging happens. Starting from the piece where next belongs we continuously insert and shift until there are no more insertions or pieces */
-	while ( remainingIns > 0 && 
-		(IndexNode = findNodeL_@1(*(@1*)BUNtloc(b,next), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) != NULL ) {
+	while ( remainingIns > 0) {
+		TstartSearchAVL = GDKusec(); 
+		if (first){
+			IndexNode = findNodeL_@1(*(@1*)BUNtloc(b,next), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL); 
+			first = FALSE;
+		} else 
+			IndexNode = findPreviousPieceWalkingBack(prevNode);
+		if ( IndexNode == NULL )
+			break; 
+		prevNode = IndexNode;
+		TendSearchAVL = GDKusec(); 
+		TotalSearchAVL += TendSearchAVL - TstartSearchAVL; 
+
 		pieces++;
 
 		/* first position after the last value of this piece. Here we will start moving values we shift from the begginning of the piece */
@@ -2956,9 +3039,9 @@ mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
         BATsetcount(b, b->batBuns->free/xx); 
 	TendInsert = GDKusec();
 	
-	/*
-	printf("\n costs Insert: %lld\n", TendInsert - TstartInsert);
-	*/
+	if (INSERTIONS_COSTS)	
+		printf("\n costs Insert: %lld, Index search: %lld \n", TendInsert - TstartInsert, TotalSearchAVL);
+	
 
 	BBPunfix(c->batCacheid);
 	BBPunfix(u->batCacheid);
@@ -2992,9 +3075,10 @@ mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosit
 	@:shrinkInsertions(@1)@
 	TendShrink = GDKusec();
 
-	/*
-	printf("\n costs Insert: %lld, Shrink: %lld \n", TendInsert - TstartInsert, TendShrink - TstartShrink);
-	*/
+	
+	if (INSERTIONS_COSTS)	
+		printf("\n costs Insert: %lld, Shrink: %lld, Index search: %lld  \n", TendInsert - TstartInsert, TendShrink - TstartShrink, TotalSearchAVL);
+	
 
         BBPunfix(c->batCacheid);
         BBPunfix(u->batCacheid);
@@ -3159,9 +3243,9 @@ printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, end
 	} 
 	TendMerge = GDKusec();
 
-	/*
-	printf("\n costs ripple: %lld, Insert: %lld, Merge: %lld \n", TendRipple-TstartRipple, TendInsert-TstartInsert, TendMerge-TstartMerge);
-	*/
+	if (INSERTIONS_COSTS)	
+		printf("\n costs ripple: %lld, Insert: %lld, Merge: %lld, Index search: %lld  \n", TendRipple-TstartRipple, TendInsert-TstartInsert, TendMerge-TstartMerge, TotalSearchAVL);
+	
                                 
         BBPunfix(c->batCacheid);
         BBPunfix(u->batCacheid);        
