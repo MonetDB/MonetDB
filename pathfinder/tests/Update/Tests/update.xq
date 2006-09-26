@@ -41,7 +41,7 @@ for $elem in $testdoc//comment()
 for $elem in $testdoc/document/element/text()
 	return do replace value of exactly-one($elem) with concat("element ", text{$elem})
 ,
-(: test chaning processing instructions with the following tests:
+(: test changing processing instructions with the following tests:
 -- existing instruction, new target
 -- new instruction, existing target
 -- new instruction, new target - XXX can't be done since there is no PI construction
