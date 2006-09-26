@@ -1250,7 +1250,7 @@ proc log2(int i) : int {
 
 # forward reference, will be filled in the sql session 
 var myc := mvc(ptr(nil));
-proc seq_next_value( str v ) : lng {
+proc next_value( str v ) : lng {
 	return mvc_next_value(myc, v);
 }
 

@@ -10,10 +10,8 @@ stdout of test 'weird_reponse_on_limit.SF-1314643` in directory 'src/test/BugDay
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 
@@ -25,13 +23,13 @@ Over..
 # id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
 # int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 # 4,	7,	4,	1,	1,	5,	1,	1 # length
-[ 4531,	"schemas",	4530,	NULL,	0,	true,	0,	0	]
+[ 4534,	"schemas",	4533,	NULL,	0,	true,	0,	0	]
 # sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 # id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
 # int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 # 4,	7,	4,	1,	1,	5,	1,	1 # length
-[ 4531,	"schemas",	4530,	NULL,	0,	true,	0,	0	]
-[ 4535,	"types",	4530,	NULL,	0,	true,	0,	0	]
+[ 4534,	"schemas",	4533,	NULL,	0,	true,	0,	0	]
+[ 4538,	"types",	4533,	NULL,	0,	true,	0,	0	]
 
 # 20:53:46 >  
 # 20:53:46 >  Done.

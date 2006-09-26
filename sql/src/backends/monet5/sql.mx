@@ -89,7 +89,7 @@ pattern getVariable( varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
-command nextValue( sequence:str ):lng
+command next_value( sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
@@ -804,7 +804,7 @@ mvc_next_value(lng *res, str *seq)
 		return msg;
 	if (sql_next_value(m->session->tr, *seq, res))
 		return MAL_SUCCEED;
-	return throwException(MALEXCEPTION, "sql.nextValue", "error");
+	return throwException(MALEXCEPTION, "sql.next_value", "error");
 }
 
 

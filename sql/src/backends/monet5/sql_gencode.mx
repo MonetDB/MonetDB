@@ -408,10 +408,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 		} break;
-		case st_seq_next:{
-			dump_1(sql, mb, s, sqlRef, "nextValue");
-		}
-			break;
 		case st_temp:{
 			int l;
 			int ht = TYPE_void;

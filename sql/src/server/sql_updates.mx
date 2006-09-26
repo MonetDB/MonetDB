@@ -919,7 +919,6 @@ push_project(stmt *rows, stmt *val)
 	switch (val->type) {
 	case st_convert:
 	case st_unop:
-	case st_seq_next:
 		val->op1.stval = push_project(rows, val->op1.stval);
 		val->nrcols = rows->nrcols;
 		return val;

@@ -187,7 +187,6 @@ head_column(stmt *st)
 		/* st_temp has no head column coming from any basetable */
 	case st_atom:
 	case st_var:
-	case st_seq_next:
 	case st_basetable:
 	case st_table:
 	case st_temp:
@@ -952,7 +951,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_atom:
 	case st_bulkinsert:
 	case st_var:
-	case st_seq_next:
 	case st_table_clear:
 
 		s->optimized = 2;

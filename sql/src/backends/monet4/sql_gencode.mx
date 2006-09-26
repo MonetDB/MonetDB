@@ -385,13 +385,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			_DELETE(buf);
 			break;
 		}
-		case st_seq_next:{
-			if (s->nrcols) 
-				dump_1(sql, s, "[seq_next_value]", nr);
-			else
-				dump_1(sql, s, "seq_next_value", nr);
-			break;
-		}
 		case st_temp:{
 			size_t buflen = strlen(s->op4.typeval.type->base.name) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
