@@ -146,10 +146,10 @@ Merges pairs of bats according to the order as defined by the first pair's tails
 		: BAT[oid,str] = CMDll_strSplit;
 "PARAMETERS:
 BAT[void,str] - the strings which are going to be tokenized
-BAT[void,str] - seperators for the strings
+BAT[void,str] - separators for the strings
 DESCRIPTION:
 ll_tokenize is a special version of [split](bat(void,str),bat(void,str)), which
-tokenizes a string using the aligned seperator string and adds a row for
+tokenizes a string using the aligned separator string and adds a row for
 each substring, with the oid of the input head identifying the original boundaries."
 
 .COMMAND round_up(dbl x) : dbl = math_unary_up_ROUND;
@@ -175,9 +175,9 @@ BAT[void,oid] - one of three different kinds (strings '2@0'; text-nodes '1@0' an
 BAT[void,str] - string values of the strings and text-nodes; an empty string for each other node
 DESCRIPTION:
 very specialized helper function for the translation of the item-sequence-to-node-sequence function in XQuery.
-It expects three aligned columns and creates out of adjazent strings and text-nodes one string,
+It expects three aligned columns and creates one string out of adjacent strings and text-nodes,
 which can be translated into a text-node again. Every other node and every new iter divide the strings.
-A space is inserted if two strings are adjazent and no space is inserted, if a text-node is in between. 
+A space is inserted if two strings are adjacent, and no space is inserted if a text-node is in between.
 Empty strings are not added to the output."
 
 .COMMAND string_join( BAT[oid,str] iter_str, BAT[oid,str] separator )
@@ -228,12 +228,12 @@ if all are ok."
 
 In XQuery, we often have the case that BAT[void,T] all contain the same tail value
 'constant columns'. In this case, we represent the column variable by a MIL
-constant. The new 'constant' MIL module mimicks the BAT algebra on such constants.
+constant. The new 'constant' MIL module mimics the BAT algebra on such constants.
 
 Regrettably, we cannot always represent constants as single MIL (non-bat) values.
 Constants sometimes *need* to go into bats-of-bats. Particular cases in XQuery are 
 the working set BAT[void,BAT] that contains a set of columns, and the result of staircase 
-join (idem dito). 
+join (ditto). 
 
 Our solution here is to represent constant columns inside a bat of bats as a 'fake' 
 BAT[void,T] with a single entry [nil,c].  The routines constant2bat/bat2constant switch
@@ -526,7 +526,7 @@ PROC correct_sizes (oid iter, bat[void,oid] item, bat[void,int] size) : bat[void
 
 @- get_root
 We now have frag_root populated for all XML document collections (previously only
-the trenasient document container). Finding the root of an item entails establishing
+the transient document container). Finding the root of an item entails establishing
 the largest root PRE that is smaller than that item. In the general case, we need
 a thetajoin for that (root < item) with a per-item {max} aggregate.
 
