@@ -291,6 +291,12 @@ enum PFmil_kind_t {
     , m_set_kind
     , m_materialize
 
+    , m_assert_order /**< MIL assert_order() function. Fixes the order 
+                          property of the tail in MonetDB BAT headers.
+                          It is a work-around to tell MonetDB about
+                          sortedness whenever it is not able to infer
+                          it itself. */
+
     , m_chk_order    /**< MIL chk_order() function. Fixes order properties
                           in MonetDB BAT headers. We should try to get rid
                           of these completely, and fix/implement MonetDB
@@ -1116,6 +1122,7 @@ PFmil_t * PFmil_string_join (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_get_fragment (const PFmil_t *);
 PFmil_t * PFmil_set_kind (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_materialize (const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_assert_order (const PFmil_t *);
 PFmil_t * PFmil_chk_order (const PFmil_t *);
 
 

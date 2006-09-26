@@ -485,6 +485,7 @@
 #define get_fragment(a) PFmil_get_fragment (a)
 #define set_kind(a,b)   PFmil_set_kind ((a), (b))
 #define materialize(a,b) PFmil_materialize ((a),(b))
+#define assert_order(a) PFmil_assert_order (a)
 #define chk_order(a)    PFmil_chk_order (a)
 
 /** variable declaration */

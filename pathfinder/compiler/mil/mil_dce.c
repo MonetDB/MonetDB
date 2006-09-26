@@ -92,6 +92,7 @@ var_duplication (PFmil_t *root, PFmil_ident_t *var)
             *var = root->sem.ident;
             return true;
 
+        case m_assert_order:
         case m_chk_order:
         case m_order:
         case m_key:
@@ -256,6 +257,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
              */
             return root;
 
+        case m_assert_order:
         case m_chk_order:
         case m_order:
         case m_key:

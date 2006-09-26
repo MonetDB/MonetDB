@@ -1878,6 +1878,12 @@ PFmil_t * PFmil_string_join (const PFmil_t *strs, const PFmil_t *sep)
 }
 
 PFmil_t *
+PFmil_assert_order (const PFmil_t *v)
+{
+    return wire1 (m_assert_order, v);
+}
+
+PFmil_t *
 PFmil_chk_order (const PFmil_t *v)
 {
     return wire1 (m_chk_order, v);

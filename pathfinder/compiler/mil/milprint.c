@@ -61,6 +61,7 @@
                  | expression '.CTextend ()'                <m_ctextend>
                  | expression '.get_fragment ()'            <m_get_fragment>
                  | expression '.materialize (' exp ')'      <m_materialize>
+                 | expression '.assert_order ()'            <m_assert_order>
                  | expression '.chk_order ()'               <m_chk_order>
                  | expression '.access (' restriction ')'   <m_access>
                  | expression '.key (' bool ')'             <m_key>
@@ -372,6 +373,7 @@ static char *ID[] = {
     , [m_get_fragment]    = "get_fragment"
     , [m_set_kind]        = "set_kind"
     , [m_materialize]     = "materialize"
+    , [m_assert_order]    = "assert_order"
     , [m_chk_order]       = "chk_order"
 
     , [m_sc_desc]  = "sc_desc"
@@ -690,6 +692,8 @@ print_expression (PFmil_t * n)
         case m_ctextend:
         /* expression '.get_fragment ()' */
         case m_get_fragment:
+        /* expression '.assert_order ()' */
+        case m_assert_order:
         /* expression '.chk_order ()' */
         case m_chk_order:
             print_expression (n->child[0]);
