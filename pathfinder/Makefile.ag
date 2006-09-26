@@ -22,7 +22,7 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-SUBDIRS = conf compiler runtime src modules
+SUBDIRS = conf compiler runtime modules src
 
 EXTRA_DIST = rules.mk extra.mk RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \

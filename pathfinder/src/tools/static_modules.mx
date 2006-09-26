@@ -57,5 +57,8 @@
 @:install_module(pathfinder)@
 @:install_module(pf_standoff)@
 @:install_module(xrpc)@
+#ifdef HAVE_PFTIJAH
+@:install_module(pftijah)@
+#endif
 
 #endif
