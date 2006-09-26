@@ -139,6 +139,14 @@ comment "Keep the insertions bat separatelly and merge only what is needed using
 command verifyCrackerIndex(b:bat[:any_1,:@1]):void
 address CRKverifyCrackerIndex_@1 
 comment "Check the cracker index and column, whether each value is in the correct chunk";
+
+command extendCrackerBAT(b:bat[:any_1,:@1], P:lng):void
+address CRKextendCrackerBAT
+comment "extend the cracker column by P positions";
+
+command printAVLTree_int(b:bat[:any_1,:@1]):void
+address CRKprintAVLTree_int 
+comment "print the AVL Tree";
 @
 
 @mal
@@ -391,6 +399,9 @@ crackers_export str CRKmergeInsertions_OnNeedGradually(int *k, int *bid, int *ne
 crackers_export str CRKmergeInsertionsB_OnNeedGradually(int *k, int *bid, int *new);
 crackers_export str CRKmergeInsertions_OnNeedGraduallyRipple(int *k, int *bid, int *new, bit *deleteNodes);
 crackers_export str CRKmergeInsertionsB_OnNeedGraduallyRipple(int *k, int *bid, int *new);
+crackers_export str CRKextendCrackerBAT(int *k, int *bid, lng positions);
+crackers_export str CRKprintAVLTree_int(int *k, int *bid);
+
 #endif /* _CRACKERS_H */
 
 @c
@@ -886,6 +897,7 @@ PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, i
 		current->deleted = TRUE;
 	return;
 }
+
 @
 
 @c
@@ -896,6 +908,9 @@ PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base, i
 @:TreeOperations(flt,simple,)@
 @:TreeOperations(dbl,simple,)@
 @:TreeOperations(date,atom,TYPE_)@
+
+
+
 
 void 
 FreeAVLTree(struct Node * current){
@@ -931,6 +946,47 @@ existsTreeIndex(int bid)
 		if (TreeIndex[i].bid == bid)
 			return i;
 	return -1;
+}
+
+void
+printAVLTree(struct Node * current, BAT *b, BUN base, int xx){
+	
+	BUN cur;
+	cur = base + ((current->position) * xx);
+	if (current->deleted == FALSE) {
+		printf("\n %lld, %d ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur) );
+	} else
+		printf("\n DELETED %lld, %d ", *(lng*)BUNhloc(b, cur), *(int*)BUNtloc(b, cur) ); 
+	
+	if (current->left != NULL)
+                printAVLTree(current->left, b, base, xx);
+
+        if (current->right != NULL)
+                printAVLTree(current->right, b, base, xx);
+
+        return;
+
+}
+
+str
+CRKprintAVLTree_int(int *k, int *bid){
+	(void) k;
+	BAT *c;
+	int zz;
+	BUN idxFirst;
+
+	int position = existsTreeIndex(*bid);
+        if (position == -1)
+                fprintf(stderr, " the crack index does not exist \n");
+
+	if ((c = BATdescriptor(TreeIndex[position].cid)) == NULL)
+                return throwMessage("crackers.CRKprintAVLTree_int", "Cannot access cracker index");
+        zz = BUNsize(c);
+        idxFirst = BUNfirst(c);
+	printAVLTree(TreeIndex[position].Tree, c, idxFirst, zz);
+	BBPunfix(c->batCacheid); 
+
+	return MAL_SUCCEED;
 }
 
 @= CreateNewIndex
@@ -1667,10 +1723,12 @@ str
 CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 {
 	BUN hh, ht, tmpt, tmph;
+	BUN ch, ct, t, s; 
 	oid *scr_h;
 	@1  *scr_t;
-	int hghShrinked = 0, lowShrinked = 0;
+	lng hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
+	int j=0, hil=0, scr_size, probe = 25;
 
 	tmph = BUNhloc(b, BUNptr(b, idx_first));
 	tmpt = BUNtloc(b, BUNptr(b, idx_first));
@@ -1679,11 +1737,11 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 
 	@:moveOrdered(*(@1*)tmpt @3 mid,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
 	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;,&& ht>=tmpt)@
-	if (lowShrinked == idx_last - idx_first +1) {
+	if (lowShrinked == idx_last - idx_first + 1) {
 			*pos = idx_last+1;
 			return MAL_SUCCEED;
 	}
-	if (hghShrinked == idx_last - idx_first +1){
+	if (hghShrinked == idx_last - idx_first + 1){
 			*pos = idx_first-1;
 			return MAL_SUCCEED;
 	}
@@ -1707,15 +1765,12 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 		return MAL_SUCCEED;
 	}	
 
-	int hil = 0;
-	BUN ch, ct; 
-	int scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked);
+	scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked);
 	if (scr_size >=2) scr_size = scr_size/2;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
-	int probe = 25;
-	BUN t = tmpt, s = tmpt+(2*probe*xx);
-	int j=0;
+	t = tmpt;
+	s = tmpt+(2*probe*xx);
 	for (;t<s;t+=xx)
 		j+=*(@1*)t @3 mid;
 	
@@ -2552,9 +2607,11 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 	int xx, zz, position = -1;
 	struct Node *IndexNode = NULL;
 	lng prevPos, prevcrsize, insertions, remainingIns, buns;
+	int pieces = 0;
+	int movements = 0;
 
-	BUN wh,wt;
-	lng copy;
+	/*BUN wh,wt;
+	lng copy;*/
 
 	for (int i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
@@ -2611,75 +2668,72 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 	inst 	 = BUNtloc(u, insFirst + endPosition*xx);
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
+	prevPos = prevcrsize - 1;
 @
 @= mergeInsertionsFromTheEndBodyII
-	prevPos = prevcrsize - 1;
+	/* Here tthe actual merging happens. Starting from the piece where next belongs we continuously insert and shift until there are no more insertions or pieces */
 	while ( remainingIns > 0 && 
 		(IndexNode = findNodeL_@1(*(@1*)BUNtloc(b,next), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) != NULL ) {
-		
+		pieces++;
+
+		/* first position after the last value of this piece. Here we will start moving values we shift from the begginning of the piece */
 		write  = next + xx;
 
 		cur    = idxFirst + (IndexNode->position) * zz;
                 curPos = BUNhloc(c, cur);
 		curVal = BUNtloc(c, cur);
-		next   = crkFirst + (*(lng*)curPos) * xx;
-		buns   = prevPos - (*(lng*)curPos);
+		buns   = prevPos - (*(lng*)curPos); /* find out how many values this piece has */
+
+		/* prevPos takes the correct value for the next itteration */
+		prevPos = *(lng*)curPos;
+
+		/* next takes the corect value for the next itteration. This is the position of the last value of the previous piece */
+		next   = crkFirst + (*(lng*)curPos) * xx; 
 	
+		/* First insert any pending insertions that belong to this piece */
 		crkh = BUNhloc(b,write+(remainingIns-1)*xx);
 		crkt = BUNtloc(b,write+(remainingIns-1)*xx);
 		while(  remainingIns > 0 && 
 			(@2_GT(inst,curVal,@3@1) || (@2_EQ(inst,curVal,@3@1) && IndexNode->inclusive == TRUE)) ){
 			*(oid*)crkh = *(oid*)insh;
 			*(@1 *)crkt = *(@1 *)inst;
-			crkh-=xx; crkt-=xx; insh-=xx; inst-=xx; remainingIns--; 
+			crkh-=xx; crkt-=xx; insh-=xx; inst-=xx; remainingIns--;
 		}
 
 		if (remainingIns == 0)
                 break;
 
-		if (buns>remainingIns){
-			/*memcpy(next+xx, write, remainingIns*xx);*/
-			crkh = BUNhloc(b, next+xx);
-       		        crkt = BUNtloc(b, next+xx);
-			wh   = BUNhloc(b,write);
-			wt   = BUNtloc(b,write);
-			copy = (buns>remainingIns?remainingIns:buns);
-			for(int i=0;i<copy;i++){
-				*(oid*)wh = *(oid*)crkh;
-                       	 	*(@1 *)wt = *(@1 *)crkt;
-                       	 	crkh+=xx; crkt+=xx; wh+=xx; wt+=xx;
-			}
+		/* Then we shift values from the beggining of the piece */
+		if (buns > remainingIns){
+			memcpy(write, next+xx, remainingIns*xx);
+			movements += remainingIns;
 		} else {
-			/*memcpy(next+xx, write+(remainingIns-buns)*xx, buns*xx);*/
-			crkh = BUNhloc(b, next+xx);
-       		        crkt = BUNtloc(b, next+xx);
-			wh   = BUNhloc(b,write+(remainingIns-buns)*xx);
-			wt   = BUNtloc(b,write+(remainingIns-buns)*xx);
-			copy = (buns>remainingIns?remainingIns:buns);
-			for(int i=0;i<copy;i++){
-				*(oid*)wh = *(oid*)crkh;
-                       	 	*(@1 *)wt = *(@1 *)crkt;
-                       	 	crkh+=xx; crkt+=xx; wh+=xx; wt+=xx;
-			}
+			memcpy( write+(remainingIns-buns)*xx, next+xx, buns*xx);
+			movements += buns;
 		}
 		
-		prevPos = *(lng*)curPos;
+		/*printf("updating index in position %lld to be %lld \n", *(lng*)curPos, *(lng*)curPos+remainingIns);*/
+		/* we always update the index to be +remainingIns since even if we move buns values we put them remainingIns positions ahead */
 		*(lng*)curPos =  *(lng*)curPos + remainingIns;
 	}
 
+	/*if (IndexNode == NULL )
+		printf("\n we reached the first piece\n");
+	
+	if ( remainingIns > 0)
+		printf("\n there are remaining insertions %lld \n", remainingIns);
+	*/
+
+	/* We reached the first piece. If there are more insertions then they all go here */
 	if (IndexNode == NULL && remainingIns > 0){
-		/*memcpy(insFirst, next + xx, remainingIns);*/
-		crkh = BUNhloc(b, insFirst+startPosition*xx);
-                crkt = BUNtloc(b, insFirst+startPosition*xx);
-		wh   = BUNhloc(b, next + xx);
-		wt   = BUNtloc(b, next + xx);
-		for(int i=0;i<remainingIns;i++){
-			*(oid*)wh = *(oid*)crkh;
-                        *(@1 *)wt = *(@1 *)crkt;
-                        crkh+=xx; crkt+=xx; wh+=xx; wt+=xx;
-		}
+		pieces++;
+		memcpy(next + xx, insFirst, remainingIns*xx);
+		movements += remainingIns;
 	}
 
+	/*
+	printf("\n went through %d pieces and did %d movements \n", pieces, movements);
+	*/
 @
 
 @= shrinkInsertions
@@ -2889,16 +2943,22 @@ CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new){
 
 str
 mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
+	lng TstartInsert, TendInsert;
 
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
+	TstartInsert = GDKusec();
 	next = BUNlast(b) - xx;
-
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
 	crkLast = BUNlast(b) + insertions * xx;
 	b->batBuns->free = crkLast - b->batBuns->base;
         BATsetcount(b, b->batBuns->free/xx); 
+	TendInsert = GDKusec();
+	
+	/*
+	printf("\n costs Insert: %lld\n", TendInsert - TstartInsert);
+	*/
 
 	BBPunfix(c->batCacheid);
 	BBPunfix(u->batCacheid);
@@ -2909,22 +2969,32 @@ mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
 
 str
 mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosition){
+	/* First merge then shrink the insertions column */
 
 	BUN insLast;
+        lng TstartInsert, TendInsert, TstartShrink, TendShrink;                 
 
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
 	insLast = BUNtloc(u,BUNlast(u));	
 	next = BUNlast(b) - xx;
-
+	
+	TstartInsert = GDKusec();
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
 	crkLast = BUNlast(b) + insertions * xx;
 	b->batBuns->free = crkLast - b->batBuns->base;
         BATsetcount(b, b->batBuns->free/xx); 
-
 	endPosition++;
+	TendInsert = GDKusec();
+
+	TstartShrink = GDKusec();
 	@:shrinkInsertions(@1)@
+	TendShrink = GDKusec();
+
+	/*
+	printf("\n costs Insert: %lld, Shrink: %lld \n", TendInsert - TstartInsert, TendShrink - TstartShrink);
+	*/
 
         BBPunfix(c->batCacheid);
         BBPunfix(u->batCacheid);
@@ -2939,7 +3009,7 @@ mergeInsertionsBRipple_@1(int *bid, int *new, lng startPosition, lng endPosition
         BUN rh, rt, rnext, insLast;     
 	lng toRippleBuns;
 	lng exceedBuns = 0;
-                        
+        lng TstartRipple, TendRipple, TstartInsert, TendInsert, TstartMerge, TendMerge;                 
         @:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
                 
 	insLast = BUNtloc(u,BUNlast(u));	
@@ -2948,16 +3018,23 @@ mergeInsertionsBRipple_@1(int *bid, int *new, lng startPosition, lng endPosition
 /*
 printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, endPosition);
 */
-        /* find out buns that should be rippled */
+
+        /* Find out buns that should be rippled. Take this values out in a temporary BAT */
+	TstartRipple = GDKusec();
+
+	/* first find the piece where the biggest insertions should be placed */
         if ( (IndexNode = findNodeH_@1(*(@1*)hgh, inclusive, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) != NULL ){
-		IndexNode->deleted = TRUE;
+	
 		rh = BUNhloc(ripple, BUNfirst(ripple));
 		rt = BUNtloc(ripple, BUNfirst(ripple));
 		cur     = idxFirst + (IndexNode->position) * zz;
                 curPos  = BUNhloc(c, cur); 
-		prevPos = *(lng*)curPos;
+		prevPos = *(lng*)curPos; /* prevPos should not be changed! mergeInsertionsFromTheEndBodyII expects it to point in the position from where merging will start */
                 rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
 
+		IndexNode->deleted = TRUE; /* TODO: consider not deleting this piece and instead extend it... */
+		/*printf("\n have to delete piece %lld  \n", *(lng*)curPos);*/
+			
 		/* merging will start from this bun */		
 		next = crkFirst + (*(lng*)curPos) * xx;
 
@@ -2965,42 +3042,57 @@ printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, end
                 crkt = BUNtloc(b,rnext);
 		crkLast = BUNtloc(b,BUNlast(b));
 
-		/* find out how many buns until we get into the next chunk */
+		/* find out how many buns until we get into the next chunk. Variable buns holds this information */
 		if ( (IndexNode = findNodeH_@1(*(@1*)BUNtloc(b,rnext),TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
-			buns = BATcount(b) - (*(lng*)curPos) - 1;
+			buns = BATcount(b) - prevPos - 1;
 		else {
 			cur    = idxFirst + (IndexNode->position) * zz;
                		curPos = BUNhloc(c, cur);
                 	rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
                 	buns   = (*(lng*)curPos) - prevPos;
 		}
+
+		/* move values out. If we get into the next piece then we simply delete it */
 		int i;
 		for (i=0; i<toRippleBuns; i++){
-			if (i > buns && crkt < crkLast){
+			if (i == buns && crkt < crkLast){
 				IndexNode->deleted = TRUE;
+				/*printf("\n have to delete piece %lld  \n", *(lng*)curPos);*/			
 				if ( (IndexNode = findNodeH_@1(*(@1*)BUNtloc(b,rnext),TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
 					buns = BATcount(b) - prevPos - 1;
 				else {
 					cur    = idxFirst + (IndexNode->position) * zz;
                				curPos = BUNhloc(c, cur);
-                			rnext   = crkFirst + (*(lng*)curPos) * xx + xx;
+                			rnext  = crkFirst + (*(lng*)curPos) * xx + xx;
                 			buns   = (*(lng*)curPos) - prevPos;
 				}
 			}
 			*(oid*)rh = *(oid*)crkh;
 			*(@1 *)rt = *(@1 *)crkt;
 			rh+=xx; rt+=xx; crkh+=xx; crkt+=xx;	
+
+			/* we consumed all values until the end of the column. nothing more to ripple */
 			if (crkt >= crkLast){ 
 				i++;
-				exceedBuns = toRippleBuns - i;
+				exceedBuns = toRippleBuns - i ;
 				break;
 			}
 		}
+		if (i == buns && IndexNode != NULL) {
+			IndexNode->deleted = TRUE;
+			/*printf("\n have to delete piece %lld  \n", *(lng*)curPos);*/
+		}
 		ripple->batBuns->free = BUNfirst(ripple) + i*xx - ripple->batBuns->base;	
 		BATsetcount(ripple, i);
-	} else 
+	} else {
+		/* then we do not have to ripple. We simply start merging from the end of the cracker column */
+		exceedBuns = toRippleBuns;
 		next = BUNlast(b) - xx;
+		/* prevPos has been correctly set in mergeInsertionsFromTheEndBodyI pointing at the last bun of the cracker column */
+	}
+	TendRipple = GDKusec();
 
+	TstartInsert = GDKusec();
         @:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@ 
 
 	if (exceedBuns > 0){
@@ -3008,8 +3100,11 @@ printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, end
 		b->batBuns->free = crkLast - b->batBuns->base;
        	 	BATsetcount(b, b->batBuns->free/xx); 
         }
-
 	endPosition++;
+	TendInsert = GDKusec();
+
+	/* now we have to merge the rippled values with the remaining insertions */
+	TstartMerge = GDKusec();
 	if (BATcount(ripple) > 0){
 		ripple->tsorted = FALSE;		
 		ripple->batRestricted = BAT_WRITE;
@@ -3048,12 +3143,25 @@ printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, end
 				}
 			}
 		}
-/*
-printf("\n -------Rippled "SZFMT" tuples \n", BATcount(ripple));
-*/		
+
+		/* if some of the insertions went at the end of the cracker column, then the pending insertions has less values now */
+		if (exceedBuns>0){
+			crkLast = BUNlast(u) - exceedBuns*xx;
+               	 	u->batBuns->free = crkLast - u->batBuns->base;
+                	BATsetcount(u, u->batBuns->free/xx);
+
+		}	
+		/*
+		printf("\n Rippled "SZFMT" tuples  but extended the main bat for %lld \n", BATcount(ripple), exceedBuns);
+		*/
 	} else {
 		@:shrinkInsertions(@1)@
 	} 
+	TendMerge = GDKusec();
+
+	/*
+	printf("\n costs ripple: %lld, Insert: %lld, Merge: %lld \n", TendRipple-TstartRipple, TendInsert-TstartInsert, TendMerge-TstartMerge);
+	*/
                                 
         BBPunfix(c->batCacheid);
         BBPunfix(u->batCacheid);        
@@ -3073,6 +3181,24 @@ printf("\n -------Rippled "SZFMT" tuples \n", BATcount(ripple));
 @:mergeInsertionOperations(flt,simple,)@
 @:mergeInsertionOperations(dbl,simple,)@
 @:mergeInsertionOperations(date,atom,TYPE_)@
+
+str
+CRKextendCrackerBAT(int *k, int *bid, lng positions){
+	(void) k;
+	BAT *b;
+	int position = existsTreeIndex(*bid);
+	if (position == -1)
+                return throwMessage("crackers.CRKextendCrackerBAT", "Cannot find cracker index");
+	if ((b = BATdescriptor(TreeIndex[position].cbid)) == NULL)
+                return throwMessage("crackers.CRKextendCrackerBAT", "Cannot access cracker BAT");
+
+	if (BATextend(b, positions) == NULL)
+                return throwMessage("crackers.CRKextendCrackerBAT", "Failed to extend the cracker BAT");	
+	
+	BBPunfix(b->batCacheid);
+
+	return MAL_SUCCEED;
+}
 
 str
 appendInsertions(int *new, int position){
@@ -3182,6 +3308,8 @@ verifyCrackerIndex_@1(int *bid){
 	idxt = BUNtloc(c, cur);
 	bnd  = BUNtloc(b, crkFirst + (*(lng*)idxh) * xx); 
 
+	if (crkt > bnd) 
+		printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n reader pointer is beyond index...", tuples, indexEntries);
 	while(crkt <= bnd){
 
 		if (@2_LT(crkt,idxt,@3@1) ||(@2_EQ(crkt,idxt,@3@1) && hghIndexNode->inclusive == FALSE)){
@@ -3201,13 +3329,18 @@ verifyCrackerIndex_@1(int *bid){
 	while (crkt < crkLast){
 		if ((hghIndexNode = findNodeH_@1(*(@1*)crkt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL)) == NULL)
 			break;
-
 		indexEntries++;
 		cur = idxFirst + ((hghIndexNode->position) * zz);
 		idxh = BUNhloc(c, cur);
 		idxt = BUNtloc(c, cur);
 		bnd  = BUNtloc(b, crkFirst + (*(lng*)idxh) * xx); 
 
+		if (crkt > bnd){ 
+			printf("\n Error: cracker index and column are not aligned. Checked %d tuples and %d index entries \n reader pointer is beyond index...", tuples, indexEntries);
+				BBPunfix(c->batCacheid);
+				BBPunfix(b->batCacheid);
+				return MAL_SUCCEED; 
+		}
 		while(crkt <= bnd){
 
 			if ( (@2_LT(crkt,idxt,@3@1) ||(@2_EQ(crkt,idxt,@3@1) && hghIndexNode->inclusive == FALSE)) &&
