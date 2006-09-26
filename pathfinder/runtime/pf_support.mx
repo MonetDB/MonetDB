@@ -987,7 +987,6 @@ DESCRIPTION:\n\
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
 @
-@
 # use size concept
 @= sizes_code
 pre_sizes
@@ -1068,15 +1067,15 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 "pf_support");
 
 @= upwards
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[void,bat]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order) : BAT[void,bat]
 {
     # "order" is not (yet?) used, here.
-    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     # upwards steps cannot yet cope with the new "root" ("collection"?) node;
     # hence, for now, we remove it, here;
     # eventually, the upwards step implementation should be fixed accordingly.
     if (count(pre_sizes) > 1) {
-        var pre_kinds := ws.fetch(PRE_KIND).fetch(frag);
+        var pre_kinds := ws.fetch(PRE_KIND).fetch(cont);
         if (pre_kinds.fetch(0) = COLLECTION) {
             pre_sizes := pre_sizes.slice(1,1+pre_sizes.fetch(1));
         }
