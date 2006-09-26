@@ -21,10 +21,14 @@ Over..
 # 21:26:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35900  < multivalue_insert.SF-1509864.sql
 # 21:26:30 >  
 
+[ 3	]
 # sys.test,	sys.test # table_name
 # id,	val # name
 # int,	int # type
 # 1,	1 # length
+[ 1,	1	]
+[ 2,	1	]
+[ 3,	1	]
 # sys.test2 # table_name
 # t # name
 # int # type
