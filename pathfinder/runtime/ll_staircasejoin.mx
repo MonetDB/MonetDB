@@ -525,8 +525,8 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
                 assert((size[pre] & (1<<31)) == 0);
 
                 /* poor man's binary search / exploiting forward scan */
-                while (fst_pre+104876 <= cand_lst && *(oid*) (fst_pre+104876) < pre)
-                    fst_pre += 104876; /* this avoids mmapped I/O */
+                while (fst_pre+1048576 <= cand_lst && *(oid*) (fst_pre+1048576) < pre)
+                    fst_pre += 1048576; /* this avoids mmapped I/O */
                 while (fst_pre+32768 <= cand_lst && *(oid*) (fst_pre+32768) < pre)
                     fst_pre += 32768;
                 while (fst_pre+1024 <= cand_lst && *(oid*) (fst_pre+1024) < pre)
