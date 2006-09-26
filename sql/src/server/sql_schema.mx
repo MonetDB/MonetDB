@@ -810,14 +810,10 @@ drop_role(mvc *sql, dlist *qname)
 }
 
 static int
-column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int alter)
+column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int alter, list **sl)
 {
 	int res = SQL_ERR;
 
-	if (alter && (s->token == SQL_UNIQUE || s->token == SQL_PRIMARY_KEY || s->token == SQL_FOREIGN_KEY)) {
-		(void) sql_error(sql, 02, "ALTER TABLE ADD COLUMN: adding column with key constraint not implemented\n");
-		return res;
-	}
 	switch (s->token) {
 		case SQL_UNIQUE:
 		case SQL_PRIMARY_KEY:
@@ -825,7 +821,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				key_type kt;
 				sql_key *k;
 
-				if (s->token == SQL_PRIMARY_KEY && !alter && t->pkey) {
+				if (s->token == SQL_PRIMARY_KEY && t->pkey) {
 					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 					return res;
 				}
@@ -838,6 +834,15 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 
 				mvc_create_kc(sql, k, cs);
 				res = SQL_OK;
+				if (alter) {
+					stmt *s;
+					list *l = create_stmt_list();
+
+					s = sql_insert_add_idx(sql, t, k->idx, l);
+					if (!(*sl))
+						*sl = create_stmt_list();
+					list_append(*sl, s);
+				}
 			}
 			break;
 		case SQL_FOREIGN_KEY:
@@ -873,6 +878,15 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				fk->on_update = (ref_actions>>8) & 255;
 				mvc_create_kc(sql, k, cs);
 				res = SQL_OK;
+				if (alter) {
+					stmt *s;
+					list *l = create_stmt_list();
+
+					s = sql_insert_add_idx(sql, t, k->idx, l);
+					if (!(*sl))
+						*sl = create_stmt_list();
+					list_append(*sl, s);
+				}
 			}
 			break;
 		case SQL_NOT_NULL:
@@ -971,7 +985,8 @@ column_option(
 		sql_schema *ss,
 		sql_table *t,
 		sql_column *cs,
-		int alter)
+		int alter,
+		list **sl)
 {
 	int res = SQL_ERR;
 
@@ -985,7 +1000,7 @@ column_option(
 
 			if (!opt_name)
 				opt_name = column_constraint_name(sym, cs, t);
-			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
+			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter, sl);
 		}
 		break;
 		case SQL_DEFAULT:
@@ -1033,7 +1048,7 @@ column_option(
 }
 
 static int
-column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_column *cs, int alter)
+column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_column *cs, int alter, list **sl)
 {
 	assert(cs);
 
@@ -1041,7 +1056,7 @@ column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_colu
 		dnode *n = NULL;
 
 		for (n = opt_list->h; n; n = n->next) {
-			int res = column_option(sql, n->data.sym, ss, t, cs, alter);
+			int res = column_option(sql, n->data.sym, ss, t, cs, alter, sl);
 
 			if (res == SQL_ERR)
 				return SQL_ERR;
@@ -1063,11 +1078,14 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		opt_list = l->h->next->next->data.lval;
 
 	if (cname && ctype) {
+		list *sl = NULL;
 		sql_column *cs = NULL;
 
 		cs = mvc_create_column(sql, t, cname, ctype);
 
-		if (column_options(sql, opt_list, ss, t, cs, alter) == SQL_ERR) {
+		if (column_options(sql, opt_list, ss, t, cs, alter, &sl) == SQL_ERR) {
+			if (sl) 
+				list_destroy(sl);
 			return NULL;
 		}
 		if (alter) {
@@ -1078,13 +1096,38 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			}
 			if (cs->null && !cs->def) {
 				a = atom_general(&cs->type, NULL, 0);
+				if (a)
+					res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
 			} else {
-				a = atom_general(&cs->type, _strdup(cs->def), 1);
+				stmt *sq, *val;
+				char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "select %s;", cs->def);
+				sq = sqlparse_intern(sql, buf, sql->mode);
+				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
+					cond_stmt_destroy(sq);
+					return NULL;
+				}
+				val = stmt_dup(sq->op1.lval->h->data);
+				val = check_types(sql, &cs->type, val, type_equal);
+				if (!val) {
+					stmt_destroy(sq);
+					return NULL;
+				}
+				stmt_destroy(sq);
+				/* default could be a function such as 
+				   next value for, this should be called once
+				   foreach new value.
+				*/
+				res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), push_project(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), val));
 			}
-			if (!a) {
+			if (!res) {
 				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");
 			}
-			res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
+		}
+		if (sl && res) {
+			list_append(sl, res);
+			res = stmt_list(sl);
 		}
 		if (!res)
 			res = stmt_none();
@@ -1240,14 +1283,20 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *cname = n->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		dlist *olist = n->next->data.lval;
+		list *sl = NULL;
 
 		if (!c) {
 			return sql_error(sql, 02, "column '%s' not found\n", cname);
 		} else {
-			if (column_options(sql, olist, ss, t, c, alter) == SQL_ERR)
+			if (column_options(sql, olist, ss, t, c, alter, &sl) == SQL_ERR) {
+				if (sl) list_destroy(sl);
 				return NULL;
+			}
 		}
-		res = stmt_none();
+		if (sl)
+			res = stmt_list(sl);
+		else
+			res = stmt_none();
 	}
 		break;
 	case SQL_LIKE:

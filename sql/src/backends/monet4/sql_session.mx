@@ -825,7 +825,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream_flush(out);
 
 	/* add myc and Output, Input to the stack */
-	v = VARnew(stk, "myc");
+	v = VARnew(stk, "myc"); /* allready exists but thats a global var */
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 
@@ -859,7 +859,7 @@ sql_client_alloc(mapi_client *fc)
 	fc->fc = be;
 
 	/* add myc and Output, Input to the stack */
-	v = VARnew(fc->stk, "myc");
+	v = VARnew(fc->stk, "myc"); /* allready exists but thats a global var */
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 

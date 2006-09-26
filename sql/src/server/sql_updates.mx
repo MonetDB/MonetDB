@@ -37,6 +37,9 @@ extern stmt *sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l);
 extern stmt *sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output);
 extern stmt *sql_update(mvc *sql, sql_table *t, stmt **updates, list *l);
 
+/* the single result value needs to be multiplexed count(rows) times */
+extern stmt *push_project(stmt *rows, stmt *val);
+
 #endif /*_SQL_UPDATES_H_*/
 @c
 
@@ -910,6 +913,21 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 	return stmt_list(l);
 }
 
+stmt *
+push_project(stmt *rows, stmt *val) 
+{
+	switch (val->type) {
+	case st_convert:
+	case st_unop:
+	case st_seq_next:
+		val->op1.stval = push_project(rows, val->op1.stval);
+		val->nrcols = rows->nrcols;
+		return val;
+	default:
+		return stmt_const(rows, val);
+	}
+}
+
 static stmt *
 insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q)
 {
@@ -1068,12 +1086,14 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 						snprintf(buf, BUFSIZ, "select %s;", c->def);
 						sq = sqlparse_intern(sql, buf, sql->mode);
 						if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
+							cond_stmt_destroy(sq);
 							cleanup_stmts(inserts, len);
 							return NULL;
 						}
 						s = stmt_dup(sq->op1.lval->h->data);
 						s = check_types(sql, &c->type, s, type_equal);
 						if (!s) {
+							stmt_destroy(sq);
 							cleanup_stmts(inserts, len);
 							return NULL;
 						}
@@ -1090,7 +1110,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 						return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
 					}
 					if (ic && !(ic->key && ic->nrcols == 0))
-						s = stmt_const(stmt_dup(ic), s);
+						s = push_project(stmt_dup(ic), s);
 					inserts[i] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), s);
 				}
 			}

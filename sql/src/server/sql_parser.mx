@@ -691,6 +691,7 @@ sql:
 declare_statement:
 	declare variable_list
 		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
+    |   declare table_def { $$ = $2; }
     ;
 
 variable_list:
@@ -1009,7 +1010,7 @@ opt_column:
 
 create_statement:	
    role_def 
- | table_def 
+ | create table_def 	{ $$ = $2; }
  | view_def
  | type_def
  | func_def
@@ -1289,14 +1290,14 @@ role_def:
  ;
 
 table_def:
-    create opt_temp TABLE qname table_content_source opt_on_commit 
+    opt_temp TABLE qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
-	  append_int(l, $2);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
-	  if ($2 != SQL_PERSIST)
-		commit_action = $6;
+	  append_int(l, $1);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
+	  if ($1 != SQL_PERSIST)
+		commit_action = $5;
 	  append_int(l, commit_action);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;

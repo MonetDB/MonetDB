@@ -252,6 +252,7 @@ extern stmt *stmt_table_clear(sql_table *t);
 extern stmt *stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode);
 
 extern stmt *stmt_const(stmt *s, stmt *val);
+
 extern stmt *stmt_mark(stmt *s, int id);
 extern stmt *stmt_mark_tail(stmt *s, int id);
 extern stmt *stmt_gen_group(stmt *s); /* given a gid,cnt blowup to full groups */

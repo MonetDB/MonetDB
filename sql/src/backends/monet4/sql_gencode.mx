@@ -386,7 +386,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_seq_next:{
-			mvc_dump_1(sql, s, "next_value", nr);
+			if (s->nrcols) 
+				dump_1(sql, s, "[seq_next_value]", nr);
+			else
+				dump_1(sql, s, "seq_next_value", nr);
 			break;
 		}
 		case st_temp:{

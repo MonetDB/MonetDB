@@ -1248,6 +1248,12 @@ proc log2(int i) : int {
   return n;
 }
 
+# forward reference, will be filled in the sql session 
+var myc := mvc(ptr(nil));
+proc seq_next_value( str v ) : lng {
+	return mvc_next_value(myc, v);
+}
+
 proc SQLgroup(BAT[oid,any] a) : grp {
 	# handle the grouping for unique checks with the special _CTgroup 
 	if (and(or((a.ttype()=int),(a.ttype()=lng)),(a.count()>(1024*1024)))) {
