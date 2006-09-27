@@ -1317,7 +1317,7 @@ int parseEnd(Client cntxt)
 			if(l==0) l= operatorLength(cntxt);
 		} 
 		/* parse fcn */
-		if( (l== strlen(curPrg->name) &&
+		if( (l== (int)strlen(curPrg->name) &&
 			 strncmp(CURRENT(cntxt), curPrg->name, l)==0) || l==0) {
 			/* its ok */
 		} else {

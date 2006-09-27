@@ -2402,7 +2402,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			str cv = NULL;
 
 			VALformat(&cv, &getVar(mb, getArg(p, i))->value);
-			if (strlen(cv) > len - (t - s)) {
+			if (strlen(cv) > ((int) len) - (t - s)) {
 				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
 
 				*t = 0;

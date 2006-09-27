@@ -902,15 +902,38 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		}
 		case 'b':
 			if (strncmp(b, "bbp",3) == 0) {
-				int i;
+				int i,limit;
 
-				for (i = 1; i < BBPsize; i++)
+				skipWord(cntxt, b);
+				i = BBPindex(b);
+				if( i)
+					limit=i+1;
+				else {
+					limit= BBPsize;
+					i=1;
+				}
+				for (; i < limit; i++)
 					if (BBP_logical(i) && BBP_cache(i)) {
 						stream_printf(out, "[%d] %s lref = %d ref= %d ", 
 							i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
+						stream_printf(out, " dirty=%d", BATdirty(BBP_cache(i)));
 						if( *BBP_logical(i) =='.')
 							stream_printf(out, " zombie ");
-						stream_printf(out, " dirty=%d \n", BATdirty(BBP_cache(i)));
+						if( BBPstatus(i) & BBPLOADED)
+							stream_printf(out, " loaded ");
+						if( BBPstatus(i) & BBPSWAPPED)
+							stream_printf(out, " swapped ");
+						if( BBPstatus(i) & BBPTMP)
+							stream_printf(out, " tmp ");
+						if( BBPstatus(i) & BBPDELETED)
+							stream_printf(out, " deleted ");
+						if( BBPstatus(i) & BBPEXISTING)
+							stream_printf(out, " existing ");
+						if( BBPstatus(i) & BBPNEW)
+							stream_printf(out, " new ");
+						if( BBPstatus(i) & BBPPERSISTENT)
+							stream_printf(out, " persistent ");
+						stream_printf(out, "\n");
 					}
 				continue;
 			}
