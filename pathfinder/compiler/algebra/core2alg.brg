@@ -1947,7 +1947,7 @@ reduce (PFcnode_t * p, int goalnt)
                                 proj (att_item, att_item));
             
             /* get the really new nodes */
-            delta = difference (res_body,
+            delta = difference (distinct (res_body),
                                 project (base_res,
                                          proj (att_iter, att_iter),
                                          proj (att_item, att_item)));
@@ -1971,41 +1971,37 @@ reduce (PFcnode_t * p, int goalnt)
 
             A(p) = (struct PFla_pair_t) {
                      .rel = rownum (
-            /* the distinct operator is superfluous as its input
-               is a union of distinct results. The difference that
-               produced these results has only follow set semantics. */
-                                distinct (
-                                    rec_fix (
-                                        rec_param (
-                                            rec_arg (
-                                                A(RL(p)).rel,
-                                                rownum (
+                                rec_fix (
+                                    rec_param (
+                                        rec_arg (
+                                            A(RL(p)).rel,
+                                            rownum (
             /* using 'delta' instead of 'res_body' changes the evaluation
                strategy: delta vs. full intermediate result (res_body) */
-                                                 /* distinct (delta), */
-                                                    distinct (res_body),
-                                                    att_pos,
-                                                    sortby (att_item),
-                                                    att_iter),
-                                                base_x),
-                                            rec_param (
-                                                rec_arg (
-                                                    res_seed,
-                                                    res,
-                                                    base_res),
+                                             /* distinct (delta), */
+                                                distinct (res_body),
+                                                att_pos,
+                                                sortby (att_item),
+                                                att_iter),
+                                            base_x),
+                                        rec_param (
+                                            rec_arg (
+                                                res_seed,
+                                                res,
+                                                base_res),
 #if 0
             /* using 'delta' instead of 'res_body' changes the evaluation
                strategy: the loop relation cannot be changed */
-                                                rec_param (
-                                                    rec_arg (
-                                                        old_loop,
-                                                        updated_loop,
-                                                        base_loop),
-                                                    rec_nil ()))),   
+                                            rec_param (
+                                                rec_arg (
+                                                    old_loop,
+                                                    updated_loop,
+                                                    base_loop),
+                                                rec_nil ()))),   
 #else
-                                                rec_nil ())),
+                                            rec_nil ())),
 #endif
-                                        res)),
+                                    res),
                                 att_pos, sortby (att_item), att_iter),
                      .frag = A(RR(p)).frag };
             

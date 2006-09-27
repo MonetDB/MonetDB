@@ -594,7 +594,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                        "does not work as expected.");
             }
 
-            prop_infer_icols (L(n), n->prop->r_icols);
+            prop_infer_icols (L(n), n->prop->l_icols);
 
             skip_children = true;
             break;
