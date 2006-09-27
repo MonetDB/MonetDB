@@ -580,7 +580,7 @@ add_empty_strings (opt_t *f, int rc, int cur_level)
     char *item_ext = kind_str(rc);
     milprintf(f,
             /* test qname and add "" for each empty item */
-            "if (ipik.count() != loop%03u.count())\n"
+            "if (iter.count() != loop%03u.count())\n"
             "{ # add empty strings\n"
             "var difference := reverse(tdiff(loop%03u,iter)).hmark(0@0);\n"
             "var res_mu := merged_union(iter.chk_order(), difference.chk_order(), item%s, %s);\n"
