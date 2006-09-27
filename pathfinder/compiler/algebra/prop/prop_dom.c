@@ -70,7 +70,7 @@ PFprop_dom (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
     if (!prop->domains) return 0;
-    
+
     for (unsigned int i = 0; i < PFarray_last (prop->domains); i++)
         if (attr == ((dom_pair_t *) PFarray_at (prop->domains, i))->attr)
             return ((dom_pair_t *) PFarray_at (prop->domains, i))->dom;
@@ -87,7 +87,7 @@ PFprop_dom_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
     if (!prop->l_domains) return 0;
-    
+
     for (unsigned int i = 0; i < PFarray_last (prop->l_domains); i++)
         if (attr == ((dom_pair_t *) PFarray_at (prop->l_domains, i))->attr)
             return ((dom_pair_t *) PFarray_at (prop->l_domains, i))->dom;
@@ -104,7 +104,7 @@ PFprop_dom_right (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
     if (!prop->r_domains) return 0;
-    
+
     for (unsigned int i = 0; i < PFarray_last (prop->r_domains); i++)
         if (attr == ((dom_pair_t *) PFarray_at (prop->r_domains, i))->attr)
             return ((dom_pair_t *) PFarray_at (prop->r_domains, i))->dom;
@@ -270,10 +270,10 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
     /* check trivial case of identity */
     if (in_subdom == in_dom)
         return true;
-        
+
     /**
      * Start list of subdomains with the input subdomain.
-     * The list will be extended whenever a relationship 
+     * The list will be extended whenever a relationship
      * matches one item of the subdomains list, but the
      * expected result domain differs.
      */
@@ -285,7 +285,7 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
         dom = ((subdom_t *) PFarray_at (prop->subdoms, i))->dom;
         insert = false;
         duplicate = false;
-        
+
         /* check for each item in the subdomains list
            if the match occurs or the superdomain is already
            in the list of subdomains */
@@ -307,20 +307,20 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
         if (insert && !duplicate)
             *(dom_t *) PFarray_add (subdomains) = dom;
     }
-    
+
     return false;
 }
 
 /**
  * Copy domains of children nodes to the property container.
- */                    
+ */
 static void
 copy_child_domains (PFla_op_t *n)
 {
     if (L(n))
         for (unsigned int i = 0; i < L(n)->schema.count; i++) {
             *(dom_pair_t *) PFarray_add (n->prop->l_domains)
-                = (dom_pair_t) { .attr = L(n)->schema.items[i].name, 
+                = (dom_pair_t) { .attr = L(n)->schema.items[i].name,
                                  .dom  = PFprop_dom (
                                              L(n)->prop,
                                              L(n)->schema.items[i].name)};
@@ -329,7 +329,7 @@ copy_child_domains (PFla_op_t *n)
     if (R(n))
         for (unsigned int i = 0; i < R(n)->schema.count; i++) {
             *(dom_pair_t *) PFarray_add (n->prop->r_domains)
-                = (dom_pair_t) { .attr = R(n)->schema.items[i].name, 
+                = (dom_pair_t) { .attr = R(n)->schema.items[i].name,
                                  .dom  = PFprop_dom (
                                              R(n)->prop,
                                              R(n)->schema.items[i].name)};
@@ -344,7 +344,7 @@ add_subdom (PFprop_t *prop, dom_t dom, dom_t subdom)
 {
     assert (prop);
     assert (prop->subdoms);
-    
+
     *(subdom_t *) PFarray_add (prop->subdoms)
         = (subdom_t) { .dom = dom, .subdom = subdom };
 }
@@ -357,7 +357,7 @@ add_disjdom (PFprop_t *prop, dom_t a, dom_t b)
 {
     assert (prop);
     assert (prop->disjdoms);
-    
+
     *(disjdom_t *) PFarray_add (prop->disjdoms)
         = (disjdom_t) { .dom1 = a, .dom2 = b };
 }
@@ -371,7 +371,7 @@ add_dom (PFprop_t *prop, PFalg_att_t attr, dom_t dom)
 {
     assert (prop);
     assert (prop->domains);
-    
+
     *(dom_pair_t *) PFarray_add (prop->domains)
         = (dom_pair_t) { .attr = attr, .dom = dom };
 }
@@ -388,7 +388,7 @@ bulk_add_dom (PFprop_t *prop, PFla_op_t *child)
     assert (child->prop);
 
     for (unsigned int i = 0; i < child->schema.count; i++) {
-        add_dom (prop, 
+        add_dom (prop,
                  child->schema.items[i].name,
                  PFprop_dom (child->prop, child->schema.items[i].name));
     }
@@ -410,13 +410,13 @@ infer_dom (PFla_op_t *n, unsigned int id)
             for (unsigned int i = 0; i < n->schema.count; i++)
                 add_dom (n->prop, n->schema.items[i].name, id++);
             break;
-            
+
         case la_empty_tbl:
             /* assign each attribute the empty domain (1) */
             for (unsigned int i = 0; i < n->schema.count; i++)
                 add_dom (n->prop, n->schema.items[i].name, EMPTYDOM);
             break;
-            
+
         case la_attach:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.attach.attname, id++);
@@ -433,7 +433,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
              * Infering the domains of the join attributes results
              * in a common schema, that is either the more general
              * domain if the are in a subdomain relationship or a
-             * new subdomain. The domains of all other columns 
+             * new subdomain. The domains of all other columns
              * (whose domain is different from the domains of the
              * join arguments) remain unchanged.
              */
@@ -455,12 +455,12 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 add_subdom (n->prop, att1_dom, join_dom);
                 add_subdom (n->prop, att2_dom, join_dom);
             }
-            
+
             /* copy domains and update domains of join arguments */
             for (unsigned int i = 0; i < L(n)->schema.count; i++)
                 if ((cur_dom = PFprop_dom (
                                    L(n)->prop,
-                                   L(n)->schema.items[i].name)) 
+                                   L(n)->schema.items[i].name))
                     == att1_dom)
                     add_dom (n->prop, L(n)->schema.items[i].name, join_dom);
                 else if (join_dom == att1_dom)
@@ -469,11 +469,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
                     add_subdom (n->prop, cur_dom, id);
                     add_dom (n->prop, L(n)->schema.items[i].name, id++);
                 }
-        
+
             for (unsigned int i = 0; i < R(n)->schema.count; i++)
                 if ((cur_dom = PFprop_dom (
                                    R(n)->prop,
-                                   R(n)->schema.items[i].name)) 
+                                   R(n)->schema.items[i].name))
                     == att2_dom)
                     add_dom (n->prop, R(n)->schema.items[i].name, join_dom);
                 else if (join_dom == att2_dom)
@@ -483,27 +483,27 @@ infer_dom (PFla_op_t *n, unsigned int id)
                     add_dom (n->prop, R(n)->schema.items[i].name, id++);
                 }
         }   break;
-        
+
         case la_project:
             /* bind all existing domains to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                add_dom (n->prop, 
-                         n->sem.proj.items[i].new, 
+                add_dom (n->prop,
+                         n->sem.proj.items[i].new,
                          PFprop_dom (L(n)->prop, n->sem.proj.items[i].old));
             break;
 
         case la_select:
             /* create new subdomains for all attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-                add_subdom (n->prop, 
-                            PFprop_dom (L(n)->prop, 
+                add_subdom (n->prop,
+                            PFprop_dom (L(n)->prop,
                                         L(n)->schema.items[i].name),
                             id);
                 add_dom (n->prop, L(n)->schema.items[i].name, id);
                 id++;
             }
             break;
-            
+
         case la_disjunion:
             /* create new superdomains for all existing attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
@@ -517,7 +517,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                                            L(n)->schema.items[i].name);
                         dom2 = PFprop_dom (R(n)->prop,
                                            R(n)->schema.items[j].name);
-                        
+
                         if (dom1 == dom2)
                             union_dom = dom1;
                         else if (PFprop_subdom (n->prop, dom1, dom2))
@@ -529,7 +529,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                             add_subdom (n->prop, union_dom, dom1);
                             add_subdom (n->prop, union_dom, dom2);
                         }
-                        add_dom (n->prop, 
+                        add_dom (n->prop,
                                  L(n)->schema.items[i].name,
                                  union_dom);
                         break;
@@ -540,7 +540,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                             "domain property inference.");
             }
             break;
-            
+
         case la_intersect:
             /* create new subdomains for all existing attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
@@ -550,12 +550,12 @@ infer_dom (PFla_op_t *n, unsigned int id)
                         R(n)->schema.items[j].name) {
                         add_subdom (
                             n->prop,
-                            PFprop_dom (L(n)->prop, 
+                            PFprop_dom (L(n)->prop,
                                         L(n)->schema.items[i].name),
                             id);
                         add_subdom (
                             n->prop,
-                            PFprop_dom (R(n)->prop, 
+                            PFprop_dom (R(n)->prop,
                                         R(n)->schema.items[j].name),
                             id);
                         add_dom (n->prop, L(n)->schema.items[i].name, id);
@@ -568,11 +568,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
                             "domain property inference.");
             }
             break;
-            
+
         case la_difference:
             /*
              * In case of the difference operator we know that
-             * 
+             *
              *  -- the domains for all attributes must be subdomains
              *     in the left argument and
              *  -- the domains for all attributes are disjoint from
@@ -583,8 +583,8 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
                 add_dom (n->prop, L(n)->schema.items[i].name, id);
 
-                add_subdom (n->prop, 
-                            PFprop_dom (L(n)->prop, 
+                add_subdom (n->prop,
+                            PFprop_dom (L(n)->prop,
                                         L(n)->schema.items[i].name),
                             id);
 
@@ -596,12 +596,12 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 id++;
             }
             break;
-            
+
         case la_distinct:
             /* create new subdomains for all existing attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-                add_subdom (n->prop, 
-                            PFprop_dom (L(n)->prop, 
+                add_subdom (n->prop,
+                            PFprop_dom (L(n)->prop,
                                         L(n)->schema.items[i].name),
                             id);
                 add_dom (n->prop, L(n)->schema.items[i].name, id);
@@ -637,19 +637,19 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_all:
             add_dom (n->prop, n->sem.aggr.res, id++);
             if (n->sem.aggr.part)
-                add_dom (n->prop, 
+                add_dom (n->prop,
                          n->sem.aggr.part,
                          PFprop_dom (L(n)->prop, n->sem.aggr.part));
             break;
 
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
             add_subdom (n->prop,
                         PFprop_dom (L(n)->prop, n->sem.aggr.part),
                         id);
             add_dom (n->prop, n->sem.aggr.res, id++);
             if (n->sem.aggr.part)
-                add_dom (n->prop, 
+                add_dom (n->prop,
                          n->sem.aggr.part,
                          PFprop_dom (L(n)->prop, n->sem.aggr.part));
             break;
@@ -682,16 +682,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
             /* create new domain for attribute item */
             add_dom (n->prop, n->sem.scjoin.item_res, id++);
             break;
-            
+
         case la_doc_tbl:
             /* retain domain for attribute iter */
             add_dom (n->prop,
-                     n->sem.doc_tbl.iter, 
+                     n->sem.doc_tbl.iter,
                      PFprop_dom (L(n)->prop, n->sem.doc_tbl.iter));
             /* create new domain for attribute item */
             add_dom (n->prop, n->sem.doc_tbl.item_res, id++);
             break;
-            
+
         case la_doc_access:
             bulk_add_dom (n->prop, R(n));
             add_dom (n->prop, n->sem.doc_access.res, id++);
@@ -699,16 +699,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_element:
             /* retain domain for attribute iter */
-            add_dom (n->prop, 
-                     n->sem.elem.iter_res, 
+            add_dom (n->prop,
+                     n->sem.elem.iter_res,
                      PFprop_dom (RL(n)->prop, n->sem.elem.iter_qn));
             /* create new domain for attribute item */
             add_dom (n->prop, n->sem.elem.item_res, id++);
             break;
-        
+
         case la_element_tag:
             break;
-            
+
         case la_attribute:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.attr.res, id++);
@@ -723,7 +723,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_comment:
         case la_processi:
             break;
-            
+
         case la_merge_adjacent:
             /* retain domain for attribute iter */
             add_dom (n->prop,
@@ -738,7 +738,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             /* create new domain for attribute item */
             add_dom (n->prop, n->sem.merge_adjacent.item_res, id++);
             break;
-            
+
         case la_roots:
             bulk_add_dom (n->prop, L(n));
             break;
@@ -747,9 +747,29 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_frag_union:
         case la_empty_frag:
             break;
-            
+
         case la_cond_err:
             bulk_add_dom (n->prop, L(n));
+            break;
+
+        case la_rec_fix:
+            /* get the domains of the overall result */
+            bulk_add_dom (n->prop, n->sem.rec_fix.res);
+            break;
+
+        case la_rec_param:
+        case la_rec_nil:
+            /* recursion parameters do not have properties */
+            break;
+
+        case la_rec_arg:
+            bulk_add_dom (n->prop, R(n));
+            break;
+
+        case la_rec_base:
+            /* create new domains for all attributes */
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                add_dom (n->prop, n->schema.items[i].name, id++);
             break;
 
         case la_proxy:
@@ -759,7 +779,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_string_join:
             /* retain domain for attribute iter */
-            add_dom (n->prop, 
+            add_dom (n->prop,
                      n->sem.string_join.iter_res,
                      PFprop_dom (L(n)->prop, n->sem.string_join.iter));
             /* create new domain for attribute item */
@@ -795,7 +815,7 @@ prop_infer (PFla_op_t *n, PFarray_t *subdoms, PFarray_t *disjdoms,
     n->prop->subdoms   = subdoms;
     n->prop->disjdoms  = disjdoms;
 
-    /* reset the domain information 
+    /* reset the domain information
        (reuse already existing lists if already available
         as this increases the performance of the compiler a lot) */
     if (n->prop->domains)
@@ -812,10 +832,10 @@ prop_infer (PFla_op_t *n, PFarray_t *subdoms, PFarray_t *disjdoms,
         PFarray_last (n->prop->r_domains) = 0;
     else
         n->prop->r_domains = PFarray (sizeof (dom_pair_t));
-    
+
     /* copy all children domains */
     copy_child_domains (n);
-    
+
     /* infer information on domain columns */
     cur_dom_id = infer_dom (n, cur_dom_id);
 
@@ -830,7 +850,7 @@ PFprop_infer_dom (PFla_op_t *root)
 {
     /*
      * Initialize domain property inference with an empty domain
-     * relation list, 
+     * relation list,
      */
     PFarray_t *subdoms  = PFarray (sizeof (subdom_t));
     PFarray_t *disjdoms = PFarray (sizeof (disjdom_t));

@@ -174,7 +174,7 @@ infer_ocol (PFla_op_t *n)
             /* see if both operands have same number of attributes */
             if (ocols_count (L(n)) != ocols_count (R(n)))
                 PFoops (OOPS_FATAL,
-                        "Schema of two arguments of UNION do not match");
+                        "Schema of two arguments of UNION does not match");
 
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
 
@@ -195,7 +195,7 @@ infer_ocol (PFla_op_t *n)
                 if (j == ocols_count (R(n)))
                     PFoops (OOPS_FATAL,
                             "Schema of two arguments of "
-                            "UNION do not match");
+                            "UNION does not match");
             }
         } break;
 
@@ -206,7 +206,7 @@ infer_ocol (PFla_op_t *n)
             /* see if both operands have same number of attributes */
             if (ocols_count (L(n)) != ocols_count (R(n)))
                 PFoops (OOPS_FATAL,
-                        "Schema of two arguments of INTERSECTION do not match");
+                        "Schema of two arguments of INTERSECTION does not match");
 
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
 
@@ -227,7 +227,7 @@ infer_ocol (PFla_op_t *n)
                 if (j == ocols_count (R(n)))
                     PFoops (OOPS_FATAL,
                             "Schema of two arguments of "
-                            "INTERSECTION do not match");
+                            "INTERSECTION does not match");
             }
         } break;
 
@@ -520,6 +520,61 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
+        case la_rec_fix:
+            /* get the schema of the overall result */
+            ocols (n) = copy_ocols (ocols (n->sem.rec_fix.res),
+                                    ocols_count (n->sem.rec_fix.res));
+            break;
+            
+        case la_rec_param:
+        case la_rec_nil:
+            /* recursion parameters do not have properties */
+            break;
+            
+        case la_rec_arg:
+        {
+            unsigned int  i, j;
+
+            /* see if both operands have same number of attributes */
+            if (ocols_count (L(n)) != ocols_count (R(n)) ||
+                ocols_count (L(n)) != ocols_count (n->sem.rec_arg.base))
+                PFoops (OOPS_FATAL,
+                        "Schema of the arguments of recursion "
+                        "argument to not match");
+
+            /* see if we find each attribute in all of the input relations */
+            for (i = 0; i < ocols_count (L(n)); i++) {
+                for (j = 0; j < ocols_count (R(n)); j++)
+                    if (ocol_at (L(n), i).name == ocol_at (R(n), j).name) {
+                        break;
+                    }
+
+                if (j == ocols_count (R(n)))
+                    PFoops (OOPS_FATAL,
+                            "Schema of the arguments of recursion "
+                            "argument to not match");
+
+                for (j = 0; j < ocols_count (n->sem.rec_arg.base); j++)
+                    if (ocol_at (L(n), i).name == 
+                        ocol_at (n->sem.rec_arg.base, j).name) {
+                        break;
+                    }
+
+                if (j == ocols_count (n->sem.rec_arg.base))
+                    PFoops (OOPS_FATAL,
+                            "Schema of the arguments of recursion "
+                            "argument to not match");
+            }
+
+            /* keep the schema of its inputs */
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+        } break;
+            
+        /* only a rewrite can change the ocol property
+           - thus update schema (property) during rewrite */
+        case la_rec_base:
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
@@ -551,15 +606,36 @@ infer_ocol (PFla_op_t *n)
 static void
 prop_infer (PFla_op_t *n)
 {
+    bool bottom_up = true;
+    
     assert (n);
 
     /* nothing to do if we already visited that node */
     if (n->bit_dag)
         return;
 
-    /* infer properties for children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer (n->child[i]);
+    /* The properties of the seeds have to be the initial properties
+       of the base of the recursion. Thus we cannot infer the property
+       bottom up here. */ 
+    if (n->kind == la_rec_arg) {
+        /* infer the schema of the seed */
+        prop_infer (L(n));
+        
+        n->sem.rec_arg.base->bit_dag = true;
+
+        ocols (n->sem.rec_arg.base) = copy_ocols (ocols (L(n)),
+                                                  ocols_count (L(n)));
+
+        /* infer the schema of the recursion body */
+        prop_infer (R(n));
+        
+        bottom_up = false;
+    }
+    
+    if (bottom_up)
+        /* infer properties for children */
+        for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+            prop_infer (n->child[i]);
 
     n->bit_dag = true;
 

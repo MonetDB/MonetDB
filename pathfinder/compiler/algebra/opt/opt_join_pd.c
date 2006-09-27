@@ -971,6 +971,14 @@ join_pushdown (PFla_op_t *p)
                 */
                 break;
                 
+            case la_rec_fix:
+            case la_rec_param:
+            case la_rec_nil:
+            case la_rec_arg:
+            case la_rec_base:
+                /* do not rewrite anything that has to do with recursion */
+                break;
+                
             case la_proxy:
             case la_proxy_base:
                 PFoops (OOPS_FATAL,

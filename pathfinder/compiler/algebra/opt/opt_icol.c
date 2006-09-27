@@ -62,6 +62,8 @@
 static void
 opt_icol (PFla_op_t *p)
 {
+    bool bottom_up = true;
+    
     assert (p);
 
     /* rewrite each node only once */
@@ -70,9 +72,20 @@ opt_icol (PFla_op_t *p)
     else
         SEEN(p) = true;
 
-    /* apply icol optimization for children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        opt_icol (p->child[i]);
+    switch (p->kind)
+    {
+        case la_rec_arg:
+            bottom_up = false;
+            break;
+
+        default:
+            break;
+    }
+    
+    if (bottom_up)
+        /* apply icol optimization for children */
+        for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+            opt_icol (p->child[i]);
 
     /* action code */
     switch (p->kind) {
@@ -463,6 +476,49 @@ opt_icol (PFla_op_t *p)
                     default:
                         break;
                 }
+            }
+            break;
+            
+        case la_rec_arg:
+            /* optimize the seeds */
+            opt_icol (L(p));
+
+            /* If some columns have been thrown away in the seeds
+               we have to make sure that the base relations know
+               about this fact. */
+            if (L(p)->schema.count != p->schema.count) {
+                PFalg_schema_t schema;
+
+                schema.items = PFmalloc (L(p)->schema.count *
+                                         sizeof (PFalg_schema_t));
+                schema.count = L(p)->schema.count;
+
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    schema.items[i] = L(p)->schema.items[i];
+
+                p->sem.rec_arg.base->schema = schema;
+            }
+            
+            /* optimize the recursion body */
+            opt_icol (R(p));
+
+            /* If the both inputs to the recursion (seed and recursive call)
+               contain different columns the schema of the recursive call has
+               to be adjusted. A projection based on the schema of the seeds
+               does the job. 
+               We can assume that both inputs to the rec_arg operator already
+               use the same column names -- the initial translation and the 
+               name mappings both maintain this naming. */
+            if (L(p)->schema.count != R(p)->schema.count) {
+                PFalg_proj_t *proj;
+
+                proj = PFmalloc (L(p)->schema.count * sizeof (PFalg_proj_t));
+
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj[i] = PFalg_proj (L(p)->schema.items[i].name,
+                                          L(p)->schema.items[i].name);
+
+                R(p) = PFla_project_ (R(p), L(p)->schema.count, proj);
             }
             break;
             

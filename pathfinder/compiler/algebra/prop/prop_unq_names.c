@@ -465,6 +465,28 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             bulk_add_name_pairs (np_list, L(n));
             break;
 
+        case la_rec_fix:
+            /* get the unique names of the overall result */
+            bulk_add_name_pairs (np_list, n->sem.rec_fix.res);
+            break;
+            
+        case la_rec_param:
+        case la_rec_nil:
+            /* recursion parameters do not have properties */
+            break;
+            
+        case la_rec_arg:
+            /* The both inputs (seed and recursion) do not use
+               the same column names. Thus we live with inconsistent
+               unique names and introduce a renaming projection 
+               (Schema R -> Schema L) during name mapping. */
+            bulk_add_name_pairs (np_list, L(n));
+            break;
+
+        case la_rec_base:
+            /* properties are already assigned */
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             bulk_add_name_pairs (np_list, L(n));
@@ -490,27 +512,60 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
     return id;
 }
 
+static void
+reset_property (PFla_op_t *n)
+{
+    /* reset the unique name information */
+    n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+    n->prop->l_name_pairs = NULL;
+    n->prop->r_name_pairs = NULL;
+}
+    
 /* worker for PFprop_infer_unq_names */
 static unsigned int
 prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 {
+    bool bottom_up = true;
+    
     assert (n);
 
     /* nothing to do if we already visited that node */
     if (n->bit_dag)
         return cur_col_id;
 
-    /* infer properties for children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        cur_col_id = prop_infer (n->child[i], cur_col_id);
+    /* The properties of the seeds have to be the initial properties
+       of the base of the recursion. Thus we cannot infer the property
+       bottom up here. */ 
+    if (n->kind == la_rec_arg) {
+        /* infer the unique names of the seed */
+        cur_col_id = prop_infer (L(n), cur_col_id);
+        
+        n->sem.rec_arg.base->bit_dag = true;
+        reset_property (n->sem.rec_arg.base);
+
+        /* copy the mapping of the unique column names of the seed
+           to its base. */
+        bulk_add_name_pairs (n->sem.rec_arg.base->prop->name_pairs,
+                             L(n));
+
+        /* infer the unique names of the recursion body */
+        cur_col_id = prop_infer (R(n), cur_col_id);
+        
+        /* The both inputs (seed and recursion) now do not use
+           the same column names: the unique names are inconsistent.
+           Thus the name mapping has to introduce a renaming projection
+           (Schema R -> Schema L). */
+        bottom_up = false;
+    }
+    
+    if (bottom_up)
+        /* infer properties for children */
+        for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+            cur_col_id = prop_infer (n->child[i], cur_col_id);
 
     n->bit_dag = true;
+    reset_property (n);
 
-    /* reset the unique name information */
-    n->prop->name_pairs = PFarray (sizeof (name_pair_t));
-    n->prop->l_name_pairs = NULL;
-    n->prop->r_name_pairs = NULL;
-    
     /* infer unique name columns */
     cur_col_id = infer_unq_names (n, cur_col_id);
 

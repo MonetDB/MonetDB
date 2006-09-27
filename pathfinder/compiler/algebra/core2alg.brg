@@ -150,6 +150,8 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term param              = 58 /**< function declaration parameter */
 %term cast               = 59 /**< XQuery `cast as' operation */
 
+%term recursion          = 60 /**< "with $v seeded by..." expression */
+%term seed               = 61
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -243,6 +245,8 @@ ParamList:          params (FunParam, ParamList)                = 602 (10);
 FunctionBody:       CoreExpr                                    = 603 (10);
                                                                      
 FunParam:           param (seqtype, var)                        = 604 (10);
+
+CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  72 (10);
 
 %%
 
@@ -407,8 +411,12 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           apply (FunctionArgs) */
         case 60:
+            
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
         case 501:
+            
+        /* CoreExpr:           recursion (var, seed (Atom, CoreExpr)) */
+        case 72:
             topdown = true;
             break;
 
@@ -760,7 +768,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         }   break;
 
-        /* OptBindExpr:        for_ (forbind (forvars (var, nil),
+        /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               Atom),
                                      OptBindExpr) */
         case 5:
@@ -934,12 +942,12 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* OptVar:             var */
         case 200:
-            /* (will never be called anyway, Rule 4 is top-down) */
+            /* (will never be called anyway, Rule 5 is top-down) */
             break;
 
         /* OptVar:             nil */
         case 201:
-            /* (will never be called anyway, Rule 4 is top-down) */
+            /* (will never be called anyway, Rule 5 is top-down) */
             break;
 
         /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
@@ -1777,6 +1785,235 @@ reduce (PFcnode_t * p, int goalnt)
         case 502:
             break;
 
+        /* CoreExpr:           recursion (var, seed (Atom, CoreExpr)) */
+        case 72:
+        {   /* TOPDOWN */
+            /*
+             * with $x seeded by e1 return e2
+             *
+             * There are two approaches to translate the above pattern:
+             *  * a delta based approach
+             *  * an approach that collects all results
+             *
+             * We choose to translate the recursion with the second approach
+             * as XQuery allows positional access as well as aggregates inside
+             * the recursion body -- a delta approach would thus return the
+             * wrong results. Whenever all the operators inside the recursion
+             * body do not rely on the result size and positions we can choose
+             * the (probably cheaper) delta approach.
+             * The delta approach then needs to change the environment as well
+             * as the loop relation as less iterations may be required in the
+             * next recursive call.
+             *
+             * The recursion is translated with the help of the following
+             * algebra nodes:
+             *  * rec_fix:   the head of the recursion referring
+             *               to the overall result
+             *  * rec_param: one item of a variable length parameter list 
+             *               (thus coping with UDFs that have an arbitrary
+             *                number or arguments)
+             *  * rec_nil:   the end of the parameter list
+             *  * rec_arg:   the operator that manages the connections
+             *               between seed argument, the recursive call, and
+             *               both its input to the next recursion (base)
+             *  * rec_base:  a dummy operator representing the algebraic
+             *               expression representing the input of the recursion
+             *               (either seed or recursive call)
+             * 
+             * The recursion (translated based on the more general approach)
+             * will be mapped into the following DAG (e1 -> q1; e2 -> q2;
+             * child edges: '---'; 'semantical' edges: '- -')
+             *
+             *         rownum_(pos:<item>||iter)
+             *            |
+             *         distinct
+             *            |
+             *         rec_fix
+             *            |  \ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+             *        rec_param            (res)           \
+             *        /       \________________            
+             *    rec_arg                      \            |
+             *    /  |  \                  rec_param
+             *    |      \                  /      \        |
+             *   / \  \   \             rec_arg  rec_nil  
+             *  /q1 \      \            /  \  \___   _ _ _ /
+             * /_____\ |    |     iter|item       \ /
+             *              |     ----|----  \     U
+             *         |    |         |           / \
+             *              |           (base)|  /  diff
+             *         | rownum_                 |   | \
+             *          (pos:<item>||iter)    |  | __|__\
+             *         |    |                    |/  |
+             *           distinct             |  |   |
+             *         |    |               rec_base |
+             *   (base)     | ______________________/ 
+             *         |    |/
+             *           pi_(iter, item)
+             *         |    |   
+             *             / \  
+             *         |  /q1 \
+             *           /_____\
+             *          \   |
+             *             /
+             *         rec_base
+             *
+             */
+
+            unsigned int   i;
+            PFla_op_t     *base_x, *base_res;
+            PFla_op_t     *res_seed, *res_body, *delta, *res;
+            PFalg_schema_t schema, res_schema;
+#if 0
+            PFla_env_t     e;
+            PFarray_t     *old_env;
+            PFla_op_t     *new_bind;    
+            PFla_op_t     *old_loop, *base_loop, *updated_loop;
+#endif
+
+            /* initiate translation of e1 */
+            reduce (kids[0], nts[0]);
+
+            /* We know that the order of the result is only required
+               outside the recursive function. Thus we throw away the
+               pos column. */
+            res_schema.count = 2;
+            res_schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
+
+            schema = A(RL(p)).rel->schema;
+            assert (schema.count == 3);
+            for (i = 0; i < 3; i++) {
+                if (schema.items[i].name == att_iter)
+                    res_schema.items[0] = schema.items[i];
+                else if (schema.items[i].name == att_item)
+                    res_schema.items[1] = schema.items[i];
+                else if (schema.items[i].name == att_pos)
+                    /* do nothing */;
+                else
+                    PFoops (OOPS_FATAL,
+                            "Input schema contains other "
+                            "columns than iter, pos, item");
+            }
+
+            /* create a new base for variable $x */
+            base_x = rec_base (schema);
+            
+            /* create a new result seed */
+            res_seed = PFla_empty_tbl_ (res_schema);
+            /* create a new result base */
+            base_res = rec_base (res_schema);
+
+#if 0
+            /* create a new base_loop relation */
+            base_loop = rec_base (loop->schema);
+            
+            /* save old enviroment */
+            old_env = env;
+            /* save old loop operator */
+            old_loop = loop;
+
+            /* create new environment */
+            env = PFarray (sizeof (PFla_env_t));
+
+            /* update all variable bindings in old environment and put
+             * them into new environment */
+            for (i = 0; i < PFarray_last (old_env); i++) {
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
+                new_bind = project (eqjoin (e.rel, 
+                                            project (base_loop,
+                                                     proj (att_iter1, att_iter)),
+                                            att_iter, att_iter1),
+                                    proj (att_iter, att_iter),
+                                    proj (att_pos, att_pos),
+                                    proj (att_item, att_item));
+                *((PFla_env_t *) PFarray_add (env)) =
+                    enventry (e.var, new_bind, e.frag);
+            }
+
+            loop = base_loop;
+            
+#endif
+            /* insert $x and "its document" into the NEW environment */
+            *((PFla_env_t *) PFarray_add (env))
+                = enventry (L(p)->sem.var, base_x, A(RL(p)).frag);
+
+            /* translate e2 under the specified conditions 
+             * (updated environment, updated loop)
+             */
+            reduce (kids[1], nts[1]);
+
+            /* the result of the recursion body */
+            res_body = project (A(RR(p)).rel,
+                                proj (att_iter, att_iter),
+                                proj (att_item, att_item));
+            
+            /* get the really new nodes */
+            delta = difference (res_body,
+                                project (base_res,
+                                         proj (att_iter, att_iter),
+                                         proj (att_item, att_item)));
+
+            /* add the new nodes (of this recursion step) 
+               to our already collected result */
+            res = disjunion (delta,
+                             project (base_res,
+                                      proj (att_iter, att_iter),
+                                      proj (att_item, att_item)));
+            
+#if 0
+            updated_loop = project (eqjoin (project (delta, 
+                                                     proj (att_iter1, 
+                                                           att_iter)),
+                                            base_loop,
+                                            att_iter1,
+                                            att_iter),
+                                    proj (att_iter, att_iter));
+#endif
+
+            A(p) = (struct PFla_pair_t) {
+                     .rel = rownum (
+            /* the distinct operator is superfluous as its input
+               is a union of distinct results. The difference that
+               produced these results has only follow set semantics. */
+                                distinct (
+                                    rec_fix (
+                                        rec_param (
+                                            rec_arg (
+                                                A(RL(p)).rel,
+                                                rownum (
+            /* using 'delta' instead of 'res_body' changes the evaluation
+               strategy: delta vs. full intermediate result (res_body) */
+                                                 /* distinct (delta), */
+                                                    distinct (res_body),
+                                                    att_pos,
+                                                    sortby (att_item),
+                                                    att_iter),
+                                                base_x),
+                                            rec_param (
+                                                rec_arg (
+                                                    res_seed,
+                                                    res,
+                                                    base_res),
+#if 0
+            /* using 'delta' instead of 'res_body' changes the evaluation
+               strategy: the loop relation cannot be changed */
+                                                rec_param (
+                                                    rec_arg (
+                                                        old_loop,
+                                                        updated_loop,
+                                                        base_loop),
+                                                    rec_nil ()))),   
+#else
+                                                rec_nil ())),
+#endif
+                                        res)),
+                                att_pos, sortby (att_item), att_iter),
+                     .frag = A(RR(p)).frag };
+            
+#if 0
+            env = old_env;
+            loop = old_loop;
+#endif
+        } break;
 
         default:
             PFoops (OOPS_FATAL, "untranslated expression (rule %i)", rule);

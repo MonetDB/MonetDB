@@ -2371,6 +2371,177 @@ PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
 
 
 /**
+ * Constructor for a tail recursion operator
+ */
+PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
+                         const PFla_op_t *res)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
+
+    assert (paramList);
+    assert (res);
+
+    /* create recursion operator */
+    ret = la_op_wire1 (la_rec_fix, paramList);
+
+    /*
+     * insert semantic value (reference to the result
+     * relation) into the result
+     */
+    ret->sem.rec_fix.res = (PFla_op_t *) res;
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = res->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < res->schema.count; i++)
+        ret->schema.items[i] = res->schema.items[i];
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to recursion
+ */
+PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
+                           const PFla_op_t *paramList)
+{
+    PFla_op_t     *ret;
+
+    assert (arguments);
+    assert (paramList);
+
+    /* create recursion parameter operator */
+    ret = la_op_wire2 (la_rec_param, arguments, paramList);
+
+    assert (paramList->schema.count == 0);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for the last item of a parameter list
+ * related to recursion
+ */
+PFla_op_t *PFla_rec_nil ()
+{
+    PFla_op_t     *ret;
+
+    /* create end of recursion parameter list operator */
+    ret = la_op_leaf (la_rec_nil);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for the arguments of a parameter (seed and recursion
+ * will be the input relations for the base operator)
+ */
+PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
+                         const PFla_op_t *recursion,
+                         const PFla_op_t *base)
+{
+    PFla_op_t     *ret;
+    unsigned int   i, j;
+
+    assert (seed);
+    assert (recursion);
+    assert (base);
+
+    /* see if both operands have same number of attributes */
+    if (seed->schema.count != recursion->schema.count ||
+        seed->schema.count != base->schema.count)
+        PFoops (OOPS_FATAL,
+                "Schema of the arguments of recursion "
+                "argument to not match");
+
+    /* see if we find each attribute in all of the input relations */
+    for (i = 0; i < seed->schema.count; i++) {
+        for (j = 0; j < recursion->schema.count; j++)
+            if (seed->schema.items[i].name == recursion->schema.items[j].name) {
+                break;
+            }
+
+        if (j == recursion->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of the arguments of recursion "
+                    "argument to not match");
+
+        for (j = 0; j < base->schema.count; j++)
+            if (seed->schema.items[i].name == base->schema.items[j].name) {
+                break;
+            }
+
+        if (j == base->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of the arguments of recursion "
+                    "argument to not match");
+    }
+
+    /* create recursion operator */
+    ret = la_op_wire2 (la_rec_arg, seed, recursion);
+
+    /*
+     * insert semantic value (reference to the base
+     * relation) into the result
+     */
+    ret->sem.rec_arg.base = (PFla_op_t *) base;
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = seed->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < seed->schema.count; i++)
+        ret->schema.items[i] = seed->schema.items[i];
+    
+    return ret;
+}
+
+
+/**
+ * Constructor for the base relation in a recursion (-- a dummy
+ * operator representing the seed relation as well as the argument
+ * computed in the recursion).
+ */
+PFla_op_t *PFla_rec_base (PFalg_schema_t schema)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
+
+    /* create base operator for the recursion */
+    ret = la_op_leaf (la_rec_base);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
+    
+    return ret;
+}
+
+
+/**
  * Constructor for a proxy operator with a single child
  */
 PFla_op_t *PFla_proxy (const PFla_op_t *n, unsigned int kind,

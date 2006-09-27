@@ -126,6 +126,11 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  frag_union     =  72
 %term  empty_frag     =  73
 %term  cond_err       =  80
+%term  rec_fix        =  81
+%term  rec_param      =  82
+%term  rec_nil        =  83
+%term  rec_arg        =  84
+%term  rec_base       =  85
 %term  concat         = 100
 %term  contains       = 101
 %term  string_join    = 102
@@ -195,9 +200,16 @@ Rel:    roots_ (processi (Rel))                   =  76 (10);
 Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  80 (10);
-Rel:    concat (Rel)                              =  81 (10);
-Rel:    contains (Rel)                            =  82 (10);
-Rel:    string_join (Rel, Rel)                    =  83 (10);
+
+Rel:    rec_fix (Rec)                             =  81 (10);
+Rel:    rec_base                                  =  82 (10);
+Rec:    rec_param (Arg, Rec)                      =  83 (10);
+Rec:    rec_nil                                   =  84 (10);
+Arg:    rec_arg (Rel, Rel)                        =  85 (10);
+
+Rel:    concat (Rel)                              =  86 (10);
+Rel:    contains (Rel)                            =  87 (10);
+Rel:    string_join (Rel, Rel)                    =  88 (10);
 
 Rel:    EmptyRel                                  =  90  (0);
 

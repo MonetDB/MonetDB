@@ -528,13 +528,37 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
             
         case la_roots:
+        {
+            PFarray_t *child_np_list;
+            PFalg_att_t unq1, unq2, ori1, ori2;
+            
+            /* child_np_list is expected to be equal to np_list,
+               meaning that the constructor in the child node
+               accepted all variable names. If they differ the
+               constructor is probably called more than once. */
+            child_np_list = infer_ori_names (L(n), np_list);
+
             /* make sure that no projection is required after
                the roots operator */
-            np_list = infer_ori_names (L(n), np_list);
-            n->prop->name_pairs = PFarray_copy (np_list);
+            for (unsigned int i = 0; i < PFarray_last (child_np_list); i++) {
+                unq1 = ((name_pair_t *) PFarray_at (child_np_list, i))->unq;
+                ori1 = ((name_pair_t *) PFarray_at (child_np_list, i))->ori;
+                
+                for (unsigned int j = 0; j < PFarray_last (np_list); j++) {
+                    unq2 = ((name_pair_t *) PFarray_at (np_list, j))->unq;
+                    ori2 = ((name_pair_t *) PFarray_at (np_list, j))->ori;
+                    
+                    if (unq1 == unq2 && ori1 != ori2)
+                        PFoops (OOPS_FATAL,
+                                "a constructor has to have exactly one "
+                                "referencing root node");
+                }
+            }
+                        
             n->prop->l_name_pairs = PFarray_copy (np_list);
+            
             return np_list;
-            break;
+        } break;
 
         case la_fragment:
         case la_frag_union:
@@ -550,6 +574,42 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                            n->sem.err.att);
             break;
 
+        case la_rec_fix:
+            n->prop->l_name_pairs = PFarray_copy (np_list);
+
+            /* The left argument list is modified in case the
+               result of the recursion (referenced via a 'semantical'
+               edge) requires different names. The mapping has to
+               cope with this special case. */
+            patch_ori_names (n->prop->l_name_pairs,
+                             infer_ori_names (n->sem.rec_fix.res,
+                                              n->prop->l_name_pairs));
+
+            /* use empty name pair list (here the list 
+               of the unused right argument) */
+            infer_ori_names (L(n), n->prop->r_name_pairs);
+            
+            return np_list;
+            break;
+            
+        case la_rec_param:
+        case la_rec_nil:
+            /* do not infer name pairs to the children */
+            break;
+            
+        case la_rec_arg:
+            /* The both inputs (seed and recursion) may not use
+               the same column names. Thus we live with inconsistent
+               original names and introduce a renaming projection 
+               (Schema L -> Schema Base and Schema R -> Schema Base)
+               during name mapping. */
+            n->prop->l_name_pairs = PFarray_copy (np_list);
+            n->prop->r_name_pairs = PFarray_copy (np_list);
+            break;
+            
+        case la_rec_base:
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             n->prop->l_name_pairs = PFarray_copy (np_list);
@@ -642,6 +702,13 @@ prop_infer (PFla_op_t *n)
 
     /* reset the list of available column names */
     FREE(n) = ALL;
+    
+    /* we also need to start one traversal from the rec_fix operator
+       to its result (no child relationship). Increasing the reference
+       counter of the result (after it is initialized) accounts for 
+       this traversal. */
+    if (n->kind == la_rec_fix)
+        EDGE(n->sem.rec_fix.res)++;
 }
 
 /**

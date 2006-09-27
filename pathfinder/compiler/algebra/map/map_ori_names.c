@@ -572,6 +572,111 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             p->sem.err.str);
             break;
         
+        case la_rec_fix:
+        {
+            /* The result of the recursion is not referenced by
+               a child edge. Thus the PROJ macro has to be applied by
+               hand. */
+            PFalg_att_t   ori_new, ori_old, unq;
+            PFla_op_t    *rec_res = O(p->sem.rec_fix.res);
+            PFalg_proj_t *projlist = PFmalloc (rec_res->schema.count *
+                                               sizeof (PFalg_proj_t));
+            bool          renamed = false;
+            unsigned int  count = 0;
+            
+            for (unsigned int i = 0; i < rec_res->schema.count; i++) {
+                ori_old = rec_res->schema.items[i].name;
+
+                /* lookup unique name for column @a ori_old */
+                unq = PFprop_unq_name_left (p->prop, ori_old);
+
+                /* column ori_old is not referenced by operator @a p 
+                   and thus does not appear in the projection */
+                if (!unq) continue;
+
+                /* lookup corresponding new name for column @a ori_old */
+                ori_new = ONAME(p, unq);
+
+                /* don't allow missing matches */
+                assert (ori_new);
+
+                projlist[count++] = proj (ori_new, ori_old);
+                renamed = renamed || (ori_new != ori_old);
+            }
+
+            res = rec_fix (O(L(p)), 
+                           renamed
+                               ? PFla_project_ (rec_res, count, projlist)
+                               : rec_res);
+        } break;
+            
+        case la_rec_param:
+            res = rec_param (O(L(p)), O(R(p)));
+            break;
+            
+        case la_rec_nil:
+            res = rec_nil ();
+            break;
+            
+        case la_rec_arg:
+        /* The both inputs (seed and recursion) may not use the same 
+           column names (as the base). Thus we live with inconsistent
+           original names and additionally add a renaming projection 
+           (Schema L -> Schema Base and Schema R -> Schema Base)
+           if necessary. */
+        {
+            PFalg_att_t unq, base_ori, seed_ori, rec_ori;
+            unsigned int count = p->schema.count;
+            bool seed_rename = false, rec_rename = false;
+            PFalg_proj_t *seed_proj = PFmalloc (count *
+                                                sizeof (PFalg_proj_t));
+            PFalg_proj_t *rec_proj = PFmalloc (count *
+                                               sizeof (PFalg_proj_t));
+
+            assert (count == p->sem.rec_arg.base->schema.count &&
+                    count == L(p)->schema.count &&
+                    count == R(p)->schema.count);
+            
+            for (unsigned int i = 0; i < count; i++) {
+                unq      = p->sem.rec_arg.base->schema.items[i].name;
+                base_ori = ONAME(p->sem.rec_arg.base, unq);
+                seed_ori = ONAME(L(p), unq);
+                rec_ori  = ONAME(R(p), unq);
+
+                seed_proj[i] = proj (base_ori, seed_ori);
+                rec_proj[i]  = proj (base_ori, rec_ori);
+
+                seed_rename = seed_rename || (base_ori != seed_ori);
+                rec_rename  = rec_rename  || (base_ori != rec_ori);
+            }
+                    
+            res = rec_arg (seed_rename 
+                               ? PFla_project_ (O(L(p)), count, seed_proj)
+                               : O(L(p)),
+                           rec_rename
+                               ? PFla_project_ (O(R(p)), count, rec_proj)
+                               : O(R(p)),
+                           O(p->sem.rec_arg.base));
+        }   break;
+
+        case la_rec_base:
+        /* combine the new original names with the already
+           existing types (see also 'case la_empty_tbl') */
+        {
+            PFalg_schema_t schema;
+            schema.count = p->schema.count;
+            schema.items  = PFmalloc (schema.count *
+                                      sizeof (PFalg_schema_t));
+
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                schema.items[i] = 
+                    (struct PFalg_schm_item_t)
+                        { .name = ONAME(p, p->schema.items[i].name),
+                          .type = p->schema.items[i].type };
+                                                   
+            res = rec_base (schema);
+        } break;
+            
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,

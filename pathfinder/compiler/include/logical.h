@@ -113,6 +113,14 @@ enum PFla_op_kind_t {
     , la_empty_frag     = 73 /**< representation of an empty fragment */
                             
     , la_cond_err       = 80 /**< facility to trigger runtime errors */
+    , la_rec_fix        = 81 /**< operator representing a tail recursion */
+    , la_rec_param      = 82 /**< list of parameters of the recursion */
+    , la_rec_nil        = 83 /**< end of the list of parameters of the 
+                                  recursion */
+    , la_rec_arg        = 84 /**< reference to the arguments of a parameter
+                                  in the recursion */
+    , la_rec_base       = 85 /**< base of the DAG describing the recursion */
+    
     , la_proxy          = 96 /**< proxy operator that represents a group
                                   of operators */
     , la_proxy_base     = 97 /**< completes the content of the proxy 
@@ -285,6 +293,17 @@ union PFla_op_sem_t {
         PFalg_att_t     att;     /**< name of the boolean attribute */
         char *          str;     /**< error message */
     } err;
+
+    /* semantic content for a recursion operator */
+    struct {
+        PFla_op_t      *res;     /**< reference to the result relation */
+    } rec_fix;
+
+    /* semantic content for an argument of a recursion parameter */
+    struct {
+        PFla_op_t      *base;    /**< reference to the base relation
+                                      of the recursion */
+    } rec_arg;
 
     /* semantic content for proxy nodes */
     struct {
@@ -744,6 +763,42 @@ PFla_op_t * PFla_empty_frag (void);
  */
 PFla_op_t * PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
                            PFalg_att_t att, char *err_string);
+
+/****************************************************************/
+
+/**
+ * Constructor for a tail recursion operator
+ */
+PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
+                         const PFla_op_t *res);
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to recursion
+ */
+PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
+                           const PFla_op_t *paramList);
+
+/**
+ * Constructor for the last item of a parameter list
+ * related to recursion
+ */
+PFla_op_t *PFla_rec_nil ();
+
+/**
+ * Constructor for the arguments of a parameter (seed and recursion
+ * will be the input relations for the base operator)
+ */
+PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
+                         const PFla_op_t *recursion,
+                         const PFla_op_t *base);
+
+/**
+ * Constructor for the base relation in a recursion (-- a dummy
+ * operator representing the seed relation as well as the argument
+ * computed in the recursion).
+ */
+PFla_op_t *PFla_rec_base (PFalg_schema_t schema);
 
 /****************************************************************/
 

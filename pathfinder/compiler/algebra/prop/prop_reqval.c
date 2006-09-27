@@ -332,10 +332,34 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_processi:
             assert (!"not implemented yet?");
 
-        default:
+        case la_rec_fix:
+            /* infer no required values */
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (L(n), rv);
+            break;
+            
+        case la_rec_param:
+        case la_rec_arg:
+            /* infer no required values */
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (L(n), rv);
+            prop_infer_reqvals (R(n), rv);
+            
+        case la_rec_nil:
+        case la_rec_base:
+            break;
+            
+        case la_cross_mvd:
             PFoops (OOPS_FATAL,
-                    "kind %i not supported in reqvals property inference.",
-                    n->kind);
+                    "clone column aware cross product operator is "
+                    "only allowed inside mvd optimization!");
+            
+        case la_eqjoin_unq:
+            PFoops (OOPS_FATAL,
+                    "clone column aware equi-join operator is "
+                    "only allowed with unique attribute names!");
     }
 }
 

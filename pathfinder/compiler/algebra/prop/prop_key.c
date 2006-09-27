@@ -49,7 +49,7 @@
 
 /**
  * worker for PFprop_key;
- * Test if @a attr is in the list of key columns in array @a keys 
+ * Test if @a attr is in the list of key columns in array @a keys
  */
 static bool
 key_worker (PFarray_t *keys, PFalg_att_t attr)
@@ -126,15 +126,15 @@ PFprop_keys_to_attlist (const PFprop_t *prop)
 
     if (!prop->keys)
         return new_list;
-        
+
     for (unsigned int i = 0; i < PFarray_last (prop->keys); i++)
         new_list.atts[i] = *(PFalg_att_t *) PFarray_at (prop->keys, i);
-        
+
     return new_list;
 }
 
 /**
- * Extends key list @a with attribute @a b 
+ * Extends key list @a with attribute @a b
  * if @a b is not in the list.
  */
 static void
@@ -147,14 +147,14 @@ union_ (PFarray_t *a, PFalg_att_t b)
 }
 
 /**
- * Extends key list @a with all the items 
+ * Extends key list @a with all the items
  * of the key list @a b that are not in @a a/
  */
 static void
 union_list (PFarray_t *a, PFarray_t *b)
 {
     PFalg_att_t cur;
-    
+
     assert (a && b);
 
     for (unsigned int i = 0; i < PFarray_last (b); i++) {
@@ -168,7 +168,7 @@ static void
 copy (PFarray_t *base, PFarray_t *content)
 {
     for (unsigned int i = 0; i < PFarray_last (content); i++)
-        *(PFalg_att_t *) PFarray_add (base) = 
+        *(PFalg_att_t *) PFarray_add (base) =
             *(PFalg_att_t *) PFarray_at (content, i);
 }
 
@@ -204,7 +204,7 @@ infer_key (PFla_op_t *n)
                     if (n->schema.items[i].type != aat_nat &&
                         n->schema.items[i].type != aat_int)
                         continue;
-                        
+
                     /* compare each tuple with all others */
                     while (j < n->sem.lit_tbl.count) {
                         if (!PFalg_atom_cmp (n->sem.lit_tbl.tuples[j].atoms[i],
@@ -218,10 +218,10 @@ infer_key (PFla_op_t *n)
                     /* all values are unique thus also key */
                     if (j == n->sem.lit_tbl.count)
                         union_ (n->prop->keys, n->schema.items[i].name);
-                    
+
                 }
             break;
-                                            
+
         case la_disjunion:
             /*
              * If
@@ -264,11 +264,11 @@ infer_key (PFla_op_t *n)
         case la_attach:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
-            
+
             if (PFprop_card (n->prop) == 1)
                 union_ (n->prop->keys, n->sem.attach.attname);
             break;
-                
+
         case la_cross:
             /* keys of one side can be retained
                if the other side has a cardinality of 1.
@@ -279,7 +279,7 @@ infer_key (PFla_op_t *n)
             else if (PFprop_card (R(n)->prop) == 1)
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
-            
+
         case la_eqjoin:
         case la_eqjoin_unq:
             /* only a key-join retains all key properties */
@@ -293,14 +293,14 @@ infer_key (PFla_op_t *n)
             else if (PFprop_key (R(n)->prop, n->sem.eqjoin.att2))
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
-            
+
         case la_project:
             /* rename keys columns from old to new */
             for (unsigned int i = 0; i < n->sem.proj.count; i++)
                 if (key_worker (L(n)->prop->keys, n->sem.proj.items[i].old))
                     union_ (n->prop->keys, n->sem.proj.items[i].new);
             break;
-            
+
         case la_select:
         case la_difference:
         case la_type_assert:
@@ -314,7 +314,7 @@ infer_key (PFla_op_t *n)
             copy (n->prop->keys, L(n)->prop->keys);
             union_list (n->prop->keys, R(n)->prop->keys);
             break;
-            
+
         case la_distinct:
             if (n->schema.count == 1)
                 /* if distinct works on a single column,
@@ -324,7 +324,7 @@ infer_key (PFla_op_t *n)
                 /* key columns stay the same */
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
-            
+
         case la_num_add:
         case la_num_subtract:
         case la_num_multiply:
@@ -339,26 +339,26 @@ infer_key (PFla_op_t *n)
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            /* if the cardinality is equal to one 
+            /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1)
                 union_ (n->prop->keys, n->sem.binary.res);
             break;
-            
+
         case la_num_neg:
         case la_bool_not:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            /* if the cardinality is equal to one 
+            /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1)
                 union_ (n->prop->keys, n->sem.unary.res);
             break;
-            
+
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_count:
         case la_seqty1:
@@ -371,38 +371,38 @@ infer_key (PFla_op_t *n)
             else
                 union_ (n->prop->keys, n->sem.aggr.res);
             break;
-            
+
         case la_rownum:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            /* if the cardinality is equal to one 
+            /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1 || !n->sem.rownum.part)
                 union_ (n->prop->keys, n->sem.rownum.attname);
             break;
-            
+
         case la_number:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            /* if the cardinality is equal to one 
+            /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1 || !n->sem.number.part)
                 union_ (n->prop->keys, n->sem.number.attname);
             break;
-            
+
         case la_type:
         case la_cast:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            /* if the cardinality is equal to one 
+            /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1)
                 union_ (n->prop->keys, n->sem.type.res);
             break;
-            
+
         case la_scjoin:
             /*
             if (n->sem.scjoin.axis == alg_attr &&
@@ -416,7 +416,7 @@ infer_key (PFla_op_t *n)
 
         case la_doc_tbl:
             if (PFprop_card (n->prop) == 1) {
-                /* If the cardinality is equal to one 
+                /* If the cardinality is equal to one
                    the result is key itself. */
                 union_ (n->prop->keys, n->sem.doc_tbl.iter);
                 union_ (n->prop->keys, n->sem.doc_tbl.item_res);
@@ -424,24 +424,24 @@ infer_key (PFla_op_t *n)
                 /* Otherwise at least column iter is key. */
                 union_ (n->prop->keys, n->sem.doc_tbl.iter);
             break;
-            
+
         case la_doc_access:
             /* key columns are propagated */
             copy (n->prop->keys, R(n)->prop->keys);
 
-            /* if the cardinality is equal to one 
+            /* if the cardinality is equal to one
                the result is key itself */
             if (PFprop_card (n->prop) == 1)
                 union_ (n->prop->keys, n->sem.doc_access.res);
             break;
-            
+
         case la_element:
             /* Element construction builds exactly
                one element in each iteration. */
             union_ (n->prop->keys, n->sem.elem.iter_res);
             union_ (n->prop->keys, n->sem.elem.item_res);
             break;
-            
+
         case la_attribute:
             copy (n->prop->keys, L(n)->prop->keys);
             union_ (n->prop->keys, n->sem.attr.res);
@@ -450,6 +450,24 @@ infer_key (PFla_op_t *n)
         case la_textnode:
             copy (n->prop->keys, L(n)->prop->keys);
             union_ (n->prop->keys, n->sem.textnode.res);
+            break;
+
+        case la_rec_fix:
+            /* get the keys of the overall result */
+            copy (n->prop->keys, n->sem.rec_fix.res->prop->keys);
+            break;
+
+        case la_rec_param:
+        case la_rec_nil:
+            /* recursion parameters do not have properties */
+            break;
+
+        case la_rec_arg:
+            copy (n->prop->keys, R(n)->prop->keys);
+            break;
+
+        case la_rec_base:
+            /* infer no properties of the seed */
             break;
 
         case la_proxy:

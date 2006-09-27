@@ -545,6 +545,54 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                             p->sem.err.str);
             break;
         
+        case la_rec_fix:
+            res = rec_fix (U(L(p)), U(p->sem.rec_fix.res));
+            break;
+            
+        case la_rec_param:
+            res = rec_param (U(L(p)), U(R(p)));
+            break;
+            
+        case la_rec_nil:
+            res = rec_nil ();
+            break;
+            
+        case la_rec_arg:
+        /* The results of the left (seed) and the right (recursion) argument 
+           have different result schemas. Thus we introduce a mapping 
+           projection that transforms the recursion schema into the seed 
+           (and base) schema. */
+        {
+            PFalg_proj_t *projlist = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                projlist[i] = proj (UNAME(p, p->schema.items[i].name),
+                                    UNAME(R(p), p->schema.items[i].name));
+                    
+            res = rec_arg (U(L(p)),
+                           PFla_project_ (U(R(p)), p->schema.count, projlist),
+                           U(p->sem.rec_arg.base));
+        }   break;
+
+        case la_rec_base:
+        /* combine the new original names with the already
+           existing types (see also 'case la_empty_tbl') */
+        {
+            PFalg_schema_t schema;
+            schema.count = p->schema.count;
+            schema.items  = PFmalloc (schema.count *
+                                      sizeof (PFalg_schema_t));
+
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                schema.items[i] = 
+                    (struct PFalg_schm_item_t)
+                        { .name = UNAME(p, p->schema.items[i].name),
+                          .type = p->schema.items[i].type };
+                                                   
+            res = rec_base (schema);
+        } break;
+            
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,

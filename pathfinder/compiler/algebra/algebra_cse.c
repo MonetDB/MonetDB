@@ -376,6 +376,17 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return false;
             break;
 
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_nil:
+        case la_rec_arg:
+        case la_rec_base:
+            /*
+             * we do neither split up nor merge recursion operators 
+             */
+            return false;
+            break;
+
         case la_proxy:
         case la_proxy_base:
             /* we assume that we do not split up proxy nodes */

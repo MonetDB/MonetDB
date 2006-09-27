@@ -176,6 +176,13 @@
 /* conditional error operator */
 #define cond_err(a,b,c,d) PFla_cond_err ((a),(b),(c),(d))
 
+/* recursion operators */
+#define rec_fix(a,b) PFla_rec_fix ((a),(b))
+#define rec_param(a,b) PFla_rec_param ((a),(b))
+#define rec_nil() PFla_rec_nil ()
+#define rec_arg(a,b,c) PFla_rec_arg ((a),(b),(c))
+#define rec_base(a) PFla_rec_base (a)
+
 /* constructors for built-in functions */
 #define fn_concat(a,b,c,d)  PFla_fn_concat ((a), (b), (c), (d))
 #define fn_contains(a,b,c,d)  PFla_fn_contains ((a), (b), (c), (d))

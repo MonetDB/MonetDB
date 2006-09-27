@@ -220,7 +220,7 @@ static void
 copy (PFarray_t *base, PFarray_t *content)
 {
     for (unsigned int i = 0; i < PFarray_last (content); i++)
-        *(const_t *) PFarray_add (base) = 
+        *(const_t *) PFarray_add (base) =
             *(const_t *) PFarray_at (content, i);
 }
 
@@ -483,7 +483,7 @@ infer_const (PFla_op_t *n)
             break;
 
         case la_bool_not:
-            /* if input is constant, output is constant as 
+            /* if input is constant, output is constant as
                well with the switched value */
             if (PFprop_const (n->prop, n->sem.unary.att))
                 PFprop_mark_const (
@@ -515,12 +515,12 @@ infer_const (PFla_op_t *n)
             break;
 
         case la_cast:
-            /* Inference of the constant result columns 
+            /* Inference of the constant result columns
                is not possible as a cast is required. */
 
             /* if the cast does not change the type res equals att */
             if (PFprop_const (L(n)->prop, n->sem.type.att) &&
-                (PFprop_const_val (L(n)->prop, 
+                (PFprop_const_val (L(n)->prop,
                                    n->sem.type.att)).type == n->sem.type.ty)
                 PFprop_mark_const (
                         n->prop,
@@ -529,7 +529,7 @@ infer_const (PFla_op_t *n)
             /* In special cases a stable cast (in respect to different
                implementations) is possible (see e.g. from int to dbl). */
             else if (PFprop_const (L(n)->prop, n->sem.type.att) &&
-                     (PFprop_const_val (L(n)->prop, 
+                     (PFprop_const_val (L(n)->prop,
                                         n->sem.type.att)).type == aat_int &&
                      n->sem.type.ty == aat_dbl)
                 PFprop_mark_const (
@@ -562,6 +562,24 @@ infer_const (PFla_op_t *n)
                         n->prop,
                         n->sem.elem.iter_res,
                         PFprop_const_val (RL(n)->prop, n->sem.elem.iter_qn));
+            break;
+
+        case la_rec_fix:
+            /* get the constants of the overall result */
+            copy (n->prop->constants, n->sem.rec_fix.res->prop->constants);
+            break;
+
+        case la_rec_param:
+        case la_rec_nil:
+            /* recursion parameters do not have properties */
+            break;
+
+        case la_rec_arg:
+            copy (n->prop->constants, R(n)->prop->constants);
+            break;
+
+        case la_rec_base:
+            /* infer no properties of the seed */
             break;
 
         case la_proxy:

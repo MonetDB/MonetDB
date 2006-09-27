@@ -100,6 +100,11 @@ static char *a_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
+    , [la_rec_fix]          = "rec fix"
+    , [la_rec_param]        = "rec param"
+    , [la_rec_nil]          = "rec nil"
+    , [la_rec_arg]          = "rec arg"
+    , [la_rec_base]         = "rec base"
     , [la_proxy]            = "PROXY"
     , [la_proxy_base]       = "PROXY_BASE"
     , [la_concat]           = "fn:concat"
@@ -160,6 +165,11 @@ static char *xml_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
+    , [la_rec_fix]          = "rec_fix"
+    , [la_rec_param]        = "rec_param"
+    , [la_rec_nil]          = "rec_nil"
+    , [la_rec_arg]          = "rec_arg"
+    , [la_rec_base]         = "rec_base"
     , [la_proxy]            = "PROXY"
     , [la_proxy_base]       = "PROXY_BASE"
     , [la_concat]           = "fn:concat"
@@ -349,6 +359,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_frag_union]     = "\"#E0E0E0\""
         , [la_empty_frag]     = "\"#E0E0E0\""
         , [la_cond_err]       = "\"#C0C0C0\""
+        , [la_rec_fix]        = "\"#FF00FF\""
+        , [la_rec_param]      = "\"#FF00FF\""
+        , [la_rec_nil]        = "\"#FF00FF\""
+        , [la_rec_arg]        = "\"#BB00BB\""
+        , [la_rec_base]       = "\"#BB00BB\""
         , [la_proxy]          = "\"#DFFFFF\""
         , [la_proxy_base]     = "\"#DFFFFF\""
         , [la_concat]         = "\"#C0C0C0\""
@@ -678,7 +693,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.err.att),
                             PFstrndup (n->sem.err.str, 16));
             break;
-
+            
         case la_proxy:
             PFarray_printf (dot, "%s %i (", a_id[n->kind], n->sem.proxy.kind);
 
@@ -717,6 +732,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_nil:
+        case la_rec_arg:
+        case la_rec_base:
         case la_proxy_base:
         case la_string_join:
             PFarray_printf (dot, "%s", a_id[n->kind]);
@@ -878,6 +898,71 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                         n->node_id, n->child[c]->node_id);
     }
 
+    /* create soft links */
+    switch (n->kind)
+    {
+        case la_rec_fix:
+            if (n->sem.rec_fix.res) {
+                if (n->sem.rec_fix.res->node_id == 0)
+                    n->sem.rec_fix.res->node_id = node_id++;
+                
+                PFarray_printf (dot,
+                                "node%i -> node%i "
+                                "[style=dashed label=res dir=none];\n",
+                                n->node_id, n->sem.rec_fix.res->node_id);
+            }
+            break;
+
+        case la_rec_arg:
+            if (n->sem.rec_arg.base) {
+                if (n->sem.rec_arg.base->node_id == 0)
+                    n->sem.rec_arg.base->node_id = node_id++;
+                
+                PFarray_printf (dot, 
+                                "node%i -> node%i "
+                                "[style=dashed label=seed dir=back];\n",
+                                n->sem.rec_arg.base->node_id,
+                                n->child[0]->node_id);
+                PFarray_printf (dot, 
+                                "node%i -> node%i "
+                                "[style=dashed label=recurse];\n",
+                                n->child[1]->node_id,
+                                n->sem.rec_arg.base->node_id);
+            }
+            break;
+
+        case la_proxy:
+            if (n->sem.proxy.base1) {
+                if (n->sem.proxy.base1->node_id == 0)
+                    n->sem.proxy.base1->node_id = node_id++;
+                
+                PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
+                                n->node_id, n->sem.proxy.base1->node_id);
+            }
+            
+            if (n->sem.proxy.base2) {
+                if (n->sem.proxy.base2->node_id == 0)
+                    n->sem.proxy.base2->node_id = node_id++;
+                
+                PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
+                                n->node_id, n->sem.proxy.base2->node_id);
+            }
+            
+            if (n->sem.proxy.ref) {
+                if (n->sem.proxy.ref->node_id == 0)
+                    n->sem.proxy.ref->node_id = node_id++;
+                
+                PFarray_printf (dot, 
+                                "node%i -> node%i "
+                                "[style=dashed label=ref];\n",
+                                n->node_id, n->sem.proxy.ref->node_id);
+            }
+            break;
+            
+        default:
+            break;
+    }
+    
     /* mark node visited */
     n->bit_dag = true;
 
@@ -1624,7 +1709,8 @@ PFla_dot (FILE *f, PFla_op_t *root)
                              "node [width=0.2];\n"
                              "node [style=filled];\n"
                              "node [color=\"#C0C0C0\"];\n"
-                             "node [fontsize=10];\n");
+                             "node [fontsize=10];\n"
+                             "edge [fontsize=9];\n");
 
         root->node_id = 1;
         la_dot (dot, root, root->node_id + 1);

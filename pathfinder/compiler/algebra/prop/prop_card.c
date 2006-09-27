@@ -145,8 +145,8 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_count:
         case la_seqty1:
@@ -172,6 +172,25 @@ infer_card (PFla_op_t *n)
             n->prop->card = 0;
             break;
 
+        case la_rec_fix:
+            /* get the cardinality of the overall result */
+            n->prop->card = n->sem.rec_fix.res->prop->card;
+            break;
+            
+        case la_rec_param:
+        case la_rec_nil:
+            /* recursion parameters do not have properties */
+            break;
+            
+        case la_rec_arg:
+            n->prop->card = R(n)->prop->card;
+            break;
+
+        case la_rec_base:
+            /* infer no properties of the seed */
+            n->prop->card = 0;
+            break;
+            
         case la_cross_mvd:
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "

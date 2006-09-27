@@ -164,6 +164,39 @@ diff (PFalg_att_t a, PFalg_att_t b)
     return a & (~b);
 }
 
+/* forward declaration */
+static void prop_infer_icols (PFla_op_t *, PFalg_att_t);
+
+/**
+ * Alternative traversal of the icols that is started 
+ * only for the recursion operator rec_fix. This traversal
+ * ensures that the required columns of all operators in the
+ * recursion body are inferred before the icols property
+ * of the seeds.
+ */
+static void
+prop_infer_icols_rec_body (PFla_op_t *n)
+{
+    if (n->kind == la_rec_param) {
+        prop_infer_icols_rec_body (L(n));
+        prop_infer_icols_rec_body (R(n));
+    }
+    else if (n->kind == la_rec_nil)
+        return;
+    else if (n->kind == la_rec_arg) {
+        /* the required columns of the body are all the 
+           columns of the schema */
+        for (unsigned int i = 0; i < n->schema.count; i++)
+            n->prop->r_icols = union_ (n->prop->r_icols,
+                                       n->schema.items[i].name);
+        /* infer the icols property of the operators in the
+           recursion body */
+        prop_infer_icols (R(n), n->prop->r_icols);
+    }
+    else PFoops (OOPS_FATAL,
+                 "only recursion operators expected!");
+}
+            
 /**
  * worker for PFprop_infer
  * infers the icols property during the second run
@@ -457,6 +490,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             skip_children = true;
             break;
 
+        case la_element_tag:
+            /* This will never be called. */
+            break;
+
         case la_attribute:
             /* whenever the attribute itself is not needed column item
                is missing and therefore the input expression can be
@@ -519,6 +556,52 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = n->sem.err.att;
             break;
 
+        case la_rec_fix:
+            /* infer the required columns of the result */
+            prop_infer_icols (n->sem.rec_fix.res, n->prop->icols);
+            
+            /* start an alternative traversal of the recursion
+               nodes to ensure that the body of the recursion
+               and thus the base operators all contain icols
+               properties before the properties of the seeds are
+               inferred. */
+            prop_infer_icols_rec_body (L(n));
+
+            /* infer empty list for parameter list */
+            n->prop->l_icols = 0;
+            break;
+            
+        case la_rec_param:
+        case la_rec_nil:
+            /* infer empty list for parameter list */
+            n->prop->l_icols = 0;
+            n->prop->r_icols = 0;
+            break;
+            
+        case la_rec_arg:
+            /* the properties of the body are already inferred 
+               (see prop_infer_icols_rec_body in la_rec_fix) */
+
+            /* the icols of the seed are the resulting icols of the body */
+            n->prop->l_icols = n->sem.rec_arg.base->prop->icols;
+
+            /* The above only works if the icols are already inferred.
+               If that's not the case choose the full schema as seed 
+               for L(n) */
+            if (!n->prop->l_icols) {
+                n->prop->l_icols = n->prop->r_icols;
+                PFlog ("icols property inference of the recursion "
+                       "does not work as expected.");
+            }
+
+            prop_infer_icols (L(n), n->prop->r_icols);
+
+            skip_children = true;
+            break;
+            
+        case la_rec_base:
+            break;
+            
         case la_proxy:
         case la_proxy_base:
             /* infer incoming icols for input relation */
@@ -534,11 +617,15 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->r_icols = union_ (n->sem.string_join.iter_sep, 
                                        n->sem.string_join.item_sep);
             break;
-
-        default:
+            
+        case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
-                    "kind %i not supported in icols property inference.",
-                    n->kind);
+                    "clone column aware equi-join operator is "
+                    "only allowed with unique names!");
+        case la_cross_mvd:
+            PFoops (OOPS_FATAL,
+                    "clone column aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 
     if (!skip_children)
@@ -576,6 +663,13 @@ prop_infer (PFla_op_t *n)
     n->prop->icols = 0;
     n->prop->l_icols = 0;
     n->prop->r_icols = 0;
+
+    /* we also need to start one traversal from the rec_fix operator
+       to its result (no child relationship). Increasing the reference
+       counter of the result (after it is initialized) accounts for 
+       this traversal. */
+    if (n->kind == la_rec_fix)
+        n->sem.rec_fix.res->state_label++;
 }
 
 /**
