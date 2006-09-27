@@ -727,6 +727,14 @@ PROC ws_create() : BAT[void,bat]
     ws.fetch(CONT_NAME).seqbase(0@0).insert(0@0,str_nil);
     ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,empty_runtime);
 
+    # add a (bogus) collection root pre=0@0 to the temporary document container
+    ws.fetch(PRE_SIZE).fetch(WS).append(int_nil);
+    ws.fetch(PRE_LEVEL).fetch(WS).append(chr(-2));
+    ws.fetch(PRE_PROP).fetch(WS).append(oid_nil);
+    ws.fetch(PRE_KIND).fetch(WS).append(COLLECTION);
+    ws.fetch(PRE_NID).fetch(WS).append(oid_nil);
+    ws.fetch(FRAG_ROOT).fetch(WS).insert(WS,1@0); # first root is 1@0
+
     # add identical bat references as 'master' bats just to make the transient container complete  
     mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
     mirror(ws_mem).leftfetchjoin(ws).[insert](0@0, [fetch](ws_mem.leftfetchjoin(ws), 0));

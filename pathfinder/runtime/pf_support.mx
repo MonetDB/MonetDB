@@ -539,8 +539,8 @@ PROC replace_root(BAT[void,oid] result, BAT[oid,oid] frag_item, BAT[oid,oid] fra
         var delta := 100000 / count(frag_frag); # generate 100K intermediate tuples max
         var cur := 0, end := count(frag_item);
         while(cur < end) {
-            result.replace(leftthetajoin(frag_item.slice(cur, cur+delta), frag_frag, GE).{max}());
-            cur :+= delta + 1;
+                result.replace(leftthetajoin(frag_item.slice(cur, cur+delta), frag_frag, GE).{max}());
+                cur :+= delta + 1;
         }
 }
 
@@ -605,10 +605,10 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
                 var attr_item := attr_cont.ord_select($h);
                 if (count(attr_item) > 0) {
-                    attr_item := attr_item.mirror().leftfetchjoin(item);
-                    attr_item := attr_item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch($h));
-                    attr_item := attr_item.leftfetchjoin(nid_rid).[swizzle](map_pid);
-                    result.replace(attr_item);
+                        attr_item := attr_item.mirror().leftfetchjoin(item);
+                        attr_item := attr_item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch($h));
+                        attr_item := attr_item.leftfetchjoin(nid_rid).[swizzle](map_pid);
+                        result.replace(attr_item);
                 }
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
                 replace_root(result, frag_item, mirror(reverse(frag_root)));
@@ -848,14 +848,12 @@ PROC ll_htordered_unique_thetajoin( int mode,
 	if ( and(order,1) = @2 ) {
 		@3 := @3.chk_order(); # just in case...
 	}
-@
 @= one_iter_many_items
 	# 1 iter, n items
 	one_iter := TRUE;
 	@:chk_order(@1@2,0,item)@
 	# =>  we do not need to sort the input
 	order := or(order,1);
-@
 @= many_iters_one_item
 	# n iters, 1 item 
 	one_item := TRUE;
@@ -1000,7 +998,7 @@ pre_levels
 @
 # code for following and preceding steps
 @= foll_prec_code
-    # dirty code to make possible, that old scj still works
+    # find the document root-pre's for prec_foll
     var nid_rid := ws.fetch(NID_RID).fetch(cont);
     var map_pid := ws.fetch(MAP_PID).fetch(cont);
     var doc_pre := ws.fetch(FRAG_ROOT).fetch(cont).tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid);
@@ -1071,16 +1069,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 {
     # "order" is not (yet?) used, here.
     var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
-    # upwards steps cannot yet cope with the new "root" ("collection"?) node;
-    # hence, for now, we remove it, here;
-    # eventually, the upwards step implementation should be fixed accordingly.
-    if (count(pre_sizes) > 1) {
-        var pre_kinds := ws.fetch(PRE_KIND).fetch(cont);
-        if (pre_kinds.fetch(0) = COLLECTION) {
-            pre_sizes := pre_sizes.slice(1,count(pre_sizes));
-        }
-    }
-    var res := ll_@1(iter, ctx, pre_sizes);
+    var res := ll_@1(iter.chk_order(), ctx.chk_order(), pre_sizes);
     return new(void,bat,2).seqbase(0@0).append(hmark(res,0@0)).append(tmark(res,0@0)).access(BAT_READ);
 }
 @
@@ -1210,7 +1199,7 @@ if (postfilter) {
                 	    cands := cands.[swizzle](map_pid); 
                 	    cands := cands.tsort(); 
                         } else {
-                	    cands.assert_order(); # TODO: can we avoid a scan here?
+                	    cands.assert_order(); 
                         }
 	                if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
                                 var min_cand := min(cands);

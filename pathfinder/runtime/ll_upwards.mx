@@ -36,6 +36,13 @@ iteration).
 The new loop-lifted variants depend on the 'size' column which allows
 for skipping. Using  'level', this is not possible.
 
+During the traversals, various per-iter bounds are needed. We heavily
+exploit the fact that iter numbers are from a dense domain, and use
+bound-arrays to store them, giving us O(1) access cost for this.
+
+The upwards axes must see the full size_bat[void,int] (starting at 0@0), 
+of which the first BUN must be a dummy (i.e. the collection root).
+
 @verbatim
 (time in msec)          10MB            100MB           1GB
     STEP                single  multi   single  multi   single  multi
@@ -51,8 +58,8 @@ single: count(doc("auctionsX.xml")/descendant::person/STEP::*)
 multi:  count(for $x in doc("auctionsX.xml")/descendant::person return $x/STEP::*)
 @end verbatim
 
-Experiments were performed on db2.cwi.nl (optimized icc compile) on
-XMark datasets of various sizes with two query variants (single and multi)
+Experiments were performed on db2.cwi.nl (optimized 64-bits oid32 icc compile) 
+on XMark datasets of various sizes with two query variants (single and multi)
 for each step, one that executes the steps on a single sequence of N persons, 
 and the other on N sequences of size 1. The latter variant takes the form of 
 a for-loop and in the old non-loop-lifted implementation leads to 
@@ -97,7 +104,7 @@ typedef struct {
 static INLINE oid 
 skipholes(oid pre, unsigned int *pre_size) {
      while(pre_size[pre] & (1<<31)) 
-         pre += pre_size[pre] & ~(1<<31); /* skip over holes */
+         pre += 1 + (pre_size[pre] & ~(1<<31)); /* skip over holes */
      return pre; 
 }
 
@@ -107,7 +114,7 @@ skipholes(oid pre, unsigned int *pre_size) {
      */
     oid idx = iter - min_iter;
     oid pos = bounds[idx]++;                    /* position to write result to */  
-    oid parent = stack[depth-1]-1;              /* parent is top-of-stack */ 
+    oid parent = stack[depth-1];                /* parent is top-of-stack */ 
     oid iter_parent = iter_stack[depth-1][idx]; /* last parent at this level for this iter */
 
     if (pos >= result_size) break; /* SANITY */
@@ -123,7 +130,7 @@ skipholes(oid pre, unsigned int *pre_size) {
     int i = depth;
     while(i > 0 && stack[i-1] > bounds[iter-min_iter]) i--;
     bounds[iter-min_iter] = stack[depth-1]; /* biggest ancestor so far for this iter */
-    result[cur].iter = depth-i;             /* #new ancestors generated for this context node */ 
+    result[cur].iter = depth-i;             /* #new ancestors generated for this context node */
 
 @= found_ancestor_gen
 
@@ -134,7 +141,7 @@ skipholes(oid pre, unsigned int *pre_size) {
     oid pos = result[cur].pre;
     if (pos > result_size || hitcnt > depth) break; /* SANITY */
     while(hitcnt > 0) {
-        final_result[pos].pre = stack[depth-hitcnt]-1;    
+        final_result[pos].pre = stack[depth-hitcnt];    
         final_result[pos].iter = iter;
         hitcnt--; pos++;
     }
@@ -146,22 +153,18 @@ ll_upwards_@1(                            /* OUTPUT: */
         oid* bounds, oid** iter_stack,    /* - per iter bound */ 
                                           /* DOCUMENT: */
         unsigned int* pre_size,           /* - pre_size column */
-        oid root, oid limit,              /* - valid range of pre ids in the document */
+        oid limit,                        /* - valid range of pre ids in the document */
                                           /* INPUT: */
         oid min_iter,                     /* - minimum iter */      
         duple* context, oid context_size) /* - the context array and its size */
 {  
-    /* NOTE: for partitioning in ancestor, we need an initial bound smaller than the 
-     * root to compare with pre values on the stack. for that reason, the stack 
-     * contains pre values INCREMENTED BY ONE. 
-     * THUS: when putting a pre on the stack, add 1, when reading from it subtract 1.
-     */
-    oid buf[XML_DEPTH_MAX+1], *stack=buf; /* STACK CONTAINS pre+1 NUMBERS */ 
+    oid buf[XML_DEPTH_MAX+1], *stack=buf; /* STACK CONTAINS pre NUMBERS */ 
+    oid root = 1; /* 0=collection node, 1=root of first fragment */  
     oid pre = root;  
     oid cur = 0;  
     int depth = 0;  
 
-    *stack++ = oid_nil+1; /* bogus parent, filtered out later */
+    *stack++ = oid_nil; /* bogus parent, filtered out later */
    (void) result_size;
    (void) min_iter;
    (void) iter_stack;
@@ -183,7 +186,7 @@ ll_upwards_@1(                            /* OUTPUT: */
         } else if (context[cur].pre <= pre + pre_size[pre]) {
 
             /* next context node is in the descendants: go find it */
-            stack[depth++] = pre+1;
+            stack[depth++] = pre;
             pre = skipholes(pre+1, pre_size);
   	    if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
 
@@ -194,7 +197,7 @@ ll_upwards_@1(                            /* OUTPUT: */
   	    if (pre > limit) break; /* SANITY */
             root = pre;
 
-        } else if (context[cur].pre < stack[depth-1] + pre_size[stack[depth-1]-1]) {
+        } else if (context[cur].pre < stack[depth-1] + pre_size[stack[depth-1]]) {
 
             /* none of the above, but next context node is in the descendants of the parent */
             pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* go to the next sibling */
@@ -203,7 +206,7 @@ ll_upwards_@1(                            /* OUTPUT: */
         } else {
 
             /* pop the stack */
-            pre = stack[--depth]-1;
+            pre = stack[--depth];
         }
    }
    return (cur == context_size);
@@ -224,21 +227,20 @@ ll_upwards(               /* RESULT: */
         BAT *size_bat,    /* - [void,int] bat, doc representation with holes */ 
         str axis) 
 { 
-    oid root = *(oid*) BUNhead(size_bat, BUNfirst(size_bat));
-    oid killed = (axis == LL_UPWARDS_ANCESTOR_SELF)?oid_nil:root;
-    unsigned int *pre_size = ((unsigned int*) BUNfirst(size_bat)) - root;
-    oid min_iter = LL_CONSTANT(1)<<(8*sizeof(oid)-1), max_iter = 0, prev_pre = 0;
-    oid* bounds, niters=1, i=0, n, m = BATcount(ctx_bat);
+    oid killed = (axis == LL_UPWARDS_ANCESTOR_SELF)?oid_nil:1; /* 1=root of first fragment */
+    oid *bounds, niters=1, min_iter = LL_CONSTANT(1)<<(8*sizeof(oid)-1), max_iter = 0; 
+    oid i=0, k = BUNsize(iter_bat), n = BUNsize(ctx_bat), m = BATcount(ctx_bat);
+    BUN p = BUNfirst(iter_bat), q = BUNlast(iter_bat), r = BUNfirst(ctx_bat);
+    unsigned int *pre_size = (unsigned int*) BUNfirst(size_bat);
     duple *context, *context_result, *prune;
-    int sorted = 1, status = GDK_FAIL;
+    int status = GDK_FAIL;
     BAT *bn = NULL;
-    BUN p, q;
 
     if (!ALIGNsynced(iter_bat,ctx_bat)) {
         GDKerror("%s: iter and context bat should be in sync.\n", axis);
         return status;
     }
-    if (BUNsize(size_bat) != sizeof(int)) {
+    if (BUNsize(size_bat) != sizeof(int) || size_bat->hseqbase || !BAThdense(size_bat)) {
         GDKerror("%s: illegal size bat passed in.\n", axis);
         return status;
     }
@@ -248,23 +250,29 @@ ll_upwards(               /* RESULT: */
     if (context == NULL) return status;
 
     /* gather the context nodes and analyze them (order, min/max iter)  */
-    BATloopFast(ctx_bat, p, q, n) {
-        oid pre = *(oid*) BUNtail(ctx_bat,p);
-        context[i++].pre = pre;
-        if (pre < prev_pre) sorted = 0;
-        prev_pre = pre;
+    if (p < q) {
+	if (!(BATtordered(iter_bat)&1)) {
+	    while(p < q) {
+                context[i].iter = *(oid*) BUNtail(iter_bat,p);
+                context[i].pre  = *(oid*) BUNtail(ctx_bat,r);
+	        if (context[i].iter < min_iter) min_iter = context[i].iter;
+	        if (context[i].iter > max_iter) max_iter = context[i].iter;
+  	        i++; p += k; r += n;
+            }
+        } else {
+            /* ordered iters, so we know min and max */
+	    while(p < q) {
+                context[i].iter = *(oid*) BUNtail(iter_bat,p);
+                context[i].pre  = *(oid*) BUNtail(ctx_bat,r);
+  	        i++; p += k; r += n;
+            }
+            min_iter = context[0].iter;
+            max_iter = context[i-1].iter;
+        }
+        niters += max_iter - min_iter; /* the size of the per-iter lookup arrays */
     }
-    i=0;
-    BATloopFast(iter_bat, p, q, n) {
-        oid iter = *(oid*) BUNtail(iter_bat,p);
-        context[i++].iter = iter;
-	if (iter < min_iter) min_iter = iter;
-	if (iter > max_iter) max_iter = iter;
-    }
-    /* now we know the size of the offset/prune arrays should be */
-    if (m) niters += max_iter - min_iter;
     
-    if (!sorted) { /* if needed, sort context set on pre-s */
+    if (!(BATtordered(ctx_bat)&1)) { /* if needed, sort context set on pre-s */
         GDKqsort(context, NULL, m, sizeof(duple), TYPE_oid, sizeof(oid));
     }
 
@@ -274,13 +282,16 @@ ll_upwards(               /* RESULT: */
      *              the previous node (for that same iter, that is).
      */
     prune = (duple*) GDKmalloc(niters*sizeof(duple));
-    if (prune == NULL) return 0;
+    if (prune == NULL) {
+        GDKfree(context);
+        return status;
+    }
     for(i=0; i<niters; i++) {
-        prune[i].pre = root;
+        prune[i].pre = 1; /* 1 = root of first fragment */
         prune[i].iter = oid_nil; 
     }
 
-    /* we can now do pruning, remember we see context nodes in pre order */
+    /* we can now do pruning, remember we now see context nodes in pre order */
     for(i=0; i<m; i++) {
         oid pre = context[i].pre;
         oid iter = context[i].iter - min_iter;
@@ -301,10 +312,10 @@ ll_upwards(               /* RESULT: */
     for(n=i=0; i<m; i++) {
         oid pre = context[i].pre;
         oid iter = context[i].iter;
-        int inc = (pre != killed); /* filter out root and pruned nodes */
+        int inc = (pre != killed); /* also prunes root (of first fragment only) */
         context[n].pre = pre;
         context[n].iter = iter;
-        n += inc; /* pruned nodes will be overwritten*/
+        n += inc; /* pruned nodes will be overwritten */
     }
     /* write sentinel record */
     context[n].pre = oid_nil;
@@ -341,7 +352,7 @@ ll_upwards(               /* RESULT: */
                     context_result = (duple*) BUNfirst(bn), n, 
                     bounds, iter_stack+1, 
                     pre_size,
-                    root, root+BATcount(size_bat), 
+                    BATcount(size_bat), 
                     min_iter, context, n))
                 {
                     /* filter out duplicates and non-existing fragment roots (represented by oid_nils) */
@@ -363,15 +374,12 @@ ll_upwards(               /* RESULT: */
             GDKfree(buf);
         }
     } else if ((context_result=GDKzalloc(n*sizeof(duple))) != NULL) {
-        /* HACK: in first pass, bounds contains a partitioning bound */
-        for(i=0; i<=niters; i++) bounds[i] = root;
-
-        /* first pass */
+        /* in first pass, bounds contains a partitioning bound (=0 < root) */
         if (ll_upwards_ancestor_cnt(
                  context_result, n, 
                  bounds, NULL,
                  pre_size,
-                 root, root+BATcount(size_bat), 
+                 BATcount(size_bat), 
                  min_iter, context, n))
         {
             /* count the hits per-iter, by examining hitcnt (context_result.iter) of each context node.
@@ -401,7 +409,8 @@ ll_upwards(               /* RESULT: */
                 if (axis == LL_UPWARDS_ANCESTOR_SELF) { /* insert the self nodes beforehand */ 
                     duple *result = (duple*) BUNfirst(bn);
                     for(i=0; i<n; i++) {
-                        oid pos = context_result[i].pre + context_result[i].iter; /* start + hitcnt */
+                        int hitcnt = (int) context_result[i].iter; /* hitcnt */
+                        oid pos = context_result[i].pre + hitcnt;
                         result[pos].pre = context[i].pre;
                         result[pos].iter = context[i].iter;
                     }
@@ -410,7 +419,7 @@ ll_upwards(               /* RESULT: */
                         context_result, m,
                         (oid*) BUNfirst(bn), NULL, /* HACK, pass result as bounds */ 
                         pre_size,
-                        root, root+BATcount(size_bat), 
+                        BATcount(size_bat), 
                         min_iter, context, n)) 
                 {
                     status = GDK_SUCCEED;
