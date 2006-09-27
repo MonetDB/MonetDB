@@ -27,3 +27,6 @@ modules_diamond_prepare
 modules_diamond.SF-1510975a
 modules_diamond.SF-1510975b
 wrong_result_duplication.SF-1549292
+type_error_with_typeswitch.SF-1559355
+type_errors_with_fn-name.SF-1563354
+fn-name_on_text_nodes.SF-1564964
