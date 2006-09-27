@@ -7,8 +7,17 @@ begin
 	end if;
 end;
 
+create function my_abs1(v int) returns int 
+begin
+	if v < 0 then 
+		return -v;
+	end if;
+	return v;
+end;
+
 select my_abs(-1);
 select my_abs(1);
+select my_abs1(1);
 
 create function my_while(v int) returns int 
 begin

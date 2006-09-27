@@ -168,7 +168,7 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 	} else { /* else */
 		symbol *e = elseif->data.sym;
 
-		if (e->token != SQL_ELSE)
+		if (e==NULL || (e->token != SQL_ELSE))
 			return NULL;
 		return sequential_block( sql, scp, res, e->data.lval, NULL);
 	}

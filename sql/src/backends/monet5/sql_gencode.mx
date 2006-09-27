@@ -1681,7 +1681,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q->barrier= BARRIERsymbol;
 			e= getArg(q,0);
 			pushArgument(mb,q,c);
-			_dumpstmt(sql,mb,s->op3.stval);
+			if(s->op3.stval)
+				_dumpstmt(sql,mb,s->op3.stval);
 			q= newAssignment(mb);
 			getArg(q,0)= e;
 			q->argc= q->retc=1;
