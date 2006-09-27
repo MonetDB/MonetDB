@@ -2958,8 +2958,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		r = stmt_dup( s->op1.lval->h->data );
 		stmt_destroy(s);
 		return r;
-	} 
-		break;
+	} break;
 	default:
 		return sql_error(sql, 02, "predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
 	}
