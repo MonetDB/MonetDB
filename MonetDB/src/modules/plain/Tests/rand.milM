@@ -1,0 +1,3 @@
+module("arith");
+srand( 1234 );
+rand().print();

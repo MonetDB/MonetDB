@@ -151,90 +151,80 @@ operands are already supported in the kernel, but are not nearly as fast,
 @- computation of { +, -, *, /, % }
 @T
 The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
-arithmetic operations.  The macro expects three parameters, two input
-atomic types and a result type.
-@m
-	.OPERATOR1 (chr) "%"  (int) : int = chrint_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (bte) "%"  (int) : int = bteint_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (sht) "%"  (sht) : sht = shtsht_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (sht) "%"  (int) : int = shtint_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (int) "%"  (int) : int = intint_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (lng) "%"  (lng) : lng = lnglng_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (lng) "%"  (int) : int = lngint_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (int) "%"  (chr) : chr = intchr_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (int) "%"  (sht) : sht = intsht_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (dbl) "%"  (dbl) : dbl = dbldbl_checkbinary_MOD;	"modulo"
-	.OPERATOR1 (flt) "%"  (flt) : flt = fltflt_checkbinary_MOD;	"modulo"
+arithmetic operations.  The macro expects four parameters, two input
+atomic types and two result types, the last of which for modulo and
+the first for all other operations.
 @= mel_arith_ops
 	.OPERATOR (@1) "+" (@2) : @3 = @1@2_binary_ADD;		"addition"
 	.OPERATOR (@1) "-" (@2) : @3 = @1@2_binary_SUB;		"substraction"
-	.OPERATOR1 (@1) "*" (@2) : @3 = @1@2_binary_MUL;		"multiplication"
+	.OPERATOR1 (@1) "*" (@2) : @3 = @1@2_binary_MUL;	"multiplication"
 	.OPERATOR1 (@1) "/" (@2) : @3 = @1@2_checkbinary_DIV;	"division"
+	.OPERATOR1 (@1) "%" (@2) : @4 = @1@2_checkbinary_MOD;	"modulo"
 @= arith_ops
-	@:@1_arith_ops(chr,chr,chr)@
-	@:@1_arith_ops(chr,bte,bte)@
-	@:@1_arith_ops(chr,sht,sht)@
-	@:@1_arith_ops(chr,int,int)@
-	@:@1_arith_ops(chr,wrd,wrd)@
-	@:@1_arith_ops(chr,lng,lng)@
-	@:@1_arith_ops(chr,flt,flt)@
-	@:@1_arith_ops(chr,dbl,dbl)@
-	@:@1_arith_ops(bte,bte,bte)@
-	@:@1_arith_ops(bte,chr,bte)@
-	@:@1_arith_ops(bte,sht,sht)@
-	@:@1_arith_ops(bte,int,int)@
-	@:@1_arith_ops(bte,wrd,wrd)@
-	@:@1_arith_ops(bte,lng,lng)@
-	@:@1_arith_ops(bte,flt,flt)@
-	@:@1_arith_ops(bte,dbl,dbl)@
-	@:@1_arith_ops(sht,chr,sht)@
-	@:@1_arith_ops(sht,bte,sht)@
-	@:@1_arith_ops(sht,sht,sht)@
-	@:@1_arith_ops(sht,int,int)@
-	@:@1_arith_ops(sht,wrd,wrd)@
-	@:@1_arith_ops(sht,lng,lng)@
-	@:@1_arith_ops(sht,flt,flt)@
-	@:@1_arith_ops(sht,dbl,dbl)@
-	@:@1_arith_ops(int,chr,int)@
-	@:@1_arith_ops(int,bte,int)@
-	@:@1_arith_ops(int,sht,int)@
-	@:@1_arith_ops(int,int,int)@
-	@:@1_arith_ops(int,wrd,wrd)@
-	@:@1_arith_ops(int,lng,lng)@
-	@:@1_arith_ops(int,flt,flt)@
-	@:@1_arith_ops(int,dbl,dbl)@
-	@:@1_arith_ops(wrd,chr,wrd)@
-	@:@1_arith_ops(wrd,bte,wrd)@
-	@:@1_arith_ops(wrd,sht,wrd)@
-	@:@1_arith_ops(wrd,int,wrd)@
-	@:@1_arith_ops(wrd,wrd,wrd)@
-	@:@1_arith_ops(wrd,lng,lng)@
-	@:@1_arith_ops(wrd,flt,flt)@
-	@:@1_arith_ops(wrd,dbl,dbl)@
-	@:@1_arith_ops(flt,chr,flt)@
-	@:@1_arith_ops(flt,bte,flt)@
-	@:@1_arith_ops(flt,sht,flt)@
-	@:@1_arith_ops(flt,int,flt)@
-	@:@1_arith_ops(flt,wrd,flt)@
-	@:@1_arith_ops(flt,lng,flt)@
-	@:@1_arith_ops(flt,flt,flt)@
-	@:@1_arith_ops(flt,dbl,dbl)@
-	@:@1_arith_ops(dbl,chr,dbl)@
-	@:@1_arith_ops(dbl,bte,dbl)@
-	@:@1_arith_ops(dbl,sht,dbl)@
-	@:@1_arith_ops(dbl,int,dbl)@
-	@:@1_arith_ops(dbl,wrd,dbl)@
-	@:@1_arith_ops(dbl,lng,dbl)@
-	@:@1_arith_ops(dbl,flt,dbl)@
-	@:@1_arith_ops(dbl,dbl,dbl)@
-	@:@1_arith_ops(lng,chr,lng)@
-	@:@1_arith_ops(lng,bte,lng)@
-	@:@1_arith_ops(lng,sht,lng)@
-	@:@1_arith_ops(lng,int,lng)@
-	@:@1_arith_ops(lng,wrd,lng)@
-	@:@1_arith_ops(lng,lng,lng)@
-	@:@1_arith_ops(lng,flt,dbl)@
-	@:@1_arith_ops(lng,dbl,dbl)@
+	@:@1_arith_ops(chr,chr,chr,chr)@
+	@:@1_arith_ops(chr,bte,bte,bte)@
+	@:@1_arith_ops(chr,sht,sht,sht)@
+	@:@1_arith_ops(chr,int,int,int)@
+	@:@1_arith_ops(chr,wrd,wrd,wrd)@
+	@:@1_arith_ops(chr,lng,lng,lng)@
+	@:@1_arith_ops(chr,flt,flt,flt)@
+	@:@1_arith_ops(chr,dbl,dbl,dbl)@
+	@:@1_arith_ops(bte,bte,bte,bte)@
+	@:@1_arith_ops(bte,chr,bte,chr)@
+	@:@1_arith_ops(bte,sht,sht,sht)@
+	@:@1_arith_ops(bte,int,int,int)@
+	@:@1_arith_ops(bte,wrd,wrd,wrd)@
+	@:@1_arith_ops(bte,lng,lng,lng)@
+	@:@1_arith_ops(bte,flt,flt,flt)@
+	@:@1_arith_ops(bte,dbl,dbl,dbl)@
+	@:@1_arith_ops(sht,chr,sht,chr)@
+	@:@1_arith_ops(sht,bte,sht,bte)@
+	@:@1_arith_ops(sht,sht,sht,sht)@
+	@:@1_arith_ops(sht,int,int,int)@
+	@:@1_arith_ops(sht,wrd,wrd,wrd)@
+	@:@1_arith_ops(sht,lng,lng,lng)@
+	@:@1_arith_ops(sht,flt,flt,flt)@
+	@:@1_arith_ops(sht,dbl,dbl,dbl)@
+	@:@1_arith_ops(int,chr,int,chr)@
+	@:@1_arith_ops(int,bte,int,bte)@
+	@:@1_arith_ops(int,sht,int,sht)@
+	@:@1_arith_ops(int,int,int,int)@
+	@:@1_arith_ops(int,wrd,wrd,wrd)@
+	@:@1_arith_ops(int,lng,lng,lng)@
+	@:@1_arith_ops(int,flt,flt,flt)@
+	@:@1_arith_ops(int,dbl,dbl,dbl)@
+	@:@1_arith_ops(wrd,chr,wrd,chr)@
+	@:@1_arith_ops(wrd,bte,wrd,bte)@
+	@:@1_arith_ops(wrd,sht,wrd,sht)@
+	@:@1_arith_ops(wrd,int,wrd,int)@
+	@:@1_arith_ops(wrd,wrd,wrd,wrd)@
+	@:@1_arith_ops(wrd,lng,lng,lng)@
+	@:@1_arith_ops(wrd,flt,flt,flt)@
+	@:@1_arith_ops(wrd,dbl,dbl,dbl)@
+	@:@1_arith_ops(flt,chr,flt,flt)@
+	@:@1_arith_ops(flt,bte,flt,flt)@
+	@:@1_arith_ops(flt,sht,flt,flt)@
+	@:@1_arith_ops(flt,int,flt,flt)@
+	@:@1_arith_ops(flt,wrd,flt,flt)@
+	@:@1_arith_ops(flt,lng,flt,flt)@
+	@:@1_arith_ops(flt,flt,flt,flt)@
+	@:@1_arith_ops(flt,dbl,dbl,dbl)@
+	@:@1_arith_ops(dbl,chr,dbl,dbl)@
+	@:@1_arith_ops(dbl,bte,dbl,dbl)@
+	@:@1_arith_ops(dbl,sht,dbl,dbl)@
+	@:@1_arith_ops(dbl,int,dbl,dbl)@
+	@:@1_arith_ops(dbl,wrd,dbl,dbl)@
+	@:@1_arith_ops(dbl,lng,dbl,dbl)@
+	@:@1_arith_ops(dbl,flt,dbl,dbl)@
+	@:@1_arith_ops(dbl,dbl,dbl,dbl)@
+	@:@1_arith_ops(lng,chr,lng,chr)@
+	@:@1_arith_ops(lng,bte,lng,bte)@
+	@:@1_arith_ops(lng,sht,lng,sht)@
+	@:@1_arith_ops(lng,int,lng,int)@
+	@:@1_arith_ops(lng,wrd,lng,wrd)@
+	@:@1_arith_ops(lng,lng,lng,lng)@
+	@:@1_arith_ops(lng,flt,dbl,flt)@
+	@:@1_arith_ops(lng,dbl,dbl,dbl)@
 @m
 @:arith_ops(mel)@
 
@@ -406,9 +396,11 @@ flt2int(int *r, flt *v)
 	return GDK_SUCCEED;
 }
 
-/* the normal implementation of an operator is to just stick the
-   operator between the operands */
-#define OP(l,op,r)	((l) op (r))
+/* these defines are used in the implementation of
+   *_checkbinary_{DIV,MOD} (see Mx macro check_binop) */
+#define CMD_MOD 1
+#define CMD_DIV 0
+
 @:arith_ops(c)@
 
 #define arith_inv(s) (1/(s))
@@ -433,22 +425,6 @@ flt2int(int *r, flt *v)
 #define arith_max(s1,s2) ((s1)>(s2))?(s1):(s2)
 #define arith_min(s1,s2) ((s1)<(s2))?(s1):(s2)
 @:binary_ops(c)@
-
-@:check_binop(_MOD,%,chr,int,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,bte,int,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,sht,sht,sht,sht,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,sht,int,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,int,int,int,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,lng,lng,lng,lng,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,lng,int,int,lng,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,int,chr,chr,int,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,int,sht,sht,int,"Modulo zero is not possible")@
-/* a % b when a and/or b are float (double) doesn't exist, so provide
-   an alternative way of calculating the result */
-#undef OP
-#define OP(l,op,r)	((l) - (dbl) ((lng) ((l) / (r))) * (r))
-@:check_binop(_MOD,%,dbl,dbl,dbl,dbl,"Modulo zero is not possible")@
-@:check_binop(_MOD,%,flt,flt,flt,flt,"Modulo zero is not possible")@
 
 @:bitwise_ops(c)@
 
@@ -715,7 +691,8 @@ result type.
 @:arith_binop(_ADD,+,@1,@2,@3)@
 @:arith_binop(_SUB,-,@1,@2,@3)@
 @:arith_binop(_MUL,*,@1,@2,@3)@
-@:check_binop(_DIV,/,@1,@2,@3,@3,"Division by zero")@
+@:check_binop(_DIV,/,@1,@2,@3,"Division by zero","division")@
+@:check_binop(_MOD,%,@1,@2,@4,"Modulo zero is not possible","modulo")@
 @
 
 @= arith_unop
@@ -772,8 +749,7 @@ int @3@4_binary@1(@5 *res, @3 *a, @4 *b)
 	3: type argument 1
 	4: type argument 2
 	5: result type 
-	6: intermediate type (sometimes the result is a smaller type (%))
-	7: Error message when something goes wrong.
+	6: Error message when the second argument is zero.
 */
 @= check_binop
 int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b)
@@ -782,12 +758,29 @@ int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b)
 	printf( "@3_binary@1\n");
 #endif
 	if (*b == 0) {
-		GDKerror(@7);
+		GDKerror(@6);
 		return GDK_FAIL;
 	} else if (*a == @3_nil || *b == @4_nil) {
 		*res = @5_nil;
 	} else {
-		*res = (@5) OP((@6)*a,@2,(@6)*b);
+#if TYPE_@3 == TYPE_flt || TYPE_@3 == TYPE_dbl || TYPE_@4 == TYPE_flt || TYPE_@4 == TYPE_dbl
+		/* at least one of the operands is a floating point
+		   type, do calculations in double precision */
+#if CMD@1
+		/* special case for floating point modulo */
+		*res = (@5) ((dbl)*a - (dbl) ((lng) ((dbl)*a / (dbl)*b)) * (dbl)*b);
+#else
+		*res = (@5) ((dbl)*a @2 (dbl)*b);
+#endif
+#else
+		/* neither operand is floating point, use the largest
+		   of the operands as intermediate type */
+#if TYPE_@3 > TYPE_@4
+		*res = (@5) ((@3)*a @2 (@3)*b);
+#else
+		*res = (@5) ((@4)*a @2 (@4)*b);
+#endif
+#endif
 	}
 	return(GDK_SUCCEED);
 }

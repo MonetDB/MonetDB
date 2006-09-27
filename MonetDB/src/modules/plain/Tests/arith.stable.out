@@ -235,240 +235,182 @@ CATCH((flt(1)%flt(0))).print();
 [ true ]
 [ false ]
 
-(sht1 + sht2).print();
-[ 7 ]
-(sht1 - sht2).print();
-[ -3 ]
-(sht1 * sht2).print();
-[ 10 ]
-(sht1 / sht2).print();
-[ 0 ]
-(sht1 % sht2).print();
-[ 2 ]
+const EPSILON := 0.00001;
 
-(sht1 + int2).print();
-[ 4 ]
-(sht1 - int2).print();
-[ 0 ]
-(sht1 * int2).print();
-[ 4 ]
-(sht1 / int2).print();
-[ 1 ]
+proc check(str op, any res): void
+{
+    var r;
+    eval("r := " + op + ";");
+    if (type(r) != type(res)) {
+        printf("operation \"%s\" yields unexpected type\n", op);
+    }
+    if (type(r) = flt) {
+        if ((res = 0.0) and (abs(r) > EPSILON) or ((res != 0.0) and (abs(r - res) / res) > EPSILON)) {
+            printf("operation \"%s\" yields unexpected value\n", op);
+            print(r); print(res);
+        }
+    } else if (type(r) = dbl) {
+        if ((res = 0.0LL) and (abs(r) > dbl(EPSILON)) or ((res != 0.0LL) and (abs(r - res) / res) > dbl(EPSILON))) {
+            printf("operation \"%s\" yields unexpected value\n", op);
+            print(r); print(res);
+        }
+    } else if (r != res) {
+        printf("operation \"%s\" yields unexpected value\n", op);
+        print(r); print(res);
+    }
+}
 
-(sht1 + flt2).print();
-[ 7.4000001 ]
-(sht1 - flt2).print();
-[ -3.4000001 ]
-(sht1 * flt2).print();
-[ 10.8000002 ]
-(sht1 / flt2).print();
-[ 0.370370358 ]
+check("sht1 + sht2", sht(7));
+check("sht1 - sht2", sht(-3));
+check("sht1 * sht2", sht(10));
+check("sht1 / sht2", sht(0));
+check("sht1 % sht2", sht(2));
 
-(sht1 + dbl2).print();
-[ 56.004566192626953 ]
-(sht1 - dbl2).print();
-[ -52.004566192626953 ]
-(sht1 * dbl2).print();
-[ 108.00913238525391 ]
-(sht1 / dbl2).print();
-[ 0.037033905482478494 ]
+check("sht1 + int2", 4);
+check("sht1 - int2", 0);
+check("sht1 * int2", 4);
+check("sht1 / int2", 1);
+check("sht1 % int2", 0);
 
-(sht1 + lng2).print();
-[ 5400456791 ]
-(sht1 - lng2).print();
-[ -5400456787 ]
-(sht1 * lng2).print();
-[ 10800913578 ]
-(sht1 / lng2).print();
-[ 0 ]
+check("sht1 + flt2", 7.4);
+check("sht1 - flt2", -3.4);
+check("sht1 * flt2", 10.8);
+check("sht1 / flt2", 0.37037037037037037);
+check("sht1 % flt2", 2.0);
 
-(int1 + sht2).print();
-[ 10 ]
-(int1 - sht2).print();
-[ 0 ]
-(int1 * sht2).print();
-[ 25 ]
-(int1 / sht2).print();
-[ 1 ]
+check("sht1 + dbl2", 56.00456789LL);
+check("sht1 - dbl2", -52.00456789LL);
+check("sht1 * dbl2", 108.00913578LL);
+check("sht1 / dbl2", 0.037033904318496347LL);
+check("sht1 % dbl2", 2.0LL);
 
-(int1 + int2).print();
-[ 7 ]
-(int1 - int2).print();
-[ 3 ]
-(int1 * int2).print();
-[ 10 ]
-(int1 / int2).print();
-[ 2 ]
-(int1 % int2).print();
-[ 1 ]
+check("sht1 + lng2", 5400456791LL);
+check("sht1 - lng2", -5400456787LL);
+check("sht1 * lng2", 10800913578LL);
+check("sht1 / lng2", 0LL);
+check("sht1 % lng2", 2LL);
 
-(int1 + flt2).print();
-[ 10.3999996 ]
-(int1 - flt2).print();
-[ -0.400000095 ]
-(int1 * flt2).print();
-[ 27 ]
-(int1 / flt2).print();
-[ 0.92592591 ]
+check("int1 + sht2", 10);
+check("int1 - sht2", 0);
+check("int1 * sht2", 25);
+check("int1 / sht2", 1);
+check("int1 % sht2", sht(0));
 
-(int1 + dbl2).print();
-[ 59.004566192626953 ]
-(int1 - dbl2).print();
-[ -49.004566192626953 ]
-(int1 * dbl2).print();
-[ 270.02283096313477 ]
-(int1 / dbl2).print();
-[ 0.092584763706196227 ]
+check("int1 + int2", 7);
+check("int1 - int2", 3);
+check("int1 * int2", 10);
+check("int1 / int2", 2);
+check("int1 % int2", 1);
 
-(int1 + lng2).print();
-[ 5400456794 ]
-(int1 - lng2).print();
-[ -5400456784 ]
-(int1 * lng2).print();
-[ 27002283945 ]
-(int1 / lng2).print();
-[ 0 ]
+check("int1 + flt2", 10.4);
+check("int1 - flt2", -0.4);
+check("int1 * flt2", 27.0);
+check("int1 / flt2", 0.92592592592592593);
+check("int1 % flt2", 5.0);
 
-(flt1 + sht2).print();
-[ 7.5 ]
-(flt1 - sht2).print();
-[ -2.5 ]
-(flt1 * sht2).print();
-[ 12.5 ]
-(flt1 / sht2).print();
-[ 0.5 ]
+check("int1 + dbl2", 59.00456789LL);
+check("int1 - dbl2", -49.00456789LL);
+check("int1 * dbl2", 270.02283945LL);
+check("int1 / dbl2", 0.092584760796240867LL);
+check("int1 % dbl2", 5.0LL);
 
-(flt1 + int2).print();
-[ 4.5 ]
-(flt1 - int2).print();
-[ 0.5 ]
-(flt1 * int2).print();
-[ 5 ]
-(flt1 / int2).print();
-[ 1.25 ]
+check("int1 + lng2", 5400456794LL);
+check("int1 - lng2", -5400456784LL);
+check("int1 * lng2", 27002283945LL);
+check("int1 / lng2", 0LL);
+check("int1 % lng2", 5LL);
 
-(flt1 + flt2).print();
-[ 7.9000001 ]
-(flt1 - flt2).print();
-[ -2.9000001 ]
-(flt1 * flt2).print();
-[ 13.5 ]
-(flt1 / flt2).print();
-[ 0.462962955 ]
-(flt1 % flt2).print();
-[ 2.5 ]
+check("flt1 + sht2", 7.5);
+check("flt1 - sht2", -2.5);
+check("flt1 * sht2", 12.5);
+check("flt1 / sht2", 0.5);
+check("flt1 % sht2", 2.5);
 
-(flt1 + dbl2).print();
-[ 56.504566192626953 ]
-(flt1 - dbl2).print();
-[ -51.504566192626953 ]
-(flt1 * dbl2).print();
-[ 135.01141548156738 ]
-(flt1 / dbl2).print();
-[ 0.046292381853098113 ]
+check("flt1 + int2", 4.5);
+check("flt1 - int2", 0.5);
+check("flt1 * int2", 5.0);
+check("flt1 / int2", 1.25);
+check("flt1 % int2", 0.5);
 
-(flt1 + lng2).print();
-[ 5.4004567e+09 ]
-(flt1 - lng2).print();
-[ -5.4004567e+09 ]
-(flt1 * lng2).print();
-[ 1.3501142e+10 ]
-(flt1 / lng2).print();
-[ 4.6292381e-10 ]
+check("flt1 + flt2", 7.9);
+check("flt1 - flt2", -2.9);
+check("flt1 * flt2", 13.5);
+check("flt1 / flt2", 0.46296296296296297);
+check("flt1 % flt2", 2.5);
 
-(dbl1 + sht2).print();
-[ 2.4999990463256836 ]
-(dbl1 - sht2).print();
-[ -7.5000009536743164 ]
-(dbl1 * sht2).print();
-[ -12.500004768371582 ]
-(dbl1 / sht2).print();
-[ -0.50000019073486324 ]
+check("flt1 + dbl2", 56.50456789LL);
+check("flt1 - dbl2", -51.50456789LL);
+check("flt1 * dbl2", 135.011419725LL);
+check("flt1 / dbl2", 0.046292380398120433LL);
+check("flt1 % dbl2", 2.5LL);
 
-(dbl1 + int2).print();
-[ -0.50000095367431641 ]
-(dbl1 - int2).print();
-[ -4.5000009536743164 ]
-(dbl1 * int2).print();
-[ -5.0000019073486328 ]
-(dbl1 / int2).print();
-[ -1.2500004768371582 ]
+check("flt1 + lng2", 5400456791.5);
+check("flt1 - lng2", -5400456786.5);
+check("flt1 * lng2", 13501141972.5);
+check("flt1 / lng2", 0.00000000046292380398120433);
+check("flt1 % lng2", 2.5);
 
-(dbl1 + flt2).print();
-[ 2.8999991416931152 ]
-(dbl1 - flt2).print();
-[ -7.900001049041748 ]
-(dbl1 * flt2).print();
-[ -13.500005388259979 ]
-(dbl1 / flt2).print();
-[ -0.46296313139309475 ]
+check("dbl1 + sht2", 2.499999LL);
+check("dbl1 - sht2", -7.500001LL);
+check("dbl1 * sht2", -12.500005LL);
+check("dbl1 / sht2", -0.5000002LL);
+check("dbl1 % sht2", -2.500001LL);
 
-(dbl1 + dbl2).print();
-[ 51.504565238952637 ]
-(dbl1 - dbl2).print();
-[ -56.50456714630127 ]
-(dbl1 * dbl2).print();
-[ -135.01146698433513 ]
-(dbl1 / dbl2).print();
-[ -0.046292399512240366 ]
-(dbl1 % dbl2).print();
-[ -2.5000009536743164 ]
+check("dbl1 + int2", -0.500001LL);
+check("dbl1 - int2", -4.500001LL);
+check("dbl1 * int2", -5.000002LL);
+check("dbl1 / int2", -1.2500005LL);
+check("dbl1 % int2", -0.500001LL);
 
-(dbl1 + lng2).print();
-[ 5400456786.499999 ]
-(dbl1 - lng2).print();
-[ -5400456791.500001 ]
-(dbl1 * lng2).print();
-[ -13501147122.776936 ]
-(dbl1 / lng2).print();
-[ -4.6292398057262125e-10 ]
+check("dbl1 + flt2", 2.899999LL);
+check("dbl1 - flt2", -7.900001LL);
+check("dbl1 * flt2", -13.5000054LL);
+check("dbl1 / flt2", -0.46296314814814815LL);
+check("dbl1 % flt2", -2.500001LL);
 
-(lng1 + sht2).print();
-[ -8999999999995 ]
-(lng1 - sht2).print();
-[ -9000000000005 ]
-(lng1 * sht2).print();
-[ -45000000000000 ]
-(lng1 / sht2).print();
-[ -1800000000000 ]
+check("dbl1 + dbl2", 51.50456689LL);
+check("dbl1 - dbl2", -56.50456889LL);
+check("dbl1 * dbl2", -135.01147372956789LL);
+check("dbl1 / dbl2", -0.046292398915072593LL);
+check("dbl1 % dbl2", -2.500001LL);
 
-(lng1 + int2).print();
-[ -8999999999998 ]
-(lng1 - int2).print();
-[ -9000000000002 ]
-(lng1 * int2).print();
-[ -18000000000000 ]
-(lng1 / int2).print();
-[ -4500000000000 ]
+check("dbl1 + lng2", 5400456786.499999LL);
+check("dbl1 - lng2", -5400456791.500001LL);
+check("dbl1 * lng2", -13501147372.956789LL);
+check("dbl1 / lng2", -0.00000000046292398915072589LL);
+check("dbl1 % lng2", -2.500001LL);
 
-(lng1 + flt2).print();
-[ -8999999999994.5996 ]
-(lng1 - flt2).print();
-[ -9000000000005.4004 ]
-(lng1 * flt2).print();
-[ -48600000858306.883 ]
-(lng1 / flt2).print();
-[ -1666666637232.2747 ]
+check("lng1 + sht2", -8999999999995LL);
+check("lng1 - sht2", -9000000000005LL);
+check("lng1 * sht2", -45000000000000LL);
+check("lng1 / sht2", -1800000000000LL);
+check("lng1 % sht2", sht(0));
 
-(lng1 + dbl2).print();
-[ -8999999999945.9961 ]
-(lng1 - dbl2).print();
-[ -9000000000054.0039 ]
-(lng1 * dbl2).print();
-[ -486041095733642.56 ]
-(lng1 / dbl2).print();
-[ -166652574671.15323 ]
+check("lng1 + int2", -8999999999998LL);
+check("lng1 - int2", -9000000000002LL);
+check("lng1 * int2", -18000000000000LL);
+check("lng1 / int2", -4500000000000LL);
+check("lng1 % int2", 0);
 
-(lng1 + lng2).print();
-[ -8994599543211 ]
-(lng1 - lng2).print();
-[ -9005400456789 ]
-(lng1 * lng2).print();
-[ 3059533224668508160 ]
-(lng1 / lng2).print();
-[ -1666 ]
-(lng1 % lng2).print();
-[ -2838989526 ]
+check("lng1 + flt2", -8999999999994.6LL);
+check("lng1 - flt2", -9000000000005.4LL);
+check("lng1 * flt2", -48600000000000.0LL);
+check("lng1 / flt2", -1666666666666.6667LL);
+# don't test this: due to rounding errors, the actual result is wildly inaccurate
+# check("lng1 % flt2", -3.6);
+
+check("lng1 + dbl2", -8999999999945.99543211LL);
+check("lng1 - dbl2", -9000000000054.00456789LL);
+check("lng1 * dbl2", -486041111010000.0LL);
+check("lng1 / dbl2", -166652569433.23355LL);
+# don't test this: due to rounding errors, the actual result is wildly inaccurate
+# check("lng1 % dbl2", -12.61269363);
+
+check("lng1 + lng2", -8994599543211LL);
+check("lng1 - lng2", -9005400456789LL);
+check("lng1 * lng2", 3059533224668508160LL); # overflow from -48604111101000000000000
+check("lng1 / lng2", -1666LL);
+check("lng1 % lng2", -2838989526LL);
 
 abs(sht2).print();
 [ 5 ]
@@ -538,9 +480,6 @@ var bit2 := false;
 not(bit2).print();
 [ true ]
 
-srand( 1234 );
-rand().print();
-[ 3558 ]
 quit();
 
 # 19:54:40 >  
