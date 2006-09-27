@@ -1147,8 +1147,8 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_affected_rows_wrap( int *r, lng *nr)
 {
-	backend *b;
-	mvc *c;
+	backend *b = NULL;
+	mvc *c = NULL;
 	str msg = getContext(&c, &b);
 
 	if (msg)
