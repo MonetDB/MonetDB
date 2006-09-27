@@ -2679,7 +2679,6 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 	int movements = 0;
 	lng TstartSearchAVL, TendSearchAVL;
 	lng TotalSearchAVL = 0;
-	bit first = TRUE;
 	struct Node *prevNode =NULL;
 
 	/*BUN wh,wt;
@@ -2742,17 +2741,10 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 	crkFirst = BUNfirst(b);
 	prevPos = prevcrsize - 1;
 @
-@= mergeInsertionsFromTheEndBodyII
-	/* Here tthe actual merging happens. Starting from the piece where next belongs we continuously insert and shift until there are no more insertions or pieces */
-	while ( remainingIns > 0) {
-		TstartSearchAVL = GDKusec(); 
-		if (first){
-			IndexNode = findNodeL_@1(*(@1*)BUNtloc(b,next), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL); 
-			first = FALSE;
-		} else 
-			IndexNode = findPreviousPieceWalkingBack(prevNode);
+@= mergeLoop
+
 		if ( IndexNode == NULL )
-			break; 
+			goto mergeDone; 
 		prevNode = IndexNode;
 		TendSearchAVL = GDKusec(); 
 		TotalSearchAVL += TendSearchAVL - TstartSearchAVL; 
@@ -2784,7 +2776,7 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 		}
 
 		if (remainingIns == 0)
-                break;
+                	goto mergeDone;
 
 		/* Then we shift values from the beggining of the piece */
 		if (buns > remainingIns){
@@ -2798,8 +2790,51 @@ printf("size is "SZFMT"  --- prev: %lld", BATcount(b), prevcrsize);
 		/*printf("updating index in position %lld to be %lld \n", *(lng*)curPos, *(lng*)curPos+remainingIns);*/
 		/* we always update the index to be +remainingIns since even if we move buns values we put them remainingIns positions ahead */
 		*(lng*)curPos =  *(lng*)curPos + remainingIns;
+@
+@= mergeInsertionsFromTheEndBodyCG
+	/* merge for the last piece only */
+	if ( remainingIns > 0) {
+		struct Node * temp;
+		TstartSearchAVL = GDKusec(); 
+		/* get the last piece */
+		IndexNode = NULL;
+		temp = TreeIndex[position].Tree;
+		if (temp->deleted == FALSE)
+			IndexNode = temp;
+		while(temp->right != NULL) {
+			temp = temp->right;
+			if (temp->deleted == FALSE)
+				IndexNode = temp;
+		}	
+		temp = TreeIndex[position].Tree;
+		while (IndexNode == NULL && temp->left!=NULL){
+			if (temp->deleted == FALSE)
+                		IndexNode = temp;
+        		while(temp->right != NULL) {
+                       		temp = temp->right; 
+                        	if (temp->deleted == FALSE)
+                               		IndexNode = temp;
+               		}        
+		}
+		@:mergeLoop(@1,@2,@3)@
+	}
+@= mergeInsertionsFromTheEndBodyR
+	/* merge for the last piece only */
+	if ( remainingIns > 0) {
+		TstartSearchAVL = GDKusec(); 
+		IndexNode = findNodeL_@1(*(@1*)BUNtloc(b,next), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL); 
+		@:mergeLoop(@1,@2,@3)@
+	}
+@
+@= mergeInsertionsFromTheEndBodyII
+	/* Here tthe actual merging happens. Starting from the piece where next belongs we continuously insert and shift until there are no more insertions or pieces */
+	while ( remainingIns > 0) {
+		TstartSearchAVL = GDKusec(); 
+		IndexNode = findPreviousPieceWalkingBack(prevNode);
+		@:mergeLoop(@1,@2,@3)@
 	}
 
+	mergeDone:;
 	/*if (IndexNode == NULL )
 		printf("\n we reached the first piece\n");
 	
@@ -3011,6 +3046,7 @@ CRKmergeInsertionsB_Force_@1(int *k, int *bid, int *new){
 
 	next = BUNlast(b) - xx;
 
+	@:mergeInsertionsFromTheEndBodyCG(@1,@2,@3)@
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
 	crkLast = BUNlast(b) + insertions * xx;
@@ -3032,6 +3068,7 @@ mergeInsertionsB_@1(int *bid, int *new, lng startPosition, lng endPosition){
 
 	TstartInsert = GDKusec();
 	next = BUNlast(b) - xx;
+	@:mergeInsertionsFromTheEndBodyCG(@1,@2,@3)@
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
 	crkLast = BUNlast(b) + insertions * xx;
@@ -3063,6 +3100,7 @@ mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosit
 	next = BUNlast(b) - xx;
 	
 	TstartInsert = GDKusec();
+	@:mergeInsertionsFromTheEndBodyCG(@1,@2,@3)@
 	@:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@
 
 	crkLast = BUNlast(b) + insertions * xx;
@@ -3177,6 +3215,7 @@ printf("\n buns to riple are %lld %lld %lld \n", toRippleBuns,startPosition, end
 	TendRipple = GDKusec();
 
 	TstartInsert = GDKusec();
+	@:mergeInsertionsFromTheEndBodyR(@1,@2,@3)@
         @:mergeInsertionsFromTheEndBodyII(@1,@2,@3)@ 
 
 	if (exceedBuns > 0){
