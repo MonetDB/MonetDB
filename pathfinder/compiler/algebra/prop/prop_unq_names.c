@@ -504,10 +504,15 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+            
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
                     "only allowed with unique attribute names!");
+            
+        case la_dummy:
+            bulk_add_name_pairs (np_list, L(n));
+            break;
     }
     return id;
 }

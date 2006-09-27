@@ -1351,6 +1351,7 @@ opt_mvd (PFla_op_t *p)
         break;
 
     case la_string_join:
+    case la_dummy:
         break;
     }
 

@@ -340,6 +340,7 @@ join_pushdown (PFla_op_t *p)
             case la_frag_union:
             case la_empty_frag:
             case la_string_join:
+            case la_dummy:
                 /* nothing to do -- can't push down the equi-join */
                 break;
 

@@ -131,6 +131,8 @@ enum PFla_op_kind_t {
     , la_concat         =100 /**< fn:concat */
     , la_contains       =101 /**< fn:contains */
     , la_string_join    =102 /**< fn:string-join */
+
+    , la_dummy          =120 /**< dummy operator that does nothing */
 };
 /** algebra operator kinds */
 typedef enum PFla_op_kind_t PFla_op_kind_t;
@@ -380,6 +382,14 @@ struct PFla_pair_t {
 typedef struct PFla_pair_t PFla_pair_t;
 
 /* ***************** Constructors ******************* */
+
+/**
+ * A dummy operator that is generated whenever some rewrite 
+ * throws away an operator (e.g., '*p = *L(p);') and the replacement
+ * is an already existing node that may not be split into multiple 
+ * operators (e.g. a number operator).
+ */
+PFla_op_t * PFla_dummy (PFla_op_t *n);
 
 /**
  * A `serialize' node will be placed on the very top of the algebra

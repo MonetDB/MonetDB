@@ -56,7 +56,7 @@ resolve_proxies (PFla_op_t *p)
         resolve_proxies (p->child[i]);
 
     if (p->kind == la_proxy || p->kind == la_proxy_base)
-        *p = *p->child[0];
+        *p = *PFla_dummy (p->child[0]);
 }
 
 /**

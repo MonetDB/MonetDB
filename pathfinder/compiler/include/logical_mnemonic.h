@@ -32,6 +32,9 @@
 /* Also import generic algebra stuff */
 #include "algebra_mnemonic.h"
 
+/** dummy operator */
+#define dummy(a) PFla_dummy (a)
+
 /** serialization */
 #define serialize(a,b,c,d) PFla_serialize ((a),(b),(c),(d))
 

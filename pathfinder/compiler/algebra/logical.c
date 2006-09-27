@@ -148,6 +148,44 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
 
 
 /**
+ * Construct a dummy operator that is generated whenever some rewrite 
+ * throws away an operator (e.g., '*p = *L(p);') and the replacement
+ * is an already existing node that may not be split into multiple 
+ * operators (e.g. a number operator).
+ */
+PFla_op_t * PFla_dummy (PFla_op_t *n)
+{
+    assert (n);
+    switch (n->kind)
+    {
+        case la_rownum:
+        case la_number:
+        case la_roots:
+        case la_rec_fix:
+        case la_rec_base:
+        case la_proxy:
+        case la_proxy_base:
+        {
+            PFla_op_t *ret = la_op_wire1 (la_dummy, n);
+
+            ret->schema.count = n->schema.count;
+            ret->schema.items
+                = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+            /* copy schema from n */
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                ret->schema.items[i] = n->schema.items[i];
+
+            return ret;
+        }
+        
+        default:
+            return n;
+    }
+}
+
+
+/**
  * Construct algebra node that will serialize the argument when executed.
  * A serialization node will be placed on the very top of the algebra
  * expression tree. Its main use is to have an explicit Twig match for

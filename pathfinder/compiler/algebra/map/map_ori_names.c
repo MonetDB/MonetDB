@@ -702,6 +702,10 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                       ONAME(p, p->sem.string_join.iter_res),
                       ONAME(p, p->sem.string_join.item_res));
             break;
+
+        case la_dummy:
+            res = O(L(p));
+            break;
     }
 
     assert(res);

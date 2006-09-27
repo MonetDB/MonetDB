@@ -119,7 +119,7 @@ opt_complex (PFla_op_t *p)
                 LL(p)->kind == la_scjoin &&
                 p->sem.attach.attname == LL(p)->sem.scjoin.iter &&
                 L(p)->sem.proj.items[0].new == LL(p)->sem.scjoin.item_res) {
-                *p = *LL(p);
+                *p = *PFla_dummy (LL(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -129,7 +129,7 @@ opt_complex (PFla_op_t *p)
                 LLL(p)->kind == la_doc_tbl &&
                 p->sem.attach.attname == LLL(p)->sem.doc_tbl.iter &&
                 L(p)->sem.proj.items[0].new == LLL(p)->sem.doc_tbl.item_res) {
-                *p = *LL(p);
+                *p = *PFla_dummy (LL(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -245,13 +245,13 @@ opt_complex (PFla_op_t *p)
                properties are available. */
             if (PFprop_card (L(p)->prop) == 1 &&
                 PFprop_icols_count (L(p)->prop) == 0) {
-                *p = *R(p);
+                *p = *PFla_dummy (R(p));
                 p->prop = PFprop ();
                 break;
             }
             if (PFprop_card (R(p)->prop) == 1 &&
                 PFprop_icols_count (R(p)->prop) == 0) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }

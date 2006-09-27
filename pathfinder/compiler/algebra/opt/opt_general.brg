@@ -134,6 +134,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  concat         = 100
 %term  contains       = 101
 %term  string_join    = 102
+%term  dummy          = 120
 
 %%
 
@@ -210,6 +211,7 @@ Arg:    rec_arg (Rel, Rel)                        =  85 (10);
 Rel:    concat (Rel)                              =  86 (10);
 Rel:    contains (Rel)                            =  87 (10);
 Rel:    string_join (Rel, Rel)                    =  88 (10);
+Rel:    dummy (Rel)                               =  89 (10);
 
 Rel:    EmptyRel                                  =  90  (0);
 
@@ -278,8 +280,9 @@ EmptyRel:    roots_ (processi (EmptyRel))         = 186  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,                   
                                      EmptyRel))   = 187  (0);
 EmptyRel:    cond_err (EmptyRel, Rel)             = 190  (0);
-EmptyRel:    concat (EmptyRel)                    = 200 (10);
-EmptyRel:    string_join (EmptyRel, Rel)          = 201 (10);
+EmptyRel:    concat (EmptyRel)                    = 200  (0);
+EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
+EmptyRel:    dummy (EmptyRel)                     = 202  (0);
 
 %%
 
@@ -448,7 +451,7 @@ reduce (PFla_op_t *p, int goalnt)
                            p->sem.proj.items[i].old);
 
             if (!renamed && L(p)->schema.count == p->schema.count) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -698,7 +701,7 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    disjunion (EmptyRel, Rel) */
         case 21:
             /* return right child */
-            *p = *R(p);
+            *p = *PFla_dummy (R(p));
             p->prop = PFprop ();
             break;
 
@@ -707,7 +710,7 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    difference (Rel, EmptyRel) */
         case 25:
             /* return left child */
-            *p = *L(p);
+            *p = *PFla_dummy (L(p));
             p->prop = PFprop ();
             break;
 
@@ -788,7 +791,7 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    distinct (scjoin (Frag, Rel)) */
         case 27:
             /* return left child */
-            *p = *L(p);
+            *p = *PFla_dummy (L(p));
             p->prop = PFprop ();
             break;
 

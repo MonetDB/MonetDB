@@ -74,7 +74,7 @@ opt_key (PFla_op_t *p)
         case la_distinct:
             for (unsigned int i = 0; i < p->schema.count; i++)
                 if (PFprop_key_left (p->prop, p->schema.items[i].name)) {
-                    *p = *L(p);
+                    *p = *PFla_dummy (L(p));
                     p->prop = PFprop ();
                     break;
                 }

@@ -112,6 +112,7 @@ infer_card (PFla_op_t *n)
         case la_proxy_base:
         case la_concat:
         case la_contains:
+        case la_dummy:
             /* cardinality stays the same */
             n->prop->card = L(n)->prop->card;
             break;

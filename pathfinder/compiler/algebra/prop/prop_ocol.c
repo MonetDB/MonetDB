@@ -595,10 +595,15 @@ infer_ocol (PFla_op_t *n)
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
                     "only allowed with unique names!");
+            
         case la_cross_mvd:
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+            
+        case la_dummy:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            break;
     }
 }
 

@@ -790,6 +790,10 @@ infer_dom (PFla_op_t *n, unsigned int id)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+            
+        case la_dummy:
+            bulk_add_dom (n->prop, L(n));
+            break;
     }
     return id;
 }

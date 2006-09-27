@@ -268,6 +268,7 @@ infer_const (PFla_op_t *n)
         case la_roots:
         case la_concat:
         case la_contains:
+        case la_dummy:
 
             /* propagate information from both input operators */
             for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
@@ -628,6 +629,7 @@ infer_const (PFla_op_t *n)
         case la_empty_frag:
         case la_concat:
         case la_contains:
+        case la_dummy:
             break;
 
         case la_cross_mvd:

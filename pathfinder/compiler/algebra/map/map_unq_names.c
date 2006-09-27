@@ -621,6 +621,10 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                       UNAME(p, p->sem.string_join.iter_res),
                       UNAME(p, p->sem.string_join.item_res));
             break;
+
+        case la_dummy:
+            res = U(L(p));
+            break;
     }
 
     assert(res);

@@ -188,7 +188,7 @@ opt_icol (PFla_op_t *p)
         case la_attach:
             /* prune attach if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.attach.attname)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -289,7 +289,7 @@ opt_icol (PFla_op_t *p)
         case la_contains:
             /* prune binary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.binary.res)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -299,7 +299,7 @@ opt_icol (PFla_op_t *p)
         case la_bool_not:
             /* prune unary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.unary.res)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -336,7 +336,7 @@ opt_icol (PFla_op_t *p)
         case la_rownum:
             /* prune rownum if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.rownum.attname)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -345,7 +345,7 @@ opt_icol (PFla_op_t *p)
         case la_number:
             /* prune number if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.number.attname)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -356,7 +356,7 @@ opt_icol (PFla_op_t *p)
         case la_cast:
             /* prune cast if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.type.res)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -366,7 +366,7 @@ opt_icol (PFla_op_t *p)
             /* prune type assertion if restricted column is not
                used afterwards */
             if (!PFprop_icol (p->prop, p->sem.type.att)) {
-                *p = *L(p);
+                *p = *PFla_dummy (L(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -378,7 +378,7 @@ opt_icol (PFla_op_t *p)
         case la_doc_access:
             /* prune doc_access if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.doc_access.res)) {
-                *p = *R(p);
+                *p = *PFla_dummy (R(p));
                 p->prop = PFprop ();
                 break;
             }
@@ -389,21 +389,21 @@ opt_icol (PFla_op_t *p)
                 case la_element:
                     /* prune element if result column is not required */
                     if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res)) {
-                        *p = *LRL(p);
+                        *p = *PFla_dummy (LRL(p));
                         p->prop = PFprop ();
                     }
                     break;
                 case la_attribute:
                     /* prune attribute if result column is not required */
                     if (!PFprop_icol (p->prop, L(p)->sem.attr.res)) {
-                        *p = *LL(p);
+                        *p = *PFla_dummy (LL(p));
                         p->prop = PFprop ();
                     }
                     break;
                 case la_textnode:
                     /* prune textnode if result column is not required */
                     if (!PFprop_icol (p->prop, L(p)->sem.textnode.res)) {
-                        *p = *LL(p);
+                        *p = *PFla_dummy (LL(p));
                         p->prop = PFprop ();
                     }
                     break;
@@ -420,7 +420,7 @@ opt_icol (PFla_op_t *p)
                            if result column is not required */
                         if (!PFprop_icol (LL(p)->prop, 
                                           LL(p)->sem.elem.item_res)) {
-                            *p = *R(p);
+                            *p = *PFla_dummy (R(p));
                             p->prop = PFprop ();
                         }
                         break;
@@ -428,7 +428,7 @@ opt_icol (PFla_op_t *p)
                         /* prune reference to attribute
                            if result column is not required */
                         if (!PFprop_icol (LL(p)->prop, LL(p)->sem.attr.res)) {
-                            *p = *R(p);
+                            *p = *PFla_dummy (R(p));
                             p->prop = PFprop ();
                         }
                         break;
@@ -437,7 +437,7 @@ opt_icol (PFla_op_t *p)
                            if result column is not required */
                         if (!PFprop_icol (LL(p)->prop,
                                           LL(p)->sem.textnode.res)) {
-                            *p = *R(p);
+                            *p = *PFla_dummy (R(p));
                             p->prop = PFprop ();
                         }
                         break;
@@ -452,7 +452,7 @@ opt_icol (PFla_op_t *p)
                            if result column is not required */
                         if (!PFprop_icol (RL(p)->prop,
                                           RL(p)->sem.elem.item_res)) {
-                            *p = *L(p);
+                            *p = *PFla_dummy (L(p));
                             p->prop = PFprop ();
                         }
                         break;
@@ -460,7 +460,7 @@ opt_icol (PFla_op_t *p)
                         /* prune reference to attribute
                            if result column is not required */
                         if (!PFprop_icol (RL(p)->prop, RL(p)->sem.attr.res)) {
-                            *p = *L(p);
+                            *p = *PFla_dummy (L(p));
                             p->prop = PFprop ();
                         }
                         break;
@@ -469,7 +469,7 @@ opt_icol (PFla_op_t *p)
                            if result column is not required */
                         if (!PFprop_icol (RL(p)->prop,
                                           RL(p)->sem.textnode.res)) {
-                            *p = *L(p);
+                            *p = *PFla_dummy (L(p));
                             p->prop = PFprop ();
                         }
                         break;

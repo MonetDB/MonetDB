@@ -110,6 +110,7 @@ static char *a_id[]  = {
     , [la_concat]           = "fn:concat"
     , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
+    , [la_dummy]            = "DUMMY"
 };
 
 /* XML node names to print out for all kinds */
@@ -175,6 +176,7 @@ static char *xml_id[]  = {
     , [la_concat]           = "fn:concat"
     , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
+    , [la_dummy]            = "DUMMY"
 };
 
 /** string representation of algebra atomic types */
@@ -369,6 +371,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_concat]         = "\"#C0C0C0\""
         , [la_contains]       = "\"#C0C0C0\""
         , [la_string_join]    = "\"#C0C0C0\""
+        , [la_dummy]          = "\"#FFFFFF\""
     };
 
     /* open up label */
@@ -739,6 +742,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         case la_rec_base:
         case la_proxy_base:
         case la_string_join:
+        case la_dummy:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
 

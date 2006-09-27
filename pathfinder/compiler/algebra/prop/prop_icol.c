@@ -622,10 +622,16 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
                     "only allowed with unique names!");
+
         case la_cross_mvd:
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+            
+        case la_dummy:
+            /* infer incoming icols for input relation */
+            n->prop->l_icols = n->prop->icols;
+            break;
     }
 
     if (!skip_children)

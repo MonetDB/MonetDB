@@ -398,6 +398,11 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+
+        case la_dummy:
+            PFoops (OOPS_FATAL,
+                    "dummy operator has to be eliminated before "
+                    "comparison!");
     }
 
     /* pacify compilers */
@@ -417,8 +422,12 @@ la_cse (PFla_op_t *n)
     if (SEEN(n))
         return n;
 
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
+        if (n->child[i]->kind == la_dummy)
+            n->child[i] = n->child[i]->child[0];
+
         n->child[i] = la_cse (n->child[i]);
+    }
 
     /*
      * Fetch the subexpressions for this node kind that we

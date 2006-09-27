@@ -485,6 +485,10 @@ infer_key (PFla_op_t *n)
             PFoops (OOPS_FATAL,
                     "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+
+        case la_dummy:
+            copy (n->prop->keys, L(n)->prop->keys);
+            break;
     }
 }
 
