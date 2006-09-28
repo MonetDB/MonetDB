@@ -473,7 +473,7 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
     empty_page       := bat("empty_page"); 
     empty_bat        := bat("empty_bat"); 
     empty_runtime    := bat("empty_runtime"); 
-    ws_nme           := bat("ws_bat");
+    ws_nme           := bat("ws_nme");
     ws_tpe           := bat("ws_tpe"); 
     ws_htp           := bat("ws_htp");
     ws_ttp           := bat("ws_ttp");
