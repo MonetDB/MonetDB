@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 958 ]
+[ 1011 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 958 ]
+[ 1011 ]
 
 var All:=0;
 
@@ -310,8 +310,8 @@ Module: "algebra"
 
 Module: "arith"
 
-[ 456 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 509 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature												help																																																																												  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "!=",		  "OPERATOR:  ",  "!=(any::1, any::1) : bit",								  "left unequal to right?"																																		  ]
@@ -326,17 +326,70 @@ Module: "arith"
 [ "!=",		  "OPERATOR:  ",  "!=(sht, sht) : bit",									  "left unequal to right?"																																		  ]
 [ "!=",		  "OPERATOR:  ",  "!=(str, str) : bit",									  "left unequal to right?"																																		  ]
 [ "!=",		  "OPERATOR:  ",  "!=(wrd, wrd) : bit",									  "left unequal to right?"																																	  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, bte) : bte",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, chr) : chr",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, dbl) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, flt) : flt",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(bte, int) : int",									  "modulo"																																			  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, lng) : lng",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, sht) : sht",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(bte, wrd) : wrd",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, bte) : bte",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, chr) : chr",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, dbl) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, flt) : flt",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(chr, int) : int",									  "modulo"																																				  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, lng) : lng",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, sht) : sht",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(chr, wrd) : wrd",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, bte) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, chr) : dbl",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(dbl, dbl) : dbl",								  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, flt) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, int) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, lng) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, sht) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(dbl, wrd) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, bte) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, chr) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, dbl) : dbl",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(flt, flt) : flt",								  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, int) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, lng) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, sht) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(flt, wrd) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(int, bte) : bte",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(int, chr) : chr",									  "modulo"																																				  ]
+[ "%",		  "OPERATOR:  ",  "%(int, dbl) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(int, flt) : flt",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(int, int) : int",									  "modulo"																																				  ]
+[ "%",		  "OPERATOR:  ",  "%(int, lng) : lng",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(int, sht) : sht",									  "modulo"																																				  ]
+[ "%",		  "OPERATOR:  ",  "%(int, wrd) : wrd",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(lng, bte) : bte",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(lng, chr) : chr",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(lng, dbl) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(lng, flt) : flt",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(lng, int) : int",									  "modulo"																																				  ]
 [ "%",		  "OPERATOR:  ",  "%(lng, lng) : lng",											  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(lng, sht) : sht",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(lng, wrd) : wrd",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(sht, bte) : bte",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(sht, chr) : chr",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(sht, dbl) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(sht, flt) : flt",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(sht, int) : int",									  "modulo"																																				  ]
+[ "%",		  "OPERATOR:  ",  "%(sht, lng) : lng",									  "modulo"																																																																											  ]
 [ "%",		  "OPERATOR:  ",  "%(sht, sht) : sht",											  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(sht, wrd) : wrd",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, bte) : bte",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, chr) : chr",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, dbl) : dbl",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, flt) : flt",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, int) : int",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, lng) : lng",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, sht) : sht",									  "modulo"																																																																											  ]
+[ "%",		  "OPERATOR:  ",  "%(wrd, wrd) : wrd",									  "modulo"																																																																											  ]
 [ "*",		  "OPERATOR:  ",  "*(bte, bte) : bte",									  "multiplication"																																		  ]
 [ "*",		  "OPERATOR:  ",  "*(bte, chr) : bte",									  "multiplication"																																		  ]
 [ "*",		  "OPERATOR:  ",  "*(bte, dbl) : dbl",									  "multiplication"																																		  ]
@@ -1103,7 +1156,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 958 ]
+[ 1011 ]
 
 quit();
 
