@@ -647,7 +647,7 @@ static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = SQLint;
+	int token = sqlINT;
 
 	lc->started = 1;
 	/* TODO start with . */
