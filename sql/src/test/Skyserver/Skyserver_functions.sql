@@ -67,7 +67,7 @@ END;
 
 CREATE FUNCTION fObjidFromSDSSWithFF(skyversion int, run int, rerun int, 
 				     camcol int, field int, obj int, 
-				     firstfield int = 0)
+				     firstfield int)
 RETURNS BIGINT
 BEGIN
     DECLARE two bigint, sky int;
@@ -117,7 +117,7 @@ END;
 
 -----------------------FLAGS ACCESS-----------------------------
 
-CREATE FUNCTION fPhotoStatusN(value int)
+CREATE FUNCTION fPhotoStatusN(val int)
 RETURNS varchar(1000)
 BEGIN
     	DECLARE bit int, mask bigint, out varchar(2000);
@@ -127,7 +127,7 @@ BEGIN
 		SET bit = bit-1;
 		SET mask = left_shift(cast(2 as bigint),bit);
 		CASE 
-			WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+			WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
 			ELSE SET out = out || (coalesce((select name from PhotoStatus where value=mask),'')||' ');
 	    	END CASE;
 	END WHILE;
@@ -142,7 +142,7 @@ BEGIN
 	RETURN x;
 END;
 
-CREATE FUNCTION fPrimTargetN(value int)
+CREATE FUNCTION fPrimTargetN(val int)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -152,32 +152,32 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
 		ELSE SET out = out || (coalesce((select name from PrimTarget where value=mask),'')||' ');
 	    END CASE;
     END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fPrimTarget(name varchar(40))
+CREATE FUNCTION fPrimTarget(nme varchar(40))
 RETURNS int
 BEGIN
 	RETURN ( SELECT cast(value as int)
 		FROM PrimTarget
-		WHERE name = UPPER(name)
+		WHERE name = UPPER(nme)
 		);
 END;
 
-CREATE FUNCTION fSecTarget(name varchar(40))
+CREATE FUNCTION fSecTarget(nme varchar(40))
 RETURNS int
 BEGIN
 RETURN ( SELECT cast(value as int)
 	FROM SecTarget
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fSecTargetN(value int)
+CREATE FUNCTION fSecTargetN(val int)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -187,23 +187,23 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
 		ELSE SET out = out || (coalesce((select name from SecTarget where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fInsideMask(name varchar(40))
+CREATE FUNCTION fInsideMask(nme varchar(40))
 RETURNS smallint
 BEGIN
 RETURN ( SELECT cast(value as tinyInt)
 	FROM InsideMask
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fInsideMaskN(value smallint)
+CREATE FUNCTION fInsideMaskN(val smallint)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit smallint, mask smallint, out varchar(2000);
@@ -213,23 +213,23 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(2,bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
 		ELSE SET out = out || (coalesce((select name from InsideMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fSpecZWarning(name varchar(40))
+CREATE FUNCTION fSpecZWarning(nme varchar(40))
 RETURNS INT 
 BEGIN
     RETURN ( SELECT cast(value as int)
 	FROM SpecZWarning
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fSpecZWarningN(value int)
+CREATE FUNCTION fSpecZWarningN(val int)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -239,23 +239,23 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || '';
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from SpecZWarning where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fImageMask(name varchar(40))
+CREATE FUNCTION fImageMask(nme varchar(40))
 RETURNS int
 BEGIN
     RETURN ( SELECT cast(value as int)
 	FROM ImageMask
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fImageMaskN(value int)
+CREATE FUNCTION fImageMaskN(val int)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -265,23 +265,23 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
 		ELSE SET out = out || (coalesce((select name from ImageMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fTiMask(name varchar(40))
+CREATE FUNCTION fTiMask(nme varchar(40))
 RETURNS int
 BEGIN
 RETURN ( SELECT cast(value as int)
 	FROM TiMask
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fTiMaskN(value int)
+CREATE FUNCTION fTiMaskN(val int)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -291,258 +291,258 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || '';
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from TiMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fPhotoModeN(value int)
+CREATE FUNCTION fPhotoModeN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM PhotoMode
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fPhotoMode(name varchar(40))
+CREATE FUNCTION fPhotoMode(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM PhotoMode
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fPhotoTypeN(value int)
+CREATE FUNCTION fPhotoTypeN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM PhotoType
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fPhotoType(name varchar(40))
+CREATE FUNCTION fPhotoType(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM PhotoType
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fMaskTypeN(value int)
+CREATE FUNCTION fMaskTypeN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM MaskType
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fMaskType(name varchar(40))
+CREATE FUNCTION fMaskType(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM MaskType
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fFieldQualityN(value int)
+CREATE FUNCTION fFieldQualityN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM FieldQuality
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fFieldQuality(name varchar(40))
+CREATE FUNCTION fFieldQuality(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM FieldQuality
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fPspStatus(name varchar(40))
+CREATE FUNCTION fPspStatus(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM PspStatus
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fPspStatusN(value int)
+CREATE FUNCTION fPspStatusN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM PspStatus
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fFramesStatus(name varchar(40))
+CREATE FUNCTION fFramesStatus(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value
 	FROM FramesStatus
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fFramesStatusN(value int)
+CREATE FUNCTION fFramesStatusN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM FramesStatus
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fSpecClass(name varchar(40))
+CREATE FUNCTION fSpecClass(nme varchar(40))
 RETURNS INTEGER
 BEGIN
 RETURN ( SELECT value 
 	FROM SpecClass
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fSpecClassN(value int)
+CREATE FUNCTION fSpecClassN(val int)
 RETURNS varchar(40)
 BEGIN
 RETURN ( SELECT name
 	FROM SpecClass
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fSpecLineNames(name varchar(40))
+CREATE FUNCTION fSpecLineNames(nme varchar(40))
 RETURNS INTEGER
 BEGIN
     RETURN ( SELECT value
 	FROM SpecLineNames
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fSpecLineNamesN(value int)
+CREATE FUNCTION fSpecLineNamesN(val int)
 RETURNS varchar(40)
 BEGIN
     RETURN ( SELECT name
 	FROM SpecLineNames
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fSpecZStatusN(value int)
+CREATE FUNCTION fSpecZStatusN(val int)
 RETURNS varchar(40)
 BEGIN
     RETURN ( SELECT name
 	FROM SpecZStatus
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fSpecZStatus(name varchar(40))
+CREATE FUNCTION fSpecZStatus(nme varchar(40))
 RETURNS INTEGER
 BEGIN
     RETURN ( SELECT value
 	FROM SpecZStatus
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fHoleType(name varchar(40))
+CREATE FUNCTION fHoleType(nme varchar(40))
 RETURNS INTEGER
 BEGIN
     RETURN ( SELECT value
 	FROM HoleType
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fHoleTypeN(value int)
+CREATE FUNCTION fHoleTypeN(val int)
 RETURNS varchar(40)
 BEGIN
     RETURN ( SELECT name
 	FROM HoleType
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fObjType(name varchar(40))
+CREATE FUNCTION fObjType(nme varchar(40))
 RETURNS INTEGER
 BEGIN
     RETURN ( SELECT value
 	FROM ObjType
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fObjTypeN(value int)
+CREATE FUNCTION fObjTypeN(val int)
 RETURNS varchar(40)
 BEGIN
     RETURN ( SELECT name
 	FROM ObjType
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fProgramType(name varchar(40))
+CREATE FUNCTION fProgramType(nme varchar(40))
 RETURNS INTEGER
 BEGIN
     RETURN ( SELECT value
 	FROM ProgramType
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fProgramTypeN(value int)
+CREATE FUNCTION fProgramTypeN(val int)
 RETURNS varchar(40)
 BEGIN
     RETURN ( SELECT name
 	FROM ProgramType
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
-CREATE FUNCTION fCoordType(name varchar(40))
+CREATE FUNCTION fCoordType(nme varchar(40))
 RETURNS INTEGER
 BEGIN
     RETURN ( SELECT value
 	FROM CoordType
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fCoordTypeN(value int)
+CREATE FUNCTION fCoordTypeN(val int)
 RETURNS varchar(40)
 BEGIN
     RETURN ( SELECT name
 	FROM CoordType
-	WHERE value = value
+	WHERE value = val
 	);
 END;
 
 
-CREATE FUNCTION fFieldMask(name varchar(40))
+CREATE FUNCTION fFieldMask(nme varchar(40))
 RETURNS int
 BEGIN
 RETURN ( SELECT cast(value as int)
 	FROM FieldMask
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
-CREATE FUNCTION fFieldMaskN(value int)
+CREATE FUNCTION fFieldMaskN(val int)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -552,14 +552,14 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || ''; 
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
 		ELSE SET out = out || (coalesce((select name from FieldMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fPhotoFlagsN(value bigint)
+CREATE FUNCTION fPhotoFlagsN(val bigint)
 RETURNS varchar(1000)
 BEGIN
     DECLARE bit int, mask bigint, out varchar(2000);
@@ -569,19 +569,19 @@ BEGIN
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
 	    CASE 
-		WHEN (bit_and(mask,value)=0) THEN SET out = out || '';
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from PhotoFlags where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
     RETURN out;
 END;
 
-CREATE FUNCTION fPhotoFlags(name varchar(40))
+CREATE FUNCTION fPhotoFlags(nme varchar(40))
 RETURNS bigint
 BEGIN
 RETURN ( SELECT cast(value as bigint)
 	FROM PhotoFlags
-	WHERE name = UPPER(name)
+	WHERE name = UPPER(nme)
 	);
 END;
 
@@ -655,7 +655,7 @@ BEGIN
     RETURN fDMSbase(deg,default,default);
 END;
 
-CREATE  FUNCTION fDMSbase(deg float, truncate int = 0, precision int = 2)
+CREATE  FUNCTION fDMSbase(deg float, truncate int, precision int)
 RETURNS varchar(32)
 BEGIN
     DECLARE	
@@ -708,7 +708,7 @@ BEGIN
     RETURN fHMSbase(deg,default,default);
 END;
 
-CREATE  FUNCTION fHMSbase(deg float, truncate int = 0, precision int = 2)
+CREATE  FUNCTION fHMSbase(deg float, truncate int = 0, precision int)
 RETURNS varchar(32)
 BEGIN
     DECLARE
