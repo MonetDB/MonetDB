@@ -647,7 +647,7 @@ static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token;
+	int token = SQLint;
 
 	lc->started = 1;
 	/* TODO start with . */
@@ -659,7 +659,6 @@ number(mvc * c, int cur)
 				token = HEXADECIMAL; 
 	}
 	else{
-		token = sqlINT;
 		if(isdigit(cur))
 			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 				;
