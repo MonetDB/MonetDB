@@ -1,0 +1,66 @@
+stdout of test 'zones` in directory 'src/test` itself:
+
+
+# 12:23:02 >  
+# 12:23:02 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=38218 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
+# 12:23:02 >  
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/export/scratch1/milena/monet/etc/MonetDB5.conf
+# dbfarm:/export/scratch1/milena/monet/var/MonetDB5/dbfarm
+# dbname:mTests_src_test
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 12:23:02 >  
+# 12:23:02 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38218  < zones.sql
+# 12:23:02 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+# . # table_name
+# alpha1 # name
+# double # type
+# 22 # length
+[ 1.1547200925865859	]
+# . # table_name
+# alpha2 # name
+# double # type
+# 22 # length
+[ 1.4142854109042293	]
+# . # table_name
+# alpha3 # name
+# double # type
+# 22 # length
+[ 2.0003048809350625	]
+[ 5	]
+[ 0	]
+# .s,	.s # table_name
+# objid,	distance # name
+# bigint,	double # type
+# 18,	22 # length
+[ 687726014001184891,	0.0066912449216976087	]
+[ 687726014001184892,	0.0068827887700544307	]
+[ 687726014001184894,	0.007001904502613389	]
+[ 687726014001184895,	0.13972627471136584	]
+[ 687726014001184896,	0.13973831452158963	]
+# .s,	.s # table_name
+# objid,	distance # name
+# bigint,	double # type
+# 18,	22 # length
+[ 687726014001184891,	0.0066912449216976087	]
+[ 687726014001184892,	0.0068827887700544307	]
+[ 687726014001184894,	0.007001904502613389	]
+
+# 12:23:02 >  
+# 12:23:02 >  Done.
+# 12:23:02 >  
+
