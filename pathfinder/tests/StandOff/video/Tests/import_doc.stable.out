@@ -21,9 +21,8 @@ region_start_attr_tag := "start";
 region_end_attr_tag := "end";
 
 shred_doc(TSTSRCDIR + "/" + "video.xml", "video.xml");
-[ "# extracting regions...\n" ]
-# extracted 5 regions
-# Shredded XML doc("video.xml"), total time after commit=0.011s
+# Elapsed time = 651us [032us/node]
+# Shredded 1 XML documents, total time after commit=0.007s
 
 commit();
 quit();

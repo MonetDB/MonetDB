@@ -298,50 +298,50 @@ concurrent updates.
 @:ws_@1(NID_QN,            24, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(NID_QN_DEL,        25, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(NID_QN_INS,        26, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(REGION_PRE,        27, void, bat, void,  oid, oid_nil)@
-@:ws_@1(REGION_START,      28, void, bat, void,  lng, oid_nil)@
-@:ws_@1(REGION_END,        29, void, bat, void,  lng, oid_nil)@
-@:ws_@1(PRE_CONT,          30, void, void,void,  oid, PRE_BASE)@
-@:ws_@1(ATTR_CONT,         31, void, void,void,  oid, PRE_BASE)@
-@:ws_@1(OPEN_NAME,         32, void, str, void, void, oid_nil)@
-@:ws_@1(OPEN_DOCID,        33, void, oid, void, void, oid_nil)@
-@:ws_@1(OPEN_CONT,         34, void, oid, void, void, oid_nil)@
-@:ws_@1(CONT_COLL,         35, void, oid, void, void, oid_nil)@
-@:ws_@1(CONT_NAME,         36, void, str, void, void, oid_nil)@
-@:ws_@1(CONT_RUNTIME,      37, void, bat, void, void, oid_nil)@
 
-@:ws_@1(_MAP_PID,          38, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_SIZE,         39, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        40, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_PROP,         41, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_KIND,         42, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_NID,          43, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_NID_RID,          44, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_FRAG_ROOT,        45, void, bat,  oid,  oid, oid_nil)@
-@:ws_@1(_QN_HISTOGRAM,     46, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX_URI_LOC,47, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI_LOC,       48, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX,        49, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI,           50, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_LOC,           51, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TEXT,        52, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_COM,         53, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_INS,         54, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TGT,         55, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_VAL,         56, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_ID_NID,           57, void, bat,  str,  oid, oid_nil)@
-@:ws_@1(_IDREF_NID,        58, void, bat,  str,  oid, oid_nil)@
-@:ws_@1(_ATTR_OWN,         59, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_QN,          60, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_PROP,        61, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(PRE_CONT,          27, void, void,void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_CONT,         28, void, void,void,  oid, PRE_BASE)@
+@:ws_@1(OPEN_NAME,         29, void, str, void, void, oid_nil)@
+@:ws_@1(OPEN_DOCID,        30, void, oid, void, void, oid_nil)@
+@:ws_@1(OPEN_CONT,         31, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_COLL,         32, void, oid, void, void, oid_nil)@
+@:ws_@1(CONT_NAME,         33, void, str, void, void, oid_nil)@
+@:ws_@1(CONT_RUNTIME,      34, void, bat, void, void, oid_nil)@
+
+@:ws_@1(_MAP_PID,          35, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         36, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        37, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         38, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         39, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          40, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          41, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        42, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     43, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,44, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       45, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        46, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           47, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           48, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        49, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         50, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         51, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         52, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         53, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ID_NID,           54, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_IDREF_NID,        55, void, bat,  str,  oid, oid_nil)@
+@:ws_@1(_ATTR_OWN,         56, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          57, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        58, void, bat, void,  oid, PRE_BASE)@
 @-
 The bottop segment are the master copies of the top segment.
 The middle segment is private to the query.
 
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
+Wouter: THEN WHY IS WS_SIZE count(ws) + 10???
+
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 72)@
+@:ws_@1_decl(WS_SIZE, 69)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -386,6 +386,12 @@ const RT_REGION_PRE    := 6;
 const RT_REGION_START  := 7;
 const RT_REGION_END    := 8;
 
+# dirty solution (proposed by Peter ;) to be able to locate (and replace) the
+# bats inside the colname_runtime-bat.
+const RT_REGION_PRE_LOCK    := lock(RT_REGION_PRE);
+const RT_REGION_START_LOCK  := lock(RT_REGION_START);
+const RT_REGION_END_LOCK    := lock(RT_REGION_END);
+
 @- shared BATs
 
 Note that MIL variables are not shared between concurrent MIL sessions. Therefore, we need the pflock()
@@ -406,7 +412,7 @@ MIL variables, but these point to the same global BATs).
 @mil
 # get a handle to the global lock
 var pf_short  := pflock(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
-var pf_wal    := pflock(1); # lock that must be held while wirting into the WAL
+var pf_wal    := pflock(1); # lock that must be held while writing into the WAL
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -602,7 +608,7 @@ PROC X() : void {
     if (not(isnil(err))) ERROR(err);
 }
 
-As a general convention all MIL PROCs _X(), i.e. whose name starts with and
+As a general convention all MIL PROCs _X(), i.e. whose name starts with an
 underscore, assume the pf_short lock is taken.
 
 @- collection lock 
@@ -657,11 +663,11 @@ resources may be freed.
 
 Here all concurreny issues are avoided by awaiting a moment of absolute
 silence, i.e. when no query is using the collection. For this reason all 
-document using functions (fn:doc() but also fn:add_doc()) put a sol-called 
+document using functions (fn:doc() but also fn:add_doc()) put a so-called 
 'pin' on the collection they are intending to manipulate.  These pins are 
 gathered in the BAT[str,int] colname_pins (it contains document names and 
 ws=query-IDs). This BAT is also used for recording which queries currently
-hold a shredlock. This is marked by storing the *negated* ws-id. The
+hold a shred-lock. This is marked by storing the *negated* ws-id. The
 catcher routine for all queries (ws_destroy) takes care of properly
 releasing these locks while cleaning up.
 
@@ -695,7 +701,7 @@ PROC _shredlock_unset(str colname,
 
 @+ working sets
 
-The working set is the run-time context of a query. For each collection, two
+The working set is the runtime context of a query. For each collection, two
 sets of bats are visible: updatable bats and masters. The masters
 have names in the working set that start with an underscore.
 
@@ -862,10 +868,6 @@ PROC __ws_addcoll(BAT[void,bat] ws,
     ws.fetch(NID_QN_INS).append(ins);
     ws.fetch(NID_QN_DEL).append(del);
 
-    # add dummy region indices
-    ws.fetch(REGION_PRE).append(empty_bat);
-    ws.fetch(REGION_START).append(empty_bat);
-    ws.fetch(REGION_END).append(empty_bat);
     return cont;
 }
 
@@ -1018,6 +1020,14 @@ PROC __runtime_maintain(int ws,
         ins.delete();
         del.delete();
     }
+    
+    # mark the region index invalid
+    # for now, we don't try to maintain it over updates
+    # any subsequent queries need to first recreate the index
+    runtime.replace(RT_REGION_PRE_LOCK, empty_bat);
+    runtime.replace(RT_REGION_START_LOCK, empty_bat);
+    runtime.replace(RT_REGION_END_LOCK, empty_bat);
+
     runtime.fetch(RT_LOCK_FREELIST).append(delpages);
 }
 

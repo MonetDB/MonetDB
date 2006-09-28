@@ -14,9 +14,8 @@ module("pathfinder");
 module("unix");
 var doc := getenv("TSTSRCDIR")+"/test1.xml";
 shred_doc(doc,"test1.xml");
-[ "# extracting regions...\n" ]
-# extracted 1 regions
-# Shredded XML doc("test1.xml"), total time after commit=0.012s
+# Elapsed time = 855us [285us/node]
+# Shredded 1 XML documents, total time after commit=0.007s
 quit();
 
 # 16:39:38 >  

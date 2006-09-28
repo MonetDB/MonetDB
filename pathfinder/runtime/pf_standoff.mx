@@ -798,14 +798,14 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
 
 ### line 868 of pf_support.mx
 @= standoff_wrap
-PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
+PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[void,bat] ws, int order, BAT[void,oid] cands, chr kind_test) : BAT[void,bat]
 {
     var result := nil;
     var one_iter := FALSE;
     var one_item := FALSE;
     var min_iter := oid_nil;
     var max_iter := oid_nil;
-
+    
     # check consistency
     if ( isnil(seqbase(iter)) or isnil(seqbase(item)) ) {
        	ERROR("@1(0): heads of iter & item/ctx must not be NIL!");
@@ -834,14 +834,14 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 
 ### line 930 of pf_support.mx
 
-    ## FIXME: should we do region_extract here???, because it could be
-    ## done much earlier. (we know it is needed when parsing the query)
-    ## FIXME: grab a lock???
-    var index := region_extract(ws,cont,"lng");
-    var region_pre := index.fetch(REGION_PRE);
-    var region_start := index.fetch(REGION_START);
-    var region_end := index.fetch(REGION_END);
-    ## FIXME: release the lock???
+    ## FIXME: should we do fetch_region_index here?, because it could be
+    ## done much earlier. (we know it this index is needed when parsing 
+    ## the query)
+    var index := fetch_region_index(ws, cont);
+    ## FIXME: perhaps do some error-checking here
+    var region_pre := index.fetch(0@0); # REGION_PRE);
+    var region_start := index.fetch(1@0); # REGION_START);
+    var region_end := index.fetch(2@0); # REGION_END);
 
     # pre-sort input
     if ( and(order,1) = 0 ) {
@@ -855,9 +855,10 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
 
     # the actual location step
     if ( isnil(result) ) {
-       	## we don't need the min_iter, max_iter, one_iter, one_item...
+       	## - we don't need the min_iter, max_iter, one_iter, one_item...
        	## but we DO need region_pre, _start, _end
-       	var res := ll_standoff_@1 (cands, iter, item, region_pre, region_start, region_end);
+        ## - only the PRE-values in the cands-bat are needed
+       	var res := ll_standoff_@1 (cands.reverse().project(nil).reverse(), iter, item, region_pre, region_start, region_end);
     	result := new(void,bat,2).seqbase(0@0)
        	          .append(res.mark(0@0).reverse())
        	          .append(res.reverse().mark(0@0).reverse())
@@ -887,7 +888,6 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int or
        	             .append(ord.leftfetchjoin(item).chk_order())
        	          .access(BAT_READ);
     }
-
     return result;
 }
 ADDHELP("@1", "tsheyar,vzzzbx", "Sep 2006",
@@ -1009,7 +1009,7 @@ if (postfilter) {
 @= no_pre
     cands := ws.fetch(PRE_SIZE).fetch(contID).mirror(); # no selection: cands is everything
 @= kind_pre
-      { cands := ws.fetch(PRE_KIND).fetch(contID); kind_test := kind; }
+      { cands := ws.fetch(PRE_KIND).fetch(contID).mirror(); kind_test := kind; }
 @= nsloc_pre
       { var nsloc := ns + ":" + loc; @:prefilter(nsloc,QN_URI_LOC)@ }
 @= loc_pre
@@ -1032,6 +1032,7 @@ if (postfilter) {
         ## NOTE: in case of standoff, we are not allowed to filter out
         ## pre's before or after the ctx-set of pre's
     } # else we use postfilter (after SCJ)
+    cands := cands.tmark(0@0);
 @
 ### line 1233 of pf_support.mx
 # expanding the standoffjoin for the different tests
@@ -1073,7 +1074,6 @@ if (postfilter) {
 
 	# pre-test
 	@4
-
     var result := @1 (result_part_iter, result_part_item, contID, ws, order @3);
 	result_part_iter := result.fetch(0);
 	result_part_item := result.fetch(1);
@@ -1261,7 +1261,7 @@ PROC standoff_@1_@2(BAT[void,oid] cands,
   var sel_end := sel_region2.leftjoin(region_end);
 
   # do the join
-  # FIXME: Wouter: as of version 0.12 document-containers can hold multiple documents
+  # FIXME: Wouter: as of version 0.14 document-containers can hold multiple documents
   # we actually should do a batloop here (iterate over all documents in a document-container)
   var result := @1_@2_join_sort(source_start, source_end,
                                 sel_start, sel_end);
@@ -1276,37 +1276,99 @@ PROC standoff_@1_@2(BAT[void,oid] cands,
 ### line 1385 of pf_support.mx
 ######### END OF NEW CODE #######################
 
-# this proc should check the state of the volatile bats REGION_PRE, REGION_START
-# and REGION_END in a collection. If they do not exist, they should be created,
-# If they are not up to date for the given collection, then they should be recreated.
-PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
+@mil
+
+# fetch_region_index checks the state of the volatile bats RT_REGION_PRE, RT_REGION_START
+# and RT_REGION_END in a collection. If they do not exist, they should be created,
+# If they are not up to date for the given collection, then they should be 
+# recreated (using region_extract) based on the current bats in the working set.
+PROC fetch_region_index(
+                BAT[void,bat] ws, 
+                oid coll_oid) : BAT[void,bat]
+{
+    var err, coll_lock, index, runtime := empty_runtime;
+
+    # check whether lock is set...
+    if (coll_oid != TEMP_DOC) {
+         var runtime := ws.fetch(CONT_RUNTIME).fetch(coll_oid);
+         err := CATCH(coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST));
+         if (not(isnil(err))) ERROR(err);
+         lock_set(coll_lock); # never lock a collection inside the short lock
+    }
+
+    err := CATCH(index := __fetch_region_index(ws, runtime, coll_oid));
+    if (coll_oid != TEMP_DOC) {
+        lock_unset(coll_lock); # release lock acquired for updatable bats
+    }
+    if (not(isnil(err))) {
+        ERROR(err);
+    }
+    return index;
+}
+
+PROC __fetch_region_index(
+                BAT[void,BAT] ws,
+                BAT[lock,BAT] runtime,
+                oid coll_oid
+        ) : BAT[void,BAT]
+{
+    # check if runtime-region-index-bats exist
+    if (or(=(coll_oid, TEMP_DOC), 
+           not(runtime.exist(RT_REGION_PRE_LOCK)))
+       ) {
+        # do build index
+        __region_extract(ws, runtime, coll_oid, "lng");
+    }
+    if (=(runtime.find(RT_REGION_PRE_LOCK), empty_bat)) {
+        # do build index
+        __region_extract(ws, runtime, coll_oid, "lng");
+    }
+
+    # 0@0 = REGION_PRE, 1@0 = REGION_START, 2@0 = REGION_END
+    var result := bat(void,bat).seqbase(0@0); 
+    result.append(runtime.find(RT_REGION_PRE_LOCK));
+    result.append(runtime.find(RT_REGION_START_LOCK));
+    result.append(runtime.find(RT_REGION_END_LOCK));
+    return result;
+}
+
+
+# create indices per collection...
+# only add them afterwards to the collection...
+# the collection lock is there... we are free to read the bats...
+# ??? (euhm, do we need the lock, for extracting regions???)
+PROC __region_extract(BAT[oid, BAT] ws, BAT[lock,BAT] runtime, oid coll_oid, str tpe) : void {
+
+  # FIXME: create a separate address range for each document in the container
+
   # how-to: this region extract is used for the StandOff steps
   # if your regions are stored in different attributes than "start" and "end",
   # than modify the variables region_namespace, region_start_attr_tag, and
   # region_end_attr_tag
 
-  var XIRAF_nodes := my_ws.fetch(QN_LOC).fetch(i).reverse().leftjoin(
-                        my_ws.fetch(QN_PREFIX).fetch(i).ord_uselect(region_namespace).mirror());
+
+  var XIRAF_nodes := ws.fetch(QN_LOC).fetch(coll_oid).reverse().leftjoin(
+                        ws.fetch(QN_PREFIX).fetch(coll_oid).ord_uselect(region_namespace).mirror());
 
   var region_pre, region_start, region_end;
   var start_qn := nil, end_qn := nil;
   if (isnil(CATCH({ start_qn := XIRAF_nodes.find(region_start_attr_tag);
                     end_qn := XIRAF_nodes.find(region_end_attr_tag); }))) {
       # get all start attributes, then their numerical value, sort it, and then get the PRE's
-      var attr_attr := my_ws.fetch(ATTR_QN).find(i).ord_uselect(start_qn).mirror();
-      var attr_prop := attr_attr.leftjoin(my_ws.fetch(ATTR_PROP).find(i));
-      var val_start := [*tpe](attr_prop.leftjoin(my_ws.fetch(PROP_VAL).find(i))).reverse().sort();
-      # Wouter?: ATTR_OWN now points to PREs? (i.o. PRE?s)
-      var start_pre := val_start.leftjoin(my_ws.fetch(ATTR_OWN).find(i));
+      var attr_attr := ws.fetch(ATTR_QN).find(coll_oid).ord_uselect(start_qn).mirror();
+      var attr_prop := attr_attr.leftjoin(ws.fetch(ATTR_PROP).find(coll_oid));
+      var val_start := [*tpe](attr_prop.leftjoin(ws.fetch(PROP_VAL).find(coll_oid))).reverse().sort();
+      # Wouter?: ATTR_OWN now points to PREs? (coll_oid.o. PRE?s)
+      var start_pre := val_start.leftjoin(ws.fetch(ATTR_OWN).find(coll_oid));
 
       # now we have a table with a PRE column and a start (numerical) column in the right order
       var left_pre := start_pre.tmark(0@0);
       var left_start := start_pre.hmark(0@0);
 
       # go get the PRE numbers that have an end attribute
-      var right_attr := my_ws.fetch(ATTR_QN).find(i).ord_uselect(end_qn).hmark(0@0);
-      var right_pre := right_attr.leftjoin(my_ws.fetch(ATTR_OWN).find(i));
-      var right_end := [*tpe](right_attr.leftjoin(my_ws.fetch(ATTR_PROP).find(i)).leftjoin(my_ws.fetch(PROP_VAL).find(i)));
+      var right_attr := ws.fetch(ATTR_QN).find(coll_oid).ord_uselect(end_qn).hmark(0@0);
+      var right_pre := right_attr.leftjoin(ws.fetch(ATTR_OWN).find(coll_oid));
+      var right_end := [*tpe](right_attr.leftjoin(ws.fetch(ATTR_PROP).find(coll_oid)).leftjoin(ws.fetch(PROP_VAL).find(coll_oid)));
 
       # the region table is the intersection between start and end
       var left_right := left_pre.leftjoin(right_pre.reverse());
@@ -1330,105 +1392,30 @@ PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
 #       region_end := bat(void,INT).seqbase(0@0).append(getINT_MAX())
 #                                  .insert(region_right.leftjoin(right_end));
 #     }
+
       region_pre := region_left.leftjoin(left_pre);
       region_start := region_left.leftjoin(left_start);
       region_end := region_right.leftjoin(right_end);
   } else {
       # if there are either no start or end nodes, the result is empty
-      region_pre := bat(void,oid);
-      region_start := bat(void,monet_atomtbl.find(tpe));
-      region_end := bat(void,monet_atomtbl.find(tpe));
+      region_pre := bat(void,oid).seqbase(0@0);
+      region_start := bat(void,monet_atomtbl.find(tpe)).seqbase(0@0);
+      region_end := bat(void,monet_atomtbl.find(tpe)).seqbase(0@0);
   }
-  if (not(exist(my_ws.fetch(REGION_PRE), i))) {
-    my_ws.fetch(REGION_PRE).access(BAT_WRITE).insert(i,region_pre);
-    my_ws.fetch(REGION_START).access(BAT_WRITE).insert(i,region_start);
-    my_ws.fetch(REGION_END).access(BAT_WRITE).insert(i,region_end);
-  }
-  return my_ws;
+    if (runtime.exist(RT_REGION_PRE_LOCK)) {
+        runtime.replace(RT_REGION_PRE_LOCK,region_pre);
+        runtime.replace(RT_REGION_START_LOCK,region_start);
+        runtime.replace(RT_REGION_END_LOCK,region_end);
+    } else {
+        runtime.insert(RT_REGION_PRE_LOCK,region_pre);
+        runtime.insert(RT_REGION_START_LOCK,region_start);
+        runtime.insert(RT_REGION_END_LOCK,region_end);
+    }
 }
-ADDHELP("region_extract", "wouter", "Oct 2005",
+ADDHELP("__region_extract", "wouter", "Oct 2005",
 "PARAMETERS:\n\
 BAT[str,BAT] an active ws (Working Set)\n\
-oid i (index in the active working set)\n\
-str tpe (type of region-values (int or lng))\n\
-DESCRIPTION:\n\
-adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and fills them.",
-"pf_standoff");
-
-
-# Wouter: the PROC below is obsolete, region extraction is now done at query-time, and
-# not at shredding-time
-PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
-    # how-to: this region extract is used for the StandOff steps
-    # if your regions are stored in different attributes than "start" and "end",
-    # than modify the variables below
-    #printf("extracting regions from %s:%s and %s:%s\n",
-    #       region_namespace,region_start_attr_tag,
-    #       region_namespace,region_end_attr_tag);
-
-    my_ws.access(BAT_WRITE);
-    var XIRAF_nodes := my_ws.find("qn_loc").reverse().leftjoin(
-                          my_ws.find("qn_prefix").ord_uselect(region_namespace).mirror());
-
-    var region_pre, region_start, region_end;
-    var start_qn := nil, end_qn := nil;
-    if (isnil(CATCH({ start_qn := XIRAF_nodes.find(region_start_attr_tag);
-                      end_qn := XIRAF_nodes.find(region_end_attr_tag); }))) {
-        # get all start attributes, then their numerical value, sort it, and then get the pre's
-        var attr_attr := my_ws.find("attr_qn").ord_uselect(start_qn).mirror();
-        var attr_prop := attr_attr.leftjoin(my_ws.find("attr_prop"));
-        var val_start := [*tpe](attr_prop.leftjoin(my_ws.find("prop_val"))).reverse().sort();
-        var start_pre := val_start.leftjoin(my_ws.find("attr_own"));
-
-        # now we have a table with a pre column and a start (numerical) column in the right order
-        var left_pre := start_pre.tmark(0@0);
-        var left_start := start_pre.hmark(0@0);
-
-        # go get the pre numbers that have an end attribute
-        var right_attr := my_ws.find("attr_qn").ord_uselect(end_qn).hmark(0@0);
-        var right_pre := right_attr.leftjoin(my_ws.find("attr_own"));
-        var right_end := [*tpe](right_attr.leftjoin(my_ws.find("attr_prop")).leftjoin(my_ws.find("prop_val")));
-
-        # the region table is the intersection between start and end
-        var left_right := left_pre.leftjoin(right_pre.reverse());
-        var region_left := left_right.hmark(0@0);
-        var region_right := left_right.tmark(0@0);
-
-## TODO: FIXME : the following code does not work, but should assign
-##               the largest possible region to the document-node
-#       if (=(tpe,"lng")) {
-#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
-#                                   .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,lng).seqbase(0@0).append(getLNG_MIN())
-#                                     .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,lng).seqbase(0@0).append(getLNG_MAX())
-#                                   .insert(region_right.leftjoin(right_end));
-#       } else {
-#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
-#                                  .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,INT).seqbase(0@0).append(getINT_MIN())
-#                                    .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,INT).seqbase(0@0).append(getINT_MAX())
-#                                  .insert(region_right.leftjoin(right_end));
-#       }
-        region_pre := region_left.leftjoin(left_pre);
-        region_start := region_left.leftjoin(left_start);
-        region_end := region_right.leftjoin(right_end);
-    } else {
-        # if there are either no start or end nodes, the result is empty
-        region_pre := bat(void,oid);
-        region_start := bat(void,monet_atomtbl.find(tpe));
-        region_end := bat(void,monet_atomtbl.find(tpe));
-    }
-    printf("# extracted %d regions\n",region_pre.count());
-    my_ws.insert("_region_pre",region_pre);
-    my_ws.insert("_region_start",region_start);
-    my_ws.insert("_region_end",region_end);
-    return my_ws;
-}
-ADDHELP("region_extract", "wouter", "Oct 2005",
-"PARAMETERS:\n\
-BAT[str,BAT] ws (Working Set)\n\
+oid coll_oid (index in the active working set)\n\
 str tpe (type of region-values (int or lng))\n\
 DESCRIPTION:\n\
 adds three BATs to the working set REGION_PRE, REGION_START, and REGION_END and fills them.",
