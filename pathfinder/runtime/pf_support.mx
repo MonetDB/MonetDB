@@ -765,6 +765,11 @@ PROC ll_htordered_unique_thetajoin( int mode,
     if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
         ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
 
+    # trivial case; not handled below as log2() cannot cope with max() of an empty BAT being NIL
+    if ((lc = 0LL) or (rc = 0LL)) {
+        return bat(oid, oid, 0).access(BAT_READ);
+    }
+
     # in case of integer equi-join, we shift iter and value together in a lng and do a single join on that
     if ((mode = EQ) and or(or((tpe = int), (tpe = oid)), (tpe = lng)))  {
         var iter_max := 32;
