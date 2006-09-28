@@ -3360,25 +3360,11 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 	case SQL_NEXT:{
 		sql_subtype *str_t = sql_bind_localtype("str");
 		sql_subfunc *f;
-
 		char *seq = se->data.sval;
-		int len = _strlen(seq);
-		/* NOTE: this is a dirty hack to disable the existence check on
-		 *       inline generated sequences, as they don't exist yet,
-		 *       but eventually will be.  We recognise this situation if
-		 *       the sequence name ends with triple double quotes (""").
-		 */
-		if (
-			seq[len - 3] != '"' &&
-			seq[len - 2] != '"' &&
-			seq[len - 1] != '"' &&
-			!sql_find_seq(sql, seq))
-		{
+
+		if ( !find_sql_sequence(sql->session->schema, seq)) 
 			return sql_error(sql, 02, "NEXT VALUE FOR: "
 			                 "no such sequence '%s'", seq);
-		}
-		
-
 		f = sql_bind_func(NULL, "next_value_for", str_t, NULL);
 		assert(f);
 		return exp_unop( exp_atom_str(seq), f);

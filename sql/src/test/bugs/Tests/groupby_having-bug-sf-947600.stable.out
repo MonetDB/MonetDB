@@ -24,19 +24,17 @@ Over..
 [ "args",	"idxs",	6	]
 [ "args",	"keycolumns",	2	]
 [ "args",	"keys",	6	]
-[ "args",	"sequences",	1	]
-[ "columns",	"sequences",	1	]
+[ "args",	"sequences",	2	]
 [ "functions",	"args",	2	]
 [ "functions",	"columns",	2	]
 [ "functions",	"idxs",	4	]
 [ "functions",	"keycolumns",	2	]
 [ "functions",	"keys",	4	]
-[ "functions",	"sequences",	1	]
+[ "functions",	"sequences",	3	]
 [ "idxs",	"columns",	8	]
 [ "idxs",	"idxs",	4	]
 [ "idxs",	"keycolumns",	3	]
 [ "idxs",	"keys",	4	]
-[ "idxs",	"sequences",	2	]
 [ "keycolumns",	"columns",	2	]
 [ "keycolumns",	"idxs",	1	]
 [ "keycolumns",	"keycolumns",	4	]
@@ -45,20 +43,23 @@ Over..
 [ "keys",	"idxs",	12	]
 [ "keys",	"keycolumns",	3	]
 [ "keys",	"keys",	5	]
-[ "keys",	"sequences",	2	]
+[ "sequences",	"columns",	2	]
+[ "sequences",	"idxs",	4	]
+[ "sequences",	"keycolumns",	2	]
+[ "sequences",	"keys",	4	]
 # sys.tables # table_name
 # name # name
 # varchar # type
 # 10 # length
 [ "functions"	]
 [ "args"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
 [ "sequences"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
 # sys.tables # table_name
 # name # name
 # varchar # type
@@ -69,10 +70,10 @@ Over..
 # 10 # length
 [ "functions"	]
 [ "args"	]
+[ "sequences"	]
 [ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-[ "sequences"	]
 # sys.tables # table_name
 # name # name
 # varchar # type

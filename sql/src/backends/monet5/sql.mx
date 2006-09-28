@@ -93,6 +93,10 @@ command next_value( sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
+command restart( sequence:str, start:lng ):lng
+address mvc_restart_seq
+comment "restart the sequence with value start";
+
 command bind_dbat(sname:str, tname:str, access:int):bat[:any_1,:any_2]
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
@@ -795,17 +799,45 @@ sql_variables(int *res)
 }
 
 str
-mvc_next_value(lng *res, str *seq)
+mvc_next_value(lng *res, str *seqname)
 {
 	mvc *m;
 	str msg = getContext(&m, NULL);
+	sql_schema *s;
 
 	if (msg)
 		return msg;
-	if (sql_next_value(m->session->tr, *seq, res))
-		return MAL_SUCCEED;
+ 	s = m->session->schema;
+	if (s) {
+		sql_sequence *seq = find_sql_sequence(s, *seqname);
+
+		if (seq && seq_next_value(seq, res))
+			return MAL_SUCCEED;
+	}
 	return throwException(MALEXCEPTION, "sql.next_value", "error");
 }
+
+str
+mvc_restart_seq(lng *res, str *seqname, lng *start)
+{
+	mvc *m;
+	str msg = getContext(&m, NULL);
+	sql_schema *s;
+
+	if (msg)
+		return msg;
+ 	s = m->session->schema;
+	if (s) {
+		sql_sequence *seq = find_sql_sequence(s, *seqname);
+
+		if (seq) {
+			*res = sql_trans_sequence_restart(m->session->tr, seq, *start);
+			return MAL_SUCCEED;
+		}
+	}
+	return throwException(MALEXCEPTION, "sql.restart", "error");
+}
+
 
 
 BAT *

@@ -433,7 +433,6 @@ int yydebug=1;
 	opt_seq_params
 	opt_alt_seq_params
 	serial_opt_params
-	opt_start
 	opt_restart
 	triggered_action
 	opt_referencing_list
@@ -480,6 +479,7 @@ int yydebug=1;
 	transaction_mode
 	transaction_mode_list
 	_transaction_mode_list
+	opt_start
 	opt_increment
 	opt_min
 	opt_max
@@ -513,7 +513,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
+	IDENT aTYPE ALIAS AGGR sqlINT HEXADECIMAL INTNUM APPROXNUM USING
 	ALL ANY SOME GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
@@ -521,7 +521,7 @@ int yydebug=1;
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
-	LEX_ERROR HEXADECIMAL
+	LEX_ERROR 
 %token	USER CURRENT_USER SESSION_USER LOCAL
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT
@@ -1079,7 +1079,7 @@ opt_seq_params:
 	opt_cache
 	opt_cycle
 	{ dlist *l = L();
-	  append_list(l, $1);
+	  append_int(l, $1);
 	  append_int(l, $2);
 	  append_int(l, $3);
 	  append_int(l, $4);
@@ -1108,38 +1108,11 @@ opt_alt_seq_params:
 ;
 
 /*
- * opt_start returns a list consisting of:
- * - int: indicating the type of symbol
- *   * -1  absent/empty
- *   *  0  no argument (only for restart)
- *   *  1  argument is a subquery
- *   *  2  argument is simple int
- * - symbol: the symbol
+ * opt_start returns sequence start number 
  */
 opt_start:
-	/* empty */				{
-								dlist *l = L();
-								append_int(l, -1);
-								$$ = l;
-							}
-  | START WITH				{
-								mvc *m = (mvc*)parm;
-								m->scanner.as = m->scanner.yycur;
-							}
-				subquery	{
-								mvc *m = (mvc*)parm;
-								dlist *l = L();
-								append_int(l, 1);
-								append_symbol(l, $4);
-								$$ = l;
-								m->scanner.view_end = m->scanner.yycur;
-							}
-  |	START WITH nonzero		{
-								dlist *l = L();
-								append_int(l, 2);
-								append_int(l, $3);
-								$$ = l;
-							}
+   	/* empty */		{ $$ = 1; }
+  |	START WITH nonzero 	{ $$ = $3; }
   ;
 
 /*
@@ -1364,21 +1337,18 @@ column_def:
 			mvc *m = (mvc*)parm;
 			/* note: sql_next_seq_name uses sa_alloc */
 			str sn = sql_next_seq_name(m);
+			dlist *p; /* primary key */
 			/* sequence generation code */
 			dlist *l = L();
 			/* finally all the options */
 			dlist *o = L();
-			dlist *p = L();
 			/* the name of the sequence */
 			append_list(l, append_string(L(), sn));
 			/* ultra dirty: inline 'integer' type generation */
 			sql_find_subtype(&it, "int", 32, 0);
 			append_type(l, &it);
-			/* create list with int 2 int 1 to indicate start from 1 */
-			append_int(p, 2);
-			append_int(p, 1);
 			/* finally all the options (no defaults here) */
-			append_list(o, p); /* start */
+			append_int(o, 1); /* start */
 			append_int(o, 1); /* increment */
 			append_int(o, 1); /* min */
 			append_int(o, 0); /* max */
@@ -1497,17 +1467,13 @@ generated_column:
 		dlist *l = L();
 		/* finally all the options */
 		dlist *o = L();
-		dlist *p = L();
 		/* the name of the sequence (not known here) */
 		append_list(l, append_string(L(), sn));
 		/* ultra dirty: inline 'integer' type generation */
 		sql_find_subtype(&it, "int", 32, 0);
 		append_type(l, &it);
-		/* create list with int 2 int 1 to indicate start from 1 */
-		append_int(p, 2);
-		append_int(p, 1);
 		/* finally all the options (no defaults here) */
-		append_list(o, p); /* start */
+		append_int(o, 1); /* start */
 		append_int(o, 1); /* increment */
 		append_int(o, 1); /* min */
 		append_int(o, 0); /* max */
@@ -1528,19 +1494,14 @@ generated_column:
 
 serial_opt_params:
 	/* empty: return the defaults */
-	{ dlist *l = L();
-	  dlist *p = L();
-	  /* create list with int 2 int 1 to indicate start from 1 */
-	  append_int(p, 2);
-	  append_int(p, 1);
+	{ $$ = L();
 	  /* finally all the options (no defaults here) */
-	  append_list(l, p); /* start */
-	  append_int(l, -1); /* increment */
-	  append_int(l, -1); /* min */
-	  append_int(l, -1); /* max */
-	  append_int(l, -1); /* cache */
-	  append_int(l, 0);  /* cycle */
-	  $$ = l;
+	  append_int($$, 1); /* start */
+	  append_int($$, -1); /* increment */
+	  append_int($$, -1); /* min */
+	  append_int($$, -1); /* max */
+	  append_int($$, -1); /* cache */
+	  append_int($$, 0);  /* cycle */
 	}
   |	'(' opt_seq_params ')'	{ $$ = $2; }
  ;
@@ -3338,34 +3299,30 @@ user:
  ;
 
 literal:
-    string
-		{ char *s = sql2str($1);
+    string 	{ char *s = sql2str($1);
 		  int len = _strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
- |  HEXADECIMAL {
-		  int len = _strlen($1), i = 2, err = 0;
+
+ |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
 		  char buf[BUFSIZ];
 		  char * hexa = $1;
 	 	  sql_subtype t;
 		  long res = 0;
+
 		  while(i<len)
 		  {
 			res <<= 5;
 			if('0'<=hexa[i] && hexa[i]<='9')
 				res = res + (hexa[i] - '0');
-				
 			else if('A'<=hexa[i] && hexa[i]<='F')
-				res = res + (hexa[i] - '7');
+				res = res + (hexa[i] - 'A' + 10);
 			else if('a'<=hexa[i] && hexa[i]<='f')
-				res = res + (hexa[i] - 'W');
+				res = res + (hexa[i] - 'a' + 10);
 			else
-			err = 1; 
+				err = 1; 
 		  	i++;
-		  }
-		  if (!err) {
-		  	  sql_find_subtype(&t, "bigint", 64, 0 );
 		  }
 		  if(err){
 			snprintf(buf, BUFSIZ, "invalid hexadecimal number (%s)", $1);
@@ -3373,8 +3330,9 @@ literal:
 			$$ = NULL;
 			YYABORT;
 		  } else{
+		  	sql_find_subtype(&t, "bigint", 64, 0 );
 			$$ = _newAtomNode( atom_int(&t, res));
-		}
+		  }
 		}
  |  sqlINT
 		{ int digits = _strlen($1), err = 0, len = sizeof(lng);

@@ -108,6 +108,22 @@ find_sql_table(sql_schema *s, char *tname)
 }
 
 node *
+find_sql_sequence_node(sql_schema *s, char *sname)
+{
+	return cs_find_name(&s->seqs, sname);
+}
+
+sql_sequence *
+find_sql_sequence(sql_schema *s, char *sname)
+{
+	node *n = find_sql_sequence_node(s, sname);
+
+	if (n)
+		return n->data;
+	return NULL;
+}
+
+node *
 find_sql_schema_node(sql_trans *t, char *sname)
 {
 	return cs_find_name(&t->schemas, sname);

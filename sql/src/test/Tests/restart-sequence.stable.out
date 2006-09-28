@@ -10,24 +10,22 @@ stdout of test 'restart-sequence` in directory 'src/test` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 
-# 12:37:20 >  
-# 12:37:20 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < restart-sequence.sql
-# 12:37:20 >  
+# 20:40:09 >  
+# 20:40:09 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32546  < restart-sequence.sql
+# 20:40:09 >  
 
-# sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences # table_name
-# name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
-# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	20,	20,	20,	20,	20,	0,	20,	0 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	0,	false	]
-#  # table_name
-# mytest # name
+# sys.q,	sys.s,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q # table_name
+# name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+# 6,	3,	1,	1,	1,	1,	1,	5 # length
+[ "mytest",	"sys",	1,	0,	0,	1,	1,	false	]
+# . # table_name
+# next_value_for_mytest # name
 # bigint # type
 # 20 # length
 [ 1	]
@@ -36,16 +34,16 @@ Over..
 # bigint # type
 # 20 # length
 [ 2	]
-# sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences # table_name
-# name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
-# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	1,	1,	1,	1,	1,	5,	1,	5 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	3,	true	]
-# sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
-# name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
-# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	1,	1,	1,	1,	1,	5,	2,	5 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	10,	true	]
+# sys.q,	sys.s,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q # table_name
+# name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+# 6,	3,	1,	1,	1,	1,	1,	5 # length
+[ "mytest",	"sys",	1,	0,	0,	1,	1,	false	]
+# sys.q,	sys.s,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q # table_name
+# name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+# 6,	3,	2,	1,	1,	1,	1,	5 # length
+[ "mytest",	"sys",	10,	0,	0,	1,	1,	false	]
 # . # table_name
 # mytest # name
 # bigint # type
@@ -56,13 +54,13 @@ Over..
 # bigint # type
 # 20 # length
 [ 11	]
-# sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences,	sequences # table_name
-# name,	schema,	start,	increment,	cache,	minvalue,	maxvalue,	cycle,	cached,	called # name
-# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-# 6,	3,	1,	1,	1,	1,	1,	5,	2,	5 # length
-[ "mytest",	"sys",	1,	1,	1,	0,	0,	false,	12,	true	]
+# sys.q,	sys.s,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q,	sys.q # table_name
+# name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+# varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+# 6,	3,	2,	1,	1,	1,	1,	5 # length
+[ "mytest",	"sys",	10,	0,	0,	1,	1,	false	]
 
-# 12:37:20 >  
-# 12:37:20 >  Done.
-# 12:37:20 >  
+# 20:40:09 >  
+# 20:40:09 >  Done.
+# 20:40:09 >  
 

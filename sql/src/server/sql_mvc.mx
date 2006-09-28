@@ -196,7 +196,6 @@ extern void stack_set_number(mvc *sql, char *name, lng v);
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
-#include "sql_sequence.h"
 #include "sql_privileges.h"
 
 static int mvc_debug = 0;
@@ -252,7 +251,6 @@ mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
 
-		sql_create_sequences(m, s);
 		sql_create_env(m, s);
 		sql_create_privileges(m, s);
 

@@ -652,13 +652,14 @@ number(mvc * c, int cur)
 	lc->started = 1;
 	/* TODO start with . */
 	if(cur == '0' && (cur = scanner_getc(lc)) == 'x'){
-			while ((cur = scanner_getc(lc)) != EOF 
-				&& 
-				(isdigit(cur) || (cur >= 'A' && cur <='F') || (cur >= 'a' && cur <= 'f'))
-			)
-				token = HEXADECIMAL; 
-	}
-	else{
+		while ((cur = scanner_getc(lc)) != EOF && 
+		       (isdigit(cur) || 
+		       (cur >= 'A' && cur <= 'F') || 
+		       (cur >= 'a' && cur <= 'f'))) 	
+			;
+		token = HEXADECIMAL; 
+	} else {
+		token = sqlINT;
 		if(isdigit(cur))
 			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 				;

@@ -594,7 +594,7 @@ BEGIN
     DECLARE jd int, l int, n int,i int, j int,
 	    rem real, days bigint, d int ,m int,
 	    y int, hr int, min int, sec float; 
-    SET jd = mjd + 2400000.5 + .5;   -- convert from MDJ to JD  (the .5 fudge makes it work).
+    SET jd = mjd + 2400000.5 + 0.5;   -- convert from MDJ to JD  (the .5 fudge makes it work).
     SET l = jd + 68569; 
     SET n = ( 4 * l ) / 146097;
     SET l = l - ( 146097 * n + 3 ) / 4;

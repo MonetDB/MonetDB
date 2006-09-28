@@ -76,6 +76,9 @@ access after being logged in.
 
 	.COMMAND mvc_next_value( mvc m, str sequence ) : lng = mvc_next_value;
 		"return the next value of the sequence"
+
+	.COMMAND mvc_restart_seq( mvc m, str sequence, lng start ) : lng = mvc_restart_seq;
+		"restart the sequence with value start"
 @-
 The updates against the relational tables are collected in separate
 BATs until transaction commit. 
@@ -400,11 +403,36 @@ getVariable(ptr value, int *type, mvc* M, str varname)
 }
 
 
+/* TODO pass also the schema name */
 int
-mvc_next_value(lng *res, mvc *c, str seq)
+mvc_next_value(lng *res, mvc *C, str seqname)
 {
-	if (sql_next_value((*(mvc **) c)->session->tr, seq, res))
-		return GDK_SUCCEED;
+	mvc *c = *(mvc**)C;
+	sql_schema *s = c->session->schema;
+
+	if (s) {
+		sql_sequence *seq = find_sql_sequence(s, seqname);
+
+		if (seq && seq_next_value(seq, res))
+			return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int
+mvc_restart_seq(lng *res, mvc *C, str seqname, lng *start)
+{
+	mvc *c = *(mvc**)C;
+	sql_schema *s = c->session->schema;
+
+	if (s) {
+		sql_sequence *seq = find_sql_sequence(s, seqname);
+
+		if (seq) {
+			*res = sql_trans_sequence_restart(c->session->tr, seq, *start);
+			return GDK_SUCCEED;
+		}
+	}
 	return GDK_FAIL;
 }
 
@@ -1252,6 +1280,9 @@ proc log2(int i) : int {
 var myc := mvc(ptr(nil));
 proc next_value( str v ) : lng {
 	return mvc_next_value(myc, v);
+}
+proc restart( str seq, lng v ) : lng {
+	return mvc_restart_seq(myc, seq, v);
 }
 
 proc SQLgroup(BAT[oid,any] a) : grp {
