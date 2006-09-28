@@ -197,7 +197,7 @@ ll_upwards_@1(                            /* OUTPUT: */
   	    if (pre > limit) break; /* SANITY */
             root = pre;
 
-        } else if (context[cur].pre < stack[depth-1] + pre_size[stack[depth-1]]) {
+        } else if (context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
 
             /* none of the above, but next context node is in the descendants of the parent */
             pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* go to the next sibling */
