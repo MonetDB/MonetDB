@@ -793,7 +793,7 @@ PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
  * Constructor for the last item of a parameter list
  * related to recursion
  */
-PFla_op_t *PFla_rec_nil ();
+PFla_op_t *PFla_rec_nil (void);
 
 /**
  * Constructor for the arguments of a parameter (seed and recursion
