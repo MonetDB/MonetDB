@@ -4387,7 +4387,7 @@ inc_refctr (PFpa_op_t *n)
     /* count number of incoming edges */
     n->refctr++;
 
-    /* only descent once */
+    /* only descend once */
     if (SEEN(n))
         return;
     else
