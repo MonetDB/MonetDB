@@ -30,3 +30,5 @@ wrong_result_duplication.SF-1549292
 type_error_with_typeswitch.SF-1559355
 type_errors_with_fn-name.SF-1563354
 fn-name_on_text_nodes.SF-1564964
+complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868
+complex-XQuery-batbat_lng_add_inplace-error-KO.SF-1562868
