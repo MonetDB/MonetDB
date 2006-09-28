@@ -1800,13 +1800,19 @@ changed already made to the BATs in the working set.",
 
 PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
 {
+  # [void,oid] list of all conts of affected documents
+  var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
+
+  # check that all containers are updatable (i.e. that none are read-only)
+  if ([ttype](affected_conts.join(ws.fetch(MAP_PID))).uselect(void).count() > 0) {
+    ERROR("updating read-only document.\n");
+  }
+
+  # this is where we're going to collect all changes
   var replacements := new(bat, bat);
 
   # extract the commands from the update tape 
   var update_cmd := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values);
-
-  # [void,oid] list of all conts of affected documents
-  var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
 
   {
     var rename_update := update_cmd.ord_uselect(UPDATE_RENAME);
