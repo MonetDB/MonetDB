@@ -21,7 +21,8 @@ Over..
 # 19:23:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=32302 type_errors_with_fn-name.SF-1563354.xq
 # 19:23:48 >  
 
-! Expected / Correct output needs to be provided / approved !
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>movies,movie,title,year</XQueryResult>
 
 # 19:23:48 >  
 # 19:23:48 >  Done.
