@@ -288,8 +288,10 @@ xml_literal (PFalg_atom_t a)
            a.val.bln ?
                "true" : "false");
     else if (a.type == aat_qname)
-        PFarray_printf (s, "%s",
-                PFqname_str (a.val.qname));
+        PFarray_printf (
+           s, "<value type=\"%s\">%s</value>",
+           atomtype[a.type],
+           PFqname_str (a.val.qname));
     else
         PFarray_printf (s, "<value type=\"node\"/>");
 
