@@ -870,8 +870,10 @@ main(int argc, char **argv)
 		/* stream xml document into the server */
 		if (input && strcmp(language, "xquery") == 0) {
 			mapi_stream_into(mid, input, colname);
+			c = doFile(mid, NULL, strcmp(language, "xquery") == 0);
+		} else {
+			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error, strcmp(language, "xquery") == 0);
 		}
-		c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error, strcmp(language, "xquery") == 0);
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
 			deinit_readline();
