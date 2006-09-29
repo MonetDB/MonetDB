@@ -3311,26 +3311,35 @@ literal:
 	 	  sql_subtype t;
 		  long res = 0;
 
-		  while(i<len)
+		  while (i<len)
 		  {
 			res <<= 5;
-			if('0'<=hexa[i] && hexa[i]<='9')
+			if ('0'<= hexa[i] && hexa[i] <= '9')
 				res = res + (hexa[i] - '0');
-			else if('A'<=hexa[i] && hexa[i]<='F')
+			else if ('A' <= hexa[i] && hexa[i] <= 'F')
 				res = res + (hexa[i] - 'A' + 10);
-			else if('a'<=hexa[i] && hexa[i]<='f')
+			else if ('a' <= hexa[i] && hexa[i] <= 'f')
 				res = res + (hexa[i] - 'a' + 10);
 			else
 				err = 1; 
 		  	i++;
 		  }
-		  if(err){
-			snprintf(buf, BUFSIZ, "invalid hexadecimal number (%s)", $1);
+		
+		  if ( i >= 2 && i <= 6)
+		  	sql_find_subtype(&t, "smallint", 16, 0);
+		  else if ( i > 6 && i <= 10)
+		  	sql_find_subtype(&t, "int", 32, 0);
+		  else if ( i > 10 && i <= 18)
+		  	sql_find_subtype(&t, "bigint", 64, 0);
+		  else
+			err = 1;
+		  
+		  if (err) {
+			snprintf(buf, BUFSIZ, "invalid hexadecimal number or hexadecimal too large (%s)", $1);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
-		  } else{
-		  	sql_find_subtype(&t, "bigint", 64, 0 );
+		  } else {
 			$$ = _newAtomNode( atom_int(&t, res));
 		  }
 		}
