@@ -197,7 +197,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	schema_id = sql_find_schema(m, "sys");
 	assert(schema_id >= 0);
 
-	table_insert(m->session->tr, uinfo, monetdbuser, "MonetDB Administrator", &schema_id);
+	table_insert(m->session->tr, uinfo, monetdbuser, "MonetDB Admin", &schema_id);
 }
 
 static int
