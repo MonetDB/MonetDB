@@ -10,10 +10,8 @@ stdout of test 'except-union-intersect-bug-sf-1146079` in directory 'src/test/bu
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 
@@ -206,34 +204,34 @@ START TRANSACTION;
 Operation successful
 
 SELECT class FROM a EXCEPT SELECT 16; -- all but 16
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    17 |
 |     2 |
 |    11 |
 |    18 |
-+-------+
++--------+
 4 rows
 
 SELECT class FROM a UNION SELECT 16; -- all with 16 (distinct so invisible)
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    17 |
 |     2 |
 |    16 |
 |    11 |
 |    18 |
-+-------+
++--------+
 5 rows
 
 SELECT class FROM a INTERSECT SELECT 16; -- just 16
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    16 |
-+-------+
++--------+
 1 row
 
 ROLLBACK;
@@ -245,9 +243,9 @@ START TRANSACTION;
 Operation successful
 
 SELECT * FROM a EXCEPT SELECT * FROM b; -- should be last 50% of a
-+----------+-------+
++----------+--------+
 | property | class |
-+==========+=======+
++==========+========+
 |       29 |    16 |
 |       12 |    16 |
 |       13 |    11 |
@@ -256,13 +254,13 @@ SELECT * FROM a EXCEPT SELECT * FROM b; -- should be last 50% of a
 |       23 |    18 |
 |       24 |    18 |
 |       15 |    16 |
-+----------+-------+
++----------+--------+
 8 rows
 
 SELECT * FROM a UNION SELECT * FROM b; -- should be a + last 50% of b
-+----------+-------+
++----------+--------+
 | property | class |
-+==========+=======+
++==========+========+
 |        1 |    17 |
 |       21 |    17 |
 |       22 |    17 |
@@ -286,13 +284,13 @@ SELECT * FROM a UNION SELECT * FROM b; -- should be a + last 50% of b
 |       24 |    15 |
 |       23 |    17 |
 |       14 |    15 |
-+----------+-------+
++----------+--------+
 23 rows
 
 SELECT * FROM a INTERSECT SELECT * FROM b; -- should be first 50% of a
-+----------+-------+
++----------+--------+
 | property | class |
-+==========+=======+
++==========+========+
 |        1 |    17 |
 |       21 |    17 |
 |       22 |    17 |
@@ -301,7 +299,7 @@ SELECT * FROM a INTERSECT SELECT * FROM b; -- should be first 50% of a
 |        4 |    16 |
 |        5 |    16 |
 |        6 |    16 |
-+----------+-------+
++----------+--------+
 8 rows
 
 ROLLBACK;
@@ -314,9 +312,9 @@ START TRANSACTION;
 Operation successful
 
 SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in output!)
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    17 |
 |    17 |
 |    17 |
@@ -332,13 +330,13 @@ SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in out
 |    16 |
 |    16 |
 |    16 |
-+-------+
++--------+
 15 rows
 
 SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    17 |
 |    17 |
 |    17 |
@@ -356,15 +354,15 @@ SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
 |    18 |
 |    16 |
 |    16 |
-+-------+
++--------+
 17 rows
 
 SELECT class FROM a INTERSECT ALL SELECT 16; -- just one 16 (!)
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    16 |
-+-------+
++--------+
 1 row
 
 ROLLBACK;
@@ -378,9 +376,9 @@ START TRANSACTION;
 Operation successful
 
 SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
-+----------+-------+
++----------+--------+
 | property | class |
-+==========+=======+
++==========+========+
 |       29 |    16 |
 |       12 |    16 |
 |       13 |    11 |
@@ -389,13 +387,13 @@ SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
 |       23 |    18 |
 |       24 |    18 |
 |       15 |    16 |
-+----------+-------+
++----------+--------+
 8 rows
 
 SELECT class FROM a EXCEPT ALL SELECT class FROM b; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    11 |
 |    18 |
 |    18 |
@@ -404,13 +402,13 @@ SELECT class FROM a EXCEPT ALL SELECT class FROM b; -- a minus the elements from
 |    16 |
 |    16 |
 |    16 |
-+-------+
++--------+
 8 rows
 
 SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
-+----------+-------+
++----------+--------+
 | property | class |
-+==========+=======+
++==========+========+
 |        1 |    17 |
 |       21 |    17 |
 |       22 |    17 |
@@ -442,13 +440,13 @@ SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
 |       24 |    15 |
 |       23 |    17 |
 |       14 |    15 |
-+----------+-------+
++----------+--------+
 31 rows
 
 SELECT * FROM a INTERSECT ALL SELECT * FROM b; -- first 50% of a
-+----------+-------+
++----------+--------+
 | property | class |
-+==========+=======+
++==========+========+
 |        1 |    17 |
 |       21 |    17 |
 |       22 |    17 |
@@ -457,13 +455,13 @@ SELECT * FROM a INTERSECT ALL SELECT * FROM b; -- first 50% of a
 |        4 |    16 |
 |        5 |    16 |
 |        6 |    16 |
-+----------+-------+
++----------+--------+
 8 rows
 
 SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
-+-------+
++--------+
 | class |
-+=======+
++========+
 |    17 |
 |    17 |
 |    17 |
@@ -472,7 +470,7 @@ SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are bo
 |    16 |
 |    16 |
 |    16 |
-+-------+
++--------+
 8 rows
 
 ROLLBACK;
