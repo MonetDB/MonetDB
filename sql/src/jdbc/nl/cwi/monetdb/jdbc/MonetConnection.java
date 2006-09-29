@@ -1169,7 +1169,7 @@ public class MonetConnection implements Connection {
 			// caller doesn't know it too
 			if (name == null) {
 				name = "doc_" + System.currentTimeMillis() + ".xml";
-				addWarning("adding new document with name " + name);
+				addWarning("adding new document with name: " + name);
 			}
 			sendControlCommand("copy " + name);
 			// the server is waiting for data to come
