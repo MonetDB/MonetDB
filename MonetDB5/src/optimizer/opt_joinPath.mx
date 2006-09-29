@@ -138,17 +138,15 @@ For the time being, we use a simplistic model, based
 on the assumption that most joins are foreign key joins anyway.
 @c
 size_t
-ALGjoinEstimate(BAT *l, BAT *r)
+ALGjoinCost(BAT *l, BAT *r)
 {
 	size_t lc, rc;
 
 	lc = BATcount(l);
 	rc = BATcount(r);
-	if( l->ttype== TYPE_void )
-		return rc;
-	if( r->htype== TYPE_void )
-		return lc;
-	return MIN(lc, rc);
+	if( l->ttype== TYPE_void || r->htype== TYPE_void )
+		return MIN(lc,rc);
+	return lc * rc;
 }
 @-
 The join path type analysis should also be done at run time,
@@ -181,9 +179,9 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* solve the join by pairing the smallest first */
 	while (top > 2) {
 		j = 0;
-		estimate = ALGjoinEstimate(joins[0],joins[1]);
+		estimate = ALGjoinCost(joins[0],joins[1]);
 		for (i = 1; i < top - 1; i++) {
-			e = ALGjoinEstimate(joins[i], joins[i + 1]);
+			e = ALGjoinCost(joins[i], joins[i + 1]);
 			if (e < estimate) {
 				estimate = e;
 				j = i;
@@ -192,24 +190,25 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef OPTIMIZER_DEBUG
 		printf("join %d and %d\n", joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
-		b = BATjoin(joins[j], joins[j + 1], estimate);
+		b = BATjoin(joins[j], joins[j + 1], 
+				MAX(BATcount(joins[j]),BATcount(joins[j+1]))/2 );
 		BBPreleaseref(joins[j]->batCacheid);
 		BBPreleaseref(joins[j + 1]->batCacheid);
 		joins[j] = b;
-		for (i = j + 1; i < top; i++)
+		for (i = j + 1; i < top-1; i++)
 			joins[i] = joins[i + 1];
 		top--;
 	}
 #ifdef OPTIMIZER_DEBUG
-	printf("join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
+	printf("final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
-	estimate = BATcount(joins[0]);
-	b = BATjoin(joins[0], joins[1], estimate);
+	b = BATjoin(joins[0], joins[1], 
+				MAX(BATcount(joins[0]),BATcount(joins[1]))/2 );
 	BBPreleaseref(joins[0]->batCacheid);
 	BBPreleaseref(joins[1]->batCacheid);
 
 	BBPkeepref(b->batCacheid);
 	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
-	return NULL;
+	return MAL_SUCCEED;
 }
 @}
