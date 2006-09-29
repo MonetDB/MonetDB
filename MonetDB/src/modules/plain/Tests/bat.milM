@@ -213,4 +213,94 @@ b2 := [swizzle](m_lng_void, map);
 m_void_oid.slice(65430,65450).print(b1,m_lng_void,b2);
 print(count([!=](b1,b2).uselect(true)));
 
+########################################### 
+# test for isolate
+#
+########################################### 
+
+# create large bats bc (chr) and bl (lng)
+var bc, bl; 
+if (isnil(CATCH(count(bat("bc"))))) {
+  bc := bat("bc");
+  bl := bat("bl");
+} else { 
+  var bak := debugmask();
+  debugmask(0);
+  var j := 0;
+  var ac := bat(void,chr,128).seqbase(0@0);
+  var al := bat(void,lng,128).seqbase(0@0);
+  while(j < 128) {
+    ac.append(chr(j));
+    al.append(lng(j));
+    j :+= 1;
+  }
+  var i := 0LL;
+  var n := lng(100*REMAP_PAGE_SIZE);
+  bc := bat(void,chr,n - 1LL).mmap(1).seqbase(0@0).rename("bc");
+  bl := bat(void,lng,n - 1LL).mmap(1).seqbase(0@0).rename("bl");
+  while((i :+= 128LL) <= n) {
+     bc.append(ac);
+     bl.append(al);
+  }
+  bc.persists(true).access(BAT_READ);
+  bl.persists(true).access(BAT_READ);
+  debugmask(bak);
+}
+
+# create copy-on-write (rcopy) and real copies
+var mc := rcopy(bc);
+var ml := rcopy(bl);
+var cc := copy(bc);
+var cl := copy(bl);
+
+# experiment-0: change masters without isolation
+var sl0 := [%]([+](sample(sample(cl,2000),20),1LL),128LL);
+var sc0 := [chr](sl0);
+var is0 := sc0.hmark(0@0);
+
+bc.replace(sc0,true);
+bl.replace(sl0,true);
+
+# produces undesired results
+[=](mc,cc).histogram().find(false).print(); #20 (rcopy has changed by changing the master!)
+[=](mc,bc).histogram().exist(false).print(); #0
+[=](ml,cl).histogram().find(false).print(); #20;
+[=](ml,bl).histogram().exist(false).print(); #0
+
+# experiment-1: with isolation
+var sl1 := [%]([+](sample(sample(cl,2000),20),1LL),128LL);
+var sc1 := [chr](sl1);
+var is1 := sc1.hmark(0@0);
+
+cc := copy(bc);
+cl := copy(bl);
+mc.isolate(is1,false);
+ml.isolate(is1,false);
+bc.replace(sc1,true);
+bl.replace(sl1,true);
+
+# produces desired results
+[=](mc,cc).histogram().exist(false).print(); #0 
+[=](mc,bc).histogram().find(false).print(); #20
+[=](ml,cl).histogram().exist(false).print(); #0;
+[=](ml,bl).histogram().find(false).print(); #20
+
+# experiment-2: with page-wise isolation
+var sl2 := [%]([+](sample(sample(cl,2000),20),1LL),128LL);
+var sc2 := [chr](sl2);
+var is2 := [oid]([/]([lng](sc2.hmark(0@0)), lng(REMAP_PAGE_SIZE)));
+
+cc := copy(bc);
+cl := copy(bl);
+mc.isolate(is2,true);
+ml.isolate(is2,true);
+bc.replace(sc2,true);
+bl.replace(sl2,true);
+
+# produces desired results
+[=](mc,cc).histogram().exist(false).print(); #0 
+[=](mc,bc).histogram().find(false).print(); #20
+[=](ml,cl).histogram().exist(false).print(); #0;
+[=](ml,bl).histogram().find(false).print(); #20
+
 quit();

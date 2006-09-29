@@ -481,6 +481,12 @@ documentation.
 .COMMAND [swizzle](BAT[void,oid] b, BAT[void,oid] map) : BAT[oid,oid] = CMDswizzle;
 "swizzle re-mapped oids (translate from logical to physical using a page-id map)"
 
+.COMMAND isolate(BAT[void,any] b, BAT[void,oid] dirty, bit pageids) : void = CMDisolate;
+"isolate a copy-on-write bat from changes in its master, by touching 
+ (and thus copying) to-be-affected pages. If 'pageids' is true, the oids
+ are page-ids pointing into b instead of direct keys, and the idea is to 
+ isolate the full 64K tuple logical page (instead of the physical page)."
+
 @- BAT Accelerators
 @m
 .COMMAND accbuild(BAT[any,any] b, str acctype) = CMDaccbuild;
@@ -2114,6 +2120,93 @@ CMDswizzle(BAT **res, BAT *b, BAT *map)
 	}
 	if (bn->htype) bn->hdense = bn->hsorted = 0;
 	bn->tdense = bn->tsorted = 0;
+	return GDK_SUCCEED;
+}
+
+int
+CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
+	int bogus = ~((((*pageids)&64)>>5) != (((*pageids)&32)>>4)); /* yields all ones */
+	size_t cnt = BATcount(b);
+
+	if (!BAThdense(b) || b->hseqbase || BUNsize(b) != ATOMsize(b->ttype)) {
+		GDKerror("isolate(%s): should be a unary column.\n", BBP_logical(b->batCacheid));
+		return GDK_FAIL;
+        }
+	if (b->theap && b->theap->base && b->theap->storage != STORE_MEM) {
+		GDKerror("isolate(%s): cannot isolate tail heaps.\n", BBP_logical(b->batCacheid));
+		return GDK_FAIL;
+        }
+	if (b->batBuns->storage == STORE_MMAP) {
+		GDKerror("isolate(%s): cannot isolate direct maps.\n", BBP_logical(b->batCacheid));
+		return GDK_FAIL;
+	}
+	if (cnt && b->batBuns->storage == STORE_PRIV) {
+		size_t pagebits, pagesize = MT_pagesize(), pagecnt = pagesize/ATOMsize(b->ttype);
+		size_t pos, lim, idx, xx, yy = pagecnt;
+		unsigned int *bitmask;
+		BUN p, q;
+		for(pagebits=0; yy>1; pagebits++) yy >>= 1;
+
+		/* determine the number of bitmask slots, and zalloc it */
+		yy = 1+ ((cnt-1) >> (pagebits+5)); /* 5 is for 32, #bits in a unsigned int */
+		bitmask = (unsigned int*) GDKmalloc(yy*sizeof(unsigned int));
+		if (bitmask == NULL) {
+			GDKerror("isolate(%s): memory failure.\n", BBP_logical(b->batCacheid));
+			return GDK_FAIL;
+		}
+		for(xx=0; xx<yy; xx++) bitmask[xx] = 0;
+
+		if (*pageids) {
+			BATloopFast(dirty, p, q, xx) {
+				/* oid is a page number, calculate absolute oid */
+				pos = (*(oid*) BUNtail(dirty,p)) << REMAP_PAGE_BITS;
+				lim = pos + REMAP_PAGE_SIZE;
+	
+				if (lim > cnt) break; /* out of bounds!! */
+
+				/* must touch all physical pages in this logical page */
+				for(; pos<lim; pos+=pagecnt) { 
+					idx = pos >> pagebits;
+					bitmask[idx >> 5] |= 1 << (idx&31); 
+				}
+			}
+		} else {
+			/* oids are the BUNs that must be isolated */
+			BATloopFast(dirty, p, q, xx) {
+				pos = *(oid*) BUNtail(dirty,p);
+
+				if (pos >= cnt) break; /* out of bounds!! */
+
+				idx = pos >> pagebits;
+				bitmask[idx >> 5] |= 1 << (idx&31); 
+			}
+		}	
+		if (p < q) {
+			GDKerror("isolate(%s): reference " SZFMT " out of range\n", 
+                                 BBP_logical(dirty->batCacheid), (size_t) *(oid*) BUNtail(dirty,p));
+			GDKfree(bitmask);
+			return GDK_FAIL;
+		}
+
+		/* write an idempotent byte into all pages that need isolation */
+		for(xx=0; xx<yy; xx++) {
+			unsigned int idx = bitmask[xx];
+			if (idx) {
+				chr *touch = ((chr*) b->batBuns->base) + xx * (pagesize << 5);
+				do {
+					if ((idx&127) == 0) { /* skip 7 clean pages */
+						idx >>=7; touch += (pagesize<<3)-pagesize;
+					} 
+					if (idx&1) {
+						/* do LOAD/STORE; bit-AND with all-ones to fool compiler */
+						*(int*) touch = (*(int*) touch)&bogus; /* causes OS trap (copy-on-write) */
+					} 
+					idx >>= 1; touch += pagesize;
+				} while(idx);
+			} /* else: skip 32 clean pages */
+		}
+		GDKfree(bitmask);
+        }
 	return GDK_SUCCEED;
 }
 @}
