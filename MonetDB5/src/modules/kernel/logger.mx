@@ -250,7 +250,7 @@ log_read_string(logger *l)
 	stream_readInt(l->log, &len);
 	buf = (char*)GDKmalloc(len);
 
-	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t)len) {
+	if ((nr = stream_read(l->log, buf, 1, len)) != len) {
 		buf[len-1] = 0;
 		printf("ERROR: couldn't read name (%s) %d\n", buf, nr);
 		GDKfree(buf);

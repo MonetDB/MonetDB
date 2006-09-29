@@ -418,6 +418,9 @@ command identity(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address CMDconvertvoid_oid_oid;
 command identity(b:bat[:void,:any_1]):bat[:oid,:any_1]
 address CMDconvertvoid_oid_oid;
+
+command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address CMDreuse;
 @-
 @}
 @{
@@ -2233,6 +2236,22 @@ CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
 	BBPreleaseref(tb->batCacheid);
+	return MAL_SUCCEED;
+}
+
+batcalc_export str CMDreuse(int *ret, int *bid)
+{
+	BAT *b,*bn;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.reuse", "Cannot access descriptor");
+	}
+	if( b->batPersistence == PERSISTENT){
+		bn= BATcopy(b, b->htype, b->ttype, 1);
+		BBPkeepref(bn->batCacheid);
+		*ret= bn->batCacheid;
+	} else
+		*ret= *bid;
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
