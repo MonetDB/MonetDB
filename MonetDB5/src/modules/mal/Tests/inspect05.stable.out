@@ -1663,6 +1663,7 @@ end main;	# 11
 [ "r_search",				  "command",	  "batcalc",	  "(s:bat[:void,:str],c:str):bat[:void,:int] ",											  "STRbatRstrSearchcst;"			  ]
 [ "r_search",				  "command",	  "batcalc",	  "(s:bat[:void,:str],c:bat[:void,:str]):bat[:void,:int] ",									  "STRbatRstrSearch;"				  ]
 [ "rtrim",				  "command",	  "batcalc",	  "(s:bat[:void,:str]):bat[:void,:str] ",											  "STRbatRtrim;"				  ]
+[ "reuse",				  "command",	  "batcalc",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",											  "CMDreuse;"				  ]
 [ "substitute",				  "command",	  "batcalc",	  "(s:bat[:void,:str],src:str,dst:str,rep:bit):bat[:void,:str] ",								  "STRbatSubstitutecst;"			  ]
 [ "substring",			  "command",	  "batcalc",	  "(s:bat[:void,:str],start:int,index:int):bat[:void,:str] ",								  "STRbatsubstringcst;"			  ]
 [ "substring",			  "command",	  "batcalc",	  "(s:bat[:void,:str],start:bat[:void,:int],index:bat[:void,:int]):bat[:void,:str] ",					  "STRbatsubstring;"			  ]
