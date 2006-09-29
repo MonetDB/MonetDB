@@ -28,6 +28,7 @@ echo Create User
 $SQL < ${RELSRCDIR}/../create_user.sql
 
 echo tables
+$SQL1 < $RELSRCDIR/../../../sql/math.sql
 $SQL1 < ${RELSRCDIR}/../Skyserver_tables.sql
 
 echo views

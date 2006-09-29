@@ -642,20 +642,7 @@ BEGIN
   RETURN ( 2*DEGREES(ASIN(sqrt(left_shift(nx1-nx2,2)+left_shift(ny1-ny2,2)+left_shift(nz1-nz2,2))/2))*60);
 END;
 
-
-CREATE FUNCTION fIAUFromEq(ra float, dec float)
-RETURNS varchar(64)
-BEGIN
-	RETURN('SDSS J'||REPLACE(fHMSbase(ra,1,2)||fDMSbase(dec,1,1),':',''));
-END;
-
-CREATE FUNCTION fDMS(deg float)
-RETURNS varchar(32)
-BEGIN
-    RETURN fDMSbase(deg,default,default);
-END;
-
-CREATE  FUNCTION fDMSbase(deg float, truncate int, precision int)
+CREATE  FUNCTION fDMSbase(deg float, truncat int, precision int)
 RETURNS varchar(32)
 BEGIN
     DECLARE	
@@ -687,28 +674,46 @@ BEGIN
 	-- degrees
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(2)));
-	SET t  = STUFF(t,3-LEN(q),LEN(q), q);
+	SET t  = STUFF(t,3-LENGTH(q),LENGTH(q), q);
 	-- minutes
 	SET d  = 60.0 * (d-nd);
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(4)));
-	SET t  = STUFF(t,6-LEN(q),LEN(q), q);
+	SET t  = STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
-	SET d  = ROUND( 60.0 * (d-nd),precision,truncate );
+	SET d  = ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
 	SET q  = LTRIM(STR(d,6+precision,precision));
-	SET t = STUFF(t,10+precision-LEN(q),LEN(q), q);
+	SET t = STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(s+t);
+END;
+
+CREATE FUNCTION fDMS(deg float)
+RETURNS varchar(32)
+BEGIN
+	Declare default_truncat int, default_precision int;
+	SET default_truncat = 0;
+	SET default_precision = 2;
+    	RETURN fDMSbase(deg,default_truncat,default_precision);
+END;
+
+CREATE FUNCTION fIAUFromEq(ra float, dec1 float)
+RETURNS varchar(64)
+BEGIN
+	RETURN('SDSS J'||REPLACE(fHMSbase(ra,1,2)||fDMSbase(dec1,1,1),':',''));
 END;
 
 CREATE FUNCTION fHMS(deg float)
 RETURNS varchar(32)
 BEGIN
-    RETURN fHMSbase(deg,default,default);
+	Declare default_truncat int, default_precision int;
+	SET default_truncat = 0;
+	SET default_precision = 2;
+    	RETURN fDMSbase(deg,default_truncat,default_precision);
 END;
 
-CREATE  FUNCTION fHMSbase(deg float, truncate int = 0, precision int)
+CREATE  FUNCTION fHMSbase(deg float, truncat int , precision int)
 RETURNS varchar(32)
 BEGIN
     DECLARE
@@ -734,19 +739,19 @@ BEGIN
 	-- degrees
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(2)));
-	SET t  = STUFF(t,3-LEN(q),LEN(q), q);
+	SET t  = STUFF(t,3-LENGTH(q),LENGTH(q), q);
 	-- minutes
 	SET d  = 60.0 * (d-nd);
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(4)));
-	SET t  = STUFF(t,6-LEN(q),LEN(q), q);
+	SET t  = STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
-	SET d  = ROUND( 60.0 * (d-nd),precision,truncate );
+	SET d  = ROUND( 60.0 * (d-nd),precision,truncat );
 	SET q  = LTRIM(STR(d,6+precision,precision));
-	SET t = STUFF(t,10+precision-LEN(q),LEN(q), q);
+	SET t = STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 --	SET d  = 60.0 * (d-nd);
 --	SET q = LTRIM(STR(d,9,3));
---	SET t = STUFF(t,13-LEN(q),LEN(q), q);
+--	SET t = STUFF(t,13-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(t);
 END;
@@ -1382,13 +1387,13 @@ BEGIN
 		DECLARE offset INT;
 		SET offset = 0
 		DECLARE PatLen INT;
-       		SET PatLen = LEN(Pattern);
+       		SET PatLen = LENGTH(Pattern);
 		 
 		WHILE (CHARINDEX(LowerPattern, LowerOld, 1) != 0 ) DO
 			SET offset = CHARINDEX(LowerPattern, LowerOld, 1);
 			SET NewString = NewString || SUBSTRING(OldString,1,offset-1) || Replacement;
-			SET OldString = SUBSTRING(OldString,offset||PatLen,LEN(OldString)-offset||PatLen);
-			SET LowerOld =  SUBSTRING(LowerOld,  offset||PatLen,LEN(LowerOld)-offset||PatLen);
+			SET OldString = SUBSTRING(OldString,offset||PatLen,LENGTH(OldString)-offset||PatLen);
+			SET LowerOld =  SUBSTRING(LowerOld,  offset||PatLen,LENGTH(LowerOld)-offset||PatLen);
 		END WHILE;
 	RETURN( NewString || OldString);
 END;
