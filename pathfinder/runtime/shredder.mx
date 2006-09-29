@@ -1263,7 +1263,7 @@ shredder_parse(shredCtxStruct *shredCtx,
 
     /* parse XML input(receive SAX events) */
     if (s) {
-        xmlCtx = xmlCreatePushParserCtxt(&shredder, shredCtx, buf, BUFSIZ, "shredder");
+        xmlCtx = xmlCreatePushParserCtxt(&shredder, shredCtx, buf, 0, "shredder");
     } else if (buffer) {
         xmlCtx = xmlCreateMemoryParserCtxt(buffer, shredCtx->fileSize);
     } else {

@@ -1615,6 +1615,7 @@ PROC shred_doc_base(BAT[void,str] idx_locations,
         var coll_oid := idx_colloid.find($h);
         var runtime  := idx_runtime.find($h);
         var idx      := idx_colnames.ord_uselect(colname).hmark(0@0);  
+        var percentage := pageFrees.find($h);
         var docBAT;
 
         if (isnil(coll_oid)) {
