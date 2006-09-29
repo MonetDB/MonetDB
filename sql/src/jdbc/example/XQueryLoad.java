@@ -41,7 +41,7 @@ public class XQueryLoad {
 
 		st.executeBatch();
 
-		SQLWarning w = st.getWarnings();
+		SQLWarning w = con.getWarnings();
 		while (w != null) {
 			System.out.println(w.getMessage());
 			w = w.getNextWarning();
