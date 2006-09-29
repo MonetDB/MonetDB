@@ -23,12 +23,12 @@ and dynamic linkage.
 The facility is offered as one of the optimization
 steps.
 
-The current translation sheme is choosen for
+The current translation scheme is chosen for
 simplicity and is particularly aimed at
 removing the MAL interpreter overhead.
 To best result is most likely obtained after
 the other MAL optimizers have performed their job.
-This may involve code inlineing steps specifically
+This may involve code in-lining steps specifically
 geared at producing C later on.
 
 To illustrate the process consider the MAL function 
@@ -55,10 +55,10 @@ the required flow of control statements.
 Notice that each instruction may produce an exception,
 which should be catched. 
 
-Ofcourse the resulting code is not optimal, e.g.
+Of course the resulting code is not optimal, e.g.
 the following portion for the example is produced:
 @example
-str MCCAdmin_tst903(void *tst903)
+str MCC_Admin_tst903(void *tst903)
 {
         BAT *b= 0; /* bat[:void,:lng] */
         void T2 = 0;
@@ -97,8 +97,8 @@ Patterns should be handled differently, e.g.  CMDBATnew
 in the example above would make this program not
 executable.
 @mal
-module tools;
-pattern Mcc(mod:str, fcn:str):void
+module compiler;
+pattern MALtoC(mod:str, fcn:str):void
 address MCdynamicCompiler
 comment "MAL to C compiler for functions";
 @{
