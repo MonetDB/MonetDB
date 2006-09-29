@@ -409,7 +409,7 @@ END;
 CREATE FUNCTION fSpecClass(nme varchar(40))
 RETURNS INTEGER
 BEGIN
-RETURN ( SELECT value 
+RETURN ( SELECT value
 	FROM SpecClass
 	WHERE name = UPPER(nme)
 	);
@@ -2219,7 +2219,7 @@ BEGIN
 	     				RETURN regionTable;			-- and return null table (in error case)
 				)
 			END IF;
-			INSERT INTO regionTable values( 	convexid,
+			INSERT INTO regionTable vals( 	convexid,
 						cast(cx as float), 
 						cast(cy as float), 
 						cast(cz as float), 
@@ -3671,7 +3671,7 @@ BEGIN
 	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
 		run6 varchar(10), stripe varchar(8), camcol varchar(8), 
 		field varchar(8), startMu varchar(10), skyVersion varchar(8);
-	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = (select val from SiteConstants where name='DataServerURL');
 	SET link = link || 'imaging/';
 	SELECT skyVersion=cast(fSkyVersion(fieldid) as varchar(8));
 	IF (skyVersion = '0')
@@ -3700,7 +3700,7 @@ CREATE FUNCTION fGetUrlFitsSpectrum(specObjId bigint)
 RETURNS varchar(128)
 BEGIN
 	DECLARE link varchar(128), plate varchar(8), mjd varchar(8), fiber varchar(8);
-	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = (select val from SiteConstants where name='DataServerURL');
 	SET link = link || 'spectro/1d_23/';
 	SELECT mjd = cast(p.mjd as varchar(8)), plate=cast(p.plate as varchar(8)), fiber=cast(s.fiberID as varchar(8)) 
 	    FROM PlateX p, specObjAll s 
@@ -3727,7 +3727,7 @@ RETURNS varchar(128)
 BEGIN
 	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
 		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = (select val from SiteConstants where name='DataServerURL');
 	SET link = link || 'imaging/';
 	SELECT  run = cast(run as varchar(8)), rerun=cast(rerun as varchar(8)), 
 		camcol=cast(camcol as varchar(8)), field=cast(field as varchar(8))
@@ -3755,7 +3755,7 @@ RETURNS varchar(128)
 BEGIN
 	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
 		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = (select val from SiteConstants where name='DataServerURL');
 	SET link = link || 'imaging/';
 	SELECT  run = cast(run as varchar(8)), rerun=cast(rerun as varchar(8)), 
 		camcol=cast(camcol as varchar(8)), field=cast(field as varchar(8))
@@ -3771,7 +3771,7 @@ RETURNS varchar(128)
 BEGIN
 	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
 		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = (select val from SiteConstants where name='DataServerURL');
 	SET link = link || 'imaging/';
 	SELECT  run = cast(run as varchar(8)), rerun=cast(rerun as varchar(8)), 
 		camcol=cast(camcol as varchar(8)), field=cast(field as varchar(8))
@@ -3800,7 +3800,7 @@ RETURNS varchar(128)
 BEGIN
 	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
 		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = (select val from SiteConstants where name='DataServerURL');
 	SET link = link || 'imaging/';
 	SELECT  run = cast(run as varchar(8)), rerun=cast(rerun as varchar(8)), 
 		camcol=cast(camcol as varchar(8)), field=cast(field as varchar(8))
@@ -4088,7 +4088,7 @@ BEGIN
 END;
 
 CREATE FUNCTION fEnum(
-	value binary(8), 
+	val binary(8), 
 	type varchar(32), 
 	length int)
 RETURNS varchar(64)
@@ -4096,14 +4096,14 @@ BEGIN
     DECLARE vstr varchar(64),
 	vbin4 binary(4),
 	vint int;
-    SET vbin4 = CAST(value as binary(4));
-    SET vint  = cAST(value as int);
+    SET vbin4 = CAST(val as binary(4));
+    SET vint  = cAST(val as int);
     --	
     IF (type<>'binary')
 	THEN SET vstr = CAST(vint as varchar(64));
     ELSE( 
         IF (length = 8)
-	   THEN EXEC master..xp_varbintohexstr value, vstr OUTPUT;	
+	   THEN EXEC master..xp_varbintohexstr val, vstr OUTPUT;	
         ELSE ( 
 	    EXEC master..xp_varbintohexstr vbin4, vstr OUTPUT;
           -- also handle the tinyint and smallint cases
