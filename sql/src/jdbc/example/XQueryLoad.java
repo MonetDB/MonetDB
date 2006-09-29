@@ -41,6 +41,10 @@ public class XQueryLoad {
 
 		st.executeBatch();
 
+		/* The name of the document is written as warning to the
+		 * Connection's warning stack.  This is kind of dirty, but since
+		 * the batch cannot return a string, there is no other way here.
+		 */
 		SQLWarning w = con.getWarnings();
 		while (w != null) {
 			System.out.println(w.getMessage());
