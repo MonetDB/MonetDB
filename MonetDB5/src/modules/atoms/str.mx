@@ -2256,7 +2256,7 @@ STRinsert(str *ret, str *s, int *start, int *l, str *s2){
 		strncpy(v, *s,*start);
 		v[*start]=0;
 		strcat(v,*s2);
-		if( *start + *l < strlen(*s)) 
+		if( *start + *l < (int) strlen(*s)) 
 			strcat(v,*s + *start + *l);
 	}
 	return MAL_SUCCEED;
