@@ -1,14 +1,14 @@
 stderr of test 'zones` in directory 'src/test` itself:
 
 
-# 12:23:02 >  
-# 12:23:02 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=38218 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
-# 12:23:02 >  
+# 13:54:27 >  
+# 13:54:27 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=31278 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
+# 13:54:27 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.13.1
-# builtin opt 	monet_pid = 29776
+# builtin opt 	monet_pid = 28897
 # builtin opt 	prefix = /export/scratch1/milena/monet
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -57,16 +57,24 @@ stderr of test 'zones` in directory 'src/test` itself:
 # cmdline opt 	monet_mod_path = /export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5
 # cmdline opt 	gdk_dbfarm = /export/scratch1/milena/monet/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /export/scratch1/milena/monet/var/MonetDB5/dblogs
-# cmdline opt 	mapi_port = 38218
+# cmdline opt 	mapi_port = 31278
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test
 
-# 12:23:02 >  
-# 12:23:02 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38218  < zones.sql
-# 12:23:02 >  
+# 13:54:28 >  
+# 13:54:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31278  < zones.sql
+# 13:54:28 >  
 
+MAPI  = monetdb@localhost:31278
+QUERY = select abs(expected - computed) as err
+ERROR = !WARNING: BATpropcheck: BAT tmp_1412 was incorrectly marked keyed!
+        !ERROR: MALexception:mal.propertyCheck:Errors found
+MAPI  = monetdb@localhost:31278
+QUERY = select S.objID,S.distance, T.expected 
+ERROR = !WARNING: BATpropcheck: BAT tmp_1544 was incorrectly marked keyed!
+        !ERROR: MALexception:mal.propertyCheck:Errors found
 
-# 12:23:02 >  
-# 12:23:02 >  Done.
-# 12:23:02 >  
+# 13:54:28 >  
+# 13:54:28 >  Done.
+# 13:54:28 >  
 
