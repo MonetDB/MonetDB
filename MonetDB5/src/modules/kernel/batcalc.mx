@@ -2251,19 +2251,8 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 		BBPreleaseref(b->batCacheid);
 		*ret= bn->batCacheid;
 	} else {
-		/* clear the properties of the BAT, they may not hold for the result */
-		b->tkey= FALSE;
-		b->tsorted= FALSE;
-		b->tseqbase= 0;
-		b->T->props= NULL;
-		b->void_tid = -1;
-		b->void_cnt = 0;
-		b->void_seq1 = oid_nil;
-		b->void_seq2 = oid_nil;
-
 		*ret= *bid;
 		BBPkeepref(*ret);
-		BBPreleaseref(*bid);
 	}
 	return MAL_SUCCEED;
 }
