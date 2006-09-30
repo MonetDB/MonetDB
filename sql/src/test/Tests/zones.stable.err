@@ -65,15 +65,6 @@ stderr of test 'zones` in directory 'src/test` itself:
 # 13:54:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31278  < zones.sql
 # 13:54:28 >  
 
-MAPI  = monetdb@localhost:31278
-QUERY = select abs(expected - computed) as err
-ERROR = !WARNING: BATpropcheck: BAT tmp_1412 was incorrectly marked keyed!
-        !ERROR: MALexception:mal.propertyCheck:Errors found
-MAPI  = monetdb@localhost:31278
-QUERY = select S.objID,S.distance, T.expected 
-ERROR = !WARNING: BATpropcheck: BAT tmp_1544 was incorrectly marked keyed!
-        !ERROR: MALexception:mal.propertyCheck:Errors found
-
 # 13:54:28 >  
 # 13:54:28 >  Done.
 # 13:54:28 >  

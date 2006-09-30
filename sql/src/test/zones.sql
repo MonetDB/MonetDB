@@ -1,5 +1,5 @@
 declare epsilon double;
-set epsilon=0.000001;
+set epsilon=0.00001;
 
 create function Alpha(theta double, decl double) returns double
     begin
