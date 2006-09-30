@@ -70,7 +70,7 @@ comment "Replace calculations with accumulator model";
 static int
 OPTaccumulatorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j, a, b, valid, limit;
+	int i,j, a=0, b, valid, limit;
 	InstrPtr p,q;
 	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
@@ -101,15 +101,26 @@ the replacement is aborted.
 		cntxt->errbuf[0]=0;
 		freeInstruction(p);
 		p=q;
-	} else 
+	} else  {
+		freeInstruction(q);
+		if(available[a]==0){
+			q= newFcnCall(mb,"batcalc","reuse");
+			getArg(q,0)= getArg(p,1);
+			pushArgument(mb,q,a);
+			available[getArg(q,0)]=1;
+		} else {
+			alias[getArg(p,1)]= a;
+			getArg(p,1)=a;
+			getArg(p,0)=a;
+		}
 		actions++;
-	pushInstruction(mb,p);
+	}
 #ifdef DEBUG_OPT_OPTIMIZER
 	printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 @c
 	for (i = 0; i < limit; i++) {
-		VarPtr v;
+		VarPtr v=0;
 		p = old[i];
 
 		for(j= p->retc; j<p->argc; j++)
@@ -124,10 +135,6 @@ the replacement is aborted.
 		if (p->retc==1  && p->argc == 3) {
 			/* binary/unary operation, check first argument */
 			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i) {
-				pushInstruction(mb,p);
-				continue;
-			}
 			
 			valid= 0;
 			if( available[getArg(p,1)] && getEndLifespan(mb,getArg(p,1))<=i){
@@ -142,17 +149,21 @@ the replacement is aborted.
 				v = getVar(mb, a = getArg(p, 1));
 				valid=  v->type == getVarType(mb,b);
 			} 
-			if( !valid){
+			if( !valid && getEndLifespan(mb,getArg(p,2)) <= i){
 				v = getVar(mb, a = getArg(p, 2));
-				valid= getEndLifespan(mb,a) <= i;
+				valid=v->type == getVarType(mb,b);
 			} 
+
+			if( getLastUpdate(mb,b) != i || !valid || !isaBatType(v->type)) {
+				pushInstruction(mb,p);
+				continue;
+			}
 #ifdef DEBUG_OPT_OPTIMIZER
 			stream_printf(GDKout, "Found accumulation candidate ");
 			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
 				i, b,a,getArg(p,2), valid, isaBatType(v->type));
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-			if (isaBatType(v->type) && valid){
 @-
 Beware, we may only use temporary BATs as accumulators, otherwise
 we can corrupt the database. 
@@ -161,60 +172,32 @@ produced by the batcalc operations.
 If the target is not yet available as a temporary variable, make
 sure it becomes one.
 @c
-				if(available[a]==0){
-					q= newFcnCall(mb,"batcalc","reuse");
-					getArg(q,0)= getArg(p,0);
-					pushArgument(mb,q,a);
-					available[getArg(q,0)]=1;
-				} else {
-					alias[getArg(p,0)]= a;
-					getArg(p,0)=a;
-				}
 
-				q= copyInstruction(p);
-				pushArgument(mb, p, getArg(p,2));
-				setArg(p,2,getArg(p,1));
-				setArg(p,1,getArg(p,0));
-				setArg(p,0,newTmpVariable(mb,TYPE_any));
-				@:patchInstruction(setArg(p,2,a))@
-			} else 
-				pushInstruction(mb,p);
-		} else if (p->retc==1 && p->argc == 2) {
+			q= copyInstruction(p);
+			pushArgument(mb, p, getArg(p,2));
+			setArg(p,2,getArg(p,1));
+			setArg(p,1,getArg(p,0));
+			@:patchInstruction@
+	} else if (p->retc==1 && p->argc == 2) {
 			/* unary operation, check first argument  and return type */
 			v = getVar(mb, a = getArg(p, 1));
 			b = getArg(p, 0);
-			if( getLastUpdate(mb,b) != i) {
+			if( getLastUpdate(mb,b) != i || getEndLifespan(mb,a) > i ||
+				!isaBatType(v->type) || v->type!= getVarType(mb,b) ) {
 				pushInstruction(mb,p);
 				continue;
 			}
 			
-			valid= getEndLifespan(mb,a) <= i;
-
-			if (isaBatType(v->type)  && v->type== getVarType(mb,b) && valid){
 #ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(GDKout, "Found unary accumulation candidate\n");
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+			stream_printf(GDKout, "Found unary accumulation candidate\n");
+			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-				if(available[a]==0){
-					q= newFcnCall(mb,"batcalc","reuse");
-					getArg(q,0)= getArg(p,0);
-					pushArgument(mb,q,a);
-					available[getArg(q,0)]=1;
-				} else {
-					alias[getArg(p,0)]= a;
-					getArg(p,0)=a;
-				}
-
-				q= copyInstruction(p);
-				pushArgument(mb, p, a);
-				setArg(p,1,getArg(p,0));
-				setArg(p,0,newTmpVariable(mb,TYPE_any));
-
-				@:patchInstruction((void) a)@
-			} else 
-				pushInstruction(mb,p);
-		} else 
-			pushInstruction(mb,p);
+			q= copyInstruction(p);
+			pushArgument(mb, p, a);
+			setArg(p,1,getArg(p,0));
+			@:patchInstruction@
+		} 
+		pushInstruction(mb,p);
 	}
 	GDKfree(old);
 	return actions;

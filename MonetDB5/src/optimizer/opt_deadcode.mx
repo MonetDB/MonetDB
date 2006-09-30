@@ -109,22 +109,11 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		se = p->token == ENDsymbol;
 		if( p->token != NOOPsymbol)
-		for (k = 0; k < p->retc; k++){
+		for (k = 0; k < p->retc; k++)
 			if( isVarUsed(mb,getArg(p,k)) ){
 				se++;
 				break;
-			} else
-			if( k==0 && getModuleId(p)== batcalcRef &&
-				((p->argc==4 &&
-					(getArg(p,1)==getArg(p,3) || getArg(p,1)==getArg(p,2)) 
-			 	) ||
-				(p->argc==3 && (getArg(p,1)==getArg(p,2)) 
-			 	))
-			){
-				/* accumulators have side effects */
-				se++;
-			}
-		}
+			} 
 
 		if (se || hasSideEffects(p, FALSE)) {
 			mb->stmt[j] = p;
