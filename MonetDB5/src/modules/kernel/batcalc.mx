@@ -94,15 +94,15 @@ because it is a contraction of a BATnew and a series of inserts.
 	@:initGrp(bit)@
 @= calcGrp
 
-	command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@5], c:bat[:any_1,:@2]):void
+	command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@5], c:bat[:any_1,:@2]):bat[:any_1,:@4]
 	address CMDbataccum@3_@2_@4_@5
 	comment "Binary BAT calculator function with accumulator BAT result";
 
-	command @1(a:bat[:any_1,:@4], cst:@4, b:bat[:any_1,:@5]):void
+	command @1(a:bat[:any_1,:@4], cst:@4, b:bat[:any_1,:@5]):bat[:any_1,:@4]
 	address CMDbataccum@3cst2_@2_@4_@5
 	comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-	command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@4], cst:@5) :void
+	command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@4], cst:@5) :bat[:any_1,:@4]
 	address CMDbataccum@3cst_@2_@4_@5
 	comment "(BAT,Constant) calculator function with accumulator BAT result";
 
@@ -2245,13 +2245,16 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("batcalc.reuse", "Cannot access descriptor");
 	}
-	if( b->batPersistence == PERSISTENT || b->batRestricted == BAT_READ){
-		bn= BATcopy(b, b->htype, b->ttype, 1);
+	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
+		bn= BATwcopy(b);
 		BBPkeepref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		*ret= bn->batCacheid;
-	} else
+	} else {
 		*ret= *bid;
+		BBPkeepref(*ret);
+		BBPreleaseref(*bid);
+	}
 	return MAL_SUCCEED;
 }
 
