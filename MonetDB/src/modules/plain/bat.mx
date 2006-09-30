@@ -2142,7 +2142,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 	}
 	if (cnt && b->batBuns->storage == STORE_PRIV) {
 		size_t pagebits, pagesize = MT_pagesize(), pagecnt = pagesize/ATOMsize(b->ttype);
-		size_t pos, lim, idx, xx, yy = pagecnt;
+		size_t pos, lim = 0, idx, xx, yy = pagecnt;
 		unsigned int *bitmask;
 		BUN p, q;
 		for(pagebits=0; yy>1; pagebits++) yy >>= 1;
