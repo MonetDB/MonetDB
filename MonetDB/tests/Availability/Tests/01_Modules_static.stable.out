@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1011 ]
+[ 1012 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1011 ]
+[ 1012 ]
 
 var All:=0;
 
@@ -826,8 +826,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 84 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 85 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -883,6 +883,7 @@ Module: "bat"
 [ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], oid, any::1, bit) : BAT[void,any::1]",			  "inplace replace values on the given locations"																																																														  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Insert all BUNs of the second BAT into the first.\n Returns the modified BAT."																											  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Insert one BUN[h,t] in a BAT.\n Returns the modified BAT."																														  ]
+[ "isolate",	  "COMMAND:   ",  "isolate(BAT[void,any], BAT[void,oid], bit) : void",					  "isolate a copy-on-write bat from changes in its master, by touching \n (and thus copying) to-be-affected pages. If 'pageids' is true, the oids\n are page-ids pointing into b instead of direct keys, and the idea is to \n isolate the full 64K tuple logical page (instead of the physical page)."									  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2]) : bit",							  "return whether the head column of a BAT is unique (key)."																																																						  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",						  "Sets the 'key' property of the head column to 'mode'. In 'key' mode,\n the kernel will silently block insertions that cause a duplicate entries\n in the head column.\n KNOWN BUG: when 'key' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.kunique;"	  ]
 [ "madvise",	  "COMMAND:   ",  "madvise(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "Modern Operating Systems allow users to influence the buffer management\n policy of virtual memory. This is a crucial feature for database systems,\n and eliminates the need to reimplement the OS in a database buffer manager.\n The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),\n BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),\n BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).\n These buffer management modes are not persistent.\n Returns the BAT operated upon."	  ]
@@ -1156,7 +1157,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1011 ]
+[ 1012 ]
 
 quit();
 
