@@ -1663,7 +1663,7 @@ showOptimizerStep(str fnme, int i, int flg)
 		stream_printf(GDKout,"Result saved on '%s'\n",fnme);
 	}
 	if (i < optTop && optimizerHistory[i].mb) {
-		stream_printf(out, "%s\n", optimizerHistory[i].title);
+		stream_printf(out, "#result after %s\n", optimizerHistory[i].title);
 		printFunction(out, optimizerHistory[i].mb, flg);
 		if(fnme) stream_close(out);
 	}
