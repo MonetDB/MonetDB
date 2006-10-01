@@ -414,6 +414,11 @@ address CMDconvertstr_str;
 command bit(b:bat[:any_1,:str]):bat[:any_1,:bit]
 address CMDconvertstr_bit;
 
+command identity(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address CMDconvertvoid_oid_oid;
+command identity(b:bat[:void,:any_1]):bat[:oid,:any_1]
+address CMDconvertvoid_oid_oid;
+
 command materialize(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address CMDmaterialize;
 command materialize(b:bat[:void,:any_1]):bat[:oid,:any_1]
