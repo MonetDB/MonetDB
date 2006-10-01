@@ -2162,7 +2162,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 				pos = (*(oid*) BUNtail(dirty,p)) << REMAP_PAGE_BITS;
 				lim = pos + REMAP_PAGE_SIZE;
 	
-				if (lim > cnt) continue; /* out of bounds!! */
+				if (lim > cnt) lim = cnt; /* out of bounds!! */
 
 				/* must touch all physical pages in this logical page */
 				for(; pos<lim; pos+=pagecnt) { 
@@ -2175,7 +2175,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 			BATloopFast(dirty, p, q, xx) {
 				pos = *(oid*) BUNtail(dirty,p);
 
-				if (lim > cnt) continue; /* out of bounds!! */
+				if (pos > cnt) continue; /* out of bounds!! */
 
 				idx = pos >> pagebits;
 				bitmask[idx >> 5] |= 1 << (idx&31); 
@@ -2193,7 +2193,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 					} 
 					if (idx&1) {
 						/* do LOAD/STORE; bit-AND with all-ones to fool compiler */
-						*(int*) touch = (*(int*) touch)&bogus; /* causes OS trap (copy-on-write) */
+						*(int*)touch = (*(int*)touch)&bogus; /* causes OS trap (copy-on-write) */
 					} 
 					idx >>= 1; touch += pagesize;
 				} while(idx);
