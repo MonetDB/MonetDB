@@ -366,6 +366,7 @@ SQLexitClient(Client c)
 	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
 		m= (mvc *) c->state[OPTIMIZE];
 		res_tables_destroy(m->results);
+		m->results= NULL;
 		mvc_destroy(m);
 		backend_destroy((backend *) c->state[PARSER]);
 		/* files are already closed */
