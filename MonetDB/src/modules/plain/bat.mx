@@ -1767,6 +1767,10 @@ The XML node storage scheme of MonetDB/XQuery needs some extra kernel support.
   we introduce a fast way to create BATs with the VM pages in a different order
   (to cheaply support inserting new pages halfway). 
 \item
+  for other bats, there is a new rcopy(), that uses copies lare heaps using
+  copy-on-write ememory maps. This is also done for string heaps, if they are
+  no longer double eliminated. 
+\item
   we introduce a primitive to swizzle OIDs for such remappings between RIDs (the real
   voids on disk) and PREs (the voids of the remapped copy).
 \end{itemize}
@@ -1779,8 +1783,14 @@ is replaced into (appends are no problem) then all live read copies (copy-on-wri
 get a 'idempotent' replace on the affected pages (a BUN replace with a value that was 
 already there), such that a shadow copy of the page is made by the OS. In this way, 
 the subsequent update in the master bat is invisible in the copy-on-write copies 
-(transaction isolation). There is a 'pagesample' PROC that produces such an 
-idempotent
+(transaction isolation). 
+
+The shadow copying could be done with BUN-replaces but can be optimized to touch just
+one word per physical page. This is done by CMDisolate.
+
+Similarly, the swizzle computations (from physical to logical id in remapped bats)
+could be done with shifts, mask, addition and fetchjoins; it is done much faster
+using the special-purpose CMDswizzle.  
 
 other changes were:
 
@@ -1795,6 +1805,12 @@ other changes were:
 \item
   gdk_batop.mx: optimized fetchjoin for idempotent positional joins (into a bat[void,void]
   with equal seqbase and all tuples hitting).
+\item
+  gdk_storage.mx: batload.  To preserve the integritry of string heaps with such forced updates, 
+  the kernel zaps the internal hash table of string heaps. Note that this is only allowd if 
+  double-elimination inside the string heap is disabled (in that case the hash table is not 
+  required to be complete).  To prevent problems, the rcopy() does not do mmap-tricks for 
+  double-eliminating heaps.
 \end{itemize}
 
 In swizzling as well as in positional join, specific optimizations are made for
@@ -2123,6 +2139,17 @@ CMDswizzle(BAT **res, BAT *b, BAT *map)
 	return GDK_SUCCEED;
 }
 
+@- fast isolation support
+
+If *pageids == TRUE, the oids are logical page-ids (REMAP_PAGE_SIZE) and the entire page
+needs to be isolated. Note the distinction between physical and logical pages. VM needs
+isolation on the physical level. The difference can be significant. A locical page is defined 
+as a number of tuples (e.g. 64K) thus spans up to 512KB in case of a 8-byte type such as lng 
+or oid. Such a a 512KB range may span up to 128 physical OS pages (MT_pagesize can be as low 
+as 4KB on current systems).
+
+All this is taken csre of by CMDisolate.
+@c
 int
 CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 	int bogus = ~((((*pageids)&64)>>5) != (((*pageids)&32)>>4)); /* yields all ones */
