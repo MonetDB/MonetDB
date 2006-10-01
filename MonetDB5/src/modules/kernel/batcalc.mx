@@ -414,10 +414,11 @@ address CMDconvertstr_str;
 command bit(b:bat[:any_1,:str]):bat[:any_1,:bit]
 address CMDconvertstr_bit;
 
-command identity(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address CMDconvertvoid_oid_oid;
-command identity(b:bat[:void,:any_1]):bat[:oid,:any_1]
-address CMDconvertvoid_oid_oid;
+command materialize(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address CMDmaterialize;
+command materialize(b:bat[:void,:any_1]):bat[:oid,:any_1]
+address CMDmaterialize
+comment "Materialize the void column";
 
 command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address CMDreuse;
@@ -1800,6 +1801,30 @@ CMDconvertvoid_oid_oid(int *ret, int *bid)
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); \
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+@h
+batcalc_export str CMDmaterialize(int *ret, int *bid);
+@c
+str
+CMDmaterialize(int *ret, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.materialize", "Cannot access descriptor");
+	}
+	if( b->htype == TYPE_void){
+		bn= BATmaterialize(b, BATcount(b));
+		if( bn == NULL)
+			return throwMessage("batcalc.materialize", "Materialization failed");
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*ret = bn->batCacheid;
+		BBPkeepref(*ret);
+	} else {
+		*ret = b->batCacheid;
+		BBPkeepref(*ret);
+	}
 	return MAL_SUCCEED;
 }
 
