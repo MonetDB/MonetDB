@@ -58,7 +58,7 @@ comment "internal routine to handle join paths.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-#define DEBUG_OPT_JOINPATH 
+/* #define DEBUG_OPT_JOINPATH */
 #endif
 @-
 @c
@@ -91,6 +91,10 @@ Try to expand each of its argument list
 			for(j=p->retc; j<p->argc; j++)
 			if( pc[getArg(p,j)] && used[getArg(p,j)]==0 ){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
+#ifdef DEBUG_OPT_JOINPATH 
+				stream_printf(GDKout,"expand with \n");
+				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
+#endif
 				if(  getModuleId(r)== algebraRef && 
 					( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
 					for(k= r->retc; k<r->argc; k++)
@@ -208,8 +212,11 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				j = i;
 			}
 		}
-		b = BATjoin(joins[j], joins[j + 1], 
-				MAX(BATcount(joins[j]),BATcount(joins[j+1]))/2 );
+@-
+BEWARE. you may not use a size estimation, because it
+may fire a BATproperty check in a few cases.
+@c
+		b = BATjoin(joins[j], joins[j + 1], oid_nil);
 #ifdef DEBUG_OPT_JOINPATH
 		printf("%d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
@@ -225,8 +232,7 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_JOINPATH
 	printf("final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
-	b = BATjoin(joins[0], joins[1], 
-				MAX(BATcount(joins[0]),BATcount(joins[1]))/2 );
+	b = BATjoin(joins[0], joins[1], oid_nil);
 	BBPreleaseref(joins[0]->batCacheid);
 	BBPreleaseref(joins[1]->batCacheid);
 
