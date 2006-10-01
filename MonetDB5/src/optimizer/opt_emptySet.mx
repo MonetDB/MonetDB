@@ -101,9 +101,10 @@ comment "Symbolic evaluation of empty BAT expressions";
 
 #define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1),TRUE); \
 	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
-	if( getVarType(mb,getArg(p,0)) == getVarType(mb,getArg(p,1)) ) { \
-		setModuleId(p,NULL); setFunctionId(p,NULL); \
-	} else { setModuleId(p,batcalcRef); setFunctionId(p,identityRef);} }
+	setModuleId(p,NULL); setFunctionId(p,NULL); \
+	if( getHeadType(getVarType(mb,getArg(p,0))) == TYPE_oid  && \
+		getHeadType(getVarType(mb,getArg(p,1))) == TYPE_void ) { \
+	setModuleId(p,batcalcRef); setFunctionId(p,materializeRef);} }
 
 static int
 ESevaluate(MalBlkPtr mb, char *empty)

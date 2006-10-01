@@ -158,6 +158,7 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (getModuleId(p)==algebraRef) {
 			if (getFunctionId(p) == markTRef  || 
 				getFunctionId(p) == markHRef  ||
+				getFunctionId(p) == selectNotNilRef  ||
 				getFunctionId(p) == sortRef  ||
 				getFunctionId(p) == sortTailRef  ||
 				getFunctionId(p) == sortrevRef  ||

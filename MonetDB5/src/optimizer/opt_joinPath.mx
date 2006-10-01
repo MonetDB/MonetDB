@@ -58,7 +58,7 @@ comment "internal routine to handle join paths.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_OPT_JOINPATH */
+#define DEBUG_OPT_JOINPATH 
 #endif
 @-
 @c
@@ -91,16 +91,12 @@ Try to expand each of its argument list
 			for(j=p->retc; j<p->argc; j++)
 			if( pc[getArg(p,j)] && used[getArg(p,j)]==0 ){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
-#ifdef DEBUG_OPT_JOINPATH 
-				stream_printf(GDKout,"expand with \n");
-				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
-#endif
 				if(  getModuleId(r)== algebraRef && 
 					( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
 					for(k= r->retc; k<r->argc; k++)
-						pushArgument(mb,q,getArg(r,k));
+						q= pushArgument(mb,q,getArg(r,k));
 				} else
-						pushArgument(mb,q,getArg(p,j));
+						q= pushArgument(mb,q,getArg(p,j));
 			}
 #ifdef DEBUG_OPT_JOINPATH 
 			stream_printf(GDKout,"new joinPath instruction\n");
@@ -108,8 +104,21 @@ Try to expand each of its argument list
 #endif
 			if(q->argc<= p->argc){
 				/* no change */
+			nochange:
 				freeInstruction(q);
 			} else {
+@-
+Final type check.
+@c
+				for(j=1; j<q->argc-1; j++)
+				if( getTailType(getArgType(mb,q,j)) != getHeadType(getArgType(mb,q,j+1)) &&
+				!( getTailType(getArgType(mb,q,j))== TYPE_oid &&
+					getHeadType(getArgType(mb,q,j))== TYPE_void) &&
+				!( getTailType(getArgType(mb,q,j))== TYPE_void &&
+					getHeadType(getArgType(mb,q,j))== TYPE_oid)
+				 )
+					goto nochange;
+
 				setFunctionId(q,joinPathRef);
 				getInstrPtr(mb,i)=q;
 				freeInstruction(p);
@@ -117,9 +126,10 @@ Try to expand each of its argument list
 				actions++;
 			}
 		}
-		/* remember its latest use */
+		/* remember its latest use 
 		for(j=p->retc; j<p->argc; j++)
 			used[getArg(p,j)]= i;
+		*/
 	}
 	return actions;
 }
@@ -163,9 +173,12 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) ret;
 	top = 0;
+#ifdef DEBUG_OPT_JOINPATH
+		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+#endif
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = (int *) getArgReference(stk, pci, i);
-#ifdef OPTIMIZER_DEBUG
+#ifdef DEBUG_OPT_JOINPATH
 		printf("bid %d\n", *bid);
 #endif
 		if ((b = BATdescriptor(*bid)) == NULL) {
@@ -180,26 +193,36 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while (top > 2) {
 		j = 0;
 		estimate = ALGjoinCost(joins[0],joins[1]);
+#ifdef DEBUG_OPT_JOINPATH
+		printf("estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
+			joins[1]->batCacheid,(int)estimate);
+#endif
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(joins[i], joins[i + 1]);
+#ifdef DEBUG_OPT_JOINPATH
+		printf("estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
+			joins[i+1]->batCacheid,(int)e);
+#endif
 			if (e < estimate) {
 				estimate = e;
 				j = i;
 			}
 		}
-#ifdef OPTIMIZER_DEBUG
-		printf("join %d and %d\n", joins[j]->batCacheid, joins[j + 1]->batCacheid);
-#endif
 		b = BATjoin(joins[j], joins[j + 1], 
 				MAX(BATcount(joins[j]),BATcount(joins[j+1]))/2 );
+#ifdef DEBUG_OPT_JOINPATH
+		printf("%d:= join(%d,%d)\n", 
+			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
+#endif
+		assert(b);
 		BBPreleaseref(joins[j]->batCacheid);
 		BBPreleaseref(joins[j + 1]->batCacheid);
 		joins[j] = b;
-		for (i = j + 1; i < top-1; i++)
-			joins[i] = joins[i + 1];
 		top--;
+		for (i = j + 1; i < top; i++)
+			joins[i] = joins[i + 1];
 	}
-#ifdef OPTIMIZER_DEBUG
+#ifdef DEBUG_OPT_JOINPATH
 	printf("final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
 	b = BATjoin(joins[0], joins[1], 
@@ -207,6 +230,7 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreleaseref(joins[0]->batCacheid);
 	BBPreleaseref(joins[1]->batCacheid);
 
+	assert(b);
 	BBPkeepref(b->batCacheid);
 	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
 	return MAL_SUCCEED;
