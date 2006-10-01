@@ -605,6 +605,7 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	@:loopImpl(@1,@2,@3,@4,@5)@
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
+	BATkey(BATmirror(dst),0);           
 	dst->tsorted = 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
@@ -634,6 +635,7 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,right,CMDbataccum@2)@
 
 	@:loopImpl(@1,@2,@3,@4,@5)@
+	BATkey(BATmirror(dst),0);           
 	dst->tsorted = 0;
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
@@ -664,7 +666,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 
 	if( '@1'== '/') {
 		if (*(@5*)cst == 0) {
-				res = throwMessage("batcalc.@1", "Division by zero");
+			res = throwMessage("batcalc.@1", "Division by zero");
 		} else {
 			@:accumCst(@3,@1,@4,@5)@ 
 		}
@@ -672,6 +674,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
+	dst->tsorted = 0;
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -702,6 +705,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
+	dst->tsorted = 0;
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
