@@ -99,11 +99,12 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-#define propagate(X) if(getArgType(mb,p,0)== getArgType(mb,p,X))\
-	{p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1),TRUE); \
+#define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1),TRUE); \
 	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
 	p->typechk=TYPE_UNKNOWN; p->fcn= NULL; \
-	setModuleId(p,NULL); setFunctionId(p,NULL); }
+	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
+	setModuleId(p,NULL); setFunctionId(p,NULL); } \
+	else {setModuleId(p,batcalcRef); setFunctionId(p,identityRef); } }
 @c
 
 static int
