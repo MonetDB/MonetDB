@@ -41,6 +41,11 @@ sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
 sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr, char *name);
 sql_server_export void monet4_parse(backend_stack stk, char *code);
+sql_server_export char *monet4_get_string(mvc *m, char *name);
+sql_server_export lng monet4_get_number(mvc *m, char *name);
+
+sql_server_export void monet4_set_string(mvc *m, char *name, char *val);
+sql_server_export void monet4_set_number(mvc *m, char *name, lng val);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -356,23 +361,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		case st_var:{
 			if (s->op1.sval) {
-				size_t buflen = strlen(s->op1.sval) + 64;
+				size_t buflen = strlen(s->op1.sval) + 32;
 				buf = NEW_ARRAY(char, buflen + 1);
 
-				if (VAR_GLOBAL(s->flag)) { /* globals */
-					if ((s->flag & VAR_DECLARE) == 0) {
-						len = snprintf(buf, buflen, "var s%d := getVariable(myc, \"%s\");\n", -s->nr, s->op1.sval);
-					} else { 
-						int tt = tail_type(s)->type->localtype;
-						len = snprintf(buf, buflen, "declareVariable(myc, \"%s\", %s(nil));\n", s->op1.sval, ATOMname(tt));
-					}
-				} else { 
-					if ((s->flag & VAR_DECLARE) == 0) {
-						len = snprintf(buf, buflen, "var s%d := %s;\n", -s->nr, s->op1.sval);
-					} else {
-						len = snprintf(buf, buflen, "var %s;\n", s->op1.sval);
-					}
-				}
+				if (s->flag & VAR_DECLARE) /* declare */
+					len = snprintf(buf, buflen, "var %s;\n", s->op1.sval);
+				else
+					len = snprintf(buf, buflen, "var s%d := %s;\n", -s->nr, s->op1.sval);
 				assert(len <= buflen);
 			} else {
 				size_t buflen = 32;
@@ -383,6 +378,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			}
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
+			break;
+		}
+		case st_seq_next:{
+			mvc_dump_1(sql, s, "next_value", nr);
 			break;
 		}
 		case st_temp:{
@@ -1413,13 +1412,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			size_t buflen = strlen(s->op1.sval) + 32;
 			buf = NEW_ARRAY(char, buflen + 1);
 
-			if (VAR_GLOBAL(s->flag)) { /* globals */
-				len = snprintf(buf, buflen, "setVariable(myc, \"%s\", s%d);\n", s->op1.sval, v);
-			} else {
-				len = snprintf(buf, buflen, "%s := s%d;\n", s->op1.sval, v);
-			}
+			len = snprintf(buf, buflen, "%s := s%d;\n", s->op1.sval, v);
 			assert(len <= buflen);
 			write_part(sql, buf, len);
+			if (VAR_GLOBAL(s->flag)) { /* globals */
+				len = snprintf(buf, buflen, "mvc_update_var(myc, \"%s\");\n", s->op1.sval);
+				write_part(sql, buf, len);
+			}
 			backend_dump_nil(sql, s->op2.stval);
 			_DELETE(buf);
 		} 	break;
@@ -1661,6 +1660,16 @@ monet4_parse(backend_stack stack, char *cmd)
 	backend_parse((Cntxt) stack, cmd);
 }
 
+char *monet4_get_string(mvc *m, char *name)
+{
+	Cntxt c = (Cntxt) m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL) 
+		if (v->binding.vtype == TYPE_str) 
+			return v->binding.val.sval;
+	return NULL;
+}
+
 void monet4_set_string(mvc *m, char *name, char *val)
 {
 	Cntxt c = (Cntxt) m->session->stk;
@@ -1669,6 +1678,46 @@ void monet4_set_string(mvc *m, char *name, char *val)
 		if (v->binding.val.sval != NULL)
 			GDKfree(v->binding.val.sval);
 		v->binding.val.sval = _strdup(val);
+	}
+}
+
+
+lng monet4_get_number(mvc *m, char *name)
+{
+	Cntxt c = (Cntxt) m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL) {
+		if (v->binding.vtype == TYPE_lng) 
+			return v->binding.val.lval;
+		if (v->binding.vtype == TYPE_int) 
+			return v->binding.val.ival;
+		if (v->binding.vtype == TYPE_sht) 
+			return v->binding.val.shval;
+		if (v->binding.vtype == TYPE_bit) 
+			if (v->binding.val.cval[0])
+				return 1;
+			return 0;
+	}
+	return 0;
+}
+
+void monet4_set_number(mvc *m, char *name, lng val)
+{
+	Cntxt c = (Cntxt) m->session->stk;
+        Variable v = VARfind(&c, name);
+	if (v != NULL) {
+		if (v->binding.vtype == TYPE_lng) 
+			v->binding.val.lval = val;
+		if (v->binding.vtype == TYPE_int) 
+			v->binding.val.ival = (int) val;
+		if (v->binding.vtype == TYPE_sht) 
+			v->binding.val.shval = (sht) val;
+		if (v->binding.vtype == TYPE_bit) {
+			if (val)
+				v->binding.val.cval[0] = 1;
+			else 
+				v->binding.val.cval[0] = 0;
+		}
 	}
 }
 

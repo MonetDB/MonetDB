@@ -187,6 +187,7 @@ head_column(stmt *st)
 		/* st_temp has no head column coming from any basetable */
 	case st_atom:
 	case st_var:
+	case st_seq_next:
 	case st_basetable:
 	case st_table:
 	case st_temp:
@@ -946,12 +947,19 @@ rel2bin(mvc *c, stmt *s)
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:
+	case st_table:
 	case st_idxbat:
 
 	case st_atom:
 	case st_bulkinsert:
 	case st_var:
+	case st_seq_next:
 	case st_table_clear:
+
+	case st_while:
+	case st_if:
+	case st_return:
+	case st_assign:
 
 		s->optimized = 2;
 		return stmt_dup(s);
@@ -1287,11 +1295,6 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_affected_rows:
 
-	case st_table:
-	case st_while:
-	case st_if:
-	case st_return:
-
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
 			stmt *ns = rel2bin(c, os);
@@ -1317,19 +1320,6 @@ rel2bin(mvc *c, stmt *s)
 				stmt_destroy(os);
 				s->op3.stval = ns;
 			}
-		}
-		s->optimized = 2;
-		return stmt_dup(s);
-
-	case st_assign:
-
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = rel2bin(c, os);
-	
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op2.stval = ns;
 		}
 		s->optimized = 2;
 		return stmt_dup(s);

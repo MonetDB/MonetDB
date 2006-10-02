@@ -55,7 +55,6 @@ typedef enum modes_t {
 typedef struct sql_var {
 	struct stmt *s;
 	char *name;
-	ValRecord value;
 } sql_var;
 
 typedef struct mvc {
@@ -103,8 +102,8 @@ extern int mvc_init(int debug, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 
-extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern mvc *mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws);
+extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -174,14 +173,6 @@ extern struct stmt *stack_find_var(mvc *sql, char *name);
 extern int frame_find_var(mvc *sql, char *name);
 extern int stack_find_frame(mvc *sql, char *name);
 
-extern ValRecord * stack_get_var(mvc *sql, char *name);
-extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
-
-extern str stack_get_string(mvc *sql, char *name);
-extern void stack_set_string(mvc *sql, char *name, str v);
-extern lng stack_get_number(mvc *sql, char *name);
-extern void stack_set_number(mvc *sql, char *name, lng v);
-
 #endif /*_SQL_MVC_H*/
 @c
 
@@ -196,6 +187,7 @@ extern void stack_set_number(mvc *sql, char *name, lng v);
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
+#include "sql_sequence.h"
 #include "sql_privileges.h"
 
 static int mvc_debug = 0;
@@ -222,7 +214,7 @@ mvc_init(int debug, backend_stack stk)
 	if (first) {
 		sql_schema *s;
 		sql_table *t;
-		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
+		mvc *m = mvc_create(0, stk, NULL, NULL);
 
 		/* disable caching */
 		m->cache = 0;
@@ -251,6 +243,7 @@ mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
 
+		sql_create_sequences(m, s);
 		sql_create_env(m, s);
 		sql_create_privileges(m, s);
 
@@ -493,7 +486,7 @@ mvc_release(mvc *m, char *name)
 }
 
 mvc *
-mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
+mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 {
 	mvc *m;
 
@@ -523,7 +516,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->mode = m_normal;
 	m->explain = m_normal;
 	m->reply_size = 100;
-	m->debug = debug;
+	m->debug = 0;
 	m->cache = 1;
 
 	m->depth = 0;
@@ -543,7 +536,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 }
 
 void
-mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
+mvc_reset(mvc *m, bstream *rs, stream *ws, int globalvars)
 {
 	sql_trans *tr;
 
@@ -577,19 +570,19 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->role_id = m->user_id = -1;
 	m->mode = m_normal;
 	if (m->explain != m_normal)
-		stack_set_number(m, "explain", m_normal);
+		backend_set_number(m, "explain", m_normal);
 	m->explain = m_normal;
 	if (m->reply_size != 100)
-		stack_set_number(m, "reply_size", 100);
+		backend_set_number(m, "reply_size", 100);
 	m->reply_size = 100;
 	if (m->timezone != 0)
-		stack_set_number(m, "current_timezone", 0);
+		backend_set_number(m, "current_timezone", 0);
 	m->timezone = 0;
-	if (m->debug != debug)
-		stack_set_number(m, "debug", debug);
-	m->debug = debug;
+	if (m->debug != 0)
+		backend_set_number(m, "debug", 0);
+	m->debug = 0;
 	if (m->cache != 1)
-		stack_set_number(m, "cache", 1);
+		backend_set_number(m, "cache", 1);
 	m->cache = 1;
 
 	m->depth = 0;
@@ -637,7 +630,7 @@ mvc_destroy(mvc *m)
 sql_type *
 mvc_bind_type(mvc *sql, char *name)
 {
-	sql_type *t = sql_trans_bind_type(sql->session->tr, NULL, name);
+	sql_type *t = sql_trans_bind_type(sql->session->tr, name);
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_type %s\n", name);
@@ -1106,34 +1099,7 @@ stack_push_var(mvc *sql, char *name, stmt *var)
 	}
 	sql->vars[sql->topvars].s = stmt_dup(var);
 	sql->vars[sql->topvars].name = _strdup(name);
-	sql->vars[sql->topvars].value.vtype = 0;
 	sql->topvars++;
-}
-
-void
-stack_set_var(mvc *sql, char *name, ValRecord *v)
-{
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0) {
-			VALclear(&sql->vars[i].value);
-			VALcopy(&sql->vars[i].value, v);
-		}
-	}
-}
-
-ValRecord *
-stack_get_var(mvc *sql, char *name)
-{
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0) {
-			return &sql->vars[i].value;
-		}
-	}
-	return NULL;
 }
 
 void 
@@ -1145,7 +1111,6 @@ stack_push_frame(mvc *sql, char *name)
 	}
 	sql->vars[sql->topvars].s = NULL;
 	sql->vars[sql->topvars].name = NULL;
-	sql->vars[sql->topvars].value.vtype = 0;
 	if (name)
 		sql->vars[sql->topvars].name = _strdup(name);
 	sql->topvars++;
@@ -1158,10 +1123,8 @@ stack_pop_frame(mvc *sql)
 	while(sql->vars[--sql->topvars].s) {
 		stmt_destroy(sql->vars[sql->topvars].s);
 		_DELETE(sql->vars[sql->topvars].name);
-		sql->vars[sql->topvars].value.vtype = 0;
-		VALclear(&sql->vars[sql->topvars].value);
 	}
-	if (sql->topvars && sql->vars[sql->topvars].name) 
+	if (sql->topvars && sql->vars[sql->topvars].name)
 		_DELETE(sql->vars[sql->topvars].name);
 	sql->frame--;
 }
@@ -1206,65 +1169,3 @@ stack_find_frame(mvc *sql, char *name)
 	return 0;
 }
 
-void
-stack_set_string(mvc *sql, char *name, char *val)
-{
-	ValRecord *v = stack_get_var(sql, name);
-
-	if (v != NULL) {
-		if (v->val.sval)
-			_DELETE(v->val.sval);
-		v->val.sval = _strdup(val);
-	}
-}
-
-str
-stack_get_string(mvc *sql, char *name)
-{
-	ValRecord *v = stack_get_var(sql, name);
-
-	if (!v || v->vtype != TYPE_str)
-		return NULL;
-	return v->val.sval;
-}
-
-void
-stack_set_number(mvc *sql, char *name, lng val)
-{
-	ValRecord *v = stack_get_var(sql, name);
-
-	if (v != NULL) {
-		if (v->vtype == TYPE_lng) 
-			v->val.lval = val;
-		if (v->vtype == TYPE_int) 
-			v->val.lval = (int) val;
-		if (v->vtype == TYPE_sht) 
-			v->val.lval = (sht) val;
-		if (v->vtype == TYPE_bit) {
-			if (val)
-				v->val.cval[0] = 1;
-			else 
-				v->val.cval[0] = 0;
-		}
-	}
-}
-
-lng
-stack_get_number(mvc *sql, char *name)
-{
-	ValRecord *v = stack_get_var(sql, name);
-
-	if (v != NULL) {
-		if (v->vtype == TYPE_lng) 
-			return v->val.lval;
-		if (v->vtype == TYPE_int) 
-			return v->val.ival;
-		if (v->vtype == TYPE_sht) 
-			return v->val.shval;
-		if (v->vtype == TYPE_bit) 
-			if (v->val.cval[0])
-				return 1;
-			return 0;
-	}
-	return 0;
-}

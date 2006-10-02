@@ -43,6 +43,13 @@ typedef void (*freestack_fptr) (backend_stack stk);
 typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr, char *name);
 typedef void (*interpret_fptr) (backend_stack stk, char *code);
 
+/* return variable */
+typedef char *(*get_string_fptr)(ptr mvc, char *name);
+typedef lng (*get_number_fptr)(ptr mvc, char *name);
+
+typedef void (*set_string_fptr)(ptr mvc, char *name, char *val);
+typedef void (*set_number_fptr)(ptr mvc, char *name, lng val);
+
 typedef char *(*create_user_fptr) (list *l, char *user, char *passwd, char *fullname, sqlid schema_id, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
 typedef int  (*find_user_fptr) (ptr m, char *user);
@@ -55,6 +62,10 @@ typedef struct _backend_functions {
 	freestack_fptr fstack;
 	freecode_fptr fcode;
 	interpret_fptr finterpret;
+	get_string_fptr fget_string;
+	get_number_fptr fget_number;
+	set_string_fptr fset_string;
+	set_number_fptr fset_number;
 	create_user_fptr fcuser;
 	drop_user_fptr fduser;
 	find_user_fptr ffuser;
@@ -67,6 +78,10 @@ extern void backend_init(backend_functions *funcs);
 extern void backend_freestack(backend_stack stk);
 extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
 extern void backend_interpret(backend_stack stk, char *code);
+extern char *backend_get_string(ptr mvc , char *name);
+extern lng backend_get_number(ptr mvc , char *name);
+extern void backend_set_string(ptr mvc, char *name, char *val);
+extern void backend_set_number(ptr mvc, char *name, lng val);
 
 extern char *backend_create_user(list *l, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);
@@ -112,6 +127,40 @@ backend_interpret(backend_stack stk, char *code)
 	assert(be_funcs != NULL);
 	if (be_funcs->finterpret != NULL)
 		be_funcs->finterpret(stk, code);
+}
+
+char *
+backend_get_string(ptr mvc, char *name)
+{
+	assert(be_funcs != NULL);
+	if (be_funcs->fget_string != NULL)
+		return be_funcs->fget_string(mvc, name);
+	return NULL;
+}
+
+lng
+backend_get_number(ptr mvc, char *name)
+{
+	assert(be_funcs != NULL);
+	if (be_funcs->fget_number != NULL)
+		return be_funcs->fget_number(mvc, name);
+	return 0;
+}
+
+void
+backend_set_string(ptr mvc, char *name, char *val)
+{
+	assert(be_funcs != NULL);
+	if (be_funcs->fset_string != NULL)
+		be_funcs->fset_string(mvc, name, val);
+}
+
+void
+backend_set_number(ptr mvc, char *name, lng val)
+{
+	assert(be_funcs != NULL);
+	if (be_funcs->fset_number != NULL)
+		be_funcs->fset_number(mvc, name, val);
 }
 
 char *

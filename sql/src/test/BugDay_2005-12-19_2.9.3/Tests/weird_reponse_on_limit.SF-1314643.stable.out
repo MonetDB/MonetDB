@@ -1,39 +1,39 @@
 stdout of test 'weird_reponse_on_limit.SF-1314643` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
 
 
-# 11:29:55 >  
-# 11:29:55 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=36353 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 11:29:55 >  
+# 18:23:00 >  
+# 18:23:00 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=39605 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit='include sql;' ; echo ; echo Over..
+# 18:23:00 >  
 
-# Monet Database Server V4.13.1
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_BugDay_2005-12-19_2.9.3
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
-# 20:30:00 >  
-# 20:30:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31501  < weird_reponse_on_limit.SF-1314643.sql
-# 20:30:00 >  
+# 08:04:03 >  
+# 08:04:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=38783  < weird_reponse_on_limit.SF-1314643.sql
+# 08:04:03 >  
 
-# sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
-# name,	query,	type,	system,	commit_action,	temporary # name
-# varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-# 7,	1,	1,	5,	1,	1 # length
-[ "schemas",	NULL,	0,	true,	0,	0	]
-# sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
-# name,	query,	type,	system,	commit_action,	temporary # name
-# varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-# 7,	1,	1,	5,	1,	1 # length
-[ "schemas",	NULL,	0,	true,	0,	0	]
-[ "types",	NULL,	0,	true,	0,	0	]
+# sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+# id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
+# int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+# 4,	7,	4,	1,	1,	5,	1,	1 # length
+[ 4455,	"schemas",	4454,	NULL,	0,	true,	0,	0	]
+# sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+# id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
+# int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+# 4,	7,	4,	1,	1,	5,	1,	1 # length
+[ 4455,	"schemas",	4454,	NULL,	0,	true,	0,	0	]
+[ 4459,	"types",	4454,	NULL,	0,	true,	0,	0	]
 
-# 20:30:00 >  
-# 20:30:00 >  Done.
-# 20:30:00 >  
+# 20:53:46 >  
+# 20:53:46 >  Done.
+# 20:53:46 >  
 

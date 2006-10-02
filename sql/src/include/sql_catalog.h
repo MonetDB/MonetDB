@@ -114,7 +114,6 @@ typedef struct sql_schema {
 	changeset tables;
 	changeset types;
 	changeset funcs;
-	changeset seqs;
 	list *keys;		/* Names for keys, idxs and triggers are */
 	list *idxs;		/* global, but these objects are only */
 	list *triggers;		/* useful within a table */
@@ -296,17 +295,6 @@ typedef struct sql_trigger {
 	char *statement;	/* action, ie list of sql statements */
 } sql_trigger;
 
-typedef struct sql_sequence {
-	sql_base base;
-	lng start;
-	lng minvalue;
-	lng maxvalue;
-	lng increment;
-	lng cacheinc;
-	bit cycle;
-	sql_schema *s;
-} sql_sequence;
-
 /* histogram types */
 typedef enum sql_histype {
        X_EXACT,
@@ -465,15 +453,12 @@ extern sql_column *find_sql_column(sql_table *t, char *cname);
 extern node *find_sql_table_node(sql_schema *s, char *tname);
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
 
-extern node *find_sql_sequence_node(sql_schema *s, char *sname);
-extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);
-
 extern node *find_sql_schema_node(sql_trans *t, char *sname);
 extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
 
 extern node *find_sql_type_node(sql_schema * s, char *tname);
 extern sql_type *find_sql_type(sql_schema * s, char *tname);
-extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
+extern sql_type *sql_trans_bind_type(sql_trans *tr, char *name);
 
 extern node *find_sql_func_node(sql_schema * s, char *tname);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);

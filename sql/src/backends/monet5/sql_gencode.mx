@@ -44,13 +44,20 @@ A dummy module is needed to load properly.
 #include <sql_mvc.h>
 #include <mal_function.h>
 
-sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
-sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
-sql5_export void backend_callinline(backend *be, Client c, stmt *s);
-sql5_export void backend_call(backend *be, Client c, cq *q);
-sql5_export void initSQLreferences(void);
-sql5_export str backend_name(cq *cq);
+sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+sql_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
+sql_export void backend_callinline(backend *be, Client c, stmt *s);
+sql_export void backend_call(backend *be, Client c, cq *q);
+sql_export void initSQLreferences(void);
+sql_export str backend_name(cq *cq);
 
+sql_export char *monet5_get_string(mvc *m, char *name);
+sql_export lng monet5_get_number(mvc *m, char *name);
+
+sql_export void monet5_set_string(mvc *m, char *name, char *val);
+sql_export void monet5_set_number(mvc *m, char *name, lng val);
+
+#define _SQL_GENCODE_DEBUG
 #endif /* _SQL2MAL_H */
 @c
 #include "sql_gencode.h"
@@ -408,6 +415,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 		} break;
+		case st_seq_next:{
+			dump_1(sql, mb, s, sqlRef, "nextValue");
+		}
+			break;
 		case st_temp:{
 			int l;
 			int ht = TYPE_void;
@@ -791,19 +802,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *cmd = st_uselect2 == s->type ? "uselect" : "select";
 
 			@:SQLprelude@
-
-			if (s->op2.stval->type == st_atom &&
-			    s->op3.stval->type == st_atom &&
-			    atom_null(s->op2.stval->op1.aval) &&
-			    atom_null(s->op3.stval->op1.aval) 
-			) {
-				q = newStmt1(mb, algebraRef, "selectNotNil");
-				q = pushArgument(mb, q, l);
-				s->nr = getDestVar(q);
-				@:SQLpostlude@
-				break;
-			}
-
 			q = newStmt1(mb, algebraRef, cmd);
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r1);
@@ -1165,7 +1163,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *fimp = sql_func_imp(s->op4.funcval->func);
 			@:SQLprelude@
 			backend_create_func(sql, s->op4.funcval->func); 
-			q = newStmt(mb, mod, fimp);
+			if (is_sqlfunc(s->op4.funcval->func))
+				q = newStmt1(mb, sql_cacheRef, fimp);
+			else if (s->op1.stval && s->op1.stval->nrcols) 
+				q = newStmt1(mb, algebraRef, fimp);
+			else
+				q = newStmt(mb, mod, fimp);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 			break;
@@ -1181,7 +1184,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q= multiplex1(mb,mod,convertOperator(fimp),l,tail_type(s)->type->localtype, s->op4.funcval->func->res.type->localtype);
 				
 			} else {
-				q = newStmt(mb, mod, fimp);
+				if (is_sqlfunc(s->op4.funcval->func))
+					q = newStmt1(mb, sql_cacheRef, fimp);
+				else
+					q = newStmt(mb, mod, fimp);
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
@@ -1200,7 +1206,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q= dump_multiplex(mb,mod,convertOperator(fimp),l,r,tail_type(s->op2.stval)->type->localtype, s->op4.funcval->func->res.type->localtype);
 				s->nr = getDestVar(q);
 			} else {
-				q = newStmt(mb, mod, convertOperator(fimp));
+				if (is_sqlfunc(s->op4.funcval->func))
+					q = newStmt1(mb, sql_cacheRef, fimp);
+				else 
+					q = newStmt(mb, mod, convertOperator(fimp));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 			}
@@ -1231,7 +1240,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					_DELETE(fimp);
 				}
 			} else {
-				q = newStmt(mb, mod, fimp);
+				if (is_sqlfunc(s->op4.funcval->func))
+					q = newStmt1(mb, sql_cacheRef, fimp);
+				else
+					q = newStmt(mb, mod, fimp);
 			}
 			for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
 				stmt *op = n->data;
@@ -1681,8 +1693,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q->barrier= BARRIERsymbol;
 			e= getArg(q,0);
 			pushArgument(mb,q,c);
-			if(s->op3.stval)
-				_dumpstmt(sql,mb,s->op3.stval);
+			_dumpstmt(sql,mb,s->op3.stval);
 			q= newAssignment(mb);
 			getArg(q,0)= e;
 			q->argc= q->retc=1;
@@ -1726,6 +1737,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 
 		}
+/*	if (s->nr == 0) s->nr = mb->stop;*/
+#ifdef _SQL_GENCODE_DEBUG
+	} else {
+		stream_printf(GDKout, "called with zero statement nr\n");
+#endif
 	}
 	return s->nr;
 }
@@ -1955,3 +1971,76 @@ backend_create_func(backend *be, sql_func *f)
 	if (backup) 
 		c->curprg = backup;
 }
+
+char *monet5_get_string(mvc *m, char *name)
+{
+	Client c = mal_clients+m->clientid;
+	MalBlkPtr mb = c->state[ENGINE]; /* get global variable mal block */
+        int varid = findVariable(mb, name);
+	if (varid >= 0) {
+		VarRecord *v = getVar(mb, varid);
+		if (v->value.vtype == TYPE_str) 
+			return v->value.val.sval;
+	}
+	return NULL;
+}
+
+void monet5_set_string(mvc *m, char *name, char *val)
+{
+	Client c = mal_clients+m->clientid;
+	MalBlkPtr mb = c->state[ENGINE]; /* get global variable mal block */
+        int varid = findVariable(mb, name);
+	if (varid >= 0) {
+		VarRecord *v = getVar(mb, varid);
+ 		if (v->value.vtype == TYPE_str) {
+			if (v->value.val.sval != NULL)
+				GDKfree(v->value.val.sval);
+			v->value.val.sval = _strdup(val);
+		}
+	}
+}
+
+
+lng monet5_get_number(mvc *m, char *name)
+{
+	Client c = mal_clients+m->clientid;
+	MalBlkPtr mb = c->state[ENGINE]; /* get global variable mal block */
+        int varid = findVariable(mb, name);
+	if (varid >= 0) {
+		VarRecord *v = getVar(mb, varid);
+		if (v->value.vtype == TYPE_lng) 
+			return v->value.val.lval;
+		if (v->value.vtype == TYPE_int) 
+			return v->value.val.ival;
+		if (v->value.vtype == TYPE_sht) 
+			return v->value.val.shval;
+		if (v->value.vtype == TYPE_bit) 
+			if (v->value.val.cval[0])
+				return 1;
+			return 0;
+	}
+	return 0;
+}
+
+void monet5_set_number(mvc *m, char *name, lng val)
+{
+	Client c = mal_clients+m->clientid;
+	MalBlkPtr mb = c->state[ENGINE]; /* get global variable mal block */
+        int varid = findVariable(mb, name);
+	if (varid >= 0) {
+		VarRecord *v = getVar(mb, varid);
+		if (v->value.vtype == TYPE_lng) 
+			v->value.val.lval = val;
+		if (v->value.vtype == TYPE_int) 
+			v->value.val.ival = val;
+		if (v->value.vtype == TYPE_sht) 
+			v->value.val.shval = val;
+		if (v->value.vtype == TYPE_bit) {
+			if (val)
+				v->value.val.cval[0] = 1;
+			else 
+				v->value.val.cval[0] = 0;
+		}
+	}
+}
+

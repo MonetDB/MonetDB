@@ -648,43 +648,28 @@ number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	int token = sqlINT;
-	int before_cur = EOF;
 
 	lc->started = 1;
 	/* TODO start with . */
-	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		while ((cur = scanner_getc(lc)) != EOF && 
-				(isdigit(cur) || 
-				 (cur >= 'A' && cur <= 'F') || 
-				 (cur >= 'a' && cur <= 'f')))
-			token = HEXADECIMAL; 
-		if (token == sqlINT)
-			before_cur = 'x';
-	} else {
-		if (isdigit(cur))
-			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
-				;
-		if (cur == '.') {
-			token = INTNUM;
-	
-			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
-				;
-		}
-		if (cur == 'e' || cur == 'E') {
-			token = APPROXNUM;
-			cur = scanner_getc(lc);
-			if (cur == '-' || cur == '+') 
-				token = 0;
-			while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
-				token = APPROXNUM;
-		}
+	while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
+		;
+	if (cur == '.') {
+		token = INTNUM;
+
+		while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
+			;
 	}
-	
+	if (cur == 'e' || cur == 'E') {
+		token = APPROXNUM;
+		cur = scanner_getc(lc);
+		if (cur == '-' || cur == '+') 
+			token = 0;
+		while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
+			token = APPROXNUM;
+	}
 	if (token) {
 		if (cur != EOF)
 			utf8_putchar(lc, cur);
-		if (before_cur != EOF)
-			utf8_putchar(lc, before_cur);
 		return scanner_token(lc, token);
 	} else {
 		(void)sql_error( c, 2, "unexpected symbol %c", cur);

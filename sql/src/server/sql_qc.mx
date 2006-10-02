@@ -63,7 +63,6 @@ typedef struct cq {
 	int key;		/* the hash key for the query text */
 	char *codestring;	/* keep code in string form to aid debugging */
 	char *name;		/* name of cache query */
-	int count;		/* number of times the query is matched */
 } cq;
 
 typedef struct qc {
@@ -168,9 +167,6 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 {
 	int i;
 
-	if (!plen && !typelist && !atoms)
-		return 0;
-
 	if (!typelist || !atoms)
 		return -1;
 	for (i=0; i < plen; i++) {
@@ -190,10 +186,8 @@ qc_find(qc *cache, int id)
 	cq *q;
 
 	for (q = cache->q; q; q = q->next) {
-		if (q->id == id) {
-			q->count++;
+		if (q->id == id)
 			return q;
-		}
 	}
 	return NULL;
 }
@@ -206,7 +200,6 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 	for (q = cache->q; q; q = q->next) {
 		if (q->key == key) {
 			if (q->paramlen == plen && param_list_cmp(q->params, params, plen) == 0 && symbol_cmp(q->s, s) == 0) {
-				q->count++;
 				return q;
 			}
 		}
@@ -241,7 +234,6 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->type = type;
 	n->key = key;
 	n->codestring = cmd;
-	n->count = 1;
 	(void) snprintf(name, BUFSIZ, "s%d_%d", n->id, cache->clientid);
 	n->name = sa_strdup(sa, name);
 	cache->q = n;

@@ -151,7 +151,15 @@ static void sqltypeinit(void);
 
 int digits2bits(int digits) 
 {
-	if (digits < 5) 
+	if (digits == 1)
+		return 3;
+	else if (digits <= 2)
+		return 6;
+	else if (digits <= 3)
+		return 9;
+	else if (digits <= 4)
+		return 13;
+	else if (digits < 5) 
 		return 16;
 	else if (digits < 10) 
 		return 32;
@@ -202,7 +210,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0 },
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0 },
 /* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0 },
 /* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1 }
 };
 
@@ -567,6 +575,8 @@ sql_func_imp(sql_func *f)
 char *
 sql_func_mod(sql_func *f)
 {
+	if (f->sql)
+		return NULL;
 	return f->mod;
 }
 
@@ -1422,8 +1432,6 @@ sqltypeinit(void)
 	sql_create_func("dayofmonth", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("week", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
 
-	sql_create_func("next_value_for", "sql", "next_value", *strings, NULL, LNG, SCALE_NONE);
-	sql_create_func("restart", "sql", "restart", *strings, LNG, LNG, SCALE_NONE);
 	for (t = strings; t < numerical; t++) {
 		sql_create_func("locate", "calc", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3("locate", "calc", "locate", *t, *t, INT, INT, SCALE_NONE);

@@ -42,7 +42,6 @@ static stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *b
 static stmt *
 psm_set(mvc *sql, scope *scp, dnode *n)
 {
-	exp_kind ek = {type_value, card_value, FALSE};
 	char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
 	stmt *var, *r = NULL;
@@ -65,7 +64,7 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 		tpe = tail_type(var);
 	}
 
-	r = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel, ek);
+	r = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
 	if (!r)
 		return NULL;
 
@@ -83,7 +82,7 @@ psm_declare(mvc *sql, scope *scp, dnode *n)
 
 	(void)scp;
 	l = create_stmt_list();
-	while(n) { /* list of 'identfiers with type' */
+	while(n) { /* list of  'identfiers with type' */
 		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
 		sql_subtype *ctype = &n->data.sym->data.lval->h->next->data.typeval;
 		while(ids) {
@@ -168,7 +167,7 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 	} else { /* else */
 		symbol *e = elseif->data.sym;
 
-		if (e==NULL || (e->token != SQL_ELSE))
+		if (e->token != SQL_ELSE)
 			return NULL;
 		return sequential_block( sql, scp, res, e->data.lval, NULL);
 	}
@@ -191,8 +190,6 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif )
 static stmt * 
 psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 {
-	exp_kind ek = {type_value, card_value, FALSE};
-
 	if (!case_when)
 		return NULL;
 
@@ -202,7 +199,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 		symbol *case_value = n->data.sym;
 		dlist *when_statements = n->next->data.lval;
 		dlist *else_statements = n->next->next->data.lval;
-		stmt *else_stmt = NULL, *v = sql_value_exp(sql, scp, case_value, NULL, NULL, sql_sel, ek);
+		stmt *else_stmt = NULL, *v = sql_value_exp(sql, scp, case_value, NULL, NULL, sql_sel);
 		stmt *cur_if = NULL, *top = NULL;
 
 		if (!v)
@@ -217,7 +214,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 		n = when_statements->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			stmt *cond=0, *when_value = sql_value_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel, ek);
+			stmt *cond=0, *when_value = sql_value_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
 			stmt *if_stmts = NULL;
 			stmt *case_stmt = NULL;
 
@@ -285,12 +282,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when )
 static stmt * 
 psm_return( mvc *sql, scope *scp, sql_subtype *restype, symbol *return_sym )
 {
-	exp_kind ek = {type_value, card_value, FALSE};
-	stmt *res;
-
-	if (restype->comp_type)
-		ek.card = card_relation;
-	res = sql_value_exp(sql, scp, return_sym, NULL, NULL, sql_sel, ek);
+	stmt *res = sql_value_exp(sql, scp, return_sym, NULL, NULL, sql_sel);
 	if (!res || (res = check_types(sql, restype, res, type_equal)) == NULL)
 		return NULL;
 	return stmt_return(res);
@@ -401,7 +393,7 @@ has_return(stmt *s )
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body)
+create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, char *impl, dlist *body)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -421,7 +413,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 		return sql_error(sql, 02, "CREATE FUNCTION: name '%s' already in use", fname);
 	
 	} else if (!instantiate && !schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "CREATE FUNCTION: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "user"), s->base.name);
+		return sql_error(sql, 02, "CREATE FUNCTION: insufficient privileges for user '%s' in schema '%s'", backend_get_string(sql, "user"), s->base.name);
 	} else {
 	 	if (params) 
 			for (n = params->h; n; n = n->next) {
@@ -448,16 +440,10 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			} else {
 				stmt_destroy(b);
 				sql_destroy_params(sql);
-				mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "sql_cache", q);
-				/* TODO: walk the stmt tree b and find all
-				   functions it depends on, and store these
-				   in a functions dependency table(f_id,d_id);
-				*/
+				mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, NULL, q);
 			}
 		} else {
-			char *fmod = qname_module(ext_name);
-			char *fnme = qname_fname(ext_name);
-			mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, fmod, fnme );
+			mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, FALSE, NULL, impl);
 		}
 	}
 	return stmt_none();
@@ -484,7 +470,7 @@ drop_func(mvc *sql, dlist *qname)
 	if (!func)  
 		return sql_error(sql, 02, "DROP FUNCTION: no such function '%s'", name);
 	if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", stack_get_string(sql, "user"), s->base.name);
+		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", backend_get_string(sql, "user"), s->base.name);
 	}
 	mvc_drop_func(sql, s, name, 0);
 
@@ -502,7 +488,7 @@ psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval);
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

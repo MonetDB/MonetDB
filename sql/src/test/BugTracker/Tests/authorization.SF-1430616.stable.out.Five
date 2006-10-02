@@ -1,0 +1,63 @@
+stdout of test 'authorization.SF-1430616` in directory 'src/test/BugTracker` itself:
+
+
+# 13:57:53 >  
+# 13:57:53 >  Mtimeout -timeout 420 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=39022 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="include sql;" ; echo ; echo Over..
+# 13:57:53 >  
+
+
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
+# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm
+# dbname:mTests_src_test_BugTracker
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 13:57:53 >  
+# 13:57:53 >  Mtimeout -timeout 300 ./authorization.SF-1430616.SQL authorization.SF-1430616 
+# 13:57:53 >  
+
+
+# 13:57:53 >  
+# 13:57:53 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/build-five-monetdb-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.4.jar -h localhost -p 39022 -d mTests_src_test_BugTracker -f ../../../../../../../../..//scratch1/fabian/monetdb/five/sql/src/test/BugTracker/Tests/authorization.SF-1430616-data.sql
+# 13:57:53 >  
+
+Operation successful
+
++---------+-----------------------+------+
+| name   | fullname              | name |
++=========+=======================+======+
+| monetdb | MonetDB Administrator | sys  |
+| voc    | VOC Explorer          | sys  |
++---------+-----------------------+------+
+2 rows
+
+Operation successful
+
+Operation successful
+
++---------+-----------------------+------+
+| name   | fullname              | name |
++=========+=======================+======+
+| monetdb | MonetDB Administrator | sys  |
+| voc    | VOC Explorer          | voc  |
++---------+-----------------------+------+
+2 rows
+
+
+# 13:57:53 >  
+# 13:57:53 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/build-five-monetdb-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.4.jar -h localhost -p 39022 -d mTests_src_test_BugTracker -q
+# 13:57:53 >  
+
+auto commit mode: on
+voc-> 
+# 13:57:54 >  
+# 13:57:54 >  Done.
+# 13:57:54 >  
+

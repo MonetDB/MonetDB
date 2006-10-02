@@ -132,6 +132,7 @@ SQLTables_(ODBCStmt *stmt,
 		       "s.\"name\" as table_schem, "
 		       "t.\"name\" as table_name, "
 		       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
+		       
 		       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
 		       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
 		       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "

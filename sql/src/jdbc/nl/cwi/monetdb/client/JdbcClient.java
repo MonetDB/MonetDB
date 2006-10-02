@@ -598,70 +598,66 @@ copts.produceHelpMessage()
 						out.println("\\d      list available tables and views");
 						out.println("\\d<obj> describes the given table or view");
 					} else if (dbmd != null && qp.getQuery().startsWith("\\d")) {
-						try {
-							String object = qp.getQuery().substring(2).trim().toLowerCase();
-							if (scolonterm && object.endsWith(";"))
-								object = object.substring(0, object.length() - 1);
-							if (!object.equals("")) {
-								int dot;
-								String schema;
-
-								if ((dot = object.indexOf(".")) != -1) {
-									// use provided schema
-									schema = object.substring(0, dot);
-									object = object.substring(dot + 1);
-								} else {
-									// get current schema
-									ResultSet rs = stmt.executeQuery("SELECT current_schema");
-									if (!rs.next())
-										throw new SQLException("current schema unknown!");
-									schema = rs.getString(1);
-									rs.close();
-								}
-								ResultSet tbl = dbmd.getTables(
-										null, schema, null, null);
-
-								// we have an object, see if we can find it
-								boolean found = false;
-								while (tbl.next()) {
-									if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
-											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
-										// we found it, describe it
-										e.dumpSchema(
-												dbmd,
-												tbl.getString("TABLE_TYPE"),
-												tbl.getString("TABLE_CAT"),
-												tbl.getString("TABLE_SCHEM"),
-												tbl.getString("TABLE_NAME")
-												);
-
-										found = true;
-										break;
-											}
-								}
-								if (!found) System.err.println("Unknown table or view: " + object);
-								tbl.close();
+						String object = qp.getQuery().substring(2).trim().toLowerCase();
+						if (scolonterm && object.endsWith(";"))
+							object = object.substring(0, object.length() - 1);
+						if (!object.equals("")) {
+							int dot;
+							String schema;
+							
+							if ((dot = object.indexOf(".")) != -1) {
+								// use provided schema
+								schema = object.substring(0, dot);
+								object = object.substring(dot + 1);
 							} else {
-								String[] types = {"TABLE", "VIEW"};
 								// get current schema
-								ResultSet rs = stmt.executeQuery("SELECT current_schema");
+								ResultSet rs =
+									stmt.executeQuery("SELECT current_schema");
 								if (!rs.next())
 									throw new SQLException("current schema unknown!");
-								ResultSet tbl = dbmd.getTables(
-										null, rs.getString(1), null, types);
+								schema = rs.getString(1);
 								rs.close();
-
-								// give us a list with tables
-								while (tbl.next()) {
-									out.println(tbl.getString("TABLE_TYPE") + "\t" +
-											tbl.getString("TABLE_SCHEM") + "." +
-											tbl.getString("TABLE_NAME"));
-								}
-								tbl.close();
 							}
-						} catch (SQLException e) {
-							out.flush();
-							System.err.println("Error: " + e.getMessage());
+							ResultSet tbl = dbmd.getTables(
+									null, schema, null, null);
+
+							// we have an object, see if we can find it
+							boolean found = false;
+							while (tbl.next()) {
+								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
+									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
+									// we found it, describe it
+									e.dumpSchema(
+										dbmd,
+										tbl.getString("TABLE_TYPE"),
+										tbl.getString("TABLE_CAT"),
+										tbl.getString("TABLE_SCHEM"),
+										tbl.getString("TABLE_NAME")
+									);
+									
+									found = true;
+									break;
+								}
+							}
+							if (!found) System.err.println("Unknown table or view: " + object);
+							tbl.close();
+						} else {
+							String[] types = {"TABLE", "VIEW"};
+							ResultSet rs =
+								stmt.executeQuery("SELECT current_schema");
+							if (!rs.next())
+								throw new SQLException("current schema unknown!");
+							ResultSet tbl = dbmd.getTables(
+									null, rs.getString(1), null, types);
+							rs.close();
+
+							// give us a list with tables
+							while (tbl.next()) {
+								out.println(tbl.getString("TABLE_TYPE") + "\t" +
+									tbl.getString("TABLE_SCHEM") + "." +
+									tbl.getString("TABLE_NAME"));
+							}
+							tbl.close();
 						}
 					} else {
 						doProcess = true;

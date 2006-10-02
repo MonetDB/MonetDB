@@ -53,7 +53,6 @@ extern ptr sql_frontend(void);
 #include "sql_gencode.h"	/* for backend_dump() */
 #include <sql_semantic.h>
 #include <rel_semantic.h>
-#include <rel_optimizer.h>
 #include <rel_bin.h>
 #include <sql_optimize.h>
 #include <sql_privileges.h>
@@ -65,7 +64,6 @@ extern ptr sql_frontend(void);
 #include <bat/res_table.h>
 #include <mapi.h>
 
-static int SQLdebug = 0;
 static int keep_trace = 0;
 
 int
@@ -134,7 +132,6 @@ sql_symbol2stmt(mvc *c)
 				s = semantic(c, NULL, c->sym);
 			}
 		} else {
-			r = rel_optimizer(c, r);
 			s = rel_bin(c, r);
 			if (s){
 				stmt *opt;
@@ -289,7 +286,7 @@ sqlexecute(backend *be, stream *out)
 			err = backend_explain(be, s, out);
 		} else {
 			if (c->cache && s->type != st_none) {
-				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->argc, c->scanner.key, c->type, sql_escape_str(QUERY(c->scanner)));
+				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->argc, c->scanner.key, c->type, NULL);
 				c->sa = NULL;
 				c->sym = NULL;
 			}
@@ -610,117 +607,110 @@ sql_variables(Cntxt stk, YYSTREE lt, ValPtr res)
 	return GDK_SUCCEED;
 }
 
-int
-dump_cache(Cntxt stk, YYSTREE lt, ValPtr res)
-{
-	mvc *m;
-	int cnt; 
-	BAT *t, *query, *count;
-	cq *q = NULL;
-	Variable v;
-
-	if (lt->cnt != 0) 
-		return handle_argerror(res, lt->cnt, 0);
-
-        v = VARfind(&stk, "myc");
-        if (v == NULL) 
-            return GDKerror("dump_cache: failed to lookup myc variable.\n"); 
-
-	m = v->binding.val.pval;
-
-	cnt = m->qc->id; 
- 	t = BATnew(TYPE_str, TYPE_bat, 1);
-	query = BATnew(TYPE_void, TYPE_str, cnt);
-	query->hseqbase = 0;
-	count = BATnew(TYPE_void, TYPE_int, cnt);
-	count->hseqbase = 0;
-	BUNins(t, "query", &query->batCacheid, FALSE);
-	BUNins(t, "count", &count->batCacheid, FALSE);
-
-	for(q = m->qc->q; q; q = q->next) {
-		BUNappend(query, q->codestring, FALSE);
-		BUNappend(count, &q->count, FALSE);
-	}
-
-	BBPunfix(query->batCacheid);
-	BBPunfix(count->batCacheid);
-	res->vtype = TYPE_bat;
-	res->val.bval = t->batCacheid;
-	BBPkeepref(t->batCacheid);
-	return GDK_SUCCEED;
-}
-
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, char *user, char *schema)
 {
+	Cntxt stk = (Cntxt)sql->session->stk;
+	Variable v;
 	sql_subtype ctype;
 	char *typename;
 	char *name;
 	stmt *r = NULL;
-	int sec = 0;
-	bit T = TRUE, F = FALSE;
-	ValRecord src;
+	char *debug_str = GDKgetenv("sql_debug");
+	int debug = 0;
+
+	if (debug_str) 
+		debug = strtol(debug_str,NULL,10);
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
  	name = "debug";
-
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &sql->debug));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.ival = debug;
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 8, 0);
 	name = "explain";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, ""));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup("");
 
 	sql_find_subtype(&ctype, typename, 1024, 0);
 	name = "current_schema";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, schema));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup(schema);
 
 	name = "current_user";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, user));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup(user);
 
 	name = "current_role";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, user));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup(user);
 
 	name = "optimizer";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, "yes"));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.sval = _strdup("yes");
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	name = "current_timezone";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &sec));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.ival = 0;
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	name = "cache";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &T));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.cval[0] = 1;
 
 	name = "profile";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &F));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.cval[0] = 0;
 
 	name = "trace";
 	r = stmt_var(_strdup(name), &ctype, 0, 1);
 	stack_push_var(sql, name, r);
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, &F));
+
+	v = VARnew(stk, name);
+	v->binding.vtype = ctype.type->localtype;
+	v->binding.val.cval[0] = 0;
 	return 0;
 }
 
@@ -785,9 +775,9 @@ mvc_login(mvc *m, char *user, char *passwd)
 		return NULL;
 	}
 	/* reset the user and schema names */
-	stack_set_string(m, "current_schema", schema);
-	stack_set_string(m, "current_user", user);
-	stack_set_string(m, "current_role", user);
+	backend_set_string(m, "current_schema", schema);
+	backend_set_string(m, "current_user", user);
+	backend_set_string(m, "current_role", user);
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }
@@ -807,7 +797,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(0, (backend_stack) stk, SQLdebug, rs, out);
+	m = mvc_create(0, (backend_stack) stk, rs, out);
 	if (!m) {
 		GDKerror("Couldn't start sqlconsole");
 		return GDK_FAIL;
@@ -825,7 +815,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream_flush(out);
 
 	/* add myc and Output, Input to the stack */
-	v = VARnew(stk, "myc"); /* allready exists but thats a global var */
+	v = VARnew(stk, "myc");
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 
@@ -850,7 +840,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 static char *
 sql_client_alloc(mapi_client *fc)
 {
-	mvc *m = mvc_create(0, (backend_stack)fc->stk, SQLdebug, NULL, NULL);
+	mvc *m = mvc_create(0, (backend_stack)fc->stk, NULL, NULL);
 	backend *be = backend_create(m, 0);
 	Variable v;
 
@@ -859,7 +849,7 @@ sql_client_alloc(mapi_client *fc)
 	fc->fc = be;
 
 	/* add myc and Output, Input to the stack */
-	v = VARnew(fc->stk, "myc"); /* allready exists but thats a global var */
+	v = VARnew(fc->stk, "myc");
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 
@@ -886,7 +876,7 @@ sql_client_init(mapi_client *fc)
 	Variable v;
 
 	rs = bstream_create(fc->c->fdin, fc->c->blocked ? (128 * BLOCK) : 0);
-	mvc_reset(m, rs, fc->c->fdout, SQLdebug, 10);
+	mvc_reset(m, rs, fc->c->fdout, 10);
 	schema = mvc_login(m, fc->c->user, fc->c->passwd);
 	if (!schema) {
 		char *res = "schema authorization error";
@@ -968,7 +958,6 @@ sql_client_free(mapi_client *fc)
 ptr
 sql_frontend(void)
 {
-	char *debug_str = GDKgetenv("sql_debug");
 	char *m_clients = GDKgetenv("mapi_clients"); 
 	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
 	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
@@ -978,9 +967,6 @@ sql_frontend(void)
 	f->f_init  = sql_client_init;
 	f->f_free  = sql_client_free;
 	f->f_engine  = sql_client_engine; /* read/parse/execute loop */
-
-	if (debug_str) 
-		SQLdebug = strtol(debug_str,NULL,10);
 	return (ptr)f;
 }
 
@@ -996,7 +982,7 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(0, (backend_stack) stk, SQLdebug, rs, out);
+	m = mvc_create(0, (backend_stack) stk, rs, out);
 
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;

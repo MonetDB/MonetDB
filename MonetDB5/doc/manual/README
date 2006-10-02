@@ -1,8 +1,0 @@
-The file manual.texi contains the integrated documentation
-framework for the MonetDB Version 5 product family.
-
-The files sqlmanual.texi (and later m5manual.texi, xquery.texi)
-are subsets of the framework. They share sections.
-Pieces in the shared code can be filtered out using
-the texi flags 'SQLmanual' and 'M5manual'.
-

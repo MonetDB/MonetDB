@@ -27,26 +27,26 @@ Over..
 # 10 # length
 [ "functions"	]
 [ "args"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
 [ "sequences"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
 # sys.tables # table_name
 # name # name
 # varchar # type
 # 10 # length
 [ "functions"	]
 [ "args"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
 [ "sequences"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
 
 # 21:42:22 >  
 # 21:42:22 >  Done.

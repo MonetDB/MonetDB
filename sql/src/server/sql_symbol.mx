@@ -34,7 +34,7 @@ typedef enum symtype {
 } symtype;
 
 typedef union symbdata {
-	lng ival;
+	int ival;
 	char *sval;
 	struct dlist *lval;
 	struct symbol *sym;
@@ -58,7 +58,7 @@ extern int dlist_length(dlist *l);
 
 extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);
 extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
-extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, lng data);
+extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, int data);
 extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *data);
 extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
 
@@ -91,7 +91,7 @@ typedef struct AtomNode {
 
 extern symbol *symbol_create(sql_allocator *sa, int token, char *data);
 extern symbol *symbol_create_list(sql_allocator *sa, int token, dlist *data);
-extern symbol *symbol_create_int(sql_allocator *sa, int token, lng data);
+extern symbol *symbol_create_int(sql_allocator *sa, int token, int data);
 extern symbol *symbol_create_symbol(sql_allocator *sa, int token, symbol *data);
 
 extern int symbol_cmp(symbol *s1, symbol *s2);
@@ -149,7 +149,7 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 }
 
 symbol *
-symbol_create_int(sql_allocator *sa, int token, lng data)
+symbol_create_int(sql_allocator *sa, int token, int data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -158,7 +158,7 @@ symbol_create_int(sql_allocator *sa, int token, lng data)
 		s->data.ival = data;
 		s->type = type_int;
 		if (symbol_debug)
-			fprintf(stderr, "%ld = symbol_create_int(%s,%lld)\n", (long) s, token2string(s->token), data);
+			fprintf(stderr, "%ld = symbol_create_int(%s,%d)\n", (long) s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -213,7 +213,7 @@ dnode_create_list(sql_allocator *sa, dlist *data)
 	return n;
 }
 static dnode *
-dnode_create_int(sql_allocator *sa, lng data)
+dnode_create_int(sql_allocator *sa, int data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -302,7 +302,7 @@ dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
 }
 
 dlist *
-dlist_append_int(sql_allocator *sa, dlist *l, lng data)
+dlist_append_int(sql_allocator *sa, dlist *l, int data)
 {
 	dnode *n = dnode_create_int(sa, data);
 

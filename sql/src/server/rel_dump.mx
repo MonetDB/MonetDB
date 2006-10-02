@@ -110,8 +110,12 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		}
 	} 	break;
 	case e_func: {
-		sql_subfunc *f = e->f;
-		printf("'%s' ", f->func->base.name );
+		if (!e->flag) {
+			sql_subfunc *f = e->f;
+			printf("'%s' ", f->func->base.name );
+		} else { /* internal function, needed for next value of */
+			printf("'func_%d' ", e->flag );
+		}
 		exps_print( sql, e->l, depth, alias);
 	} 	break;
 	case e_aggr: {

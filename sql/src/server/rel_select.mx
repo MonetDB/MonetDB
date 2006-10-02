@@ -450,6 +450,22 @@ exp_op( list *l, sql_subfunc *f )
 }
 
 static sql_exp * 
+exp_internal_func_int( list *l, int func_id)
+{ 
+	sql_subtype it; 
+	sql_exp *e = exp_create(e_func);
+
+	e->card = exps_card(l);
+	if (!l || list_length(l) == 0)
+		e->card = CARD_ATOM; /* unop returns a single atom */
+	e->l = l;
+	sql_find_subtype(&it, "int", 9, 0);
+	e->f = dup_subtype(&it);
+	e->flag = func_id;
+	return e;
+}
+
+static sql_exp * 
 exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
 {
 	sql_exp *e = exp_create(e_convert);
@@ -1637,16 +1653,10 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		return NULL;
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
-		int var = (stack_find_var(sql, name) != NULL);
 		
 		exp = rel_bind_column(sql, rel, name);
-		if (exp && var) 
-			return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
-		if (!exp && var)
-			return rel_var_ref(sql, name, 0);
-		if (!exp && !var)
-			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
-		
+		if (!exp && (exp = rel_var_ref(sql, name, 0)) == NULL)
+			return NULL;
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
@@ -3358,16 +3368,26 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 	}
 	case SQL_NEXT:{
-		sql_subtype *str_t = sql_bind_localtype("str");
-		sql_subfunc *f;
 		char *seq = se->data.sval;
-
-		if ( !find_sql_sequence(sql->session->schema, seq)) 
+		int len = _strlen(seq);
+		/* NOTE: this is a dirty hack to disable the existence check on
+		 *       inline generated sequences, as they don't exist yet,
+		 *       but eventually will be.  We recognise this situation if
+		 *       the sequence name ends with triple double quotes (""").
+		 */
+		if (
+			seq[len - 3] != '"' &&
+			seq[len - 2] != '"' &&
+			seq[len - 1] != '"' &&
+			!sql_find_seq(sql, seq))
+		{
 			return sql_error(sql, 02, "NEXT VALUE FOR: "
 			                 "no such sequence '%s'", seq);
-		f = sql_bind_func(NULL, "next_value_for", str_t, NULL);
-		assert(f);
-		return exp_unop( exp_atom_str(seq), f);
+		}
+		return exp_internal_func_int( 
+			append(new_exp_list(), exp_atom_str(seq)), 
+			st_seq_next
+			);
 	} 
 	case SQL_CAST:
 		return rel_cast(sql, *rel, se, f);

@@ -1,9 +1,0 @@
-b := bat.new(:void,:int);
-s1:= algebra.select(b,1,80);
-s2:= algebra.select(s1,5,95);
-s3:= algebra.select(s2,50,nil:int);
-s4:= algebra.select(s3,nil:int,75);
-io.print(s4);
-optimizer.rangePush();
-optimizer.deadcode();
-mdb.list();

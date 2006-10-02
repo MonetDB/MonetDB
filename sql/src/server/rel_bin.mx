@@ -155,7 +155,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 				list_append(l,es);
 			}
 		}
-		s = stmt_Nop(stmt_list(l), sql_dup_func(e->f)); 
+		if (!e->flag) {
+			sql_subfunc *f = e->f;
+			s = stmt_Nop(stmt_list(l), sql_dup_func(f)); 
+		} else { /* special internal functions */
+			s = stmt_internal(e->flag, l);
+			list_destroy(l);
+		}
 	} 	break;
 	case e_aggr: {
 		list *attr = e->l; 

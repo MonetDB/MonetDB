@@ -83,11 +83,6 @@ Actually, the logger should issue commit statements after each block.
 
 #include "bat_bm.h"
 
-/* the sequence identifier for sql object */
-#define SQL_OID	1
-/* the sequence identifier for the logger */
-#define LOG_OID	0
-
 extern struct logger *logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm);
 
 extern void logger_destroy(struct logger *logger);
@@ -95,7 +90,7 @@ extern int logger_exit(struct logger *logger);
 extern int logger_restart(struct logger *logger);
 extern int logger_cleanup(struct logger *logger);
 extern int logger_changes(struct logger *logger);
-extern int logger_sequence(struct logger *logger, int seq, lng *id);
+extern int logger_oid(struct logger *logger);
 
 extern int log_bat(struct logger *logger, BAT *b, char *n);
 extern int log_bat_clear(struct logger *logger, char *n);
@@ -104,7 +99,7 @@ extern int log_bat_transient(struct logger *logger, char *n);
 
 extern int log_tstart(struct logger *logger);
 extern int log_tend(struct logger *logger);
-extern int log_sequence(struct logger *logger, int seq, lng id);
+extern int log_oid(struct logger *logger, int id);
 
 #endif /*_SQL_LOGGER_H_*/
 @c
@@ -156,12 +151,13 @@ typedef struct logger {
 	int debug;
 	int changes;
 	int version;
-	lng id;
+	int id;
 	int tid;
+	int oid; 
 	char *dir;
 	stream *log;
 	struct bm *bm;
-	BAT *sql_id; /* int, lng */
+	BAT *sql_log; /* oid, int */
 } logger;
 
 static int
@@ -229,21 +225,6 @@ log_read_clear(logger *logger, char *name)
 		BATclear(b);
 		bat_destroy(b);
 	}
-}
-
-static void
-log_read_seq(logger *logger, logformat *l)
-{
-	int seq = l->nr;
-	lng id;
-	int res = SQL_OK;
-
-	res = stream_readLng(logger->log, &id);
-	if (BUNfnd(logger->sql_id, &seq)) {
-		BUNdelHead(logger->sql_id, &seq, FALSE);
-	}
-	BUNins(logger->sql_id, &seq, &id, FALSE);
-	(void)res;
 }
 
 static void
@@ -393,7 +374,7 @@ logger_open(logger *logger)
 {
 	char filename[BUFSIZ];
 
-	snprintf(filename, BUFSIZ, "%s%s." LLFMT, logger->dir, LOGFILE, logger->id);
+	snprintf(filename, BUFSIZ, "%s%s.%d", logger->dir, LOGFILE, logger->id);
 	logger->log = open_wstream(filename);
 	if (stream_errnr(logger->log))
 		 return SQL_ERR;
@@ -463,7 +444,9 @@ logger_readlog(logger *logger, char *filename)
 
 			break;
 		case SQL_LOG_OID:
-			log_read_seq(logger, &l);
+			logger->oid = l.nr;
+			if (logger->debug & 1)
+				fprintf(stderr, "logger oid %d\n", logger->oid);
 
 			break;
 		case SQL_LOG_INSERT:
@@ -521,11 +504,11 @@ logger_readlogs(logger *logger, FILE *fp, char *filename)
 
 	while (fgets(id, BUFSIZ, fp) != NULL) {
 		char buf[BUFSIZ];
-		lng lid = strtoll(id, NULL, 10);
+		int lid = strtol(id, NULL, 10);
 		
 		if (lid >= logger->id) {
 			logger->id = lid;
-			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, logger->id);
+			snprintf(buf, BUFSIZ, "%s.%d", filename, logger->id);
 
 			if ((res = logger_readlog(logger, buf)) != 0) {
 				break;
@@ -538,19 +521,19 @@ logger_readlogs(logger *logger, FILE *fp, char *filename)
 static int
 logger_commit(logger *logger)
 {
-	int id = LOG_OID;
+	oid id = 0;
 	if (logger->debug & 1)
 		fprintf(stderr, "logger_commit\n");
 
-	BUNdelHead(logger->sql_id, &id, FALSE);
-	BUNins(logger->sql_id, &id, &logger->id, FALSE);
+	BUNdelHead(logger->sql_log, &id, FALSE);
+	BUNins(logger->sql_log, &id, &logger->id, FALSE);
 	return bm_commit(logger->bm);
 }
 
 static int
 check_version(logger *logger, FILE *fp)
 {
-	int version = 0;
+	int id, version = 0;
 
 	if (fscanf(fp, "%6d", &version) != 1 || version != logger->version) {
 		GDKerror("Incompatible database version %06d, "
@@ -560,6 +543,10 @@ check_version(logger *logger, FILE *fp)
 		return -1;
 	}
 	fgetc(fp);		/* skip \n */
+	if (fscanf(fp, "%d", &id) == 1) {
+		logger->oid = id;
+		fgetc(fp);	/* skip \n */
+	}
 	fgetc(fp);		/* skip \n */
 	return 0;
 }
@@ -567,37 +554,38 @@ check_version(logger *logger, FILE *fp)
 static logger *
 logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 {
-	int id = LOG_OID;
+	oid id = 0;
 	logger *logger = NEW(struct logger);
 	FILE *fp;
 	char filename[BUFSIZ];
 	char bak[BUFSIZ];
-	bm_bid sql_id = 0;
+	bm_bid sql_log = 0;
 
 	logger->debug = debug;
 	logger->changes = 0;
 	logger->version = version;
 	logger->id = 1;
 	logger->tid = 0;
+	logger->oid = 0;
 
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	logger->dir = _strdup(filename);
 	logger->log = NULL;
 	logger->bm = bm;
-	sql_id = bm_find_bat(logger->bm, "sql_id");
-	if (sql_id == 0) {
-		logger->sql_id = bat_new(TYPE_int, TYPE_lng, 1, "logger_new");
-		BATmode(logger->sql_id, PERSISTENT);
-		BBPrename(logger->sql_id->batCacheid, "sql_id");
+	sql_log = bm_find_bat(logger->bm, "sql_log");
+	if (sql_log == 0) {
+		logger->sql_log = bat_new(TYPE_oid, TYPE_int, 1, "logger_new");
+		BATmode(logger->sql_log, PERSISTENT);
+		BBPrename(logger->sql_log->batCacheid, "sql_log");
 		
-		bm_add_bat(bm, logger->sql_id, "sql_id");
-		BUNins(logger->sql_id, &id, &logger->id, FALSE);
+		bm_add_bat(bm, logger->sql_log, "sql_log");
+		BUNins(logger->sql_log, &id, &logger->id, FALSE);
 	} else {
-		logger->sql_id = bat_descriptor(sql_id, "logger_new");
-		if (BATcount(logger->sql_id)) {
-			logger->id = *(lng*)BUNtail(logger->sql_id, BUNfnd(logger->sql_id, &id));
+		logger->sql_log = bat_descriptor(sql_log, "logger_new");
+		if (BATcount(logger->sql_log)) {
+			logger->id = *(int*)BUNtail(logger->sql_log, BUNfnd(logger->sql_log, &id));
 		} else {
-			BUNins(logger->sql_id, &id, &logger->id, FALSE);
+			BUNins(logger->sql_log, &id, &logger->id, FALSE);
 		}
 	}
 
@@ -631,13 +619,13 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			GDKerror("logger could not create file %s\n", filename);
 			return NULL;
 		}
-		fprintf(fp, "%06d\n\n", logger->version);
+		fprintf(fp, "%06d\n%d\n\n", logger->version, logger->oid);
 		logger->id ++;
-		fprintf(fp, LLFMT "\n", logger->id);
+		fprintf(fp, "%d\n", logger->id);
 	} else {
-		fprintf(fp, "%06d\n\n", logger->version);
+		fprintf(fp, "%06d\n%d\n\n", logger->version, logger->oid);
 		logger->id ++;
-		fprintf(fp, LLFMT "\n", logger->id);
+		fprintf(fp, "%d\n", logger->id);
 	}
 	fclose(fp);
 	logger->tid = 1;
@@ -690,19 +678,19 @@ logger_exit(logger *logger)
 	if ((fp = fopen(filename, "w")) != NULL) {
 		char ext[BUFSIZ];
 
-		fprintf(fp, "%06d\n\n", logger->version);
+		fprintf(fp, "%06d\n%d\n\n", logger->version, logger->oid);
 		logger->id ++;
 
 		if (logger_commit(logger) < 0)
 			return SQL_ERR;
 
-		fprintf(fp, LLFMT "\n", logger->id);
+		fprintf(fp, "%d\n", logger->id);
 		fclose(fp);
 
 		/* atomic action, switch to new log, keep old for later 
 		   cleanup actions 
 		 */
-		snprintf(ext, BUFSIZ, "bak-" LLFMT, logger->id);
+		snprintf(ext, BUFSIZ, "bak-%d", logger->id);
 		if (GDKmove(logger->dir, LOGFILE, "bak", logger->dir, LOGFILE, ext) < 0)
 			 return SQL_ERR;
 	} else {
@@ -730,7 +718,7 @@ logger_cleanup(logger *logger)
 	char id[BUFSIZ];
 	FILE *fp = NULL;
 
-	snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, logger->dir, LOGFILE, logger->id);
+	snprintf(buf, BUFSIZ, "%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
 	if (logger->debug & 1)
 		fprintf(stderr, "logger_cleanup %s\n", buf);
 
@@ -749,7 +737,7 @@ logger_cleanup(logger *logger)
 		GDKunlink(logger->dir, LOGFILE, id);
 	}
 	fclose(fp);
-	snprintf(buf, BUFSIZ, "bak-" LLFMT, logger->id);
+	snprintf(buf, BUFSIZ, "bak-%d", logger->id);
 	GDKunlink(logger->dir, LOGFILE, buf);
 
 	return SQL_OK;
@@ -762,15 +750,9 @@ logger_changes(logger *logger)
 }
 
 int
-logger_sequence(logger *logger, int seq, lng *id)
+logger_oid(logger *logger)
 {
-	ptr p = BUNfnd(logger->sql_id, &seq);
-
-	if (p) {
-		*id = *(lng*)BUNtail(logger->sql_id, p);
-		return 1;
-	}
-	return 0;
+	return logger->oid;
 }
 
 @-
@@ -952,27 +934,17 @@ log_tend(logger *logger)
 	return SQL_OK;
 }
 
-/* a transaction in it self */
 int
-log_sequence(logger *logger, int seq, lng id)
+log_oid(logger *logger, int id)
 {
 	logformat l;
 
 	l.flag = SQL_LOG_OID;
-	l.nr = seq;
+	l.nr = id;
+	logger->oid = id;
 
 	if (logger->debug)
-		fprintf(stderr, "log_sequence %d" LLFMT "\n", seq, id);
+		fprintf(stderr, "log_oid %d\n", id);
 
-	if (BUNfnd(logger->sql_id, &seq)) {
-		BUNdelHead(logger->sql_id, &seq, FALSE);
-	}
-	BUNins(logger->sql_id, &seq, &id, FALSE);
-
-	if (log_write_format(logger, &l) == SQL_ERR ||
-	    !stream_writeLng(logger->log, id) ||
-	    stream_flush(logger->log) ||
-	    stream_fsync(logger->log))
-		 return SQL_ERR;
-	return SQL_OK;
+	return log_write_format(logger, &l);
 }

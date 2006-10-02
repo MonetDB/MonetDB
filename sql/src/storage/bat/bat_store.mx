@@ -22,9 +22,6 @@
 
 #include "sql_storage.h"
 #include "bat_bm.h"
-#include "bat_logger.h"
-
-extern struct logger *logger;
 
 #define isNew(x)  (x->base.flag == TR_NEW)
 #define isTemp(x) (isNew(x)||x->t->persistence!=SQL_PERSIST)
@@ -56,17 +53,18 @@ extern BAT *temp_descriptor(bm_bid b);
 #endif /*BATSTORE_H */
 @c
 #include "bat_store.h"
+#include <bat.h>
+#include "bat_logger.h"
 #include "sql_types.h"
 #include "sql_backend.h"
 #include "bat_sequence.h"
-#include <bat.h>
 
 /* version 03.02.01 of catalog */
 #define CATALOG_VERSION 30201
 
-struct logger *logger = NULL;
+static struct logger *logger = NULL;
 static MT_Lock bs_lock;
-static lng store_oid = 0;
+static int store_oid = 0;
 static int nr_sessions = 0;
 static int nr_active = 0;
 static int transactions = 0;
@@ -470,13 +468,6 @@ table_destroy(sql_table *t)
 	if (t->query)
 		_DELETE(t->query);
 	_DELETE(t);
-}
-
-void
-seq_destroy(sql_sequence *s)
-{
-	base_destroy(&s->base);
-	_DELETE(s);
 }
 
 void
@@ -927,7 +918,7 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 	sz = *(int *) bun_find(column_type_digits, lid);
 	d = *(int *) bun_find(column_type_scale, lid);
 	if (!sql_find_subtype(&c->type, tpe, sz, d))
-		sql_init_subtype(&c->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
+		sql_init_subtype(&c->type, sql_trans_bind_type(tr, tpe), sz, d);
 	def = (char *) bun_find(column_default, lid);
 	c->def = NULL;
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
@@ -1208,7 +1199,7 @@ load_arg(sql_trans *tr, sql_func * f, BAT *args, BUN j)
 	digits = *(int *) bun_find(arg_type_digits, lid);
 	scale = *(int *) bun_find(arg_type_scale, lid);
 	if (!sql_find_subtype(&a->type, tpe, digits, scale))
-		sql_init_subtype(&a->type, sql_trans_bind_type(tr, f->s, tpe), digits, scale);
+		sql_init_subtype(&a->type, sql_trans_bind_type(tr, tpe), digits, scale);
 
 	/* complex (table) types */
 	if (a->type.type->localtype == TYPE_bat) 
@@ -1286,58 +1277,21 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	return t;
 }
 
-static sql_sequence *
-load_seq(sql_trans *tr, sql_schema * s, BAT *seqs, BUN j)
-{
-	sql_sequence *seq = NEW(sql_sequence);
-	ptr lid = BUNhead(seqs, j);
-	BAT *seq_id = get_bat(bm, "sys_sequences_id");
-	BAT *seq_name = get_bat(bm, "sys_sequences_name");
-	BAT *seq_start = get_bat(bm, "sys_sequences_start");
-	BAT *seq_minvalue = get_bat(bm, "sys_sequences_minvalue");
-	BAT *seq_maxvalue = get_bat(bm, "sys_sequences_maxvalue");
-	BAT *seq_increment = get_bat(bm, "sys_sequences_increment");
-	BAT *seq_cacheinc = get_bat(bm, "sys_sequences_cacheinc");
-	BAT *seq_cycle = get_bat(bm, "sys_sequences_cycle");
-
-	(void)tr;
-	base_init(&seq->base, *(sqlid *) bun_find(seq_id, lid), TR_OLD, bun_find(seq_name, lid));
-	seq->start = *(lng *) bun_find(seq_start, lid);
-	seq->minvalue = *(lng *) bun_find(seq_minvalue, lid);
-	seq->maxvalue = *(lng *) bun_find(seq_maxvalue, lid);
-	seq->increment = *(lng *) bun_find(seq_increment, lid);
-	seq->cacheinc = *(lng *) bun_find(seq_cacheinc, lid);
-	seq->cycle = *(bit *) bun_find(seq_cycle, lid);
-	seq->s = s;
-
-	bat_destroy(seq_id);
-	bat_destroy(seq_name);
-	bat_destroy(seq_start);
-	bat_destroy(seq_minvalue);
-	bat_destroy(seq_maxvalue);
-	bat_destroy(seq_increment);
-	bat_destroy(seq_cacheinc);
-	bat_destroy(seq_cycle);
-	return seq;
-}
-
 static sql_schema *
 load_schema(sql_trans *tr, BAT *schemas, BUN j)
 {
 	sql_schema *s = NEW(sql_schema);
 	ptr lid = BUNhead(schemas, j);
-	BAT *tables, *ptables, *types, *funcs, *seqs;
+	BAT *tables, *ptables, *types, *funcs;
 	BUN p, q;
 	BAT *schema_names = get_bat(bm, "sys_schemas_name");
 	BAT *schema_auths = get_bat(bm, "sys_schemas_authorization");
 	BAT *table_schema = get_bat(bm, "sys__tables_schema_id");
 	BAT *D_tables = get_bat(bm, "D_sys__tables");
 	BAT *type_schema = get_bat(bm, "sys_types_schema_id");
-	BAT *D_types = get_bat(bm, "D_sys_types");
+	BAT *D_types = get_bat(bm, "D_sys__types");
 	BAT *func_schema = get_bat(bm, "sys_functions_schema_id");
-	BAT *D_funcs = get_bat(bm, "D_sys_functions");
-	BAT *seq_schema = get_bat(bm, "sys_sequences_schema_id");
-	BAT *D_seqs = get_bat(bm, "D_sys_sequences");
+	BAT *D_funcs = get_bat(bm, "D_sys__functions");
 
 	base_init(&s->base, *(sqlid *) bun_find(schemas, lid), TR_OLD, bun_find(schema_names, lid));
 	s->auth_id = *(sqlid *) bun_find(schema_auths, lid);
@@ -1345,68 +1299,47 @@ load_schema(sql_trans *tr, BAT *schemas, BUN j)
 	s->idxs = list_create((fdestroy) NULL);
 	s->triggers = list_create((fdestroy) NULL);
 
-	bat_destroy(schema_auths);
-	bat_destroy(schema_names);
-
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	cs_init(&s->types, (fdestroy) &type_destroy);
 	cs_init(&s->funcs, (fdestroy) &func_destroy);
-	cs_init(&s->seqs, (fdestroy) &seq_destroy);
 
 	if (bs_debug)
 		fprintf(stderr, "load schema %s %d\n", s->base.name, s->base.id);
 
-	/* first load simple types */
+	tables = BATselect(table_schema, (ptr) &s->base.id, (ptr) &s->base.id);
+	ptables = BATkdiff(tables, BATmirror(D_tables));
+	bat_destroy(tables);
+
+	BATloop(ptables, p, q) 
+	    	cs_add(&s->tables, load_table(tr, s, ptables, p), TR_OLD);
+	bat_destroy(ptables);
+
 	types = BATselect(type_schema, (ptr) &s->base.id, (ptr) &s->base.id);
 	if (D_types) {
 		BAT *ptypes = BATkdiff(types, BATmirror(D_types));
 		bat_destroy(types);
 		types = ptypes;
 	}
-	bat_destroy(type_schema);
-	bat_destroy(D_types);
 
 	BATloop(types, p, q)
 	    cs_add(&s->types, load_type(tr, s, types, p), TR_OLD);
 	bat_destroy(types);
 
-	/* second tables (and complex types) */
-	tables = BATselect(table_schema, (ptr) &s->base.id, (ptr) &s->base.id);
-	ptables = BATkdiff(tables, BATmirror(D_tables));
-	bat_destroy(tables);
-	bat_destroy(table_schema);
-	bat_destroy(D_tables);
-
-	BATloop(ptables, p, q) 
-	    	cs_add(&s->tables, load_table(tr, s, ptables, p), TR_OLD);
-	bat_destroy(ptables);
-
-	/* last functions which could use these types */
 	funcs = BATselect(func_schema, (ptr) &s->base.id, (ptr) &s->base.id);
 	if (D_funcs) {
 		BAT *pfuncs = BATkdiff(funcs, BATmirror(D_funcs));
 		bat_destroy(funcs);
 		funcs = pfuncs;
 	}
-	bat_destroy(func_schema);
-	bat_destroy(D_funcs);
 
 	BATloop(funcs, p, q)
 	    cs_add(&s->funcs, load_func(tr, s, funcs, p), TR_OLD);
 	bat_destroy(funcs);
 
-	seqs = BATselect(seq_schema, (ptr) &s->base.id, (ptr) &s->base.id);
-	if (D_seqs) {
-		BAT *pseqs = BATkdiff(seqs, BATmirror(D_seqs));
-		bat_destroy(seqs);
-		seqs = pseqs;
-	}
-	bat_destroy(seq_schema);
-	bat_destroy(D_seqs);
-
-	BATloop(seqs, p, q)
-	    cs_add(&s->seqs, load_seq(tr, s, seqs, p), TR_OLD);
-	bat_destroy(seqs);
+	bat_destroy(table_schema);
+	bat_destroy(schema_auths);
+	bat_destroy(schema_names);
+	bat_destroy(D_tables);
 	return s;
 }
 
@@ -1473,7 +1406,7 @@ sys_bat(struct bm *bm, char *name, int type)
 static int
 next_oid(void)
 {
-	lng id = 0;
+	int id = 0;
 	MT_set_lock(bs_lock, "next_oid");
 	id = store_oid++;
 	MT_unset_lock(bs_lock, "next_oid");
@@ -1810,63 +1743,6 @@ bs_init_trigger(struct bm *bm, int istmp)
 	bat_destroy(U_kc_trunc);
 	bat_destroy(U_kc_nr);
 	bat_destroy(D_kc);
-}
-
-static void
-bs_init_sequence(struct bm *bm)
-{
-	int istmp = 0;
-	BAT *sequence_id = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_id"), TYPE_int);
-	BAT *sequence_schema = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_schema_id"), TYPE_int);
-	BAT *sequence_name = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_name"), TYPE_str);
-	BAT *sequence_start = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_start"), TYPE_lng);
-	BAT *sequence_minvalue = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_minvalue"), TYPE_lng);
-	BAT *sequence_maxvalue = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_maxvalue"), TYPE_lng);
-	BAT *sequence_increment = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_increment"), TYPE_lng);
-	BAT *sequence_cacheinc = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_cacheinc"), TYPE_lng);
-	BAT *sequence_cycle = sys_bat(bm, Ccc(istmp,"tmp","sys","sequences_cycle"), TYPE_bit);
-
-	BAT *U_sequence_id = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_id"), TYPE_int);
-	BAT *U_sequence_schema = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_schema_id"), TYPE_int);
-	BAT *U_sequence_name = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_name"), TYPE_str);
-	BAT *U_sequence_start = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_start"), TYPE_lng);
-	BAT *U_sequence_minvalue = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_minvalue"), TYPE_lng);
-	BAT *U_sequence_maxvalue = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_maxvalue"), TYPE_lng);
-	BAT *U_sequence_increment = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_increment"), TYPE_lng);
-	BAT *U_sequence_cacheinc = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_cacheinc"), TYPE_lng);
-	BAT *U_sequence_cycle = sys_bat(bm, Ucc(istmp,"tmp","sys","sequences_cycle"), TYPE_bit);
-
-	BAT *D_sequence = sys_bat(bm, Dcc(istmp,"tmp","sys","sequences"), TYPE_oid);
-
-	update_table_bat(sequence_id, U_sequence_id, D_sequence);
-	update_table_bat(sequence_schema, U_sequence_schema, D_sequence);
-	update_table_bat(sequence_name, U_sequence_name, D_sequence);
-	update_table_bat(sequence_start, U_sequence_start, D_sequence);
-	update_table_bat(sequence_minvalue, U_sequence_minvalue, D_sequence);
-	update_table_bat(sequence_maxvalue, U_sequence_maxvalue, D_sequence);
-	update_table_bat(sequence_increment, U_sequence_increment, D_sequence);
-	update_table_bat(sequence_cacheinc, U_sequence_cacheinc, D_sequence);
-	update_table_bat(sequence_cycle, U_sequence_cycle, D_sequence);
-
-	bat_destroy(sequence_id);
-	bat_destroy(sequence_schema);
-	bat_destroy(sequence_name);
-	bat_destroy(sequence_start);
-	bat_destroy(sequence_minvalue);
-	bat_destroy(sequence_maxvalue);
-	bat_destroy(sequence_increment);
-	bat_destroy(sequence_cacheinc);
-	bat_destroy(sequence_cycle);
-	bat_destroy(U_sequence_id);
-	bat_destroy(U_sequence_schema);
-	bat_destroy(U_sequence_name);
-	bat_destroy(U_sequence_start);
-	bat_destroy(U_sequence_minvalue);
-	bat_destroy(U_sequence_maxvalue);
-	bat_destroy(U_sequence_increment);
-	bat_destroy(U_sequence_cacheinc);
-	bat_destroy(U_sequence_cycle);
-	bat_destroy(D_sequence);
 }
 
 static void
@@ -2273,7 +2149,6 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id)
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	cs_init(&s->types, (fdestroy) &type_destroy);
 	cs_init(&s->funcs, (fdestroy) &func_destroy);
-	cs_init(&s->seqs, (fdestroy) &seq_destroy);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
 	s->triggers = list_create((fdestroy) NULL);
@@ -2317,7 +2192,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	if (!logger)
 		return -1;
 
-	logger_sequence(logger, SQL_OID, &store_oid);
+	store_oid = logger_oid(logger);
 	MT_lock_init(&bs_lock);
 
 	types_init(debug);
@@ -2325,7 +2200,6 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_init_schema(bm);
 	bs_init_type(bm);
 	bs_init_func(bm);
-	bs_init_sequence(bm);
 	while(istmp<2) {
 		bs_init_table(bm,istmp);
 		bs_init_column(bm,istmp);
@@ -2346,12 +2220,6 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 
 		first = 1;
 
-		/* todo introduce a dependencies table which keeps
-		   dependencies between sql objects, such as
-			call dependencies for func's
-			sequence and table dependencies
-			etc.
-		*/
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN);
 		t = bootstrap_create_table(tr, s, "schemas");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2388,16 +2256,6 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "type_scale", "int", 32);
 		bootstrap_create_column(tr, t, "number", "int", 32);
 
-		t = bootstrap_create_table(tr, s, "sequences");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "schema_id", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 256);
-		bootstrap_create_column(tr, t, "start", "bigint", 64);
-		bootstrap_create_column(tr, t, "minvalue", "bigint", 64);
-		bootstrap_create_column(tr, t, "maxvalue", "bigint", 64);
-		bootstrap_create_column(tr, t, "increment", "bigint", 64);
-		bootstrap_create_column(tr, t, "cacheinc", "bigint", 64);
-		bootstrap_create_column(tr, t, "cycle", "boolean", 1);
 
 		while(s) {
 			t = bootstrap_create_table(tr, s, "_tables");
@@ -2960,24 +2818,6 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	return f;
 }
 
-static sql_sequence *
-seq_dup(sql_trans *tr, int flag, sql_sequence *oseq, sql_schema * s)
-{
-	sql_sequence *seq = NEW(sql_sequence);
-
-	(void)tr;
-	base_init(&seq->base, oseq->base.id, tr_flag(&oseq->base, flag), oseq->base.name);
-
-	seq->start = oseq->start;
-	seq->minvalue = oseq->minvalue;
-	seq->maxvalue = oseq->maxvalue;
-	seq->increment = oseq->increment;
-	seq->cacheinc = oseq->cacheinc;
-	seq->cycle = oseq->cycle;
-	seq->s = s;
-	return seq;
-}
-
 static sql_schema *
 schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 {
@@ -2989,19 +2829,13 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 
 	s->auth_id = os->auth_id;
 	cs_init(&s->tables, (fdestroy) &table_destroy);
-	cs_init(&s->types, (fdestroy) &type_destroy);
-	cs_init(&s->funcs, (fdestroy) &func_destroy);
-	cs_init(&s->seqs, (fdestroy) &seq_destroy);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
 	s->triggers = list_create((fdestroy) NULL);
 
-	if (os->types.set) {
-		for (n = os->types.set->h; n; n = n->next) {
-			cs_add(&s->types, type_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
-		}
-		os->types.nelm = NULL;
-	}
+	cs_init(&s->types, (fdestroy) &type_destroy);
+	cs_init(&s->funcs, (fdestroy) &func_destroy);
+
 	if (os->tables.set) {
 		for (n = os->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
@@ -3011,17 +2845,17 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		}
 		os->tables.nelm = NULL;
 	}
+	if (os->types.set) {
+		for (n = os->types.set->h; n; n = n->next) {
+			cs_add(&s->types, type_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
+		}
+		os->types.nelm = NULL;
+	}
 	if (os->funcs.set) {
 		for (n = os->funcs.set->h; n; n = n->next) {
 			cs_add(&s->funcs, func_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
 		}
 		os->funcs.nelm = NULL;
-	}
-	if (os->seqs.set) {
-		for (n = os->seqs.set->h; n; n = n->next) {
-			cs_add(&s->seqs, seq_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
-		}
-		os->seqs.nelm = NULL;
 	}
 	if (flag == TR_NEW && tr->parent == gtrans) 
 		os->base.flag = TR_OLD;
@@ -3286,13 +3120,6 @@ rollforward_create_func(sql_trans *tr, sql_func *k)
 	return k;
 }
 
-static sql_sequence *
-rollforward_create_seq(sql_trans *tr, sql_sequence *k)
-{
-	(void) tr;
-	return k;
-}
-
 
 static sql_column *
 rollforward_create_column(sql_trans *tr, sql_column *c)
@@ -3462,15 +3289,6 @@ rollforward_drop_trigger(sql_trans *tr, sql_trigger * i)
 }
 
 static int
-rollforward_drop_seq(sql_trans *tr, sql_sequence * seq)
-{
-	(void)tr;
-	(void)seq;
-	/* TODO drop sequence */
-	return SQL_OK;
-}
-
-static int
 rollforward_drop_table(sql_trans *tr, sql_table *t)
 {
 	int ok = SQL_OK;
@@ -3504,12 +3322,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 static int
 rollforward_drop_schema(sql_trans *tr, sql_schema *s)
 {
-	int ok = SQL_OK;
-
-	ok = rollforward_changeset_deletes(tr, &s->seqs, (rfdfunc) &rollforward_drop_seq);
-	if (ok == SQL_OK)
-		return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table);
-	return ok;
+	return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table);
 }
 
 static sql_schema *
@@ -3790,21 +3603,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	return ok;
 }
 
-static int
-rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt)
-{
-	/* TODO what to update */
-	(void)tr;
-	if (ft->start != tt->start)
-		tt->start = ft->start;
-	tt->minvalue = ft->minvalue;
-	tt->maxvalue = ft->maxvalue;
-	tt->increment = ft->increment;
-	tt->cacheinc = ft->cacheinc;
-	tt->cycle = ft->cycle;
-	return SQL_OK;
-}
-
 static sql_table *
 conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 {
@@ -3836,9 +3634,6 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
 
 	if (ok == SQL_OK) /* last as it may require complex (table) types */
 		ok = rollforward_changeset_updates(tr, &fs->funcs, &ts->funcs, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_func, (rfdfunc) NULL, (dupfunc) &func_dup);
-
-	if (ok == SQL_OK) /* last as it may require complex (table) types */
-		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup);
 
 	return ok;
 }
@@ -4098,20 +3893,6 @@ reset_func(sql_trans *tr, sql_func *ft, sql_func *pft)
 }
 
 static int
-reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
-{
-	(void)tr;
-	ft->start = pft->start;
-	ft->minvalue = pft->minvalue;
-	ft->maxvalue = pft->maxvalue;
-	ft->increment = pft->increment;
-	ft->cacheinc = pft->cacheinc;
-	ft->cycle = pft->cycle;
-	return SQL_OK;
-}
-
-
-static int
 reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 {
 	if (!isTable(ft) || isTempTable(ft))
@@ -4157,11 +3938,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		if (ok == SQL_OK)
 			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
 
-		if (ok == SQL_OK)
-			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-
-		if (ok == SQL_OK)
-			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+		return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	}
 	return SQL_OK;
 }
@@ -4271,7 +4048,7 @@ sql_trans_commit(sql_trans *tr)
 		/*catalog_corrupt(tr->parent);*/
 	}
 	if (tr->parent == gtrans) {
-		ok = log_sequence(logger, SQL_OID, store_oid);
+		ok = log_oid(logger, store_oid);
 		if (ok == SQL_OK)
 			ok = log_tend(logger);
 		tr->schema_number = store_schema_number();
@@ -4400,17 +4177,6 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 }
 
 static void
-sys_drop_sequence(sql_trans *tr, sql_sequence * seq)
-{
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *sysseqs = find_sql_table(syss, "sequences");
-	oid rid = column_find_row(tr, find_sql_column(sysseqs, "id"), &seq->base.id, NULL);
-
-	assert(rid != -1);
-	table_delete(tr, sysseqs, rid);
-}
-
-static void
 sys_drop_column(sql_trans *tr, sql_column *col)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
@@ -4483,20 +4249,6 @@ sys_drop_table(sql_trans *tr, sql_table *t)
 		tr->schema_updates ++;
 }
 
-static void
-sys_drop_type(sql_trans *tr, sql_type *type)
-{
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *sys_tab_type = find_sql_table(syss, "types");
-	sql_column *sys_type_col = find_sql_column(sys_tab_type, "id");
-	oid rid = column_find_row(tr, sys_type_col, &type->base.id, NULL);
-
-	assert(rid != -1);
-	table_delete(tr, sys_tab_type, rid);
-
-	tr->schema_updates ++;
-}
-
 
 static void
 sys_drop_func(sql_trans *tr, sql_func *func)
@@ -4518,19 +4270,6 @@ sys_drop_func(sql_trans *tr, sql_func *func)
 }
 
 static void
-sys_drop_types(sql_trans *tr, sql_schema *s)
-{
-	node *n;
-
-	if (cs_size(&s->types))
-		for (n = s->types.set->h; n; n = n->next) {
-			sql_type *t = n->data;
-
-			sys_drop_type(tr, t);
-		}
-}
-
-static void
 sys_drop_tables(sql_trans *tr, sql_schema *s)
 {
 	node *n;
@@ -4542,33 +4281,6 @@ sys_drop_tables(sql_trans *tr, sql_schema *s)
 			sys_drop_table(tr, t);
 		}
 }
-
-static void
-sys_drop_funcs(sql_trans *tr, sql_schema *s)
-{
-	node *n;
-
-	if (cs_size(&s->funcs))
-		for (n = s->funcs.set->h; n; n = n->next) {
-			sql_func *f = n->data;
-
-			sys_drop_func(tr, f);
-		}
-}
-
-static void
-sys_drop_sequences(sql_trans *tr, sql_schema *s)
-{
-	node *n;
-
-	if (cs_size(&s->seqs))
-		for (n = s->seqs.set->h; n; n = n->next) {
-			sql_sequence *seq = n->data;
-
-			sys_drop_sequence(tr, seq);
-		}
-}
-
 
 sql_type *
 sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, int scale, int radix, char *impl)
@@ -4608,9 +4320,11 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	int number = 0;
 
 	base_init(&t->base, next_oid(), TR_NEW, func);
-	assert(impl && mod);
 	t->imp = _strdup(impl);
-	t->mod = _strdup(mod); 
+	if (mod)
+		t->mod = _strdup(mod); 
+	else
+		t->mod = _strdup("SQL"); 
 	t->sql = sql;
 	t->aggr = aggr;
 	t->ops = list_dup(args, (fdup)&arg_dup);
@@ -4675,12 +4389,11 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id)
 	base_init(&s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	cs_init(&s->tables, (fdestroy) &table_destroy);
-	cs_init(&s->types, (fdestroy) &type_destroy);
-	cs_init(&s->funcs, (fdestroy) &func_destroy);
-	cs_init(&s->seqs, (fdestroy) &seq_destroy);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
 	s->triggers = list_create((fdestroy) NULL);
+	cs_init(&s->types, (fdestroy) &type_destroy);
+	cs_init(&s->funcs, (fdestroy) &func_destroy);
 
 	cs_add(&tr->schemas, s, TR_NEW);
 	table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id);
@@ -4699,10 +4412,7 @@ sql_trans_drop_schema(sql_trans *tr, char *sname)
 
 	assert(rid != -1);
 	table_delete(tr, sysschema, rid);
-	sys_drop_funcs(tr, s);
 	sys_drop_tables(tr, s);
-	sys_drop_types(tr, s);
-	sys_drop_sequences(tr, s);
 
 	s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
@@ -5296,112 +5006,6 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name)
 	n = cs_find_name(&i->t->triggers, name);
 	if (n)
 		cs_del(&i->t->triggers, n, i->base.flag);
-}
-
-sql_sequence * 
-sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle )
-{
-	sql_sequence *seq = NEW(sql_sequence);
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *sysseqs = find_sql_table(syss, "sequences");
-
-	assert(name);
-	base_init(&seq->base, next_oid(), TR_NEW, name);
-
-	seq->start = start;
-	seq->minvalue = min;
-	seq->maxvalue = max;
-	seq->increment = inc;
-	seq->cacheinc = cacheinc;
-	seq->cycle = cycle;
-	seq->s = s;
-
-	cs_add(&s->seqs, seq, TR_NEW);
-
-	table_insert(tr, sysseqs, &seq->base.id, &s->base.id, seq->base.name, &seq->start, &seq->minvalue, &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle);
-
-	s->base.wtime = tr->wtime = tr->stime;
-	return seq;
-}
-
-void
-sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name)
-{
-	node *n = cs_find_name(&s->seqs, name);
-	sql_sequence *seq = n->data;
-
-	sys_drop_sequence(tr, seq);
-	seq->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	cs_del(&s->seqs, n, seq->base.flag);
-}
-
-sql_sequence *
-sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle)
-{
-	sql_schema *syss = find_sql_schema(tr, "sys"); 
-	sql_table *seqs = find_sql_table(syss, "sequences");
-	oid rid = column_find_row(tr, find_sql_column(seqs, "id"),
-				  &seq->base.id, NULL);
-	sql_column *c;
-	int changed = 0;
-
-	assert(rid != -1);
-	if (min >= 0 && seq->minvalue != min) {
-		seq->minvalue = min; 
-		c = find_sql_column(seqs, "minvalue");
-		column_update_value(tr, c, rid, &seq->minvalue);
-	}
-	if (max >= 0 && seq->maxvalue != max) {
-		seq->maxvalue = max; 
-		changed = 1;
-		c = find_sql_column(seqs, "maxvalue");
-		column_update_value(tr, c, rid, &seq->maxvalue);
-	}
-	if (inc >= 0 && seq->increment != inc) {
-		seq->increment = inc; 
-		changed = 1;
-		c = find_sql_column(seqs, "increment");
-		column_update_value(tr, c, rid, &seq->increment);
-	}
-	if (cache >= 0 && seq->cacheinc != cache) {
-		seq->cacheinc = cache; 
-		changed = 1;
-		c = find_sql_column(seqs, "cacheinc");
-		column_update_value(tr, c, rid, &seq->cacheinc);
-	}
-	if (seq->cycle != cycle) {
-		seq->cycle = cycle; 
-		changed = 1;
-		c = find_sql_column(seqs, "cycle");
-		column_update_value(tr, c, rid, &seq->cycle);
-	}
-
-	if (changed) {
-		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->stime;
-		tr->schema_updates ++;
-	}
-	return seq;
-}
-
-lng 
-sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
-{
-	if (seq->start != start) {
-		sql_schema *syss = find_sql_schema(tr, "sys"); 
-		sql_table *seqs = find_sql_table(syss, "sequences");
-		oid rid = column_find_row(tr, find_sql_column(seqs, "id"),
-				  &seq->base.id, NULL);
-		sql_column *c = find_sql_column(seqs, "start");
-
-		assert(rid != -1);
-		seq->start = start; 
-		column_update_value(tr, c, rid, &seq->start);
-
-		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->stime;
-		tr->schema_updates ++;
-	}
-	seq_restart(seq, seq->start);
-	return seq->start;
 }
 
 sql_session *

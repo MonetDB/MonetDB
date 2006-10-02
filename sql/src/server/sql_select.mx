@@ -29,27 +29,11 @@
 #include "sql_scope.h"
 #include "sql_statement.h"
 
-/* value vs predicate (boolean) */
-#define type_value	0
-#define type_predicate	1
-/* cardinality expected by enclosing operator */
-#define card_value	0
-#define card_column 	1
-#define card_set	2	/* some operators require a set (IN/EXISTS) */
-#define card_relation 	3
-/* allowed to reduce (in the where and having parts we can reduce) */
-
-typedef struct exp_kind_t {
-	chr type;
-	chr card;
-	bit reduce;	
-} exp_kind;
-
-#define sql_from 0		/* nothing */
-#define sql_where 1		/* relate to any column from the from */
+#define sql_from 0
+#define sql_where 1
 /* special search fase which is used within the selection fase */
-#define sql_search 2		/* ??? */
-#define sql_sel   3		/* relate to the pivots (subquery) */
+#define sql_search 2
+#define sql_sel   3
 
 extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
@@ -57,7 +41,7 @@ extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel);
 extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq);
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
 
-extern stmt *sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
+extern stmt *sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f);
 extern stmt *sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f);
 extern stmt *stmt2pivot(scope *scp, stmt *s);
 
@@ -104,8 +88,7 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 	tvar *tv = NULL;
 	sql_subtype *st = NULL;
 	node *m;
-	exp_kind ek = {type_value, card_relation, TRUE};
-	stmt *sq = sql_value_exp(sql, scp, query->data.lval->h->data.sym, NULL, NULL, sql_from, ek);
+	stmt *sq = sql_value_exp(sql, scp, query->data.lval->h->data.sym, NULL, NULL, sql_from);
 	char *tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
 
 	if (!sq)
@@ -159,7 +142,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 			return NULL;
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
-			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "user"), s->base.name, tname);
+			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", backend_get_string(sql, "user"), s->base.name, tname);
 			return NULL;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
@@ -303,24 +286,13 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			if (!cv)
 				return sql_error(sql, 02, "SELECT: ROWID column used without table reference");
 			return stmt_mirror(stmt_dup(cv->s));
-		} else {
+		} else if (!(cs = scope_bind(scp, NULL, name))) {
+			/* maybe simple param */
 			sql_arg *a = sql_bind_param(sql, name);
-			stmt *s = stack_find_var(sql, name);
-			cs = scope_bind(scp, NULL, name);
-
-			if (cs) {
-				if (a || s) {
-					stmt_destroy(cs);
-					return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
-				}
-			} else if (a) {
-				if (s) 
-					return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
-				cs = stmt_var(_strdup(a->name), &a->type, 0, 0);
-			} else if (s) {
-				cs = sql_var_ref(sql, name, 0);
+			if (!a) {
+				return sql_var_ref(sql, name, 0);
 			} else {
-				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+				cs = stmt_var(_strdup(a->name), &a->type, 0, 0);
 			}
 		}
 	} else if (dlist_length(l) == 2) {
@@ -495,7 +467,6 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 	sql_subtype *restype = NULL, rtype;
 	stmt *res = NULL, *else_stmt = NULL;
 	node *n, *m;
-	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (dn) {
 		stmt *cond = NULL, *result = NULL;
@@ -504,8 +475,8 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		if (token == SQL_NULLIF) {
 			stmt *e1, *e2;
 
-			e1 = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
-			e2 = sql_value_exp(sql, scp, dn->next->data.sym, grp, subset, f, ek);
+			e1 = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f);
+			e2 = sql_value_exp(sql, scp, dn->next->data.sym, grp, subset, f);
 			if (e1 && subset && subset->nrcols && e1->nrcols == 0)
 				e1 = stmt_const(first_subset(subset), e1);
 			if (e1 && e2) {
@@ -521,18 +492,13 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			/* COALESCE(e1,e2) == CASE WHEN e1 
 			   IS NOT NULL THEN e1 ELSE e2 END */
 		} else if (token == SQL_COALESCE) {
-			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
+			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f);
 
 			if (cond && subset && subset->nrcols && cond->nrcols == 0)
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
-				sql_subtype *bt = sql_bind_localtype("bit");
-				sql_subtype *tp = tail_type(cond);
-				sql_subfunc *isnul, *not;
-				isnul = sql_bind_func_result(sql->session->schema, "isnull", tp, NULL, bt);
-				not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
 				result = stmt_dup(cond);
-				cond = stmt_unop(stmt_unop(cond, isnul), not);
+				cond = sql_compare(sql, cond, stmt_atom(atom_general(tail_type(cond), NULL, 0)), "<>", sql_search);
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
@@ -542,7 +508,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			} else {
 				cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset, sql_search);
 			}
-			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, f, ek);
+			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, f);
 		}
 		if (!cond || !result) {
 			list_destroy(conds);
@@ -569,7 +535,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		stmt *cond = NULL, *result = NULL;
 
 		if (token == SQL_COALESCE) {
-			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
+			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f);
 
 			if (cond && subset->nrcols && cond->nrcols == 0)
 				cond = stmt_const(first_subset(subset), cond);
@@ -585,7 +551,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			} else {
 				cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset, sql_search);
 			}
-			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, sql_search, ek);
+			result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset, sql_search);
 		}
 		if (!cond || !result) {
 			list_destroy(conds);
@@ -623,7 +589,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		stmt *result = else_stmt;
 
 		if (!result)
-			result = sql_value_exp(sql, scp, opt_else, grp, subset, f, ek);
+			result = sql_value_exp(sql, scp, opt_else, grp, subset, f);
 
 		tpe = tail_type(result);
 		if (tpe && restype) {
@@ -724,8 +690,8 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	dlist *dl = se->data.lval;
 	symbol *s = dl->h->data.sym;
 	sql_subtype *tpe = &dl->h->next->data.typeval;
-	exp_kind ek = {type_value, card_column, FALSE};
-	stmt *l = sql_value_exp(sql, scp, s, grp, subset, f, ek);
+
+	stmt *l = sql_value_exp(sql, scp, s, grp, subset, f);
 
 	if (!l)
 		return NULL;
@@ -739,16 +705,9 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 				l = stmt_binop(l, stmt_atom_int(tpe->digits), c);
 		}
 	}
-	if (l) {
-		sql_type *ltpe = tail_type(l)->type;
-		l = check_types(sql, tpe, l, type_cast);
-		if (!l) {
-			/* we overwrite the error here */
-			sql->errstr[0] = 0;
-			return sql_error(sql, 02, "CAST: cannot cast type '%s' to type '%s'", ltpe->sqlname, tpe->type->sqlname );
-		}
-	}
-	return l;
+	if (l)
+		return check_types(sql, tpe, l, type_cast);
+	return NULL;
 }
 
 static stmt *
@@ -783,10 +742,9 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	char *fname = qname_fname(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
-	exp_kind ek = {type_value, card_column, FALSE};
 
 	for (; ops; ops = ops->next) {
-		stmt *op = sql_value_exp(sql, scp, ops->data.sym, grp, subset, fs, ek);
+		stmt *op = sql_value_exp(sql, scp, ops->data.sym, grp, subset, fs);
 
 		if (!op) {
 			list_destroy(sl);
@@ -961,14 +919,13 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	char *fname = qname_fname(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
-	exp_kind ek = {type_value, card_column, FALSE};
 
 	sql->depth++;
 	if (sql->depth > SQL_MAXDEPTH)
 		return sql_error(sql, 02, "SELECT: too many nested operators");
 
- 	ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, f, ek);
-	rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset, f, ek);
+ 	ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, f);
+	rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset, f);
 	sql->depth --;
 
 	if (!ls || !rs) {
@@ -1035,8 +992,7 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	char *sname = qname_schema(l->data.lval);
 	sql_subfunc *f = NULL;
 	sql_subtype *rt = NULL;
-	exp_kind ek = {type_value, card_column, FALSE};
-	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, fs, ek);
+	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, fs);
 	sql_schema *s = sql->session->schema;
 
 	if (!rs)
@@ -1117,8 +1073,6 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 				return stmt_atom_int(1);
 		}
 	} else {
-		exp_kind ek = {type_value, card_column, FALSE};
-
 		/* use cnt as nils shouldn't be counted */
 		if (strcmp(aggrstr, "count") == 0) {
 			aggrstr = "count_no_nil";
@@ -1127,7 +1081,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		}
 		/* the values which are aggregated together, no grp should
 		 * be given there to optain the values */
-		s = sql_value_exp(sql, scp, l->h->next->next->data.sym, /*grp */ NULL, subset, f, ek);
+		s = sql_value_exp(sql, scp, l->h->next->next->data.sym, /*grp */ NULL, subset, f);
 	}
 
 	if (s && distinct) {
@@ -1229,7 +1183,7 @@ sql_table_exp(mvc *sql, scope *scp, symbol *sym )
 }
 
 stmt *
-sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind ek)
+sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 {
 
 	switch (se->token) {
@@ -1255,33 +1209,12 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 		   subquery result is used
 		 */
 		if (s && s->type == st_list) {
-			/* single value (no outer references) */
+			/* single value */
 		 	if (list_length(s->op1.lval) == 1) {
 				stmt *t = stmt_dup(s->op1.lval->h->data);
 				stmt_destroy(s);
 				s = t;
-
-				/* if we got a unrelated column, we need 
-				   a dynamic check for a single valued result.
-				*/
-				if (s->nrcols != 0 && s->aggr != 1 &&
-				   (ek.card == card_value || 
-				    ek.card == card_column)) {
-					/* Here we obtain a single value
-					   which is NULL incase of an empty
-					   result or the single result of
-					   the sub query. We raise an exception
-					   incase the sub query returned more
-					   results.
-					 */
-					
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(s));
-					assert(zero_or_one);
-					s = stmt_aggr(s, NULL, zero_or_one);
-					/* we aggregated in the subquery not 
-					   in the outer */
-					s->aggr = 0;
-				}
+				s->aggr = 1;	
 			}
 		}
 
@@ -1316,10 +1249,21 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 		break;
 	case SQL_NEXT:{
 		char *seq = se->data.sval;
-
-		if (!find_sql_sequence(sql->session->schema, seq)) 
+		int len = _strlen(seq);
+		/* NOTE: this is a dirty hack to disable the existence check on
+		 *       inline generated sequences, as they don't exist yet,
+		 *       but eventually will be.  We recognise this situation if
+		 *       the sequence name ends with triple double quotes (""").
+		 */
+		if (
+			seq[len - 3] != '"' &&
+			seq[len - 2] != '"' &&
+			seq[len - 1] != '"' &&
+			!sql_find_seq(sql, seq))
+		{
 			return sql_error(sql, 02, "NEXT VALUE FOR: "
 			                 "no such sequence '%s'", seq);
+		}
 		return stmt_seq_next( _strdup(seq) );
 	}
 		break;
@@ -2122,8 +2066,7 @@ static stmt *
 _column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, int f)
 {
 	dlist *l = column_e->data.lval;
-	exp_kind ek = {type_value, card_column, FALSE};
-	stmt *s = sql_value_exp(sql, scp, l->h->data.sym, grp, subset, f, ek);
+	stmt *s = sql_value_exp(sql, scp, l->h->data.sym, grp, subset, f);
 
 	if (!s)
 		return NULL;
@@ -2254,7 +2197,6 @@ static stmt *
 sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f)
 {
 	stmt *rs, *ls;
-	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (lo->token == SQL_SELECT) { /* swap subquery to the right handside */
 		symbol *tmp = lo;
@@ -2268,12 +2210,12 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			compare_op[0] = '>';
 	}
 
-	ls = sql_value_exp(sql, scp, lo, grp, subset, f, ek);
+	ls = sql_value_exp(sql, scp, lo, grp, subset, f);
 	if (!ls)
 		return NULL;
 	
 	if (ro->token != SQL_SELECT) {
-		rs = sql_value_exp(sql, scp, ro, grp, subset, f, ek);
+		rs = sql_value_exp(sql, scp, ro, grp, subset, f);
 		if (!rs) {
 			stmt_destroy(ls);
 			return NULL;
@@ -2503,8 +2445,6 @@ sql_or(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 stmt *
 sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f)
 {
-	exp_kind ek = {type_value, card_column, FALSE};
-
 	if (!sc)
 		return NULL;
 	switch (sc->token) {
@@ -2545,9 +2485,9 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		int symmetric = sc->data.lval->h->next->data.ival;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
-		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f, ek);
-		stmt *rs1 = sql_value_exp(sql, scp, ro1, grp, subset, f, ek);
-		stmt *rs2 = sql_value_exp(sql, scp, ro2, grp, subset, f, ek);
+		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f);
+		stmt *rs1 = sql_value_exp(sql, scp, ro1, grp, subset, f);
+		stmt *rs2 = sql_value_exp(sql, scp, ro2, grp, subset, f);
 		sql_subtype *ct = NULL;
 
 		if (!ls || !rs1 || !rs2)
@@ -2592,7 +2532,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		stmt *res = NULL;
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
-		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f, ek);
+		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f);
 		stmt *a = NULL, *e = NULL;
 		sql_subtype *st = sql_bind_localtype("str");
 		char *es = NULL;
@@ -2606,9 +2546,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		}
 
 		lo = ro->data.lval->h->data.sym;
-		/* like uses a single string pattern */
-		ek.card = card_value;
-		a = sql_value_exp(sql, scp, lo, grp, subset, f, ek);
+		a = sql_value_exp(sql, scp, lo, grp, subset, f);
 
 		if (!a) {
 			stmt_destroy(ls);
@@ -2667,12 +2605,10 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	{
 		dlist *l = sc->data.lval;
 		symbol *lo = l->h->data.sym;
-		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f, ek);
+		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f);
 
 		if (!ls)
 			return NULL;
-		/* TODO fix parsing, ie subquery seperate from values */
-		ek.card = card_set;
 		if (l->h->next->type == type_list) {
 			dnode *n = l->h->next->data.lval->h;
 			sql_subtype *ct = tail_type(ls);
@@ -2680,7 +2616,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 			for (; n; n = n->next) {
 				symbol *sval = n->data.sym;
-				stmt *v = sql_value_exp(sql, scp, sval, NULL, NULL, f, ek);
+				stmt *v = sql_value_exp(sql, scp, sval, NULL, NULL, f);
 
 				if (!v) {
 					stmt_destroy(ls);
@@ -2894,9 +2830,9 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	/* is (NOT) NULL */
 	{
 		symbol *cr = sc->data.sym;
-		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f, ek);
+		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f);
 
-		/* TODO predicate! */
+		/* TODO predicate!! */
 		if (res) {
 			sql_subtype *tpe = tail_type(res);
 			stmt *a = stmt_atom(atom_general(tpe, NULL, 0));
@@ -2947,7 +2883,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		r = stmt_dup( s->op1.lval->h->data );
 		stmt_destroy(s);
 		return r;
-	} break;
+	} 
+		break;
 	default:
 		return sql_error(sql, 02, "predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
 	}
@@ -3022,7 +2959,6 @@ sql_selection_ref(mvc *sql, scope *scp, symbol *grp, dlist *selection, stmt *sub
 	dnode *n;
 	dlist *gl = grp->data.lval;
 	char *name = NULL;
-	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (dlist_length(gl) > 1)
 		return NULL;
@@ -3037,7 +2973,7 @@ sql_selection_ref(mvc *sql, scope *scp, symbol *grp, dlist *selection, stmt *sub
 			/* AS name */ 
 			if (l->h->next->data.sval &&
 			    strcmp(l->h->next->data.sval, name) == 0){
-				return sql_value_exp(sql, scp, l->h->data.sym, NULL, subset, sql_sel, ek);
+				return sql_value_exp(sql, scp, l->h->data.sym, NULL, subset, sql_sel);
 			}
 		}
 	}
@@ -3220,14 +3156,10 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs || !tail_type(cs)) {
+			if (cs) stmt_destroy(cs);
 			list_destroy(sl);
-			sql_select_cleanup(sql, cs, subset, NULL);
+			sql_select_cleanup(sql, s, subset, NULL);
 			return sql_error(sql, 02, "SELECT: subquery result missing");
-		}
-		if (tail_type(cs)->comp_type) {
-			list_destroy(sl);
-			sql_select_cleanup(sql, cs, subset, NULL);
-			return sql_error(sql, 02, "SELECT: subquery returns a table");
 		}
 		list_append(sl, cs);
 		aggr |= cs->aggr;

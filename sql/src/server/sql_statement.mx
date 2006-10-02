@@ -51,6 +51,7 @@ typedef enum stmt_type {
 	st_none,
 	st_sql,			/* sometimes a query rewrite is easier */
 	st_var,			/* use and/or declare variable */
+	st_seq_next,		/* calculate next sequence number */
 
 	st_basetable,	
 	st_table,		/* some functions return a table */
@@ -182,6 +183,7 @@ extern stmt *stmt_sql(char *query);
 extern stmt *stmt_var(char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_seq_next(char *seqname);
+extern stmt *stmt_internal(int st, list *ops);
 
 extern stmt *stmt_table(stmt *cols, int temp);
 extern stmt *stmt_basetable(sql_table *t, char *tname);
@@ -204,7 +206,6 @@ extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
 extern stmt *stmt_atom_string(char *s);
 extern stmt *stmt_atom_int(int i);
-extern stmt *stmt_atom_lng(lng l);
 extern stmt *stmt_bool(int b);
 extern stmt *stmt_filter(stmt *sel);
 extern stmt *stmt_select(stmt *op1, stmt *op2, comp_type cmptype);
@@ -251,7 +252,6 @@ extern stmt *stmt_table_clear(sql_table *t);
 extern stmt *stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode);
 
 extern stmt *stmt_const(stmt *s, stmt *val);
-
 extern stmt *stmt_mark(stmt *s, int id);
 extern stmt *stmt_mark_tail(stmt *s, int id);
 extern stmt *stmt_gen_group(stmt *s); /* given a gid,cnt blowup to full groups */
@@ -319,6 +319,7 @@ st_type2string(st_type type)
 		ST(none);
 		ST(sql);
 		ST(var);
+		ST(seq_next);
 
 		ST(basetable);
 		ST(table);
@@ -414,17 +415,8 @@ stmt_atom_int(int i)
 {
 	sql_subtype t;
 
-	sql_find_subtype(&t, "int", 32, 0);
+	sql_find_subtype(&t, "int", 9, 0);
 	return stmt_atom(atom_int(&t, i));
-}
-
-stmt *
-stmt_atom_lng(lng l)
-{
-	sql_subtype t;
-
-	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(atom_int(&t, l));
 }
 
 stmt *
@@ -613,6 +605,7 @@ stmt_destroy(stmt *s)
 		case st_pivot:
 		case st_rs_column:
 		case st_sql:
+		case st_seq_next:
 
 		case st_while:
 		case st_if:
@@ -830,16 +823,28 @@ stmt_varnr(int nr, sql_subtype *t)
 	return s;
 }
 
+
 stmt *
 stmt_seq_next(char *seqname)
 {
-	sql_subtype *str_t = sql_bind_localtype("str");
-	stmt *seq = stmt_atom_string(seqname);
-	sql_subfunc *f;
+	stmt *s = stmt_create(st_seq_next);
 
-	f = sql_bind_func(NULL, "next_value_for", str_t, NULL);
-	assert(f);
-	return stmt_unop(seq, f);
+	s->op1.stval = stmt_atom_string(seqname);
+	s->key = 1;
+	return s;
+}
+
+stmt *
+stmt_internal(int st, list *ops)
+{
+	stmt *s = stmt_create((st_type)st);
+	int len = list_length(ops);
+
+	if (len >= 1) s->op1.stval = stmt_dup(ops->h->data);
+	if (len >= 2) s->op2.stval = stmt_dup(ops->h->next->data);
+	if (len >= 3) s->op3.stval = stmt_dup(ops->h->next->next->data);
+	s->key = 1;
+	return s;
 }
 
 stmt *
@@ -1826,6 +1831,7 @@ tail_type(stmt *st)
 		} else if (st->op1.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
+	case st_seq_next:
 	case st_table_clear:
 		return sql_bind_localtype("lng");
 	case st_mirror:
@@ -1864,7 +1870,6 @@ head_type(stmt *st)
 {
 	switch (st->type) {
 	case st_aggr:
-	case st_convert:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
@@ -2017,6 +2022,7 @@ column_name(stmt *st)
 	case st_pivot:
 	case st_replace:
 	case st_convert:
+	case st_seq_next:
 		return column_name(st->op1.stval);
 
 	case st_op:
@@ -2149,6 +2155,7 @@ schema_name(stmt *st)
 	case st_pivot:
 	case st_replace:
 	case st_convert:
+	case st_seq_next:
 	case st_unop:
 	case st_binop:
 	case st_Nop:

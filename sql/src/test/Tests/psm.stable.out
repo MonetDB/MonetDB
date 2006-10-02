@@ -32,11 +32,6 @@ Over..
 # 1 # length
 [ 1	]
 # . # table_name
-# my_abs1_single_value # name
-# int # type
-# 1 # length
-[ 1	]
-# . # table_name
 # my_while_single_value # name
 # int # type
 # 2 # length

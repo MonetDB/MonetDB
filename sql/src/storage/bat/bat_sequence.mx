@@ -22,8 +22,8 @@
 extern void sequences_init(void);
 extern void sequences_exit(void);
 
-extern int seq_next_value(sql_sequence *seq, lng *val);
-extern int seq_restart(sql_sequence *seq, lng start);
+extern int sql_next_value(sql_trans *tr, char *seq, lng *val);
+extern int sequence_exit(char* s);
 
 #endif /* BAT_SEQ_H */
 @c
@@ -33,18 +33,37 @@ extern int seq_restart(sql_sequence *seq, lng start);
 #include "bat_bm.h"
 #include "bat_logger.h"
 
-typedef struct bat_sequence {
-	sqlid seqid;
-	bit called;
+/*
+ * There is a small window were the update of the cached value is done by a
+ * different transaction. This could result in a wrong order of the updates 
+ * which incase of a crash could lead to second use of sequence numbers.
+ *
+ * Creating/using 2 sequence numbers at the sametime will give problems as
+ * the sql_seqs list is global but the numbers aren't committed.
+ * The impact of this is low as one transaction will fail, but still the
+ * wrong sql_seqs list is used.
+ */
+
+typedef struct sql_sequence {
+	char *name;
+	lng start;
 	lng cur;
+	lng minvalue;
+	lng maxvalue;
+	lng increment;
+	lng cacheinc;
+	bit cycle;
 	lng cached;
-} bat_sequence;
+	bit called;
+	bit save;
+} sql_sequence;
 
 static list *sql_seqs = NULL;
 
 static void 
-sequence_destroy( bat_sequence *s )
+sequence_destroy( sql_sequence *s )
 {
+	_DELETE(s->name);
 	_DELETE(s);
 }
 
@@ -53,93 +72,216 @@ void sequences_init(void)
 	sql_seqs = list_create( (fdestroy)sequence_destroy );
 }
 
-void sequences_exit(void)
-{
-	list_destroy(sql_seqs);
-}
-
-/* lock is held */
-static void 
-sql_update_sequence_cache(sql_sequence *seq, lng cached) 
-{
-	log_sequence(logger, seq->base.id, cached);
-}
-
-/* lock is held */
-static bat_sequence *
-sql_create_sequence(sql_sequence *seq ) 
-{
-	lng id = 0;
-	bat_sequence *s = NULL;
-
-	s = NEW(bat_sequence);
-	s -> seqid = seq->base.id;
-	s -> called = 0;
-	s -> cur = seq->start; 	  
-	s -> cached = seq->start;
-
-	if (seq->base.flag == TR_OLD && 
-	    logger_sequence(logger, seq->base.id, &id )) 
-		s->cached = id;
-	s -> cur = s->cached;
-	return s;
-}
-
-int seq_restart(sql_sequence *seq, lng start)
-{
-	node *n = NULL;
-	bat_sequence *s;
+/**
+ * Stores the current cache value of the sequence and destroys it.  This
+ * function is used when an ALTER or DROP SEQUENCE statement is
+ * performed.  Because the given sequence is part of the sql_seqs list,
+ * the list is updated accordingly by this function.
+ *
+ * @return 0 if an error occurred while removing the sequence, 1
+ *         otherwise
+ */
+int sequence_exit(char* seq) {
+	sql_trans *ntr;
+	sql_schema *sys;
+	sql_table *seqs;
+	sql_column *seq_name;
+	sql_column *seq_cached;
+	ssize_t id;
+	node* n;
+	sql_sequence *s;
 
 	store_lock();
-	for ( n = sql_seqs->h; n; n = n ->next ) {
-		s = n->data;
-		if (s->seqid == seq->base.id)
-			break;
-	}
-	if (!n) {
-		s = sql_create_sequence(seq);
-		if (!s) {
-			store_unlock();
-			return 0;
+ 	ntr = sql_trans_create(0, NULL, NULL);
+ 	sys = find_sql_schema(ntr, "sys");
+ 	seqs = find_sql_table(sys, "sequences");
+ 	seq_name = find_sql_column(seqs, "name");
+ 	seq_cached = find_sql_column(seqs, "cached");
+
+	/* find the right node in the list and remove it */
+	if (list_length(sql_seqs)) {
+		for (n = sql_seqs->h; n; n = n ->next) {
+			s = n->data;
+			if (strcmp(s->name, seq) == 0) {
+				list_remove_node(sql_seqs, n);
+				break;
+			}
 		}
-		list_append(sql_seqs, s);
+		/* the sequence was not loaded */
+		sql_trans_destroy(ntr);
+		store_unlock();
+		return(1);
 	} else {
-		s = n->data;
+		/* nothing is loaded yet */
+		sql_trans_destroy(ntr);
+		store_unlock();
+		return(1);
 	}
-	s->called = 0;
-	s->cur = start;
-	s->cached = start + seq->cacheinc;
-	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
-	{
-		/* we're out of numbers */
+
+	if (s && (id = column_find_row(ntr, seq_name, s->name, NULL)) >= 0) {
+		column_update_value(ntr, seq_cached, id, &s->cur);
+	} else {
+		sql_trans_destroy(ntr);
+		/* error message:
+		 * "Internal consistency error: no such sequence %s", s->name
+		 */
 		store_unlock();
 		return(0);
 	}
-	sql_update_sequence_cache(seq, s->cached);
-	store_unlock(); 
-	return 1;
+	sql_trans_commit(ntr);
+	sql_trans_destroy(ntr);
+	sequence_destroy(s);
+	store_unlock();
+
+	return(1);
 }
 
+void sequences_exit(void)
+{
+	node *n;
+	sql_trans *ntr = sql_trans_create(0, NULL, NULL);
+	sql_schema *sys = find_sql_schema(ntr, "sys");
+	sql_table *seqs = find_sql_table(sys, "sequences");
+	sql_column *seq_name = find_sql_column(seqs, "name");
+	sql_column *seq_cached = find_sql_column(seqs, "cached");
+
+	/* reset sequence numbers */
+	if (list_length(sql_seqs)){
+		for ( n = sql_seqs->h; n; n = n ->next ) {
+			sql_sequence *s = n->data;
+			ssize_t id;
+	
+			if ((id = column_find_row(ntr, seq_name, s->name, NULL)) >= 0) 
+				column_update_value(ntr, seq_cached, id, &s->cur);
+		}
+		sql_trans_commit(ntr);
+	}
+	list_destroy(sql_seqs);
+	sql_trans_destroy(ntr);
+}
+
+static void 
+sql_update_sequence_cache(sql_trans *tr, char *seq, lng cached, bit called) 
+{
+	ssize_t id;
+	sql_trans *ntr;
+	sql_schema *sys;
+	sql_table *seqs;
+	sql_column *seq_name;
+	sql_column *seq_cached;
+	sql_column *seq_called;
+
+	store_lock();
+ 	ntr = sql_trans_create(0, NULL, NULL);
+ 	sys = find_sql_schema(ntr, "sys");
+ 	seqs = find_sql_table(sys, "sequences");
+ 	seq_name = find_sql_column(seqs, "name");
+ 	seq_cached = find_sql_column(seqs, "cached");
+ 	seq_called = find_sql_column(seqs, "called");
+
+	if ((id = column_find_row(ntr, seq_name, seq, NULL)) < 0) {
+		/* a new sequence needs to be updated in the current transaction */
+		sys = find_sql_schema(tr, "sys");
+		seqs = find_sql_table(sys, "sequences");
+		seq_name = find_sql_column(seqs, "name");
+		seq_cached = find_sql_column(seqs, "cached");
+		seq_called = find_sql_column(seqs, "called");
+
+		if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) {
+			sql_trans_destroy(ntr);
+			store_unlock();
+			return;
+		}
+		column_update_value(tr, seq_cached, id, &cached);
+		column_update_value(tr, seq_called, id, &called);
+	} else {
+		column_update_value(ntr, seq_cached, id, &cached);
+		column_update_value(ntr, seq_called, id, &called);
+		sql_trans_commit(ntr);
+	}
+	sql_trans_destroy(ntr);
+	store_unlock();
+}
+
+static sql_sequence *
+sql_create_sequence(sql_trans *tr, char *seq ) 
+{
+	void *p;
+	ssize_t id;
+	sql_sequence *s = NULL;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *seqs = find_sql_table(sys, "sequences");
+	sql_column *seq_name = find_sql_column(seqs, "name");
+	sql_column *seq_start = find_sql_column(seqs, "start");
+	sql_column *seq_inc = find_sql_column(seqs, "increment");
+	sql_column *seq_cache = find_sql_column(seqs, "cache");
+	sql_column *seq_min = find_sql_column(seqs, "minvalue");
+	sql_column *seq_max = find_sql_column(seqs, "maxvalue");
+	sql_column *seq_cycle = find_sql_column(seqs, "cycle");
+	sql_column *seq_cached = find_sql_column(seqs, "cached");
+	sql_column *seq_called = find_sql_column(seqs, "called");
+	lng nr;
+
+	if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) 
+		return NULL;
+	
+	s = NEW(sql_sequence);
+	s -> save = 0;
+	s -> name = _strdup(seq);
+	s -> start = *(lng*)(p=column_find_value(tr, seq_start, id)); _DELETE(p);
+	s -> increment = *(lng*)(p=column_find_value(tr, seq_inc, id)); _DELETE(p);
+	/* todo cacheinc should be multiple of increment */
+	s -> cacheinc = s->increment * *(lng*)(p=column_find_value(tr, seq_cache, id)); _DELETE(p);
+	s -> minvalue = *(lng*)(p=column_find_value(tr, seq_min, id)); _DELETE(p);
+	s -> maxvalue = *(lng*)(p=column_find_value(tr, seq_max, id)); _DELETE(p);
+	s -> cycle = *(bit*)(p=column_find_value(tr, seq_cycle, id)); _DELETE(p);
+	s -> called = *(bit*)(p=column_find_value(tr, seq_called, id)); _DELETE(p);
+	s -> cached = *(lng*)(p=column_find_value(tr, seq_cached, id)); _DELETE(p);
+
+	/* clear the read timestamps, else we cannot commit */
+	seq_name->base.rtime = seq_start->base.rtime = seq_inc->base.rtime = seq_cache->base.rtime = seq_min->base.rtime = seq_max->base.rtime = seq_cycle->base.rtime = seq_cached->base.rtime = seq_called->base.rtime = 0;
+	seqs->base.rtime = 0;
+
+	/* move to the global transaction, to get the current values */
+	while(tr->parent) 
+		tr = tr->parent;
+
+	sys = find_sql_schema(tr, "sys");
+	seqs = find_sql_table(sys, "sequences");
+	seq_name = find_sql_column(seqs, "name");
+	seq_cached = find_sql_column(seqs, "cached");
+
+	if (s->called) {
+		s -> cur = s->cached;
+		if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) 
+			return s;
+		nr = *(lng*)(p=column_find_value(tr, seq_cached, id)); _DELETE(p);
+		if (nr > s->cur) 
+			s->cur = s->cached = nr;
+	} else {
+		s -> cur = s->start;
+		s -> called = 1;
+		s -> save = 1;
+	}
+	return s;
+}
 
 int
-seq_next_value(sql_sequence *seq, lng *val)
+sql_next_value(sql_trans *tr, char *seq, lng *val)
 {
 	lng nr = 0;
 	node *n = NULL;
-	bat_sequence *s;
-	int save = 0;
+	sql_sequence *s;
 
 	*val = 0;
 	store_lock();
 	for ( n = sql_seqs->h; n; n = n ->next ) {
 		s = n->data;
-		if (s->seqid == seq->base.id)
+		if (strcmp(s->name, seq) == 0) 
 			break;
 	}
 	if (!n) {
-		s = sql_create_sequence(seq);
+		s = sql_create_sequence(tr, seq);
 		if (!s) {
 			store_unlock();
 			return 0;
@@ -147,29 +289,28 @@ seq_next_value(sql_sequence *seq, lng *val)
 		list_append(sql_seqs, s);
 	} else {
 		s = n->data;
-		if (s->called)
-			s->cur += seq->increment;
+		s->cur += s->increment;
 	}
 	/* handle min/max and cycle */
-	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
-	    (seq->minvalue && s->cur < seq->minvalue))
+	if ((s->maxvalue && s->cur > s->maxvalue) ||
+	    (s->minvalue && s->cur < s->minvalue))
 	{
-		if (seq->cycle) {
+		if (s->cycle) {
 			/* cycle to the start value again */
-			s->cur = seq->start;
-			save = 1;
+			s->cur = s->start;
+			s->save = 1;
 		} else { /* we're out of numbers */
 			store_unlock();
 			return(0);
 		}
 	}
-	s->called = 1;
 	nr = s->cur;
 	*val = nr;
-	if (save || nr == s->cached) {
-		s->cached = nr + seq->cacheinc;
-		sql_update_sequence_cache(seq, s->cached);
+	if (s->save || nr == s->cached) {
+		/* update value in a single transaction */
+		s->cached = nr + s->cacheinc;
 		store_unlock(); 
+		sql_update_sequence_cache(tr, seq, s->cached, s->called);
 		return 1;
 	}
 	assert(nr<s->cached);

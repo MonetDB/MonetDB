@@ -1,0 +1,549 @@
+stdout of test 'arith` in directory 'src/modules/plain` itself:
+
+
+# 19:54:40 >  
+# 19:54:40 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_src_modules_plain arith.prelude < arith.milM
+# 19:54:40 >  
+
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+module("arith");
+
+setoid(oid(20000000));
+var sht1 := sht(2);
+var sht2 := sht(5);
+var int1 := 5;
+var int2 := 2;
+var flt1 := 2.5;
+var flt2 := 5.4;
+var dbl1 := dbl(-2.500001);	 # may also need string since float is default
+var dbl2 := dbl(54.00456789);      # real and is less significant	
+var lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
+var lng2 := lng("5400456789");     # int
+var oid1 := oid(int1);
+var oid2 := oid(int2);
+
+sht1.print();
+[ 2 ]
+sht2.print();
+[ 5 ]
+int1.print();
+[ 5 ]
+int2.print();
+[ 2 ]
+flt1.print();
+[ 2.5 ]
+flt2.print();
+[ 5.4000001 ]
+dbl1.print();
+[ -2.5000009536743164 ]
+dbl2.print();
+[ 54.004566192626953 ]
+lng1.print();
+[ -9000000000000 ]
+lng2.print();
+[ 5400456789 ]
+oid1.print();
+[ 5@0 ]
+oid2.print();
+[ 2@0 ]
+
+# DD/Bug 6389: (i%0) should return nil instead of crashing the server
+CATCH((chr(1)%int(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: chrint_checkbinary_MOD: operation failed.\n" ]
+CATCH((sht(1)%int(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: shtint_checkbinary_MOD: operation failed.\n" ]
+CATCH((int(1)%sht(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: intsht_checkbinary_MOD: operation failed.\n" ]
+CATCH((int(1)%chr(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: intchr_checkbinary_MOD: operation failed.\n" ]
+CATCH((int(1)%int(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: intint_checkbinary_MOD: operation failed.\n" ]
+CATCH((lng(1)%int(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: lngint_checkbinary_MOD: operation failed.\n" ]
+CATCH((dbl(1)%dbl(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: dbldbl_checkbinary_MOD: operation failed.\n" ]
+CATCH((flt(1)%flt(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: fltflt_checkbinary_MOD: operation failed.\n" ]
+
+('a' < 'z').print();  ('z' < 'a').print();  ('a' < 'a').print();
+[ true ]
+[ false ]
+[ false ]
+('a' <= 'z').print(); ('z' <= 'a').print(); ('a' <= 'a').print();
+[ true ]
+[ false ]
+[ true ]
+('a' = 'z').print();  ('z' = 'a').print();  ('a' = 'a').print();
+[ false ]
+[ false ]
+[ true ]
+('a' >= 'z').print(); ('z' >= 'a').print(); ('a' >= 'a').print();
+[ false ]
+[ true ]
+[ true ]
+('a' > 'z').print();  ('z' > 'a').print();  ('a' > 'a').print();
+[ false ]
+[ true ]
+[ false ]
+
+(sht1 < sht2).print();  (sht2 < sht1).print();  (sht1 < sht1).print();
+[ true ]
+[ false ]
+[ false ]
+(sht1 <= sht2).print(); (sht2 <= sht1).print(); (sht1 <= sht1).print();
+[ true ]
+[ false ]
+[ true ]
+(sht1 = sht2).print();  (sht2 = sht1).print();  (sht1 = sht1).print();
+[ false ]
+[ false ]
+[ true ]
+(sht1 >= sht2).print(); (sht2 >= sht1).print(); (sht1 >= sht1).print();
+[ false ]
+[ true ]
+[ true ]
+(sht1 > sht2).print();  (sht2 > sht1).print();  (sht1 > sht1).print();
+[ false ]
+[ true ]
+[ false ]
+
+(int1 < int2).print();  (int2 < int1).print();  (int1 < int1).print();
+[ false ]
+[ true ]
+[ false ]
+(int1 <= int2).print(); (int2 <= int1).print(); (int1 <= int1).print();
+[ false ]
+[ true ]
+[ true ]
+(int1 = int2).print();  (int2 = int1).print();  (int1 = int1).print();
+[ false ]
+[ false ]
+[ true ]
+(int1 >= int2).print(); (int2 >= int1).print(); (int1 >= int1).print();
+[ true ]
+[ false ]
+[ true ]
+(int1 > int2).print();  (int2 > int1).print();  (int1 > int1).print();
+[ true ]
+[ false ]
+[ false ]
+
+(flt1 < flt2).print();  (flt2 < flt1).print();  (flt1 < flt1).print();
+[ true ]
+[ false ]
+[ false ]
+(flt1 <= flt2).print(); (flt2 <= flt1).print(); (flt1 <= flt1).print();
+[ true ]
+[ false ]
+[ true ]
+(flt1 = flt2).print();  (flt2 = flt1).print();  (flt1 = flt1).print();
+[ false ]
+[ false ]
+[ true ]
+(flt1 >= flt2).print(); (flt2 >= flt1).print(); (flt1 >= flt1).print();
+[ false ]
+[ true ]
+[ true ]
+(flt1 > flt2).print();  (flt2 > flt1).print();  (flt1 > flt1).print();
+[ false ]
+[ true ]
+[ false ]
+
+(dbl1 < dbl2).print();  (dbl2 < dbl1).print();  (dbl1 < dbl1).print();
+[ true ]
+[ false ]
+[ false ]
+(dbl1 <= dbl2).print(); (dbl2 <= dbl1).print(); (dbl1 <= dbl1).print();
+[ true ]
+[ false ]
+[ true ]
+(dbl1 = dbl2).print();  (dbl2 = dbl1).print();  (dbl1 = dbl1).print();
+[ false ]
+[ false ]
+[ true ]
+(dbl1 >= dbl2).print(); (dbl2 >= dbl1).print(); (dbl1 >= dbl1).print();
+[ false ]
+[ true ]
+[ true ]
+(dbl1 > dbl2).print();  (dbl2 > dbl1).print();  (dbl1 > dbl1).print();
+[ false ]
+[ true ]
+[ false ]
+
+(lng1 < lng2).print();  (lng2 < lng1).print();  (lng1 < lng1).print();
+[ true ]
+[ false ]
+[ false ]
+(lng1 <= lng2).print(); (lng2 <= lng1).print(); (lng1 <= lng1).print();
+[ true ]
+[ false ]
+[ true ]
+(lng1 = lng2).print();  (lng2 = lng1).print();  (lng1 = lng1).print();
+[ false ]
+[ false ]
+[ true ]
+(lng1 >= lng2).print(); (lng2 >= lng1).print(); (lng1 >= lng1).print();
+[ false ]
+[ true ]
+[ true ]
+(lng1 > lng2).print();  (lng2 > lng1).print();  (lng1 > lng1).print();
+[ false ]
+[ true ]
+[ false ]
+
+(oid1 < oid2).print();  (oid2 < oid1).print();  (oid1 < oid1).print();
+[ false ]
+[ true ]
+[ false ]
+(oid1 <= oid2).print(); (oid2 <= oid1).print(); (oid1 <= oid1).print();
+[ false ]
+[ true ]
+[ true ]
+(oid1 = oid2).print();  (oid2 = oid1).print();  (oid1 = oid1).print();
+[ false ]
+[ false ]
+[ true ]
+(oid1 >= oid2).print(); (oid2 >= oid1).print(); (oid1 >= oid1).print();
+[ true ]
+[ false ]
+[ true ]
+(oid1 > oid2).print();  (oid2 > oid1).print();  (oid1 > oid1).print();
+[ true ]
+[ false ]
+[ false ]
+
+("abcde" < "abcdf").print();  ("abcdf" < "abcde").print();  ("abcde" < "abcde").print();
+[ true ]
+[ false ]
+[ false ]
+("abcde" <= "abcdf").print(); ("abcdf" <= "abcde").print(); ("abcde" <= "abcde").print();
+[ true ]
+[ false ]
+[ true ]
+("abcde" = "abcdf").print();  ("abcdf" = "abcde").print();  ("abcde" = "abcde").print();
+[ false ]
+[ false ]
+[ true ]
+("abcde" >= "abcdf").print(); ("abcdf" >= "abcde").print(); ("abcde" >= "abcde").print();
+[ false ]
+[ true ]
+[ true ]
+("abcde" > "abcdf").print();  ("abcdf" > "abcde").print();  ("abcde" > "abcde").print();
+[ false ]
+[ true ]
+[ false ]
+
+(sht1 + sht2).print();
+[ 7 ]
+(sht1 - sht2).print();
+[ -3 ]
+(sht1 * sht2).print();
+[ 10 ]
+(sht1 / sht2).print();
+[ 0 ]
+(sht1 % sht2).print();
+[ 2 ]
+
+(sht1 + int2).print();
+[ 4 ]
+(sht1 - int2).print();
+[ 0 ]
+(sht1 * int2).print();
+[ 4 ]
+(sht1 / int2).print();
+[ 1 ]
+
+(sht1 + flt2).print();
+[ 7.4000001 ]
+(sht1 - flt2).print();
+[ -3.4000001 ]
+(sht1 * flt2).print();
+[ 10.8000002 ]
+(sht1 / flt2).print();
+[ 0.370370358 ]
+
+(sht1 + dbl2).print();
+[ 56.004566192626953 ]
+(sht1 - dbl2).print();
+[ -52.004566192626953 ]
+(sht1 * dbl2).print();
+[ 108.00913238525391 ]
+(sht1 / dbl2).print();
+[ 0.037033905482478494 ]
+
+(sht1 + lng2).print();
+[ 5400456791 ]
+(sht1 - lng2).print();
+[ -5400456787 ]
+(sht1 * lng2).print();
+[ 10800913578 ]
+(sht1 / lng2).print();
+[ 0 ]
+
+(int1 + sht2).print();
+[ 10 ]
+(int1 - sht2).print();
+[ 0 ]
+(int1 * sht2).print();
+[ 25 ]
+(int1 / sht2).print();
+[ 1 ]
+
+(int1 + int2).print();
+[ 7 ]
+(int1 - int2).print();
+[ 3 ]
+(int1 * int2).print();
+[ 10 ]
+(int1 / int2).print();
+[ 2 ]
+(int1 % int2).print();
+[ 1 ]
+
+(int1 + flt2).print();
+[ 10.3999996 ]
+(int1 - flt2).print();
+[ -0.400000095 ]
+(int1 * flt2).print();
+[ 27 ]
+(int1 / flt2).print();
+[ 0.92592591 ]
+
+(int1 + dbl2).print();
+[ 59.004566192626953 ]
+(int1 - dbl2).print();
+[ -49.004566192626953 ]
+(int1 * dbl2).print();
+[ 270.02283096313477 ]
+(int1 / dbl2).print();
+[ 0.092584763706196227 ]
+
+(int1 + lng2).print();
+[ 5400456794 ]
+(int1 - lng2).print();
+[ -5400456784 ]
+(int1 * lng2).print();
+[ 27002283945 ]
+(int1 / lng2).print();
+[ 0 ]
+
+(flt1 + sht2).print();
+[ 7.5 ]
+(flt1 - sht2).print();
+[ -2.5 ]
+(flt1 * sht2).print();
+[ 12.5 ]
+(flt1 / sht2).print();
+[ 0.5 ]
+
+(flt1 + int2).print();
+[ 4.5 ]
+(flt1 - int2).print();
+[ 0.5 ]
+(flt1 * int2).print();
+[ 5 ]
+(flt1 / int2).print();
+[ 1.25 ]
+
+(flt1 + flt2).print();
+[ 7.9000001 ]
+(flt1 - flt2).print();
+[ -2.9000001 ]
+(flt1 * flt2).print();
+[ 13.5 ]
+(flt1 / flt2).print();
+[ 0.462962955 ]
+(flt1 % flt2).print();
+[ 2.5 ]
+
+(flt1 + dbl2).print();
+[ 56.504566192626953 ]
+(flt1 - dbl2).print();
+[ -51.504566192626953 ]
+(flt1 * dbl2).print();
+[ 135.01141548156738 ]
+(flt1 / dbl2).print();
+[ 0.046292381853098113 ]
+
+(flt1 + lng2).print();
+[ 5.4004567e+09 ]
+(flt1 - lng2).print();
+[ -5.4004567e+09 ]
+(flt1 * lng2).print();
+[ 1.3501142e+10 ]
+(flt1 / lng2).print();
+[ 4.6292381e-10 ]
+
+(dbl1 + sht2).print();
+[ 2.4999990463256836 ]
+(dbl1 - sht2).print();
+[ -7.5000009536743164 ]
+(dbl1 * sht2).print();
+[ -12.500004768371582 ]
+(dbl1 / sht2).print();
+[ -0.50000019073486324 ]
+
+(dbl1 + int2).print();
+[ -0.50000095367431641 ]
+(dbl1 - int2).print();
+[ -4.5000009536743164 ]
+(dbl1 * int2).print();
+[ -5.0000019073486328 ]
+(dbl1 / int2).print();
+[ -1.2500004768371582 ]
+
+(dbl1 + flt2).print();
+[ 2.8999991416931152 ]
+(dbl1 - flt2).print();
+[ -7.900001049041748 ]
+(dbl1 * flt2).print();
+[ -13.500005388259979 ]
+(dbl1 / flt2).print();
+[ -0.46296313139309475 ]
+
+(dbl1 + dbl2).print();
+[ 51.504565238952637 ]
+(dbl1 - dbl2).print();
+[ -56.50456714630127 ]
+(dbl1 * dbl2).print();
+[ -135.01146698433513 ]
+(dbl1 / dbl2).print();
+[ -0.046292399512240366 ]
+(dbl1 % dbl2).print();
+[ -2.5000009536743164 ]
+
+(dbl1 + lng2).print();
+[ 5400456786.499999 ]
+(dbl1 - lng2).print();
+[ -5400456791.500001 ]
+(dbl1 * lng2).print();
+[ -13501147122.776936 ]
+(dbl1 / lng2).print();
+[ -4.6292398057262125e-10 ]
+
+(lng1 + sht2).print();
+[ -8999999999995 ]
+(lng1 - sht2).print();
+[ -9000000000005 ]
+(lng1 * sht2).print();
+[ -45000000000000 ]
+(lng1 / sht2).print();
+[ -1800000000000 ]
+
+(lng1 + int2).print();
+[ -8999999999998 ]
+(lng1 - int2).print();
+[ -9000000000002 ]
+(lng1 * int2).print();
+[ -18000000000000 ]
+(lng1 / int2).print();
+[ -4500000000000 ]
+
+(lng1 + flt2).print();
+[ -8999999999994.5996 ]
+(lng1 - flt2).print();
+[ -9000000000005.4004 ]
+(lng1 * flt2).print();
+[ -48600000858306.883 ]
+(lng1 / flt2).print();
+[ -1666666637232.2747 ]
+
+(lng1 + dbl2).print();
+[ -8999999999945.9961 ]
+(lng1 - dbl2).print();
+[ -9000000000054.0039 ]
+(lng1 * dbl2).print();
+[ -486041095733642.56 ]
+(lng1 / dbl2).print();
+[ -166652574671.15323 ]
+
+(lng1 + lng2).print();
+[ -8994599543211 ]
+(lng1 - lng2).print();
+[ -9005400456789 ]
+(lng1 * lng2).print();
+[ 3059533224668508160 ]
+(lng1 / lng2).print();
+[ -1666 ]
+(lng1 % lng2).print();
+[ -2838989526 ]
+
+abs(sht2).print();
+[ 5 ]
+abs(int2).print();
+[ 2 ]
+abs(flt2).print();
+[ 5.4000001 ]
+abs(dbl2).print();
+[ 54.004566192626953 ]
+abs(lng2).print();
+[ 5400456789 ]
+
+max(sht1,sht2).print();
+[ 5 ]
+max(int1,int2).print();
+[ 5 ]
+max(flt1,flt2).print();
+[ 5.4000001 ]
+max(dbl1,dbl2).print();
+[ 54.004566192626953 ]
+max(lng1,lng2).print();
+[ 5400456789 ]
+
+min(sht1,sht2).print();
+[ 2 ]
+min(int1,int2).print();
+[ 2 ]
+min(flt1,flt2).print();
+[ 2.5 ]
+min(dbl1,dbl2).print();
+[ -2.5000009536743164 ]
+min(lng1,lng2).print();
+[ -9000000000000 ]
+
+max(oid1,oid2).print();
+[ 5@0 ]
+min(oid1,oid2).print();
+[ 2@0 ]
+
+inv(flt2).print();
+[ 0.185185179 ]
+inv(dbl2).print();
+[ 0.018516952741239247 ]
+
+(int1<<int2).print();
+[ 20 ]
+(int1>>int2).print();
+[ 1 ]
+
+(int1 or  int2).print();
+[ 7 ]
+(int1 and int2).print();
+[ 0 ]
+(int1 xor int2).print();
+[ 7 ]
+not(int2).print();
+[ -3 ]
+
+var bit1 := true;
+var bit2 := false;
+(bit1 or  bit2).print();
+[ true ]
+(bit1 and bit2).print();
+[ false ]
+(bit1 xor bit2).print();
+[ true ]
+not(bit2).print();
+[ true ]
+
+srand( 1234 );
+rand().print();
+[ 990577243 ]
+quit();
+
+# 19:54:40 >  
+# 19:54:40 >  Done.
+# 19:54:40 >  
+

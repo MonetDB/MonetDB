@@ -58,7 +58,7 @@ comment"Retrieve the SQL statement for a
 #include "sql.h"
 
 #define _SQL_CACHE_DEBUG
-sql5_export str SQLCacheRemove(int *ret, str *nme);
+sql_export str SQLCacheRemove(int *ret, str *nme);
 
 #endif /* _SQL_CACHE_H_ */
 @c
