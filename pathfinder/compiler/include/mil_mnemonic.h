@@ -73,6 +73,7 @@
 #define unused() PFmil_unused ()
 
 #define if_(a,b,c) PFmil_if ((a), (b), (c))
+#define while_(a,b) PFmil_while ((a), (b))
 
 /** assignment statement, combined with variable declaration */
 #define assgn(a,b) PFmil_assgn ((a),(b))
@@ -227,6 +228,9 @@
 
 /** multiplexed arithmetic modulo */
 #define mmod(a,b) PFmil_mmod ((a), (b))
+
+/** greater than */
+#define gt(a,b) PFmil_gt ((a), (b))
 
 /** multiplexed comparison (greater than) */
 #define mgt(a,b) PFmil_mgt ((a), (b))

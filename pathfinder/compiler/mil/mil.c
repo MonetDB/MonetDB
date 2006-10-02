@@ -394,6 +394,15 @@ PFmil_if (const PFmil_t *cond, const PFmil_t *e1, const PFmil_t *e2)
 }
 
 /**
+ * MIL while statement
+ */
+PFmil_t *
+PFmil_while (const PFmil_t *cond, const PFmil_t *e)
+{
+    return wire2 (m_while, cond, e);
+}
+
+/**
  * Construct a combined variable declaration and its assignment.
  * (Declare variable @a v and assign result of @a e to it.)
  *
@@ -933,6 +942,15 @@ PFmil_t *
 PFmil_mmod (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_mmod, a, b);
+}
+
+/**
+ * Greater than operator
+ */
+PFmil_t *
+PFmil_gt (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_gt, a, b);
 }
 
 /**

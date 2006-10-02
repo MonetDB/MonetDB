@@ -9,6 +9,7 @@
  
    statements    : statements statements                    <m_seq>
                  | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
+                 | 'while (' Expr ') {' stmts '}'           <m_while>
                  | <nothing>                                <m_nop>
                  | '#' c                                    <m_comment> 
                  | statement ';'                            <otherwise>
@@ -75,6 +76,7 @@
                  | '[*](' expression ',' expression ')'     <m_mmult>
                  | '[/](' expression ',' expression ')'     <m_mdiv>
                  | '[%](' expression ',' expression ')'     <m_mmod>
+                 | '>(' expression ',' expression ')'       <m_gt>
                  | '[>](' expression ',' expression ')'     <m_mgt>
                  | '[=](' expression ',' expression ')'     <m_meq>
                  | '[not](' expression ')'                  <m_mnot>
@@ -209,6 +211,7 @@ static char *ID[] = {
     , [m_mmult]        = "[*]"
     , [m_mdiv]         = "[/]"
     , [m_mmod]         = "[%]"
+    , [m_gt]           = ">"
     , [m_mgt]          = "[>]"
     , [m_meq]          = "[=]"
     , [m_mnot]         = "[not]"
@@ -452,6 +455,14 @@ print_statements (PFmil_t * n)
             print_statements (n->child[1]);
             milprintf ("} else {\n");
             print_statements (n->child[2]);
+            milprintf ("}\n");
+            break;
+
+        case m_while:
+            milprintf ("while (");
+            print_expression (n->child[0]);
+            milprintf (") {\n");
+            print_statements (n->child[1]);        
             milprintf ("}\n");
             break;
 
@@ -750,6 +761,8 @@ print_expression (PFmil_t * n)
         case m_mdiv:
         /* expression : '[%](' expression ',' expression ')' */
         case m_mmod:
+        /* expression : '>(' expression ',' expression ')' */
+        case m_gt:
         /* expression : '[>](' expression ',' expression ')' */
         case m_mgt:
         /* expression : '[=](' expression ',' expression ')' */

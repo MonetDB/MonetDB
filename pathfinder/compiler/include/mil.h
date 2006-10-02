@@ -87,6 +87,7 @@ enum PFmil_kind_t {
     , m_seq          /**< Sequence of two MIL statements */
 
     , m_if           /**< if-then-else blocks */
+    , m_while        /**< while statement */
 
     , m_assgn        /**< assignment statement + declaration (`var ... :=') */
 #if 0
@@ -145,6 +146,7 @@ enum PFmil_kind_t {
     , m_mdiv         /**< multiplexed arithmetic divide */
     , m_mmod         /**< multiplexed arithmetic modulo */
 
+    , m_gt           /**< greater than */
     , m_mgt          /**< multiplexed comparison (greater than) */
     , m_meq          /**< multiplexed comparison (equality) */
 
@@ -442,6 +444,9 @@ PFmil_t * PFmil_new (const PFmil_t *, const PFmil_t *);
 
 /** if-then-else clauses */
 PFmil_t * PFmil_if (const PFmil_t *, const PFmil_t *, const PFmil_t *);
+
+/** while statement */
+PFmil_t * PFmil_while (const PFmil_t *, const PFmil_t *);
 /**
  * Assignment statement including declaration:
  * Declare variable v and assign expression e to it.
@@ -607,6 +612,9 @@ PFmil_t * PFmil_mdiv (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed modulo operator */
 PFmil_t * PFmil_mmod (const PFmil_t *, const PFmil_t *);
+
+/** greater than */
+PFmil_t * PFmil_gt (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed comparison operator (greater than) */
 PFmil_t * PFmil_mgt (const PFmil_t *, const PFmil_t *);
