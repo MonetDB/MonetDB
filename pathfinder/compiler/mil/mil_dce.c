@@ -338,8 +338,18 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                     /*
                      * variable is used as first parameter of a expression
                      * with side effects, mark it as dirty.
+                     *
+                     * Only mark variable dirty if we also apply a change.
+                     * Otherwise we might have not enough information to
+                     * conclude correctly that something is dirty. (E.g., in
+                     * 'while (b) { a := new(..); a.append(..); b := a; }'
+                     * b is only used in the next iteration and thus not
+                     * used in the first traversal. In consequence a is not
+                     * marked used which leads in 'case m_assgn' to code
+                     * that does not clean up the dirty flag correctly.)
                      */
-                    PFbitset_set (dirty_vars, var, true);
+                    if (change)
+                        PFbitset_set (dirty_vars, var, true);
 #endif
 
                     if (PFbitset_get (used_vars, var)) {
