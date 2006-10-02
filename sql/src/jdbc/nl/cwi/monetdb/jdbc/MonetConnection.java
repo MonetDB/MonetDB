@@ -1739,6 +1739,15 @@ public class MonetConnection implements Connection {
 							// increase the cache size (a lot)
 							cacheSize *= 10;
 
+							// Java string are UTF-16, right?
+							long free = Runtime.getRuntime().freeMemory() / 2;
+							// we run the risk that we kill ourselves
+							// here, but maybe that's better to continue
+							// as long as possible, than asking too much
+							// too soon
+							if (cacheSize > free)
+								cacheSize = (int)free;	// it must fit
+
 							// by changing the cacheSize, we also
 							// change the block measures.  Luckily
 							// we don't care about previous blocks
