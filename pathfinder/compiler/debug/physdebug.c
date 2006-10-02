@@ -122,6 +122,11 @@ static char *a_id[]  = {
     , [pa_frag_union]      = "FRAG_UNION"
     , [pa_empty_frag]      = "EMPTY_FRAG"
     , [pa_cond_err]        = "!ERROR"
+    , [pa_rec_fix]         = "rec fix"
+    , [pa_rec_param]       = "rec param"
+    , [pa_rec_nil]         = "rec nil"
+    , [pa_rec_arg]         = "rec arg"
+    , [pa_rec_base]        = "rec base"
     , [pa_concat]          = "fn:concat"
     , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
@@ -202,6 +207,11 @@ static char *xml_id[]  = {
     , [pa_frag_union]      = "frag_union"
     , [pa_empty_frag]      = "empty_frag"
     , [pa_cond_err]        = "!ERROR"
+    , [pa_rec_fix]         = "rec_fix"
+    , [pa_rec_param]       = "rec_param"
+    , [pa_rec_nil]         = "rec_nil"
+    , [pa_rec_arg]         = "rec_arg"
+    , [pa_rec_base]        = "rec_base"
     , [pa_concat]          = "fn:concat"
     , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
@@ -410,6 +420,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_frag_union]      = "\"#E0E0E0\""
         , [pa_empty_frag]      = "\"#E0E0E0\""
         , [pa_cond_err]        = "\"#C0C0C0\""
+        , [pa_rec_fix]         = "\"#FF00FF\""
+        , [pa_rec_param]       = "\"#FF00FF\""
+        , [pa_rec_nil]         = "\"#FF00FF\""
+        , [pa_rec_arg]         = "\"#BB00BB\""
+        , [pa_rec_base]        = "\"#BB00BB\""
         , [pa_concat]          = "\"#C0C0C0\""
         , [pa_contains]        = "\"#C0C0C0\""
         , [pa_string_join]     = "\"#C0C0C0\""
@@ -711,6 +726,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         case pa_fragment:
         case pa_frag_union:
         case pa_empty_frag:
+        case pa_rec_fix:
+        case pa_rec_param:
+        case pa_rec_nil:
+        case pa_rec_arg:
+        case pa_rec_base:
         case pa_string_join:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
@@ -846,6 +866,43 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
 
         PFarray_printf (dot, "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
+    }
+
+    /* create soft links */
+    switch (n->kind)
+    {
+        case pa_rec_fix:
+            if (n->sem.rec_fix.res) {
+                if (n->sem.rec_fix.res->node_id == 0)
+                    n->sem.rec_fix.res->node_id = node_id++;
+                
+                PFarray_printf (dot,
+                                "node%i -> node%i "
+                                "[style=dashed label=res dir=none];\n",
+                                n->node_id, n->sem.rec_fix.res->node_id);
+            }
+            break;
+
+        case pa_rec_arg:
+            if (n->sem.rec_arg.base) {
+                if (n->sem.rec_arg.base->node_id == 0)
+                    n->sem.rec_arg.base->node_id = node_id++;
+                
+                PFarray_printf (dot, 
+                                "node%i -> node%i "
+                                "[style=dashed label=seed dir=back];\n",
+                                n->sem.rec_arg.base->node_id,
+                                n->child[0]->node_id);
+                PFarray_printf (dot, 
+                                "node%i -> node%i "
+                                "[style=dashed label=recurse];\n",
+                                n->child[1]->node_id,
+                                n->sem.rec_arg.base->node_id);
+            }
+            break;
+
+        default:
+            break;
     }
 
     /* mark node visited */

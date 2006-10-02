@@ -2736,6 +2736,240 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
 }
 
 /**
+ * Constructor for a tail recursion operator
+ */
+PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
+                         const PFpa_op_t *res)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i;
+
+    assert (paramList);
+    assert (res);
+
+    /* create recursion operator */
+    ret = wire1 (pa_rec_fix, paramList);
+
+    /*
+     * insert semantic value (reference to the result
+     * relation) into the result
+     */
+    ret->sem.rec_fix.res = (PFpa_op_t *) res;
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = res->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < res->schema.count; i++)
+        ret->schema.items[i] = res->schema.items[i];
+    
+    /* ordering stays the same as the result ordering */
+    for (unsigned int i = 0; i < PFord_set_count (res->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (res->orderings, i));
+
+    /* costs */
+    ret->cost = res->cost + paramList->cost + 1;
+
+    return ret;
+}
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to recursion
+ */
+PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
+                           const PFpa_op_t *paramList)
+{
+    PFpa_op_t     *ret;
+
+    assert (arguments);
+    assert (paramList);
+
+    /* create recursion parameter operator */
+    ret = wire2 (pa_rec_param, arguments, paramList);
+
+    assert (paramList->schema.count == 0);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+    
+    /* costs */
+    ret->cost = arguments->cost + paramList->cost + 1;
+
+    return ret;
+}
+
+/**
+ * Constructor for the last item of a parameter list
+ * related to recursion
+ */
+PFpa_op_t *PFpa_rec_nil (void)
+{
+    PFpa_op_t     *ret;
+
+    /* create end of recursion parameter list operator */
+    ret = leaf (pa_rec_nil);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+    
+    /* costs */
+    ret->cost = 0;
+
+    return ret;
+}
+
+/**
+ * Constructor for the arguments of a parameter (seed and recursion
+ * will be the input relations for the base operator)
+ */
+PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
+                         const PFpa_op_t *recursion,
+                         const PFpa_op_t *base)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i, j;
+
+    assert (seed);
+    assert (recursion);
+    assert (base);
+
+    /* see if both operands have same number of attributes */
+    if (seed->schema.count != recursion->schema.count ||
+        seed->schema.count != base->schema.count)
+        PFoops (OOPS_FATAL,
+                "Schema of the arguments of recursion "
+                "argument to not match");
+
+    /* see if we find each attribute in all of the input relations */
+    for (i = 0; i < seed->schema.count; i++) {
+        for (j = 0; j < recursion->schema.count; j++)
+            if (seed->schema.items[i].name == recursion->schema.items[j].name) {
+                break;
+            }
+
+        if (j == recursion->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of the arguments of recursion "
+                    "argument to not match");
+
+        for (j = 0; j < base->schema.count; j++)
+            if (seed->schema.items[i].name == base->schema.items[j].name) {
+                break;
+            }
+
+        if (j == base->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of the arguments of recursion "
+                    "argument to not match");
+    }
+
+    /* check if the orderings of the seed and the recursion
+       fulfill the required ordering of the base */
+    for (i = 0; i < PFord_set_count (base->orderings); i++) {
+        if (!PFord_count (PFord_set_at (base->orderings, i)))
+           continue; /* case is trivially fulfilled */
+        
+        for (j = 0; j < PFord_set_count (recursion->orderings); j++)
+            if (PFord_implies (
+                    PFord_set_at (recursion->orderings, j),
+                    PFord_set_at (base->orderings, i)))
+                break;
+
+        if (j == PFord_set_count (recursion->orderings))
+            PFoops (OOPS_FATAL,
+                    "The ordering of the recursion arguments "
+                    "does not imply the ordering of the recursion base");
+
+        for (j = 0; j < PFord_set_count (seed->orderings); j++)
+            if (PFord_implies (
+                    PFord_set_at (seed->orderings, j),
+                    PFord_set_at (base->orderings, i)))
+                break;
+
+        if (j == PFord_set_count (seed->orderings))
+            PFoops (OOPS_FATAL,
+                    "The ordering of the recursion seeds "
+                    "does not imply the ordering of the recursion base");
+    }
+
+    /* create recursion operator */
+    ret = wire2 (pa_rec_arg, seed, recursion);
+
+    /*
+     * insert semantic value (reference to the base
+     * relation) into the result
+     */
+    ret->sem.rec_arg.base = (PFpa_op_t *) base;
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = seed->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < seed->schema.count; i++)
+        ret->schema.items[i] = seed->schema.items[i];
+    
+    /* ordering stays the same as the base ordering */
+    for (unsigned int i = 0; i < PFord_set_count (base->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (base->orderings, i));
+
+    /* costs */
+    ret->cost = seed->cost + recursion->cost + 1;
+
+    return ret;
+}
+
+/**
+ * Constructor for the base relation in a recursion (-- a dummy
+ * operator representing the seed relation as well as the argument
+ * computed in the recursion).
+ */
+PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i, j;
+
+    /* check if the order criteria all appear in the schema */
+    for (i = 0; i < PFord_count (ord); i++) {
+        for (j = 0; j < schema.count; j++)
+            if (PFord_order_at (ord, i) ==
+                schema.items[j].name)
+                break;
+
+        if (i == schema.count)
+            PFoops (OOPS_FATAL,
+                    "sort column '%s' does not appear in the schema",
+                    PFatt_str (PFord_order_at (ord, i)));
+    }
+    
+    /* create base operator for the recursion */
+    ret = leaf (pa_rec_base);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
+    
+    /* add the ordering given to the constructor */
+    PFord_set_add (ret->orderings, ord);
+
+    /* costs */
+    ret->cost = 1;
+
+    return ret;
+}
+
+/**
   * Constructor for builtin function fn:concat
   * (translation is similar to arithmetic operators)
   */

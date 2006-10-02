@@ -140,6 +140,14 @@
 #define empty_frag()      PFpa_empty_frag ()
 
 #define cond_err(a,b,c,d) PFpa_cond_err ((a), (b), (c), (d))
+
+/* recursion operators */
+#define rec_fix(a,b) PFpa_rec_fix ((a),(b))
+#define rec_param(a,b) PFpa_rec_param ((a),(b))
+#define rec_nil() PFpa_rec_nil ()
+#define rec_arg(a,b,c) PFpa_rec_arg ((a),(b),(c))
+#define rec_base(a,b) PFpa_rec_base ((a),(b))
+
 #define fn_concat(a,b,c,d)  PFpa_fn_concat ((a), (b), (c), (d))
 #define fn_contains(a,b,c,d)  PFpa_fn_contains ((a), (b), (c), (d))
 #define string_join(a,b,c,d)  PFpa_string_join ((a),(b),(c),(d))

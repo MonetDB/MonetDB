@@ -3,7 +3,7 @@
 /**
  * @file
  *
- * Declarations specific to logical algebra.
+ * Declarations specific to physical algebra.
  *
  *
  * Copyright Notice:
@@ -42,6 +42,9 @@
 
 #include "ordering.h"
 
+
+/** algebra operator node */
+typedef struct PFpa_op_t PFpa_op_t;
 
 /* .............. algebra operators (operators on relations) .............. */
 
@@ -128,6 +131,13 @@ enum PFpa_op_kind_t {
     , pa_frag_union     = 132
     , pa_empty_frag     = 133
     , pa_cond_err       = 140 /**< conditional error operator */
+    , pa_rec_fix        = 141 /**< operator representing a tail recursion */
+    , pa_rec_param      = 142 /**< list of parameters of the recursion */
+    , pa_rec_nil        = 143 /**< end of the list of parameters of the 
+                                  recursion */
+    , pa_rec_arg        = 144 /**< reference to the arguments of a parameter
+                                  in the recursion */
+    , pa_rec_base       = 145 /**< base of the DAG describing the recursion */
     , pa_concat         = 150 /**< Concatenation of two strings (fn:concat) */
     , pa_contains       = 151 /**< string containment check (fn:contains) */
     , pa_string_join    = 152 /**< Concatenation of multiple strings */
@@ -306,6 +316,18 @@ union PFpa_op_sem_t {
         PFalg_att_t     att;     /**< name of the boolean attribute */
         char *          str;     /**< error message */
     } err;
+    
+    /* semantic content for a recursion operator */
+    struct {
+        PFpa_op_t      *res;     /**< reference to the result relation */
+    } rec_fix;
+
+    /* semantic content for an argument of a recursion parameter */
+    struct {
+        PFpa_op_t      *base;    /**< reference to the base relation
+                                      of the recursion */
+    } rec_arg;
+
 };
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
@@ -344,8 +366,6 @@ struct PFpa_op_t {
                                         node; required exclusively to
                                         create dot output. */
 };
-/** algebra operator node */
-typedef struct PFpa_op_t PFpa_op_t;
 
 
 
@@ -815,6 +835,42 @@ PFpa_op_t *PFpa_empty_frag (void);
  */
 PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
                            PFalg_att_t att, char *err_string);
+
+/****************************************************************/
+
+/**
+ * Constructor for a tail recursion operator
+ */
+PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
+                         const PFpa_op_t *res);
+
+/**
+ * Constructor for a list item of a parameter list
+ * related to recursion
+ */
+PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
+                           const PFpa_op_t *paramList);
+
+/**
+ * Constructor for the last item of a parameter list
+ * related to recursion
+ */
+PFpa_op_t *PFpa_rec_nil (void);
+
+/**
+ * Constructor for the arguments of a parameter (seed and recursion
+ * will be the input relations for the base operator)
+ */
+PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
+                         const PFpa_op_t *recursion,
+                         const PFpa_op_t *base);
+
+/**
+ * Constructor for the base relation in a recursion (-- a dummy
+ * operator representing the seed relation as well as the argument
+ * computed in the recursion).
+ */
+PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord);
 
 /****************************************************************/
 /* operators introduced by built-in functions */
