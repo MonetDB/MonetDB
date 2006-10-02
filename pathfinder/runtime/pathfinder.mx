@@ -1782,7 +1782,13 @@ PROC shred_doc(BAT[void,str] locations,
     ws_destroy(int(ws)); 
     if (not(isnil(err))) ERROR(err);
     var ms := (us := usec() - us) / 1000;
-    printf("%c Shredded %d XML documents, total time after commit=%lld.%03llds\n", chr(35), nr, /(ms,1000),%(ms,1000));
+
+    if (nr = 1)
+        printf("%c Shredded 1 XML document (%s), total time after commit=%lld.%03llds\n",
+               chr(35), names.fetch(0), /(ms,1000),%(ms,1000));
+    else
+        printf("%c Shredded %d XML documents, total time after commit=%lld.%03llds\n",
+               chr(35), nr, /(ms,1000),%(ms,1000));
 }
 
 PROC shred_doc(str location, 
