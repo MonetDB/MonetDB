@@ -40,7 +40,8 @@
 #include "oops.h"
 
 static PFmil_t *
-mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars);
+mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
+                bool change);
 
 /** Adds recursivly all variables to the set of the used variables. */
 static void add_vars_to_used (PFmil_t *root, PFbitset_t *used_vars) 
@@ -55,13 +56,14 @@ static void add_vars_to_used (PFmil_t *root, PFbitset_t *used_vars)
 }
 
 /**
- * Reduce unsed subexpressions of root to a sequence of statements 
+ * Reduce unused subexpressions of root to a sequence of statements 
  * with side effects.
  */
 static PFmil_t *
 reduce_expressions (PFmil_t *root,
                     PFbitset_t *used_vars,
-                    PFbitset_t *dirty_vars) 
+                    PFbitset_t *dirty_vars,
+                    bool change) 
 {
     /* new node, replacing this expression node. */
     PFmil_t *new_op = PFmil_nop();
@@ -69,7 +71,7 @@ reduce_expressions (PFmil_t *root,
     for (unsigned int i = 0; i < MIL_MAXCHILD && root->child[i] != NULL; i++) {
 
         PFmil_t *param_op
-            = mil_dce_worker (root->child[i], used_vars, dirty_vars);
+            = mil_dce_worker (root->child[i], used_vars, dirty_vars, change);
 
         /* concat statements, if multiple parameters have side effects. */
         if (param_op->kind != m_nop)
@@ -111,7 +113,8 @@ var_duplication (PFmil_t *root, PFmil_ident_t *var)
 }
 
 static PFmil_t *
-mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars) 
+mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
+                bool change) 
 {
 
 #ifdef NDEBUG
@@ -122,14 +125,21 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
     switch (root->kind) {
 
         case m_seq:
-            /* descend in reverse pre-order, collect the used variables from
-             * the end to beginning of the program. */
-            for (int i = MIL_MAXCHILD; --i >= 0;)
-                if (root->child[i] != NULL)
-                    root->child[i] = mil_dce_worker (root->child[i],
-                                                     used_vars,
-                                                     dirty_vars);
-            return root;
+            {
+                /* descend in reverse pre-order, collect the used variables
+                 * from the end to beginning of the program. */
+                PFmil_t *new_child;
+
+                for (int i = MIL_MAXCHILD; --i >= 0;)
+                    if (root->child[i] != NULL) {
+                        new_child = mil_dce_worker (root->child[i],
+                                                    used_vars,
+                                                    dirty_vars,
+                                                    change);
+                        if (change) root->child[i] = new_child;
+                    }
+                return root;
+            }
 
         case m_assgn:
             {
@@ -184,7 +194,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
                      * but invoke elimination recursively on the r-value
                      * (which could have side effects!)
                      */
-                    return mil_dce_worker (rvalue, used_vars, dirty_vars);
+                    return mil_dce_worker (rvalue,
+                                           used_vars,
+                                           dirty_vars,
+                                           change);
 
                 /*
                  * assignment on used variable, mark all on the right
@@ -197,7 +210,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
                 PFbitset_set (dirty_vars, lvalue->sem.ident, false);
 
                 /* update dirty vars */
-                mil_dce_worker (rvalue, used_vars, dirty_vars);
+                mil_dce_worker (rvalue, used_vars, dirty_vars, change);
 #endif
 
                 return root;
@@ -206,11 +219,13 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
 
         case m_if:
             {
+                PFmil_t *new_child;
+
                 /* all variables of the condition are used. */
                 add_vars_to_used (root->child[0], used_vars);
 
                 /* update dirty vars */
-                mil_dce_worker (root->child[0], used_vars, dirty_vars);
+                mil_dce_worker (root->child[0], used_vars, dirty_vars, change);
 
                 /*
                  * to find the used variables of a if-then-else block, we must 
@@ -224,14 +239,18 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
 #endif
 
                 /* invoke dce on if part */
-                root->child[1]
-                    = mil_dce_worker (root->child[1], used_vars, dirty_vars);
+                new_child = mil_dce_worker (root->child[1], 
+                                            used_vars,
+                                            dirty_vars,
+                                            change);
+                if (change) root->child[1] = new_child;
 
                 /* invoke dce on else part */
-                root->child[2]
-                    = mil_dce_worker (root->child[2],
-                                      else_used_vars, 
-                                      else_dirty_vars);
+                new_child = mil_dce_worker (root->child[2], 
+                                            else_used_vars, 
+                                            else_dirty_vars,
+                                            change);
+                if (change) root->child[2] = new_child;
 
                 PFbitset_or (used_vars, else_used_vars);
 
@@ -245,6 +264,49 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
                  * (I think this is not needed because the if clause is only
                  * used rarely).
                  */
+                
+                /* the variables of the condition are required (add them again
+                   in case the then and else branch did throw them away) */
+                add_vars_to_used (root->child[0], used_vars);
+
+                return root;
+            }
+            break;
+
+        case m_while:
+            {
+                PFmil_t *new_child;
+
+                /* all variables of the condition are used. */
+                add_vars_to_used (root->child[0], used_vars);
+
+                /* update dirty vars */
+                mil_dce_worker (root->child[0], used_vars, dirty_vars, change);
+
+                /* the variables of the condition are required
+                   for the next iteration */
+                add_vars_to_used (root->child[0], used_vars);
+
+                /* ONLY collect the variables required for an iteration */
+                mil_dce_worker (root->child[1], used_vars, dirty_vars, false);
+
+                /* the variables of the condition are required
+                   for the next iteration */
+                add_vars_to_used (root->child[0], used_vars);
+
+                /* invoke dce on the loop body (used_vars now contains the
+                   variables in the condition as well as the ones required
+                   for another pass through the body */
+                new_child = mil_dce_worker (root->child[1], 
+                                            used_vars,
+                                            dirty_vars,
+                                            change);
+                if (change) root->child[1] = new_child;
+                
+                /* the variables of the condition are required for the first
+                   check of the condition */
+                add_vars_to_used (root->child[0], used_vars);
+
                 return root;
             }
             break;
@@ -289,8 +351,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
                         /* update dirty vars */
                         for (unsigned int i = 0; i < MIL_MAXCHILD 
                                 && root->child[i] != NULL; i++)
-                            mil_dce_worker (root->child[i], used_vars, 
-                                    dirty_vars);
+                            mil_dce_worker (root->child[i],
+                                            used_vars, 
+                                            dirty_vars,
+                                            change);
 #endif
 
                         return root;
@@ -300,14 +364,20 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
                          * statement is e.g. append(a, b) and a is not used, 
                          * but b could have side effects.
                          */
-                        return reduce_expressions (root, used_vars, dirty_vars);
+                        return reduce_expressions (root,
+                                                   used_vars,
+                                                   dirty_vars,
+                                                   change);
                 }
                 else
                     /*
                      * statement is e.g. append(a, b) and a is not used,
                      * but b could have side effects.
                      */
-                    return reduce_expressions (root, used_vars, dirty_vars);
+                    return reduce_expressions (root, 
+                                               used_vars,
+                                               dirty_vars,
+                                               change);
             }
             break;
 
@@ -319,7 +389,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
             /* update dirty vars */
             for (unsigned int i = 0; i < MIL_MAXCHILD 
                     && root->child[i] != NULL; i++)
-                mil_dce_worker (root->child[i], used_vars, dirty_vars);
+                mil_dce_worker (root->child[i], used_vars, dirty_vars, change);
 #endif
             /* all variables in the parameter list are used. */
             add_vars_to_used (root, used_vars);
@@ -330,7 +400,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars)
              * side effect free expression, descend recursively
              * to find side effects in child nodes
              */
-            return reduce_expressions (root, used_vars, dirty_vars);
+            return reduce_expressions (root, used_vars, dirty_vars, change);
     }
 }
 
@@ -363,7 +433,7 @@ PFmil_dce (PFmil_t *root)
     /* variable unused is always used because it helps MonetDB to cleanup */
     PFbitset_set (used_vars, PF_MIL_VAR_UNUSED, true);
 
-    PFmil_t *res = mil_dce_worker (root, used_vars, dirty_vars);
+    PFmil_t *res = mil_dce_worker (root, used_vars, dirty_vars, true);
 
     return res;
 }
