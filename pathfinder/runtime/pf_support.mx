@@ -419,6 +419,7 @@ const bool_str := bat(void,str,2).append("false").append("true").seqbase(0@0).ac
 const bit_nil       := bit(nil);
 const chr_nil       := chr(nil);
 const int_nil       := int(nil);
+const lng_nil       := lng(nil);
 const dbl_nil       := dbl(nil);
 const oid_nil       := oid(nil);
 const str_nil       := str(nil);
@@ -1803,13 +1804,13 @@ currently checked). Returns the first argument which details the
 changed already made to the BATs in the working set.",
 "pf_support");
 
-PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
+PROC play_update_tape(lng wsid, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
 {
   # [void,oid] list of all conts of affected documents
   var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
 
   # check that all containers are updatable (i.e. that none are read-only)
-  if ([ttype](affected_conts.join(ws.fetch(MAP_PID))).uselect(void).count() > 0) {
+  if ([ttype](affected_conts.join(ws_bat(wsid).fetch(MAP_PID))).uselect(void).count() > 0) {
     ERROR("updating read-only document.\n");
   }
 
@@ -1842,7 +1843,7 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       update_rename := update_rename.tmark(0@0);
 
       # do the work
-      replacements := do_update_rename(replacements, ws, update_node_item, update_node_kind, update_rename);
+      replacements := do_update_rename(replacements, wsid, update_node_item, update_node_kind, update_rename);
     }
   }
 
@@ -1869,7 +1870,7 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       update_replace := update_replace.tmark(0@0);
 
       # do the work
-      replacements := do_update_replace(replacements, ws, update_node_item, update_node_kind, update_replace);
+      replacements := do_update_replace(replacements, wsid, update_node_item, update_node_kind, update_replace);
     }
   }
 
@@ -1901,7 +1902,7 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       insert_update := insert_update.tmark(0@0);
 
       # do the work
-      replacements := do_update_insert(replacements, ws, insert_update, update_node_item, update_node_kind, update_insert_node_item, update_insert_node_kind);
+      replacements := do_update_insert(replacements, wsid, insert_update, update_node_item, update_node_kind, update_insert_node_item, update_insert_node_kind);
     }
   }
 
@@ -1924,7 +1925,7 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       update_node_kind := update_node_kind.tmark(0@0);
 
       # do the work
-      replacements := do_update_delete(replacements, ws, update_node_item, update_node_kind);
+      replacements := do_update_delete(replacements, wsid, update_node_item, update_node_kind);
     }
   }
 
@@ -1932,7 +1933,7 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     if (replacements.exist(replacements)) {
       var texts := replacements.find(replacements);
       replacements := replacements.delete(replacements, texts);
-      fix_consecutive_texts(replacements, ws, texts);
+      fix_consecutive_texts(replacements, wsid, texts);
     }
     replacements@batloop() {
       var a := $h.access();
@@ -1949,8 +1950,9 @@ PROC play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 # due to the order in which updates are executed, do_update_rename and
 # do_update_replace don't have to contend with inserted pages or with
 # nodes having changed their PRE value
-PROC do_update_rename(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] update_node_item, bat[void,int] update_node_kind, bat[void,str] update_rename) : bat[bat,bat]
+PROC do_update_rename(bat[bat,bat] replacements, lng wsid, bat[void,oid] update_node_item, bat[void,int] update_node_kind, bat[void,str] update_rename) : bat[bat,bat]
 {
+  var ws := ws_bat(wsid);
   var conts := update_node_kind.get_container();
   var types := update_node_kind.get_types();
   var attrs := types.ord_uselect(ATTR);
@@ -2021,8 +2023,9 @@ PROC do_update_rename(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
   return replacements;
 }
 
-PROC do_update_replace(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] update_node_item, bat[void,int] update_node_kind, bat[void,str] update_replace) : bat[bat,bat]
+PROC do_update_replace(bat[bat,bat] replacements, lng wsid, bat[void,oid] update_node_item, bat[void,int] update_node_kind, bat[void,str] update_replace) : bat[bat,bat]
 {
+  var ws := ws_bat(wsid);
   var conts := update_node_kind.get_container();
   var types := update_node_kind.get_types();
   var attrs := types.ord_uselect(ATTR);
@@ -2112,9 +2115,10 @@ PROC do_update_replace(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid
   return replacements;
 }
 
-PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng] insert_update, bat[void,oid] update_node_item, bat[void,int] update_node_kind, bat[void,oid] update_insert_node_item, bat[void,int] update_insert_node_kind) : bat[bat,bat]
+PROC do_update_insert(bat[bat,bat] replacements, lng wsid, bat[void,lng] insert_update, bat[void,oid] update_node_item, bat[void,int] update_node_kind, bat[void,oid] update_insert_node_item, bat[void,int] update_insert_node_kind) : bat[bat,bat]
 {
   # extract container ID from update_insert_node_kind
+  var ws := ws_bat(wsid);
   var batdoccont := update_node_kind.get_container();
   var batcont := update_insert_node_kind.get_container();
 
@@ -2296,7 +2300,7 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
           var lastpage;
           var i := 0;
           while (i < npages) {
-            lastpage := ws_newpage(ws, doccont);
+            lastpage := ws_newpage(wsid, doccont);
             newpages.append(lastpage);
             i :+= 1;
           }
@@ -2646,7 +2650,7 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
         # (required semantics)
 
         # get NID values for new nodes
-        var newnids := ws_newnids(ws, doccont, insertsize).hmark(0@0); # [idx,NID]
+        var newnids := ws_newnids(wsid, doccont, insertsize).hmark(0@0); # [idx,NID]
         var newnididx := 0@0;
 
         var insert_pre_size := ws.fetch(PRE_SIZE).find(insertcont);
@@ -2854,8 +2858,9 @@ PROC do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,lng]
   return replacements;
 }
 
-PROC do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] update_node_item, bat[void,int] update_node_kind) : bat[bat,bat]
+PROC do_update_delete(bat[bat,bat] replacements, lng wsid, bat[void,oid] update_node_item, bat[void,int] update_node_kind) : bat[bat,bat]
 {
+  var ws := ws_bat(wsid);
   var conts := update_node_kind.get_container();
   var types := update_node_kind.get_types();
   var attrs := types.ord_uselect(ATTR);
@@ -3128,9 +3133,10 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
   return qn_map;
 }
 
-PROC fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, bat[oid,oid] contnid) : void
+PROC fix_consecutive_texts(bat[bat,bat] replacements, lng wsid, bat[oid,oid] contnid) : void
 {
   # for now ignore position information
+  var ws := ws_bat(wsid);
   contnid.reverse().tunique()@batloop() {
     var cont := $h;
 
@@ -5269,10 +5275,10 @@ CMDinvalid_qname(str *ret, BAT *b)
 }
 
 
-MT_Lock pf_runtime_lock[2];
+MT_Lock pf_runtime_lock[4];
 
 int CMDpflock(ptr *ret, int* nr) {
-    *ret = (ptr) &pf_runtime_lock[(*nr)&1];
+    *ret = (ptr) &pf_runtime_lock[(*nr)&3];
     return GDK_SUCCEED;
 }
 
@@ -5581,12 +5587,16 @@ CMDnil@1(int *res, int *v1, int *v2)
 bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[0]);
     MT_init_lock(pf_runtime_lock[1]);
+    MT_init_lock(pf_runtime_lock[2]);
+    MT_init_lock(pf_runtime_lock[3]);
     return NULL;
 }
 
 void pf_support_epilogue() {
     MT_destroy_lock(pf_runtime_lock[0]);
     MT_destroy_lock(pf_runtime_lock[1]);
+    MT_destroy_lock(pf_runtime_lock[2]);
+    MT_destroy_lock(pf_runtime_lock[3]);
 }
 
 @- PROCs required by the algebraic translation ###

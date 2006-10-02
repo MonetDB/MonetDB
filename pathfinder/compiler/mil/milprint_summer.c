@@ -640,9 +640,9 @@ translateEmpty_node (opt_t *f)
     milprintf(f,
             "{ # translateEmpty_node ()\n"
             "_elem_iter  := empty_bat;\n"
-            "_elem_size  := empty_bat.project(int(nil));\n"
-            "_elem_level := empty_bat.project(chr(nil));\n"
-            "_elem_kind  := empty_bat.project(chr(nil));\n"
+            "_elem_size  := empty_bat.project(int_nil);\n"
+            "_elem_level := empty_bat.project(chr_nil);\n"
+            "_elem_kind  := empty_bat.project(chr_nil);\n"
             "_elem_prop  := empty_bat;\n"
             "_elem_cont  := empty_bat;\n"
             "_attr_iter  := empty_bat;\n"
@@ -797,9 +797,9 @@ map2NODE_interface (opt_t *f)
 
             "} else { # if (nodes.count() != 0) ...\n"
             "_elem_iter  := empty_bat;\n"
-            "_elem_size  := empty_bat.project(int(nil));\n"
-            "_elem_level := empty_bat.project(chr(nil));\n"
-            "_elem_kind  := empty_bat.project(chr(nil));\n"
+            "_elem_size  := empty_bat.project(int_nil);\n"
+            "_elem_level := empty_bat.project(chr_nil);\n"
+            "_elem_kind  := empty_bat.project(chr_nil);\n"
             "_elem_prop  := empty_bat;\n"
             "_elem_cont  := empty_bat;\n"
             "_attr_iter  := empty_bat;\n"
@@ -2599,9 +2599,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "iter_size := nil;\n"
     
      /* attr */ /* root_pre is a dummy needed for merge union with content_pre */
-     /* attr */ "var root_pre := oid(nil);\n"
+     /* attr */ "var root_pre := oid_nil;\n"
      /* attr */ /* as well as root_cont_pre */
-     /* attr */ "var root_cont_pre := oid(nil);\n"
+     /* attr */ "var root_cont_pre := oid_nil;\n"
     
                 /* merge union root and nodes */
                 "{\n"
@@ -2654,7 +2654,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         milprintf(f, "root_cont := item%03u.project(WS);\n", i);
     
      /* attr */ milprintf(f,
-     /* attr */ "preNew_preOld := item%03u.project(oid(nil));\n", i);
+     /* attr */ "preNew_preOld := item%03u.project(oid_nil);\n", i);
      /* attr */ milprintf(f,
      /* attr */ "preNew_preOld := preNew_preOld.tmark(0@0);\n"
      /* attr */ "preNew_cont := preNew_preOld.tmark(0@0);\n"
@@ -2734,7 +2734,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                    and 'select(nil)' inside mvaljoin gives back all the attributes
                    not bound to a pre value first all root pre values have to
                    be thrown out */
-                "var content_preNew_preOld := preNew_preOld.ord_select(oid(nil),oid(nil));\n"
+                "var content_preNew_preOld := preNew_preOld.ord_select(oid_nil,oid_nil);\n"
                 "var oid_preOld := content_preNew_preOld.tmark(0@0);\n"
                 "var oid_preNew := content_preNew_preOld.hmark(0@0);\n"
                 "content_preNew_preOld := nil;\n"
@@ -3016,7 +3016,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "var qn := item%03u.tmark(seqb);\n"
                 "ws.fetch(ATTR_QN).fetch(WS).insert(qn);\n"
                 "ws.fetch(ATTR_CONT).fetch(WS).insert(qn.project(WS));\n"
-                "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.project(oid(nil)));\n"
+                "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.project(oid_nil));\n"
                 /* get the intermediate result */
                 "iter := iter%03u;\n"
                 "pos := pos%03u;\n"
@@ -3168,7 +3168,7 @@ evaluateCast (opt_t *f,
         milprintf(f, "var cast_val := item.%s;\n", cast);
 
     milprintf(f,
-            "if (cast_val.texist(%s(nil)))\n"
+            "if (cast_val.texist(%s_nil))\n"
             "{    ERROR (\"err:FORG0001: could not cast value from %s to %s.\"); }\n",
             target.mil_type, ori.name, target.name);
 
@@ -3213,7 +3213,7 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
 	"  if (_k.exist(STR) or _k.exist(U_A)) {\n"
 	"    _val.insert(kind.ord_uselect(STR,U_A).mirror().leftfetchjoin(item).leftfetchjoin(str_values).%s);\n"
 	"  }\n"
-	"  _val := _val.tmark(0@0).project(%s(nil)).access(BAT_WRITE).replace(_val).access(BAT_READ);\n"
+	"  _val := _val.tmark(0@0).project(%s_nil).access(BAT_WRITE).replace(_val).access(BAT_READ);\n"
 	"} else {\n"
 	"  # at run-time, it turns out to be homogeneous\n"
 	"  kind := reverse(_k).fetch(0);\n", tpe.mil_type, tpe.mil_type, tpe.mil_type, tpe.mil_type, str_cast, tpe.mil_type);
@@ -3247,7 +3247,7 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
         "if (type(_val) = void) { # idempotent cast leaves (_val = item)\n"
 	"  _val := item;\n"
         "} else {\n"
-        "  if (_val.texist(%s(nil)))\n"
+        "  if (_val.texist(%s_nil))\n"
         "    ERROR (\"err:FORG0001: could not cast value to %s.\");\n", tpe.mil_type, tpe.name);
 
     if (tpe.kind == BOOL) {
@@ -3875,7 +3875,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
             "iter := iter.materialize(ipik);\n"
             "var iter_count := {count}(iter.reverse(), loop%03u.reverse(), FALSE);\n"
             "var iter_pos := {min}(iter.reverse());\n"
-            "var sequences := iter_count.ord_uselect(2,int(nil));\n"
+            "var sequences := iter_count.ord_uselect(2,int_nil);\n"
             "var emptyseqs := iter_count.tmark(0@0).ord_uselect(0,0);\n", cur_level);
 
     /* error check. Note that kind maybe constant, leftfetchjoin and min both work here  */
@@ -3900,7 +3900,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     milprintf(f,
             "# replace all nodes by true (also the single-node sequences!!)\n"
             "if (type(kind) = bat) {\n"
-            "  sequences := kind.ord_uselect(NODE,int(nil));\n" 
+            "  sequences := kind.ord_uselect(NODE,int_nil);\n" 
             "  if (bit(count(sequences))) {\n"
             "    sequences := sequences.project(1@0);\n"
             "    item.access(BAT_WRITE).replace(sequences).access(BAT_READ);\n"
@@ -3918,7 +3918,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     /* finally, if applicable, get back the empty sequences as falses. */
     milprintf(f,
             "if (bit(count(emptyseqs))) {\n"
-            "  item := loop%03u.tmark(oid(nil)).outerjoin(reverse(iter)).outerjoin(item).seqbase(0@0);\n"
+            "  item := loop%03u.tmark(oid_nil).outerjoin(reverse(iter)).outerjoin(item).seqbase(0@0);\n"
             "  iter := loop%03u.tmark(0@0);\n"
             "  ipik := item;\n"
             "  item.access(BAT_WRITE).replace(emptyseqs.project(0@0)).access(BAT_READ);\n"
@@ -4492,7 +4492,7 @@ is2ns_node (opt_t *f, int counter)
             "othernodes.leftfetchjoin(_elem_cont%03u), "
                                      "_elem_cont,\n"
             "othernodes.leftfetchjoin(_elem_iter%03u.mirror()), "
-                                     "oid(nil));\n"
+                                     "oid_nil);\n"
             "_elem_iter := res_mu_is2ns.fetch(1).chk_order();\n" /* CONST? */
             "_elem_size := res_mu_is2ns.fetch(2);\n" /* CONST? */
             "_elem_level:= res_mu_is2ns.fetch(3);\n" /* CONST? */
@@ -5360,7 +5360,7 @@ eval_join_helper (opt_t *f, int code, int number,
                 "join_item%i := join_item_str.[%s]();\n"
                 "join_item%i := join_item%i.materialize(ipik%03u);\n"
                 "}\n"
-                "if (join_item%i.texist(%s(nil)))\n"
+                "if (join_item%i.texist(%s_nil))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to %s.\"); }\n",
                 number, container.mil_type,
                 number, number, res, 
@@ -6166,7 +6166,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
                 "  var t := time();\n"
-                "  var r := ws_doc(ws, item%s.materialize(ipik));\n"
+                "  var r := ws_opendoc(wsid, item%s.materialize(ipik));\n"
                 "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
                 "  item  := r.hmark(0@0);\n"
                 "  time_shred :+= time() - t;\n"
@@ -6196,7 +6196,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  var elem_iters := elements.leftfetchjoin(iter);\n"
                 "  var elem_items := elements.leftfetchjoin(item);\n"
                 "  var elem_conts := elements.leftfetchjoin(kind.get_container());\n"
-                "  var elem_attrs := elements.project(oid(nil));\n"
+                "  var elem_attrs := elements.project(oid_nil);\n"
                 "  var attributes := kind.get_type(ATTR).mirror();\n"
                 "  var attr_iters := attributes.leftfetchjoin(iter).materialize(attributes);\n"
                 "  var attr_attrs := attributes.leftfetchjoin(item).materialize(attributes);\n"
@@ -6718,7 +6718,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := reverse(loop%03u.tdiff(iter));\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter, difference, cast_val, dbl(nil));\n"
+                "var res_mu := merged_union(iter, difference, cast_val, dbl_nil);\n"
                 "cast_val := res_mu.fetch(1);\n" /* CONST? */
                 "}\n",
                 cur_level,
@@ -6726,7 +6726,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         /* nil as NaN value doesn't work out, because nil disappears in joins */
         milprintf(f,
-                "if (cast_val.texist(dbl(nil)))\n"
+                "if (cast_val.texist(dbl_nil))\n"
                 "{    ERROR (\"We do not support the value NaN.\"); }\n");
 
         if (!code)
@@ -7284,24 +7284,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# upd:delete (node) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                  "int_values.append(UPDATE_DELETE);\n"
-                  "var delitemID := int_values.reverse().find(UPDATE_DELETE);\n"
-                  "var item1 := constant2bat(delitemID);\n"
-                  "var item2 := constant2bat(item);\n"
-                  "var item3 := constant2bat(nil);\n"
-                  "var item4 := item3;\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind);\n"
-                  "var kind3 := constant2bat(int(nil));\n"
-                  "var kind4 := kind3;\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
+                  "var delitemID := int_values.addValues(UPDATE_DELETE);\n"
+                  "var ids := mirror(ipik);\n"
+                  "var merge1 := merged_union(ids, ids,\n"
+                  "                           delitemID, item,\n"
+                  "                           INT, kind,\n"
                   "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
+                  "var merge2 := merged_union(ids, ids,\n"
+                  "                           oid_nil, oid_nil,\n"
+                  "                           int_nil, int_nil,\n"
                   "                           iter, iter);\n"
                   "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
                   "                          merge1.fetch(1), merge2.fetch(1),\n"
@@ -7309,7 +7300,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                          merge1.fetch(3), merge2.fetch(3));\n"
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n");
+                  "iter := merge.fetch(3);\n"
+                  "ipik := item;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_upd,"insertIntoAsFirst")) == 0 ||
@@ -7344,24 +7336,16 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "int_values.append(%s);\n"
-                  "var cmdID := int_values.reverse().find(%s);\n"
-                  "var item1 := constant2bat(cmdID);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := constant2bat(item);\n"
-                  "var item4 := constant2bat(nil);\n"
-                  "var kind1 := constant2bat(INT);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(kind);\n"
-                  "var kind4 := constant2bat(int(nil));\n"
-                  "iter := constant2bat(iter);\n"
-                  "var merge1 := merged_union(ipik.mirror(), ipik%03u.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
+                  "var cmdID := int_values.addValues(%s);\n"
+                  "var id1 := ipik.mirror();\n"
+                  "var id2 := ipik%03u.mirror();\n"
+                  "var merge1 := merged_union(id1, id2,\n"
+                  "                           cmdID, item%03u,\n"
+                  "                           INT, kind%03u,\n"
                   "                           iter, iter);\n"
-                  "var merge2 := merged_union(ipik.mirror(), ipik%03u.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
+                  "var merge2 := merged_union(id1, id2,\n"
+                  "                           item, oid_nil,\n"
+                  "                           kind, int_nil,\n"
                   "                           iter, iter);\n"
                   "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
                   "                          merge1.fetch(1), merge2.fetch(1),\n"
@@ -7370,7 +7354,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
                   "iter := merge.fetch(3);\n",
-                  update_cmd, update_cmd, counter, counter, counter, counter);
+                  "ipik := item;\n",
+                  update_cmd, counter, counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }
@@ -7386,10 +7371,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (fun->arity == 2) {
             counter++;
             milprintf(f,
+                      "# collection is default same as document name\n"
                       "var item%03u := item%03u;\n"
                       "var kind%03u := kind%03u;\n"
-                      "int_values.append(0LL);\n"
-                      "item := int_values.reverse().find(0LL);\n"
+                      "# percentage default is 0\n"
+                      "item := int_values.addValues(0LL).tmark(0@0);\n"
                       "kind := INT;\n",
                       counter, counter - 1, counter, counter - 1);
         } else {
@@ -7398,39 +7384,29 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             saveResult(f, counter);
             if (fun->arity == 3) {
                 milprintf(f,
-                          "kind%03u := constant2bat(kind%03u);\n"
                           "if (kind%03u.fetch(0) = INT) {\n"
+                          "  # collection was omitted, but percentage provided\n"
                           "  kind := kind%03u;\n"
                           "  item := item%03u;\n"
                           "  kind%03u := kind%03u;\n"
                           "  item%03u := item%03u;\n"
                           "} else {\n"
-                          "  kind := INT;\n"
-                          "  int_values.append(0LL);\n"
-                          "  var item := int_values.reverse().find(0LL);\n"
+                          "  item := int_values.addValues(0LL).tmark(0@0);\n"
+                          "  kind := INT;\n",
                           "}\n",
-                          counter, counter, counter, counter, counter, counter, counter - 1, counter, counter - 1);
+                          counter, counter, counter, counter, counter - 1, counter, counter - 1);
             } else {
                 translate2MIL(f, NORMAL, cur_level, counter, RRRL(args));
             }
         }
         milprintf(f,
-                  "var item1 := constant2bat(item%03u);\n"
-                  "var item2 := constant2bat(item%03u);\n"
-                  "var item3 := constant2bat(item%03u);\n"
-                  "var item4 := constant2bat(item);\n"
-                  "var kind1 := constant2bat(kind%03u);\n"
-                  "var kind2 := constant2bat(kind%03u);\n"
-                  "var kind3 := constant2bat(kind%03u);\n"
-                  "var kind4 := constant2bat(kind);\n"
-                  "iter := constant2bat(iter);\n"
                   "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item1, item2,\n"
-                  "                           kind1, kind2,\n"
+                  "                           item%03u, item%03u,\n"
+                  "                           kind%03u, kind%03u,\n"
                   "                           iter, iter);\n"
                   "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
-                  "                           item3, item4,\n"
-                  "                           kind3, kind4,\n"
+                  "                           item%03u, [abs](item),\n"
+                  "                           kind%03u, kind,\n"
                   "                           iter, iter);\n"
                   "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
                   "                          merge1.fetch(1), merge2.fetch(1),\n"
@@ -7438,8 +7414,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                          merge1.fetch(3), merge2.fetch(3));\n"
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  counter - 2, counter - 1, counter, counter - 2, counter - 1, counter);
+                  "iter := merge.fetch(3);\n"
+                  "ipik := item;\n",
+                  counter - 2, counter - 1, counter - 2, counter - 1, counter, counter);
         if (fun->arity > 2) {
             deleteResult(f, counter);
         }
@@ -7451,6 +7428,25 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         milprintf(f, "# fn:del-doc (str) as del_stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f,
+                  "var delID := int_values.addValues(-1LL);\n"
+                  "var ids := mirror(ipik);\n"
+                  "var merge1 := merged_union(ids, ids,\n"
+                  "                           item, item,\n"
+                  "                           kind, kind,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ids, ids,\n"
+                  "                           item, -1LL,\n"
+                  "                           kind, delID,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n"
+                  "ipik := item;\n");
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
@@ -7642,7 +7638,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
                 "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
-		"    ws_doc(ws, docs_to_load);\n"
+		"    ws_opendoc(wsid, docs_to_load);\n"
 		"    docs_to_load := nil;\n"
 		"    loaded_docs := nil;\n"
 		"    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
@@ -10483,7 +10479,7 @@ const char* PFinitMIL(void) {
         "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
+        "var shredBAT := int_nil; # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "var time_compile := 0;\n"
         "var time_read := 0;\n"
         "var time_shred := 0;\n"
@@ -10538,7 +10534,8 @@ const char* PFvarMIL(void) {
         "\n"
         /* Decleration of 'ws' has been moved from PFstartMIL to here to
          * easy debugging. */
-        "var ws := int(nil);\n"
+        "var wsid := lng_nil;\n"
+        "var ws := int_nil;\n"
         "# environment that represents start of any query\n"
         "var v_iter000;\n"
         "var v_item000;\n"
@@ -10557,7 +10554,7 @@ const char* PFstartMIL(void) {
         "time_exec := time();\n"
         "\n"
         "var err := CATCH({\n"
-        "  ws := ws_create();\n"
+        "  wsid := ws_id(ws := ws_create());\n"
         "\n"
         "  # get full picture on var_usage (and sort it)\n"
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
@@ -10576,7 +10573,7 @@ const char* PFstartMIL(void) {
 
 const char* PFdocbatMIL(void) {
     /* NjN why isn't this moved to the pathfinder.mx file */
-    return  " ws_addcoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
+    return  " ws_addcoll(wsid, bat(shredBAT), \"\", TEMP_DOC);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
@@ -10603,17 +10600,13 @@ static const char* _PFstopMIL(int statement_type) {
         strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
         break;
     case 2:
-        /* add-doc statement */
-        strcat(buf, "  do_add_doc(ws, item, kind, int_values, str_values);\n");
-        break;
-    case 3:
-        /* del-doc statement */
-        strcat(buf, "  do_del_doc(ws, item, kind, int_values, str_values);\n");
+        /* doc-mgmt statement */
+        strcat(buf, "  play_doc_tape(wsid, item, kind, int_values, str_values);\n");
         break;
     }
     strcat(buf,
            "});\n"
-           "ws_destroy(int(ws));\n"
+           "ws_destroy(wsid);\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
            "if (genType.startsWith(\"timing\"))\n"
