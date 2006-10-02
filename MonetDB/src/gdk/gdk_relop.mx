@@ -777,11 +777,12 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	BATcheck(l, "BATfetchjoin: l");
 	BATcheck(r, "BATfetchjoin: r");
 
-	if (estimate == oid_nil) {
-		estimate = BATcount(l);
-	}
 	lcount= BATcount(l);
 	rcount= BATcount(r);
+	if (estimate == oid_nil || estimate < lcount) {
+		/* upper bound to avoid size checks in the join loop */
+		estimate = lcount;
+	}
 
 	if (swap) {
 		if (!BAThdense(r)) {
