@@ -128,7 +128,7 @@ PROC rpc_client(
     if (options.search("rpctime") >= 0) {
         printf("\nMIL_Client_DeSerialisation_Start: %lld msec\n", time_milClntDeSeriaStart);
     }
-    return ws_addcoll(ws, rpcres, local_name, TEMP_DOC);
+    return ws_opencoll(ws_id(ws), rpcres, local_name, TEMP_DOC);
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\

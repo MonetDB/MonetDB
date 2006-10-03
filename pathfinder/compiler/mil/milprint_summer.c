@@ -10573,7 +10573,7 @@ const char* PFstartMIL(void) {
 
 const char* PFdocbatMIL(void) {
     /* NjN why isn't this moved to the pathfinder.mx file */
-    return  " ws_addcoll(wsid, bat(shredBAT), \"\", TEMP_DOC);\n";
+    return  " ws_opencoll(wsid, bat(shredBAT), \"\", TEMP_DOC);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
