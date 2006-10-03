@@ -31,9 +31,9 @@ PHP_INSTDIR = C:\php-5
 PHP_PEARDIR = share\pear
 PHP_EXTENSIONDIR = lib\php5
 
-PYTHONBASE=C:\Python24
+PYTHONBASE=C:\Python25
 PYTHON_INCS=-I$(PYTHONBASE)\include
-PYTHON_LIBS=$(PYTHONBASE)\libs\python24.lib
+PYTHON_LIBS=$(PYTHONBASE)\libs\python25.lib
 PYTHON_LIBDIR=share\MonetDB\python
 
 # not need to edit beyond here..
