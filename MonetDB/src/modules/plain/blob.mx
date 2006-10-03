@@ -451,14 +451,15 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 		s++;
 		res <<= 4;
 		if (*s >= '0' && *s <= '9') {
-			res = *s - '0';
+			res += *s - '0';
 		} else if (*s >= 'A' && *s <= 'F') {
-			res = 10 + *s - 'A';
+			res += 10 + *s - 'A';
 		} else if (*s >= 'a' && *s <= 'f') {
-			res = 10 + *s - 'a';
+			res += 10 + *s - 'a';
 		} else {
 			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
 		}
+		s++;
 
 		result->data[i] = res;
 	}
