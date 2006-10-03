@@ -1,4 +1,3 @@
-
 create view revenue0 (supplier_no, total_revenue) as
 	select
 		l_suppkey,

@@ -40,6 +40,9 @@ extern struct logger *logger;
 #define bat_set_access(b,access) b->P->restricted = access
 #define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
 
+extern BAT *bind_bats(sql_trans *tr, sql_column *c);
+extern BAT *bind_idxs(sql_trans *tr, sql_idx * i);
+
 extern BAT *bind_bat(sql_trans *tr, sql_column *c, int access);
 extern BAT *bind_ubat(sql_trans *tr, sql_column *c, int access);
 extern BAT *bind_idx(sql_trans *tr, sql_idx * i, int access);
@@ -143,6 +146,58 @@ temp_copy(bm_bid b, int temp)
 }
 
 BAT *
+bind_bats(sql_trans *tr, sql_column *c)
+{
+	BAT *b = bat_new(TYPE_int, TYPE_bat, 4, "bind_bats");
+	int access;
+
+	(void)tr;
+	access = 0;
+	BUNins(b, &access, &c->bat.bid, FALSE);
+	if (c->bat.ibid) {
+		access = 0; /* inserts */
+		BUNins(b, &access, &c->bat.ibid, FALSE);
+	}
+	if (c->bat.ubid) {
+		access = 1; /* deletes */
+		BUNins(b, &access, &c->bat.ubid, FALSE);
+		access = 0; /* inserts */
+		BUNins(b, &access, &c->bat.ubid, FALSE);
+	}
+	if (c->t->dbid) {
+		access = 1; /* deletes */
+		BUNins(b, &access, &c->t->dbid, FALSE);
+	}
+	return b;
+}
+
+BAT *
+bind_idxs(sql_trans *tr, sql_idx *i)
+{
+	BAT *b = bat_new(TYPE_int, TYPE_bat, 4, "bind_idxs");
+	int access;
+
+	(void)tr;
+	access = 0;
+	BUNins(b, &access, &i->bat.bid, FALSE);
+	if (i->bat.ibid) {
+		access = 0; /* inserts */
+		BUNins(b, &access, &i->bat.ibid, FALSE);
+	}
+	if (i->bat.ubid) {
+		access = 1; /* deletes */
+		BUNins(b, &access, &i->bat.ubid, FALSE);
+		access = 0; /* inserts */
+		BUNins(b, &access, &i->bat.ubid, FALSE);
+	}
+	if (i->t->dbid) {
+		access = 1; /* deletes */
+		BUNins(b, &access, &i->t->dbid, FALSE);
+	}
+	return b;
+}
+
+BAT *
 bind_bat(sql_trans *tr, sql_column *c, int access)
 {
 	BAT *b;
@@ -197,6 +252,7 @@ BAT *
 bind_ubat(sql_trans *tr, sql_column *c, int access)
 {
 	BAT *b;
+
 	b = temp_descriptor(c->bat.ubid);
 	b->batDirty |= 2;
 	assert(b);
@@ -222,11 +278,11 @@ append_ubat(sql_trans *tr, sql_column *c, int access, BAT *i)
 	} else {
 		BATappend(b, i, TRUE);
 	}
+	assert(b);
 	b->batDirty |= 2;
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
 	if (access == INS || access == UPD) 
 		c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
-	assert(b);
 	return b;
 }
 
@@ -289,11 +345,11 @@ append_idx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	} else {
 		assert(0); /* RDONLY appends ???? */
 	}
+	assert(b != NULL);
 	b->batDirty |= 2;
-	if (access == INS || access == UPD) 
+	if (access == INS) 
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	assert(b);
 	return b;
 }
 
@@ -304,12 +360,12 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 
 	b = temp_descriptor(i->bat.ubid);
 	b->batDirty |= 2;
+	assert(b);
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (access == INS || access == UPD) {
 		bat_set_access(b, BAT_WRITE);
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	}
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	assert(b);
 	return b;
 }
 
@@ -319,7 +375,7 @@ append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	BAT *b;
 
 	b = temp_descriptor(i->bat.ubid);
-	if (BATcount(b) == 0) { 
+	if (BATcount(b) == 0 && !VIEWparent(ib)){ 
 		bat_destroy(b);
 		temp_destroy(i->bat.ubid);
 		i->bat.ubid = temp_create(ib);
@@ -327,11 +383,11 @@ append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 	} else {
 		BATappend(b, ib, TRUE);
 	}
+	assert(b);
+	b->batDirty |= 2;
 	if (access == INS || access == UPD) 
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	b->batDirty |= 2;
-	assert(b);
 	return b;
 }
 
@@ -2174,8 +2230,8 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	return col;
 }
 
-static sql_table *
-create_table_intern(char *name, sht type, bit system, int persistence, int commit_action)
+sql_table *
+create_sql_table(char *name, sht type, bit system, int persistence, int commit_action)
 {
 	sql_table *t = NEW(sql_table);
 
@@ -2196,6 +2252,7 @@ create_table_intern(char *name, sht type, bit system, int persistence, int commi
 	t->sz = SQLBATSIZE;
 	t->cnt = 0;
 	t->cleared = 0;
+	t->s = NULL;
 	return t;
 }
 
@@ -2206,7 +2263,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-	sql_table *t = create_table_intern(name, tt_table, 1, persistence, commit_action);
+	sql_table *t = create_sql_table(name, tt_table, 1, persistence, commit_action);
 
 	BAT *b;
 	oid rid;
@@ -3691,11 +3748,12 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		m = m->next;
 	} while (ok == SQL_OK && n && m);
 	if (tt->idxs.set) {
-		for (n = tt->idxs.set->h, m = tt->idxs.set->h; ok == SQL_OK && n && m; n = n->next, m = m->next) {
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == SQL_OK && n && m; n = n->next, m = m->next) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
 			BAT *ups, *ins, *cur;
 
+			/* some indices have no bats */
 			if (!oi->bat.bid)
 				continue;
 
@@ -3704,9 +3762,11 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ci -> bat.bid = oi -> bat.bid;
 				temp_dup(ci->bat.bid);
 			}
+			if (!ci->base.wtime) 
+				continue;
+
 			cur = temp_descriptor(oi->bat.bid);
 			if (ft->cleared && ttr == gtrans) {
-
 				bat_clear(cur);
 				ok = log_bat_clear(logger, oi->bat.name);
 				if (ok == SQL_OK) 
@@ -3716,6 +3776,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ins = temp_descriptor(ci->bat.ibid);
 			/* any inserts */
 			if (BUNlast(ins) > BUNfirst(ins)) {
+				assert(nr_active>0);
 				if (BUNlast(ins) > ins->batInserted) {
 					if (nr_active > 1) {
 						BAT *ci = temp_descriptor(oi->bat.ibid);
@@ -3725,7 +3786,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (ok == SQL_OK && ttr == gtrans)
 						ok = log_bat(logger, ins, oi->bat.name);
 				}
-				if (nr_active == 1) {
+				if (nr_active == 1) { /* flush all */
 					BAT *pi = temp_descriptor(oi->bat.ibid);
 					if (!BATcount(cur)) {
 						/* swap cur and ins */
@@ -3751,6 +3812,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				BATcommit(ins);
 			} 
 			bat_destroy(ins);
+
 			ups = temp_descriptor(ci->bat.ubid);
 			/* any updates */
 			if (BUNlast(ups) > BUNfirst(ups)) {
@@ -4074,7 +4136,6 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 			fprintf(stderr, " (%d<%d)\n", 
 				tr->stime, pfc->base.wtime);
 		}
-		return SQL_OK;
 	}
 	return SQL_OK;
 }
@@ -4713,7 +4774,7 @@ sql_table *
 sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz)
 {
 	BAT *b;
-	sql_table *t = create_table_intern(name, tt_table, system, persistence, commit_action);
+	sql_table *t = create_sql_table(name, tt_table, system, persistence, commit_action);
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
@@ -4721,8 +4782,6 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 	/* temps all belong to a special tmp schema */
 	assert( !isTempTable(t) || (strcmp(s->base.name, "tmp") == 0));
 
-	t->dbid = 0;
-	t->query = NULL;
 	t->s = s;
 	t->sz = sz;
 	if (sz < 0)
@@ -4744,7 +4803,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 sql_table *
 sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system)
 {
-	sql_table *t = create_table_intern(name, tt_view, system, SQL_PERSIST, 0);
+	sql_table *t = create_sql_table(name, tt_view, system, SQL_PERSIST, 0);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
@@ -4767,7 +4826,7 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 sql_table *
 sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system)
 {
-	sql_table *t = create_table_intern(name, tt_generated, system, SQL_PERSIST, 0);
+	sql_table *t = create_sql_table(name, tt_generated, system, SQL_PERSIST, 0);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
@@ -4786,16 +4845,12 @@ sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, 
 	return t;
 }
 
-
-static
 sql_column *
-create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT *bb)
+create_sql_column(sql_table *t, char *name, sql_subtype *tpe)
 {
 	sql_column *col = NEW(sql_column);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
-	sql_table *syscolumn = find_sql_table(syss, "_columns");
-
 	base_init(&col->base, next_oid(), TR_NEW, name);
+
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
@@ -4806,6 +4861,16 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 	col->unique = 0;
 
 	cs_add(&t->columns, col, TR_NEW);
+	return col;
+}
+
+static
+sql_column *
+create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT *bb)
+{
+	sql_column *col = create_sql_column(t, name, tpe );
+	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_table *syscolumn = find_sql_table(syss, "_columns");
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (bb)

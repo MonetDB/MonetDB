@@ -1414,9 +1414,12 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			if (VAR_GLOBAL(s->flag)) { /* globals */
-				len = snprintf(buf, buflen, "setVariable(myc, \"%s\", s%d);\n", s->op1.sval, v);
+				int vn = backend_dumpstmt_(s->op1.stval, nr, sql);
+				len = snprintf(buf, buflen, "setVariable(myc, s%d, s%d);\n", vn, v);
 			} else {
-				len = snprintf(buf, buflen, "%s := s%d;\n", s->op1.sval, v);
+				char *vn = atom2string(s->op1.stval->op1.aval);
+				len = snprintf(buf, buflen, "%s := s%d;\n", vn, v);
+				_DELETE(vn);
 			}
 			assert(len <= buflen);
 			write_part(sql, buf, len);

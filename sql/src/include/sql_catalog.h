@@ -66,7 +66,8 @@
 typedef enum temp_t { 
 	SQL_PERSIST,
 	SQL_LOCAL_TEMP,
-	SQL_GLOBAL_TEMP
+	SQL_GLOBAL_TEMP,
+	SQL_DECLARED_TABLE	/* variable inside a stored procedure */
 } temp_t;
 
 typedef enum commit_action_t { 

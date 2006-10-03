@@ -170,14 +170,12 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 
 	if (atom_null(a)) {
 		if (a->data.vtype != rt->type->localtype) {
-			a->data.vtype = rt->type->localtype;
-			if (ATOMstorage(a->data.vtype) < TYPE_str) {
-				ptr p = ATOMnilptr(a->data.vtype);
+			ptr p;
 
-				VALset(&a->data, a->data.vtype, p);
-			} else {
-				a->data.val.pval = NULL;
-			}
+			a->destroy = 0; /* we cannot destroy a nilptr */
+			a->data.vtype = rt->type->localtype;
+			p = ATOMnilptr(a->data.vtype);
+			VALset(&a->data, a->data.vtype, p);
 		}
 	}
 	a->tpe = *rt;
@@ -631,12 +629,16 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 	char *tname;
 	stmt *tab = s;
 	int temp = 0;
-	assert(s->type == st_table);
 
-	if (s->type == st_table) {
-		tab = s->op1.stval;
-		temp = s->flag;
+	if (s->type != st_table) {
+		stmt_destroy(s);
+		return sql_error(
+			sql, 03,
+			"single value and complex type '%s' are not equal",
+			(ct->type==tt_generated)?"table":"unknown");
 	}
+	tab = s->op1.stval;
+	temp = s->flag;
 	if (tab->type == st_list) {
 		node *n, *m;
 		list *l = create_stmt_list();
@@ -664,9 +666,9 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 		if (list_length(ct->columns.set) != 1) {
 			stmt *res = sql_error(
 				sql, 03,
-				"single value of type %s and complex type %s are not equal",
+				"single value of type %s and complex type '%s' are not equal",
 				st->type->sqlname,
-				(ct->type==0)?"table":"unknown"
+				(ct->type==tt_generated)?"table":"unknown"
 			);
 			stmt_destroy(s);
 			return res;

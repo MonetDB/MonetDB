@@ -1704,14 +1704,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_assign: {
 			int r = _dumpstmt(sql,mb, s->op2.stval);
 			if (!VAR_GLOBAL(s->flag)) { /* globals */
+				char *vn = atom2string(s->op1.stval->op1.aval);
 				q = newInstruction(mb,ASSIGNsymbol);
 				q->argc = q->retc = 0;
-                        	q = pushArgumentId(mb, q, _strdup(s->op1.sval));
+				q = pushArgumentId(mb, q, vn);
 				pushInstruction(mb, q);
 				q->retc++;
 			} else {
+				int vn = _dumpstmt(sql, mb, s->op1.stval);
 				q = newStmt1(mb, sqlRef, "setVariable");
-                        	q = pushStr(mb, q, s->op1.sval);
+				q = pushArgument(mb, q, vn);
 			}
 			q = pushArgument(mb, q, r);
 		} 	break;

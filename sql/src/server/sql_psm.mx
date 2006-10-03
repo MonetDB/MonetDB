@@ -31,6 +31,7 @@ extern stmt *psm(mvc *sql, symbol *sym);
 #endif /* _SQL_PSM_H_ */
 @c
 #include "sql_psm.h"
+#include "sql_schema.h"
 #include "sql_select.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
@@ -94,7 +95,7 @@ psm_declare(mvc *sql, scope *scp, dnode *n)
 			if (frame_find_var(sql, name)) {
 				list_destroy(l);
 				return sql_error(sql, 01, 
-					"Variable %s allready declared", name);
+					"Variable '%s' allready declared", name);
 			}
 			r = stmt_var(_strdup(name), ctype, 1, sql->frame );
 			stack_push_var(sql, name, r);
@@ -104,6 +105,55 @@ psm_declare(mvc *sql, scope *scp, dnode *n)
 		n = n->next;
 	}
 	return stmt_list(l);
+}
+
+
+static sql_table *
+find_basetable(stmt *s)
+{
+	switch(s->type) {
+	case st_list:
+		if (list_length(s->op1.lval)) 
+			return find_basetable(s->op1.lval->h->data);
+		break;
+	case st_basetable:
+		return s->op1.tval;
+	default:
+		if (s->op1.stval)
+			return find_basetable(s->op1.stval);
+	}
+	return NULL;
+}
+
+static stmt *
+psm_declare_table(mvc *sql, scope *scp, dnode *n)
+{
+	dlist *qname = n->next->data.lval;
+	char *name = qname_table(qname);
+	char *sname = qname_schema(qname);
+	stmt *ret, *r;
+	sql_subtype ctype = *sql_bind_localtype("bat");
+
+	(void)scp;
+	if (sname)  /* not allowed here */
+		return sql_error(sql, 02, "DECLARE TABLE: qualified name allowed");
+	if (frame_find_var(sql, name)) 
+		return sql_error(sql, 01, "Variable '%s' allready declared", 
+			name);
+	
+	ret = sql_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, qname, n->next->next->data.sym, n->next->next->next->data.ival);
+
+	if (!ret)
+		return NULL;
+	ctype . comp_type = find_basetable(ret); 
+	r = stmt_var(_strdup(name), &ctype, 1, sql->frame );
+	stack_push_var(sql, name, r);
+	/*
+	int level;
+	level = stack_find_frame(sql, name);
+	return stmt_assign(name, ret, level);
+	*/
+	return r;
 }
 
 /* [ label: ]
@@ -314,6 +364,9 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 			break;
 		case SQL_DECLARE:
 			res = psm_declare(sql, scp, s->data.lval->h);
+			break;
+		case SQL_CREATE_TABLE: 
+			res = psm_declare_table(sql, scp, s->data.lval->h);
 			break;
 		case SQL_WHILE:
 			res = psm_while_do(sql, scp, restype, s->data.lval->h);

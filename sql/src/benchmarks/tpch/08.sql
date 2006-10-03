@@ -1,5 +1,3 @@
-
-
 select
 	o_year,
 	sum(case

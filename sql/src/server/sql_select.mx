@@ -155,6 +155,13 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 			s = tmp_schema(sql);
 			t = mvc_bind_table(sql, s, tname);
 		}
+		if (!t && !sname) {
+			stmt *st;
+			if ((st = stack_find_var(sql, tname)) != NULL) {
+				sql_subtype *tpe = tail_type(st);
+				t = tpe->comp_type;
+			}
+		}
 		if (!t) {
 			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 			return NULL;
@@ -272,6 +279,9 @@ static stmt *
 sql_var_ref(mvc *sql, char *name, int at)
 {
 	stmt *s = NULL;
+
+	/* TODO in case of global (not builtin session) vars, obtain the 
+	   value instead as the variable disappears after the session */
 
 	if ((s = stack_find_var(sql, name)) != NULL) {
 		int frame = stack_find_frame(sql, name);

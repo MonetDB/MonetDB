@@ -197,8 +197,10 @@ extern stmt *stmt_column(stmt *i, stmt *basetable);	/* relational column */
 extern stmt *stmt_rs_column(stmt *result_set, stmt *v, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
+extern stmt *stmt_delta_table_bat(sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_tbat(sql_table *t, int access);
 extern stmt *stmt_idxbat(sql_idx * i, int access);
+extern stmt *stmt_delta_table_idxbat(sql_idx * i, int access);
 
 extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
@@ -617,6 +619,7 @@ stmt_destroy(stmt *s)
 		case st_while:
 		case st_if:
 		case st_return:
+		case st_assign:
 
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -624,13 +627,6 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
-			break;
-
-		case st_assign:
-			if (s->op1.sval)
-				_DELETE(s->op1.sval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
 			break;
 
 		case st_exception:
@@ -887,8 +883,8 @@ stmt_column(stmt *op1, stmt *table)
 	return s;
 }
 
-static stmt *
-stmt_bat_(sql_column *c, stmt *basetable, int access )
+stmt *
+stmt_bat(sql_column *c, stmt *basetable, int access )
 {
 	stmt *s = stmt_create(st_bat);
 
@@ -900,14 +896,14 @@ stmt_bat_(sql_column *c, stmt *basetable, int access )
 }
 
 stmt *
-stmt_bat(sql_column *c, stmt *basetable, int access )
+stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 {
-	stmt *s = stmt_bat_(c, basetable, access );
-	
+	stmt *s = stmt_bat(c, basetable, access );
+
 	if (c->base.flag != TR_NEW && isTable(c->t) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
-		stmt *i = stmt_bat_(c, stmt_dup(basetable), RD_INS );
-		stmt *u = stmt_bat_(c, stmt_dup(basetable), RD_UPD );
+		stmt *i = stmt_bat(c, stmt_dup(basetable), RD_INS );
+		stmt *u = stmt_bat(c, stmt_dup(basetable), RD_UPD );
 
 		s = stmt_union(s, i);
 		s = stmt_diff(s, u);
@@ -933,7 +929,7 @@ stmt_tbat(sql_table *t, int access)
 }
 
 stmt *
-stmt_idxbat_(sql_idx * i, int access)
+stmt_idxbat(sql_idx * i, int access)
 {
 	stmt *s = stmt_create(st_idxbat);
 
@@ -944,14 +940,14 @@ stmt_idxbat_(sql_idx * i, int access)
 }
 
 stmt *
-stmt_idxbat(sql_idx * idx, int access)
+stmt_delta_table_idxbat(sql_idx * idx, int access)
 {
-	stmt *s = stmt_idxbat_(idx, access);
+	stmt *s = stmt_idxbat(idx, access);
 
 	if (idx->base.flag != TR_NEW && isTable(idx->t) &&
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
-		stmt *i = stmt_idxbat_(idx, RD_INS);
-		stmt *u = stmt_idxbat_(idx, RD_UPD);
+		stmt *i = stmt_idxbat(idx, RD_INS);
+		stmt *u = stmt_idxbat(idx, RD_UPD);
 
 		s = stmt_union(s, i);
 		s = stmt_diff(s, u);
@@ -2227,7 +2223,7 @@ stmt *stmt_assign(char *varname, stmt *val, int level)
 {
 	stmt *s = stmt_create(st_assign);
 
-	s->op1.sval = _strdup(varname);
+	s->op1.stval = stmt_atom_string(_strdup(varname));
 	s->op2.stval = val;
 	s->flag = (level<<1);
 	return s;

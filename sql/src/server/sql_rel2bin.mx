@@ -23,10 +23,15 @@
 #ifndef _SQL_REL2BIN_H
 #define _SQL_REL2BIN_H
 
+#define PSEL(s) ((s->type == st_select || s->type == st_uselect) && !s->op2.stval->nrcols)
+#define RSEL(s) (s->type == st_select2 || s->type == st_uselect2)
+#define USEL(s) (s->type == st_uselect || s->type == st_uselect2)
+
 #include "sql_statement.h"
 #include "sql_types.h"
 
 extern stmt *rel2bin(mvc *c, stmt *s);
+extern sql_column * basecolumn(stmt *st);
 
 #endif /* _SQL_REL2BIN_H */
 
@@ -193,13 +198,14 @@ head_column(stmt *st)
 	case st_op:
 	case st_ptable:
 	case st_idxbat:
+
+	case st_rs_column:
 		return NULL;
 
 		/* stmts without head column which also are not expected */
 	case st_none:
 	case st_sql:
 
-	case st_rs_column:
 	case st_dbat:
 
 	case st_ordered:
@@ -228,7 +234,7 @@ head_column(stmt *st)
  * number of semijoins and selects.
  * There we need too know which columns come from the same basecolumn.
  */
-static sql_column *
+sql_column *
 basecolumn(stmt *st)
 {
 	if (!st)
@@ -371,20 +377,6 @@ stmt_max(stmt *x, stmt *y)
 	assert(f);
 	return stmt_binop(x, y, f);
 }
-
-stmt *
-stmt_uselect_select(stmt *s)
-{
-	assert(s->type == st_uselect2 || (s->type == st_uselect && !s->op2.stval->nrcols));
-	if (s->type == st_uselect2)
-		s->type = st_select2;
-	else
-		s->type = st_select;
-	assert(!s->t);
-	s->t = stmt_dup(s->op1.stval->t);
-	return s;
-}
-
 
 list *
 shrink_select_ranges(mvc *sql, list *oldsels)
@@ -620,131 +612,52 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 	return newsels;
 }
 
-#define PSEL(s) ((s->type == st_select || s->type == st_uselect) && !s->op2.stval->nrcols)
-#define RSEL(s) (s->type == st_select2 || s->type == st_uselect2)
-#define USEL(s) (s->type == st_uselect || s->type == st_uselect2)
-
-stmt *
-eliminate_semijoin(stmt *s)
+static int 
+sel_find_keycolumn( stmt *s, sql_kc *kc)
 {
-	stmt *s1, *s2;
-	sql_column *bc1, *bc2;
-
-	assert(s->type == st_semijoin);
-	s1 = s->op1.stval;
-	s2 = s->op2.stval;
-	bc1 = basecolumn(s1);
-	bc2 = basecolumn(s2);
-	if (bc1 && bc1 == bc2) {
-		int match1 = (PSEL(s1) || RSEL(s1));
-		int match2 = (PSEL(s2) || RSEL(s2));
-
-		if (match1 && match2) {
-			/* semijoin( select(x,..), select(x,..) ) */
-			int swap = 0;
-
-			if (PSEL(s1) && s1->flag == cmp_equal) {
-				/* do point select first */
-				swap = 0;
-			} else if (PSEL(s2) && s2->flag == cmp_equal) {
-				/* do point select first */
-				swap = 1;
-			} else if (PSEL(s2) && s2->flag == cmp_notequal) {
-				/* do notequal select last */
-				swap = 0;
-			} else if (PSEL(s1) && s1->flag == cmp_notequal) {
-				/* do notequal select last */
-				swap = 1;
-			} else if (PSEL(s2) && s2->flag == cmp_notlike) {
-				/* do notequal select last */
-				swap = 0;
-			} else if (PSEL(s1) && s1->flag == cmp_notlike) {
-				/* do notequal select last */
-				swap = 1;
-			} else if (PSEL(s2) && s2->flag == cmp_like) {
-				/* do like select last */
-				swap = 0;
-			} else if (PSEL(s1) && s1->flag == cmp_like) {
-				/* do like select last */
-				swap = 1;
-			} else if (PSEL(s1)) {
-				/* single-sided range before double-sided range */
-				swap = 0;
-			} else if (PSEL(s2)) {
-				/* single-sided range before double-sided range */
-				swap = 1;
-			}
-			if (swap) {
-				stmt *os;
-
-				os = s1;
-				s1 = s2;
-				s2 = os;
-			}
-			if (USEL(s1)) {
-				/* uselect => select  to keep tail for s2 */
-				s1 = stmt_uselect_select(s1);
-			}
-		} else if (match1) {
-			/* semijoin( select(x,..), f(x) )  =>  semijoin( f(x), select(x,..) ) */
-			stmt *os;
-			int m;
-
-			m = match1;
-			match1 = match2;
-			match2 = m;
-			os = s1;
-			s1 = s2;
-			s2 = os;
-		}
-		if (match2 && 0) {
-			/* semijoin( f(x), select(x,..) )  =>  select( f(x), .. ) */
-			stmt *ns = NULL;
-
-			switch (s2->type) {
-			case st_select:
-			case st_uselect:
-				/* uselect => select  as semijoin also propagates the left input's tail */
-				ns = stmt_select(stmt_dup(s1), stmt_dup(s2->op2.stval), (comp_type) s2->flag);
-				break;
-			case st_select2:
-			case st_uselect2:
-				/* uselect => select  as semijoin also propagates the left input's tail */
-				ns = stmt_select2(stmt_dup(s1), stmt_dup(s2->op2.stval), stmt_dup(s2->op3.stval), s2->flag);
-				break;
-			default:
-				/* pacify compiler; should never be reached. */
-				assert(0);
-			}
-			return ns;
-		}
-	}
-	return stmt_dup(s);
-}
-
-stmt *
-eliminate_reverse(stmt *s)
-{
-	stmt *os = s->op1.stval, *ns;
-
-	assert(s->type == st_reverse);
-	switch (os->type) {
-	case st_reverse:
-		/* reverse(reverse(x)) => x */
-		ns = os->op1.stval;
-		break;
-	case st_mirror:
-		/* reverse(mirror(x)) => mirror(x) */
-		ns = os;
-		break;
-	default:
-		ns = s;
-	}
-	return stmt_dup(ns);
+	s = s->op1.stval;
+	if (s && s->type == st_bat && s->op1.cval == kc->c)
+		return 0;
+	return -1;
 }
 
 static stmt *
-stmt_hash( mvc *sql, list *l ) 
+select_hash_key( mvc *sql, sql_idx *i, list *l ) 
+{
+	sql_subtype *it;
+	stmt *h = NULL;
+	stmt *bits = stmt_atom_int(1 + 31/list_length(l));
+	node *icn;
+
+	it = sql_bind_localtype("int");
+
+        for(icn = i->columns->h; icn; icn = icn->next) {
+		sql_kc *kc = icn->data;
+		node *n = list_find(l, kc, (fcmp)&sel_find_keycolumn);
+		stmt *s;
+
+		assert(n);
+
+		s = stmt_dup(n->data);
+		if (h) {
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", it, it, tail_type(s), it);
+
+			h = stmt_Nop(stmt_list( list_append( list_append(
+				list_append(create_stmt_list(), h), 
+				stmt_dup(bits)), 
+				stmt_dup(s->op2.stval))), 
+				xor);
+		} else {
+			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, it);
+			h = stmt_unop(stmt_dup(s->op2.stval), hf);
+		}
+	}
+	stmt_destroy(bits);
+	return stmt_select(stmt_idxbat(i, RDONLY), h, cmp_equal);
+}
+
+static stmt *
+join_hash_key( mvc *sql, list *l ) 
 {
 	node *m;
 	sql_subtype *it;
@@ -776,6 +689,7 @@ stmt_hash( mvc *sql, list *l )
 	return stmt_join(stmt_reverse(o), h, cmp_equal);
 }
 
+
 /* TODO find out if the columns have an (hash) index */
 static stmt *
 reljoin( mvc *sql, list *l1, list *l2 )
@@ -788,8 +702,8 @@ reljoin( mvc *sql, list *l1, list *l2 )
 		r = stmt_dup(l2->h->data);
 		return stmt_join(l, stmt_reverse(r), cmp_equal);
 	}
-	l = stmt_hash(sql, l1);
-	r = stmt_hash(sql, l2);
+	l = join_hash_key(sql, l1);
+	r = join_hash_key(sql, l2);
 	res = stmt_join(l, stmt_reverse(r), cmp_equal);
 	l = stmt_mark(stmt_reverse(res), 4);
 	r = stmt_mark(stmt_dup(res), 4);
@@ -815,29 +729,6 @@ reljoin( mvc *sql, list *l1, list *l2 )
 	}
 	res = stmt_join(stmt_reverse(l), r, cmp_equal);
 	return res;
-}
-
-/* push this select through the statement s */
-stmt *
-push_select( stmt *select, stmt *s )
-{
-	if (select->type == st_select2) 
-		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
-
-	if (select->type == st_uselect2) 
-		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
-
-	if (select->type == st_select) {
-		if (select->flag == cmp_like || select->flag == cmp_notlike)
-			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
-		else
-			return stmt_select( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
-	}
-
-	if (select->type == st_uselect) 
-		return stmt_uselect( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
-	assert(0);
-	return NULL;
 }
 
 /* push this select through the statement s */
@@ -891,38 +782,58 @@ push_select_stmt( list *l, stmt *sel )
 	return sel;
 }
 
-static int 
-is_reduced( stmt *s )
+static list *
+use_ukey( mvc *sql, list *l )
 {
-	switch(s->type) 
-	{
-	case st_relselect:
-	case st_filter:
-	case st_select:
-	case st_select2:
-	case st_uselect:
-	case st_uselect2:
-	case st_semijoin:
-	case st_limit:
-	case st_reljoin:
-		return 1;
+	sql_table *t;
+	node *n;
+	stmt *s;
 
-	case st_join:
-		/* fetch join, look at the join operands */
-		if (s->flag == cmp_equal && 
-		    s->op1.stval->t && s->op1.stval->t == s->op2.stval->h)
-			return  is_reduced(s->op1.stval) + 
-				is_reduced(s->op2.stval);
-		return 1;
-	case st_union:	
-		return is_reduced(s->op1.stval) + is_reduced(s->op2.stval);
-	case st_reverse:
-	case st_mark:
-	case st_diff:	
-		return is_reduced(s->op1.stval);
-	default:
-		return 0;
+	for( n = l->h; n; n = n->next) {
+		s = n->data;
+
+		/* we can only use hash indices for lookups, not for ranges */
+		if (RSEL(s))
+			return l;
+		/* we only want selects on base columns */
+		if (s->op1.stval->type != st_bat)
+			return l;
 	}
+
+	s = l->h->data;
+	if (!s->h || s->h->type != st_basetable)
+		return l;
+	t = s->h->op1.tval;
+	
+	if (t->idxs.set) {
+		int cnt = 0;
+		node *in;
+		sql_idx *i;
+	   	for(in = t->idxs.set->h; in; in = in->next){
+ 			i = in->data;
+			if (i->type == unique && 
+			    list_length(l) == list_length(i->columns)) {
+				node *icn;
+
+				cnt = 0;
+              			for(icn = i->columns->h; icn; icn = icn->next, cnt++) {
+					sql_kc *kc = icn->data;
+					node *n = list_find(l, kc, (fcmp)&sel_find_keycolumn);
+					if (!n)
+						break;
+				}
+              			if (list_length(i->columns) == cnt) {
+					break;
+				}
+				cnt = 0;
+			}
+		}
+		if (cnt) { /* result can only be one row! */
+			stmt *hash = select_hash_key(sql, i, l);
+			list_prepend(l, hash);
+		}
+	}
+	return l;
 }
 
 stmt *
@@ -946,7 +857,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:
-	case st_idxbat:
 
 	case st_atom:
 	case st_bulkinsert:
@@ -992,6 +902,8 @@ rel2bin(mvc *c, stmt *s)
 			if (!mvc_debug_on(c, 4096)) {
 				l = shrink_select_ranges(c, l);
 			}
+			/* check if we have a unique index */
+			l = use_ukey(c, l);
 			n = list_find(l, (void*)1, (fcmp) &find_unique);
 			if (!n) {
 				list *ll = create_stmt_list();
@@ -1005,6 +917,7 @@ rel2bin(mvc *c, stmt *s)
 			} else {
 				stmt *sel = stmt_dup(n->data); 
 
+				//printf("found a select return a unique value. Lets try to do it first. So we push it through the other selects\n");
 				list_remove_node(l, n);
 				sel = push_select_stmt(l, sel);
 				res = rel2bin(c, sel);
@@ -1021,237 +934,15 @@ rel2bin(mvc *c, stmt *s)
 		return res;
 	}
 
-	case st_limit: {
-		stmt *ns, *j = NULL, *os = s;
+	case st_limit: 
+	case st_semijoin:
+	case st_join:
 
-		/* try to push the limit through the (fetch) join */
-		j = s->op1.stval;
-		/* equi join on same base table */
-		if (s->flag == 0 &&
-		    j->type == st_join && 
-		  ((j->flag == cmp_equal && 
-		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
-		    j->flag == cmp_all)) {
-			stmt *l = stmt_dup(j->op1.stval);
-			stmt *r = stmt_dup(j->op2.stval);
-
-			l = stmt_limit(l, 
-			      s->op2.stval->op1.aval->data.val.ival,
-			      s->op3.stval->op1.aval->data.val.ival,
-			      s->flag);
-			s = stmt_join(l, r, cmp_equal); 
-			ns = rel2bin(c, s);
-			stmt_destroy(s);
-			os->rewritten = stmt_dup(ns);
-			os->optimized = ns->optimized = 2;
-			return ns;
-		} else
-		/* incase there is no reduction on the left, push
-		   the topn into the right part */
-		if (
-		    s->flag != 0 /* topn, ie limit and orderby */ &&
-		    j->type == st_join && 
-		  ((j->flag == cmp_equal && 
-		    !is_reduced(j) &&
-		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
-		    j->flag == cmp_all)) {
-			stmt *l = stmt_dup(j->op1.stval);
-			stmt *r = stmt_dup(j->op2.stval);
-
-			r = stmt_limit(r, 
-			      s->op2.stval->op1.aval->data.val.ival,
-			      s->op3.stval->op1.aval->data.val.ival,
-			      s->flag);
-			s = stmt_join(l, r, cmp_equal); 
-			ns = rel2bin(c, s);
-			stmt_destroy(s);
-			os->rewritten = stmt_dup(ns);
-			os->optimized = ns->optimized = 2;
-			return ns;
-		}
-		/* try to push the limit through the order */
-		if (j->type == st_order) {
-			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
-				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival,
-				j->flag+1), j->flag);
-			ns = rel2bin(c, s);
-			stmt_destroy(s);
-			os->rewritten = stmt_dup(ns);
-			os->optimized = ns->optimized = 2;
-			return ns;
-		}
-		/* try to push the limit through the reverse */
-		if (j->type == st_reverse) {
-			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
-				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival,
-				j->flag));
-			ns = rel2bin(c, s);
-			stmt_destroy(s);
-			os->rewritten = stmt_dup(ns);
-			os->optimized = ns->optimized = 2;
-			return ns;
-		}
-		/* try to push the limit through the mark */
-		if (j->type == st_mark) {
-			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
-				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival, j->flag),
-				j->op2.stval->op1.aval->data.val.ival);
-			ns = rel2bin(c, s);
-			stmt_destroy(s);
-			os->rewritten = stmt_dup(ns);
-			os->optimized = ns->optimized = 2;
-			return ns;
-		}
-		if (s->op1.stval) {
-			stmt *os = s->op1.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op1.stval = ns;
-		}
-		s->optimized = 2;
-		return stmt_dup(s);
-	}
-	case st_semijoin:{
-
-		stmt *j = NULL;
-		stmt *os, *ns;
-
-		os = stmt_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
-		/* try to push the semijoin through the (fetch) join */
-		if (os->op1.stval->type == st_join) {
-			j = os->op1.stval;
-			/* equi join on same base table */
-			if (j->type == st_join && 
-		    		j->flag == cmp_equal &&
-		    		j->op1.stval->t == j->op2.stval->h ) {
-				stmt *l = stmt_dup(j->op1.stval);
-				stmt *r = stmt_dup(j->op2.stval);
-				s = stmt_semijoin(l, stmt_dup(os->op2.stval));
-				l = rel2bin(c, s);
-				stmt_destroy(s);
-				stmt_destroy(os);
-				os = stmt_join( l, r, cmp_equal);
-				os->optimized = 2; 
-				return os;
-			}
-		} 
-		if (!mvc_debug_on(c, 4096) && os->nrcols) {
-			ns = eliminate_semijoin(os);
-		} else {
-			ns = stmt_dup(os);
-		}
-		stmt_destroy(os);
-		s->optimized = ns->optimized = 2;
-		if (ns != s) {
-			s->rewritten = stmt_dup(ns);
-		}
-		return ns;
-	}
-
-	case st_join:{
-
-		if (s->op1.stval) {
-			stmt *os = s->op1.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op1.stval = ns;
-		}
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op2.stval = ns;
-		}
-
-		/* remove expensive double kdiffs 
-		 * if join on oids from the same table then 	
-		 * right kdiff is not needed 
-		 */
-		if (s->flag == cmp_equal && 
-		    s->op1.stval->t == s->op2.stval->h &&
-		    s->op2.stval->type == st_diff){
-			stmt *old = s->op2.stval;
-			s->op2.stval = stmt_dup(old->op1.stval);
-			stmt_destroy(old);
-		}
-		s->optimized = 2;
-		return stmt_dup(s);
-	}
-
-	case st_reverse:{
-
-		stmt *os, *ns;
-
-		os = stmt_reverse(rel2bin(c, s->op1.stval));
-		if (!mvc_debug_on(c, 4096)) {
-			ns = eliminate_reverse(os);
-		} else {
-			ns = stmt_dup(os);
-		}
-		stmt_destroy(os);
-		s->optimized = ns->optimized = 2;
-		if (ns != s) {
-			s->rewritten = stmt_dup(ns);
-		}
-		return ns;
-	}
+	case st_reverse:
 	case st_select:
 	case st_select2:
 	case st_uselect:
-	case st_uselect2: {
-		stmt *res = NULL;
-
-		/* push down the select through st_diff */
-		if (s->op1.stval->type == st_diff && s->flag != cmp_notequal) {
-			stmt *d = s->op1.stval;
-	
-			s = push_select( s, stmt_dup(d->op1.stval)); 
-			s = stmt_diff(s, stmt_dup(d->op2.stval));
-			res = rel2bin(c, s);
-			stmt_destroy(s);
-			return res;
-		}
-		/* push down the select through st_union */
-		if (s->op1.stval->type == st_union && s->flag != cmp_notequal) {
-			stmt *l, *r;
-			stmt *u = s->op1.stval;
-	
-			l = push_select( s, stmt_dup(u->op1.stval)); 
-			r = push_select( s, stmt_dup(u->op2.stval)); 
-			s = stmt_union(l, r);
-			res = rel2bin(c, s);
-			stmt_destroy(s);
-			return res;
-		}
-
-		if (s->op1.stval) {
-			stmt *os = s->op1.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op1.stval = ns;
-		}
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op2.stval = ns;
-		}
-		s->optimized = 2;
-		return stmt_dup(s);
-	}
+	case st_uselect2: 
 
 	case st_temp:
 	case st_filter:
@@ -1291,6 +982,9 @@ rel2bin(mvc *c, stmt *s)
 	case st_while:
 	case st_if:
 	case st_return:
+	case st_assign:
+
+	case st_output: 
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1321,77 +1015,6 @@ rel2bin(mvc *c, stmt *s)
 		s->optimized = 2;
 		return stmt_dup(s);
 
-	case st_assign:
-
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = rel2bin(c, os);
-	
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op2.stval = ns;
-		}
-		s->optimized = 2;
-		return stmt_dup(s);
-
-	case st_output: {
-
-		if (s->op1.stval) {
-			stmt *os = s->op1.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op1.stval = ns;
-		}
-
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op2.stval = ns;
-		}
-
-		/*
-		if all outputs depend on the same mark, just use
-			   the mark as order and simply use the bases.
-		*/
-/*
-		if (!mvc_debug_on(c, 65536) && s->op1.stval->type != st_ordered)
-		{
-			stmt *lst = s->op1.stval;
-
-			node *n = lst->op1.lval->h;
-			stmt *c = n->data;
-			stmt *h = c->op1.stval;
-			list *l = create_stmt_list();
-			int all = 1;
-			for( ; n; n = n->next) {
-				stmt *c = n->data;
-				if (c->type != st_join || h != c->op1.stval ||
-				    c->op2.stval->type != st_bat) {
-					all = 0;
-					break;
-				}
-				list_append(l, stmt_dup(c->op2.stval));
-			}
-			if (all) {
-				stmt *m = stmt_reverse(stmt_dup(h));
-				stmt *r = eliminate_reverse(m);
-				stmt *res = stmt_output(stmt_ordered(r, stmt_list(l)));
-				stmt_destroy(m);
-				res->optimized = 2;
-				return res;
-			} else {
-				list_destroy(l);
-			}
-		}
-*/
-		s->optimized = 2;
-		return stmt_dup(s);
-	}
 	case st_list:{
 
 		stmt *res = NULL;
@@ -1414,8 +1037,28 @@ rel2bin(mvc *c, stmt *s)
 	}
 
 	case st_bat:
-		s->optimized = 2;
-		return stmt_dup(s);
+
+		if (s->flag == RDONLY) {
+			stmt *res = stmt_delta_table_bat( s->op1.cval, stmt_dup(s->h), s->flag);
+			s->rewritten = stmt_dup(res);
+			s->optimized = res->optimized = 2;
+			return res;
+		} else {
+			s->optimized = 2;
+			return stmt_dup(s);
+		}
+
+	case st_idxbat:
+
+		if (s->flag == RDONLY) {
+			stmt *res = stmt_delta_table_idxbat( s->op1.idxval, s->flag);
+			s->rewritten = stmt_dup(res);
+			s->optimized = res->optimized = 2;
+			return res;
+		} else {
+			s->optimized = 2;
+			return stmt_dup(s);
+		}
 
 	case st_pivot:
 	case st_ptable:

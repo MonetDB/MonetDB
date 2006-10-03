@@ -58,6 +58,7 @@ extern ptr sql_frontend(void);
 #include <sql_optimize.h>
 #include <sql_privileges.h>
 #include <sql_rel2bin.h>
+#include <bin_optimizer.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
@@ -139,9 +140,10 @@ sql_symbol2stmt(mvc *c)
 			if (s){
 				stmt *opt;
 
-				opt = optimize(c, s);
+				/* only needed for merge tables */
+				opt = rel2bin(c, s); 	
 				stmt_destroy(s);
-				s = rel2bin(c, opt);
+				s = bin_optimizer(c, opt);
 				stmt_destroy(opt);
 				return s;
 			}
@@ -175,6 +177,9 @@ sql_symbol2stmt(mvc *c)
 		printf("# rel2bin\n");
 */
 		opt = rel2bin(c, s);
+		stmt_destroy(s);
+		s = opt;
+		opt = bin_optimizer(c, s);
 		stmt_destroy(s);
 		s = opt;
 /*

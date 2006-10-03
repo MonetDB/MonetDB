@@ -159,7 +159,9 @@ select_count(stmt *s)
 			return select_count(s->op1.stval) + 3;	/* point */
 	case st_select2: case st_uselect2:
 		return select_count(s->op1.stval) + 2;		/* range */
-	case st_bat: case st_idxbat:
+	case st_idxbat:
+		return 10;	/* we want join indices first */
+	case st_bat: 
 	case st_pivot:
 	case st_aggr:
 	case st_group:
@@ -733,7 +735,7 @@ push_selects_down(mvc *c, list *con)
 	}
 	list_destroy(sels);
 
-	/* todo join order rewrites */
+	/* TODO join order rewrites */
 	for (n = djoins->h; n; n = n->next) {
 		list *ejoins = list_select(joins, n->data, (fcmp) &stmt_cmp_head_tail, (fdup) &stmt_dup);
 		stmt *join = ejoins->h->data;
@@ -780,6 +782,7 @@ push_selects_down(mvc *c, list *con)
 
 				/* replace foreign key joins by index */
 				if (idx && fkjoins) {
+					int nr = 0;
 					jdx = stmt_idxbat(idx, 0);
 					jdx->nrcols = 2;
 					if(tail) {
@@ -796,7 +799,9 @@ push_selects_down(mvc *c, list *con)
 						node * nj = list_find(ejoins, jn->data, (fcmp)&data_cmp);
 						assert(nj);
 						list_remove_node(ejoins, nj);
+						nr ++;
 					}
+					assert(nr == list_length(fkjoins));
 				}
 				if (fkjoins)
 					list_destroy(fkjoins);
@@ -831,7 +836,7 @@ push_selects_down(mvc *c, list *con)
 		} else if (jdx) {
 			hsel = list_find(rsel, (void*)jdx, (fcmp)&cmp_sel_head);
 			tsel = list_find(rsel, (void*)jdx, (fcmp)&cmp_sel_tail);
-			if (hsel){
+			if (hsel) {
 				stmt *sel = hsel->data;
 				jdx = stmt_semijoin(jdx, stmt_dup(sel));
 				sel->nr++;
@@ -852,7 +857,7 @@ push_selects_down(mvc *c, list *con)
 			nqjoins = list_select(ejoins, (void *) 1L, (fcmp) &join_cmp_neq, (fdup) &stmt_dup);
 			list_destroy(ejoins);
 		} else {
-			/* no multi-att equi-join found; theat all joins equally */
+			/* no multi-att equi-join found; treat all joins equally */
 			reljoin = NULL;
 			nqjoins = ejoins;
 		}
@@ -1028,18 +1033,7 @@ set2pivot(mvc *c, list *l)
 	/* end of order */
 
 	n = l->h;
-/*
-	join = (stmt *) list_reduce(l, (freduce) &stmt_smallest, (fdup) &stmt_dup);
-	n = list_find(l, (void *) join, data_cmp);
-	if (join)
-		stmt_destroy(join);
-*/
-	if (!n) {
-assert(0);
-		list_destroy(l);
-		list_destroy(pivots);
-		return NULL;
-	}
+	assert(n);
 	st = n->data;
 	if (st->nrcols == 1) {
 		if (st->type == st_idxbat) {
@@ -1057,8 +1051,9 @@ assert(0);
 			list_append(pivots, stmt_mark(stmt_dup(st), markid++));
 		}
 	}
+	len = list_length(l);
 	n = list_remove_node(l, n);
-	len = list_length(l) + 1;
+	assert(list_length(l)+1 == len);
 	while (list_length(l) > 0 && len > 0) {
 		len--;
 		n = l->h;
@@ -1070,20 +1065,7 @@ assert(0);
 				list *nps = NULL;
 				stmt *pv = p->data;
 
-				if (st->type == st_idxbat) {
-					/* joining two join indices, no join
-					   needed 
-					 */
-					if (pv->t == st->h && pv->h == st->h) {
-						list_append(pivots, stmt_dup(st));
-						n = list_remove_node(l, n);
-						break;
-					} else if (pv->t == st->t && pv->h == st->t) {
-						list_append(pivots, stmt_reverse(stmt_dup(st)));
-						n = list_remove_node(l, n);
-						break;
-					}
-				} else if (pv->t == st->h) {
+				if (pv->t == st->h) {
 					nps = mk_pivot(pivots, stmt_dup(st), stmt_dup(pv), markid++);
 					list_destroy(pivots);
 					pivots = nps;
@@ -1257,6 +1239,7 @@ optimize(mvc *c, stmt *s)
 	case st_dbat:
 	case st_basetable:
 	case st_idxbat:
+	case st_bat:
 
 	case st_atom:
 	case st_bulkinsert:
@@ -1348,6 +1331,7 @@ optimize(mvc *c, stmt *s)
 	case st_if:
 	case st_return:
 	case st_table:
+	case st_assign:
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1378,18 +1362,6 @@ optimize(mvc *c, stmt *s)
 		s->optimized = 1;
 		return stmt_dup(s);
 
-	case st_assign:
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = optimize(c, os);
-
-			assert(ns != s);
-			s->op2.stval = ns;
-			stmt_destroy(os);
-		}
-		s->optimized = 1;
-		return stmt_dup(s);
-
 	case st_list:{
 
 		stmt *res = NULL;
@@ -1410,11 +1382,6 @@ optimize(mvc *c, stmt *s)
 		}
 		return res;
 	}
-
-	case st_bat:
-
-		s->optimized = 1;
-		return stmt_dup(s);
 
 	case st_pivot:{
 

@@ -1,5 +1,3 @@
-
-
 select
 	l_shipmode,
 	sum(case

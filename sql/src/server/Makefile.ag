@@ -45,6 +45,7 @@ lib_sqlserver = {
 		sql_semantic.mx \
 		sql_optimize.mx \ 
 		sql_rel2bin.mx \
+		bin_optimizer.mx \
 		sql_qc.mx \
 		sql_symbol.mx \
 		sql_scan.mx \   

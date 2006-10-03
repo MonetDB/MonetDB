@@ -21,8 +21,8 @@ if [ $# -eq 1 ]; then
 	SQL="$1"
 fi
 
-#echo "loading"
-#./load.sh "$SQL"
+echo "loading"
+./load.sh "$SQL"
 
 #export E=explain.sql
 export E=""

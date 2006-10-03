@@ -447,6 +447,10 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 
 	if (access == UPD || access == RD_UPD)
 		b = bind_ubat(tr, c, access);
+/*
+	else if (access == RDONLY)
+		b = bind_bats(tr, c);
+*/
 	else
 		b = bind_bat(tr, c, access);
 	return b;
@@ -492,6 +496,10 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	(void) tname;
 	if (access == UPD || access == RD_UPD)
 		b = bind_uidx(tr, i, access);
+/* 
+	else if (access == RDONLY)
+		b = bind_idxs(tr, i);
+*/
 	else
 		b = bind_idx(tr, i, access);
 	return b;

@@ -170,7 +170,6 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(tpe, val, destroy);
 	a = atom_create();
-	a->isnull = 1;
 	a->tpe = *tpe;
 	a->data.val.pval = NULL;
 	a->data.vtype = tpe->type->localtype;
@@ -205,10 +204,11 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 				GDKfree(p);
 			/*_DELETE(val);*/
 		}
-	} else if (ATOMstorage(a->data.vtype) < TYPE_str) {
+	} else { 
 		p = ATOMnilptr(a->data.vtype);
 		VALset(&a->data, a->data.vtype, p);
-		a->destroy = 1;
+		a->destroy = 0;
+		a->isnull = 1;
 	}
 	return a;
 }
@@ -434,14 +434,9 @@ atom_cast(atom *a, sql_subtype *tp)
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
 	
-		if (ATOMextern(a->data.vtype) && !a->data.val.pval) {
-			p = ATOMnil(a->data.vtype);
-			VALset(&a->data, a->data.vtype, p);
-		} else if (!ATOMextern(a->data.vtype)) {
-			p = ATOMnilptr(a->data.vtype);
-			VALset(&a->data, a->data.vtype, p);
-		}
-		a->destroy = 1;
+		p = ATOMnilptr(a->data.vtype);
+		VALset(&a->data, a->data.vtype, p);
+		a->destroy = 0;
 		return 1;
 	}
 	return 0;

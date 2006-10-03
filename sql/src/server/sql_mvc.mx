@@ -989,6 +989,7 @@ mvc_drop_trigger(mvc *m, sql_schema *s, char *name)
 	sql_trans_drop_trigger(m->session->tr, s, name);
 }
 
+
 sql_table *
 mvc_create_table(mvc *m, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz)
 {
@@ -997,7 +998,11 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, bit system, int persistence,
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_table %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
 
-	t = sql_trans_create_table(m->session->tr, s, name, system, persistence, commit_action, sz);
+	if (persistence == SQL_DECLARED_TABLE)
+		/* declared tables should not end up in the catalog */
+		t = create_sql_table(name, tt_table, system, persistence, commit_action);
+	else
+		t = sql_trans_create_table(m->session->tr, s, name, system, persistence, commit_action, sz);
 	m->type = Q_SCHEMA;
 	return t;
 }
@@ -1064,7 +1069,11 @@ mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	m->type = Q_SCHEMA;
-	return sql_trans_create_column(m->session->tr, t, name, tpe);
+	if (t->persistence == SQL_DECLARED_TABLE)
+		/* declared tables should not end up in the catalog */
+		return create_sql_column(t, name, tpe);
+	else
+		return sql_trans_create_column(m->session->tr, t, name, tpe);
 }
 
 void

@@ -67,6 +67,7 @@ extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int ca
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id);
 extern void sql_trans_drop_schema(sql_trans *tr, char *sname);
 
+extern sql_table *create_sql_table(char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system);
 extern sql_table *sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system);
@@ -74,6 +75,7 @@ extern sql_table *sql_trans_create_generated(sql_trans *tr, sql_schema *s, char 
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int cascade);
 extern size_t sql_trans_clear_table(sql_trans *tr, sql_table *t);
 
+extern sql_column *create_sql_column(sql_table *t, char *nme, sql_subtype *tpe);
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe);
 extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, char *name);
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
