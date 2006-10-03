@@ -7353,7 +7353,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                          merge1.fetch(3), merge2.fetch(3));\n"
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
+                  "iter := merge.fetch(3);\n"
                   "ipik := item;\n",
                   update_cmd, counter, counter, counter);
         deleteResult (f, counter);
@@ -7392,7 +7392,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                           "  item%03u := item%03u;\n"
                           "} else {\n"
                           "  item := int_values.addValues(0LL).tmark(0@0);\n"
-                          "  kind := INT;\n",
+                          "  kind := INT;\n"
                           "}\n",
                           counter, counter, counter, counter, counter - 1, counter, counter - 1);
             } else {
