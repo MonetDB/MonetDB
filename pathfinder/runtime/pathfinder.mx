@@ -2332,10 +2332,10 @@ typedef struct {
 
     /* pointers into MIL variable records (to set values) */
     int *shredBAT; 
-    int *time_compile; 
-    int *time_shred; 
-    int *time_exec; 
-    int *time_print; 
+    lng *time_compile; 
+    lng *time_shred; 
+    lng *time_exec; 
+    lng *time_print; 
     char **genType;
 
     /* counts used to remove query (non-module) procs and stacks after execution */
@@ -2592,7 +2592,7 @@ xquery_compile_exec(xquery_client *ctx,
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
- * xquery_function_call(xquery_client *ctx, int msec, char *ns, char *method, 
+ * xquery_function_call(xquery_client *ctx, lng usec, char *ns, char *method, 
  *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -2748,7 +2748,7 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
 static char xquery_function_error[80] = "xquery_method: error during execution.\n";
 static char* 
 xquery_function_call(xquery_client *ctx, 
-                     int msec, 
+                     lng usec, 
                      char *ns, 
                      char *method, 
                      int argc, 
@@ -2912,18 +2912,18 @@ xquery_function_call(xquery_client *ctx,
 
     /* set the MIL shredBAT and getType variables to the actual values */
     ctx->shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
-    *(ctx->time_compile) = GDKms() - msec;
+    *(ctx->time_compile) = GDKusec() - usec;
     
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
 /*
         if (strstr(*(ctx->genType), "rpcdtime") != NULL) {
-           printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
-           printf("\tTrans: %d msec\n", (*ctx->time_compile) );
-           printf("\tShred: %d msec\n", (*ctx->time_shred) );
-           printf("\tQuery: %d msec\n", (*ctx->time_exec - *ctx->time_shred) );
-           printf("Server_Serialisation + Network_Server_2_Client: %d msec\n", (*ctx->time_print) );
+           printf("\nServer_Application: %.3f msec\n", (*ctx->time_compile + *ctx->time_exec) / 1000.0 );
+           printf("\tTrans: %.3f msec\n", (*ctx->time_compile) / 1000.0 );
+           printf("\tShred: %.3f msec\n", (*ctx->time_shred) / 1000.0 );
+           printf("\tQuery: %.3f msec\n", (*ctx->time_exec - *ctx->time_shred) / 1000.0 );
+           printf("Server_Serialisation + Network_Server_2_Client: %.3f msec\n", (*ctx->time_print) / 1000.0 );
         }
 */
 
@@ -3200,10 +3200,10 @@ xquery_client_alloc_(xquery_client *ctx)
 
     @:find_var(shredBAT,int,ival)@
     @:find_var(genType,str,sval)@
-    @:find_var(time_compile,int,ival)@
-    @:find_var(time_exec,int,ival)@
-    @:find_var(time_print,int,ival)@
-    @:find_var(time_shred,int,ival)@
+    @:find_var(time_compile,lng,lval)@
+    @:find_var(time_exec,lng,lval)@
+    @:find_var(time_print,lng,lval)@
+    @:find_var(time_shred,lng,lval)@
 
     @:find_bat(proc_vid)@
     @:find_bat(var_usage)@
@@ -3442,7 +3442,7 @@ xquery_client_end(xquery_client *ctx, char *err)
  * all above functions return the new pointer in the xquery after parsing.
  *
  * char*
- * xquery_prepare(xquery_client *ctx, int msec, char* xquery)
+ * xquery_prepare(xquery_client *ctx, lng usec, char* xquery)
  * - parse xquery; chop off module imports, and recognize single method calls. These are re-executed
  *   from a cached MIL tree. Otherwise use pathfinder to compile. Returns error string (NULL if ok).
  */
@@ -3632,7 +3632,7 @@ static char xquery_too_complex[80] = "xquery_prepare: xquery is too complex for 
 #define xquery_nondescriptive_error ((char*) -1)
 static char*
 xquery_prepare(xquery_client *ctx, 
-               int msec, 
+               lng usec, 
                char* query) 
 {
     int nsbuf = 0, loaded_modules = 0, len;
@@ -3802,7 +3802,7 @@ xquery_prepare(xquery_client *ctx,
                     int* cnt_ptr = cnt;    
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, msec, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
+                    err = xquery_function_call(ctx, usec, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
@@ -3968,11 +3968,11 @@ xquery_client_engine(mapi_client *fc )
                 continue; 
         } else if (*p == 'S' || *p == 's') {
             /* execute query */
-            int msec = GDKms();
+            lng usec = GDKusec();
             xquery = p+1;
             err = xquery_change_genType(ctx, genType);
             if (err == NULL) 
-                err = xquery_prepare(ctx, msec, xquery);
+                err = xquery_prepare(ctx, usec, xquery);
             if (err && err != xquery_nondescriptive_error) {
                 /* report errors back to client */
                 stream_write(ctx->fderr, err, strlen(err), 1);
@@ -4029,7 +4029,7 @@ CMDxquery(Cntxt stk,
           YYSTREE lt, 
           ValPtr res)
 {
-    int msec = GDKms();
+    lng usec = GDKusec();
     char *mode = "xml", *xquery = NULL, *err = NULL;
     bit no=0, *is_url=&no;
     Client c = NULL;
@@ -4071,7 +4071,7 @@ CMDxquery(Cntxt stk,
                 /* run the query, but collect all output in a buffer */
                 stream *bak = GDKout;
                 THRsetdata(0,s);
-                err = xquery_prepare(ctx, msec, xquery);
+                err = xquery_prepare(ctx, usec, xquery);
                 if (err == NULL || err == xquery_nondescriptive_error) {
                     res->val.sval = GDKmalloc(b->pos+1);
                     if (res->val.sval) {
@@ -4121,7 +4121,7 @@ xquery_method(stream *out,
               str* argval,
               BAT* shredBAT)
 {
-    int msec = GDKms();
+    lng usec = GDKusec();
     MT_Id XQthread_id = THRgettid(), old_tid;
     Thread XQthread = THRget(XQthread_id), old_thread;
     char *err, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
@@ -4163,7 +4163,7 @@ xquery_method(stream *out,
     }
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, msec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
+        err = xquery_function_call(ctx, usec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 

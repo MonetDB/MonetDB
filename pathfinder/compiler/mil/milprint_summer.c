@@ -6165,11 +6165,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "  var t := time();\n"
+                "  var t := usec();\n"
                 "  var r := ws_opendoc(wsid, item%s.materialize(ipik));\n"
                 "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
                 "  item  := r.hmark(0@0);\n"
-                "  time_shred :+= time() - t;\n"
+                "  time_shred :+= usec() - t;\n"
                 "} # end of translate fn:doc (string?) as document?\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
     }
@@ -10480,11 +10480,11 @@ const char* PFinitMIL(void) {
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
         "var shredBAT := int_nil; # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
-        "var time_compile := 0;\n"
-        "var time_read := 0;\n"
-        "var time_shred := 0;\n"
-        "var time_print := 0;\n"
-        "var time_exec := 0;\n"
+        "var time_compile := 0LL;\n"
+        "var time_read := 0LL;\n"
+        "var time_shred := 0LL;\n"
+        "var time_print := 0LL;\n"
+        "var time_exec := 0LL;\n"
         "var genType := \"xml\";";
 }
 
@@ -10548,10 +10548,10 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(void) {
     return  
         "{\n"
-        "time_read := 0;\n"
-        "time_shred := 0;\n"
-        "time_print := 0;\n"
-        "time_exec := time();\n"
+        "time_read := 0LL;\n"
+        "time_shred := 0LL;\n"
+        "time_print := 0LL;\n"
+        "time_exec := usec();\n"
         "\n"
         "var err := CATCH({\n"
         "  wsid := ws_id(ws := ws_create());\n"
@@ -10584,7 +10584,7 @@ static const char* _PFstopMIL(int statement_type) {
     static char buf[1024];
 
     strcpy(buf,
-           "  time_print := time();\n"
+           "  time_print := usec();\n"
            "  time_exec := time_print - time_exec;\n"
            "  \n");
     switch (statement_type) {
@@ -10608,10 +10608,10 @@ static const char* _PFstopMIL(int statement_type) {
            "});\n"
            "ws_destroy(wsid);\n"
            "if (not(isnil(err))) ERROR(err);\n"
-           "time_print := time() - time_print;\n"
+           "time_print := usec() - time_print;\n"
            "if (genType.startsWith(\"timing\"))\n"
-           "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
-           "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
+           "   printf(\"\\nTrans %% 11.3f msec\\nShred %% 11.3f msec\\nQuery %% 11.3f msec\\nPrint %% 11.3f msec\\n\","
+           "       dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"
            "}\n");
     return buf;
 }
@@ -10760,7 +10760,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     if (module_base == 0) {
         timing = PFtimer_stop(timing);
         milprintf(f, "iter := 1@0;\n");
-        milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
+        milprintf(f, "time_compile := %dLL;\n" , timing);
         milprintf(f, _PFstopMIL(PFty_subtype (TY(R(c)), PFty_empty ())
                                 ? 0		       /* only the empty sequence has type empty and is not updateable */
                                 : (PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))
