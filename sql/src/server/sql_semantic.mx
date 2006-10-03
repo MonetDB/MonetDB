@@ -166,14 +166,11 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 
 	if (atom_null(a)) {
 		if (a->data.vtype != rt->type->localtype) {
-			a->data.vtype = rt->type->localtype;
-			if (ATOMstorage(a->data.vtype) < TYPE_str) {
-				ptr p = ATOMnilptr(a->data.vtype);
+			ptr p; 
 
-				VALset(&a->data, a->data.vtype, p);
-			} else {
-				a->data.val.pval = NULL;
-			}
+			a->data.vtype = rt->type->localtype;
+			p = ATOMnilptr(a->data.vtype);
+			VALset(&a->data, a->data.vtype, p);
 		}
 	}
 	a->tpe = *rt;
