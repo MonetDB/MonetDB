@@ -10597,7 +10597,7 @@ static const char* _PFstopMIL(int statement_type) {
         break;
     case 1:
         /* update statement */
-        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
+        strcat(buf, "  play_update_tape(wsid, item, kind, int_values, str_values);\n");
         break;
     case 2:
         /* doc-mgmt statement */
