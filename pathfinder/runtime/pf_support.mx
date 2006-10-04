@@ -5604,6 +5604,7 @@ void pf_support_epilogue() {
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
     # load all requested documents into the working set
+    var wsid := ws_id(ws);
     var r := ws_opendoc(wsid, item);
 
     # pick the according cont value for each document requested
