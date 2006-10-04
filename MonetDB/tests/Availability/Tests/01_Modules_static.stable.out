@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1012 ]
+[ 1014 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1012 ]
+[ 1014 ]
 
 var All:=0;
 
@@ -826,14 +826,15 @@ Module: "arith"
 
 Module: "bat"
 
-[ 85 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 87 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int) : BAT[any,any]",							  "Creates a new empty transient BAT, with head- and tail-types as indicated."																																																				  ]
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, int) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, lng) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
+[ "BAT",	  "COMMAND:   ",  "BAT(int, int, wrd) : BAT[any,any]",						  "Creates a new empty BAT, directly allocating for 'size' elements."																																  ]
 [ "[swizzle]",	  "COMMAND:   ",  "[swizzle](BAT[oid,oid], BAT[void,oid]) : BAT[oid,oid]",				  "swizzle re-mapped oids (translate from logical to physical using a page-id map)"																																																																																							  ]
 [ "[swizzle]",	  "COMMAND:   ",  "[swizzle](BAT[void,oid], BAT[void,oid]) : BAT[oid,oid]",				  "swizzle re-mapped oids (translate from logical to physical using a page-id map)"																																																																																							  ]
 [ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str) : void",									  "Build an accelerator on the head column of b. The builtin accelerator\n types index and hash will be created as transient accelerators. They\n will not be saved on disk. User-defined accelerators must always be\n persistent."									  ]
@@ -885,13 +886,14 @@ Module: "bat"
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Insert one BUN[h,t] in a BAT.\n Returns the modified BAT."																														  ]
 [ "isolate",	  "COMMAND:   ",  "isolate(BAT[void,any], BAT[void,oid], bit) : void",					  "isolate a copy-on-write bat from changes in its master, by touching \n (and thus copying) to-be-affected pages. If 'pageids' is true, the oids\n are page-ids pointing into b instead of direct keys, and the idea is to \n isolate the full 64K tuple logical page (instead of the physical page)."									  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2]) : bit",							  "return whether the head column of a BAT is unique (key)."																																																						  ]
-[ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",						  "Sets the 'key' property of the head column to 'mode'. In 'key' mode,\n the kernel will silently block insertions that cause a duplicate entries\n in the head column.\n KNOWN BUG: when 'key' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.kunique();"	  ]
+[ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Sets the 'key' property of the head column to 'mode'. In 'key' mode,\n the kernel will silently block insertions that cause a duplicate entries\n in the head column.\n KNOWN BUG: when 'key' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.kunique();"				  ]
 [ "madvise",	  "COMMAND:   ",  "madvise(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "Modern Operating Systems allow users to influence the buffer management\n policy of virtual memory. This is a crucial feature for database systems,\n and eliminates the need to reimplement the OS in a database buffer manager.\n The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),\n BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),\n BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).\n These buffer management modes are not persistent.\n Returns the BAT operated upon."	  ]
 [ "mirror",	  "COMMAND:   ",  "mirror(BAT[any::1,any]) : BAT[any::1,any::1]",					  "Returns the head-mirror image of a BAT (two head columns)."																																																						  ]
 [ "mmap",	  "COMMAND:   ",  "mmap(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "For each individual heap, you can change the allocation mode to\n either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.\n Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save\n (this has to happen before the heap can be mapped into virtual memory).\n These modes are persistent. "																													  ]
 [ "new",	  "COMMAND:   ",  "new(int, int) : BAT[any,any]",							  "Creates a new empty transient BAT, with head- and tail-types as indicated."																																																						  ]
 [ "new",	  "COMMAND:   ",  "new(int, int, int) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																							  ]
 [ "new",	  "COMMAND:   ",  "new(int, int, lng) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																							  ]
+[ "new",	  "COMMAND:   ",  "new(int, int, wrd) : BAT[any,any]",						  "Creates a new empty BAT, directly allocating for 'size' elements."																																  ]
 [ "order",	  "COMMAND:   ",  "order(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Sorts the BAT itself, in place, on ascending head values. Returns b."																																																				  ]
 [ "order_rev",	  "COMMAND:   ",  "order_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Sorts the BAT itself, in place, on descending head values. Returns b."																																																				  ]
 [ "ordered",	  "COMMAND:   ",  "ordered(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
@@ -909,7 +911,7 @@ Module: "bat"
 [ "seqbase",	  "COMMAND:   ",  "seqbase(BAT[oid,any::1]) : oid",							  "Get the sequence base for the void vcolumn of a BAT."																																																						  ]
 [ "seqbase",	  "COMMAND:   ",  "seqbase(BAT[void,any::1]) : oid",							  "Get the sequence base for the void vcolumn of a BAT."																																																						  ]
 [ "seqbase",	  "COMMAND:   ",  "seqbase(BAT[void,any::1], oid) : BAT[void,any::1]",					  "Set the sequence base for the void vcolumn of a BAT.\n Returns the BAT itself."																																																			  ]
-[ "set",	  "COMMAND:   ",  "set(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",						  "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel\n will silently block insertions that cause a duplicate BUN [head,tail] entries\n in the BAT.\n KNOWN BUG: when 'set' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.sunique();\n Returns the BAT itself."  ]
+[ "set",	  "COMMAND:   ",  "set(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel\n will silently block insertions that cause a duplicate BUN [head,tail] entries\n in the BAT.\n KNOWN BUG: when 'set' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.sunique();\n Returns the BAT itself."	  ]
 [ "synced",	  "COMMAND:   ",  "synced(BAT[any,any], BAT[any,any]) : bit",						  "Tests whether two BATs are synced or not. "																																																								  ]
 [ "tail",	  "COMMAND:   ",  "tail(BAT[any,any]) : str",								  "Returns the type of the tail column of a BAT, as a string."																																																								  ]
 [ "tail",	  "COMMAND:   ",  "tail(int) : str",											  "Returns the type of the tail column of a BAT, as a string."																														  ]
@@ -1157,7 +1159,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1012 ]
+[ 1014 ]
 
 quit();
 

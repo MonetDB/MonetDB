@@ -42,16 +42,22 @@ can be found in this module.
 .COMMAND new(int ht, int tt) : BAT[any,any] = CMDnew_default;
 "Creates a new empty transient BAT, with head- and tail-types as indicated."
 
-.COMMAND bat(int ht, int tt, int size) : BAT[any,any] = CMDnew;
+.COMMAND bat(int ht, int tt, wrd size) : BAT[any,any] = CMDnew;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
-.COMMAND new(int ht, int tt, int size) : BAT[any,any] = CMDnew;
+.COMMAND new(int ht, int tt, wrd size) : BAT[any,any] = CMDnew;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
 .COMMAND bat(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
 .COMMAND new(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
+.COMMAND bat(int ht, int tt, int size) : BAT[any,any] = CMDnew_int;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
+.COMMAND new(int ht, int tt, int size) : BAT[any,any] = CMDnew_int;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
 .COMMAND reverse(BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
@@ -650,7 +656,18 @@ CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap)
 }
 
 int
-CMDnew(BAT **ret, int *ht, int *tt, int *cap)
+CMDnew_int(BAT **ret, int *ht, int *tt, int *cap)
+{
+	if (*cap < 0)
+		*cap = 0;
+	*ret = BATnew(*ht, *tt, (size_t) * cap);
+	if (*ret)
+		(*ret)->batDirty |= 2;
+	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDnew(BAT **ret, int *ht, int *tt, wrd *cap)
 {
 	if (*cap < 0)
 		*cap = 0;
@@ -663,7 +680,7 @@ CMDnew(BAT **ret, int *ht, int *tt, int *cap)
 int
 CMDnew_default(BAT **ret, int *ht, int *tt)
 {
-	int default_size = 0;
+	wrd default_size = 0;
 
 	return CMDnew(ret, ht, tt, &default_size);
 }
