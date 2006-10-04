@@ -3,7 +3,7 @@
 /**
  * @file
  *
- * Compile a logical algebra tree into a physical execution plan. 
+ * Compile a logical algebra tree into a physical execution plan.
  *
  * @section planning Physical Plan Generation
  *
@@ -116,6 +116,8 @@
 /* short-hands */
 #define L(p) ((p)->child[0])
 #define R(p) ((p)->child[1])
+#define LL(p) (L(L(p)))
+#define LR(p) (R(L(p)))
 
 /**
  * A ``plan'' is actually a physical algebra operator tree.
@@ -249,7 +251,7 @@ plan_lit_tbl (const PFla_op_t *n)
 }
 
 /**
- * Generate possible physical plans for literal table construction 
+ * Generate possible physical plans for literal table construction
  * of empty tables
  *
  * There's actually just the one literal table constructor in
@@ -335,7 +337,7 @@ cross_worker (PFplanlist_t *ret, const plan_t *a, const plan_t *b)
  * For the logical operation R x S, this will return
  * both combinations, R x S and S x R, for the physical plan.
  *
- * If relations R and S follow the orderings O_r and O_s, 
+ * If relations R and S follow the orderings O_r and O_s,
  * R x S will have the ordering O_r + O_s (see #PFpa_cross).
  */
 static PFplanlist_t *
@@ -580,7 +582,7 @@ plan_disjunion (const PFla_op_t *n)
 
             /* kick out the duplicates */
             prefixes = PFord_unique (prefixes);
-                
+
             /* and generate plans */
             for (unsigned int i = 0; i < PFord_set_count (prefixes); i++)
                 add_plan (ret, merge_union (R, S, PFord_set_at (prefixes, i)));
@@ -614,7 +616,7 @@ plan_intersect (const PFla_op_t *n)
     assert (n); assert (n->kind == la_intersect);
     assert (L(n)); assert (L(n)->plans);
     assert (R(n)); assert (R(n)->plans);
-    
+
     /* consider each plan in L */
     for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
         /* and each plan in R */
@@ -842,8 +844,8 @@ plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
 {
     PFplanlist_t  *ret  = new_planlist ();
 
-    assert (n); 
-    assert (n->kind == la_avg || n->kind == la_max 
+    assert (n);
+    assert (n->kind == la_avg || n->kind == la_max
             || n->kind == la_min || n->kind == la_sum);
     assert (L(n)); assert (L(n)->plans);
 
@@ -1195,7 +1197,7 @@ plan_doc_tbl (const PFla_op_t *n)
      * its cost is at most 1.5 times the cost of an unordered plan.
      */
     if (cheapest_ordered->cost <= cheapest_unordered->cost * 1.5)
-        add_plan (ret, doc_tbl (cheapest_ordered, 
+        add_plan (ret, doc_tbl (cheapest_ordered,
                                 n->sem.doc_tbl.iter,
                                 n->sem.doc_tbl.item));
     else
@@ -1209,7 +1211,7 @@ plan_doc_tbl (const PFla_op_t *n)
 /**
  * Create physical operator that allows the access to the
  * string content of the loaded documents
- */ 
+ */
 static PFplanlist_t *
 plan_doc_access (const PFla_op_t *n)
 {
@@ -1415,7 +1417,7 @@ plan_merge_texts (const PFla_op_t *n)
                          cheapest_sorted))
             cheapest_sorted = *(plan_t **) PFarray_at (sorted, i);
 
-    /* generate a merge_adjacent_text_node operator for 
+    /* generate a merge_adjacent_text_node operator for
        the single remaining plan */
     add_plan (ret,
               merge_adjacent (
@@ -1607,7 +1609,220 @@ plan_string_join (const PFla_op_t *n)
 }
 
 
+/**
+ * `recursion' operator(s) in the logical algebra just get a 1:1 mapping
+ * into the physical recursion operator(s).
+ *
+ * @note
+ *   For the same reason as the node constructors, we generate exactly
+ *   one plan for this operator(s). More than one plan might lead to
+ *   multiple recursion operators referencing a similar body. In MIL
+ *   these recursions would be generated separately which would lead
+ *   to different node constructions for the same constructor.
+ */
+static PFplanlist_t *
+plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
+{
+    PFplanlist_t *ret = new_planlist (),
+                 *res,
+                 *seed,
+                 *recursion,
+                 *base,
+                 *arg,
+                 *new_params,
+                 *params = new_planlist ();
+    plan_t       *cheapest_res_plan = NULL;
+    plan_t       *cheapest_params   = NULL;
+    PFla_op_t    *cur;
 
+    assert (n->kind == la_rec_fix);
+
+    /* get the first parameter */
+    cur = L(n);
+    /* start physical paramter list with the end of the list */
+    add_plan (params, rec_nil ());
+
+    /* assign logical properties to physical node as well */
+    for (unsigned int plan = 0; plan < PFarray_last (params); plan++)
+        (*(plan_t **) PFarray_at (params, plan))->prop = PFprop();
+
+    /* collect the plans for all parameters
+       The inputs to the recursion all have to fulfill the ordering
+       specified by @a ord. */
+    while (cur->kind != la_rec_nil) {
+        assert (cur->kind == la_rec_param &&
+                L(cur)->kind == la_rec_arg);
+
+        seed       = new_planlist ();
+        recursion  = new_planlist ();
+        arg        = new_planlist ();
+        new_params = new_planlist ();
+
+        for (unsigned int i = 0; i < PFarray_last (LL(cur)->plans); i++)
+            add_plans (seed,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (LL(cur)->plans, i),
+                           ord));
+
+        seed = prune_plans (seed);
+
+        for (unsigned int i = 0; i < PFarray_last (LR(cur)->plans); i++)
+            add_plans (recursion,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (LR(cur)->plans, i),
+                           ord));
+
+        recursion = prune_plans (recursion);
+
+        base = L(cur)->sem.rec_arg.base->plans;
+
+        /* create new arguments */
+        for (unsigned int i = 0; i < PFarray_last (seed); i++)
+            for (unsigned int j = 0; j < PFarray_last (recursion); j++)
+                for (unsigned int k = 0; k < PFarray_last (base); k++)
+                    add_plan (arg,
+                              rec_arg (
+                                  *(plan_t **) PFarray_at (seed, i),
+                                  *(plan_t **) PFarray_at (recursion, j),
+                                  *(plan_t **) PFarray_at (base, k)));
+
+        /* assign logical properties to physical node as well */
+        for (unsigned int plan = 0; plan < PFarray_last (arg); plan++)
+            (*(plan_t **) PFarray_at (arg, plan))->prop = L(cur)->prop;
+
+        /* create new paramters
+           (new argument + list of paramters obtained so far) */
+        for (unsigned int i = 0; i < PFarray_last (arg); i++)
+            for (unsigned int j = 0; j < PFarray_last (params); j++)
+                add_plan (new_params,
+                          rec_param (
+                              *(plan_t **) PFarray_at (arg, i),
+                              *(plan_t **) PFarray_at (params, j)));
+
+        /* assign logical properties to physical node as well */
+        for (unsigned int plan = 0; plan < PFarray_last (new_params); plan++)
+            (*(plan_t **) PFarray_at (new_params, plan))->prop = cur->prop;
+
+        params = new_params;
+        cur = R(cur);
+    }
+
+    /* prune all plans except one as we otherwise might end up with plans
+       that might evaluate the recursion more than once */
+
+    /* find the cheapest plan for the params */
+    for (unsigned int i = 0; i < PFarray_last (params); i++)
+        if (!cheapest_params
+            || costless (*(plan_t **) PFarray_at (params, i),
+                         cheapest_params))
+            cheapest_params = *(plan_t **) PFarray_at (params, i);
+
+    /* get the plans for the result of the recursion */
+    res = n->sem.rec_fix.res->plans;
+
+    /* find the cheapest plan for the result */
+    for (unsigned int i = 0; i < PFarray_last (res); i++)
+        if (!cheapest_res_plan
+            || costless (*(plan_t **) PFarray_at (res, i),
+                         cheapest_res_plan))
+            cheapest_res_plan = *(plan_t **) PFarray_at (res, i);
+
+    add_plan (ret, rec_fix (cheapest_params, cheapest_res_plan));
+
+    return ret;
+}
+
+/**
+ * `recursion' operator(s) in the logical algebra just get a 1:1 mapping
+ * into the physical recursion operator(s).
+ */
+static void
+plan_recursion_base (PFla_op_t *n, PFord_ordering_t ord)
+{
+    PFplanlist_t *plans = new_planlist ();
+
+    add_plan (plans, rec_base (n->schema, ord));
+
+    /* Keep the computed plans in the logical algebra node. */
+    n->plans = plans;
+
+    /* assign logical properties to physical node as well */
+    for (unsigned int plan = 0; plan < PFarray_last (plans); plan++)
+        (*(plan_t **) PFarray_at (plans, plan))->prop = n->prop;
+}
+
+/**
+ * Worker for function clean_up_body_plans.
+ *
+ * return code semantics:
+ *  false -- do nothing
+ *  true  -- prune plans
+ */
+static bool
+clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
+{
+    unsigned int i;
+    bool code = false /* keep plans */;
+
+    if (!n->plans)
+        return true /* delete plans */;
+
+    switch (n->kind)
+    {
+        /* do not delete the plans along the fragments */
+        case la_frag_union:
+            return false /* keep plans */;
+
+        case la_rec_base:
+            for (i = 0; i < PFarray_last (bases); i++)
+                if (n == *(PFla_op_t **) PFarray_at (bases, i)) {
+                    code = true /* delete plans */;
+                    break;
+                }
+            break;
+
+        default:
+            for (i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+                code = code || clean_up_body_plans_worker (n->child[i], bases);
+            break;
+    }
+    if (code)
+        n->plans = NULL;
+
+    return code;
+}
+
+/**
+ * Delete all the plans annotated to the logical algebra nodes,
+ * which can reach the base operators of the recursion.
+ */
+static void
+clean_up_body_plans (PFla_op_t *n)
+{
+    PFarray_t *bases = PFarray (sizeof (PFla_op_t *));
+    PFla_op_t *cur;
+    bool code;
+
+    assert (n->kind == la_rec_fix);
+
+    cur = L(n);
+    /* collect base operators */
+    while (cur->kind != la_rec_nil) {
+        assert (cur->kind == la_rec_param && L(cur)->kind == la_rec_arg);
+        *(PFla_op_t **) PFarray_add (bases) = L(cur)->sem.rec_arg.base;
+        cur = R(cur);
+    }
+
+    cur = L(n);
+    /* clean up the plans */
+    while (cur->kind != la_rec_nil) {
+        code = clean_up_body_plans_worker (LR(cur), bases);
+        assert (code);
+        cur = R(cur);
+    }
+    code = clean_up_body_plans_worker (n->sem.rec_fix.res, bases);
+    assert (code);
+}
 
 /**
  * Return possible plans that guarantee the result from @a unordered
@@ -1709,7 +1924,7 @@ prune_plans (PFplanlist_t *planlist)
 
         /* assume there is no better plan */
         bool found_better = false;
-    
+
         /* but maybe there is one already in our return list */
         for (unsigned int j = 0; j < PFarray_last (ret); j++)
             if (better_or_equal (*(plan_t **) PFarray_at (ret, j),
@@ -1828,18 +2043,20 @@ plan_subexpression (PFla_op_t *n)
     switch (n->kind) {
         /* process the following logical algebra nodes top-down */
         case la_element:
+        case la_rec_fix:
             break;
         default:
-            /* translate bottom-up */
-            for (unsigned int i = 0; i < PFLA_OP_MAXCHILD; i++)
-                if (n->child[i])
-                    plan_subexpression (n->child[i]);
+            /* translate bottom-up (ensure that the fragment
+               information is translated after the value part) */
+            for (unsigned int i = PFLA_OP_MAXCHILD; i > 0; i--)
+                if (n->child[i - 1])
+                    plan_subexpression (n->child[i - 1]);
     }
 
     /* Compute possible plans. */
     switch (n->kind) {
         case la_serialize:      plans = plan_serialize (n);    break;
-                                                              
+
         case la_lit_tbl:        plans = plan_lit_tbl (n);      break;
         case la_empty_tbl:      plans = plan_empty_tbl (n);    break;
         case la_attach:         plans = plan_attach (n);       break;
@@ -1851,64 +2068,150 @@ plan_subexpression (PFla_op_t *n)
         case la_intersect:      plans = plan_intersect (n);    break;
         case la_difference:     plans = plan_difference (n);   break;
         case la_distinct:       plans = plan_distinct (n);     break;
-                                                               
-        case la_num_add:                                       
-        case la_num_subtract:                                  
-        case la_num_multiply:                                  
-        case la_num_divide:                                    
-        case la_num_modulo:                                    
-        case la_num_eq:                                        
-        case la_num_gt:                                        
-        case la_bool_and:                                      
-        case la_bool_or:                                       
+
+        case la_num_add:
+        case la_num_subtract:
+        case la_num_multiply:
+        case la_num_divide:
+        case la_num_modulo:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
                                 plans = plan_binop (n);        break;
-                                                               
-        case la_num_neg:                                       
-        case la_bool_not:                                      
+
+        case la_num_neg:
+        case la_bool_not:
                                 plans = plan_unary (n);        break;
         case la_avg:            plans = plan_aggr (pa_avg, n); break;
         case la_max:            plans = plan_aggr (pa_max, n); break;
         case la_min:            plans = plan_aggr (pa_min, n); break;
         case la_sum:            plans = plan_aggr (pa_sum, n); break;
         case la_count:          plans = plan_count (n);        break;
-                                                               
+
         case la_rownum:         plans = plan_rownum (n);       break;
         case la_number:         plans = plan_number (n);       break;
         case la_type:           plans = plan_type (n);         break;
         case la_type_assert:    plans = plan_type_assert (n);  break;
         case la_cast:           plans = plan_cast (n);         break;
-     /* case la_seqty1:         */                             
-     /* case la_all:            */                             
-                                                               
+     /* case la_seqty1:         */
+     /* case la_all:            */
+
         case la_scjoin:         plans = plan_scjoin (n);       break;
         case la_doc_tbl:        plans = plan_doc_tbl (n);      break;
         case la_doc_access:     plans = plan_doc_access (n);   break;
-                                                              
-        case la_element:                                       
-            plan_subexpression (L(n));                         
-            assert (R(n)->kind == la_element_tag);             
-            plan_subexpression (L(R(n)));                      
-            plan_subexpression (R(R(n)));                      
-            plans = plan_element (n);                          
-            break;                                             
+
+        case la_element:
+            plan_subexpression (L(n));
+            assert (R(n)->kind == la_element_tag);
+            plan_subexpression (L(R(n)));
+            plan_subexpression (R(R(n)));
+            plans = plan_element (n);
+            break;
         case la_attribute:      plans = plan_attribute (n);    break;
         case la_textnode:       plans = plan_textnode (n);     break;
-     /* case la_docnode:        */                             
-     /* case la_comment:        */                             
-     /* case la_processi:       */                             
+     /* case la_docnode:        */
+     /* case la_comment:        */
+     /* case la_processi:       */
         case la_merge_adjacent: plans = plan_merge_texts (n);  break;
-                                                               
+
         case la_roots:          plans = plan_roots (n);        break;
         case la_fragment:       plans = plan_fragment (n);     break;
         case la_frag_union:     plans = plan_frag_union (n);   break;
         case la_empty_frag:     plans = plan_empty_frag (n);   break;
-                                                               
+
         case la_cond_err:       plans = plan_cond_err (n);     break;
-                                                               
+
+        case la_rec_fix:
+        {
+            PFla_op_t       *rec_arg, *cur;
+            PFord_ordering_t ord;
+            PFord_set_t      orderings = PFord_set ();
+            PFplanlist_t    *rec_list = new_planlist ();
+            plan_t          *cheapest_rec_plan = NULL;
+            plans = new_planlist ();
+
+            /* get the plans for all the seeds */
+            cur = L(n);
+            while (cur->kind != la_rec_nil) {
+                assert (cur->kind == la_rec_param &&
+                        L(cur)->kind == la_rec_arg);
+                rec_arg = L(cur);
+                plan_subexpression (L(rec_arg));
+                cur = R(cur);
+            }
+
+            /* collect all the orderings we want to try */
+            /* TODO: find the correct variable names for sortings and add them
+               to the orderings */
+            /*
+            ord = PFordering ();
+            ord = PFord_refine (PFord_refine (ord, correct_iter_name),
+                                correct_item_name);
+            orderings = PFord_set_add (orderings, ord);
+            */
+            ord = PFordering ();
+            orderings = PFord_set_add (orderings, ord);
+
+            /* generate plans for the body of the recursion
+               for each ordering */
+            for (unsigned int i = 0; i < PFord_set_count (orderings); i++) {
+                ord = PFord_set_at (orderings, i);
+                cur = L(n);
+
+                /* create base operators with the correct ordering */
+                while (cur->kind != la_rec_nil) {
+                    assert (cur->kind == la_rec_param &&
+                            L(cur)->kind == la_rec_arg);
+                    rec_arg = L(cur);
+                    plan_recursion_base (rec_arg->sem.rec_arg.base, ord);
+                    cur = R(cur);
+                }
+
+                /* generate the plans for the body */
+                cur = L(n);
+                while (cur->kind != la_rec_nil) {
+                    assert (cur->kind == la_rec_param &&
+                            L(cur)->kind == la_rec_arg);
+                    rec_arg = L(cur);
+                    plan_subexpression (R(rec_arg));
+                    cur = R(cur);
+                }
+
+                /* create plans for the result relation */
+                plan_subexpression (n->sem.rec_fix.res);
+
+                /* put together all ingredients to form a physical
+                   representation of the recursion (basically a 1:1
+                   match) and add the generated plan to the list of
+                   already collected plans */
+                add_plans (rec_list, plan_recursion (n, ord));
+
+                /* Reset all the plans in the body. */
+                clean_up_body_plans (n);
+            }
+
+            /* For the same reason as the node constructors, we generate exactly
+               one plan for this operator(s). More than one plan might lead to
+               multiple recursion operators referencing a similar body. In MIL
+               these recursions would be generated separately which would lead
+               to different node constructions for the same constructor.  */
+
+            /* find the cheapest plan for the recursion */
+            for (unsigned int i = 0; i < PFarray_last (rec_list); i++)
+                if (!cheapest_rec_plan
+                    || costless (*(plan_t **) PFarray_at (rec_list, i),
+                                 cheapest_rec_plan))
+                    cheapest_rec_plan = *(plan_t **) PFarray_at (rec_list, i);
+
+            /* add overall plan to the list */
+            add_plan (plans, cheapest_rec_plan);
+        } break;
+
         case la_concat:         plans = plan_concat (n);       break;
         case la_contains:       plans = plan_contains (n);     break;
         case la_string_join:    plans = plan_string_join (n);  break;
-                                                              
+
         default:
             PFoops (OOPS_FATAL,
                     "physical algebra equivalent for logical algebra "
