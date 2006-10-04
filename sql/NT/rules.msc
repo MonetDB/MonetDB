@@ -26,9 +26,9 @@ PTHREAD = C:\Pthreads
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 
-PYTHONBASE=C:\Python24
+PYTHONBASE=C:\Python25
 PYTHON_INCS=-I$(PYTHONBASE)\include
-PYTHON_LIBS=$(PYTHONBASE)\libs\python24.lib
+PYTHON_LIBS=$(PYTHONBASE)\libs\python25.lib
 PYTHON_LIBDIR=share\MonetDB\python
 
 # not need to edit beyond here..
