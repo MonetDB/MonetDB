@@ -280,7 +280,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the intersection taken over *both* columns of two BATs.
  Results in all BUNs of 'left' that are also in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
- 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."
+ 'sintersect(left.sunique(),right.sunique())' or: 'sintersect(left,right).sunique()'."
 @- head-intersecting elements (a.k.a. semijoin)
 @m
 .COMMAND kintersect ( BAT[any::1,any::2] left, BAT[any::1,any] right) :
@@ -288,7 +288,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the intersection taken over only the *head* columns of two BATs.
  Results in all BUNs of 'left' that are also in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
- 'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'."
+ 'kintersect(left.kunique(),right.kunique())' or: 'kintersect(left,right).kunique()'."
 
 .COMMAND tintersect ( BAT[any::2,any::1] left, BAT[any,any::1] right) :
 				BAT[any::2,any::1] = CMDtintersect;
@@ -301,7 +301,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the difference taken over *both* columns of two BATs.
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
- 'sdiff(left.sunique,right.sunique)' or: 'sdiff(left,right).sunique'."
+ 'sdiff(left.sunique(),right.sunique())' or: 'sdiff(left,right).sunique()'."
 @- head-differing elements
 @m
 .COMMAND kdiff ( BAT[any::1,any::2] left, BAT[any::1,any] right) :
@@ -309,7 +309,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the difference taken over only the *head* columns of two BATs.
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
- 'kdiff(left.kunique,right.kunique)' or: 'kdiff(left,right).kunique'."
+ 'kdiff(left.kunique(),right.kunique())' or: 'kdiff(left,right).kunique()'."
 
 .COMMAND tdiff ( BAT[any::2,any::1] left, BAT[any,any::1] right) :
 				BAT[any::2,any::1] = CMDtdiff;
@@ -322,7 +322,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the union of two BATs; looking at both columns of both BATs.
  Results in all BUNs of 'left', plus all BUNs of 'right' that are not in
  'left'. *no* double-elimination is done. If you want this, do:
- 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."
+ 'sunion(left.sunique(),right.sunique())' or: 'sunion(left,right).sunique()'."
 @- union on head
 @m
 .COMMAND kunion ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) :
@@ -330,7 +330,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the union of two BATs; looking at head-columns only.
  Results in all BUNs of 'left', plus all BUNs of 'right' that are not in 
  'left'. *no* double-elimination is done. If you want this, do:
- 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."
+ 'kunion(left.kunique(),right.kunique())' or: 'sunion(left,right).kunique()'."
 @+ Joins
 The core of every relational engine.
 Signature Changed: Output tail type incorrect because of soid to coid switch.

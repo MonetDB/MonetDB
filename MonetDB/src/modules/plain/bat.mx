@@ -280,7 +280,7 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
  the kernel will silently block insertions that cause a duplicate entries
  in the head column.
  KNOWN BUG: when 'key' is set to TRUE, this function does not automatically
- eliminate duplicates. Use b := b.kunique;"
+ eliminate duplicates. Use b := b.kunique();"
 
 .COMMAND key( BAT[any::1,any::2] b) : bit = CMDgetkey;
 "return whether the head column of a BAT is unique (key)."
@@ -291,7 +291,7 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
  will silently block insertions that cause a duplicate BUN [head,tail] entries
  in the BAT.
  KNOWN BUG: when 'set' is set to TRUE, this function does not automatically
- eliminate duplicates. Use b := b.sunique;
+ eliminate duplicates. Use b := b.sunique();
  Returns the BAT itself."
 
 .COMMAND access( BAT[any::1,any::2] b, int mode)

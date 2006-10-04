@@ -461,7 +461,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         return access(b,mode);
     }
     ADDHELP("readonly", "boncz", "Aug  6 1998",
-        "deprecated. Use 'b.access' instead.", "sys");
+        "deprecated. Use 'b.access()' instead.", "sys");
 
     PROC readonly( BAT[any::1,any::2] b) : int {
         var s := b.info().find("batRestricted");
