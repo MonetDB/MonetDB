@@ -122,10 +122,11 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	str kintersectRef = getName("kintersect", 10);
 	str fragmentRef = getName("fragment", 8);
 
-	int limit = mb->stop;
-	InstrPtr *old = mb->stmt;
+	int limit = mb->stop, ctop=0;
+	InstrPtr *old = mb->stmt, *constraints;
 
 	newMalBlkStmt(mb, mb->stop); /* a new statement stack */
+	constraints= (InstrPtr *) alloca(sizeof(InstrPtr)*limit);
 
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
@@ -143,9 +144,28 @@ sequences to filter and replace calls with empty arguments.
 		    empty[getArg(p,0)] &&
 		   (f == bindRef || f == bindidxRef || f == binddbatRef)){
 			InstrPtr q;
+@-
+The emptyset assertion is only needed once for relational insertions.
+We assume here that string constants have been matched already.
+@c
+			if( f == bindRef) {
+				for( j=ctop-1; j>=0; j--){
+					q= constraints[j];
+					if( strcmp(getVarConstant(mb,getArg(q,1)).val.sval,
+							getVarConstant(mb,getArg(p,1)).val.sval)==0 &&
+						strcmp(getVarConstant(mb,getArg(q,2)).val.sval,
+							getVarConstant(mb,getArg(p,2)).val.sval)==0 &&
+							getVarConstant(mb,getArg(p,4)).val.ival!=2
+					) 
+						/* don't generate the assertion */
+						goto ignoreConstraint;
+				}
 
-			q = newStmt1(mb, constraintsRef, "emptySet");
-			q = pushArgument(mb, q, getArg(p,0) );
+				q = newStmt1(mb, constraintsRef, "emptySet");
+				q = pushArgument(mb, q, getArg(p,0) );
+				constraints[ctop++]= p;
+			}
+		ignoreConstraint:
 			continue;
 		} 
 
