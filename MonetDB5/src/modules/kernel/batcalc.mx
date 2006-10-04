@@ -2280,7 +2280,9 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 		return throwMessage("batcalc.reuse", "Cannot access descriptor");
 	}
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
-		bn= BATwcopy(b);
+		bn= BATnewstorage(b->htype,b->ttype,BATcount(b));
+		/* fake the necessary inserts */
+		BATsetcount(bn,BATcount(b));
 		BBPkeepref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		*ret= bn->batCacheid;
