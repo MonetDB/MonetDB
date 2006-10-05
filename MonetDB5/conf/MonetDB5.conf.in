@@ -87,8 +87,7 @@ gdk_debug=0
 # Prompt when using MAL interface 
 # monet_prompt=>
 # Where do the MonetDB modules reside? The second path is for windows dlls.
-monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
-
+monet_mod_path=@libdir@@DIRSEP@@PACKAGE@@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@lib@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@bin
 # Start mserver in daemon mode, or start with MAL interactive interface?
 monet_daemon=no	
 
