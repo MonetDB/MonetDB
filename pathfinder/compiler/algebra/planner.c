@@ -1822,6 +1822,12 @@ clean_up_body_plans (PFla_op_t *n)
     }
     code = clean_up_body_plans_worker (n->sem.rec_fix.res, bases);
     assert (code);
+    
+#ifdef NDEBUG
+    /* otherwise compilers (correctly) complain about "code" being
+          set but never used in case assertions are switched off */
+    (void) code;
+#endif
 }
 
 /**
