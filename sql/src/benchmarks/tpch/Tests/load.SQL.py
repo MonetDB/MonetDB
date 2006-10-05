@@ -8,7 +8,7 @@ SRCDIR = os.path.join(TSTSRCBASE,TSTDIR)
 DATADIR = os.path.join(SRCDIR,"SF-0.01")
 SQL_CLIENT = os.environ['SQL_CLIENT']
 
-f = open("load.sql","w")
+f = open("load-sf-0.01.sql","w")
 for i in fileinput.input(os.path.join(SRCDIR,"load.sql")):
     x = string.split(i,"PWD/")
     if len(x) == 2:
