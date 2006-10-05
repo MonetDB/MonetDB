@@ -26,8 +26,13 @@ Over..
 # varchar,	int # type
 # 18,	10 # length
 [ "Supplier#000000074",	9	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	3	]
 
-# 12:35:05 >  
-# 12:35:05 >  Done.
-# 12:35:05 >  
+# 09:17:21 >  
+# 09:17:21 >  Done.
+# 09:17:21 >  
 

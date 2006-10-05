@@ -19,3 +19,5 @@ group by
 order by
 	l_returnflag,
 	l_linestatus;
+
+select * from optimizer_stats() stats;

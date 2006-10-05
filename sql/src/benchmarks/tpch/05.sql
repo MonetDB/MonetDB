@@ -24,3 +24,4 @@ order by
 	revenue desc;
 
 select * from optimizer_stats() stats;
+

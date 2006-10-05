@@ -30,8 +30,13 @@ Over..
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	0	]
 
-# 12:34:32 >  
-# 12:34:32 >  Done.
-# 12:34:32 >  
+# 09:17:13 >  
+# 09:17:13 >  Done.
+# 09:17:13 >  
 

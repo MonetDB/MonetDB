@@ -26,3 +26,5 @@ group by
 	l_shipmode
 order by
 	l_shipmode;
+
+select * from optimizer_stats() stats;

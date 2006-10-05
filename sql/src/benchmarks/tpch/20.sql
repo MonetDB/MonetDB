@@ -35,3 +35,5 @@ where
 	and n_name = 'CANADA'
 order by
 	s_name;
+
+select * from optimizer_stats() stats;

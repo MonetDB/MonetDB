@@ -199,8 +199,13 @@ Over..
 [ "VIETNAM",	1994,	1003275.5371	]
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	5	]
 
-# 12:34:41 >  
-# 12:34:41 >  Done.
-# 12:34:41 >  
+# 09:17:15 >  
+# 09:17:15 >  Done.
+# 09:17:15 >  
 

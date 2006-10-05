@@ -35,3 +35,5 @@ group by
 	cntrycode
 order by
 	cntrycode;
+
+select * from optimizer_stats() stats;

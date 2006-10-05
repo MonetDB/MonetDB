@@ -33,3 +33,5 @@ where
 		and l_shipmode in ('AIR', 'AIR REG')
 		and l_shipinstruct = 'DELIVER IN PERSON'
 	);
+
+select * from optimizer_stats() stats;

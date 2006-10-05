@@ -30,8 +30,13 @@ Over..
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	5	]
 
-# 12:34:34 >  
-# 12:34:34 >  Done.
-# 12:34:34 >  
+# 09:17:14 >  
+# 09:17:14 >  Done.
+# 09:17:14 >  
 

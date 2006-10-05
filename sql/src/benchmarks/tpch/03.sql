@@ -21,3 +21,5 @@ order by
 	revenue desc,
 	o_orderdate
 limit 10;
+
+select * from optimizer_stats() stats;

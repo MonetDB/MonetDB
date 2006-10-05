@@ -27,3 +27,5 @@ having
 	)
 order by
 	value desc;
+
+select * from optimizer_stats() stats;

@@ -15,3 +15,5 @@ where
 		where
 			l_partkey = p_partkey
 	);
+
+select * from optimizer_stats() stats;

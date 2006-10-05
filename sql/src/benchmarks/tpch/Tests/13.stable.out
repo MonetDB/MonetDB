@@ -57,8 +57,13 @@ Over..
 [ 3,	2	]
 [ 2,	2	]
 [ 30,	1	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
 
-# 12:34:50 >  
-# 12:34:50 >  Done.
-# 12:34:50 >  
+# 09:17:17 >  
+# 09:17:17 >  Done.
+# 09:17:17 >  
 
