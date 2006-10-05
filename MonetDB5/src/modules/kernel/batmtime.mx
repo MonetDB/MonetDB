@@ -115,28 +115,23 @@ batmtime_export str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst);
 @= implCmpOp
 str MTIME@1bat_@3(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
-	BUN o,p,q;
-	int xx,yy;
-	bit v, *vp = &v;
+	@1 *o, *p, *q;
+	bit *a;
 
 	prepareOperand2(left,l,right,r,"batcalc.@2");
 	@:chkSize(left,right,CMDcompare@1)@
 	prepareResult2(bn,left,right,TYPE_bit,"batcalc.@2");
 
-	o = BUNfirst(left);
-	p = BUNfirst(right);
-	q = BUNlast(right);
-	xx = BUNsize(left);
-	yy = BUNsize(right);
+	o = (@1*)BUNtail(left,BUNfirst(left));
+	p = (@1*)BUNtail(right,BUNfirst(right));
+	q = (@1*)BUNtail(right,BUNlast(right));
+	a = (bit*)BUNtail(bn, BUNfirst(bn));
+
 	while(p<q) {
-		ptr h = BUNhead(left,o);
-		@1 *tl = (@1*)BUNtail(left,o);
-		@1 *tr = (@1*)BUNtail(right,p);
-		MTIME@1_@3(vp, tl, tr);
-		bunfastins(bn, h, vp);
-		o += xx;
-		p += yy;
+		MTIME@1_@3(a++, o++, p++);
 	}
+	BATsetcount(bn, BATcount(left));
+ 	bn->batBuns->free = ((char *)a) - bn->batBuns->base;
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -150,23 +145,20 @@ bunins_failed:
 
 str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
 {   BAT *bn, *left;
-	BUN p,q;
-	int xx;
-	bit v, *vp= &v;
+	@1 *p, *q;
+	bit *a;
 
 	prepareOperand(left,l,"batcalc.@2");
 	prepareResult(bn,left,TYPE_bit,"batcalc.@2");
 
-	p = BUNfirst(left);
-	q = BUNlast(left);
-	xx = BUNsize(left);
+	p = (@1*)BUNtail(left,BUNfirst(left));
+	q = (@1*)BUNtail(left,BUNlast(left));
+	a = (bit*)BUNtail(bn, BUNfirst(bn));
 	while(p<q) {
-		ptr h = BUNhead(left,p);
-		@1 *tl = (@1*) BUNtail(left,p);
-		MTIME@1_@3(vp, tl, cst);
-		bunfastins(bn, h, vp);
-		p += xx;
+		MTIME@1_@3(a++, p++, cst);
 	}
+	BATsetcount(bn, BATcount(left));
+ 	bn->batBuns->free = ((char *)a) - bn->batBuns->base;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
