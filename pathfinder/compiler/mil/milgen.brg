@@ -148,6 +148,11 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term frag_union     = 132
 %term empty_frag     = 133
 %term cond_err       = 140
+%term rec_fix        = 141
+%term rec_param      = 142
+%term rec_nil        = 143
+%term rec_arg        = 144
+%term rec_base       = 145
 %term concat         = 150
 %term contains       = 151
 %term string_join    = 152
@@ -239,6 +244,13 @@ FragList: frag_union (FragList, Frag)                              = 122 (10);
 FragList: empty_frag                                               = 123 (10);
 
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
+
+Rel:      rec_fix (Rec)                                            = 131 (10);
+Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 132 (10);
+Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 133 (10);
+Rec:      rec_nil                                                  = 134 (10);
+Rel:      rec_base                                                 = 135 (10);
+
 Rel:      concat (Rel)                                             = 140 (10);
 Rel:      contains (Rel)                                           = 141 (10);
 Rel:      string_join (Rel, Rel)                                   = 142 (10);
@@ -447,7 +459,7 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
     if (mvar)
         return mvar;
 
-    /* FIXME: DEBUGGING ONLY */
+#ifndef NDEBUG
     fprintf (stderr, "looking for att: %s, ty: 0x%X\n", PFatt_str (att), ty);
     fprintf (stderr, "environment looks like:\n");
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
@@ -457,8 +469,8 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
                  PFatt_str (entry.att), entry.ty, 
                  PFmil_var_str (entry.mvar->name));
     }
+#endif
 
-    assert (0);
     PFoops (OOPS_FATAL,
             "attribute '%s' with type '0x%X' not found in environment",
             PFatt_str (att), ty);
@@ -567,6 +579,346 @@ static PFmil_type_t impl_types[] = {
 #define implty(n) type (impl_types[n])
 #endif
 
+/* forward declaration */
+static void reduce (PFpa_op_t * p, int goalnt);
+
+/**
+ * Alternative reducer function. Copes with patterns that are
+ * larger than the burg patterns (e.g., variable parameter lists
+ * required for the recursion operator). It contains the
+ * respective action code for some of the above burg patterns.
+ */
+static void
+reduce1 (PFpa_op_t * p, int goalnt)
+{
+    int           rule;           /* rule number that matches for this node */
+    short        *nts;            /* target non-terminals for the leaf nodes of
+                                     the current rule */
+    PFpa_op_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
+
+    assert (p);
+    /* reduce1 should be called only once for each pattern */
+    if (p->env)
+        return;
+
+    p->env = new_env ();
+    
+    /* determine rule that matches for this non-terminal */
+    rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
+
+    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert(rule);
+
+    /* initialize the kids[] vector */
+    for (unsigned short i = 0; i < MAX_KIDS; i++)
+        kids[i] = NULL;
+
+    /*
+     * prepare recursive traversal: get information on leaf nodes of
+     * this rule
+     */
+    nts = PFmilgen_nts[rule];
+    PFmilgen_kids (p, rule, kids);
+    
+#ifndef NDEBUG
+    execute (comment ("Begin rule %d (reduce1)", rule));
+#endif
+
+    switch (rule) {
+        /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
+        case 132:
+            /* only generate MIL code for the seed */
+            reduce (kids[0], nts[0]);
+            
+            /* relink the enviroment of arg to its base */
+            L(p)->sem.rec_arg.base->env = p->env;
+            
+            /* Copy the result of the the seed into a new variable.
+               This variable is pinned for each call of the base
+               (base and paramter both refer to the same environment)
+               and additionally for each parameter to avoid that the
+               variable is overwritten during generation of the recursion. */
+            for (unsigned int i = 0; i < env_count (LL(p)->env); i++) {
+                mvar_t *tmp  = new_var (p->refctr + 
+                                        L(p)->sem.rec_arg.base->refctr);
+
+                /* copy variable */
+                execute (
+                    assgn (var (tmp->name),
+                           var (env_at (LL(p)->env, i).mvar->name)));
+                
+                /* add the variable to the current environment
+                   (and thus also to the base environment) */
+                env_add (p->env,
+                         env_at (LL(p)->env, i).att,
+                         env_at (LL(p)->env, i).ty,
+                         tmp);
+                
+                /* unpin the seed once -- the recursion now does not
+                   reference it anymore */
+                unpin (((env_t *) PFarray_at (kids[0]->env, i))->mvar, 1);
+            }
+
+            /* translate all the remaining seeds */
+            reduce1 (kids[2], nts[2]);
+            break;
+
+        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
+        case 133:
+            /* relink the enviroment of arg to its base */
+            L(p)->sem.rec_arg.base->env = p->env;
+
+            /* For each column and type in the empty table generate
+               a new bat and assign it to the variables used by the
+               recursion. */
+            for (unsigned int col = 0; col < LL(p)->schema.count; col++)
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & LL(p)->schema.items[col].type) {
+                        mvar_t *tmp  = new_var (p->refctr + 
+                                                L(p)->sem.rec_arg.base->refctr);
+
+                        /* assign an empty BAT to the new variable */
+                        execute (
+                            assgn (var (tmp->name),
+                                   seqbase (new (type (m_void), implty (t)),
+                                            lit_oid (0))));
+                        
+                        /* add the variable to the current environment
+                           (and thus also to the base environment) */
+                        env_add (p->env,
+                                 LL(p)->schema.items[col].name,
+                                 t,
+                                 tmp);
+                    }
+
+            /* translate all the remaining seeds */
+            reduce1 (kids[1], nts[1]);
+            break;
+
+        /* Rec:      rec_nil */
+        case 134:
+            /* no MIL code needed */
+            break;
+            
+        default:
+            PFoops (OOPS_FATAL,
+                    "cannot cope with rule %d in "
+                    "alternative reduce function",
+                    rule);
+    }
+
+#ifndef NDEBUG
+    execute (comment ("End rule %d (reduce1)", rule));
+    for (unsigned int i = 0; i < PFarray_last (p->env); i++)
+        assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
+#endif
+
+#ifndef NDEBUG
+    /* Debugging only: assign column names to BATs */
+    /* switch off debugging information as it triggers errors in MonetDB...
+    for (unsigned int i = 0; i < env_count (p->env); i++)
+        execute (col_name (var (env_at (p->env, i).mvar->name),
+                           lit_str (PFatt_str (env_at (p->env, i).att))));
+    */
+#endif
+
+}
+
+/**
+ * Alternative reducer function. Copes with patterns that are
+ * larger than the burg patterns (e.g., variable parameter lists
+ * required for the recursion operator). It contains the
+ * respective action code for some of the above burg patterns.
+ */
+static void
+reduce2 (PFpa_op_t * p, int goalnt)
+{
+    int           rule;           /* rule number that matches for this node */
+    short        *nts;            /* target non-terminals for the leaf nodes of
+                                     the current rule */
+    PFpa_op_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
+    int           pos_body;       /* position of the recursion body in the
+                                     list of kids */
+
+    /* reduce2 should be only called after reduce1 */
+    if (!p->env)
+        PFoops (OOPS_FATAL,
+                "cannot cope with function reduce2 "
+                "as long as reduce1 was not called.");
+
+    /* determine rule that matches for this non-terminal */
+    rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
+
+    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert(rule);
+
+    /* initialize the kids[] vector */
+    for (unsigned short i = 0; i < MAX_KIDS; i++)
+        kids[i] = NULL;
+
+    /*
+     * prepare recursive traversal: get information on leaf nodes of
+     * this rule
+     */
+    nts = PFmilgen_nts[rule];
+    PFmilgen_kids (p, rule, kids);
+    
+#ifndef NDEBUG
+    execute (comment ("Begin rule %d (reduce2)", rule));
+#endif
+
+    pos_body = 0;
+    
+    switch (rule) {
+        /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
+        case 132:
+            pos_body = 1; /* discard the seed */
+        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
+        case 133:
+            /* only generate MIL code for the seed */
+            reduce (kids[pos_body], nts[pos_body]);
+            /* translate all the remaining parts of the body */
+            reduce2 (kids[pos_body + 1], nts[pos_body + 1]);
+            
+            /* ensure that we have a 1:1 mapping of the environments */
+            assert (PFarray_last (p->env) == PFarray_last (LR(p)->env));
+            
+            /* Reassign the variables. Thus the initial seed relations
+               are overwritten by the result of the recursion */
+            for (unsigned int i = 0; i < PFarray_last (p->env); i++) {
+                env_t entry = env_at (p->env, i);
+
+                /* find the corresponding variable in res for the variable in p */
+                mvar_t *tmp = env_mvar (LR(p)->env, entry.att, entry.ty);
+
+                execute (
+                    assgn (var (entry.mvar->name),
+                           var (tmp->name)));
+                   
+                /* unpin the recursion once -- the recursion now does not
+                   reference it anymore */
+                unpin (tmp, 1);
+            }
+            break;
+
+        /* Rec:      rec_nil */
+        case 134:
+            /* no MIL code needed */
+            break;
+            
+        default:
+            PFoops (OOPS_FATAL,
+                    "cannot cope with rule %d in "
+                    "alternative reduce function",
+                    rule);
+    }
+
+#ifndef NDEBUG
+    execute (comment ("End rule %d (reduce2)", rule));
+    for (unsigned int i = 0; i < PFarray_last (p->env); i++)
+        assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
+#endif
+
+#ifndef NDEBUG
+    /* Debugging only: assign column names to BATs */
+    /* switch off debugging information as it triggers errors in MonetDB...
+    for (unsigned int i = 0; i < env_count (p->env); i++)
+        execute (col_name (var (env_at (p->env, i).mvar->name),
+                           lit_str (PFatt_str (env_at (p->env, i).att))));
+    */
+#endif
+
+}
+
+/**
+ * Alternative reducer function. Copes with patterns that are
+ * larger than the burg patterns (e.g., variable parameter lists
+ * required for the recursion operator). It contains the
+ * respective action code for some of the above burg patterns.
+ */
+static void
+reduce3 (PFpa_op_t * p, int goalnt)
+{
+    int           rule;           /* rule number that matches for this node */
+    short        *nts;            /* target non-terminals for the leaf nodes of
+                                     the current rule */
+    PFpa_op_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
+    int           pos_list;       /* position of the param list in the
+                                     list of kids */
+
+    /* reduce3 should be only called after reduce1 */
+    if (!p->env)
+        PFoops (OOPS_FATAL,
+                "cannot cope with function reduce3 "
+                "as long as reduce1 was not called.");
+
+    /* determine rule that matches for this non-terminal */
+    rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
+
+    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert(rule);
+
+    /* initialize the kids[] vector */
+    for (unsigned short i = 0; i < MAX_KIDS; i++)
+        kids[i] = NULL;
+
+    /*
+     * prepare recursive traversal: get information on leaf nodes of
+     * this rule
+     */
+    nts = PFmilgen_nts[rule];
+    PFmilgen_kids (p, rule, kids);
+    
+#ifndef NDEBUG
+    execute (comment ("Begin rule %d (reduce3)", rule));
+#endif
+
+    pos_list = 1;
+    
+    switch (rule) {
+        /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
+        case 132:
+            pos_list = 2; /* discard the seed */
+        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
+        case 133:
+            /* translate all the remaining parts of the list */
+            reduce3 (kids[pos_list], nts[pos_list]);
+            
+            /* release the remaining pins that ensured that the
+               recursion input arguments were not overwritten
+               during the recursion. */
+            for (unsigned int i = 0; i < PFarray_last (p->env); i++) {
+                unpin (env_at (p->env, i).mvar, p->refctr);
+            }
+            break;
+
+        /* Rec:      rec_nil */
+        case 134:
+            /* no MIL code needed */
+            break;
+            
+        default:
+            PFoops (OOPS_FATAL,
+                    "cannot cope with rule %d in "
+                    "alternative reduce function",
+                    rule);
+    }
+
+#ifndef NDEBUG
+    execute (comment ("End rule %d (reduce3)", rule));
+#endif
+
+#ifndef NDEBUG
+    /* Debugging only: assign column names to BATs */
+    /* switch off debugging information as it triggers errors in MonetDB...
+    for (unsigned int i = 0; i < env_count (p->env); i++)
+        execute (col_name (var (env_at (p->env, i).mvar->name),
+                           lit_str (PFatt_str (env_at (p->env, i).att))));
+    */
+#endif
+
+}
+
 /**
  * Reducer function. This is the heart of this source file. It
  * contains all the action code for the above burg patterns.
@@ -607,6 +959,8 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1:
         /* Query:    serialize (FragList, empty_tbl) */
         case 2:
+        /* Rel:      rec_fix (Rec) */
+        case 131:
             topdown = true;
             break;
 
@@ -1038,6 +1392,14 @@ reduce (PFpa_op_t * p, int goalnt)
 
             execute (print (args));
             */
+
+            unpin (intVAL, 1);
+            unpin (dblVAL, 1);
+            /* unpin (decVAL, 1); as we currently have no
+                                           decimal support we use doubles */
+            unpin (strVAL, 1);
+            unpin (item, 1);
+            unpin (kind, 1);
 
         } break;
 
@@ -2937,6 +3299,8 @@ reduce (PFpa_op_t * p, int goalnt)
                   assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
                   assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
                   );
+
+             unpin (v, 1);
         } break;
 
         /* Rel:      doc_access (FragList, Rel) */
@@ -3335,6 +3699,104 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
 
+        /* Rel:      rec_fix (Rec) */
+        case 131:
+        {
+            PFmil_t *oldmilprog, *bodymilprog;
+            PFarray_t *res_env;
+            mvar_t *old_count, *new_count;
+            
+            /* first bind all seeds to new variables */
+            reduce1(kids[0], nts[0]);
+           
+            old_count = new_var (1);
+            new_count = new_var (1);
+
+            /* initialize the result counters */
+            execute (
+                assgn (var (old_count->name), 
+                       lit_int (-1)),
+                assgn (var (new_count->name), 
+                       lit_int (0)));
+                       
+            /* save the current mil program */
+            oldmilprog = milprog;
+           
+            /* create a new empty milprog */
+            milprog = nop ();
+           
+            /* translate the recursion body and 
+               reassign the recursion variables */
+            reduce2(kids[0], nts[0]);
+           
+            /* get the result environment */
+            res_env = p->sem.rec_fix.res->env;
+
+            /* update the result counters */
+            execute (
+                assgn (var (old_count->name), 
+                       var (new_count->name)),
+                assgn (var (new_count->name),
+                       count (var (env_at (res_env, 0).mvar->name))));
+
+            /* make the old mil program the active one */
+            bodymilprog = milprog;
+            milprog = oldmilprog;
+           
+            /* apply the while statement */
+            execute (
+                while_ (
+                  gt (var (new_count->name),
+                      var (old_count->name)),
+                  bodymilprog));
+
+            /* the condition variables are not needed anymore */
+            unpin (new_count, 1);
+            unpin (old_count, 1);
+            
+            /* copy all the result attributes */
+            for (unsigned int i = 0; i < env_count (res_env); i++) {
+                pin (env_at (res_env, i).mvar,
+                     /* add the pins of the rec_fix operator and
+                        release the additional result pin from 
+                        the rec_fix operator */
+                     p->refctr - 1);
+                
+                env_add (p->env,
+                         env_at (res_env, i).att,
+                         env_at (res_env, i).ty,
+                         env_at (res_env, i).mvar);
+            }
+            
+            /* release all the pins of the while loop arguments */
+            reduce3(kids[0], nts[0]);
+            /* ensure that the child of p (the first argument) still
+               has one pin left to release (see bottom of function reduce) */
+            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++)
+                pin (env_at (L(p)->env, i).mvar, 1);
+        } break;
+
+        /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
+        case 132:
+        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
+        case 133:
+        /* Rec:      rec_nil */
+        case 134:
+            /* the rules are called via reduce1, reduce2, and reduce3 */
+            break;
+
+        /* Rel:      rec_base */
+        case 135:
+            /* no MIL code needed */
+
+            /* The environment already contains the bindings.
+               See rules:
+                  rec_param (rec_arg (Rel, Rel), Rec)
+                and
+                  rec_param (rec_arg (empty_tbl, Rel), Rec))
+                in function reduce1 */
+            break;
+
         /* Rel:      concat (Rel) */
         case 140:
             bin_arith (PFmil_madd, p);
@@ -3415,6 +3877,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
 #ifndef NDEBUG
     execute (comment ("End rule %d", rule));
+
     for (unsigned int i = 0; i < PFarray_last (p->env); i++)
         assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
 #endif
@@ -4395,6 +4858,13 @@ inc_refctr (PFpa_op_t *n)
     
     for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         inc_refctr (n->child[i]);
+    
+    /* we also need to start one traversal from the rec_fix operator
+       to its result (no child relationship). Increasing the reference
+       counter of the result (after it is initialized) accounts for 
+       this traversal. */
+    if (n->kind == pa_rec_fix)
+        n->sem.rec_fix.res->refctr++;
 }
 
 static void
@@ -4451,6 +4921,21 @@ PFmilgen (PFpa_op_t *n)
 
     /* start compilation */
     reduce (n, 1);
+
+#ifndef NDEBUG
+    mvar_t *var = NULL;
+    for (unsigned int i = 0; i < PFarray_last (mvars); i++)
+        if ((var = (mvar_t *) PFarray_at (mvars, i))->pins) {
+            if (var->pins == 1)
+                PFinfo (OOPS_WARNING, 
+                        "variable %s stilled pinned once.",
+                        PFmil_var_str (var->name));
+            else
+                PFinfo (OOPS_WARNING, 
+                        "variable %s stilled pinned %i times.",
+                        PFmil_var_str (var->name), var->pins);
+        }
+#endif
 
     /* prepend variable declarations before the actual program */
     for (unsigned int i = 0; i < PFarray_last (mvars); i++)
