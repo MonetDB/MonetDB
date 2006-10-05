@@ -102,15 +102,26 @@ AC_SUBST(Qincludedir)
 Qinfodir="$infodir"
 AC_SUBST(Qinfodir)
 
-DIRSEP="/"
 case "$target_os" in
 mac*)	DIRSEP=":"
+	QDIRSEP=':'
 	AC_ERROR([mac not supported yet])
+	;;
+*mingw*)
+	DIRSEP='\'
+	QDIRSEP='\\'
+	PATHSEP=';'
+	;;
+*)
+	DIRSEP='/'
+	QDIRSEP='/'
+	PATHSEP=':'
 	;;
 esac
 AC_SUBST(DIRSEP)
-QDIRSEP="$DIRSEP"
 AC_SUBST(QDIRSEP)
+AC_SUBST(PATHSEP)
+AC_SUBST(SOEXT)
 
 dnl We're not building on native Windows.
 AM_CONDITIONAL(NATIVE_WIN32,false)
