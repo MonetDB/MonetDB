@@ -27,8 +27,8 @@ if [ $# -eq 1 ]; then
 fi
 
 #$SQL < c.sql-dec
-SF='sf-1'
-#SF='sf-0.01'
+#SF='sf-1'
+SF='sf-0.01'
 
 dir=`echo $SF | tr '[a-z]' '[A-Z]'`
 $SQL < c.sql-dec-primary-foreign

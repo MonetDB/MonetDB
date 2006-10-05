@@ -22,3 +22,5 @@ group by
 	n_name
 order by
 	revenue desc;
+
+select * from optimizer_stats() stats;
