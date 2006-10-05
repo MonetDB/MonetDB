@@ -185,11 +185,11 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
 	 0, 0,			/* hardwired MALinit*/
 	 0, 0,			/* implicit */
-	 "MALinitClient", 0,	/* no MALinitClient */
-	 "MALexitClient", (MALfcn) & MALexitClient,
+	 0, 0,			/* no initClient */
+	 "MALexitClient", (MALfcn) &MALexitClient,
 	 "MALreader", (MALfcn) &MALreader, 0,
 	 "MALparser", (MALfcn) &MALparser, 0,
-	 "MALoptimizer", 0, 0,	
+	 0, 0, 0,			
 	 0, 0, 0,
 	 "MALengine", (MALfcn) &MALengine, 0, 0},
 	{0,0,			/* name */
