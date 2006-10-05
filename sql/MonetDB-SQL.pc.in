@@ -22,7 +22,7 @@ bindir=@bindir@
 libdir=@libdir@
 includedir=@includedir@
 
-modpath=${libdir}/MonetDB
+modpath=${libdir}/MonetDB:${libdir}/MonetDB/lib:${libdir}/MonetDB/bin
 classpath=${libdir}/MonetDB/java/MonetDB_JDBC.jar
 
 Name: ${pkg}
