@@ -33,7 +33,7 @@ includedir=@includedir@
 pkgincludedir=${includedir}/${pkg}
 pkglibdir=${libdir}/${pkg}
 
-modpath=${pkglibdir}
+modpath=${pkglibdir}:${pkglibdir}/lib:${pkglibdir}/bin
 classpath=${pkglibdir}/java/mapi.jar
 
 Name: ${pkg}

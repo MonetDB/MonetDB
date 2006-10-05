@@ -214,6 +214,8 @@ def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
     else:
         add = name + " ="
     for l in list:
+##        if 'lib_' in l or l.startswith('-l_'):
+##            continue
         if l[0] in ("-", "$", "@"):
             add = add + " " + l
         else:
@@ -662,6 +664,8 @@ def am_library(fd, var, libmap, am):
         scripts_ext = libmap['SCRIPTS']
 
     ld = am_translate_dir(ld, am)
+    if sep == '_':
+        ld = ld + '/lib'
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
         am['NLIBS'].append((pref, libname, sep))
@@ -677,7 +681,7 @@ def am_library(fd, var, libmap, am):
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
     ldflags = []
-    if sep == '_':
+    if sep == '_' and pref == '':
         ldflags.append('-module')
     if libmap.has_key("LDFLAGS"):
         for x in libmap["LDFLAGS"]:
@@ -738,10 +742,14 @@ def am_libs(fd, var, libsmap, am):
     ld = "libdir"
     if (libsmap.has_key("DIR")):
         ld = libsmap["DIR"][0] # use first name given
+    ld = am_translate_dir(ld, am)
 
     sep = ""
     if libsmap.has_key('SEP'):
         sep = libsmap['SEP'][0]
+
+    if sep == '_':
+        ld = ld + '/lib'
 
     scripts_ext = []
     if libsmap.has_key('SCRIPTS'):
@@ -776,8 +784,8 @@ def am_libs(fd, var, libsmap, am):
             _libs += libsmap["LDFLAGS"];
         if len(_libs) > 0:
             fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
-        if sep == '_':
-            fd.write(am_additional_flags(libname, sep, "LIB", ['-module'], am))
+##        if sep == '_':
+##            fd.write(am_additional_flags(libname, sep, "LIB", ['-module'], am))
 
         nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
         srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
@@ -802,7 +810,6 @@ def am_libs(fd, var, libsmap, am):
             fd.write("all-local-%s: $(%s_scripts)\n" % (libname, libname))
             am['ALL'].append(libname)
 
-        ld = am_translate_dir(ld, am)
         fd.write("%sdir = %s\n" % (libname, ld))
         fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,string.upper(libname)))
         am['LIBS'].append(('lib', libname, sep, ''))

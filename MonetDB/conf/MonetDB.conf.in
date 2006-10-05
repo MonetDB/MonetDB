@@ -83,8 +83,9 @@ monet_prompt=MonetDB>
 # Show version and copyright information when starting the server or
 # a MIL client?
 monet_welcome=yes
-# Where do the MonetDB modules reside? The second path is for windows dlls.
-monet_mod_path=@Xlibdir@@DIRSEP@@PACKAGE@@PATHSEP@@Xlibdir@@DIRSEP@bin
+# Where do the MonetDB modules reside?
+# The first directory contains MIL modules, and either the second or third (depending on the system) the C modules.
+monet_mod_path=@Xlibdir@@DIRSEP@@PACKAGE@@PATHSEP@@Xlibdir@@DIRSEP@@PACKAGE@@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@@PACKAGE@@DIRSEP@bin
 # Start Mserver in daemon mode, or start with MIL interactive interface?
 monet_daemon=no
 
