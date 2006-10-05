@@ -426,7 +426,10 @@ address CMDmaterialize
 comment "Materialize the void column";
 
 command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address CMDreuse;
+address CMDreuse
+comment "Reuse a temporary BAT if you can. Otherwise,
+	allocate enough storage to accept result of an
+ 	operation (not involving the heap)";
 @-
 @}
 @{
@@ -2280,7 +2283,7 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 		return throwMessage("batcalc.reuse", "Cannot access descriptor");
 	}
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
-		bn= BATnewstorage(b->htype,b->ttype,BATcount(b));
+		bn= BATnew(b->htype,b->ttype,BATcount(b));
 		/* fake the necessary inserts */
 		BATsetcount(bn,BATcount(b));
 		BBPkeepref(bn->batCacheid);
