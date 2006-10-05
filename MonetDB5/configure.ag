@@ -43,8 +43,8 @@ if test "$GCC" = "yes"; then
 	X_CFLAGS="$X_CFLAGS -Wno-sign-compare"
 fi
 
-# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb5-config
-# MONETDB_SOURCE is the absolute path name of the source directory
+# MONETDB5_BUILD and MONETDB5_SOURCE are *only* used for monetdb5-config
+# MONETDB5_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 
 # The Q versions of various variables are used in places where \'s
@@ -52,18 +52,18 @@ fi
 # in path names, so there is no need to do anything special here
 # except set the variables.  The command to set them in case we do
 # need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
-MONETDB_BUILD=[`pwd`]
-AC_SUBST(MONETDB_BUILD)
-QMONETDB_BUILD="$MONETDB_BUILD"
-XMONETDB_BUILD="`$translatepath "$MONETDB_BUILD"`"
-QXMONETDB_BUILD="`echo "$XMONETDB_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QMONETDB_BUILD)
-AC_SUBST(XMONETDB_BUILD)
-AC_SUBST(QXMONETDB_BUILD)
-MONETDB_SOURCE=[`(cd $srcdir && pwd)`]
-AC_SUBST(MONETDB_SOURCE)
-QMONETDB_SOURCE="$MONETDB_SOURCE"
-AC_SUBST(QMONETDB_SOURCE)
+MONETDB5_BUILD=[`pwd`]
+AC_SUBST(MONETDB5_BUILD)
+QMONETDB5_BUILD="$MONETDB5_BUILD"
+XMONETDB5_BUILD="`$translatepath "$MONETDB5_BUILD"`"
+QXMONETDB5_BUILD="`echo "$XMONETDB5_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QMONETDB5_BUILD)
+AC_SUBST(XMONETDB5_BUILD)
+AC_SUBST(QXMONETDB5_BUILD)
+MONETDB5_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(MONETDB5_SOURCE)
+QMONETDB5_SOURCE="$MONETDB5_SOURCE"
+AC_SUBST(QMONETDB5_SOURCE)
 
 # if no --prefix option, we must set Qprefix to the default value
 # the problem is that prefix is set very late in the process if it
