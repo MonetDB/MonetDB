@@ -58,6 +58,8 @@ typedef struct sql_var {
 	ValRecord value;
 } sql_var;
 
+#define MAXSTATS 8
+
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
@@ -94,6 +96,8 @@ typedef struct mvc {
 	int type;		/* query type */
 	int depth;		/* depth of the current expression */
 	int label;		/* numbers for relational projection labels */
+
+	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */
 
 	int result_id;
 	res_table *results;
@@ -495,6 +499,7 @@ mvc_release(mvc *m, char *name)
 mvc *
 mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 {
+	int i;
 	mvc *m;
 
  	m = NEW(mvc);
@@ -528,6 +533,8 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->depth = 0;
 	m->label = 0;
+	for(i=0;i<MAXSTATS;i++)
+		m->opt_stats[i] = 0;
 
 	store_lock();
 	m->session = sql_session_create(stk, 1 /*autocommit on*/);
@@ -545,6 +552,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 void
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 {
+	int i;
 	sql_trans *tr;
 
 	if (mvc_debug)
@@ -595,6 +603,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->depth = 0;
 	m->label = 0;
 	m->type = Q_PARSE;
+
+	for(i=0;i<MAXSTATS;i++)
+		m->opt_stats[i] = 0;
 
 	m->result_id = 0;
 	m->results = NULL;

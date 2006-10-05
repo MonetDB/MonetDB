@@ -802,6 +802,7 @@ push_selects_down(mvc *c, list *con)
 						nr ++;
 					}
 					assert(nr == list_length(fkjoins));
+					c->opt_stats[0]++; 
 				}
 				if (fkjoins)
 					list_destroy(fkjoins);

@@ -19,4 +19,4 @@ DEVELOPMENT?interval_milliseconds.SF-1357338
 timestamp_fraction.SF-1357342
 aggregate_functions_with_limit.SF-1367127
 bogus_prepare.SF-1377079
-#HAVE_MONET?multiple_servers_2.SF-1385247
+HAVE_MONET?multiple_servers_2.SF-1385247

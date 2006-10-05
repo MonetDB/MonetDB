@@ -230,6 +230,9 @@ stream.
 	.BUILTIN dump_cache() : ptr = dump_cache;
 		"dump the query cache"
 
+	.BUILTIN dump_opt_stats() : ptr = dump_opt_stats;
+		"dump the optimizer rewrite statistics"
+
 	.COMMAND zero_or_one( BAT[any,any::1] b) : any::1 = zero_or_one; "if b contains exactly one value return this. Incase of more raise an exception else return nil"
 
 .END sql_server;

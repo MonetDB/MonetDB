@@ -140,7 +140,7 @@ sql_symbol2stmt(mvc *c)
 			if (s){
 				stmt *opt;
 
-				/* only needed for merge tables */
+				/* only needed for delta tables */
 				opt = rel2bin(c, s); 	
 				stmt_destroy(s);
 				s = bin_optimizer(c, opt);
@@ -603,7 +603,7 @@ sql_variables(Cntxt stk, YYSTREE lt, ValPtr res)
 	m = v->binding.val.pval;
 
 	vars = BATnew(TYPE_void,TYPE_str, m->topvars);
-	vars->hseqbase = 0;
+	BATseqbase(vars, 0);
 	for (i=0; i<m->topvars && m->vars[i].s; i++) 
 		BUNappend(vars, m->vars[i].name, FALSE);
 	r = BATnew(TYPE_str,TYPE_bat,1);
@@ -636,9 +636,9 @@ dump_cache(Cntxt stk, YYSTREE lt, ValPtr res)
 	cnt = m->qc->id; 
  	t = BATnew(TYPE_str, TYPE_bat, 1);
 	query = BATnew(TYPE_void, TYPE_str, cnt);
-	query->hseqbase = 0;
+	BATseqbase(query, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
-	count->hseqbase = 0;
+	BATseqbase(count, 0);
 	BUNins(t, "query", &query->batCacheid, FALSE);
 	BUNins(t, "count", &count->batCacheid, FALSE);
 
@@ -648,6 +648,44 @@ dump_cache(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 
 	BBPunfix(query->batCacheid);
+	BBPunfix(count->batCacheid);
+	res->vtype = TYPE_bat;
+	res->val.bval = t->batCacheid;
+	BBPkeepref(t->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+dump_opt_stats(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	mvc *m;
+	int cnt; 
+	BAT *t, *rewrite, *count;
+	Variable v;
+
+	if (lt->cnt != 0) 
+		return handle_argerror(res, lt->cnt, 0);
+
+        v = VARfind(&stk, "myc");
+        if (v == NULL) 
+            return GDKerror("dump_opt_stats: failed to lookup myc variable.\n");
+
+	m = v->binding.val.pval;
+
+	cnt = m->qc->id; 
+ 	t = BATnew(TYPE_str, TYPE_bat, 1);
+	rewrite = BATnew(TYPE_void, TYPE_str, cnt);
+	BATseqbase(rewrite, 0);
+	count = BATnew(TYPE_void, TYPE_int, cnt);
+	BATseqbase(count, 0);
+	BUNins(t, "rewrite", &rewrite->batCacheid, FALSE);
+	BUNins(t, "count", &count->batCacheid, FALSE);
+
+	BUNappend(rewrite, "joinidx", FALSE);
+	BUNappend(count, &m->opt_stats[0], FALSE);
+	/* TODO add other rewrites */
+
+	BBPunfix(rewrite->batCacheid);
 	BBPunfix(count->batCacheid);
 	res->vtype = TYPE_bat;
 	res->val.bval = t->batCacheid;

@@ -219,6 +219,10 @@ command dump_cache() :bat[:str,:bat]
 address dump_cache
 comment "dump the content of the query cache";
 
+command dump_opt_stats() :bat[:str,:bat]
+address dump_opt_stats
+comment "dump the optimizer rewrite statistics";
+
 @- SQL function aliases
 The code generate should identify the precise module
 target for all functions. This creates quite some
@@ -507,6 +511,7 @@ sabaoth.marchScenario("sql":str);
 #include "sql_semantic.h"
 #include "sql_optimize.h"
 #include "sql_rel2bin.h"
+#include <bin_optimizer.h>
 #include "sql_decimal.h"
 #include "sql_string.h"
 #include "sql_scope.h"
@@ -631,11 +636,12 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			if (s){
 				stmt *opt;
 
-				opt = optimize(c, s);
+				/* only needed for delta tables */
+				opt = rel2bin(c, s); 	
 				stmt_destroy(s);
-				s = rel2bin(c, opt);
+				s = bin_optimizer(c, opt);
 				stmt_destroy(opt);
-				return opt;
+				return s;
 			}
 		}
 	}  else {
@@ -650,6 +656,9 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		stmt_destroy(s);
 		s = opt;
 		opt = rel2bin(c, s);
+		stmt_destroy(s);
+		s = opt;
+		opt = bin_optimizer(c, s);
 		stmt_destroy(s);
 		s = opt;
 	}
@@ -787,7 +796,7 @@ sql_variables(int *res)
 		return msg;
 
 	vars = BATnew(TYPE_void,TYPE_str, m->topvars);
-	vars->hseqbase = 0;
+	BATseqbase(vars, 0);
 	for (i=0; i<m->topvars && m->vars[i].s; i++) 
 		BUNappend(vars, m->vars[i].name, FALSE);
 	r = BATnew(TYPE_str,TYPE_bat,1);
@@ -2033,9 +2042,9 @@ dump_cache(int *r)
 	cnt = m->qc->id; 
  	t = BATnew(TYPE_str, TYPE_bat, 1);
 	query = BATnew(TYPE_void, TYPE_str, cnt);
-	query->hseqbase = 0;
+	BATseqbase(query, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
-	count->hseqbase = 0;
+	BATseqbase(count, 0);
 	BUNins(t, "query", &query->batCacheid, FALSE);
 	BUNins(t, "count", &count->batCacheid, FALSE);
 
@@ -2045,6 +2054,36 @@ dump_cache(int *r)
 	}
 
 	BBPunfix(query->batCacheid);
+	BBPunfix(count->batCacheid);
+	*r = t->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+
+str
+dump_opt_stats(int *r)
+{
+	mvc *m;
+	str msg = getContext(&m, NULL);
+	int cnt; 
+	BAT *t, *rewrite, *count;
+
+	if (msg)
+		return msg;
+	cnt = m->qc->id; 
+ 	t = BATnew(TYPE_str, TYPE_bat, 1);
+	rewrite = BATnew(TYPE_void, TYPE_str, cnt);
+	BATseqbase(rewrite, 0);
+	count = BATnew(TYPE_void, TYPE_int, cnt);
+	BATseqbase(count, 0);
+	BUNins(t, "rewrite", &rewrite->batCacheid, FALSE);
+	BUNins(t, "count", &count->batCacheid, FALSE);
+
+	BUNappend(rewrite, "joinidx", FALSE);
+	BUNappend(count, &m->opt_stats[0], FALSE);
+	/* TODO add other rewrites */
+
+	BBPunfix(rewrite->batCacheid);
 	BBPunfix(count->batCacheid);
 	*r = t->batCacheid;
 	BBPkeepref(*r);

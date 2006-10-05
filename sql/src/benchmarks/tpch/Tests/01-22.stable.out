@@ -34,6 +34,15 @@ Over..
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
 [ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
 [ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:37:13 >  
+# 09:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:13 >  
 
 # 12:35:08 >  
 # 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -47,6 +56,15 @@ Over..
 [ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
 [ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
 [ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	7	]
+
+# 09:37:13 >  
+# 09:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:13 >  
 
 # 12:35:08 >  
 # 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -66,6 +84,15 @@ Over..
 [ 450,	205447.4232,	1995-03-05,	0	]
 [ 47204,	204478.5213,	1995-03-13,	0	]
 [ 9696,	201502.2188,	1995-02-20,	0	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	2	]
+
+# 09:37:13 >  
+# 09:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:13 >  
 
 # 12:35:08 >  
 # 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -80,6 +107,15 @@ Over..
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:08 >  
 # 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -94,6 +130,15 @@ Over..
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	5	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:09 >  
 # 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -104,6 +149,15 @@ Over..
 # decimal # type
 # 21 # length
 [ 1193053.2253	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:09 >  
 # 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -117,6 +171,15 @@ Over..
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	2 # length
+[ "joinidx",	10	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:09 >  
 # 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -128,6 +191,15 @@ Over..
 # 10,	21 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	7	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:09 >  
 # 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -311,6 +383,15 @@ Over..
 [ "VIETNAM",	1994,	1003275.5371	]
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	5	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -340,6 +421,15 @@ Over..
 [ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"carefully express asymptotes are after the blithe deposits. regular pl"	]
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"ironic, unusual dependencies sleep across the quickly reg"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"regular, regular accounts boost special instructions. bold, final accounts at the regular pa"	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	3	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -708,6 +798,15 @@ Over..
 [ 332,	112181.30	]
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	4	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -719,6 +818,15 @@ Over..
 # 4,	10,	10 # length
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -760,6 +868,15 @@ Over..
 [ 3,	2	]
 [ 2,	2	]
 [ 30,	1	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -770,6 +887,15 @@ Over..
 # decimal # type
 # 21 # length
 [ 15.4865	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -780,6 +906,15 @@ Over..
 # int,	varchar,	varchar,	varchar,	decimal # type
 # 10,	18,	36,	15,	21 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1085,6 +1220,15 @@ Over..
 [ "Brand#55",	"STANDARD ANODIZED BRASS",	36,	4	]
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1095,6 +1239,15 @@ Over..
 # decimal # type
 # 21 # length
 [ 0.00	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1106,6 +1259,15 @@ Over..
 # 18,	10,	10,	10,	17,	20 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	2	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:10 >  
 # 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1116,6 +1278,15 @@ Over..
 # decimal # type
 # 21 # length
 [ 22923.0280	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	3	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:11 >  
 # 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1126,6 +1297,15 @@ Over..
 # varchar,	varchar # type
 # 18,	30 # length
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:11 >  
 # 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1136,6 +1316,15 @@ Over..
 # varchar,	int # type
 # 18,	10 # length
 [ "Supplier#000000074",	9	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	3	]
+
+# 09:37:14 >  
+# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
+# 09:37:14 >  
 
 # 12:35:11 >  
 # 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -1152,8 +1341,13 @@ Over..
 [ "29",	11,	88722.85	]
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
+# .stats,	.stats # table_name
+# rewrite,	count # name
+# clob,	int # type
+# 7,	1 # length
+[ "joinidx",	0	]
 
-# 12:35:11 >  
-# 12:35:11 >  Done.
-# 12:35:11 >  
+# 09:37:14 >  
+# 09:37:14 >  Done.
+# 09:37:14 >  
 
