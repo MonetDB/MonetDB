@@ -38,7 +38,7 @@ then
 fi
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/runtime/.libs:${builddir}/runtime"
+MOD_PATH="${builddir}/runtime/.libs:${builddir}/runtime:${srcdir}/runtime"
 if [ -d "${MONETDB_PREFIX}/lib64" ]
   then	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib64/MonetDB"
   else	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib/MonetDB"
