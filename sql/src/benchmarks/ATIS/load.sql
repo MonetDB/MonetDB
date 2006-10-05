@@ -9796,3 +9796,4 @@ insert into transport values ('T','TAXI');
 insert into transport values ('R','RENTAL CAR');
 insert into transport values ('A','AIR TAXI OPERATION');
 commit;
+select * from query_cache() qc;
