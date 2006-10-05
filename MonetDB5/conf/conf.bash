@@ -500,22 +500,22 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	# but still needed for the rest:
 	if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
 		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
-		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}"
-		libpath="${WHAT_PREFIX}/${libdir}:${modpath}:${libpath}"
+		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
+		libpath="${WHAT_PREFIX}/${libdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
 		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 	fi
 	if [ "${os}" = "CYGWIN" ] ; then
 		# CYGWIN finds dlls using the PATH variable 
 		if [ "${what}" = "MONETDB" ] ; then
-			binpath="${WHAT_PREFIX}/${libdir}/bin:${binpath}"
+			binpath="${WHAT_PREFIX}/${libdir}/${pkgdir}/bin:${binpath}"
 		fi
 	fi
 	if [ "${os}" = "IRIX64" ] ; then
 		# IRIX64 requires this to find dependend modules
 		if [ "${what}" = "MONETDB" ] ; then
-			libpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${libpath}"
+			libpath="${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
 		  else
-			libpath="${MONETDB_PREFIX}/${libdir}/${pkgdir}:${libpath}"
+			libpath="${MONETDB_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
 		fi
 	fi
 	if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
@@ -669,7 +669,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/${libdir}/${pkgdir}5:${WHAT_PREFIX}/${libdir}/${pkgdir}5/lib:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
 		echo " MTEST_${what}5=${MTEST_WHAT}"
 		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
 		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
