@@ -1776,7 +1776,7 @@ return_statement:
 
 return_value:
       simple_scalar_exp
-   |  subquery	%prec UMINUS	/* single value */
+   |  select_stmt
    |  search_condition
    |  TABLE select_with_parens	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $2); }
