@@ -1244,29 +1244,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			char *mod = _strdup(s->op4.aggrval->aggr->mod);
-			char *aggrfunc = _strdup(s->op4.aggrval->aggr->imp);
-			char *c;
+			char *aggrfunc = s->op4.aggrval->aggr->imp;
 			int restype = s->op4.aggrval->aggr->res.type->localtype;
 			sql_subtype *tpe = tail_type(s->op1.stval);
 			int output_type_needed = 0;
 			
-			/* some aggr functions require bigger outputs types */
-			/* TODO: cut-off seems to fail sometimes */
-			if (tpe &&
-			    (s->op4.aggrval->aggr->res.type->localtype > 
-			    tpe->type->localtype || 
-			    (s->op4.aggrval->aggr->res.type->localtype == 
-			     tpe->type->localtype && 
-			     tpe->type->localtype == TYPE_lng)) ) {
-				/* Cut off the type information.
-			   	It should be handled by the type resolver
-			 	*/
-				c = strchr(aggrfunc, '_');
-				if (c) {
-					output_type_needed = 1;
-					*c = 0;
-				}
-			}
+			if (tpe && strcmp(aggrfunc, "sum") == 0) 
+				output_type_needed = 1;
 
 			@:SQLprelude@
 			if (s->flag) { 
@@ -1281,8 +1265,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int e = _dumpstmt(sql, mb, s->op3.stval);
 
 				q = newStmt(mb, mod, aggrfunc);
-				if (output_type_needed)
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_void,restype));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_any,restype));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, e);
@@ -1292,7 +1275,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarType(mb, getArg(q, 0), restype);
 				q = pushArgument(mb, q, l);
 			}
-			_DELETE(aggrfunc);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		}

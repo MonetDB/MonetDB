@@ -956,23 +956,37 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_aggr:{
+			int output_type_needed = 0;
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			size_t buflen = strlen(s->op4.aggrval->aggr->imp) + SMALLBUFSIZ;
+			char *aggrfunc = s->op4.aggrval->aggr->imp;
+			sql_subtype *tpe = tail_type(s->op1.stval);
+
 			buf = NEW_ARRAY(char, buflen + 1);
+
+			/* some aggr functions require bigger outputs types */
+			if (tpe && strcmp(aggrfunc,"sum") == 0) 
+				output_type_needed = 1;
 
 			if (s->flag) {
 				int l2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 
-				len += snprintf(buf + len, buflen - len, "var s%d := %s(s%d, s%d);\n", -s->nr, s->op4.aggrval->aggr->imp, l, l2);
+				len += snprintf(buf + len, buflen - len, "var s%d := %s(s%d, s%d);\n", -s->nr, aggrfunc, l, l2);
 				assert(len <= buflen);
 			} else if (s->op3.gval) {
 				int g = backend_dumpstmt_(s->op2.stval, nr, sql);
 				int e = backend_dumpstmt_(s->op3.stval, nr, sql);
 
-				len += snprintf(buf + len, buflen - len, "var s%d := {%s}(s%d, s%d, s%d);\n", -s->nr, s->op4.aggrval->aggr->imp, l, g, e);
+				if (!output_type_needed)
+					len += snprintf(buf + len, buflen - len, "var s%d := {%s}(s%d, s%d, s%d);\n", -s->nr, aggrfunc, l, g, e);
+				else
+					len += snprintf(buf + len, buflen - len, "var s%d := {%s_%s}(s%d, s%d, s%d);\n", -s->nr, aggrfunc, ATOMname(tpe->type->localtype), l, g, e);
 				assert(len <= buflen);
 			} else {
-				len += snprintf(buf + len, buflen - len, "var s%d := s%d.%s();\n", -s->nr, l, s->op4.aggrval->aggr->imp);
+				if (!output_type_needed)
+					len += snprintf(buf + len, buflen - len, "var s%d := s%d.%s();\n", -s->nr, l, aggrfunc);
+				else
+					len += snprintf(buf + len, buflen - len, "var s%d := s%d.%s_%s();\n", -s->nr, l, aggrfunc, ATOMname(tpe->type->localtype));
 				assert(len <= buflen);
 			}
 			dump(sql, buf, len, -s->nr);
