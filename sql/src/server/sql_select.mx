@@ -785,25 +785,31 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3)
 static stmt *
 sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 {
+	int nr_args = 0;
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->data.lval->h;
 	list *sl = create_stmt_list();
 	list *tl = list_create(NULL);
 	sql_subfunc *f = NULL;
+	sql_subtype *obj_type = NULL;
 	char *fname = qname_fname(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind ek = {type_value, card_column, FALSE};
 
-	for (; ops; ops = ops->next) {
+	for (; ops; ops = ops->next, nr_args++) {
 		stmt *op = sql_value_exp(sql, scp, ops->data.sym, grp, subset, fs, ek);
+		sql_subtype *tpe;
 
 		if (!op) {
 			list_destroy(sl);
 			return NULL;
 		}
 		list_append(sl, op);
-		list_append(tl, tail_type(op));
+		tpe = tail_type(op);
+		if (!nr_args)
+			obj_type = tpe;
+		list_append(tl, tpe);
 	}
 	if (sname) 
 		s = mvc_bind_schema(sql, sname);
@@ -811,35 +817,31 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	list_destroy(tl);
 	if (f) {
 		return stmt_Nop(stmt_list(sl), f);
-	} else {
-		if ((f = sql_bind_member(s, fname, tail_type(sl->h->data), list_length(sl))) != NULL) {
-			node *n, *m;
-			list *nsl = create_stmt_list();
+	} else if ((f = sql_bind_member(s, fname, obj_type, nr_args)) != NULL ||
+		   (f = sql_find_func(s, fname, nr_args)) != NULL) {
+		node *n, *m;
+		list *nsl = create_stmt_list();
 
-			n = sl->h;
-			list_append(nsl, stmt_dup(n->data));
-			m = f->func->ops->h;
-			for (n = n->next, m = m->next; n && m; n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				stmt *op = stmt_dup(n->data);
+		for (n = sl->h, m = f->func->ops->h; n && m; 
+				n = n->next, m = m->next) {
+			sql_arg *a = m->data;
+			stmt *op = stmt_dup(n->data);
 
-				op = check_types(sql, &a->type, op, type_equal);
-				if (!op) {
-					list_destroy(nsl);
-					nsl = NULL;
-					break;
-				}
-				list_append(nsl, op);
+			op = check_types(sql, &a->type, op, type_equal);
+			if (!op) {
+				list_destroy(nsl);
+				nsl = NULL;
+				break;
 			}
-			if (nsl) {
-				list_destroy(sl);
-				return stmt_Nop(stmt_list(nsl), f);
-			}
+			list_append(nsl, op);
 		}
-		list_destroy(sl);
-		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+		if (nsl) {
+			list_destroy(sl);
+			return stmt_Nop(stmt_list(nsl), f);
+		}
 	}
-	return NULL;
+	list_destroy(sl);
+	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
 static stmt *
@@ -886,13 +888,16 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 	} else {
 		int digits = t1->digits + t2->digits;
 
-		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL) {
+		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL ||
+		   ((f = sql_find_func(s, fname, 2)) != NULL && f->func->sql)) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
-			sql_arg *a = m->next->data;
+			sql_arg *a = m->data;
 
+			ls = check_types(sql, &a->type, ls, type_equal);
+			a = m->next->data;
 			rs = check_types(sql, &a->type, rs, type_equal);
-			if (rs)
+			if (ls && rs) 
 				return stmt_binop(ls, rs, f);
 		} else if (convert_types(sql, &ls, &rs, 1, type_equal) >= 0) {
 			/* try operators */
@@ -916,10 +921,8 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 	}
 	if (rs && ls)
 		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
-	if (ls)
-		stmt_destroy(ls);
-	if (rs)
-		stmt_destroy(rs);
+	cond_stmt_destroy(ls);
+	cond_stmt_destroy(rs);
 	return res;
 }
 
