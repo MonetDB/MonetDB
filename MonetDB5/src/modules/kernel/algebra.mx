@@ -2078,7 +2078,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	}
 	return throwMessage("algebra.select", "GDKerror");
 }
-@c
+
 algebra_export str ALGselectNotNil(int *result, int *bid);
 str
 ALGselectNotNil(int *result, int *bid)
@@ -2090,20 +2090,22 @@ ALGselectNotNil(int *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		return throwMessage("algebra.selectNotNil", "Cannot access descriptor");
 
-	low=high= ATOMnilptr(b->ttype);
-	if( BATcount_no_nil(b) != BATcount(b) )
+	if( BATcount_no_nil(b) != BATcount(b) ){
+		low=high= ATOMnilptr(b->ttype);
 		CMDselect_(&bn, b, low, high, &bound, &bound);
-	else
-		bn= BATrcopy(b);
-
-	BBPreleaseref(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
+		BBPreleaseref(b->batCacheid);
+		if (bn) {
+			if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+			*result = bn->batCacheid;
+			BBPkeepref(*result);
+			return MAL_SUCCEED;
+		}
+		return throwMessage("algebra.select", "GDKerror");
 	}
-	return throwMessage("algebra.select", "GDKerror");
+	/* just pass on the result */
+	*result = b->batCacheid;
+	BBPkeepref(*result);
+	return MAL_SUCCEED;
 }
 
 algebra_export str ALGselectHead(int *result, int *bid, ptr low, ptr high);
