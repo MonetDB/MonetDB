@@ -6103,7 +6103,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  var res := doLoopLiftedRPC(genType,\n"
                 "                             \"%s\", \"%s\", \"%s\",\n"
                 "                             iterc_total, %d,\n"
-                "                             ws, rpc_dsts,\n"
+                "                             wsid, rpc_dsts,\n"
                 "                             fun_vid%03u, fun_iter%03u,\n"
                 "                             fun_item%03u, fun_kind%03u,\n"
                 "                             int_values, dbl_values,\n"
