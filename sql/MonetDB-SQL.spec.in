@@ -164,7 +164,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/Mbeddedsql
 %{_libdir}/libembeddedsql.*
-%{_libdir}/MonetDB/lib_sql_server*
+%{_libdir}/MonetDB/lib/lib_sql_server*
 %{_libdir}/MonetDB/*.mil
 
 %files devel

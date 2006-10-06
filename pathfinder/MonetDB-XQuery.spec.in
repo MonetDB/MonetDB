@@ -91,7 +91,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/pf
-%{_libdir}/MonetDB/lib_*
+%{_libdir}/MonetDB/lib/lib_*
 %{_libdir}/MonetDB/*.mil
 %{prefix}/bin/Mbeddedxq
 %{_libdir}/libembeddedxq.*

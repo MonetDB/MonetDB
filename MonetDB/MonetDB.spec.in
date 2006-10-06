@@ -250,8 +250,8 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.*
 %{_libdir}/libmonet.*
 %{_libdir}/libembeddedmil.*
-%{_libdir}/%{name}/*.so* 
-%{_libdir}/%{name}/*.la* 
+%{_libdir}/%{name}/lib/*.so* 
+%{_libdir}/%{name}/lib/*.la* 
 %{_libdir}/%{name}/*.mil* 
 
 %{prefix}/share/%{name}/tools/* 
