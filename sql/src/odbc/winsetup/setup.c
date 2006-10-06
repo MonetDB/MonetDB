@@ -34,7 +34,6 @@
 #include "resource.h"
 
 static char *DriverName = "MonetDB ODBC Driver";
-static char *DataSourceName = "MonetDB";
 static HINSTANCE instance;
 
 #define strncasecmp(x,y,l) _strnicmp(x,y,l)
