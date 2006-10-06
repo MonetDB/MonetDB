@@ -1050,22 +1050,26 @@ opt_mvd (PFla_op_t *p)
             }
             else if (LL(p)->kind == la_attach && 
                      LL(p)->sem.attach.attname == L(p)->sem.doc_tbl.item) {
-                /* create base table and apply doc_tbl operator 
-                   on this table. Afterwards apply the cross product
-                   with the possibly huge iter relation. */
+                /* save iter relation */
+                PFla_op_t *iter_rel = LL(L(p));
+                
+                /* create base table and overwrite doc_tbl 
+                   node to update both roots and frag operators */
+                *(L(p)) = *(doc_tbl (lit_tbl (
+                                         attlist (L(p)->sem.doc_tbl.iter,
+                                                  L(p)->sem.doc_tbl.item),
+                                         tuple (lit_nat (1),
+                                                LL(p)->sem.attach.value)),
+                                     L(p)->sem.doc_tbl.iter,
+                                     L(p)->sem.doc_tbl.item,
+                                     L(p)->sem.doc_tbl.item_res));
+
+                /* Apply the cross product with the possibly
+                   huge iter relation. */
                 *p = *(cross_can (
-                          LL(L(p)),
+                          iter_rel,
                           project (
-                              roots (
-                                  doc_tbl (
-                                      lit_tbl (
-                                          attlist (L(p)->sem.doc_tbl.iter,
-                                                   L(p)->sem.doc_tbl.item),
-                                          tuple (lit_nat (1),
-                                                 LL(p)->sem.attach.value)),
-                                      L(p)->sem.doc_tbl.iter,
-                                      L(p)->sem.doc_tbl.item,
-                                      L(p)->sem.doc_tbl.item_res)),
+                              roots (L(p)),
                               proj (L(p)->sem.doc_tbl.item_res,
                                     L(p)->sem.doc_tbl.item_res))));
                 modified = true;
