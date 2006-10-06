@@ -121,8 +121,12 @@ str MTIME@1bat_@3(int *ret, int *l, int *r)
 	prepareOperand2(left,l,right,r,"batcalc.@2");
 	@:chkSize(left,right,CMDcompare@1)@
 	prepareResult2(bn,left,right,TYPE_bit,"batcalc.@2");
-	if( BUNsize(left) != sizeof(@1) || BUNsize(right)!= sizeof(@1) )
+	if( BUNsize(left) != sizeof(@1) || BUNsize(right)!= sizeof(@1) ){
+		BBPreleaseref(right->batCacheid);
+		BBPreleaseref(left->batCacheid);
+		BBPreleaseref(bn->batCacheid);
 		return throwMessage("batmtime.@3","Unexpected input type");
+	}
 
 	o = (@1*)BUNtail(left,BUNfirst(left));
 	p = (@1*)BUNtail(right,BUNfirst(right));

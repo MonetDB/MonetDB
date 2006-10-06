@@ -28,12 +28,10 @@ The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
 The common set of math functions is supported.
 @= scienceFcn
-	command @1(x:bat[:any_1,:dbl])  :bat[:any_1,:dbl] 
-	address CMDscience_@1;
 	command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
 	address CMDsciencevoid_@1;
 @= scienceFcnBinary
-	command @1(x:bat[:any_1,:dbl],y:@2):bat[:any_1,:dbl] 
+	command @1(x:bat[:void,:dbl],y:@2):bat[:void,:dbl] 
 	address CMDscience_@1;
 @-
 @mal
@@ -100,55 +98,30 @@ BATMATHresult(BAT *b, int tpe)
 
 @-
 @= scienceFcnImpl
-batmath_export str CMDscience_@1(int *ret, int *bid);
-str CMDscience_@1(int *ret, int *bid){
+batmath_export str CMDsciencevoid_@1(int *ret, int *bid);
+str CMDsciencevoid_@1(int *ret, int *bid){
 	BAT *b,*bn;
-	int xx;
-	BUN p,q;
+	@2 *o,*p,*q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
+	if( BUNsize(b) != sizeof(@2)){
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("batcalc.@1","Unexpected type");
 	}
 
 	bn= BATMATHresult(b, TYPE_dbl);
 	@:tstBat(CMDscience_@1)@
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		dbl t = *(dbl*) BUNtail(b,p);
-		dbl x= t== dbl_nil? dbl_nil:@1(t);
-		bunfastins(bn, h, &x);
-	}
-bunins_failed:
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-/* You don;t have to materialize the oids.
-This is taken care upon access */
-batmath_export str CMDsciencevoid_@1(int *ret, int *bid);
-str CMDsciencevoid_@1(int *ret, int *bid){
-	BAT *b,*bn;
-	int xx;
-	BUN p,q;
-	oid o;
+	o = (@2*) BUNtail(bn, BUNfirst(bn));
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("batcalc.@1", "Cannot access descriptor");
-	}
+	p = (@2*) BUNtail(b, BUNfirst(b));
+	q = (@2*) BUNtail(b, BUNlast(b));
 
-	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
-	@:tstBat(CMDsciencevoid_@1)@
-	o= b->hseqbase;
-
-	BATloopFast(b, p, q, xx) {
-		dbl t = *(dbl*) BUNtail(b,p);
-		dbl x= t== dbl_nil? dbl_nil:@1(t);
-		bunfastins(bn, &o, &x);
-		o++;
+	while(p<q){
+		*o++ = *p== dbl_nil? dbl_nil: @1(*p);
+		p++;
 	}
-bunins_failed:
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -158,23 +131,28 @@ bunins_failed:
 batmath_export str CMDscience_@1(int *ret, int *bid, @2 *d);
 str CMDscience_@1(int *ret, int *bid, @2 *d){
 	BAT *b,*bn;
-	int xx;
-	BUN p,q;
+	@2 *o,*p,*q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		return throwMessage("batcalc.@1", "Cannot access descriptor");
 	}
+	if( BUNsize(b) != sizeof(@2)){
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("batcalc.@1","Unexpected type");
+	}
 
 	bn= BATMATHresult(b, TYPE_dbl);
 	@:tstBat(CMDscience_@1)@
+	o = (@2*) BUNtail(bn, BUNfirst(bn));
 
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		dbl t = *(dbl*) BUNtail(b,p);
-		dbl x= t== dbl_nil? dbl_nil:@1(t, *d);
-		bunfastins(bn, h, &x);
+	p = (@2*) BUNtail(b, BUNfirst(b));
+	q = (@2*) BUNtail(b, BUNlast(b));
+
+	while(p<q){
+		*o++ = *p== dbl_nil? dbl_nil: @1(*p,*d);
+		p++;
 	}
-bunins_failed:
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
@@ -182,22 +160,22 @@ bunins_failed:
 	return MAL_SUCCEED;
 }
 @c
-@:scienceFcnImpl(asin)@
-@:scienceFcnImpl(acos)@
-@:scienceFcnImpl(atan)@
-@:scienceFcnImpl(cos)@
-@:scienceFcnImpl(sin)@
-@:scienceFcnImpl(tan)@
-@:scienceFcnImpl(cosh)@
-@:scienceFcnImpl(sinh)@
-@:scienceFcnImpl(tanh)@
-@:scienceFcnImpl(exp)@
-@:scienceFcnImpl(log)@
-@:scienceFcnImpl(log10)@
-@:scienceFcnImpl(sqrt)@
-@:scienceFcnImpl(ceil)@
-@:scienceFcnImpl(fabs)@
-@:scienceFcnImpl(floor)@
+@:scienceFcnImpl(asin,dbl)@
+@:scienceFcnImpl(acos,dbl)@
+@:scienceFcnImpl(atan,dbl)@
+@:scienceFcnImpl(cos,dbl)@
+@:scienceFcnImpl(sin,dbl)@
+@:scienceFcnImpl(tan,dbl)@
+@:scienceFcnImpl(cosh,dbl)@
+@:scienceFcnImpl(sinh,dbl)@
+@:scienceFcnImpl(tanh,dbl)@
+@:scienceFcnImpl(exp,dbl)@
+@:scienceFcnImpl(log,dbl)@
+@:scienceFcnImpl(log10,dbl)@
+@:scienceFcnImpl(sqrt,dbl)@
+@:scienceFcnImpl(ceil,dbl)@
+@:scienceFcnImpl(fabs,dbl)@
+@:scienceFcnImpl(floor,dbl)@
 @-
 	round is not binary...
 	@:scienceBinaryImpl(round,int)@
