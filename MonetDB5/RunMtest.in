@@ -38,10 +38,6 @@ fi
 
 # where compiled modules are to be found
 MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${srcdir}/src/compiler:${builddir}/src/mil/.libs:${builddir}/src/mil:${srcdir}/src/mil:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${srcdir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${srcdir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${srcdir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${srcdir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal:${srcdir}/src/modules/mal:${builddir}/src/modules/mil/.libs:${builddir}/src/modules/mil:${srcdir}/src/modules/mil:${builddir}/src/modules/milprocs/.libs:${builddir}/src/modules/milprocs:${srcdir}/src/modules/milprocs"
-if [ -d "${MONETDB_PREFIX}/lib64" ]
-  then	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib64/MonetDB"
-  else	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib/MonetDB"
-fi
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
