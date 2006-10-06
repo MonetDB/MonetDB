@@ -791,7 +791,17 @@ PROC ws_create() : BAT[void,bat]
 
 PROC ws_id(BAT[void,bat] ws) : lng
 {
-    return or(<<(and(lng(newoid(1)),2147483647LL), 32), lng(ws));
+    # By stroing the wsid in the ws BAT's name, we make ws_id(ws) idempotent,
+    # and hence callable at any point in time during a query/transaction, also repeatedly.
+    var ws_bat_name := bbpname(ws);
+    var wsid;
+    if (startsWith(ws_bat_name, "tmp_") or not(endsWith(ws_bat_name, "LL"))) {
+        wsid := or(<<(and(lng(newoid(1)),2147483647LL), 32), lng(ws));
+        rename(ws, str(wsid)+"LL");
+    } else {
+        wsid := lng(ws_bat_name);
+    }
+    return wsid;
 }
 
 PROC ws_bat(lng wsid) : BAT[void,bat] 
