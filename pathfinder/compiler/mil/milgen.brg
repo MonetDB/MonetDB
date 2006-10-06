@@ -2857,11 +2857,13 @@ reduce (PFpa_op_t * p, int goalnt)
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
             {
                 bool att_needed = true;
-                mvar_t *v = new_var (p->refctr);
-
+                mvar_t *v = NULL;
+               
                 /* cast as qname requires additional document access */
                 if (L(p)->schema.items[i].name == p->sem.cast.att &&
                     p->sem.cast.ty == aat_qname) {
+
+                    v = new_var (p->refctr);
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if ((t & L(p)->schema.items[i].type) &&
@@ -2933,6 +2935,8 @@ reduce (PFpa_op_t * p, int goalnt)
                 else if (L(p)->schema.items[i].name == p->sem.cast.att) {
 
                     unsigned int   parts = 0;
+
+                    v = new_var (p->refctr);
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & L(p)->schema.items[i].type) {
@@ -3467,62 +3471,63 @@ reduce (PFpa_op_t * p, int goalnt)
         case 103:
         {
             /* copy the iter BAT */
-             mvar_t *iter = env_mvar (L(R(p))->env, p->sem.ii.iter, aat_nat);
-             env_add (p->env, p->sem.ii.iter, aat_nat, iter);
-             pin (iter, p->refctr);
-             PFmil_t *pre, *pfrag, *attr, *afrag;
-             mvar_t *tmp;
+            mvar_t *iter = env_mvar (L(R(p))->env, p->sem.ii.iter, aat_nat);
+            env_add (p->env, p->sem.ii.iter, aat_nat, iter);
+            pin (iter, p->refctr);
+            PFmil_t *pre, *pfrag, *attr, *afrag;
+            mvar_t *tmp;
 
-             /* temporary variable */
-             mvar_t *v = new_var (1);
-             /* result BATs */
-             mvar_t *res_pre = new_var (p->refctr);
-             mvar_t *res_frag = new_var (p->refctr);
+            /* temporary variable */
+            mvar_t *v = new_var (1);
+            /* result BATs */
+            mvar_t *res_pre = new_var (p->refctr);
+            mvar_t *res_frag = new_var (p->refctr);
 
-             env_add (p->env, p->sem.ii.item, aat_pre, res_pre);
-             env_add (p->env, p->sem.ii.item, aat_pfrag, res_frag);
+            env_add (p->env, p->sem.ii.item, aat_pre, res_pre);
+            env_add (p->env, p->sem.ii.item, aat_pfrag, res_frag);
 
-             /* check occurrence of attributes and other nodes
-                and react accordingly */ 
-             if ((tmp = env_mvar_unsafe (R(R(p))->env,
-                                         p->sem.ii.item,
-                                         aat_pre)))
-             {
-                  pre = var (tmp->name);
-                  pfrag = VAR (R(R(p))->env, p->sem.ii.item, aat_pfrag);
-             } else {
-                  pre = seqbase (new (type (m_void), type (m_oid)),
+            /* check occurrence of attributes and other nodes
+               and react accordingly */ 
+            if ((tmp = env_mvar_unsafe (R(R(p))->env,
+                                        p->sem.ii.item,
+                                        aat_pre)))
+            {
+                 pre = var (tmp->name);
+                 pfrag = VAR (R(R(p))->env, p->sem.ii.item, aat_pfrag);
+            } else {
+                 pre = seqbase (new (type (m_void), type (m_oid)),
+                                lit_oid (0));
+                 pfrag = pre;
+            }
+               
+            if ((tmp = env_mvar_unsafe (R(R(p))->env,
+                                        p->sem.ii.item,
+                                        aat_attr)))
+            {
+                 attr = var (tmp->name);
+                 afrag = VAR (R(R(p))->env, p->sem.ii.item, aat_afrag);
+            } else {
+                 attr = seqbase (new (type (m_void), type (m_oid)),
                                  lit_oid (0));
-                  pfrag = pre;
-             }
-                
-             if ((tmp = env_mvar_unsafe (R(R(p))->env,
-                                         p->sem.ii.item,
-                                         aat_attr)))
-             {
-                  attr = var (tmp->name);
-                  afrag = VAR (R(R(p))->env, p->sem.ii.item, aat_afrag);
-             } else {
-                  attr = seqbase (new (type (m_void), type (m_oid)),
-                                  lit_oid (0));
-                  afrag = attr;
-             }
+                 afrag = attr;
+            }
 
-             execute (
-                  assgn (var (v->name),
-                         element (VAR (L(R(p))->env, p->sem.ii.iter, aat_nat),
-                                  VAR (L(R(p))->env, p->sem.ii.item, aat_qname),
-                                  VAR (R(R(p))->env, p->sem.ii.iter, aat_nat),
-                                  pre, pfrag, attr, afrag,
-                                  var (PF_MIL_VAR_WS))),
-                  assgn (var (PF_MIL_VAR_WS),
-                         fetch (var (v->name), lit_int (0))),
-                  assgn (var (res_pre->name), 
-                         fetch (var (v->name), lit_int (1))),
-                  assgn (var (res_frag->name),
-                         fetch (var (v->name), lit_int (2)))
-                  );
+            execute (
+                 assgn (var (v->name),
+                        element (VAR (L(R(p))->env, p->sem.ii.iter, aat_nat),
+                                 VAR (L(R(p))->env, p->sem.ii.item, aat_qname),
+                                 VAR (R(R(p))->env, p->sem.ii.iter, aat_nat),
+                                 pre, pfrag, attr, afrag,
+                                 var (PF_MIL_VAR_WS))),
+                 assgn (var (PF_MIL_VAR_WS),
+                        fetch (var (v->name), lit_int (0))),
+                 assgn (var (res_pre->name), 
+                        fetch (var (v->name), lit_int (1))),
+                 assgn (var (res_frag->name),
+                        fetch (var (v->name), lit_int (2)))
+                 );
 
+            unpin (v, 1);
         } break;
 
         /* FragRel: attribute (Rel) */
@@ -3546,6 +3551,8 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (attr->name), fetch (var (v->name), lit_int (1))),
                 assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
                 );
+
+            unpin (v, 1);
 
             /* copy all the existing variables of the qname relation */
             for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
