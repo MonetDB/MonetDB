@@ -502,7 +502,9 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
 		modpath="${WHAT_PREFIX}/${libdir}/${pkgdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib"
 		libpath="${WHAT_PREFIX}/${libdir}:${WHAT_PREFIX}/${libdir}/${pkgdir}/lib:${libpath}"
-		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+		if [ "${what}" != "MONET5" ] ; then
+			mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
+		fi
 	fi
 	if [ "${os}" = "CYGWIN" ] ; then
 		# CYGWIN finds dlls using the PATH variable 
