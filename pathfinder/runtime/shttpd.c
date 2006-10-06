@@ -57,9 +57,11 @@
 #define	AUTH_REALM	"mydomain.com"		/* Default auth realm */
 
 /* Darwin prior to 7.0 and Win32 do not have socklen_t */
+#ifndef __MINGW32__
 #ifdef NO_SOCKLEN_T
 typedef int socklen_t;
 #endif
+#endif  /* __MINGW32__ */
 
 #define	NELEMS(ar)	(sizeof(ar) / sizeof(ar[0]))
 
