@@ -1,5 +1,7 @@
 load
+load_xrpc
 sigs
+sigs_xrpc
 procs
 string_join1
 string_join2

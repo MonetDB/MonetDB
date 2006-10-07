@@ -1,0 +1,4 @@
+printf("module '%s'\n","xrpc");
+module(xrpc);
+sigs("xrpc");
+drop("xrpc");

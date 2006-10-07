@@ -12,7 +12,6 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 mods.insert(nil,"pf_standoff");
-mods.insert(nil,"xrpc");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -142,16 +141,6 @@ module 'pf_standoff'
 [ "select_wide(BAT[oid,oid], BAT[oid,oid], oid, BAT[void,BAT], int, BAT[void,oid], chr) : BAT[void,BAT]"	  ]
 [ "select_wide_join_sort(BAT[oid,int], BAT[oid,int], BAT[oid,int], BAT[oid,int]) : BAT[void,oid]"	  ]
 [ "select_wide_join_sort(BAT[oid,lng], BAT[oid,lng], BAT[oid,lng], BAT[oid,lng]) : BAT[void,oid]"	  ]
-module 'xrpc'
-
-
-
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# signature																						  # name
-# str																							  # type
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "http_post(str, str, str, str, str, lng, int, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[str,BAT]"	  ]
-[ "httpd_start(int, str) : void"																				  ]
 
 quit();
 

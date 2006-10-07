@@ -2,7 +2,6 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 mods.insert(nil,"pf_standoff");
-mods.insert(nil,"xrpc");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
