@@ -64,6 +64,7 @@ include inet;
 # the hardwired multiplex extensions
 include batmath;
 include batcalc;
+include batconvert;
 include batmtime;
 include batstr;
 include batcolor;
