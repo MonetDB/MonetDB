@@ -795,10 +795,9 @@ PROC ws_create() : BAT[void,bat]
     return ws;
 }
 
+# retrieve wsid from name of BAT ws 
 PROC ws_id(BAT[void,bat] ws) : lng
 {
-    # By stroing the wsid in the ws BAT's name, we make ws_id(ws) idempotent,
-    # and hence callable at any point in time during a query/transaction, also repeatedly.
     var ws_bat_name := bbpname(ws);
     var wsid := lng_nil;
     if (startsWith(ws_bat_name, "tmp_") or not(endsWith(ws_bat_name, "LL"))) {
@@ -809,6 +808,9 @@ PROC ws_id(BAT[void,bat] ws) : lng
     return wsid;
 }
 
+# retrieve BAT ws that belongs to wsid;
+# only used in ws_precommit() to prepare the result of _ws_pinnedcoll() to
+# be fed into _ws_coll_isolate()
 PROC ws_bat(lng wsid) : BAT[void,bat] 
 {
     return bat(and(wsid, 2147483647LL));
@@ -850,10 +852,10 @@ PROC ws_free(lng wsid) : void
     collection_cleanup(commitBAT);
 }
 
-PROC ws_destroy(lng wsid) : void
+PROC ws_destroy(BAT[void,bat] ws) : void
 {
-    ws_bat(wsid).fetch(CONT_LOCKED)@batloop() lock_unset($t);
-    ws_free(wsid);
+    ws.fetch(CONT_LOCKED)@batloop() lock_unset($t);
+    ws_free(ws_id(ws));
 }
 
 # add a collection to the working set
@@ -986,7 +988,7 @@ PROC _ws_opencoll(lng wsid,
 }
 
 
-PROC ws_opencoll(lng wsid,
+PROC ws_opencoll(BAT[void,BAT] ws,
                  BAT[str,bat] docBAT, 
                  str name, oid coll_oid) : oid
 {
@@ -994,13 +996,13 @@ PROC ws_opencoll(lng wsid,
 
     if (coll_oid != TEMP_DOC) {
          lock_set(pf_short);
-         err := CATCH(coll_lock := reverse(runtime := _ws_opencoll(wsid, coll_oid)).fetch(RT_LOCK_FREELIST));
+         err := CATCH(coll_lock := reverse(runtime := _ws_opencoll(ws_id(ws), coll_oid)).fetch(RT_LOCK_FREELIST));
          lock_unset(pf_short);
          if (not(isnil(err))) ERROR(err);
 
          lock_set(coll_lock); # never lock a collection inside the short lock
     }
-    err := CATCH(cont := __ws_opencoll(ws_bat(wsid), runtime, docBAT, name, coll_oid));
+    err := CATCH(cont := __ws_opencoll(ws, runtime, docBAT, name, coll_oid));
     if (coll_oid != TEMP_DOC) {
         lock_unset(coll_lock); # release lock acquired for updatable bats
     }
@@ -1289,13 +1291,13 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
 }
 
 
-PROC ws_precommit(lng wsid,
+PROC ws_precommit(BAT[void,BAT] ws,
                   oid cont,  
                   BAT[void,oid] ancestor_pre, 
                   BAT[void,oid] modified_pre,
                   BAT[void,oid] modified_attr) : void 
 {
-    var ws := ws_bat(wsid);
+    var wsid := ws_id(ws);
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var pre_nid := ws.fetch(PRE_NID).fetch(cont);
@@ -1348,18 +1350,17 @@ PROC ws_precommit(lng wsid,
 
 
 # proc to call from the update code: acquire locks and add new nodes and remove deleted ones
-PROC ws_postcommit(lng wsid,
+PROC ws_postcommit(BAT[void,BAT] ws,
                    oid cont,  
                    BAT[oid,oid] ins, 
                    BAT[oid,oid] del,
                    BAT[void,oid] delpages) : void 
 {
-    var ws := ws_bat(wsid);
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
 
     # maintain the index while holding the collection lock
-    var err := CATCH(__runtime_maintain(wsid, colname, runtime, ins, del));
+    var err := CATCH(__runtime_maintain(ws_id(ws), colname, runtime, ins, del));
     if (not(isnil(err))) ERROR(err);
 
     coll_lock_unset(ws, cont); # release X-access to the masters (after the commit phase)
@@ -1367,10 +1368,10 @@ PROC ws_postcommit(lng wsid,
 
 
 # append a new page. when the page is at the end; we 
-PROC ws_newpage(lng wsid,
+PROC ws_newpage(BAT[void,BAT] ws,
                 oid cont) : oid 
 {
-    var ws := ws_bat(wsid);
+    var wsid := ws_id(ws);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
@@ -1445,11 +1446,11 @@ PROC ws_newpage(lng wsid,
 } 
 
 # return free NID values in the head
-PROC ws_newnids(lng wsid,
+PROC ws_newnids(BAT[void, BAT] ws,
                 oid cont,
                 int cnt) : BAT[oid,void]
 {
-    var ws := ws_bat(wsid);
+    var wsid := ws_id(ws);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
@@ -1582,11 +1583,11 @@ PROC _ws_opendoc(lng wsid,
 }
 
 # fn:doc() support, optimized for loop-lifted execution (e.g. quickly open thousands of documents from a few collections)
-PROC ws_opendoc(lng wsid,
+PROC ws_opendoc(BAT[void,BAT] ws,
                 BAT[void,str] idx_names) : BAT[oid,int]
 {
     var idx_filenames := copy(idx_names := idx_names.tmark(0@0)).access(BAT_WRITE);
-    var ws := ws_bat(wsid);
+    var wsid := ws_id(ws);
 
     # create filenames from URIs (str_nil if not a filename-URI)
     { var selidx_isurl  := [search](idx_names, "://").ord_select(0,int_nil);
@@ -1612,7 +1613,7 @@ PROC ws_opendoc(lng wsid,
     var coll_colname := reverse(idx_coll.select(oid_nil,oid_nil).tdiff(ws.fetch(CONT_COLL))).kunique().leftfetchjoin(idx_colname);
     coll_colname@batloop() {
         var docBAT := [bat]([+](str(int($h)), ws_dsk).reverse().mirror()); # get master bats
-        ws_opencoll(wsid, docBAT, $t, $h); # collections are loaded one-by-one
+        ws_opencoll(ws, docBAT, $t, $h); # collections are loaded one-by-one
     }
 
     # all still unknown documents (if any) are shredded one-by-one into separate temporary collections
@@ -1630,7 +1631,7 @@ PROC ws_opendoc(lng wsid,
             var location := bat(void,str).append($t).seqbase(0@0).access(BAT_READ);
             var docBAT   := bat(str,bat); 
             var coll_oid := shred_into_docBAT(docBAT, location, name, colname, oid_nil, empty_runtime, doCommit, lng(0), ts, stream_nil, wsid);
-            var cont     := ws_opencoll(wsid, docBAT, colname, coll_oid);
+            var cont     := ws_opencoll(ws, docBAT, colname, coll_oid);
             if (doCommit) commitBAT.append([bbpname](docBAT).tmark(0@0));
             var idx_repl := selidx_names.uselect($t);
             idx_colname.replace(idx_repl.project(colname));
@@ -1961,7 +1962,7 @@ shredding (and not the WAL). We cannot use both mechanisms and still have an ato
 TODO: integrate do_add_doc and do_deldoc() in s single primitive processes a list
       of fn:add_doc() and fn:del_doc() calls (Sjoerd?).
 @mil
-PROC play_doc_tape(lng wsid,
+PROC play_doc_tape(BAT[void,BAT] ws,
                     BAT[void,oid] item, 
                     BAT[void,int] kind, 
                     BAT[void,lng] int_values, 
@@ -1977,7 +1978,7 @@ PROC play_doc_tape(lng wsid,
     shred_doc_base(stream_nil, add_doc.leftfetchjoin(locations), 
                                add_doc.leftfetchjoin(names), 
                                add_doc.leftfetchjoin(colnames), 
-                               add_doc.leftfetchjoin(percentages), wsid);
+                               add_doc.leftfetchjoin(percentages), ws_id(ws));
 }
 
 @- MIL Document Management Interface

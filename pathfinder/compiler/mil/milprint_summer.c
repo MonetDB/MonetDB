@@ -6103,7 +6103,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  var res := doLoopLiftedRPC(genType,\n"
                 "                             \"%s\", \"%s\", \"%s\",\n"
                 "                             iterc_total, %d,\n"
-                "                             wsid, rpc_dsts,\n"
+                "                             ws, rpc_dsts,\n"
                 "                             fun_vid%03u, fun_iter%03u,\n"
                 "                             fun_item%03u, fun_kind%03u,\n"
                 "                             int_values, dbl_values,\n"
@@ -6166,7 +6166,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
                 "  var t := usec();\n"
-                "  var r := ws_opendoc(wsid, item%s.materialize(ipik));\n"
+                "  var r := ws_opendoc(ws, item%s.materialize(ipik));\n"
                 "  kind  := r.tmark(0@0).set_kind(ELEM);\n"
                 "  item  := r.hmark(0@0);\n"
                 "  time_shred :+= usec() - t;\n"
@@ -7638,7 +7638,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
                 "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
                 "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
-		"    ws_opendoc(wsid, docs_to_load);\n"
+		"    ws_opendoc(ws, docs_to_load);\n"
 		"    docs_to_load := nil;\n"
 		"    loaded_docs := nil;\n"
 		"    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
@@ -10534,7 +10534,6 @@ const char* PFvarMIL(void) {
         "\n"
         /* Decleration of 'ws' has been moved from PFstartMIL to here to
          * easy debugging. */
-        "var wsid := lng_nil;\n"
         "var ws := int_nil;\n"
         "# environment that represents start of any query\n"
         "var v_iter000;\n"
@@ -10554,7 +10553,7 @@ const char* PFstartMIL(void) {
         "time_exec := usec();\n"
         "\n"
         "var err := CATCH({\n"
-        "  wsid := ws_id(ws := ws_create());\n"
+        "  ws := ws_create();\n"
         "\n"
         "  # get full picture on var_usage (and sort it)\n"
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
@@ -10573,7 +10572,7 @@ const char* PFstartMIL(void) {
 
 const char* PFdocbatMIL(void) {
     /* NjN why isn't this moved to the pathfinder.mx file */
-    return  " ws_opencoll(wsid, bat(shredBAT), \"\", TEMP_DOC);\n";
+    return  " ws_opencoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
@@ -10597,16 +10596,16 @@ static const char* _PFstopMIL(int statement_type) {
         break;
     case 1:
         /* update statement */
-        strcat(buf, "  play_update_tape(wsid, item, kind, int_values, str_values);\n");
+        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
         break;
     case 2:
         /* doc-mgmt statement */
-        strcat(buf, "  play_doc_tape(wsid, item, kind, int_values, str_values);\n");
+        strcat(buf, "  play_doc_tape(ws, item, kind, int_values, str_values);\n");
         break;
     }
     strcat(buf,
            "});\n"
-           "ws_destroy(wsid);\n"
+           "ws_destroy(ws);\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := usec() - time_print;\n"
            "if (genType.startsWith(\"timing\"))\n"

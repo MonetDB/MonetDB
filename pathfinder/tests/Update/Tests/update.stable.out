@@ -19,8 +19,8 @@ var docname := "testdoc.xml";
 var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);
 var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);
 var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append("");
-var ws := ws_create(); var wsid := ws_id(ws);
-var r := ws_opendoc(wsid, bat(void,str,1).append(docname));
+var ws := ws_create();
+var r := ws_opendoc(ws, bat(void,str,1).append(docname));
 var item := r.hmark(0@0);
 var kind := r.tmark(0@0).set_kind(ELEM);
 var iter := new(void,oid).seqbase(0@0).append(1@0);
@@ -10127,7 +10127,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="9998" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="9998">element content 9998</element>
 <element author="Sjoerd Mullender" title="test element" attr="9999" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="9999">element content 9999</element>
 </document></XQueryResult>
-ws_destroy(wsid);
+ws_destroy(ws);
 ;
 printf("\nDone..\n");
 

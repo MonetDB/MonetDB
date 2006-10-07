@@ -1834,17 +1834,17 @@ PROC tj_url2Collection(str doc, str url, str selTagList) : void
 
 PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
 {
-	var ws := ws_create(); var wsid := ws_id(ws);
+	var ws := ws_create();
 	if (not(bat("doc_name").reverse().exist(doc))) {
 		shred_doc(url,doc);
 	}
-	ws_opendoc(wsid, bat(void,str,1).append(doc));
+	ws_opendoc(ws, bat(void,str,1).append(doc));
         
 	bat("tj_globalTerms").access(BAT_WRITE);
 	bat("tj_globalTags").access(BAT_WRITE);
         
 	tj_add2collection(tj_collection(collName),ws,doc,selTagList);
-	ws_destroy(wsid);
+	ws_destroy(ws);
 	# var height1 := bat("doc_height").fetch(bat("doc_name").reverse().find(doc));
 	var height1 := 999; # REMOVE
         
@@ -1977,12 +1977,16 @@ PROC tijah2pf(BAT[oid,dbl] pre_score) : BAT :=
 
 # align_frag assumes the following variable to be global to its scope:
 # frag, kind, ipik, ws
+# StM: 
+# Is this a dead PROC? 
+# At least I could not find any place where it is called or referred to.
+# If so, it should be removed from the code base!
 PROC align_frag() : void :=
 {
 	var needed_docs := bat("tj_" + collName + "_doc_name").semijoin(frag.tunique());
 	var loaded_docs := ws.fetch(DOC_LOADED).reverse();
 	var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
-	ws_opendoc(wsid, docs_to_load);
+	ws_opendoc(ws, docs_to_load);
 	var fid_pffid := needed_docs.join(ws.fetch(DOC_LOADED).reverse());
 	frag := frag.join(fid_pffid).sort().tmark(0@0);
 	kind := set_kind(frag, ELEM);

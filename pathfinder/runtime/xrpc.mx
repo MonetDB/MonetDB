@@ -109,7 +109,7 @@ PROC rpc_client(
         str rpc_method,
         lng iterc,
         int arity,
-        lng wsid,
+        BAT[void, BAT] ws,
         BAT[void, oid] fun_vid,
         BAT[void, oid] fun_iter,
         BAT[void, oid] fun_item,
@@ -119,7 +119,6 @@ PROC rpc_client(
         BAT[void, dbl] dec_values,
         BAT[void, str] str_values) : oid {
 
-    var ws := ws_bat(wsid);
     var rpcres := http_post(options, dst, rpc_module, rpc_uri, rpc_method,
                             iterc, arity, ws, 
                             fun_vid,    fun_iter,   fun_item,   fun_kind,
@@ -129,7 +128,7 @@ PROC rpc_client(
     if (options.search("rpctime") >= 0) {
         printf("\nMIL_Client_DeSerialisation_Start: %lld msec\n", time_milClntDeSeriaStart);
     }
-    return ws_opencoll(wsid, rpcres, local_name, TEMP_DOC);
+    return ws_opencoll(ws, rpcres, local_name, TEMP_DOC);
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\
@@ -260,7 +259,7 @@ PROC doLoopLiftedRPC(
         str rpc_method,
         lng iterc_total,
         int arity,
-        lng wsid,
+        BAT[void, BAT] ws,
         BAT[oid, str] rpc_dsts,
         BAT[void, oid] fun_vid,
         BAT[void, oid] fun_iter,
@@ -273,7 +272,6 @@ PROC doLoopLiftedRPC(
 {
     var mylock := lock_create();
 
-    var ws := ws_bat(wsid);
     var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);
     var steps := rpc_unq_dsts.count();
     var iterc := iterc_total / steps; # we assume the same #iterations to each dst
@@ -306,7 +304,7 @@ PROC doLoopLiftedRPC(
         {
             rpc_oid := rpc_client(local_name, options, $t,
                             rpc_module, rpc_uri, rpc_method, 
-                            iterc, arity, wsid,
+                            iterc, arity, ws,
                             fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst, 
                             int_values, dbl_values, dec_values, str_values);
         });
