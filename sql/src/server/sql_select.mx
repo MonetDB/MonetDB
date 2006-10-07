@@ -129,6 +129,7 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 	return tv;
 }
 
+
 static tvar *
 table_ref(mvc *sql, scope *scp, symbol *tableref)
 {
@@ -139,6 +140,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 	   (ie tableref->data.lval->h->next->data.sym */
 
 	if (tableref->token == SQL_NAME) {
+		stmt *temp_table = NULL;
 		char *sname = qname_schema(tableref->data.lval->h->data.lval);
 		sql_schema *s = NULL;
 		tname = qname_table(tableref->data.lval->h->data.lval);
@@ -156,9 +158,9 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 			t = mvc_bind_table(sql, s, tname);
 		}
 		if (!t && !sname) {
-			stmt *st;
-			if ((st = stack_find_var(sql, tname)) != NULL) {
-				sql_subtype *tpe = tail_type(st);
+			sql_subtype *tpe;
+			if ((tpe = stack_find_type(sql, tname)) != NULL) {
+				temp_table = stack_find_var(sql, tname);
 				t = tpe->comp_type;
 			}
 		}
@@ -172,7 +174,11 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
-		return scope_add_table_columns(sql, scp, t, tname, RDONLY);
+		if (temp_table) {
+			return scope_add_temp_table(scp, t, temp_table, tname); 
+		} else {
+			return scope_add_table_columns(sql, scp, t, tname, RDONLY);
+		}
 	} else if (tableref->token == SQL_TABLE) {
 		return sql_table_func(sql, scp, tableref);
 	} else if (tableref->token == SQL_SELECT) {

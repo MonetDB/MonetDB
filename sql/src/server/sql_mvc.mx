@@ -56,6 +56,7 @@ typedef struct sql_var {
 	struct stmt *s;
 	char *name;
 	ValRecord value;
+	sql_subtype type;
 } sql_var;
 
 #define MAXSTATS 8
@@ -170,9 +171,11 @@ extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, ex
 extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
 
 /* variable management */
-extern void stack_push_var(mvc *sql, char *name, struct stmt *var);
+extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
 extern void stack_push_frame(mvc *sql, char *name);
 extern void stack_pop_frame(mvc *sql);
+extern void stack_pop_until(mvc *sql, int top);
+extern sql_subtype *stack_find_type(mvc *sql, char *name);
 extern struct stmt *stack_find_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
@@ -577,7 +580,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 
 	m->params = NULL;
 	/* reset topvars to the set of global variables */
-	m->topvars = globalvars;
+	stack_pop_until(m, globalvars);
 	m->frame = 1;
 	m->argc = 0;
 	m->sym = NULL;
@@ -631,6 +634,8 @@ mvc_destroy(mvc *m)
 		store_unlock();
 	}
 	sql_session_destroy(m->session);
+
+	stack_pop_until(m, 0);
 
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
@@ -1118,7 +1123,7 @@ mvc_default(mvc *m, sql_column *col, char *val)
 
 /* variable management */
 void 
-stack_push_var(mvc *sql, char *name, stmt *var)
+stack_push_var(mvc *sql, char *name, stmt *var, sql_subtype *type)
 {
 	if (sql->topvars == sql->sizevars) {
 		sql->sizevars <<= 1;
@@ -1127,6 +1132,7 @@ stack_push_var(mvc *sql, char *name, stmt *var)
 	sql->vars[sql->topvars].s = stmt_dup(var);
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
+	sql->vars[sql->topvars].type = *type;
 	sql->topvars++;
 }
 
@@ -1172,18 +1178,51 @@ stack_push_frame(mvc *sql, char *name)
 	sql->frame++;
 }
 
+void
+stack_pop_until(mvc *sql, int top) 
+{
+	while(--sql->topvars >= top) {
+		sql_var *v = &sql->vars[sql->topvars];
+
+		_DELETE(v->name);
+		if (v->s) {
+			stmt_destroy(v->s);
+			v->value.vtype = 0;
+			VALclear(&v->value);
+			if (v->type.comp_type) 
+				table_destroy(v->type.comp_type);
+		}
+	}
+}
+
 void 
 stack_pop_frame(mvc *sql)
 {
 	while(sql->vars[--sql->topvars].s) {
-		stmt_destroy(sql->vars[sql->topvars].s);
-		_DELETE(sql->vars[sql->topvars].name);
-		sql->vars[sql->topvars].value.vtype = 0;
-		VALclear(&sql->vars[sql->topvars].value);
+		sql_var *v = &sql->vars[sql->topvars];
+
+		stmt_destroy(v->s);
+		_DELETE(v->name);
+		v->value.vtype = 0;
+		VALclear(&v->value);
+		if (v->type.comp_type) 
+			table_destroy(v->type.comp_type);
 	}
-	if (sql->topvars && sql->vars[sql->topvars].name) 
+	if (sql->topvars && sql->vars[sql->topvars].name)  
 		_DELETE(sql->vars[sql->topvars].name);
 	sql->frame--;
+}
+
+sql_subtype *
+stack_find_type(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && strcmp(sql->vars[i].name, name)==0)
+			return &sql->vars[i].type;
+	}
+	return NULL;
 }
 
 stmt *
