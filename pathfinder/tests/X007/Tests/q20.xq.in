@@ -1,0 +1,4 @@
+let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
+
+for $c in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart
+return $c/Connection[position() = last()]
