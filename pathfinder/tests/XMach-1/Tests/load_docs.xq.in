@@ -1,0 +1,8 @@
+(:
+let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
+return sum( for $d in $doc return count(doc($d)) )
+:)
+let $doc :=
+	for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
+	return doc($d)
+return count($doc)
