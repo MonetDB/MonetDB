@@ -1,8 +1,8 @@
 # the multiplex code blocks.
 
-b:= bat.new(:int,:int);
+b:= bat.new(:void,:int);
 barrier (v,i):= language.newRange(0:int);
-	bat.insert(b,i,i);
+	bat.append(b,i);
 	redo (v,i):= language.nextElement(1:int,10:int);
 exit (v,i);
 c:= algebra.copy(b);

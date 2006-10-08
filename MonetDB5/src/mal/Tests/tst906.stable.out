@@ -41,140 +41,140 @@ stdout of test 'tst906` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_1:str)
 # check detection of the underlying fast implementations 	# 2  (_2:str)
-    b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
-barrier (v,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 7
-    bat.insert(b,i,i);	# 5 BKCinsert_bun (_8:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= language.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 5
+    b := bat.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_4:void)(_5:lng)
+barrier (v,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-(_8:lng) jump 7
+    bat.append(b,i);	# 5 BKCappend_val_wrap (_9:void)<-(b:bat[:void,:lng])(i:lng)
+    redo (v,i):= language.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-(_10:lng)(_11:lng) jump 5
 exit (v,i);	# 7  (v:bit)(i:lng)
-    c := algebra.copy(b);	# 8 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    io.print(c);	# 9 IOprint_val (_12:int)<-(c:bat[:lng,:lng])
-    x := batcalc.+(b,c);	# 10 CMDbatADD_lng_lng_lng (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
-    io.print(x);	# 11 IOprint_val (_14:int)<-(x:bat[:lng,:lng])
-    x := batcalc.+(b,1:lng);	# 12 CMDbatADDcst_lng_lng_lng (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(_9:lng)
-    io.print(x);	# 13 IOprint_val (_15:int)<-(x:bat[:lng,:lng])
-    x := batcalc./(b,1:lng);	# 14 CMDbatDIVcst_lng_lng_lng (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(_9:lng)
-    io.print(x);	# 15 IOprint_val (_16:int)<-(x:bat[:lng,:lng])
-    x := batcalc.*(b,c);	# 16 CMDbatMUL_lng_lng_lng (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
-    io.print(x);	# 17 IOprint_val (_17:int)<-(x:bat[:lng,:lng])
-    y := batcalc.==(b,b);	# 18 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(b:bat[:lng,:lng])
-    io.print(y);	# 19 IOprint_val (_19:int)<-(y:bat[:lng,:bit])
-    y := batcalc.==(b,x);	# 20 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(x:bat[:lng,:lng])
-    io.print(y);	# 21 IOprint_val (_20:int)<-(y:bat[:lng,:bit])
-    z := batcalc.not(y);	# 22 CMDbitbatNOT (z:bat[:lng,:bit])<-(y:bat[:lng,:bit])
-    io.print(z);	# 23 IOprint_val (_22:int)<-(z:bat[:lng,:bit])
+    c := algebra.copy(b);	# 8 ALGcopy (c:bat[:void,:lng])<-(b:bat[:void,:lng])
+    io.print(c);	# 9 IOprint_val (_13:int)<-(c:bat[:void,:lng])
+    x := batcalc.+(b,c);	# 10 CMDbatADD_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(c:bat[:void,:lng])
+    io.print(x);	# 11 IOprint_val (_15:int)<-(x:bat[:void,:lng])
+    x := batcalc.+(b,1:lng);	# 12 CMDbatADDcst_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(_10:lng)
+    io.print(x);	# 13 IOprint_val (_16:int)<-(x:bat[:void,:lng])
+    x := batcalc./(b,1:lng);	# 14 CMDbatDIVcst_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(_10:lng)
+    io.print(x);	# 15 IOprint_val (_17:int)<-(x:bat[:void,:lng])
+    x := batcalc.*(b,c);	# 16 CMDbatMUL_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(c:bat[:void,:lng])
+    io.print(x);	# 17 IOprint_val (_18:int)<-(x:bat[:void,:lng])
+    y := batcalc.==(b,b);	# 18 CMDcmpEQ (y:bat[:void,:bit])<-(b:bat[:void,:lng])(b:bat[:void,:lng])
+    io.print(y);	# 19 IOprint_val (_20:int)<-(y:bat[:void,:bit])
+    y := batcalc.==(b,x);	# 20 CMDcmpEQ (y:bat[:void,:bit])<-(b:bat[:void,:lng])(x:bat[:void,:lng])
+    io.print(y);	# 21 IOprint_val (_21:int)<-(y:bat[:void,:bit])
+    z := batcalc.not(y);	# 22 CMDbitbatNOT (z:bat[:void,:bit])<-(y:bat[:void,:bit])
+    io.print(z);	# 23 IOprint_val (_23:int)<-(z:bat[:void,:bit])
 end main;	# 24  
 #-----------------#
 # h	t	  # name
 # lng	lng	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-[ 4,	  4	  ]
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
-[ 8,	  8	  ]
-[ 9,	  9	  ]
+[ nil,	  0	  ]
+[ nil,	  1	  ]
+[ nil,	  2	  ]
+[ nil,	  3	  ]
+[ nil,	  4	  ]
+[ nil,	  5	  ]
+[ nil,	  6	  ]
+[ nil,	  7	  ]
+[ nil,	  8	  ]
+[ nil,	  9	  ]
 #-----------------#
 # h	t	  # name
-# lng	lng	  # type
+# void	lng	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  2	  ]
-[ 2,	  4	  ]
-[ 3,	  6	  ]
-[ 4,	  8	  ]
-[ 5,	  10	  ]
-[ 6,	  12	  ]
-[ 7,	  14	  ]
-[ 8,	  16	  ]
-[ 9,	  18	  ]
-#-----------------#
-# h	t	  # name
-# lng	lng	  # type
-#-----------------#
-[ 0,	  1	  ]
-[ 1,	  2	  ]
-[ 2,	  3	  ]
-[ 3,	  4	  ]
-[ 4,	  5	  ]
-[ 5,	  6	  ]
-[ 6,	  7	  ]
-[ 7,	  8	  ]
-[ 8,	  9	  ]
-[ 9,	  10	  ]
+[ nil,	  0	  ]
+[ nil,	  2	  ]
+[ nil,	  4	  ]
+[ nil,	  6	  ]
+[ nil,	  8	  ]
+[ nil,	  10	  ]
+[ nil,	  12	  ]
+[ nil,	  14	  ]
+[ nil,	  16	  ]
+[ nil,	  18	  ]
 #-----------------#
 # h	t	  # name
-# lng	lng	  # type
+# void	lng	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-[ 4,	  4	  ]
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
-[ 8,	  8	  ]
-[ 9,	  9	  ]
-#-----------------#
-# h	t	  # name
-# lng	lng	  # type
-#-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  4	  ]
-[ 3,	  9	  ]
-[ 4,	  16	  ]
-[ 5,	  25	  ]
-[ 6,	  36	  ]
-[ 7,	  49	  ]
-[ 8,	  64	  ]
-[ 9,	  81	  ]
+[ nil,	  1	  ]
+[ nil,	  2	  ]
+[ nil,	  3	  ]
+[ nil,	  4	  ]
+[ nil,	  5	  ]
+[ nil,	  6	  ]
+[ nil,	  7	  ]
+[ nil,	  8	  ]
+[ nil,	  9	  ]
+[ nil,	  10	  ]
 #-----------------#
 # h	t	  # name
-# lng	bit	  # type
+# void	lng	  # type
 #-----------------#
-[ 0,	  true	  ]
-[ 1,	  true	  ]
-[ 2,	  true	  ]
-[ 3,	  true	  ]
-[ 4,	  true	  ]
-[ 5,	  true	  ]
-[ 6,	  true	  ]
-[ 7,	  true	  ]
-[ 8,	  true	  ]
-[ 9,	  true	  ]
-#-----------------#
-# h	t	  # name
-# lng	bit	  # type
-#-----------------#
-[ 0,	  true	  ]
-[ 1,	  true	  ]
-[ 2,	  false	  ]
-[ 3,	  false	  ]
-[ 4,	  false	  ]
-[ 5,	  false	  ]
-[ 6,	  false	  ]
-[ 7,	  false	  ]
-[ 8,	  false	  ]
-[ 9,	  false	  ]
+[ nil,	  0	  ]
+[ nil,	  1	  ]
+[ nil,	  2	  ]
+[ nil,	  3	  ]
+[ nil,	  4	  ]
+[ nil,	  5	  ]
+[ nil,	  6	  ]
+[ nil,	  7	  ]
+[ nil,	  8	  ]
+[ nil,	  9	  ]
 #-----------------#
 # h	t	  # name
-# lng	bit	  # type
+# void	lng	  # type
 #-----------------#
-[ 0,	  false	  ]
-[ 1,	  false	  ]
-[ 2,	  true	  ]
-[ 3,	  true	  ]
-[ 4,	  true	  ]
-[ 5,	  true	  ]
-[ 6,	  true	  ]
-[ 7,	  true	  ]
-[ 8,	  true	  ]
-[ 9,	  true	  ]
+[ nil,	  0	  ]
+[ nil,	  1	  ]
+[ nil,	  4	  ]
+[ nil,	  9	  ]
+[ nil,	  16	  ]
+[ nil,	  25	  ]
+[ nil,	  36	  ]
+[ nil,	  49	  ]
+[ nil,	  64	  ]
+[ nil,	  81	  ]
+#-----------------#
+# h	t	  # name
+# void	bit	  # type
+#-----------------#
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+#-----------------#
+# h	t	  # name
+# void	bit	  # type
+#-----------------#
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+#-----------------#
+# h	t	  # name
+# void	bit	  # type
+#-----------------#
+[ nil,	  false	  ]
+[ nil,	  false	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
+[ nil,	  true	  ]
 
 # 19:09:39 >  
 # 19:09:39 >  Done.
