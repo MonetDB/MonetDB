@@ -117,10 +117,9 @@ Test against overflow in a reduce situation.
 batcalc_export str CMDconvert_void_@1_@2(int *ret, int *bid);
 str CMDconvert_void_@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
-	@1 *p,*q,tp;
-	@2 *o, to;
+	@1 *p,*q;
+	@2 *o;
 	ptr pp,qp;
-	oid ho;
 	int xx;
 
 	if( TYPE_@1 == TYPE_@2)
@@ -134,12 +133,11 @@ str CMDconvert_void_@1_@2(int *ret, int *bid){
 		pp= BUNhead(b,BUNfirst(b));
 		qp= BUNhead(b,BUNlast(b));
 		xx= BUNsize(b);
+		o= (@2*) BUNtail(bn,BUNfirst(bn));
 		while(pp<qp){
-			ho= *(oid*) BUNhead(b, pp); 
-			tp= *(@1*)BUNtail(b, pp);
-			to = tp == @1_nil?  @2_nil: (@2)tp;
-			bunfastins(bn, &ho, &to);
-			pp+= xx;
+			p= (@1*)BUNtail(b, pp);
+			*o = *p== @1_nil ?  @2_nil: (@2) *p;
+			pp+= xx; o++;
 		}
 	} else {
 		o= (@2*) BUNtail(bn,BUNfirst(bn));

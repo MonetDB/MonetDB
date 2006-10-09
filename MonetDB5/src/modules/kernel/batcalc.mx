@@ -224,7 +224,8 @@ C qualifier and the operands
 	command ++(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDunaryPLUSPLUS
 	comment "Unary minus over the tail of the bat";
-
+@-
+Not used yet
 	#command -(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
 	#		:bat[:any_1,:@1] 
 	#address CMDunaryAccumMIN 

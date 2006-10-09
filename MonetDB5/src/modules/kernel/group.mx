@@ -162,6 +162,8 @@ command avg(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1]
 address GRPavg_@1
 comment "grouped tail average";
 
+@-
+Not used yet
 #command min(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
 #address GRPwindowmin@1
 #comment "Tail minimum of groups of a fixed size";
