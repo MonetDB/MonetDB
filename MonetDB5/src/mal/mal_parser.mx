@@ -1651,7 +1651,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			nextChar(cntxt);
 			continue;
 		case '#': 
-		{ /* keep the full line comments */
+		{ /* keep the full line comments unless it is a MX #line */
 			char start[256], *e=start, c; 
 			MalBlkPtr curBlk= cntxt->curprg->def;
 			InstrPtr curInstr;
@@ -1669,12 +1669,15 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				}
 			}
 			if( e> start) *e=0;
-			if( e>start && curBlk->stop > 0){
+			if( e>start && curBlk->stop > 0 &&
+				 strncmp("#line ",start,4)!= 0 ){
 				ValRecord cst;
 @-
 Keep the comment lines as un-used constants.
-This implies that a deadcode optimizer will remove
-the information.
+However, comment lines produced by Mx, i.e. #line
+directives are not saved. The unnecessarily consume
+resources when kept.
+The deadcode optimizer removes all comment information.
 @c
 				curInstr= newInstruction(NULL, REMsymbol);
 				cst.vtype= TYPE_str;
