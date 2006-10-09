@@ -1670,7 +1670,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			}
 			if( e> start) *e=0;
 			if( e>start && curBlk->stop > 0 &&
-				 strncmp("#line ",start,4)!= 0 ){
+				 strncmp("#line ",start,6)!= 0 ){
 				ValRecord cst;
 @-
 Keep the comment lines as un-used constants.
