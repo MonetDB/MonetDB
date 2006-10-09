@@ -168,7 +168,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 			return NULL;
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
-			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "user"), s->base.name, tname);
+			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 			return NULL;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
