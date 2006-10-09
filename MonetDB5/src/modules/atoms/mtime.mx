@@ -299,7 +299,6 @@ address timestamp_fromstr;
 
 command tostr():str 
 address timestamp_tostr;
-#.NULL	 address timestamp_null;
 command unix_epoch():timestamp
 address MTIMEunix_epoch
 comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
@@ -367,7 +366,6 @@ command tostr():str
 address tzone_tostr;
 command str():str   
 address MTIMEtzone_tostr;
-#.NULL	 address tzone_null;
 command timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;
 command timestamp(secs:int):timestamp
