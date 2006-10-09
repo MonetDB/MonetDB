@@ -990,17 +990,23 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1:
         {
             mvar_t *intVAL, *dblVAL, *decVAL, *strVAL;
-            mvar_t *item, *kind;
+            mvar_t *item, *kind, *err;
             PFalg_simple_type_t ty;
             bool sorted = false;
             PFalg_att_t pa_item = p->sem.serialize.item;
+            PFmil_t *oldmilprog, *bodymilprog;
 
+            /* save the current mil program */
+            oldmilprog = milprog;
+           
+            /* create a new empty milprog */
+            milprog = nop ();
+           
             /*
             PFmil_t *args = NULL;
             */
 
             execute (
-                assgn (unused (), nil ()),
                 assgn (var (PF_MIL_VAR_WS), new_ws ()));
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
@@ -1401,14 +1407,39 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (item, 1);
             unpin (kind, 1);
 
+            /* make the old mil program the active one */
+            bodymilprog = milprog;
+            milprog = oldmilprog;
+           
+            err = new_var (1);
+
+            execute (
+                assgn (
+                    var (err->name),
+                    catch_ (bodymilprog)),
+                if_ (not (isnil (var (PF_MIL_VAR_WS))),
+                     destroy_ws (var (PF_MIL_VAR_WS)),
+                     nop ()),
+                if_ (not (isnil (var (err->name))),
+                     error (var (err->name)),
+                     nop ()));
+            
+            unpin (err, 1);
         } break;
 
         /* Query:   serialize (FragList, empty_tbl) */
         case 2:
         {
             mvar_t *intVAL, *dblVAL, *decVAL, *strVAL;
-            mvar_t *item, *kind;
+            mvar_t *item, *kind, *err;
+            PFmil_t *oldmilprog, *bodymilprog;
 
+            /* save the current mil program */
+            oldmilprog = milprog;
+           
+            /* create a new empty milprog */
+            milprog = nop ();
+           
             reduce (kids[0], nts[0]);
 
             /* Set up all the value containers for print_result().
@@ -1454,12 +1485,32 @@ reduce (PFpa_op_t * p, int goalnt)
                                         arg (var (dblVAL->name),
                                             arg (var (decVAL->name),
                                                  var (strVAL->name))))))))));
+            
             unpin (intVAL, 1);
             unpin (dblVAL, 1);
             unpin (decVAL, 1);
             unpin (strVAL, 1);
             unpin (item, 1);
             unpin (kind, 1);
+
+            /* make the old mil program the active one */
+            bodymilprog = milprog;
+            milprog = oldmilprog;
+           
+            err = new_var (1);
+
+            execute (
+                assgn (
+                    var (err->name),
+                    catch_ (bodymilprog)),
+                if_ (not (isnil (var (PF_MIL_VAR_WS))),
+                     destroy_ws (var (PF_MIL_VAR_WS)),
+                     nop ()),
+                if_ (not (isnil (var (err->name))),
+                     error (var (err->name)),
+                     nop ()));
+
+            unpin (err, 1);
         } break;
 
         /* Rel:      lit_tbl */
@@ -4924,7 +4975,8 @@ PFmilgen (PFpa_op_t *n)
     /* we start with an empty MIL program */
     milprog = declare (unused ());
 
-    execute (declare (var (PF_MIL_VAR_WS)));
+    execute (declare (var (PF_MIL_VAR_WS)),
+             assgn (unused (), nil ()));
 
     /* start compilation */
     reduce (n, 1);

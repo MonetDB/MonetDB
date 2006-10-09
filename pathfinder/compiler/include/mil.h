@@ -150,6 +150,7 @@ enum PFmil_kind_t {
     , m_mgt          /**< multiplexed comparison (greater than) */
     , m_meq          /**< multiplexed comparison (equality) */
 
+    , m_not          /**< boolean negation `not' */
     , m_mnot         /**< multiplexed boolean negation `[not]' */
     , m_mneg         /**< multiplexed numeric negation `[-]' */
 
@@ -175,16 +176,19 @@ enum PFmil_kind_t {
                           argument functions (e.g., merged_union) */
 
     , m_new_ws       /**< Create a new (empty) working set */
+    , m_destroy_ws   /**< Free an existing working set */
     , m_mposjoin     /**< Positional multijoin with a working set */
     , m_mvaljoin     /**< Multijoin with a working set */
     , m_bat          /**< MonetDB bat() function */
+    , m_catch        /**< MonetDB CATCH() function */
     , m_error        /**< MonetDB ERROR() function */
 
+    , m_isnil        /**< Operator `isnil()' */
     , m_misnil       /**< Multiplexed isnil() operator `[isnil]()' */
     , m_mifthenelse  /**< Multiplexed ifthenelse() operator `[ifthenelse]()' */
-    , m_msearch       /**< Multiplexed search() function `[search](a,b)' */
-    , m_mstring       /**< Multiplexed string() function `[string](a,b)' */
-    , m_mstring2      /**< Multiplexed string() function `[string](a,b,c)' */
+    , m_msearch      /**< Multiplexed search() function `[search](a,b)' */
+    , m_mstring      /**< Multiplexed string() function `[string](a,b)' */
+    , m_mstring2     /**< Multiplexed string() function `[string](a,b,c)' */
 
     , m_llscj_anc
     , m_llscj_anc_elem
@@ -622,6 +626,9 @@ PFmil_t * PFmil_mgt (const PFmil_t *, const PFmil_t *);
 /** Multiplexed comparison operator (equality) */
 PFmil_t * PFmil_meq (const PFmil_t *, const PFmil_t *);
 
+/** MIL boolean negation */
+PFmil_t * PFmil_not (const PFmil_t *);
+
 /** MIL multiplexed boolean negation */
 PFmil_t * PFmil_mnot (const PFmil_t *);
 
@@ -633,6 +640,9 @@ PFmil_t * PFmil_mand (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed boolean operator `or' */
 PFmil_t * PFmil_mor (const PFmil_t *, const PFmil_t *);
+
+/** Operator `[isnil]' */
+PFmil_t * PFmil_isnil (const PFmil_t *);
 
 /** Multiplexed isnil operator `[isnil]' */
 PFmil_t * PFmil_misnil (const PFmil_t *);
@@ -650,10 +660,12 @@ PFmil_t * PFmil_mstring (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mstring2 (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_new_ws (void);
+PFmil_t * PFmil_destroy_ws (const PFmil_t *ws);
 PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_bat (const PFmil_t *);
+PFmil_t * PFmil_catch (const PFmil_t *);
 PFmil_t * PFmil_error (const PFmil_t *);
 
 /* ---------- staircase join variants ---------- */

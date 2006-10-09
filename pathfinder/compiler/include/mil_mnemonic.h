@@ -241,8 +241,14 @@
 /** multiplexed or */
 #define mor(a,b) PFmil_mor ((a), (b))
 
+/** boolean negation */
+#define not(a) PFmil_not (a)
+
 /** multiplexed boolean negation */
 #define mnot(a) PFmil_mnot (a)
+
+/** operator `isnil()' */
+#define isnil(a) PFmil_isnil (a)
 
 /** multiplexed isnil() operator `[isnil]()' */
 #define misnil(a) PFmil_misnil (a)
@@ -253,6 +259,9 @@
 /** create new (empty) working set */
 #define new_ws() PFmil_new_ws ()
 
+/** Free an existing working set */
+#define destroy_ws(ws) PFmil_destroy_ws (ws)
+
 /** positional multijoin with a working set `mposjoin (a, b, c)' */
 #define mposjoin(a,b,c) PFmil_mposjoin ((a), (b), (c))
 
@@ -261,6 +270,9 @@
 
 /** MonetDB bat() function */
 #define bat(a) PFmil_bat (a)
+
+/** MonetDB CATCH() function */
+#define catch_(a) PFmil_catch (a)
 
 /** MonetDB ERROR() function */
 #define error(a) PFmil_error (a)

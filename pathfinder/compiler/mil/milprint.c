@@ -23,10 +23,12 @@
                  | 'ERROR (' expression ')'                 <m_error>
                  | 'print (' args ')'                       <m_print>
                  | 'col_name (' expr ',' expr ')'           <m_col_name>
+                 | 'destroy_ws (' expression ')'            <m_destroy_ws>
 
    expression    : Variable                                 <m_var>
                  | literal                                  <m_lit_*, m_nil>
                  | 'new (' Type ',' Type ')'                <m_new>
+                 | 'CATCH ({' expression '})'               <m_catch>
                  | expression '.seqbase (' expression ')'   <m_seqbase>
                  | expression '.select (' expression ')'    <m_select>
                  | expression '.exist (' expression ')'     <m_exist>
@@ -79,8 +81,10 @@
                  | '>(' expression ',' expression ')'       <m_gt>
                  | '[>](' expression ',' expression ')'     <m_mgt>
                  | '[=](' expression ',' expression ')'     <m_meq>
+                 | 'not(' expression ')'                    <m_not>
                  | '[not](' expression ')'                  <m_mnot>
                  | '[-](' expression ')'                    <m_mneg>
+                 | 'isnil(' expression ')'                  <m_isnil>
                  | '[isnil](' expression ')'                <m_misnil>
                  | '[and](' expression ',' expression ')'   <m_mand>
                  | '[or](' expression ',' expression ')'    <m_mor>
@@ -214,6 +218,7 @@ static char *ID[] = {
     , [m_gt]           = ">"
     , [m_mgt]          = "[>]"
     , [m_meq]          = "[=]"
+    , [m_not]          = "not"
     , [m_mnot]         = "[not]"
     , [m_mneg]         = "[-]"
     , [m_mand]         = "[and]"
@@ -222,8 +227,10 @@ static char *ID[] = {
     , [m_msearch]      = "[search]"
     , [m_mstring]      = "[string]"
     , [m_mstring2]     = "[string]"
+    , [m_isnil]        = "isnil"
     , [m_misnil]       = "[isnil]"
     , [m_new_ws]       = "ws_create"
+    , [m_destroy_ws]   = "ws_destroy"
     , [m_mposjoin]     = "mposjoin"
     , [m_mvaljoin]     = "mvaljoin"
     , [m_doc_tbl]      = "doc_tbl"
@@ -393,6 +400,7 @@ static char *ID[] = {
     , [m_sum]      = "sum"
     , [m_gsum]     = "{sum}"
     , [m_bat]      = "bat"
+    , [m_catch]    = "CATCH"
     , [m_error]    = "ERROR"
     , [m_col_name] = "col_name"
 
@@ -547,6 +555,8 @@ print_statement (PFmil_t * n)
             break;
         */
 
+        /* statement: 'destroy_ws (' expression ')' */
+        case m_destroy_ws:
         /* statement: 'ERROR(' expression ')' */
         case m_error:
             milprintf ("%s (", ID[n->kind]);
@@ -623,6 +633,13 @@ print_expression (PFmil_t * n)
             milprintf (", ");
             print_type (n->child[1]);
             milprintf (")");
+            break;
+
+        /* expression : 'CATCH ({' expression '})' */
+        case m_catch:
+            milprintf ("CATCH ({\n");
+            print_statements (n->child[0]);
+            milprintf ("})");
             break;
 
         /* expression : expression '.materialize (' expression ')' */
@@ -816,10 +833,14 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : 'not(' expression ')' */
+        case m_not:
         /* expression : '[not](' expression ')' */
         case m_mnot:
         /* expression : '[-](' expression ')' */
         case m_mneg:
+        /* expression : 'isnil(' expression ')' */
+        case m_isnil:
         /* expression : '[isnil](' expression ')' */
         case m_misnil:
             milprintf ("%s(", ID[n->kind]);

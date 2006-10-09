@@ -972,6 +972,15 @@ PFmil_meq (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Boolean negation
+ */
+PFmil_t *
+PFmil_not (const PFmil_t *a)
+{
+    return wire1 (m_not, a);
+}
+
+/**
  * Multiplexed boolean negation
  */
 PFmil_t *
@@ -1005,6 +1014,13 @@ PFmil_t *
 PFmil_mor (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_mor, a, b);
+}
+
+/** Operator `isnil()' */
+PFmil_t *
+PFmil_isnil (const PFmil_t *a)
+{
+    return wire1 (m_isnil, a);
 }
 
 /** Multiplexed isnil() operator `[isnil]()' */
@@ -1049,6 +1065,12 @@ PFmil_bat (const PFmil_t *a)
 }
 
 PFmil_t *
+PFmil_catch (const PFmil_t *a)
+{
+    return wire1 (m_catch, a);
+}
+
+PFmil_t *
 PFmil_error (const PFmil_t *a)
 {
     return wire1 (m_error, a);
@@ -1061,6 +1083,15 @@ PFmil_t *
 PFmil_new_ws (void)
 {
     return leaf (m_new_ws);
+}
+
+/**
+ * Free an existing working set
+ */
+PFmil_t *
+PFmil_destroy_ws (const PFmil_t *ws)
+{
+    return wire1 (m_destroy_ws, ws);
 }
 
 /**
