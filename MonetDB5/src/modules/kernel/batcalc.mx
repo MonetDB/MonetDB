@@ -1927,15 +1927,15 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 		return throwMessage("batcalc.reuse", "Cannot access descriptor");
 	}
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
-		bn= BATwcopy(b);
-/*
 		if( ATOMvarsized(b->ttype)){
+			bn= BATwcopy(b);
 		} else {
 			bn= BATnew(b->htype,b->ttype,BATcount(b));
 			bn->batBuns->free = BATcount(b) * BUNsize(bn);
 			BATsetcount(bn,BATcount(b));
+			bn->tsorted= FALSE; BATkey(bn,FALSE);
+			bn->hsorted= FALSE; BATkey(BATmirror(bn),FALSE);
 		}
-*/
 		BBPkeepref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		*ret= bn->batCacheid;

@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f batconvert
+@f batcast
 @a M.L. Kersten
 @+ BAT Coercion Routines
 The coercion routines over BATs can not easily be speed up using
@@ -67,6 +67,7 @@ against overflow.
 	@:coercion(str,bit)@
 @-
 @{
+@include kprelude.mx
 @- Implementation
 @h
 #include "gdk.h"
@@ -74,13 +75,13 @@ against overflow.
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBBATCALC
-#define batcalc_export extern __declspec(dllimport)
+#ifndef LIBBATCAST
+#define batcast_export extern __declspec(dllimport)
 #else
-#define batcalc_export extern __declspec(dllexport)
+#define batcast_export extern __declspec(dllexport)
 #endif
 #else
-#define batcalc_export extern
+#define batcast_export extern
 #endif
 
 @- Implementation of coercions
@@ -96,12 +97,10 @@ if( bn== NULL) {*ret= 0;
 	return throwMessage("batcalc.@1", "can not create bat");}
 
 @= Idempotent
-batcalc_export str CMDconvert_@1(int *ret, int *bid);
+batcast_export str CMDconvert_@1(int *ret, int *bid);
 str CMDconvert_@1(int *ret, int *bid){
 	BAT *b, *bn;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		return throwMessage("batcalc.convert", "Cannot access descriptor");
-	}
+	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
 
 	bn= BATrcopy(b);
 	@:tstBat(CMDconvert_@1)@
@@ -114,35 +113,28 @@ str CMDconvert_@1(int *ret, int *bid){
 The void case is geared at speed.
 Test against overflow in a reduce situation.
 @= Mapping
-batcalc_export str CMDconvert_void_@1_@2(int *ret, int *bid);
+batcast_export str CMDconvert_void_@1_@2(int *ret, int *bid);
 str CMDconvert_void_@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	@1 *p,*q;
 	@2 *o;
-	ptr pp,qp;
-	int xx;
 
 	if( TYPE_@1 == TYPE_@2)
 		return CMDconvert_@1(ret,bid);
-	if( (b= BATdescriptor(*bid)) == NULL )
-		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
 
 	bn= newBATcresult(b, TYPE_@2);
 	@:tstBat(CMDconvert_@1_@2)@
+	o= (@2*)BUNtail(bn,BUNfirst(bn));
+	p= (@1*)BUNtail(b,BUNfirst(b));
+	q= (@1*)BUNtail(b,BUNlast(b));
 	if(sizeof(@1) != BUNsize(b)  ){
-		pp= BUNhead(b,BUNfirst(b));
-		qp= BUNhead(b,BUNlast(b));
-		xx= BUNsize(b);
-		o= (@2*) BUNtail(bn,BUNfirst(bn));
-		while(pp<qp){
-			p= (@1*)BUNtail(b, pp);
+		size_t xx= BUNsize(b);
+		while(p<q){
 			*o = *p== @1_nil ?  @2_nil: (@2) *p;
-			pp+= xx; o++;
+			p= (@1 *) ((char*)p+xx); o++;
 		}
 	} else {
-		o= (@2*) BUNtail(bn,BUNfirst(bn));
-		p= (@1*) BUNtail(b,BUNfirst(b));
-		q= (@1*) BUNtail(b,BUNlast(b));
 		while(p<q){
 			*o = *p== @1_nil ?  @2_nil: (@2) *p;
 			p++; o++;
@@ -158,31 +150,29 @@ bunins_failed:
 	return MAL_SUCCEED;
 }
 @= GeneralFixed
-batcalc_export str CMDconvert_@1_@2(int *ret, int *bid);
+batcast_export str CMDconvert_@1_@2(int *ret, int *bid);
 str CMDconvert_@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
-	int xx;
+	size_t xx;
 	@2 y;
-	@1 v;
-	ptr p,q;
+	char *p, *q, *h;
 
 	if( TYPE_@1 == TYPE_@2)
 		return CMDconvert_@1(ret,bid);
-	if( (b= BATdescriptor(*bid)) == NULL )
-		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
 
 	bn= newBATcresult(b, TYPE_@2);
 	@:tstBat(CMDconvert_@1)@
 
-	p= (ptr) BUNhead(b,BUNfirst(b));
-	q= (ptr) BUNhead(b,BUNlast(b));
+	h= (char*) BUNhead(b,BUNfirst(b));
+	p= (char*) BUNtail(b,BUNfirst(b));
+	q= (char*) BUNtail(b,BUNlast(b));
 	xx= BUNsize(b);
 
 	while(p<q){
-		v= *(@1*) BUNtail(b,p);
-		y= v== @1_nil? @2_nil: (@2) v;
-		bunfastins(bn, p, &y);
-		p+= xx;
+		y= *(@1*)p== @1_nil? @2_nil: (@2) *(@1*)p;
+		bunfastins(bn, h, &y);
+		p+= xx; h+=xx;
 	}
 bunins_failed:
 	bn->tsorted = 0;
@@ -193,30 +183,28 @@ bunins_failed:
 	return MAL_SUCCEED;
 }
 @= GeneralToStr
-batcalc_export str CMDconvert_@1_str(int *ret, int *bid);
+batcast_export str CMDconvert_@1_str(int *ret, int *bid);
 str CMDconvert_@1_str(int *ret, int *bid){
 	BAT *b,*bn;
-	int xx;
-	ptr t,h,e;
+	size_t xx;
+	char *p,*q,*h;
 	str dst=0;
 	int len=0;
 
-	if( (b= BATdescriptor(*bid)) == NULL )
-		return throwMessage("batcalc.convert", "Cannot access descriptor");
-
+	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
 	bn= newBATcresult(b, TYPE_str);
 	@:tstBat(CMDconvert_@1)@
 
-	h= (ptr) BUNhead(b,BUNfirst(b));
-	t= (ptr) BUNtail(b,BUNfirst(b));
-	e= (ptr) BUNhead(b,BUNlast(b));
+	h= (char*) BUNhead(b,BUNfirst(b));
+	p= (char*) BUNtail(b,BUNfirst(b));
+	q= (char*) BUNtail(b,BUNlast(b));
 	xx= BUNsize(b);
 
-	while(h<e){
-		@1ToStr(&dst,&len, (ptr) t);
+	while(p<q){
+		@1ToStr(&dst,&len, (ptr) p);
 		bunfastins(bn, h, (ptr)dst);
 		if( dst) GDKfree(dst);
-		t+=xx; h+= xx;
+		p+=xx; h+= xx;
 	}
 bunins_failed:
 	bn->tsorted = 0;
@@ -226,22 +214,20 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-batcalc_export str CMDconvert_void_@1_str(int *ret, int *bid);
+batcast_export str CMDconvert_void_@1_str(int *ret, int *bid);
 str CMDconvert_void_@1_str(int *ret, int *bid){
 	return CMDconvert_@1_str(ret,bid);
 }
 @= GeneralFromStr
-batcalc_export str CMDconvert_str_@1(int *ret, int *bid);
+batcast_export str CMDconvert_str_@1(int *ret, int *bid);
 str CMDconvert_str_@1(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
-	ptr t,h,e;
+	char * t,*h,*e;
 	ptr v;
 	int len;
 
-	if( (b= BATdescriptor(*bid)) == NULL )
-		return throwMessage("batcalc.convert", "Cannot access descriptor");
-
+	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
 	bn= newBATcresult(b, TYPE_@1);
 	@:tstBat(CMDconvert_str_@1)@
 
@@ -266,14 +252,14 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-batcalc_export str CMDconvert_void_str_@1(int *ret, int *bid);
+batcast_export str CMDconvert_void_str_@1(int *ret, int *bid);
 str CMDconvert_void_str_@1(int *ret, int *bid){
 	return CMDconvert_str_@1(ret,bid);
 }
 @-
 The lengthly list of coercions options could have been generated.
 @c
-#include "batconvert.h"
+#include "batcast.h"
 
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, TRUE)
 #define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
@@ -360,11 +346,11 @@ int	oidToStr(char **dst, int *len, oid *src  ){
 
 @:GeneralFromStr(bit)@
 
-batcalc_export str CMDconvert_void_str_str(int *ret, int *bid);
+batcast_export str CMDconvert_void_str_str(int *ret, int *bid);
 str CMDconvert_void_str_str(int *ret, int *bid){
 	return CMDconvert_str(ret,bid);
 }
-batcalc_export str CMDconvert_str_str(int *ret, int *bid);
+batcast_export str CMDconvert_str_str(int *ret, int *bid);
 str CMDconvert_str_str(int *ret, int *bid){
 	return CMDconvert_str(ret,bid);
 }

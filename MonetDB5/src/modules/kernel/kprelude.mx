@@ -1,0 +1,18 @@
+@-
+The Mx macros below are used in many places throughout the code base.
+
+@= getBATdescriptor
+	if( (@3= BATdescriptor(*@2)) == NULL ){ *@1 = 0;
+		 return throwMessage(@4, "cannot access descriptor");
+   }
+
+@= Pseudo
+	if (BBPindex("view_@1_@2") <= 0)
+		BATname(b, "@2");
+	BATroles(b,"@1","@2");
+	BATmode(b,TRANSIENT);
+	BBPkeepref(b->batCacheid);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+
+
