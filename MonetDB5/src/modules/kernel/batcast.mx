@@ -231,14 +231,14 @@ str CMDconvert_str_@1(int *ret, int *bid){
 	bn= newBATcresult(b, TYPE_@1);
 	@:tstBat(CMDconvert_str_@1)@
 
-	h= (ptr) BUNhead(b,BUNfirst(b));
-	t= (ptr) BUNtail(b,BUNfirst(b));
-	e= (ptr) BUNhead(b,BUNlast(b));
+	h= (ptr) BUNhloc(b,BUNfirst(b));
+	t= (ptr) BUNtloc(b,BUNfirst(b));
+	e= (ptr) BUNhloc(b,BUNlast(b));
 	xx= BUNsize(b);
 
 	while(h<e){
 		v= NULL; len=0;
-		ATOMfromstr( TYPE_@1, &v, &len, t);
+		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)t);
 		bunfastins(bn, h, v);
 		if(ATOMextern(TYPE_@1) )
 			GDKfree(v);
