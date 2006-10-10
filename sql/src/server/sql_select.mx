@@ -290,8 +290,12 @@ sql_var_ref(mvc *sql, char *name, int at)
 	   value instead as the variable disappears after the session */
 
 	if ((s = stack_find_var(sql, name)) != NULL) {
+		sql_subtype *tpe = stack_find_type(sql, name);
 		int frame = stack_find_frame(sql, name);
-		return stmt_var(_strdup(name), tail_type(s), 0, frame);
+		if (tpe->comp_type)
+			return stmt_table(stmt_dup(s), 1);
+		else
+			return stmt_var(_strdup(name), tpe, 0, frame);
 	} else  if (at) {
 		return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
 	} else {
@@ -2474,11 +2478,13 @@ sql_or(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 {
 	stmt *res = NULL;
 
-	(void) sql;		/* Stefan: unused!? */
 	(void) scp;		/* Stefan: unused!? */
 
 	if (!ls || !rs)
 		return NULL;
+
+	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0))
+		return sql_binop_(sql, NULL, NULL, "or", ls, rs);
 
 	if (f >= sql_search)
 		return stmt_union(stmt_const(ls, stmt_atom_int(0)), stmt_const(rs, stmt_atom_int(0)));

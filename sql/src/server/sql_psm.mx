@@ -78,6 +78,7 @@ psm_set(mvc *sql, scope *scp, dnode *n)
 	return stmt_assign(name, r, level);
 }
 
+/* TODO add logic to check if variables get initialized */
 static stmt *
 psm_declare(mvc *sql, scope *scp, dnode *n)
 {
