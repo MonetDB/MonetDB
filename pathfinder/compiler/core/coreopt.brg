@@ -206,65 +206,69 @@ CoreExpr:           Atom                                        =   2 (10);
 CoreExpr:           SequenceTypeCast                            =   3 (10);
                                                                      
 CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   4 (10);
+CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
+                                         Atom),
+                                nil), var)                      =   5 (10);
+
 OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
                                    Atom),                            
-                          OptBindExpr)                          =   5 (10);
+                          OptBindExpr)                          =   6 (10);
                                                                      
-OptVar:             nil                                         =   6 (10);
-OptVar:             var                                         =   7 (10);
+OptVar:             nil                                         =   7 (10);
+OptVar:             var                                         =   8 (10);
                                                                      
-OptBindExpr:        let (letbind (var, Atom), OptBindExpr)      =   8 (10);
+OptBindExpr:        let (letbind (var, Atom), OptBindExpr)      =   9 (10);
 OptBindExpr:        let (letbind (var,                               
                                   flwr (let (letbind (var,           
                                                       CoreExpr),     
                                              nil),                   
                                         CoreExpr)),                  
-                         OptBindExpr)                           =   9 (10);
+                         OptBindExpr)                           =  10 (10);
 OptBindExpr:        let (letbind (var,                               
                                   flwr (let (letbind (var,           
                                                       CoreExpr),     
                                              OptBindExpr),           
                                         CoreExpr)),                  
-                         OptBindExpr)                           =  10 (10);
-OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =  11 (10);
-OptBindExpr:        nil                                         =  12 (10);
+                         OptBindExpr)                           =  11 (10);
+OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =  12 (10);
+OptBindExpr:        nil                                         =  13 (10);
                                                                      
 CoreExpr:           typesw (Atom,                                    
                             cases (case_ (SequenceType,              
                                           CoreExpr),                 
-                                   default_ (CoreExpr)))        =  13 (10);
+                                   default_ (CoreExpr)))        =  20 (10);
                                                                      
-SequenceType:       seqtype                                     =  14 (10);
-SequenceType:       stattype (CoreExpr)                         =  15 (10);
+SequenceType:       seqtype                                     =  21 (10);
+SequenceType:       stattype (CoreExpr)                         =  22 (10);
                                                                      
-SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  16 (10);
+SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  23 (10);
                                                                      
 CoreExpr:           proof (subty (CoreExpr, SequenceType),           
-                           CoreExpr)                            =  17 (10);
+                           CoreExpr)                            =  24 (10);
                                                                      
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  18 (10);
+CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  25 (10);
                                                                      
-Var:                var                                         =  19 (10);
+Var:                var                                         =  26 (10);
                                                                      
-CoreExpr:           seq (Atom, Atom)                            =  20 (10);
-CoreExpr:           seq (empty, Atom)                           =  21 (10);
-CoreExpr:           seq (Atom, empty)                           =  22 (10);
+CoreExpr:           seq (Atom, Atom)                            =  27 (10);
+CoreExpr:           seq (empty, Atom)                           =  28 (10);
+CoreExpr:           seq (Atom, empty)                           =  29 (10);
                                                                      
-CoreExpr:           LocationSteps                               =  23 (10);
-CoreExpr:           LocationStep                                =  24 (10);
+CoreExpr:           LocationSteps                               =  30 (10);
+CoreExpr:           LocationStep                                =  31 (10);
                                                                      
-LocationStep:       ancestor (SequenceType)                     =  25 (10);
-LocationStep:       ancestor_or_self (SequenceType)             =  26 (10);
-LocationStep:       attribute (SequenceType)                    =  27 (10);
-LocationStep:       child (SequenceType)                        =  28 (10);
-LocationStep:       descendant (SequenceType)                   =  29 (10);
-LocationStep:       descendant_or_self (SequenceType)           =  30 (10);
-LocationStep:       following (SequenceType)                    =  31 (10);
-LocationStep:       following_sibling (SequenceType)            =  32 (10);
-LocationStep:       parent (SequenceType)                       =  33 (10);
-LocationStep:       preceding (SequenceType)                    =  34 (10);
-LocationStep:       preceding_sibling (SequenceType)            =  35 (10);
-LocationStep:       self (SequenceType)                         =  36 (10);
+LocationStep:       ancestor (SequenceType)                     =  32 (10);
+LocationStep:       ancestor_or_self (SequenceType)             =  33 (10);
+LocationStep:       attribute (SequenceType)                    =  34 (10);
+LocationStep:       child (SequenceType)                        =  35 (10);
+LocationStep:       descendant (SequenceType)                   =  36 (10);
+LocationStep:       descendant_or_self (SequenceType)           =  37 (10);
+LocationStep:       following (SequenceType)                    =  38 (10);
+LocationStep:       following_sibling (SequenceType)            =  39 (10);
+LocationStep:       parent (SequenceType)                       =  40 (10);
+LocationStep:       preceding (SequenceType)                    =  41 (10);
+LocationStep:       preceding_sibling (SequenceType)            =  42 (10);
+LocationStep:       self (SequenceType)                         =  43 (10);
 /* [STANDOFF] */
 LocationStep:       select_narrow (SequenceType)                =  100 (10);
 LocationStep:       select_wide (SequenceType)                  =  101 (10);
@@ -272,59 +276,59 @@ LocationStep:       reject_narrow (SequenceType)                =  102 (10);
 LocationStep:       reject_wide (SequenceType)                  =  103 (10);
 /* [/STANDOFF] */
                                                                      
-LocationSteps:      locsteps (LocationStep, LocationSteps)      =  37 (10);
-LocationSteps:      locsteps (LocationStep, Atom)               =  38 (10);
+LocationSteps:      locsteps (LocationStep, LocationSteps)      =  50 (10);
+LocationSteps:      locsteps (LocationStep, Atom)               =  51 (10);
                                                                      
-CoreExpr:           elem (TagName, CoreExpr)                    =  39 (10);
-CoreExpr:           attr (TagName, CoreExpr)                    =  40 (10);
-CoreExpr:           text (CoreExpr)                             =  41 (10);
-CoreExpr:           doc (CoreExpr)                              =  42 (10);
-CoreExpr:           comment (CoreExpr)                          =  43 (10);
-CoreExpr:           pi (CoreExpr)                               =  44 (10);
+CoreExpr:           elem (TagName, CoreExpr)                    =  52 (10);
+CoreExpr:           attr (TagName, CoreExpr)                    =  53 (10);
+CoreExpr:           text (CoreExpr)                             =  54 (10);
+CoreExpr:           doc (CoreExpr)                              =  55 (10);
+CoreExpr:           comment (CoreExpr)                          =  56 (10);
+CoreExpr:           pi (CoreExpr)                               =  57 (10);
                                                                      
-TagName:            tag                                         =  45 (10);
-TagName:            CoreExpr                                    =  46 (10);
+TagName:            tag                                         =  58 (10);
+TagName:            CoreExpr                                    =  59 (10);
                                                                      
-CoreExpr:           apply (FunctionArgs)                        =  47 (10);
-CoreExpr:           apply (arg (Atom, nil))                     =  48 (10);
-CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  49 (10);
+CoreExpr:           apply (FunctionArgs)                        =  60 (10);
+CoreExpr:           apply (arg (Atom, nil))                     =  61 (10);
+CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  62 (10);
                                                                      
-FunctionArgs:       arg (Atom, FunctionArgs)                    =  50 (10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  51 (10);
-FunctionArgs:       nil                                         =  52 (10);
+FunctionArgs:       arg (Atom, FunctionArgs)                    =  63 (10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  64 (10);
+FunctionArgs:       nil                                         =  65 (10);
                                                                      
-CoreExpr:           ordered (CoreExpr)                          =  53 (10);
-CoreExpr:           unordered (CoreExpr)                        =  54 (10);
+CoreExpr:           ordered (CoreExpr)                          =  66 (10);
+CoreExpr:           unordered (CoreExpr)                        =  67 (10);
                                                                      
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  55 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  68 (10);
                                                                      
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  56 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  57 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  69 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  70 (10);
                                                                      
-CoreExpr:           cast (SequenceType, CoreExpr)               =  58 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  71 (10);
                                                                      
-Atom:               var                                         =  59 (10);
-Atom:               empty                                       =  60 (10);
-Atom:               LiteralValue                                =  61 (10);
+Atom:               var                                         =  72 (10);
+Atom:               empty                                       =  73 (10);
+Atom:               LiteralValue                                =  74 (10);
                                                                      
-LiteralValue:       lit_str                                     =  62 (10);
-LiteralValue:       lit_int                                     =  63 (10);
-LiteralValue:       lit_dec                                     =  64 (10);
-LiteralValue:       lit_dbl                                     =  65 (10);
-LiteralValue:       true_                                       =  66 (10);
-LiteralValue:       false_                                      =  67 (10);
+LiteralValue:       lit_str                                     =  80 (10);
+LiteralValue:       lit_int                                     =  81 (10);
+LiteralValue:       lit_dec                                     =  82 (10);
+LiteralValue:       lit_dbl                                     =  83 (10);
+LiteralValue:       true_                                       =  84 (10);
+LiteralValue:       false_                                      =  85 (10);
                                                                      
-FunctionDecls:      nil                                         =  68 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  69 (10);
+FunctionDecls:      nil                                         =  86 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  87 (10);
                                                                      
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  70 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  88 (10);
                                                                      
-ParamList:          nil                                         =  71 (10);
-ParamList:          params (FunParam, ParamList)                =  72 (10);
+ParamList:          nil                                         =  89 (10);
+ParamList:          params (FunParam, ParamList)                =  90 (10);
                                                                      
-FunctionBody:       CoreExpr                                    =  73 (10);
+FunctionBody:       CoreExpr                                    =  91 (10);
                                                                      
-FunParam:           param (SequenceType, var)                   =  74 (10);
+FunParam:           param (SequenceType, var)                   =  92 (10);
 
 /* Pathfinder extension: recursion */
 CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  75 (10);
@@ -356,6 +360,7 @@ CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  75 (10);
 #define LLL(p) L(L(L(p)))
 #define LLR(p) R(L(L(p)))
 #define LRR(p) R(R(L(p)))
+#define LLLL(p) L(L(L(L(p))))
 #define LRLL(p) L(L(R(L(p))))
 #define LRLR(p) R(L(R(L(p))))
 #define RLR(p) R(L(R(p)))
@@ -457,7 +462,7 @@ reduce (PFcnode_t * p, int goalnt)
                 break;
 
             /* OptBindExpr:        let (letbind (var, Atom), OptBindExpr) */
-            case 8:
+            case 9:
                 /*
                  * Unfold atoms (a is an atom)
                  *
@@ -538,10 +543,23 @@ reduce (PFcnode_t * p, int goalnt)
     rewritten = false;
 
     switch (rule) {
+        /* CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
+                                                    Atom),
+                                           nil), var) */
+        case 5:
+            /* replace for loops of the form
+               'for $a in ... return $a' by its input '...' */
+            if (LLLL(p)->sem.var == R(p)->sem.var) {
+                *p = *LLR(p);
+                relabel (p, kids);
+                rewritten = true;
+            }
+            break;
+            
         /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               Atom),
                                      OptBindExpr) */
-        case 5:
+        case 6:
             /*
              * If we iterate over a sequence that we know (from static
              * typing) to always have length 1, replace the `for' by
@@ -577,7 +595,7 @@ reduce (PFcnode_t * p, int goalnt)
                                                         nil),
                                                    CoreExpr)),
                                     OptBindExpr) */
-        case 9:
+        case 10:
             /*
              * Remove a nested let block:
              * 
@@ -611,7 +629,7 @@ reduce (PFcnode_t * p, int goalnt)
                                                         OptBindExpr)),
                                                    CoreExpr),
                                     OptBindExpr) */
-        case 10:
+        case 11:
             /*
              * Remove a nested let block:
              * 
@@ -639,7 +657,7 @@ reduce (PFcnode_t * p, int goalnt)
                                        cases (case_ (SequenceType,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
-        case 13:
+        case 20:
             /*
              * If we statically know that the type of an expression matches
              * a typeswitch case, we can remove the typeswitch.
@@ -661,19 +679,19 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           seq (empty, Atom) */
-        case 21:
+        case 28:
             *p = *R(p);
             rewritten = true;
             break;
 
         /* CoreExpr:           seq (Atom, empty) */
-        case 22:
+        case 29:
             *p = *L(p);
             rewritten = true;
             break;
 
         /* CoreExpr:           apply (arg (Atom, nil)) */
-        case 48:
+        case 61:
             if (! PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "data"))) {
                 /*
                  * If the argument is a subtype of atomic*, fn:data()
@@ -969,7 +987,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           apply (arg (Atom, arg (Atom, nil))) */
-        case 49:
+        case 62:
             /*
              * fn:concat does not need to append an empty string
              */
@@ -1007,7 +1025,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* Atom:                var */
-        case 59:
+        case 72:
             {
                 /*
                  * See the comment in the declaration of var_env and
