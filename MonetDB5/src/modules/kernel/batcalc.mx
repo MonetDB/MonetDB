@@ -362,7 +362,7 @@ command materialize(b:bat[:void,:any_1]):bat[:oid,:any_1]
 address CMDmaterialize
 comment "Materialize the void column";
 
-command reuse(b:bat[:void,:any_2]):bat[:void,:any_2]
+command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address CMDreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
@@ -1929,7 +1929,7 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 		return throwMessage("batcalc.reuse", "Cannot access descriptor");
 	}
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
-		if( ATOMvarsized(b->ttype)){
+		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
 			bn= BATwcopy(b);
 		} else {
 			bn= BATnew(b->htype,b->ttype,BATcount(b));
@@ -1938,8 +1938,7 @@ batcalc_export str CMDreuse(int *ret, int *bid)
 
 			bn->tsorted= FALSE; 
 			BATkey(bn,FALSE);
-			/* head should be void */
-			assert(b->htype == TYPE_void);
+			/* head is void */
 			BATseqbase(bn, b->hseqbase);
 		}
 		BBPkeepref(bn->batCacheid);
