@@ -235,9 +235,8 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
                 rv.val = union_ (rv.val, n->sem.binary.att1);
                 rv.name = union_ (rv.name, n->sem.binary.att2);
                 rv.val = union_ (rv.val, n->sem.binary.att2);
-                prop_infer_reqvals (L(n), rv);
-                break;
             }
+            prop_infer_reqvals (L(n), rv);
             break;
 
         case la_bool_or:
@@ -247,9 +246,8 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
                 rv.val = diff (rv.val, n->sem.binary.att1);
                 rv.name = union_ (rv.name, n->sem.binary.att2);
                 rv.val = diff (rv.val, n->sem.binary.att2);
-                prop_infer_reqvals (L(n), rv);
-                break;
             }
+            prop_infer_reqvals (L(n), rv);
             break;
 
         case la_bool_not:
