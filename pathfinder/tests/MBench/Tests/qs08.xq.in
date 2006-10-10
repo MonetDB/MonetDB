@@ -1,0 +1,3 @@
+for $e in doc("$TSTTRGDIR/sf0.1.xml")//eOccasional return
+  <eOccasional aRef="{$e/@aRef}">
+  </eOccasional>
