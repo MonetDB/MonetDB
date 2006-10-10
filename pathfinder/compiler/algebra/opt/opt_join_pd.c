@@ -315,7 +315,6 @@ join_pushdown (PFla_op_t *p)
             case la_serialize:
             case la_lit_tbl:
             case la_empty_tbl:
-            case la_disjunion:
             case la_intersect:
             case la_difference:
             case la_distinct:
@@ -651,6 +650,16 @@ join_pushdown (PFla_op_t *p)
                 modified = true;
                 break;
 
+            case la_disjunion:
+                /* This rewrite is only correct if the union operator
+                   is implemented as a union all operation. */
+                *p = *disjunion (eqjoin_unq (L(lp), rp, latt, ratt,
+                                             p->sem.eqjoin_unq.res),
+                                 eqjoin_unq (R(lp), rp, latt, ratt,
+                                             p->sem.eqjoin_unq.res));
+                modified = true;
+                break;
+                
             case la_num_add:
                 modified = modify_binary_op (p, lp, rp, PFla_add);
                 break;
