@@ -137,6 +137,9 @@ select_count(stmt *s)
 		return sc;
 	}
 	case st_join:
+		/* we don't like thetajoins */
+		if (s->flag != cmp_equal)
+			return -1;
 		return select_count(s->op1.stval) + select_count(s->op2.stval);
 	case st_reverse:
 		return select_count(s->op1.stval);
@@ -152,15 +155,15 @@ select_count(stmt *s)
 		return sc;
 	}
 	case st_select: case st_uselect:
-		if (s->op2.stval->nrcols >= 1)
-			return select_count(s->op1.stval) +
-				select_count(s->op2.stval);
+		if (s->op2.stval->nrcols >= 1) 
+		   /* before the reduce we need to scan */
+			return -1;
 		else
 			return select_count(s->op1.stval) + 3;	/* point */
 	case st_select2: case st_uselect2:
 		return select_count(s->op1.stval) + 2;		/* range */
 	case st_idxbat:
-		return 10;	/* we want join indices first */
+		return 100;	/* we want join indices first */
 	case st_bat: 
 	case st_pivot:
 	case st_aggr:
