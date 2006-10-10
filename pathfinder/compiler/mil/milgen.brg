@@ -245,7 +245,7 @@ FragList: empty_frag                                               = 123 (10);
 
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
 
-Rel:      rec_fix (Rec)                                            = 131 (10);
+Rel:      rec_fix (Rec, Rel)                                       = 131 (10);
 Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 132 (10);
 Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 133 (10);
 Rec:      rec_nil                                                  = 134 (10);
@@ -959,7 +959,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1:
         /* Query:    serialize (FragList, empty_tbl) */
         case 2:
-        /* Rel:      rec_fix (Rec) */
+        /* Rel:      rec_fix (Rec, Rel) */
         case 131:
             topdown = true;
             break;
@@ -3757,7 +3757,7 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
 
-        /* Rel:      rec_fix (Rec) */
+        /* Rel:      rec_fix (Rec, Rel) */
         case 131:
         {
             PFmil_t *oldmilprog, *bodymilprog;
@@ -3788,7 +3788,8 @@ reduce (PFpa_op_t * p, int goalnt)
             reduce2(kids[0], nts[0]);
            
             /* get the result environment */
-            res_env = p->sem.rec_fix.res->env;
+            reduce(kids[1], nts[1]);
+            res_env = R(p)->env;
 
             /* update the result counters */
             execute (
@@ -3815,10 +3816,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /* copy all the result attributes */
             for (unsigned int i = 0; i < env_count (res_env); i++) {
                 pin (env_at (res_env, i).mvar,
-                     /* add the pins of the rec_fix operator and
-                        release the additional result pin from 
-                        the rec_fix operator */
-                     p->refctr - 1);
+                     p->refctr);
                 
                 env_add (p->env,
                          env_at (res_env, i).att,
@@ -4916,13 +4914,6 @@ inc_refctr (PFpa_op_t *n)
     
     for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         inc_refctr (n->child[i]);
-    
-    /* we also need to start one traversal from the rec_fix operator
-       to its result (no child relationship). Increasing the reference
-       counter of the result (after it is initialized) accounts for 
-       this traversal. */
-    if (n->kind == pa_rec_fix)
-        n->sem.rec_fix.res->refctr++;
 }
 
 static void

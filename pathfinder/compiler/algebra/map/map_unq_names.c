@@ -546,7 +546,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
         
         case la_rec_fix:
-            res = rec_fix (U(L(p)), U(p->sem.rec_fix.res));
+            res = rec_fix (U(L(p)), U(R(p)));
             break;
             
         case la_rec_param:

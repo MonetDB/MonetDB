@@ -317,11 +317,6 @@ union PFpa_op_sem_t {
         char *          str;     /**< error message */
     } err;
     
-    /* semantic content for a recursion operator */
-    struct {
-        PFpa_op_t      *res;     /**< reference to the result relation */
-    } rec_fix;
-
     /* semantic content for an argument of a recursion parameter */
     struct {
         PFpa_op_t      *base;    /**< reference to the base relation

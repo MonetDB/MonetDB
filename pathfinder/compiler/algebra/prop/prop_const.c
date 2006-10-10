@@ -567,7 +567,7 @@ infer_const (PFla_op_t *n)
 
         case la_rec_fix:
             /* get the constants of the overall result */
-            copy (n->prop->constants, n->sem.rec_fix.res->prop->constants);
+            copy (n->prop->constants, R(n)->prop->constants);
             break;
 
         case la_rec_param:

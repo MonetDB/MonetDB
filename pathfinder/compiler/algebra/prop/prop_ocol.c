@@ -522,8 +522,7 @@ infer_ocol (PFla_op_t *n)
 
         case la_rec_fix:
             /* get the schema of the overall result */
-            ocols (n) = copy_ocols (ocols (n->sem.rec_fix.res),
-                                    ocols_count (n->sem.rec_fix.res));
+            ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)));
             break;
             
         case la_rec_param:
@@ -607,6 +606,77 @@ infer_ocol (PFla_op_t *n)
     }
 }
 
+/* forward declaration */
+static void
+prop_infer (PFla_op_t *n);
+
+/* Helper function that walks through a recursion paramter list
+   and only calls the property inference for the seed expressions. */
+static void
+prop_infer_rec_seed (PFla_op_t *n)
+{
+    switch (n->kind)
+    {
+        case la_rec_param:
+            /* infer the ocols of the arguments */
+            prop_infer_rec_seed (L(n));
+            prop_infer_rec_seed (R(n));
+            break;
+
+        case la_rec_arg:
+            /* infer the ocols of the seed */
+            prop_infer (L(n));
+            
+            n->sem.rec_arg.base->bit_dag = true;
+            ocols (n->sem.rec_arg.base) = copy_ocols (ocols (L(n)),
+                                                      ocols_count (L(n)));
+            break;
+
+        case la_rec_nil:
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "unexpected node kind %i",
+                    n->kind);
+            break;
+    }
+}
+
+/* Helper function that walks through a recursion paramter list
+   and only calls the property inference for the recursion body. */
+static void
+prop_infer_rec_body (PFla_op_t *n)
+{
+    switch (n->kind)
+    {
+        case la_rec_param:
+            /* infer the ocols of the arguments */
+            prop_infer_rec_body (L(n));
+            prop_infer_rec_body (R(n));
+            break;
+
+        case la_rec_arg:
+            /* infer the ocols of the recursion body */
+            prop_infer (R(n));
+            break;
+
+        case la_rec_nil:
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "unexpected node kind %i",
+                    n->kind);
+            break;
+    }
+
+    n->bit_dag = true;
+
+    /* infer information on resulting columns */
+    infer_ocol (n);
+}
+    
 /* worker for PFprop_infer_ocol */
 static void
 prop_infer (PFla_op_t *n)
@@ -619,22 +689,21 @@ prop_infer (PFla_op_t *n)
     if (n->bit_dag)
         return;
 
-    /* The properties of the seeds have to be the initial properties
-       of the base of the recursion. Thus we cannot infer the property
-       bottom up here. */ 
-    if (n->kind == la_rec_arg) {
-        /* infer the schema of the seed */
-        prop_infer (L(n));
-        
-        n->sem.rec_arg.base->bit_dag = true;
+    /* Make sure to first collect all seeds and adjust
+       the rec_base properties before inferring the properties
+       for the body and result expression. */
+    switch (n->kind)
+    {
+        case la_rec_fix:
+            /* infer the ocols of the arguments */
+            prop_infer_rec_seed (L(n));
+            prop_infer_rec_body (L(n));
+            prop_infer (R(n));
+            bottom_up = false;
+            break;
 
-        ocols (n->sem.rec_arg.base) = copy_ocols (ocols (L(n)),
-                                                  ocols_count (L(n)));
-
-        /* infer the schema of the recursion body */
-        prop_infer (R(n));
-        
-        bottom_up = false;
+        default:
+            break;
     }
     
     if (bottom_up)

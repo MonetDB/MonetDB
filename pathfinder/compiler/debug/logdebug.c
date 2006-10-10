@@ -892,7 +892,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {      
-
         /*
          * Label for child node has already been built, such that
          * only the edge between parent and child must be created
@@ -907,18 +906,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
     /* create soft links */
     switch (n->kind)
     {
-        case la_rec_fix:
-            if (n->sem.rec_fix.res) {
-                if (n->sem.rec_fix.res->node_id == 0)
-                    n->sem.rec_fix.res->node_id = node_id++;
-                
-                PFarray_printf (dot,
-                                "node%i -> node%i "
-                                "[style=dashed label=res dir=none];\n",
-                                n->node_id, n->sem.rec_fix.res->node_id);
-            }
-            break;
-
         case la_rec_arg:
             if (n->sem.rec_arg.base) {
                 if (n->sem.rec_arg.base->node_id == 0)
@@ -934,6 +921,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                                 "[style=dashed label=recurse];\n",
                                 n->child[1]->node_id,
                                 n->sem.rec_arg.base->node_id);
+                if (!n->sem.rec_arg.base->bit_dag)
+                    node_id = la_dot (dot, n->sem.rec_arg.base, node_id);
             }
             break;
 
@@ -944,6 +933,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                 
                 PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
                                 n->node_id, n->sem.proxy.base1->node_id);
+                if (!n->sem.proxy.base1->bit_dag)
+                    node_id = la_dot (dot, n->sem.proxy.base1, node_id);
             }
             
             if (n->sem.proxy.base2) {
@@ -952,6 +943,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                 
                 PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
                                 n->node_id, n->sem.proxy.base2->node_id);
+                if (!n->sem.proxy.base2->bit_dag)
+                    node_id = la_dot (dot, n->sem.proxy.base2, node_id);
             }
             
             if (n->sem.proxy.ref) {
@@ -962,6 +955,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                                 "node%i -> node%i "
                                 "[style=dashed label=ref];\n",
                                 n->node_id, n->sem.proxy.ref->node_id);
+                if (!n->sem.proxy.ref->bit_dag)
+                    node_id = la_dot (dot, n->sem.proxy.ref, node_id);
             }
             break;
             

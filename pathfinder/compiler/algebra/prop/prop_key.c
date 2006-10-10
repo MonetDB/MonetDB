@@ -454,7 +454,7 @@ infer_key (PFla_op_t *n)
 
         case la_rec_fix:
             /* get the keys of the overall result */
-            copy (n->prop->keys, n->sem.rec_fix.res->prop->keys);
+            copy (n->prop->keys, R(n)->prop->keys);
             break;
 
         case la_rec_param:

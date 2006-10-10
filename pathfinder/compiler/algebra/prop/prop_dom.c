@@ -754,7 +754,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_rec_fix:
             /* get the domains of the overall result */
-            bulk_add_dom (n->prop, n->sem.rec_fix.res);
+            bulk_add_dom (n->prop, R(n));
             break;
 
         case la_rec_param:

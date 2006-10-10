@@ -871,18 +871,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
     /* create soft links */
     switch (n->kind)
     {
-        case pa_rec_fix:
-            if (n->sem.rec_fix.res) {
-                if (n->sem.rec_fix.res->node_id == 0)
-                    n->sem.rec_fix.res->node_id = node_id++;
-                
-                PFarray_printf (dot,
-                                "node%i -> node%i "
-                                "[style=dashed label=res dir=none];\n",
-                                n->node_id, n->sem.rec_fix.res->node_id);
-            }
-            break;
-
         case pa_rec_arg:
             if (n->sem.rec_arg.base) {
                 if (n->sem.rec_arg.base->node_id == 0)

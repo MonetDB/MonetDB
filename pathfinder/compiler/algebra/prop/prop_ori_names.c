@@ -575,21 +575,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_rec_fix:
-            n->prop->l_name_pairs = PFarray_copy (np_list);
-
-            /* The left argument list is modified in case the
-               result of the recursion (referenced via a 'semantical'
-               edge) requires different names. The mapping has to
-               cope with this special case. */
-            patch_ori_names (n->prop->l_name_pairs,
-                             infer_ori_names (n->sem.rec_fix.res,
-                                              n->prop->l_name_pairs));
-
-            /* use empty name pair list (here the list 
-               of the unused right argument) */
-            infer_ori_names (L(n), n->prop->r_name_pairs);
-            
-            return np_list;
+            n->prop->r_name_pairs = PFarray_copy (np_list);
             break;
             
         case la_rec_param:
@@ -707,13 +693,6 @@ prop_infer (PFla_op_t *n)
 
     /* reset the list of available column names */
     FREE(n) = ALL;
-    
-    /* we also need to start one traversal from the rec_fix operator
-       to its result (no child relationship). Increasing the reference
-       counter of the result (after it is initialized) accounts for 
-       this traversal. */
-    if (n->kind == la_rec_fix)
-        EDGE(n->sem.rec_fix.res)++;
 }
 
 /**

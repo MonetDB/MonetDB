@@ -2421,13 +2421,7 @@ PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
     assert (res);
 
     /* create recursion operator */
-    ret = la_op_wire1 (la_rec_fix, paramList);
-
-    /*
-     * insert semantic value (reference to the result
-     * relation) into the result
-     */
-    ret->sem.rec_fix.res = (PFla_op_t *) res;
+    ret = la_op_wire2 (la_rec_fix, paramList, res);
 
     /* allocate memory for the result schema (= schema(n)) */
     ret->schema.count = res->schema.count;

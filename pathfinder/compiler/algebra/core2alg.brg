@@ -1793,17 +1793,20 @@ reduce (PFcnode_t * p, int goalnt)
              *
              * There are two approaches to translate the above pattern:
              *  * a delta based approach
-             *  * an approach that collects all results
+             *  * an approach that uses the result of the current recursion
+             *    step as input for next one
+             *  * an approach that uses the overall result as input for the
+             *    next recursion step
              *
-             * We choose to translate the recursion with the second approach
+             * We choose to translate the recursion with the third approach
              * as XQuery allows positional access as well as aggregates inside
              * the recursion body -- a delta approach would thus return the
              * wrong results. Whenever all the operators inside the recursion
              * body do not rely on the result size and positions we can choose
              * the (probably cheaper) delta approach.
-             * The delta approach then needs to change the environment as well
-             * as the loop relation as less iterations may be required in the
-             * next recursive call.
+             * The delta and the last result approach both need to change
+             * the environment as well as the loop relation as less iterations
+             * may be required in the next recursive call.
              *
              * The recursion is translated with the help of the following
              * algebra nodes:
@@ -1829,25 +1832,27 @@ reduce (PFcnode_t * p, int goalnt)
              *         distinct
              *            |
              *         rec_fix
-             *            |  \ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-             *        rec_param            (res)           \
-             *        /       \________________            
+             *            |  \_____________________________
+             *        rec_param                            \
+             *        /       \________________             \
              *    rec_arg                      \            |
-             *    /  |  \                  rec_param
+             *    /  |  \                  rec_param        |
              *    |      \                  /      \        |
-             *   / \  \   \             rec_arg  rec_nil  
-             *  /q1 \      \            /  \  \___   _ _ _ /
+             *   / \  \   \             rec_arg  rec_nil    /
+             *  /q1 \      \            /  \  \___   ______/
              * /_____\ |    |     iter|item       \ /
-             *              |     ----|----  \     U
+             *              |     ----|----  \     U (2)
              *         |    |         |           / \
-             *              |           (base)|  /  diff
+             *              |           (base)|  /  diff (1)
              *         | rownum_                 |   | \
              *          (pos:<item>||iter)    |  | __|__\
              *         |    |                    |/  |
-             *           distinct             |  |   |
-             *         |    |               rec_base |
+             *           (use (1), (2), or    \  |   |
+             *         |  (3) as input)     rec_base |
              *   (base)     | ______________________/ 
              *         |    |/
+             *           distinct (3)
+             *         |    |
              *           pi_(iter, item)
              *         |    |   
              *             / \  
@@ -1942,12 +1947,12 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[1], nts[1]);
 
             /* the result of the recursion body */
-            res_body = project (A(RR(p)).rel,
-                                proj (att_iter, att_iter),
-                                proj (att_item, att_item));
+            res_body = distinct (project (A(RR(p)).rel,
+                                          proj (att_iter, att_iter),
+                                          proj (att_item, att_item)));
             
             /* get the really new nodes */
-            delta = difference (distinct (res_body),
+            delta = difference (res_body,
                                 project (base_res,
                                          proj (att_iter, att_iter),
                                          proj (att_item, att_item)));
@@ -1976,10 +1981,17 @@ reduce (PFcnode_t * p, int goalnt)
                                         rec_arg (
                                             A(RL(p)).rel,
                                             rownum (
-            /* using 'delta' instead of 'res_body' changes the evaluation
-               strategy: delta vs. full intermediate result (res_body) */
-                                             /* distinct (delta), */
-                                                distinct (res_body),
+            /* using 'distinct (delta)' or 'distinct (res_body)'
+               instead of 'res' changes the evaluation strategy:
+                - 'delta': only the really new nodes are the input
+                  for the next recursion
+                - 'res_body': the result of the current recursion
+                  is the input for the next recursion
+                - 'res': the whole result collected until now
+                  is input to the next recurstion step */
+                    /* (1) */                /* delta, */
+                    /* (2) */                   res,
+                    /* (3) */                /* res_body, */
                                                 att_pos,
                                                 sortby (att_item),
                                                 att_iter),

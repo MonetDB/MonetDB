@@ -573,42 +573,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
         
         case la_rec_fix:
-        {
-            /* The result of the recursion is not referenced by
-               a child edge. Thus the PROJ macro has to be applied by
-               hand. */
-            PFalg_att_t   ori_new, ori_old, unq;
-            PFla_op_t    *rec_res = O(p->sem.rec_fix.res);
-            PFalg_proj_t *projlist = PFmalloc (rec_res->schema.count *
-                                               sizeof (PFalg_proj_t));
-            bool          renamed = false;
-            unsigned int  count = 0;
-            
-            for (unsigned int i = 0; i < rec_res->schema.count; i++) {
-                ori_old = rec_res->schema.items[i].name;
-
-                /* lookup unique name for column @a ori_old */
-                unq = PFprop_unq_name_left (p->prop, ori_old);
-
-                /* column ori_old is not referenced by operator @a p 
-                   and thus does not appear in the projection */
-                if (!unq) continue;
-
-                /* lookup corresponding new name for column @a ori_old */
-                ori_new = ONAME(p, unq);
-
-                /* don't allow missing matches */
-                assert (ori_new);
-
-                projlist[count++] = proj (ori_new, ori_old);
-                renamed = renamed || (ori_new != ori_old);
-            }
-
-            res = rec_fix (O(L(p)), 
-                           renamed
-                               ? PFla_project_ (rec_res, count, projlist)
-                               : rec_res);
-        } break;
+            res = rec_fix (O(L(p)),
+                           PROJ(RIGHT, p));
+            break;
             
         case la_rec_param:
             res = rec_param (O(L(p)), O(R(p)));

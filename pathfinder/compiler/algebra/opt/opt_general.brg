@@ -202,7 +202,7 @@ Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  80 (10);
 
-Rel:    rec_fix (Rec)                             =  81 (10);
+Rel:    rec_fix (Rec, Rel)                        =  81 (10);
 Rel:    rec_base                                  =  82 (10);
 Rec:    rec_param (Arg, Rec)                      =  83 (10);
 Rec:    rec_nil                                   =  84 (10);

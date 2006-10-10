@@ -427,6 +427,7 @@ la_cse (PFla_op_t *n)
             n->child[i] = n->child[i]->child[0];
 
         n->child[i] = la_cse (n->child[i]);
+
     }
 
     /*

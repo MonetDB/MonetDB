@@ -558,7 +558,8 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_rec_fix:
             /* infer the required columns of the result */
-            prop_infer_icols (n->sem.rec_fix.res, n->prop->icols);
+            n->prop->r_icols = n->prop->icols;
+            prop_infer_icols (R(n), n->prop->r_icols);
             
             /* start an alternative traversal of the recursion
                nodes to ensure that the body of the recursion
@@ -569,6 +570,10 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             /* infer empty list for parameter list */
             n->prop->l_icols = 0;
+
+            prop_infer_icols (L(n), n->prop->l_icols);
+
+            skip_children = true;
             break;
             
         case la_rec_param:
@@ -669,13 +674,6 @@ prop_infer (PFla_op_t *n)
     n->prop->icols = 0;
     n->prop->l_icols = 0;
     n->prop->r_icols = 0;
-
-    /* we also need to start one traversal from the rec_fix operator
-       to its result (no child relationship). Increasing the reference
-       counter of the result (after it is initialized) accounts for 
-       this traversal. */
-    if (n->kind == la_rec_fix)
-        n->sem.rec_fix.res->state_label++;
 }
 
 /**

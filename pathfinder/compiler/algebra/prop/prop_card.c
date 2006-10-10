@@ -175,7 +175,7 @@ infer_card (PFla_op_t *n)
 
         case la_rec_fix:
             /* get the cardinality of the overall result */
-            n->prop->card = n->sem.rec_fix.res->prop->card;
+            n->prop->card = R(n)->prop->card;
             break;
             
         case la_rec_param:

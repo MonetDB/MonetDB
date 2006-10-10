@@ -1718,7 +1718,7 @@ plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
             cheapest_params = *(plan_t **) PFarray_at (params, i);
 
     /* get the plans for the result of the recursion */
-    res = n->sem.rec_fix.res->plans;
+    res = R(n)->plans;
 
     /* find the cheapest plan for the result */
     for (unsigned int i = 0; i < PFarray_last (res); i++)
@@ -1820,7 +1820,7 @@ clean_up_body_plans (PFla_op_t *n)
         assert (code);
         cur = R(cur);
     }
-    code = clean_up_body_plans_worker (n->sem.rec_fix.res, bases);
+    code = clean_up_body_plans_worker (R(n), bases);
     assert (code);
     
 #ifdef NDEBUG
@@ -2185,7 +2185,7 @@ plan_subexpression (PFla_op_t *n)
                 }
 
                 /* create plans for the result relation */
-                plan_subexpression (n->sem.rec_fix.res);
+                plan_subexpression (R(n));
 
                 /* put together all ingredients to form a physical
                    representation of the recursion (basically a 1:1
