@@ -25,6 +25,9 @@ to the Version 4.* implementation.
 The coercion routines are build for speed. They are not protected
 against overflow.
 
+@= idempotent
+	command batcalc.@1(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
+	address CMDconvert_@1;
 @= coercion
 	command batcalc.@2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
 	address CMDconvert_@1_@2
@@ -33,33 +36,51 @@ against overflow.
 	address CMDconvert_void_@1_@2
 	comment "Coerce an @1 tail to a bat with @2 tail.";
 @{
-@-
-@= Coercion
-	@:coercion(@1,sht)@
-	@:coercion(@1,int)@
-	@:coercion(@1,oid)@
-	@:coercion(@1,lng)@
-	@:coercion(@1,dbl)@
-	@:coercion(@1,flt)@
-	@:coercion(@1,str)@
 @mal
-	@:Coercion(sht)@
-	@:Coercion(int)@
-	@:Coercion(lng)@
-	@:Coercion(flt)@
-	@:Coercion(dbl)@
-	@:Coercion(str)@
+	@:idempotent(bit)@
+	@:idempotent(chr)@
+	@:idempotent(sht)@
+	@:idempotent(int)@
+	@:idempotent(oid)@
+	@:idempotent(lng)@
+	@:idempotent(flt)@
+	@:idempotent(dbl)@
+	@:idempotent(str)@
 
-	@:coercion(bit,sht)@
-	@:coercion(bit,int)@
-	@:coercion(bit,lng)@
+	@:coercion(sht,oid)@
+	@:coercion(sht,int)@
+	@:coercion(sht,lng)@
+	@:coercion(sht,flt)@
+	@:coercion(sht,dbl)@
+
+	@:coercion(int,sht)@
+	@:coercion(int,oid)@
+	@:coercion(int,lng)@
+	@:coercion(int,flt)@
+	@:coercion(int,dbl)@
+
+	@:coercion(lng,oid)@
+	@:coercion(lng,sht)@
+	@:coercion(lng,int)@
+	@:coercion(lng,flt)@
+	@:coercion(lng,dbl)@
 
 	@:coercion(oid,sht)@
 	@:coercion(oid,int)@
 	@:coercion(oid,lng)@
+	@:coercion(oid,flt)@
+	@:coercion(oid,dbl)@
 
-	@:coercion(oid,oid)@
-	@:coercion(chr,chr)@
+	@:coercion(flt,sht)@
+	@:coercion(flt,int)@
+	@:coercion(flt,lng)@
+	@:coercion(flt,dbl)@
+
+	@:coercion(dbl,sht)@
+
+	@:coercion(bit,sht)@
+	@:coercion(bit,int)@
+	@:coercion(bit,lng)@
 
 	@:coercion(sht,bit)@
 	@:coercion(int,bit)@
@@ -92,9 +113,12 @@ The others effectively may loose information, which calls
 for a more expensive operation based on the conversion
 routines in the GDK kernel.
 
-@= tstBat
+@= tstBAT
 if( bn== NULL) {*ret= 0; 
 	return throwMessage("batcalc.@1", "can not create bat");}
+@= resultBAT
+	bn= newBATcresult(b, TYPE_@1);
+	@:tstBAT(@2)@
 
 @= Idempotent
 batcast_export str CMDconvert_@1(int *ret, int *bid);
@@ -102,13 +126,19 @@ str CMDconvert_@1(int *ret, int *bid){
 	BAT *b, *bn;
 	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
 
-	bn= BATrcopy(b);
-	@:tstBat(CMDconvert_@1)@
+	bn= BATcopy(b, b->htype, b->ttype, 2);
+	@:tstBAT(CMDconvert_@1)@
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@= wrapup
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	*ret= bn->batCacheid;
+	BBPkeepref(*ret);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
 @-
 The void case is geared at speed.
 Test against overflow in a reduce situation.
@@ -119,35 +149,20 @@ str CMDconvert_void_@1_@2(int *ret, int *bid){
 	@1 *p,*q;
 	@2 *o;
 
-	if( TYPE_@1 == TYPE_@2)
-		return CMDconvert_@1(ret,bid);
 	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
-
-	bn= newBATcresult(b, TYPE_@2);
-	@:tstBat(CMDconvert_@1_@2)@
+	@:resultBAT(@2,CMDconvert_@1_@2)@
 	o= (@2*)BUNtail(bn,BUNfirst(bn));
 	p= (@1*)BUNtail(b,BUNfirst(b));
 	q= (@1*)BUNtail(b,BUNlast(b));
-	if(sizeof(@1) != BUNsize(b)  ){
-		size_t xx= BUNsize(b);
-		while(p<q){
-			*o = *p== @1_nil ?  @2_nil: (@2) *p;
-			p= (@1 *) ((char*)p+xx); o++;
-		}
-	} else {
-		while(p<q){
-			*o = *p== @1_nil ?  @2_nil: (@2) *p;
-			p++; o++;
-		}
+	size_t xx= BUNsize(b);
+	while(p<q){
+		*o = *p== @1_nil ?  @2_nil: (@2) *p;
+		p= (@1 *) ((char*)p+xx); o++;
 	}
 bunins_failed:
 	(bn)->batBuns->free += BATcount(b)*sizeof(@2);
 	BATsetcount(bn, BATcount(b));
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	@:wrapup@
 }
 @= GeneralFixed
 batcast_export str CMDconvert_@1_@2(int *ret, int *bid);
@@ -157,13 +172,8 @@ str CMDconvert_@1_@2(int *ret, int *bid){
 	@2 y;
 	char *p, *q, *h;
 
-	if( TYPE_@1 == TYPE_@2)
-		return CMDconvert_@1(ret,bid);
 	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
-
-	bn= newBATcresult(b, TYPE_@2);
-	@:tstBat(CMDconvert_@1)@
-
+	@:resultBAT(@2,CMDconvert_@1)@
 	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNtail(b,BUNfirst(b));
 	q= (char*) BUNtail(b,BUNlast(b));
@@ -175,14 +185,22 @@ str CMDconvert_@1_@2(int *ret, int *bid){
 		p+= xx; h+=xx;
 	}
 bunins_failed:
-	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	@:wrapup@
 }
-@= GeneralToStr
+@-
+Handling string coercion
+		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)p);
+@= ConvertToStr
+		@1ToStr(&dst,&len, (ptr) p);
+		bunfastins(bn, h, (ptr)dst);
+		if( dst) GDKfree(dst);
+@= ConvertFromStr
+		v= NULL; len=0;
+		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)p);
+		bunfastins(bn, h, v);
+		if(ATOMextern(TYPE_@1) )
+			GDKfree(v);
+@= GeneralStr
 batcast_export str CMDconvert_@1_str(int *ret, int *bid);
 str CMDconvert_@1_str(int *ret, int *bid){
 	BAT *b,*bn;
@@ -192,65 +210,45 @@ str CMDconvert_@1_str(int *ret, int *bid){
 	int len=0;
 
 	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
-	bn= newBATcresult(b, TYPE_str);
-	@:tstBat(CMDconvert_@1)@
-
+	@:resultBAT(str,CMDconvert_@1)@
 	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNtail(b,BUNfirst(b));
 	q= (char*) BUNtail(b,BUNlast(b));
 	xx= BUNsize(b);
 
 	while(p<q){
-		@1ToStr(&dst,&len, (ptr) p);
-		bunfastins(bn, h, (ptr)dst);
-		if( dst) GDKfree(dst);
+		@:ConvertToStr(@1)@
 		p+=xx; h+= xx;
 	}
 bunins_failed:
-	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	@:wrapup@
 }
 batcast_export str CMDconvert_void_@1_str(int *ret, int *bid);
 str CMDconvert_void_@1_str(int *ret, int *bid){
 	return CMDconvert_@1_str(ret,bid);
 }
-@= GeneralFromStr
+
 batcast_export str CMDconvert_str_@1(int *ret, int *bid);
 str CMDconvert_str_@1(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
-	char * t,*h,*e;
+	char *p,*q,*h;
 	ptr v;
 	int len;
 
 	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
-	bn= newBATcresult(b, TYPE_@1);
-	@:tstBat(CMDconvert_str_@1)@
-
-	h= (ptr) BUNhloc(b,BUNfirst(b));
-	t= (ptr) BUNtloc(b,BUNfirst(b));
-	e= (ptr) BUNhloc(b,BUNlast(b));
+	@:resultBAT(@1,CMDconvert_str_@1)@
+	h= (char *) BUNhead(b,BUNfirst(b));
+	p= (ptr) BUNtloc(b,BUNfirst(b));
+	q= (char *) BUNhead(b,BUNlast(b));
 	xx= BUNsize(b);
 
-	while(h<e){
-		v= NULL; len=0;
-		ATOMfromstr( TYPE_@1, &v, &len, (char*)Tbase(b)+*(var_t*)t);
-		bunfastins(bn, h, v);
-		if(ATOMextern(TYPE_@1) )
-			GDKfree(v);
-		t+=xx; h+= xx;
+	while(p<q){
+		@:ConvertFromStr(@1)@
+		p+=xx; h+= xx;
 	}
 bunins_failed:
-	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret= bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	@:wrapup@
 }
 batcast_export str CMDconvert_void_str_@1(int *ret, int *bid);
 str CMDconvert_void_str_@1(int *ret, int *bid){
@@ -260,9 +258,6 @@ str CMDconvert_void_str_@1(int *ret, int *bid){
 The lengthly list of coercions options could have been generated.
 @c
 #include "batcast.h"
-
-#define BATwcopy(b) BATcopy(b, b->htype, b->ttype, TRUE)
-#define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
 
 static BAT *
 newBATcresult(BAT *b, int tpe)
@@ -278,80 +273,76 @@ newBATcresult(BAT *b, int tpe)
 	bn->tsorted = b->tsorted;
 	return bn;
 }
-@-
-@= CoercionImpl
-	@:GeneralFixed(@1,oid)@
-	@:GeneralFixed(@1,int)@
-	@:GeneralFixed(@1,lng)@
-	@:GeneralFixed(@1,flt)@
-	@:GeneralFixed(@1,dbl)@
-	@:Mapping(@1,oid)@
-	@:Mapping(@1,int)@
-	@:Mapping(@1,lng)@
-	@:Mapping(@1,flt)@
-	@:Mapping(@1,dbl)@
-	@:GeneralToStr(@1)@
-	@:GeneralFromStr(@1)@
-@c
 
 int	oidToStr(char **dst, int *len, oid *src  ){
 		return OIDtoStr(dst,len, src);
 }
-@:Idempotent(bit)@
-@:Idempotent(sht)@
-@:Idempotent(int)@
-@:Idempotent(lng)@
-@:Idempotent(flt)@
-@:Idempotent(dbl)@
-@:Idempotent(str)@
-@:Idempotent(oid)@
-@:Idempotent(chr)@
+	@:Idempotent(bit)@
+	@:Idempotent(chr)@
+	@:Idempotent(sht)@
+	@:Idempotent(int)@
+	@:Idempotent(oid)@
+	@:Idempotent(lng)@
+	@:Idempotent(flt)@
+	@:Idempotent(dbl)@
+	@:Idempotent(str)@
 
-@:CoercionImpl(sht)@
-@:CoercionImpl(int)@
-@:CoercionImpl(oid)@
-@:CoercionImpl(lng)@
-@:CoercionImpl(flt)@
-@:CoercionImpl(dbl)@
+	@:GeneralStr(bit)@
+	@:GeneralStr(chr)@
+	@:GeneralStr(sht)@
+	@:GeneralStr(int)@
+	@:GeneralStr(lng)@
+	@:GeneralStr(flt)@
+	@:GeneralStr(dbl)@
 
-@:GeneralFixed(sht,sht)@
-@:GeneralFixed(int,sht)@
-@:GeneralFixed(oid,sht)@
-@:GeneralFixed(lng,sht)@
-@:GeneralFixed(flt,sht)@
-@:GeneralFixed(dbl,sht)@
-@:Mapping(sht,sht)@
-@:Mapping(int,sht)@
-@:Mapping(lng,sht)@
-@:Mapping(oid,sht)@
-@:Mapping(flt,sht)@
-@:Mapping(dbl,sht)@
+@-
+The reduction coding is still to be provided.
+@= CoercionEnlarge
+	@:GeneralFixed(@1,@2)@
+	@:Mapping(@1,@2)@
+@= CoercionReduce
+	@:GeneralFixed(@1,@2)@
+	@:Mapping(@1,@2)@
+@-
+Write out all combinations to ease subsequent
+code fine tuning
+@c
+	@:CoercionEnlarge(sht,oid)@
+	@:CoercionEnlarge(sht,int)@
+	@:CoercionEnlarge(sht,lng)@
+	@:CoercionEnlarge(sht,flt)@
+	@:CoercionEnlarge(sht,dbl)@
 
-@:GeneralFixed(bit,sht)@
-@:GeneralFixed(bit,int)@
-@:GeneralFixed(bit,lng)@
-@:Mapping(bit,sht)@
-@:Mapping(bit,int)@
-@:Mapping(bit,lng)@
+	@:CoercionReduce(int,sht)@
+	@:CoercionEnlarge(int,oid)@
+	@:CoercionEnlarge(int,lng)@
+	@:CoercionEnlarge(int,flt)@
+	@:CoercionEnlarge(int,dbl)@
 
-@:GeneralFixed(sht,bit)@
-@:GeneralFixed(int,bit)@
-@:GeneralFixed(lng,bit)@
-@:Mapping(sht,bit)@
-@:Mapping(int,bit)@
-@:Mapping(lng,bit)@
+	@:CoercionReduce(lng,oid)@
+	@:CoercionReduce(lng,sht)@
+	@:CoercionReduce(lng,int)@
+	@:CoercionEnlarge(lng,flt)@
+	@:CoercionEnlarge(lng,dbl)@
 
-@:GeneralFixed(chr,chr)@
-@:Mapping(chr,chr)@
+	@:CoercionReduce(oid,sht)@
+	@:CoercionReduce(oid,int)@
+	@:CoercionEnlarge(oid,lng)@
+	@:CoercionEnlarge(oid,flt)@
+	@:CoercionEnlarge(oid,dbl)@
 
-@:GeneralFromStr(bit)@
+	@:CoercionReduce(flt,sht)@
+	@:CoercionReduce(flt,int)@
+	@:CoercionReduce(flt,lng)@
+	@:CoercionEnlarge(flt,dbl)@
 
-batcast_export str CMDconvert_void_str_str(int *ret, int *bid);
-str CMDconvert_void_str_str(int *ret, int *bid){
-	return CMDconvert_str(ret,bid);
-}
-batcast_export str CMDconvert_str_str(int *ret, int *bid);
-str CMDconvert_str_str(int *ret, int *bid){
-	return CMDconvert_str(ret,bid);
-}
+	@:CoercionReduce(dbl,sht)@
+
+	@:CoercionEnlarge(bit,sht)@
+	@:CoercionEnlarge(bit,int)@
+	@:CoercionEnlarge(bit,lng)@
+
+	@:CoercionReduce(sht,bit)@
+	@:CoercionReduce(int,bit)@
+	@:CoercionReduce(lng,bit)@
 @}

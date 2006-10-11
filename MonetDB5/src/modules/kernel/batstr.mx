@@ -27,10 +27,6 @@ aligned on the head. Moreover, the head of the BATs
 are limited to :void, which can be cheaply realized using
 the GRPsplit operation.
 @mal
-command batcalc.str(b:bat[:void,:str]):bat[:void,:str]
-address STRbattostr
-comment "Identity mapping for string bats";
-
 command batcalc.length( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatLength
 comment "Return the length of a string.";
@@ -554,14 +550,6 @@ bunins_failed:
 @:binarySTR(Tail,str,int,strTail,"tail")@
 @:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
 @:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
-
-batstr_export str STRbattostr(int *ret, int *bid);
-str
-STRbattostr(int *ret, int *bid)
-{
-	BBPincref(*ret = *bid, TRUE);
-	return MAL_SUCCEED;
-}
 
 batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 str
