@@ -41,6 +41,15 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
+# .s,	.s,	sys.t # table_name
+# objid,	distance,	expected # name
+# bigint,	double,	double # type
+# 1,	22,	22 # length
+# . # table_name
+# fgetnearestobjidalleq_single_value # name
+# bigint # type
+# 1 # length
+[ 0	]
 
 # 13:48:21 >  
 # 13:48:21 >  Done.

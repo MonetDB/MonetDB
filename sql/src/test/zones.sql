@@ -57,7 +57,7 @@ from zoneindex where ra<180.0 and margin=0;
 
 -------------------------------------
 create function GetNearbyObjects(
-                       pdec double, pra double, -- in degrees
+                       pra double, pdec double, -- in degrees
                        ptheta double)           -- radius in degrees
 returns Table (objID bigint, distance double) 
 begin
@@ -86,7 +86,7 @@ begin
 end;
 
 select count(S.objID) 
-from GetNearbyObjects(cast(1.48 as double),cast(193.75 as double),cast(0.1 as double)) as S;
+from GetNearbyObjects(193.75, 1.48, 0.1) as S;
 
 create table zonetest (
     objID    bigint,
@@ -99,10 +99,38 @@ insert into zonetest values( 687726014001184895,	0.13972627471136584);
 insert into zonetest values( 687726014001184896,	0.13973831452158963);
 
 select S.objID,S.distance, T.expected 
-from GetNearbyObjects(cast(1.48 as double),cast(193.75 as double),cast(1.0 as double)) as S, zonetest as T
+from GetNearbyObjects(193.75,1.48, 1.0) as S, zonetest as T
 where S.objID=T.objID and abs(S.distance-T.expected)>epsilon;
 
+-----------------------------------
+create function GetNearestObject(
+                         pra double, pdec double) -- in degrees
+returns Table (objID bigint, distance double) 
+begin
+	return TABLE(select objID,distance
+	from GetNearbyObjects(pra,pdec,0.1) G
+	where distance = (select min(distance) 
+	from GetNearbyObjects(pra,pdec,0.1) G1));
+end;
 
+create function fGetNearestObjIdAllEq(
+                         pra double, pdec double, pr double)
+returns bigint
+begin
+	declare ob bigint;
+	set ob= (select G.objID
+	from GetNearestObject(pra,pdec) G);
+        return ob;
+end;
+
+declare nearest bigint;
+set nearest=687726014001184891;
+
+select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
+
+---------------------------------------------
+drop function fGetNearestObjIdAllEq;
+drop function GetNearestObject;
 drop function GetNearbyObjects;
 drop function Alpha;
 drop table alphatest;
