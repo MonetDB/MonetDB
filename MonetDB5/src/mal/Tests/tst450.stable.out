@@ -410,6 +410,27 @@ command crackers.printCrackerInsertions(b:bat[:any_1,:sht]):void address CRKprin
 command crackers.printCrackerInsertions(b:bat[:any_1,:chr]):void address CRKprintCrackerInsertions;
 #Print the pending insertions of the cracker BAT of b
 
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:date]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:dbl]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:flt]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:lng]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:int]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:sht]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
+command crackers.sizeCrackerInsertions(b:bat[:any_1,:chr]):void address CRKsizeCrackerInsertions;
+#Get the size of the pending insertions of the cracker BAT of b
+
 command io.import{unsafe}(b:bat[:any_1,:any_2],filepath:str):bit address IOimport;
 #Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #parameter BAT. You have to create it! Its signature must match the dump,
