@@ -399,7 +399,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t chr;
-	int i;
+	size_t i;
 
 	/* don't seed the randomiser, or you get the same challenge during
 	 * the same second */
