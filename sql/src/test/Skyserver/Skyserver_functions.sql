@@ -1877,8 +1877,9 @@ END;
 
 CREATE FUNCTION fGetObjectsEq(flag int, ra float, 
 				deci float, r float, zoom float)
-RETURNS obj table (ra float, [dec] float, flag int, objid bigint)
+RETURNS table(ra float, [dec] float, flag int, objid bigint)
 BEGIN
+	DECLARE table obj(ra float, [dec] float, flag int, objid bigint);
         DECLARE nx float,
                 ny float,
                 nz float,
@@ -1889,71 +1890,71 @@ BEGIN
         if (rad > 250) 
 		THEN set rad = 250;      -- limit to 4.15 degrees == 250 arcminute radius
 	END IF;
-        set nx  = COS(RADIANS(dec))*COS(RADIANS(ra));
-        set ny  = COS(RADIANS(dec))*SIN(RADIANS(ra));
-        set nz  = SIN(RADIANS(dec));
+        set nx  = COS(RADIANS(deci))*COS(RADIANS(ra));
+        set ny  = COS(RADIANS(deci))*SIN(RADIANS(ra));
+        set nz  = SIN(RADIANS(deci));
         set mag =  25 - 1.5* zoom;  -- magnitude reduction.
-        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)||' '||str(dec,22,15)||' '||str(rad,5,2);
+        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)||' '||str(deci,22,15)||' '||str(rad,5,2);
 
-        if ( (flag & 1) > 0 )  -- specObj
+        if ( bit_and(flag, 1) > 0 )  -- specObj
             THEN 
                 INSERT INTO obj
                 SELECT ra, dec,  1 as flag, specobjid as objid
-                FROM fHtmCover(cmd) , SpecObj WITH (nolock)
+                FROM fHtmCover(cmd) , SpecObj 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
         END IF;
 
-        if ( (flag & 2) > 0 )  -- photoObj
+        if ( bit_and(flag, 2) > 0 )  -- photoObj
             THEN 
                 INSERT INTO obj
                 SELECT ra, dec, 2 as flag, objid
-                FROM fHtmCover(cmd) , PhotoPrimary WITH (nolock)
+                FROM fHtmCover(cmd) , PhotoPrimary 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad)
                 and (r <= mag );
          END IF;
 
-        if ( (flag & 4) > 0 )  -- target
+        if ( bit_and(flag, 4) > 0 )  -- target
             THEN 
                 INSERT INTO obj
                 SELECT ra, dec, 4 as flag, targetid as objid
-                FROM fHtmCover(cmd) , Target WITH (nolock)
+                FROM fHtmCover(cmd) , Target 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
 	END IF;
 
-        if ( (flag & 8) > 0 )  -- mask
+        if ( bit_and(flag, 8) > 0 )  -- mask
             THEN
                 INSERT INTO obj
                 SELECT ra, dec, 8 as flag, maskid as objid
-                FROM fHtmCover(cmd) , Mask WITH (nolock)
+                FROM fHtmCover(cmd) , Mask 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
 	END IF;
 
-        if ( (flag & 16) > 0 ) -- plate
+        if ( bit_and(flag, 16) > 0 ) -- plate
             THEN
                 SET rad = r + 89.4;   -- add the tile radius
 	        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)
-			||' '||str(dec,22,15)||' '||str(rad,5,2);
+			||' '||str(deci,22,15)||' '||str(rad,5,2);
                 INSERT INTO obj
                 SELECT ra, dec, 16 as flag, plateid as objid
-                FROM fHtmCover(cmd) , PlateX WITH (nolock)
+                FROM fHtmCover(cmd) , PlateX
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
 	END IF;
 
-        if ( (flag & 32) > 0 )  -- photoPrimary and secondary
+        if ( bit_and(flag, 32) > 0 )  -- photoPrimary and secondary
             THEN
                 INSERT INTO obj
                 SELECT ra, dec, 2 as flag, objid
-                FROM fHtmCover(cmd) , PhotoObjAll WITH (nolock)
+                FROM fHtmCover(cmd) , PhotoObjAll
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad)
@@ -1963,9 +1964,10 @@ BEGIN
         RETURN obj;
 END;
 
-CREATE   FUNCTION fGetObjectsMaskEq(flag int, ra float, dec float, r float, zoom float)
-RETURNS obj table (ra float, [dec] float, flag int, objid bigint)
+CREATE   FUNCTION fGetObjectsMaskEq(flag int, ra float, deci float, r float, zoom float)
+RETURNS table (ra float, [dec] float, flag int, objid bigint)
 BEGIN
+	DECLARE table obj(ra float, [dec] float, flag int, objid bigint);
         DECLARE nx float,
                 ny float,
                 nz float,
@@ -1976,59 +1978,59 @@ BEGIN
         if (rad > 250) 
 		THEN set rad = 250;
 	END IF;      -- limit to 4.15 degrees == 250 arcminute radius
-        set nx  = COS(RADIANS(dec))*COS(RADIANS(ra));
-        set ny  = COS(RADIANS(dec))*SIN(RADIANS(ra));
-        set nz  = SIN(RADIANS(dec));
+        set nx  = COS(RADIANS(deci))*COS(RADIANS(ra));
+        set ny  = COS(RADIANS(deci))*SIN(RADIANS(ra));
+        set nz  = SIN(RADIANS(deci));
         set mag =  25 - 1.5* zoom;  -- magnitude reduction.
-        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)||' '||str(dec,22,15)||' '||str(rad,5,2);
+        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)||' '||str(deci,22,15)||' '||str(rad,5,2);
 
-        if ( (flag & 1) > 0 )  -- specObj
+        if ( bit_and(flag, 1) > 0 )  -- specObj
             THEN
                 INSERT INTO obj
                 SELECT ra, dec,  1 as flag, specobjid as objid
-                FROM fHtmCover(cmd) , SpecObj WITH (nolock)
+                FROM fHtmCover(cmd) , SpecObj
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
 	END IF;
-        if ( (flag & 2) > 0 )  -- photoObj
+        if ( bit_and(flag, 2) > 0 )  -- photoObj
             THEN
                 INSERT INTO obj
                 SELECT ra, dec, 2 as flag, objid
-                FROM fHtmCover(cmd) , PhotoPrimary WITH (nolock)
+                FROM fHtmCover(cmd) , PhotoPrimary
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad)
                 and (r <= mag );
 	END IF;
-        if ( (flag & 4) > 0 )  -- target
+        if ( bit_and(flag, 4) > 0 )  -- target
             THEN
                 INSERT INTO obj
                 SELECT ra, dec, 4 as flag, targetid as objid
-                FROM fHtmCover(cmd) , Target WITH (nolock)
+                FROM fHtmCover(cmd) , Target
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
 	END IF;
-        if ( (flag & 8) > 0 )  -- mask
+        if ( bit_and(flag, 8) > 0 )  -- mask
             THEN
 	        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)
-			||' '||str(dec,22,15)||' '||str(rad+15,5,2);
+			||' '||str(deci,22,15)||' '||str(rad+15,5,2);
                 INSERT INTO obj
                 SELECT ra, dec, 8 as flag, maskid as objid
-                FROM fHtmCover(cmd) , Mask WITH (nolock)
+                FROM fHtmCover(cmd) , Mask
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< (rad+radius));
 	END IF;
-        if ( (flag & 16) > 0 ) -- plate
+        if ( bit_and(flag, 16) > 0 ) -- plate
             THEN
                 SET rad = r + 89.4;   -- add the tile radius
 	        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)
-			||' '||str(dec,22,15)||' '||str(rad,5,2);
+			||' '||str(deci,22,15)||' '||str(rad,5,2);
                 INSERT INTO obj
                 SELECT ra, dec, 16 as flag, plateid as objid
-                FROM fHtmCover(cmd) , PlateX WITH (nolock)
+                FROM fHtmCover(cmd) , PlateX 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -2037,7 +2039,7 @@ BEGIN
         RETURN obj;
 END;
 
-CREATE FUNCTION fGetNearbyFrameEq (ra float, dec float, 
+CREATE FUNCTION fGetNearbyFrameEq (ra float, deci float, 
 					radius float, zoom int)
 RETURNS TABLE (
 	fieldID 	bigint NOT NULL,
@@ -2060,7 +2062,7 @@ BEGIN
 	set ny  = COS(dec*d2r)*SIN(ra*d2r);
 	set nz  = SIN(dec*d2r);
 	set cc  = COS(r*d2r/60);     -- cos(r) (r converted to radians)	
-	set cmd = 'CIRCLE J2000 ' ||str(ra,22,15)||' '||str(dec,22,15)||' '||str(r,5,2);
+	set cmd = 'CIRCLE J2000 ' ||str(ra,22,15)||' '||str(deci,22,15)||' '||str(r,5,2);
 	RETURN TABLE(SELECT  
 	    fieldID, 
 	    a,b,c,d,e,f,node,incl,
@@ -2073,7 +2075,7 @@ BEGIN
 	OPTION(FORCE ORDER, LOOP JOIN));
 END;
 
-CREATE FUNCTION fGetNearestFrameEq (ra float, dec float, zoom int)
+CREATE FUNCTION fGetNearestFrameEq (ra float, deci float, zoom int)
 RETURNS TABLE (
 	fieldID 	bigint NOT NULL,
 	a 		float NOT NULL ,
@@ -2089,14 +2091,14 @@ RETURNS TABLE (
 BEGIN
 	RETURN TABLE(	
 	    SELECT fieldID, a, b, c, d, e, f, node, incl, distance  -- look up to 81
-	    FROM fGetNearbyFrameEq (ra , dec, 81, zoom )	-- arcmin away from center.
+	    FROM fGetNearbyFrameEq (ra , deci, 81, zoom )	-- arcmin away from center.
             ORDER BY distance ASC LIMIT 1);   
 END;
 
-CREATE FUNCTION fGetNearestFrameidEq (ra float, dec float, zoom int)
+CREATE FUNCTION fGetNearestFrameidEq (ra float, deci float, zoom int)
 RETURNS bigint
 BEGIN
-	RETURN (select fieldID from fGetNearestFrameEq(ra, dec, zoom) );
+	RETURN (select fieldID from fGetNearestFrameEq(ra, deci, zoom) );
 END;
 
 
@@ -2182,7 +2184,7 @@ BEGIN
 	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpAtlas-'||run6||'-'||camcol||'-'||field||'.fit.gz';
 END;
 
-CREATE FUNCTION fGetUrlNavEq(ra float, dec float)
+CREATE FUNCTION fGetUrlNavEq(ra float, deci float)
 returns varchar(256)
 begin
 	declare WebServerURL varchar(500);
@@ -2192,7 +2194,7 @@ begin
 		from SiteConstants
 		where name ='WebServerURL';
 	return WebServerURL || 'tools/chart/navi.asp?zoom=1&ra=' 
-		|| ltrim(str(ra,10,6)) || '&dec=' || ltrim(str(dec,10,6));
+		|| ltrim(str(ra,10,6)) || '&dec=' || ltrim(str(deci,10,6));
 end;
 
 CREATE FUNCTION fGetUrlFitsBin(fieldId bigint, filter varchar(4))
@@ -2265,9 +2267,9 @@ returns varchar(256)
 begin
 	declare WebServerURL varchar(500);
 	declare ra float;
-	declare dec float;
+	declare deci float;
 	set ra = 0
-	set dec = 0;
+	set deci = 0;
 	set WebServerURL = 'http://localhost/';
 	select cast(value as varchar(500))
 		into WebServerURL
@@ -2280,7 +2282,7 @@ begin
 		|| cast(objId as varchar(32));
 end;
 
-CREATE FUNCTION fGetUrlExpEq(ra float, dec float)
+CREATE FUNCTION fGetUrlExpEq(ra float, deci float)
 returns varchar(256)
 	begin
 	declare WebServerURL varchar(500);
@@ -2290,7 +2292,7 @@ returns varchar(256)
 		from SiteConstants
 		where name ='WebServerURL';
 	return WebServerURL || 'tools/explore/obj.asp?ra=' 
-		|| ltrim(str(ra,10,6)) || '&dec=' || ltrim(str(dec,10,6))
+		|| ltrim(str(ra,10,6)) || '&dec=' || ltrim(str(deci,10,6))
 end;
 
 CREATE FUNCTION fGetUrlNavId(objId bigint)
@@ -2298,9 +2300,9 @@ returns varchar(256)
 begin
 	declare WebServerURL varchar(500);
 	declare ra float;
-	declare dec float;
+	declare deci float;
 	set ra = 0
-	set dec = 0;
+	set deci = 0;
 	set WebServerURL = 'http://localhost/';
 	select cast(value as varchar(500))
 		into WebServerURL
@@ -2310,7 +2312,7 @@ begin
 	from PhotoObjAll
 	where objID = objId;
 	return WebServerURL ||'tools/chart/navi.asp?zoom=1&ra=' 
-		|| ltrim(str(ra,10,10)) || '&dec=' || ltrim(str(dec,10,10));
+		|| ltrim(str(ra,10,10)) || '&dec=' || ltrim(str(deci,10,10));
 	end
 
 
@@ -2385,7 +2387,7 @@ RETURNS TABLE (
 BEGIN
     RETURN TABLE(
     select  enum, name, type, length, unit, ucd, description, rank 
-    from ( SELECT	distinct convert(sysname,c.name) as name,
+    from ( SELECT	distinct convert(c.name USING sysname) as name,
 			t.name as type,
 			coalesce(d.length, c.length) as length,
 			colid as ColNumber,
@@ -2435,7 +2437,7 @@ RETURNS TABLE (
 BEGIN
     RETURN TABLE(
     select  enum, name, type, length, unit, ucd, description
-    from ( SELECT	distinct convert(sysname,c.name) as name,
+    from ( SELECT	distinct convert(c.name USING sysname) as name,
 			t.name as type,
 			coalesce(d.length, c.length) as length,
 			colid as ColNumber,
@@ -2485,7 +2487,7 @@ BEGIN
 	(case output when 'yes' then 'output' else 'input' end) as inout,
 	pnum
     FROM ( 
-	SELECT	distinct convert(sysname,c.name),
+	SELECT	distinct convert(c.name USING sysname),
 		t.name,
 		coalesce(d.length, c.length), 
 		case (substring(c.name,1,1)) 
@@ -2586,11 +2588,11 @@ BEGIN
     DECLARE firstfieldbit bigint;
     SET firstfieldbit = 0x0000000010000000;
     SET objID = objID & ~firstfieldbit;
-    IF (select count(*) from PhotoTag WITH (nolock) where objID = objID) > 0
+    IF (select count(*) from PhotoTag  where objID = objID) > 0
         THEN RETURN objID;
     	ELSE(
         	SET objID = objID + firstfieldbit;
-        	IF (select count(*) from PhotoTag WITH (nolock) where objID = objID) > 0
+        	IF (select count(*) from PhotoTag  where objID = objID) > 0
             		THEN RETURN objID;
 		END IF;
 	);
@@ -2604,11 +2606,11 @@ BEGIN
     DECLARE firstfieldbit bigint;
     SET firstfieldbit = 0x0000000010000000;
     SET objID = objID & ~firstfieldbit;
-    IF (select count(*) from PhotoPrimary WITH (nolock) where objID = objID) > 0
+    IF (select count(*) from PhotoPrimary  where objID = objID) > 0
         THEN RETURN objID;
     	ELSE (
 	        SET objID = objID + firstfieldbit;
-       		IF (select count(*) from PhotoPrimary WITH (nolock) where objID = objID) > 0
+       		IF (select count(*) from PhotoPrimary  where objID = objID) > 0
             		THEN RETURN objID;
 		END IF;
 	);
@@ -2636,10 +2638,10 @@ BEGIN
 	IF d < -1 
 		THEN SET d = -1;
 	END IF;
-	SET d = CASE WHEN ACOS(d) + fuzzR <PI() 
-		  	THEN COS(ACOS(d)+fuzzR);
-		  	ELSE -1 ;
-		 END CASE;
+	CASE WHEN ACOS(d) + fuzzR <PI() 
+		  	THEN SET d = COS(ACOS(d)+fuzzR);
+		  	ELSE SET d = -1 ;
+	END CASE;
 	RETURN d;
 END;
 
