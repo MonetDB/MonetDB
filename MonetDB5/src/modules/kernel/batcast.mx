@@ -240,7 +240,7 @@ str CMDconvert_str_@1(int *ret, int *bid){
 	@:resultBAT(@1,CMDconvert_str_@1)@
 	h= (char *) BUNhead(b,BUNfirst(b));
 	p= (ptr) BUNtloc(b,BUNfirst(b));
-	q= (char *) BUNhead(b,BUNlast(b));
+	q= (char *) BUNtloc(b,BUNlast(b));
 	xx= BUNsize(b);
 
 	while(p<q){
