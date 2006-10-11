@@ -93,6 +93,8 @@ Qbindir="$bindir"
 AC_SUBST(Qbindir)
 Qlibexecdir="$libexecdir"
 AC_SUBST(Qlibexecdir)
+Qdatarootdir="$datarootdir"
+AC_SUBST(Qdatarootdir)
 Qdatadir="$datadir"
 AC_SUBST(Qdatadir)
 Qmandir="$mandir"
