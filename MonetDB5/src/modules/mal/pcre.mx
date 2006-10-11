@@ -119,21 +119,23 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 #define pcre_export extern
 #endif
 
-#ifndef HAVE_LIBPCRE
-
+#ifndef LIBPCRE
 #define pcre str
-pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
-pcre_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
-pcre_export str PCREcompile_wrap(pcre ** res, str *pattern);
-pcre_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
+#else
+#include <pcre.h>
+#endif
+
+pcre_export str PCREquote(str *r, str *v);
 pcre_export str PCREselect(int *res, str *pattern, int *bid);
+pcre_export str PCREuselect(int *res, str *pattern, int *bid);
 pcre_export str PCREmatch(bit *ret, str *val, str *pat);
 pcre_export str PCREfromstr(str instr, int *l, pcre ** val);
+
+pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
+pcre_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
+
 pcre_export str PCREcompile_wrap(pcre ** res, str *pattern);
 pcre_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
-pcre_export str PCREselect(int *res, str *pattern, int *bid);
-pcre_export str PCREmatch(bit *ret, str *val, str *pat);
-pcre_export str PCREquote(str *r, str *v);
 pcre_export int pcre_tostr(str *tostr, int *l, pcre * p);
 pcre_export int pcre_fromstr(str instr, int *l, pcre ** val);
 pcre_export int pcre_nequal(pcre * l, pcre * r);
@@ -142,8 +144,9 @@ pcre_export pcre * pcre_null(void);
 pcre_export void pcre_del(Heap *h, var_t *index);
 pcre_export int pcre_length(pcre * p);
 pcre_export void pcre_heap(Heap *heap, size_t capacity);
-pcre_export str PCREuselect(int *res, str *pattern, int *bid);
 pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre * val);
+
+#ifndef HAVE_LIBPCRE
 
 int
 pcre_compile_wrap(pcre ** res, str pattern)
@@ -227,28 +230,6 @@ pcre_match(bit *ret, str val, str pat)
 	return GDK_FAIL;
 }
 #else
-
-#include <pcre.h>
-
-pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
-pcre_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
-pcre_export str PCREcompile_wrap(pcre ** res, str *pattern);
-pcre_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
-pcre_export str PCREselect(int *res, str *pattern, int *bid);
-pcre_export str PCREmatch(bit *ret, str *val, str *pat);
-pcre_export str PCREfromstr(str instr, int *l, pcre ** val);
-pcre_export str PCREcompile_wrap(pcre ** res, str *pattern);
-pcre_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
-pcre_export str PCREselect(int *res, str *pattern, int *bid);
-pcre_export str PCREmatch(bit *ret, str *val, str *pat);
-pcre_export int pcre_tostr(str *tostr, int *l, pcre * p);
-pcre_export int pcre_fromstr(str instr, int *l, pcre ** val);
-pcre_export int pcre_nequal(pcre * l, pcre * r);
-pcre_export hash_t pcre_hash(pcre * b);
-pcre_export pcre * pcre_null(void);
-pcre_export void pcre_del(Heap *h, var_t *index);
-pcre_export int pcre_length(pcre * p);
-pcre_export void pcre_heap(Heap *heap, size_t capacity);
 
 #define m2p(p) (pcre*)(((sht*)p)+1)
 #define p2m(p) (pcre*)(((sht*)p)-1)
@@ -607,9 +588,9 @@ pcre_match(bit *ret, str val, str pat)
 {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
-	pcre *re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL);
+	pcre *re;
 
-	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL){
 		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 		return GDK_FAIL;
 	}
