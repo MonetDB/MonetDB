@@ -56,6 +56,10 @@ command match(s:str, pat:str):bit
 address PCREmatch
 comment "POSIX pattern matching against a string";
 
+command patindex(s:str, pat:str):int
+address PCREpatindex
+comment "Location of the first POSIX pattern matching against a string"
+
 command replace(origin:str,pat:str,repl:str,flags:str):str
 address PCREreplace_wrap
 comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with
@@ -129,6 +133,7 @@ pcre_export str PCREquote(str *r, str *v);
 pcre_export str PCREselect(int *res, str *pattern, int *bid);
 pcre_export str PCREuselect(int *res, str *pattern, int *bid);
 pcre_export str PCREmatch(bit *ret, str *val, str *pat);
+pcre_export str PCREpatindex(int *ret, str *val, str *pat);
 pcre_export str PCREfromstr(str instr, int *l, pcre ** val);
 
 pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
@@ -227,6 +232,16 @@ pcre_match(bit *ret, str val, str pat)
 	(void) val;
 	(void) pat;
 	GDKerror("pcre_match() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
+}
+
+int
+pcre_patindex(int *ret, str val, str pat)
+{
+	(void) ret;
+	(void) val;
+	(void) pat;
+	GDKerror("pcre_patindexmatch() not available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 #else
@@ -597,6 +612,21 @@ pcre_match(bit *ret, str val, str pat)
 	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0) >= 0;
 	return GDK_SUCCEED;
 }
+
+int
+pcre_patindex(int *ret, str val, str pat)
+{
+	const char err[BUFSIZ], *err_p = err;
+	int errpos = 0;
+	pcre *re;
+	
+	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
+		return GDK_FAIL;
+	}
+	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0);
+	return GDK_SUCCEED;
+}
 #endif
 
 int
@@ -909,6 +939,15 @@ PCREmatch(bit *ret, str *val, str *pat)
 {
 	if (pcre_match(ret, *val, *pat) == GDK_FAIL) {
 		return throwMessage("pcre.match", "Match failed");
+	}
+	return MAL_SUCCEED;
+}
+
+str
+PCREpatindex(int *ret, str *val, str *pat)
+{
+	if (pcre_patindex(ret, *val, *pat) == GDK_FAIL) {
+		return throwMessage("pcre.patindex", "PATINDEX failed");
 	}
 	return MAL_SUCCEED;
 }
