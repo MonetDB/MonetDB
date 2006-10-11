@@ -229,6 +229,7 @@ typedef struct column_t {
 
 typedef struct columnset_t {
 	column **columns;	/* an array of associated columns */
+	char l_valid;		/* whether length is valid */
 	size_t length;		/* the number of rows in this block */
 	char complete;		/* whether this ResultSet block can be serialised */
 	struct columnset_t *nextSet;	/* the next ResultSet block (if not NULL) */
@@ -419,7 +420,7 @@ RSBcreate(int *retval, int *columns, char *type)
 				memset(elements[i]->columnSet.columns, 0, sizeof(column *) * *columns);
 				for (j = 0; j < *columns; j++)
 					RSinitColumn(&(elements[i]->columnSet), &j);
-				elements[i]->columnSet.length = -1;
+				elements[i]->columnSet.l_valid = 0;
 				free = i;
 			}
 		}
@@ -443,7 +444,7 @@ RSBtake(int *retval, int *id)
 	int i;
 
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
-		if (elements[i] != NULL && elements[i]->id == *id) {
+		if (elements[i] != NULL && elements[i]->id == (size_t)*id) {
 			*retval = i + 1;
 			return (MAL_SUCCEED);
 		}
@@ -724,7 +725,7 @@ RStailWidth(int *retval, BAT *b)
  * it is free'd first.
  */
 static void
-RSinitColumn(columnset * cs, int *colindex)
+RSinitColumn(columnset *cs, int *colindex)
 {
 	/* free if not empty */
 	if (cs->columns[*colindex])
@@ -781,7 +782,7 @@ RSpopulateColumn(int *retval, int *handle, int *colno, int *bat)
 	/* tell the BBP to leave this BAT alone: it's ours! */
 	BBPfix(b->batCacheid);
 
-	if (cs->length != -1) {
+	if (cs->l_valid != 0) {
 		/* check length of BAT and match it with the known length */
 		if (cs->length != BATcount(b))
 			throwRSf("resultset.populateColumn", "BATcount does not match those of previous columns (%d)", cs->length);
@@ -790,6 +791,7 @@ RSpopulateColumn(int *retval, int *handle, int *colno, int *bat)
 		 * base for all other columns that get added */
 		cs->length = BATcount(b);
 		rs->length += cs->length;
+		cs->l_valid = 1;
 	}
 	/* add the BAT */
 	if (cs->columns[*colno - 1]->bat !=NULL)
@@ -1007,7 +1009,7 @@ RSunion(int *retval, int *handle)
 	memset(cs->columns, 0, sizeof(column *) * rs->columnCount);
 	for (j = 0; j < rs->columnCount; j++)
 		RSinitColumn(cs, &j);
-	cs->length = -1;
+	cs->l_valid = 0;
 
 	*retval = *handle;
 	return (MAL_SUCCEED);
@@ -1039,7 +1041,7 @@ RSdePopulate(int *retval, int *handle)
 			BBPunfix(cs->columns[i]->bat->batCacheid);
 		cs->columns[i]->bat = NULL;
 	}
-	cs->length = -1;
+	cs->l_valid = 0;
 	cs->complete = (char) 0;
 	cs->nextSet = NULL;
 	rs->length = 0;
