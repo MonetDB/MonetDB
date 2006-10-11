@@ -2317,7 +2317,8 @@ TABshowRow(Tablet * t)
 void
 TABshowRange(Tablet * t, lng first, lng last)
 {
-	lng i, j;
+	lng i;
+	size_t j;
 	oid k;
 
 	i = BATcount(t->columns[0].c);
