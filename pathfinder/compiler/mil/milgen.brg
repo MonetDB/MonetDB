@@ -3516,6 +3516,8 @@ reduce (PFpa_op_t * p, int goalnt)
                   assgn (var (frag->name), fetch (var (v->name),
                                                   lit_int (2)))
                   );
+
+            unpin (v, 1);
         } break;
 
         /* FragRel: element (FragList, element_tag (Rel, Rel)) */
