@@ -1352,8 +1352,7 @@ END;
 
 CREATE FUNCTION fReplace(OldString VARCHAR(8000), Pattern VARCHAR(1000), Replacement VARCHAR(1000))
 RETURNS VARCHAR(8000) 
-BEGIN 
-	BEGIN
+BEGIN
 		DECLARE NewString VARCHAR(8000);
 		SET NewString = '';
 		IF (LTRIM(Pattern) = '') 
@@ -1363,16 +1362,16 @@ BEGIN
 		SET LowerOld = LOWER(OldString);
 		DECLARE LowerPattern VARCHAR(8000);
   		SET LowerPattern = LOWER(Pattern);
-		DECLARE offset INT;
-		SET offset = 0
+		DECLARE offset_val INT;
+		SET offset_val = 0;
 		DECLARE PatLen INT;
        		SET PatLen = LENGTH(Pattern);
 		 
 		WHILE (LOCATE(LowerPattern, LowerOld, 1) <> 0 ) DO
-			SET offset = LOCATE(LowerPattern, LowerOld, 1);
-			SET NewString = NewString || SUBSTRING(OldString,1,offset-1) || Replacement;
-			SET OldString = SUBSTRING(OldString,offset||PatLen,LENGTH(OldString)-offset||PatLen);
-			SET LowerOld =  SUBSTRING(LowerOld,  offset||PatLen,LENGTH(LowerOld)-offset||PatLen);
+			SET offset_val = LOCATE(LowerPattern, LowerOld, 1);
+			SET NewString = NewString || SUBSTRING(OldString,1,offset_val-1) || Replacement;
+			SET OldString = SUBSTRING(OldString,offset_val + PatLen,LENGTH(OldString) - offset_val + PatLen);
+			SET LowerOld =  SUBSTRING(LowerOld,  offset_val + PatLen,LENGTH(LowerOld) - offset_val + PatLen);
 		END WHILE;
 	RETURN( NewString || OldString);
 END;
@@ -1380,52 +1379,52 @@ END;
 
 ------------------------HTML SPATIAL INDEX---------------------------
 
-CREATE FUNCTION fIsNumbers (string varchar(8000), start int, stop int)
+CREATE FUNCTION fIsNumbers (string_val varchar(8000), start_val int, stop int)
 RETURNS INT
 BEGIN 
-	DECLARE offset int,		-- current offfset in string
-		char	char,		-- current char in string
+	DECLARE offset_val int,		-- current offfset in string
+		char_val   char,		-- current char in string
 		dot	int,		-- flag says we saw a dot.
 		num	int;		-- flag says we saw a digit
 	SET dot = 0;			--
 	SET num = 0;			--
-	SET offset = start;		-- 
-	IF (stop > len(string)) 
+	SET offset_val = start_val;		-- 
+	IF (stop > LENGTH(string_val)) 
 		THEN RETURN 0;   -- stop if past end
 	END IF;
-	SET char = substring(string,offset,1); -- handle sign
-	IF(char ='+' or char='-') 
-		THEN SET offset = offset + 1;
+	SET char_val = substring(string_val,offset_val,1); -- handle sign
+	IF(char_val ='+' or char_val='-') 
+		THEN SET offset_val = offset_val + 1;
 	END IF;
 	-- process number
-	WHILE (offset <= stop)	DO-- loop over digits
+	WHILE (offset_val <= stop)	DO-- loop over digits
 					-- get next char
-		SET char = substring(string,offset,1);
-		IF (char = '.') 	-- if a decmial point
+		SET char_val = substring(string_val,offset_val,1);
+		IF (char_val = '.') 	-- if a decmial point
 			  		-- reject duplicate
 			THEN 
 				IF (dot = 1) 
 					THEN RETURN 0;
 				END IF;
 				SET dot = 1;	-- set flag
-				SET offset = offset + 1;  -- advance
-	 		ELSEIF (char<'0' or '9' <char)  -- if not digit
+				SET offset_val = offset_val + 1;  -- advance
+	 		ELSEIF (char_val<'0' or '9' <char_val)  -- if not digit
 				THEN RETURN 0;	-- reject
 			ELSE 		-- its a digit
 					-- advance
-			     	SET offset = offset + 1;
+			     	SET offset_val = offset_val + 1;
 				SET num= 1;	-- set digit flag
 
 		END IF; 			-- end loop
 	-- test for bigint overflow	
-		IF (stop-start > 19) 
+		IF (stop-start_val > 19) 
 			THEN RETURN 0; -- reject giant numbers
 		END IF;
-	      	IF  (dot = 0 and  stop-start >= 19 )
+	      	IF  (dot = 0 and  stop-start_val >= 19 )
 					-- if its a bigint
 			THEN
-				IF ( ((stop-start)>19) or	-- reject if too big
-				('9223372036854775807' > substring(string,start,stop)))
+				IF ( ((stop-start_val)>19) or	-- reject if too big
+				('9223372036854775807' > substring(string_val,start_val,stop)))
 					THEN  RETURN 0;
 				END IF;		--
 		END IF; 			-- end bigint overflow test
@@ -1472,12 +1471,19 @@ BEGIN
 	RETURN(Answer);     			
 END;
 
+--THIS function was created just for testing. It is a function related with web-page.
+CREATE FUNCTION fHtmLookup(cmd varchar(100))
+RETURNS bigint
+BEGIN
+	RETURN 1;
+END;
+
 CREATE FUNCTION fHtmLookupXyz(x float, y float, z float) 
 RETURNS bigint 
 BEGIN 
 	DECLARE cmd varchar(100); 
         SET cmd = 'CARTESIAN 20 ' 
-             ||str(x,22,15)||' '||str(y,22,15)||' '||str(z,22,15);
+             ||str(x,15)||' '||str(y,15)||' '||str(z,15);
 	RETURN fHtmLookup(cmd);
 END; 
 
@@ -1509,30 +1515,30 @@ END;
 CREATE FUNCTION fGetNearbyObjAllXYZ (nx float, ny float, nz float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    mode int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 )
 BEGIN
 	DECLARE TABLE proxtab(
 	    objID bigint,
-	    run int NOT NULL,
-	    camcol int NOT NULL,
-	    field int NOT NULL,
-	    rerun int NOT NULL,
-	    type int NOT NULL,
-	    mode int NOT NULL,
-	    cx float NOT NULL,
-	    cy float NOT NULL,
-	    cz float NOT NULL,
+	    run int ,
+	    camcol int ,
+	    field int ,
+	    rerun int ,
+	    type int ,
+	    mode int ,
+	    cx float ,
+	    cy float ,
+	    cz float ,
 	    htmID bigint,
 	    distance float		-- distance in arc minutes
 	);
@@ -1541,9 +1547,9 @@ BEGIN
 		THEN RETURN proxtab;
 	END IF;
 	set d2r = PI()/180.0;
-	set cmd = 'CIRCLE CARTESIAN '|| 
-			||str(nx,22,15)||' '||str(ny,22,15)||' '||str(nz,22,15)
-			|| ' ' || str(r,10,2);
+	set cmd = 'CIRCLE CARTESIAN ' 
+			||str(nx,15)||' '||str(ny,15)||' '||str(nz,15)
+			|| ' ' || str(r,2);
 
 	INSERT INTO proxtab SELECT 
 	    objID, 
@@ -1559,7 +1565,7 @@ BEGIN
 	    htmID,
  	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 
 	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
-	    FROM fHtmCover(cmd) , PhotoTag
+	    FROM fHtmCover(cmd) v3, PhotoTag
 	    WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend )
 	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
 	ORDER BY (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) ASC
@@ -1570,30 +1576,30 @@ END;
 CREATE FUNCTION fGetNearbyObjAllEq (ra float, deci float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    mode tinyint NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode tinyint ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 ) 
 BEGIN
 	DECLARE prox TEMPORARY TABLE (
 	    objID bigint,
-	    run int NOT NULL,
-	    camcol int NOT NULL,
-	    field int NOT NULL,
-	    rerun int NOT NULL,
-	    type int NOT NULL,
-	    mode tinyint NOT NULL,
-	    cx float NOT NULL,
-	    cy float NOT NULL,
-	    cz float NOT NULL,
+	    run int ,
+	    camcol int ,
+	    field int ,
+	    rerun int ,
+	    type int ,
+	    mode tinyint ,
+	    cx float ,
+	    cy float ,
+	    cz float ,
 	    htmID bigint,
 	    distance float		-- distance in arc minutes
 	); 
@@ -1613,15 +1619,15 @@ END;
 CREATE FUNCTION fGetNearestObjAllEq (ra float, deci float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    mode int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 ) 
@@ -1655,28 +1661,28 @@ END;
 CREATE FUNCTION fGetNearbyObjXYZ (nx float, ny float, nz float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 )
 BEGIN
 	DECLARE proxtab TEMPORAY TABLE (
 	    objID bigint,
-	    run int NOT NULL,
-	    camcol int NOT NULL,
-	    field int NOT NULL,
-	    rerun int NOT NULL,
-	    type int NOT NULL,
-	    cx float NOT NULL,
-	    cy float NOT NULL,
-	    cz float NOT NULL,
+	    run int ,
+	    camcol int ,
+	    field int ,
+	    rerun int ,
+	    type int ,
+	    cx float ,
+	    cy float ,
+	    cz float ,
 	    htmID bigint,
 	    distance float		-- distance in arc minutes
 	);
@@ -1688,8 +1694,8 @@ BEGIN
 	END IF;
 	set d2r = PI()/180.0				   
 	set cmd = 'CIRCLE CARTESIAN '  
-			|| str(nx,22,15)||' '||str(ny,22,15)||' '||str(nz,22,15)
-			|| ' ' || str(r,10,2)
+			|| str(nx,15)||' '||str(ny,15)||' '||str(nz,15)
+			|| ' ' || str(r,2)
 	INSERT INTO proxtab SELECT 
 	    objID, 
 	    run,
@@ -1714,14 +1720,14 @@ END;
 CREATE FUNCTION fGetNearestObjXYZ (nx float, ny float, nz float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 )
@@ -1735,28 +1741,28 @@ END;
 CREATE FUNCTION fGetNearbyObjEq (ra float, deci float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 ) 
 BEGIN
 	DECLARE proxtab TEMPORARY TABLE (
 	    objID bigint,
-	    run int NOT NULL,
-	    camcol int NOT NULL,
-	    field int NOT NULL,
-	    rerun int NOT NULL,
-	    type int NOT NULL,
-	    cx float NOT NULL,
-	    cy float NOT NULL,
-	    cz float NOT NULL,
+	    run int ,
+	    camcol int ,
+	    field int ,
+	    rerun int ,
+	    type int ,
+	    cx float ,
+	    cy float ,
+	    cz float ,
 	    htmID bigint,
 	    distance float		-- distance in arc minutes
 	); 
@@ -1776,14 +1782,14 @@ END;
 CREATE FUNCTION fGetNearestObjEq (ra float, deci float, r float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
 )
@@ -1824,14 +1830,14 @@ CREATE FUNCTION fGetObjFromRect (ra1 float, ra2 float,
 				 dec1 float, dec2 float)
 RETURNS TABLE (
     objID bigint,
-    run int NOT NULL,
-    camcol int NOT NULL,
-    field int NOT NULL,
-    rerun int NOT NULL,
-    type int NOT NULL,
-    cx float NOT NULL,
-    cy float NOT NULL,
-    cz float NOT NULL,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    cx float ,
+    cy float ,
+    cz float ,
     htmID bigint
 )
 BEGIN
@@ -1877,9 +1883,9 @@ END;
 
 CREATE FUNCTION fGetObjectsEq(flag int, ra float, 
 				deci float, r float, zoom float)
-RETURNS table(ra float, [dec] float, flag int, objid bigint)
+RETURNS table(ra float, "dec" float, flag int, objid bigint)
 BEGIN
-	DECLARE table obj(ra float, [dec] float, flag int, objid bigint);
+	DECLARE table obj(ra float, "dec" float, flag int, objid bigint);
         DECLARE nx float,
                 ny float,
                 nz float,
@@ -1894,7 +1900,7 @@ BEGIN
         set ny  = COS(RADIANS(deci))*SIN(RADIANS(ra));
         set nz  = SIN(RADIANS(deci));
         set mag =  25 - 1.5* zoom;  -- magnitude reduction.
-        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)||' '||str(deci,22,15)||' '||str(rad,5,2);
+        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)||' '||str(deci,15)||' '||str(rad,2);
 
         if ( bit_and(flag, 1) > 0 )  -- specObj
             THEN 
@@ -1940,8 +1946,8 @@ BEGIN
         if ( bit_and(flag, 16) > 0 ) -- plate
             THEN
                 SET rad = r + 89.4;   -- add the tile radius
-	        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)
-			||' '||str(deci,22,15)||' '||str(rad,5,2);
+	        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)
+			||' '||str(deci,15)||' '||str(rad,2);
                 INSERT INTO obj
                 SELECT ra, dec, 16 as flag, plateid as objid
                 FROM fHtmCover(cmd) , PlateX
@@ -1965,9 +1971,9 @@ BEGIN
 END;
 
 CREATE   FUNCTION fGetObjectsMaskEq(flag int, ra float, deci float, r float, zoom float)
-RETURNS table (ra float, [dec] float, flag int, objid bigint)
+RETURNS table (ra float, "dec" float, flag int, objid bigint)
 BEGIN
-	DECLARE table obj(ra float, [dec] float, flag int, objid bigint);
+	DECLARE table obj(ra float, "dec" float, flag int, objid bigint);
         DECLARE nx float,
                 ny float,
                 nz float,
@@ -1982,7 +1988,7 @@ BEGIN
         set ny  = COS(RADIANS(deci))*SIN(RADIANS(ra));
         set nz  = SIN(RADIANS(deci));
         set mag =  25 - 1.5* zoom;  -- magnitude reduction.
-        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)||' '||str(deci,22,15)||' '||str(rad,5,2);
+        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)||' '||str(deci,15)||' '||str(rad,2);
 
         if ( bit_and(flag, 1) > 0 )  -- specObj
             THEN
@@ -2014,8 +2020,8 @@ BEGIN
 	END IF;
         if ( bit_and(flag, 8) > 0 )  -- mask
             THEN
-	        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)
-			||' '||str(deci,22,15)||' '||str(rad+15,5,2);
+	        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)
+			||' '||str(deci,15)||' '||str(rad+15,2);
                 INSERT INTO obj
                 SELECT ra, dec, 8 as flag, maskid as objid
                 FROM fHtmCover(cmd) , Mask
@@ -2026,8 +2032,8 @@ BEGIN
         if ( bit_and(flag, 16) > 0 ) -- plate
             THEN
                 SET rad = r + 89.4;   -- add the tile radius
-	        set cmd = 'CIRCLE J2000 '||' '||str(ra,22,15)
-			||' '||str(deci,22,15)||' '||str(rad,5,2);
+	        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)
+			||' '||str(deci,15)||' '||str(rad,2);
                 INSERT INTO obj
                 SELECT ra, dec, 16 as flag, plateid as objid
                 FROM fHtmCover(cmd) , PlateX 
@@ -2042,16 +2048,16 @@ END;
 CREATE FUNCTION fGetNearbyFrameEq (ra float, deci float, 
 					radius float, zoom int)
 RETURNS TABLE (
-	fieldID 	bigint NOT NULL,
-	a 		float NOT NULL ,
-	b 		float NOT NULL ,
-	c 		float NOT NULL ,
-	d 		float NOT NULL ,
-	e 		float NOT NULL ,
-	f 		float NOT NULL ,
-	node 		float NOT NULL ,
-	incl 		float NOT NULL ,
-        distance        float NOT NULL		-- distance in arc minutes 
+	fieldID 	bigint ,
+	a 		float  ,
+	b 		float  ,
+	c 		float  ,
+	d 		float  ,
+	e 		float  ,
+	f 		float  ,
+	node 		float  ,
+	incl 		float  ,
+        distance        float 		-- distance in arc minutes 
 )
 BEGIN
 	DECLARE d2r float,nx float,ny float,nz float,r float,
@@ -2062,7 +2068,7 @@ BEGIN
 	set ny  = COS(dec*d2r)*SIN(ra*d2r);
 	set nz  = SIN(dec*d2r);
 	set cc  = COS(r*d2r/60);     -- cos(r) (r converted to radians)	
-	set cmd = 'CIRCLE J2000 ' ||str(ra,22,15)||' '||str(deci,22,15)||' '||str(r,5,2);
+	set cmd = 'CIRCLE J2000 ' ||str(ra,15)||' '||str(deci,15)||' '||str(r,2);
 	RETURN TABLE(SELECT  
 	    fieldID, 
 	    a,b,c,d,e,f,node,incl,
@@ -2077,16 +2083,16 @@ END;
 
 CREATE FUNCTION fGetNearestFrameEq (ra float, deci float, zoom int)
 RETURNS TABLE (
-	fieldID 	bigint NOT NULL,
-	a 		float NOT NULL ,
-	b 		float NOT NULL ,
-	c 		float NOT NULL ,
-	d 		float NOT NULL ,
-	e 		float NOT NULL ,
-	f 		float NOT NULL ,
-	node 		float NOT NULL ,
-	incl 		float NOT NULL ,
-        distance        float NOT NULL;		-- distance in arc minutes 
+	fieldID 	bigint ,
+	a 		float  ,
+	b 		float  ,
+	c 		float  ,
+	d 		float  ,
+	e 		float  ,
+	f 		float  ,
+	node 		float  ,
+	incl 		float  ,
+        distance        float ;		-- distance in arc minutes 
 ) 
 BEGIN
 	RETURN TABLE(	
@@ -2132,8 +2138,8 @@ BEGIN
 	    INTO run, rerun, startMu, stripe, camcol, field
 	    FROM Field f, Segment s
 	    WHERE f.fieldId=fieldId and s.segmentID = f.segmentID; 
-	SET run6   = substring('000000',1,6-len(run)) || run;
-	SET field = substring('0000',1,4-len(field)) || field;
+	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
+	SET field = substring('0000',1,4-LENGTH(field)) || field;
 	RETURN 	 link || 'stripe' || stripe || '_mu' || startMu || '_' 
 		|| skyVersion || '/'||camcol||'/tsField-'||run6||'-'
 		||camcol||'-'||rerun||'-'||field||'.fit';
@@ -2149,8 +2155,8 @@ BEGIN
 	    INTO mjd, plate, fiber 
 	    FROM PlateX p, specObjAll s 
 	    WHERE p.plateId=s.plateId AND s.specObjID=specObjId;
-	SET plate = substring('0000',1,4-len(plate)) || plate;
-	SET fiber = substring( '000',1,3-len(fiber)) || fiber;
+	SET plate = substring('0000',1,4-LENGTH(plate)) || plate;
+	SET fiber = substring( '000',1,3-LENGTH(fiber)) || fiber;
 	RETURN 	 link || plate || '/1d/spSpec-'||mjd||'-'||plate||'-'||fiber||'.fit';
 END;
 
@@ -2179,8 +2185,8 @@ BEGIN
 	    INTO run, rerun, camcol, field
 	    FROM Field
 	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-len(run)) || run;
-	SET field = substring('0000',1,4-len(field)) || field;
+	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
+	SET field = substring('0000',1,4-LENGTH(field)) || field;
 	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpAtlas-'||run6||'-'||camcol||'-'||field||'.fit.gz';
 END;
 
@@ -2194,7 +2200,7 @@ begin
 		from SiteConstants
 		where name ='WebServerURL';
 	return WebServerURL || 'tools/chart/navi.asp?zoom=1&ra=' 
-		|| ltrim(str(ra,10,6)) || '&dec=' || ltrim(str(deci,10,6));
+		|| ltrim(str(ra,6)) || '&dec=' || ltrim(str(deci,6));
 end;
 
 CREATE FUNCTION fGetUrlFitsBin(fieldId bigint, filter varchar(4))
@@ -2209,8 +2215,8 @@ BEGIN
 	    INTO run, rerun, camcol, field
 	    FROM Field
 	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-len(run)) || run;
-	SET field = substring('0000',1,4-len(field)) || field;
+	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
+	SET field = substring('0000',1,4-LENGTH(field)) || field;
 	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpBIN-'||run6||'-'||filter||camcol||'-'||field||'.fit.gz';
 END;
 
@@ -2226,8 +2232,8 @@ BEGIN
 	    INTO run, rerun, camcol, field
 	    FROM Field
 	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-len(run)) || run;
-	SET field = substring('0000',1,4-len(field)) || field;
+	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
+	SET field = substring('0000',1,4-LENGTH(field)) || field;
 	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpM-'||run6||'-'||filter||camcol||'-'||field||'.fit.gz';
 END;
 
@@ -2257,8 +2263,8 @@ BEGIN
 	    INTO run, rerun, camcol, field
 	    FROM Field
 	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-len(run)) || run;
-	SET field = substring('0000',1,4-len(field)) || field;
+	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
+	SET field = substring('0000',1,4-LENGTH(field)) || field;
 	RETURN 	 link || run || '/' || rerun || '/corr/'||camcol||'/fpC-'||run6||'-'||filter||camcol||'-'||field||'.fit.gz';
 END;
 
@@ -2292,7 +2298,7 @@ returns varchar(256)
 		from SiteConstants
 		where name ='WebServerURL';
 	return WebServerURL || 'tools/explore/obj.asp?ra=' 
-		|| ltrim(str(ra,10,6)) || '&dec=' || ltrim(str(deci,10,6))
+		|| ltrim(str(ra,6)) || '&dec=' || ltrim(str(deci,6))
 end;
 
 CREATE FUNCTION fGetUrlNavId(objId bigint)
@@ -2312,7 +2318,7 @@ begin
 	from PhotoObjAll
 	where objID = objId;
 	return WebServerURL ||'tools/chart/navi.asp?zoom=1&ra=' 
-		|| ltrim(str(ra,10,10)) || '&dec=' || ltrim(str(deci,10,10));
+		|| ltrim(str(ra,10)) || '&dec=' || ltrim(str(deci,10));
 	end
 
 
@@ -2358,11 +2364,11 @@ BEGIN
 	run6 char(6), c1 char(1), z2 char(2);
 	-----------------------------------------
 	SET field4 = cast( field as varchar(4));
-	SET field4 = substring('0000',1,4-len(field4)) || field4;
+	SET field4 = substring('0000',1,4-LENGTH(field4)) || field4;
 	SET run6 = cast( run as varchar(6));
-	SET run6 = substring('000000',1,6-len(run6)) || run6;
+	SET run6 = substring('000000',1,6-LENGTH(run6)) || run6;
 	SET z2 = cast( zoom as varchar(2));
-	SET z2 = substring('00',1,2-len(z2)) || z2;
+	SET z2 = substring('00',1,2-LENGTH(z2)) || z2;
 	SET c1   = cast(camcol as char(1));
 	--
 	SET TheName = c1 || '\\' || 'fpCi-' || run6 ||'-'|| c1||'-'||cast(rerun as varchar(4))||'-'
@@ -2587,7 +2593,7 @@ RETURNS BIGINT
 BEGIN
     DECLARE firstfieldbit bigint;
     SET firstfieldbit = 0x0000000010000000;
-    SET objID = objID & ~firstfieldbit;
+    SET objID = bit_and(objID, bit_not(firstfieldbit));
     IF (select count(*) from PhotoTag  where objID = objID) > 0
         THEN RETURN objID;
     	ELSE(
@@ -2605,7 +2611,7 @@ RETURNS BIGINT
 BEGIN
     DECLARE firstfieldbit bigint;
     SET firstfieldbit = 0x0000000010000000;
-    SET objID = objID & ~firstfieldbit;
+    SET objID = bit_and(objID, bit_not(firstfieldbit));
     IF (select count(*) from PhotoPrimary  where objID = objID) > 0
         THEN RETURN objID;
     	ELSE (
@@ -2618,10 +2624,10 @@ BEGIN
     RETURN cast(0 as bigint);
 END;
 
-CREATE FUNCTION  fDatediffSec(start datetime, now datetime) 
+CREATE FUNCTION  fDatediffSec(start_val datetime, now datetime) 
 RETURNS float
 BEGIN
-  RETURN(datediff(millisecond, start, now)/1000.0);
+  RETURN(datediff(millisecond, start_val, now)/1000.0);
 END;   			-- End fDatediffSec()
 
 CREATE FUNCTION fRegionFuzz(d float, buffer float) 
