@@ -24,6 +24,7 @@ exec_prefix="@Qexec_prefix@"
 
 bindir="@Qbindir@"
 libexecdir="@Qlibexecdir@"
+datarootdir="@Qdatarootdir@"
 datadir="@Qdatadir@"
 sysconfdir="@Qsysconfdir@"
 localstatedir="@Qlocalstatedir@"
@@ -54,8 +55,8 @@ Known values for OPTION are:
   --version		output version information
 
 Install directories ${pkg} was configured to
-  --prefix  --exec-prefix  --bindir  --libexecdir  --datadir
-  --sysconfdir  --localstatedir  --libdir  --infodir
+  --prefix  --exec-prefix  --bindir  --libexecdir  --datarootdir
+  --datadir  --sysconfdir  --localstatedir  --libdir  --infodir
   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
 
 EOF

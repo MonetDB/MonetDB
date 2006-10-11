@@ -148,6 +148,12 @@ QXlibexecdir="`echo "$Xlibexecdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlibexecdir)
 AC_SUBST(Xlibexecdir)
 AC_SUBST(QXlibexecdir)
+Qdatarootdir="$datarootdir"
+Xdatarootdir="`$translatepath "$datarootdir"`"
+QXdatarootdir="`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(Qdatarootdir)
+AC_SUBST(Xdatarootdir)
+AC_SUBST(QXdatarootdir)
 Qdatadir="$datadir"
 Xdatadir="`$translatepath "$datadir"`"
 QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
