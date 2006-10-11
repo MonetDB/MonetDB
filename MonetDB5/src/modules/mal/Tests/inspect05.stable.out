@@ -1720,7 +1720,6 @@ end main;	# 11
 [ "search",				  "command",	  "batcalc",	  "(s:bat[:void,:str],c:bat[:void,:str]):bat[:void,:int] ",									  "STRbatstrSearch;"				  ]
 [ "startsWith",				  "command",	  "batcalc",	  "(s:bat[:void,:str],prefix:str):bat[:void,:bit] ",										  "STRbatPrefixcst;"				  ]
 [ "startsWith",				  "command",	  "batcalc",	  "(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:bit] ",								  "STRbatPrefix;"				  ]
-[ "str",				  "command",	  "batcalc",	  "(b:bat[:void,:str]):bat[:void,:str] ",											  "STRbattostr;"				  ]
 [ "sht",				  "command",	  "batcalc",	  "(b:bat[:void,:oid]):bat[:void,:sht] ",										  "CMDconvert_void_oid_sht;"			  ]
 [ "sht",				  "command",	  "batcalc",	  "(b:bat[:any_1,:oid]):bat[:any_1,:sht] ",										  "CMDconvert_oid_sht;"				  ]
 [ "sht",				  "command",	  "batcalc",	  "(b:bat[:void,:bit]):bat[:void,:sht] ",										  "CMDconvert_void_bit_sht;"			  ]
