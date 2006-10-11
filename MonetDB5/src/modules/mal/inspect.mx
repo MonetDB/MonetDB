@@ -597,7 +597,7 @@ INSPECTgetSource(str *ret, str *mod, str *fcn)
 {
 	Symbol s;
 	char *buf;
-	int len,lim;
+	size_t len,lim;
 
 	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
