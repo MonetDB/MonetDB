@@ -450,7 +450,7 @@ BPTdeposit2(int *ret, int *bid, int *pid)
 
 	while (partitions[idx].next >= 0)
 		idx = partitions[idx].next;
-	if (b->hseqbase < partitions[idx].last && partitions[idx].last != -1) {
+	if (b->hseqbase < partitions[idx].last && partitions[idx].last != oid_nil) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("partitions.deposit", "Partition already known");
 	}
