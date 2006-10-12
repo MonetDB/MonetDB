@@ -882,7 +882,7 @@ If the operation involves an update of the operand it should told.
 					getFunctionId(q) == appendRef ||
 					getFunctionId(q) == deleteRef)
 					return TRUE;
-				if (idcmp("destroy", getFunctionId(q)) == 0)
+				if (getFunctionId(q) && idcmp("destroy", getFunctionId(q)) == 0)
 					return TRUE;
 			}
 	}
