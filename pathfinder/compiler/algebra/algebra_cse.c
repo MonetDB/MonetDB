@@ -164,7 +164,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 return false;
 
             for (unsigned int i = 0; i < a->schema.count; i++)
-                if (a->schema.items[i].name != b->schema.items[i].name)
+                if (a->schema.items[i].name != b->schema.items[i].name ||
+                    a->schema.items[i].type != b->schema.items[i].type)
                     return false;
 
             if (a->sem.lit_tbl.count != b->sem.lit_tbl.count)
