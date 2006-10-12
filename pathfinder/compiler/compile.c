@@ -66,6 +66,7 @@
 #include "algebra_cse.h"
 #include "planner.h"
 #include "physdebug.h"
+#include "intro_rec_border.h"
 #include "milgen.h"       /* MIL command tree generation */
 #include "mil_dce.h"      /* dead MIL code elimination */
 #include "milprint.h"     /* create string representation of MIL tree */
@@ -104,8 +105,9 @@ static char *phases[] = {
     [15]  = "after the logical algebra tree has been rewritten/optimized",
     [16]  = "after the CSE on the logical algebra tree",
     [17]  = "after compiling logical into the physical algebra",
-    [18]  = "after compiling the physical algebra into MIL code",
-    [19]  = "after the MIL program has been serialized"
+    [18]  = "after introducing recursion boundaries",
+    [19]  = "after compiling the physical algebra into MIL code",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
@@ -483,6 +485,17 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(17);
 
+    /* Extend the physical algebra with recursion boundaries
+       whenever a recursion occurs */
+    tm = PFtimer_start ();
+    paroot = PFpa_intro_rec_borders (paroot);
+    tm = PFtimer_stop (tm);
+
+    if (status->timing)
+        PFlog ("introduction of recursion boundaries: %s", PFtimer_str (tm));
+
+    STOP_POINT(18);
+
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
     mroot = PFmilgen (paroot);
@@ -501,7 +514,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             PFlog ("dead code elimination:\t\t %s", PFtimer_str (tm));
     }
 
-    STOP_POINT(18);
+    STOP_POINT(19);
 
     /* Render MIL program in Monet MIL syntax 
      */
@@ -515,7 +528,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("MIL code serialization:\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(19);
+    STOP_POINT(20);
 
     /* Print MIL program to pfout */
     if (mil_program)

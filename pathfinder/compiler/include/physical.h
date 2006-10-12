@@ -138,6 +138,7 @@ enum PFpa_op_kind_t {
     , pa_rec_arg        = 144 /**< reference to the arguments of a parameter
                                   in the recursion */
     , pa_rec_base       = 145 /**< base of the DAG describing the recursion */
+    , pa_rec_border     = 146 /**< border of the DAG describing the recursion */
     , pa_concat         = 150 /**< Concatenation of two strings (fn:concat) */
     , pa_contains       = 151 /**< string containment check (fn:contains) */
     , pa_string_join    = 152 /**< Concatenation of multiple strings */
@@ -354,7 +355,9 @@ struct PFpa_op_t {
     unsigned           bit_reset:1;/**< used to reset the dag bit
                                              in a DAG traversal */
     unsigned           bit_dag:1;  /**< enables DAG traversal */
-
+    unsigned           bit_in:1;   /**< indicates that node is part
+                                        of a recursion body */
+    
     struct PFpa_op_t  *child[PFPA_OP_MAXCHILD];
     unsigned int       refctr;
     int                node_id;    /**< specifies the id of this operator
@@ -866,6 +869,12 @@ PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
  * computed in the recursion).
  */
 PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord);
+
+/**
+ * Constructor for the border relation in a recursion (-- a dummy
+ * operator representing the border of a recursion body).
+ */
+PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n);
 
 /****************************************************************/
 /* operators introduced by built-in functions */

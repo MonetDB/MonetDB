@@ -2964,6 +2964,38 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
 }
 
 /**
+ * Constructor for a border of the recursion body
+ */
+PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n)
+{
+    PFpa_op_t     *ret;
+    unsigned int   i;
+
+    assert (n);
+
+    /* create recursion operator */
+    ret = wire1 (pa_rec_border, n);
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = n->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+    
+    /* ordering stays the same as the input */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* costs */
+    ret->cost = n->cost;
+
+    return ret;
+}
+
+/**
   * Constructor for builtin function fn:concat
   * (translation is similar to arithmetic operators)
   */

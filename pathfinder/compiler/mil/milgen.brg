@@ -153,6 +153,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term rec_nil        = 143
 %term rec_arg        = 144
 %term rec_base       = 145
+%term rec_border     = 146
 %term concat         = 150
 %term contains       = 151
 %term string_join    = 152
@@ -230,13 +231,15 @@ Rel:      llscj_prec_sibl (FragList, Rel)                          =  90 (10);
 FragRel:  doc_tbl (Rel)                                            = 100 (10);
 Rel:      doc_access (FragList, Rel)                               = 101 (10);
 FragRel:  element (FragList, element_tag (Rel, empty_tbl))         = 102 (10);
-FragRel:  element (FragList, element_tag (Rel, Rel))               = 103 (10);
-FragRel:  attribute (Rel)                                          = 104 (10);
-FragRel:  textnode (Rel)                                           = 105 (10);
-FragRel:  docnode (FragList, Rel)                                  = 106 (10);
-FragRel:  comment (Rel)                                            = 107 (10);
-FragRel:  processi (Rel)                                           = 108 (10);
-FragRel:  merge_adjacent (FragList, Rel)                           = 109 (10);
+FragRel:  element (FragList, 
+                   element_tag (Rel, rec_border (empty_tbl)))      = 103 (10);
+FragRel:  element (FragList, element_tag (Rel, Rel))               = 104 (10);
+FragRel:  attribute (Rel)                                          = 105 (10);
+FragRel:  textnode (Rel)                                           = 106 (10);
+FragRel:  docnode (FragList, Rel)                                  = 107 (10);
+FragRel:  comment (Rel)                                            = 108 (10);
+FragRel:  processi (Rel)                                           = 109 (10);
+FragRel:  merge_adjacent (FragList, Rel)                           = 110 (10);
 
 Rel:      roots (FragRel)                                          = 120 (10);
 Frag:     fragment (FragRel)                                       = 121 (10);
@@ -250,6 +253,7 @@ Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 132 (10);
 Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 133 (10);
 Rec:      rec_nil                                                  = 134 (10);
 Rel:      rec_base                                                 = 135 (10);
+Rel:      rec_border (Rel)                                         = 136 (10);
 
 Rel:      concat (Rel)                                             = 140 (10);
 Rel:      contains (Rel)                                           = 141 (10);
@@ -583,13 +587,87 @@ static PFmil_type_t impl_types[] = {
 static void reduce (PFpa_op_t * p, int goalnt);
 
 /**
+ * Alternative reducer function. Introduces code that is invariant
+ * to the recursion before the recursion body is translated.
+ */
+static void
+reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
+{
+    int           rule;           /* rule number that matches for this node */
+    short        *nts;            /* target non-terminals for the leaf nodes of
+                                     the current rule */
+    PFpa_op_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
+
+    assert (p);
+
+    /* determine rule that matches for this non-terminal */
+    rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
+
+    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert(rule);
+
+    /* initialize the kids[] vector */
+    for (unsigned short i = 0; i < MAX_KIDS; i++)
+        kids[i] = NULL;
+
+    /*
+     * prepare recursive traversal: get information on leaf nodes of
+     * this rule
+     */
+    nts = PFmilgen_nts[rule];
+    PFmilgen_kids (p, rule, kids);
+    
+    switch (rule) {
+        /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
+        case 132:
+            /* only follow the seeds */
+            reduce (kids[0], nts[0]);
+            /* and the rest of the parameter list */
+            reduce_border (kids[2], nts[2], border_vars);
+            break;
+
+        /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
+        case 133:
+            /* follow the rest of the parameter list */
+            reduce_border (kids[1], nts[1], border_vars);
+            break;
+
+        /* Rec:      rec_nil */
+        case 134:
+            /* nothing to be done */
+            break;
+            
+        /* Rel:      rec_border (Rel) */
+        case 136:
+            if (!p->env) {
+                /* translate sub-DAG starting at the border */
+                reduce (p, goalnt);
+                assert (p->env);
+                /* increase the pin count by one to avoid releasing the
+                   variables before the end of the while loop and remember 
+                   which variables to unpin afterwards */
+                for (unsigned int i = 0; i < env_count (p->env); i++) {
+                    pin (env_at (p->env, i).mvar, 1);
+                    *(mvar_t **) PFarray_add (border_vars) 
+                        = env_at (p->env, i).mvar;
+                }
+            }
+            break;
+            
+        default:
+            for (unsigned short i = 0; nts[i]; i++)
+                reduce_border (kids[i], nts[i], border_vars);
+    }
+}
+
+/**
  * Alternative reducer function. Copes with patterns that are
  * larger than the burg patterns (e.g., variable parameter lists
  * required for the recursion operator). It contains the
  * respective action code for some of the above burg patterns.
  */
 static void
-reduce1 (PFpa_op_t * p, int goalnt)
+reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 {
     int           rule;           /* rule number that matches for this node */
     short        *nts;            /* target non-terminals for the leaf nodes of
@@ -660,7 +738,11 @@ reduce1 (PFpa_op_t * p, int goalnt)
             }
 
             /* translate all the remaining seeds */
-            reduce1 (kids[2], nts[2]);
+            reduce1 (kids[2], nts[2], border_vars);
+
+            /* translate all expressions that are invariant to
+               the recursion body */
+            reduce_border (kids[1], nts[1], border_vars);
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
@@ -671,7 +753,11 @@ reduce1 (PFpa_op_t * p, int goalnt)
             /* For each column and type in the empty table generate
                a new bat and assign it to the variables used by the
                recursion. */
-            for (unsigned int col = 0; col < LL(p)->schema.count; col++)
+            for (unsigned int col = 0; col < LL(p)->schema.count; col++) {
+                if (!LL(p)->schema.items[col].type)
+                    PFoops (OOPS_FATAL,
+                            "empty sequence should never occur in MIL generation.");
+
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & LL(p)->schema.items[col].type) {
                         mvar_t *tmp  = new_var (p->refctr + 
@@ -690,9 +776,14 @@ reduce1 (PFpa_op_t * p, int goalnt)
                                  t,
                                  tmp);
                     }
+            }
 
             /* translate all the remaining seeds */
-            reduce1 (kids[1], nts[1]);
+            reduce1 (kids[1], nts[1], border_vars);
+
+            /* translate all expressions that are invariant to
+               the recursion body */
+            reduce_border (kids[0], nts[0], border_vars);
             break;
 
         /* Rec:      rec_nil */
@@ -970,10 +1061,13 @@ reduce (PFpa_op_t * p, int goalnt)
 
     /*
      * Recursively invoke compilation.  This means bottom-up compilation.
+     * (ensure that the fragment information is translated after 
+     *  the value part)
      */
     if (!topdown)
-        for (unsigned short i = 0; nts[i]; i++)
-            reduce (kids[i], nts[i]);
+        for (unsigned short i = MAX_KIDS; i > 0; i--)
+            if (kids[i - 1])
+                reduce (kids[i - 1], nts[i - 1]);
 
     if (p->env)
         return;
@@ -1008,8 +1102,8 @@ reduce (PFpa_op_t * p, int goalnt)
 
             execute (
                 assgn (var (PF_MIL_VAR_WS), new_ws ()));
-            reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
+            reduce (kids[0], nts[0]);
 
             /* Set up all the value containers for print_result().
              * (It is actually too much overhead to introduce the value
@@ -3488,6 +3582,9 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* FragRel: element (FragList, element_tag (Rel, empty_lit_tbl)) */
         case 102:
+        /* FragRel: element (FragList, 
+                             element_tag (Rel, rec_border (empty_tbl))) */
+        case 103:
         {
             /* copy the iter BAT */
 
@@ -3521,7 +3618,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* FragRel: element (FragList, element_tag (Rel, Rel)) */
-        case 103:
+        case 104:
         {
             /* copy the iter BAT */
             mvar_t *iter = env_mvar (L(R(p))->env, p->sem.ii.iter, aat_nat);
@@ -3584,7 +3681,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* FragRel: attribute (Rel) */
-        case 104:
+        case 105:
         {
             /* temporary variable */
             mvar_t *v = new_var (1);
@@ -3619,7 +3716,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* FragRel: textnode (Rel) */
-        case 105:
+        case 106:
         {
             /* temporary variable */
             mvar_t *v = new_var (1);
@@ -3652,25 +3749,25 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      docnode (FragList, Rel) */
-        case 106:
+        case 107:
             PFoops (OOPS_FATAL,
                     "docnode not implemented yet.");
             break;
 
         /* Rel:      comment (Rel) */
-        case 107:
+        case 108:
             PFoops (OOPS_FATAL,
                     "comment not implemented yet.");
             break;
 
         /* Rel:      processi (Rel) */
-        case 108:
+        case 109:
             PFoops (OOPS_FATAL,
                     "processing-instruction not implemented yet.");
             break;
 
         /* Rel:      merge_adjacent (FragList, Rel) */
-        case 109:
+        case 110:
         {
             PFmil_t *iter = NULL, *pre = NULL, *pfrag = NULL;
 
@@ -3765,9 +3862,15 @@ reduce (PFpa_op_t * p, int goalnt)
             PFmil_t *oldmilprog, *bodymilprog;
             PFarray_t *res_env;
             mvar_t *old_count, *new_count;
+            PFarray_t *border_vars = PFarray (sizeof (mvar_t *));
             
-            /* first bind all seeds to new variables */
-            reduce1(kids[0], nts[0]);
+            /* Generate code for the seeds and bind them to the new variables.
+               In addition generate code for all expressions that are 
+               invariant to the recursion body (all expressions underneath
+               a rec_border operator) and pin the variables holding the 
+               results once more such they are not released in the recursion
+               body (references stored in border_vars). */
+            reduce1(kids[0], nts[0], border_vars);
            
             old_count = new_var (1);
             new_count = new_var (1);
@@ -3826,8 +3929,14 @@ reduce (PFpa_op_t * p, int goalnt)
                          env_at (res_env, i).mvar);
             }
             
+            /* release the additional pins of the variables
+               representing the recursion invariant expressions */
+            for (unsigned int i = 0; i < PFarray_last (border_vars); i++)
+                unpin (*(mvar_t **) PFarray_at (border_vars, i), 1);
+            
             /* release all the pins of the while loop arguments */
             reduce3(kids[0], nts[0]);
+
             /* ensure that the child of p (the first argument) still
                has one pin left to release (see bottom of function reduce) */
             for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++)
@@ -3853,6 +3962,18 @@ reduce (PFpa_op_t * p, int goalnt)
                 and
                   rec_param (rec_arg (empty_tbl, Rel), Rec))
                 in function reduce1 */
+            break;
+
+        /* Rel:      rec_border (Rel) */
+        case 136:
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+            }
             break;
 
         /* Rel:      concat (Rel) */

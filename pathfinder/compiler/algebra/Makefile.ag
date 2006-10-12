@@ -49,6 +49,7 @@ lib_algebra = {
                 logical.c \
                 planner.c \
                 physical.c \
+                intro_rec_border.c \
                 ordering.c \
                 builtins.c
 }

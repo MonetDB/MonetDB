@@ -127,6 +127,7 @@ static char *a_id[]  = {
     , [pa_rec_nil]         = "rec nil"
     , [pa_rec_arg]         = "rec arg"
     , [pa_rec_base]        = "rec base"
+    , [pa_rec_border]      = "rec border"
     , [pa_concat]          = "fn:concat"
     , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
@@ -212,6 +213,7 @@ static char *xml_id[]  = {
     , [pa_rec_nil]         = "rec_nil"
     , [pa_rec_arg]         = "rec_arg"
     , [pa_rec_base]        = "rec_base"
+    , [pa_rec_border]      = "rec_border"
     , [pa_concat]          = "fn:concat"
     , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
@@ -425,6 +427,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_rec_nil]         = "\"#FF00FF\""
         , [pa_rec_arg]         = "\"#BB00BB\""
         , [pa_rec_base]        = "\"#BB00BB\""
+        , [pa_rec_border]      = "\"#BB00BB\""
         , [pa_concat]          = "\"#C0C0C0\""
         , [pa_contains]        = "\"#C0C0C0\""
         , [pa_string_join]     = "\"#C0C0C0\""
@@ -731,6 +734,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         case pa_rec_nil:
         case pa_rec_arg:
         case pa_rec_base:
+        case pa_rec_border:
         case pa_string_join:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;

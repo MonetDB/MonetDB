@@ -555,8 +555,9 @@ static char *phases[] = {
     [15]  = "after the logical algebra tree has been rewritten/optimized",
     [16]  = "after the CSE on the logical algebra tree",
     [17]  = "after compiling logical into the physical algebra",
-    [18]  = "after compiling the physical algebra into MIL code",
-    [19]  = "after the MIL program has been serialized"
+    [18]  = "after introducing recursion boundaries",
+    [19]  = "after compiling the physical algebra into MIL code",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /**
