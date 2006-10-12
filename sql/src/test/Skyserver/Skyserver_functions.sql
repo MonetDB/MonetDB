@@ -1562,7 +1562,7 @@ BEGIN
 			||str(nx,15)||' '||str(ny,15)||' '||str(nz,15)
 			|| ' ' || str(r,2);
 
-	RETURN (SELECT 
+	RETURN TABLE(SELECT 
 	    objID, 
 	    run,
 	    camcol,
