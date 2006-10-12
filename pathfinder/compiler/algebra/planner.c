@@ -1755,38 +1755,51 @@ plan_recursion_base (PFla_op_t *n, PFord_ordering_t ord)
  * Worker for function clean_up_body_plans.
  *
  * return code semantics:
- *  false -- do nothing
- *  true  -- prune plans
+ *   0 -- do nothing
+ *   1 -- prune plans
+ *   2 -- constructor appeared - bail out
+ *
+ * The code is based on the precedence of the semantics.
  */
-static bool
+static int
 clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
 {
     unsigned int i;
-    bool code = false /* keep plans */;
+    int cur_code, code = 0 /* keep plans */;
 
     if (!n->plans)
-        return true /* delete plans */;
+        return 1 /* delete plans */;
 
     switch (n->kind)
     {
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_doc_tbl:
+            if (code) return 2 /* constructor appeared - bail out */;
+            
         /* do not delete the plans along the fragments */
         case la_frag_union:
-            return false /* keep plans */;
+            return 0 /* keep plans */;
 
         case la_rec_base:
             for (i = 0; i < PFarray_last (bases); i++)
                 if (n == *(PFla_op_t **) PFarray_at (bases, i)) {
-                    code = true /* delete plans */;
+                    code = 1 /* delete plans */;
                     break;
                 }
             break;
 
         default:
-            for (i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-                code = code || clean_up_body_plans_worker (n->child[i], bases);
+            for (i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
+                cur_code = clean_up_body_plans_worker (n->child[i], bases);
+                /* collect the codes */
+                code = code > cur_code ? code : cur_code;
+            }
             break;
     }
-    if (code)
+    /* reset plan */
+    if (code == 1)
         n->plans = NULL;
 
     return code;
@@ -1795,8 +1808,13 @@ clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
 /**
  * Delete all the plans annotated to the logical algebra nodes,
  * which can reach the base operators of the recursion.
+ *
+ * If one such operator is a constructor the clean up has to fail
+ * (see also return value) as otherwise the recursion may refer
+ * to a different constructor as the fragment information 
+ * (the cheapest overall recursion plan vs. the last plan).
  */
-static void
+static bool
 clean_up_body_plans (PFla_op_t *n)
 {
     PFarray_t *bases = PFarray (sizeof (PFla_op_t *));
@@ -1817,17 +1835,18 @@ clean_up_body_plans (PFla_op_t *n)
     /* clean up the plans */
     while (cur->kind != la_rec_nil) {
         code = clean_up_body_plans_worker (LR(cur), bases);
+        
+        /* if a constructor was detected we can stop processing now. */
+        if (code == 2)
+            return false; /* constructor appeared - bail out */
+
         assert (code);
         cur = R(cur);
     }
     code = clean_up_body_plans_worker (R(n), bases);
     assert (code);
     
-#ifdef NDEBUG
-    /* otherwise compilers (correctly) complain about "code" being
-          set but never used in case assertions are switched off */
-    (void) code;
-#endif
+    return code != 2;
 }
 
 /**
@@ -2193,8 +2212,12 @@ plan_subexpression (PFla_op_t *n)
                    already collected plans */
                 add_plans (rec_list, plan_recursion (n, ord));
 
-                /* Reset all the plans in the body. */
-                clean_up_body_plans (n);
+                /* Reset all the plans in the body.
+                   If a constructor appears in the body the clean up 
+                   fails and we have to stop generating new plans and
+                   use the current (first) plan */
+                if (!clean_up_body_plans (n))
+                    break;
             }
 
             /* For the same reason as the node constructors, we generate exactly
