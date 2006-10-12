@@ -646,9 +646,11 @@ prop_infer (PFla_op_t *n, unsigned int cur_col_id)
     }
 
     if (bottom_up)
-        /* infer properties for children */
-        for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-            cur_col_id = prop_infer (n->child[i], cur_col_id);
+        /* infer properties for children bottom-up (ensure that
+           the fragment information is translated after the value part) */
+        for (unsigned int i = PFLA_OP_MAXCHILD; i > 0; i--)
+            if (n->child[i - 1])
+                cur_col_id = prop_infer (n->child[i - 1], cur_col_id);
 
     n->bit_dag = true;
     reset_property (n);

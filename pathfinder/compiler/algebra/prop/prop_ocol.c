@@ -707,9 +707,11 @@ prop_infer (PFla_op_t *n)
     }
     
     if (bottom_up)
-        /* infer properties for children */
-        for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-            prop_infer (n->child[i]);
+        /* infer properties for children bottom-up (ensure that
+           the fragment information is translated after the value part) */
+        for (unsigned int i = PFLA_OP_MAXCHILD; i > 0; i--)
+            if (n->child[i - 1])
+                prop_infer (n->child[i - 1]);
 
     n->bit_dag = true;
 
