@@ -1510,7 +1510,18 @@ BEGIN
 END;
 
 -----------------SPATIAL ACCESS BASED ON HTM--------------
+--The following function was created for the test. Its real implementation will be done by Milena.
 
+CREATE FUNCTION fHtmCover (Region VARCHAR(8000))
+RETURNS TABLE (
+		HTMIDstart BIGINT,  
+		HTMIDend   BIGINT )
+BEGIN
+	DECLARE TABLE Triangles(
+		HTMIDstart BIGINT,  
+		HTMIDend   BIGINT );
+	RETURN Triangles;
+END;
 
 CREATE FUNCTION fGetNearbyObjAllXYZ (nx float, ny float, nz float, r float)
 RETURNS TABLE (
@@ -1519,8 +1530,8 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
-    mode int ,
+    type_val int ,
+    "mode" int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1534,8 +1545,8 @@ BEGIN
 	    camcol int ,
 	    field int ,
 	    rerun int ,
-	    type int ,
-	    mode int ,
+	    type_val int ,
+	    "mode" int ,
 	    cx float ,
 	    cy float ,
 	    cz float ,
@@ -1551,26 +1562,23 @@ BEGIN
 			||str(nx,15)||' '||str(ny,15)||' '||str(nz,15)
 			|| ' ' || str(r,2);
 
-	INSERT INTO proxtab SELECT 
+	RETURN (SELECT 
 	    objID, 
 	    run,
 	    camcol,
 	    field,
 	    rerun,
-	    type,
-	    mode,
+	    type_val,
+	    "mode",
 	    cx,
 	    cy,
 	    cz,
 	    htmID,
- 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 
+ 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as distance 
 	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
-	    FROM fHtmCover(cmd) v3, PhotoTag
+	    FROM fHtmCover(cmd) v2, PhotoTag
 	    WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend )
-	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
-	ORDER BY (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) ASC
-	OPTION(FORCE ORDER, LOOP JOIN);
-	RETURN proxtab;
+	    AND ( distance < r) ORDER BY distance ASC );
 END;
 
 CREATE FUNCTION fGetNearbyObjAllEq (ra float, deci float, r float)
@@ -1580,8 +1588,8 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
-    mode tinyint ,
+    type_val int ,
+    "mode" smallint ,
     cx float ,
     cy float ,
     cz float ,
@@ -1589,14 +1597,14 @@ RETURNS TABLE (
     distance float		-- distance in arc minutes
 ) 
 BEGIN
-	DECLARE prox TEMPORARY TABLE (
+	DECLARE TABLE proxtab(
 	    objID bigint,
 	    run int ,
 	    camcol int ,
 	    field int ,
 	    rerun int ,
-	    type int ,
-	    mode tinyint ,
+	    type_val int ,
+	    "mode" smallint ,
 	    cx float ,
 	    cy float ,
 	    cz float ,
@@ -1611,9 +1619,7 @@ BEGIN
 	set nx  = COS(deci*d2r)*COS(ra*d2r);
 	set ny  = COS(deci*d2r)*SIN(ra*d2r);
 	set nz  = SIN(deci*d2r);
-	INSERT INTO proxtab	
-	SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r);
-	RETURN proxtab;
+	RETURN (SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r) v2);
 END;
 
 CREATE FUNCTION fGetNearestObjAllEq (ra float, deci float, r float)
@@ -1623,8 +1629,8 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
-    mode int ,
+    type_val int ,
+    "mode" int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1639,12 +1645,12 @@ BEGIN
 	set nz  = SIN(deci*d2r);
 	RETURN TABLE(	
 	SELECT * 
-	FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)
+	FROM fGetNearbyObjAllXYZ(nx,ny,nz,r) v2
 	ORDER BY distance ASC LIMIT 1);   -- order by needed to get the closest one.
 END;
 
 CREATE FUNCTION fGetNearestObjIdEqMode (ra float, deci float, 
-					r float, mode int)
+					r float, mode_value int)
 RETURNS bigint
 BEGIN
     DECLARE nx float, ny float, nz float;
@@ -1653,8 +1659,8 @@ BEGIN
     SET nz = sin(radians(deci));
     RETURN (
 	select objID 
-	from fGetNearbyObjAllXYZ(nx,ny,nz,r)
-	where mode = mode
+	from fGetNearbyObjAllXYZ(nx,ny,nz,r) v2
+	where "mode" = mode
 	order by distance asc LIMIT 1); 
 END;
 
@@ -1665,7 +1671,7 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
+    type_val int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1673,13 +1679,13 @@ RETURNS TABLE (
     distance float		-- distance in arc minutes
 )
 BEGIN
-	DECLARE proxtab TEMPORAY TABLE (
+	DECLARE TABLE proxtab(
 	    objID bigint,
 	    run int ,
 	    camcol int ,
 	    field int ,
 	    rerun int ,
-	    type int ,
+	    type_val int ,
 	    cx float ,
 	    cy float ,
 	    cz float ,
@@ -1692,29 +1698,27 @@ BEGIN
 	if (r<0) 
 		THEN RETURN proxtab;
 	END IF;
-	set d2r = PI()/180.0				   
+	set d2r = PI()/180.0;				   
 	set cmd = 'CIRCLE CARTESIAN '  
 			|| str(nx,15)||' '||str(ny,15)||' '||str(nz,15)
-			|| ' ' || str(r,2)
-	INSERT INTO proxtab SELECT 
+			|| ' ' || str(r,2);
+	RETURN (SELECT 
 	    objID, 
 	    run,
 	    camcol,
 	    field,
 	    rerun,
-	    type,
+	    type_val,
 	    cx,
 	    cy,
 	    cz,
 	    htmID,
- 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 
+ 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as distance
 	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
-	    FROM fHtmCover(cmd), PhotoPrimary
+	    FROM fHtmCover(cmd) v2, PhotoPrimary
 	    WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend )
-	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r) 
-	ORDER BY (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) ASC
-	OPTION(FORCE ORDER, LOOP JOIN);
-	RETURN proxtab;
+	    AND ( distance_val < r) 
+	ORDER BY distance ASC);
 END;
 
 CREATE FUNCTION fGetNearestObjXYZ (nx float, ny float, nz float, r float)
@@ -1724,7 +1728,7 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
+    type_val int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1745,7 +1749,7 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
+    type_val int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1753,13 +1757,13 @@ RETURNS TABLE (
     distance float		-- distance in arc minutes
 ) 
 BEGIN
-	DECLARE proxtab TEMPORARY TABLE (
+	DECLARE TABLE proxtab (
 	    objID bigint,
 	    run int ,
 	    camcol int ,
 	    field int ,
 	    rerun int ,
-	    type int ,
+	    type_val int ,
 	    cx float ,
 	    cy float ,
 	    cz float ,
@@ -1775,7 +1779,7 @@ BEGIN
 	set ny  = COS(deci*d2r)*SIN(ra*d2r);
 	set nz  = SIN(deci*d2r);
 	INSERT INTO proxtab	
-	SELECT * FROM fGetNearbyObjXYZ(nx,ny,nz,r);
+	SELECT * FROM fGetNearbyObjXYZ(nx,ny,nz,r) v3;
 	RETURN proxtab;
 END;
 
@@ -1786,7 +1790,7 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
+    type_val int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1808,21 +1812,21 @@ END;
 CREATE FUNCTION fGetNearestObjIdEq(ra float, deci float, r float)
 RETURNS bigint
 BEGIN
-    RETURN (select objID from fGetNearestObjEq(ra,deci,r)); 
+    RETURN (select objID from fGetNearestObjEq(ra,deci,r) v3); 
 END;
 
 CREATE FUNCTION fGetNearestObjIdAllEq(ra float, deci float, r float)
 RETURNS bigint
 BEGIN
-    RETURN (select objID from fGetNearestObjAllEq(ra,deci,r));
+    RETURN (select objID from fGetNearestObjAllEq(ra,deci,r) v3);
 END;
 
 CREATE FUNCTION fGetNearestObjIdEqType (ra float, deci float, r float, t int)
 RETURNS bigint
 BEGIN
     RETURN (	select objID 
-		from fGetNearbyObjEq(ra,deci,r)
-		where type=t 
+		from fGetNearbyObjEq(ra,deci,r) v3
+		where type_val=t 
 		order by distance asc LIMIT 1); 
 END;
 
@@ -1834,7 +1838,7 @@ RETURNS TABLE (
     camcol int ,
     field int ,
     rerun int ,
-    type int ,
+    type_val int ,
     cx float ,
     cy float ,
     cz float ,
@@ -1843,7 +1847,7 @@ RETURNS TABLE (
 BEGIN
 	declare d2r float, cmd varchar(1000), radius float, 
 	    dot float, d1 float, d2 float,
-	    level int, shift bigint, ra float, deci float,
+	    level_val int, shift bigint, ra float, deci float,
 	    nx1 float, ny1 float, nz1 float,
 	    nx2 float, ny2 float, nz2 float,
 	    nx float, ny float, nz float;
@@ -1873,9 +1877,9 @@ BEGIN
 	END IF;
 	set radius = ACOS(dot)/d2r*60.0;
 	RETURN TABLE(SELECT
-	    objID, run, camcol, field, rerun, type,
+	    objID, run, camcol, field, rerun, type_val,
 	    cx, cy, cz, htmID
-	from fGetNearbyObjEq(ra,deci,radius)
+	from fGetNearbyObjEq(ra,deci,radius) v3
 	    WHERE (cz>nz1) AND (cz<nz2) 
 		AND (-cx*nx1+cy*ny1>0)
 		AND (cx*nx2-cy*ny2)>0);
@@ -1905,8 +1909,8 @@ BEGIN
         if ( bit_and(flag, 1) > 0 )  -- specObj
             THEN 
                 INSERT INTO obj
-                SELECT ra, dec,  1 as flag, specobjid as objid
-                FROM fHtmCover(cmd) , SpecObj 
+                SELECT ra, "dec",  1 as flag, specobjid as objid
+                FROM fHtmCover(cmd) v2, SpecObj 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -1915,8 +1919,8 @@ BEGIN
         if ( bit_and(flag, 2) > 0 )  -- photoObj
             THEN 
                 INSERT INTO obj
-                SELECT ra, dec, 2 as flag, objid
-                FROM fHtmCover(cmd) , PhotoPrimary 
+                SELECT ra, "dec", 2 as flag, objid
+                FROM fHtmCover(cmd) v2, PhotoPrimary 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad)
@@ -1926,8 +1930,8 @@ BEGIN
         if ( bit_and(flag, 4) > 0 )  -- target
             THEN 
                 INSERT INTO obj
-                SELECT ra, dec, 4 as flag, targetid as objid
-                FROM fHtmCover(cmd) , Target 
+                SELECT ra, "dec", 4 as flag, targetid as objid
+                FROM fHtmCover(cmd) v2, Target 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -1936,8 +1940,8 @@ BEGIN
         if ( bit_and(flag, 8) > 0 )  -- mask
             THEN
                 INSERT INTO obj
-                SELECT ra, dec, 8 as flag, maskid as objid
-                FROM fHtmCover(cmd) , Mask 
+                SELECT ra, "dec", 8 as flag, maskid as objid
+                FROM fHtmCover(cmd) v2, Mask 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -1949,8 +1953,8 @@ BEGIN
 	        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)
 			||' '||str(deci,15)||' '||str(rad,2);
                 INSERT INTO obj
-                SELECT ra, dec, 16 as flag, plateid as objid
-                FROM fHtmCover(cmd) , PlateX
+                SELECT ra, "dec", 16 as flag, plateid as objid
+                FROM fHtmCover(cmd) v2, PlateX
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -1959,8 +1963,8 @@ BEGIN
         if ( bit_and(flag, 32) > 0 )  -- photoPrimary and secondary
             THEN
                 INSERT INTO obj
-                SELECT ra, dec, 2 as flag, objid
-                FROM fHtmCover(cmd) , PhotoObjAll
+                SELECT ra, "dec", 2 as flag, objid
+                FROM fHtmCover(cmd) v2, PhotoObjAll
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad)
@@ -1993,8 +1997,8 @@ BEGIN
         if ( bit_and(flag, 1) > 0 )  -- specObj
             THEN
                 INSERT INTO obj
-                SELECT ra, dec,  1 as flag, specobjid as objid
-                FROM fHtmCover(cmd) , SpecObj
+                SELECT ra, "dec",  1 as flag, specobjid as objid
+                FROM fHtmCover(cmd) v2, SpecObj
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -2002,8 +2006,8 @@ BEGIN
         if ( bit_and(flag, 2) > 0 )  -- photoObj
             THEN
                 INSERT INTO obj
-                SELECT ra, dec, 2 as flag, objid
-                FROM fHtmCover(cmd) , PhotoPrimary
+                SELECT ra, "dec", 2 as flag, objid
+                FROM fHtmCover(cmd) v2 , PhotoPrimary
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad)
@@ -2012,8 +2016,8 @@ BEGIN
         if ( bit_and(flag, 4) > 0 )  -- target
             THEN
                 INSERT INTO obj
-                SELECT ra, dec, 4 as flag, targetid as objid
-                FROM fHtmCover(cmd) , Target
+                SELECT ra, "dec", 4 as flag, targetid as objid
+                FROM fHtmCover(cmd) v2 , Target
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -2023,8 +2027,8 @@ BEGIN
 	        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)
 			||' '||str(deci,15)||' '||str(rad+15,2);
                 INSERT INTO obj
-                SELECT ra, dec, 8 as flag, maskid as objid
-                FROM fHtmCover(cmd) , Mask
+                SELECT ra, "dec", 8 as flag, maskid as objid
+                FROM fHtmCover(cmd) v2 , Mask
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< (rad+radius));
@@ -2035,8 +2039,8 @@ BEGIN
 	        set cmd = 'CIRCLE J2000 '||' '||str(ra,15)
 			||' '||str(deci,15)||' '||str(rad,2);
                 INSERT INTO obj
-                SELECT ra, dec, 16 as flag, plateid as objid
-                FROM fHtmCover(cmd) , PlateX 
+                SELECT ra, "dec", 16 as flag, plateid as objid
+                FROM fHtmCover(cmd) v2 , PlateX 
                 WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
                 AND ((2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)
 		    +power(nz-cz,2))/2))*60)< rad);
@@ -2064,21 +2068,20 @@ BEGIN
 	    cc float,cmd varchar(80);
 	set r = radius;
 	set d2r = PI()/180.0;
-	set nx  = COS(dec*d2r)*COS(ra*d2r);
-	set ny  = COS(dec*d2r)*SIN(ra*d2r);
-	set nz  = SIN(dec*d2r);
+	set nx  = COS(deci*d2r)*COS(ra*d2r);
+	set ny  = COS(deci*d2r)*SIN(ra*d2r);
+	set nz  = SIN(deci*d2r);
 	set cc  = COS(r*d2r/60);     -- cos(r) (r converted to radians)	
 	set cmd = 'CIRCLE J2000 ' ||str(ra,15)||' '||str(deci,15)||' '||str(r,2);
 	RETURN TABLE(SELECT  
 	    fieldID, 
 	    a,b,c,d,e,f,node,incl,
-            (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)
-	    FROM fHtmCover(cmd) , Frame
+            (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as distance
+	    FROM fHtmCover(cmd) v2 , Frame
 	    WHERE (HTMID BETWEEN  HTMIDstart AND HTMIDend)
 	    AND zoom = zoom
-	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r) 
-	    ORDER BY (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) ASC
-	OPTION(FORCE ORDER, LOOP JOIN));
+	    AND ( distance< r) 
+	    ORDER BY distance ASC );
 END;
 
 CREATE FUNCTION fGetNearestFrameEq (ra float, deci float, zoom int)
@@ -2092,7 +2095,7 @@ RETURNS TABLE (
 	f 		float  ,
 	node 		float  ,
 	incl 		float  ,
-        distance        float ;		-- distance in arc minutes 
+        distance        float 		-- distance in arc minutes 
 ) 
 BEGIN
 	RETURN TABLE(	
@@ -2104,225 +2107,13 @@ END;
 CREATE FUNCTION fGetNearestFrameidEq (ra float, deci float, zoom int)
 RETURNS bigint
 BEGIN
-	RETURN (select fieldID from fGetNearestFrameEq(ra, deci, zoom) );
+	RETURN (select fieldID from fGetNearestFrameEq(ra, deci, zoom) v3);
 END;
 
 
 ----------------------REGION OPERATIONS-------------------------------------
 
 
--------------------------URL GENERATION----------------------------------------
-
-CREATE FUNCTION fGetUrlFitsField(fieldId bigint)
-RETURNS varchar(128)
-BEGIN
-	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
-		run6 varchar(10), stripe varchar(8), camcol varchar(8), 
-		field varchar(8), startMu varchar(10), skyVersion varchar(8);
-	SET link = (select val from SiteConstants where name='DataServerURL');
-	SET link = link || 'imaging/';
-	SELECT cast(fSkyVersion(fieldid) as varchar(8)) INTO skyVersion;
-	IF (skyVersion = '0')
-		THEN SET link = link || 'inchunk_target/';
-	ELSEIF (skyVersion = '1')
-		THEN SET link = link || 'inchunk_best/';
-	ELSE
-		SET link = link || 'inchunk_runs/';
-	END IF;
-	SELECT  cast(f.run as varchar(8)), 
-		cast(f.rerun as varchar(8)), 
-		cast(s.startMu as varchar(10)), 
-		cast(s.stripe as varchar(8)),
-		cast(f.camcol as varchar(8)), 
-		cast(f.field as varchar(8))
-	    INTO run, rerun, startMu, stripe, camcol, field
-	    FROM Field f, Segment s
-	    WHERE f.fieldId=fieldId and s.segmentID = f.segmentID; 
-	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
-	SET field = substring('0000',1,4-LENGTH(field)) || field;
-	RETURN 	 link || 'stripe' || stripe || '_mu' || startMu || '_' 
-		|| skyVersion || '/'||camcol||'/tsField-'||run6||'-'
-		||camcol||'-'||rerun||'-'||field||'.fit';
-END;
-
-CREATE FUNCTION fGetUrlFitsSpectrum(specObjId bigint)
-RETURNS varchar(128)
-BEGIN
-	DECLARE link varchar(128), plate varchar(8), mjd varchar(8), fiber varchar(8);
-	SET link = (select val from SiteConstants where name='DataServerURL');
-	SET link = link || 'spectro/1d_23/';
-	SELECT cast(p.mjd as varchar(8)), cast(p.plate as varchar(8)), cast(s.fiberID as varchar(8))
-	    INTO mjd, plate, fiber 
-	    FROM PlateX p, specObjAll s 
-	    WHERE p.plateId=s.plateId AND s.specObjID=specObjId;
-	SET plate = substring('0000',1,4-LENGTH(plate)) || plate;
-	SET fiber = substring( '000',1,3-LENGTH(fiber)) || fiber;
-	RETURN 	 link || plate || '/1d/spSpec-'||mjd||'-'||plate||'-'||fiber||'.fit';
-END;
-
-CREATE FUNCTION fGetUrlSpecImg(specObjId bigint)
-returns varchar(256)
-begin
-	declare WebServerURL varchar(500);
-	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500))
-		into WebServerURL
-		from SiteConstants
-		where name ='WebServerURL';
-	return WebServerURL || 'get/specById.asp?id=' 
-		|| cast(coalesce(specObjId,0) as varchar(32));
-end;
-
-CREATE FUNCTION fGetUrlFitsAtlas(fieldId bigint)
-RETURNS varchar(128)
-BEGIN
-	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
-		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select val from SiteConstants where name='DataServerURL');
-	SET link = link || 'imaging/';
-	SELECT  cast(run as varchar(8)), cast(rerun as varchar(8)), 
-		cast(camcol as varchar(8)), cast(field as varchar(8))
-	    INTO run, rerun, camcol, field
-	    FROM Field
-	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
-	SET field = substring('0000',1,4-LENGTH(field)) || field;
-	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpAtlas-'||run6||'-'||camcol||'-'||field||'.fit.gz';
-END;
-
-CREATE FUNCTION fGetUrlNavEq(ra float, deci float)
-returns varchar(256)
-begin
-	declare WebServerURL varchar(500);
-	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500))
-		into WebServerURL
-		from SiteConstants
-		where name ='WebServerURL';
-	return WebServerURL || 'tools/chart/navi.asp?zoom=1&ra=' 
-		|| ltrim(str(ra,6)) || '&dec=' || ltrim(str(deci,6));
-end;
-
-CREATE FUNCTION fGetUrlFitsBin(fieldId bigint, filter varchar(4))
-RETURNS varchar(128)
-BEGIN
-	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
-		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select val from SiteConstants where name='DataServerURL');
-	SET link = link || 'imaging/';
-	SELECT  cast(run as varchar(8)), cast(rerun as varchar(8)), 
-		cast(camcol as varchar(8)), cast(field as varchar(8))
-	    INTO run, rerun, camcol, field
-	    FROM Field
-	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
-	SET field = substring('0000',1,4-LENGTH(field)) || field;
-	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpBIN-'||run6||'-'||filter||camcol||'-'||field||'.fit.gz';
-END;
-
-CREATE FUNCTION fGetUrlFitsMask(fieldId bigint, filter varchar(4))
-RETURNS varchar(128)
-BEGIN
-	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
-		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select val from SiteConstants where name='DataServerURL');
-	SET link = link || 'imaging/';
-	SELECT  cast(run as varchar(8)), cast(rerun as varchar(8)), 
-		cast(camcol as varchar(8)), cast(field as varchar(8))
-	    INTO run, rerun, camcol, field
-	    FROM Field
-	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
-	SET field = substring('0000',1,4-LENGTH(field)) || field;
-	RETURN 	 link || run || '/' || rerun || '/objcs/'||camcol||'/fpM-'||run6||'-'||filter||camcol||'-'||field||'.fit.gz';
-END;
-
-CREATE FUNCTION fGetUrlFrameImg(frameId bigint, zoom int)
-returns varchar(256)
-begin
-	declare WebServerURL varchar(500);
-	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500))
-		into WebServerURL
-		from SiteConstants
-		where name ='WebServerURL';
-	return WebServerURL || 'get/frameById.asp?id=' 
-		|| cast(frameId as varchar(32))
-		|| '&zoom=' || cast(zoom as varchar(6));
-end;
-
-CREATE FUNCTION fGetUrlFitsCFrame(fieldId bigint, filter varchar(4))
-RETURNS varchar(128)
-BEGIN
-	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
-		camcol varchar(8), field varchar(8), run6 varchar(10);
-	SET link = (select val from SiteConstants where name='DataServerURL');
-	SET link = link || 'imaging/';
-	SELECT  cast(run as varchar(8)), cast(rerun as varchar(8)), 
-		cast(camcol as varchar(8)), cast(field as varchar(8))
-	    INTO run, rerun, camcol, field
-	    FROM Field
-	    WHERE fieldId=fieldId;
-	SET run6   = substring('000000',1,6-LENGTH(run)) || run;
-	SET field = substring('0000',1,4-LENGTH(field)) || field;
-	RETURN 	 link || run || '/' || rerun || '/corr/'||camcol||'/fpC-'||run6||'-'||filter||camcol||'-'||field||'.fit.gz';
-END;
-
-CREATE FUNCTION fGetUrlExpId(objId bigint)
-returns varchar(256)
-begin
-	declare WebServerURL varchar(500);
-	declare ra float;
-	declare deci float;
-	set ra = 0
-	set deci = 0;
-	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500))
-		into WebServerURL
-		from SiteConstants where name ='WebServerURL'; 
-	select ra, dec
-	into ra, dec
-	from PhotoObjAll
-	where objID = objId;
-	return WebServerURL ||'tools/explore/obj.asp?id=' 
-		|| cast(objId as varchar(32));
-end;
-
-CREATE FUNCTION fGetUrlExpEq(ra float, deci float)
-returns varchar(256)
-	begin
-	declare WebServerURL varchar(500);
-	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500))
-		into WebServerURL
-		from SiteConstants
-		where name ='WebServerURL';
-	return WebServerURL || 'tools/explore/obj.asp?ra=' 
-		|| ltrim(str(ra,6)) || '&dec=' || ltrim(str(deci,6))
-end;
-
-CREATE FUNCTION fGetUrlNavId(objId bigint)
-returns varchar(256)
-begin
-	declare WebServerURL varchar(500);
-	declare ra float;
-	declare deci float;
-	set ra = 0
-	set deci = 0;
-	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500))
-		into WebServerURL
-		from SiteConstants where name ='WebServerURL'; 
-	select ra, dec
-	into ra, dec
-	from PhotoObjAll
-	where objID = objId;
-	return WebServerURL ||'tools/chart/navi.asp?zoom=1&ra=' 
-		|| ltrim(str(ra,10)) || '&dec=' || ltrim(str(deci,10));
-	end
-
-
-;
 
 ---------------------------NAME GENERATION-----------------------------
 
@@ -2334,26 +2125,26 @@ CREATE FUNCTION fIndexName(
 )
 RETURNS varchar(32)
 BEGIN
-	DECLARE constraint varchar(2000), 
+	DECLARE constraint_val varchar(2000), 
 		head varchar(8),
 		fk varchar(1000);
 	--
 	SET head = CASE code 
-		WHEN 'K' THEN 'pk_';
-		WHEN 'F' THEN 'fk_';
-		WHEN 'I' THEN 'i_';
-		END CASE;
+		WHEN 'K' THEN 'pk_'
+		WHEN 'F' THEN 'fk_'
+		WHEN 'I' THEN 'i_'
+		END;
 	--
 	SET fk = replace(replace(replace(foreignKey,',','_'),')',''),'(','_');
-	SET constraint = head || tableName || '_'
+	SET constraint_val = head || tableName || '_'
 		|| replace(replace(fieldList,' ',''),',','_');
 	IF foreignkey <> '' 
-		THEN SET constraint = constraint || '_' || fk;
+		THEN SET constraint_val = constraint_val || '_' || fk;
 	END IF;
 	--
-	SET constraint = substring(constraint,1,32);
-	SET constraint = replace(replace(constraint,'',''),'','');
-	RETURN constraint;
+	SET constraint_val = substring(constraint_val,1,32);
+	SET constraint_val = replace(replace(constraint_val,'',''),'','');
+	RETURN constraint_val;
 END;
 
 CREATE FUNCTION fTileFileName (zoom int, 
@@ -2383,7 +2174,7 @@ CREATE FUNCTION fDocColumnsWithRank(TableName varchar(400))
 RETURNS TABLE (
 	enum	varchar(64),
 	name		varchar(64),
-	type 		varchar(32),
+	type_val 		varchar(32),
 	length	int,
 	unit		varchar(64),
 	ucd		varchar(64),
@@ -2392,9 +2183,9 @@ RETURNS TABLE (
 )
 BEGIN
     RETURN TABLE(
-    select  enum, name, type, length, unit, ucd, description, rank 
-    from ( SELECT	distinct convert(c.name USING sysname) as name,
-			t.name as type,
+    select  enum, name, type_val, length, unit, ucd, description, rank 
+    from ( SELECT	distinct convert(c.name,varchar(64)) as name,
+			t.name as type_val,
 			coalesce(d.length, c.length) as length,
 			colid as ColNumber,
 			m.unit,
@@ -2434,7 +2225,7 @@ CREATE FUNCTION fDocColumns(TableName varchar(400))
 RETURNS TABLE (
 	enum	varchar(64),
 	name		varchar(64),
-	type 		varchar(32),
+	type_val 		varchar(32),
 	length	int,
 	unit		varchar(64),
 	ucd		varchar(64),
@@ -2442,9 +2233,9 @@ RETURNS TABLE (
 )
 BEGIN
     RETURN TABLE(
-    select  enum, name, type, length, unit, ucd, description
-    from ( SELECT	distinct convert(c.name USING sysname) as name,
-			t.name as type,
+    select  enum, name, type_val, length, unit, ucd, description
+    from ( SELECT	distinct convert(c.name,varchar(64)) as name,
+			t.name as type_val,
 			coalesce(d.length, c.length) as length,
 			colid as ColNumber,
 			m.unit,
@@ -2482,18 +2273,18 @@ END;
 CREATE FUNCTION fDocFunctionParams (FunctionName varchar(400))
 RETURNS TABLE (
 	name		varchar(64),
-	type 		varchar(32),
+	type_val 		varchar(32),
 	length	int,
 	inout		varchar(8),
 	pnum		int
 )
 BEGIN
     RETURN TABLE(
-    SELECT  name, type, length, 
+    SELECT  name, type_val, length, 
 	(case output when 'yes' then 'output' else 'input' end) as inout,
 	pnum
     FROM ( 
-	SELECT	distinct convert(c.name USING sysname),
+	SELECT	distinct convert(c.name,varchar(64)),
 		t.name,
 		coalesce(d.length, c.length), 
 		case (substring(c.name,1,1)) 
@@ -2504,7 +2295,7 @@ BEGIN
 				when '' then 'no' else 'yes' end
 			end,
 		colid  
-		INTO name, type, length, input, output, pnum
+		INTO name, type_val, length, input, output, pnum
 		FROM 	sysobjects o,
 			sysusers u,
    			master.spt_datatype_info d,
@@ -2550,38 +2341,6 @@ BEGIN
 		||(select fPhotoFlagsN(itFlags))||'|';
 END;
 
-CREATE FUNCTION fEnum(
-	val binary(8), 
-	type varchar(32), 
-	length int)
-RETURNS varchar(64)
-BEGIN
-    DECLARE vstr varchar(64),
-	vbin4 binary(4),
-	vint int;
-    SET vbin4 = CAST(val as binary(4));
-    SET vint  = cAST(val as int);
-    --	
-    IF (type<>'binary')
-	THEN SET vstr = CAST(vint as varchar(64));
-    ELSE( 
-        IF (length = 8)
-	   THEN EXEC master..xp_varbintohexstr val, vstr OUTPUT;	
-        ELSE ( 
-	    EXEC master..xp_varbintohexstr vbin4, vstr OUTPUT;
-          -- also handle the tinyint and smallint cases
-            IF (length = 2)
-               THEN SET vstr = CAST(vstr as varchar(6));
-            ELSE 
-                IF (length=1)
-		    THEN SET vstr = CAST(vstr as varchar(4));
-	        END IF;
-            END IF;
-        END IF;
-    END IF;
-    RETURN vstr;
-END;
-
 CREATE FUNCTION fFirstFieldBit()
 RETURNS BIGINT
 BEGIN
@@ -2596,12 +2355,11 @@ BEGIN
     SET objID = bit_and(objID, bit_not(firstfieldbit));
     IF (select count(*) from PhotoTag  where objID = objID) > 0
         THEN RETURN objID;
-    	ELSE(
+    	ELSE
         	SET objID = objID + firstfieldbit;
         	IF (select count(*) from PhotoTag  where objID = objID) > 0
             		THEN RETURN objID;
 		END IF;
-	);
     END IF;
     RETURN cast(0 as bigint);
 END;
@@ -2614,17 +2372,16 @@ BEGIN
     SET objID = bit_and(objID, bit_not(firstfieldbit));
     IF (select count(*) from PhotoPrimary  where objID = objID) > 0
         THEN RETURN objID;
-    	ELSE (
+    	ELSE 
 	        SET objID = objID + firstfieldbit;
        		IF (select count(*) from PhotoPrimary  where objID = objID) > 0
             		THEN RETURN objID;
 		END IF;
-	);
     END IF;
     RETURN cast(0 as bigint);
 END;
 
-CREATE FUNCTION  fDatediffSec(start_val datetime, now datetime) 
+CREATE FUNCTION  fDatediffSec(start_val timestamp, now timestamp) 
 RETURNS float
 BEGIN
   RETURN(datediff(millisecond, start_val, now)/1000.0);
@@ -2652,13 +2409,13 @@ BEGIN
 END;
 
 CREATE FUNCTION fStripeOfRun(run int)
-RETURNS int as
+RETURNS int
 BEGIN
   RETURN (SELECT stripe from Segment where run = run and camcol=1 LIMIT 1);
 END;
 
 CREATE FUNCTION fStripOfRun(run int)
-RETURNS int as
+RETURNS int
 BEGIN
   RETURN (SELECT strip from Segment where run = run and camcol=1 LIMIT 1);
 END;
@@ -2666,7 +2423,7 @@ END;
 CREATE FUNCTION fGetDiagChecksum()
 RETURNS BIGINT
 BEGIN
-	RETURN (select sum(count)+count(*) from Diagnostics);
+	RETURN (select sum(count)+count(*) from "Diagnostics");
 END;
 
 COMMIT;

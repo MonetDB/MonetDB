@@ -386,7 +386,7 @@ CREATE TABLE LoadHistory(
 CREATE TABLE "Diagnostics"(
 	name varchar(64) NOT NULL,
 	type varchar(8) NOT NULL,
-	count bigint NULL,
+	"count" bigint NULL,
  CONSTRAINT pk_Diagnostics_name PRIMARY KEY  
 (
 	name
