@@ -312,6 +312,102 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
 }
 
 /**
+ * common_super_dom finds the lowest common domain of @a dom1 and
+ * @a dom2 (using the domain relationship list in property container
+ * @a prop).
+ */
+static dom_t
+common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
+{
+    PFarray_t *domains1, *domains2, *merge_doms;
+    bool insert, duplicate;
+    dom_t subdom, dom, subitem;
+
+    assert (prop);
+    assert (prop->subdoms);
+
+    /* check trivial case of identity */
+    if (dom1 == dom2)
+        return dom1;
+    
+    /* collect all the super domains for each input */
+    
+    /* start with the input domains as seed */    
+    domains1 = PFarray (sizeof (dom_t));
+    *(dom_t *) PFarray_add (domains1) = dom1;
+    domains2 = PFarray (sizeof (dom_t));
+    *(dom_t *) PFarray_add (domains2) = dom2;
+
+    for (unsigned int i = PFarray_last (prop->subdoms); i > 0; --i) {
+        subdom = ((subdom_t *) PFarray_at (prop->subdoms, i))->subdom;
+        dom = ((subdom_t *) PFarray_at (prop->subdoms, i))->dom;
+        
+        insert = false;
+        duplicate = false;
+        for (unsigned int j = 0; j < PFarray_last (domains1); j++) {
+            subitem = *(dom_t *) PFarray_at (domains1, j);
+            if (subdom == subitem)
+                insert = true;
+            if (dom == subitem)
+                duplicate = true;
+        }
+        if (insert && !duplicate)
+            *(dom_t *) PFarray_add (domains1) = dom;
+
+        insert = false;
+        duplicate = false;
+        for (unsigned int j = 0; j < PFarray_last (domains2); j++) {
+            subitem = *(dom_t *) PFarray_at (domains2, j);
+            if (subdom == subitem)
+                insert = true;
+            if (dom == subitem)
+                duplicate = true;
+        }
+        if (insert && !duplicate)
+            *(dom_t *) PFarray_add (domains2) = dom;
+    }
+    
+    /* intersect both domain lists */
+    merge_doms = PFarray (sizeof (dom_t));
+    for (unsigned int i = 0; i < PFarray_last (domains1); i++) {
+        dom1 = *(dom_t *) PFarray_at (domains1, i);
+        for (unsigned int j = 0; j < PFarray_last (domains2); j++) {
+            dom2 = *(dom_t *) PFarray_at (domains2, j);
+            if (dom1 == dom2) *(dom_t *) PFarray_add (merge_doms) = dom1;
+        }
+    }
+        
+    /* no common super domain exists */
+    if (!PFarray_last (merge_doms))
+        return 0;
+    
+    dom1 = *(dom_t *) PFarray_at (merge_doms, 0);
+    
+    /* trivial case -- only one common domain */
+    if (PFarray_last (merge_doms) == 1)
+        return dom1;
+    
+    /* find the leaf node (of the domain tree) */
+    for (unsigned int i = 1; i < PFarray_last (merge_doms); i++) {
+        dom2 = *(dom_t *) PFarray_at (merge_doms, i);
+        if (!dom1 /* undecided */ ||
+            PFprop_subdom (prop, dom2, dom1))
+            dom1 = dom2;
+        else if (PFprop_subdom (prop, dom1, dom2))
+            dom1 = dom1;
+        else
+            /* undecided */
+            dom1 = 0;
+    }
+    /* if we haven't found a leaf then bail out */
+    if (!dom1)
+        PFoops (OOPS_FATAL,
+                "domain relationship is incorrect");
+
+    return dom1;
+}
+
+/**
  * Copy domains of children nodes to the property container.
  */
 static void
@@ -508,7 +604,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             /* create new superdomains for all existing attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 unsigned int j;
-                dom_t dom1, dom2, union_dom;
+                dom_t dom1, dom2, union_dom, cdom;
 
                 for (j = 0; j < R(n)->schema.count; j++)
                     if (L(n)->schema.items[i].name ==
@@ -526,6 +622,12 @@ infer_dom (PFla_op_t *n, unsigned int id)
                             union_dom = dom2;
                         else {
                             union_dom = id++;
+                            /* add an edge to the new domain from the
+                               lowest common subdomain of its input */
+                            cdom = common_super_dom (n->prop, dom1, dom2);
+                            if (cdom)
+                                add_subdom (n->prop, cdom, union_dom);
+
                             add_subdom (n->prop, union_dom, dom1);
                             add_subdom (n->prop, union_dom, dom2);
                         }
