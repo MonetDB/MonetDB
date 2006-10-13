@@ -164,7 +164,6 @@ str CMDconvert_void_@1_@2(int *ret, int *bid){
 		*o = *p== @1_nil ?  @2_nil: (@2) *p;
 		p= (@1 *) ((char*)p+xx); o++;
 	}
-bunins_failed:
 	(bn)->batBuns->free += BATcount(b)*sizeof(@2);
 	BATsetcount(bn, BATcount(b));
 	@:wrapup@
