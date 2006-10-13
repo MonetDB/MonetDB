@@ -1776,7 +1776,14 @@ clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
         case la_attribute:
         case la_textnode:
         case la_doc_tbl:
-            if (code) return 2 /* constructor appeared - bail out */;
+            for (i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
+                cur_code = clean_up_body_plans_worker (n->child[i], bases);
+                /* collect the codes */
+                code = code > cur_code ? code : cur_code;
+            }
+            if (code)
+                return 2 /* constructor appeared - bail out */;
+            break;
             
         /* do not delete the plans along the fragments */
         case la_frag_union:
