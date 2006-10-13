@@ -368,6 +368,7 @@ typedef struct shredCtxStruct {
     size_t   pageFree;           /* number of tuples per page to leave empty */
 
     /* attributes for shred into collection */
+    int      incremental;         /* boolean: incremental shred? */
     int      updatable;           /* boolean: is nid-rid-pre the identity mapping? */
     char     *val_prefix;         /* temporary string buffer, includes val(at the end) */
     char     *val;                /* temporary PFSHRED_BUFLEN-byte string workspace */
@@ -475,8 +476,10 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
 #ifdef DEBUG
     stream_printf(GDKout, "APPEND-STR[%s](%s)\n", sb->def->name, v);
 #endif
-    if (sb->def->compress && BATcount(sb->bat) >(8 * sb->bat->thash->mask))
+    if (sb->def->compress && BATcount(sb->bat) > 4 * sb->bat->thash->mask) {
         HASHdestroy(sb->bat); /* keeps hash performance in check */
+        BAThash(BATmirror(sb->bat), 2*BATcount(sb->bat));
+    }
 
     if (!BUNappend(sb->bat,(ptr)v, TRUE)) {
         GDKerror("shredBAT_append_str: APPEND-STR[%s](%s), BUNappend fails\n", sb->def->name, v);
@@ -737,9 +740,14 @@ handle_idref(shredCtxStruct *shredCtx,
             /* we must ignore duplicate IDs(see W3C XPath functions and operators spec) */
             BUN bun;
             HASHfnd_str(bun, sb->bat, shredCtx->val_prefix);
-            if (bun) continue;
-            if (BATcount(sb->bat) > 8*sb->bat->hhash->mask)
+            if (bun) {
+                sb->dupl++;
+                continue;
+            }
+            if (BATcount(sb->bat) > 4 * sb->bat->hhash->mask) {
                 HASHdestroy(sb->bat); /* keeps hash performance in check */
+                BAThash(BATmirror(sb->bat), 2*BATcount(sb->bat));
+            }
         }
         if (!BUNins(sb->bat, shredCtx->val_prefix, &pre, TRUE)) {
             GDKerror("handle_idref: append() for handle_idref(own=%s, pre=" OIDFMT ", pfxloc=%s, v=\"%s\") = %d FAILED\n", 
@@ -1382,6 +1390,7 @@ shredder_create(char *location,
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
+    shredCtx->incremental = (BATcount(docBAT) > 0);
 
     /* init the idref attribute database */
     attrDB_init(&shredCtx->idrefAttrDB);
@@ -1393,7 +1402,7 @@ shredder_create(char *location,
         sb->def = &shredbatdef[i];
         sb->dupl = 0;
 
-        if (BATcount(docBAT)) {
+        if (shredCtx->incremental) {
             /* be very picky with the BATs in docBAT: check, check and check  */
             str name = strchr(BUNhead(docBAT,p), '_');
             if (strcmp(name, shredbatdef[i].name)) {
@@ -1502,7 +1511,7 @@ shredder_create(char *location,
         stream_printf(GDKout, "# shredding with holes: pagesize=%d, #fillsize=%d\n", REMAP_PAGE_SIZE, pageFree);
     }
 
-    if (BATcount(docBAT) == 0) {
+    if (!shredCtx->incremental) {
         /* first shred into new collection */
         map_pid->hseqbase = 0;
         if (shredCtx->updatable) {
@@ -1661,7 +1670,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     }
 
     /* fill result bat-of-bats */
-    if (BATcount(docBAT) == 0) {
+    if (!shredCtx->incremental) {
         for(i=0; i<SHRED_BATS; i++) {
             shredBAT *sb = &shredCtx->dstBAT[i];
             if (sb->def->headType == TYPE_void && !BAThdense(sb->bat))
