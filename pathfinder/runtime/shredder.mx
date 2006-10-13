@@ -295,7 +295,7 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
  { PROP_TEXT,    "_prop_text",        TYPE_void, TYPE_str,  0.3, 1}, 
  { PROP_COM,     "_prop_com",         TYPE_void, TYPE_str,  0.0, 1}, 
  { PROP_INS,     "_prop_ins",         TYPE_void, TYPE_str,  0.0, 0}, 
- { PROP_INS,     "_prop_tgt",         TYPE_void, TYPE_str,  0.0, 0}, 
+ { PROP_TGT,     "_prop_tgt",         TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_VAL,     "_prop_val",         TYPE_void, TYPE_str,  0.1, 1}, 
  { ID_NID,       "_id_nid",           TYPE_str,  TYPE_oid,  0.0, 0}, 
  { IDREF_NID,    "_idref_nid",        TYPE_str,  TYPE_oid,  0.0, 0}, 
