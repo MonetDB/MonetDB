@@ -832,7 +832,7 @@ PROC _ws_free(lng wsid) : BAT[void,str]
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
     var cursize := sum(doc_timestamp.select(timestamp_nil,timestamp_nil).mirror().join(collection_size));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
-    if (cursize > maxsize) delete_all_docs(true);
+    if (cursize > maxsize) del_doc_base(true, doc_name, false);
 
     return _collection_cleanup(); # garbage collect empty collections
 }
@@ -1562,7 +1562,7 @@ PROC _ws_opendoc(lng wsid,
     # check the timestamps
     var sel_del := [>](sel_idx.leftfetchjoin(idx_timestamps), sel_lim).ord_uselect(true);
     if (count(sel_del) > 0) # delete stale documents
-       del_doc_base(bit_nil, mirror(sel_del).leftfetchjoin(sel_idx).leftfetchjoin(idx_names),wsid);
+	del_doc_base(bit_nil,mirror(sel_del).leftfetchjoin(sel_idx).leftfetchjoin(idx_names),false);
 
     # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
     var idx_idx := idx_doc.ord_uselect(oid_nil).mirror();
@@ -1918,13 +1918,14 @@ PROC _del_doc(bit cachedOnly,
 }
 
 PROC del_doc_base(bit cachedOnly, 
-                  BAT[any,str] names) : void
+                  BAT[any,str] names,
+                  bit pf_short_req) : void
 {
     var bak_locations := bat(oid,str);
     var bak_names := bat(oid,str);
     var err;
 
-    lock_set(pf_short);
+    if (pf_short_req) lock_set(pf_short);
     err := CATCH(_del_doc(cachedOnly, names, bak_locations, bak_names));
     if (not(isnil(err))) {
         var fatal := CATCH(_del_doc_replace(bak_locations, bak_names));
@@ -1933,7 +1934,7 @@ PROC del_doc_base(bit cachedOnly,
              exit(); # recover *must must* succeed
         }
     }
-    lock_unset(pf_short);
+    if (pf_short_req) lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 
     # now here is our commit: flush 2 bat descs and BBP.dir
@@ -1974,7 +1975,7 @@ PROC play_doc_tape(BAT[void,BAT] ws,
     var percentages := [+](locations.mirror().[lng](), 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values).tmark(0@0);
     var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
     var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
-    del_doc_base(bit_nil, del_doc.leftfetchjoin(names));
+    del_doc_base(bit_nil, del_doc.leftfetchjoin(names), true);
     shred_doc_base(stream_nil, add_doc.leftfetchjoin(locations), 
                                add_doc.leftfetchjoin(names), 
                                add_doc.leftfetchjoin(colnames), 
@@ -2039,8 +2040,7 @@ Shred xml document to the internal Pathfinder format, (analog to import_doc())."
 
 PROC delete_doc(str name) : void
 {
-    var err := CATCH(del_doc_base(bit_nil, bat(void,str).seqbase(0@0).append(name)));
-    if (not(isnil(err))) ERROR(err);
+    del_doc_base(bit_nil, bat(void,str).seqbase(0@0).append(name), true);
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
 "PARAMETERS:\n\
@@ -2051,8 +2051,7 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs(bit cachedOnly) : void
 {
-    var err := CATCH(del_doc_base(cachedOnly, doc_name));
-    if (not(isnil(err))) ERROR(err);
+    del_doc_base(cachedOnly, doc_name, true);
     
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
