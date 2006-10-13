@@ -1687,10 +1687,8 @@ addTwo_@1(int i, @1 *valueA, lng indexA, BUN p2, @1 *valueB, lng indexB, BUN p)
 void             
 addAVLIndex_@1(int m,  lng position, BAT * b)
 {       
-        BUN ph,pt,base;
+        BUN base;
         int xx = BUNsize(b);
-        ph = BUNhloc(b, BUNlast(b));
-        pt = BUNtloc(b, BUNlast(b));
         if (position == 0){
         
                 AVLIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
@@ -3418,7 +3416,7 @@ movements += remainingIns;
 
 @= mergeDeletionsBody
         BAT *c, *u, *b, *crackerPiece, *deletesPiece, *positions, *crackerSlice, *deletesSlice;
-	BUN delh, delt, idxFirst, crk, crkFirst, crkLast, delFirst, low, lowVal, hgh, hghPos=NULL, hghVal, pos, posLast;
+	BUN delt, idxFirst, crk, crkFirst, crkLast, delFirst, low, lowVal, hgh, hghPos=NULL, hghVal, pos, posLast;
 	int xx, zz, pp, position = -1;
 	lng deletions, remainingDel, buns;
 	struct Node *lowNode, *hghNode, *temp;
@@ -3465,7 +3463,6 @@ movements += remainingIns;
 	zz = BUNsize(c);
 	delFirst = BUNfirst(u);	
 
-	delh 	 = BUNhloc(u, delFirst + startPosition*xx);
 	delt 	 = BUNtloc(u, delFirst + startPosition*xx);
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
@@ -3811,14 +3808,12 @@ str
 mergeInsertionsBGradually_@1(int *bid, int *new, lng startPosition, lng endPosition){
 	/* First merge then shrink the insertions column */
 
-	BUN insLast;
 #ifdef DEBUG_CRACKERS_INSERTIONS
         lng TstartInsert, TendInsert, TstartShrink, TendShrink;                 
 #endif
 
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3)@
 
-	insLast = BUNtloc(u,BUNlast(u));	
 	next = BUNlast(b) - xx;
 	
 #ifdef DEBUG_CRACKERS_INSERTIONS
@@ -4095,10 +4090,11 @@ mergeDeletions_@1(int *bid, int *del, lng startPosition, lng endPosition){
 
 str
 mergeDeletionsGradually_@1(int *bid, int *del, lng startPosition, lng endPosition){
+	BUN delh = NULL;
                 
         @:mergeDeletionsBody(@1,@2,@3)@
 
-	 @:shrinkDeletions(@1)@
+	@:shrinkDeletions(@1)@
                 
         BBPunfix(c->batCacheid);
         BBPunfix(u->batCacheid);
@@ -4751,8 +4747,10 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 	int gapH = 1;
 	BUN l, lt, insLast;
 	lng insertionsStart, insertionsEnd, insertions;
+	/*
 	lng Tstart=0, Tend=0, TstartMerge=0, TendMerge=0;
 	 Tstart = GDKusec();
+	*/
 	
 	if (@2_GT(low,hgh,@3@1))
 		return throwMessage("crackers.crack", "illegal range");
@@ -4914,9 +4912,9 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		} else if (TreeIndex[m].mergeInsertions == 2){
 			/* merge only the requested values using the ripple strategy */
 			if (TreeIndex[m].mergeFromTheEnd == TRUE){
-				TstartMerge = GDKusec();
+				/*TstartMerge = GDKusec();*/
 				mergeInsertionsBRipple_@1(bid, &TreeIndex[m].iid, insertionsStart, insertionsEnd, hgh, *inclusiveHgh);	
-				TendMerge = GDKusec();
+				/*TendMerge = GDKusec();*/
 			}
 			else
 				mergeInsertionsRipple_@1(bid, &TreeIndex[m].iid, insertionsStart, hgh, *inclusiveHgh, TreeIndex[m].deleteNodes);	
@@ -5084,8 +5082,9 @@ printf("\n found Low=%d, found Hgh=%d \n",foundLow,foundHgh);
 	}
 		
 	@:CreateResult()@
+	/*
 	Tend = GDKusec();
-	/*printf("\n Select: total: %lld, insert %lld, Before: %lld, After: %lld \n", Tend-Tstart,TendMerge-TstartMerge, TstartMerge - Tstart, Tend - TendMerge);
+	printf("\n Select: total: %lld, insert %lld, Before: %lld, After: %lld \n", Tend-Tstart,TendMerge-TstartMerge, TstartMerge - Tstart, Tend - TendMerge);
 	*/
 	return MAL_SUCCEED;
 }       
