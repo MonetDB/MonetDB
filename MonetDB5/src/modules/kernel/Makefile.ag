@@ -65,7 +65,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		calc.mx bat5.mx algebra.mx status.mx unix.mx \
-		mmath.mx lock.mx sema.mx alarm.mx  \
+		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
 		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
 		pqueue.mx mkey.mx microbenchmark.mx
 
@@ -94,7 +94,8 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
-		batcolor.mx batcast.mx batcalc.mx batmath.mx group.mx aggr.mx array.mx \
+		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmath.mx \
+		group.mx aggr.mx array.mx \
 		counters.mx logger.mx pqueue.mx mkey.mx microbenchmark.mx
 }
 
