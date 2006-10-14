@@ -180,12 +180,9 @@ Double bind operations should also be eliminated.
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if ( (getFunctionId(p) == bindRef || 
-			getFunctionId(p) == bindidxRef) && 
+			  getFunctionId(p) == bindidxRef ||
+			  getFunctionId(p) == binddbatRef ) && 
 			getModuleId(p) == sqlRef) {
-			ns[k++] = p;
-		}
-		if ( getFunctionId(p) == binddbatRef && 
-		     getModuleId(p) == sqlRef) {
 			ns[k++] = p;
 		}
 	}
@@ -201,19 +198,12 @@ instructions, producing a syntactic correct MAL program again.
 	ns[k++] = p;
 
 	for (i = 1; i < mb->stop - 1; i++) {
-		int doit = 1;
-
 		p = getInstrPtr(mb, i);
-		if ( getModuleId(p) == sqlRef &&
+		if ( !(getModuleId(p) == sqlRef &&
 		     (getFunctionId(p) == bindRef || 
-		      getFunctionId(p) == bindidxRef)) {
-			doit = 0;
-		}
-		if ( getModuleId(p) == sqlRef &&
-		     getFunctionId(p) == binddbatRef ) {
-			doit = 0;
-		}
-		if (doit)
+		      getFunctionId(p) == binddbatRef ||
+		      getFunctionId(p) == bindidxRef)) ){
+		} 
 			ns[k++] = p;
 	}
 @-
