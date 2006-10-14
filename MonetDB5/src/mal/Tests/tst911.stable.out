@@ -37,7 +37,7 @@ stdout of test 'tst911` in directory 'src/mal` itself:
 function user.choptest(b:bat[:void,:lng],size:lng,base:lng):void;	# 0  (choptest:void)<-(b:bat[:void,:lng])(size:lng)(base:lng)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
 barrier (chk,c):= bat.newIterator(b,size);	# 2 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 5
-    t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:void,:lng])<-(c:bat[:void,:lng])(_8:lng)(_9:lng)
+    t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:oid,:lng])<-(c:bat[:void,:lng])(_8:lng)(_9:lng)
     redo (chk,c):= bat.hasMoreElements(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 3
 exit (chk,c);	# 5  (chk:lng)(c:bat[:void,:lng])
     t1 := alarm.usec();	# 6 ALARMusec (t1:lng)
@@ -86,7 +86,7 @@ barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-
 exit (go,i);	# 9  (go:bit)(i:lng)
     t0 := alarm.usec();	# 10 ALARMusec (t0:lng)
 barrier doit := true;	# 11  (doit:bit)<-(_17:bit) jump 13
-    t := algebra.select(b,256000:lng,266000:lng);	# 12 ALGselect (t:bat[:void,:lng])<-(b:bat[:void,:lng])(_19:lng)(_20:lng)
+    t := algebra.select(b,256000:lng,266000:lng);	# 12 ALGselect (t:bat[:oid,:lng])<-(b:bat[:void,:lng])(_19:lng)(_20:lng)
 exit doit;	# 13  (doit:bit)
     t1 := alarm.usec();	# 14 ALARMusec (t1:lng)
     base := calc.-(t1,t0);	# 15 CALCbinarySUBlnglng (base:lng)<-(t1:lng)(t0:lng)

@@ -47,17 +47,17 @@ stdout of test 'tst2560` in directory 'src/mal` itself:
 #	redo always;
 #exit always;
 #end view1;
-factory user.view1(l:int,h:int):bat[:void,:str];	# 0  (view1:bat[:void,:str])<-(l:int)(h:int)
+factory user.view1(l:int,h:int):bat[:oid,:str];	# 0  (view1:bat[:oid,:str])<-(l:int)(h:int)
     a:bat[:void,:int]  := bbp.bind("emp","age");	# 1 CMDbbpbind2 (a:bat[:void,:int])<-(_4:str)(_5:str)
     b:bat[:void,:str]  := bbp.bind("emp","name");	# 2 CMDbbpbind2 (b:bat[:void,:str])<-(_4:str)(_7:str)
 barrier always := true;	# 3  (always:bit)<-(_9:bit) jump 17
     lOld := l;	# 4  (lOld:int)<-(l:int)
     hOld := h;	# 5  (hOld:int)<-(h:int)
     io.print("recalc");	# 6 IOprint_val (_12:int)<-(_13:str)
-    c := algebra.select(a,l,h);	# 7 ALGselect (c:bat[:void,:int])<-(a:bat[:void,:int])(l:int)(h:int)
-    d := algebra.semijoin(b,c);	# 8 ALGsemijoin (d:bat[:void,:str])<-(b:bat[:void,:str])(c:bat[:void,:int])
+    c := algebra.select(a,l,h);	# 7 ALGselect (c:bat[:oid,:int])<-(a:bat[:void,:int])(l:int)(h:int)
+    d := algebra.semijoin(b,c);	# 8 ALGsemijoin (d:bat[:oid,:str])<-(b:bat[:void,:str])(c:bat[:oid,:int])
 barrier available := true;	# 9  (available:bit)<-(_9:bit) jump 15
-    yield d;	# 10  (d:bat[:void,:str])
+    yield d;	# 10  (d:bat[:oid,:str])
     leave available := calc.!=(lOld,l);	# 11 CALCcompNEQintint (available:bit)<-(lOld:int)(l:int) jump 15
     leave available := calc.!=(hOld,h);	# 12 CALCcompNEQintint (available:bit)<-(hOld:int)(h:int) jump 15
     io.print("reuse");	# 13 IOprint_val (_17:int)<-(_18:str)
@@ -91,12 +91,12 @@ function user.main():void;	# 0  (main:void)
     bat.append(s,"B");	# 13 BKCappend_val_wrap (_24:void)<-(s:bat[:void,:str])(_25:str)
     bat.append(s,"C");	# 14 BKCappend_val_wrap (_26:void)<-(s:bat[:void,:str])(_27:str)
     io.print(s);	# 15 IOprint_val (_28:int)<-(s:bat[:void,:str])
-    e := user.view1(0,2);	# 16  (e:bat[:void,:str])<-(_30:int)(_13:int)
-    io.print(e);	# 17 IOprint_val (_31:int)<-(e:bat[:void,:str])
-    e := user.view1(0,2);	# 18  (e:bat[:void,:str])<-(_30:int)(_13:int)
-    io.print(e);	# 19 IOprint_val (_32:int)<-(e:bat[:void,:str])
-    e := user.view1(0,4);	# 20  (e:bat[:void,:str])<-(_30:int)(_33:int)
-    io.print(e);	# 21 IOprint_val (_34:int)<-(e:bat[:void,:str])
+    e := user.view1(0,2);	# 16  (e:bat[:oid,:str])<-(_30:int)(_13:int)
+    io.print(e);	# 17 IOprint_val (_31:int)<-(e:bat[:oid,:str])
+    e := user.view1(0,2);	# 18  (e:bat[:oid,:str])<-(_30:int)(_13:int)
+    io.print(e);	# 19 IOprint_val (_32:int)<-(e:bat[:oid,:str])
+    e := user.view1(0,4);	# 20  (e:bat[:oid,:str])<-(_30:int)(_33:int)
+    io.print(e);	# 21 IOprint_val (_34:int)<-(e:bat[:oid,:str])
 end main;	# 22  
 #-----------------#
 # emp	age	  # name

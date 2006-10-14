@@ -13,10 +13,10 @@ bat.insert(b, 2@0, 2.5);
 io.print(b);
 
 ## c should be of type [:oid, :flt], but it was printed as [:oid, :int]
-c := batcalc.init(a, 2.1);
+c := algebra.project(a, 2.1);
 io.print(c);
 
-e:= batcalc.init(b,2.5);
+e:= algebra.project(b,2.5);
 io.print(e);
-d:= batcalc.init(a,3);
+d:= algebra.project(a,3);
 io.print(d);
