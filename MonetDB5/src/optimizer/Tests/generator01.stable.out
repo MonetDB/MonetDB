@@ -33,8 +33,8 @@ function user.main():void;	# 0  (main:void)
     low := 0;	# 5  (low:int)<-(_9:int)
     high := 3;	# 6  (high:int)<-(_11:int)
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 11
-    s := algebra.select(b,low,high);	# 8 ALGselect (s:bat[:void,:int])<-(b:bat[:void,:int])(low:int)(high:int)
-    t := algebra.select(s,low,high);	# 9 ALGselect (t:bat[:void,:int])<-(s:bat[:void,:int])(low:int)(high:int)
+    s := algebra.select(b,low,high);	# 8 ALGselect (s:bat[:oid,:int])<-(b:bat[:void,:int])(low:int)(high:int)
+    t := algebra.select(s,low,high);	# 9 ALGselect (t:bat[:oid,:int])<-(s:bat[:oid,:int])(low:int)(high:int)
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 10 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 8
 exit b:bat[:void,:int] ;	# 11  (b:bat[:void,:int])
     io.print("finished");	# 12 IOprint_val (_14:int)<-(_15:str)

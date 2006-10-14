@@ -36,9 +36,9 @@ function user.main():void;	# 0  (main:void)
 barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 6 PBMnewIterator (c:bat[:void,:int])<-(_7:str) jump 16
     cr := bat.reverse(c);	# 7 BKCreverse (cr:bat[:int,:void])<-(c:bat[:void,:int])
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 14
-    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:void,:int])<-(b:bat[:void,:int])(_11:int)(_12:int)
-    s := algebra.join(t,cr);	# 10 ALGjoin (s:bat[:void,:oid])<-(t:bat[:void,:int])(cr:bat[:int,:void])
-    _22 := aggr.count(s);	# 11 ALGcount_bat (_22:int)<-(s:bat[:void,:oid])
+    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:oid,:int])<-(b:bat[:void,:int])(_11:int)(_12:int)
+    s := algebra.join(t,cr);	# 10 ALGjoin (s:bat[:oid,:void])<-(t:bat[:oid,:int])(cr:bat[:int,:void])
+    _22 := aggr.count(s);	# 11 ALGcount_bat (_22:int)<-(s:bat[:oid,:void])
     cnt := calc.+(cnt,_22);	# 12 CALCbinaryADDintint (cnt:int)<-(cnt:int)(_22:int)
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 9
 exit b:bat[:void,:int] ;	# 14  (b:bat[:void,:int])

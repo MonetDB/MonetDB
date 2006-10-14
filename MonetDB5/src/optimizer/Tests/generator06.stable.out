@@ -35,8 +35,8 @@ barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (
     cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:void])<-(c:bat[:void,:int])
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 12
     s := algebra.join(b,cr);	# 8 ALGjoin (s:bat[:void,:oid])<-(b:bat[:void,:int])(cr:bat[:int,:void])
-    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:void,:int])<-(b:bat[:void,:int])(_12:int)(_13:int)
-    u := algebra.select(c,4,6);	# 10 ALGselect (u:bat[:void,:int])<-(c:bat[:void,:int])(_15:int)(_16:int)
+    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:oid,:int])<-(b:bat[:void,:int])(_12:int)(_13:int)
+    u := algebra.select(c,4,6);	# 10 ALGselect (u:bat[:oid,:int])<-(c:bat[:void,:int])(_15:int)(_16:int)
     redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 8
 exit b:bat[:void,:int] ;	# 12  (b:bat[:void,:int])
     redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (c:bat[:void,:int])<-(_7:str) jump 6

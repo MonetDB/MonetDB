@@ -26,9 +26,9 @@ function user.main():void;	# 0  (main:void)
 # Cost model example 	# 1  (_1:str)
     r{rows=100} := bat.new(:void,:int);	# 2 CMDBATnew (r:bat[:void,:int])<-(_3:void)(_4:int)
     s{rows=1000} := bat.new(:void,:int);	# 3 CMDBATnew (s:bat[:void,:int])<-(_3:void)(_4:int)
-    rs{rows=501} := algebra.select(s,1,1);	# 4 ALGselect (rs:bat[:void,:int])<-(s:bat[:void,:int])(_7:int)(_7:int)
+    rs{rows=501} := algebra.select(s,1,1);	# 4 ALGselect (rs:bat[:oid,:int])<-(s:bat[:void,:int])(_7:int)(_7:int)
     rr{rows=100} := bat.reverse(r);	# 5 BKCreverse (rr:bat[:int,:void])<-(r:bat[:void,:int])
-    j{rows=100} := algebra.join(rs,rr);	# 6 ALGjoin (j:bat[:void,:oid])<-(rs:bat[:void,:int])(rr:bat[:int,:void])
+    j{rows=100} := algebra.join(rs,rr);	# 6 ALGjoin (j:bat[:oid,:void])<-(rs:bat[:oid,:int])(rr:bat[:int,:void])
     mdb.list();	# 7 MDBlist (_11:void)
 end main;	# 8  
 function user.main():void;

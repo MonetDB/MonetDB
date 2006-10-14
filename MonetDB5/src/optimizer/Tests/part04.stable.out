@@ -59,10 +59,10 @@ stdout of test 'part04` in directory 'src/optimizer` itself:
 #end qry;
 function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;	# 0  (qry:void)<-(a:bat[:void,:int])(b:bat[:void,:int])
     io.print("experiment 3");	# 1 IOprint_val (_3:int)<-(_4:str)
-    c := algebra.select(a,0,10);	# 2 ALGselect (c:bat[:void,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
-    m := bat.mirror(c);	# 3 BKCmirror (m:bat[:void,:void])<-(c:bat[:void,:int])
-    j := algebra.join(m,b);	# 4 ALGjoin (j:bat[:void,:int])<-(m:bat[:void,:void])(b:bat[:void,:int])
-    io.print(j);	# 5 IOprint_val (_10:int)<-(j:bat[:void,:int])
+    c := algebra.select(a,0,10);	# 2 ALGselect (c:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
+    m := bat.mirror(c);	# 3 BKCmirror (m:bat[:oid,:oid])<-(c:bat[:oid,:int])
+    j := algebra.join(m,b);	# 4 ALGjoin (j:bat[:oid,:int])<-(m:bat[:oid,:oid])(b:bat[:void,:int])
+    io.print(j);	# 5 IOprint_val (_10:int)<-(j:bat[:oid,:int])
 end qry;	# 6  
 #
 #optimizer.partitionedQuery("user","qry");

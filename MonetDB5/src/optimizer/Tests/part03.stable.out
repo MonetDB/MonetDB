@@ -61,9 +61,9 @@ stdout of test 'part03` in directory 'src/optimizer` itself:
 #end qry;
 function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;	# 0  (qry:void)<-(a:bat[:void,:int])(b:bat[:void,:int])
     io.print("experiment 3");	# 1 IOprint_val (_3:int)<-(_4:str)
-    c := algebra.select(a,0,10);	# 2 ALGselect (c:bat[:void,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
-    j := algebra.select(c,0,5);	# 3 ALGselect (j:bat[:void,:int])<-(c:bat[:void,:int])(_6:int)(_9:int)
-    io.print(j);	# 4 IOprint_val (_10:int)<-(j:bat[:void,:int])
+    c := algebra.select(a,0,10);	# 2 ALGselect (c:bat[:oid,:int])<-(a:bat[:void,:int])(_6:int)(_7:int)
+    j := algebra.select(c,0,5);	# 3 ALGselect (j:bat[:oid,:int])<-(c:bat[:oid,:int])(_6:int)(_9:int)
+    io.print(j);	# 4 IOprint_val (_10:int)<-(j:bat[:oid,:int])
 end qry;	# 5  
 #
 #optimizer.partitionedQuery("user","qry");
