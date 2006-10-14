@@ -1915,6 +1915,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* create a new result base */
             base_res = rec_base (res_schema);
 
+#if STRATEGY == IFP
+            /* ensure that res_seed is also used
+               for the strategy IFP */
+            (void) res_seed;
+#endif
+
 #if STRATEGY
             /* create a new base_loop relation */
             base_loop = rec_base (loop->schema);
