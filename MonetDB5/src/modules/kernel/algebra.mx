@@ -104,6 +104,9 @@ The range selections are targeted at the tail of the BAT.
 @mal
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
 		:bat[:any_1,:any_2] 
+address ALGselect;
+command select(b:bat[:void,:any_2], low:any_2, high:any_2) 
+		:bat[:oid,:any_2] 
 address ALGselect
 comment "Select all BUNs that have tail values: {v| low <= v <= high}.
 	NIL boundary values have a special meaning.
@@ -117,6 +120,9 @@ comment "Select all BUNs that have tail values: {v| low <= v <= high}.
 
 command select(b:bat[:any_1,:any_2], low:any_2, 
 	high:any_2, li:bit, hi:bit) :bat[:any_1,:any_2] 
+address ALGselectInclusive;
+command select(b:bat[:void,:any_2], low:any_2, 
+	high:any_2, li:bit, hi:bit) :bat[:oid,:any_2] 
 address ALGselectInclusive
 comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
 	Boundary inclusion is indicated separately.
@@ -125,6 +131,8 @@ comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
 	+ high == nil means: no upper bound.";
 
 command select(b:bat[:any_1,:any_2],value:any_2) :bat[:any_1,:any_2] 
+address ALGselect1;
+command select(b:bat[:void,:any_2],value:any_2) :bat[:oid,:any_2] 
 address ALGselect1
 comment "Select all BUNs of a BAT with a certain 
 	tail value. Selection on NIL is also 
@@ -132,6 +140,8 @@ comment "Select all BUNs of a BAT with a certain
 	e.g.:int(nil)).";
 
 command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address ALGselectNotNil;
+command selectNotNil(b:bat[:void,:any_2]):bat[:oid,:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
 @-
@@ -175,12 +185,19 @@ comment "Produces a new BAT with groups identified by the head column. The resul
 
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
 		li:bit, hi:bit) :bat[:any_1,:void] 
+address ALGuselectInclusive;
+command uselect(b:bat[:void,:any_2], low:any_2, high:any_2, 
+		li:bit, hi:bit) :bat[:oid,:void] 
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void] 
 address ALGuselect;
 command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void] 
+address ALGuselect1;
+command uselect(b:bat[:void,:any_2], low:any_2, high:any_2):bat[:oid,:void] 
+address ALGuselect;
+command uselect(b:bat[:void,:any_2], value:any_2) :bat[:oid,:void] 
 address ALGuselect1
 comment "Value select, but returning only the 
 	head values. SEE ALSO:select(bat,val)";
@@ -526,6 +543,23 @@ command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
 comment "Extract the head of a BAT.";
 
+@= projectGrp
+command project(v:@1,b:bat[:any_2,:any_1]) :bat[:@1,:any_1] 
+address ALGprojecthead_@1
+comment "Fill the head with a constant, e.g. [0~b]";
+command project(b:bat[:any_2,:any_1],v:@1) :bat[:any_2,:@1] 
+address ALGprojecttail_@1
+comment "Fill the tail with a constant, e.g. [0~b]";
+@mal
+	@:projectGrp(bit)@
+	@:projectGrp(chr)@
+	@:projectGrp(str)@
+	@:projectGrp(oid)@
+	@:projectGrp(int)@
+	@:projectGrp(sht)@
+	@:projectGrp(lng)@
+	@:projectGrp(flt)@
+	@:projectGrp(dbl)@
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
@@ -576,6 +610,26 @@ comment "Split head into two values";
 
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
+
+@- Variable management
+It is sometimes needed to cast a type at runtime
+@mal
+command identity(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address ALGidentity;
+command identity(b:bat[:void,:any_1]):bat[:oid,:any_1]
+address ALGidentity;
+
+command materialize(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address ALGmaterialize;
+command materialize(b:bat[:void,:any_1]):bat[:oid,:any_1]
+address ALGmaterialize
+comment "Materialize the void column";
+
+command reuse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address ALGreuse
+comment "Reuse a temporary BAT if you can. Otherwise,
+	allocate enough storage to accept result of an
+ 	operation (not involving the heap)";
 
 @- Hash Split
 The commands below is temporarilly postponed, because
@@ -766,6 +820,8 @@ for each algebraic operand. Since each algebraic operands may apply
 different strategies, according to different status in its operand properties,
 each algebraic operator may have different propagation rules with these
 different situations as conditions.
+
+@include kprelude.mx
 @{
 @h
 #ifndef ALGEBRA_H
@@ -3197,6 +3253,124 @@ ALGprojectNIL(int *ret, int *bid)
         return MAL_SUCCEED;
     }
     return throwMessage("algebra.project", "Cannot create the constant BAT");
+}
+
+@-
+The constant versions are typed by the parser
+@= projectImpl
+algebra_export str ALGprojecthead_@1(int *ret,ptr *val, int *bid);
+str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
+	BAT *b, *bn;
+	int xx;
+	BUN p,q;
+
+	@:getBATdescriptor(bid,b,"batcalc.project")@
+
+	bn= BATnew(TYPE_@1,BAThtype(b),BATcount(b));
+	@:tstBAT(fillhead_@1)@
+	BATloopFast(b, p, q, xx) {
+		ptr v = BUNtail(b,p);
+		bunfastins(bn, val,v);
+	}
+bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+	*ret= bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+algebra_export str ALGprojecttail_@1(int *ret,int *bid, ptr *val);
+str ALGprojecttail_@1(int *ret,int *bid, ptr *val){
+	BAT *b, *bn;
+	int xx;
+	BUN p,q;
+
+	@:getBATdescriptor(bid,b,"batcalc.project")@
+
+	bn= BATnew(BAThtype(b),TYPE_@1,BATcount(b));
+	@:tstBAT(filltail_@1)@
+	BATloopFast(b, p, q, xx) {
+		ptr v = BUNhead(b,p);
+		bunfastins(bn,v, val);
+	}
+bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+	*ret= bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+@-
+
+@c
+@:projectImpl(int)@
+@:projectImpl(sht)@
+@:projectImpl(lng)@
+@:projectImpl(oid)@
+@:projectImpl(flt)@
+@:projectImpl(dbl)@
+@:projectImpl(str)@
+@:projectImpl(chr)@
+@:projectImpl(bit)@
+
+/* You don;t have to materialize the oids.
+This is taken care upon access */
+@h
+algebra_export str ALGidentity(int *ret, int *bid);
+@c
+str
+ALGidentity(int *ret, int *bid)
+{
+	BAT *b;
+
+	@:getBATdescriptor(bid,b,"algebra.identity")@
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); \
+	BBPkeepref(*ret = b->batCacheid);
+	return MAL_SUCCEED;
+}
+@h
+algebra_export str ALGmaterialize(int *ret, int *bid);
+@c
+str
+ALGmaterialize(int *ret, int *bid)
+{
+	BAT *b, *bn;
+
+	@:getBATdescriptor(bid,b,"algebra.materialize")@
+	if( b->htype == TYPE_void){
+		bn= BATmaterialize(b, BATcount(b));
+		if( bn == NULL)
+			return throwMessage("batcalc.materialize", "Materialization failed");
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		BBPkeepref(*ret= bn->batCacheid);
+	} else 
+		BBPkeepref(*ret = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+algebra_export str ALGreuse(int *ret, int *bid)
+{
+	BAT *b,*bn;
+	@:getBATdescriptor(bid,b,"algebra.reuse")@
+
+	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
+		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
+			bn= BATwcopy(b);
+		} else {
+			bn= BATnew(b->htype,b->ttype,BATcount(b));
+			bn->batBuns->free = BATcount(b) * BUNsize(bn);
+			BATsetcount(bn,BATcount(b));
+
+			bn->tsorted= FALSE; 
+			BATkey(bn,FALSE);
+			/* head is void */
+			BATseqbase(bn, b->hseqbase);
+		}
+		BBPkeepref(*ret= bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+	} else 
+		BBPkeepref(*ret = *bid);
+	return MAL_SUCCEED;
 }
 
 @}

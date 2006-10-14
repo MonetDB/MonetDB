@@ -39,16 +39,24 @@ command batcalc.match(b:bat[:void,:str], pat:str):bat[:void,:bit]
 address STRbatmatchCst
 comment "POSIX pattern matching against a string BAT";
 
+command batcalc.==( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:bit]
+address STRbatEqual;
 command batcalc.==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatEqual
 comment "Equate a bat of strings against each other";
+command batcalc.==( l:bat[:oid,:str], r:str) :bat[:oid,:bit]
+address STRbatEqualCst;
 command batcalc.==( l:bat[:void,:str], r:str) :bat[:void,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
+command batcalc.!=( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:bit]
+address STRbatNotEqual;
 command batcalc.!=( l:bat[:void,:str], r:bat[:oid,:str]) :bat[:void,:bit]
 address STRbatNotEqual
 comment "Equate a bat of strings against each other";
+command batcalc.!=( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:bit]
+address STRbatNotEqual;
 command batcalc.!=( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatNotEqual
 comment "Equate a bat of strings against each other";

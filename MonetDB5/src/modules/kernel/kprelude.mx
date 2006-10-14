@@ -2,9 +2,23 @@
 The Mx macros below are used in many places throughout the code base.
 
 @= getBATdescriptor
-	if( (@3= BATdescriptor(*@2)) == NULL ){ *@1 = 0;
-		 return throwMessage(@4, "cannot access descriptor");
+	if( (@2= BATdescriptor(*@1)) == NULL ){ @4;
+		 return throwMessage(@3, "cannot access descriptor");
    }
+@= tstBAT
+if( bn== NULL) {*ret= 0;
+    return throwMessage("batcalc.@1", "can not create bat");}
+
+@= resultBAT
+    if (BAThvoid(b)) {
+        bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+        BATseqbase(bn, b->hseqbase);
+    } else
+        bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( bn== NULL) 
+		return throwMessage(@2, "can not create bat");
+    bn->hsorted = b->hsorted;
+    bn->tsorted = b->tsorted;
 
 @= Pseudo
 	if (BBPindex("view_@1_@2") <= 0)

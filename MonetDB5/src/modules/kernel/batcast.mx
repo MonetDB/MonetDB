@@ -129,7 +129,7 @@ if( bn== NULL) {*ret= 0;
 batcast_export str CMDconvert_@1(int *ret, int *bid);
 str CMDconvert_@1(int *ret, int *bid){
 	BAT *b, *bn;
-	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
+	@:getBATdescriptor(bid, b, "batcalc.convert")@
 
 	bn= BATcopy(b, b->htype, b->ttype, 2);
 	@:tstBAT(CMDconvert_@1)@
@@ -154,7 +154,7 @@ str CMDconvert_void_@1_@2(int *ret, int *bid){
 	@1 *p,*q;
 	@2 *o;
 
-	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
+	@:getBATdescriptor(bid, b, "batcalc.convert")@
 	@:resultBAT(@2,CMDconvert_@1_@2)@
 	o= (@2*)BUNtail(bn,BUNfirst(bn));
 	p= (@1*)BUNtail(b,BUNfirst(b));
@@ -176,7 +176,7 @@ str CMDconvert_@1_@2(int *ret, int *bid){
 	@2 y;
 	char *p, *q, *h;
 
-	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
+	@:getBATdescriptor(bid, b, "batcalc.convert")@
 	@:resultBAT(@2,CMDconvert_@1)@
 	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNtail(b,BUNfirst(b));
@@ -213,7 +213,7 @@ str CMDconvert_@1_str(int *ret, int *bid){
 	str dst=0;
 	int len=0;
 
-	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
+	@:getBATdescriptor(bid, b, "batcalc.convert")@
 	@:resultBAT(str,CMDconvert_@1)@
 	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNtail(b,BUNfirst(b));
@@ -240,7 +240,7 @@ str CMDconvert_str_@1(int *ret, int *bid){
 	ptr v;
 	int len;
 
-	@:getBATdescriptor(ret, bid, b, "batcalc.convert")@
+	@:getBATdescriptor(bid, b, "batcalc.convert")@
 	@:resultBAT(@1,CMDconvert_str_@1)@
 	h= (char *) BUNhead(b,BUNfirst(b));
 	p= (ptr) BUNtloc(b,BUNfirst(b));
