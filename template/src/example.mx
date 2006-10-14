@@ -56,9 +56,12 @@ Vector.h.
 #include <math.h>
 #include <time.h>
 
-int hello( str *res, str src ){
-	int len = strlen(src) + strlen("hello ");
-	*res = GDKmalloc(len);
+int
+hello(str *res, str src)
+{
+	size_t len = strlen(src) + strlen("hello ");
+
+	*res = GDKmalloc(len + 1);
 	*res[0] = '\0';
 	strcat(*res, "hello ");
 	strcat(*res, src);
