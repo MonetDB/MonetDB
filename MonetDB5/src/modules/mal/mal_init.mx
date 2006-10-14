@@ -65,6 +65,7 @@ include inet;
 include batmath;
 include batcalc;
 include batcast;
+include batifthen;
 include batmtime;
 include batstr;
 include batcolor;
