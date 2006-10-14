@@ -104,7 +104,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 	p->typechk=TYPE_UNKNOWN; p->fcn= NULL; \
 	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
 	setModuleId(p,NULL); setFunctionId(p,NULL); } \
-	else {setModuleId(p,batcalcRef); setFunctionId(p,identityRef); } }
+	else {setModuleId(p,algebraRef); setFunctionId(p,identityRef); } }
 @c
 
 static int
