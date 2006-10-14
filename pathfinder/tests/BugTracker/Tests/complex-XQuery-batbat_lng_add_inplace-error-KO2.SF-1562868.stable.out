@@ -17,13 +17,14 @@ quit();
 
 Over..
 
-# 20:27:48 >  
-# 20:27:48 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=31524 complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868.xq
-# 20:27:48 >  
+# 00:26:44 >  
+# 00:26:44 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=34276 complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868.xq
+# 00:26:44 >  
 
-! Expected / correct output needs to be added by hand or approved once the bug is fixed !
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/><prob/></XQueryResult>
 
-# 20:27:49 >  
-# 20:27:49 >  Done.
-# 20:27:49 >  
+# 00:26:45 >  
+# 00:26:45 >  Done.
+# 00:26:45 >  
 

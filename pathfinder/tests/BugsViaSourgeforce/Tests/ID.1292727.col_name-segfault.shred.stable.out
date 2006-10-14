@@ -12,7 +12,7 @@ stdout of test 'ID.1292727.col_name-segfault.shred` in directory 'tests/BugsViaS
 module("pathfinder");
 module("unix");
 
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XMark/Tests";
+var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/XMark/Tests";
 
 shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.65s

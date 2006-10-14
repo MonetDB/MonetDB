@@ -13,12 +13,13 @@ module("pathfinder");
 module("unix");
 
 var TSTSRCDIR := getenv("TSTSRCDIR");
+var TSTSRCBASE := getenv("TSTSRCBASE");
 
 shred_doc(TSTSRCDIR + "/" + "foo.xml", "foo.xml");
 # Shredded XML doc("foo.xml"), total time after commit=0.8s
 shred_doc(TSTSRCDIR + "/" + "book.xml", "book.xml");
 # Shredded XML doc("book.xml"), total time after commit=0.8s
-shred_doc(TSTSRCDIR + "/../../XMark/Tests/auctionG.xml", "auctionG.xml");
+shred_doc(TSTSRCBASE+"/benchmarks/XMark/Tests/auctionG.xml", "auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.64s
 
 commit();

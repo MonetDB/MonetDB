@@ -12,7 +12,7 @@ stdout of test 'auctionG_xml` in directory 'tests/BugTracker` itself:
 module(unix);
 module(pathfinder);
 var TSTSRCBASE := getenv("TSTSRCBASE");
-shred_doc(TSTSRCBASE+"/tests/XMark/Tests/auctionG.xml","auctionG.xml");
+shred_doc(TSTSRCBASE+"/benchmarks/XMark/Tests/auctionG.xml","auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.090s
 quit();
 

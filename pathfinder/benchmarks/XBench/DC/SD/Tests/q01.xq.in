@@ -1,0 +1,3 @@
+for $item in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item[@id="I1"]
+return
+    $item

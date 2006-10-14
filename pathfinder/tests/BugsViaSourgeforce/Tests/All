@@ -1,4 +1,4 @@
-# first test loads default XMark document from tests/XMark/Tests/auctionG.xml
+# first test loads default XMark document from benchmarks/XMark/Tests/auctionG.xml
 # used by other tests in this directory
 auctionG_xml
 

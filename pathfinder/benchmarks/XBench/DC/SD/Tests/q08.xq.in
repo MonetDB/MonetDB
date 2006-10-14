@@ -1,0 +1,3 @@
+for $a in doc("$TSTTRGDIR/small.catalog.xml")/catalog/*[@id="I4"]
+return
+    $a/publisher

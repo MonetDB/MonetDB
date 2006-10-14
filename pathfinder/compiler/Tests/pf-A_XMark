@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for i in $RELSRCDIR/../../tests/XMark/Tests/*.xq; do
+for i in $RELSRCDIR/../../benchmarks/XMark/Tests/*.xq; do
 	j=${i##*/}
 	test -L $j || ln -s $i $j
 	echo "\"pf -A $j >/dev/null\""

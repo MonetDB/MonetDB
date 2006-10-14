@@ -1,0 +1,4 @@
+for $item in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item
+where $item/authors/author/name/first_name = "Ben"
+return
+    $item/title
