@@ -887,7 +887,7 @@ static stmt *
 find_column(sql_column *c, stmt *basetable) 
 {
 	node *n;
-	assert(basetable->type = st_list);
+	assert(basetable->type == st_list);
 
 	for(n=basetable->op1.lval->h; n; n = n->next) {
 		char *cn = NULL;
