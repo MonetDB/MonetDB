@@ -151,8 +151,10 @@ comment "Writes the next part to the stream.  If it is the first part,
 the header will be written to the stream first.  The size of the blocks
 is determined by the value supplied via the setBlockSize function.";
 
-# ResultSets themselves should never be serialised to disk.  The
-# fromStr and toStr functions merely exist to adhere to the interface
+@-
+ResultSets themselves should never be serialised to disk.  The
+fromStr and toStr functions merely exist to adhere to the interface
+@mal
 command fromstr()
 address RSfromString
 comment "Discards the string and does nothing (returns nil)";

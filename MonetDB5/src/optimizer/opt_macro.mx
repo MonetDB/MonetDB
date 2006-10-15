@@ -99,9 +99,6 @@ It would often require a rewrite of several other statements as well.
 pattern optimizer.macro(targetmod:str,targetfcn:str):void
 address OPTmacro
 comment "Inline the code of the target function.";
-#pattern optimizer.macro(targetmod:str):void
-#address OPTmacro
-#comment "Inline functions known a specific module.";
 pattern optimizer.macro(mod:str,fcn:str,targetmod:str,targetfcn:str):void
 address OPTmacro
 comment "Inline a target function used in a specific function.";
@@ -109,14 +106,18 @@ comment "Inline a target function used in a specific function.";
 pattern optimizer.orcam(targetmod:str,targetfcn:str):void
 address OPTorcam
 comment "Inverse macro processor for current function";
-#pattern optimizer.orcam(targetmod:str):void
-#address OPTorcam
-#comment "Inverse macro processor for a module";
 pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void
 address OPTorcam
 comment "Inverse macro, find pattern and replace with a function call.";
 
+@-
 @{
+#pattern optimizer.macro(targetmod:str):void
+#address OPTmacro
+#comment "Inline functions known a specific module.";
+#pattern optimizer.orcam(targetmod:str):void
+#address OPTorcam
+#comment "Inverse macro processor for a module";
 @+ Implementation section
 @h
 #ifndef _MAL_MACRO_H_
