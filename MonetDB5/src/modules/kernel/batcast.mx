@@ -118,21 +118,14 @@ The others effectively may loose information, which calls
 for a more expensive operation based on the conversion
 routines in the GDK kernel.
 
-@= tstBAT
-if( bn== NULL) {*ret= 0; 
-	return throwMessage("batcalc.@1", "can not create bat");}
-@= resultBAT
-	bn= newBATcresult(b, TYPE_@1);
-	@:tstBAT(@2)@
-
 @= Idempotent
 batcast_export str CMDconvert_@1(int *ret, int *bid);
 str CMDconvert_@1(int *ret, int *bid){
 	BAT *b, *bn;
-	@:getBATdescriptor(bid, b, "batcalc.convert")@
+	@:getBATdescriptor(bid, b, "batcalc.@1")@
 
 	bn= BATcopy(b, b->htype, b->ttype, 2);
-	@:tstBAT(CMDconvert_@1)@
+	@:tstBAT("batcalc.@1")@
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -154,8 +147,8 @@ str CMDconvert_void_@1_@2(int *ret, int *bid){
 	@1 *p,*q;
 	@2 *o;
 
-	@:getBATdescriptor(bid, b, "batcalc.convert")@
-	@:resultBAT(@2,CMDconvert_@1_@2)@
+	@:getBATdescriptor(bid, b, "batcalc.@2")@
+	@:resultBAT(@2,"batcalc.@2")@
 	o= (@2*)BUNtail(bn,BUNfirst(bn));
 	p= (@1*)BUNtail(b,BUNfirst(b));
 	q= (@1*)BUNtail(b,BUNlast(b));
@@ -176,8 +169,8 @@ str CMDconvert_@1_@2(int *ret, int *bid){
 	@2 y;
 	char *p, *q, *h;
 
-	@:getBATdescriptor(bid, b, "batcalc.convert")@
-	@:resultBAT(@2,CMDconvert_@1)@
+	@:getBATdescriptor(bid, b, "batcalc.@2")@
+	@:resultBAT(@2,"batcalc.@2")@
 	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNtail(b,BUNfirst(b));
 	q= (char*) BUNtail(b,BUNlast(b));
@@ -213,8 +206,8 @@ str CMDconvert_@1_str(int *ret, int *bid){
 	str dst=0;
 	int len=0;
 
-	@:getBATdescriptor(bid, b, "batcalc.convert")@
-	@:resultBAT(str,CMDconvert_@1)@
+	@:getBATdescriptor(bid, b, "batcalc.@2")@
+	@:resultBAT(str,"batcalc.@2")@
 	h= (char*) BUNhead(b,BUNfirst(b));
 	p= (char*) BUNtail(b,BUNfirst(b));
 	q= (char*) BUNtail(b,BUNlast(b));
@@ -240,8 +233,8 @@ str CMDconvert_str_@1(int *ret, int *bid){
 	ptr v;
 	int len;
 
-	@:getBATdescriptor(bid, b, "batcalc.convert")@
-	@:resultBAT(@1,CMDconvert_str_@1)@
+	@:getBATdescriptor(bid, b, "batcalc.@1")@
+	@:resultBAT(@1,"batcalc.@1")@
 	h= (char *) BUNhead(b,BUNfirst(b));
 	p= (ptr) BUNtloc(b,BUNfirst(b));
 	q= (char *) BUNtloc(b,BUNlast(b));
@@ -262,21 +255,6 @@ str CMDconvert_void_str_@1(int *ret, int *bid){
 The lengthly list of coercions options could have been generated.
 @c
 #include "batcast.h"
-
-static BAT *
-newBATcresult(BAT *b, int tpe)
-{
-	BAT *bn;
-
-	if (BAThvoid(b)) {
-		bn = BATnew(TYPE_void, tpe, BATcount(b));
-		BATseqbase(bn, b->hseqbase);
-	} else
-		bn = BATnew(b->htype, tpe, BATcount(b));
-	bn->hsorted = b->hsorted;
-	bn->tsorted = b->tsorted;
-	return bn;
-}
 
 int	oidToStr(char **dst, int *len, oid *src  ){
 		return OIDtoStr(dst,len, src);

@@ -3267,7 +3267,7 @@ str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
 	bn= BATnew(TYPE_@1,BAThtype(b),BATcount(b));
-	@:tstBAT(fillhead_@1)@
+	@:tstBAT("algebra.project")@
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUNtail(b,p);
 		bunfastins(bn, val,v);
@@ -3288,7 +3288,7 @@ str ALGprojecttail_@1(int *ret,int *bid, ptr *val){
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
 	bn= BATnew(BAThtype(b),TYPE_@1,BATcount(b));
-	@:tstBAT(filltail_@1)@
+	@:tstBAT("algebra.project")@
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUNhead(b,p);
 		bunfastins(bn,v, val);

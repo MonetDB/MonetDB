@@ -7,7 +7,7 @@ The Mx macros below are used in many places throughout the code base.
    }
 @= tstBAT
 if( bn== NULL) {*ret= 0;
-    return throwMessage("batcalc.@1", "can not create bat");}
+    return throwMessage(@1, "can not create bat");}
 
 @= resultBAT
     if (BAThvoid(b)) {
