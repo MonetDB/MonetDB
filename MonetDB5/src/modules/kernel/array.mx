@@ -53,10 +53,6 @@ and shift all elemenets with a factor s";
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
 
-#command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
-#address ARRAYmultiply_int_int
-#comment "Calculate the array product";
-
 command product(b:bat[:void,:any_1],c:bat[:void,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
@@ -68,8 +64,11 @@ comment "Fill an array representation with constants ";
 pattern print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...) :void 
 address ARRAYprint
 comment "Prints an array, using 1 value bat and N aligned index bats";
-
 @{
+@-
+#command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
+#address ARRAYmultiply_int_int
+#comment "Calculate the array product";
 @- Implementation
 @include ../mal/prelude.mx
 @h

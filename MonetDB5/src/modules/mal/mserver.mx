@@ -43,9 +43,6 @@ comment "Start a Mapi server with the default settings.";
 command listen(port:int):int
 address SERVERlisten_port
 comment "Start a Mapi server on the given port";
-#command listen(open:bit):int
-#address SERVERlisten_open
-#comment "Start a Mapi server on the default port global bound or not";
 command listen(port:int, maxusers:int):int
 address SERVERlisten2
 comment "Start a Mapi server";
@@ -254,6 +251,13 @@ pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one";
 
+
+mserver.listen();
+@-
+@{
+#command listen(open:bit):int
+#address SERVERlisten_open
+#comment "Start a Mapi server on the default port global bound or not";
 #command receive(key:int,nme:str):bat[:any_1,:any_2]
 #address SERVERreceive
 #comment "Fetch a bat from a remote site";
@@ -261,9 +265,6 @@ comment "Bind a remote variable to a local one";
 #command send(key:int,nme:str, r:bat[:any_1,:any_2]):void
 #address SERVERsend
 #comment "Sent a bat to a remote site";
-
-mserver.listen();
-@{
 command prelude()
 address SERVERprelude;
 command epilogue()

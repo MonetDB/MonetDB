@@ -259,7 +259,7 @@ str STRbat@1(int *ret, int *l)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	return throwMessage("batstr.==", "bunins failed");
+	return throwMessage("batstr.@1", "bunins failed");
 }
 
 @c
@@ -291,7 +291,7 @@ str STRbat@1(int *ret, int *l)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	return throwMessage("batstr.==", "bunins failed");
+	return throwMessage("batstr.@1", "bunins failed");
 }
 @c
 @:BATstr(Lower,strLower,str,str)@

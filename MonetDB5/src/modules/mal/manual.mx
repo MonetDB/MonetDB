@@ -27,9 +27,6 @@ tools to massage it further for presentation.
 @mal
 module manual;
 
-#command completion(text:str)
-#address MANUALcompletion
-#comment "Produces the wordcompletion table.";
 command help(text:str)
 address MANUALhelp
 comment "Produces a list of all <module>.<function> that match 
@@ -58,6 +55,9 @@ command summary():void
 address MANUALcreateSummary
 comment "Produces a manual with help lines grouped by module.";
 @-
+#command completion(text:str)
+#address MANUALcompletion
+#comment "Produces the wordcompletion table.";
 @{
 @+ Implementation
 @include prelude.mx

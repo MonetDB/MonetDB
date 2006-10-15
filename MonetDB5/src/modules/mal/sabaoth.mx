@@ -48,17 +48,18 @@ command marchConnection(host:str, port:int, ssl:bit)
 address SABAOTHmarchConnection
 comment "Publishes the given host/port as available for connecting to this server";
 
-# TODO
-#command retreatConnection(host:str, port:int, ssl:bit)
-#address SABAOTHretreatConnection
-#comment "Unpublishes the given host/port as available for connecting to this server";
-
 command wildRetreat()
 address SABAOTHwildRetreat
 comment "Unpublishes everything known for this server";
 
 
 #sabaoth.prelude();
+@-
+TODO
+#command retreatConnection(host:str, port:int, ssl:bit)
+#address SABAOTHretreatConnection
+#comment "Unpublishes the given host/port as available for connecting to this server";
+
 
 @- Implementation
 

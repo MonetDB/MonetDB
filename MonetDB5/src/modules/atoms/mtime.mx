@@ -292,8 +292,9 @@ timezone.   Also, if a timestamp is parsed from a string that does not have
 an explicit GMT specifier, it is taken to be a timestamp in the local
 timezone. The default local timezone is just GMT+00, but it can be set
 arbitrarily.
+# not stored as a lng !
 @mal
-atom timestamp :lng;# not stored as a lng !
+atom timestamp :lng;
 command fromstr():timestamp 
 address timestamp_fromstr;
 
@@ -427,12 +428,13 @@ command date_add_month_interval(t:date,s:int):date
 address MTIMEdate_add_month_interval_wrap
 comment "Add months to a date";
 
+@-
 #command int(d:date):int = MTIMEdate_2int;
 #command int(d:daytime):int = MTIMEdaytime_2int;
 #command lng(d:timestamp):int = MTIMEtimestamp_2lng;
 #command lng(d:timezone):lng = MTIMEtzone_2lng;
 #command int(d:zrule):int = MTIMErule_2int;
-
+@mal
 command date(:date):date
 address MTIMEdate2date
 comment "generate the nil date";
@@ -514,7 +516,6 @@ For decomposing a timestamp, there are routines that decompose it in a date
 and daytime. The bulk variants are also provided to simplify code
 generation for SQL and to improve speed.
 @mal
-# date
 command year(d:date) :int 
 address MTIMEdate_extract_year 
 comment "extracts year from date (nonzero 
@@ -534,7 +535,6 @@ comment "extracts day from date ";
 command day(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_day_bulk;
 
-# daytime
 command hours(h:daytime) :int 
 address MTIMEdaytime_extract_hours 
 comment "extracts hour from daytime";
@@ -559,7 +559,6 @@ comment "extracts milliseconds from daytime";
 command milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;
 
-# timestamp
 command daytime(t:timestamp) :daytime 
 address MTIMEtimestamp_extract_daytime_default 
 comment "extracts daytime from timestamp 
@@ -578,7 +577,6 @@ address MTIMEtimestamp_extract_date
 comment "extracts date from timestamp in a 
 	specific timezone.";
 
-# timezone
 command setTimezone(name:str):timezone 
 address MTIMEtimezone
 comment "Test and set the timezone.";
@@ -720,7 +718,6 @@ command daytime(h:int,m:int,s:int):daytime
 address MTIMEdaytime3
 comment "default time with zeroed components";
 
-#SQL utility functions
 command current_timestamp():timestamp
 address MTIMEcurrent_timestamp;
 command current_date():date

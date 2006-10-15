@@ -46,7 +46,6 @@ The code speaks for itself
 @}
 @mal
 
-module bat;
 
 #command bat(ht:int, tt:int) :bat[:any_1,:any_2] 
 #address BKCnewBat
@@ -61,6 +60,7 @@ module bat;
 #address BKCnewBATlng
 #comment "Creates a new empty BAT, allocating 'size' elements.";
 
+module bat;
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
 address BKCreverse
 comment "Returns the reverse view of a BAT (head is tail and tail is head).
@@ -361,8 +361,9 @@ command replace(b:bat[:void, :any_2], h:oid, t:any_2, force:bit) :void
 address BKCreplace_bun_force
 comment "Replace the tail value of one BUN that has some head value.";
 
-# The SQL append/inplace commands
-
+@-
+The SQL append/inplace commands
+@mal
 command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1]) :void
 address BKCappend_wrap
 comment "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)";
@@ -426,13 +427,11 @@ comment "inplace replace values on the given locations";
 command inplace( o:bat[:void,:any_1], d:bat[:void,:any_1], force:bit) :void
 address BKCbat_inplace_force
 comment "inplace replace values on the given locations";
-
-#end SQL enhancement
 @-
 Destroying a BAT should also involve removing references
 maintained in the MAL program structure.
 Therefore it is moved to the bbp module
-@mal
+
 #command destroy(b:bat[:any_1,:any_2]):void
 #address BKCdestroy;
 #command destroy(b:bat[:any_1,:any_2],now:bit):void
@@ -441,6 +440,7 @@ Therefore it is moved to the bbp module
 #address BKCdestroy_bat
 #comment "Schedule bat for removal upon session 
 
+@mal
 command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :void
 address BKCdelete_bun
 comment "Delete one specific BUN.";
@@ -458,11 +458,12 @@ command delete(b:bat[:any_1, :any_2]) :void
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
+@-
 #command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :void
 #address BKCdelete_bat
 #comment "Delete from the first BAT all BUNs with a head value that 
         #is in the second.";
-
+@mal
 command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :void
 address BKCdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN 
@@ -654,7 +655,7 @@ comment "Tests whether two BATs are synced or not. ";
 
 @- Constants
 The following constants have not been integrated in the code base
-@mal
+
 #Constants have been added to mal/const.mx prelude
 #    STORE_MEM   := 0;     # load into GDKmalloced memory
 #    STORE_MMAP  := 1;     # mmap() into virtual memory

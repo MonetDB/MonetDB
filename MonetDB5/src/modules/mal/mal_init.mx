@@ -29,8 +29,6 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-
-#include pcl;
 include mdb;
 include unix;
 include lock;
@@ -38,8 +36,9 @@ include sema;
 include alarm;
 include mmath;
 include streams;
-
-# the kernel stuff to make it work
+@-
+The kernel stuff to make it work
+@mal
 include bat5;
 include batExtensions;
 include pcre;
@@ -53,7 +52,9 @@ include array;
 include pqueue;
 include mkey;
 
-#atom extensions
+@-
+Atom extensions
+@mal
 include blob;
 include color;
 include str;
@@ -61,7 +62,9 @@ include url;
 include mtime; 
 include inet;
 
-# the hardwired multiplex extensions
+@-
+The hardwired multiplex extensions
+@mal
 include batmath;
 include batcalc;
 include batcast;
@@ -70,11 +73,15 @@ include batmtime;
 include batstr;
 include batcolor;
 
-# awareness support (and start with a clean record)
+@-
+Awareness support (and start with a clean record)
+@mal
 include sabaoth;
 sabaoth.wildRetreat();
 
-# MAL related extensions
+@-
+MAL related extensions
+@mal
 include clients;
 include tablet;
 include mal_io;
@@ -94,7 +101,6 @@ include profiler;
 include statistics;
 
 include optimizer;
-# here follows all the optimizer modules
 include opt_support;
 include opt_accumulators;
 include opt_aliases;
@@ -120,17 +126,18 @@ include opt_reduce;
 include opt_singleton;
 include opt_strengthReduction;
 
-include opt_crack;	#  not in alpha5
-include opt_joinselect;	#  not in alpha5
-include opt_remoteQueries; # not in alpha5
-
 include chopper;
+
 #include logger;
 include transaction;
 include partitions;
-
-# less important stuff
-include crackers; # not in alpha5
+@-
+Not in alpha 5
+@mal
+include opt_crack;
+include opt_joinselect;
+include opt_remoteQueries;
+include crackers; 
 
 # publish mal existence
 sabaoth.marchScenario("mal":str);
