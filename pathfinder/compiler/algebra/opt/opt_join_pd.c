@@ -651,6 +651,60 @@ join_pushdown (PFla_op_t *p)
                 break;
 
             case la_disjunion:
+            {
+                /* In situations where we apply actions on the
+                   empty sequence and append the generated rows with a union
+                   a join pushdown does not help (-- it will be stopped at
+                   the difference operator anyway).
+                   Thus we avoid to rewrite any union that uses the outcome
+                   of a difference operation. */
+                PFla_op_t *cur;
+                bool diff;
+                
+                /* check for difference in left subtree */
+                cur = L(lp);
+                diff = false;
+                while (cur) {
+                    switch (cur->kind)
+                    {
+                        case la_project:
+                        case la_attach:
+                            cur = L(cur);
+                            break;
+                        case la_difference:
+                            diff = true;
+                            /* continue */
+                        default:
+                            cur = NULL; /* stop processing */
+                            break;
+                    }
+                }
+                /* stop rewriting if difference was discovered */
+                if (diff)
+                    break;
+                
+                /* check for difference in left subtree */
+                cur = R(lp);
+                diff = false;
+                while (cur) {
+                    switch (cur->kind)
+                    {
+                        case la_project:
+                        case la_attach:
+                            cur = L(cur);
+                            break;
+                        case la_difference:
+                            diff = true;
+                            /* continue */
+                        default:
+                            cur = NULL; /* stop processing */
+                            break;
+                    }
+                }
+                /* stop rewriting if difference was discovered */
+                if (diff)
+                    break;
+                
                 /* This rewrite is only correct if the union operator
                    is implemented as a union all operation. */
                 *p = *disjunion (eqjoin_unq (L(lp), rp, latt, ratt,
@@ -658,7 +712,7 @@ join_pushdown (PFla_op_t *p)
                                  eqjoin_unq (R(lp), rp, latt, ratt,
                                              p->sem.eqjoin_unq.res));
                 modified = true;
-                break;
+            } break;
                 
             case la_num_add:
                 modified = modify_binary_op (p, lp, rp, PFla_add);
