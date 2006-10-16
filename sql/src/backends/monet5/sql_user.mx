@@ -47,6 +47,10 @@ monet5_drop_user(ptr _mvc, str user)
 	sql_schema *sys;
 	sql_table *users;
 	sql_column *users_name;
+	int schema_id,  user_id;
+        user_id = sql_find_auth(m, user);
+        schema_id = sql_find_auth_schema(m, user);
+
 	str err = AUTHremoveUser(&user);
 	if (err != MAL_SUCCEED) {
 		(void)sql_error(m, 02, "DROP USER: %s", err);
@@ -66,6 +70,10 @@ monet5_drop_user(ptr _mvc, str user)
 		 * (seemingly) inconsistency between system and sql shadow
 		 * administration.
 		*/
+
+	 if (user_id != -1 || schema_id != -1)
+                mvc_drop_dependency(m, schema_id, user_id);
+
 	return TRUE;
 }
 
@@ -78,6 +86,7 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 	str ret;
 	char buf[BUFSIZ];
 	(void)l;
+	size_t user_id;
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
@@ -92,9 +101,14 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 
 	/* create two SQL statements that insert the user in the SQL
 	 * adminsitration */
+	user_id = (size_t)store_next_oid();
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_user_info\" VALUES('%s','%s',%d);", user, fullname, schema_id);
 	list_append(l, stmt_sql(_strdup(buf)));
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, grantorid);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", user_id, user, grantorid);
+	list_append(l, stmt_sql(_strdup(buf)));
+
+	/* create SQL statement that creates the schema dependency on the user*/
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"dependency_control\" VALUES(%d," SZFMT ", %d);", schema_id, user_id, USER_DEPENDENCY);
 	list_append(l, stmt_sql(_strdup(buf)));
 
 	return(NULL);
@@ -220,6 +234,8 @@ static int
 monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 {
 	mvc *m = (mvc *)_mvc;
+	int old_schema_id, user_id;
+	old_schema_id = sql_find_auth_schema(m, user);
 
 	if (passwd != NULL) {
 		str err = AUTHsetPassword(&user, &passwd);
@@ -228,6 +244,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 			return(FALSE);
 		}
 	}
+
 	if (schema_id) {
 		ssize_t rid;
 		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
@@ -242,6 +259,11 @@ monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 
 		column_update_value(m->session->tr, users_schema, rid, &schema_id);
 	}
+	
+        user_id = sql_find_auth(m, user);
+        mvc_create_dependency(m, schema_id, user_id, USER_DEPENDENCY);
+        mvc_drop_dependency(m, old_schema_id, user_id);
+
 	return TRUE;
 }
 

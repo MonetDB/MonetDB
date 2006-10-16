@@ -300,6 +300,9 @@ extern void cond_stmt_destroy(stmt *s);
 extern void stmt_destroy(stmt *s);
 extern stmt *stmt_dup(stmt *s);
 
+/*Dependency control*/
+extern void stmt_list_dependencies(stmt *s, list *l);
+
 extern group *grp_create(stmt *s, group *og, stmt *col);
 extern group *grp_semijoin(group *og, stmt *s);
 extern void grp_destroy(group *g);
@@ -780,6 +783,174 @@ NIELS: Because the optimizer rewrites partly inplace some parts of the
 		_DELETE(s);
 	}
 }
+
+void
+stmt_list_dependencies(stmt *s, list *l)
+{
+	int func_id;
+	switch (s->type) {
+		case st_relselect:
+			break;
+		case st_reljoin:
+			break;
+
+		case st_diff:
+		case st_intersect:
+		case st_union:
+		case st_join:
+		case st_outerjoin:
+		case st_derive:
+		case st_unique:
+		case st_alias:
+		case st_append:
+		case st_insert:
+		case st_replace:
+		case st_pivot:
+		case st_rs_column:
+		case st_sql:
+
+		case st_while:
+		case st_if:
+		case st_return:
+		case st_assign:
+
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval, l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			break;
+
+		case st_exception:
+
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval, l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			if (s->op4.stval)
+				stmt_list_dependencies(s->op4.stval, l);
+			break;
+
+		case st_set:
+		case st_sets:
+		case st_list:
+
+		case st_ptable:
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval, l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			break;
+
+		case st_var:
+			break;
+
+			/* reference only independently managed resources */
+		case st_table:
+			stmt_list_dependencies(s->op1.stval, l);
+			break;
+		case st_basetable:
+		case st_table_clear:
+		case st_bat:
+		case st_dbat:
+		case st_idxbat:
+		case st_none:
+			break;
+
+			/* special cases */
+		case st_temp:
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval, l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			break;
+		case st_aggr:
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval, l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			break;
+		case st_convert:
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			break;
+		case st_op:
+		case st_unop:
+		case st_binop:
+		case st_Nop:
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval ,l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			func_id = s->op4.funcval->func->base.id;
+			list_append(l,&func_id);	
+			break;
+		case st_atom:
+			break;
+
+			/* simple case of statements of only statements */
+		case st_const:
+		case st_mark:
+		case st_gen_group:
+		case st_reverse:
+		case st_mirror:
+		case st_limit:
+		case st_order:
+		case st_reorder:
+		case st_ordered:
+		case st_output:
+		case st_affected_rows:
+
+		case st_column:
+		case st_group:
+		case st_group_ext:
+
+		case st_filter:
+		case st_select:
+		case st_select2:
+		case st_uselect:
+		case st_uselect2:
+		case st_semijoin:
+
+		case st_bulkinsert:
+			if (s->op1.stval)
+				stmt_list_dependencies(s->op1.stval, l);
+			if (s->op2.stval)
+				stmt_list_dependencies(s->op2.stval, l);
+			if (s->op3.stval)
+				stmt_list_dependencies(s->op3.stval, l);
+			if (s->op4.stval)
+				stmt_list_dependencies(s->op4.stval, l);
+			break;
+
+		default:
+			printf("! TODO: stmt_list_dependencies(%u=%s) !\n", s->type, st_type2string(s->type));
+	}
+	if (s->h)
+		stmt_list_dependencies(s->h, l);
+	if (s->t)
+		stmt_list_dependencies(s->t, l);
+	if (s->rewritten)
+		stmt_list_dependencies(s->rewritten, l);
+
+#ifndef NDEBUG
+	if (s->nr2 > 0) {
+	} else if (s->nr2 == int_nil) {
+	} else if (s->nr2 < 0) {
+		printf("= sql_statement.mx: stmt_list_dependencies: (rssult of) statement %s (%u) was used %d times more often than its refcnt indicated!\n", st_type2string(s->type), s->type, -s->nr2);
+	}
+#endif
+}
+
 
 stmt *
 stmt_none()

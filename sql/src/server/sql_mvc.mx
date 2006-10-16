@@ -170,6 +170,12 @@ extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, char *name, sht ti
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
 
+/*dependency control*/
+extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
+extern void mvc_drop_dependency(mvc *m, int id, int depend_id);
+extern void mvc_create_dependencies(mvc *m, sqlid id, list *dep_l, int dep_type);
+extern int mvc_check_dependency(mvc * m, int id);
+
 /* variable management */
 extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
 extern void stack_push_frame(mvc *sql, char *name);
@@ -264,6 +270,7 @@ mvc_init(int debug, backend_stack stk)
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
 		sql_create_profile(m, s);
+		sql_trans_all_dependencies(m->session->tr);
 
 		if (mvc_commit(m, 0, NULL) < 0) {
 			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
@@ -890,7 +897,6 @@ mvc_drop_func(mvc *m, sql_schema *s, char *name, int cascade)
 	m->type = Q_SCHEMA;
 }
 
-
 sql_schema *
 mvc_create_schema(mvc *m, char *name, int auth_id)
 {
@@ -1099,6 +1105,59 @@ mvc_drop_column(mvc *m, sql_table *t, char *name)
 		fprintf(stderr, "mvc_drop_column %s %s\n", t->base.name, name);
 	sql_trans_drop_column(m->session->tr, t, name);
 	m->type = Q_SCHEMA;
+}
+
+void
+mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
+	m->type = Q_SCHEMA;
+
+	sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
+	
+}
+
+void
+mvc_drop_dependency(mvc *m, int id, int depend_id)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_drop_dependency %d %d \n", id, depend_id);
+	m->type = Q_SCHEMA;
+
+	sql_trans_drop_dependency(m->session->tr, id, depend_id);
+}
+
+void
+mvc_create_dependencies(mvc *m, sqlid id, list *dep_l, int dep_type)
+{
+	node *n = dep_l->h;
+	int i;
+	
+	for (i = 0; i < list_length(dep_l); i++)
+	{
+		mvc_create_dependency(m, id, *(int *) n->data, dep_type);
+		n = n->next;
+	}
+
+	list_destroy(dep_l);
+}
+
+int
+mvc_check_dependency(mvc * m, int id)
+{
+	list *dep_list = NULL;
+
+	dep_list =  sql_trans_get_dependencies(m->session->tr, id);
+	
+	if ( list_length(dep_list) > 0 ) {
+		list_destroy(dep_list);
+		return 0;
+	}
+	else {
+		list_destroy(dep_list);
+		return 1;
+	}
 }
 
 sql_column *

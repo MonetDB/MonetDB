@@ -757,6 +757,7 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 		GDKfree(err);
 		return FALSE;
 	}
+
 	return stmt_list(l);
 }
 
@@ -765,6 +766,7 @@ drop_user(mvc *sql, char *user)
 {
 	if(sql_drop_user(sql, user) == FALSE)
 		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
+
 	return stmt_none();
 }
 
@@ -772,7 +774,6 @@ static stmt *
 alter_user(mvc *sql, char *user, char *passwd, char *schema)
 {
 	sqlid schema_id = 0;
-
 	if (backend_find_user(sql, user) < 0)
 		return sql_error(sql, 02, "ALTER USER: no such user '%s'", user);
 
@@ -782,6 +783,7 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 		return sql_error(sql, 02, "ALTER USER: no such schema '%s'", schema);
 	}
 	sql_alter_user(sql, user, passwd, schema_id);
+
 	return stmt_none();
 }
 
@@ -1555,6 +1557,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	} else {
 		list *table_elements = create_stmt_list();
 		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
+		mvc_create_dependency(sql, sql->user_id, ss->base.id, SCHEMA_DEPENDENCY);
 
 		dnode *n = schema_elements->h;
 
@@ -1577,6 +1580,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			list_append_stmt(table_elements, res);
 			n = n->next;
 		}
+
 		return list2stmt(table_elements);
 	}
 }

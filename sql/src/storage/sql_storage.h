@@ -21,6 +21,9 @@
 
 #include "sql_catalog.h"
 
+extern list* table_select_column( sql_trans *tr, sql_column *val, sql_column *key, void *key_value, ...);
+extern list* table_select_column_multi_values( sql_trans *tr, sql_column *val, sql_column *key1 , void *key_value1, sql_column *key2,list *values);
+
 extern ssize_t
  column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
 
@@ -103,5 +106,10 @@ extern void sql_session_destroy(sql_session *s);
 extern void sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
+
+extern void sql_trans_all_dependencies(sql_trans *tr);
+extern void sql_trans_create_dependency(sql_trans *tr, int id, int depend_id, int depend_type);
+extern void sql_trans_drop_dependency(sql_trans *tr, int id, int depend_id);
+extern list* sql_trans_get_dependencies(sql_trans *tr, int id);
 
 #endif /*SQL_STORAGE_H */

@@ -21,6 +21,7 @@
 #define BATSTORE_H
 
 #include "sql_storage.h"
+#include "bat_dependency.h"
 #include "bat_bm.h"
 #include "bat_logger.h"
 
@@ -2507,8 +2508,13 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 			bootstrap_create_column(tr, t, "column", "varchar", 1024);
 			bootstrap_create_column(tr, t, "trunc", "int", 32);
 			bootstrap_create_column(tr, t, "nr", "int", 32);
+			
+
 
 			if (!p) {
+				/*To create the dependency table*/
+				create_dependency_table(tr,s);
+
 				p = s; 
 				/* now the same tables for temporaries */
 				s = bootstrap_create_schema(tr, "tmp", ROLE_SYSADMIN);
@@ -5525,6 +5531,13 @@ sql_session_reset(sql_session *s, int ac)
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;
+}
+
+
+void
+sql_trans_all_dependencies(sql_trans *tr)
+{
+	dependency_schem_user(tr);
 }
 
 int

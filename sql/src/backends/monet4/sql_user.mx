@@ -40,11 +40,18 @@ sql_server_export void monet4_user_init(backend_functions *be_funcs);
 char *
 monet4_create_user(list *l, char *user, char *passwd, char *fullname, sqlid schema_id, sqlid grantorid) {
 	char buf[BUFSIZ];
+	size_t user_id;
+
 	/* create two SQL statements that insert the user in the SQL
 	 * adminsitration */
+	user_id = (size_t)store_next_oid();
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
 	list_append(l, stmt_sql(_strdup(buf)));
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, grantorid);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", user_id, user, grantorid);
+	list_append(l, stmt_sql(_strdup(buf)));
+
+	/* create SQL statement that creates the schema dependency on the user*/
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"dependency_control\" VALUES(%d," SZFMT ", %d);", schema_id, user_id, USER_DEPENDENCY);
 	list_append(l, stmt_sql(_strdup(buf)));
 
 	return(NULL);
@@ -118,6 +125,7 @@ monet4_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 {
 	mvc *m = (mvc*)_mvc;
 	ssize_t rid;
+	int old_schema_id, user_id;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *users = find_sql_table(sys, "db_users");
 	sql_column *users_name = find_sql_column(users, "name");
@@ -136,6 +144,12 @@ monet4_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 
 		column_update_value(m->session->tr, users_schema, rid, &schema_id);
 	}
+
+	old_schema_id = sql_find_auth_schema(m, user);
+        user_id = sql_find_auth(m, user);
+        mvc_create_dependency(m, schema_id, user_id, USER_DEPENDENCY);
+        mvc_drop_dependency(m, old_schema_id, user_id);
+
 	return TRUE;
 }
 
@@ -143,15 +157,22 @@ int
 monet4_drop_user(ptr _mvc, char * user)
 {
 	ssize_t rid;
+	int schema_id,  user_id;
 	mvc *m = (mvc*)_mvc;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *users = find_sql_table(sys, "db_users");
 	sql_column *users_name = find_sql_column(users, "name");
+        user_id = sql_find_auth(m, user);
+        schema_id = sql_find_auth_schema(m, user);
 
 	rid = column_find_row(m->session->tr, users_name, user, NULL);
 	if (rid < 0)
 		return FALSE;
 	table_delete(m->session->tr, users, rid);
+	
+	if ( user_id != -1 || schema_id != -1 )
+                mvc_drop_dependency(m, schema_id, user_id);	
+
 	return TRUE;	
 }
 
