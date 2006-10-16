@@ -1508,9 +1508,7 @@ reduce (PFpa_op_t * p, int goalnt)
             err = new_var (1);
 
             execute (
-                assgn (
-                    var (err->name),
-                    catch_ (bodymilprog)),
+                catch_ (var (err->name), bodymilprog),
                 if_ (not (isnil (var (PF_MIL_VAR_WS))),
                      destroy_ws (var (PF_MIL_VAR_WS)),
                      nop ()),
@@ -1594,9 +1592,7 @@ reduce (PFpa_op_t * p, int goalnt)
             err = new_var (1);
 
             execute (
-                assgn (
-                    var (err->name),
-                    catch_ (bodymilprog)),
+                catch_ (var (err->name), bodymilprog),
                 if_ (not (isnil (var (PF_MIL_VAR_WS))),
                      destroy_ws (var (PF_MIL_VAR_WS)),
                      nop ()),

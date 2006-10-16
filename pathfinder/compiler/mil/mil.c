@@ -1065,9 +1065,9 @@ PFmil_bat (const PFmil_t *a)
 }
 
 PFmil_t *
-PFmil_catch (const PFmil_t *a)
+PFmil_catch (const PFmil_t *a, const PFmil_t *b)
 {
-    return wire1 (m_catch, a);
+    return wire2 (m_catch, a, b);
 }
 
 PFmil_t *

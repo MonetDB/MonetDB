@@ -217,6 +217,31 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
             }
             break;
 
+        case m_catch:
+            {
+                PFmil_t  *var = root->child[0];
+                PFmil_t  *body = root->child[1];
+
+                assert(var->kind == m_var);
+
+                /* The variable is set to true. */
+                PFbitset_set (used_vars, var->sem.ident, true);
+
+                /* try to find dead code in the body */ 
+                mil_dce_worker (body, used_vars, dirty_vars, change);
+
+#ifndef NDEBUG
+                /* variable on the left side is clean */
+                PFbitset_set (dirty_vars, var->sem.ident, false);
+
+                /* update dirty vars */
+                mil_dce_worker (body, used_vars, dirty_vars, change);
+#endif
+
+                return root;
+            }
+            break;
+
         case m_if:
             {
                 PFmil_t *new_child;

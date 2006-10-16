@@ -15,6 +15,7 @@
                  | statement ';'                            <otherwise>
 
    statement     : Variable ':=' expression                 <m_assgn>
+                 | Variable ':= CATCH ({' statements '})'   <m_catch>
                  | expr '.insert (' expr ',' expr ')'       <m_insert>
                  | expression '.append (' expression ')'    <m_bappend>
                  | expression '.access (' restriction ')'   <m_access>
@@ -28,7 +29,6 @@
    expression    : Variable                                 <m_var>
                  | literal                                  <m_lit_*, m_nil>
                  | 'new (' Type ',' Type ')'                <m_new>
-                 | 'CATCH ({' expression '})'               <m_catch>
                  | expression '.seqbase (' expression ')'   <m_seqbase>
                  | expression '.select (' expression ')'    <m_select>
                  | expression '.exist (' expression ')'     <m_exist>
@@ -508,6 +508,14 @@ print_statement (PFmil_t * n)
             print_expression (n->child[1]);
             break;
 
+        /* statement : variable ':= CATCH ({' statements '})' */
+        case m_catch:
+            print_variable (n->child[0]);
+            milprintf (" := CATCH ({\n");
+            print_statements (n->child[1]);
+            milprintf ("})");
+            break;
+
         /* statement : 'var' Variable */
         case m_declare:
             milprintf ("var ");
@@ -633,13 +641,6 @@ print_expression (PFmil_t * n)
             milprintf (", ");
             print_type (n->child[1]);
             milprintf (")");
-            break;
-
-        /* expression : 'CATCH ({' expression '})' */
-        case m_catch:
-            milprintf ("CATCH ({\n");
-            print_statements (n->child[0]);
-            milprintf ("})");
             break;
 
         /* expression : expression '.materialize (' expression ')' */

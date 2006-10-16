@@ -180,7 +180,8 @@ enum PFmil_kind_t {
     , m_mposjoin     /**< Positional multijoin with a working set */
     , m_mvaljoin     /**< Multijoin with a working set */
     , m_bat          /**< MonetDB bat() function */
-    , m_catch        /**< MonetDB CATCH() function */
+    , m_catch        /**< MonetDB catch function + assignment 
+                          'a0000 := CATCH()' */
     , m_error        /**< MonetDB ERROR() function */
 
     , m_isnil        /**< Operator `isnil()' */
@@ -665,7 +666,7 @@ PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_bat (const PFmil_t *);
-PFmil_t * PFmil_catch (const PFmil_t *);
+PFmil_t * PFmil_catch (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_error (const PFmil_t *);
 
 /* ---------- staircase join variants ---------- */

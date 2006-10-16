@@ -271,8 +271,8 @@
 /** MonetDB bat() function */
 #define bat(a) PFmil_bat (a)
 
-/** MonetDB CATCH() function */
-#define catch_(a) PFmil_catch (a)
+/** MonetDB catch function + assignment 'a0000 := CATCH()' */
+#define catch_(a,b) PFmil_catch ((a),(b))
 
 /** MonetDB ERROR() function */
 #define error(a) PFmil_error (a)
