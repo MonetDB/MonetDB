@@ -1,41 +1,39 @@
 stdout of test 'rsbox05` in directory 'src/modules/mal` itself:
 
 
-# 09:27:17 >  
-# 09:27:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monet5/program/var/MonetDB5/log" --set mapi_port=41325 --set sql_port=52541 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox05.mal </dev/null
-# 09:27:17 >  
+# 20:14:44 >  
+# 20:14:44 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35008 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox05.mal < /dev/null
+# 20:14:44 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf
-# dbfarm:/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl/ for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ## Simple test that tests whether `unknown atoms' are currectly printed
 ## as strings
 #
 #include rsbox;
 #
-#b := new(:void, :date);
-#insert(b, nil, "1999-05-02":date);
+#b := bat.new(:void, :date);
+#bat.insert(b, nil, "1999-05-02":date);
 #
 #rs := rsbox.create(1, 't');
-#populateColumn(rs, 1, b);
+#resultset.populateColumn(rs, 1, b);
 #
-#writeNextPart(rs);
+#resultset.writeNextPart(rs);
 #
 function user.main():void;	# 0  (main:void)
 # Simple test that tests whether `unknown atoms' are currectly printed 	# 1  (_1:str)
 # as strings 	# 2  (_2:str)
-# ResultSets themselves should never be serialised to disk.  The 	# 3  (_3:str)
-# fromStr and toStr functions merely exist to adhere to the interface 	# 4  (_4:str)
-    b := bat.new(:void,:date);	# 5 CMDBATnew (b:bat[:void,:date])<-(_6:void)(_7:date)
-    bat.insert(b,nil:void,1999-05-02:date);	# 6 BKCinsert_bun (_8:void)<-(b:bat[:void,:date])(_9:void)(_10:date)
-    rs := rsbox.create(1,'t');	# 7 RSBcreate (rs:resultset)<-(_12:int)(_13:chr)
-    resultset.populateColumn(rs,1,b);	# 8 RSpopulateColumn (_14:resultset)<-(rs:resultset)(_12:int)(b:bat[:void,:date])
-    resultset.writeNextPart(rs);	# 9 RSwriteNextPart (_15:int)<-(rs:resultset)
-end main;	# 10  
+    b := bat.new(:void,:date);	# 3 CMDBATnew (b:bat[:void,:date])<-(_4:void)(_5:date)
+    bat.insert(b,nil:void,1999-05-02:date);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:void,:date])(_7:void)(_8:date)
+    rs := rsbox.create(1,'t');	# 5 RSBcreate (rs:resultset)<-(_10:int)(_11:chr)
+    resultset.populateColumn(rs,1,b);	# 6 RSpopulateColumn (_12:resultset)<-(rs:resultset)(_10:int)(b:bat[:void,:date])
+    resultset.writeNextPart(rs);	# 7 RSwriteNextPart (_13:int)<-(rs:resultset)
+end main;	# 8  
 &t
 $id	1
 $columncount	1
@@ -50,7 +48,7 @@ $ctype	S
 %width	0
 [10:1999-05-02
 
-# 09:27:17 >  
-# 09:27:17 >  Done.
-# 09:27:17 >  
+# 20:14:44 >  
+# 20:14:44 >  Done.
+# 20:14:44 >  
 
