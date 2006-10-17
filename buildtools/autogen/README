@@ -11,7 +11,9 @@ If you use the --prefix option or otherwise install autogen in a
 different place, you may have to set your PYTHONPATH environment
 variable accordingly.  The directory which needs to be added is
 <install-dir-prefix>/lib(64)/python<python-version>/site-packages, where
-<python-version is the version of Python used (e.g. 2.4).
+<python-version> is the version of Python used (e.g. 2.4).
+You can automatically get the respective directory via
+"<install-dir-prefix>/`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`".
 
 On Windows, to follow these instructions, Python must of course be
 found in your PATH.  The default location where autogen.py is
