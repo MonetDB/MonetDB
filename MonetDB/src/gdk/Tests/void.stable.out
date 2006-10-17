@@ -374,9 +374,9 @@ v3.info().find("hdense").print();
 v3.access(BAT_WRITE);
 v3.reverse().delete(2);
 v3.info().find("hseqbase").print();
-[ "1@0" ]
+[ "2@0" ]
 v3.info().find("hdense").print();
-[ "0" ]
+[ "1" ]
 
 var x := new(void,void);
 x.seqbase(0@0);

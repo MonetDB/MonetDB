@@ -2463,7 +2463,7 @@ check if duplicated properties are equal
 
 		if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
 			oid o = (b->htype && yy != xx) ? *(oid *) BUNhloc(b, BUNfirst(b)) : oid_nil;
-			GDKerror("BATpropcheck: BAT %s set inconsistent hseqbase: %d != %d => %d\n", BBPname(b->batCacheid), b->hseqbase, bm->tseqbase, o);
+			GDKerror("BATpropcheck: BAT %s(%d) set inconsistent hseqbase: %d != %d => %d\n", BATgetId(b), b->batCacheid, b->hseqbase, bm->tseqbase, o);
 			b->hseqbase = bm->tseqbase = o;
 
 			b->batDirty = TRUE;
@@ -2483,23 +2483,24 @@ check if duplicated properties are equal
 		     ((b->batInserted > b->batBuns->base + b->batBuns->free) << 12) |
 		     ((b->batBuns->size > b->batBuns->maxsize) << 13) |
 		     (((b->batBuns->free > b->batBuns->size) & 
-                       ((b->htype != TYPE_void) | (b->ttype != TYPE_void))) << 14);
+		       ((b->htype != TYPE_void) | (b->ttype != TYPE_void))) << 14) |
+		     (((xx - yy) != BATcount(b)) << 15);
 
 		if (zz) {
-			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d (%o)\n", BBPname(b->batCacheid), zz, zz);
+			GDKfatal("BATpropcheck: BAT %s(%d) has inconsistent descriptor %d (%o)\n", BATgetId(b), b->batCacheid, zz, zz);
 
 		}
 		if (b->hhash!= bm->thash) {
-			GDKerror("BATpropcheck: BAT %s has inconsistent accrefs\n", BBPname(b->batCacheid));
+			GDKerror("BATpropcheck: BAT %s(%d) has inconsistent accrefs\n", BATgetId(b), b->batCacheid);
 			HASHdestroy(b);
 			b->batDirty = TRUE;
 		}
 		if (b->dims.headkey != bm->dims.tailkey) {
-			GDKerror("BATpropcheck: BAT %s recovered hkey\n", BBPname(b->batCacheid));
+			GDKerror("BATpropcheck: BAT %s(%d) recovered hkey\n", BATgetId(b), b->batCacheid);
 			b->dims.headkey = bm->dims.tailkey = b->batDirty = TRUE;
 		}
 		if (BAThdense(b) && !b->hkey) {
-			GDKerror("BATpropcheck: BAT %s is dense but not key!?\n", BBPname(b->batCacheid));
+			GDKerror("BATpropcheck: BAT %s(%d) is dense but not key!?\n", BATgetId(b), b->batCacheid);
 		}
 	}
 	if (BAThdense(b) && !b->hkey)
@@ -2513,23 +2514,31 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 	if (yy > xx && BAThdense(b) && b->htype == TYPE_oid && *(oid*)BUNhloc(b,BUNfirst(b)) != b->hseqbase) {
 		GDKerror("BATpropcheck: BAT %s(%d) seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n", BATgetId(b), b->batCacheid, b->hseqbase, *(oid*)BUNhloc(b, BUNfirst(b)));
 	}
-	if (yy + 1 >= xx) {
+	if (yy + 1 >= xx) { /* BATcount(b) <= 1 */
 		if (ATOMlinear(tpe) && !(b->hsorted & 1)) {
 			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, BATcount(b));
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
-		if (yy > xx && !b->hkey) {
+		if (!b->hkey) {
 			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d tuples is (h)key!\n", BATgetId(b), b->batCacheid, BATcount(b));
 
 			BATkey(b, TRUE);
 		}
-		if (yy > xx && tpe == TYPE_oid && !BAThdense(b)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d) with %d tuples is (h)dense!\n", BATgetId(b), b->batCacheid, BATcount(b));
+		if (tpe == TYPE_oid && !BAThdense(b)) {
+			oid hsb = oid_nil;
+			if (yy == xx) { /* BATcount(b) == 0 */
+				hsb = 0; /* does not really matter */
+			} else {
+				hsb = *(oid *) BUNhloc(b, BUNfirst(b));
+			}
+			if (hsb != oid_nil) {
+				XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d) with %d tuples is (h)dense!\n", BATgetId(b), b->batCacheid, BATcount(b));
 
-			b->hdense = b->batDirtydesc = TRUE;
-			BATseqbase(b, *(oid *) BUNhloc(b, BUNfirst(b)));
+				b->hdense = b->batDirtydesc = TRUE;
+				BATseqbase(b, hsb);
+			}
 		}
 		return b;
 	}
@@ -2724,7 +2733,7 @@ for determining which algebra commands set properties sub-optimally.
 				if ((bv->hhash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
-					THRprintf(GDKerr, "BATpropcheck(%s): could allocate hash table for key test\n", BBPname(b->batCacheid));
+					THRprintf(GDKerr, "BATpropcheck: BAT %s(%d): could allocate hash table for key test\n", BATgetId(b), b->batCacheid);
 				} else {
 					BATmirror(bv)->thash = bv->hhash;
 
@@ -2754,7 +2763,7 @@ for determining which algebra commands set properties sub-optimally.
 					default:
 						@:hash_disprove(,ead)@
 					}
-					BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size " SZFMT "\n", BBPname(b->batCacheid), lim);
+					BATDEBUG THRprintf(GDKerr, "BATpropcheck: BAT %s(%d): used hashtable of size " SZFMT "\n", BATgetId(b), b->batCacheid, lim);
 				}
 				BBPreclaim(bv);
 			}
@@ -2800,26 +2809,26 @@ failed to disprove on exhaustive check => succeeded to prove
       exit:
 	if (mode & BATPROPS_CHECK) {
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
-			GDKwarning("BATpropcheck: BAT %s was incorrectly marked sorted!\n", BATgetId(b));
+			GDKwarning("BATpropcheck: BAT %s(%d) was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid);
 			if (BAThordered(b))
-				GDKwarning("BATpropcheck: BAT %s remains marked radix-clustered on %d bits; not checked!", BATgetId(b), BAThordered(b) >> 1);
+				GDKwarning("BATpropcheck: BAT %s(%d) remains marked radix-clustered on %d bits; not checked!", BATgetId(b), b->batCacheid, BAThordered(b) >> 1);
 		}
 		if (key_bak && !b->hkey)
-			GDKwarning("BATpropcheck: BAT %s was incorrectly marked keyed!\n", BATgetId(b));
+			GDKwarning("BATpropcheck: BAT %s(%d) was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid);
 		if (dense_bak && disprove_dense) {
 			if (!BAThdense(b))
-				GDKwarning("BATpropcheck: BAT %s was incorrectly marked dense!\n", BATgetId(b));
+				GDKwarning("BATpropcheck: BAT %s(%d) was incorrectly marked dense!\n", BATgetId(b), b->batCacheid);
 			if (seq_bak != b->hseqbase)
-				GDKwarning("BATpropcheck: BAT %s had incorrect seqbase!\n", BATgetId(b));
+				GDKwarning("BATpropcheck: BAT %s(%d) had incorrect seqbase!\n", BATgetId(b), b->batCacheid);
 		}
 		XPROPDEBUG {
 			if (!(sorted_bak & 1) && (BAThordered(b) & 1))	/* StM: GDK_SORTED_REV ? */
-				GDKwarning("BATpropcheck: BAT %s was not marked sorted!\n", BATgetId(b));
+				GDKwarning("BATpropcheck: BAT %s(%d) was not marked sorted!\n", BATgetId(b), b->batCacheid);
 			if (!key_bak && b->hkey)
-				GDKwarning("BATpropcheck: BAT %s was not marked keyed!\n", BATgetId(b));
+				GDKwarning("BATpropcheck: BAT %s(%d) was not marked keyed!\n", BATgetId(b), b->batCacheid);
 			if (!dense_bak && disprove_dense) {
 				if (BAThdense(b))
-					GDKwarning("BATpropcheck: BAT %s was not marked dense!\n", BATgetId(b));
+					GDKwarning("BATpropcheck: BAT %s(%d) was not marked dense!\n", BATgetId(b), b->batCacheid);
 			}
 		}
 	}
