@@ -5537,7 +5537,7 @@ sql_session_reset(sql_session *s, int ac)
 void
 sql_trans_all_dependencies(sql_trans *tr)
 {
-	dependency_schem_user(tr);
+	backend_schema_user_dependencies(tr);
 }
 
 int

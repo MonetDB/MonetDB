@@ -28,7 +28,6 @@
 
 
 extern int create_dependency_table(sql_trans *tr, sql_schema *s);
-extern void dependency_schem_user(sql_trans *tr);
 extern void sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
 extern void sql_trans_drop_dependency(sql_trans* tr, int id, int depend_id);
 extern list* sql_trans_get_dependencies(sql_trans* tr, int id);
@@ -128,62 +127,6 @@ sql_trans_get_dependencies(sql_trans* tr, int id)
 /*Load the dependencies of the sys schema*/
 
 /*Schema on users*/
-void
-dependency_schem_user(sql_trans *tr)
-{
-	oid rid_schema, rid_user;
-	int schema_id, user_id;
-	list *users_list;
-	sql_schema *s;
-	sql_table *schemas, *users, *auths;
-	sql_column *sch_id, *sch_name, *auth_id, *auth_name, *users_name, *users_sch;
-
-	s = find_sql_schema(tr, "sys");	
-
-	schemas = find_sql_table(s, "schemas");
-	auths = find_sql_table(s, "auths");
-	users = find_sql_table(s, "db_user_info");
-
-	sch_id = find_sql_column(schemas, "id");
-	sch_name = find_sql_column(schemas, "name");
-	auth_id = find_sql_column(auths, "id");
-	auth_name = find_sql_column(auths, "name");
-	users_name = find_sql_column(users, "name");
-	users_sch = find_sql_column(users, "default_schema");
-
-	rid_schema = column_find_row(tr, sch_name, "sys", NULL);
-
-	if (rid_schema != -1) {
-		schema_id = *(int *) column_find_value(tr, sch_id, rid_schema);
-		users_list = table_select_column(tr, users_name, users_sch, &schema_id, NULL);
-
-		while (users_list->h) {
-			rid_user = column_find_row(tr, auth_name, (char *) users_list->h->data, NULL);
-			user_id =  *(int *) column_find_value(tr, auth_id, rid_user);
-			
-			sql_trans_create_dependency(tr, schema_id, user_id, USER_DEPENDENCY);
-			
-			users_list->h = users_list->h->next;
-		}
-	}
-
-	rid_schema = column_find_row(tr, sch_name, "tmp", NULL);
-
-	if (rid_schema != -1) {
-		schema_id = *(int *) column_find_value(tr, sch_id, rid_schema);
-		users_list = table_select_column(tr, users_name, users_sch, &schema_id);
-
-		while (users_list->h){
-			rid_user = column_find_row(tr,auth_name, (char *) users_list->h->data, NULL);
-			user_id = *(int *) column_find_value(tr, auth_id, rid_user);
-			
-			sql_trans_create_dependency(tr, schema_id, user_id, USER_DEPENDENCY);
-			
-			users_list->h = users_list->h->next;
-		}
-	}
-	list_destroy(users_list);
-}
 
 /*Function on Functions*/
 
