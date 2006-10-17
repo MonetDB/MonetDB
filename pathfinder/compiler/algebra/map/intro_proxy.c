@@ -1975,6 +1975,10 @@ find_conflicts (PFla_op_t *p, PFarray_t *conflict_list)
     else
         SEEN(p) = true;
 
+    if (p->kind == la_rec_arg &&
+        IN(p->sem.rec_arg.base))
+        *(PFla_op_t **) PFarray_add (conflict_list) = p->sem.rec_arg.base;
+
     /* traverse children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         find_conflicts (p->child[i], conflict_list);
