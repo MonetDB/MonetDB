@@ -758,6 +758,8 @@ SQLsetTimer(Client c, int onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
+	q = newStmt(c->curprg->def,"mdb","setFlow");
+	pushBit(c->curprg->def,q,onoff);
 }
 
 void
