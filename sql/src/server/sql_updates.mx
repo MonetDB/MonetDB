@@ -357,11 +357,11 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 				stmt *n;
 
 				n = stmt_dup(inserts[c->c->colnr]->op2.stval);
-				n = stmt_mirrorjoin(n, stmt_dup(missing));
+				n = stmt_semijoin(n, stmt_dup(missing));
 				n = stmt_unop(n, isnil);
 				n = stmt_uselect(n, stmt_bool(1), cmp_equal);
 				if (cur)
-					cur = stmt_mirrorjoin(cur, n);
+					cur = stmt_semijoin(cur, n);
 				else
 					cur = n;
 			}
@@ -545,7 +545,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			if (updates[c->c->colnr]) {
 				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 			} else {
-				upd = stmt_mirrorjoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(updates[updcol]->op2.stval));
+				upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(updates[updcol]->op2.stval));
 			}
 			l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
 			stmt_reljoin_fill(s, l, upd);
@@ -572,7 +572,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 					upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 				} else {
 					upd = stmt_dup(updates[updcol]->op2.stval);
-					upd = stmt_mirrorjoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
+					upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 				}
 				g = grp_create(upd, g, NULL);
 			}
@@ -686,7 +686,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 		} else {
 			upd = stmt_dup(updates[updcol]->op2.stval);
-			upd = stmt_mirrorjoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
+			upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 		}
 
 		if (h) {
@@ -726,14 +726,14 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 		} else {
 			upd = stmt_dup(updates[updcol]->op2.stval);
-			upd = stmt_mirrorjoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
+			upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
 			stmt *nn = stmt_dup(upd);
 
 			nn = stmt_uselect(nn, stmt_atom(atom_general(&c->c->type, NULL, 0)), cmp_equal);
 			if (null)
-				null = stmt_mirrorjoin(null, nn);
+				null = stmt_semijoin(null, nn);
 			else
 				null = nn;
 			nulls = 1;
@@ -800,7 +800,7 @@ scope_add_updated( scope *scp, stmt **updates, sql_table *t, char *on, char *nn)
 		stmt *h = stmt_dup(updates[c->colnr]->op2.stval);
 		stmt *updated = stmt_dup(updates[c->colnr]->op1.stval);
 
-		updated = stmt_mirrorjoin(updated, h);
+		updated = stmt_semijoin(updated, h);
 		updated = stmt_alias(updated, _strdup(on), cn);
 		table_add_column(tv, updated, NULL, c->base.name);
 	}
@@ -1428,7 +1428,7 @@ scope_add_deleted( scope *scp, stmt *deletes, sql_table *t, char *name)
 		char *cn = _strdup(c->base.name);
 		stmt *deleted = stmt_bat(c, stmt_dup(ts), RDONLY);
 
-		deleted = stmt_mirrorjoin(deleted, stmt_dup(deletes));
+		deleted = stmt_semijoin(deleted, stmt_dup(deletes));
 		deleted = stmt_alias(deleted, _strdup(name), cn);
 		table_add_column(tv, deleted, NULL, c->base.name);
 	}

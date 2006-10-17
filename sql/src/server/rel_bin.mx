@@ -904,7 +904,7 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 				predicate = rel2bin_predicate();
 			predicate = stmt_select(predicate, s, cmp_equal);
 		} else if (sel) {
-			sel = stmt_mirrorjoin(sel, s);
+			sel = stmt_semijoin(sel, s);
 		} else {
 			sel = s;
 		}
@@ -1084,7 +1084,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel )
 		for ( ; n; n = n->next) {
 			stmt *s;
 	
-			s = stmt_mirrorjoin(stmt_dup(n->data), stmt_dup(limit));
+			s = stmt_semijoin(stmt_dup(n->data), stmt_dup(limit));
 			list_append(newl, s);
 		}
 	}

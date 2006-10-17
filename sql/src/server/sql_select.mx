@@ -3707,7 +3707,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 
 			order = stmt_limit(order, offset, sn->limit, 0);
 			for (n = s->op1.lval->h; n; n = n->next)
-				list_append(l, stmt_mirrorjoin(stmt_dup(n->data), stmt_dup(order)));
+				list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(order)));
 			stmt_destroy(s);
 			s = stmt_list(l);
 		} else {
@@ -3719,7 +3719,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 				stmt *limit = stmt_limit(stmt_dup(n->data), offset, sn->limit, 0);
 				list_append(l, limit);
 				for ( n = n->next; n; n = n->next)
-					list_append(l, stmt_mirrorjoin(stmt_dup(n->data), stmt_dup(limit)));
+					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(limit)));
 			}
 			stmt_destroy(s);
 			s = stmt_list(l);
