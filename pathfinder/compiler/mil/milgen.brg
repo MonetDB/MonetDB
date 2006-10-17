@@ -408,7 +408,7 @@ env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
 #ifndef NDEBUG
-    execute ( comment ("%s: %s(%s)", 
+    execute ( comment ("    %s: %s(%s)", 
                        PFmil_var_str (v->name), 
                        PFatt_str (att), 
                        PFsimple_type_str (ty)));
@@ -699,7 +699,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     PFmilgen_kids (p, rule, kids);
     
 #ifndef NDEBUG
-    execute (comment ("Begin rule %d (reduce1)", rule));
+    execute (comment ("Begin rule (reduce1): \"%s\"", PFmilgen_string[rule]));
 #endif
 
     switch (rule) {
@@ -799,7 +799,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     }
 
 #ifndef NDEBUG
-    execute (comment ("End rule %d (reduce1)", rule));
+    execute (comment ("End rule (reduce1): \"%s\"", PFmilgen_string[rule]));
     for (unsigned int i = 0; i < PFarray_last (p->env); i++)
         assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
 #endif
@@ -855,7 +855,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
     PFmilgen_kids (p, rule, kids);
     
 #ifndef NDEBUG
-    execute (comment ("Begin rule %d (reduce2)", rule));
+    execute (comment ("Begin rule (reduce2): \"%s\"", PFmilgen_string[rule]));
 #endif
 
     pos_body = 0;
@@ -905,7 +905,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
     }
 
 #ifndef NDEBUG
-    execute (comment ("End rule %d (reduce2)", rule));
+    execute (comment ("End rule (reduce2): \"%s\"", PFmilgen_string[rule]));
     for (unsigned int i = 0; i < PFarray_last (p->env); i++)
         assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
 #endif
@@ -961,7 +961,7 @@ reduce3 (PFpa_op_t * p, int goalnt)
     PFmilgen_kids (p, rule, kids);
     
 #ifndef NDEBUG
-    execute (comment ("Begin rule %d (reduce3)", rule));
+    execute (comment ("Begin rule (reduce3): \"%s\"", PFmilgen_string[rule]));
 #endif
 
     pos_list = 1;
@@ -996,7 +996,7 @@ reduce3 (PFpa_op_t * p, int goalnt)
     }
 
 #ifndef NDEBUG
-    execute (comment ("End rule %d (reduce3)", rule));
+    execute (comment ("End rule (reduce3): \"%s\"", PFmilgen_string[rule]));
 #endif
 
 #ifndef NDEBUG
@@ -1075,7 +1075,7 @@ reduce (PFpa_op_t * p, int goalnt)
     p->env = new_env ();
 
 #ifndef NDEBUG
-    execute (comment ("Begin rule %d", rule));
+    execute (comment ("Begin rule: \"%s\"", PFmilgen_string[rule]));
 #endif
 
     switch (rule) {
@@ -4051,7 +4051,7 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (((env_t *) PFarray_at (kids[c]->env, i))->mvar, 1);
 
 #ifndef NDEBUG
-    execute (comment ("End rule %d", rule));
+    execute (comment ("End rule: \"%s\"", PFmilgen_string[rule]));
 
     for (unsigned int i = 0; i < PFarray_last (p->env); i++)
         assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
