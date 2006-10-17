@@ -2098,6 +2098,7 @@ CMDswizzle(BAT **res, BAT *b, BAT *map)
 	oid *pid = (oid*) BUNtail(map, BUNfirst(map));
 	BUN p, q;
 	BAT *bn;
+	oid sqbs;
 
 	if (map->hseqbase) {
 		GDKerror("[swizzle]: map %s should be a void column starting at 0@0.\n", 
@@ -2151,8 +2152,23 @@ CMDswizzle(BAT **res, BAT *b, BAT *map)
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	if (bn->htype) bn->hdense = bn->hsorted = 0;
-	bn->tdense = bn->tsorted = 0;
+
+	sqbs = n == 0 ? 0 : *(oid*)BUNhead(bn,BUNfirst(bn));
+	bn->hdense = BAThdense(b) || (n < 2 && sqbs != oid_nil);
+	if (bn->hdense) {
+		BATseqbase(bn, sqbs);
+	}
+	bn->hsorted = (bn->hdense || BAThordered(b)&1) ? GDK_SORTED : FALSE;
+	BATkey(bn, bn->hdense || b->hkey != 0);
+
+	sqbs = n == 0 ? 0 : *(oid*)BUNtail(bn,BUNfirst(bn));
+	bn->tdense = n < 2 && sqbs != oid_nil;
+	if (bn->tdense) {
+		BATseqbase(BATmirror(bn), sqbs);
+	}
+	bn->tsorted = bn->tdense ? GDK_SORTED : FALSE;
+	BATkey(BATmirror(bn), bn->tdense || b->tkey != 0);
+
 	return GDK_SUCCEED;
 }
 
