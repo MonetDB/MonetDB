@@ -646,7 +646,9 @@ The latter case is still optimized for the case that the result
 is bat[void,T] for a simple fixed-size type T. In that case we 
 do inline array[T] inserts.
 @c
-BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
+BAT *
+BATcopy(BAT *b, int ht, int tt, int writeable)
+{
 	ssize_t bunstocopy = -1;
 	size_t cnt;
 	BAT *bn = NULL;

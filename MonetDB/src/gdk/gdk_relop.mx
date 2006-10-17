@@ -853,10 +853,17 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 	offset = (ssize_t) (base - r->hseqbase);
 	end = base + rcount;
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
-	seqbase =
-	    (l->htype ==
-	     TYPE_void) ? l->hseqbase : (lcount ? (l->htype ==
-							TYPE_int ? (oid) *(int *) BUNhead(l, BUNfirst(l)) : (l->htype == TYPE_oid ? *(oid *) BUNhead(l, BUNfirst(l)) : (l->htype == TYPE_lng ? (oid) *(lng *) BUNhead(l, BUNfirst(l)) : oid_nil))) : oid_nil);
+	seqbase = (l->htype == TYPE_void) ?
+		  l->hseqbase :
+		  (lcount ?
+		   (l->htype == TYPE_int ?
+		    (oid) *(int *) BUNhead(l, BUNfirst(l)) :
+		    (l->htype == TYPE_oid ?
+		     *(oid *) BUNhead(l, BUNfirst(l)) :
+		     (l->htype == TYPE_lng ?
+		      (oid) *(lng *) BUNhead(l, BUNfirst(l)) :
+		      oid_nil))) :
+		   oid_nil);
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 2\n");
 
