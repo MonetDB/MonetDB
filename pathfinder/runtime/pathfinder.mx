@@ -2013,6 +2013,15 @@ PROC shred_doc(BAT[void,str] locations,
         printf("%c Shredded %d XML documents, total time after commit=%lld.%03llds\n",
                chr(35), nr, /(ms,1000),%(ms,1000));
 }
+ADDHELP("shred_doc", "rittinge", "Oct 2006",
+"PARAMETERS:\n\
+- BAT[void,str] locations: URIs refering to the xml documents to be shredded)\n\
+- BAT[void,str] names:     document names ('alias') in the database\n\
+- BAT[void,str] colnames:  collection names ('alias') in the database\n\
+- BAT[void,lng] pageFrees: percentage of pages left free in the database\n\
+DESCRIPTION:\n\
+Shred multiple xml documents to the internal Pathfinder format.",
+"pathfinder");
 
 PROC shred_doc(str location, 
                str name, 
@@ -2024,18 +2033,28 @@ PROC shred_doc(str location,
               bat(void,str).append(colname).seqbase(0@0), 
               bat(void,lng).append(percentage).seqbase(0@0)); 
 }
+ADDHELP("shred_doc", "rittinge", "Oct 2006",
+"PARAMETERS:\n\
+- str location: URI refering to the xml documents to be shredded)\n\
+- str name:     document name ('alias') in the database\n\
+- str colname:  collection name ('alias') in the database\n\
+- lng pageFree: percentage of pages left free in the database\n\
+DESCRIPTION:\n\
+Shred single xml documents to the internal Pathfinder format.",
+"pathfinder");
 
 PROC shred_doc(str location, 
                str name) : void
 {
     shred_doc(location, name, name, 0LL);
 }
-ADDHELP("shred_doc", "flokstra", "Dec 2004",
+ADDHELP("shred_doc", "rittinge", "Oct 2006",
 "PARAMETERS:\n\
-- str URI containing the xml document to be shredded)\n\
-- str document name ('alias') in database\n\
+- str location: URI containing the xml document to be shredded)\n\
+- str name:     document name ('alias') in database\n\
 DESCRIPTION:\n\
-Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
+Shred single xml document to the internal Pathfinder format.\n\
+(Leave no free pages and do not relate it to a collection.)",
 "pathfinder");
 
 PROC delete_doc(str name) : void
