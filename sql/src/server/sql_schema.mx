@@ -613,6 +613,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
+		exp_kind ek = {type_value, card_relation, TRUE};
 		stmt *sq = NULL;
 		int len = 0;
 		char *subquery = NULL;
@@ -627,7 +628,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 		}
 
-		sq = scope_subquery(sql, NULL, query);
+		sq = scope_subquery(sql, NULL, query, ek );
 		if (!sq)
 			return NULL;
 		if (sql->scanner.view_end) {
@@ -1397,6 +1398,7 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		}
 		return list2stmt(new_columns);
 	} else { /* [col name list] as subquery with or without data */
+		exp_kind ek = {type_value, card_relation, TRUE};
 		stmt *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
 		dlist *column_spec = as_sq->h->data.lval;
@@ -1404,7 +1406,7 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		int with_data = as_sq->h->next->next->data.ival;
 		sql_table *t = NULL; 
 
-		sq = scope_subquery(sql, NULL, subquery);
+		sq = scope_subquery(sql, NULL, subquery, ek);
 		if (!sq)
 			return NULL;
 		/* create table */

@@ -1240,8 +1240,8 @@ stack_push_frame(mvc *sql, char *name)
 void
 stack_pop_until(mvc *sql, int top) 
 {
-	while(--sql->topvars >= top) {
-		sql_var *v = &sql->vars[sql->topvars];
+	while(sql->topvars > top) {
+		sql_var *v = &sql->vars[--sql->topvars];
 
 		_DELETE(v->name);
 		if (v->s) {

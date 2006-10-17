@@ -345,8 +345,10 @@ sqlparse_intern(mvc *m, char *query, modes_t mode)
 		*/
 		if (mode == m_execute)
 			sq = semantic(m, NULL, m->sym);
-		else
-			sq = scope_subquery(m, NULL, m->sym);
+		else {
+			exp_kind ek = {type_value, card_relation, TRUE};
+			sq = scope_subquery(m, NULL, m->sym, ek);
+		}
 	}
 
 	GDKfree(query);

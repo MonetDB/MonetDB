@@ -193,7 +193,7 @@ monet4_drop_user(ptr _mvc, char * user)
 		return FALSE;
 	table_delete(m->session->tr, users, rid);
 	
-	if ( user_id != -1 || schema_id != -1 )
+	if ( user_id != -1 && schema_id != -1 )
                 mvc_drop_dependency(m, schema_id, user_id);	
 
 	return TRUE;	

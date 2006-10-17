@@ -101,6 +101,7 @@ typedef struct relation {
 	char card;	/* 0, 1 (row), 2 aggr, 3 */
 	char processed; /* fully processed or still in the process of building */
 	char subquery;	/* is this part a subquery, this is needed for proper name binding */
+	void *p;	/* properties for the optimizer */
 } sql_rel;
 
 #endif /* SQL_RELATION_H */

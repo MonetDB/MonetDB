@@ -724,8 +724,8 @@ reljoin( mvc *sql, list *l1, list *l2 )
 
 		cmp = stmt_uselect(cmp, stmt_bool(1), cmp_equal);
 
-		l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
-		r = stmt_semijoin(stmt_dup(r), cmp);
+		l = stmt_mirrorjoin(stmt_dup(l), stmt_dup(cmp));
+		r = stmt_mirrorjoin(stmt_dup(r), cmp);
 	}
 	res = stmt_join(stmt_reverse(l), r, cmp_equal);
 	return res;
@@ -737,9 +737,9 @@ push_semijoin( stmt *select, stmt *s )
 {
 	if (select->type != st_select2 && select->type != st_uselect2 &&
 	    select->type != st_select && select->type != st_uselect) 
-		return stmt_semijoin(s, stmt_dup(select));
+		return stmt_mirrorjoin(s, stmt_dup(select));
 
-	s = stmt_semijoin(stmt_dup(select->op1.stval), s);
+	s = stmt_mirrorjoin(stmt_dup(select->op1.stval), s);
 	if (select->type == st_select2) 
 		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
 
@@ -913,11 +913,11 @@ rel2bin(mvc *c, stmt *s)
 				if (ol != l) 
 					list_destroy(l);
 				l = ll;
-				res = (stmt *) list_reduce(l, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+				res = (stmt *) list_reduce(l, (freduce) &stmt_mirrorjoin, (fdup) &stmt_dup);
 			} else {
 				stmt *sel = stmt_dup(n->data); 
 
-				//printf("found a select return a unique value. Lets try to do it first. So we push it through the other selects\n");
+				/*printf("found a select return a unique value. Lets try to do it first. So we push it through the other selects\n");*/
 				list_remove_node(l, n);
 				sel = push_select_stmt(l, sel);
 				res = rel2bin(c, sel);

@@ -32,6 +32,25 @@
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 
+extern sql_exp *exps_bind_column( list *exps, char *cname);
+extern sql_exp *exps_bind_column2( list *exps, char *tname, char *cname);
+
+extern sql_rel *rel_crossproduct(sql_rel *l, sql_rel *r, operator_type join);
+extern void rel_join_add_exp( sql_rel *rel, sql_exp *e);
+
+extern sql_rel *
+rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e);
+extern sql_rel *
+rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e);
+
+extern sql_exp *exp_dup(sql_exp* e);
+extern void exp_destroy(sql_exp* e);
+extern void rel_destroy(sql_rel *rel);
+
+#define append(l,v) list_append(l,v) 
+#define new_exp_list() list_create((fdestroy)&exp_destroy)
+#define new_rel_list() list_create((fdestroy)NULL)
+
 #endif /*_REL_SELECT_H_*/
 @c
 
@@ -43,13 +62,8 @@ extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 #include "sql_env.h"
 #include "rel_dump.h"
 
-#define append(l,v) list_append(l,v) 
-#define new_exp_list() list_create((fdestroy)&exp_destroy)
-#define new_rel_list() list_create((fdestroy)NULL)
 #define new_subtype_list() list_create((fdestroy)&sql_subtype_destroy)
 #define rel_project_exp(e) rel_project(sql, NULL, append(new_exp_list(), e))
-
-static void rel_destroy(sql_rel *rel);
 
 static sql_exp *rel_unop_(mvc *sql, sql_exp *l, sql_schema *s, char *fname);
 static sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname);
@@ -77,7 +91,7 @@ rel_destroy_(sql_rel *rel)
 	}
 }
 
-static void 
+void 
 rel_destroy(sql_rel *rel)
 {
 	if (!rel) 
@@ -98,6 +112,7 @@ rel_create()
 	r->nrcols = 0;
 	r->processed = 0;
 	r->subquery = 0;
+	r->p = NULL;
 	return r;
 }
 
@@ -111,8 +126,14 @@ rel_setsubquery(sql_rel*r)
 	r->subquery = 1;
 }
 
+sql_exp *
+exp_dup(sql_exp *exp)
+{
+	sql_ref_inc(&exp->ref);
+	return exp;
+}
 
-static void 
+void 
 exp_destroy(sql_exp *exp)
 {
 	if (!exp) 
@@ -159,13 +180,6 @@ exp_destroy(sql_exp *exp)
 		printf("TODO: exp_destroy %u\n", exp->type);
 	}
 	_DELETE(exp);
-}
-
-static sql_exp *
-exp_dup(sql_exp *exp)
-{
-	sql_ref_inc(&exp->ref);
-	return exp;
 }
 
 static sql_subtype*
@@ -475,19 +489,6 @@ exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card )
 }
 
 static sql_exp *
-exps_bind_column( list *exps, char *cname ) 
-{
-	node *en;
-
-	for (en = exps->h; en; en = en->next ) {
-		sql_exp *e = en->data;
-		if (e->name && strcmp(e->name, cname) == 0)
-			return e;
-	}
-	return NULL;
-}
-
-static sql_exp *
 basetable_bind_column( sql_rel *rel, char *cname ) 
 {
 	node *cn;
@@ -523,7 +524,20 @@ exp_find_column( sql_exp *e )
 	return e;
 }
 
-static sql_exp *
+sql_exp *
+exps_bind_column( list *exps, char *cname ) 
+{
+	node *en;
+
+	for (en = exps->h; en; en = en->next ) {
+		sql_exp *e = en->data;
+		if (e->name && strcmp(e->name, cname) == 0)
+			return e;
+	}
+	return NULL;
+}
+
+sql_exp *
 exps_bind_column2( list *exps, char *tname, char *cname ) 
 {
 	node *en;
@@ -807,7 +821,8 @@ rel_basetable(sql_table *t, char *tname)
 {
 	sql_rel *rel = rel_create();
 
-	rel->name = (tname)?_strdup(tname):NULL;
+	assert(tname);
+	rel->name = _strdup(tname);
 	rel->l = t;
 	rel->r = NULL;
 	rel->op = op_basetable;
@@ -848,7 +863,7 @@ rel_setop(sql_rel *l, sql_rel *r, operator_type setop)
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_crossproduct(sql_rel *l, sql_rel *r, operator_type join)
 {
 	sql_rel *rel = rel_create();
@@ -863,7 +878,7 @@ rel_crossproduct(sql_rel *l, sql_rel *r, operator_type join)
 	return rel;
 }
 
-static void 
+void 
 rel_join_add_exp( sql_rel *rel, sql_exp *e)
 {
 	assert(is_join(rel->op));
@@ -1038,7 +1053,7 @@ rel_select(sql_rel *l, sql_exp *e)
 	sql_rel *rel = rel_create();
 	
 	assert(rel->op != op_select);
-	rel->name = NULL;
+	rel->name = l->name?_strdup(l->name):NULL;
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_select;
@@ -1189,7 +1204,7 @@ static char * rel_get_name( sql_rel *rel )
 /* ls is the left expression of the select, rs is a simple atom, e is the
    select expression. 
  */
-static sql_rel *
+sql_rel *
 rel_push_select( mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 {
 	list *l = rel_bind_path(sql, rel, ls);
@@ -1243,7 +1258,7 @@ rel_push_select( mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 /* ls and rs are the left and right expression of the join, e is the
    join expression. 
  */
-static sql_rel *
+sql_rel *
 rel_push_join( mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 {
 	list *l = rel_bind_path(sql, rel, ls);
@@ -1610,11 +1625,10 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 static sql_exp *
 rel_var_ref(mvc *sql, char *name, int at)
 {
-	stmt *s;
-
-	if ((s = stack_find_var(sql, name)) != NULL) {
+	if (stack_find_var(sql, name) != NULL) {
+		sql_subtype *tpe = stack_find_type(sql, name);
 		/*int frame = stack_find_frame(sql, name);*/
-		return exp_param(name, tail_type(s));
+		return exp_param(name, tpe);
 	} else if (at) {
 		return sql_error(sql, 02, "SELECT: '@""%s' unknown", name);
 	} else {
@@ -3078,7 +3092,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 
 			if (cond) {
 				result = exp_dup(cond);
-				cond = rel_binop_(sql, cond, exp_atom(atom_general(exp_subtype(cond), NULL, 0)), NULL, "<>" );
+				cond = rel_unop_(sql, rel_unop_(sql, cond, NULL, "isnull"), NULL, "not");
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
@@ -3124,7 +3138,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 
 			if (cond) {
 				result = exp_dup(cond);
-				cond = rel_binop_(sql, cond, exp_atom(atom_general(exp_subtype(cond), NULL, 0)), NULL, "<>");
+				cond = rel_unop_(sql, rel_unop_(sql, cond, NULL, "isnull"), NULL, "not");
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
