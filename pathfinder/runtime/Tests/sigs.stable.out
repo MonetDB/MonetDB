@@ -107,6 +107,8 @@ module 'pathfinder'
 [ "delete_doc(str) : void"			  ]
 [ "pfstart(bit, lng) : void"				  ]
 [ "shred_doc(BAT[void,str], BAT[void,str], BAT[void,str], BAT[void,lng]) : void"  ]
+[ "shred_doc(str, str) : void"							  ]
+[ "shred_doc(str, str, str, lng) : void"					  ]
 [ "xmlcache_add_rule(str, any) : void"		  ]
 [ "xmlcache_del_rule(str) : void"		  ]
 [ "xmlcache_print() : void"			  ]
