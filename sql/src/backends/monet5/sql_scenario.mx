@@ -270,42 +270,6 @@ SQLexitQuery(int *ret){
 	return MAL_SUCCEED;
 }
 
-@-
-It should become possible to initialize the SQL
-from a MAL program to setup an environment to
-debug independently of the parser plans
-produced. This should not touch the IO parameters.
-@c
-str 
-SQLinitAdmin(Client c)
-{
-	str msg;
-	mvc *m;
-	str schema;
-
-	if (!SQLinitialized && (msg = SQLinit(c)) != MAL_SUCCEED)
-		return msg;
-	
-	if ((backend *) c->state[PARSER] == 0) {
-		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
-		/* replace user name with client record setting later on */
-		global_variables(m, "monetdb", "sys");
-		schema = monet5_user_get_def_schema(m, (oid)0);
-		if (!schema) {
-			_DELETE(schema);
-			return throwMessage("SQLparser", "No schema defined\n");
-		}
-		_DELETE(schema);
-		c->state[PARSER] = (void *) backend_create(m, c);
-		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
-		c->state[OPTIMIZE] = m;
-	} else {
-		m = c->state[OPTIMIZE];
-		/* TODO reset global variables */
-	}
-	return MAL_SUCCEED;
-}
-
 str
 SQLinitClient(Client c)
 {
@@ -324,6 +288,8 @@ SQLinitClient(Client c)
 		m = mvc_create((c-mal_clients), 0, SQLdebug, c->fdin, c->fdout);
 
 		global_variables(m, "monetdb", "sys");
+		if (isAdministrator(c))  /* console should return everything */
+			m->reply_size = -1;
 		/* pass through credentials of the user if not console */
 		schema = monet5_user_get_def_schema(m, c->user);
 		if (!schema) {
@@ -384,7 +350,7 @@ str
 SQLinitEnvironment(int *ret)
 {
 	(void) ret;
-	return SQLinitAdmin(MCgetClient());
+	return SQLinitClient(MCgetClient());
 }
 @-
 The cache with plans should be regularly be refreshed.
