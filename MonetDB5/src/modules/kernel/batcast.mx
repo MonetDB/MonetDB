@@ -146,13 +146,14 @@ str CMDconvert_void_@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	@1 *p,*q;
 	@2 *o;
+	size_t xx;
 
 	@:getBATdescriptor(bid, b, "batcalc.@2")@
 	@:resultBAT(@2,"batcalc.@2")@
 	o= (@2*)BUNtail(bn,BUNfirst(bn));
 	p= (@1*)BUNtail(b,BUNfirst(b));
 	q= (@1*)BUNtail(b,BUNlast(b));
-	size_t xx= BUNsize(b);
+	xx= BUNsize(b);
 	while(p<q){
 		*o = *p== @1_nil ?  @2_nil: (@2) *p;
 		p= (@1 *) ((char*)p+xx); o++;
