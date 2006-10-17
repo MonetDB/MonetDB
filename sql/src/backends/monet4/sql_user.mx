@@ -205,7 +205,7 @@ monet4_schema_user_dependencies(ptr _trans)
 	sql_trans *tr = (sql_trans*) _trans;
 	oid rid_schema, rid_user;
         int schema_id, user_id;
-        list *users_list;
+        list *users_list = NULL;
         sql_schema *s;
         sql_table *schemas, *users, *auths;
         sql_column *sch_id, *sch_name, *auth_id, *auth_name, *users_name, *users_sch;
@@ -253,7 +253,8 @@ monet4_schema_user_dependencies(ptr _trans)
                         users_list->h = users_list->h->next;
                 }
         }
-        list_destroy(users_list);
+	if (users_list)
+        	list_destroy(users_list);
 }
 
 
