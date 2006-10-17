@@ -799,19 +799,23 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 
 	if ( (lcount == 0) || (rcount == 0) ){
 		/* below range checking do not support empty bats. so treat them separately (easy) */
-		bn = BATnew(l->htype, r->ttype, 0);
+		@:return_empty_join_result(|l|==0 or |r|==0)@
+@= return_empty_join_result
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: @1 => empty result\n");
+		bn = BATnew(l_orig->htype, r->ttype, 0);
 		bn->hsorted = bn->tsorted = GDK_SORTED;
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
 		if (bn->htype == TYPE_void || bn->htype == TYPE_oid) {
 			bn->hdense = TRUE;
-			BATseqbase(bn, l->hseqbase);
+			BATseqbase(bn, l_orig->hseqbase);
 		}
 		if (bn->ttype == TYPE_void || bn->ttype == TYPE_oid) {
 			bn->tdense = TRUE;
 			BATseqbase(BATmirror(bn), r->tseqbase);
 		}
 		return bn;
+@c
 	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) { 
 		/* idempotent join: always hit and substitute tail with the same value */
 		return VIEWcreate(l);
@@ -825,6 +829,9 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATtordered(l)&1\n");
 		ALGODEBUG THRprintf(GDKout, "r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
 
+		if (r_lo > l_hi || r_hi < l_lo) {
+			@:return_empty_join_result(r_lo > l_hi || r_hi < l_lo)@
+		}
 		if (r_lo > l_lo || r_hi < l_hi) {
 			ALGODEBUG THRprintf(GDKout, "shrinking!\n");
 			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
@@ -832,6 +839,12 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			l = BATselect(l, &r_lo, &r_hi);	/* sorted, so it will be a slice */
 			if (l == NULL)
 				return NULL;
+			if (BATcount(l) == 0) {
+				if (l != l_orig) {
+					BBPreclaim(l);	/* was created as a temporary (slice) select on l */
+				}
+				@:return_empty_join_result(|l|==0)@
+			}
 		}
 	}
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 1\n");
@@ -1004,7 +1017,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 		ALIGNsetH(bn, l);	/* BAThkey(r), remember? */
 	} else {
 		if (hitalways_check) {
-			GDKerror("BATfetchjoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|="SZFMT" != "SZFMT"=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), BATcount(bn), lcount);
 		}
 		bn->hsorted = l->hsorted;
 	}
