@@ -237,7 +237,7 @@ kind_str (int i)
     else if (i == NODE)
         mps_error ("kind_str: NODE is no valid reference.");
     else if (i == VALUES)
-        mps_error ("kind_str: VALUES is no valid reference.");
+        return "";
     else
         mps_error ("kind_str: no valid reference (%i).", i);
 
