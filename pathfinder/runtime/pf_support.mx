@@ -3658,17 +3658,17 @@ static BAT *BATmark_grp( BAT *b, BAT *g, oid *s )
 	trivprop = (BATcount(bn) < 2);
 	ALIGNsetH(bn,b);
 	bn->hsorted = (trivprop ? GDK_SORTED : BAThordered(b));
-	bn->hdense = (trivprop ? TRUE : BAThdense(b));
+	bn->hdense = BAThdense(b) || (trivprop && b->htype==TYPE_oid);
 	if (BAThdense(bn)) {
 		BATseqbase(bn, b->hseqbase);
 	}
-	BATkey(bn, (b->hkey!=0));
+	BATkey(bn, (bn->hdense || b->hkey!=0));
 	bn->tsorted = (trivprop ? GDK_SORTED : FALSE);
-	bn->tdense = (trivprop ? TRUE : FALSE);
+	bn->tdense = trivprop;
 	if (BATtdense(bn)) {
 		BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn, BUNfirst(bn)));
 	}
-	BATkey(BATmirror(bn), FALSE);
+	BATkey(BATmirror(bn), trivprop);
 
 	if (gc) BBPreclaim(gc);
         return bn;
@@ -5095,7 +5095,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 
 	if (!bn->batDirty) bn->batDirty = TRUE;
 	triv_prop = (BATcount(bn) < 2);
-	BATkey(bn,all_key);
+	BATkey(bn,triv_prop||all_key);
 	BATkey(BATmirror(bn),triv_prop);
 	bn->hsorted = GDK_SORTED;
 	bn->tsorted = triv_prop;
