@@ -559,10 +559,28 @@ We have to do it: create a new BAT and put everything into it.
 	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), BATtkey(b));
 	if (BAThdense(b)) {
+		bn->hdense = TRUE;
 		BATseqbase(bn, b->hseqbase + low);
+	} else if (bn->hkey && bn->htype == TYPE_oid) {
+		if (BATcount(bn) == 0) {
+			bn->hdense = TRUE;
+			BATseqbase(bn, 0);
+		} else if (* (oid *) BUNhloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 == * (oid *) BUNhloc(bn, BUNlast(bn) - BUNsize(bn))) {
+			bn->hdense = TRUE;
+			BATseqbase(bn, * (oid *) BUNhloc(bn, BUNfirst(bn)));
+		}
 	}
 	if (BATtdense(b)) {
+		bn->tdense = TRUE;
 		BATseqbase(BATmirror(bn), b->tseqbase + low);
+	} else if (bn->tkey && bn->ttype == TYPE_oid) {
+		if (BATcount(bn) == 0) {
+			bn->tdense = TRUE;
+			BATseqbase(BATmirror(bn), 0);
+		} else if (* (oid *) BUNtloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 == * (oid *) BUNtloc(bn, BUNlast(bn) - BUNsize(bn))) {
+			bn->tdense = TRUE;
+			BATseqbase(BATmirror(bn), * (oid *) BUNtloc(bn, BUNfirst(bn)));
+		}
 	}
 	return bn;
       bunins_failed:
@@ -1496,8 +1514,16 @@ BAT@6sort@3(BAT *b)
 		return BATcopy(b, b->htype, b->ttype, FALSE);
 	}
 	if (BATcount(b) < 2) {
-		/* with less than 2 BUNs, b is ordered, hence we return a read-only copy/view of b */
+		/* with fewer than 2 BUNs, b is ordered, hence we return a read-only copy/view of b */
 		b->hsorted = (bit) GDK_SORTED@2;
+		if (b->htype == TYPE_oid) {
+			oid h = * (oid *) BUNhloc(b, BUNfirst(b));
+
+			if (h != oid_nil) {
+				b->hdense = 1;
+				b->hseqbase = h;
+			}
+		}
 		return BATcopy(b, b->htype, b->ttype, FALSE);
 	}
 	/* a void tail column 0,1,2,3,... must be materialized to oid before sorting */
