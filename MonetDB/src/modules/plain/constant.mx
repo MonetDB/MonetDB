@@ -137,10 +137,10 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 "@1join(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"
 
 .COMMAND @1join ( BAT[void,oid] left, any::1 right ) : any::1 = CMDconstjoinRightCopy;
-"@join(l,r); where the second parameter is a constant; return r (assumes join hits)"
+"@1join(l,r); where the second parameter is a constant; return r (assumes join hits)"
 
 .COMMAND @1join ( oid left, any::1 right ) : any::1 = CMDconstjoinCopy;
-"@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
+"@1join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
 
 .COMMAND @1join ( any::1 left, BAT[any::1,any::2] right ) : any::2 = CMDconst@2joinLeftCopy;
 "@1join(l,r); where the first parameter is a MIL constant. Return a MIL constant."
