@@ -71,6 +71,10 @@ command setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
+command setFlow(b:bit):void
+address MDBsetFlow
+comment "Turn on/off memory flow debugger";
+
 command setMemory(b:bit):void
 address MDBsetMemory
 comment "Turn on/off memory statistics tracing.";
@@ -170,6 +174,7 @@ mdb_export str MDBgetDebug(int *ret);
 mdb_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(int *ret, bit *flag);
+mdb_export str MDBsetFlow(int *ret, bit *flag);
 mdb_export str MDBsetMemory(int *ret, bit *flag);
 mdb_export str MDBsetIO(int *ret, bit *flag);
 mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
@@ -313,6 +318,16 @@ MDBsetTimer(int *ret, bit *flag)
 	(void) ret;
 	cntxt->timerFlag =  *flag;
 	cntxt->timer= GDKusec();
+	return MAL_SUCCEED;
+}
+
+str
+MDBsetFlow(int *ret, bit *flag)
+{
+	Client cntxt = MCgetClient();
+
+	(void) ret;
+	cntxt->flowFlag =  *flag;
 	return MAL_SUCCEED;
 }
 
