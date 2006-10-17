@@ -27,9 +27,13 @@ aligned on the head. Moreover, the head of the BATs
 are limited to :void, which can be cheaply realized using
 the GRPsplit operation.
 @= compareOp
+command batcalc.@2( l:bat[:oid,:@1], r:bat[:oid,:@1]) :bat[:oid,:bit]
+address MTIME@1bat_@3;
 command batcalc.@2( l:bat[:void,:@1], r:bat[:void,:@1]) :bat[:void,:bit]
 address MTIME@1bat_@3
 comment "Compare a bat of @1 against each other";
+command batcalc.@2( l:bat[:oid,:@1], r:@1) :bat[:oid,:bit]
+address MTIME@1bat_@3cst;
 command batcalc.@2( l:bat[:void,:@1], r:@1) :bat[:void,:bit]
 address MTIME@1bat_@3cst
 comment "Compare a bat of @1 against a singleton";
