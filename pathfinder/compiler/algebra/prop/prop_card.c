@@ -118,6 +118,7 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_cross:
+        case la_cross_mvd:
             /* multiply both children cardinalities */
             n->prop->card = L(n)->prop->card * R(n)->prop->card;
             break;
@@ -191,11 +192,6 @@ infer_card (PFla_op_t *n)
             /* infer no properties of the seed */
             n->prop->card = 0;
             break;
-            
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
     }
 }
 

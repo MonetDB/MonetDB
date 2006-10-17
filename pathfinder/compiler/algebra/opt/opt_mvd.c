@@ -1419,12 +1419,44 @@ clean_up_cross (PFla_op_t *p)
         }
 
         /* ensure that we do not generate empty projection lists */
-        assert(count);
+        if (!count) {
+            /* we can throw away the cross product if no column 
+               is required and the cross product does not change
+               the cardinality */
+            if (PFprop_card (L(p)->prop) == 1)
+                *p = *dummy (R(p));
+            else {
+                PFalg_proj_t *proj_list2;
+                proj_list2 = PFmalloc ((R(p)->schema.count - 1)
+                                       * sizeof (*(proj_list)));
+                count = 0;
+                /* split up the columns such that they do not conflict
+                   anymore */
+                assert (R(p)->schema.count > 1);
+                /* throw out the first column of the left child
+                   from the right child */
+                for (j = 0; j < R(p)->schema.count; j++)
+                    if (L(p)->schema.items[0].name !=
+                        R(p)->schema.items[j].name) {
+                        proj_list2[count++] = 
+                            proj (R(p)->schema.items[j].name,
+                                  R(p)->schema.items[j].name);
+                    }
+                /* keep only the first column of the left child */
+                proj_list[0] = proj (L(p)->schema.items[0].name,
+                                     L(p)->schema.items[0].name);
 
-        if (dup_count)
-            *p = *(cross (PFla_project_ (L(p), count, proj_list), R(p)));
-        else
-            *p = *(cross (L(p), R(p)));
+                /* apply project operator on both childs */
+                *p = *(cross (PFla_project_ (L(p), 1, proj_list),
+                              PFla_project_ (R(p), count, proj_list2)));
+            }
+        }
+        else {
+            if (dup_count)
+                *p = *(cross (PFla_project_ (L(p), count, proj_list), R(p)));
+            else
+                *p = *(cross (L(p), R(p)));
+        }
     }
 }
 
@@ -1438,9 +1470,6 @@ PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
        detect more patterns */ 
     PFla_cse (root);
 
-    /* Infer constant property first */
-    PFprop_infer_const (root);
-
     /* Keep track of the ineffective 
        cross product - cross product 
        rewrites and stop if 
@@ -1453,6 +1482,9 @@ PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
         PFla_dag_reset (root);
 
     PFla_dag_reset (root);
+
+    /* Infer cardinality property first */
+    PFprop_infer_card (root);
 
     /* replace clone column aware cross
        products by normal ones */
