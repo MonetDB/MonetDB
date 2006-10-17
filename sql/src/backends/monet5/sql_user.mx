@@ -108,7 +108,7 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 	list_append(l, stmt_sql(_strdup(buf)));
 
 	/* create SQL statement that creates the schema dependency on the user*/
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"dependency_control\" VALUES(%d," SZFMT ", %d);", schema_id, user_id, USER_DEPENDENCY);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"dependencies\" VALUES(%d," SZFMT ", %d);", schema_id, user_id, USER_DEPENDENCY);
 	list_append(l, stmt_sql(_strdup(buf)));
 
 	return(NULL);
