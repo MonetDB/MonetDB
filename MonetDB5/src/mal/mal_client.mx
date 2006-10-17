@@ -129,7 +129,7 @@ usage patterns.
 #ifdef HAVE_SYS_RESOURCE_H
 	struct  rusage resource;	/* trace memory resource usage */
 #endif
-	sht timerFlag, memoryFlag, ioFlag;
+	sht timerFlag, memoryFlag, ioFlag, flowFlag;
 @-
 @}
 @-

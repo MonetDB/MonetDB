@@ -71,6 +71,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
+static void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -1522,7 +1523,44 @@ if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
 			stream_printf(cntxt->fdout,"# %6d bytes",
 				cntxt->memory.arena-oldMemory.arena );
 	}
+	if( cntxt->flowFlag){
+		/* calculate the read/write byte flow */
+		stream_printf(cntxt->fdout,"# ");
+		/* getVolume(cntxt,mb,stk,pci,0);*/
+		/* getVolume(cntxt,mb,stk,pci,1);*/
+		getVolume(cntxt,mb,stk,pci,2);
+	}
 	printTraceCall(cntxt,mb,stk,stkpc);
 	cntxt->timer = GDKusec();
+}
+@-
+For performance evaluation it is handy to know the 
+maximal amount of bytes read/written. The actual
+amount is harder to guess, because it too much
+depends on the operation.
+@c
+void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
+	int i, limit, vol=0;
+	BAT *b;
+	str tag;
+
+	(void) mb;
+	limit= rd? pci->argc: pci->retc;
+	i= rd? pci->retc:0;
+	for(; i<limit; i++)
+	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+		b= BATdescriptor( stk->stk[getArg(pci,i)].val.br.id);
+		if( b==0) continue;
+		vol += BATcount(b) * BUNsize(b);
+		BBPunfix(b->batCacheid);
+	}
+	tag= (rd==0?"r": (rd==1?"w":""));
+	if( vol <1024)
+		stream_printf(cntxt->fdout,"%4dB%s",vol,tag);
+	else
+	if( vol <1024*1024)
+		stream_printf(cntxt->fdout,"%4dK%s",vol/1024,tag);
+	else
+		stream_printf(cntxt->fdout,"%4dM%s",vol/1024/1024,tag);
 }
 @}

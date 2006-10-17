@@ -68,6 +68,8 @@ debug <mask>   -- set the runtime debugging mask
 step       -- advance to next MAL instruction
 module     -- display the module signatures
 finish     -- finish current call
+flow		-- trace memory flow
+io		-- trace io flow
 exit       -- terminate current call
 quit       -- turn off debugging
 list <fcn> -- list current program block
@@ -756,6 +758,11 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			return;
 		}
 		case 'f':	/* finish */
+			if( strncmp("flow",b,4) == 0){
+				skipWord(cntxt, b);
+				cntxt->flowFlag = (sht) atol(b);
+				break;
+			}
 		case 'n':	/* next */
 		case 's':	/* step */
 			if (strncmp("scenarios", b, 3) == 0) {
@@ -1568,6 +1575,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "timer {0,1}-- produce micro-second response time [default=0]\n");
 	stream_printf(f, "trace <var>-- trace assignment to variables\n");
 	stream_printf(f, "io         -- produce page activity trace \n");
+	stream_printf(f, "flow       -- produce memory flow trace \n");
 	stream_printf(f, "help       -- this message\n");
 }
 
