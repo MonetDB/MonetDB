@@ -381,6 +381,7 @@ const COLLECTION       := chr(5);
 const WS               := 0@0; # first container in ws = transient doc container
 const PRE_BASE         := 0@0; # all our PRE bats start at 0 (the super-root)
 const TEMP_DOC         := 0@0; # doc/coll key that is never used for persistent docs
+const OPEN_BASE        := 1000000000@0; # temporary (ws-private) doc-ids start here
 
 const WS_MAXID         := 1LL << 62;
 
@@ -773,6 +774,9 @@ PROC ws_create() : BAT[void,bat]
     ws.fetch(CONT_COLL).seqbase(0@0).insert(0@0,oid_nil);
     ws.fetch(CONT_NAME).seqbase(0@0).insert(0@0,str_nil);
     ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,empty_runtime);
+    ws.fetch(OPEN_NAME).seqbase(OPEN_BASE);
+    ws.fetch(OPEN_DOCID).seqbase(OPEN_BASE);
+    ws.fetch(OPEN_CONT).seqbase(OPEN_BASE);
 
     # add a (bogus) collection root pre=0@0 to the temporary document container
     ws.fetch(PRE_SIZE).fetch(WS).append(int_nil);
@@ -1540,13 +1544,13 @@ and which are available (and need only pinning) is done inside the locked phase 
 wd_doc(). Care was taken to allow large sets of documents that reside in a single
 collection to be opened quickly (i.e. using the proper bulk primitives).
 @mil
-PROC _ws_opendoc(lng wsid,
-                 BAT[void,str] idx_names, 
-                 BAT[void,str] idx_filenames, 
-                 BAT[void,timestamp] idx_timestamps, # inout param
-                 BAT[void,str] idx_colname,    # out param  
-                 BAT[void,oid] idx_coll,       # out param
-                 BAT[void,oid] idx_doc) : void # out param
+PROC _ws_open(lng wsid,
+              BAT[void,str] idx_names, 
+              BAT[void,str] idx_filenames, 
+              BAT[void,timestamp] idx_timestamps, # inout param
+              BAT[void,str] idx_colname,    # out param  
+              BAT[void,oid] idx_coll,       # out param
+              BAT[void,oid] idx_doc) : void # out param
 {
     # get all the doc-id, coll-id's and collection names of known documents. The ones with nil-tail are unknown.
     idx_doc.append(idx_names.outerjoin(reverse(doc_name)));
@@ -1582,12 +1586,13 @@ PROC _ws_opendoc(lng wsid,
     colname_pins.insert(idx_doc.join(doc_collection).join(collection_name).tunique().project(wsid)); 
 }
 
-# fn:doc() support, optimized for loop-lifted execution (e.g. quickly open thousands of documents from a few collections)
-PROC ws_opendoc(BAT[void,BAT] ws,
-                BAT[void,str] idx_names) : BAT[oid,int]
+# this function processes only URIs still unknown to this ws; returns OPEN ids (point into OPEN_* ws entries) 
+PROC ws_open(BAT[void,BAT] ws,
+             BAT[void,str] idx_names) : BAT[void,oid]
 {
     var idx_filenames := copy(idx_names := idx_names.tmark(0@0)).access(BAT_WRITE);
     var wsid := ws_id(ws);
+    var open_docid := ws.fetch(OPEN_DOCID);
 
     # create filenames from URIs (str_nil if not a filename-URI)
     { var selidx_isurl  := [search](idx_names, "://").ord_select(0,int_nil);
@@ -1605,7 +1610,7 @@ PROC ws_opendoc(BAT[void,BAT] ws,
     var idx_coll    := bat(void,oid).seqbase(0@0);
     var idx_doc     := bat(void,oid).seqbase(0@0);
     lock_set(pf_short);
-    var err := CATCH(_ws_opendoc(wsid, idx_names,idx_filenames,idx_timestamps,idx_colname,idx_coll,idx_doc));
+    var err := CATCH(_ws_open(wsid, idx_names,idx_filenames,idx_timestamps,idx_colname,idx_coll,idx_doc));
     lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 
@@ -1615,6 +1620,7 @@ PROC ws_opendoc(BAT[void,BAT] ws,
         var docBAT := [bat]([+](str(int($h)), ws_dsk).reverse().mirror()); # get master bats
         ws_opencoll(ws, docBAT, $t, $h); # collections are loaded one-by-one
     }
+    var idx_cont := idx_coll.outerjoin(reverse(ws.fetch(CONT_COLL))).access(BAT_WRITE);
 
     # all still unknown documents (if any) are shredded one-by-one into separate temporary collections
     var selidx_names := idx_doc.ord_uselect(oid_nil);
@@ -1622,41 +1628,57 @@ PROC ws_opendoc(BAT[void,BAT] ws,
         selidx_names := selidx_names.mirror().leftfetchjoin(idx_names);
         var selidx_unames := selidx_names.reverse().kunique().reverse();
         var commitBAT := bat(void,str);
-        selidx_unames@batloop() {
-            # note that due to caching rules, some temporary documents (e.g. file URLs) become persistent
-            var ts       := idx_timestamps.find($h);
-            var doCommit := not(isnil(ts));
-            var colname  := "::" + str(wsid) + "::" + $t; # unique name contains ws identfier (MT unique)
-            var name     := bat(void,str).append(colname).seqbase(0@0).access(BAT_READ);
-            var location := bat(void,str).append($t).seqbase(0@0).access(BAT_READ);
-            var docBAT   := bat(str,bat); 
-            var coll_oid := shred_into_docBAT(docBAT, location, name, colname, oid_nil, empty_runtime, doCommit, lng(0), ts, stream_nil, wsid);
-            var cont     := ws_opencoll(ws, docBAT, colname, coll_oid);
-            if (doCommit) commitBAT.append([bbpname](docBAT).tmark(0@0));
-            var idx_repl := selidx_names.uselect($t);
-            idx_colname.replace(idx_repl.project(colname));
-            idx_repl     := idx_repl.project(coll_oid);
-            idx_coll.replace(idx_repl);
-            idx_doc.replace(idx_repl);
-        }
+        var docBAT    := bat(str,bat,count(selidx_unames));
+        var locations := selidx_unames.tmark(0@0);
+        var names     := [+]("::" + str(wsid) + "::",  locations);
+        var colname   := names.fetch(0);
+        var ts        := selidx_unames.mirror().leftfetchjoin(idx_timestamps).min();
+        var docid_base:= ifthenelse(isnil(ts), oid(int(OPEN_BASE) + count(open_docid)), oid_nil);
+        var coll_doc  := shred_into_docBAT(docBAT, locations, names, colname, TEMP_DOC, empty_runtime, docid_base, lng(0), ts, stream_nil, wsid); 
+        var cont      := ws_opencoll(ws, docBAT, colname, reverse(coll_doc).fetch(0));
+        if (isnil(docid_base)) commitBAT.append([bbpname](docBAT).tmark(0@0));
+        
         # commit the new collections 
         pf_checkpoint(commitBAT);
+        var doc_oids;
         lock_set(pf_short);
         doc_undo.delete(doc_undo.select(wsid)); # if these remain, ws_destroy() would remove the new documents
         lock_unset(pf_short);
+
+        # set new colname, coll_oid, and doc_oid
+        idx_colname.replace(selidx_names.project(colname));
+        idx_cont.replace(selidx_names.project(cont));
+        idx_doc.replace(selidx_names.leftjoin(locations.reverse()).leftfetchjoin(coll_doc.tmark(0@0)));
     }
 
     # add in bulk all documents to the ws (could be thousands of them!!)
-    var selidx_doc   := idx_doc.tdiff(ws.fetch(OPEN_DOCID)).reverse().kunique().reverse();
-    var selidx_cont  := selidx_doc.mirror().leftfetchjoin(idx_coll).leftjoin(reverse(ws.fetch(CONT_COLL)));
+    var selidx_doc   := idx_doc.tdiff(open_docid).reverse().kunique().reverse();
+    var selidx_cont  := selidx_doc.mirror().leftfetchjoin(idx_cont);
     var selidx_names := selidx_doc.mirror().leftfetchjoin(idx_names);
-    ws.fetch(OPEN_DOCID).append(selidx_doc);
+    open_docid.append(selidx_doc);
     ws.fetch(OPEN_CONT).append(selidx_cont);
     ws.fetch(OPEN_NAME).append(selidx_names);
     ws.fetch(OPEN_NAME).reverse().accbuild("hash");
 
+    return idx_doc.leftjoin(reverse(open_docid));
+}
+
+# fn:doc() support, optimized for loop-lifted execution (e.g. quickly open thousands of documents from a few collections)
+PROC ws_opendoc(BAT[void,BAT] ws,
+                BAT[void,str] idx_names) : BAT[oid,int]
+{
+    idx_names := idx_names.tmark(0@0);
+    var idx_open  := idx_names.outerjoin(reverse(ws.fetch(OPEN_NAME)));
+    var new_idx   := idx_open.uselect(oid_nil).hmark(0@0); 
+    var new_open  := ws_open(ws, new_idx.leftfetchjoin(idx_names));
+    var idx_open_ := reverse(new_idx).leftfetchjoin(new_open);
+    new_idx := nil; # avoid/remove potential view on idx_open before makeing it writable
+    new_open := nil;
+    idx_open.access(BAT_WRITE).replace(idx_open_).access(BAT_READ);
+
     # return the resulting [rootpre,cont] combinations
-    var idx_cont := idx_coll.leftjoin(reverse(ws.fetch(CONT_COLL))).tmark(0@0);
+    var idx_cont := idx_open.leftfetchjoin(ws.fetch(OPEN_CONT));
+    var idx_doc  := idx_open.leftfetchjoin(ws.fetch(OPEN_DOCID));
     var idx_root := idx_cont.project(oid_nil).access(BAT_WRITE);
     tunique(idx_cont)@batloop() {
         var frag_root  := ws.fetch(FRAG_ROOT).fetch($h);
@@ -1667,6 +1689,7 @@ PROC ws_opendoc(BAT[void,BAT] ws,
     }
     return reverse(idx_root).leftfetchjoin(idx_cont);
 }
+
 
 
 @- shredding documents
@@ -1693,19 +1716,20 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
                         lng wsid) : oid
 {
     # get a new persistent doc id
-    var doc_oid    := doc_collection.find(TEMP_DOC);
-    var doc_id     := lng(doc_oid);
-    var doc_id_new := doc_id + lng(count(idx_location));
-    if (doc_id_new > lng(2000000000)) 
+    var docid_base := doc_collection.find(TEMP_DOC);
+    var docid      := lng(docid_base);
+    var docid_new  := docid + lng(count(idx_location));
+    if (docid_new > lng(OPEN_BASE)) 
         ERROR("_shred_doc: out of document id's. Export all documents, and shred them into a new database\n");
-    doc_collection.replace(TEMP_DOC, oid(doc_id_new));
+    doc_collection.replace(TEMP_DOC, oid(docid_new));
 
     if (bit(count(doc_name.tintersect(idx_name)))) 
         ERROR("_shred_doc: document names should be globally unique\n");
 
     # determine the collection id for this doc
-    if (isnil(coll_oid)) {
-        coll_oid := doc_oid;
+    if (isnil(coll_oid)) coll_oid := TEMP_DOC; # StM: requires "Peter-check"!
+    if (coll_oid = TEMP_DOC) {
+        coll_oid := docid_base;
         if (collection_name.texist(colname)) ERROR("_shred_doc: collection name should be globally unique\n");
         collection_name.insert(coll_oid, colname);
         collection_size.insert(coll_oid, sum([batsize](docBAT)));
@@ -1715,22 +1739,21 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
     }
 
     # all documents to the doc_* table
-    var docid_location := idx_location.tmark(doc_oid);
-    var docid_name     := idx_name.tmark(doc_oid);
+    var docid_location := idx_location.tmark(docid_base);
+    var docid_name     := idx_name.tmark(docid_base);
     doc_name.insert(docid_name);
     doc_location.insert(docid_location);
     doc_timestamp.insert(docid_name.project(ts));
     doc_collection.insert(docid_name.project(coll_oid));
     if (not(colname.startsWith("::"))) doc_undo.insert(docid_name.project(wsid));
 
-    return doc_oid;
+    return docid_base;
 }
-
 
 # finish the master bats while holding the collection lock
 PROC __shred_into_docBAT(BAT[str,bat] docBAT, 
                          str colname, 
-                         oid doc_oid, 
+                         oid docid_base, 
                          BAT[lock,bat] runtime,
                          oid pre, 
                          bit updatable, 
@@ -1738,10 +1761,11 @@ PROC __shred_into_docBAT(BAT[str,bat] docBAT,
 {
     # finish shred by setting the new (densely ascending doc_oids in FRAG_ROOT (in order)
     var root_frag := reverse(docBAT.fetch(FRAG_ROOT));
-    root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(doc_oid), true);
+    root_frag.replace(root_frag.ord_uselect(TEMP_DOC).mark(docid_base), true);
 
     # index the new document(s)
-    __runtime_addchunk(wsid, colname, runtime, docBAT.fetch(PRE_NID), docBAT.fetch(PRE_KIND), docBAT.fetch(PRE_PROP), pre, updatable);
+    if (runtime != empty_runtime) 
+      __runtime_addchunk(wsid, colname, runtime, docBAT.fetch(PRE_NID), docBAT.fetch(PRE_KIND), docBAT.fetch(PRE_PROP), pre, updatable);
 }
 
 
@@ -1752,14 +1776,14 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
                        str colname, 
                        oid coll_oid, 
                        BAT[lock,bat] runtime,
-                       bit doCommit, 
+                       oid docid_base, 
                        lng pageFree, 
                        timestamp ts, 
                        Stream s,
-                       lng wsid) : oid
+                       lng wsid) : BAT[oid,oid] 
 {
+    var err;
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
-    var doc_oid := TEMP_DOC;
     var pre := 0@0;
     if (count(docBAT) > 0) pre := oid(count(docBAT.fetch(PRE_SIZE))); 
 
@@ -1771,22 +1795,24 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
         shred_stream(docBAT, s, pageFree, coll_lock);
     }
 
-    if (doCommit) {
+    if (isnil(docid_base)) {
         [save](docBAT); 
 
         # add doc to the database locked
         lock_set(pf_short);
-        var err := CATCH(doc_oid := _shred_into_docBAT(docBAT, location, name, colname, coll_oid, ts, wsid));
+        err := CATCH(docid_base := _shred_into_docBAT(docBAT, location, name, colname, coll_oid, ts, wsid));
         lock_unset(pf_short);
         if (not(isnil(err))) ERROR(err);
-
-        # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
-        if (not(isnil(coll_lock))) lock_set(coll_lock); # never lock a collection inside the short lock
-        err := CATCH(__shred_into_docBAT(docBAT, colname, doc_oid, runtime, pre, >(pageFree,0LL), wsid));
-        if (not(isnil(coll_lock))) lock_unset(coll_lock);
-        if (not(isnil(err))) ERROR(err);
+        if (isnil(coll_oid)) coll_oid := docid_base; # StM: requires "Peter-check"!
+        if (coll_oid = TEMP_DOC) coll_oid := docid_base;
     }
-    return doc_oid;
+    # finish the shred (set doc_oids in FRAG_ROOT, and maintain the nsloc index)
+    if (not(isnil(coll_lock))) lock_set(coll_lock); # never lock a collection inside the short lock
+    err := CATCH(__shred_into_docBAT(docBAT, colname, docid_base, runtime, pre, >(pageFree,0LL), wsid));
+    if (not(isnil(coll_lock))) lock_unset(coll_lock);
+    if (not(isnil(err))) ERROR(err);
+
+    return reverse(location.project(coll_oid).tmark(docid_base));
 }
 
 
@@ -1842,7 +1868,8 @@ PROC shred_doc_base(BAT[void,str] idx_locations,
         var docBAT;
 
         if (isnil(coll_oid)) {
-            docBAT := bat(str,bat); # new collection
+            docBAT := bat(str,bat,count(idx)); # new collection
+            #coll_oid := TEMP_DOC; # StM: requires "Peter-check"!
         } else {
             docBAT := [bat]([+](str(int(coll_oid)), ws_dsk).reverse().mirror()); # append to existing 
 
@@ -1851,7 +1878,7 @@ PROC shred_doc_base(BAT[void,str] idx_locations,
         shred_into_docBAT(docBAT, 
                           idx.leftfetchjoin(idx_locations),
                           idx.leftfetchjoin(idx_names),
-                          colname, coll_oid, runtime, true, percentage, timestamp_nil, s, wsid);
+                          colname, coll_oid, runtime, oid_nil, percentage, timestamp_nil, s, wsid);
 
         commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
     }
