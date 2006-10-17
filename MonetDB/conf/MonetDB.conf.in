@@ -69,6 +69,8 @@ gdk_debug=0
 # 2097152 = show join/select algorithm chosen
 # 4194304 = show result size estimations (for join,select)
 # 8388608 = extended property checking: tells also about not set properties
+#16777216 = disable property checking with join & outerjoin (e.g., for performance measurements)
+#33554432 = disable "cleaning" of freed memory in GDKfree() (e.g., for performance measurements)
 
 # General client Section
 #=======================

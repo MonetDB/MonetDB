@@ -818,6 +818,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 @c
 	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) { 
 		/* idempotent join: always hit and substitute tail with the same value */
+                ALGODEBUG THRprintf(GDKout, "BATfetchjoin: VIEWcreate(l)\n");
 		return VIEWcreate(l);
 	} else if ((BATtordered(l) & 1) && !hitalways) {
 		/* optimization to be able to carry over more void head columns */
@@ -1157,7 +1158,12 @@ BATjoin(BAT *l, BAT *r, size_t estimate)
 	/* allows swapping of left and right input for faster processing */
 	BAT *b = batjoin(l, r, estimate, TRUE);
 
-	BATpropcheck(b, BATPROPS_ALL);
+	/* invest in property check, since we cannot easily derive the result properties,
+	 * but later operations might benefit from / depend on them
+	 * Disable at runtime via `Mserver --debug=16777216` or
+	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 */
+	JOINPROPCHK BATpropcheck(b, BATPROPS_ALL);
 	return b;
 }
 
@@ -1168,7 +1174,12 @@ BATleftjoin(BAT *l, BAT *r, size_t estimate)
 	   and hence maintain order of left head in result */
 	BAT *b = batjoin(l, r, estimate, FALSE);
 
-	BATpropcheck(b, BATPROPS_ALL);
+	/* invest in property check, since we cannot easily derive the result properties,
+	 * but later operations might benefit from / depend on them
+	 * Disable at runtime via `Mserver --debug=16777216` or
+	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 */
+	JOINPROPCHK BATpropcheck(b, BATPROPS_ALL);
 	return b;
 }
 
@@ -1224,9 +1235,16 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	}
 	if (BAThdense(r) == FALSE && BAThordered(r) & 1) {
 		/* use the merge-join; it takes care of the rest */
+		ALGODEBUG THRprintf(GDKout, "BATouterjoin: mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);\n");
 		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);
 		ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
+		/* invest in property check, since we cannot easily derive the result properties,
+		 * but later operations might benefit from / depend on them
+		 * Disable at runtime via `Mserver --debug=16777216` or
+		 * `debugmask(or(debugmask(),16777216));` in MIL.
+		 */
+		JOINPROPCHK BATpropcheck(bn, BATPROPS_ALL);
 		return bn;
 	} else if (bn == NULL) {
 		@:joinbat(JOIN_EQ,BATouterjoin(l,r,oid_nil),estimate)@
@@ -1305,6 +1323,13 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	 */
 	if (!bn)
 		goto bunins_failed;
+
+	/* invest in property check, since we cannot easily derive the result properties,
+	 * but later operations might benefit from / depend on them
+	 * Disable at runtime via `Mserver --debug=16777216` or
+	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 */
+	JOINPROPCHK BATpropcheck(bn, BATPROPS_ALL);
 	return bn;
 
       bunins_failed:

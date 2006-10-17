@@ -2278,6 +2278,9 @@ gdk_export MT_Lock GDKtmLock;
 #define ESTIDEBUG	if (GDKdebug&4194304)
 #define XPROPDEBUG      if (GDKdebug&8388608)
 
+#define JOINPROPCHK     if (!(GDKdebug&16777216))
+#define DEADBEEFCHK     if (!(GDKdebug&33554432))
+
 gdk_export int GDKnrofthreads;
 gdk_export int GDKdebug;
 gdk_export int GDKembedded;

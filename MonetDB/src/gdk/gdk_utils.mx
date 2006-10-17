@@ -1128,9 +1128,12 @@ GDKfree(void *blk)
 		 * been freed and/or trigger some error in case the memory
 		 * is accessed after is has been freed.
 		 * To avoid performance penalty in the "production version",
-		 * we only do this in debugging/development mode.
+		 * we only do this in debugging/development mode (i.e.,
+		 * when configured with --enable-assert).
+		 * Disable at runtime via `Mserver --debug=33554432` or
+		 * `debugmask(or(debugmask(),33554432));` in MIL.
 		 */
-		memset(s,0xDB,size - (8 + (size & 1))); /* 0xDeadBeef */
+		DEADBEEFCHK memset(s,0xDB,size - (8 + (size & 1))); /* 0xDeadBeef */
 #endif
 #ifdef GDK_MEM_MISALIGN
 		if (size & 1)
