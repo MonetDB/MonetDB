@@ -785,6 +785,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 
 			}
 			if (lval) {
+			    if (*(oid *)tl != oid_nil) {
 				size_t l = (*(oid *) tl) + (li ? 0 : 1);
 
 				if (l > b->tseqbase)
@@ -793,6 +794,12 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 					l = 0;
 				if (l > low)
 					low = l;
+			    } else {
+			    	if (equi) {
+			    		/* nil-equi select on dense columns is empty */
+			    		high = low;
+			    	}
+			    }
 			}
 		} else {
 			/* Use probe-based binary search */
