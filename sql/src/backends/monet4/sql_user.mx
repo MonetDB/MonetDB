@@ -220,7 +220,7 @@ monet4_schema_user_dependencies(ptr _trans)
 
         if (rid_schema != -1) {
                 schema_id = *(int *) column_find_value(tr, sch_id, rid_schema);
-                users_list = table_select_column(tr, users_name, users_sch, &schema_id);
+                users_list = table_select_column(tr, users_name, users_sch, &schema_id, NULL);
 
                 while (users_list->h){
                         rid_user = column_find_row(tr,auth_name, (char *) users_list->h->data, NULL);
