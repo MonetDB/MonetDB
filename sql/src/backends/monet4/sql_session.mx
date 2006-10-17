@@ -778,7 +778,7 @@ mvc_login(mvc *m, char *user, char *passwd)
 
 	char *schema = NULL;
 
-	if (m->debug)
+	if (m->debug & 1)
 		fprintf(stderr, "mvc_login %s\n", user);
 
 	mvc_trans(m);
