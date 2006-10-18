@@ -23,17 +23,14 @@
 
 #include "sql_types.h"
 #include "bat_sequence.h"
-#include "bat_logger.h"
 #include "bat_store.h"
-
 
 extern int create_dependency_table(sql_trans *tr, sql_schema *s);
 extern void sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
 extern void sql_trans_drop_dependency(sql_trans* tr, int id, int depend_id);
 extern list* sql_trans_get_dependencies(sql_trans* tr, int id);
+
 #endif /*BAT_DEPEND_H */
-
-
 @c
 
 #include "bat_dependency.h"

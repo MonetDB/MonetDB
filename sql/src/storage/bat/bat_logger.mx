@@ -30,38 +30,17 @@ This module is designed to support efficient logging of SQL database.
 Once loaded, the SQL compiler will insert the proper calls at
 transaction commit to include the changes in the log file.
 
-[The alternative storage structure is an ASCII dump, using a slightly
-enhanced Monet dump file format.
- +batnams[hv,tv]	insert the bun
- -batname[hv,tv]	delete the bun
- *batname[headtype,tailtype]	define a bat
- =bat timestamp		check/update the bat timestamp
-
-possibly use the tag and batname as a mode switcher to reduce the
-the storage, i.e.
-=mybat[int,int]
-+[1,1]
-[2,2]
-[3,3]
--[2,2]
-=yourbat[int,str]
-*yourbat 16824
--[3,3]
-
-]
-
 The key decision to be made by the user is the location of the log file.
 Ideally, it should be stored in fail-safe environment, or at least
 the log and databases should be on separate disk columns.
 
 The current setup assumes that the log directory is a mounted file system. (?)
-This file system may reside on the hardware as the database server
+This file system may reside on the same hardware as the database server
 and therefor the writes are done to the same disk, but could also 
 reside on an other system and then the changes are flushed through the network.  
 The logger works under the assumption that it is called to safeguard
 updates on the database when it has an exclusive lock on
-the latest version. This lock should be guaranteed by calling
-the transaction manager first.
+the latest version. 
 
 Finding the updates applied to a BAT is relatively easy, because each
 BAT contains a delta structure. On commit these changes are
@@ -69,12 +48,10 @@ written to the log file and the delta management is reset. Since each
 commit is written to the same log file, the beginning and end are 
 marked by a log identifier.
 
-Shouldn't you dump the BAT version/timestamp? Updates are only
-allowed when the BAT timestamp does not prohibit this.
-
 A server restart should only (re)process blocks which are completely 
-written to disk. 
-Actually, the logger should issue commit statements after each block.
+written to disk. A log replay therefor ends in a commit or abort on
+the changed bats. Once all logs have been read, the changes to
+the bats are maded persistent, ie a bbp sub-commit is done.
 
 @* Implementation Code 
 @h
@@ -83,13 +60,16 @@ Actually, the logger should issue commit statements after each block.
 
 #include "bat_bm.h"
 
+#define SQLBATSIZE 0
+
+typedef int log_bid;
+
 /* the sequence identifier for sql object */
 #define SQL_OID	1
 /* the sequence identifier for the logger */
 #define LOG_OID	0
 
-extern struct logger *logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm);
-
+extern struct logger *logger_create(int debug, char *logdir, char *dbname, int version);
 extern void logger_destroy(struct logger *logger);
 extern int logger_exit(struct logger *logger);
 extern int logger_restart(struct logger *logger);
@@ -106,6 +86,10 @@ extern int log_tstart(struct logger *logger);
 extern int log_tend(struct logger *logger);
 extern int log_sequence(struct logger *logger, int seq, lng id);
 
+extern log_bid logger_add_bat(struct logger *logger, BAT *b, char *name);
+extern void logger_del_bat(struct logger *logger, log_bid bid);
+extern log_bid logger_find_bat(struct logger *logger, char *name);
+
 #endif /*_SQL_LOGGER_H_*/
 @c
 #include "sql_mem.h"
@@ -117,23 +101,6 @@ The log record encoding is geared at reduced storage space, but
 at the expense of readability. A user can not easily inspect the
 log a posteriori to check what has happened.
 
-Since the logger uses global variables, you could opt to provide the
-exclusive access as part of the logger implementation. 
-This means that a client should use the following scheme
-
-... update bat B ...
-logger.start()
-logger.safe(B)
-... other BAT updates to be saved.
-logger.commit()
-gdk.commit()	# implied by the logger.commit?
-
-[Niels, why not keeping a log per bat, e.g. mybat.log.230102.1 ?
-this simplifies parallel 
-recovery after a crash. Furthermore, the log time stamp can be
-compared with the BAT to see if you need to consult the log file.]
-[Martin, this is not done as keeping multiple files open (or opening
-multiple files) has a too great performance impact.]
 @c
 #define SQL_LOG_START		1
 #define SQL_LOG_END		2
@@ -152,6 +119,9 @@ typedef struct logformat_t {
 
 #define LOGFILE "log"
 
+static int bm_commit(struct logger *logger);
+static void bm_abort(struct logger *logger );
+
 typedef struct logger {
 	int debug;
 	int changes;
@@ -160,8 +130,10 @@ typedef struct logger {
 	int tid;
 	char *dir;
 	stream *log;
-	struct bm *bm;
-	BAT *sql_id; /* int, lng */
+	BAT *sql_id; 	/* int, lng */
+
+	/* Store log_bids (int) to circumvent trouble with reference counting */
+	BAT *bat_name;	/* int, str */
 } logger;
 
 static int
@@ -219,7 +191,7 @@ log_write_string(logger *l, char *n)
 static void
 log_read_clear(logger *logger, char *name)
 {
-	bm_bid bid = bm_find_bat(logger->bm, name);
+	log_bid bid = logger_find_bat(logger, name);
 	BAT *b = bat_descriptor(bid, "log_read_clear");
 
 	if (logger->debug & 1)
@@ -249,7 +221,7 @@ log_read_seq(logger *logger, logformat *l)
 static void
 log_read_updates(logger *logger, logformat *l, char *name)
 {
-	bm_bid bid = bm_find_bat(logger->bm, name);
+	log_bid bid = logger_find_bat(logger, name);
 	BAT *b = bat_descriptor(bid,  "log_read_updates");
 
 	if (logger->debug & 1)
@@ -300,10 +272,10 @@ log_read_updates(logger *logger, logformat *l, char *name)
 static void
 log_read_destroy(logger *logger, char *name)
 {
-	bm_bid bid = bm_find_bat(logger->bm, name);
+	log_bid bid = logger_find_bat(logger, name);
 
 	if (bid)
-		bm_del_bat(logger->bm, bid);
+		logger_del_bat(logger, bid);
 }
 
 static void
@@ -350,7 +322,7 @@ log_read_create(logger *logger, char *name)
 			GDKerror("logger could not create bat (%s,%s,%s,%d,%d)\n", name, ha, ta, ht, tt);
 			return;
 		}
-		bm_add_bat(logger->bm, b, name);
+		logger_add_bat(logger, b, name);
 		bat_destroy(b);
 	}
 	if (buf)
@@ -360,14 +332,14 @@ log_read_create(logger *logger, char *name)
 static void
 log_read_use(logger *logger, logformat *l, char *name)
 {
-	bm_bid bid = l->nr;
+	log_bid bid = l->nr;
 	BAT *b = bat_descriptor(bid, "log_read_use");
 	
 	if (!b) {
 		GDKerror("logger could not use bat (" OIDFMT ") for %s\n", bid, name);
 		return ;
 	}
-	bm_add_bat(logger->bm, b, name);
+	logger_add_bat(logger, b, name);
 }
 
 static void
@@ -376,7 +348,7 @@ tr_commit(logger *logger)
 	if (logger->debug & 1)
 		printf("tr_commit\n");
 
-	bm_commit(logger->bm);
+	bm_commit(logger);
 }
 
 static void
@@ -385,7 +357,7 @@ tr_abort(logger *logger)
 	if (logger->debug & 1)
 		printf("tr_abort\n");
 
-	bm_abort(logger->bm);
+	bm_abort(logger);
 }
 
 static int
@@ -544,7 +516,7 @@ logger_commit(logger *logger)
 
 	BUNdelHead(logger->sql_id, &id, FALSE);
 	BUNins(logger->sql_id, &id, &logger->id, FALSE);
-	return bm_commit(logger->bm);
+	return bm_commit(logger);
 }
 
 static int
@@ -565,15 +537,44 @@ check_version(logger *logger, FILE *fp)
 	return 0;
 }
 
+static
+int bm_subcommit( BAT * catalog ) 
+{
+	BUN p,q;
+	BAT *n = bat_new(TYPE_void, TYPE_str, BATcount(catalog)*2, "subcommit");
+	BAT *b = catalog;
+	int res;
+
+	BATseqbase(n,0);
+	/* first loop over deleted then over current and new */
+	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
+		bat col = *(log_bid*)BUNhead(b,p);
+		str name = BBPname(col);
+		BUNappend(n, name, FALSE);
+	}
+	BATloop(b, p, q) {
+		bat col = *(log_bid*)BUNhead(b,p);
+		str name = BBPname(col);
+		BUNappend(n, name, FALSE);
+	}
+	/* now commit catalog, so its also up to date on disk */
+	BATcommit(catalog); 
+	res = TMsubcommit(n);
+	BBPreclaim(n);
+	return res;
+}
+
 static logger *
-logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
+logger_new(int debug, char *logdir, char *dbname, int version)
 {
 	int id = LOG_OID;
 	logger *logger = NEW(struct logger);
 	FILE *fp;
 	char filename[BUFSIZ];
 	char bak[BUFSIZ];
-	bm_bid sql_id = 0;
+	log_bid sql_id = 0;
+	char *catalog = "sql_catalog";
+	bat sql_catalog = BBPindex("sql_catalog");
 
 	logger->debug = debug;
 	logger->changes = 0;
@@ -584,14 +585,45 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	logger->dir = _strdup(filename);
 	logger->log = NULL;
-	logger->bm = bm;
-	sql_id = bm_find_bat(logger->bm, "sql_id");
+	logger->bat_name = NULL;
+
+	if (sql_catalog == 0) {
+		log_bid bid = 0;
+		logger->bat_name = bat_new(TYPE_int, TYPE_str, SQLBATSIZE, "logger_new");
+		if (debug)
+			printf("create sql_catalog\n");
+
+		bid = logger->bat_name->batCacheid;
+
+		/* Make persistent */
+		bat_incref(bid, TRUE, "logger_new");
+		BATmode(logger->bat_name, PERSISTENT);
+		BBPrename(logger->bat_name->batCacheid, catalog);
+
+		/* insert catalog bat, to make TMsubcommit calls possible */
+		BUNins(logger->bat_name, &bid, catalog, FALSE);
+		if (bm_subcommit(logger->bat_name) != 0)  /* save sql_catalog */
+			return NULL;
+	} else { /* find the persisten sql_catalog. As non persistent bats
+		    require a logical reference we also add a logical 
+		    reference for the persistent bats */
+		BUN p, q;
+		BAT *b = bat_descriptor(sql_catalog, "logger_new");
+
+		logger->bat_name = b;
+		BATloop(b, p, q) {
+			bat bid = *(log_bid *) BUNhead(b, p);
+
+			bat_incref(bid, TRUE, "logger_new");
+		}
+	}
+	sql_id = logger_find_bat(logger, "sql_id");
 	if (sql_id == 0) {
 		logger->sql_id = bat_new(TYPE_int, TYPE_lng, 1, "logger_new");
 		BATmode(logger->sql_id, PERSISTENT);
 		BBPrename(logger->sql_id->batCacheid, "sql_id");
 		
-		bm_add_bat(bm, logger->sql_id, "sql_id");
+		logger_add_bat(logger, logger->sql_id, "sql_id");
 		BUNins(logger->sql_id, &id, &logger->id, FALSE);
 	} else {
 		logger->sql_id = bat_descriptor(sql_id, "logger_new");
@@ -646,9 +678,9 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 }
 
 logger *
-logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm)
+logger_create(int debug, char *logdir, char *dbname, int version)
 {
-	logger *logger = logger_new(debug, logdir, dbname, version, bm);
+	logger *logger = logger_new(debug, logdir, dbname, version);
 	if (!logger)
 		return NULL;
 	if (logger_open(logger) == SQL_ERR) {
@@ -669,8 +701,30 @@ logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 void
 logger_destroy(logger *logger)
 {
-	if (logger->bm)
+	if (logger->bat_name) {
+		BUN p, q;
+		BAT *b = logger->bat_name;
+
 		logger_cleanup(logger);
+
+		/* destroy the deleted */
+/* would be an error ....
+		for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
+			bat bid = *(log_bid *) BUNhead(b, p);
+
+			bat_decref(bid, TRUE);
+		}
+*/
+		/* free resources */
+		BATloop(b, p, q) {
+			bat bid = *(log_bid *) BUNhead(b, p);
+
+			bat_decref(bid, TRUE);
+		}
+
+		bat_decref(logger->bat_name->batCacheid, TRUE);
+		bat_destroy(logger->bat_name);
+	}
 	_DELETE(logger->dir);
 	logger_close(logger);
 	_DELETE(logger);
@@ -976,4 +1030,92 @@ log_sequence(logger *logger, int seq, lng id)
 	    stream_fsync(logger->log))
 		 return SQL_ERR;
 	return SQL_OK;
+}
+
+static int
+bm_commit(logger *logger)
+{
+	BUN p;
+	BAT *b = logger->bat_name;
+
+	/* remove the destroyed bats */
+	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
+		bat bid = *(log_bid *) BUNhead(b, p);
+		BAT *b = bat_descriptor(bid, "bm_commit");
+
+		BATmode(b, TRANSIENT);
+		bat_decref(bid, TRUE);
+		bat_destroy(b);
+	}
+
+	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
+		log_bid bid = *(log_bid *) BUNhead(b, p);
+		BAT *b = bat_descriptor(bid, "bm_commit");
+
+		BATmode(b, PERSISTENT);
+		bat_destroy(b);
+	}
+	if (bm_subcommit(logger->bat_name) != 0)	/* save new bats */
+		return SQL_ERR;
+	return 0;
+}
+
+static void
+bm_abort(logger *logger)
+{
+	BUN p;
+	BAT *b = logger->bat_name;
+
+	/* remove the created bats */
+	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
+		bat bid = *(log_bid *) BUNhead(b, p);
+
+		bat_decref(bid, TRUE);
+	}
+	for (p = BUNfirst(b); p < b->batInserted; p = BUNnext(b, p)) {
+		log_bid bid = *(log_bid *) BUNhead(b, p);
+		BAT *b = bat_descriptor(bid, "bm_abort");
+
+		BATundo(b);
+		BATcommit(b);
+		bat_destroy(b);
+	}
+	BATundo(logger->bat_name);
+}
+
+log_bid
+logger_add_bat(logger *logger, BAT *b, char *name)
+{
+	log_bid bid = logger_find_bat(logger, name);
+
+	if (bid) {
+		if (bid != b->batCacheid) 
+			BUNdelHead(logger->bat_name, &bid, FALSE);
+		else
+			return bid;
+	}
+	bid = b->batCacheid;
+	if (logger->debug)
+		printf("create %s\n", name);
+	BUNins(logger->bat_name, &bid, name, FALSE);
+	bat_incref(bid, TRUE, "logger_add_bat");
+	return bid;
+}
+
+void
+logger_del_bat(logger *logger, log_bid bid)
+{
+	BUNdelHead(logger->bat_name, &bid, FALSE);
+}
+
+log_bid
+logger_find_bat(logger *logger, char *name)
+{
+	BAT *r_bat_name = BATmirror(logger->bat_name);
+	log_bid res = 0;
+	BUN p = BUNfnd(r_bat_name, name);
+
+	if (p) 
+		res = *(log_bid *) BUNtail(r_bat_name, p);
+	return res;
 }
