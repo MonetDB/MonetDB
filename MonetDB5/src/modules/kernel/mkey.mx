@@ -336,7 +336,7 @@ MKEYrotate_xor_hash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ *cur;
 	} else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
 		lng *cur = (lng*) pval;
-		int val = cur[0] ^ cur[1];
+		int val = (int)( cur[0] ^ cur[1]);
 		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ val;
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		str cur = *(str*) pval;

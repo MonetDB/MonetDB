@@ -142,10 +142,10 @@ fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @
 	ptr = get_@1_ptr(*out);
 
 	while (i-- > 0) {
-		register int ni = o;
+		register int ni = (int) o;
 
 		while (ni < n) {
-			register int ri = r;
+			register int ri = (int) r;
 
 			while (ri-- > 0)
 				(*(ptr ++)) = ni * s;
@@ -217,7 +217,7 @@ ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref((int)*ret);
 	return MAL_SUCCEED;
 }
 
@@ -230,7 +230,7 @@ ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offse
 		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref((int)*ret);
 	return MAL_SUCCEED;
 }
 
@@ -248,7 +248,7 @@ ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1
 		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref((int)*ret);
 	return MAL_SUCCEED;
 }
 
@@ -264,7 +264,7 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
+	BBPkeepref((int)*ret);
 	return MAL_SUCCEED;
 }
 @c
