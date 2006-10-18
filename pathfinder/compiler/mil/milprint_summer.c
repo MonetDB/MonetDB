@@ -237,7 +237,7 @@ kind_str (int i)
     else if (i == NODE)
         mps_error ("kind_str: NODE is no valid reference.");
     else if (i == VALUES)
-        return "";
+        mps_error ("kind_str: VALUES is no valid reference.");
     else
         mps_error ("kind_str: no valid reference (%i).", i);
 
@@ -5115,7 +5115,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
     deleteResult_ (f, counter, STR);
     deleteResult_ (f, counter-1, STR);
     deleteResult_ (f, counter-2, STR);
-    return VALUES;
+    return code;
 }
 
 /**
@@ -7170,11 +7170,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                          PFqname (PFns_fn,"subsequence")))
     {
         /* get offset */
-        translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (translate2MIL (f, VALUES, cur_level, counter, RL(args)) == NORMAL)
+                milprintf(f, "item%s := item%s;\n", kind_str(DBL), val_join(DBL));
         saveResult_ (f, ++counter, DBL);
 
         if (fun->arity == 3) { /* get length */
-                translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+                if( translate2MIL (f, VALUES, cur_level, counter, RRL(args)) == NORMAL) 
+                        milprintf(f, "item%s := item%s;\n", kind_str(DBL), val_join(DBL));
                 saveResult_ (f, counter+1, DBL);
         }
         /* get main table */
@@ -7202,7 +7204,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var offset_dbl := item_dbl_%03d.tmark(1@0);\n"
                 "    var offset_oid := leftfetchjoin(iter, [oid](offset_dbl));\n"
                 "    var sel := [>=](pos, offset_oid);\n",
-                        kind_str(code), kind_str(code), counter-1);
+                        kind_str(rc), kind_str(rc), counter-1);
         if (fun->arity == 3)
                 milprintf(f,
                         "    var limit_dbl := item_dbl_%03d.tmark(1@0);\n"
@@ -7223,7 +7225,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "        item%s := ipik.leftfetchjoin(item%s);\n" 
                 "        pos := tmark_grp_unique(iter,ipik);\n"
                 "    }\n"
-                "}\n", kind_str(code), kind_str(code));
+                "}\n", kind_str(rc), kind_str(rc));
 
         if (fun->arity == 3)
                 deleteResult_ (f, counter, DBL);
