@@ -2515,6 +2515,12 @@ reduce (PFpa_op_t * p, int goalnt)
                             count++;
                         }
 
+                /* handle the case that a sort does nothing */
+                if (!PFord_count (p->sem.sortby.required))
+                    execute (assgn (var (v->name),
+                                    mirror (var (env_at (L(p)->env,
+                                                         0).mvar->name))));
+
                 execute (assgn (var (v->name),
                                 reverse (mark (var (v->name), lit_oid (0)))));
 
