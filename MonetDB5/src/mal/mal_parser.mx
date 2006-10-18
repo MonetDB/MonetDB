@@ -779,7 +779,7 @@ charCst(Client cntxt, ValPtr cst)
 			if (isdigit(*v)) {
 				i++; v++;
 			}
-			cst->val.cval[0]= strtol(v,NULL,0);
+			cst->val.cval[0]= (char) strtol(v,NULL,0);
 		}
 	} else {
 		cst->val.cval[0]= *v;
