@@ -4654,12 +4654,13 @@ M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	flt *perc  = (flt*)getArgReference(stk, pci, j++);
 	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
 	int passes = pci->argc - j;
+	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster,b)@
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
-	for (int i = 0; i < passes; i++) {
+	for (i = 0; i < passes; i++) {
 		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
 	}
 	switch(passes) {
@@ -4689,12 +4690,13 @@ M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	flt *perc  = (flt*)getArgReference(stk, pci, j++);
 	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
 	int passes = pci->argc - j;
+	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster_l,b)@
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
-	for (int i = 0; i < passes; i++) {
+	for (i = 0; i < passes; i++) {
 		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
 	}
 	switch(passes) {
@@ -4724,12 +4726,13 @@ M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str nme    = (str )getArgReference(stk, pci, j++);
 	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
 	int passes = pci->argc - j;
+	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster_p,b)@
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
-	for (int i = 0; i < passes; i++) {
+	for (i = 0; i < passes; i++) {
 		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
 	}
 	switch(passes) {
@@ -4758,12 +4761,13 @@ M5_RDX_radix_cluster_lp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *M5b   = (int*)getArgReference(stk, pci, j++);
 	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
 	int passes = pci->argc - j;
+	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster_lp,b)@
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
-	for (int i = 0; i < passes; i++) {
+	for (i = 0; i < passes; i++) {
 		nbits[i] = *(int*)getArgReference(stk, pci, j+i);
 	}
 	switch(passes) {
