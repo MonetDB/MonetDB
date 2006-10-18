@@ -1095,7 +1095,7 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 				val= *(@3*) p @2 *(@3*)t;
 				BUNfastins(bn, h, &val);
 			}
-			p+= xx; t+= yy; 
+			p+= xx; h += yy; t+= yy; 
 		}
 	}
 
