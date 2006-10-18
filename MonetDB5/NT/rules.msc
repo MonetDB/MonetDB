@@ -18,22 +18,23 @@
 PYTHON=python
 YACC=bison -b y -y
 LEX=flex 
+SWIG=swig
 
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
-!IFDEF USE_MINGW
-PTHREAD_INCS = "-I$(PTHREAD)\include" -D_DLL
-PTHREAD_LIBS = "$(PTHREAD)\lib\libpthreadGC2.a"
-!ELSE
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
-!ENDIF
-PHP_SRCDIR = $(TOPDIR)\..\..\php-4.4.0
-PHP_INSTDIR = C:\php-4.4.0-Win32
+PHP_SRCDIR = $(TOPDIR)\..\..\php-5.1.4
+PHP_INSTDIR = C:\php-5
 # for these, also see configure.py
 PHP_PEARDIR = share\pear
-PHP_EXTENSIONDIR = lib\php4
+PHP_EXTENSIONDIR = lib\php5
+
+PYTHONBASE=C:\Python25
+PYTHON_INCS=-I$(PYTHONBASE)\include
+PYTHON_LIBS=$(PYTHONBASE)\libs\python25.lib
+PYTHON_LIBDIR=share\MonetDB\python
 
 # not need to edit beyond here..
 
@@ -58,14 +59,8 @@ pkgincludedir = $(includedir)\$(pkg)
 
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
-!IFDEF USE_MINGW
-SOCKET_LIBS = -lwsock32
-!ELSE
 SOCKET_LIBS = wsock32.lib
-!ENDIF
 
-COMPILE_MEL=1
-COMPILE_MX=1
 MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
 MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
 CP=copy
@@ -101,7 +96,7 @@ MONETDB_MODS="\"/LIBPATH:$(MONETDB_PREFIX)\lib\MonetDB\""
 !ENDIF
 MONET4=yes
 PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
-PHP_LIBS = $(PHP_INSTDIR)\php4ts.lib
+PHP_LIBS = $(PHP_INSTDIR)\php5embed.lib
 # there's nothing special about PEAR on Windows
 HAVE_PEAR = 1
 
@@ -184,10 +179,10 @@ HAVE_PEAR = 1
 .mx.ll:
 	$(MX) $(MXFLAGS) -x L $<
 
-{$(SRCDIR)}.c.$O:
+{$(SRCDIR)}.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-.c.$O:
+.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
 .SUFFIXES: .m .mx .proto_h .mil .glue_c
