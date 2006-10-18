@@ -2072,7 +2072,6 @@ The core cracking routines.
 			ht @6= xx;
 		}
 	}
-	int i;
 	for (i= hil-1; i >= 0; i--){
 		if (*(@1*)tmpt @5){
 			*(oid*)hh = *(oid*)tmph;
@@ -2110,6 +2109,7 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 	int scr_size = idx_last - idx_first +1;
 	int hghShrinked = 0, lowShrinked = 0, scrH, hil, mids, probe, j;
 	int xx = BUNsize(b);
+	int i;
 
 	tmph = BUNhloc(b, BUNptr(b, idx_first));
 	tmpt = BUNtloc(b, BUNptr(b, idx_first));
@@ -2228,11 +2228,15 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 }
 @
 @= OThreeLateCopying
+{
+	BUN tmp1, tmp2;
+	int i;
+
 	while (*(@1*)tmpt @5){
 		tmpt @2= xx;
 		tmph @2= xx;
 	}
-	BUN tmp1 = lt, tmp2;
+	tmp1 = lt;
 	while (tmpt @3 ht){
 		if ( *(@1*)tmpt @4){
 			if (*(@1*)lt @5){
@@ -2278,7 +2282,6 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 			mmids++;	
 		}
 	}
-	int i;
 	for (i= hil-1; i >= 0; i--){
 		if (*(@1*)tmpt @5){
 			*(oid*)hh = *(oid*)tmph;
@@ -2357,6 +2360,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
                 tmph @6= xx;
                 tmpt @6= xx;
         }
+}
 @
 @= OrderedZero
 		while (tmpt @3 ht){ 
@@ -2387,7 +2391,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 		/*Extreme case where all lows(or all but one, or all but two) where in the hgh partition (or opposite depending how we move) */
 		if (ct @6 tmpt ){
 			if (ct == tmpt || ct == tmpt @2 xx) {
-				for (int i=hil; i >=0 ; i--){
+				for (i=hil; i >=0 ; i--){
 					if (*(@1*)tmpt @4 mid){
 						*(oid*)hh = *(oid*)tmph;
 						*(@1 *)ht = *(@1 *)tmpt;
@@ -2397,7 +2401,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 					tmpt @5= xx;
 					tmph @5= xx;
 				}
-				for (int i=hil-1; i >=0 ; i--){
+				for (i=hil-1; i >=0 ; i--){
 					*(oid*)hh = scr_h[i];
 					*(@1 *)ht = scr_t[i];
 					ht @5= xx;
@@ -2406,7 +2410,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 
 			}
 			else{
-				for (int i=hil-1; i >=0 ; i--){
+				for (i=hil-1; i >=0 ; i--){
 					*(oid*)hh = scr_h[i];
 					*(@1 *)ht = scr_t[i];
 					ht @5= xx;
@@ -2424,7 +2428,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 				ht @5= xx;
 			}
 		}
-		for (int i=hil-1; i >=0 ; i--){
+		for (i=hil-1; i >=0 ; i--){
 			if (*(@1*)tmpt @4 mid){
 				*(oid*)hh = *(oid*)tmph;
 				*(@1 *)ht = *(@1 *)tmpt;
@@ -2448,6 +2452,7 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 	lng hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 	int j=0, hil=0, scr_size, probe = 25;
+	int i;
 
 	tmph = BUNhloc(b, BUNptr(b, idx_first));
 	tmpt = BUNtloc(b, BUNptr(b, idx_first));
@@ -2963,8 +2968,9 @@ str
 removeTreeIndex(int *bid){
 	BAT *c;
 	int position = -1;
+	int i;
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
         	if (TreeIndex[i].bid == *bid){
                 	position = i;	
 			break;
@@ -2993,8 +2999,9 @@ str
 appendCrackerBAT(int * bid, int * new){ 
         BAT *c, *u;
 	int position = -1;
+	int i;
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
                         position = i;
 			break;	
@@ -3066,8 +3073,9 @@ struct tempBATNode{
 	struct tempBATNode *tempBATs, *lastBAT, *temp;
 	lng extended = 0, extendedIns = 0, insDone = 0, written, pos, prevPos, lastPos, prevcrsize, insertions, needed;
 	bit takeNext;
+	int i;
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
                         position = i;
 			break;	
@@ -3171,6 +3179,7 @@ struct tempBATNode{
 	*(lng*)curPos = *(lng*)curPos + insDone;
 
 	while (@5){
+		int totalValues;
 	
 		lowIndexNode = findNodeH_@1(*(@1*)BUNtloc(tempBATs->b,BUNfirst(tempBATs->b)), TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
 		if (lowIndexNode == NULL)
@@ -3218,7 +3227,7 @@ struct tempBATNode{
 
 		rscrh = BUNhloc(tempBATs->b,BUNfirst(tempBATs->b));
 		rscrt = BUNtloc(tempBATs->b,BUNfirst(tempBATs->b));
-		int totalValues = tempBATs->values;
+		totalValues = tempBATs->values;
 		/* replace at the and of this chunk all values taken from the beginning of it */
 		for (written=0;written<totalValues;written++){
 			@:newTempBAT(@1)@
@@ -3345,11 +3354,14 @@ lng TstartSearchAVL, TendSearchAVL;
 lng TotalSearchAVL = 0;
 #endif
 
-	for (int i = 0; i < maxCrackMap; i++)
-                if (TreeIndex[i].bid == *bid){
-                        position = i;
-			break;	
-		}
+	{
+		int i;
+		for (i = 0; i < maxCrackMap; i++)
+					if (TreeIndex[i].bid == *bid){
+							position = i;
+				break;	
+			}
+	}
 
         if ((u = BATdescriptor(*new)) == NULL) 
                 return throwMessage("crackers.mergeInsertions_@1", "Cannot access insertions BAT");
@@ -3587,12 +3599,13 @@ movements += remainingIns;
 	lng deletions, remainingDel, buns;
 	struct Node *lowNode, *hghNode, *temp;
 	lng LposCr=0,HposCr=0, LposDe, HposDe, deletesForCurrentPiece=0, holSize;
+	int i;
 
 /*
 	lng T1=0,T2=0, joinCost=0;
 */
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
                         position = i;
 			break;	
@@ -3882,6 +3895,7 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 	@1 min;
 	BUN inst, insLast;
 	int xx, position = -1;
+	int i;
 
 	(void) k;
 
@@ -3891,7 +3905,7 @@ CRKmergeInsertions_PartiallyForget_@1(int *k, int *bid, int *new){
 	if (BATcount(u) == 0)
 		return MAL_SUCCEED;
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
         	if (TreeIndex[i].bid == *bid){
                 	position = i;	
 			break;
@@ -4288,9 +4302,10 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 
 	struct Node *lowNode, *hghNode, *temp, *stopNode; 
 	lng LposCr=0,HposCr=0, LposDe, HposDe, deletesForCurrentPiece=0, holSize, holPiece;
+	int i;
 
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
                         position = i;
 			break;	
@@ -4625,8 +4640,9 @@ verifyCrackerIndex_@1(int *bid){
 	bit prevIncl; 
 	@1 prevVal;
 	int tuples=0, indexEntries=0;
+	int i;
 
-	for (int i = 0; i < maxCrackMap; i++)
+	for (i = 0; i < maxCrackMap; i++)
                 if (TreeIndex[i].bid == *bid){
                         position = i;
 			break;	
@@ -4855,7 +4871,7 @@ the appropriate pieces, update the index and return the result.
 		CRKcrackUnorderedZero_LE_@1(b,*low, cl1, ch1,&vl);
 	if (vl < cl1){
 		/*then the left piece is empty*/
-		gapL = -1;;
+		gapL = -1;
 	}
 	if (vl > ch1){
 		/*then the right piece is empty*/
@@ -5386,13 +5402,14 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 		if we have to crack only one piece, i.e., if our range falls 
 		in one piece only then we crack from cl to ch otherwise we use 
 		the other indices as it is shown */
-	int xx, zz;;
+	int xx, zz;
 	int _vl;
 	bit HBound, foundLow=0, foundHgh=0;
 	int gapL = 1;
 	int gapH = 1;
 	bit rippledDeletions = FALSE;
 	struct Node *lowNode=NULL, *hghNode=NULL, *lowNodeNext=NULL, *temp;
+	BUN idxFirst;
 	
 	if (@2_GT(low,hgh,@3@1))
 		return throwMessage("crackers.crack", "illegal range");
@@ -5497,7 +5514,7 @@ CRKRangeTree_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *in
 
 	xx = BUNsize(b);
 	zz = BUNsize(c);
-	BUN idxFirst = BUNfirst(c);
+	idxFirst = BUNfirst(c);
 
 	/* find out where in the index the low	 falls */
 	
