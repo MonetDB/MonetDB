@@ -1208,7 +1208,7 @@ int zero_or_one(ptr ret, BAT* b)
 		p = BUNtail(b,BUNfirst(b));
 	} else {
 		p = NULL;
-		GDKerror("cardinality violation (%d>1)", c);
+		GDKerror("zero_or_one: cardinality violation (%d>1)", c);
 		return GDK_FAIL;
 	}
 	if (ATOMvarsized(b->ttype)) {

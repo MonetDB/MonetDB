@@ -67,11 +67,11 @@ stderr of test 'insert_values.SF-1578838` in directory 'src/test/BugTracker` its
 
 MAPI  = monetdb@localhost:31810
 QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
-ERROR = !ERROR: cardinality violation (2>1)
+ERROR = !ERROR: zero_or_one: cardinality violation (2>1)
         !ERROR: zero_or_one: operation failed.
 MAPI  = monetdb@localhost:31810
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
-ERROR = !ERROR: cardinality violation (2>1)
+ERROR = !ERROR: zero_or_one: cardinality violation (2>1)
         !ERROR: zero_or_one: operation failed.
 
 # 16:05:55 >  

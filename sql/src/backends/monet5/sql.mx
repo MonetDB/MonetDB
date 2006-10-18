@@ -1294,7 +1294,7 @@ zero_or_one(ptr ret, int *bid)
 	ptr p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("sql.zero_or_one", "Cannot access descriptor");
+		return throwMessage("zero_or_one", "Cannot access descriptor");
 	}
 	c = BATcount(b);
 	if (c == 0) {
@@ -1306,7 +1306,7 @@ zero_or_one(ptr ret, int *bid)
 
 		p = NULL;
                 snprintf(buf, BUFSIZ, "cardinality violation (%d>1)", c);
-		return throwMessage("sql.zero_or_one", buf);
+		return throwMessage("zero_or_one", buf);
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
 	BBPreleaseref(b->batCacheid);
