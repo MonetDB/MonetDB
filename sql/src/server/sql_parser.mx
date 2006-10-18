@@ -291,7 +291,6 @@ int yydebug=1;
 	when_search_statement
 	if_statement
 	while_statement
-	select_stmt
 	select_with_parens
 	select_no_parens
 	simple_select
@@ -573,7 +572,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> AS ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
-%token ARE NAMES CALL LANGUAGE SQL
+%token CALL LANGUAGE SQL
 %token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -1620,7 +1619,7 @@ view_def:
   ;
 
 view_as:
-	select_stmt
+	select_no_parens
   ;
 
 opt_with_check_option:
@@ -1776,9 +1775,9 @@ return_statement:
 
 return_value:
       simple_scalar_exp
-   |  select_stmt
+   |  complex_select
    |  search_condition
-   |  TABLE '(' select_stmt ')'	
+   |  TABLE '(' complex_select ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    |  NULLX 	{ $$ = _newAtomNode( NULL);  }
    ;
@@ -2294,7 +2293,7 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   VALUES row_commalist
 		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
- |  select_stmt
+ |  select_no_parens
  ;
 
 
@@ -2447,28 +2446,8 @@ join_spec:
   ;
 
 sql:
-    select_stmt
- ;
-
-select_stmt:
-    simple_select			%prec UMINUS
-	opt_order_by_clause opt_limit opt_offset
-	{
-	  if ($1->token == SQL_SELECT) {
-		SelectNode *sn = (SelectNode*)$1;
-		sn->orderby = $2;
-		sn->limit = $3;
-		sn->offset = $4;
-		$$ = $1;
-	   } else {
-		$$ = NULL;
-		yyerror("order by and limit are only allowed with a select statement");
-		YYABORT;
-		YYERROR; /* just to silence intel compiler */
-	   }
-	}
- |  set_select				%prec UMINUS
- |  select_with_parens			%prec UMINUS
+    select_no_parens
+ |  '(' select_no_parens ')' 	{ $$ = $2; }
  ;
 
 select_with_parens:
@@ -2478,12 +2457,13 @@ select_with_parens:
 
 simple_select:
     SELECT opt_distinct selection table_exp
+		opt_order_by_clause opt_limit opt_offset
 	{ $$ = newSelectNode( SA, $2, $3, NULL,
 		$4->h->data.sym,
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, -1, -1);
+		$5, NULL, $6, $7);
 	}
     ;
 

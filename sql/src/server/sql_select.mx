@@ -213,7 +213,8 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 	}
 	assert(sn->s.token == SQL_SELECT);
 
-	if (ek.card != card_relation && sn->limit >= 0)
+	if ((ek.card != card_relation && sn->limit >= 0) && 
+	    (ek.card == card_value && sn->limit != 1))
 		return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT");
 
 	if (ek.card != card_relation && sn->orderby)

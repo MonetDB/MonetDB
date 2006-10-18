@@ -293,8 +293,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			if(  f== bindRef){
 				for(j=0; j<k; j++)
 				if( strcmp(sname,bind[j].schema)==0 &&
-					strcmp(tname,bind[j].table)==0 &&
-					bind[j].mode== getVarConstant(mb, getArg(p,4)).val.ival
+				    strcmp(tname,bind[j].table)==0 &&
+				    bind[j].mode == getVarConstant(mb, getArg(p,4)).val.ival
 					){
 					if(bind[j].column && strcmp(cname,bind[j].column)==0)
 						break;

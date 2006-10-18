@@ -282,8 +282,6 @@ scanner_init_keywords(void)
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
 
-	keywords_insert("ARE", ARE);
-	keywords_insert("NAMES", NAMES);
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);

@@ -441,6 +441,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 			tr = sql_trans_destroy(tr);
 		}
 		m->session->tr = tr;	/* restart at savepoint */
+		m->session->status = tr->status;
 		if (tr->name) {
 			_DELETE(tr->name)
 			tr->name = NULL;
