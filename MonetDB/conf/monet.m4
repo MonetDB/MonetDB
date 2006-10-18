@@ -1077,6 +1077,7 @@ AC_DEFUN([AM_MONETDB_OPTIONS],
 dnl Defaults that differ between development trunk and release branch:
 dft_assert=yes
 dft_optimi=no
+dft_warning=no
 
 dnl --with-translatepath
 translatepath=echo
@@ -1298,9 +1299,9 @@ AC_SUBST(NO_INLINE_CFLAGS)
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
 	AC_HELP_STRING([--enable-warning],
-		[enable extended compiler warnings [default=no]]),
+		[enable extended compiler warnings [default=$dft_warning]]),
 	enable_warning=$enableval,
-	enable_warning=no)
+	enable_warning=$dft_warning)
 if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
