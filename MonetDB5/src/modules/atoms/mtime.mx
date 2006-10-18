@@ -2548,7 +2548,7 @@ int
 date_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 {
 	if (*sec > 0) {
-		int delta = -1 * *sec / 86400;
+		int delta = (int)(-1 * *sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -2582,7 +2582,7 @@ int
 date_add_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
 	if (*sec > 0) {
-		int delta = *sec / 86400;
+		int delta = (int) (*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -3746,25 +3746,25 @@ MTIMEsql_month(int *ret, int *t)
 str
 MTIMEsql_day(int *ret, lng *t)
 {
-	*ret= *t/86400;
+	*ret=(int)( *t/86400);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_hours(int *ret, lng *t)
 {
-	*ret= (*t % 86400)/3600;
+	*ret= (int)( (*t % 86400)/3600);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_minutes(int *ret, lng *t)
 {
-	*ret= (*t %3600)/60;
+	*ret= (int)( (*t %3600)/60);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_seconds(int *ret, lng *t)
 {
-	*ret= *t %60;
+	*ret= (int)(*t %60);
 	return MAL_SUCCEED;
 }
 
