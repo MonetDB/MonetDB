@@ -279,7 +279,7 @@ CodeSub(char *call)
 	mx_line = line;
 }
 
-#define blk_size 32766
+#define blk_size (1<<18)
 /* #define blk_size 1024 */
 static char blk[blk_size];
 
