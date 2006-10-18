@@ -471,7 +471,7 @@ sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l)
 
 	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
 		sql_column *c = m->data;
-		stmt *b = stmt_bat(c, stmt_dup(ts), INS);
+		stmt *b = stmt_bat(c, stmt_dup(ts), RDONLY);
 		sql_subtype *tp = tail_type(b);
 
 		inserts[i] = stmt_append(stmt_temp(tp), b);
