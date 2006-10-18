@@ -1883,6 +1883,15 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
     PFord_ordering_t best_order = PFordering ();
 
     /*
+     * If the output does not need to be sorted 
+     * just return the unordered input.
+     */
+    if (PFord_implies (best_order, required)) {
+        add_plan (ret, unordered);
+        return ret;
+    }
+    
+    /*
      * See if we can benefit from some existing sorting
      */
     for (unsigned int j = 0; j < PFord_set_count (unordered->orderings); j++) {
