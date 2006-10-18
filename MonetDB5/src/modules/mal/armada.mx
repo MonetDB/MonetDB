@@ -474,7 +474,7 @@ ARMADAgetStep(str *ret, int *step)
 
 	assert (ARMADA_func_site != NULL);
 
-	if (*step < 0 || *step >= BATcount(ARMADA_func_site))
+	if (*step < 0 || (size_t)*step >= BATcount(ARMADA_func_site))
 		throwf("ArmadaException", "getStep", "step id out of range: %d", *step);
 
 	p = BUNfirst(ARMADA_func_site) + (BUNsize(ARMADA_func_site) * *step);
@@ -511,7 +511,7 @@ ARMADAgetTrail(str *ret, int *trail)
 
 	assert (ARMADA_step_pre != NULL);
 
-	if (*trail < 0 || *trail >= BATcount(ARMADA_step_pre))
+	if (*trail < 0 || (size_t)*trail >= BATcount(ARMADA_step_pre))
 		throwf("ArmadaException", "getTrail", "trail id out of range: %d", *trail);
 
 	/* The step_pre BAT is actually representing a tree, where the pre
