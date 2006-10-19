@@ -553,7 +553,15 @@ pcre_match(bit *ret, str val, str pat)
 		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 		return GDK_FAIL;
 	}
-	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0) >= 0;
+	errpos = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0);
+	if (errpos >= 0)
+		*ret = 1;
+	else if (errpos == -1)
+		*ret = 0;
+	else {
+		GDKerror("pcre.match", "Matching of regular expression (%s) failed with %d", pat, errpos);
+		return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 #endif
