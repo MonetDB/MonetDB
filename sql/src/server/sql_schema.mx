@@ -1557,11 +1557,12 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	if (mvc_bind_schema(sql, name)) {
 		return sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
 	} else {
+		dnode *n;
 		list *table_elements = create_stmt_list();
 		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
 		mvc_create_dependency(sql, sql->user_id, ss->base.id, SCHEMA_DEPENDENCY);
 
-		dnode *n = schema_elements->h;
+		n = schema_elements->h;
 
 		while (n) {
 			stmt *res = NULL;
