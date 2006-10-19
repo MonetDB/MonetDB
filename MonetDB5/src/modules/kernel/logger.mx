@@ -101,6 +101,16 @@ comment "Log the inserts in the WAL (return success)"
 #define LOG_OK 0
 #define LOG_ERR -1
 
+#ifdef WIN32
+#ifndef LIBLOGGER
+#define logger_export extern __declspec(dllimport)
+#else
+#define logger_export extern __declspec(dllexport)
+#endif
+#else
+#define logger_export extern
+#endif
+
 extern struct logger *logger_create(int debug, char *logdir, char *dbname, int version);
 
 extern void logger_destroy(struct logger *logger);
@@ -1006,6 +1016,14 @@ The remainder is the M5 wrapper code.
 @c
 #include "mal.h"
 #include "mal_exception.h"
+
+logger_export str LOGGERinit(bit *ret, str *dir, str *dbname);
+logger_export str LOGGERinitDefault(bit *ret);
+logger_export str LOGGERstartTransaction(oid *tid, bit *update);
+logger_export str LOGGERcommitTransaction(bit *success, oid *tid);
+logger_export str LOGGERdelta(bit *success, int *bid, int *delta, oid *tid);
+logger_export str LOGGERinsert(bit *success, int *bid, oid *tid);
+
 str
 LOGGERstartTransaction(oid *tid, bit *update){
 	if(trans_start( tid, update) == GDK_FAIL)

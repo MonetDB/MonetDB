@@ -35,7 +35,8 @@ comment "Create a BAT with a normal integer distribution";
 @+ Experimentation Gimmicks
 @- Data Generation
 @h
-#ifdef _MBM_H_
+#ifndef _MBM_H_
+#define _MBM_H_
 #include <mal.h>
 
 #ifdef WIN32
@@ -56,6 +57,7 @@ mb_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev
 #include <mal.h>
 #include <math.h>
 #include <mal_exception.h>
+#include "microbenchmark.h"
 
 int
 BATuniform(BAT **bn, oid *base, int *size, int *domain)
