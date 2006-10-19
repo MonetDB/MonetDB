@@ -57,16 +57,7 @@ comment "Compare a bat of @1 against a singleton";
 #include "ctype.h"
 #include "mal_exception.h"
 #include "mtime.h"
-
-#ifdef WIN32
-#ifndef LIBBATMTIME
-#define batmtime_export extern __declspec(dllimport)
-#else
-#define batmtime_export extern __declspec(dllexport)
-#endif
-#else
-#define batmtime_export extern
-#endif
+#include "batmtime.h"
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
@@ -113,8 +104,8 @@ implementation for shifted window arithmetic as well.
 	return throwMessage("batcalc.@3", "requires bats of identical size");
 
 @= implDef
-batmtime_export str MTIME@1bat_@3(int *ret, int *l, @1 *r);
-batmtime_export str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst);
+batmtime_export str MTIME@1bat_@2(int *ret, int *l, int *r);
+batmtime_export str MTIME@1bat_@2cst(int *ret, int *l, @1 *cst);
 
 @= implCmpOp
 str MTIME@1bat_@3(int *ret, int *l, int *r)
@@ -188,6 +179,16 @@ The implementation section.
 @:implCmpOp(@1,>=,GE)@
 
 @h
+#ifdef WIN32
+#ifndef LIBBATMTIME
+#define batmtime_export extern __declspec(dllimport)
+#else
+#define batmtime_export extern __declspec(dllexport)
+#endif
+#else
+#define batmtime_export extern
+#endif
+
 @:implCmpGrpDef(date)@
 @:implCmpGrpDef(daytime)@
 @:implCmpGrpDef(timestamp)@
