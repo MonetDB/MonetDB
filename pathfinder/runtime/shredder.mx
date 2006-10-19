@@ -416,7 +416,7 @@ shredBAT_setcount(shredBAT *sb,
 static size_t 
 shredBAT_newsize(shredBAT *sb, size_t newsize)
 {
-    newsize = MAX(sb->size, newsize) + MAX(BATTINY, newsize/4);
+    newsize = MAX(sb->size, newsize + MAX(BATTINY, newsize/4));
     if (sb->def->table == PRE_SIZE && (newsize & REMAP_PAGE_MASK)) { 
         /* align rid bats on the page-size */
         newsize += REMAP_PAGE_SIZE - (newsize & REMAP_PAGE_MASK);
