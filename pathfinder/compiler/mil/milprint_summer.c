@@ -4962,160 +4962,395 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 }
 
 /**
- * fn_replace_translate translates the builtin functions fn:replace and fn:translate
+ * fn_matches the builtin functions fn:matches
+ * @param f the Stream the MIL code is printed to
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param fun the function information
+ * @param args the head of the function argument list
+ */
+static int
+fn_matches (opt_t *f, int cur_level, int counter, 
+            PFfun_t *fun, PFcnode_t *args)
+{
+    char* item_ext = kind_str(STR);
+    int hasFlags = fun->arity == 3 ? 1 : 0;
+    PFcnode_t *flags_node;
+
+    /* translate 'input'-s */
+    if (translate2MIL(f, VALUES, cur_level, counter, L(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    /* translate 'pattern'-s */
+    if (translate2MIL(f, VALUES, cur_level, counter, RL(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    /* translate 'flags'-s */
+    if (hasFlags)
+        flags_node = RRL(args);
+    else 
+        flags_node = PFcore_str("");
+    if (translate2MIL(f, VALUES, cur_level, counter, flags_node) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    milprintf(f,
+            "{ # fn:matches (string?, string%s) as boolean\n"
+            "var inputs;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "inputs := res_mu.fetch(1);\n"
+            "} else {\n"
+            "inputs := item%s%03u.materialize(ipik%03u);\n"
+            "}\n",
+            hasFlags ? ", string":"",
+            counter-1, cur_level, 
+            cur_level, counter-1,
+            counter-1, item_ext, counter-1,
+            item_ext, counter-1, counter-1);
+    milprintf(f,
+            "var patterns;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "patterns := res_mu.fetch(1);\n"
+            "} else {\n"
+            "patterns := item%s%03u.materialize(ipik%03u);\n"
+            "}\n"
+            "# replace empty sequences with empty strings\n"
+            "inputs := outerjoin(patterns.mirror(), inputs);\n"
+            "inputs := [ifthenelse]([isnil](inputs), \"\", inputs);\n",
+            counter, cur_level, 
+            cur_level, counter,
+            counter, item_ext, counter,
+            item_ext, counter, counter);
+    milprintf(f,
+            "var flagss;\n"
+            "if (ipik.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter, difference, item%s, \"\");\n"
+            "flagss := res_mu.fetch(1);\n"
+            "} else {\n"
+            "flagss := item%s;\n"
+            "}\n"
+            "var chk;\n"
+            "var chkPtn := \"[^imsx]\";\n"
+            "var pcre_err := CATCH({ chk := [pcre_match](flagss, const chkPtn); });\n"
+            "if(not(isnil(pcre_err))) {\n"
+            "   ERROR(\"Should not happen: error occurred while checking flags: \" + pcre_err);\n"
+            "}\n"
+            "if(chk.texist(true)){\n"
+            "    ERROR(\"err:FORX0001: flags of fn:matches containing undefined character(s)\");\n"
+            "}\n"
+            "chk := nil;\n"
+            "chkPtn := nil;\n"
+            "pcre_err := nil;\n",
+            cur_level,
+            cur_level,
+            item_ext,
+            item_ext);
+    milprintf(f,
+            "item := [pcre_match](inputs,patterns%s).[oid]();\n"
+            "iter := loop%03u.tmark(0@0);\n"
+            "ipik := iter;\n"
+            "pos := 1@0;\n"
+            "kind := BOOL;\n"
+            "inputs := nil;\n"
+            "patterns := nil;\n"
+            "flagss := nil;\n"
+            "} # end of fn:matches (string?, string%s) as boolean\n",
+            hasFlags ? ", flagss": "",
+            cur_level,
+            hasFlags ? ", string":"");
+
+    deleteResult_ (f, counter, STR);
+    deleteResult_ (f, counter-1, STR);
+    return NORMAL;
+}
+
+/**
+ * fn_replace the builtin functions fn:replace
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
  * @param cur_level the level of the for-scope
  * @param counter the actual offset of saved variables
  * @param fun the function information
  * @param args the head of the function argument list
- * @param xqfunc the name of the XQuery function being translated
- * @param milfunc the name of the MIL function to be called
  */
 static int
-fn_replace_translate (opt_t *f, int code, int cur_level, int counter, 
-            PFfun_t *fun, PFcnode_t *args,
-            const char *xqfunc, const char *milfunc)
+fn_replace (opt_t *f, int code, int cur_level, int counter, 
+            PFfun_t *fun, PFcnode_t *args)
 {
-    char* item_ext = kind_str(STR); /* return "_str_"; */
-    int opt_arity = fun->arity == 4 ? 1 : 0; /* Do you have the optional arity? */
-    int replace = strcmp(xqfunc, "replace") == 0 ? 1 : 0;
+    char* item_ext = kind_str(STR);
+    int hasFlags = fun->arity == 4 ? 1 : 0;
     PFcnode_t *flags_node;
 
+    /* translate 'input'-s */
     if (translate2MIL (f, VALUES, cur_level, counter, L(args)) == NORMAL)
     {
         milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
     }
-
     counter++;
     saveResult_ (f, counter, STR);
 
+    /* translate 'pattern'-s */
     if (translate2MIL (f, VALUES, cur_level, counter, RL(args)) == NORMAL)
     {
         milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
     }
-
     counter++;
     saveResult_ (f, counter, STR);
 
+    /* translate 'replacement'-s */
     if (translate2MIL (f, VALUES, cur_level, counter, RRL(args)) == NORMAL)
     {
         milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
     }
-
     counter++;
     saveResult_ (f, counter, STR);
 
-    if (replace)
+    /* translate 'flags'-s */
+    if (hasFlags)
+        flags_node = RRRL(args);
+    else
+        flags_node = PFcore_str("");
+    if (translate2MIL (f, VALUES, cur_level, counter, flags_node) == NORMAL)
     {
-        if (opt_arity)
-        {
-            flags_node = RRRL(args);
-        }
-        else{
-            flags_node = PFcore_str("");
-        }
-
-        if (translate2MIL (f, VALUES, cur_level, counter, flags_node) == NORMAL)
-        {
-            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
-        }
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
     }
 
+    milprintf(f,
+            "{ # fn:replace (string?, string, string%s) as string\n"
+            "var inputs;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "inputs := res_mu.fetch(1);\n"
+            "} else {\n"
+            "inputs := item%s%03u.materialize(ipik%03u);\n"
+            "}\n",
+            hasFlags ? ", string" : "",
+            counter-2, cur_level, 
+            cur_level, counter-2,
+            counter-2, item_ext, counter-2,
+            item_ext, counter-2, counter-2);
+    milprintf(f,
+            "var patterns;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "patterns := res_mu.fetch(1);\n"
+            "} else {\n"
+            "patterns := item%s%03u.materialize(ipik%03u);\n"
+            "}\n"
+            "# replace empty sequences with empty strings\n"
+            "inputs := outerjoin(patterns.mirror(), inputs);\n"
+            "inputs := [ifthenelse]([isnil](inputs), \"\", inputs);\n",
+            counter-1, cur_level, 
+            cur_level, counter-1,
+            counter-1, item_ext, counter-1,
+            item_ext, counter-1, counter-1);
+    milprintf(f,
+            "var replacements;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "replacements := res_mu.fetch(1);\n"
+            "} else {\n"
+            "replacements := item%s%03u.materialize(ipik%03u);\n"
+            "}\n"
+
+            "var chk;\n"
+            "var chkPtn := \"[$][0-9]\";\n"
+            "var pcre_err := CATCH({ chk := [pcre_match](replacements, const chkPtn); });\n"
+            "if(not(isnil(pcre_err))) {\n"
+            "   ERROR(\"Should not happen: error occurred while checking replacements: \" + pcre_err);\n"
+            "}\n"
+            "if(chk.texist(true)){\n"
+            "    ERROR(\"Variables in replacements are not supported yet\");\n"
+            "}\n"
+            "chk := nil;\n",
+            counter, cur_level, 
+            cur_level, counter,
+            counter, item_ext, counter,
+            item_ext, counter, counter);
+    milprintf(f,
+            "var flagss;\n"
+            "if (ipik.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter, difference, item%s, \"\");\n"
+            "flagss := res_mu.fetch(1);\n"
+            "} else {\n"
+            "flagss := item%s;\n"
+            "}\n"
+            "chkPtn := \"[^imsx]\";\n"
+            "pcre_err := CATCH({ chk := [pcre_match](flagss, const chkPtn); });\n"
+            "if(not(isnil(pcre_err))) {\n"
+            "   ERROR(\"Should not happen: error occurred while checking flags: \" + pcre_err);\n"
+            "}\n"
+            "if(chk.texist(true)){\n"
+            "    ERROR(\"err:FORX0001: flags of fn:replace containing undefined character(s)\");\n"
+            "}\n"
+            "chk := nil;\n"
+            "chkPtn := nil;\n"
+            "pcre_err := nil;\n",
+            cur_level,
+            cur_level,
+            item_ext,
+            item_ext);
 
     milprintf(f,
-                "{ # fn:%s (string?, string, string%s) as string\n"
-                "var strings;\n"
-                "if (ipik%03u.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
-                "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
-                "strings := res_mu.fetch(1);\n"
-                "} else {\n"
-                "strings := item%s%03u.materialize(ipik%03u);\n"
-                "}\n",
-                xqfunc, opt_arity ? ", string" : "",
-                counter-2, cur_level, 
-                cur_level, counter-2,
-                counter-2, item_ext, counter-2,
-		item_ext, counter-2, counter-2);
-    milprintf(f,
-                "var patterns;\n"
-                "if (ipik%03u.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
-                "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
-                "patterns := res_mu.fetch(1);\n"
-                "} else {\n"
-                "patterns := item%s%03u.materialize(ipik%03u);\n"
-                "}\n"
-                "# replace empty sequences with empty strings\n"
-                "strings := outerjoin(patterns.mirror(), strings);\n"
-                "strings := [ifthenelse]([isnil](strings), \"\", strings);\n",
-                counter-1, cur_level, 
-                cur_level, counter-1,
-                counter-1, item_ext, counter-1,
-                item_ext, counter-1, counter-1);
-
-    milprintf(f,
-                "var replacements;\n"
-                "if (ipik%03u.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
-                "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
-                "replacements := res_mu.fetch(1);\n"
-                "} else {\n"
-                "replacements := item%s%03u;\n"
-                "}\n",
-                counter, cur_level, 
-                cur_level, counter,
-                counter, item_ext, counter,
-                item_ext, counter);
-
-    if (replace)
-    {
-        milprintf(f,
-                "var flagss;\n"
-                "if (ipik.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := reverse(loop%03u.tdiff(iter));\n"
-                "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter, difference, item%s, \"\");\n"
-                "flagss := res_mu.fetch(1);\n"
-                "} else {\n"
-                "flagss := item%s;\n"
-                "}\n",
-                cur_level,
-                cur_level,
-                item_ext,
-                item_ext);
-    }
-
-    milprintf(f, "var res := [%s](strings,patterns,replacements%s);\n", 
-            milfunc, replace ? ", flagss": "");
-
-    milprintf(f,
-            "strings := nil;\n"
-            "patterns := nil;\n"
-            "replacements := nil;\n"
+            "var res := [pcre_replace](inputs,patterns,replacements,flagss);\n"
             "iter := loop%03u.tmark(0@0);\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
-            "kind := STR;\n",
+            "kind := STR;\n"
+            "inputs := nil;\n"
+            "patterns := nil;\n"
+            "replacements := nil;\n"
+            "flagss := nil;\n",
             cur_level);
 
     char buf[128];
-    snprintf(buf, sizeof(buf), "fn:%s (string?, string, string%s) as string", 
-            xqfunc, opt_arity ? ", string": "");
+    snprintf(buf, sizeof(buf),
+            "fn:replace (string?, string, string%s) as string",
+            hasFlags?", string":"");
 
     return_str_funs (f, code, cur_level, buf);
     deleteResult_ (f, counter, STR);
     deleteResult_ (f, counter-1, STR);
     deleteResult_ (f, counter-2, STR);
-    return code;
+    return code?STR:NORMAL;
+}
+
+/**
+ * fn_translate translates the builtin functions fn:translate
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param args the head of the function argument list
+ */
+static int
+fn_translate (opt_t *f, int code, int cur_level, int counter, 
+              PFcnode_t *args)
+{
+    char* item_ext = kind_str(STR);
+
+    /* translate 'arg'-s */
+    if (translate2MIL (f, VALUES, cur_level, counter, L(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    /* translate 'mapString'-s */
+    if (translate2MIL (f, VALUES, cur_level, counter, RL(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    /* translate 'transString'-s */
+    if (translate2MIL (f, VALUES, cur_level, counter, RRL(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    milprintf(f,
+            "{ # fn:translate (string?, string, string) as string\n"
+            "var args;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "args := res_mu.fetch(1);\n"
+            "} else {\n"
+            "args := item%s%03u.materialize(ipik%03u);\n"
+            "}\n",
+            counter-1, cur_level, 
+            cur_level, counter-1,
+            counter-1, item_ext, counter-1,
+            item_ext, counter-1, counter-1);
+    milprintf(f,
+            "var mapStrings;\n"
+            "if (ipik%03u.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter%03u));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
+            "mapStrings := res_mu.fetch(1);\n"
+            "} else {\n"
+            "mapStrings := item%s%03u.materialize(ipik%03u);\n"
+            "}\n"
+            "# replace empty sequences with empty strings\n"
+            "args := outerjoin(mapStrings.mirror(), args);\n"
+            "args := [ifthenelse]([isnil](args), \"\", args);\n",
+            counter, cur_level, 
+            cur_level, counter,
+            counter, item_ext, counter,
+            item_ext, counter, counter);
+    milprintf(f,
+            "var transStrings;\n"
+            "if (ipik.count() != loop%03u.count())\n"
+            "{\n"
+            "var difference := reverse(loop%03u.tdiff(iter));\n"
+            "difference := difference.hmark(0@0);\n"
+            "var res_mu := merged_union(iter.chk_order(), difference, item%s, \"\");\n"
+            "transStrings := res_mu.fetch(1);\n"
+            "} else {\n"
+            "transStrings := item%s;\n"
+            "}\n",
+            cur_level, 
+            cur_level,
+            item_ext,
+            item_ext);
+
+    milprintf(f,
+            "var res := [translate](args,mapStrings,transStrings);\n"
+            "iter := loop%03u.tmark(0@0);\n"
+            "ipik := iter;\n"
+            "pos := 1@0;\n"
+            "kind := STR;\n"
+            "args := nil;\n"
+            "mapStrings:= nil;\n"
+            "transStrings := nil;\n",
+            cur_level);
+
+    return_str_funs (f, code, cur_level, 
+            "fn:translate (string?, string, string) as string");
+    deleteResult_ (f, counter, STR);
+    deleteResult_ (f, counter-1, STR);
+    return code?STR:NORMAL;
 }
 
 /**
@@ -6569,13 +6804,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         fn_substring (f, code, cur_level, counter, fun, args);
         return (code)?STR:NORMAL;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"matches")))
+    {
+        return fn_matches (f, cur_level, counter, fun, args);
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"replace")))
     {
-        return fn_replace_translate (f, code, cur_level, counter, fun, args, "replace", "pcre_replace");
+        return fn_replace (f, code, cur_level, counter, fun, args);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"translate")))
     {
-        return fn_replace_translate (f, code, cur_level, counter, fun, args, "translate", "translate");
+        return fn_translate (f, code, cur_level, counter, args);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"substring-before")))
     {

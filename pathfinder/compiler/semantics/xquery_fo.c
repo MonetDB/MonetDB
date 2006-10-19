@@ -1405,21 +1405,34 @@ PFfun_xquery_fo ()
                                 PFty_xs_string (),
                                 PFty_xs_string () },
             .ret_ty = PFty_xs_string () } } }
-    , /* fn:replace (string?, string, string) as string? */
+    , /* fn:matches(string?, string) as boolean */
+      { .ns = PFns_fn, .loc = "matches",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
+                                PFty_xs_string () },
+            .ret_ty = PFty_xs_boolean () } } }
+    , /* fn:matches (string?, string, string) as boolean */
+      { .ns = PFns_fn, .loc = "matches",
+        .arity = 3, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
+                                PFty_xs_string (),
+                                PFty_xs_string () },
+            .ret_ty = PFty_xs_boolean () } } }
+    , /* fn:replace (string?, string, string) as string */
       { .ns = PFns_fn, .loc = "replace",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string (),
                                 PFty_xs_string () },
-            .ret_ty = PFty_opt( PFty_xs_string ()) } } }
-    , /* fn:replace (string?, string, string, string) as string? */
+            .ret_ty = PFty_xs_string () } } }
+    , /* fn:replace (string?, string, string, string) as string */
       { .ns = PFns_fn, .loc = "replace",
         .arity = 4, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
                                 PFty_xs_string (),
                                 PFty_xs_string (),
                                 PFty_xs_string () },
-            .ret_ty = PFty_opt( PFty_xs_string ()) } } }
+            .ret_ty = PFty_xs_string () } } }
     , /* fn:subsequence(item*, double) as item* */
       /* Note that typecheck.brg implements a specific typing rule! */
       { .ns = PFns_fn, .loc = "subsequence",
