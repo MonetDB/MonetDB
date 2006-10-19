@@ -226,6 +226,7 @@ HAVE_PCRE?replace01
 HAVE_PCRE?replace02
 HAVE_PCRE?replace03
 HAVE_PCRE?replace04
+HAVE_PCRE?replace05
 HAVE_PCRE?replace07
 HAVE_PCRE?replace08
 HAVE_PCRE?replace10
@@ -246,3 +247,18 @@ ID.1490847
 translate1
 translate2
 translate3
+HAVE_PCRE?matches01
+HAVE_PCRE?matches02
+HAVE_PCRE?matches03
+HAVE_PCRE?matches04
+HAVE_PCRE?matches05
+HAVE_PCRE?matches06
+HAVE_PCRE?matches07
+HAVE_PCRE?matches08
+HAVE_PCRE?matches09
+HAVE_PCRE?matches10
+HAVE_PCRE?matches11
+HAVE_PCRE?matches12
+HAVE_PCRE?matches13
+HAVE_PCRE?matches14
+HAVE_PCRE?matches15
