@@ -58,15 +58,23 @@ explicitly enabled; it is not the default.
 .COMMAND pcre_match(str s, str pat) : bit = pcre_match;
    "POSIX pattern matching against a string"
 
+.COMMAND pcre_match(str s, str pat, str flags) : bit = pcre_match_with_flags;
+   "POSIX pattern matching against a string"
+
 .COMMAND pcre_replace(str origin_str, str pattern, str replacement, str flags) : str = pcre_replace;
    "Replace _all_ matches of \"pattern\" in \"origin_str\" with\
 	\"replacement\".\n\
     Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n\
-	'e': if present, an empty string is considered to be a valid match\n\
-	'i': if present, the match operates in case-insensitive mode. Otherwise, in\
-	     case-sensitive mode.\n\
+    'e': if present, an empty string is considered to be a valid\
+         match\n\
+    'i': if present, the match operates in case-insensitive mode.\
+         Otherwise, in case-sensitive mode.\n\
     'm': if present, the match operates in multi-line mode.\n\
-	's': if present, the match operates in \"dot-all\"
+    's': if present, the match operates in \"dot-all\"\n\
+    'x': if present, whitespace characters (#x9, #xA, #xD and #x20) in\
+         the regular expression are removed prior to matching with one \
+         exception: whitespace characters within character class \
+         expressions are not removed.\
 	The specifications of the flags can be found in \"man pcreapi\"\n\
 	The flag letters may be repeated.\n\
 	No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n\
@@ -174,6 +182,17 @@ pcre_init(void)
 void
 pcre_exit(void)
 {
+}
+
+int
+pcre_match_with_flags(bit *ret, str val, str pat, str flags)
+{
+	(void) ret;
+	(void) val;
+	(void) pat;
+    (void)flags;
+	GDKerror("pcre_match_with_flags() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
 }
 
 int
@@ -329,7 +348,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 		} else if (flags[i] == 'x') {
 			compile_options |= PCRE_EXTENDED;
 		} else {
-			GDKerror("pcre_replace: \"flags\" contains invalid character '%c'\n", flags[i]);
+			GDKerror("pcre_replace: unsupported flag character '%c'\n", flags[i]);
 			return GDK_FAIL;
 		}
 	}
@@ -543,13 +562,29 @@ pcre_exit(void)
 }
 
 int
-pcre_match(bit *ret, str val, str pat)
+pcre_match_with_flags(bit *ret, str val, str pat, str flags)
 {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
+    int options = PCRE_UTF8, i;
 	pcre *re;
 
-	if ((re = pcre_compile(pat, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	for (i = 0; i < (int)strlen(flags); i++) {
+		if (flags[i] == 'i') {
+			options |= PCRE_CASELESS;
+		} else if (flags[i] == 'm') {
+			options |= PCRE_MULTILINE;
+		} else if (flags[i] == 's') {
+			options |= PCRE_DOTALL;
+		} else if (flags[i] == 'x') {
+			options |= PCRE_EXTENDED;
+		} else {
+			GDKerror("pcre_match: unsupported flag character '%c'\n", flags[i]);
+			return GDK_FAIL;
+		}
+	}
+
+	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre.match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 		return GDK_FAIL;
 	}
@@ -563,6 +598,12 @@ pcre_match(bit *ret, str val, str pat)
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
+}
+
+int
+pcre_match(bit *ret, str val, str pat)
+{
+	return pcre_match_with_flags(ret, val, pat, "");
 }
 #endif
 
