@@ -1,0 +1,43 @@
+stdout of test 'coalesce` in directory 'src/test` itself:
+
+
+# 17:28:20 >  
+# 17:28:20 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5/lib:/export/scratch1/milena/monet/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=34169 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
+# 17:28:20 >  
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/export/scratch1/milena/monet/etc/MonetDB5.conf
+# dbfarm:/export/scratch1/milena/monet/var/MonetDB5/dbfarm
+# dbname:mTests_src_test
+# Visit http://monetdb.cwi.nl/ for further information
+
+Ready.
+
+Over..
+
+# 17:28:20 >  
+# 17:28:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34169  < coalesce.sql
+# 17:28:20 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+# . # table_name
+# avg_single_value # name
+# double # type
+# 22 # length
+[ 28	]
+# sys.test,	. # table_name
+# id,	single_value # name
+# int,	varchar # type
+# 1,	7 # length
+[ 1,	"a"	]
+[ 2,	"unknown"	]
+[ 3,	"c"	]
+
+# 17:28:21 >  
+# 17:28:21 >  Done.
+# 17:28:21 >  
+
