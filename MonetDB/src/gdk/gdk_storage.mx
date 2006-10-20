@@ -592,9 +592,6 @@ BATload_intern(bat i)
 		}
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->hheap, b->htype);
-		} else if (ATOMstorage(b->htype) == TYPE_str && !GDK_ELIMDOUBLES(b->hheap)) {
-			/* heap may have been mmaped-ed, appended-by-force, and then corrupted by crash */
-			memset(b->hheap->base, 0, GDK_STRHASHTABLE*sizeof(var_t)); /* empty hashtable = consistent */
 		}
 	}
 
@@ -608,10 +605,7 @@ BATload_intern(bat i)
 		}
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->theap, b->ttype);
-		} else if (ATOMstorage(b->ttype) == TYPE_str && !GDK_ELIMDOUBLES(b->theap)) {
-			/* heap may have been mmaped-ed, appended-by-force, and then corrupted by crash */
-			memset(b->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t)); /* empty hashtable = consistent */
-		}
+		} 
 	}
 
 	/* handle fatal errors */
@@ -623,6 +617,10 @@ BATload_intern(bat i)
 		if (b->theap) 
 			HEAPfree(b->theap);
 		return NULL;
+	}
+	if (b->GDKversion != GDKLIBRARY) {
+		b->GDKversion = GDKLIBRARY;
+		b->batDirtydesc = 1;
 	}
 
 	/* initialize descriptor */
@@ -642,6 +640,13 @@ BATload_intern(bat i)
 	b->batMapbuns =  b->batBuns->storage;
 	if (b->hheap) b->batMaphheap = b->hheap->storage;
 	if (b->theap) b->batMaptheap = b->theap->storage;
+
+	if (ATOMstorage(b->htype) == TYPE_str) {
+		strCheckHash(b, b->hheap, b->hloc); /* ensure consistency */
+	}
+	if (ATOMstorage(b->ttype) == TYPE_str) {
+		strCheckHash(b, b->theap, b->tloc); /* ensure consistency */
+	}
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;

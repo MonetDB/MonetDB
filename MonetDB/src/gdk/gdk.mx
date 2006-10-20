@@ -907,6 +907,9 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
+#define GDKLIBRARY_OLD  050415  /* 64-bits BAT with old hash function */
+#define GDKLIBRARY      061020  /* 64-bits BAT */
+
 typedef struct BAT {
 	/* static bat properties */
 	sht GDKversion;		/* FIRST! */

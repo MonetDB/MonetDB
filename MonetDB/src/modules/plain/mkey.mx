@@ -278,6 +278,8 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
 @c
 #include <monet.h>
 
+#define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
+
 @-
 new functionality for the low-resource-consumption ds_link. It will
 first one by one create a hash value out of the multiple attributes.
@@ -456,9 +458,9 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		str base = b->theap->base;
 
 		while (cur < end) {
-			int val;
-
-			val = (int) strHash(base + *cur); /* 64bit: truncating top bits */
+                        str src = base + *cur;
+			hash_t val;
+			GDK_STRHASH(src, val);
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
 			cur = (int *) (((BUN) cur) + xx);
 			dst = (int *) (((BUN) dst) + yy);

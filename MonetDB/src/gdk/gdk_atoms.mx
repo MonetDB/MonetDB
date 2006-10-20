@@ -166,6 +166,7 @@ gdk_export int strToStr(str *dst, int *len, str src);
 gdk_export str strRead(str a, stream *s, size_t cnt);
 gdk_export int strWrite(str a, stream *s, size_t cnt);
 gdk_export hash_t strHash(str s);
+gdk_export void strCheckHash(BAT *b, Heap *hp, int loc);
 gdk_export var_t strPut(Heap *b, var_t *off, str src);
 gdk_export void strHeap(Heap *d, size_t cap);
 gdk_export int strLen(const char *s);
@@ -1872,27 +1873,56 @@ strHeap(Heap *d, size_t cap)
 
 @- Hash Function 
 The string hash function is a very simple hash function that xors and 
-rotates all characters together. 
-
+rotates all characters together. It is optimized to process 2 characters
+at a time (adding 16-bits to the hash value each iteration).
 @h
-#define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
-
+#define GDK_STRHASH(x,y) {                                             \
+        str _c = (str) (x);                                            \
+        for((y)=0; _c[0] && _c[1]; _c+=2) {                            \
+                 (y) = ((y) << 5) ^ ((y) >> 7) ^ (_c[1] << 3) ^ _c[0]; \
+        }                                                              \
+        (y) ^= _c[0];                                                  \
+}
 @c
-#define GDK_STRHASH(x,y) {						\
-		str _s = (str) (x);					\
-		for((y)=0; *_s; _s++) {					\
-			(y) = GDK_ROTATE(y, 4, SIZEOF_OID*8-4, 15) ^ *_s; \
-		}							\
-	}
-
 hash_t
 strHash(str s)
 {
 	hash_t res;
-
 	GDK_STRHASH(s, res);
 	return res;
 }
+
+
+static void 
+strFlushHash(Heap *h)
+{
+	memset(h->base, 0, GDK_STRHASHSIZE); 
+}
+ 
+void strCheckHash(BAT *b, Heap *h, int loc) 
+{
+	if (!GDK_ELIMDOUBLES(h)) {
+                /* heap may have been mmaped-ed, appended-by-force, and then corrupted by crash 
+                 */
+	        strFlushHash(h); /* empty hashtable = consistent */
+        } else if (b->GDKversion != GDKLIBRARY) {
+                /* the (small) hash table was built with a previous hash function. Re-build it.
+                 */
+        	var_t *hash = (var_t*) h->base;
+        	hash_t idx, xx;
+        	BUN p, q;
+		strFlushHash(h);
+        	BATloopFast(b, p, q, xx) {
+               		var_t off  = *(var_t*) (p+loc);
+                	str val    = ((str) hash) + off;
+                	GDK_STRHASH(val, idx);
+                	idx &= GDK_STRHASHMASK;
+                	((var_t*) val)[-1] = hash[idx];
+                	hash[idx] = off;
+        	}
+        }
+}
+
 
 @- 
 The @%strPut@ routine. The routine @%strLocate@ can be used to identify
@@ -1903,8 +1933,10 @@ var_t
 strLocate(Heap *h, str v)
 {
 	var_t *htab = (var_t *) h->base;
-	var_t *l, *e = htab + (strHash(v) & GDK_STRHASHMASK);
-
+	var_t *l, *e;
+	hash_t idx;
+        GDK_STRHASH(v, idx);
+        e = htab + (idx & GDK_STRHASHMASK);
 	if (*e) {
 		for (l = e; *l && *l < h->free; l = (var_t *) ((char *) h->base + *l)) {
 			str x = (str) ((char *) h->base + *l + sizeof(var_t));
@@ -1951,7 +1983,8 @@ strPut(Heap *h, var_t *dst, str v)
 	size_t elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
-	off = strHash(v) & GDK_STRHASHMASK;
+	GDK_STRHASH(v,off);
+	off &= GDK_STRHASHMASK;
 	for (l = ((var_t *) h->base) + off; *l && *l < h->free; l = (var_t *) (h->base + *l)) {
 		str x = (str) (h->base + *l + sizeof(var_t));
 
@@ -1963,7 +1996,7 @@ strPut(Heap *h, var_t *dst, str v)
 
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
 	if (h->free + len >= elimlimit) {
-		memset(h->base, 0, GDK_STRHASHSIZE);
+		strFlushHash(h);
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
