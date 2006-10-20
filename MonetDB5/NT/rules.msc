@@ -24,7 +24,7 @@ SWIG=swig
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
 PTHREAD_INCS = "-I$(PTHREAD)\include"
-PTHREAD_LIBS = "$(PTHREAD)\lib64\pthreadVC2.lib"
+PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
 PHP_SRCDIR = $(TOPDIR)\..\..\php-5.1.4
 PHP_INSTDIR = C:\php-5
 # for these, also see configure.py
