@@ -77,7 +77,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="0047" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0047">element content 0047</element>
 <element author="Sjoerd Mullender" title="test element" attr="0048" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0048">element content 0048</element>
 <element author="Sjoerd Mullender" title="test element" attr="0049" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0049">element content 0049</element>
-<Element author="Sjoerd Mullender" title="test element" attr="0050" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0050">element content 0050</element>
+<Element author="Sjoerd Mullender" title="test element" attr="0050" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0050">element content 0050</Element>
 <element author="Sjoerd Mullender" title="test element" attr="0051" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0051">element content 0051</element>
 <element author="Sjoerd Mullender" title="test element" attr="0052" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0052">element content 0052</element>
 <element author="Sjoerd Mullender" title="test element" attr="0053" copyright="CWI" xyzzy="hgulp" foo="bar" Attribute="0053">element content 0053</element>
