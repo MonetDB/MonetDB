@@ -115,9 +115,14 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		BATpropagate(b1, b2, GDK_AGGR_HASNIL);
 	}
 	if (BAThvoid(b2)) {
+		/* b2 is either dense or has a void(nil) head */
 		if (b1->htype != TYPE_void)
 			b1->hdense = TRUE;
 		BATseqbase(b1, b2->hseqbase);
+	} else if (b1->htype != TYPE_void) {
+		/* b2 is not dense, so set b1 not dense */
+		b1->hdense = FALSE;
+		BATseqbase(b1, oid_nil);
 	}
 	BATkey(b1, b2->hkey != FALSE);
 	b1->hsorted = BAThordered(b2);
