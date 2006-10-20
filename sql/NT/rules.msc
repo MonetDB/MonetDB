@@ -89,6 +89,20 @@ MONETDB_MODS="\"/LIBPATH:$(MONETDB_PREFIX)\lib\MonetDB\""
 !ENDIF
 MONET4=yes
 
+!IFDEF MONET5
+MONET5_INCLUDEDIR=$(MONET5_PREFIX)\include
+MONET5_INCS="-I$(MONET5_INCLUDEDIR)" "-I$(MONET5_INCLUDEDIR)\atoms" "-I$(MONET5_INCLUDEDIR)\compiler" "-I$(MONET5_INCLUDEDIR)\kernel" "-I$(MONET5_INCLUDEDIR)\mal" "-I$(MONET5_INCLUDEDIR)\mil" "-I$(MONET5_INCLUDEDIR)\optimizer" "-I$(MONET5_INCLUDEDIR)\scheduler"
+!IF [$(MAKE) /help 2>&1 | grep -q 6.]
+MONET5_LIBS="/LIBPATH:$(MONET5_PREFIX)\lib"
+MONET5_MODS="/LIBPATH:$(MONET5_PREFIX)\lib\MonetDB5"
+!ELSE
+MONET5_LIBS="\"/LIBPATH:$(MONET5_PREFIX)\lib\""
+MONET5_MODS="\"/LIBPATH:$(MONET5_PREFIX)\lib\MonetDB5\""
+!ENDIF
+!ELSE
+MONETD_INCS=
+!ENDIF
+
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -x h $<
 
@@ -133,6 +147,16 @@ MONET4=yes
 
 .mx.mil:
 	$(MX) $(MXFLAGS) -x mil $<
+
+{$(SRCDIR)}.mx.mal:
+	$(MX) $(MXFLAGS) -x mal $<
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
+
+.mx.mal:
+	$(MX) $(MXFLAGS) -x mal $<
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
 
 {$(SRCDIR)}.mx.y:
 	$(MX) $(MXFLAGS) -x y $<
