@@ -15,3 +15,23 @@
  * Portions created by CWI are Copyright (C) 1997-2006 CWI.
  * All Rights Reserved.
  */
+
+#include "sql_config.h"
+
+#ifdef WIN32
+#ifndef LIBSQL_CACHE
+#define dummy_export extern __declspec(dllimport)
+#else
+#define dummy_export extern __declspec(dllexport)
+#endif
+#else
+#define dummy_export extern
+#endif
+
+/* declare and export a dummy function so that on Windows the .lib
+ * file is also produced */
+dummy_export void dummy(void);
+void
+dummy(void)
+{
+}
