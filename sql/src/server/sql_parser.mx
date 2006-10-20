@@ -2604,7 +2604,7 @@ table_ref:
 				}
  |  joined_table 		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
-/* the following rule seems to be redundant ?
+/* the following rule seems to be redundant ?  
  |  '(' joined_table ')' table_name
 				{ $$ = $2;
 				  append_symbol($2->data.lval, $4); }

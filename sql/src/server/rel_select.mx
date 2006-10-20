@@ -3959,6 +3959,12 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	if (!t1 || !t2)
 		return NULL;
 
+	if (strcmp(t1->name, t2->name) == 0) { 
+		rel_destroy(t1);
+		rel_destroy(t2);
+		return sql_error(sql, 02, "SELECT: '%s' on both sides of the JOIN expression;", t1->name);
+	}
+
 	switch(jointype) {
 	case jt_inner: op = op_join;
 		break;
@@ -4008,6 +4014,8 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	} else {		/* ! js -> natural join */
 		rel = join_on_column_name(sql, rel, t1, t2, 0);
 	}
+	if (!rel)
+		return NULL;
 	rel->op = op; 
 	return rel;
 }

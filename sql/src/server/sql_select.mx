@@ -140,7 +140,8 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 	/* todo handle opt_table_ref 
 	   (ie tableref->data.lval->h->next->data.sym */
 
-	if (tableref->token == SQL_NAME) {
+	switch(tableref->token) {
+	case SQL_NAME: { 
 		stmt *temp_table = NULL;
 		char *sname = qname_schema(tableref->data.lval->h->data.lval);
 		sql_schema *s = NULL;
@@ -180,11 +181,12 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		} else {
 			return scope_add_table_columns(sql, scp, t, tname, RDONLY);
 		}
-	} else if (tableref->token == SQL_TABLE) {
+	}
+	case SQL_TABLE:
 		return sql_table_func(sql, scp, tableref);
-	} else if (tableref->token == SQL_SELECT) {
+	case SQL_SELECT:
 		return sql_subquery_optname(sql, scp, tableref);
-	} else {
+	default:
 		return query_exp_optname(sql, scp, tableref);
 	}
 }
@@ -1445,12 +1447,13 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 	if (!tv1 || !tv2)
 		return NULL;
 
-	if (js && natural) {
+	if (tv1->tname && tv2->tname && strcmp(tv1->tname, tv2->tname) == 0) 
+		return sql_error(sql, 02, "SELECT: '%s' on both sides of the JOIN expression;", tv1->tname);
+
+	if (js && natural) 
 		return sql_error(sql, 02, "SELECT: cannot have a NATURAL JOIN with a join specification (ON or USING);");
-	}
-	if (!js && !natural) {
+	if (!js && !natural) 
 		return sql_error(sql, 02, "SELECT: must have NATURAL JOIN or a JOIN with a join specification (ON or USING);");
-	}
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		s = sql_logical_exp(sql, scp, js, NULL, NULL, sql_where);
@@ -2041,29 +2044,29 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 	}
 	case SQL_JOIN:
 	{
-		scope *nscp = scope_open(scp);
+		scope *nscp = scope_open(NULL);
 		stmt *tq = sql_join(sql, nscp, q);
 
 		if (!tq)
 			return NULL;
 		res = table_optname(sql, scp, tq, q->data.lval->t->data.sym);
-		scp = scope_close(nscp);
+		scope_close(nscp);
 		return res;
 	}
 	case SQL_CROSS:
 	{
-		scope *nscp = scope_open(scp);
+		scope *nscp = scope_open(NULL);
 		stmt *tq = sql_cross_(sql, nscp, q);
 
 		if (!tq)
 			return NULL;
 		res = table_optname(sql, scp, tq, q->data.lval->t->data.sym);
-		scp = scope_close(nscp);
+		scope_close(nscp);
 		return res;
 	}
 	case SQL_UNIONJOIN:
 	{
-		scope *nscp = scope_open(scp);
+		scope *nscp = scope_open(NULL);
 		node *m;
 		dnode *n = q->data.lval->h;
 
@@ -2095,7 +2098,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 		}
 		res = table_optname(sql, scp, stmt_list(unions), q->data.lval->t->data.sym);
 		list_destroy(matching_columns);
-		scp = scope_close(nscp);
+		scope_close(nscp);
 		return res;
 	}
 	default:
