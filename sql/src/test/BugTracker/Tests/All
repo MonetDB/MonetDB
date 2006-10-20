@@ -32,3 +32,4 @@ groupby_with_alias.SF-1520575
 drop_system_tables.SF-1550768
 set_operation_coersions.SF-1543216
 insert_values.SF-1578838
+ambiguous_join.SF-1580565
