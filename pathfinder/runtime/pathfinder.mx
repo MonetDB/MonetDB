@@ -230,14 +230,12 @@ PROC xquery_server_start() : void {
 # - OPEN_NAME          BAT[void,str]        open-docid / document name
 # - OPEN_DOCID         BAT[void,oid]        open-docid / persistent document-ID 
 #
-# the void key of OPEN_* (open_docid) starts at OPEN_BASE (=1 billion)
-#
 # NOTE: when the query starts, a first, empty container is created, the
 #       'transient document container'. It has container-ID (cont) 0.
 #
 # NOTE: open temporary shredded documents that are not cached have both 
 #       _COLL and _DOCID fields set to an "artificial" doc_oid == open-docid.
-#       These are values > OPEN_BASE (1 billion). It is only unique within the ws.
+#       These are values < DOCID_MIN (1 billion). It is only unique within the ws.
 #       Persistent documents and container have globally unique keys that 
 #       point into the doc_* and collection_* tables.
 #
@@ -385,8 +383,8 @@ const COLLECTION       := chr(5);
 const WS               := 0@0; # first container in ws = transient doc container
 const PRE_BASE         := 0@0; # all our PRE bats start at 0 (the super-root)
 const TEMP_DOC         := 0@0; # doc/coll key that is never used for persistent docs
-const OPEN_BASE        := 1000000000@0; # temporary (ws-private) doc-ids start here
-
+const DOCID_MIN        := 1000000000@0; # persistent doc-ids start here
+const DOCID_MAX        := 2000000000@0; # and end here
 const WS_MAXID         := 1LL << 62;
 
 # slots in the col_runtime bats
@@ -504,7 +502,7 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     uri_lifetime    := new(str,lng).persists(true).rename("uri_lifetime");
 }
 if (not(doc_collection.exist(TEMP_DOC))) {
-    doc_collection.insert(TEMP_DOC, 1000@0); # hack: store next oid as in invalid TEMP_DOC tuple
+    doc_collection.insert(TEMP_DOC, DOCID_MIN); # hack: store next oid as in invalid TEMP_DOC tuple
 }
 if (isnil(CATCH(bat("doc_undo").count()))) {
     doc_undo         := bat("doc_undo"); 
@@ -606,11 +604,14 @@ PROC _collection_cleanup() : BAT[void,str]
 # make a list of victim bats transient, the commit (slow - done outside the short lock)
 PROC collection_cleanup(BAT[void,str] delBAT) : void
 {
-    var commitBAT := bat(void,str,count(delBAT));
-    delBAT@batloop() {
-        if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
+    var cnt := count(delBAT);
+    if (bit(cnt)) {
+        var commitBAT := bat(void,str,cnt);
+        delBAT@batloop() {
+            if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
+        }
+        pf_checkpoint(commitBAT);
     }
-    pf_checkpoint(commitBAT);
 }
 
 
@@ -794,9 +795,6 @@ PROC ws_create() : BAT[void,bat]
     ws.fetch(CONT_COLL).seqbase(0@0).insert(0@0,oid_nil);
     ws.fetch(CONT_NAME).seqbase(0@0).insert(0@0,str_nil);
     ws.fetch(CONT_RUNTIME).seqbase(0@0).insert(0@0,empty_runtime);
-    ws.fetch(OPEN_NAME).seqbase(OPEN_BASE);
-    ws.fetch(OPEN_DOCID).seqbase(OPEN_BASE);
-    ws.fetch(OPEN_CONT).seqbase(OPEN_BASE);
 
     # add a (bogus) collection root pre=0@0 to the temporary document container
     ws.fetch(PRE_SIZE).fetch(WS).append(int_nil);
@@ -840,7 +838,7 @@ PROC ws_bat(lng wsid) : BAT[void,bat]
     return bat(and(wsid, 2147483647LL));
 }
 
-PROC _ws_free(lng wsid) : BAT[void,str]
+PROC _ws_free(lng wsid) : void
 {
     # check for failed doc_adds (should happen infrequently - we don't care about performance)
     var del := doc_undo.uselect(wsid).project(str_nil);
@@ -857,8 +855,6 @@ PROC _ws_free(lng wsid) : BAT[void,str]
     var cursize := sum(doc_timestamp.select(timestamp_nil,timestamp_nil).mirror().join(collection_size));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
     if (cursize > maxsize) del_doc_base(true, doc_name, false);
-
-    return _collection_cleanup(); # garbage collect empty collections
 }
 
 PROC ws_free(lng wsid) : void
@@ -866,14 +862,13 @@ PROC ws_free(lng wsid) : void
     # always make sure not to cause errors while holding the lock
     lock_set(pf_free);
     lock_set(pf_short);
-    var commitBAT, err := CATCH(commitBAT := _ws_free(wsid));
+    var err := CATCH(_ws_free(wsid));
     lock_unset(pf_short);
     lock_unset(pf_free);
     if (not(isnil(err))) {
         printf("%s\n!ERROR: ws_free: query cleanup failed, Mserver must be restarted.\n", err);
         exit(); # ws_free *must must* succeed, it frees all hanging locks etc
     }
-    collection_cleanup(commitBAT);
 }
 
 PROC ws_destroy(BAT[void,bat] ws) : void
@@ -1022,7 +1017,7 @@ PROC ws_opencoll(BAT[void,BAT] ws,
 {
     var err, cont, coll_lock, runtime := empty_runtime;
 
-    if (coll_oid < OPEN_BASE) {
+    if (coll_oid >= DOCID_MIN) {
          lock_set(pf_short);
          err := CATCH(coll_lock := reverse(runtime := _ws_opencoll(ws_id(ws), coll_oid)).fetch(RT_LOCK_FREELIST));
          lock_unset(pf_short);
@@ -1031,7 +1026,7 @@ PROC ws_opencoll(BAT[void,BAT] ws,
          lock_set(coll_lock); # never lock a collection inside the short lock
     }
     err := CATCH(cont := __ws_opencoll(ws, runtime, docBAT, name, coll_oid));
-    if (coll_oid < OPEN_BASE) {
+    if (coll_oid >= DOCID_MIN) {
         lock_unset(coll_lock); # release lock acquired for updatable bats
     }
     if (not(isnil(err))) ERROR(err);
@@ -1657,7 +1652,7 @@ PROC ws_open(BAT[void,BAT] ws,
         var names     := [+]("::" + str(wsid) + "::",  locations);
         var colname   := names.fetch(0);
         var min_ts    := selidx_unq.mirror().leftfetchjoin(idx_timestamps).min();
-        var docid_base:= ifthenelse(isnil(min_ts), oid(int(OPEN_BASE) + count(open_docid)), oid_nil);
+        var docid_base:= ifthenelse(isnil(min_ts), oid(count(open_docid)), oid_nil);
         var coll_oid  := shred_into_docBAT(docBAT, locations, names, colname, 
                                            oid_nil,       # create new collection
                                            empty_runtime, # no index to maintain 
@@ -1744,7 +1739,7 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
     var docid_base := doc_collection.find(TEMP_DOC);
     var docid      := lng(docid_base);
     var docid_new  := docid + lng(count(idx_location));
-    if (docid_new > lng(OPEN_BASE)) 
+    if (docid_new > lng(DOCID_MAX)) 
         ERROR("_shred_doc: out of document id's. Export all documents, and shred them into a new database\n");
     doc_collection.replace(TEMP_DOC, oid(docid_new));
 
@@ -1864,17 +1859,26 @@ PROC _shred_doc_base(BAT[oid,str] selidx_coll,
     return reverse(mirror(reverse(idx_colnames)).outerjoin(reverse(collection_name))).outerjoin(colname_runtime);
 }
 
-PROC shred_doc_base(BAT[void,str] idx_locations, 
+PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
+{
+    doc_undo.delete(doc_undo.select(wsid));
+    if (cleanup) return _collection_cleanup(); # garbage collect empty collections
+    return empty_bat;
+}
+
+PROC shred_doc_base(BAT[void,str] commitBAT,
+                    BAT[void,str] idx_locations, 
                     BAT[void,str] idx_names, 
                     BAT[void,str] idx_colnames, 
                     BAT[void,lng] pageFrees, 
                     Stream s,
-                    lng wsid) : int 
+                    lng wsid) : void
 {
-    var pivot, err, nr := 0;
+    var pivot, err, nr := 0, cleanup := bit(count(commitBAT));
     var selidx_colname := idx_colnames;
     if (count(selidx_colname) > 0)
         selidx_colname := reverse(reverse(idx_colnames).kunique().sort());
+
 
     lock_set(pf_short);
     err := CATCH(pivot := _shred_doc_base(selidx_colname, idx_names, idx_colnames, wsid));
@@ -1883,7 +1887,6 @@ PROC shred_doc_base(BAT[void,str] idx_locations,
     var idx_runtime := pivot.tmark(0@0);
     var idx_colloid := pivot.hmark(0@0);
 
-    var commitBAT := bat(void,str);
     selidx_colname@batloop(){
         # process collections one-by one
         var colname  := $t;
@@ -1907,14 +1910,14 @@ PROC shred_doc_base(BAT[void,str] idx_locations,
 
         commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
     }
+    # checkpoint the new bats
     if (pf_checkpoint(commitBAT)) {
+        # remove the in-memory undo log; and trim collection
         lock_set(pf_short);
-        var doc_done := doc_undo.select(wsid);
-        doc_undo.delete(doc_done);
+        err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
         lock_unset(pf_short);
-        nr := count(doc_done);
+        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
     }
-    return nr;
 }
 
 
@@ -1925,7 +1928,7 @@ PROC shred_stream(Stream s,
 {
     var names := bat(void,str).append(name).access(BAT_READ).seqbase(0@0);
     var wsid := WS_MAXID + lng(clientid() + 1);
-    var err := CATCH(shred_doc_base(names, names, names.project(colname), names.project(pageFree), s, wsid));
+    var err := CATCH(shred_doc_base(bat(void,str), names, names, names.project(colname), names.project(pageFree), s, wsid));
     ws_free(wsid); 
     if (not(isnil(err))) ERROR(err);
 }
@@ -1955,9 +1958,9 @@ PROC _del_doc(bit cachedOnly,
     if (isnil(cachedOnly)) {
         del := reverse(names.outerjoin(reverse(doc_name)));
         if (del.exist(oid_nil)) {
-            ERROR("delete_doc(%s): document not found in database (%d such errors)!\n", 
-                                   names.find(del.find(oid_nil)), 
-                                   count(reverse(del).uselect(oid_nil)));
+            ERROR("_del_doc(%s): document not found in database (%d such errors)!\n", 
+                                 names.find(del.find(oid_nil)), 
+                                 count(reverse(del).uselect(oid_nil)));
         }
         del := kunique(del);
     } else if (cachedOnly) {
@@ -1969,16 +1972,15 @@ PROC _del_doc(bit cachedOnly,
     _del_doc_replace(del, del);
 }
 
-PROC del_doc_base(bit cachedOnly, 
-                  BAT[any,str] names,
-                  bit pf_short_req) : void
+PROC del_doc(bit cachedOnly, 
+             BAT[any,str] names,
+             bit pf_short_req) : BAT[void,str]
 {
     var bak_locations := bat(oid,str);
     var bak_names := bat(oid,str);
-    var err;
 
     if (pf_short_req) lock_set(pf_short);
-    err := CATCH(_del_doc(cachedOnly, names, bak_locations, bak_names));
+    var err := CATCH(_del_doc(cachedOnly, names, bak_locations, bak_names));
     if (not(isnil(err))) {
         var fatal := CATCH(_del_doc_replace(bak_locations, bak_names));
         if (not(isnil(fatal))) {
@@ -1989,14 +1991,32 @@ PROC del_doc_base(bit cachedOnly,
     if (pf_short_req) lock_unset(pf_short);
     if (not(isnil(err))) ERROR(err);
 
-    # now here is our commit: flush 2 bat descs and BBP.dir
-    var commitBAT := bat(void,str).append("doc_name").append("doc_location");
+    return bat(void,str).append("doc_name").append("doc_location");
+}
+
+PROC del_doc_base(bit cachedOnly, 
+                  BAT[any,str] names,
+                  bit pf_short_req) : void
+{
+    # do the work in memory
+    var commitBAT := del_doc(cachedOnly, name, pf_short_req);
+
+    # now here is our commit: checkpoint 2 bat descs and BBP.dir
     var ok := false;
     lock_set(pf_wal);
     CATCH(ok := subcommit(commitBAT));
     lock_unset(pf_wal);
     if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+   
+    if (pf_short_req) {
+        # try to remove empty collections (non-critical)
+        lock_set(pf_short);
+        var err := CATCH(commitBAT := _collection_cleanup());
+        lock_unset(pf_short);
+        if (isnil(err)) CATCH(collection_cleanup(commitBAT));
+    }
 }
+
 
 @+ Document Management Interfaces
 
@@ -2008,18 +2028,15 @@ and may also lead to on-the-fly document shredding.
 
 @- XQuery Document Management Interface
 
-The do_add_doc() is a loop-lifted document management function. It may only occur in read-only
+The play_doc_tape() is a loop-lifted document management function. It may only occur in read-only
 queries (i.e. not intermingled with updates). This is because we use checkpointing for
 shredding (and not the WAL). We cannot use both mechanisms and still have an atomic operation.
-
-TODO: integrate do_add_doc and do_deldoc() in s single primitive processes a list
-      of fn:add_doc() and fn:del_doc() calls (Sjoerd?).
 @mil
 PROC play_doc_tape(BAT[void,BAT] ws,
-                    BAT[void,oid] item, 
-                    BAT[void,int] kind, 
-                    BAT[void,lng] int_values, 
-                    BAT[void,str] str_values) : void
+                   BAT[void,oid] item, 
+                   BAT[void,int] kind, 
+                   BAT[void,lng] int_values, 
+                   BAT[void,str] str_values) : void
 {
     var locations   := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(str_values);
     var names       := [+](locations.mirror().[lng](), 1).[oid]().leftfetchjoin(item).leftfetchjoin(str_values).tmark(0@0);
@@ -2027,11 +2044,12 @@ PROC play_doc_tape(BAT[void,BAT] ws,
     var percentages := [+](locations.mirror().[lng](), 3).[oid]().leftfetchjoin(item).leftfetchjoin(int_values).tmark(0@0);
     var del_doc     := percentages.ord_uselect(-1LL).hmark(0@0); 
     var add_doc     := percentages.ord_uselect(0LL,lng_nil).hmark(0@0); 
-    del_doc_base(bit_nil, del_doc.leftfetchjoin(names), true);
-    shred_doc_base(stream_nil, add_doc.leftfetchjoin(locations), 
-                               add_doc.leftfetchjoin(names), 
-                               add_doc.leftfetchjoin(colnames), 
-                               add_doc.leftfetchjoin(percentages), ws_id(ws));
+    shred_doc_base(del_doc(bit_nil, del_doc.leftfetchjoin(names), true),
+                   stream_nil,
+                   add_doc.leftfetchjoin(locations), 
+                   add_doc.leftfetchjoin(names), 
+                   add_doc.leftfetchjoin(colnames), 
+                   add_doc.leftfetchjoin(percentages), ws_id(ws));
 }
 
 @- MIL Document Management Interface
@@ -2049,15 +2067,16 @@ PROC shred_doc(BAT[void,str] locations,
 {
     var us := usec();
     var wsid := WS_MAXID + lng(clientid() + 1);
-    var nr, err := CATCH(nr := shred_doc_base(locations.tmark(0@0), 
-                                              names.tmark(0@0), 
-                                              colnames.tmark(0@0), 
-                                              pageFrees.tmark(0@0), 
-                                              stream_nil, wsid));
+    var err := CATCH(shred_doc_base(bat(void,str), 
+                                    locations.tmark(0@0), 
+                                    names.tmark(0@0), 
+                                    colnames.tmark(0@0), 
+                                    pageFrees.tmark(0@0), 
+                                    stream_nil, wsid));
     ws_free(wsid); 
     if (not(isnil(err))) ERROR(err);
     var ms := (us := usec() - us) / 1000;
-
+    var nr := count(locations);
     if (nr = 1)
         printf("%c Shredded 1 XML document (%s), total time after commit=%lld.%03llds\n",
                chr(35), names.fetch(0), /(ms,1000),%(ms,1000));
@@ -2109,9 +2128,13 @@ Shred single xml document to the internal Pathfinder format.\n\
 (Leave no free pages and do not relate it to a collection.)",
 "pathfinder");
 
+PROC delete_doc(BAT[void,str] name) : void
+{
+    del_doc_base(bit_nil, name, true);
+}
 PROC delete_doc(str name) : void
 {
-    del_doc_base(bit_nil, bat(void,str).seqbase(0@0).append(name), true);
+    delete_doc(bat(void,str).append(name).seqbase(0@0));
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
 "PARAMETERS:\n\
@@ -2123,7 +2146,6 @@ delete the persistent BATS that store the document.",
 PROC delete_all_docs(bit cachedOnly) : void
 {
     del_doc_base(cachedOnly, doc_name, true);
-    
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
 "DESCRIPTION:\n\
