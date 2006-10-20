@@ -166,7 +166,7 @@ gdk_export int strToStr(str *dst, int *len, str src);
 gdk_export str strRead(str a, stream *s, size_t cnt);
 gdk_export int strWrite(str a, stream *s, size_t cnt);
 gdk_export hash_t strHash(str s);
-gdk_export void strCheckHash(BAT *b, Heap *hp, int loc);
+gdk_export void strCleanHash(Heap *hp, int rebuild);
 gdk_export var_t strPut(Heap *b, var_t *off, str src);
 gdk_export void strHeap(Heap *d, size_t cap);
 gdk_export int strLen(const char *s);
@@ -1893,36 +1893,39 @@ strHash(str s)
 }
 
 
-static void 
-strFlushHash(Heap *h)
+void strCleanHash(Heap *h, int rebuild) 
 {
-	memset(h->base, 0, GDK_STRHASHSIZE); 
-}
- 
-void strCheckHash(BAT *b, Heap *h, int loc) 
-{
-	if (!GDK_ELIMDOUBLES(h)) {
-                /* heap may have been mmaped-ed, appended-by-force, and then corrupted by crash 
-                 */
-	        strFlushHash(h); /* empty hashtable = consistent */
-        } else if (b->GDKversion != GDKLIBRARY) {
-                /* the (small) hash table was built with a previous hash function. Re-build it.
-                 */
-        	var_t *hash = (var_t*) h->base;
-        	hash_t idx, xx;
-        	BUN p, q;
-		strFlushHash(h);
-        	BATloopFast(b, p, q, xx) {
-               		var_t off  = *(var_t*) (p+loc);
-                	str val    = ((str) hash) + off;
-                	GDK_STRHASH(val, idx);
-                	idx &= GDK_STRHASHMASK;
-                	((var_t*) val)[-1] = hash[idx];
-                	hash[idx] = off;
-        	}
-        }
-}
+        if (rebuild) {
+                var_t xx, cur=0, end=0;
+		str hash = (str) h->base;
 
+		/* collect all values in one big linked list */
+                for(xx=0; xx<GDK_STRHASHTABLE; xx++) {
+                        var_t yy = ((var_t*) hash)[xx];
+
+		        ((var_t*) hash)[xx] = 0; /* clear hash table slot */ 
+
+		        if (end) {
+                                ((var_t*) (hash + end))[-1] = yy;
+                        } else {
+                                cur = yy;
+                        }
+		        for(; yy; yy=((var_t*) (hash + yy))[-1]) end = yy;
+                }
+
+		/* process the linked list, inserting the values again */
+                for(; cur; cur=end) {
+                	str val = hash + cur;
+                	GDK_STRHASH(val, xx);
+                	xx &= GDK_STRHASHMASK;
+                        end = ((var_t*) val)[-1];
+                        ((var_t*) val)[-1] = ((var_t*) hash)[xx];
+                	((var_t*) hash)[xx] = cur;
+        	}
+        } else {
+	        memset(h->base, 0, GDK_STRHASHSIZE);
+	}
+}
 
 @- 
 The @%strPut@ routine. The routine @%strLocate@ can be used to identify
@@ -1996,7 +1999,7 @@ strPut(Heap *h, var_t *dst, str v)
 
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
 	if (h->free + len >= elimlimit) {
-		strFlushHash(h);
+		strCleanHash(h, FALSE); 
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */

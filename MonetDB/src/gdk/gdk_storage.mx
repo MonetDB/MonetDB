@@ -592,7 +592,9 @@ BATload_intern(bat i)
 		}
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->hheap, b->htype);
-		}
+		} else if (ATOMstorage(b->htype) == TYPE_str) {
+		        strCleanHash(b->hheap, (b->GDKversion != GDKLIBRARY)); /* ensure consistency */
+	        }
 	}
 
 	/* LOAD tail heap */
@@ -605,6 +607,8 @@ BATload_intern(bat i)
 		}
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->theap, b->ttype);
+		} else if (ATOMstorage(b->ttype) == TYPE_str) {
+		        strCleanHash(b->theap, (b->GDKversion != GDKLIBRARY)); /* ensure consistency */
 		} 
 	}
 
@@ -640,13 +644,6 @@ BATload_intern(bat i)
 	b->batMapbuns =  b->batBuns->storage;
 	if (b->hheap) b->batMaphheap = b->hheap->storage;
 	if (b->theap) b->batMaptheap = b->theap->storage;
-
-	if (ATOMstorage(b->htype) == TYPE_str) {
-		strCheckHash(b, b->hheap, b->hloc); /* ensure consistency */
-	}
-	if (ATOMstorage(b->ttype) == TYPE_str) {
-		strCheckHash(b, b->theap, b->tloc); /* ensure consistency */
-	}
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
