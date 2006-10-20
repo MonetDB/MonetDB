@@ -217,18 +217,15 @@ int
 mvc_init(int debug, backend_stack stk)
 {
 	int first = 0;
-	char *logdir = GDKgetenv("sql_logdir");
-	char *dbname = GDKgetenv("gdk_dbname");
-
-	assert(logdir && dbname);
 
 	mvc_debug = debug;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
+		fprintf(stderr, "mvc_init\n");
+
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, logdir, dbname, stk)) < 0) {
+	if ((first = store_init(debug, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}

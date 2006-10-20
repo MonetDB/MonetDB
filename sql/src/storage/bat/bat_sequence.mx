@@ -61,7 +61,7 @@ void sequences_exit(void)
 static void 
 sql_update_sequence_cache(sql_sequence *seq, lng cached) 
 {
-	log_sequence(logger, seq->base.id, cached);
+	log_sequence(seq->base.id, cached);
 }
 
 /* lock is held */
@@ -78,7 +78,7 @@ sql_create_sequence(sql_sequence *seq )
 	s -> cached = seq->start;
 
 	if (seq->base.flag == TR_OLD && 
-	    logger_sequence(logger, seq->base.id, &id )) 
+	    logger_sequence(seq->base.id, &id )) 
 		s->cached = id;
 	s -> cur = s->cached;
 	return s;

@@ -45,7 +45,7 @@ extern int
  table_check(sql_trans *tr, sql_table *t);
 
 extern int
- store_init(int debug, char *logdir, char *dbname, backend_stack stk);
+ store_init(int debug, backend_stack stk);
 extern void
  store_exit(void);
 
