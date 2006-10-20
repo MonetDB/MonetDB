@@ -17,7 +17,8 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
-install: targetdirs all
+install: targetdirs mal_config.h all
+	$(INSTALL) mal_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc:
@@ -25,11 +26,8 @@ $(SRCDIR)\Makefile.msc:
 
 all-msc: mal_config.h
 
-mal_config.h: winconfig.h sysdefs.h
-	$(INSTALL) winconfig.h mal_config.h
-
-sysdefs.h: "$(SRCDIR)\sysdefs.h.in"
-	$(CONFIGURE) "$(SRCDIR)\sysdefs.h.in" > sysdefs.h
+mal_config.h: mal_config.h.in
+	$(CONFIGURE) mal_config.h.in > mal_config.h
 
 RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
 	$(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
