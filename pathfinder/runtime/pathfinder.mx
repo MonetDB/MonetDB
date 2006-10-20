@@ -194,7 +194,7 @@ PROC xquery_server_start() : void {
 
 # The Working Set #################################################################
 #
-# A "working set" contains all XML data currently accessible a running query;
+# A "working set" contains all XML data currently accessible to a running query;
 # each running XQuery has its own working set. 
 #
 # Thus, for each bat in a document container, the working set contains a bat-of-bats.
@@ -304,9 +304,9 @@ concurrent updates.
 @:ws_@1(ATTR_QN,           22, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_PROP,         23, void, bat, void,  oid, PRE_BASE)@
 
-@:ws_@1(NID_QN,            24, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(NID_QN_DEL,        25, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(NID_QN_INS,        26, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(QN_NID,            24, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(QN_NID_DEL,        25, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(QN_NID_INS,        26, void, bat, void,  oid, PRE_BASE)@
 
 @:ws_@1(PID_MAP,           27, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(PRE_CONT,          28, void, void,void,  oid, PRE_BASE)@
@@ -344,7 +344,7 @@ concurrent updates.
 @:ws_@1(_ATTR_QN,          59, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(_ATTR_PROP,        60, void, bat, void,  oid, PRE_BASE)@
 @-
-The bottop segment are the master copies of the top segment.
+The bottom segment are the master copies of the top segment.
 The middle segment is private to the query.
 
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
@@ -394,10 +394,10 @@ const RT_LOCK_FREELIST := 0;
 const RT_NID_FREELIST  := 1;
 const RT_PAGE_WS       := 2;
 const RT_ATTR_WS       := 3;
-const RT_NID_QN        := 4;
-const RT_NID_QN_INS    := 5;
-const RT_NID_QN_DEL    := 6;
-const RT_NID_QN_UNQ    := 7;
+const RT_QN_NID        := 4;
+const RT_QN_NID_INS    := 5;
+const RT_QN_NID_DEL    := 6;
+const RT_QN_NID_UNQ    := 7;
 const RT_REGION_PRE    := 8;
 const RT_REGION_START  := 9;
 const RT_REGION_END    := 10;
@@ -407,6 +407,22 @@ const RT_REGION_END    := 10;
 const RT_REGION_PRE_LOCK    := lock(RT_REGION_PRE);
 const RT_REGION_START_LOCK  := lock(RT_REGION_START);
 const RT_REGION_END_LOCK    := lock(RT_REGION_END);
+
+# these constants are used by the update code
+# the values should remain in this order and be consecutive with the indices from the working set
+const MAP_PID_UPDATE := _ATTR_PROP + 1; # assume _ATTR_PROP is the last entry in the working set
+const RID_SIZE_UPDATE := MAP_PID_UPDATE + 1;
+const RID_LEVEL_UPDATE := RID_SIZE_UPDATE + 1;
+const RID_KIND_UPDATE := RID_LEVEL_UPDATE + 1;
+const RID_PROP_UPDATE := RID_KIND_UPDATE + 1;
+const RID_NID_UPDATE := RID_PROP_UPDATE + 1;
+const NID_RID_UPDATE := RID_NID_UPDATE + 1;
+const ATTR_QN_UPDATE := NID_RID_UPDATE + 1;
+const ATTR_PROP_UPDATE := ATTR_QN_UPDATE + 1;
+const ATTR_OWN_UPDATE := ATTR_PROP_UPDATE + 1;
+const UPDATED_TEXT := ATTR_OWN_UPDATE + 1;
+const NID_QN_INS_UPDATE := UPDATED_TEXT + 1; # note, NID_QN and not QN_NID
+const NID_QN_DEL_UPDATE := NID_QN_INS_UPDATE + 1;
 
 @- shared BATs
 
@@ -645,7 +661,7 @@ The first entry (named RT_LOCK_FREELIST ) in this runtime-BAT is
 'pagefree' is a BAT[oid,void] that contains a list of free pages.
 
 The other entries in the runtime-BAT relate to indices on the collection.
-More information can be found in the NID_QN section. Also, the StandOff
+More information can be found in the QN_NID section. Also, the StandOff
 extensions use entries in the runtime-BAT.
 
 The collection lock can be used to get exclusive access to the master
@@ -882,6 +898,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
     if (isolate) {
         # on each document load, we update the free page list (i.e. garbage collection)
         var free_pages := map_pid.ord_uselect(oid_nil).access(BAT_WRITE); # list of free pages
+        if ((free_pages.count() = 0) and (free_pages.htype() = void)) free_pages.seqbase(0@0); # give it a non-nil head
         var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
         runtime.replace(coll_lock, free_pages);
 
@@ -914,12 +931,12 @@ PROC __ws_opencoll(BAT[void,bat] ws,
 
     # initialize runtime on first load (this involves full table scans and may cost)
     var idx, ins, del;
-    if (count(runtime) > RT_NID_QN) {
-        idx := runtime.fetch(RT_NID_QN);
-        ins := runtime.fetch(RT_NID_QN_INS);
-        del := runtime.fetch(RT_NID_QN_DEL);
+    if (count(runtime) > RT_QN_NID) {
+        idx := runtime.fetch(RT_QN_NID);
+        ins := runtime.fetch(RT_QN_NID_INS);
+        del := runtime.fetch(RT_QN_NID_DEL);
     } else {
-        # create the NID_QN index
+        # create the QN_NID index
         var cnt := ws.fetch(QN_HISTOGRAM).fetch(cont);
         var nid := ws.fetch(PRE_NID).fetch(cont);
         var knd := ws.fetch(PRE_KIND).fetch(cont);
@@ -933,11 +950,14 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         if (runtime != empty_runtime) { # a non temporary document
             var free_nids := empty_bat;
             if (isolate) { # new writable empty bats
-                free_nids := dsk.fetch(PRE_NID).uselect(oid_nil).access(BAT_WRITE); 
+                free_nids := dsk.fetch(PRE_NID).uselect(oid_nil).access(BAT_WRITE);
+                if ((free_nids.count() = 0) and (free_nids.htype() = void)) {
+                  free_nids.seqbase(0@0);
+                }
                 ins := bat(oid,oid);
                 del := bat(oid,oid);
-                page_ws := bat(oid,int);
-                attr_ws := bat(oid,int);
+                page_ws := bat(oid,lng);
+                attr_ws := bat(oid,lng);
             }
             runtime.insert(lock_nil,free_nids);
             runtime.insert(lock_nil,page_ws);
@@ -951,9 +971,9 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         ins := ins.copy().access(BAT_WRITE);
         del := del.copy().access(BAT_WRITE);
     }
-    ws.fetch(NID_QN).append(idx);
-    ws.fetch(NID_QN_INS).append(ins);
-    ws.fetch(NID_QN_DEL).append(del);
+    ws.fetch(QN_NID).append(idx);
+    ws.fetch(QN_NID_INS).append(ins);
+    ws.fetch(QN_NID_DEL).append(del);
 
     return cont;
 }
@@ -1039,13 +1059,13 @@ collection a number of specific locks and index structures (BATs).
   the lock and a BAT with a list of free page ids.
 1 RT_NID_FREELIST [lock,bat] 
   nil lock and a BAT with a list of free NIDs
-2 RT_NID_QN        [nil, bat] 
+2 RT_QN_NID        [nil, bat] 
   the main BAT[oid,oid] object shared by all concurrent queries
-3 RT_NID_QN_INS    [nil, bat] 
+3 RT_QN_NID_INS    [nil, bat] 
   a private BAT[oid,oid] with all nodes that got this QN  during this query
-4 RT_NID_QN_DEL    [nil, bat] 
+4 RT_QN_NID_DEL    [nil, bat] 
   a private BAT[oid,oid] with all nodes that no longer have this QN since this query.
-5 RT_NID_QN_UNQ    [nil, bat] 
+5 RT_QN_NID_UNQ    [nil, bat] 
   a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
 
 The first entry head holds a collection lock (coll_lock, in much of the
@@ -1057,14 +1077,14 @@ The first entry tail holds a page-free list.
 The second entry tail holds a NID-free list.
 Both are used when a document is being extended by an uopdate query.
 
-@- NID_QN index
+@- QN_NID index
 
-The NID_QN index uses the collection lock for all its maintenance and
-query actions. The bulk of the data is in the shared NID_QN master bat (thus 
-taking coll_lock is required when accessing it).  The NID_QN index does not 
+The QN_NID index uses the collection lock for all its maintenance and
+query actions. The bulk of the data is in the shared QN_NID master bat (thus 
+taking coll_lock is required when accessing it).  The QN_NID index does not 
 use any additional locks, so the other head values are nil.
 
-The NID_QN index is a dynamic, adaptive non-persistent index on NSLOC that
+The QN_NID index is a dynamic, adaptive non-persistent index on NSLOC that
 can deliver NID candidate lists. These NIDs must be translated into RIDs
 (leftfetchjoin), then swizzled, then (finally) sorted, in order to serve
 as input for loop-lifted staircase join (SCJ).
@@ -1089,10 +1109,10 @@ would be  in the order of the document collection, instead).
 Therefore, it is stored in the runtime-BAT, reachable for new queries
 via the colname_runtime meta-BAT.
 
-Isolation in the NID_QN index is provided by committing in the _INS and _DEL 
+Isolation in the QN_NID index is provided by committing in the _INS and _DEL 
 master bats, which are not seen by any concurrent queries. If there are no 
 concurrent queries, _INS and _DEL are flushed with the new changes into the 
-NID_QN master.
+QN_NID master.
 @mil
 # get a handle to the runtime-BAT (and create it if not there yet)
 PROC _runtime_get(str colname) : BAT[lock,bat] 
@@ -1105,7 +1125,7 @@ PROC _runtime_get(str colname) : BAT[lock,bat]
 
 # double-underscore __X() means we must have the RT_LOCK_FREELIST of this collection
 
-# this computes a new NID_QN index for a suffix of the PRE-table
+# this computes a new QN_NID index for a suffix of the PRE-table
 PROC __runtime_index(BAT[void,oid] nid, 
                      BAT[void,chr] knd, 
                      BAT[void,oid] prp, 
@@ -1133,15 +1153,15 @@ PROC __runtime_maintain(lng wsid,
                         BAT[oid,oid] del,
                         BAT[void,oid] delpages) : void
 {
-    var others := colname_pins.ord_uselect(colname).access(BAT_WRITE).delete(wsid);
+    var others := colname_pins.reverse().ord_uselect(colname).access(BAT_WRITE).delete(wsid);
     if (count(others) > 0) {
-        runtime.fetch(RT_NID_QN_INS).insert(idx);
-        runtime.fetch(RT_NID_QN_DEL).insert(del);
+        runtime.fetch(RT_QN_NID_INS).insert(idx);
+        runtime.fetch(RT_QN_NID_DEL).insert(del);
     } else {
         # coast is clear, unite als ins, all del and apply them to the master
-        ins := runtime.fetch(RT_NID_QN_INS).insert(ins);
-        del := runtime.fetch(RT_NID_QN_DEL).insert(del);
-        runtime.fetch(RT_NID_QN_INS).insert(ins).deleteBuns(del);
+        ins := runtime.fetch(RT_QN_NID_INS).insert(ins);
+        del := runtime.fetch(RT_QN_NID_DEL).insert(del);
+        runtime.fetch(RT_QN_NID).insert(ins).deleteBuns(del);
         ins.delete();
         del.delete();
     }
@@ -1153,7 +1173,7 @@ PROC __runtime_maintain(lng wsid,
     runtime.replace(RT_REGION_START_LOCK, empty_bat);
     runtime.replace(RT_REGION_END_LOCK, empty_bat);
 
-    runtime.fetch(RT_LOCK_FREELIST).append(delpages);
+    runtime.fetch(RT_LOCK_FREELIST).reverse().append(delpages);
 }
 
 # used by shred: incremental shred on an already index document must maintain it (i.e. add new nodes)
@@ -1166,8 +1186,8 @@ PROC __runtime_addchunk(lng wsid,
                         oid pre,
                         bit updatable) : void 
 {
-    if (count(runtime) > RT_NID_QN) { # only maintain if the index is instantiated now anyway
-        var idx := __runtime_index(nid, knd, prp, runtime.fetch(RT_NID_QN_UNQ), pre, updatable);
+    if (count(runtime) > RT_QN_NID) { # only maintain if the index is instantiated now anyway
+        var idx := __runtime_index(nid, knd, prp, runtime.fetch(RT_QN_NID_UNQ), pre, updatable);
         __runtime_maintain(wsid, colname, runtime, idx, empty_bat, empty_bat);
     }
 }
@@ -1177,19 +1197,19 @@ PROC __runtime_lookup(BAT[lock,bat] runtime,
                       BAT[oid,oid] qn_ids) : bat[void,oid] 
 {
     var res, valid := false;
-    if (count(runtime) > RT_NID_QN) { 
+    if (count(runtime) > RT_QN_NID) { 
         # do lookup using the index
-        var ins, del, idx := runtime.fetch(RT_NID_QN).reverse();
+        var ins, del, idx := runtime.fetch(RT_QN_NID).reverse();
         if (count(qn_ids) = 1) {
             var qn_id := qn_ids.fetch(0);
             res := idx.select(qn_id);
-            ins := runtime.fetch(RT_NID_QN_INS).select(qn_id);
-            del := runtime.fetch(RT_NID_QN_DEL).select(qn_id);
+            ins := runtime.fetch(RT_QN_NID_INS).select(qn_id);
+            del := runtime.fetch(RT_QN_NID_DEL).select(qn_id);
             valid := bit(count(res) + count(ins) + count(del));
         } else {
             res := idx.join(qn_ids);
-            ins := runtime.fetch(RT_NID_QN_INS).join(qn_ids);
-            del := runtime.fetch(RT_NID_QN_DEL).join(qn_ids);
+            ins := runtime.fetch(RT_QN_NID_INS).join(qn_ids);
+            del := runtime.fetch(RT_QN_NID_DEL).join(qn_ids);
             valid := (count(qn_ids.tdiff(res).tdiff(ins).tdiff(del)) = 0);
         }
         if (bit(count(ins) + count(del))) {
@@ -1222,7 +1242,7 @@ PROC __runtime_newnids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void]
     
     # re-use a page from the list; or -if empty- append a new page
     if (i > 0) {
-        var ret := free_nids.slice(i + 1 - cnt,cnt).copy();
+        var ret := free_nids.slice(i - cnt, i - 1).copy();
         free_nids.delete(ret);
         return ret;
     }
@@ -1300,24 +1320,18 @@ PROC _ws_coll_isolate(BAT[void,bat] ws,
 
 
 PROC ws_precommit(BAT[void,BAT] ws,
-                  oid cont,  
-                  BAT[void,oid] ancestor_pre, 
-                  BAT[void,oid] modified_pre,
-                  BAT[void,oid] modified_attr) : void 
+                  oid cont,
+                  BAT[void,oid] modified_page,
+                  BAT[void,oid] ancestor_nid,
+                  BAT[void,oid] modified_nid,
+                  BAT[void,oid] modified_attr) : void
 {
     var wsid := ws_id(ws);
     var colname := ws.fetch(CONT_NAME).fetch(cont);
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
-    var pre_nid := ws.fetch(PRE_NID).fetch(cont);
-    var pid_map := ws.fetch(PID_MAP).fetch(cont);
     var page_ws := runtime.fetch(RT_PAGE_WS);
     var attr_ws := runtime.fetch(RT_ATTR_WS);
  
-    # compute nids and page-ids from pre's
-    var ancestor_nid := ancestor_pre.leftfetchjoin(pre_nid);
-    var modified_nid := modified_pre.leftfetchjoin(pre_nid);
-    var modified_page := [oid](tunique([>>]([lng](modified_pre), REMAP_PAGE_BITS)).hmark(0@0)).leftfetchjoin(pid_map);
-
     # thanks to coll_lock, no new cont users will appear for the moment
     # also get pf_free, to block processing of ending queries, to achieve total stability
     coll_lock_set(ws, cont); 
@@ -1342,16 +1356,20 @@ PROC ws_precommit(BAT[void,BAT] ws,
 
     # let's now establish the current set of queries (ws-s) that were already using this collection
     lock_set(pf_short);
-    var other_ws, err := CATCH(other_ws := [ws_bat](_ws_pinnedcoll(wsid, colname)));
+    var other_ws, err := CATCH(other_ws := [ws_bat](_ws_pinnedcoll(wsid, colname)).tmark(0@0));
 
     # isolate these working set against our intended updates. 
     # copying pages can take time, thus we introduced pf_free: it allows to do the isolation without claiming pf_short
     lock_unset(pf_short);
-    if (isnil(err)) err := CATCH([_ws_coll_isolate](other_ws, colname, 
-                                                    const ancestor_nid, 
-                                                    const modified_nid, 
-                                                    const modified_page, 
-                                                    const modified_attr));
+    if (isnil(err)) {
+        if (other_ws.count() > 0) {
+            err := CATCH([_ws_coll_isolate](other_ws, colname, 
+                                            const ancestor_nid, 
+                                            const modified_nid, 
+                                            const modified_page, 
+                                            const modified_attr));
+        }
+    }
     lock_unset(pf_free);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1368,7 +1386,7 @@ PROC ws_postcommit(BAT[void,BAT] ws,
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
 
     # maintain the index while holding the collection lock
-    var err := CATCH(__runtime_maintain(ws_id(ws), colname, runtime, ins, del));
+    var err := CATCH(__runtime_maintain(ws_id(ws), colname, runtime, ins, del, delpages));
     if (not(isnil(err))) ERROR(err);
 
     coll_lock_unset(ws, cont); # release X-access to the masters (after the commit phase)

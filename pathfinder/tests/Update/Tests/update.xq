@@ -29,6 +29,9 @@ for $elem in $testdoc/document/element
 ,
 do delete ($testdoc/document/@title, $testdoc/document/@copyright, $testdoc/document/@foo)
 ,
+for $elem in $testdoc/document/element[@attribute = 50]
+	return do rename exactly-one($elem) with "Element"
+,
 (: test changing comment value with the following test:
 -- new text
 :)
