@@ -102,12 +102,9 @@ address MILinsert_bun;
 @-
 Compatibility code wrappers
 @c
-#include "mal.h"
 #include "bat5.h"
 #include "mal_utils.h"
 #include "streams.h"
-
-#include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
@@ -214,6 +211,8 @@ mil.deposit("M_SQRT1_2",M_SQRT1_2);
 #else
 #define mil_utils_export extern
 #endif
+
+#include "mal.h"
 
 mil_utils_export str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mil_utils_export str MILhasMoreElements(lng *cursor, str *v);
