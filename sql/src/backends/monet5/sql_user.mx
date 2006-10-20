@@ -72,10 +72,11 @@ monet5_drop_user(ptr _mvc, str user)
 	sql_table *users;
 	sql_column *users_name;
 	int schema_id,  user_id;
-        user_id = sql_find_auth(m, user);
-        schema_id = sql_find_auth_schema(m, user);
+	str err;
+	user_id = sql_find_auth(m, user);
+	schema_id = sql_find_auth_schema(m, user);
 
-	str err = AUTHremoveUser(&user);
+	err = AUTHremoveUser(&user);
 	if (err != MAL_SUCCEED) {
 		(void)sql_error(m, 02, "DROP USER: %s", err);
 		_DELETE(err);
@@ -109,9 +110,9 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 	BAT *scens;
 	str ret;
 	char buf[BUFSIZ];
-	(void)l;
 	size_t user_id;
 
+	(void)l;
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
 	BUNins(scens, "sql", 0, FALSE);
@@ -417,8 +418,9 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	rid = column_find_row(m->session->tr, auths_name, username, NULL);
 	if (rid >= 0) {
 		sql_column *auths_id = find_sql_column(auths, "id");
+		int id;
 		p = column_find_value(m->session->tr, auths_id, rid);
-		int id = *(int *) p;
+		id = *(int *) p;
 		_DELETE(p);
 
 		m->user_id = m->role_id = id;
