@@ -425,13 +425,13 @@ mo_builtin_settings(opt **Set)
 	set[i].value = strdup("2");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("sql_debug");
-	set[i].value = strdup("0");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("sql_logdir");
+	set[i].name = strdup("logdir");
 	snprintf(buf, BUFSIZ, "%s%c%s%clog", MONETDB_LOCALSTATEDIR, DIR_SEP, PACKAGE, DIR_SEP);
 	set[i].value = strdup(buf);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_debug");
+	set[i].value = strdup("0");
 	i++;
 	assert(i == N_OPTIONS);
 	*Set = set;

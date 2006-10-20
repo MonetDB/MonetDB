@@ -172,6 +172,8 @@ field in the BBPrec records.
 @h
 #define BBPnamecheck(s) (((s)[0]=='t' && (s)[1]=='m' && (s)[2]=='p' &&\
 			  (s)[3]=='_')?strtol(s+4,NULL,8):0)
+#define BBPtmpcheck(s) (((s)[0]=='t' && (s)[1]=='m' && (s)[2]=='p' &&\
+			  (s)[3]=='_')?1:0)
 
 @c
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
@@ -370,7 +372,7 @@ BBPinithash(void)
 	while (--i > 0) {
 		str s = BBP_logical(i);
 		if (s) {
-			if (*s != '.' && BBPnamecheck(BBP_logical(i)) == 0) {
+			if (*s != '.' && BBPtmpcheck(BBP_logical(i)) == 0) {
 				BBP_insert(i);
 			}
 			if (BBP_logical(-i)) {
@@ -609,13 +611,13 @@ BBPinit(void)
 		BBP_logical(i) = GDKstrdup(s);
 		BBP[ABS(i)].bak[0] = NULL;
 		BBP[ABS(i)].bak[1] = NULL;
-		if (BBPnamecheck(s)) /* only backup temp names */
+		if (BBPtmpcheck(s)) /* only backup temp names */
 			BBP[ABS(i)].bak[(i)<0] = BBP_logical(i);
 		i = -i;
 		if (c && c[1]) {
 			BBP_logical(i) = GDKstrdup(c + 1);
 			/* only backup temp names */
-			if (BBPnamecheck(BBP_logical(i))) 
+			if (BBPtmpcheck(BBP_logical(i))) 
 				BBP[ABS(i)].bak[(i)<0] = BBP_logical(i);
 			j++;
 		} else {
@@ -1071,7 +1073,7 @@ bbpclear(bat i)
 			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBPname(i));
 		}
 		BBPuncacheit_(i, TRUE);
-		if (BBPnamecheck(BBP_logical(i)) == 0) {
+		if (BBPtmpcheck(BBP_logical(i)) == 0) {
 			BBP_delete(i);
 		}
 		if (BBP_logical(-i)) {
@@ -1158,7 +1160,7 @@ BBPrename(bat bid, str nme)
 	BBP_notrim = BBP_getpid();
 
 	/* carry through the name change */
-	if (BBP_logical(bid) && BBPnamecheck(BBP_logical(bid)) == 0) {
+	if (BBP_logical(bid) && BBPtmpcheck(BBP_logical(bid)) == 0) {
 		BBP_delete(bid);
 	}
 	if( BBP_logical(bid) != BBP[ABS(bid)].bak[(bid)<0])
@@ -2316,7 +2318,7 @@ BBPaddtobin(BAT *b)
 	BAT *m = BBP_cache(-bid);
 
 	/* only cache simple non-saved non-renamed transient bats */
-	if (m == NULL || batcache_minsize == 0 || b->batCopiedtodisk || b->batLview || BBPnamecheck(s) == 0 || b->htype > TYPE_str || b->ttype > TYPE_str) {
+	if (m == NULL || batcache_minsize == 0 || b->batCopiedtodisk || b->batLview || BBPtmpcheck(s) == 0 || b->htype > TYPE_str || b->ttype > TYPE_str) {
 		BATdelete(b); /* handles persistent case also (file deletes) */
 		return 1;
 	}

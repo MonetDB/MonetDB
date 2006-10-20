@@ -212,7 +212,10 @@ yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 		if (t->yysons[i])
 			tn->yysons[i] = yycopy(t->yysons[i], kill_orig, func_parent&(i==1), next, end);
 	t = YYOVERFLOW(t);
-	if (t) tn->yysons[tn->capacity] = yycopy(t, kill_orig, 0, next, end);
+	if (t) {
+		assert(tn->extendable && tn->cnt == tn->capacity);
+		tn->yysons[tn->capacity] = yycopy(t, kill_orig, 0, next, end);
+	}
 	return tn;
 }
 
@@ -548,7 +551,10 @@ yysubstitute_proc(YYSTREE t, int argc, ValPtr argv, char**next, char** end)
 		tt->yyval.len = argc;
 	}
 	t = YYOVERFLOW(t);
-	if (t) tt->yysons[tt->cnt] = yysubstitute_proc(t, argc, argv, next, end);
+	if (t) {
+		assert(tt->extendable && tt->cnt == tt->capacity);
+		tt->yysons[tt->capacity] = yysubstitute_proc(t, argc, argv, next, end);
+	}
 	return tt;
 }
 

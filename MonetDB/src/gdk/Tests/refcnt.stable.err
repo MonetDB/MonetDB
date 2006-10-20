@@ -2,7 +2,7 @@ stderr of test 'refcnt` in directory 'src/gdk` itself:
 
 
 # 11:40:32 >  
-# 11:40:32 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=57441 --set sql_port=54507 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
+# 11:40:32 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=57441 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
 # 11:40:32 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
@@ -23,12 +23,8 @@ stderr of test 'refcnt` in directory 'src/gdk` itself:
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
 # builtin opt 	mapi_debug = 0
-# builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_api = sql(default-schema)
-# builtin opt 	sql_user = monetdb
-# builtin opt 	sql_schema = default-schema
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# builtin opt 	logdir = ${prefix}/var/MonetDB/log
 # config opt 	prefix = /ufs/sjoerd/Monet
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
@@ -40,13 +36,12 @@ stderr of test 'refcnt` in directory 'src/gdk` itself:
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
-# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	logdir = ${prefix}/var/MonetDB/log
 # cmdline opt 	gdk_debug = 10
 # cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs
 # cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm
-# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
+# cmdline opt 	logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
 # cmdline opt 	mapi_port = 57441
-# cmdline opt 	sql_port = 54507
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_gdk
 
