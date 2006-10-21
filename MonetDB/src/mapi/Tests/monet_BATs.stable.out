@@ -2,7 +2,7 @@ stdout of test 'monet_BATs` in directory 'src/mapi` itself:
 
 
 # 18:21:02 >  
-# 18:21:02 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set monet_prompt= --trace "--dbname=mTests_src_mapi" "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB/mapi.mil" monet_BATs.prologue ; echo ; echo Over..
+# 18:21:02 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace "--dbname=mTests_src_mapi" "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB/mapi.mil" monet_BATs.prologue ; echo ; echo Over..
 # 18:21:02 >  
 
 # Monet Database Server V4.3.13

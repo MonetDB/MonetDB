@@ -103,17 +103,16 @@ mapi_debug=0
 # (smaller than 1 is not very useful)
 #mapi_clients=2
 
-# LOGGER Interface Section
-#======================
-# Place to store transaction logs of the logger
-# The logs are typically stored on a different storage medium
-# to protect the database against accidental hardware loss.
-logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dblogs
-
 # SQL Interface Section
 #======================
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
+
+# Place to store transaction logs
+# The logs are typically stored on a different storage medium
+# to protect the database against accidental hardware loss.
+# it should be different directory as used for xquery!
+sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs
 
 # XQuery Interface Section
 #=========================
@@ -127,6 +126,12 @@ xquery_output=xml
 
 #limit the document cache on disk to 100MB
 xquery_cacheMB=100                      
+
+# Place to store transaction logs
+# The logs are typically stored on a different storage medium
+# to protect the database against accidental hardware loss.
+# it should be different directory as used for sql!
+xquery_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@xquery_logs
 
 # Profile Interface Section
 #====================================

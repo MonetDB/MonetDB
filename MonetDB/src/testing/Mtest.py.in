@@ -940,10 +940,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #STDOUT.flush()
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        for LogDBvar in 'GDK_DBFARM', 'LOGDIR':
+        for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR', 'XQUERY_LOGDIR':
             LogDBdir = os.path.join(env[LogDBvar],TSTDB)
-            if LogDBvar == 'LOGDIR':
-                LogDBtxt = "log directory for "
+            if LogDBvar in 'SQL_LOGDIR':
+                LogDBtxt = "sql log directory for "
+            elif LogDBvar in 'XQUERY_LOGDIR':
+                LogDBtxt = "xquery log directory for "
             else:
                 LogDBtxt = ""
             if os.path.exists(LogDBdir):
@@ -1597,7 +1599,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
-            FILES = FILES+" "+os.path.join(env['LOGDIR'],TSTDB,'log\\*')
+            FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'sql_logs\\*')
+            FILES = FILES+" "+os.path.join(env['XQUERY_LOGDIR'],TSTDB,'xquery_logs\\*')
             WHAT0 = os.path.join(THISPATH,"MkillUsers")+" -l"+ME
             WHAT1 = FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
             WHAT = WHAT0+" -p"+ME+" "+WHAT1
@@ -2579,7 +2582,8 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
-        dft['setLOGDIR']     = "'--set \"logdir='+env['LOGDIR']+'\"'"
+        dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
+        dft['setXQUERY_LOGDIR']     = "'--set \"sql_logdir='+env['XQUERY_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['MAPICLIENT']     = "'MapiClient -lmil'" 
         dft['SQLCLIENT']      = "'MapiClient -lsql'" 
@@ -2642,7 +2646,7 @@ def main(argv) :
              "override Mserver's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
-            ('logdir', None, 'logdir', '<directory>',
+            ('sql_logdir', None, 'sql_logdir', '<directory>',
              "override default location of transaction-log directory"),
             ('MAPICLIENT', None, 'MAPICLIENT', '<mapi-client program>',
              'default: %s' % dft['MAPICLIENT']),
@@ -2720,9 +2724,12 @@ def main(argv) :
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
-        a = opts.get('logdir')
+        a = opts.get('sql_logdir')
         if a is not None:
-            env['LOGDIR'] = a
+            env['SQL_LOGDIR'] = a
+        a = opts.get('xquery_logdir')
+        if a is not None:
+            env['XQUERY_LOGDIR'] = a
         a = opts.get('use_at')
         if a is not None:
             env['USE_AT'] = a
@@ -2810,10 +2817,14 @@ def main(argv) :
             env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
         else:
             env['setGDK_DBFARM'] = ''
-        if env.has_key('LOGDIR'):
-            env['setLOGDIR'] = eval(dft['setLOGDIR'])
+        if env.has_key('SQL_LOGDIR'):
+            env['setSQL_LOGDIR'] = eval(dft['setSQL_LOGDIR'])
         else:
-            env['setLOGDIR'] = ''
+            env['setSQL_LOGDIR'] = ''
+        if env.has_key('XQUERY_LOGDIR'):
+            env['setXQUERY_LOGDIR'] = eval(dft['setXQUERY_LOGDIR'])
+        else:
+            env['setXQUERY_LOGDIR'] = ''
 
     if THISFILE == "Mprofile.py"  and  not env['CMDLST']:
         try:
@@ -2919,7 +2930,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','SQL_SERVER']
+        vars_ = vars_ + ['XQUERY_LOGDIR','SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','SQL_SERVER']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2971,11 +2982,11 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if env['VERSION'] >= 49900:
-            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
-                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setLOGDIR'], env['MAPIPORT'])
+            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
-                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setLOGDIR'], env['MAPIPORT'])
+            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec('@PYTHON@')     , '@PYTHON@'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
@@ -3089,9 +3100,12 @@ def main(argv) :
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
-        if not os.path.exists(env['LOGDIR']):
+        if not os.path.exists(env['SQL_LOGDIR']):
             #TODO: set mode to umask
-            os.makedirs(env['LOGDIR'])
+            os.makedirs(env['SQL_LOGDIR'])
+        if not os.path.exists(env['XQUERY_LOGDIR']):
+            #TODO: set mode to umask
+            os.makedirs(env['XQUERY_LOGDIR'])
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:

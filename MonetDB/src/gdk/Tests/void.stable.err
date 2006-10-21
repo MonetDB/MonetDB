@@ -23,7 +23,11 @@ stderr of test 'void` in directory 'src/gdk` itself:
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
 # builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
 # config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
