@@ -117,17 +117,16 @@ checkpoint_dir=${prefix}/var/MonetDB5/chkpnt
 #====================================
 mapi_port=50000			#default port to address a mserver
 
-# LOGGER Interface Section
-#======================
-# Place to store transaction logs of the logger
-# The logs are typically stored on a different storage medium
-# to protect the database against accidental hardware loss.
-logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dblogs 
-
 # SQL Interface Section
 #====================================
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
+
+# Place to store transaction logs
+# The logs are typically stored on a different storage medium
+# to protect the database against accidental hardware loss.
+# it should be different directory as used for xquery!
+sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@sql_logs 
 
 # XQuery Interface Section
 #=========================
@@ -140,3 +139,9 @@ xquery_output=dm
 
 #limit the document cache on disk to 100MB
 xquery_cacheMB=100
+
+# Place to store transaction logs
+# The logs are typically stored on a different storage medium
+# to protect the database against accidental hardware loss.
+# it should be different directory as used for sql!
+xquery_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@xquery_logs
