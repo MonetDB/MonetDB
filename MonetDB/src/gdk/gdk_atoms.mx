@@ -1879,7 +1879,7 @@ at a time (adding 16-bits to the hash value each iteration).
 #define GDK_STRHASH(x,y) {                                             \
         str _c = (str) (x);                                            \
         for((y)=0; _c[0] && _c[1]; _c+=2) {                            \
-                 (y) = ((y) << 5) ^ ((y) >> 7) ^ (_c[1] << 3) ^ _c[0]; \
+                 (y) = ((y) << 3) ^ ((y) >> 11) ^ ((y) >> 17) ^ (_c[1] << 8) ^ _c[0];\
         }                                                              \
         (y) ^= _c[0];                                                  \
 }
@@ -1895,36 +1895,41 @@ strHash(str s)
 
 void strCleanHash(Heap *h, int rebuild) 
 {
-        if (rebuild) {
+        if (!GDK_ELIMDOUBLES(h)) {
+                /* flush hash table for security */
+	        memset(h->base, 0, GDK_STRHASHSIZE);
+	} else if (rebuild) {
                 var_t xx, cur=0, end=0;
 		str hash = (str) h->base;
-
+/* int cnt[GDK_STRHASHTABLE]; */ 
 		/* collect all values in one big linked list */
                 for(xx=0; xx<GDK_STRHASHTABLE; xx++) {
                         var_t yy = ((var_t*) hash)[xx];
 
+/* cnt[xx]=0; */
 		        ((var_t*) hash)[xx] = 0; /* clear hash table slot */ 
 
 		        if (end) {
-                                ((var_t*) (hash + end))[-1] = yy;
+                                *(var_t*) (hash + end) = yy;
                         } else {
                                 cur = yy;
                         }
-		        for(; yy; yy=((var_t*) (hash + yy))[-1]) end = yy;
+		        for(; yy; yy=*(var_t*) (hash + yy)) end = yy;
                 }
 
 		/* process the linked list, inserting the values again */
                 for(; cur; cur=end) {
                 	str val = hash + cur;
-                	GDK_STRHASH(val, xx);
+                	GDK_STRHASH(val + sizeof(var_t), xx);
                 	xx &= GDK_STRHASHMASK;
-                        end = ((var_t*) val)[-1];
-                        ((var_t*) val)[-1] = ((var_t*) hash)[xx];
+                        end = *(var_t*) val;
+                        *(var_t*) val = ((var_t*) hash)[xx];
                 	((var_t*) hash)[xx] = cur;
+/* cnt[xx]++; */
         	}
-        } else {
-	        memset(h->base, 0, GDK_STRHASHSIZE);
-	}
+/* for(xx=0; xx<GDK_STRHASHTABLE; xx++)
+   if(cnt[xx]) stream_printf(GDKout, "%5d %6d", xx, cnt[xx]); */
+        } 
 }
 
 @- 
@@ -1999,7 +2004,7 @@ strPut(Heap *h, var_t *dst, str v)
 
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
 	if (h->free + len >= elimlimit) {
-		strCleanHash(h, FALSE); 
+	        memset(h->base, 0, GDK_STRHASHSIZE);
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */

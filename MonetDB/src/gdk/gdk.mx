@@ -908,7 +908,7 @@ typedef struct {
 } COLrec;
 
 #define GDKLIBRARY_OLD  050415  /* 64-bits BAT with old hash function */
-#define GDKLIBRARY      061020  /* 64-bits BAT */
+#define GDKLIBRARY      061021  /* 64-bits BAT */
 
 typedef struct BAT {
 	/* static bat properties */

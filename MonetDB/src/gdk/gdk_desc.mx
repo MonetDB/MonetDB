@@ -35,7 +35,7 @@ introduced to the atom ADT (atomConvert and atomHeapConvert).
 @+ BAT versions
 Three BAT formats are currently supported:
 @h
-#define GDKversionOK(x)	((x)==GDKLIBRARY || (x)==GDKLIBRARY_OLD)
+#define GDKversionOK(x)	((x)>=GDKLIBRARY_OLD && (x)<=GDKLIBRARY)
 
 @
 If BATs need to be added to an old BBP directory, we might need
