@@ -203,6 +203,8 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 #define mkey_export extern
 #endif
 
+#define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
+
 mkey_export str  MKEYrotate(int *ret, int *v, int *nbits);
 mkey_export str  MKEYhash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mkey_export str  MKEYhash_chr(int *ret, chr *v);
