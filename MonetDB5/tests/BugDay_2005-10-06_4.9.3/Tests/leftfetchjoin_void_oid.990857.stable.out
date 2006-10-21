@@ -42,7 +42,7 @@ end main;	# 12
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "20749"	  ]
+[ "version",		  "25105"	  ]
 [ "batId",		  "tmp_13"	  ]
 [ "batCacheid",		  "11"		  ]
 [ "batParentid",	  "0"		  ]
@@ -64,7 +64,7 @@ end main;	# 12
 [ "hkey",		  "1"		  ]
 [ "hloc",		  "0"		  ]
 [ "hvarsized",		  "1"		  ]
-[ "halign",		  "1000165"	  ]
+[ "halign",		  "1000169"	  ]
 [ "hnosorted",		  "0"		  ]
 [ "hnosorted_rev",	  "0"		  ]
 [ "hnodense",		  "0"		  ]
@@ -77,7 +77,7 @@ end main;	# 12
 [ "tkey",		  "1"		  ]
 [ "tloc",		  "0"		  ]
 [ "tvarsized",		  "0"		  ]
-[ "talign",		  "1000164"	  ]
+[ "talign",		  "1000168"	  ]
 [ "tnosorted",		  "0"		  ]
 [ "tnosorted_rev",	  "0"		  ]
 [ "tnodense",		  "0"		  ]
