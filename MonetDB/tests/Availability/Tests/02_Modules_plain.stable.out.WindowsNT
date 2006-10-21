@@ -731,17 +731,28 @@ Module: "lock"
 
 Module: "logger"
 
-[ 6 ]
-[ 6 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 17 ]
+[ 17 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature							help													  # name
 # str			str		str								str													  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "log_delta",		  "COMMAND:   ",  "log_delta(BAT[void,any::1], BAT[oid,any::1], oid) : bit",	  "log the delta in the WAL (return success)"								  ]
-[ "log_insert",		  "COMMAND:   ",  "log_insert(BAT[void,any::1], oid) : bit",			  "log the inserts in the WAL (return success)"								  ]
-[ "log_trans_end",	  "COMMAND:   ",  "log_trans_end(oid) : bit",					  "write transaction end in the WAL (return success)"							  ]
-[ "log_trans_start",	  "COMMAND:   ",  "log_trans_start(bit) : oid",					  "Log a start of a transaction, return new transaction id"						  ]
-[ "logger_start",	  "COMMAND:   ",  "logger_start(str, str) : bit",				  "Start logging; if first start, check if recovery is needed. if already logging, close the old file."	  ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "log_bat",		  "COMMAND:   ",  "log_bat(logger, BAT[void,any::1], str) : void",		  "log the inserts in the WAL"														  ]
+[ "log_bat_clear",	  "COMMAND:   ",  "log_bat_clear(logger, str) : void",				  "log the inserts in the WAL"														  ]
+[ "log_bat_persists",	  "COMMAND:   ",  "log_bat_persists(logger, BAT[void,any::1], str) : void",	  "log the created bat in the WAL (return success)"											  ]
+[ "log_bat_transient",	  "COMMAND:   ",  "log_bat_transient(logger, str) : void",			  "log the bat destruction in the WAL (return success)"											  ]
+[ "log_delta",		  "COMMAND:   ",  "log_delta(logger, BAT[void,any::1], str) : void",		  "log the updates in the WAL"														  ]
+[ "log_trans_end",	  "COMMAND:   ",  "log_trans_end(logger) : void",				  "write transaction end in the WAL"													  ]
+[ "log_trans_start",	  "COMMAND:   ",  "log_trans_start(logger) : void",				  "Log a start of a transaction"													  ]
+[ "logger_add_bat",	  "COMMAND:   ",  "logger_add_bat(logger, BAT[void,any::1], str) : int",	  "Register a bat name, return the bid"													  ]
+[ "logger_changes",	  "COMMAND:   ",  "logger_changes(logger) : int",				  "Return the number of logged changes."												  ]
+[ "logger_cleanup",	  "COMMAND:   ",  "logger_cleanup(logger) : void",				  "Cleanup the old no longer needed logfiles. Should be call after logger_restart but can be called with out any locks."		  ]
+[ "logger_create",	  "COMMAND:   ",  "logger_create(int, str, str, str, int) : logger",		  "Create logger, check if recovery is needed. The fn variable names the frontend,this is needed to keep the catalog bat seperate"	  ]
+[ "logger_del_bat",	  "COMMAND:   ",  "logger_del_bat(logger, int) : void",				  "Unregister a bat with given bid"													  ]
+[ "logger_destroy",	  "COMMAND:   ",  "logger_destroy(logger) : void",				  "Free the resources used by the logger."												  ]
+[ "logger_exit",	  "COMMAND:   ",  "logger_exit(logger) : void",					  "After the manager replaced some bats we need to flush these bats to disk and close the current log file."				  ]
+[ "logger_find_bat",	  "COMMAND:   ",  "logger_find_bat(logger, str) : int",				  "Find the bid for a named bat"													  ]
+[ "logger_restart",	  "COMMAND:   ",  "logger_restart(logger) : void",				  "Restart will call logger_exit and logger_open to start a new log file."								  ]
 [ "logger_start",	  "PROC:      ",  "logger_start() : void",					  "not available"											  ]
 
 Module: "mapi"
