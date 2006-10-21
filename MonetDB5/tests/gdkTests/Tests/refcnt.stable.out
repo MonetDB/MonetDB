@@ -184,14 +184,14 @@ function user.main():void;	# 0  (main:void)
     bat.insert(m,20@0:oid,"twenty");	# 46 BKCinsert_bun (_52:void)<-(m:bat[:oid,:str])(_53:oid)(_54:str)
 #VAR res := [createBAT](i); 	# 47  (_55:str)
     io.print("do multiplex");	# 48 IOprint_val (_56:int)<-(_57:str)
-    _78 := bat.new(:oid,:BAT);	# 49 CMDBATnew (_78:bat[:oid,:BAT])<-(_45:oid)(_27:BAT)
-barrier (_80,_81,_82):= bat.newIterator(m);	# 50 CHPbunIterator (_80:lng)(_81:oid)(_82:str)<-(m:bat[:oid,:str]) jump 56
-    _84 := user.createBAT(_82);	# 51  (_84:BAT)<-(_82:str)
-    bat.insert(_78,_81,_84);	# 52 BKCinsert_bun (_85:void)<-(_78:bat[:oid,:BAT])(_81:oid)(_84:BAT)
+    _78 := bat.new(nil:oid,nil);	# 49 CMDBATnew (_78:bat[:oid,:BAT])<-(_79:oid)(_80:BAT)
+barrier (_82,_83,_84):= bat.newIterator(m);	# 50 CHPbunIterator (_82:lng)(_83:oid)(_84:str)<-(m:bat[:oid,:str]) jump 56
+    _86 := user.createBAT(_84);	# 51  (_86:BAT)<-(_84:str)
+    bat.insert(_78,_83,_86);	# 52 BKCinsert_bun (_87:void)<-(_78:bat[:oid,:BAT])(_83:oid)(_86:BAT)
 catch MALexception:str ;	# 53  (MALexception:str) jump 54
 exit MALexception:str ;	# 54  (MALexception:str)
-    redo (_80,_81,_82):= bat.hasMoreElements(m);	# 55 CHPbunHasMoreElements (_80:lng)(_81:oid)(_82:str)<-(m:bat[:oid,:str]) jump 51
-exit (_80,_81,_82);	# 56  (_80:lng)(_81:oid)(_82:str)
+    redo (_82,_83,_84):= bat.hasMoreElements(m);	# 55 CHPbunHasMoreElements (_82:lng)(_83:oid)(_84:str)<-(m:bat[:oid,:str]) jump 51
+exit (_82,_83,_84);	# 56  (_82:lng)(_83:oid)(_84:str)
     r:bat[:oid,:BAT]  := _78;	# 57  (r:bat[:oid,:BAT])<-(_78:bat[:oid,:BAT])
     io.print(r);	# 58 IOprint_val (_60:int)<-(r:bat[:oid,:BAT])
 #tmp(); 	# 59  (_61:str)
