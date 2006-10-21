@@ -30,7 +30,7 @@ extern int seq_restart(sql_sequence *seq, lng start);
 #include "sql_catalog.h"
 #include "sql_storage.h"
 #include "bat_store.h"
-#include "bat_logger.h"
+#include <logger.h>
 
 typedef struct bat_sequence {
 	sqlid seqid;
@@ -61,7 +61,7 @@ void sequences_exit(void)
 static void 
 sql_update_sequence_cache(sql_sequence *seq, lng cached) 
 {
-	log_sequence(logger, seq->base.id, cached);
+	log_sequence(sql_logger, seq->base.id, cached);
 }
 
 /* lock is held */
@@ -78,7 +78,7 @@ sql_create_sequence(sql_sequence *seq )
 	s -> cached = seq->start;
 
 	if (seq->base.flag == TR_OLD && 
-	    logger_sequence(logger, seq->base.id, &id )) 
+	    logger_sequence(sql_logger, seq->base.id, &id )) 
 		s->cached = id;
 	s -> cur = s->cached;
 	return s;

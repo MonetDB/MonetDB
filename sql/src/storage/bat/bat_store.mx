@@ -22,9 +22,9 @@
 
 #include "sql_storage.h"
 #include "bat_dependency.h"
-#include "bat_logger.h"
+#include <logger.h>
 
-extern struct logger *logger;
+extern logger *sql_logger;
 
 #define isNew(x)  (x->base.flag == TR_NEW)
 #define isTemp(x) (isNew(x)||x->t->persistence!=SQL_PERSIST)
@@ -61,13 +61,14 @@ extern BAT *temp_descriptor(log_bid b);
 #include "bat_store.h"
 #include "sql_types.h"
 #include "sql_backend.h"
+#include "bat_bm.h"
 #include "bat_sequence.h"
 #include <bat.h>
 
 /* version 03.02.01 of catalog */
 #define CATALOG_VERSION 30201
 
-struct logger *logger = NULL;
+logger *sql_logger = NULL;
 static MT_Lock bs_lock;
 static lng store_oid = 0;
 static int nr_sessions = 0;
@@ -136,7 +137,7 @@ temp_copy(log_bid b, int temp)
 		c = bat_copy(o, "temp_copy");
 		BATcommit(c);
 	} else {
-		c = bat_new(o->htype, o->ttype, SQLBATSIZE, "temp_copy");
+		c = bat_new(o->htype, o->ttype, BATSIZE, "temp_copy");
 	}
 	r = temp_create(c);
 	bat_destroy(c);
@@ -597,9 +598,9 @@ tr_flag(sql_base * b, int flag)
 }
 
 static BAT *
-get_bat(struct logger *logger, char *name)
+get_bat(char *name)
 {
-	log_bid bid = logger_find_bat(logger, name);
+	log_bid bid = logger_find_bat(sql_logger, name);
 
 	if (bid) {
 		BAT *b = temp_descriptor(bid);
@@ -614,8 +615,8 @@ static void
 load_keycolumn(sql_trans *tr, BAT *columns, BUN j, sql_key *k)
 {
 	sql_kc *kc = NEW(sql_kc);
-	BAT *kc_col = get_bat(logger, "sys_keycolumns_column");
-	BAT *kc_trunc = get_bat(logger, "sys_keycolumns_trunc");
+	BAT *kc_col = get_bat("sys_keycolumns_column");
+	BAT *kc_trunc = get_bat("sys_keycolumns_trunc");
 	ptr lid = BUNhead(columns, j);
 	char *name = bun_find(kc_col, lid);
 	int trunc = *(int *) bun_find(kc_trunc, lid);
@@ -637,13 +638,13 @@ load_key(sql_trans *tr, BAT *keys, BUN j, sql_table *t)
 {
 	size_t ccnt;
 	BAT *cols, *rcols;
-	BAT *key_id = get_bat(logger, "sys_keys_id");
-	BAT *key_tpe = get_bat(logger, "sys_keys_type");
-	BAT *key_name = get_bat(logger, "sys_keys_name");
-	BAT *key_rkey = get_bat(logger, "sys_keys_rkey");
-	BAT *kc_id = get_bat(logger, "sys_keycolumns_id");
-	BAT *kc_nr = get_bat(logger, "sys_keycolumns_nr");
-	BAT *D_keycolumns = get_bat(logger, "D_sys_keycolumns");
+	BAT *key_id = get_bat("sys_keys_id");
+	BAT *key_tpe = get_bat("sys_keys_type");
+	BAT *key_name = get_bat("sys_keys_name");
+	BAT *key_rkey = get_bat("sys_keys_rkey");
+	BAT *kc_id = get_bat("sys_keycolumns_id");
+	BAT *kc_nr = get_bat("sys_keycolumns_nr");
+	BAT *D_keycolumns = get_bat("D_sys_keycolumns");
 	ptr lid = BUNhead(keys, j);
 	key_type ktype = (key_type) *(int *) bun_find(key_tpe, lid);
 	char *name = (char *) bun_find(key_name, lid);
@@ -744,8 +745,8 @@ static void
 load_idxcolumn(sql_trans *tr, BAT *columns, BUN j, sql_idx * i)
 {
 	sql_kc *kc = NEW(sql_kc);
-	BAT *kc_col = get_bat(logger, "sys_keycolumns_column");
-	BAT *kc_trunc = get_bat(logger, "sys_keycolumns_trunc");
+	BAT *kc_col = get_bat("sys_keycolumns_column");
+	BAT *kc_trunc = get_bat("sys_keycolumns_trunc");
 	ptr lid = BUNhead(columns, j);
 	char *name = bun_find(kc_col, lid);
 	int trunc = *(int *) bun_find(kc_trunc, lid);
@@ -771,12 +772,12 @@ load_idx(sql_trans *tr, BAT *idxs, BUN j, sql_table *t)
 	size_t ccnt;
 	BAT *b;
 	BAT *cols, *rcols;
-	BAT *idx_id = get_bat(logger, "sys_idxs_id");
-	BAT *idx_tpe = get_bat(logger, "sys_idxs_type");
-	BAT *idx_name = get_bat(logger, "sys_idxs_name");
-	BAT *kc_id = get_bat(logger, "sys_keycolumns_id");
-	BAT *kc_nr = get_bat(logger, "sys_keycolumns_nr");
-	BAT *D_keycolumns = get_bat(logger, "D_sys_keycolumns");
+	BAT *idx_id = get_bat("sys_idxs_id");
+	BAT *idx_tpe = get_bat("sys_idxs_type");
+	BAT *idx_name = get_bat("sys_idxs_name");
+	BAT *kc_id = get_bat("sys_keycolumns_id");
+	BAT *kc_nr = get_bat("sys_keycolumns_nr");
+	BAT *D_keycolumns = get_bat("D_sys_keycolumns");
 	ptr lid = BUNhead(idxs, j);
 	idx_type itype = (idx_type) * (int *) bun_find(idx_tpe, lid);
 	char *name = (char *) bun_find(idx_name, lid);
@@ -815,13 +816,13 @@ load_idx(sql_trans *tr, BAT *idxs, BUN j, sql_table *t)
 	if (itype == join_idx || list_length(ni->columns) > 1 ) {
 		snprintf(bname, BUFSIZ, "%s_%s_%s", t->s->base.name, t->base.name, ni->base.name);
 		ni->bat.name = _strdup(bname);
-		b = temp_descriptor(logger_find_bat(logger, ni->bat.name));
+		b = temp_descriptor(logger_find_bat(sql_logger, ni->bat.name));
 		ni->bat.bid = temp_create(b);
 		bat_destroy(b);
 
 		snprintf(bname, BUFSIZ, "U_%s", ni->bat.name);
 		ni->bat.uname = _strdup(bname);
-		b = temp_descriptor(logger_find_bat(logger, ni->bat.uname));
+		b = temp_descriptor(logger_find_bat(sql_logger, ni->bat.uname));
 		ni->bat.ubid = temp_create(b);
 		bat_destroy(b);
 	}
@@ -868,8 +869,8 @@ static void
 load_triggercolumn(sql_trans *tr, BAT *columns, BUN j, sql_trigger * i)
 {
 	sql_kc *kc = NEW(sql_kc);
-	BAT *kc_col = get_bat(logger, "sys_keycolumns_column");
-	BAT *kc_trunc = get_bat(logger, "sys_keycolumns_trunc");
+	BAT *kc_col = get_bat("sys_keycolumns_column");
+	BAT *kc_trunc = get_bat("sys_keycolumns_trunc");
 	ptr lid = BUNhead(columns, j);
 	char *name = bun_find(kc_col, lid);
 	int trunc = *(int *) bun_find(kc_trunc, lid);
@@ -891,18 +892,18 @@ load_trigger(sql_trans *tr, BAT *triggers, BUN j, sql_table *t)
 {
 	size_t ccnt;
 	BAT *cols, *rcols;
-	BAT *trigger_id = get_bat(logger, "sys_triggers_id");
-	BAT *trigger_name = get_bat(logger, "sys_triggers_name");
-	BAT *trigger_time = get_bat(logger, "sys_triggers_time");
-	BAT *trigger_orientation = get_bat(logger, "sys_triggers_orientation");
-	BAT *trigger_event = get_bat(logger, "sys_triggers_event");
-	BAT *trigger_old_name = get_bat(logger, "sys_triggers_old_name");
-	BAT *trigger_new_name = get_bat(logger, "sys_triggers_new_name");
-	BAT *trigger_condition = get_bat(logger, "sys_triggers_condition");
-	BAT *trigger_statement = get_bat(logger, "sys_triggers_statement");
-	BAT *kc_id = get_bat(logger, "sys_keycolumns_id");
-	BAT *kc_nr = get_bat(logger, "sys_keycolumns_nr");
-	BAT *D_keycolumns = get_bat(logger, "D_sys_keycolumns");
+	BAT *trigger_id = get_bat("sys_triggers_id");
+	BAT *trigger_name = get_bat("sys_triggers_name");
+	BAT *trigger_time = get_bat("sys_triggers_time");
+	BAT *trigger_orientation = get_bat("sys_triggers_orientation");
+	BAT *trigger_event = get_bat("sys_triggers_event");
+	BAT *trigger_old_name = get_bat("sys_triggers_old_name");
+	BAT *trigger_new_name = get_bat("sys_triggers_new_name");
+	BAT *trigger_condition = get_bat("sys_triggers_condition");
+	BAT *trigger_statement = get_bat("sys_triggers_statement");
+	BAT *kc_id = get_bat("sys_keycolumns_id");
+	BAT *kc_nr = get_bat("sys_keycolumns_nr");
+	BAT *D_keycolumns = get_bat("D_sys_keycolumns");
 	ptr lid = BUNhead(triggers, j);
 	char *name = (char *) bun_find(trigger_name, lid);
 	char *old_name = (char *) bun_find(trigger_old_name, lid);
@@ -967,14 +968,14 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 	ptr lid = BUNhead(columns, j);
 	int sz, d;
 	BAT *b;
-	BAT *column_id = get_bat(logger, "sys__columns_id");
-	BAT *column_name = get_bat(logger, "sys__columns_name");
-	BAT *column_type = get_bat(logger, "sys__columns_type");
-	BAT *column_type_digits = get_bat(logger, "sys__columns_type_digits");
-	BAT *column_type_scale = get_bat(logger, "sys__columns_type_scale");
-	BAT *column_default = get_bat(logger, "sys__columns_default");
-	BAT *column_null = get_bat(logger, "sys__columns_null");
-	BAT *column_number = get_bat(logger, "sys__columns_number");
+	BAT *column_id = get_bat("sys__columns_id");
+	BAT *column_name = get_bat("sys__columns_name");
+	BAT *column_type = get_bat("sys__columns_type");
+	BAT *column_type_digits = get_bat("sys__columns_type_digits");
+	BAT *column_type_scale = get_bat("sys__columns_type_scale");
+	BAT *column_default = get_bat("sys__columns_default");
+	BAT *column_null = get_bat("sys__columns_null");
+	BAT *column_number = get_bat("sys__columns_number");
 
 	base_init(&c->base, *(sqlid *) bun_find(column_id, lid), TR_OLD, (char *) bun_find(column_name, lid));
 
@@ -1000,13 +1001,13 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 
 		snprintf(name, BUFSIZ, "%s_%s_%s", t->s->base.name, t->base.name, c->base.name);
 		c->bat.name = _strdup(name);
-		b = temp_descriptor(logger_find_bat(logger, c->bat.name));
+		b = temp_descriptor(logger_find_bat(sql_logger, c->bat.name));
 		c->bat.bid = temp_create(b);
 		bat_destroy(b);
 
 		snprintf(name, BUFSIZ, "U_%s", c->bat.name);
 		c->bat.uname = _strdup(name);
-		b = temp_descriptor(logger_find_bat(logger, c->bat.uname));
+		b = temp_descriptor(logger_find_bat(sql_logger, c->bat.uname));
 		c->bat.ubid = temp_create(b);
 		bat_destroy(b);
 
@@ -1062,21 +1063,21 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	BAT *cols, *rcols, *keys, *rkeys, *idxs, *ridxs, *triggers, *rtriggers;
 	BUN p, q;
 	size_t ccnt;
-	BAT *column_table = get_bat(logger, "sys__columns_table_id");
-	BAT *column_number = get_bat(logger, "sys__columns_number");
-	BAT *key_table = get_bat(logger, "sys_keys_table_id");
-	BAT *idx_table = get_bat(logger, "sys_idxs_table_id");
-	BAT *trigger_table = get_bat(logger, "sys_triggers_table_id");
-	BAT *table_id = get_bat(logger, "sys__tables_id");
-	BAT *table_names = get_bat(logger, "sys__tables_name");
-	BAT *table_queries = get_bat(logger, "sys__tables_query");
-	BAT *table_type = get_bat(logger, "sys__tables_type");
-	BAT *table_system = get_bat(logger, "sys__tables_system");
-	BAT *table_commit_action = get_bat(logger, "sys__tables_commit_action");
-	BAT *D_columns = get_bat(logger, "D_sys__columns");
-	BAT *D_keys = get_bat(logger, "D_sys_keys");
-	BAT *D_idxs = get_bat(logger, "D_sys_idxs");
-	BAT *D_triggers = get_bat(logger, "D_sys_triggers");
+	BAT *column_table = get_bat("sys__columns_table_id");
+	BAT *column_number = get_bat("sys__columns_number");
+	BAT *key_table = get_bat("sys_keys_table_id");
+	BAT *idx_table = get_bat("sys_idxs_table_id");
+	BAT *trigger_table = get_bat("sys_triggers_table_id");
+	BAT *table_id = get_bat("sys__tables_id");
+	BAT *table_names = get_bat("sys__tables_name");
+	BAT *table_queries = get_bat("sys__tables_query");
+	BAT *table_type = get_bat("sys__tables_type");
+	BAT *table_system = get_bat("sys__tables_system");
+	BAT *table_commit_action = get_bat("sys__tables_commit_action");
+	BAT *D_columns = get_bat("D_sys__columns");
+	BAT *D_keys = get_bat("D_sys_keys");
+	BAT *D_idxs = get_bat("D_sys_idxs");
+	BAT *D_triggers = get_bat("D_sys_triggers");
 
 	base_init(&t->base, *(sqlid *) bun_find(table_id, lid), TR_OLD, bun_find(table_names, lid));
 	query = (char *) bun_find(table_queries, lid);
@@ -1093,7 +1094,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 
 	t->pkey = NULL;
 	t->s = s;
-	t->sz = SQLBATSIZE;
+	t->sz = BATSIZE;
 	t->cnt = 0;
 
 	cs_init(&t->columns, (fdestroy) &column_destroy);
@@ -1108,7 +1109,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 		BAT *b;
 		bat bid;
 
-		if (!isTempTable(t) && (bid = logger_find_bat(logger, t->dname))) {
+		if (!isTempTable(t) && (bid = logger_find_bat(sql_logger, t->dname))) {
 			b = temp_descriptor(bid);
 		} else {
 			b = bat_new(TYPE_void, TYPE_oid, t->sz, "load_table");
@@ -1202,13 +1203,13 @@ load_type(sql_trans *tr, sql_schema * s, BAT *types, BUN j)
 {
 	sql_type *t = NEW(sql_type);
 	ptr lid = BUNhead(types, j);
-	BAT *type_id = get_bat(logger, "sys_types_id");
-	BAT *type_systemname = get_bat(logger, "sys_types_systemname");
-	BAT *type_sqlname = get_bat(logger, "sys_types_sqlname");
-	BAT *type_digits = get_bat(logger, "sys_types_digits");
-	BAT *type_scale = get_bat(logger, "sys_types_scale");
-	BAT *type_radix = get_bat(logger, "sys_types_radix");
-	BAT *type_eclass = get_bat(logger, "sys_types_eclass");
+	BAT *type_id = get_bat("sys_types_id");
+	BAT *type_systemname = get_bat("sys_types_systemname");
+	BAT *type_sqlname = get_bat("sys_types_sqlname");
+	BAT *type_digits = get_bat("sys_types_digits");
+	BAT *type_scale = get_bat("sys_types_scale");
+	BAT *type_radix = get_bat("sys_types_radix");
+	BAT *type_eclass = get_bat("sys_types_eclass");
 
 	(void)tr;
 	base_init(&t->base, *(sqlid *) bun_find(type_id, lid), TR_OLD, bun_find(type_systemname, lid));
@@ -1252,10 +1253,10 @@ load_arg(sql_trans *tr, sql_func * f, BAT *args, BUN j)
 	sql_arg *a = NEW(sql_arg);
 	ptr lid = BUNhead(args, j);
 	int digits, scale;
-	BAT *arg_name = get_bat(logger, "sys_args_name");
-	BAT *arg_type = get_bat(logger, "sys_args_type");
-	BAT *arg_type_digits = get_bat(logger, "sys_args_type_digits");
-	BAT *arg_type_scale = get_bat(logger, "sys_args_type_scale");
+	BAT *arg_name = get_bat("sys_args_name");
+	BAT *arg_type = get_bat("sys_args_type");
+	BAT *arg_type_digits = get_bat("sys_args_type_digits");
+	BAT *arg_type_scale = get_bat("sys_args_type_scale");
 
 	(void)f;
 	a->name = _strdup((char *) bun_find(arg_name, lid));
@@ -1283,14 +1284,14 @@ load_func(sql_trans *tr, sql_schema * s, BAT *funcs, BUN j)
 	ptr lid = BUNhead(funcs, j);
 	BAT *args, *rargs;
 	BUN p, q;
-	BAT *func_id = get_bat(logger, "sys_functions_id");
-	BAT *func_name = get_bat(logger, "sys_functions_name");
-	BAT *func_func = get_bat(logger, "sys_functions_func");
-	BAT *func_mod = get_bat(logger, "sys_functions_mod");
-	BAT *func_sql = get_bat(logger, "sys_functions_sql");
-	BAT *func_aggr = get_bat(logger, "sys_functions_aggr");
-	BAT *arg_func_id = get_bat(logger, "sys_args_func_id");
-	BAT *arg_number = get_bat(logger, "sys_args_number");
+	BAT *func_id = get_bat("sys_functions_id");
+	BAT *func_name = get_bat("sys_functions_name");
+	BAT *func_func = get_bat("sys_functions_func");
+	BAT *func_mod = get_bat("sys_functions_mod");
+	BAT *func_sql = get_bat("sys_functions_sql");
+	BAT *func_aggr = get_bat("sys_functions_aggr");
+	BAT *arg_func_id = get_bat("sys_args_func_id");
+	BAT *arg_number = get_bat("sys_args_number");
 	int first = 1;
 
 	base_init(&t->base, *(sqlid *) bun_find(func_id, lid), TR_OLD, bun_find(func_name, lid));
@@ -1346,14 +1347,14 @@ load_seq(sql_trans *tr, sql_schema * s, BAT *seqs, BUN j)
 {
 	sql_sequence *seq = NEW(sql_sequence);
 	ptr lid = BUNhead(seqs, j);
-	BAT *seq_id = get_bat(logger, "sys_sequences_id");
-	BAT *seq_name = get_bat(logger, "sys_sequences_name");
-	BAT *seq_start = get_bat(logger, "sys_sequences_start");
-	BAT *seq_minvalue = get_bat(logger, "sys_sequences_minvalue");
-	BAT *seq_maxvalue = get_bat(logger, "sys_sequences_maxvalue");
-	BAT *seq_increment = get_bat(logger, "sys_sequences_increment");
-	BAT *seq_cacheinc = get_bat(logger, "sys_sequences_cacheinc");
-	BAT *seq_cycle = get_bat(logger, "sys_sequences_cycle");
+	BAT *seq_id = get_bat("sys_sequences_id");
+	BAT *seq_name = get_bat("sys_sequences_name");
+	BAT *seq_start = get_bat("sys_sequences_start");
+	BAT *seq_minvalue = get_bat("sys_sequences_minvalue");
+	BAT *seq_maxvalue = get_bat("sys_sequences_maxvalue");
+	BAT *seq_increment = get_bat("sys_sequences_increment");
+	BAT *seq_cacheinc = get_bat("sys_sequences_cacheinc");
+	BAT *seq_cycle = get_bat("sys_sequences_cycle");
 
 	(void)tr;
 	base_init(&seq->base, *(sqlid *) bun_find(seq_id, lid), TR_OLD, bun_find(seq_name, lid));
@@ -1383,16 +1384,16 @@ load_schema(sql_trans *tr, BAT *schemas, BUN j)
 	ptr lid = BUNhead(schemas, j);
 	BAT *tables, *ptables, *types, *funcs, *seqs;
 	BUN p, q;
-	BAT *schema_names = get_bat(logger, "sys_schemas_name");
-	BAT *schema_auths = get_bat(logger, "sys_schemas_authorization");
-	BAT *table_schema = get_bat(logger, "sys__tables_schema_id");
-	BAT *D_tables = get_bat(logger, "D_sys__tables");
-	BAT *type_schema = get_bat(logger, "sys_types_schema_id");
-	BAT *D_types = get_bat(logger, "D_sys_types");
-	BAT *func_schema = get_bat(logger, "sys_functions_schema_id");
-	BAT *D_funcs = get_bat(logger, "D_sys_functions");
-	BAT *seq_schema = get_bat(logger, "sys_sequences_schema_id");
-	BAT *D_seqs = get_bat(logger, "D_sys_sequences");
+	BAT *schema_names = get_bat("sys_schemas_name");
+	BAT *schema_auths = get_bat("sys_schemas_authorization");
+	BAT *table_schema = get_bat("sys__tables_schema_id");
+	BAT *D_tables = get_bat("D_sys__tables");
+	BAT *type_schema = get_bat("sys_types_schema_id");
+	BAT *D_types = get_bat("D_sys_types");
+	BAT *func_schema = get_bat("sys_functions_schema_id");
+	BAT *D_funcs = get_bat("D_sys_functions");
+	BAT *seq_schema = get_bat("sys_sequences_schema_id");
+	BAT *D_seqs = get_bat("D_sys_sequences");
 
 	base_init(&s->base, *(sqlid *) bun_find(schemas, lid), TR_OLD, bun_find(schema_names, lid));
 	s->auth_id = *(sqlid *) bun_find(schema_auths, lid);
@@ -1466,12 +1467,12 @@ load_schema(sql_trans *tr, BAT *schemas, BUN j)
 }
 
 static sql_trans *
-load_trans(struct logger *logger, backend_stack stk)
+load_trans(backend_stack stk)
 {
 	sql_trans *t = NEW(sql_trans);
 	BUN p, q;
-	BAT *schema_ids = get_bat(logger, "sys_schemas_id");
-	BAT *D_schemas = get_bat(logger, "D_sys_schemas");
+	BAT *schema_ids = get_bat("sys_schemas_id");
+	BAT *D_schemas = get_bat("D_sys_schemas");
 	BAT *b;
 
 	t->name = NULL;
@@ -1499,20 +1500,20 @@ load_trans(struct logger *logger, backend_stack stk)
 }
 
 static BAT *
-sys_bat(struct logger *logger, char *name, int type)
+sys_bat(char *name, int type)
 {
 	BAT *b = NULL;
-	bat bid = logger_find_bat(logger, name);
+	bat bid = logger_find_bat(sql_logger, name);
 
 	if (bs_debug)
 		fprintf(stderr, "sys_bat %s bid %d\n", name, bid);
 
 	if (bid == 0) {
 		if (name[0] == 'U')
-			b = bat_new(TYPE_oid, type, SQLBATSIZE, "sys_bat");
+			b = bat_new(TYPE_oid, type, BATSIZE, "sys_bat");
 		else
-			b = bat_new(TYPE_void, type, SQLBATSIZE, "sys_bat");
-		bid = logger_add_bat(logger, b, name );
+			b = bat_new(TYPE_void, type, BATSIZE, "sys_bat");
+		bid = logger_add_bat(sql_logger, b, name );
 		if (bs_debug)
 			fprintf(stderr, "sys_bat created %s bid %d\n", name, bid);
 
@@ -1542,16 +1543,16 @@ store_next_oid(void)
 }
 
 static void
-bs_init_schema(struct logger *logger)
+bs_init_schema(void)
 {
 	int istmp = 0;
-	BAT *sql_schema_id = sys_bat(logger, Ccc(istmp,"tmp","sys","schemas_id"), TYPE_int);
-	BAT *sql_schema_name = sys_bat(logger, Ccc(istmp,"tmp","sys","schemas_name"), TYPE_str);
-	BAT *sql_schema_auth = sys_bat(logger, Ccc(istmp,"tmp","sys","schemas_authorization"), TYPE_int);
-	BAT *U_schema_id = sys_bat(logger, Ucc(istmp,"tmp","sys","schemas_id"), TYPE_int);
-	BAT *U_schema_name = sys_bat(logger, Ucc(istmp,"tmp","sys","schemas_name"), TYPE_str);
-	BAT *U_schema_auth = sys_bat(logger, Ucc(istmp,"tmp","sys","schemas_authorization"), TYPE_int);
-	BAT *D_sql_schema = sys_bat(logger, Dcc(istmp,"tmp","sys","schemas"), TYPE_oid);
+	BAT *sql_schema_id = sys_bat(Ccc(istmp,"tmp","sys","schemas_id"), TYPE_int);
+	BAT *sql_schema_name = sys_bat(Ccc(istmp,"tmp","sys","schemas_name"), TYPE_str);
+	BAT *sql_schema_auth = sys_bat(Ccc(istmp,"tmp","sys","schemas_authorization"), TYPE_int);
+	BAT *U_schema_id = sys_bat(Ucc(istmp,"tmp","sys","schemas_id"), TYPE_int);
+	BAT *U_schema_name = sys_bat(Ucc(istmp,"tmp","sys","schemas_name"), TYPE_str);
+	BAT *U_schema_auth = sys_bat(Ucc(istmp,"tmp","sys","schemas_authorization"), TYPE_int);
+	BAT *D_sql_schema = sys_bat(Dcc(istmp,"tmp","sys","schemas"), TYPE_oid);
 
 	update_table_bat(sql_schema_id, U_schema_id, D_sql_schema);
 	update_table_bat(sql_schema_name, U_schema_name, D_sql_schema);
@@ -1567,23 +1568,23 @@ bs_init_schema(struct logger *logger)
 }
 
 static void
-bs_init_table(struct logger *logger, int istmp)
+bs_init_table(int istmp)
 {
-	BAT *sql_table_id = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_id"), TYPE_int);
-	BAT *sql_table_name = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_name"), TYPE_str);
-	BAT *sql_table_schema = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_schema_id"), TYPE_int);
-	BAT *sql_table_query = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_query"), TYPE_str);
-	BAT *sql_table_type = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_type"), TYPE_sht);
-	BAT *sql_table_system = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_system"), TYPE_bit);
-	BAT *sql_table_commit_action = sys_bat(logger, Ccc(istmp,"tmp","sys","_tables_commit_action"), TYPE_sht);
-	BAT *U_table_id = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_id"), TYPE_int);
-	BAT *U_table_name = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_name"), TYPE_str);
-	BAT *U_table_schema = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_schema_id"), TYPE_int);
-	BAT *U_table_query = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_query"), TYPE_str);
-	BAT *U_table_type = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_type"), TYPE_sht);
-	BAT *U_table_system = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_system"), TYPE_bit);
-	BAT *U_table_commit_action = sys_bat(logger, Ucc(istmp,"tmp","sys","_tables_commit_action"), TYPE_sht);
-	BAT *D_sql_table = sys_bat(logger, Dcc(istmp,"tmp","sys","_tables"), TYPE_oid);
+	BAT *sql_table_id = sys_bat(Ccc(istmp,"tmp","sys","_tables_id"), TYPE_int);
+	BAT *sql_table_name = sys_bat(Ccc(istmp,"tmp","sys","_tables_name"), TYPE_str);
+	BAT *sql_table_schema = sys_bat(Ccc(istmp,"tmp","sys","_tables_schema_id"), TYPE_int);
+	BAT *sql_table_query = sys_bat(Ccc(istmp,"tmp","sys","_tables_query"), TYPE_str);
+	BAT *sql_table_type = sys_bat(Ccc(istmp,"tmp","sys","_tables_type"), TYPE_sht);
+	BAT *sql_table_system = sys_bat(Ccc(istmp,"tmp","sys","_tables_system"), TYPE_bit);
+	BAT *sql_table_commit_action = sys_bat(Ccc(istmp,"tmp","sys","_tables_commit_action"), TYPE_sht);
+	BAT *U_table_id = sys_bat(Ucc(istmp,"tmp","sys","_tables_id"), TYPE_int);
+	BAT *U_table_name = sys_bat(Ucc(istmp,"tmp","sys","_tables_name"), TYPE_str);
+	BAT *U_table_schema = sys_bat(Ucc(istmp,"tmp","sys","_tables_schema_id"), TYPE_int);
+	BAT *U_table_query = sys_bat(Ucc(istmp,"tmp","sys","_tables_query"), TYPE_str);
+	BAT *U_table_type = sys_bat(Ucc(istmp,"tmp","sys","_tables_type"), TYPE_sht);
+	BAT *U_table_system = sys_bat(Ucc(istmp,"tmp","sys","_tables_system"), TYPE_bit);
+	BAT *U_table_commit_action = sys_bat(Ucc(istmp,"tmp","sys","_tables_commit_action"), TYPE_sht);
+	BAT *D_sql_table = sys_bat(Dcc(istmp,"tmp","sys","_tables"), TYPE_oid);
 
 	update_table_bat(sql_table_id, U_table_id, D_sql_table);
 	update_table_bat(sql_table_name, U_table_name, D_sql_table);
@@ -1609,27 +1610,27 @@ bs_init_table(struct logger *logger, int istmp)
 }
 
 static void
-bs_init_column(struct logger *logger, int istmp)
+bs_init_column(int istmp)
 {
-	BAT *sql_column_id = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_id"), TYPE_int);
-	BAT *sql_column_name = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_name"), TYPE_str);
-	BAT *sql_column_type = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_type"), TYPE_str);
-	BAT *sql_column_type_digits = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_type_digits"), TYPE_int);
-	BAT *sql_column_type_scale = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_type_scale"), TYPE_int);
-	BAT *sql_column_table = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_table_id"), TYPE_int);
-	BAT *sql_column_default = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_default"), TYPE_str);
-	BAT *sql_column_null = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_null"), TYPE_bit);
-	BAT *sql_column_number = sys_bat(logger, Ccc(istmp,"tmp","sys","_columns_number"), TYPE_int);
-	BAT *U_column_id = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_id"), TYPE_int);
-	BAT *U_column_name = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_name"), TYPE_str);
-	BAT *U_column_type = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_type"), TYPE_str);
-	BAT *U_column_type_digits = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_type_digits"), TYPE_int);
-	BAT *U_column_type_scale = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_type_scale"), TYPE_int);
-	BAT *U_column_table = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_table_id"), TYPE_int);
-	BAT *U_column_default = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_default"), TYPE_str);
-	BAT *U_column_null = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_null"), TYPE_bit);
-	BAT *U_column_number = sys_bat(logger, Ucc(istmp,"tmp","sys","_columns_number"), TYPE_int);
-	BAT *D_sql_column = sys_bat(logger, Dcc(istmp,"tmp","sys","_columns"), TYPE_oid);
+	BAT *sql_column_id = sys_bat(Ccc(istmp,"tmp","sys","_columns_id"), TYPE_int);
+	BAT *sql_column_name = sys_bat(Ccc(istmp,"tmp","sys","_columns_name"), TYPE_str);
+	BAT *sql_column_type = sys_bat(Ccc(istmp,"tmp","sys","_columns_type"), TYPE_str);
+	BAT *sql_column_type_digits = sys_bat(Ccc(istmp,"tmp","sys","_columns_type_digits"), TYPE_int);
+	BAT *sql_column_type_scale = sys_bat(Ccc(istmp,"tmp","sys","_columns_type_scale"), TYPE_int);
+	BAT *sql_column_table = sys_bat(Ccc(istmp,"tmp","sys","_columns_table_id"), TYPE_int);
+	BAT *sql_column_default = sys_bat(Ccc(istmp,"tmp","sys","_columns_default"), TYPE_str);
+	BAT *sql_column_null = sys_bat(Ccc(istmp,"tmp","sys","_columns_null"), TYPE_bit);
+	BAT *sql_column_number = sys_bat(Ccc(istmp,"tmp","sys","_columns_number"), TYPE_int);
+	BAT *U_column_id = sys_bat(Ucc(istmp,"tmp","sys","_columns_id"), TYPE_int);
+	BAT *U_column_name = sys_bat(Ucc(istmp,"tmp","sys","_columns_name"), TYPE_str);
+	BAT *U_column_type = sys_bat(Ucc(istmp,"tmp","sys","_columns_type"), TYPE_str);
+	BAT *U_column_type_digits = sys_bat(Ucc(istmp,"tmp","sys","_columns_type_digits"), TYPE_int);
+	BAT *U_column_type_scale = sys_bat(Ucc(istmp,"tmp","sys","_columns_type_scale"), TYPE_int);
+	BAT *U_column_table = sys_bat(Ucc(istmp,"tmp","sys","_columns_table_id"), TYPE_int);
+	BAT *U_column_default = sys_bat(Ucc(istmp,"tmp","sys","_columns_default"), TYPE_str);
+	BAT *U_column_null = sys_bat(Ucc(istmp,"tmp","sys","_columns_null"), TYPE_bit);
+	BAT *U_column_number = sys_bat(Ucc(istmp,"tmp","sys","_columns_number"), TYPE_int);
+	BAT *D_sql_column = sys_bat(Dcc(istmp,"tmp","sys","_columns"), TYPE_oid);
 
 	update_table_bat(sql_column_id, U_column_id, D_sql_column);
 	update_table_bat(sql_column_name, U_column_name, D_sql_column);
@@ -1664,38 +1665,38 @@ bs_init_column(struct logger *logger, int istmp)
 
 
 static void
-bs_init_key(struct logger *logger, int istmp)
+bs_init_key(int istmp)
 {
-	BAT *key_id = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_id"), TYPE_int);
-	BAT *key_table = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_table_id"), TYPE_int);
-	BAT *key_tpe = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_type"), TYPE_int);
-	BAT *key_name = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_name"), TYPE_str);
-	BAT *key_rkey = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_rkey"), TYPE_int);
-	BAT *U_key_id = sys_bat(logger, Ucc(istmp,"tmp","sys","keys_id"), TYPE_int);
-	BAT *U_key_table = sys_bat(logger, Ucc(istmp,"tmp","sys","keys_table_id"), TYPE_int);
-	BAT *U_key_tpe = sys_bat(logger, Ucc(istmp,"tmp","sys","keys_type"), TYPE_int);
-	BAT *U_key_name = sys_bat(logger, Ucc(istmp,"tmp","sys","keys_name"), TYPE_str);
-	BAT *U_key_rkey = sys_bat(logger, Ucc(istmp,"tmp","sys","keys_rkey"), TYPE_int);
-	BAT *D_key = sys_bat(logger, Dcc(istmp,"tmp","sys","keys"), TYPE_oid);
+	BAT *key_id = sys_bat(Ccc(istmp,"tmp","sys","keys_id"), TYPE_int);
+	BAT *key_table = sys_bat(Ccc(istmp,"tmp","sys","keys_table_id"), TYPE_int);
+	BAT *key_tpe = sys_bat(Ccc(istmp,"tmp","sys","keys_type"), TYPE_int);
+	BAT *key_name = sys_bat(Ccc(istmp,"tmp","sys","keys_name"), TYPE_str);
+	BAT *key_rkey = sys_bat(Ccc(istmp,"tmp","sys","keys_rkey"), TYPE_int);
+	BAT *U_key_id = sys_bat(Ucc(istmp,"tmp","sys","keys_id"), TYPE_int);
+	BAT *U_key_table = sys_bat(Ucc(istmp,"tmp","sys","keys_table_id"), TYPE_int);
+	BAT *U_key_tpe = sys_bat(Ucc(istmp,"tmp","sys","keys_type"), TYPE_int);
+	BAT *U_key_name = sys_bat(Ucc(istmp,"tmp","sys","keys_name"), TYPE_str);
+	BAT *U_key_rkey = sys_bat(Ucc(istmp,"tmp","sys","keys_rkey"), TYPE_int);
+	BAT *D_key = sys_bat(Dcc(istmp,"tmp","sys","keys"), TYPE_oid);
 
-	BAT *kc_id = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
-	BAT *kc_col = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
-	BAT *kc_trunc = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
-	BAT *kc_nr = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
-	BAT *U_kc_id = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
-	BAT *U_kc_col = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
-	BAT *U_kc_trunc = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
-	BAT *U_kc_nr = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
-	BAT *D_kc = sys_bat(logger, Dcc(istmp,"tmp","sys","keycolumns"), TYPE_oid);
+	BAT *kc_id = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
+	BAT *kc_col = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
+	BAT *kc_trunc = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
+	BAT *kc_nr = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
+	BAT *U_kc_id = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
+	BAT *U_kc_col = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
+	BAT *U_kc_trunc = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
+	BAT *U_kc_nr = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
+	BAT *D_kc = sys_bat(Dcc(istmp,"tmp","sys","keycolumns"), TYPE_oid);
 
 	update_table_bat(key_id, U_key_id, D_key);
 	update_table_bat(key_table, U_key_table, D_key);
 	update_table_bat(key_tpe, U_key_tpe, D_key);
 	update_table_bat(key_name, U_key_name, D_key);
 	update_table_bat(key_rkey, U_key_rkey, D_key);
-	/* key_updaterule = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_updaterule"), TYPE_int); */
-	/* key_deleterule = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_deleterule"), TYPE_int); */
-	/* key_deferrability = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_deferrability"), TYPE_int); */
+	/* key_updaterule = sys_bat(Ccc(istmp,"tmp","sys","keys_updaterule"), TYPE_int); */
+	/* key_deleterule = sys_bat(Ccc(istmp,"tmp","sys","keys_deleterule"), TYPE_int); */
+	/* key_deferrability = sys_bat(Ccc(istmp,"tmp","sys","keys_deferrability"), TYPE_int); */
 
 	update_table_bat(kc_id, U_kc_id, D_kc);
 	update_table_bat(kc_col, U_kc_col, D_kc);
@@ -1726,35 +1727,35 @@ bs_init_key(struct logger *logger, int istmp)
 }
 
 static void
-bs_init_idx(struct logger *logger, int istmp)
+bs_init_idx(int istmp)
 {
-	BAT *idx_id = sys_bat(logger, Ccc(istmp,"tmp","sys","idxs_id"), TYPE_int);
-	BAT *idx_table = sys_bat(logger, Ccc(istmp,"tmp","sys","idxs_table_id"), TYPE_int);
-	BAT *idx_tpe = sys_bat(logger, Ccc(istmp,"tmp","sys","idxs_type"), TYPE_int);
-	BAT *idx_name = sys_bat(logger, Ccc(istmp,"tmp","sys","idxs_name"), TYPE_str);
-	BAT *U_idx_id = sys_bat(logger, Ucc(istmp,"tmp","sys","idxs_id"), TYPE_int);
-	BAT *U_idx_table = sys_bat(logger, Ucc(istmp,"tmp","sys","idxs_table_id"), TYPE_int);
-	BAT *U_idx_tpe = sys_bat(logger, Ucc(istmp,"tmp","sys","idxs_type"), TYPE_int);
-	BAT *U_idx_name = sys_bat(logger, Ucc(istmp,"tmp","sys","idxs_name"), TYPE_str);
-	BAT *D_idx = sys_bat(logger, Dcc(istmp,"tmp","sys","idxs"), TYPE_oid);
+	BAT *idx_id = sys_bat(Ccc(istmp,"tmp","sys","idxs_id"), TYPE_int);
+	BAT *idx_table = sys_bat(Ccc(istmp,"tmp","sys","idxs_table_id"), TYPE_int);
+	BAT *idx_tpe = sys_bat(Ccc(istmp,"tmp","sys","idxs_type"), TYPE_int);
+	BAT *idx_name = sys_bat(Ccc(istmp,"tmp","sys","idxs_name"), TYPE_str);
+	BAT *U_idx_id = sys_bat(Ucc(istmp,"tmp","sys","idxs_id"), TYPE_int);
+	BAT *U_idx_table = sys_bat(Ucc(istmp,"tmp","sys","idxs_table_id"), TYPE_int);
+	BAT *U_idx_tpe = sys_bat(Ucc(istmp,"tmp","sys","idxs_type"), TYPE_int);
+	BAT *U_idx_name = sys_bat(Ucc(istmp,"tmp","sys","idxs_name"), TYPE_str);
+	BAT *D_idx = sys_bat(Dcc(istmp,"tmp","sys","idxs"), TYPE_oid);
 
-	BAT *kc_id = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
-	BAT *kc_col = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
-	BAT *kc_trunc = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
-	BAT *kc_nr = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
-	BAT *U_kc_id = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
-	BAT *U_kc_col = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
-	BAT *U_kc_trunc = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
-	BAT *U_kc_nr = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
-	BAT *D_kc = sys_bat(logger, Dcc(istmp,"tmp","sys","keycolumns"), TYPE_oid);
+	BAT *kc_id = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
+	BAT *kc_col = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
+	BAT *kc_trunc = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
+	BAT *kc_nr = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
+	BAT *U_kc_id = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
+	BAT *U_kc_col = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
+	BAT *U_kc_trunc = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
+	BAT *U_kc_nr = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
+	BAT *D_kc = sys_bat(Dcc(istmp,"tmp","sys","keycolumns"), TYPE_oid);
 
 	update_table_bat(idx_id, U_idx_id, D_idx);
 	update_table_bat(idx_table, U_idx_table, D_idx);
 	update_table_bat(idx_tpe, U_idx_tpe, D_idx);
 	update_table_bat(idx_name, U_idx_name, D_idx);
-	/* key_updaterule = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_updaterule"), TYPE_int); */
-	/* key_deleterule = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_deleterule"), TYPE_int); */
-	/* key_deferrability = sys_bat(logger, Ccc(istmp,"tmp","sys","keys_deferrability"), TYPE_int); */
+	/* key_updaterule = sys_bat(Ccc(istmp,"tmp","sys","keys_updaterule"), TYPE_int); */
+	/* key_deleterule = sys_bat(Ccc(istmp,"tmp","sys","keys_deleterule"), TYPE_int); */
+	/* key_deferrability = sys_bat(Ccc(istmp,"tmp","sys","keys_deferrability"), TYPE_int); */
 
 	update_table_bat(kc_id, U_kc_id, D_kc);
 	update_table_bat(kc_col, U_kc_col, D_kc);
@@ -1783,40 +1784,40 @@ bs_init_idx(struct logger *logger, int istmp)
 }
 
 static void
-bs_init_trigger(struct logger *logger, int istmp)
+bs_init_trigger(int istmp)
 {
-	BAT *trigger_id = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_id"), TYPE_int);
-	BAT *trigger_name = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_name"), TYPE_str);
-	BAT *trigger_table = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_table_id"), TYPE_int);
-	BAT *trigger_time = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_time"), TYPE_sht);
-	BAT *trigger_orientation = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_orientation"), TYPE_sht);
-	BAT *trigger_event = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_event"), TYPE_sht);
-	BAT *trigger_old_name = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_old_name"), TYPE_str);
-	BAT *trigger_new_name = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_new_name"), TYPE_str);
-	BAT *trigger_condition = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_condition"), TYPE_str);
-	BAT *trigger_statement = sys_bat(logger, Ccc(istmp,"tmp","sys","triggers_statement"), TYPE_str);
+	BAT *trigger_id = sys_bat(Ccc(istmp,"tmp","sys","triggers_id"), TYPE_int);
+	BAT *trigger_name = sys_bat(Ccc(istmp,"tmp","sys","triggers_name"), TYPE_str);
+	BAT *trigger_table = sys_bat(Ccc(istmp,"tmp","sys","triggers_table_id"), TYPE_int);
+	BAT *trigger_time = sys_bat(Ccc(istmp,"tmp","sys","triggers_time"), TYPE_sht);
+	BAT *trigger_orientation = sys_bat(Ccc(istmp,"tmp","sys","triggers_orientation"), TYPE_sht);
+	BAT *trigger_event = sys_bat(Ccc(istmp,"tmp","sys","triggers_event"), TYPE_sht);
+	BAT *trigger_old_name = sys_bat(Ccc(istmp,"tmp","sys","triggers_old_name"), TYPE_str);
+	BAT *trigger_new_name = sys_bat(Ccc(istmp,"tmp","sys","triggers_new_name"), TYPE_str);
+	BAT *trigger_condition = sys_bat(Ccc(istmp,"tmp","sys","triggers_condition"), TYPE_str);
+	BAT *trigger_statement = sys_bat(Ccc(istmp,"tmp","sys","triggers_statement"), TYPE_str);
 
-	BAT *U_trigger_id = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_id"), TYPE_int);
-	BAT *U_trigger_name = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_name"), TYPE_str);
-	BAT *U_trigger_table = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_table_id"), TYPE_int);
-	BAT *U_trigger_time = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_time"), TYPE_sht);
-	BAT *U_trigger_orientation = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_orientation"), TYPE_sht);
-	BAT *U_trigger_event = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_event"), TYPE_sht);
-	BAT *U_trigger_old_name = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_old_name"), TYPE_str);
-	BAT *U_trigger_new_name = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_new_name"), TYPE_str);
-	BAT *U_trigger_condition = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_condition"), TYPE_str);
-	BAT *U_trigger_statement = sys_bat(logger, Ucc(istmp,"tmp","sys","triggers_statement"), TYPE_str);
-	BAT *D_trigger = sys_bat(logger, Dcc(istmp,"tmp","sys","triggers"), TYPE_oid);
+	BAT *U_trigger_id = sys_bat(Ucc(istmp,"tmp","sys","triggers_id"), TYPE_int);
+	BAT *U_trigger_name = sys_bat(Ucc(istmp,"tmp","sys","triggers_name"), TYPE_str);
+	BAT *U_trigger_table = sys_bat(Ucc(istmp,"tmp","sys","triggers_table_id"), TYPE_int);
+	BAT *U_trigger_time = sys_bat(Ucc(istmp,"tmp","sys","triggers_time"), TYPE_sht);
+	BAT *U_trigger_orientation = sys_bat(Ucc(istmp,"tmp","sys","triggers_orientation"), TYPE_sht);
+	BAT *U_trigger_event = sys_bat(Ucc(istmp,"tmp","sys","triggers_event"), TYPE_sht);
+	BAT *U_trigger_old_name = sys_bat(Ucc(istmp,"tmp","sys","triggers_old_name"), TYPE_str);
+	BAT *U_trigger_new_name = sys_bat(Ucc(istmp,"tmp","sys","triggers_new_name"), TYPE_str);
+	BAT *U_trigger_condition = sys_bat(Ucc(istmp,"tmp","sys","triggers_condition"), TYPE_str);
+	BAT *U_trigger_statement = sys_bat(Ucc(istmp,"tmp","sys","triggers_statement"), TYPE_str);
+	BAT *D_trigger = sys_bat(Dcc(istmp,"tmp","sys","triggers"), TYPE_oid);
 
-	BAT *kc_id = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
-	BAT *kc_col = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
-	BAT *kc_trunc = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
-	BAT *kc_nr = sys_bat(logger, Ccc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
-	BAT *U_kc_id = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
-	BAT *U_kc_col = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
-	BAT *U_kc_trunc = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
-	BAT *U_kc_nr = sys_bat(logger, Ucc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
-	BAT *D_kc = sys_bat(logger, Dcc(istmp,"tmp","sys","keycolumns"), TYPE_oid);
+	BAT *kc_id = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
+	BAT *kc_col = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
+	BAT *kc_trunc = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
+	BAT *kc_nr = sys_bat(Ccc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
+	BAT *U_kc_id = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_id"), TYPE_int);
+	BAT *U_kc_col = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_column"), TYPE_str);
+	BAT *U_kc_trunc = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_trunc"), TYPE_int);
+	BAT *U_kc_nr = sys_bat(Ucc(istmp,"tmp","sys","keycolumns_nr"), TYPE_int);
+	BAT *D_kc = sys_bat(Dcc(istmp,"tmp","sys","keycolumns"), TYPE_oid);
 
 	update_table_bat(trigger_id, U_trigger_id, D_trigger);
 	update_table_bat(trigger_name, U_trigger_name, D_trigger);
@@ -1868,30 +1869,30 @@ bs_init_trigger(struct logger *logger, int istmp)
 }
 
 static void
-bs_init_sequence(struct logger *logger)
+bs_init_sequence(void)
 {
 	int istmp = 0;
-	BAT *sequence_id = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_id"), TYPE_int);
-	BAT *sequence_schema = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_schema_id"), TYPE_int);
-	BAT *sequence_name = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_name"), TYPE_str);
-	BAT *sequence_start = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_start"), TYPE_lng);
-	BAT *sequence_minvalue = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_minvalue"), TYPE_lng);
-	BAT *sequence_maxvalue = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_maxvalue"), TYPE_lng);
-	BAT *sequence_increment = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_increment"), TYPE_lng);
-	BAT *sequence_cacheinc = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_cacheinc"), TYPE_lng);
-	BAT *sequence_cycle = sys_bat(logger, Ccc(istmp,"tmp","sys","sequences_cycle"), TYPE_bit);
+	BAT *sequence_id = sys_bat(Ccc(istmp,"tmp","sys","sequences_id"), TYPE_int);
+	BAT *sequence_schema = sys_bat(Ccc(istmp,"tmp","sys","sequences_schema_id"), TYPE_int);
+	BAT *sequence_name = sys_bat(Ccc(istmp,"tmp","sys","sequences_name"), TYPE_str);
+	BAT *sequence_start = sys_bat(Ccc(istmp,"tmp","sys","sequences_start"), TYPE_lng);
+	BAT *sequence_minvalue = sys_bat(Ccc(istmp,"tmp","sys","sequences_minvalue"), TYPE_lng);
+	BAT *sequence_maxvalue = sys_bat(Ccc(istmp,"tmp","sys","sequences_maxvalue"), TYPE_lng);
+	BAT *sequence_increment = sys_bat(Ccc(istmp,"tmp","sys","sequences_increment"), TYPE_lng);
+	BAT *sequence_cacheinc = sys_bat(Ccc(istmp,"tmp","sys","sequences_cacheinc"), TYPE_lng);
+	BAT *sequence_cycle = sys_bat(Ccc(istmp,"tmp","sys","sequences_cycle"), TYPE_bit);
 
-	BAT *U_sequence_id = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_id"), TYPE_int);
-	BAT *U_sequence_schema = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_schema_id"), TYPE_int);
-	BAT *U_sequence_name = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_name"), TYPE_str);
-	BAT *U_sequence_start = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_start"), TYPE_lng);
-	BAT *U_sequence_minvalue = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_minvalue"), TYPE_lng);
-	BAT *U_sequence_maxvalue = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_maxvalue"), TYPE_lng);
-	BAT *U_sequence_increment = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_increment"), TYPE_lng);
-	BAT *U_sequence_cacheinc = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_cacheinc"), TYPE_lng);
-	BAT *U_sequence_cycle = sys_bat(logger, Ucc(istmp,"tmp","sys","sequences_cycle"), TYPE_bit);
+	BAT *U_sequence_id = sys_bat(Ucc(istmp,"tmp","sys","sequences_id"), TYPE_int);
+	BAT *U_sequence_schema = sys_bat(Ucc(istmp,"tmp","sys","sequences_schema_id"), TYPE_int);
+	BAT *U_sequence_name = sys_bat(Ucc(istmp,"tmp","sys","sequences_name"), TYPE_str);
+	BAT *U_sequence_start = sys_bat(Ucc(istmp,"tmp","sys","sequences_start"), TYPE_lng);
+	BAT *U_sequence_minvalue = sys_bat(Ucc(istmp,"tmp","sys","sequences_minvalue"), TYPE_lng);
+	BAT *U_sequence_maxvalue = sys_bat(Ucc(istmp,"tmp","sys","sequences_maxvalue"), TYPE_lng);
+	BAT *U_sequence_increment = sys_bat(Ucc(istmp,"tmp","sys","sequences_increment"), TYPE_lng);
+	BAT *U_sequence_cacheinc = sys_bat(Ucc(istmp,"tmp","sys","sequences_cacheinc"), TYPE_lng);
+	BAT *U_sequence_cycle = sys_bat(Ucc(istmp,"tmp","sys","sequences_cycle"), TYPE_bit);
 
-	BAT *D_sequence = sys_bat(logger, Dcc(istmp,"tmp","sys","sequences"), TYPE_oid);
+	BAT *D_sequence = sys_bat(Dcc(istmp,"tmp","sys","sequences"), TYPE_oid);
 
 	update_table_bat(sequence_id, U_sequence_id, D_sequence);
 	update_table_bat(sequence_schema, U_sequence_schema, D_sequence);
@@ -1925,29 +1926,29 @@ bs_init_sequence(struct logger *logger)
 }
 
 static void
-bs_init_type(struct logger *logger)
+bs_init_type(void)
 {
 	int zero = 0;
 	node *n = NULL;
 
 	int istmp = 0;
-	BAT *type_id = sys_bat(logger, Ccc(istmp,"tmp","sys","types_id"), TYPE_int);
-	BAT *type_sqlname = sys_bat(logger, Ccc(istmp,"tmp","sys","types_sqlname"), TYPE_str);
-	BAT *type_digits = sys_bat(logger, Ccc(istmp,"tmp","sys","types_digits"), TYPE_int);
-	BAT *type_scale = sys_bat(logger, Ccc(istmp,"tmp","sys","types_scale"), TYPE_int);
-	BAT *type_radix = sys_bat(logger, Ccc(istmp,"tmp","sys","types_radix"), TYPE_int);
-	BAT *type_eclass = sys_bat(logger, Ccc(istmp,"tmp","sys","types_eclass"), TYPE_int);
-	BAT *type_schema_id = sys_bat(logger, Ccc(istmp,"tmp","sys","types_schema_id"), TYPE_int);
-	BAT *type_systemname = sys_bat(logger, Ccc(istmp,"tmp","sys","types_systemname"), TYPE_str);
-	BAT *U_type_id = sys_bat(logger, Ucc(istmp,"tmp","sys","types_id"), TYPE_int);
-	BAT *U_type_sqlname = sys_bat(logger, Ucc(istmp,"tmp","sys","types_sqlname"), TYPE_str);
-	BAT *U_type_digits = sys_bat(logger, Ucc(istmp,"tmp","sys","types_digits"), TYPE_int);
-	BAT *U_type_scale = sys_bat(logger, Ucc(istmp,"tmp","sys","types_scale"), TYPE_int);
-	BAT *U_type_radix = sys_bat(logger, Ucc(istmp,"tmp","sys","types_radix"), TYPE_int);
-	BAT *U_type_eclass = sys_bat(logger, Ucc(istmp,"tmp","sys","types_eclass"), TYPE_int);
-	BAT *U_type_schema_id = sys_bat(logger, Ucc(istmp,"tmp","sys","types_schema_id"), TYPE_int);
-	BAT *U_type_systemname = sys_bat(logger, Ucc(istmp,"tmp","sys","types_systemname"), TYPE_str);
-	BAT *D_type = sys_bat(logger, Dcc(istmp,"tmp","sys","types"), TYPE_oid);
+	BAT *type_id = sys_bat(Ccc(istmp,"tmp","sys","types_id"), TYPE_int);
+	BAT *type_sqlname = sys_bat(Ccc(istmp,"tmp","sys","types_sqlname"), TYPE_str);
+	BAT *type_digits = sys_bat(Ccc(istmp,"tmp","sys","types_digits"), TYPE_int);
+	BAT *type_scale = sys_bat(Ccc(istmp,"tmp","sys","types_scale"), TYPE_int);
+	BAT *type_radix = sys_bat(Ccc(istmp,"tmp","sys","types_radix"), TYPE_int);
+	BAT *type_eclass = sys_bat(Ccc(istmp,"tmp","sys","types_eclass"), TYPE_int);
+	BAT *type_schema_id = sys_bat(Ccc(istmp,"tmp","sys","types_schema_id"), TYPE_int);
+	BAT *type_systemname = sys_bat(Ccc(istmp,"tmp","sys","types_systemname"), TYPE_str);
+	BAT *U_type_id = sys_bat(Ucc(istmp,"tmp","sys","types_id"), TYPE_int);
+	BAT *U_type_sqlname = sys_bat(Ucc(istmp,"tmp","sys","types_sqlname"), TYPE_str);
+	BAT *U_type_digits = sys_bat(Ucc(istmp,"tmp","sys","types_digits"), TYPE_int);
+	BAT *U_type_scale = sys_bat(Ucc(istmp,"tmp","sys","types_scale"), TYPE_int);
+	BAT *U_type_radix = sys_bat(Ucc(istmp,"tmp","sys","types_radix"), TYPE_int);
+	BAT *U_type_eclass = sys_bat(Ucc(istmp,"tmp","sys","types_eclass"), TYPE_int);
+	BAT *U_type_schema_id = sys_bat(Ucc(istmp,"tmp","sys","types_schema_id"), TYPE_int);
+	BAT *U_type_systemname = sys_bat(Ucc(istmp,"tmp","sys","types_systemname"), TYPE_str);
+	BAT *D_type = sys_bat(Dcc(istmp,"tmp","sys","types"), TYPE_oid);
 
 	if (BATcount(type_sqlname) == 0) {
 		oid rid = type_id->hseqbase + BATcount(type_id);
@@ -1988,44 +1989,44 @@ bs_init_type(struct logger *logger)
 }
 
 static void
-bs_init_func(struct logger *logger)
+bs_init_func(void)
 {
 	bit T = TRUE, F = FALSE;
 	int zero = 0;
 	node *n = NULL, *m = NULL;
 
 	int istmp = 0;
-	BAT *func_id = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_id"), TYPE_int);
-	BAT *func_name = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_name"), TYPE_str);
-	BAT *func_func = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_func"), TYPE_str);
-	BAT *func_mod = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_mod"), TYPE_str);
-	BAT *func_sql = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
-	BAT *func_aggr = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
-	BAT *func_schema_id = sys_bat(logger, Ccc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
-	BAT *U_func_id = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_id"), TYPE_int);
-	BAT *U_func_name = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_name"), TYPE_str);
-	BAT *U_func_func = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_func"), TYPE_str);
-	BAT *U_func_mod = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_mod"), TYPE_str);
-	BAT *U_func_sql = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
-	BAT *U_func_aggr = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
-	BAT *U_func_schema_id = sys_bat(logger, Ucc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
-	BAT *D_func = sys_bat(logger, Dcc(istmp,"tmp","sys","functions"), TYPE_oid);
+	BAT *func_id = sys_bat(Ccc(istmp,"tmp","sys","functions_id"), TYPE_int);
+	BAT *func_name = sys_bat(Ccc(istmp,"tmp","sys","functions_name"), TYPE_str);
+	BAT *func_func = sys_bat(Ccc(istmp,"tmp","sys","functions_func"), TYPE_str);
+	BAT *func_mod = sys_bat(Ccc(istmp,"tmp","sys","functions_mod"), TYPE_str);
+	BAT *func_sql = sys_bat(Ccc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
+	BAT *func_aggr = sys_bat(Ccc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
+	BAT *func_schema_id = sys_bat(Ccc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
+	BAT *U_func_id = sys_bat(Ucc(istmp,"tmp","sys","functions_id"), TYPE_int);
+	BAT *U_func_name = sys_bat(Ucc(istmp,"tmp","sys","functions_name"), TYPE_str);
+	BAT *U_func_func = sys_bat(Ucc(istmp,"tmp","sys","functions_func"), TYPE_str);
+	BAT *U_func_mod = sys_bat(Ucc(istmp,"tmp","sys","functions_mod"), TYPE_str);
+	BAT *U_func_sql = sys_bat(Ucc(istmp,"tmp","sys","functions_sql"), TYPE_bit);
+	BAT *U_func_aggr = sys_bat(Ucc(istmp,"tmp","sys","functions_aggr"), TYPE_bit);
+	BAT *U_func_schema_id = sys_bat(Ucc(istmp,"tmp","sys","functions_schema_id"), TYPE_int);
+	BAT *D_func = sys_bat(Dcc(istmp,"tmp","sys","functions"), TYPE_oid);
 
-	BAT *arg_id = sys_bat(logger, Ccc(istmp,"tmp","sys","args_id"), TYPE_int);
-	BAT *arg_func_id = sys_bat(logger, Ccc(istmp,"tmp","sys","args_func_id"), TYPE_int);
-	BAT *arg_name = sys_bat(logger, Ccc(istmp,"tmp","sys","args_name"), TYPE_str);
-	BAT *arg_type = sys_bat(logger, Ccc(istmp,"tmp","sys","args_type"), TYPE_str);
-	BAT *arg_type_digits = sys_bat(logger, Ccc(istmp,"tmp","sys","args_type_digits"), TYPE_int);
-	BAT *arg_type_scale = sys_bat(logger, Ccc(istmp,"tmp","sys","args_type_scale"), TYPE_int);
-	BAT *arg_number = sys_bat(logger, Ccc(istmp,"tmp","sys","args_number"), TYPE_int);
-	BAT *U_arg_id = sys_bat(logger, Ucc(istmp,"tmp","sys","args_id"), TYPE_int);
-	BAT *U_arg_func_id = sys_bat(logger, Ucc(istmp,"tmp","sys","args_func_id"), TYPE_int);
-	BAT *U_arg_name = sys_bat(logger, Ucc(istmp,"tmp","sys","args_name"), TYPE_str);
-	BAT *U_arg_type = sys_bat(logger, Ucc(istmp,"tmp","sys","args_type"), TYPE_str);
-	BAT *U_arg_type_digits = sys_bat(logger, Ucc(istmp,"tmp","sys","args_type_digits"), TYPE_int);
-	BAT *U_arg_type_scale = sys_bat(logger, Ucc(istmp,"tmp","sys","args_type_scale"), TYPE_int);
-	BAT *U_arg_number = sys_bat(logger, Ucc(istmp,"tmp","sys","args_number"), TYPE_int);
-	BAT *D_arg = sys_bat(logger, Dcc(istmp,"tmp","sys","args"), TYPE_oid);
+	BAT *arg_id = sys_bat(Ccc(istmp,"tmp","sys","args_id"), TYPE_int);
+	BAT *arg_func_id = sys_bat(Ccc(istmp,"tmp","sys","args_func_id"), TYPE_int);
+	BAT *arg_name = sys_bat(Ccc(istmp,"tmp","sys","args_name"), TYPE_str);
+	BAT *arg_type = sys_bat(Ccc(istmp,"tmp","sys","args_type"), TYPE_str);
+	BAT *arg_type_digits = sys_bat(Ccc(istmp,"tmp","sys","args_type_digits"), TYPE_int);
+	BAT *arg_type_scale = sys_bat(Ccc(istmp,"tmp","sys","args_type_scale"), TYPE_int);
+	BAT *arg_number = sys_bat(Ccc(istmp,"tmp","sys","args_number"), TYPE_int);
+	BAT *U_arg_id = sys_bat(Ucc(istmp,"tmp","sys","args_id"), TYPE_int);
+	BAT *U_arg_func_id = sys_bat(Ucc(istmp,"tmp","sys","args_func_id"), TYPE_int);
+	BAT *U_arg_name = sys_bat(Ucc(istmp,"tmp","sys","args_name"), TYPE_str);
+	BAT *U_arg_type = sys_bat(Ucc(istmp,"tmp","sys","args_type"), TYPE_str);
+	BAT *U_arg_type_digits = sys_bat(Ucc(istmp,"tmp","sys","args_type_digits"), TYPE_int);
+	BAT *U_arg_type_scale = sys_bat(Ucc(istmp,"tmp","sys","args_type_scale"), TYPE_int);
+	BAT *U_arg_number = sys_bat(Ucc(istmp,"tmp","sys","args_number"), TYPE_int);
+	BAT *D_arg = sys_bat(Dcc(istmp,"tmp","sys","args"), TYPE_oid);
 
 	if (BATcount(func_name) == 0) {
 		oid rid = func_id->hseqbase + BATcount(func_id);
@@ -2179,47 +2180,47 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 
 	snprintf(bname, BUFSIZ, "%s_%s_%s", col->t->s->base.name, col->t->base.name, col->base.name);
 	col->bat.name = _strdup(bname);
-	b = temp_descriptor(logger_find_bat(logger, col->bat.name));
+	b = temp_descriptor(logger_find_bat(sql_logger, col->bat.name));
 	col->bat.ibid = temp_create(b);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_id"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_id"));
 	rid = BATcount(b);
 	BUNins(b, (ptr) &rid, (ptr) &col->base.id, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_table_id"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_table_id"));
 	BUNins(b, (ptr) &rid, (ptr) &t->base.id, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_name"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_name"));
 	BUNins(b, (ptr) &rid, (ptr) col->base.name, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_type"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_type"));
 	BUNins(b, (ptr) &rid, (ptr) col->type.type->sqlname, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_type_digits"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_type_digits"));
 	BUNins(b, (ptr) &rid, (ptr) &col->type.digits, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_type_scale"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_type_scale"));
 	BUNins(b, (ptr) &rid, (ptr) &col->type.scale, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_default"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_default"));
 	if (col->def)
 		BUNins(b, (ptr) &rid, (ptr) col->def, FALSE);
 	else
 		BUNins(b, (ptr) &rid, (ptr) ATOMnilptr(TYPE_str), FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_null"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_null"));
 	BUNins(b, (ptr) &rid, (ptr) &col->null, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_columns_number"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_columns_number"));
 	BUNins(b, (ptr) &rid, (ptr) &col->colnr, FALSE);
 	bat_destroy(b);
 
@@ -2248,7 +2249,7 @@ create_sql_table(char *name, sht type, bit system, int persistence, int commit_a
 	t->pkey = NULL;
 	t->dname = NULL;
 	t->dbid = 0;
-	t->sz = SQLBATSIZE;
+	t->sz = BATSIZE;
 	t->cnt = 0;
 	t->cleared = 0;
 	t->s = NULL;
@@ -2276,33 +2277,33 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 
 	snprintf(bname, BUFSIZ, "D_%s_%s", t->s->base.name, t->base.name);
 	t->dname = _strdup(bname);
-	b = temp_descriptor(logger_find_bat(logger, t->dname));
+	b = temp_descriptor(logger_find_bat(sql_logger, t->dname));
 	t->dbid = temp_create(b);
 	bat_destroy(b);
 
 	assert(t->dbid);
 
 	istmp = 0; /* global temps are stored in the sys schema */
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_id"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_id"));
 	rid = BATcount(b);
 	BUNins(b, (ptr) &rid, (ptr) &t->base.id, FALSE);
 	bat_destroy(b);
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_schema_id"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_schema_id"));
 	BUNins(b, (ptr) &rid, (ptr) &s->base.id, FALSE);
 	bat_destroy(b);
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_name"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_name"));
 	BUNins(b, (ptr) &rid, (ptr) t->base.name, FALSE);
 	bat_destroy(b);
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_type"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_type"));
 	BUNins(b, (ptr) &rid, (ptr) &t->type, FALSE);
 	bat_destroy(b);
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_system"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_system"));
 	BUNins(b, (ptr) &rid, (ptr) &t->system, FALSE);
 	bat_destroy(b);
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_commit_action"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_commit_action"));
 	BUNins(b, (ptr) &rid, (ptr) &commit_action, FALSE);
 	bat_destroy(b);
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","_tables_query"));
+	b = get_bat(Ccc(istmp,"tmp","sys","_tables_query"));
 	BUNins(b, (ptr) &rid, (ptr) ATOMnilptr(TYPE_str), FALSE);
 	bat_destroy(b);
 
@@ -2336,16 +2337,16 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id)
 
 	cs_add(&tr->schemas, s, TR_NEW);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","schemas_id"));
+	b = get_bat(Ccc(istmp,"tmp","sys","schemas_id"));
 	rid = BATcount(b);
 	BUNins(b, (ptr) &rid, (ptr) &s->base.id, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","schemas_name"));
+	b = get_bat(Ccc(istmp,"tmp","sys","schemas_name"));
 	BUNins(b, (ptr) &rid, (ptr) s->base.name, FALSE);
 	bat_destroy(b);
 
-	b = get_bat(logger, Ccc(istmp,"tmp","sys","schemas_authorization"));
+	b = get_bat(Ccc(istmp,"tmp","sys","schemas_authorization"));
 	BUNins(b, (ptr) &rid, (ptr) &s->auth_id, FALSE);
 	bat_destroy(b);
 
@@ -2367,31 +2368,31 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	int istmp = 0;
 
 	bs_debug = debug;
-	logger = logger_create(debug, logdir, dbname, CATALOG_VERSION);
+	sql_logger = logger_create(debug, "sql", logdir, dbname, CATALOG_VERSION);
 
-	if (!logger)
+	if (!sql_logger)
 		return -1;
 
-	logger_sequence(logger, SQL_OID, &store_oid);
+	logger_sequence(sql_logger, OBJ_SID, &store_oid);
 	MT_lock_init(&bs_lock);
 
 	types_init(debug);
 
-	bs_init_schema(logger);
-	bs_init_type(logger);
-	bs_init_func(logger);
-	bs_init_sequence(logger);
+	bs_init_schema();
+	bs_init_type();
+	bs_init_func();
+	bs_init_sequence();
 	while(istmp<2) {
-		bs_init_table(logger,istmp);
-		bs_init_column(logger,istmp);
-		bs_init_key(logger,istmp);
-		bs_init_idx(logger,istmp);
-		bs_init_trigger(logger,istmp);
+		bs_init_table(istmp);
+		bs_init_column(istmp);
+		bs_init_key(istmp);
+		bs_init_idx(istmp);
+		bs_init_trigger(istmp);
 		istmp++;
 	}
 	sequences_init();
 
-	gtrans = load_trans(logger, stk);
+	gtrans = load_trans(stk);
 
 	if (!find_sql_schema(gtrans, "sys")) {
 		sql_schema *s, *p = NULL;
@@ -2533,14 +2534,14 @@ static int logging = 0;
 void
 store_exit(void)
 {
-	struct logger *l = logger;
+	struct logger *l = sql_logger;
 
 	/* never started! */
-	if (!logger)
+	if (!sql_logger)
 		return;
 
 	MT_set_lock(bs_lock, "store_exit");
-	logger = NULL;
+	sql_logger = NULL;
 #ifdef STORE_DEBUG
 	fprintf(stderr, "store exit locked\n");
 #endif
@@ -2584,20 +2585,20 @@ void
 store_manager(void)
 {
 	while (active) {
-		int res = SQL_OK;
+		int res = LOG_OK;
 
 		MT_sleep_ms(30000);
 		MT_set_lock(bs_lock, "store_manager");
-		if (transactions || !active || !logger || 
-			logger_changes(logger) < 1000) {
+		if (transactions || !active || !sql_logger || 
+			logger_changes(sql_logger) < 1000) {
 			MT_unset_lock(bs_lock, "store_manager");
 			continue;
 		}
 		logging = 1;
-		res = logger_restart(logger);
+		res = logger_restart(sql_logger);
 		MT_unset_lock(bs_lock, "store_manager");
-		if (logging && res == SQL_OK)
-			logger_cleanup(logger);
+		if (logging && res == LOG_OK)
+			logger_cleanup(sql_logger);
 		logging = 0;
 	}
 }
@@ -3142,12 +3143,12 @@ typedef sql_base *(*dupfunc) (sql_trans *tr, int flag, sql_base * b, sql_base * 
 static int
 rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql_base * b, rfufunc rollforward_updates, rfcfunc rollforward_creates, rfdfunc rollforward_deletes, dupfunc fd)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 	node *n = NULL;
 
 	/* delete removed bases */
 	if (fs->dset)
-		for (n = fs->dset->h; ok == SQL_OK && n; n = n->next) {
+		for (n = fs->dset->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *fb = n->data;
 			node *tbn = cs_find_name(ts, fb->name);
 
@@ -3173,7 +3174,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 	if (fs->set) {
 		/* update existing */
 		if (rollforward_updates) {
-			for (n = fs->set->h; ok == SQL_OK && n && n != fs->nelm; n = n->next) {
+			for (n = fs->set->h; ok == LOG_OK && n && n != fs->nelm; n = n->next) {
 				sql_base *fb = n->data;
 				node *tbn = cs_find_name(ts, fb->name);
 
@@ -3193,7 +3194,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 		}
 		/* add the new bases */
 		if (fd && rollforward_creates) {
-			for (n = fs->nelm; ok == SQL_OK && n; ) {
+			for (n = fs->nelm; ok == LOG_OK && n; ) {
 				node *nxt = n->next;
 				sql_base *fb = n->data;
 				sql_base *tb = fd(tr, TR_NEW, fb, b);
@@ -3205,7 +3206,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					if (r)
 						cs_add(ts, r, TR_NEW);
 					else
-						ok = SQL_ERR;
+						ok = LOG_ERR;
 				}
 				fb->rtime = fb->wtime = 0;
 				fb->flag = TR_OLD;
@@ -3227,27 +3228,27 @@ rollforward_changeset_creates(sql_trans *tr, changeset * cs, rfcfunc rf)
 			sql_base *b = n->data;
 
 			if (!rf(tr, b))
-				return SQL_ERR;
+				return LOG_ERR;
 
 			b->rtime = b->wtime = 0;
 			b->flag = TR_OLD;
 		}
 		cs->nelm = NULL;
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
 rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (!cs)
 		return ok;
 	if (cs->dset) {
 		node *n;
 
-		for (n = cs->dset->h; ok == SQL_OK && n; n = n->next) {
+		for (n = cs->dset->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *b = n->data;
 
 			ok = rf(tr, b);
@@ -3258,7 +3259,7 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
 	if (cs->set) {
 		node *n;
 
-		for (n = cs->set->h; ok == SQL_OK && n; n = n->next) {
+		for (n = cs->set->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *b = n->data;
 
 			ok = rf(tr, b);
@@ -3270,7 +3271,7 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
 static sql_idx *
 rollforward_create_idx(sql_trans *tr, sql_idx * i)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (i->bat.ibid) {
 		char bname[BUFSIZ];
@@ -3278,12 +3279,12 @@ rollforward_create_idx(sql_trans *tr, sql_idx * i)
 
 		snprintf(bname, BUFSIZ, "%s_%s_%s", i->t->s->base.name, i->t->base.name, i->base.name);
 		i->bat.name = _strdup(bname);
-		i->bat.bid = logger_add_bat(logger, b, bname);
+		i->bat.bid = logger_add_bat(sql_logger, b, bname);
 		temp_destroy(i->bat.ibid);
 		i->bat.ibid = 0;
 
 		if (tr->parent == gtrans)
-			ok = log_bat_persists(logger, b, i->bat.name);
+			ok = log_bat_persists(sql_logger, b, i->bat.name);
 
 		snprintf(bname, BUFSIZ, "U_%s", i->bat.name);
 		i->bat.uname = _strdup(bname);
@@ -3291,11 +3292,11 @@ rollforward_create_idx(sql_trans *tr, sql_idx * i)
 			u = temp_descriptor(i->bat.ubid);
 		else 
 			u = bat_new(TYPE_oid, b->ttype, i->t->sz, "rollforward_create_idx");
-		(void) logger_add_bat(logger, u, bname);
+		(void) logger_add_bat(sql_logger, u, bname);
 		i->bat.ubid = temp_create(u);
 
-		if (tr->parent == gtrans && ok == SQL_OK)
-			ok = log_bat_persists(logger, u, i->bat.uname);
+		if (tr->parent == gtrans && ok == LOG_OK)
+			ok = log_bat_persists(sql_logger, u, i->bat.uname);
 
 		bat_destroy(u);
 
@@ -3313,7 +3314,7 @@ rollforward_create_idx(sql_trans *tr, sql_idx * i)
 		BATkey(BATmirror(b), BOUND2BTRUE);
 		bat_destroy(b);
 	}
-	if (ok != SQL_OK)
+	if (ok != LOG_OK)
 		return NULL;
 	return i;
 }
@@ -3357,7 +3358,7 @@ rollforward_create_seq(sql_trans *tr, sql_sequence *k)
 static sql_column *
 rollforward_create_column(sql_trans *tr, sql_column *c)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 	char bname[BUFSIZ];
 	BAT *b, *u, *i;
 
@@ -3367,12 +3368,12 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 
 		snprintf(bname, BUFSIZ, "%s_%s_%s", c->t->s->base.name, c->t->base.name, c->base.name);
 		c->bat.name = _strdup(bname);
-		c->bat.bid = logger_add_bat(logger, b, bname);
+		c->bat.bid = logger_add_bat(sql_logger, b, bname);
 		temp_destroy(c->bat.ibid);
 		c->bat.ibid = 0;
 
 		if (tr->parent == gtrans)
-			ok = log_bat_persists(logger, b, c->bat.name);
+			ok = log_bat_persists(sql_logger, b, c->bat.name);
 
 		c->t->cnt = BATcount(b);
 
@@ -3382,11 +3383,11 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 			u = temp_descriptor(c->bat.ubid);
 		else 
 			u = bat_new(TYPE_oid, b->ttype, c->t->sz, "rollforward");
-		(void) logger_add_bat(logger, u, bname);
+		(void) logger_add_bat(sql_logger, u, bname);
 		c->bat.ubid = temp_create(u);
 
-		if (tr->parent == gtrans && ok == SQL_OK)
-			ok = log_bat_persists(logger, u, c->bat.uname);
+		if (tr->parent == gtrans && ok == LOG_OK)
+			ok = log_bat_persists(sql_logger, u, c->bat.uname);
 
 		bat_destroy(u);
 
@@ -3400,7 +3401,7 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 	if (tr->parent == gtrans) 
 		c->base.flag = TR_OLD;	
 
-	if (ok != SQL_OK)
+	if (ok != LOG_OK)
 		return NULL;
 	return c;
 }
@@ -3408,7 +3409,7 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 static sql_table *
 rollforward_create_table(sql_trans *tr, sql_table *t)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (bs_debug) 
 		fprintf(stderr, "create table %s\n", t->base.name);
@@ -3424,10 +3425,10 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 
 			snprintf(name, BUFSIZ, "D_%s_%s", t->s->base.name, t->base.name);
 			t->dname = _strdup(name);
-			(void) logger_add_bat(logger, d, t->dname);
+			(void) logger_add_bat(sql_logger, d, t->dname);
 
 			if (tr->parent == gtrans)
-				ok = log_bat_persists(logger, d, t->dname);
+				ok = log_bat_persists(sql_logger, d, t->dname);
 
 			t->cnt -= BATcount(d);
 			bat_destroy(d);
@@ -3439,7 +3440,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 	}
 	if (tr->parent == gtrans) 
 		t->base.flag = TR_OLD;	
-	if (ok != SQL_OK)
+	if (ok != LOG_OK)
 		return NULL;
 	return t;
 }
@@ -3447,54 +3448,54 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 static int
 rollforward_drop_column(sql_trans *tr, sql_column *c)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (c->bat.bid && c->bat.ubid) {
 		log_bid bid;
 
 		if (tr->parent == gtrans) {
-			ok = log_bat_transient(logger, c->bat.name);
+			ok = log_bat_transient(sql_logger, c->bat.name);
 
-			if (ok == SQL_OK)
-				ok = log_bat_transient(logger, c->bat.uname);
+			if (ok == LOG_OK)
+				ok = log_bat_transient(sql_logger, c->bat.uname);
 
-			bid = logger_find_bat(logger, c->bat.name);
+			bid = logger_find_bat(sql_logger, c->bat.name);
 			if (bid) 
-				logger_del_bat(logger, bid);
+				logger_del_bat(sql_logger, bid);
 
-			bid = logger_find_bat(logger, c->bat.uname);
+			bid = logger_find_bat(sql_logger, c->bat.uname);
 			if (bid) 
-				logger_del_bat(logger, bid);
+				logger_del_bat(sql_logger, bid);
 		}
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
 rollforward_drop_idx(sql_trans *tr, sql_idx * i)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (i->bat.bid && i->bat.ubid) {
 		log_bid bid;
 		if (tr->parent == gtrans) {
-			ok = log_bat_transient(logger, i->bat.name);
+			ok = log_bat_transient(sql_logger, i->bat.name);
 
-			if (ok == SQL_OK)
-				ok = log_bat_transient(logger, i->bat.uname);
+			if (ok == LOG_OK)
+				ok = log_bat_transient(sql_logger, i->bat.uname);
 
-			bid = logger_find_bat(logger, i->bat.name);
+			bid = logger_find_bat(sql_logger, i->bat.name);
 			if (bid)
-				logger_del_bat(logger, bid);
+				logger_del_bat(sql_logger, bid);
 		
-			bid = logger_find_bat(logger, i->bat.uname);
+			bid = logger_find_bat(sql_logger, i->bat.uname);
 			if (bid) 
-				logger_del_bat(logger, bid);
+				logger_del_bat(sql_logger, bid);
 		}
 	}
 	/* remove idx from schema */
 	list_remove_data(i->t->s->idxs, i);
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -3510,7 +3511,7 @@ rollforward_drop_key(sql_trans *tr, sql_key *k)
 
 		list_remove_node(fk->rkey->keys, n);
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -3518,7 +3519,7 @@ rollforward_drop_trigger(sql_trans *tr, sql_trigger * i)
 {
 	(void)tr;
 	list_remove_data(i->t->s->triggers, i);
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -3527,13 +3528,13 @@ rollforward_drop_seq(sql_trans *tr, sql_sequence * seq)
 	(void)tr;
 	(void)seq;
 	/* TODO drop sequence */
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
 rollforward_drop_table(sql_trans *tr, sql_table *t)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (bs_debug) 
 		fprintf(stderr, "drop table %s\n", t->base.name);
@@ -3542,21 +3543,21 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 		if (tr->parent == gtrans) {
 			log_bid bid;
 
-			ok = log_bat_transient(logger, t->dname);
+			ok = log_bat_transient(sql_logger, t->dname);
 
-			bid = logger_find_bat(logger, t->dname);
+			bid = logger_find_bat(sql_logger, t->dname);
 			if (bid) 
-				logger_del_bat(logger, bid);
+				logger_del_bat(sql_logger, bid);
 		}
 	}
 
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->columns, (rfdfunc) &rollforward_drop_column);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->idxs, (rfdfunc) &rollforward_drop_idx);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->keys, (rfdfunc) &rollforward_drop_key);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->triggers, (rfdfunc) &rollforward_drop_trigger);
 	return ok;
 }
@@ -3564,10 +3565,10 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 static int
 rollforward_drop_schema(sql_trans *tr, sql_schema *s)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	ok = rollforward_changeset_deletes(tr, &s->seqs, (rfdfunc) &rollforward_drop_seq);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table);
 	return ok;
 }
@@ -3582,7 +3583,7 @@ rollforward_create_schema(sql_trans *tr, sql_schema *s)
 static int
 rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 	sql_trans *ttr = tr->parent;
 	node *n, *m;
 	lng deleted = 0;
@@ -3593,11 +3594,11 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		return ok;
 
 	ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &ft->idxs, &tt->idxs, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_idx, (rfdfunc) &rollforward_drop_idx, (dupfunc) &idx_dup);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &ft->keys, &tt->keys, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_key, (rfdfunc) &rollforward_drop_key, (dupfunc) &key_dup);
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &ft->triggers, &tt->triggers, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_trigger, (rfdfunc) &rollforward_drop_trigger, (dupfunc) &trigger_dup);
 
 	assert(cs_size(&tt->columns) == cs_size(&ft->columns));
@@ -3605,8 +3606,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	n = ft->columns.set->h;
 	m = tt->columns.set->h;
 
-	if (ok != SQL_OK || !n || !m) 
-		return SQL_ERR;
+	if (ok != LOG_OK || !n || !m) 
+		return LOG_ERR;
 
 	deleted = 0;
 	db = temp_descriptor(ft->dbid);
@@ -3622,7 +3623,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		bat_clear(odb);
 		bat_destroy(odb);
 		if (ttr == gtrans)
-			ok = log_bat_clear(logger, tt->dname);
+			ok = log_bat_clear(sql_logger, tt->dname);
 	}
 
 	if (bs_debug) 
@@ -3641,7 +3642,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		}
 
 		if (ttr == gtrans)
-			ok = log_bat(logger, odb, tt->dname);
+			ok = log_bat(sql_logger, odb, tt->dname);
 		bat_destroy(odb);
 		BATcommit(db);
 	}
@@ -3666,9 +3667,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cur = temp_descriptor(oc->bat.bid);
 		if (ft->cleared && ttr == gtrans) {
 			bat_clear(cur);
-			ok = log_bat_clear(logger, oc->bat.name);
-			if (ok == SQL_OK) 
-				ok = log_bat_clear(logger, oc->bat.uname);
+			ok = log_bat_clear(sql_logger, oc->bat.name);
+			if (ok == LOG_OK) 
+				ok = log_bat_clear(sql_logger, oc->bat.uname);
 		}
 
 		ins = temp_descriptor(cc->bat.ibid);
@@ -3681,8 +3682,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					append_inserted(ci, ins);
 					bat_destroy(ci);
 				}
-				if (ok == SQL_OK && ttr == gtrans)
-					ok = log_bat(logger, ins, oc->bat.name);
+				if (ok == LOG_OK && ttr == gtrans)
+					ok = log_bat(sql_logger, ins, oc->bat.name);
 			}
 			if (nr_active == 1) { /* flush all */
 				BAT *pi = temp_descriptor(oc->bat.ibid);
@@ -3695,7 +3696,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					temp_destroy(cc->bat.bid);
 					cc->bat.bid = temp_create(swpbat);
 					if (ttr == gtrans) 
-						logger_add_bat(logger, ins, oc->bat.name);
+						logger_add_bat(sql_logger, ins, oc->bat.name);
 					ins = cur;
 					cur = swpbat;
 				} else {
@@ -3720,8 +3721,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					copy_inserted(cu, ups);
 					bat_destroy(cu);
 				}
-				if (ok == SQL_OK && ttr == gtrans)
-					ok = log_bat(logger, ups, oc->bat.uname);
+				if (ok == LOG_OK && ttr == gtrans)
+					ok = log_bat(sql_logger, ups, oc->bat.uname);
 			}
 			if (nr_active == 1) { /* flush all */
 				void_replace_bat(cur, ups, TRUE);
@@ -3749,9 +3750,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		n = n->next;
 		m = m->next;
-	} while (ok == SQL_OK && n && m);
+	} while (ok == LOG_OK && n && m);
 	if (tt->idxs.set) {
-		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == SQL_OK && n && m; n = n->next, m = m->next) {
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
 			BAT *ups, *ins, *cur;
@@ -3771,9 +3772,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			cur = temp_descriptor(oi->bat.bid);
 			if (ft->cleared && ttr == gtrans) {
 				bat_clear(cur);
-				ok = log_bat_clear(logger, oi->bat.name);
-				if (ok == SQL_OK) 
-					ok = log_bat_clear(logger, oi->bat.uname);
+				ok = log_bat_clear(sql_logger, oi->bat.name);
+				if (ok == LOG_OK) 
+					ok = log_bat_clear(sql_logger, oi->bat.uname);
 			}
 
 			ins = temp_descriptor(ci->bat.ibid);
@@ -3786,8 +3787,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						append_inserted(ci, ins);
 						bat_destroy(ci);
 					}
-					if (ok == SQL_OK && ttr == gtrans)
-						ok = log_bat(logger, ins, oi->bat.name);
+					if (ok == LOG_OK && ttr == gtrans)
+						ok = log_bat(sql_logger, ins, oi->bat.name);
 				}
 				if (nr_active == 1) { /* flush all */
 					BAT *pi = temp_descriptor(oi->bat.ibid);
@@ -3800,7 +3801,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						temp_destroy(ci->bat.bid);
 						ci->bat.bid = temp_create(swpbat);
 						if (ttr == gtrans) 
-							logger_add_bat(logger, ins, oi->bat.name);
+							logger_add_bat(sql_logger, ins, oi->bat.name);
 						ins = cur;
 						cur = swpbat;
 					} else {
@@ -3825,8 +3826,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						copy_inserted(cu, ups);
 						bat_destroy(cu);
 					}
-					if (ok == SQL_OK && ttr == gtrans)
-						ok = log_bat(logger, ups, oi->bat.uname);
+					if (ok == LOG_OK && ttr == gtrans)
+						ok = log_bat(sql_logger, ups, oi->bat.uname);
 				}
 				if (nr_active == 1) { /* flush all */
 					void_replace_bat(cur, ups, TRUE);
@@ -3867,7 +3868,7 @@ rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt)
 	tt->increment = ft->increment;
 	tt->cacheinc = ft->cacheinc;
 	tt->cycle = ft->cycle;
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static sql_table *
@@ -3891,18 +3892,18 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 static int
 rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &fs->types, &ts->types, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_type, (rfdfunc) NULL, (dupfunc) &type_dup);
 
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &fs->tables, &ts->tables, &ts->base, (rfufunc) &rollforward_update_table, (rfcfunc) &rollforward_create_table, (rfdfunc) &rollforward_drop_table, (dupfunc) &conditional_table_dup);
 
-	if (ok == SQL_OK) /* last as it may require complex (table) types */
+	if (ok == LOG_OK) /* last as it may require complex (table) types */
 		ok = rollforward_changeset_updates(tr, &fs->funcs, &ts->funcs, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_func, (rfdfunc) NULL, (dupfunc) &func_dup);
 
-	if (ok == SQL_OK) /* last as it may require complex (table) types */
+	if (ok == LOG_OK) /* last as it may require complex (table) types */
 		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup);
 
 	return ok;
@@ -3911,14 +3912,14 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
 static int
 rollforward_trans(sql_trans *tr)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	if (tr->parent && tr->wtime > tr->parent->wtime) {
 		tr->parent->wtime = tr->wtime;
 		tr->parent->schema_updates = tr->schema_updates;
 	}
 
-	if (ok == SQL_OK)
+	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup);
 	if (tr->parent == gtrans) {
 		gtrans->stime = tr->stime;
@@ -3974,7 +3975,7 @@ typedef int (*resetf) (sql_trans *tr, sql_base * fs, sql_base * pfs);
 static int
 reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, resetf rf, dupfunc fd)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 	node *m = NULL, *n = NULL;
 
 	(void)tr;
@@ -3994,7 +3995,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 	if (fs->set)
 		n = fs->set->h;
 	if (pfs->set) {
-		for (m = pfs->set->h; ok == SQL_OK && m && n; ) { 
+		for (m = pfs->set->h; ok == LOG_OK && m && n; ) { 
 			sql_base *fb = n->data;
 			sql_base *pfb = m->data;
 
@@ -4031,7 +4032,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			}
 		}
 		/* add new bases */
-		for (; ok == SQL_OK && m; m = m->next ) {
+		for (; ok == LOG_OK && m; m = m->next ) {
 			sql_base *pfb = m->data;
 			sql_base *r = fd(tr, TR_OLD, pfb,  b);
 			cs_add(fs, r, TR_OLD);
@@ -4041,7 +4042,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					(r->name)?r->name:"help");
 			}
 		}
-		while ( ok == SQL_OK && n) { /* remove remaining old stuff */
+		while ( ok == LOG_OK && n) { /* remove remaining old stuff */
 			node *t = n->next;
 			if (bs_debug) {
 				sql_base *b = n->data;
@@ -4092,7 +4093,7 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 		bat_destroy(pu);
 		fi->base.wtime = fi->base.rtime = 0;
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -4140,7 +4141,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				tr->stime, pfc->base.wtime);
 		}
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -4149,7 +4150,7 @@ reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
 	(void)tr;
 	(void)ft;
 	(void)pft;
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -4158,7 +4159,7 @@ reset_func(sql_trans *tr, sql_func *ft, sql_func *pft)
 	(void)tr;
 	(void)ft;
 	(void)pft;
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -4171,7 +4172,7 @@ reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
 	ft->increment = pft->increment;
 	ft->cacheinc = pft->cacheinc;
 	ft->cycle = pft->cycle;
-	return SQL_OK;
+	return LOG_OK;
 }
 
 
@@ -4179,22 +4180,22 @@ static int
 reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 {
 	if (!isTable(ft) || isTempTable(ft))
-		return SQL_OK;
+		return LOG_OK;
 
 	/* did we make changes or is the global changed after we started */
 	if (ft->base.wtime || tr->stime < pft->base.wtime) {
-		int ok = SQL_OK;
+		int ok = LOG_OK;
 
 		temp_destroy(ft->dbid);
 		ft->dbid = temp_copy(pft->dbid, isTempTable(ft));
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
-		if (ok == SQL_OK)
+		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->idxs, &pft->idxs, &ft->base, (resetf) &reset_idx, (dupfunc) &idx_dup);
-		if (ok == SQL_OK)
+		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) NULL, (dupfunc) &key_dup);
-		if (ok == SQL_OK)
+		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->triggers, &pft->triggers, &ft->base, (resetf) NULL, (dupfunc) &trigger_dup);
 
 		if (bs_debug) {
@@ -4206,7 +4207,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		}
 		return ok;
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -4214,20 +4215,20 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 {
 	/* did we make changes or is the global changed after we started */
 	if (fs->base.wtime || tr->stime < pfs->base.wtime) {
-		int ok = SQL_OK;
+		int ok = LOG_OK;
 		fs->base.wtime = fs->base.rtime = 0;
 
 		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) &reset_type, (dupfunc) &type_dup);
-		if (ok == SQL_OK)
+		if (ok == LOG_OK)
 			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
 
-		if (ok == SQL_OK)
+		if (ok == LOG_OK)
 			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
 
-		if (ok == SQL_OK)
+		if (ok == LOG_OK)
 			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	}
-	return SQL_OK;
+	return LOG_OK;
 }
 
 static int
@@ -4318,31 +4319,31 @@ catalog_corrupt( sql_trans *tr )
 int
 sql_trans_commit(sql_trans *tr)
 {
-	int ok = SQL_OK;
+	int ok = LOG_OK;
 
 	/* write phase */
 	if (bs_debug)
 		fprintf(stderr, "forwarding changes %d,%d\n", gtrans->stime, tr->stime);
 	if (tr->parent == gtrans) {
 		tr->stime = timestamp ();
-		if (!logger)
-			return SQL_ERR;
-		ok = log_tstart(logger);
+		if (!sql_logger)
+			return LOG_ERR;
+		ok = log_tstart(sql_logger);
 	}
-	if (ok == SQL_OK) {
+	if (ok == LOG_OK) {
 		/*catalog_corrupt(tr); */
 		ok = rollforward_trans(tr);
 		/*catalog_corrupt(tr->parent);*/
 	}
 	if (tr->parent == gtrans) {
-		ok = log_sequence(logger, SQL_OID, store_oid);
-		if (ok == SQL_OK)
-			ok = log_tend(logger);
+		ok = log_sequence(sql_logger, OBJ_SID, store_oid);
+		if (ok == LOG_OK)
+			ok = log_tend(sql_logger);
 		tr->schema_number = store_schema_number();
 	}
 	if (bs_debug)
 		fprintf(stderr, "done forwarding changes %d\n", gtrans->stime);
-	return ok;
+	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
 static void
@@ -4788,7 +4789,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 	t->s = s;
 	t->sz = sz;
 	if (sz < 0)
-		t->sz = SQLBATSIZE;
+		t->sz = BATSIZE;
 
 	b = bat_new(TYPE_void, TYPE_oid, t->sz, "sql_trans_create_table");
 	t->dbid = temp_create(b);

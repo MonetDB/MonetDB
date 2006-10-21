@@ -39,7 +39,6 @@ operators.
 @c
 
 #include "sql_storage.h"
-#include "bat_logger.h"
 #include "bat_bm.h"
 #include "bat_store.h"
 #include <bat.h>

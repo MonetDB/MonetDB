@@ -46,6 +46,7 @@ smallTOC_SHARED_MODS =	\
 	-l_pcre	\
 	-l_pqueue	\
 	-l_streams	\
+	-l_logger	\
 	-l_unix	\
 	-l_xtables	\
 	\
