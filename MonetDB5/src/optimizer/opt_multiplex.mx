@@ -119,6 +119,7 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int alias[MAXARG];
 	char buf[128];
 	InstrPtr q;
+	int ht, tt;
 
 	(void) stk;
 	strcpy(buf, newFcn);
@@ -153,20 +154,20 @@ find the actual arguments at the proper place of the callee.
 	resB = getArg(q, 0);
 	if (isAnyExpression(getArgType(mb, pci, 0)))
 		msg = throwMessage("optimizer.multiplex", "Target type is missing");
-	pushArgument(mb, q, newTypeVariable(mb, getHeadType(getArgType(mb, pci, 0))));
-	pushArgument(mb, q, newTypeVariable(mb, getTailType(getArgType(mb, pci, 0))));
+	ht = getHeadType(getArgType(mb, pci, 0));
+	tt = getTailType(getArgType(mb, pci, 0));
+	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+	q = pushNil(mb, q, ht);
+	q = pushNil(mb, q, tt);
 	/* set the sequence base if the original had it */
-	if( getHeadType(getArgType(mb, pci, 0)) == TYPE_void){
-		int base;
-		q= newFcnCall(mb,"bat","getSequenceBase");
-		base= getArg(q,0)= newTmpVariable(mb,TYPE_oid);
-		pushArgument(mb,q,iter);
+	if( ht == TYPE_void){
+		int base = 0;
 		q= newFcnCall(mb,"bat","setSequenceBase");
 		pushArgument(mb,q,resB);
-		pushArgument(mb,q,base);
+		pushOid(mb,q,base);
 		resB = getDestVar(q);
 	}
-	/* barrier (mloop,h,r):= newIterator(refBat); */
+	/* barrier (mloop,h,r) := newIterator(refBat); */
 	q = newFcnCall(mb, "bat", "newIterator");
 	q->barrier = BARRIERsymbol;
 	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
