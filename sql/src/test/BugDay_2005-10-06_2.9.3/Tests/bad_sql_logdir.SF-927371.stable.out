@@ -7,7 +7,7 @@ stdout of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 
 
 # 12:38:56 >  
-# 12:38:56 >  echo loaded(); quit(); | eval Mserver --set monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin --set monet_prompt='' --set logdir=/xyz --dbinit='module(sql_server); loaded(); sql_server_start();'
+# 12:38:56 >  echo loaded(); quit(); | eval Mserver --set monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded(); sql_server_start();'
 # 12:38:56 >  
 
 # Monet Database Server V4.9.3
