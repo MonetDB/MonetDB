@@ -15,8 +15,10 @@ if( bn== NULL) {*ret= 0;
         BATseqbase(bn, b->hseqbase);
     } else
         bn = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( bn== NULL) 
+	if( bn== NULL) {
+		@3
 		return throwMessage(@2, "can not create bat");
+	}
     bn->hsorted = b->hsorted;
     bn->tsorted = b->tsorted;
 

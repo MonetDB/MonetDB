@@ -161,9 +161,13 @@ comment "Substitute first occurrence of 'src' by
 	not a substring of dst.";
 
 command batcalc.like(s:bat[:any_1,:str],pat:str,esc:str):bat[:any_1,:void]
+address STRbatlike;
+command batcalc.like(s:bat[:void,:str],pat:str,esc:str):bat[:oid,:void]
 address STRbatlike
 comment "Perform SQL like operation against a string bat";
 command batcalc.like(s:bat[:any_1,:str],pat:str):bat[:any_1,:void]
+address STRbatlike2;
+command batcalc.like(s:bat[:void,:str],pat:str):bat[:oid,:void]
 address STRbatlike2
 comment "Perform SQL like operation against a string bat";
 @+ Implementation

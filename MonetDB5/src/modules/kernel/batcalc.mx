@@ -17,10 +17,9 @@
 @f batcalc
 @a M.L. Kersten
 @* BAT calculator
-[TODO: property propagation]
 Many applications require extension of the basic calculator and
 mathematic functions to work on BAT arguments. Although the
-MAL multiplex module contains a command ('multiplex.script')
+MAL multiplex optimizer contains a command ('optimizer.multiplex')
 to generate the necessary code, it is often much more efficient to 
 use one of the dedidacted batcalc functions introduced below.
 
@@ -52,7 +51,7 @@ for NULLs in each and every basic operation +,-,/,* and comparisons.
 This variant can be obtained using a compile time flag (NULLTST) for the time
 being. If it turns out to be effective, we will derive a new
 version of batcalc.
-Preliminary experiments show that ignoring the NULLS saves about 15\%
+Experiments show that ignoring the NULLS saves about 15\%
 for larger instructions.
 @mal
 module batcalc;
@@ -331,27 +330,54 @@ This code could be further improved by factoring
 out occurrences of the nil-tst on the constant provided.
 This has been left out.
 @= accumCst
-	while( p1 < hend ){
 #ifdef NULLTST
-		if(*(@3 *)p2 == @3_nil || *(@4*)cst == @4_nil)
+	if( *(@4*) cst == @4_nil){
+		while( p1 < hend ){
+			*(@1*)p1= @1_nil;
+			p1= (ptr)( ((char *)p1) + s1);
+			p2= (ptr)( ((char *)p2) + s2);
+		}
+	} else
+	while( p1 < hend ){
+		if(*(@3 *)p2 == @3_nil )
 			*(@1*)p1= @1_nil;
 		else 
-#endif
 			*(@1*)p1 = *(@3*) p2 @2 *(@4 *) cst;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
-@= accumCstLeft
+#else
 	while( p1 < hend ){
+		*(@1*)p1 = *(@3*) p2 @2 *(@4 *) cst;
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
+	}
+#endif
+
+@= accumCstLeft
 #ifdef NULLTST
-		if(*(@3 *)p2 == @3_nil || *(@4*)cst == @4_nil)
+	if( *(@4*) cst == @4_nil)
+		while( p1 < hend ){
+			*(@1*)p1= @1_nil;
+			p1= (ptr)( ((char *)p1) + s1);
+			p2= (ptr)( ((char *)p2) + s2);
+		}
+	else
+	while( p1 < hend ){
+		if(*(@3 *)p2 == @3_nil )
 			*(@1*)p1= @1_nil;
 		else 
-#endif
 			*(@1*)p1 = *(@3*) cst @2 *(@4 *) p2;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
+#else
+	while( p1 < hend ){
+		*(@1*)p1 = *(@3*) cst @2 *(@4 *) p2;
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
+	}
+#endif
 @= accumCstDIV
 	while( p1 < hend ){
 		if(*(@3*)cst == 0) { 
