@@ -50,9 +50,11 @@ explicitly. The result of the optimizer is:
 barrier (_11,_12,_13):= bat.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
-catch MALexception;
-exit MALexception;
     redo (_11,_12,_13):= bat.hasMoreElements(b);
+catch MALexception;
+	#ignore any error
+    redo (_11,_12,_13):= bat.hasMoreElements(b);
+exit MALexception;
 exit (_11,_12,_13);
     c := _8;
 @end verbatim
@@ -208,17 +210,6 @@ find the actual arguments at the proper place of the callee.
 	pushArgument(mb, q, hvar);
 	pushArgument(mb, q, cr);
 
-/* catch   MALexception and ignore them  and replace value with nil*/
-	q = newInstruction(mb,CATCHsymbol);
-	k = newVariable(mb, GDKstrdup("MALexception"), TYPE_str);
-	getVar(mb,k)->isudftype = 1;
-
-	pushReturn(mb, q, k);
-	pushInstruction(mb, q);
-	q= newInstruction(mb,EXITsymbol);
-	pushReturn(mb,q,k);
-	pushInstruction(mb,q);
-
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q = newFcnCall(mb, "bat", "hasMoreElements");
 	q->barrier = REDOsymbol;
@@ -226,6 +217,27 @@ find the actual arguments at the proper place of the callee.
 	pushReturn(mb, q, hvar);
 	pushReturn(mb, q, tvar);
 	pushArgument(mb, q, iter);
+
+/* catch   MALexception and ignore them  and replace value with nil*/
+	q = newInstruction(mb,CATCHsymbol);
+	k = newVariable(mb, GDKstrdup("MALexception"), TYPE_str);
+	getVar(mb,k)->isudftype = 1;
+	pushReturn(mb, q, k);
+	pushInstruction(mb, q);
+
+/* redo (mloop,h,r):= hasMoreElements(refBat); */
+/* ignore the error and continue */
+	q = newFcnCall(mb, "bat", "hasMoreElements");
+	q->barrier = REDOsymbol;
+	getArg(q, 0) = mloop;
+	pushReturn(mb, q, hvar);
+	pushReturn(mb, q, tvar);
+	pushArgument(mb, q, iter);
+
+/* finalized the catch block */
+	q= newInstruction(mb,EXITsymbol);
+	pushReturn(mb,q,k);
+	pushInstruction(mb,q);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;

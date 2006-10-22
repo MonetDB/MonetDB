@@ -21,16 +21,17 @@ function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,1,1);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_4:int)
     _8 := bat.new(nil:int,nil:int);	# 3 CMDBATnew (_8:bat[:int,:int])<-(_9:int)(_9:int)
-barrier (_11,_12,_13):= bat.newIterator(b);	# 4 CHPbunIterator (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 10
+barrier (_11,_12,_13):= bat.newIterator(b);	# 4 CHPbunIterator (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 11
     _15 := calc.+(_13,1);	# 5 CALCbinaryADDintint (_15:int)<-(_13:int)(_4:int)
     bat.insert(_8,_12,_15);	# 6 BKCinsert_bun (_16:void)<-(_8:bat[:int,:int])(_12:int)(_15:int)
-catch MALexception:str ;	# 7  (MALexception:str) jump 8
-exit MALexception:str ;	# 8  (MALexception:str)
+    redo (_11,_12,_13):= bat.hasMoreElements(b);	# 7 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5
+catch MALexception:str ;	# 8  (MALexception:str) jump 10
     redo (_11,_12,_13):= bat.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5
-exit (_11,_12,_13);	# 10  (_11:lng)(_12:int)(_13:int)
-    c:bat[:int,:int]  := _8;	# 11  (c:bat[:int,:int])<-(_8:bat[:int,:int])
-    mdb.list();	# 12 MDBlist (_7:void)
-end main;	# 13  
+exit MALexception:str ;	# 10  (MALexception:str)
+exit (_11,_12,_13);	# 11  (_11:lng)(_12:int)(_13:int)
+    c:bat[:int,:int]  := _8;	# 12  (c:bat[:int,:int])<-(_8:bat[:int,:int])
+    mdb.list();	# 13 MDBlist (_7:void)
+end main;	# 14  
 function user.main():void;
     b := bat.new(:int,:int);
     bat.insert(b,1,1);
@@ -38,9 +39,10 @@ function user.main():void;
 barrier (_11,_12,_13):= bat.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
-catch MALexception:str ;
-exit MALexception:str ;
     redo (_11,_12,_13):= bat.hasMoreElements(b);
+catch MALexception:str ;
+    redo (_11,_12,_13):= bat.hasMoreElements(b);
+exit MALexception:str ;
 exit (_11,_12,_13);
     c:bat[:int,:int]  := _8;
     mdb.list();
