@@ -1546,7 +1546,7 @@ void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
 
 	(void) mb;
 	limit= rd ==0? pci->retc: pci->argc;
-	i= rd==0? pci->retc:0;
+	i= rd? pci->retc:0;
 	for(; i<limit; i++)
 	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 		b= BATdescriptor( stk->stk[getArg(pci,i)].val.br.id);
