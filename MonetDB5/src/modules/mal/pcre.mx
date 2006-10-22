@@ -903,6 +903,7 @@ PCREuselect(int *res, str *pattern, int *bid)
 	int errpos = 0;
 	BUN p, q;
 	pcre *re = NULL;
+	oid o = oid_nil;
 
 	if ((strs = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("pcre.select", "Cannot access descriptor");
@@ -922,9 +923,11 @@ PCREuselect(int *res, str *pattern, int *bid)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(bn, BUNhead(strs, p), NULL, FALSE);
+			ptr h = BUNhead(strs, p);
+			bunfastins(bn, h, &o);
 		}
 	}
+bunins_failed:
 	my_pcre_free(re);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*res = bn->batCacheid;
