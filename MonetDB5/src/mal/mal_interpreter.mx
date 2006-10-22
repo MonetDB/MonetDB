@@ -1526,9 +1526,9 @@ if( cntxt->timerFlag && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flowFlag){
 		/* calculate the read/write byte flow */
 		stream_printf(cntxt->fdout,"# ");
-		/* getVolume(cntxt,mb,stk,pci,0);*/
-		/* getVolume(cntxt,mb,stk,pci,1);*/
-		getVolume(cntxt,mb,stk,pci,2);
+		getVolume(cntxt,mb,stk,pci,0);
+		getVolume(cntxt,mb,stk,pci,1);
+		/* getVolume(cntxt,mb,stk,pci,2);*/
 	}
 	printTraceCall(cntxt,mb,stk,stkpc);
 	cntxt->timer = GDKusec();
@@ -1545,8 +1545,8 @@ void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
 	str tag;
 
 	(void) mb;
-	limit= rd? pci->argc: pci->retc;
-	i= rd? pci->retc:0;
+	limit= rd ==0? pci->retc: pci->argc;
+	i= rd==0? pci->retc:0;
 	for(; i<limit; i++)
 	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 		b= BATdescriptor( stk->stk[getArg(pci,i)].val.br.id);
@@ -1554,13 +1554,16 @@ void getVolume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rd){
 		vol += BATcount(b) * BUNsize(b);
 		BBPunfix(b->batCacheid);
 	}
-	tag= (rd==0?"r": (rd==1?"w":""));
+	tag= (rd==0?"w": (rd==1?"r":""));
 	if( vol <1024)
-		stream_printf(cntxt->fdout,"%4dB%s",vol,tag);
+		stream_printf(cntxt->fdout,"%3dB%s",vol,tag);
 	else
 	if( vol <1024*1024)
-		stream_printf(cntxt->fdout,"%4dK%s",vol/1024,tag);
+		stream_printf(cntxt->fdout,"%3dK%s",vol/1024,tag);
 	else
-		stream_printf(cntxt->fdout,"%4dM%s",vol/1024/1024,tag);
+	if( vol <1024* 1024*1024)
+		stream_printf(cntxt->fdout,"%3dM%s",vol/1024/1024,tag);
+	else
+		stream_printf(cntxt->fdout,"%3dG%s",vol/1024/1024/1024,tag);
 }
 @}
