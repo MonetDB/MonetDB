@@ -281,7 +281,7 @@ multiplex1(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, in
 		match = 1;
 	if( match && type <= TYPE_str){
 		q = newStmt1(mb, batcalcRef, name);
-		/*setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));*/
+		setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));
 		q = pushArgument(mb, q, o1);
 	} else {
 		q = newStmt(mb, "optimizer","multiplex");
@@ -311,7 +311,7 @@ dump_multiplex(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1
 		match = 1;
 	if( (match && type <= TYPE_str) || match==2){
 		q = newStmt1(mb, batcalcRef, name);
-		/*setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));*/
+		setVarType(mb,getArg(q,0), newBatType(TYPE_any,rtype));
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	} else {
@@ -332,11 +332,6 @@ multiplexN(MalBlkPtr mb, char *name)
 	if (strcmp(name,"calc.rotate_xor_hash") == 0) {
 		q = newStmt(mb, "mkey", "bulk_rotate_xor_hash");
 	} 
-/*
-	if (strcmp(name,"calc.substring") == 0) {
-		q = newStmt(mb, "batcalc", "substring");
-	}
-*/
 	return q;
 }
 
@@ -729,6 +724,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, e);
 					k = getDestVar(q);
+
+					q = newStmt1(mb, algebraRef, "project");
+					q = pushArgument(mb, q, l);
+					q = pushNil(mb, q, TYPE_void);
+					l = getDestVar(q);
 					q = newStmt1(mb, algebraRef, "kdifference");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, k);
@@ -745,6 +745,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					k = getDestVar(q);
+					q = newStmt1(mb, algebraRef, "project");
+					q = pushArgument(mb, q, l);
+					q = pushNil(mb, q, TYPE_void);
+					l = getDestVar(q);
 					q = newStmt1(mb, algebraRef, "kdifference");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, k);
@@ -1230,7 +1234,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushStr(mb, q, fimp);
 				} else {
 					setVarType(mb,getArg(q,0), 
-						newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
+						newBatType(TYPE_any,tail_type(s->op1.stval)->type->localtype));
 					_DELETE(fimp);
 				}
 			} else {
