@@ -92,7 +92,7 @@ address PCRElike3;
 command like(s:str, pat:str):bit 
 address PCRElike2;
 
-command like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
+command like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
 address PCRElike_uselect_pcre;
 
 pattern prelude():void 
