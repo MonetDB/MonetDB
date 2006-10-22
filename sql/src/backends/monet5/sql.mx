@@ -459,15 +459,6 @@ comment "cast @1 to a month_interval and check for overflow";
 Include the sql_cache functionality
 @mal
 
-command calc.like(s:str, pat:str, esc:str):bit 
-address PCRElike3;
-
-command calc.like(s:str, pat:str):bit 
-address PCRElike2;
-
-command batstr.like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
-address PCRElike_uselect_pcre;
-
 command prelude()
 address SQLprelude;
 

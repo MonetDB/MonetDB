@@ -709,7 +709,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				switch (s->flag) {
 				case cmp_like:{
 					int e = _dumpstmt(sql, mb, s->op3.stval);
-					q = newStmt1(mb, batcalcRef, "like");
+					q = newStmt(mb, "pcre", "like");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, e);
@@ -719,7 +719,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					int e = _dumpstmt(sql, mb, s->op3.stval);
 					int k;
 
-					q = newStmt1(mb, batcalcRef, "like");
+					q = newStmt(mb, "pcre", "like");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, e);
