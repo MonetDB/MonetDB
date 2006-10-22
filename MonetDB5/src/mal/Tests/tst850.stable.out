@@ -30,17 +30,18 @@ function user.main():void;	# 0  (main:void)
     io.print(t);	# 6 IOprint_val (_11:int)<-(t:bat[:void,:str])
     _17 := bat.new(nil:void,nil:bit);	# 7 CMDBATnew (_17:bat[:void,:bit])<-(_18:void)(_19:bit)
     _20 := bat.setSequenceBase(_17,0@0);	# 8 BKCsetSequenceBase (_20:bat[:void,:bit])<-(_17:bat[:void,:bit])(_6:oid)
-barrier (_22,_23,_24):= bat.newIterator(t);	# 9 CHPbunIterator (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 15
+barrier (_22,_23,_24):= bat.newIterator(t);	# 9 CHPbunIterator (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 16
     _26 := str.startsWith(_24,"");	# 10 STRPrefix (_26:bit)<-(_24:str)(_14:str)
     bat.insert(_20,_23,_26);	# 11 BKCinsert_bun (_27:void)<-(_20:bat[:void,:bit])(_23:oid)(_26:bit)
-catch MALexception:str ;	# 12  (MALexception:str) jump 13
-exit MALexception:str ;	# 13  (MALexception:str)
+    redo (_22,_23,_24):= bat.hasMoreElements(t);	# 12 CHPbunHasMoreElements (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 10
+catch MALexception:str ;	# 13  (MALexception:str) jump 15
     redo (_22,_23,_24):= bat.hasMoreElements(t);	# 14 CHPbunHasMoreElements (_22:lng)(_23:oid)(_24:str)<-(t:bat[:void,:str]) jump 10
-exit (_22,_23,_24);	# 15  (_22:lng)(_23:oid)(_24:str)
-    b:bat[:void,:bit]  := _20;	# 16  (b:bat[:void,:bit])<-(_20:bat[:void,:bit])
-    bat.setSequenceBase(b,0@0);	# 17 BKCsetSequenceBase (_15:bat[:void,:bit])<-(b:bat[:void,:bit])(_6:oid)
-    io.print(b);	# 18 IOprint_val (_16:int)<-(b:bat[:void,:bit])
-end main;	# 19  
+exit MALexception:str ;	# 15  (MALexception:str)
+exit (_22,_23,_24);	# 16  (_22:lng)(_23:oid)(_24:str)
+    b:bat[:void,:bit]  := _20;	# 17  (b:bat[:void,:bit])<-(_20:bat[:void,:bit])
+    bat.setSequenceBase(b,0@0);	# 18 BKCsetSequenceBase (_15:bat[:void,:bit])<-(b:bat[:void,:bit])(_6:oid)
+    io.print(b);	# 19 IOprint_val (_16:int)<-(b:bat[:void,:bit])
+end main;	# 20  
 #-------------------------#
 # h	tmp_13		  # name
 # void	str		  # type
