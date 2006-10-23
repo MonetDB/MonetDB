@@ -908,7 +908,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 
 		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
 			if (as->nr != ~(size_t)0 && i < as->nr) {
-				GDKerror("ASCIIload_file: read error\n");
+				GDKerror("read error\n");
 				res = -1;
 			}
 			break;
@@ -923,7 +923,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 			if (e) {
 				*e = '\0';
 				if (insert_line(as, s) < 0) {
-					GDKerror("ASCIIload_file: value %s not inserted\n", s);
+					GDKerror("value %s not inserted\n", s);
 					s = e + seplen;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -933,7 +933,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 				done = 1;
 			} else if (b->eof && s + as->nr_attrs < end) {
 				if (insert_line(as, s) < 0) {
-					GDKerror("ASCIIload_file: value %s not inserted\n", s);
+					GDKerror("value %s not inserted\n", s);
 					s = end;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -949,7 +949,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 					if (b->pos == 0 || (b->len - b->pos > b->size >> 1))
 						size <<= 4;
 					if (read_more(b, out, size) == EOF) {
-						GDKerror("ASCIIload_file: read error\n");
+						GDKerror("read error\n");
 						res = -1;
 						break;
 					}
