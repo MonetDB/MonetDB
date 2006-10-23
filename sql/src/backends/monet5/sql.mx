@@ -1269,8 +1269,8 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, in
 	if (msg)
 		return msg;
 	b = mvc_import_table(m, *s, *tname, *sep, *rsep, *sz);
-	if (b == 0)
-		return throwMessage("sql.importTable", "failed");
+	if (!b)
+		return throwMessage("importTable", "failed to import table");
 	*res = b->batCacheid;
 	BBPincref( *res, TRUE);
 	BBPunfix(*res);

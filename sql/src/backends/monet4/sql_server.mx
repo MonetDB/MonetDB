@@ -616,8 +616,10 @@ int
 mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, int *sz)
 {
 	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, *sz);
-	if (*res == NULL)
+	if (*res == NULL) {
+		GDKerror("importTable: failed to import table");
 		return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 
