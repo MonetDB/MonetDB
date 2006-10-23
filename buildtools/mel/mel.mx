@@ -506,7 +506,7 @@ main(int argc, char *argv[])
 extern yystype yylval;
 
 #ifdef FLEX_SCANNER
-#if !defined(YY_FLEX_SUBMINOR_VERSION) || YY_FLEX_SUBMINOR_VERSION < 5
+#if !defined(YY_FLEX_SUBMINOR_VERSION) || YY_FLEX_SUBMINOR_VERSION < 5 || YY_FLEX_SUBMINOR_VERSION > 31
 /* flex 2.5.31 declares yylineno.  I don't know which other versions
    do as well. */
 int yylineno;
