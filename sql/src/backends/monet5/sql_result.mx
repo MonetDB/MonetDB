@@ -308,8 +308,9 @@ bat_max_@1length(BAT *b)
 		res += (*s-'0');
 	}
 	if (!*s && t->scale) {
-		GDKerror("decimal wrong format (%s)", p);
-		return NULL;
+		for( i = 0; i < t->scale; i++) {
+			res *= 10;
+		}
 	}
 	if (*s) {
 		if (*s != '.') {
@@ -324,6 +325,9 @@ bat_max_@1length(BAT *b)
 			}
 			res *= 10;
 			res += (*s-'0');
+		}
+		for( ; i < t->scale; i++) {
+			res *= 10;
 		}
 	}
 	if (*s) {
