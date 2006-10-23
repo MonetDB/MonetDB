@@ -563,7 +563,7 @@ ASCIIcollect_bats(ascii *as)
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		if (cnt != BATcount(fmt[i].c)) {
-			GDKerror("ASCIIcollect: counts are not equal\n");
+			GDKerror("Error: counts are not equal\n");
 			return NULL;
 		}
 	}
@@ -643,7 +643,7 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	*end = bak;
 
 	if (!adt) {
-		GDKerror("insert_val: %lx not inserted %s\n", (size_t) adt, s);
+		GDKerror("value %s not inserted\n", s);
 		return 1;
 	}
 
