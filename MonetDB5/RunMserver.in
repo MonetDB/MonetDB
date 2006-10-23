@@ -16,7 +16,7 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-builddir=@QXMONETDB_BUILD@
+builddir=@QXMONETDB5_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
@@ -48,4 +48,4 @@ if [ "${uname}" = "AIX" ] ; then
 fi
 export LD_LIBRARY_PATH
 
-exec mserver --set monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB5.conf" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
+exec mserver5 --set monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB5.conf" --dbfarm="${builddir}/dbfarm" ${1+"$@"}

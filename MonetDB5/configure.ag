@@ -82,7 +82,11 @@ else
 fi
 AC_SUBST(Qexec_prefix)
 Qsrcdir="$srcdir"
+Xsrcdir="`$translatepath "$srcdir"`"
+QXsrcdir="`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qsrcdir)
+AC_SUBST(Xsrcdir)
+AC_SUBST(QXsrcdir)
 Qlocalstatedir="$localstatedir"
 AC_SUBST(Qlocalstatedir)
 Qlibdir="$libdir"
