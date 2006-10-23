@@ -1244,7 +1244,7 @@ insert_val(Column * fmt, char *s, char *e, char quote)
 	*end = bak;
 
 	if (!adt) {
-		GDKerror("%ld not inserted %s\n", (long) adt, s);
+		GDKerror("value %s not inserted\n", s);
 		return 1;
 	}
 
