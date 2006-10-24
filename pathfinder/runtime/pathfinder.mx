@@ -1150,7 +1150,7 @@ PROC __runtime_maintain(lng wsid,
 {
     var others := colname_pins.reverse().ord_uselect(colname).access(BAT_WRITE).delete(wsid);
     if (count(others) > 0) {
-        runtime.fetch(RT_QN_NID_INS).insert(idx);
+        runtime.fetch(RT_QN_NID_INS).insert(ins);
         runtime.fetch(RT_QN_NID_DEL).insert(del);
     } else {
         # coast is clear, unite als ins, all del and apply them to the master
