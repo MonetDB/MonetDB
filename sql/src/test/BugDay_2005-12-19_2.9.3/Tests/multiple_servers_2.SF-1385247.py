@@ -1,7 +1,7 @@
 import os, time, sys
 
 def server_start(x,s,dbinit):
-    srvcmd = '%s --dbinit "%s"' % (os.getenv('MSERVER'),dbinit)
+    srvcmd = '%s --dbname "%s" --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
     sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stdout.flush()

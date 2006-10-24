@@ -1,7 +1,7 @@
 import os, time
 
 def main():
-    srvcmd = '%s --dbinit "module(sql_server); mapi_register(sql_frontend()); mapi_start();"' % os.getenv('MSERVER')
+    srvcmd = '%s --dbname "%s" --dbinit "module(sql_server); mapi_register(sql_frontend()); mapi_start();"' % (os.getenv('MSERVER'),os.getenv('TSTDB'))
     srv = os.popen(srvcmd, 'w')
     time.sleep(10)                      # give server time to start
     cltcmd = os.getenv('SQL_CLIENT')
