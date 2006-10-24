@@ -386,7 +386,7 @@ void mal_exit(void){
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
 	mal_scope = 0;
-	unloadModuleLibraries(); 
+	unloadLibraries(); 
 
 	finishNamespace();
 	if( cntxt->cwd)

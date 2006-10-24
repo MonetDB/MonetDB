@@ -116,6 +116,7 @@ information should be dealt with separately.[TODO]
 @h
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
+	str		srcFile;	/* NULL for stdin, or file name */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */
@@ -408,6 +409,7 @@ Client MCinitClient(oid user, bstream *fin, stream *fout) {
 	c->user = user; 
 	c->scenario = NULL;
 	c->oldscenario = NULL;
+	c->srcFile = NULL;
 	c->sessionkey = 0;
 	c->blkmode = 0;
 

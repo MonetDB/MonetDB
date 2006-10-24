@@ -841,7 +841,7 @@ parseAtom(Client cntxt)
 	if (currChar(cntxt) != ':')
 		tpe= TYPE_void;	/* no type qualifier */
 	else tpe = parseTypeId(cntxt, TYPE_int);
-	s = (str) loadModuleLibrary(modnme);
+	s = (str) loadLibrary(modnme);
 	if (s)
 		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 	malAtomDefinition(modnme, tpe);
@@ -861,7 +861,7 @@ str parseModule(Client cntxt)
 	if ((l = idLength(cntxt)) <= 0)
 		return parseError(cntxt, "<module path> expected\n");
 	modnme = putName(nxt, l);
-	s = (str) loadModuleLibrary(modnme);
+	s = (str) loadLibrary(modnme);
 	if (s)
 		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 
@@ -912,7 +912,7 @@ parseInclude(Client cntxt)
 	}
 	skipToEnd(cntxt);
 
-	s = (str) loadModuleLibrary(modnme);
+	s = (str) loadLibrary(modnme);
 	if (s)
 		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 	malInclude(cntxt, modnme, 0);
@@ -1244,10 +1244,7 @@ This scheme is intended for just-in-time compilation.
 			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr, 
 			findModule(cntxt->nspace, putName(modnme,strlen(modnme))) );
-		curInstr->fcn = getAddressFromLib(
-			findModule(cntxt->nspace, putName(modnme,strlen(modnme))),nme );
-		if( curInstr->fcn == NULL)
-			curInstr->fcn = getAddress(modnme,nme, 0);
+		curInstr->fcn = getAddress(cntxt->srcFile, modnme, nme,0);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
 			malAtomProperty(curBlk, curInstr);
@@ -1282,7 +1279,7 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 			return 0;
 		}
 		nme = idCopy(cntxt,i);
-		curInstr->fcn = getAddress(cntxt->nspace->name,nme,0);
+		curInstr->fcn = getAddress(cntxt->srcFile, cntxt->nspace->name, nme,0);
 		skipSpace(cntxt);
 	}
 	/* block is terminated at the END statement */

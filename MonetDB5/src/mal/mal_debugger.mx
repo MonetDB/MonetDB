@@ -1395,7 +1395,7 @@ printBatInfo(stream *f, VarPtr n, ValPtr v)
 		int ret;
 		MALfcn fcn;
 
-		fcn = getAddress("bat","BKCinfo", 0);
+		fcn = getAddress("bat","bat","BKCinfo", 0);
 		if (fcn) {
 			BAT *b;
 
@@ -1422,7 +1422,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		MALfcn fcn;
 		BUN p;
 
-		fcn = getAddress("bat","BKCinfo", 0);
+		fcn = getAddress("bat","bat","BKCinfo", 0);
 		if (fcn) {
 			BAT *b;
 

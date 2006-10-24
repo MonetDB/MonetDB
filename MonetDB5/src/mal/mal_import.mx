@@ -119,6 +119,7 @@ It should be reset before continuing.
 	int oldlisting = c->listing;
 	int oldmode = c->mode;
 	int oldblkmode = c->blkmode;
+	str oldsrcFile = c->srcFile;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
 	Module oldnspace = c->nspace;
@@ -137,6 +138,7 @@ It should be reset before continuing.
 	c->mode = oldmode;
 	c->blkmode = oldblkmode;
 	c->bak = oldbak;
+	c->srcFile = oldsrcFile;
 	if(c->prompt) GDKfree(c->prompt);
 	c->prompt = oldprompt;
 	c->promptlength= strlen(c->prompt);
@@ -173,6 +175,7 @@ malInclude(Client c, str name, int listing)
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
+	str oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
 	Module oldnspace = c->nspace;
@@ -185,6 +188,7 @@ malInclude(Client c, str name, int listing)
 	c->bak = NULL;
 
 	c->fdin = NULL;
+	c->srcFile = name;
 	if ((s = malLoadScript(name, &c->fdin)))
 		stream_printf(c->fdout, "#%s\n", s);
 	else 
@@ -226,6 +230,7 @@ evalFile(Client c, str fname, int listing){
 	c->bak = NULL;
 
 	c->fdin = NULL;
+	c->srcFile= fname;
 	fd = malOpenSource(fname);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
@@ -257,6 +262,7 @@ compileString(Symbol *fcn, Client c, str s){
 	c->listing = 0;
 	c->bak = NULL;
 	c->fdin = NULL;
+	c->srcFile= NULL;
 
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	if (s[len - 1] != '\n') {
@@ -314,6 +320,7 @@ callString(Client c, str s, int listing)
 	c->listing = listing;
 	c->bak = NULL;
 	c->fdin = NULL;
+	c->srcFile= NULL;
 
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	if (s[len - 1] != '\n') {
