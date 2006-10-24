@@ -557,7 +557,9 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			}
 		}
 	}
-	return(mvc_export_warning(out, w));
+	if (mvc_export_warning(out, w) != 1)
+		return -1;
+	return 0;
 }
 
 
@@ -921,7 +923,9 @@ mvc_export_operation(mvc *m, stream *s, str w)
 		}
 	}
 
-	return(mvc_export_warning(s, w));
+	if (mvc_export_warning(s, w) != 1)
+		return -1;
+	return 0;
 }
 
 int
@@ -942,7 +946,9 @@ mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 	if (stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
 			stream_write(s, "\n", 1, 1) != 1)
 		return -1;
-	return(mvc_export_warning(s, w));
+	if (mvc_export_warning(s, w) != 1)
+		return -1;
+	return 0;
 }
 
 static int

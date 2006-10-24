@@ -966,7 +966,7 @@ produce code.
 #endif
 	if( be->q ){
 		if (m->mode == m_prepare)
-			err = mvc_export_prepare(m, c->fdout, be->q);
+			err = mvc_export_prepare(m, c->fdout, be->q, "");
 		else if (m->mode == m_inplace ){
 			/* everything ready for a fast call */
 		} else /* call procedure generation (only in cache mode) */
