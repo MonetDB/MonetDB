@@ -489,7 +489,7 @@ main(int argc, char *argv[])
 	return 0;
 }
 @L 
-%option never-interactive
+%option never-interactive yylineno
 %{
 #include <mel_config.h>
 #include "mel.h"
