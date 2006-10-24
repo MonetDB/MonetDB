@@ -95,7 +95,7 @@ typedef struct mvc {
 	sql_session *session;	
 
 	int type;		/* query type */
-	int depth;		/* depth of the current expression */
+	unsigned int depth;	/* depth of the current expression */
 	int label;		/* numbers for relational projection labels */
 
 	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */

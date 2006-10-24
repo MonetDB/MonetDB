@@ -111,11 +111,6 @@ dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 
-dnl  However, there are still some signed-unsigned comparisons...
-if test "$GCC" = "yes"; then
-	X_CFLAGS="$X_CFLAGS -Wno-sign-compare"
-fi
-
 case "$host_os" in
 *mingw*)
 AM_CONDITIONAL(NOT_WIN32, false)

@@ -27,16 +27,16 @@ extern list* table_select_column_multi_values( sql_trans *tr, sql_column *val, s
 extern ssize_t
  column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
 
-extern void *column_find_value(sql_trans *tr, sql_column *c, oid rid);
+extern void *column_find_value(sql_trans *tr, sql_column *c, ssize_t rid);
 
 extern int
- column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value);
+ column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value);
 
 extern int
  table_insert(sql_trans *tr, sql_table *t, ...);
 
 extern int
- table_delete(sql_trans *tr, sql_table *t, oid rid);
+ table_delete(sql_trans *tr, sql_table *t, ssize_t rid);
 
 extern int
  table_dump(sql_trans *tr, sql_table *t);

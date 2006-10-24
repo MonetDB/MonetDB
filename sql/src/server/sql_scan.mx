@@ -557,7 +557,7 @@ scanner_string(mvc *c, int quote)
 		lc->yycur--;	/* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
-			if (lc->rs->len >= (int)lc->rs->pos + lc->yycur + 1) {
+			if (lc->rs->len >= lc->rs->pos + lc->yycur + 1) {
 				(void) sql_error(c, 2, "NULL byte in string");
 				return LEX_ERROR;
 			}

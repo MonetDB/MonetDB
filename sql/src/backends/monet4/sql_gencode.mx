@@ -240,7 +240,7 @@ mvc_dump_1(backend *sql, stmt *s, char *name, int *nr)
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf(buf, buflen,
+	size_t len = snprintf(buf, buflen,
 			   "var s%d := mvc_%s(myc, s%d);\n",
 			   -s->nr, name, o1);
 
@@ -257,7 +257,7 @@ mvc_dump_2(backend *sql, stmt *s, char *name, int *nr)
 	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf(buf, buflen,
+	size_t len = snprintf(buf, buflen,
 			   "var s%d := mvc_%s(myc, s%d, s%d);\n",
 			   -s->nr, name, o1, o2);
 
@@ -274,7 +274,7 @@ dump_1(backend *sql, stmt *s, char *name, int *nr)
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf(buf, buflen,
+	size_t len = snprintf(buf, buflen,
 			   "var s%d := s%d.%s();\n",
 			   -s->nr, o1, name);
 
@@ -291,7 +291,7 @@ dump_2(backend *sql, stmt *s, char *name, int *nr)
 	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf(buf, buflen,
+	size_t len = snprintf(buf, buflen,
 			   "var s%d := %s(s%d, s%d);\n",
 			   -s->nr, name, o1, o2);
 
@@ -310,7 +310,7 @@ dump_3(backend *sql, stmt *s, char *name, int *nr)
 	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 	size_t buflen = strlen(name) + 64;
 	char *buf = NEW_ARRAY(char, buflen);
-	int len = snprintf(buf, buflen,
+	size_t len = snprintf(buf, buflen,
 			   "var s%d := %s(s%d, s%d, s%d);\n",
 			   -s->nr, name, o1, o2, o3);
 
@@ -327,7 +327,7 @@ static int
 backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 {
 	char *buf = NULL;
-	int len = 0;
+	size_t len = 0;
 	node *n;
 
 	assert(*nr);
@@ -344,7 +344,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 		switch (s->type) {
 		case st_none:{
-			int buflen = SMALLBUFSIZ;
+			size_t buflen = SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			strcpy(buf, "var none := \"none\";\n");
@@ -1197,7 +1197,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_affected_rows: {
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			char *buf = NEW_ARRAY(char, SMALLBUFSIZ);
-			int len = snprintf(buf, SMALLBUFSIZ,
+			size_t len = snprintf(buf, SMALLBUFSIZ,
 					   "var s%d := mvc_affected_rows(myc, Output, s%d);\n",
 					   -s->nr, l);
 			dump(sql, buf, len, -s->nr);
@@ -1797,7 +1797,7 @@ backend_explain(backend *be, stmt *s, stream *out)
 		int i = 0;
 
 		for (; i < c->argc; i++) {
-			int len;
+			size_t len;
 			atom *a = c->args[i];
 			char buf[BUFSIZ];
 

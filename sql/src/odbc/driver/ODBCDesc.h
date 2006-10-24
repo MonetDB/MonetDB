@@ -44,7 +44,7 @@ typedef struct {
 	SQLCHAR *sql_desc_name;
 	SQLSMALLINT sql_desc_nullable;
 	SQLINTEGER sql_desc_num_prec_radix;
-	SQLINTEGER sql_desc_octet_length;
+	SQLUINTEGER sql_desc_octet_length;
 	SQLINTEGER *sql_desc_octet_length_ptr;
 	SQLINTEGER sql_desc_parameter_type;
 	SQLSMALLINT sql_desc_precision;

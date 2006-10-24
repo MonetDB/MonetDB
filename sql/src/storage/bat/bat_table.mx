@@ -228,7 +228,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 }
 
 void *
-column_find_value(sql_trans *tr, sql_column *c, oid rid)
+column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 {
 	BUN p;
 	BAT *b, *d = NULL;
@@ -256,11 +256,12 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 }
 
 int
-column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
+column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value)
 {
 	BAT *b;
 
-	assert(rid != oid_nil);
+	assert(rid != (ssize_t)oid_nil);
+	assert(rid != -1);
 
 	if (c->bat.ubid) {
 		b = temp_descriptor(c->bat.ubid);
@@ -315,11 +316,11 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 }
 
 int
-table_delete(sql_trans *tr, sql_table *t, oid rid)
+table_delete(sql_trans *tr, sql_table *t, ssize_t rid)
 {
 	BAT *b = bind_dbat(tr, t, INS);
 
-	assert(rid != oid_nil);
+	assert(rid != (ssize_t)oid_nil);
 	assert(rid != -1);
 
 	BUNappend(b, (ptr) &rid, TRUE);
@@ -363,7 +364,7 @@ table_check(sql_trans *tr, sql_table *t)
 		b = temp_descriptor(c->bat.bid);
 		if (cnt == -1) {
 			cnt = BATcount(b);
-		} else if (cnt != BATcount(b)) {
+		} else if (cnt != (ssize_t)BATcount(b)) {
 			assert(0);
 			return (int)(cnt - BATcount(b));
 		}

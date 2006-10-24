@@ -203,7 +203,7 @@ void
 monet4_schema_user_dependencies(ptr _trans)
 {
 	sql_trans *tr = (sql_trans*) _trans;
-	oid rid_schema, rid_user;
+	ssize_t rid_schema, rid_user;
         int schema_id, user_id;
         list *users_list = NULL;
         sql_schema *s;

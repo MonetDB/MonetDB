@@ -90,7 +90,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		return SQL_ERROR;
 	}
 	if (nUIDLength > 0) {
-		if (nUIDLength >= sizeof(uid))
+		if ((size_t)nUIDLength >= sizeof(uid))
 			nUIDLength = sizeof(uid) - 1;
 		strncpy(uid, (char *) szUID, nUIDLength);
 		uid[nUIDLength] = 0;
@@ -108,7 +108,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		return SQL_ERROR;
 	}
 	if (nPWDLength > 0) {
-		if (nPWDLength >= sizeof(pwd))
+		if ((size_t)nPWDLength >= sizeof(pwd))
 			nPWDLength = sizeof(pwd) - 1;
 		strncpy(pwd, (char *) szPWD, nPWDLength);
 		pwd[nPWDLength] = 0;
