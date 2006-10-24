@@ -511,7 +511,6 @@ extern yystype yylval;
 /* after flex 2.5.4 flex uses yyget and yyset lineno functions, so for
    older flexs we define these here 
  */
-int yylineno;
 #define yyget_lineno()		yylineno
 #define yyset_lineno(ln)	yylineno = ln
 #else
