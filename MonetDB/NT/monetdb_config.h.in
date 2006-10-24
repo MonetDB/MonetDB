@@ -25,7 +25,9 @@
  * 1200; in Visual Studio 8 the value is 1400).
  */
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
+#endif
 
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE 1
@@ -361,7 +363,9 @@
 
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
+#ifndef snprintf
 #define snprintf _snprintf
+#endif
 
 /* Define to 1 if the system has the type `socklen_t'. */
 /* #undef HAVE_SOCKLEN_T */
@@ -378,7 +382,9 @@
 
 /* Define to 1 if you have the `strcasecmp' function. */
 #define HAVE_STRCASECMP 1
+#ifndef strcasecmp
 #define strcasecmp(x,y) _stricmp(x,y)
+#endif
 
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1
@@ -397,7 +403,9 @@
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #define HAVE_STRNCASECMP 1
+#ifndef strncasecmp
 #define strncasecmp(x,y,z) _strnicmp(x,y,z)
+#endif
 
 /* Define to 1 if you have the `strsignal' function. */
 /* #undef HAVE_STRSIGNAL */
@@ -522,7 +530,9 @@
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
+#ifndef vsnprintf
 #define vsnprintf _vsnprintf
+#endif
 
 /* Define to 1 if you have the <winsock.h> header file. */
 #define HAVE_WINSOCK_H 1
@@ -732,7 +742,9 @@
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef inline
 #define inline __inline
+#endif
 
 /* Define to `long' if <sys/types.h> does not define. */
 /* #undef off_t */
