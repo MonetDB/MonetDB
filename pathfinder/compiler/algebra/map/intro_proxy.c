@@ -1349,8 +1349,6 @@ generate_join_proxy (PFla_op_t *root,
     PFalg_proj_t *entry_proj = PFmalloc ((proxy_entry->schema.count - 1) *
                                          sizeof (PFalg_proj_t));
 
-    (void) root;
-
     /* skip proxy generation if some conflicts cannot be resolved */
     if (!join_resolve_conflicts (proxy_entry,
                                  proxy_exit,
@@ -1364,7 +1362,7 @@ generate_join_proxy (PFla_op_t *root,
         return false;
 
     /* assign unique names to track the names inside the proxy body */
-    PFprop_infer_unq_names (proxy_entry);
+    PFprop_infer_unq_names (root);
 
     /* short-hand for the key column name */
     num_col = proxy_exit->sem.number.attname;
