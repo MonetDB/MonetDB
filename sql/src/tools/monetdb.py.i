@@ -19,6 +19,9 @@
 %include "exception.i"
 
 %{
+#ifdef HAVE_FSTAT
+#undef HAVE_FSTAT
+#endif
 #include "C/Mapi.h"
 %}
 
