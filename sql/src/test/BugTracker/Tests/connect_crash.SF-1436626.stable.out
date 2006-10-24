@@ -9,10 +9,10 @@ stdout of test 'connect_crash.SF-1436626` in directory 'src/test/BugTracker` its
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-# . # table_name
-# single_value # name
-# smallint # type
-# 1 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
 quit();
 
