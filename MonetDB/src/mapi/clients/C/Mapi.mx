@@ -3316,13 +3316,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			if (!mid->error)
 				mid->error = MSERVER;
 			break;
+		case '%':
 		case '#':
 		case '&':
 			if (lookahead < 0)
 				lookahead = 1;
 			result = parse_header_line(hdl, line, result);
 			hdl->active = result;
-			if (result && *line == '#')
+			if (result && *line == '%')
 				add_cache(result, strdup(line));
 			break;
 		default:
