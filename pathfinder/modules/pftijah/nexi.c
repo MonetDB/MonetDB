@@ -238,8 +238,8 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     txt_retr_model->param1      = 0.8;
     txt_retr_model->param2      = 0.5;
     txt_retr_model->param3      = 0;
-    //txt_retr_model->prior_type  = NO_PRIOR;
-    txt_retr_model->prior_type  = LENGTH_PRIOR;    
+    txt_retr_model->prior_type  = NO_PRIOR;
+    //txt_retr_model->prior_type  = LENGTH_PRIOR;    
     //txt_retr_model->prior_size  = 0;
     txt_retr_model->prior_size  = 2;
     strcpy(txt_retr_model->context, "");
@@ -452,6 +452,22 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
         } else if ( strcmp(optName,"sra_tracefile") == 0 ) {
             MILPRINTF(MILOUT, "trace     := TRUE;\n" );
             MILPRINTF(MILOUT, "tracefile := \"%s\";\n", optVal );
+            
+        } else if (strcmp(optName, "scoreBase") == 0) {
+            if (strcasecmp(optVal, "ONE") == 0) {
+                MILPRINTF(MILOUT, "scoreBase := 1;\n");
+                base_type = ONE;
+            } else {
+                MILPRINTF(MILOUT, "scoreBase := 0;\n");
+                base_type = ZERO;
+            }
+            
+        } else if (strcmp(optName, "prior") == 0) {
+            if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
+                txt_retr_model->prior_type  = LENGTH_PRIOR;
+            } else {
+                txt_retr_model->prior_type  = NO_PRIOR;
+            }
             
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
