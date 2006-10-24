@@ -38,11 +38,6 @@ AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 
-dnl  However, there are still some signed-unsigned comparisons...
-if test "$GCC" = "yes"; then
-	X_CFLAGS="$X_CFLAGS -Wno-sign-compare"
-fi
-
 # MONETDB5_BUILD and MONETDB5_SOURCE are *only* used for monetdb5-config
 # MONETDB5_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
