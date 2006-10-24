@@ -35,7 +35,7 @@ log files. This file is a simple ascii file with the following format:
  	6DIGIT-VERSION\n[log file number \n]*]*
 The transaction log files have a binary format, which stores fixed size 
 logformat headers (flag,nr,bid), where the flag is the type of update logged.
-The nr field indicates how many changes there were (incase of inserts/deletes).
+The nr field indicates how many changes there were (in case of inserts/deletes).
 The bid stores the bid identifier.
 
 The key decision to be made by the user is the location of the log file.
@@ -43,8 +43,8 @@ Ideally, it should be stored in fail-safe environment, or at least
 the log and databases should be on separate disk columns.
 
 This file system may reside on the same hardware as the database server
-and therefor the writes are done to the same disk, but could also 
-reside on an other system and then the changes are flushed through the network.  
+and therefore the writes are done to the same disk, but could also 
+reside on another system and then the changes are flushed through the network.  
 The logger works under the assumption that it is called to safeguard
 updates on the database when it has an exclusive lock on
 the latest version. This lock should be guaranteed by the calling
@@ -57,9 +57,9 @@ commit is written to the same log file, the beginning and end are
 marked by a log identifier.
 
 A server restart should only (re)process blocks which are completely 
-written to disk. A log replay therefor ends in a commit or abort on
+written to disk. A log replay therefore ends in a commit or abort on
 the changed bats. Once all logs have been read, the changes to
-the bats are maded persistent, ie a bbp sub-commit is done.
+the bats are made persistent, i.e. a bbp sub-commit is done.
 
 @{
 @* Module Definition
@@ -155,10 +155,10 @@ The logger also keeps sequence numbers. A sequence needs to store each
 requested (block) of sequence numbers. This is done using the log_sequence
 function. The logger_sequence function can be used to return the
 last logged sequence number. Sequences identifiers should be unique, and
-2 are already used. The first LOG_SID is used internal for the log files
+2 are already used. The first LOG_SID is used internally for the log files
 sequence. The second OBJ_SID is for frontend objects, for example the sql
 objects have a global sequence counter such that each table, trigger, sequence
-etc has a unique number. 
+etc. has a unique number. 
 @h
 /* the sequence identifier for the sequence of log files */
 #define LOG_SID	0
