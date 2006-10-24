@@ -163,6 +163,8 @@ enum PFctype_t {
   , c_recursion          = 60 /**< "with $v seeded by..." expression */
   , c_seed               = 61
 
+  /* Pathfinder extension: XRPC */
+  , c_xrpc               = 62 /**< XRPC calls: "execute at" */
 };
 
 /** Core tree node type indicators */
@@ -296,6 +298,8 @@ PFcnode_t *PFcore_cast (const PFcnode_t *type, const PFcnode_t *expr);
 PFcnode_t *PFcore_recursion (const PFcnode_t *var,
                              const PFcnode_t *seed_recurse);
 PFcnode_t *PFcore_seed (const PFcnode_t *seed, const PFcnode_t *recurse);
+
+PFcnode_t *PFcore_xrpc (const PFcnode_t *uri, const PFcnode_t *fun);
 
 PFfun_t *PFcore_function (PFqname_t);
 PFcnode_t *PFcore_apply (PFapply_t *, const PFcnode_t *);

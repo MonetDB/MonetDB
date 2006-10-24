@@ -1001,6 +1001,21 @@ PFcore_seed (const PFcnode_t *seed, const PFcnode_t *recurse)
     return PFcore_wire2 (c_seed, seed, recurse);
 }
 
+
+/**
+ * Pathfinder extension: XRPC calls.
+ *
+ * @param uri Core expression that identifies the URI where to
+ *            execute the function call
+ * @param fun Core expression; function call that shall be executed
+ *            at @a uri
+ */
+PFcnode_t *
+PFcore_xrpc (const PFcnode_t *uri, const PFcnode_t *fun)
+{
+    return PFcore_wire2 (c_xrpc, uri, fun);
+}
+
 /**
  * Function declaration in the list of declarations
  * (see #PFcore_fun_decls).

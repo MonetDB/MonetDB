@@ -197,6 +197,7 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    stmt_ty        = 125
 %term    recursion      = 126
 %term    seed           = 127
+%term    xrpc           = 128
 
 %%
 
@@ -487,113 +488,117 @@ PrimaryExpr:            FunctionCall                                = 179 (10);
 PrimaryExpr:            Constructor                                 = 180 (10);
 PrimaryExpr:            OrderedExpr                                 = 181 (10);
 PrimaryExpr:            UnorderedExpr                               = 182 (10);
+PrimaryExpr:            XRPCCall                                    = 183 (10);
 
-Literal:                NumericLiteral                              = 183 (10);
-Literal:                StringLiteral                               = 184 (10);
+Literal:                NumericLiteral                              = 184 (10);
+Literal:                StringLiteral                               = 185 (10);
 
-NumericLiteral:         IntegerLiteral                              = 185 (10);
-NumericLiteral:         DecimalLiteral                              = 186 (10);
-NumericLiteral:         DoubleLiteral                               = 187 (10);
+NumericLiteral:         IntegerLiteral                              = 186 (10);
+NumericLiteral:         DecimalLiteral                              = 187 (10);
+NumericLiteral:         DoubleLiteral                               = 188 (10);
 
-IntegerLiteral:         lit_int                                     = 188 (10);
-DecimalLiteral:         lit_dec                                     = 189 (10);
-DoubleLiteral:          lit_dbl                                     = 190 (10);
+IntegerLiteral:         lit_int                                     = 189 (10);
+DecimalLiteral:         lit_dec                                     = 190 (10);
+DoubleLiteral:          lit_dbl                                     = 191 (10);
 
-StringLiteral:          lit_str                                     = 191 (10);
+StringLiteral:          lit_str                                     = 192 (10);
 
-ParenthesizedExpr:      OptExpr                                     = 192 (10);
+ParenthesizedExpr:      OptExpr                                     = 193 (10);
 
-ContextItemExpr:        dot                                         = 193 (10);
+ContextItemExpr:        dot                                         = 194 (10);
 
-FunctionCall:           fun_ref (OptFuncArgList_)                   = 194 (10);
+FunctionCall:           fun_ref (OptFuncArgList_)                   = 195 (10);
 
-OptFuncArgList_:        nil                                         = 195 (10);
-OptFuncArgList_:        FuncArgList_                                = 196 (10);
+OptFuncArgList_:        nil                                         = 196 (10);
+OptFuncArgList_:        FuncArgList_                                = 197 (10);
 
-FuncArgList_:           args (OptExpr, nil)                         = 197 (10);
-FuncArgList_:           args (OptExpr, FuncArgList_)                = 198 (10);
+FuncArgList_:           args (OptExpr, nil)                         = 198 (10);
+FuncArgList_:           args (OptExpr, FuncArgList_)                = 199 (10);
 
-OrderedExpr:            ordered (OptExpr)                           = 199 (10);
-UnorderedExpr:          unordered (OptExpr)                         = 200 (10);
+OrderedExpr:            ordered (OptExpr)                           = 200 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 201 (10);
 
-Constructor:            ElementConstructor                          = 201 (10);
-Constructor:            AttributeConstructor                        = 202 (10);
-Constructor:            TextConstructor                             = 203 (10);
-Constructor:            CommentConstructor                          = 204 (10);
-Constructor:            PIConstructor                               = 205 (10);
-Constructor:            DocumentConstructor                         = 206 (10);
+Constructor:            ElementConstructor                          = 202 (10);
+Constructor:            AttributeConstructor                        = 203 (10);
+Constructor:            TextConstructor                             = 204 (10);
+Constructor:            CommentConstructor                          = 205 (10);
+Constructor:            PIConstructor                               = 206 (10);
+Constructor:            DocumentConstructor                         = 207 (10);
 
-ElementConstructor:     elem (TagName, OptContentExpr)              = 207 (10);
+ElementConstructor:     elem (TagName, OptContentExpr)              = 208 (10);
 
-AttributeConstructor:   attr (TagName, OptContentExpr)              = 208 (10);
+AttributeConstructor:   attr (TagName, OptContentExpr)              = 209 (10);
 
-TextConstructor:        text (OptContentExpr)                       = 209 (10);
+TextConstructor:        text (OptContentExpr)                       = 210 (10);
 
-CommentConstructor:     comment (OptContentExpr)                    = 210 (10);
+CommentConstructor:     comment (OptContentExpr)                    = 211 (10);
 
-PIConstructor:          pi (OptContentExpr)                         = 211 (10);
+PIConstructor:          pi (OptContentExpr)                         = 212 (10);
 
-DocumentConstructor:    doc (OptContentExpr)                        = 212 (10);
+DocumentConstructor:    doc (OptContentExpr)                        = 213 (10);
 
-TagName:                tag                                         = 213 (10);
-TagName:                OptExpr                                     = 214 (10);
+TagName:                tag                                         = 214 (10);
+TagName:                OptExpr                                     = 215 (10);
 
-OptContentExpr:         OptExpr                                     = 215 (10);
-OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 216 (10);
-OptContentExpr:         contseq (empty_seq, empty_seq)              = 217 (1);
+OptContentExpr:         OptExpr                                     = 216 (10);
+OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 217 (10);
+OptContentExpr:         contseq (empty_seq, empty_seq)              = 218 (1);
 OptContentExpr:         contseq (contseq (OptContentExpr,
                                           OptContentExpr),
-                                 OptContentExpr)                    = 218 (1);
+                                 OptContentExpr)                    = 219 (1);
 
-ExtensionExpr:          ext_expr (Pragmas, nil)                     = 219 (10);
-ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 220 (10);
+ExtensionExpr:          ext_expr (Pragmas, nil)                     = 220 (10);
+ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 221 (10);
 
-Pragmas:                nil                                         = 221 (10);
-Pragmas:                pragmas (pragma, Pragmas)                   = 222 (10);
+Pragmas:                nil                                         = 222 (10);
+Pragmas:                pragmas (pragma, Pragmas)                   = 223 (10);
 
-DeclImport:             RevalidationDecl                            = 223 (10);
+DeclImport:             RevalidationDecl                            = 224 (10);
 
-RevalidationDecl:       revalid                                     = 224 (10);
+RevalidationDecl:       revalid                                     = 225 (10);
 
-ExprSingle:             InsertExpr                                  = 225 (10);
-ExprSingle:             DeleteExpr                                  = 226 (10);
-ExprSingle:             RenameExpr                                  = 227 (10);
-ExprSingle:             ReplaceExpr                                 = 228 (10);
-ExprSingle:             TransformExpr                               = 229 (10);
+ExprSingle:             InsertExpr                                  = 226 (10);
+ExprSingle:             DeleteExpr                                  = 227 (10);
+ExprSingle:             RenameExpr                                  = 228 (10);
+ExprSingle:             ReplaceExpr                                 = 229 (10);
+ExprSingle:             TransformExpr                               = 230 (10);
 
-InsertExpr:             insert (SourceExpr, TargetExpr)             = 230 (10);
-DeleteExpr:             delete (SourceExpr)                         = 231 (10);
-ReplaceExpr:            replace (SourceExpr, TargetExpr)            = 232 (10);
-RenameExpr:             rename (SourceExpr, NewNameExpr)            = 233 (10);
+InsertExpr:             insert (SourceExpr, TargetExpr)             = 231 (10);
+DeleteExpr:             delete (SourceExpr)                         = 232 (10);
+ReplaceExpr:            replace (SourceExpr, TargetExpr)            = 233 (10);
+RenameExpr:             rename (SourceExpr, NewNameExpr)            = 234 (10);
 
 TransformExpr:          transform (TransformBindings,
-                                   modify (ExprSingle, ExprSingle)) = 234 (10);
+                                   modify (ExprSingle, ExprSingle)) = 235 (10);
 
-TransformBindings:      nil                                         = 235 (10);
+TransformBindings:      nil                                         = 236 (10);
 TransformBindings:      transbinds (TransformBinding,
-                                    TransformBindings)              = 236 (10);
+                                    TransformBindings)              = 237 (10);
 
-TransformBinding:       let (var_type (varref, nil), OptExpr)       = 237 (10);
+TransformBinding:       let (var_type (varref, nil), OptExpr)       = 238 (10);
 
-SourceExpr:             ExprSingle                                  = 238 (10);
-TargetExpr:             ExprSingle                                  = 239 (10);
-NewNameExpr:            ExprSingle                                  = 240 (10);
+SourceExpr:             ExprSingle                                  = 239 (10);
+TargetExpr:             ExprSingle                                  = 240 (10);
+NewNameExpr:            ExprSingle                                  = 241 (10);
 
 /* updating function declarations */
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (stmt_ty (nil))),
-                                  OptExpr)                          = 241 (10);
+                                  OptExpr)                          = 242 (10);
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (stmt_ty (nil))),
-                                  external)                         = 242 (10);
+                                  external)                         = 243 (10);
 
 /* Pathfinder extension: recursion */
-ExprSingle:             RecursiveExpr                               = 243 (10);
+ExprSingle:             RecursiveExpr                               = 244 (10);
 
 RecursiveExpr:          recursion (
                             var_type (varref, OptTypeDeclaration_),
-                            seed (ExprSingle, ExprSingle))          = 244 (10);
+                            seed (ExprSingle, ExprSingle))          = 245 (10);
 /* end of recursion extension */
+
+/* Pathfinder extension: XRPC */
+XRPCCall:               xrpc (Expr, FunctionCall)                   = 246 (10);
 
 %%
 
@@ -887,7 +892,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             break;
 
         /* OptContentExpr: contseq (empty_seq, empty_seq) */
-        case 217:
+        case 218:
             *p = *R(p);
             rewritten = true;
             break;
@@ -895,7 +900,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
         /* OptContentExpr: contseq (contseq (OptContentExpr,
                                              OptContentExpr),
                                     OptContentExpr)              */
-        case 218:
+        case 219:
             c = wire2 (p_contseq, p->loc,
                        LL(p),
                        wire2 (p_contseq, p->loc, LR(p), R(p)));

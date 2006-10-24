@@ -110,5 +110,19 @@ user-defined functions in a peer-to-peer fashion.
 
 [ Documentation on this remains to be filled in... ]
 
+Pathfinder's XRPC functionality can be accessed via a syntax extension
+in our compiler.  The statement
+
+  execute at { <<URI>> } { <<FunctionCall>> }
+
+will execute the function call given in the second pair of curly
+braces at the URI specified in the first pair of braces.  The URI
+expression may be any expression that can sensibly be interpreted
+as a string.  Note that Pathfinder only allows *function calls*
+to be executed remotely (contrasted to, e.g., the RPC extensions
+supported by the Galax [1] XQuery engine).
+
 XQuery RPC functionality is currently only available in Pathfinder's
 "milprint_summer" back-end.
+
+[1] http://www.galaxquery.org/

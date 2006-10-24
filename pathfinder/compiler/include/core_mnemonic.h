@@ -125,6 +125,7 @@
 #define step(a,e)             PFcore_step ((a), (e))
 #define recursion(a,b)        PFcore_recursion ((a), (b))
 #define seed(a,b)             PFcore_seed ((a), (b))
+#define xrpc(a,b)             PFcore_xrpc ((a), (b))
 #define fun_decls(a,b)        PFcore_fun_decls ((a), (b))
 #define fun_decl(a,b,c)       PFcore_fun_decl ((a), (b), (c))
 #define params(a,b)           PFcore_params ((a), (b))

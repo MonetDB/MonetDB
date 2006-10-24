@@ -132,6 +132,9 @@ char *c_id[]  = {
   , [c_recursion]          = "recursion"
   , [c_seed]               = "seed"
 
+  /* Pathfinder extension: XRPC */
+  , [c_xrpc]               = "xrpc"
+
 };
 
 /** Current node id */

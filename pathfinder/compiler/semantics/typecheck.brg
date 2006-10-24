@@ -162,6 +162,9 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term recursion          = 60 /**< Pathfinder extension: recursion */
 %term seed               = 61 /**< Pathfinder extension: recursion */
 
+/* Pathfinder extension: XRPC */
+%term xrpc               = 62 /**< Pathfinder extension: XRPC */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -282,6 +285,9 @@ FunParam:           param (SequenceType, var)                   =  73 (10);
 
 /* Pathfinder extension: recursion */
 CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  74 (10);
+
+/* Pathfinder extension: XRPC */
+CoreExpr:           xrpc (Atom, CoreExpr)                        =  75 (10);
 
 %%
 
@@ -1225,6 +1231,16 @@ reduce (PFcnode_t * p, int goalnt)
              */
             TY(p) = TY(RL(p));
 
+            break;
+
+        /* CoreExpr:           xrpc (Var, CoreExpr) */
+        case 75:
+            if (! PFty_subtype (TY(L(p)), PFty_xs_string ()))
+                PFoops (OOPS_TYPECHECK,
+                        "the location specified in an `execute at' statement "
+                        "must be a subtype of xs:string (got %s)",
+                        PFty_str (TY(L(p))));
+            TY(p) = TY(R(p));
             break;
 
         default:

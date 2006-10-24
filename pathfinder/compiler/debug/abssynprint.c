@@ -181,6 +181,9 @@ char *p_id[]  = {
     /* Pathfinder extension: recursion */
     , [p_recursion]         = "recursion"
     , [p_seed]              = "seed"
+    
+    /* Pathfinder extension: XRPC */
+    , [p_xrpc]              = "xrpc"
 };
 
 /** Names of XPath axes */

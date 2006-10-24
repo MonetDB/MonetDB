@@ -182,6 +182,9 @@ enum PFptype_t {
     /* Pathfinder extension: recursion */
     , p_recursion        = 126  /**< "with $xx seeded by..." expression */
     , p_seed             = 127  /**< seed and return expr of a recursive expr */
+
+    /* Pathfinder extension: XRPC */
+    , p_xrpc             = 128  /**< XRPC: "execute at" */
 };
 
 typedef enum PFptype_t PFptype_t;

@@ -350,6 +350,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token every_dollar                    "every $"
 %token except                          "except"
 %token excl_equals                     "!="
+%token execute_at_lbrace               "execute at {"
 %token external_                       "external"
 %token following_colon_colon           "following::"
 %token following_sibling_colon_colon   "following-sibling::"
@@ -703,6 +704,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                VarRef
                WhereClause
                Wildcard
+               XRPCCall               /* Pathfinder extension */
 
 %type <phole> 
                CaseClauses_
@@ -2044,6 +2046,7 @@ PrimaryExpr               : Literal           { $$ = $1; }
                           | OrderedExpr       { $$ = $1; }
                           | UnorderedExpr     { $$ = $1; }
                           | Constructor       { $$ = $1; }
+                          | XRPCCall          { $$ = $1; }  /* PF extension */
                           ;
 
 /* [85] */
@@ -2758,6 +2761,11 @@ SeedVar                   : VarName OptTypeDeclaration_
                             { $$ = wire2 (p_var_type, @$, $1, $2); }
                           ;
 /* end of the Pathfinder recursion extension */
+
+/* Pathfinder extension: XRPC */
+XRPCCall                  : "execute at {" Expr "}" "{" FunctionCall "}"
+                            { $$ = wire2 (p_xrpc, @$, $2, $5); }
+/* End Pathfinder extension */
 
 %%
 

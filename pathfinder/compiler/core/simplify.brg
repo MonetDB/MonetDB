@@ -207,6 +207,9 @@ static PFarray_t *var_env[HASH_BUCKETS];
 %term recursion          = 60 /**< Pathfinder extension: recursion */
 %term seed               = 61 /**< Pathfinder extension: recursion */
 
+/* Pathfinder extension: XRPC */
+%term xrpc               = 62 /**< Pathfinder extension: XRPC */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -349,6 +352,9 @@ FunParam:           param (SequenceType, Atom)                  =  75 (10);
 
 /* Pathfinder extension: recursion */
 CoreExpr:           recursion (var, seed (Atom, CoreExpr))      =  76 (10);
+
+/* Pathfinder extension: XRPC */
+CoreExpr:           xrpc (var, CoreExpr)                        =  77 (10);
 
 %%
 

@@ -604,6 +604,8 @@ _                                {S}
                                      yield (document_lbrace); }
 "element"{_}?"{"                   { pushState (OPERATOR); pushState (DEFAULT);
                                      yield (element_lbrace); }
+"execute"{_}"at"{_}?"{"            { pushState (OPERATOR); pushState (DEFAULT);
+                                     yield (execute_at_lbrace); }
 "attribute"{_}?"{"                 { pushState (OPERATOR); pushState (DEFAULT);
                                      yield (attribute_lbrace); }
 "text"{_}?"{"                      { pushState (OPERATOR);
