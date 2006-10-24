@@ -22,10 +22,10 @@ Over..
 # 12:45:19 >  
 
 [ 1	]
-# test1048671 # table_name
-# val # name
-# int # type
-# 10 # length
+% sys.test1048671 # table_name
+% val # name
+% int # type
+% 10 # length
 [ 1234567890	]
 
 # 12:45:20 >  

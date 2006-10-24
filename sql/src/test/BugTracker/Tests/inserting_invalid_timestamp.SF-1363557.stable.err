@@ -68,11 +68,11 @@ stderr of test 'inserting_invalid_timestamp.SF-1363557` in directory 'src/test/B
 # 16:23:39 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47860  < SF-1363557.inserting_invalid_timestamp.sql
 # 16:23:39 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into foo values('12:12:12:99');
 ERROR = !ERROR: timestamp: conversion of string '12:12:12:99' failed
         !ERROR: str_2_timestamp: operation failed.
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into foo values(timestamp '12:12:12:99');
 ERROR = !incorrect timestamp value (12:12:12:99) in: "insert into foo values(timestamp '12:12:12:99')"
 

@@ -23,10 +23,10 @@ Over..
 
 [ 1	]
 [ 1	]
-# sf1028461 # table_name
-# s # name
-# varchar # type
-# 6 # length
+% sys.sf1028461 # table_name
+% s # name
+% varchar # type
+% 6 # length
 [ "yyyxxx"	]
 
 # 12:45:14 >  

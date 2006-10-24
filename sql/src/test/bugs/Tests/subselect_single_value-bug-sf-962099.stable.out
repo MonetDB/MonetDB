@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:50:41 >  
-# 12:50:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < subselect_single_value-bug-sf-962099.sql
-# 12:50:41 >  
+# 11:55:36 >  
+# 11:55:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_single_value-bug-sf-962099.sql
+# 11:55:36 >  
 
-# ,	 # table_name
-# single_value,	single_value # name
-# smallint,	smallint # type
-# 6,	6 # length
+% .,	. # table_name
+% single_value,	single_value # name
+% smallint,	smallint # type
+% 1,	1 # length
 [ 1,	2	]
-# t,	t # table_name
-# single_value,	single_value # name
-# smallint,	smallint # type
-# 6,	6 # length
+% .t,	.t # table_name
+% single_value,	single_value # name
+% smallint,	smallint # type
+% 1,	1 # length
 [ 1,	2	]
 
 # 12:50:41 >  

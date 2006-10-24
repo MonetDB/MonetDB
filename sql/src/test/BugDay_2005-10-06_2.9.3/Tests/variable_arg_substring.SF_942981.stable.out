@@ -22,10 +22,10 @@ Over..
 # 12:37:35 >  
 
 [ 5	]
-#  # table_name
-# substring_single_value # name
-# char # type
-# 0 # length
+% . # table_name
+% substring_single_value # name
+% char # type
+% 0 # length
 [ "hal"	]
 [ "o"	]
 [ "llo"	]

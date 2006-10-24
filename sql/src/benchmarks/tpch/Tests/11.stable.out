@@ -21,10 +21,10 @@ Over..
 # 12:34:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 11.sql
 # 12:34:45 >  
 
-# partsupp,	 # table_name
-# ps_partkey,	value # name
-# int,	decimal # type
-# 10,	21 # length
+% sys.partsupp,	sys. # table_name
+% ps_partkey,	value # name
+% int,	decimal # type
+% 4,	21 # length
 [ 1376,	13271249.89	]
 [ 788,	9498648.06	]
 [ 1071,	9388264.40	]
@@ -384,10 +384,10 @@ Over..
 [ 332,	112181.30	]
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	4	]
 
 # 12:34:45 >  

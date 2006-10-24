@@ -23,10 +23,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# sys. # table_name
-# a # name
-# varchar # type
-# 14 # length
+% sys. # table_name
+% a # name
+% varchar # type
+% 14 # length
 [ "mydir1/mytest1"	]
 [ "mydir1/mytest2"	]
 [ "mydir1/mytest3"	]
@@ -34,10 +34,10 @@ Over..
 [ "mydir2/mytest1"	]
 [ "mydir2/mytest2"	]
 [ "mydir2/mytest3"	]
-# sys. # table_name
-# a # name
-# varchar # type
-# 14 # length
+% sys. # table_name
+% a # name
+% varchar # type
+% 14 # length
 [ "mydir1/mytest1"	]
 [ "mydir1/mytest2"	]
 [ "mydir1/mytest3"	]

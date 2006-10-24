@@ -26,10 +26,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
-# NULL # name
-# char # type
-# 23 # length
+% . # table_name
+% NULL # name
+% char # type
+% 23 # length
 [ "base table"	]
 [ "system table"	]
 [ "view"	]

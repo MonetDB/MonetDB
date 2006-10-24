@@ -21,10 +21,10 @@ Over..
 # 12:34:53 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 16.sql
 # 12:34:53 >  
 
-# part,	part,	part,	partsupp # table_name
-# p_brand,	p_type,	p_size,	supplier_cnt # name
-# varchar,	varchar,	int,	int # type
-# 8,	25,	10,	10 # length
+% sys.part,	sys.part,	sys.part,	sys.partsupp # table_name
+% p_brand,	p_type,	p_size,	supplier_cnt # name
+% varchar,	varchar,	int,	int # type
+% 8,	25,	2,	1 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
 [ "Brand#22",	"LARGE BURNISHED TIN",	36,	6	]
@@ -321,10 +321,10 @@ Over..
 [ "Brand#55",	"STANDARD ANODIZED BRASS",	36,	4	]
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
 # 12:34:53 >  

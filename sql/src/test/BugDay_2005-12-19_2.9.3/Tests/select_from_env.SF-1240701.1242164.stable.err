@@ -68,7 +68,7 @@ stderr of test 'select_from_env.SF-1240701.1242164` in directory 'src/test/BugDa
 # 13:22:15 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47090  < select_from_env.SF-1240701.1242164.sql
 # 13:22:15 >  
 
-MAPI  = monetdb@localhost:38496
+MAPI  = monetdb@localhost:35781
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
 ERROR = !ERROR: SELECT: subquery returned more than one row
 

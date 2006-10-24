@@ -21,20 +21,20 @@ Over..
 # 12:30:42 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_distinct.sql
 # 12:30:42 >  
 
-# aircraft # table_name
-# category # name
-# char # type
-# 10 # length
+% sys.aircraft # table_name
+% category # name
+% char # type
+% 10 # length
 [ ""	]
 [ "AMPHIBIAN"	]
 [ "HELICOPTER"	]
 [ "JET"	]
 [ "PROPELLER"	]
 [ "TURBOPROP"	]
-# flight # table_name
-# from_airport # name
-# char # type
-# 3 # length
+% sys.flight # table_name
+% from_airport # name
+% char # type
+% 3 # length
 [ "ATL"	]
 [ "BOS"	]
 [ "BWI"	]
@@ -44,10 +44,10 @@ Over..
 [ "PHL"	]
 [ "PIT"	]
 [ "SFO"	]
-# flight # table_name
-# aircraft_code # name
-# char # type
-# 3 # length
+% sys.flight # table_name
+% aircraft_code # name
+% char # type
+% 3 # length
 [ "100"	]
 [ "727"	]
 [ "72S"	]
@@ -70,10 +70,10 @@ Over..
 [ "SH3"	]
 [ "SH6"	]
 [ "SWM"	]
-# fare,	fare,	fare,	fare,	fare,	fare,	fare,	fare # table_name
-# fare_code,	from_airport,	to_airport,	fare_class,	fare_airline,	restrict_code,	one_way_cost,	rnd_trip_cost # name
-# char,	char,	char,	char,	char,	char,	real,	real # type
-# 8,	3,	3,	3,	2,	5,	13,	13 # length
+% sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare # table_name
+% fare_code,	from_airport,	to_airport,	fare_class,	fare_airline,	restrict_code,	one_way_cost,	rnd_trip_cost # name
+% char,	char,	char,	char,	char,	char,	real,	real # type
+% 8,	3,	3,	3,	2,	5,	13,	13 # length
 [ "7100001",	"ATL",	"BOS",	"F",	"",	"",	497,	994	]
 [ "7100002",	"ATL",	"BOS",	"FN",	"",	"",	348,	696	]
 [ "7100003",	"ATL",	"BOS",	"Y",	"",	"",	331,	662	]
@@ -608,10 +608,10 @@ Over..
 [ "7100532",	"SFO",	"PIT",	"F",	"US",	"",	819,	1638	]
 [ "7100533",	"SFO",	"PIT",	"Y",	"",	"",	546,	1092	]
 [ "7100534",	"SFO",	"PIT",	"Y",	"",	"VU/1",	379,	0	]
-# flight_fare # table_name
-# flight_code # name
-# int # type
-# 10 # length
+% sys.flight_fare # table_name
+% flight_code # name
+% int # type
+% 6 # length
 [ 101908	]
 [ 101909	]
 [ 101910	]
@@ -1191,10 +1191,10 @@ Over..
 [ 144574	]
 [ 144575	]
 [ 144576	]
-# flight,	aircraft # table_name
-# flight_code,	aircraft_type # name
-# int,	char # type
-# 10,	64 # length
+% sys.flight,	sys.aircraft # table_name
+% flight_code,	aircraft_type # name
+% int,	char # type
+% 6,	64 # length
 [ 101908,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101909,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101910,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
@@ -1774,10 +1774,10 @@ Over..
 [ 144574,	"BOEING 737-300"	]
 [ 144575,	"BOEING 727-200 (ALL SERIES)"	]
 [ 144576,	"BOEING 737-300"	]
-# airline,	aircraft # table_name
-# airline_name,	aircraft_type # name
-# char,	char # type
-# 64,	64 # length
+% sys.airline,	sys.aircraft # table_name
+% airline_name,	aircraft_type # name
+% char,	char # type
+% 64,	64 # length
 [ "AMERICAN AIRLINES",	"BOEING 727-200 (ALL SERIES)"	]
 [ "AMERICAN AIRLINES",	"BOEING 767 (ALL SERIES)"	]
 [ "AMERICAN AIRLINES",	"FAIRCHILD (SWEARINGEN) METRO/MERLIN"	]

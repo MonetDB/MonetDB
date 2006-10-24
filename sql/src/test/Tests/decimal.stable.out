@@ -31,10 +31,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# test # table_name
-# t1 # name
-# decimal # type
-# 7 # length
+% sys.test # table_name
+% t1 # name
+% decimal # type
+% 7 # length
 [ 1.10	]
 [ -1.10	]
 [ 12.12	]

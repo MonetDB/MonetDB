@@ -1,19 +1,19 @@
 stdout of test 'zones` in directory 'src/test` itself:
 
 
-# 13:48:21 >  
-# 13:48:21 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=36590 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
-# 13:48:21 >  
+# 11:50:13 >  
+# 11:50:13 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=35781 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:50:13 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/export/scratch1/milena/monet/etc/MonetDB5.conf
-# dbfarm:/export/scratch1/milena/monet/var/MonetDB5/dbfarm
-# dbname:mTests_src_test
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.13.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -31,24 +31,24 @@ Over..
 [ 1	]
 [ 5	]
 [ 0	]
-# .s # table_name
-# count_no_nil_objid # name
-# int # type
-# 1 # length
+% .s # table_name
+% count_no_nil_objid # name
+% int # type
+% 1 # length
 [ 3	]
 [ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
-# .s,	.s,	sys.t # table_name
-# objid,	distance,	expected # name
-# bigint,	double,	double # type
-# 1,	22,	22 # length
-# . # table_name
-# fgetnearestobjidalleq_single_value # name
-# bigint # type
-# 1 # length
+% .s,	.s,	sys.t # table_name
+% objid,	distance,	expected # name
+% bigint,	double,	double # type
+% 1,	22,	22 # length
+% . # table_name
+% fgetnearestobjidalleq_single_value # name
+% bigint # type
+% 1 # length
 [ 0	]
 
 # 13:48:21 >  

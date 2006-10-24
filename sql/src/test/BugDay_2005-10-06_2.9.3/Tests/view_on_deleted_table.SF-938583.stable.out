@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:41:07 >  
-# 12:41:07 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < view_on_deleted_table.SF-938583.sql
-# 12:41:07 >  
+# 11:50:36 >  
+# 11:50:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < view_on_deleted_table.SF-938583.sql
+# 11:50:36 >  
 
-# v_vdt # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.v_vdt # table_name
+% i # name
+% int # type
+% 1 # length
 
-# 12:41:07 >  
-# 12:41:07 >  Done.
-# 12:41:07 >  
+# 11:50:36 >  
+# 11:50:36 >  Done.
+# 11:50:36 >  
 

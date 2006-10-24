@@ -22,25 +22,25 @@ Over..
 # 12:58:09 >  
 
 [ 3	]
-# . # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
-# profile,	 # table_name
-# query,	single_value # name
-# varchar,	char # type
-# 10,	7 # length
+% tmp.profile,	. # table_name
+% query,	single_value # name
+% varchar,	varchar # type
+% 9,	7 # length
 [ "select 1;",	"monetdb"	]
-# tables # table_name
-# count_id # name
-# int # type
-# 1 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 1	]
-# tmp.profile,	. # table_name
-# query,	single_value # name
-# varchar,	char # type
-# 51,	7 # length
+% tmp.profile,	. # table_name
+% query,	single_value # name
+% varchar,	varchar # type
+% 51,	7 # length
 [ "select 1;",	"monetdb"	]
 [ "select query, user from profile;",	"monetdb"	]
 [ "select count(*) from t1314649 where \"human\" = true;",	"monetdb"	]

@@ -22,10 +22,10 @@ Over..
 # 12:40:13 >  
 
 [ 4	]
-# v_sv # table_name
-# count_v # name
-# int # type
-# 10 # length
+% sys.v_sv # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 4	]
 
 # 12:40:13 >  

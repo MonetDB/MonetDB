@@ -57,19 +57,19 @@ stderr of test 'decimal` in directory 'src/test` itself:
 # 09:34:12 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=spin --port=58772  < decimal.sql
 # 09:34:12 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into test values (1234);
 ERROR = !ERROR: convert: too many digits (6 > 5)
         !ERROR: sht_num2dec_int: operation failed.
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into test values (-1234);
 ERROR = !ERROR: convert: too many digits (6 > 5)
         !ERROR: sht_num2dec_int: operation failed.
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into test values (1234.1);
 ERROR = !ERROR: convert: too many digits (6 > 5)
         !ERROR: int_dec2dec_int: operation failed.
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into test values (-1234.1);
 ERROR = !ERROR: convert: too many digits (6 > 5)
         !ERROR: int_dec2dec_int: operation failed.

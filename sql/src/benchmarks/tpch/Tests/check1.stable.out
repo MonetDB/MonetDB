@@ -17,49 +17,49 @@ quit();
 
 Over..
 
-# 12:34:26 >  
-# 12:34:26 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < check1.sql
-# 12:34:26 >  
+# 11:47:54 >  
+# 11:47:54 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < check1.sql
+# 11:47:54 >  
 
-# customer # table_name
-# count_c_custkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 4 # length
 [ 1500	]
-# nation # table_name
-# count_n_nationkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 25	]
-# orders # table_name
-# count_o_orderkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 5 # length
 [ 15000	]
-# partsupp # table_name
-# count_ps_partkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 4 # length
 [ 8000	]
-# part # table_name
-# count_p_partkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 4 # length
 [ 2000	]
-# region # table_name
-# count_r_regionkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 5	]
-# supplier # table_name
-# count_s_suppkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 3 # length
 [ 100	]
-# lineitem # table_name
-# count_l_orderkey # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 5 # length
 [ 60175	]
 
 # 12:34:27 >  

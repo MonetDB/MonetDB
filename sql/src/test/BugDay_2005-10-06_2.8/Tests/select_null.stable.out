@@ -17,25 +17,25 @@ quit();
 
 Over..
 
-# 12:37:21 >  
-# 12:37:21 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_null.sql
-# 12:37:21 >  
+# 11:50:14 >  
+# 11:50:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_null.sql
+# 11:50:14 >  
 
-#  # table_name
-# NULL # name
-# char # type
-# 0 # length
+% . # table_name
+% NULL # name
+% char # type
+% 0 # length
 [ NULL	]
-#  # table_name
-# v # name
-# char # type
-# 0 # length
+% . # table_name
+% v # name
+% char # type
+% 0 # length
 [ NULL	]
 [ 1	]
-# t # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.t # table_name
+% i # name
+% int # type
+% 1 # length
 [ NULL	]
 
 # 12:37:21 >  

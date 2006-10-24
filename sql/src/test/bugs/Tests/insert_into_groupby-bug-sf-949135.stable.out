@@ -23,15 +23,15 @@ Over..
 
 [ 1	]
 [ 1	]
-# a # table_name
-# s # name
-# varchar # type
-# 5 # length
+% sys.a # table_name
+% s # name
+% varchar # type
+% 5 # length
 [ "hallo"	]
-# b # table_name
-# s # name
-# varchar # type
-# 5 # length
+% sys.b # table_name
+% s # name
+% varchar # type
+% 5 # length
 [ "hallo"	]
 [ 1	]
 [ 1	]

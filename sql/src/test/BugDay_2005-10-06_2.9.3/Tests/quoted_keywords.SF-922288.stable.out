@@ -23,16 +23,16 @@ Over..
 
 [ 1	]
 [ 1	]
-# tab,	tab # table_name
-# att,	null # name
-# int,	int # type
-# 10,	10 # length
+% sys.tab,	sys.tab # table_name
+% att,	null # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	2	]
 [ 3,	4	]
-# ,	tab # table_name
-# test,	nullable # name
-# char,	int # type
-# 0,	10 # length
+% .,	sys.tab # table_name
+% test,	nullable # name
+% char,	int # type
+% 0,	1 # length
 [ NULL,	2	]
 [ NULL,	4	]
 

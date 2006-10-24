@@ -25,18 +25,18 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# like_test # table_name
-# str # name
-# varchar # type
-# 3 # length
+% sys.like_test # table_name
+% str # name
+% varchar # type
+% 3 # length
 [ ""	]
 [ "t"	]
 [ "ts"	]
 [ "tsz"	]
-# like_test # table_name
-# str # name
-# varchar # type
-# 2 # length
+% sys.like_test # table_name
+% str # name
+% varchar # type
+% 2 # length
 [ "ts"	]
 
 # 12:54:45 >  

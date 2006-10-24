@@ -1198,7 +1198,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			char *buf = NEW_ARRAY(char, SMALLBUFSIZ);
 			size_t len = snprintf(buf, SMALLBUFSIZ,
-					   "var s%d := mvc_affected_rows(myc, Output, s%d);\n",
+					   "var s%d := mvc_affected_rows(myc, Output, s%d, \"\");\n",
 					   -s->nr, l);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
@@ -1245,7 +1245,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 					len = snprintf(buf, buflen, "var s%d := mvc_export_value(myc, Output, %d, ", -s->nr, sql->mvc->type );
 	
-					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %u, %u, %d, s%d);\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
+					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %u, %u, %d, s%d, \"\");\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
 					write_command(sql, buf);
 					write_part(sql, buf, len);
 					len = 0;
@@ -1312,7 +1312,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					buflen += BUFSIZ;
 					buf = RENEW_ARRAY(char, buf, buflen);
 				}
-				len = snprintf(buf, buflen, "mvc_export_result(myc, Output, s%d);\n", -s->nr);
+				len = snprintf(buf, buflen, "mvc_export_result(myc, Output, s%d, \"\");\n", -s->nr);
 				assert(len <= buflen);
 
 				assert(len <= buflen);
@@ -1488,7 +1488,7 @@ backend_dumpstmt(stmt *s, int *nr, backend *sql)
 	}
 
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
-		char *msg = "mvc_schema_operation(myc, Output);\n";
+		char *msg = "mvc_schema_operation(myc, Output, \"\");\n";
 		stream_write(sql->out, msg, strlen(msg), 1);
 	}
 	stream_write(sql->out, "}\n", 2, 1);
@@ -1827,7 +1827,7 @@ backend_explain(backend *be, stmt *s, stream *out)
 	t_id = mvc_result_table(c, 1, c->type, b);
 	mvc_result_column(c, ".", "statement", "varchar", -1, -1, b);
 	BBPunfix(b->batCacheid);
-	return(mvc_export_result(c, out, t_id));
+	return(mvc_export_result(c, out, t_id, NULL));
 }
 
 int

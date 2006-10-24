@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:37:31 >  
-# 12:37:31 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < string_quotes.SF-919539.sql
-# 12:37:31 >  
+# 11:50:17 >  
+# 11:50:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < string_quotes.SF-919539.sql
+# 11:50:17 >  
 
-#  # table_name
-# single_value # name
-# char # type
-# 2 # length
+% . # table_name
+% single_value # name
+% char # type
+% 2 # length
 [ "aa"	]
-#  # table_name
-# single_value # name
-# char # type
-# 3 # length
+% . # table_name
+% single_value # name
+% char # type
+% 3 # length
 [ "a'a"	]
 
 # 12:37:31 >  

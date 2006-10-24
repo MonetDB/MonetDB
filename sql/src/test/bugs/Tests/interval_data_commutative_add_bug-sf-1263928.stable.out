@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:56:39 >  
-# 12:56:39 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < interval_data_commutative_add_bug-sf-1263928.sql
-# 12:56:39 >  
+# 11:55:47 >  
+# 11:55:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < interval_data_commutative_add_bug-sf-1263928.sql
+# 11:55:47 >  
 
-#  # table_name
-# sql_add_single_value # name
-# date # type
-# 10 # length
+% . # table_name
+% sql_add_single_value # name
+% date # type
+% 10 # length
 [ 2005-08-20	]
-#  # table_name
-# sql_add_single_value # name
-# date # type
-# 10 # length
+% . # table_name
+% sql_add_single_value # name
+% date # type
+% 10 # length
 [ 2005-08-20	]
 
 # 12:56:39 >  

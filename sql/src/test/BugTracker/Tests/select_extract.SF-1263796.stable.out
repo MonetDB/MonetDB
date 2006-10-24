@@ -22,10 +22,10 @@ Over..
 # 12:47:39 >  
 
 [ 1	]
-# t # table_name
-# c # name
-# time # type
-# 8 # length
+% sys.t # table_name
+% c # name
+% time # type
+% 8 # length
 [ 12:34:56	]
 
 # 12:47:39 >  

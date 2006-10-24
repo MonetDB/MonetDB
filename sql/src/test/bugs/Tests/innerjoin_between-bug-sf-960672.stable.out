@@ -27,16 +27,16 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# h,	h,	h # table_name
-# a,	b,	count_b # name
-# int,	int,	int # type
-# 10,	10,	10 # length
+% sys.h,	sys.h,	sys.h # table_name
+% a,	b,	count_b # name
+% int,	int,	int # type
+% 2,	2,	1 # length
 [ 0,	10,	2	]
 [ 10,	20,	1	]
-# h,	h,	h # table_name
-# a,	b,	count_b # name
-# int,	int,	int # type
-# 10,	10,	10 # length
+% sys.h,	sys.h,	sys.h # table_name
+% a,	b,	count_b # name
+% int,	int,	int # type
+% 2,	2,	1 # length
 [ 0,	10,	2	]
 [ 10,	20,	1	]
 

@@ -21,52 +21,52 @@ Over..
 # 12:34:14 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < moa_ordered.sql
 # 12:34:14 >  
 
-# moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
-# name,	type,	field1,	field2,	field3 # name
-# varchar,	varchar,	varchar,	varchar,	varchar # type
-# 5,	5,	2,	18,	1 # length
+% sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
+% name,	type,	field1,	field2,	field3 # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 5,	5,	2,	18,	1 # length
 [ "Video",	"match",	"ID",	"MediaInformationFK",	NULL	]
-# moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
-# name,	type,	field1,	field2,	field3 # name
-# varchar,	varchar,	varchar,	varchar,	varchar # type
-# 0,	0,	0,	0,	0 # length
-# moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
-# name,	type,	field1,	field2,	field3 # name
-# varchar,	varchar,	varchar,	varchar,	varchar # type
-# 15,	5,	10,	9,	1 # length
+% sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
+% name,	type,	field1,	field2,	field3 # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 0,	0,	0,	0,	0 # length
+% sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
+% name,	type,	field1,	field2,	field3 # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 15,	5,	10,	9,	1 # length
 [ "CreationCreator",	"match",	"CreationFK",	"CreatorFK",	NULL	]
-# moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
-# name,	type,	field1,	field2,	field3 # name
-# varchar,	varchar,	varchar,	varchar,	varchar # type
-# 0,	0,	0,	0,	0 # length
-# moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
-# name,	type,	field1,	field2,	field3 # name
-# varchar,	varchar,	varchar,	varchar,	varchar # type
-# 7,	5,	9,	12,	1 # length
+% sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
+% name,	type,	field1,	field2,	field3 # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 0,	0,	0,	0,	0 # length
+% sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
+% name,	type,	field1,	field2,	field3 # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 7,	5,	9,	12,	1 # length
 [ "Creator",	"match",	"CreatorPK",	"IndividualFK",	NULL	]
-# moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
-# name,	type,	field1,	field2,	field3 # name
-# varchar,	varchar,	varchar,	varchar,	varchar # type
-# 0,	0,	0,	0,	0 # length
+% sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
+% name,	type,	field1,	field2,	field3 # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 0,	0,	0,	0,	0 # length
 [ 1	]
 [ 1	]
 [ 17	]
 [ 17	]
 [ 17	]
-# _t2,	_t2,	_t2,	_t2 # table_name
-# id,	imdb,	image,	mediainformationfk # name
-# int,	varchar,	varchar,	int # type
-# 10,	7,	72,	10 # length
+% sys._t2,	sys._t2,	sys._t2,	sys._t2 # table_name
+% id,	imdb,	image,	mediainformationfk # name
+% int,	varchar,	varchar,	int # type
+% 1,	7,	72,	1 # length
 [ 1,	"0120338",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif",	1	]
-# _t1,	_t1,	_t1 # table_name
-# creationpk,	title,	creationdate # name
-# int,	varchar,	varchar # type
-# 10,	7,	4 # length
+% sys._t1,	sys._t1,	sys._t1 # table_name
+% creationpk,	title,	creationdate # name
+% int,	varchar,	varchar # type
+% 1,	7,	4 # length
 [ 1,	"Titanic",	"1997"	]
-# _t3,	_t3 # table_name
-# creationfk,	creatorfk # name
-# int,	int # type
-# 10,	10 # length
+% sys._t3,	sys._t3 # table_name
+% creationfk,	creatorfk # name
+% int,	int # type
+% 1,	4 # length
 [ 1,	5823	]
 [ 1,	5824	]
 [ 1,	5825	]
@@ -84,10 +84,10 @@ Over..
 [ 1,	5837	]
 [ 1,	5838	]
 [ 1,	5839	]
-# _t4,	_t4,	_t4 # table_name
-# creatorpk,	role,	individualfk # name
-# int,	varchar,	int # type
-# 10,	8,	10 # length
+% sys._t4,	sys._t4,	sys._t4 # table_name
+% creatorpk,	role,	individualfk # name
+% int,	varchar,	int # type
+% 4,	8,	4 # length
 [ 5823,	"Actor",	2328	]
 [ 5824,	"Actor",	415	]
 [ 5825,	"Actor",	3	]
@@ -105,10 +105,10 @@ Over..
 [ 5837,	"Actor",	693	]
 [ 5838,	"Writer",	376	]
 [ 5839,	"Director",	376	]
-# _t5,	_t5 # table_name
-# individualpk,	personname # name
-# int,	varchar # type
-# 10,	27 # length
+% sys._t5,	sys._t5 # table_name
+% individualpk,	personname # name
+% int,	varchar # type
+% 4,	27 # length
 [ 3,	"Abernathy,+Lewis"	]
 [ 43,	"Amis,+Suzy"	]
 [ 156,	"Bates,+Kathy"	]
@@ -126,10 +126,10 @@ Over..
 [ 2799,	"Warner,+David"	]
 [ 2911,	"Winslet,+Kate"	]
 [ 2978,	"Zane,+Billy"	]
-# video,	video,	video,	video # table_name
-# id,	imdb,	image,	mediainformationfk # name
-# decimal,	varchar,	varchar,	decimal # type
-# 12,	7,	72,	12 # length
+% sys.video,	sys.video,	sys.video,	sys.video # table_name
+% id,	imdb,	image,	mediainformationfk # name
+% decimal,	varchar,	varchar,	decimal # type
+% 12,	7,	72,	12 # length
 [ 1,	"0120338",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif",	1	]
 [ 2,	"0076759",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6301773551.01.MZZZZZZZ.gif",	1	]
 [ 3,	"0120915",	"http%3A%2F%2Fposters.imdb.com%2FPosters%2Fs%2Fswepi1styleb1.jpg",	1	]
@@ -354,10 +354,10 @@ Over..
 [ 222,	"0116583",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6304290888.01.MZZZZZZZ.gif",	1	]
 [ 223,	"0098067",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0783225962.01.MZZZZZZZ.gif",	1	]
 [ 224,	"0112864",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305280711.01.MZZZZZZZ.gif",	1	]
-# creation,	creation,	creation # table_name
-# creationpk,	title,	creationdate # name
-# decimal,	varchar,	varchar # type
-# 12,	50,	6 # length
+% sys.creation,	sys.creation,	sys.creation # table_name
+% creationpk,	title,	creationdate # name
+% decimal,	varchar,	varchar # type
+% 12,	50,	6 # length
 [ 1,	"Titanic",	"1997"	]
 [ 2,	"Star Wars",	"1977"	]
 [ 3,	"Star Wars: Episode I - The Phantom Menace",	"1999"	]
@@ -582,10 +582,10 @@ Over..
 [ 222,	"Hunchback of Notre Dame, The",	"1996/I"	]
 [ 223,	"Parenthood",	"1989"	]
 [ 224,	"Die Hard: With a Vengeance",	"1995"	]
-# creationcreator,	creationcreator # table_name
-# creationfk,	creatorfk # name
-# decimal,	decimal # type
-# 12,	12 # length
+% sys.creationcreator,	sys.creationcreator # table_name
+% creationfk,	creatorfk # name
+% decimal,	decimal # type
+% 12,	12 # length
 [ 1,	5823	]
 [ 1,	5824	]
 [ 1,	5825	]
@@ -4582,10 +4582,10 @@ Over..
 [ 224,	277	]
 [ 224,	278	]
 [ 224,	279	]
-# creator,	creator,	creator # table_name
-# creatorpk,	role,	individualfk # name
-# decimal,	varchar,	decimal # type
-# 12,	8,	12 # length
+% sys.creator,	sys.creator,	sys.creator # table_name
+% creatorpk,	role,	individualfk # name
+% decimal,	varchar,	decimal # type
+% 12,	8,	12 # length
 [ 262,	"Actor",	1176	]
 [ 263,	"Actor",	1239	]
 [ 264,	"Actor",	1332	]
@@ -8582,10 +8582,10 @@ Over..
 [ 5837,	"Actor",	693	]
 [ 5838,	"Writer",	376	]
 [ 5839,	"Director",	376	]
-# individual,	individual # table_name
-# individualpk,	personname # name
-# decimal,	varchar # type
-# 12,	31 # length
+% sys.individual,	sys.individual # table_name
+% individualpk,	personname # name
+% decimal,	varchar # type
+% 12,	31 # length
 [ 1,	"Abatemarco,+Tony"	]
 [ 2,	"Abbott,+John+(I)"	]
 [ 3,	"Abernathy,+Lewis"	]
@@ -11576,10 +11576,10 @@ Over..
 [ 243	]
 [ 243	]
 [ 243	]
-# _t7,	_t7 # table_name
-# creationfk,	creatorfk # name
-# int,	int # type
-# 10,	10 # length
+% sys._t7,	sys._t7 # table_name
+% creationfk,	creatorfk # name
+% int,	int # type
+% 3,	4 # length
 [ 1,	5839	]
 [ 2,	5815	]
 [ 3,	5791	]
@@ -11823,10 +11823,10 @@ Over..
 [ 222,	333	]
 [ 223,	304	]
 [ 224,	279	]
-# _t6,	_t6,	_t6 # table_name
-# creatorpk,	role,	individualfk # name
-# int,	varchar,	int # type
-# 10,	8,	10 # length
+% sys._t6,	sys._t6,	sys._t6 # table_name
+% creatorpk,	role,	individualfk # name
+% int,	varchar,	int # type
+% 4,	8,	4 # length
 [ 279,	"Director",	1805	]
 [ 304,	"Director",	1278	]
 [ 332,	"Director",	2915	]
@@ -12070,10 +12070,10 @@ Over..
 [ 5791,	"Director",	1637	]
 [ 5815,	"Director",	1637	]
 [ 5839,	"Director",	376	]
-# _t8,	_t8 # table_name
-# individualpk,	personname # name
-# int,	varchar # type
-# 10,	23 # length
+% sys._t8,	sys._t8 # table_name
+% individualpk,	personname # name
+% int,	varchar # type
+% 4,	23 # length
 [ 33,	"Allen,+Irwin"	]
 [ 40,	"Allers,+Roger"	]
 [ 57,	"Apted,+Michael"	]
@@ -12325,10 +12325,10 @@ Over..
 [ 25	]
 [ 391	]
 [ 39	]
-# _t10,	_t10,	_t10,	_t10 # table_name
-# id,	imdb,	image,	mediainformationfk # name
-# int,	varchar,	varchar,	int # type
-# 10,	7,	72,	10 # length
+% sys._t10,	sys._t10,	sys._t10,	sys._t10 # table_name
+% id,	imdb,	image,	mediainformationfk # name
+% int,	varchar,	varchar,	int # type
+% 3,	7,	72,	1 # length
 [ 9,	"0116629",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif",	1	]
 [ 19,	"0117998",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif",	1	]
 [ 45,	"0117060",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif",	1	]
@@ -12343,10 +12343,10 @@ Over..
 [ 191,	"0117333",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630471193X.01.MZZZZZZZ.gif",	1	]
 [ 195,	"0117571",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630521610X.01.MZZZZZZZ.gif",	1	]
 [ 214,	"0116213",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729601.01.MZZZZZZZ.gif",	1	]
-# _t9,	_t9,	_t9 # table_name
-# creationpk,	title,	creationdate # name
-# int,	varchar,	varchar # type
-# 10,	21,	4 # length
+% sys._t9,	sys._t9,	sys._t9 # table_name
+% creationpk,	title,	creationdate # name
+% int,	varchar,	varchar # type
+% 3,	21,	4 # length
 [ 9,	"Independence Day",	"1996"	]
 [ 19,	"Twister",	"1996"	]
 [ 45,	"Mission: Impossible",	"1996"	]
@@ -12361,10 +12361,10 @@ Over..
 [ 191,	"Phenomenon",	"1996"	]
 [ 195,	"Scream",	"1996"	]
 [ 214,	"Eraser",	"1996"	]
-# _t13,	_t13 # table_name
-# creationfk,	creatorfk # name
-# int,	int # type
-# 10,	10 # length
+% sys._t13,	sys._t13 # table_name
+% creationfk,	creatorfk # name
+% int,	int # type
+% 3,	4 # length
 [ 9,	5640	]
 [ 9,	5641	]
 [ 19,	5390	]
@@ -12390,10 +12390,10 @@ Over..
 [ 195,	1000	]
 [ 214,	532	]
 [ 214,	533	]
-# _t14,	_t14,	_t14 # table_name
-# creatorpk,	role,	individualfk # name
-# int,	varchar,	int # type
-# 10,	6,	10 # length
+% sys._t14,	sys._t14,	sys._t14 # table_name
+% creatorpk,	role,	individualfk # name
+% int,	varchar,	int # type
+% 4,	6,	4 # length
 [ 532,	"Writer",	1082	]
 [ 533,	"Writer",	2169	]
 [ 1000,	"Writer",	2882	]
@@ -12419,10 +12419,10 @@ Over..
 [ 5391,	"Writer",	578	]
 [ 5640,	"Writer",	807	]
 [ 5641,	"Writer",	689	]
-# _t16,	_t16 # table_name
-# individualpk,	personname # name
-# int,	varchar # type
-# 10,	19 # length
+% sys._t16,	sys._t16 # table_name
+% individualpk,	personname # name
+% int,	varchar # type
+% 4,	19 # length
 [ 540,	"Cook,+Douglas+(I)"	]
 [ 540,	"Cook,+Douglas+(I)"	]
 [ 578,	"Crichton,+Michael"	]
@@ -12465,10 +12465,10 @@ Over..
 [ 243	]
 [ 243	]
 [ 243	]
-# _t17,	_t17,	_t17 # table_name
-# creatorpk,	role,	individualfk # name
-# int,	varchar,	int # type
-# 10,	8,	10 # length
+% sys._t17,	sys._t17,	sys._t17 # table_name
+% creatorpk,	role,	individualfk # name
+% int,	varchar,	int # type
+% 4,	8,	4 # length
 [ 279,	"Director",	1805	]
 [ 304,	"Director",	1278	]
 [ 332,	"Director",	2915	]
@@ -12712,10 +12712,10 @@ Over..
 [ 5791,	"Director",	1637	]
 [ 5815,	"Director",	1637	]
 [ 5839,	"Director",	376	]
-# _t18,	_t18 # table_name
-# creationfk,	creatorfk # name
-# int,	int # type
-# 10,	10 # length
+% sys._t18,	sys._t18 # table_name
+% creationfk,	creatorfk # name
+% int,	int # type
+% 3,	4 # length
 [ 1,	5839	]
 [ 2,	5815	]
 [ 3,	5791	]
@@ -12959,10 +12959,10 @@ Over..
 [ 222,	333	]
 [ 223,	304	]
 [ 224,	279	]
-# _t19,	_t19,	_t19 # table_name
-# creationpk,	title,	creationdate # name
-# int,	varchar,	varchar # type
-# 10,	50,	6 # length
+% sys._t19,	sys._t19,	sys._t19 # table_name
+% creationpk,	title,	creationdate # name
+% int,	varchar,	varchar # type
+% 3,	50,	6 # length
 [ 1,	"Titanic",	"1997"	]
 [ 2,	"Star Wars",	"1977"	]
 [ 3,	"Star Wars: Episode I - The Phantom Menace",	"1999"	]
@@ -13214,15 +13214,15 @@ Over..
 [ 10	]
 [ 243	]
 [ 10	]
-# _t20,	_t20 # table_name
-# individualpk,	personname # name
-# int,	varchar # type
-# 10,	17 # length
+% sys._t20,	sys._t20 # table_name
+% individualpk,	personname # name
+% int,	varchar # type
+% 4,	17 # length
 [ 2522,	"Spielberg,+Steven"	]
-# _t22,	_t22,	_t22 # table_name
-# creatorpk,	role,	individualfk # name
-# int,	varchar,	int # type
-# 10,	8,	10 # length
+% sys._t22,	sys._t22,	sys._t22 # table_name
+% creatorpk,	role,	individualfk # name
+% int,	varchar,	int # type
+% 4,	8,	4 # length
 [ 2290,	"Director",	2522	]
 [ 2884,	"Director",	2522	]
 [ 4722,	"Director",	2522	]
@@ -13233,10 +13233,10 @@ Over..
 [ 5543,	"Director",	2522	]
 [ 5743,	"Director",	2522	]
 [ 5767,	"Director",	2522	]
-# _t23,	_t23,	_t23 # table_name
-# creatorpk,	role,	individualfk # name
-# int,	varchar,	int # type
-# 10,	8,	10 # length
+% sys._t23,	sys._t23,	sys._t23 # table_name
+% creatorpk,	role,	individualfk # name
+% int,	varchar,	int # type
+% 4,	8,	4 # length
 [ 2290,	"Director",	2522	]
 [ 2884,	"Director",	2522	]
 [ 4722,	"Director",	2522	]
@@ -13247,10 +13247,10 @@ Over..
 [ 5543,	"Director",	2522	]
 [ 5743,	"Director",	2522	]
 [ 5767,	"Director",	2522	]
-# _t25,	_t25 # table_name
-# creationfk,	creatorfk # name
-# int,	int # type
-# 10,	10 # length
+% sys._t25,	sys._t25 # table_name
+% creationfk,	creatorfk # name
+% int,	int # type
+% 3,	4 # length
 [ 4,	5767	]
 [ 5,	5743	]
 [ 13,	5543	]
@@ -13261,10 +13261,10 @@ Over..
 [ 46,	4722	]
 [ 119,	2884	]
 [ 143,	2290	]
-# _t27,	_t27,	_t27 # table_name
-# creationpk,	title,	creationdate # name
-# int,	varchar,	varchar # type
-# 10,	36,	4 # length
+% sys._t27,	sys._t27,	sys._t27 # table_name
+% creationpk,	title,	creationdate # name
+% int,	varchar,	varchar # type
+% 3,	36,	4 # length
 [ 4,	"E.T. the Extra-Terrestrial",	"1982"	]
 [ 5,	"Jurassic Park",	"1993"	]
 [ 13,	"Jaws",	"1975"	]
@@ -13280,10 +13280,10 @@ Over..
 [ 10	]
 [ 10	]
 [ 10	]
-# _t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32 # table_name
-# individualpk,	personname,	creatorpk,	role,	individualfk,	creationfk,	creatorfk,	creationpk,	title,	creationdate # name
-# int,	varchar,	int,	varchar,	int,	int,	int,	int,	varchar,	varchar # type
-# 10,	17,	10,	8,	10,	10,	10,	10,	36,	4 # length
+% sys._t32,	sys._t32,	sys._t32,	sys._t32,	sys._t32,	sys._t32,	sys._t32,	sys._t32,	sys._t32,	sys._t32 # table_name
+% individualpk,	personname,	creatorpk,	role,	individualfk,	creationfk,	creatorfk,	creationpk,	title,	creationdate # name
+% int,	varchar,	int,	varchar,	int,	int,	int,	int,	varchar,	varchar # type
+% 4,	17,	4,	8,	4,	3,	4,	3,	36,	4 # length
 [ 2522,	"Spielberg,+Steven",	2290,	"Director",	2522,	143,	2290,	143,	"Hook",	"1991"	]
 [ 2522,	"Spielberg,+Steven",	2884,	"Director",	2522,	119,	2884,	119,	"Close Encounters of the Third Kind",	"1977"	]
 [ 2522,	"Spielberg,+Steven",	4722,	"Director",	2522,	46,	4722,	46,	"Indiana Jones and the Temple of Doom",	"1984"	]

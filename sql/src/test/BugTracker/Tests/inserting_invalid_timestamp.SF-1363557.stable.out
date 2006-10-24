@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:47:28 >  
-# 12:47:28 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < inserting_invalid_timestamp.SF-1363557.sql
-# 12:47:28 >  
+# 11:53:57 >  
+# 11:53:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < inserting_invalid_timestamp.SF-1363557.sql
+# 11:53:57 >  
 
-# foo # table_name
-# bar # name
-# timestamp # type
-# 26 # length
+% sys.foo # table_name
+% bar # name
+% timestamp # type
+% 26 # length
 
-# 12:47:29 >  
-# 12:47:29 >  Done.
-# 12:47:29 >  
+# 11:53:57 >  
+# 11:53:57 >  Done.
+# 11:53:57 >  
 

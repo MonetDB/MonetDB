@@ -51,7 +51,7 @@ import java.net.*;
  * block in a sequence.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.8
+ * @version 2.9
  */
 final class MonetSocketBlockMode {
 	/** Stream from the Socket for reading */
@@ -74,7 +74,7 @@ final class MonetSocketBlockMode {
 	final static int UNKNOWN   = 0;
 	/** a line starting with ! indicates ERROR */
 	final static int ERROR     = 1;
-	/** a line starting with # indicates HEADER */
+	/** a line starting with % indicates HEADER */
 	final static int HEADER    = 2;
 	/** a line starting with [ indicates RESULT */
 	final static int RESULT    = 3;
@@ -86,6 +86,8 @@ final class MonetSocketBlockMode {
 	final static int SOHEADER  = 6;
 	/** a line starting with ^ indicates REDIRECT */
 	final static int REDIRECT  = 7;
+	/** a line starting with # indicates INFO */
+	final static int INFO      = 8;
 
 	/** The blocksize (hardcoded in compliance with stream.mx) */
 	final static int BLOCK     = 8 * 1024 - 2;
@@ -411,7 +413,7 @@ final class MonetSocketBlockMode {
 			case '&':
 				lineType = SOHEADER;
 			break;
-			case '#':
+			case '%':
 				lineType = HEADER;
 			break;
 			case '[':
@@ -419,6 +421,9 @@ final class MonetSocketBlockMode {
 			break;
 			case '^':
 				lineType = REDIRECT;
+			break;
+			case '#':
+				lineType = INFO;
 			break;
 			default:
 				if (first == (char)1 && line.length() == 2) {
@@ -438,7 +443,8 @@ final class MonetSocketBlockMode {
 	 * getLineType returns the type of the last line read.
 	 *
 	 * @return an integer representing the kind of line this is, one of the
-	 *         following constants: UNKNOWN, HEADER, ERROR, PROMPT, RESULT
+	 *         following constants: UNKNOWN, HEADER, ERROR, PROMPT,
+	 *         RESULT, REDIRECT, INFO
 	 */
 	public int getLineType() {
 		return(lineType);

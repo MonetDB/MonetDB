@@ -35,10 +35,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# allnewtriples,	allnewtriples,	allnewtriples,	allnewtriples,	allnewtriples # table_name
-# id,	subject,	predicate,	object,	explicit # name
-# int,	int,	int,	int,	boolean # type
-# 10,	10,	10,	10,	0 # length
+% sys.allnewtriples,	sys.allnewtriples,	sys.allnewtriples,	sys.allnewtriples,	sys.allnewtriples # table_name
+% id,	subject,	predicate,	object,	explicit # name
+% int,	int,	int,	int,	boolean # type
+% 1,	1,	1,	1,	5 # length
 [ 1,	1,	1,	1,	false	]
 [ 2,	1,	1,	2,	false	]
 [ 3,	1,	2,	1,	false	]
@@ -46,10 +46,10 @@ Over..
 [ 5,	1,	2,	2,	false	]
 [ 6,	2,	2,	1,	false	]
 [ 7,	2,	2,	2,	false	]
-# foreign,	foreign,	foreign,	foreign # table_name
-# id,	subject,	predicate,	object # name
-# int,	int,	int,	int # type
-# 10,	10,	10,	10 # length
+% sys.foreign,	sys.foreign,	sys.foreign,	sys.foreign # table_name
+% id,	subject,	predicate,	object # name
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
 [ 1,	1,	1,	1	]
 [ 2,	2,	2,	2	]
 [ 3,	1,	2,	2	]

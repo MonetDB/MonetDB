@@ -17,22 +17,22 @@ quit();
 
 Over..
 
-# 12:37:07 >  
-# 12:37:07 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < keys.sql
-# 12:37:07 >  
+# 11:50:05 >  
+# 11:50:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < keys.sql
+# 11:50:05 >  
 
-# idxs,	idxs,	keys,	keys # table_name
-# name,	type,	name,	type # name
-# varchar,	int,	varchar,	int # type
-# 27,	10,	10,	10 # length
+% sys.idxs,	sys.idxs,	sys.keys,	sys.keys # table_name
+% name,	type,	name,	type # name
+% varchar,	int,	varchar,	int # type
+% 27,	1,	10,	1 # length
 [ "unique_key",	0,	"unique_key",	1	]
 [ "allnewtriples_subject_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_predicate_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_object_idx",	0,	NULL,	NULL	]
-# idxs,	idxs,	keys,	keys # table_name
-# name,	type,	name,	type # name
-# varchar,	int,	varchar,	int # type
-# 10,	10,	10,	10 # length
+% sys.idxs,	sys.idxs,	sys.keys,	sys.keys # table_name
+% name,	type,	name,	type # name
+% varchar,	int,	varchar,	int # type
+% 10,	1,	10,	1 # length
 [ "unique_key",	0,	"unique_key",	1	]
 
 # 12:37:07 >  

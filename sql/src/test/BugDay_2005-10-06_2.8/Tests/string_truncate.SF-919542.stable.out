@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:37:33 >  
-# 12:37:33 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < string_truncate.SF-919542.sql
-# 12:37:33 >  
+# 11:50:18 >  
+# 11:50:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < string_truncate.SF-919542.sql
+# 11:50:18 >  
 
-# z # table_name
-# w # name
-# varchar # type
-# 0 # length
+% sys.z # table_name
+% w # name
+% varchar # type
+% 0 # length
 
-# 12:37:33 >  
-# 12:37:33 >  Done.
-# 12:37:33 >  
+# 11:50:18 >  
+# 11:50:18 >  Done.
+# 11:50:18 >  
 

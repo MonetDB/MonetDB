@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:34:41 >  
-# 12:34:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 09.sql
-# 12:34:41 >  
+# 11:48:00 >  
+# 11:48:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 09.sql
+# 11:48:00 >  
 
-# profit,	profit,	profit # table_name
-# nation,	o_year,	sum_profit # name
-# varchar,	int,	decimal # type
-# 14,	10,	21 # length
+% sys.profit,	sys.profit,	sys.profit # table_name
+% nation,	o_year,	sum_profit # name
+% varchar,	int,	decimal # type
+% 14,	4,	21 # length
 [ "ALGERIA",	1998,	386617.8283	]
 [ "ALGERIA",	1997,	401601.1258	]
 [ "ALGERIA",	1996,	156938.7971	]
@@ -199,10 +199,10 @@ Over..
 [ "VIETNAM",	1994,	1003275.5371	]
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	5	]
 
 # 09:17:15 >  

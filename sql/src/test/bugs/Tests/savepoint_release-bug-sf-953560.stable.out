@@ -17,28 +17,28 @@ quit();
 
 Over..
 
-# 12:50:05 >  
-# 12:50:05 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < savepoint_release-bug-sf-953560.sql
-# 12:50:05 >  
+# 11:55:35 >  
+# 11:55:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < savepoint_release-bug-sf-953560.sql
+# 11:55:35 >  
 
-# table_test_csavepoints # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.table_test_csavepoints # table_name
+% id # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-# table_test_csavepoints # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.table_test_csavepoints # table_name
+% id # name
+% int # type
+% 1 # length
 [ 1	]
 [ 2	]
 [ 3	]
-# table_test_csavepoints # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.table_test_csavepoints # table_name
+% id # name
+% int # type
+% 1 # length
 [ 1	]
 [ 2	]
 [ 3	]

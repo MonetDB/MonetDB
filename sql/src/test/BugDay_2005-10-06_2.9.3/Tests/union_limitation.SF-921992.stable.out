@@ -22,10 +22,10 @@ Over..
 # 12:37:48 >  
 
 [ 1	]
-# ,	 # table_name
-# c1,	c2 # name
-# varchar,	varchar # type
-# 6,	6 # length
+% .,	. # table_name
+% c1,	c2 # name
+% varchar,	varchar # type
+% 6,	6 # length
 [ "abc",	"123"	]
 [ "abcdef",	"123456"	]
 

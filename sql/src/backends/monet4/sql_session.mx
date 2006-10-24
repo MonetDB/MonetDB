@@ -320,9 +320,9 @@ sqlexecute(backend *be, stream *out)
 			err = -1;
 			return sqlcleanup(c, err);
 		}
-		err = mvc_export_prepare(c, out, q);
+		err = mvc_export_prepare(c, out, q, NULL);
 	} else if (q && !q->code) {
-		err = backend_call(be, c, q); 
+		err = backend_call(be, c, q);
 	} else if (q) {
 		err = backend_fastpath(be, c, q);
 	}

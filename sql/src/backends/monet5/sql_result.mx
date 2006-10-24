@@ -27,11 +27,11 @@
 #include <sql_catalog.h>
 #include <sql_qc.h>
 
-extern int mvc_export_affrows(mvc *m, stream *s, lng val);
-extern int mvc_export_operation(mvc *m, stream *s);
-extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype);
-extern int mvc_export_result(mvc *c, stream *s, int res_id);
-extern int mvc_export_prepare(mvc *c, stream *s, cq *q);
+extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
+extern int mvc_export_operation(mvc *m, stream *s, str w);
+extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w);
+extern int mvc_export_result(mvc *c, stream *s, int res_id, str w);
+extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr);
 
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
@@ -499,8 +499,21 @@ first part (reply_size) of the result set. It should be produced in Monet format
 enable mapi to work with it.
 @c
 
+static int
+mvc_export_warning(stream *s, str w) {
+	str tmp = NULL;
+	while (w != NULL && *w != '\0') {
+		if ((tmp = strchr(w, (int)'\n')) != NULL)
+			*tmp++ = '\0';
+		if (stream_printf(s, "#%s", w) < 0)
+			return(-1);
+		w = tmp;
+	}
+	return(1);
+}
+
 int
-mvc_export_prepare(mvc *c, stream *out, cq *q)
+mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 {
 	node *n;
 	int len = c->params ? list_length(c->params) : 0;
@@ -511,10 +524,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q)
 	/* write header, query type: Q_PREPARE */
 	if (stream_printf(out,
 		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-		"# prepare,	prepare,	prepare # table_name\n"
-		"# type,	digits,	scale # name\n"
-		"# varchar,	int,	int # type\n"
-		"# 0,	0,	0 # length\n",
+		"%% prepare,	prepare,	prepare # table_name\n"
+		"%% type,	digits,	scale # name\n"
+		"%% varchar,	int,	int # type\n"
+		"%% 0,	0,	0 # length\n",
 		q->id, len, len) < 0) {
 		return -1;
 	}
@@ -544,7 +557,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q)
 			}
 		}
 	}
-	return 0;
+	return(mvc_export_warning(out, w));
 }
 
 
@@ -856,9 +869,9 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 	return ok;
 }
 
-
+ 
 int
-mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype) 
+mvc_export_value(mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w) 
 {
 	char *buf = NULL;
 	int len = 0;
@@ -872,13 +885,13 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	if (stream_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
-	    stream_write(s, "# ", 2, 1) == 1 &&
+	    stream_write(s, "% ", 2, 1) == 1 &&
 	    stream_write(s, tn, strlen(tn), 1) == 1 &&
-	    stream_write(s, " # table_name\n# ", 16, 1) == 1 &&
+	    stream_write(s, " # table_name\n% ", 16, 1) == 1 &&
 	    stream_write(s, cn, strlen(cn), 1) == 1 &&
-	    stream_write(s, " # name\n# ", 10, 1) == 1 &&
+	    stream_write(s, " # name\n% ", 10, 1) == 1 &&
 	    stream_write(s, type, strlen(type), 1) == 1 &&
-	    stream_write(s, " # type\n# ", 10, 1) == 1 &&
+	    stream_write(s, " # type\n% ", 10, 1) == 1 &&
 	    export_length(s, mtype, eclass, d, sc, 0, p) &&
 	    stream_write(s, " # length\n[ ", 12, 1) == 1 &&
 	    export_value( m, s, eclass, type, d, sc, p, mtype, &buf, &len)) 
@@ -886,10 +899,13 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	    
 	if (buf)
 		_DELETE(buf);
+
+	if (ok)
+		ok = mvc_export_warning(s, w);
 	return ok;
 }
 int
-mvc_export_operation(mvc *m, stream *s)
+mvc_export_operation(mvc *m, stream *s, str w)
 {
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
@@ -905,11 +921,11 @@ mvc_export_operation(mvc *m, stream *s)
 		}
 	}
 
-	return 0;
+	return(mvc_export_warning(s, w));
 }
 
 int
-mvc_export_affrows(mvc *m, stream *s, lng val) 
+mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 {
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
@@ -926,11 +942,11 @@ mvc_export_affrows(mvc *m, stream *s, lng val)
 	if (stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
 			stream_write(s, "\n", 1, 1) != 1)
 		return -1;
-	return 0;
+	return(mvc_export_warning(s, w));
 }
 
 static int
-export_error( BAT *order)
+export_error(BAT *order)
 {
 	if (order)
 		BBPunfix(order->batCacheid);
@@ -938,7 +954,7 @@ export_error( BAT *order)
 }
 
 int
-mvc_export_result(mvc *m, stream *s, int res_id)
+mvc_export_result(mvc *m, stream *s, int res_id, str w)
 {
 	int i, clean = 0, res = 0;
 	size_t count;
@@ -980,7 +996,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	if (!mvc_send_int(s, (size_t) m->reply_size < count ? m->reply_size : (int) count)) 
 		return export_error(order);
 
-	if (stream_write(s, "\n# ", 3, 1) != 1)
+	if (stream_write(s, "\n% ", 3, 1) != 1)
 		return export_error(order);
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
@@ -991,7 +1007,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # table_name\n# ", 16, 1) != 1)
+	if (stream_write(s, " # table_name\n% ", 16, 1) != 1)
 		return export_error(order);
 
 	for (i = 0; i < t->nr_cols; i++) {
@@ -1002,7 +1018,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # name\n# ", 10, 1) != 1)
+	if (stream_write(s, " # name\n% ", 10, 1) != 1)
 		return export_error(order);
 
 	for (i = 0; i < t->nr_cols; i++) {
@@ -1013,7 +1029,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # type\n# ", 10, 1) != 1)
+	if (stream_write(s, " # type\n% ", 10, 1) != 1)
 		return export_error(order);
 
 	for (i = 0; i < t->nr_cols; i++) {
@@ -1041,6 +1057,9 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	BBPunfix(order->batCacheid);
 	if (clean)
 		m->results = res_tables_remove(m->results, t);
+
+	if (res > 0)
+		res = mvc_export_warning(s, w);
 	return res;
 }
 

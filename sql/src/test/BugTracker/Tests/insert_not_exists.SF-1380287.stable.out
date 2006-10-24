@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:47:53 >  
-# 12:47:53 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < insert_not_exists.SF-1380287.sql
-# 12:47:53 >  
+# 11:54:01 >  
+# 11:54:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < insert_not_exists.SF-1380287.sql
+# 11:54:01 >  
 
-#  # table_name
-# single_value # name
-# char # type
-# 15 # length
+% . # table_name
+% single_value # name
+% char # type
+% 15 # length
 [ "creating tables"	]
-#  # table_name
-# single_value # name
-# char # type
-# 14 # length
+% . # table_name
+% single_value # name
+% char # type
+% 15 # length
 [ "filling kwTemp"	]
 [ 1	]
 [ 1	]
@@ -51,10 +51,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
-# single_value # name
-# char # type
-# 15 # length
+% . # table_name
+% single_value # name
+% char # type
+% 15 # length
 [ "filling kwmTemp"	]
 [ 1	]
 [ 1	]
@@ -76,52 +76,52 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# kwtemp # table_name
-# count_id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 20	]
-#  # table_name
-# single_value # name
-# char # type
-# 31 # length
+% . # table_name
+% single_value # name
+% char # type
+% 31 # length
 [ "filling s4_keywords from kwTemp"	]
 [ 20	]
-#  # table_name
-# single_value # name
-# char # type
-# 31 # length
+% . # table_name
+% single_value # name
+% char # type
+% 31 # length
 [ "dropping kwTemp"	]
-# kwmtemp # table_name
-# count_urlid # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 20	]
-#  # table_name
-# single_value # name
-# char # type
-# 27 # length
+% . # table_name
+% single_value # name
+% char # type
+% 31 # length
 [ "filling s4_kwm from kwmTemp"	]
 [ 20	]
-#  # table_name
-# single_value # name
-# char # type
-# 27 # length
+% . # table_name
+% single_value # name
+% char # type
+% 31 # length
 [ "dropping kwmTemp"	]
-# ,	s4_keywords # table_name
-# single_value,	count_id # name
-# char,	int # type
-# 9,	10 # length
+% .,	sys. # table_name
+% single_value,	count_ # name
+% char,	int # type
+% 9,	2 # length
 [ "expect 20",	20	]
-# ,	s4_kwm # table_name
-# single_value,	count_urlid # name
-# char,	int # type
-# 9,	10 # length
+% .,	sys. # table_name
+% single_value,	count_ # name
+% char,	int # type
+% 9,	2 # length
 [ "expect 20",	20	]
-#  # table_name
-# single_value # name
-# char # type
-# 31 # length
+% . # table_name
+% single_value # name
+% char # type
+% 31 # length
 [ "dropping s4_kwm and s4_keywords"	]
 
 # 12:47:53 >  

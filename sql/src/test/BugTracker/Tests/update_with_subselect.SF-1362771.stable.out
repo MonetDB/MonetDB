@@ -25,16 +25,16 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# statistics_,	statistics_ # table_name
-# url_id,	hour1 # name
-# int,	int # type
-# 10,	10 # length
+% sys.statistics_,	sys.statistics_ # table_name
+% url_id,	hour1 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	0	]
 [ 1	]
-# statistics_,	statistics_ # table_name
-# url_id,	hour1 # name
-# int,	int # type
-# 10,	10 # length
+% sys.statistics_,	sys.statistics_ # table_name
+% url_id,	hour1 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 
 # 12:47:32 >  

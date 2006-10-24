@@ -25,18 +25,18 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# tst,	tst # table_name
-# a0,	a1 # name
-# int,	int # type
-# 10,	10 # length
+% sys.tst,	sys.tst # table_name
+% a0,	a1 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
 [ 4,	4	]
-# tst,	tst # table_name
-# a0,	a1 # name
-# int,	int # type
-# 10,	10 # length
+% sys.tst,	sys.tst # table_name
+% a0,	a1 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
@@ -44,18 +44,18 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# tst2,	tst2 # table_name
-# b0,	b1 # name
-# int,	int # type
-# 10,	10 # length
+% sys.tst2,	sys.tst2 # table_name
+% b0,	b1 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
 [ 4,	4	]
-# tst2,	tst2 # table_name
-# b0,	b1 # name
-# int,	int # type
-# 10,	10 # length
+% sys.tst2,	sys.tst2 # table_name
+% b0,	b1 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]

@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:52:52 >  
-# 12:52:52 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < escape_quote-bug-sf-1006469.sql
-# 12:52:52 >  
+# 11:55:41 >  
+# 11:55:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < escape_quote-bug-sf-1006469.sql
+# 11:55:41 >  
 
-#  # table_name
-# char_length_single_value # name
-# int # type
-# 10 # length
+% . # table_name
+% char_length_single_value # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
 

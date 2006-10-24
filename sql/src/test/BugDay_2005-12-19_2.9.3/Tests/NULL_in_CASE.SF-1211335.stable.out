@@ -17,39 +17,39 @@ quit();
 
 Over..
 
-# 11:35:46 >  
-# 11:35:46 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49040  < NULL_in_CASE.SF-1211335.sql
-# 11:35:46 >  
+# 11:50:59 >  
+# 11:50:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < NULL_in_CASE.SF-1211335.sql
+# 11:50:59 >  
 
-#  # table_name
-# ifthenelse_=_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% ifthenelse_=_single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# ifthenelse_=_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% ifthenelse_=_single_value # name
+% smallint # type
+% 6 # length
 [ NULL	]
-#  # table_name
-# ifthenelse_=_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% ifthenelse_=_single_value # name
+% smallint # type
+% 1 # length
 [ 2	]
-#  # table_name
-# ifthenelse_=_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% ifthenelse_=_single_value # name
+% smallint # type
+% 6 # length
 [ NULL	]
-#  # table_name
-# ifthenelse_=_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% ifthenelse_=_single_value # name
+% int # type
+% 1 # length
 [ 3	]
-#  # table_name
-# ifthenelse_=_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% ifthenelse_=_single_value # name
+% int # type
+% 11 # length
 [ NULL	]
 
 # 11:35:46 >  

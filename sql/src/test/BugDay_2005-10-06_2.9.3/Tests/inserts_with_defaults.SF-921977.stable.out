@@ -22,10 +22,10 @@ Over..
 # 12:37:43 >  
 
 [ 1	]
-# null_1,	null_1,	null_1 # table_name
-# id,	text1,	text2 # name
-# int,	varchar,	varchar # type
-# 10,	4,	3 # length
+% sys.null_1,	sys.null_1,	sys.null_1 # table_name
+% id,	text1,	text2 # name
+% int,	varchar,	varchar # type
+% 1,	4,	3 # length
 [ 1,	"test",	"foo"	]
 
 # 12:37:43 >  

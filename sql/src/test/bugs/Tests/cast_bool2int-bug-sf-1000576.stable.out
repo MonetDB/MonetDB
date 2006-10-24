@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:52:27 >  
-# 12:52:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < cast_bool2int-bug-sf-1000576.sql
-# 12:52:27 >  
+# 11:55:40 >  
+# 11:55:40 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < cast_bool2int-bug-sf-1000576.sql
+# 11:55:40 >  
 
-#  # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
 
 # 12:52:27 >  

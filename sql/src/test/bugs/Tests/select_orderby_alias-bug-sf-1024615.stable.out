@@ -17,24 +17,24 @@ quit();
 
 Over..
 
-# 12:54:29 >  
-# 12:54:29 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_orderby_alias-bug-sf-1024615.sql
-# 12:54:29 >  
+# 11:55:43 >  
+# 11:55:43 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < select_orderby_alias-bug-sf-1024615.sql
+# 11:55:43 >  
 
-# keys,	keys,	keys,	keys,	keys,	keycolumns,	keycolumns,	keycolumns,	keycolumns,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	schemas,	schemas,	schemas # table_name
-# id,	table_id,	type,	name,	rkey,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	istable,	system,	clear,	temporary,	id,	name,	authorization # name
-# int,	int,	int,	varchar,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	boolean,	boolean,	boolean,	smallint,	int,	varchar,	int # type
-# 10,	10,	10,	0,	10,	10,	0,	10,	10,	10,	0,	10,	0,	0,	0,	0,	6,	10,	0,	10 # length
-# keys,	keys,	keys,	keys,	keys,	keycolumns,	keycolumns,	keycolumns,	keycolumns,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	schemas,	schemas,	schemas # table_name
-# id,	table_id,	type,	name,	rkey,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	istable,	system,	clear,	temporary,	id,	name,	authorization # name
-# int,	int,	int,	varchar,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	boolean,	boolean,	boolean,	smallint,	int,	varchar,	int # type
-# 10,	10,	10,	0,	10,	10,	0,	10,	10,	10,	0,	10,	0,	0,	0,	0,	6,	10,	0,	10 # length
-# ,	schemas,	tables,	keycolumns,	keys,	keys # table_name
-# TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
-# varchar,	varchar,	varchar,	varchar,	int,	varchar # type
-# 0,	0,	0,	0,	10,	0 # length
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	id,	name,	authorization # name
+% int,	int,	int,	varchar,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	int,	varchar,	int # type
+% 1,	1,	1,	0,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	0,	1 # length
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	id,	name,	authorization # name
+% int,	int,	int,	varchar,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	int,	varchar,	int # type
+% 1,	1,	1,	0,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	0,	1 # length
+% .,	sys.schemas,	sys.tables,	sys.keycolumns,	sys.keys,	sys.keys # table_name
+% TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
+% varchar,	varchar,	varchar,	varchar,	int,	varchar # type
+% 0,	0,	0,	0,	1,	0 # length
 
-# 12:54:29 >  
-# 12:54:29 >  Done.
-# 12:54:29 >  
+# 11:55:43 >  
+# 11:55:43 >  Done.
+# 11:55:43 >  
 

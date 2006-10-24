@@ -23,17 +23,17 @@ Over..
 
 [ 1	]
 [ 1	]
-# test_update,	test_update # table_name
-# id,	x # name
-# varchar,	int # type
-# 1,	10 # length
+% sys.test_update,	sys.test_update # table_name
+% id,	x # name
+% varchar,	int # type
+% 1,	1 # length
 [ "a",	1	]
 [ "b",	2	]
 [ 1	]
-# test_update,	test_update # table_name
-# id,	x # name
-# varchar,	int # type
-# 1,	10 # length
+% sys.test_update,	sys.test_update # table_name
+% id,	x # name
+% varchar,	int # type
+% 1,	1 # length
 [ "a",	1	]
 [ "b",	3	]
 

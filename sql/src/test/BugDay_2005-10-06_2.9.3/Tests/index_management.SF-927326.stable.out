@@ -24,10 +24,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# my_table # table_name
-# my_column # name
-# int # type
-# 10 # length
+% sys.my_table # table_name
+% my_column # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 2	]

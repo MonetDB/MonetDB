@@ -19585,10 +19585,10 @@ Over..
 [ 1	]
 # 4 # querytype
 [ 1	]
-# .qc,	.qc # table_name
-# query,	count # name
-# clob,	int # type
-# 164,	4 # length
+% .qc,	.qc # table_name
+% query,	count # name
+% clob,	int # type
+% 164,	4 # length
 [ "select * from query_cache() qc;",	1	]
 [ "insert into transport values (\\'L\\',\\'LIMOUSINE\\');",	4	]
 [ "insert into time_zone values (\\'HST\\',\\'HAWAII/ALEUTIAN STANDARD TIME\\');",	9	]

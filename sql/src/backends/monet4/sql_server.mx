@@ -122,19 +122,19 @@ stream.
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
 
-	.COMMAND mvc_schema_operation(mvc m, Stream s) =
+	.COMMAND mvc_schema_operation(mvc m, Stream s, str w) =
 		mvc_export_schema_wrap; "export a schema operation to stream s"
 
-	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
+	.COMMAND mvc_export_result(mvc m, Stream s, int result_id, str w) =
 		mvc_export_result_wrap; "export a result to stream s"
 
-	.COMMAND mvc_affected_rows(mvc m, Stream s, int cnt) =
+	.COMMAND mvc_affected_rows(mvc m, Stream s, int cnt, str w) =
 		mvc_affected_rows_int; "export the number of affected rows by the current query to stream s"
 
-	.COMMAND mvc_affected_rows(mvc m, Stream s, lng cnt) =
+	.COMMAND mvc_affected_rows(mvc m, Stream s, lng cnt, str w) =
 		mvc_affected_rows_wrap; "export the number of affected rows by the current query to stream s"
 
-	.COMMAND mvc_export_value(mvc m, Stream s, int qtype, str tname, str name, str typename, int digits, int scale, int eclass, any val ) =
+	.COMMAND mvc_export_value(mvc m, Stream s, int qtype, str tname, str name, str typename, int digits, int scale, int eclass, any val, str w) =
 		mvc_export_value_wrap; "export a single value onto the stream s"
 
 	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, 
@@ -624,47 +624,47 @@ mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rse
 }
 
 int
-mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
+mvc_export_result_wrap(mvc *M, Stream *S, int *res_id, str w)
 {
-	if (mvc_export_result(*(mvc **) M, *(stream **) S, *res_id))
+	if (mvc_export_result(*(mvc **) M, *(stream **) S, *res_id, w))
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
 }
 
 int
-mvc_export_schema_wrap(mvc *M, Stream *S)
+mvc_export_schema_wrap(mvc *M, Stream *S, str w)
 {
-	if (mvc_export_operation(*(mvc **) M, *(stream **) S))
+	if (mvc_export_operation(*(mvc **) M, *(stream **) S, w))
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
 }
 
 int
-mvc_affected_rows_wrap(mvc *M, Stream *S, lng *nr)
+mvc_affected_rows_wrap(mvc *M, Stream *S, lng *nr, str w)
 {
 	stream *s = *(stream**)S;
 	mvc *m = *(mvc**)M;
 
 	m->type = Q_UPDATE;
-	if (mvc_export_affrows(m, s, *nr))
+	if (mvc_export_affrows(m, s, *nr, w))
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
 }
 
 int
-mvc_affected_rows_int(mvc *M, Stream *S, int *nr)
+mvc_affected_rows_int(mvc *M, Stream *S, int *nr, str w)
 {
 	lng N = *nr;
-	return mvc_affected_rows_wrap(M, S, &N);
+	return mvc_affected_rows_wrap(M, S, &N, w);
 }
 
 int
-mvc_export_value_wrap(mvc *M, Stream *S, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)
+mvc_export_value_wrap(mvc *M, Stream *S, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype, str w)
 {
-	if (mvc_export_value(*(mvc **) M, *(stream **)S, *qtype, tn, name, type, *digits, *scale, *eclass, p, mtype) != SQL_OK)
+	if (mvc_export_value(*(mvc **) M, *(stream **)S, *qtype, tn, name, type, *digits, *scale, *eclass, p, mtype, w) != SQL_OK)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }

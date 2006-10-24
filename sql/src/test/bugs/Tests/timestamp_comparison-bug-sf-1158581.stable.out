@@ -22,20 +22,20 @@ Over..
 # 12:56:12 >  
 
 [ 1	]
-# datetest,	datetest # table_name
-# low,	high # name
-# timestamp,	timestamp # type
-# 26,	26 # length
+% sys.datetest,	sys.datetest # table_name
+% low,	high # name
+% timestamp,	timestamp # type
+% 26,	26 # length
 [ 2004-12-27 16:29:57.409000,	9999-12-31 00:00:00.000000	]
-# datetest,	datetest # table_name
-# low,	high # name
-# timestamp,	timestamp # type
-# 26,	26 # length
+% sys.datetest,	sys.datetest # table_name
+% low,	high # name
+% timestamp,	timestamp # type
+% 26,	26 # length
 [ 2004-12-27 16:29:57.409000,	9999-12-31 00:00:00.000000	]
-# sys.datetest,	sys. # table_name
-# max_low,	max_low # name
-# timestamp,	timestamp # type
-# 26,	20 # length
+% sys.datetest,	sys. # table_name
+% max_low,	max_low # name
+% timestamp,	timestamp # type
+% 26,	20 # length
 [ 2004-12-27 16:29:57.409000,	2004-12-27 16:29:57	]
 
 # 12:56:13 >  

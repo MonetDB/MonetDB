@@ -30,10 +30,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# t3,	t3 # table_name
-# id,	val # name
-# int,	int # type
-# 10,	10 # length
+% sys.t3,	sys.t3 # table_name
+% id,	val # name
+% int,	int # type
+% 1,	1 # length
 [ 2,	NULL	]
 [ NULL,	NULL	]
 [ 1,	NULL	]
@@ -43,10 +43,10 @@ Over..
 [ 1,	6	]
 [ NULL,	6	]
 [ 2,	6	]
-# t3,	t3 # table_name
-# id,	val # name
-# int,	int # type
-# 10,	10 # length
+% sys.t3,	sys.t3 # table_name
+% id,	val # name
+% int,	int # type
+% 1,	1 # length
 [ NULL,	NULL	]
 [ NULL,	6	]
 [ NULL,	5	]
@@ -56,10 +56,10 @@ Over..
 [ 2,	5	]
 [ 2,	NULL	]
 [ 2,	6	]
-# t3,	t3 # table_name
-# id,	val # name
-# int,	int # type
-# 10,	10 # length
+% sys.t3,	sys.t3 # table_name
+% id,	val # name
+% int,	int # type
+% 1,	1 # length
 [ NULL,	NULL	]
 [ 1,	NULL	]
 [ 2,	NULL	]
@@ -69,10 +69,10 @@ Over..
 [ NULL,	6	]
 [ 1,	6	]
 [ 2,	6	]
-# t3,	t3 # table_name
-# id,	val # name
-# int,	int # type
-# 10,	10 # length
+% sys.t3,	sys.t3 # table_name
+% id,	val # name
+% int,	int # type
+% 1,	1 # length
 [ NULL,	NULL	]
 [ NULL,	5	]
 [ NULL,	6	]

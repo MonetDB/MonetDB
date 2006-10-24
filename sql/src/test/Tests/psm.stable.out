@@ -1,90 +1,90 @@
 stdout of test 'psm` in directory 'src/test` itself:
 
 
-# 14:40:48 >  
-# 14:40:48 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=35733 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
-# 14:40:48 >  
+# 11:50:10 >  
+# 11:50:10 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=35781 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:50:10 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
-# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
-# dbname:mTests_src_test
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.13.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
-# 19:06:12 >  
-# 19:06:12 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36912  < psm.sql
-# 19:06:12 >  
+# 11:50:11 >  
+# 11:50:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < psm.sql
+# 11:50:11 >  
 
-# . # table_name
-# sql_neg_single_value # name
-# int # type
-# 1 # length
+% . # table_name
+% sql_neg_single_value # name
+% int # type
+% 1 # length
 [ 1	]
-# . # table_name
-# my_abs_single_value # name
-# int # type
-# 1 # length
+% . # table_name
+% my_abs_single_value # name
+% int # type
+% 1 # length
 [ 1	]
-# . # table_name
-# my_abs1_single_value # name
-# int # type
-# 1 # length
+% . # table_name
+% my_abs1_single_value # name
+% int # type
+% 1 # length
 [ 1	]
-# . # table_name
-# my_while_single_value # name
-# int # type
-# 2 # length
+% . # table_name
+% my_while_single_value # name
+% int # type
+% 2 # length
 [ -5	]
-# . # table_name
-# my_declare_single_value # name
-# int # type
-# 3 # length
+% . # table_name
+% my_declare_single_value # name
+% int # type
+% 3 # length
 [ 105	]
-# . # table_name
-# my_complex_declare_single_value # name
-# int # type
-# 1 # length
+% . # table_name
+% my_complex_declare_single_value # name
+% int # type
+% 1 # length
 [ 1	]
-# . # table_name
-# my_case_single_value # name
-# int # type
-# 3 # length
+% . # table_name
+% my_case_single_value # name
+% int # type
+% 3 # length
 [ 100	]
-# . # table_name
-# my_case_single_value # name
-# int # type
-# 3 # length
+% . # table_name
+% my_case_single_value # name
+% int # type
+% 3 # length
 [ 200	]
-# . # table_name
-# my_case_single_value # name
-# int # type
-# 2 # length
+% . # table_name
+% my_case_single_value # name
+% int # type
+% 2 # length
 [ -1	]
-# . # table_name
-# my_searchcase_single_value # name
-# int # type
-# 3 # length
+% . # table_name
+% my_searchcase_single_value # name
+% int # type
+% 3 # length
 [ 100	]
-# . # table_name
-# my_searchcase_single_value # name
-# int # type
-# 3 # length
+% . # table_name
+% my_searchcase_single_value # name
+% int # type
+% 3 # length
 [ 200	]
-# . # table_name
-# my_searchcase_single_value # name
-# int # type
-# 2 # length
+% . # table_name
+% my_searchcase_single_value # name
+% int # type
+% 2 # length
 [ -1	]
-# .fla,	.fla,	.fla # table_name
-# x,	y,	z # name
-# double,	double,	double # type
-# 22,	22,	22 # length
+% .fla,	.fla,	.fla # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 22,	22,	22 # length
 [ 0,	0,	0	]
 
 # 14:40:48 >  

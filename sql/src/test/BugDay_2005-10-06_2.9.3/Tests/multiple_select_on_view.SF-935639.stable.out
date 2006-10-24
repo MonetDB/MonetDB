@@ -23,15 +23,15 @@ Over..
 
 [ 1	]
 [ 1	]
-# c # table_name
-# count_b # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 2	]
-# c # table_name
-# count_b # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 2	]
 
 # 12:40:41 >  

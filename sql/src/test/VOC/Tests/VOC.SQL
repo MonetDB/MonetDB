@@ -23,7 +23,7 @@ EOF
 
 Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCschema.sql"
 	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCschema.sql 2>&1
-Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCinsert.sql"
+Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCinsert.sql -Xbatching 400"
 	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCinsert.sql 2>&1
 Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCquery.sql"
 	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB} -e -f $RELSRCDIR/../VOCquery.sql 2>&1

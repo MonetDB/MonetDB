@@ -22,10 +22,10 @@ Over..
 # 12:38:01 >  
 
 [ 1	]
-# test_dbl # table_name
-# val # name
-# double # type
-# 22 # length
+% sys.test_dbl # table_name
+% val # name
+% double # type
+% 22 # length
 [ 1e+308	]
 
 # 12:38:01 >  

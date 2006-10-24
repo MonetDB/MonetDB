@@ -27,28 +27,28 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# test # table_name
-# count_val # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 6	]
-# test # table_name
-# count_no_nil_val # name
-# int # type
-# 10 # length
+% sys.test # table_name
+% count_no_nil_val # name
+% int # type
+% 1 # length
 [ 5	]
-# test # table_name
-# count_x # name
-# int # type
-# 10 # length
+% sys.test # table_name
+% count_x # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 2	]
 [ 2	]
-# test # table_name
-# count_val # name
-# int # type
-# 10 # length
+% sys.test # table_name
+% count_val # name
+% int # type
+% 1 # length
 [ 0	]
 [ 1	]
 [ 2	]

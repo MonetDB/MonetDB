@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:42:22 >  
-# 12:42:22 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < BATpropcheck_error.SF-1012739.sql
-# 12:42:22 >  
+# 11:50:39 >  
+# 11:50:39 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < BATpropcheck_error.SF-1012739.sql
+# 11:50:39 >  
 
-# ,	schemas,	tables,	keycolumns,	keys,	keys # table_name
-# TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
-# char,	varchar,	varchar,	varchar,	int,	varchar # type
-# 0,	0,	0,	0,	10,	0 # length
+% .,	sys.schemas,	sys.tables,	sys.keycolumns,	sys.keys,	sys.keys # table_name
+% TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
+% char,	varchar,	varchar,	varchar,	int,	varchar # type
+% 0,	0,	0,	0,	1,	0 # length
 
-# 12:42:22 >  
-# 12:42:22 >  Done.
-# 12:42:22 >  
+# 11:50:39 >  
+# 11:50:39 >  Done.
+# 11:50:39 >  
 

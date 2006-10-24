@@ -61,7 +61,7 @@ stderr of test 'multivalue_insert.SF-1509864` in directory 'src/test/BugTracker`
 # 21:26:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35900  < multivalue_insert.SF-1509864.sql
 # 21:26:30 >  
 
-MAPI  = monetdb@localhost:33174
+MAPI  = monetdb@localhost:35185
 QUERY = insert into test2 values (1),(1),(1);
 ERROR = !ERROR: INSERT INTO: UNIQUE constraint 'test2.test2_t_unique' violated
 

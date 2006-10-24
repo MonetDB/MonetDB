@@ -17,24 +17,24 @@ quit();
 
 Over..
 
-# 12:57:23 >  
-# 12:57:23 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < interval_convert_bugs-sf-1274077-1274085.sql
-# 12:57:23 >  
+# 11:55:48 >  
+# 11:55:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < interval_convert_bugs-sf-1274077-1274085.sql
+# 11:55:48 >  
 
-#  # table_name
-# single_value # name
-# month_interval # type
-# 0 # length
+% . # table_name
+% single_value # name
+% month_interval # type
+% 0 # length
 [ 14	]
-#  # table_name
-# single_value # name
-# month_interval # type
-# 0 # length
+% . # table_name
+% single_value # name
+% month_interval # type
+% 0 # length
 [ 12	]
-#  # table_name
-# single_value # name
-# sec_interval # type
-# 0 # length
+% . # table_name
+% single_value # name
+% sec_interval # type
+% 0 # length
 [ 86400	]
 
 # 12:57:23 >  

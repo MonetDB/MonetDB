@@ -22,17 +22,17 @@ Over..
 # 12:45:11 >  
 
 [ 3	]
-# sys.t947601 # table_name
-# name # name
-# varchar # type
-# 6 # length
+% sys.t947601 # table_name
+% name # name
+% varchar # type
+% 6 # length
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]
-# sys.t947601 # table_name
-# name # name
-# varchar # type
-# 6 # length
+% sys.t947601 # table_name
+% name # name
+% varchar # type
+% 6 # length
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]

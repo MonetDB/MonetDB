@@ -31,18 +31,18 @@ Over..
 # 12:33:58 >  Mtimeout -timeout 180 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
 # 12:33:58 >  
 
-# model,	model,	model,	model # table_name
-# model_id,	is_mutagen,	lumo,	logp # name
-# int,	char,	double,	double # type
-# 10,	3,	22,	22 # length
-# atom,	atom,	atom,	atom,	atom # table_name
-# atom_id,	model_id,	element,	type,	charge # name
-# varchar,	int,	char,	char,	double # type
-# 0,	10,	2,	3,	22 # length
-# bond,	bond,	bond,	bond,	bond # table_name
-# bond_id,	model_id,	atom1,	atom2,	type # name
-# int,	int,	varchar,	varchar,	char # type
-# 10,	10,	0,	0,	3 # length
+% sys.model,	sys.model,	sys.model,	sys.model # table_name
+% model_id,	is_mutagen,	lumo,	logp # name
+% int,	char,	double,	double # type
+% 1,	3,	22,	22 # length
+% sys.atom,	sys.atom,	sys.atom,	sys.atom,	sys.atom # table_name
+% atom_id,	model_id,	element,	type,	charge # name
+% varchar,	int,	char,	char,	double # type
+% 0,	1,	2,	3,	22 # length
+% sys.bond,	sys.bond,	sys.bond,	sys.bond,	sys.bond # table_name
+% bond_id,	model_id,	atom1,	atom2,	type # name
+% int,	int,	varchar,	varchar,	char # type
+% 1,	1,	0,	0,	3 # length
 
 # 12:33:58 >  
 # 12:33:58 >  Mtimeout -timeout 180 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
@@ -10387,10 +10387,10 @@ Over..
 # 12:34:01 >  Mtimeout -timeout 180 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
 # 12:34:01 >  
 
-# model,	model,	model,	model # table_name
-# model_id,	is_mutagen,	lumo,	logp # name
-# int,	char,	double,	double # type
-# 10,	3,	22,	22 # length
+% sys.model,	sys.model,	sys.model,	sys.model # table_name
+% model_id,	is_mutagen,	lumo,	logp # name
+% int,	char,	double,	double # type
+% 3,	3,	22,	22 # length
 [ 1,	"T",	-1.246,	4.2300000000000004	]
 [ 2,	"F",	-1.429,	1.4399999999999999	]
 [ 3,	"F",	-1.456,	1.8600000000000001	]
@@ -10579,10 +10579,10 @@ Over..
 [ 186,	"F",	-0.57399999999999995,	2.0699999999999998	]
 [ 187,	"T",	-1.276,	5.4100000000000001	]
 [ 188,	"F",	-0.872,	3.5099999999999998	]
-# atom,	atom,	atom,	atom,	atom # table_name
-# atom_id,	model_id,	element,	type,	charge # name
-# varchar,	int,	char,	char,	double # type
-# 7,	10,	2,	3,	22 # length
+% sys.atom,	sys.atom,	sys.atom,	sys.atom,	sys.atom # table_name
+% atom_id,	model_id,	element,	type,	charge # name
+% varchar,	int,	char,	char,	double # type
+% 7,	3,	2,	3,	22 # length
 [ "d1_1",	1,	"c",	"22",	2.5347717258483701e-09	]
 [ "d1_2",	1,	"c",	"22",	2.5347717258483701e-09	]
 [ "d1_3",	1,	"c",	"22",	2.5347717258483701e-09	]
@@ -15476,10 +15476,10 @@ Over..
 [ "d188_22",	188,	"n",	"38",	0.00017469446174800399	]
 [ "d188_23",	188,	"o",	"40",	1.6222539045429601e-07	]
 [ "d188_24",	188,	"o",	"40",	1.6222539045429601e-07	]
-# bond,	bond,	bond,	bond,	bond # table_name
-# bond_id,	model_id,	atom1,	atom2,	type # name
-# int,	int,	varchar,	varchar,	char # type
-# 10,	10,	7,	7,	3 # length
+% sys.bond,	sys.bond,	sys.bond,	sys.bond,	sys.bond # table_name
+% bond_id,	model_id,	atom1,	atom2,	type # name
+% int,	int,	varchar,	varchar,	char # type
+% 4,	3,	7,	7,	3 # length
 [ 0,	1,	"d1_1",	"d1_2",	"7"	]
 [ 1,	1,	"d1_2",	"d1_3",	"7"	]
 [ 2,	1,	"d1_3",	"d1_4",	"7"	]

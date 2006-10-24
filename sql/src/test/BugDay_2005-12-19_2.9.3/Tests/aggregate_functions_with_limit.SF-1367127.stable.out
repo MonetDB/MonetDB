@@ -71,15 +71,15 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
-# count_id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 50	]
-# ,	test_aggre_limit # table_name
-# type,	count_type # name
-# varchar,	int # type
-# 3,	10 # length
+% sys.,	sys.test_aggre_limit # table_name
+% type,	count_type # name
+% varchar,	int # type
+% 3,	2 # length
 [ "int",	29	]
 
 # 13:09:10 >  

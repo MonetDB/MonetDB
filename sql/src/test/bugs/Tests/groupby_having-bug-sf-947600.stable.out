@@ -12,14 +12,14 @@ quit();
 
 Over..
 
-# 12:48:43 >  
-# 12:48:43 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < groupby_having-bug-sf-947600.sql
-# 12:48:43 >  
+# 11:55:31 >  
+# 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_having-bug-sf-947600.sql
+# 11:55:31 >  
 
-# a,	b,	b # table_name
-# name,	name,	count_name # name
-# varchar,	varchar,	int # type
-# 10,	10,	2 # length
+% sys.a,	sys.b,	sys.b # table_name
+% name,	name,	count_name # name
+% varchar,	varchar,	int # type
+% 10,	10,	2 # length
 [ "args",	"columns",	6	]
 [ "args",	"idxs",	6	]
 [ "args",	"keycolumns",	2	]
@@ -47,10 +47,10 @@ Over..
 [ "sequences",	"idxs",	4	]
 [ "sequences",	"keycolumns",	2	]
 [ "sequences",	"keys",	4	]
-# sys.tables # table_name
-# name # name
-# varchar # type
-# 10 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 10 # length
 [ "functions"	]
 [ "args"	]
 [ "sequences"	]
@@ -60,26 +60,26 @@ Over..
 [ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-# sys.tables # table_name
-# name # name
-# varchar # type
-# 0 # length
-# tables # table_name
-# name # name
-# varchar # type
-# 10 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 10 # length
 [ "functions"	]
 [ "args"	]
 [ "sequences"	]
 [ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-# sys.tables # table_name
-# name # name
-# varchar # type
-# 0 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 0 # length
 
-# 12:48:43 >  
-# 12:48:43 >  Done.
-# 12:48:43 >  
+# 11:55:31 >  
+# 11:55:31 >  Done.
+# 11:55:31 >  
 

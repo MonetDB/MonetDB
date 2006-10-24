@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:48:38 >  
-# 12:48:38 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < innerjoin_multiple-bug-sf-943661.sql
-# 12:48:38 >  
+# 11:55:31 >  
+# 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < innerjoin_multiple-bug-sf-943661.sql
+# 11:55:31 >  
 
-# schemas,	tables,	columns # table_name
-# name,	name,	name # name
-# varchar,	varchar,	varchar # type
-# 3,	10,	11 # length
+% sys.schemas,	sys.tables,	sys.columns # table_name
+% name,	name,	name # name
+% varchar,	varchar,	varchar # type
+% 3,	10,	11 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -83,10 +83,10 @@ Over..
 [ "tmp",	"keys",	"rkey"	]
 [ "tmp",	"keys",	"table_id"	]
 [ "tmp",	"keys",	"type"	]
-# sys.s,	sys.t,	sys.c # table_name
-# name,	name,	name # name
-# varchar,	varchar,	varchar # type
-# 3,	10,	11 # length
+% sys.s,	sys.t,	sys.c # table_name
+% name,	name,	name # name
+% varchar,	varchar,	varchar # type
+% 3,	10,	11 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]

@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:46:27 >  
-# 12:46:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < empty_avg.SF-1207887.sql
-# 12:46:27 >  
+# 11:50:58 >  
+# 11:50:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < empty_avg.SF-1207887.sql
+# 11:50:58 >  
 
-#  # table_name
-# scale_down_avg_field # name
-# double # type
-# 22 # length
+% sys. # table_name
+% scale_down_avg_field # name
+% double # type
+% 22 # length
 [ NULL	]
 
 # 12:46:27 >  

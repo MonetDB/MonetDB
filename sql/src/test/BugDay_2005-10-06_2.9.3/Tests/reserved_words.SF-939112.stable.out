@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:41:22 >  
-# 12:41:22 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < reserved_words.SF-939112.sql
-# 12:41:22 >  
+# 11:50:36 >  
+# 11:50:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < reserved_words.SF-939112.sql
+# 11:50:36 >  
 
-#  # table_name
-# count_no_nil_number # name
-# boolean # type
-# 0 # length
+% sys. # table_name
+% count_no_nil_number # name
+% boolean # type
+% 5 # length
 [ true	]
 
 # 12:41:22 >  

@@ -21,10 +21,10 @@ Over..
 # 12:30:40 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_key_prefix_join.sql
 # 12:30:40 >  
 
-# fare # table_name
-# fare_code # name
-# char # type
-# 8 # length
+% sys.fare # table_name
+% fare_code # name
+% char # type
+% 8 # length
 [ "7100005"	]
 [ "7100005"	]
 [ "7100005"	]

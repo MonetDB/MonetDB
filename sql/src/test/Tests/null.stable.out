@@ -27,10 +27,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# t3,	t3 # table_name
-# id,	val # name
-# int,	int # type
-# 10,	10 # length
+% sys.t3,	sys.t3 # table_name
+% id,	val # name
+% int,	int # type
+% 1,	1 # length
 [ 2,	NULL	]
 [ 1,	NULL	]
 

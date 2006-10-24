@@ -23,17 +23,17 @@ Over..
 
 [ 1	]
 [ 1	]
-# test # table_name
-# x # name
-# varchar # type
-# 1 # length
+% sys.test # table_name
+% x # name
+% varchar # type
+% 1 # length
 [ "a"	]
-# test # table_name
-# x # name
-# varchar # type
-# 0 # length
+% sys.test # table_name
+% x # name
+% varchar # type
+% 0 # length
 
-# 12:51:13 >  
-# 12:51:13 >  Done.
-# 12:51:13 >  
+# 11:55:37 >  
+# 11:55:37 >  Done.
+# 11:55:37 >  
 

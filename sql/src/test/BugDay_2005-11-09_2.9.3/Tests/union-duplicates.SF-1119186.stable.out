@@ -23,42 +23,42 @@ Over..
 
 [ 1	]
 [ 1	]
-# aap1119186 # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.aap1119186 # table_name
+% id # name
+% int # type
+% 1 # length
 [ 1	]
 [ 6	]
-#  # table_name
-# id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% id # name
+% int # type
+% 1 # length
 [ 1	]
 [ 6	]
-#  # table_name
-# id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% id # name
+% int # type
+% 1 # length
 [ 1	]
 [ 6	]
 [ 1	]
 [ 6	]
-#  # table_name
-# test # name
-# char # type
-# 1 # length
+% . # table_name
+% test # name
+% char # type
+% 1 # length
 [ "a"	]
 [ "a"	]
-#  # table_name
-# test # name
-# char # type
-# 1 # length
+% . # table_name
+% test # name
+% char # type
+% 1 # length
 [ "a"	]
 [ "b"	]
-#  # table_name
-# test # name
-# char # type
-# 1 # length
+% . # table_name
+% test # name
+% char # type
+% 1 # length
 [ "a"	]
 [ "a"	]
 [ "b"	]

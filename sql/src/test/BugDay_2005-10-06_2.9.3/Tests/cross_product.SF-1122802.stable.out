@@ -23,20 +23,20 @@ Over..
 
 [ 20	]
 [ 20	]
-# t1 # table_name
-# count_id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 20	]
-# t2 # table_name
-# count_id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 20	]
-# t1 # table_name
-# count_id # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 3 # length
 [ 400	]
 
 # 12:43:16 >  

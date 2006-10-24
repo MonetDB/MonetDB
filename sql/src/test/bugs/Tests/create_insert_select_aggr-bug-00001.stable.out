@@ -21,87 +21,87 @@ Over..
 # 12:47:55 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_insert_select_aggr-bug-00001.sql
 # 12:47:55 >  
 
-#  # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-# ff,	ff # table_name
-# id,	name # name
-# int,	varchar # type
-# 10,	6 # length
+% sys.ff,	sys.ff # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	6 # length
 [ 1,	"Tim"	]
 [ 2,	"Jochem"	]
-#  # table_name
-# sql_sub_single_value # name
-# int # type
-# 10 # length
+% . # table_name
+% sql_sub_single_value # name
+% int # type
+% 2 # length
 [ 15	]
-# sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
-# name,	query,	istable,	system,	commit_action # name
-# varchar,	varchar,	boolean,	boolean,	smallint # type
-# 0,	0,	5,	5,	1 # length
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% name,	query,	type,	system,	commit_action # name
+% varchar,	varchar,	smallint,	boolean,	smallint # type
+% 0,	0,	1,	5,	1 # length
 [ 1	]
 [ 1	]
-# r # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.r # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
 [ 2	]
 [ 1	]
-# r # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.r # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
-# r # table_name
-# i # name
-# int # type
-# 1 # length
+% sys.r # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
-# sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
-# name,	query,	type,	system,	commit_action # name
-# varchar,	varchar,	smallint,	boolean,	smallint # type
-# 1,	1,	1,	5,	1 # length
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% name,	query,	type,	system,	commit_action # name
+% varchar,	varchar,	smallint,	boolean,	smallint # type
+% 1,	1,	1,	5,	1 # length
 [ "r",	NULL,	0,	false,	0	]
 [ 1	]
 [ 1	]
-# r # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.r # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
 [ 2	]
 [ 1	]
 [ 1	]
 [ 1	]
-# r # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.r # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
-# r # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.r # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
-# ptables,	,	,	 # table_name
-# name,	single_value,	single_value,	single_value # name
-# varchar,	smallint,	smallint,	smallint # type
-# 0,	1,	1,	1 # length
+% sys._tables,	.,	.,	. # table_name
+% name,	single_value,	single_value,	single_value # name
+% varchar,	smallint,	smallint,	smallint # type
+% 0,	1,	1,	1 # length
 
-# 10:31:10 >  
-# 10:31:10 >  Done.
-# 10:31:10 >  
+# 11:55:26 >  
+# 11:55:26 >  Done.
+# 11:55:26 >  
 

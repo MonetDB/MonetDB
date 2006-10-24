@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 13:22:15 >  
-# 13:22:15 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47090  < select_from_env.SF-1240701.1242164.sql
-# 13:22:15 >  
+# 11:51:03 >  
+# 11:51:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_from_env.SF-1240701.1242164.sql
+# 11:51:03 >  
 
-# env,	env # table_name
-# name,	value # name
-# varchar,	varchar # type
-# 15,	95 # length
+% .env # table_name
+% name # name
+% varchar # type
+% 15 # length
 [ "config"	]
 [ "gdk_arch"	]
 [ "gdk_version"	]

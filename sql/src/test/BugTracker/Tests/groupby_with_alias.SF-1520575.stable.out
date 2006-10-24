@@ -17,20 +17,20 @@ quit();
 
 Over..
 
-# 09:13:53 >  
-# 09:13:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33703  < groupby_with_alias.SF-1520575.sql
-# 09:13:53 >  
+# 11:54:20 >  
+# 11:54:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_with_alias.SF-1520575.sql
+# 11:54:20 >  
 
-# sys.test # table_name
-# b # name
-# int # type
-# 1 # length
-# .,	sys.a # table_name
-# bug_alias,	sum_f2 # name
-# varchar,	bigint # type
-# 0,	1 # length
+% sys.test_grp # table_name
+% b # name
+% int # type
+% 1 # length
+% .,	sys.a # table_name
+% bug_alias,	sum_f2 # name
+% varchar,	int # type
+% 0,	1 # length
 
-# 09:13:53 >  
-# 09:13:53 >  Done.
-# 09:13:53 >  
+# 11:54:20 >  
+# 11:54:20 >  Done.
+# 11:54:20 >  
 

@@ -61,7 +61,7 @@ stderr of test 'session_vars` in directory 'src/test` itself:
 # 12:29:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38612  < session_vars.sql
 # 12:29:59 >  
 
-MAPI  = monetdb@localhost:38612
+MAPI  = monetdb@localhost:35781
 QUERY = set test_nr = 'help';
 ERROR = !ERROR: int: conversion of string 'help' failed
         !ERROR: str_2_int: operation failed.

@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:31:53 >  
-# 12:31:53 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 33.sql
-# 12:31:53 >  
+# 11:47:13 >  
+# 11:47:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 33.sql
+# 11:47:13 >  
 
-# model192,	model192,	model192 # table_name
-# is_mutagen,	is_mutagen,	count_no_nil_model_id # name
-# char,	char,	int # type
-# 3,	3,	10 # length
+% sys.model192,	sys.model192,	sys.model192 # table_name
+% is_mutagen,	is_mutagen,	count_no_nil_model_id # name
+% char,	char,	int # type
+% 3,	3,	2 # length
 [ "T",	"T",	14	]
 
 # 12:31:54 >  

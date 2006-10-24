@@ -24,16 +24,16 @@ Over..
 [ 1	]
 [ 1	]
 [ 2	]
-# test1044534 # table_name
-# id # name
-# int # type
-# 10 # length
-# test1044534 # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.test1044534 # table_name
+% id # name
+% int # type
+% 1 # length
+% sys.test1044534 # table_name
+% id # name
+% int # type
+% 1 # length
 
-# 12:45:17 >  
-# 12:45:17 >  Done.
-# 12:45:17 >  
+# 11:50:52 >  
+# 11:50:52 >  Done.
+# 11:50:52 >  
 

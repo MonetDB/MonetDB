@@ -28,14 +28,14 @@ Over..
 
 [ 1	]
 
-# 12:38:04 >  
-# 12:38:04 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < last_line_without_newline.SF-922390_s02.sql
-# 12:38:04 >  
+# 11:50:26 >  
+# 11:50:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < last_line_without_newline.SF-922390_s02.sql
+# 11:50:26 >  
 
-# tab_0 # table_name
-# att # name
-# int # type
-# 10 # length
+% sys.tab_0 # table_name
+% att # name
+% int # type
+% 1 # length
 [ 1	]
 
 # 12:38:04 >  

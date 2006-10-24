@@ -1,19 +1,19 @@
 stdout of test 'coalesce` in directory 'src/test` itself:
 
 
-# 17:28:20 >  
-# 17:28:20 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5/lib:/export/scratch1/milena/monet/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=34169 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
-# 17:28:20 >  
+# 11:50:13 >  
+# 11:50:13 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=35781 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:50:13 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/export/scratch1/milena/monet/etc/MonetDB5.conf
-# dbfarm:/export/scratch1/milena/monet/var/MonetDB5/dbfarm
-# dbname:mTests_src_test
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.13.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -24,15 +24,15 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# . # table_name
-# avg_single_value # name
-# double # type
-# 22 # length
+% . # table_name
+% avg_single_value # name
+% double # type
+% 22 # length
 [ 28	]
-# sys.test,	. # table_name
-# id,	single_value # name
-# int,	varchar # type
-# 1,	7 # length
+% sys.test,	. # table_name
+% id,	single_value # name
+% int,	varchar # type
+% 1,	7 # length
 [ 1,	"a"	]
 [ 2,	"unknown"	]
 [ 3,	"c"	]

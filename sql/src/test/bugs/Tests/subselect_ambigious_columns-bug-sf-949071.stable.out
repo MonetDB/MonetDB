@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:48:50 >  
-# 12:48:50 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < subselect_ambigious_columns-bug-sf-949071.sql
-# 12:48:50 >  
+# 11:55:31 >  
+# 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_ambigious_columns-bug-sf-949071.sql
+# 11:55:31 >  
 
-# tables # table_name
-# name # name
-# varchar # type
-# 10 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 10 # length
 [ "functions"	]
 [ "args"	]
 [ "sequences"	]
@@ -34,10 +34,10 @@ Over..
 [ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-# sys.tables # table_name
-# name # name
-# varchar # type
-# 10 # length
+% sys.tables # table_name
+% name # name
+% varchar # type
+% 10 # length
 [ "functions"	]
 [ "args"	]
 [ "sequences"	]

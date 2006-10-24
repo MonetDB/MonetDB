@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:37:26 >  
-# 12:37:26 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < union-SF.918078.sql
-# 12:37:26 >  
+# 11:50:16 >  
+# 11:50:16 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < union-SF.918078.sql
+# 11:50:16 >  
 
-#  # table_name
-# i # name
-# int # type
-# 10 # length
+% sys. # table_name
+% i # name
+% int # type
+% 1 # length
 
-# 12:37:26 >  
-# 12:37:26 >  Done.
-# 12:37:26 >  
+# 11:50:16 >  
+# 11:50:16 >  Done.
+# 11:50:16 >  
 

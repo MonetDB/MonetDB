@@ -17,52 +17,52 @@ quit();
 
 Over..
 
-# 15:21:44 >  
-# 15:21:44 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38268  < create_in_schema.sql
-# 15:21:44 >  
+# 11:50:09 >  
+# 11:50:09 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < create_in_schema.sql
+# 11:50:09 >  
 
-# sys.bla1 # table_name
-# id # name
-# int # type
-# 1 # length
-# tmp.bla2 # table_name
-# id # name
-# int # type
-# 1 # length
-# bla.bla3 # table_name
-# id # name
-# int # type
-# 1 # length
-# tmp.bla4 # table_name
-# id # name
-# int # type
-# 1 # length
-# tmp.bla5 # table_name
-# id # name
-# int # type
-# 1 # length
-# sys.v_bla1 # table_name
-# id # name
-# int # type
-# 1 # length
-# tmp.v_bla2 # table_name
-# id # name
-# int # type
-# 1 # length
-# bla.v_bla3 # table_name
-# id # name
-# int # type
-# 1 # length
-# tmp.v_bla4 # table_name
-# id # name
-# int # type
-# 1 # length
-# tmp.v_bla5 # table_name
-# id # name
-# int # type
-# 1 # length
+% sys.bla1 # table_name
+% id # name
+% int # type
+% 1 # length
+% tmp.bla2 # table_name
+% id # name
+% int # type
+% 1 # length
+% bla.bla3 # table_name
+% id # name
+% int # type
+% 1 # length
+% tmp.bla4 # table_name
+% id # name
+% int # type
+% 1 # length
+% tmp.bla5 # table_name
+% id # name
+% int # type
+% 1 # length
+% sys.v_bla1 # table_name
+% id # name
+% int # type
+% 1 # length
+% tmp.v_bla2 # table_name
+% id # name
+% int # type
+% 1 # length
+% bla.v_bla3 # table_name
+% id # name
+% int # type
+% 1 # length
+% tmp.v_bla4 # table_name
+% id # name
+% int # type
+% 1 # length
+% tmp.v_bla5 # table_name
+% id # name
+% int # type
+% 1 # length
 
-# 15:21:45 >  
-# 15:21:45 >  Done.
-# 15:21:45 >  
+# 11:50:10 >  
+# 11:50:10 >  Done.
+# 11:50:10 >  
 

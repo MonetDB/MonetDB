@@ -17,42 +17,42 @@ quit();
 
 Over..
 
-# 12:37:15 >  
-# 12:37:15 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < identifiers.sql
-# 12:37:15 >  
+# 11:50:07 >  
+# 11:50:07 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < identifiers.sql
+# 11:50:07 >  
 
-#  # table_name
-# bla # name
-# smallint # type
-# 6 # length
+% . # table_name
+% bla # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# bla # name
-# smallint # type
-# 6 # length
+% . # table_name
+% bla # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# bla # name
-# smallint # type
-# 6 # length
+% . # table_name
+% bla # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# Bla # name
-# smallint # type
-# 6 # length
+% . # table_name
+% Bla # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# BLA # name
-# smallint # type
-# 6 # length
+% . # table_name
+% BLA # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# B"la" # name
-# smallint # type
-# 6 # length
+% . # table_name
+% B"la" # name
+% smallint # type
+% 1 # length
 [ 1	]
 
-# 12:37:15 >  
-# 12:37:15 >  Done.
-# 12:37:15 >  
+# 11:50:07 >  
+# 11:50:07 >  Done.
+# 11:50:07 >  
 

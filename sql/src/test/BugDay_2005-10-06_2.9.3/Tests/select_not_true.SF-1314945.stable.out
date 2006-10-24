@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:44:43 >  
-# 12:44:43 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_not_true.SF-1314945.sql
-# 12:44:43 >  
+# 11:50:45 >  
+# 11:50:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_not_true.SF-1314945.sql
+# 11:50:45 >  
 
-#  # table_name
-# single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% single_value # name
+% boolean # type
+% 5 # length
 [ false	]
-#  # table_name
-# not_single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% not_single_value # name
+% boolean # type
+% 5 # length
 [ false	]
 
 # 12:44:43 >  

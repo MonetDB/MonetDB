@@ -23,10 +23,10 @@ Over..
 
 [ 1	]
 [ 1	]
-# bugtest,	bugtest # table_name
-# id,	name # name
-# int,	varchar # type
-# 10,	6 # length
+% sys.bugtest,	sys.bugtest # table_name
+% id,	name # name
+% int,	varchar # type
+% 1,	6 # length
 [ 1,	"André"	]
 [ 1,	"test"	]
 

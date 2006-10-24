@@ -22,26 +22,26 @@ Over..
 # 09:15:18 >  
 
 [ 3	]
-# prepare,	prepare,	prepare # table_name
-# type,	digits,	scale # name
-# varchar,	int,	int # type
-# 0,	0,	0 # length
+% prepare,	prepare,	prepare # table_name
+% type,	digits,	scale # name
+% varchar,	int,	int # type
+% 0,	0,	0 # length
 [ "char",	0,	0	]
-# sys.t1234205 # table_name
-# name # name
-# varchar # type
-# 6 # length
+% sys.t1234205 # table_name
+% name # name
+% varchar # type
+% 6 # length
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]
-# prepare,	prepare,	prepare # table_name
-# type,	digits,	scale # name
-# varchar,	int,	int # type
-# 0,	0,	0 # length
-# sys.t1234205 # table_name
-# name # name
-# varchar # type
-# 5 # length
+% prepare,	prepare,	prepare # table_name
+% type,	digits,	scale # name
+% varchar,	int,	int # type
+% 0,	0,	0 # length
+% sys.t1234205 # table_name
+% name # name
+% varchar # type
+% 5 # length
 [ "niels"	]
 
 # 09:15:18 >  

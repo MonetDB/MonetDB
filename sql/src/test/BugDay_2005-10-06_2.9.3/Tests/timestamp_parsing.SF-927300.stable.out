@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:38:46 >  
-# 12:38:46 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < timestamp_parsing.SF-927300.sql
-# 12:38:46 >  
+# 11:50:28 >  
+# 11:50:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < timestamp_parsing.SF-927300.sql
+# 11:50:28 >  
 
-#  # table_name
-# single_value # name
-# timestamp # type
-# 26 # length
+% . # table_name
+% single_value # name
+% timestamp # type
+% 26 # length
 [ 2004-04-01 08:57:00.000000	]
 
 # 12:38:46 >  

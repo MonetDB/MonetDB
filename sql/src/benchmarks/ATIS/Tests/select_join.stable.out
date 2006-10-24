@@ -21,10 +21,10 @@ Over..
 # 12:30:39 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_join.sql
 # 12:30:39 >  
 
-# airline,	aircraft # table_name
-# airline_name,	aircraft_type # name
-# char,	char # type
-# 64,	64 # length
+% sys.airline,	sys.aircraft # table_name
+% airline_name,	aircraft_type # name
+% char,	char # type
+% 64,	64 # length
 [ "AMERICAN AIRLINES",	"BOEING 727-200 (ALL SERIES)"	]
 [ "AMERICAN AIRLINES",	"BOEING 727-200 (ALL SERIES)"	]
 [ "AMERICAN AIRLINES",	"BOEING 727-200 (ALL SERIES)"	]

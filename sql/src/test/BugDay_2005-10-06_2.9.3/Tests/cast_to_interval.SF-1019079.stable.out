@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:42:49 >  
-# 12:42:49 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < cast_to_interval.SF-1019079.sql
-# 12:42:49 >  
+# 11:50:40 >  
+# 11:50:40 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < cast_to_interval.SF-1019079.sql
+# 11:50:40 >  
 
-#  # table_name
-# single_value # name
-# month_interval # type
-# 0 # length
+% . # table_name
+% single_value # name
+% month_interval # type
+% 0 # length
 [ 0	]
 
 # 12:42:49 >  

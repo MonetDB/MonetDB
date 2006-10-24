@@ -17,20 +17,20 @@ quit();
 
 Over..
 
-# 12:47:58 >  
-# 12:47:58 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < foreignkey_leftjoin-bug-sf-854312.sql
-# 12:47:58 >  
+# 11:55:26 >  
+# 11:55:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < foreignkey_leftjoin-bug-sf-854312.sql
+# 11:55:26 >  
 
-# a,	a,	a,	a,	b,	b,	b,	b,	b,	b # table_name
-# var1,	var2,	var3,	var4,	r_id,	id,	var1,	var2,	var3,	var4 # name
-# char,	varchar,	bigint,	varchar,	int,	char,	bigint,	bigint,	varchar,	char # type
-# 4,	0,	20,	0,	10,	4,	20,	20,	0,	20 # length
-# a,	a,	a,	a,	b,	b,	b,	b,	b,	b # table_name
-# var1,	var2,	var3,	var4,	r_id,	id,	var1,	var2,	var3,	var4 # name
-# char,	varchar,	bigint,	varchar,	int,	char,	bigint,	bigint,	varchar,	char # type
-# 4,	0,	20,	0,	10,	4,	20,	20,	0,	20 # length
+% sys.a,	sys.a,	sys.a,	sys.a,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b # table_name
+% var1,	var2,	var3,	var4,	r_id,	id,	var1,	var2,	var3,	var4 # name
+% char,	varchar,	bigint,	varchar,	int,	char,	bigint,	bigint,	varchar,	char # type
+% 4,	0,	1,	0,	1,	4,	1,	1,	0,	20 # length
+% sys.a,	sys.a,	sys.a,	sys.a,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b # table_name
+% var1,	var2,	var3,	var4,	r_id,	id,	var1,	var2,	var3,	var4 # name
+% char,	varchar,	bigint,	varchar,	int,	char,	bigint,	bigint,	varchar,	char # type
+% 4,	0,	1,	0,	1,	4,	1,	1,	0,	20 # length
 
-# 12:47:58 >  
-# 12:47:58 >  Done.
-# 12:47:58 >  
+# 11:55:26 >  
+# 11:55:26 >  Done.
+# 11:55:26 >  
 

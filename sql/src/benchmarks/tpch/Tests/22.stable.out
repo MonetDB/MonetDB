@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:35:06 >  
-# 12:35:06 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 22.sql
-# 12:35:06 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 22.sql
+# 11:48:05 >  
 
-# custsale,	custsale,	custsale # table_name
-# cntrycode,	numcust,	totacctbal # name
-# varchar,	int,	decimal # type
-# 2,	10,	21 # length
+% sys.custsale,	sys.custsale,	sys.custsale # table_name
+% cntrycode,	numcust,	totacctbal # name
+% varchar,	int,	decimal # type
+% 2,	2,	17 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]
@@ -32,10 +32,10 @@ Over..
 [ "29",	11,	88722.85	]
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
 # 09:17:21 >  

@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:50:17 >  
-# 12:50:17 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < date_parsing-bug-sf-960166.sql
-# 12:50:17 >  
+# 11:55:35 >  
+# 11:55:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < date_parsing-bug-sf-960166.sql
+# 11:55:35 >  
 
-#  # table_name
-# =_current_date # name
-# boolean # type
-# 0 # length
+% . # table_name
+% =_current_date # name
+% boolean # type
+% 5 # length
 [ false	]
-#  # table_name
-# =_current_date # name
-# boolean # type
-# 0 # length
+% . # table_name
+% =_current_date # name
+% boolean # type
+% 5 # length
 [ false	]
 
 # 12:50:17 >  

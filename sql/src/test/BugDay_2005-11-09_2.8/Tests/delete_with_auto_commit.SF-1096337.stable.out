@@ -22,29 +22,29 @@ Over..
 # 12:45:05 >  
 
 [ 1	]
-# t1096337 # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.t1096337 # table_name
+% i # name
+% int # type
+% 9 # length
 [ 123456789	]
 [ 1	]
-# t1096337 # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.t1096337 # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
-# u1096337 # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.u1096337 # table_name
+% id # name
+% int # type
+% 9 # length
 [ 123456789	]
 [ 1	]
-# u1096337 # table_name
-# id # name
-# int # type
-# 10 # length
+% sys.u1096337 # table_name
+% id # name
+% int # type
+% 1 # length
 
-# 12:45:05 >  
-# 12:45:05 >  Done.
-# 12:45:05 >  
+# 11:50:48 >  
+# 11:50:48 >  Done.
+# 11:50:48 >  
 

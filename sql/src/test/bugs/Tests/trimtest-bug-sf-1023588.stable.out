@@ -22,21 +22,21 @@ Over..
 # 12:54:07 >  
 
 [ 1	]
-# trimtest # table_name
-# master # name
-# varchar # type
-# 8 # length
+% sys.trimtest # table_name
+% master # name
+% varchar # type
+% 8 # length
 [ " Volkers"	]
-#  # table_name
-# trim_master # name
-# varchar # type
-# 7 # length
+% sys. # table_name
+% trim_master # name
+% varchar # type
+% 7 # length
 [ "Volkers"	]
 [ 1	]
-# trimtest # table_name
-# master # name
-# varchar # type
-# 7 # length
+% sys.trimtest # table_name
+% master # name
+% varchar # type
+% 7 # length
 [ "Volkers"	]
 
 # 12:54:07 >  

@@ -17,29 +17,29 @@ quit();
 
 Over..
 
-# 17:12:03 >  
-# 17:12:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38749  < variables.SF-1508160.sql
-# 17:12:03 >  
+# 11:54:19 >  
+# 11:54:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < variables.SF-1508160.sql
+# 11:54:19 >  
 
-# tmp. # table_name
-# value # name
-# int # type
-# 1 # length
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
 [ 0	]
-# tmp. # table_name
-# value # name
-# int # type
-# 1 # length
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
 [ 0	]
-# tmp. # table_name
-# truncate_value # name
-# varchar # type
-# 0 # length
+% . # table_name
+% single_value # name
+% varchar # type
+% 0 # length
 [ ""	]
-# tmp. # table_name
-# truncate_value # name
-# varchar # type
-# 0 # length
+% . # table_name
+% single_value # name
+% varchar # type
+% 0 # length
 [ ""	]
 
 # 17:12:03 >  

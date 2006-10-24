@@ -25,29 +25,29 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# trimtest # table_name
-# str # name
-# varchar # type
-# 11 # length
+% sys.trimtest # table_name
+% str # name
+% varchar # type
+% 11 # length
 [ "string1"	]
 [ "  string2"	]
 [ "string3  "	]
 [ "  string4  "	]
 [ 4	]
-# trimtest # table_name
-# str # name
-# varchar # type
-# 7 # length
+% sys.trimtest # table_name
+% str # name
+% varchar # type
+% 7 # length
 [ "string1"	]
 [ "string2"	]
 [ "string3"	]
 [ "string4"	]
-# trimtest # table_name
-# str # name
-# varchar # type
-# 0 # length
+% sys.trimtest # table_name
+% str # name
+% varchar # type
+% 0 # length
 
-# 12:54:16 >  
-# 12:54:16 >  Done.
-# 12:54:16 >  
+# 13:27:30 >  
+# 13:27:30 >  Done.
+# 13:27:30 >  
 

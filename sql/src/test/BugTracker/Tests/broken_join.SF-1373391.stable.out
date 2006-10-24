@@ -23,10 +23,10 @@ Over..
 
 [ 1	]
 [ 1	]
-# urlstest,	clickstest # table_name
-# urlid,	clicktime # name
-# int,	time # type
-# 10,	8 # length
+% sys.urlstest,	sys.clickstest # table_name
+% urlid,	clicktime # name
+% int,	time # type
+% 5,	8 # length
 [ 14534,	19:42:31	]
 
 # 12:47:50 >  

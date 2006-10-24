@@ -23,10 +23,10 @@ Over..
 
 [ 1	]
 [ 1	]
-# sys.adttest,	sys.adttest,	sys.adttest,	sys.adttest,	sys.adttest,	sys.adttest # table_name
-# id,	dosname,	filename,	contenttype,	blobsize,	blobdata # name
-# int,	char,	varchar,	varchar,	int,	blob # type
-# 1,	11,	28,	10,	2,	0 # length
+% sys.adttest,	sys.adttest,	sys.adttest,	sys.adttest,	sys.adttest,	sys.adttest # table_name
+% id,	dosname,	filename,	contenttype,	blobsize,	blobdata # name
+% int,	char,	varchar,	varchar,	int,	blob # type
+% 1,	11,	28,	10,	2,	0 # length
 [ 1,	"WXKZAYWFEPY",	"DECRYZWIEHLQNUAQPLFXHZLMHRDR",	"video/mpeg",	10,	41418041418041418041	]
 [ 2,	NULL,	NULL,	NULL,	NULL,	NULL	]
 

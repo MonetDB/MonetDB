@@ -22,10 +22,10 @@ Over..
 # 12:37:29 >  
 
 [ 1	]
-# t # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.t # table_name
+% i # name
+% int # type
+% 1 # length
 [ NULL	]
 
 # 12:37:29 >  

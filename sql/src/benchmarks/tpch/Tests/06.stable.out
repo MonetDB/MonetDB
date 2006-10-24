@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 12:34:36 >  
-# 12:34:36 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 06.sql
-# 12:34:36 >  
+# 11:47:57 >  
+# 11:47:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 06.sql
+# 11:47:57 >  
 
-#  # table_name
-# revenue # name
-# decimal # type
-# 21 # length
+% sys. # table_name
+% revenue # name
+% decimal # type
+% 21 # length
 [ 1193053.2253	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
 # 09:17:14 >  

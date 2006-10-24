@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:56:24 >  
-# 12:56:24 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < selectlist_subquery-sf-1208599.sql
-# 12:56:24 >  
+# 11:55:47 >  
+# 11:55:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < selectlist_subquery-sf-1208599.sql
+# 11:55:47 >  
 
-# o,	o,	 # table_name
-# lid,	avg_prijs,	current_prijs # name
-# int,	double,	double # type
-# 10,	22,	22 # length
+% sys.o,	sys.o,	. # table_name
+% lid,	avg_prijs,	current_prijs # name
+% int,	double,	double # type
+% 1,	22,	22 # length
 
-# 12:56:24 >  
-# 12:56:24 >  Done.
-# 12:56:24 >  
+# 11:55:47 >  
+# 11:55:47 >  Done.
+# 11:55:47 >  
 

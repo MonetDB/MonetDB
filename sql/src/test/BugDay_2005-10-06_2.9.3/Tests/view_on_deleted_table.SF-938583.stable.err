@@ -68,7 +68,7 @@ stderr of test 'view_on_deleted_table.SF-938583` in directory 'src/test/BugDay_2
 # 18:20:04 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47415  < view_on_deleted_table.SF-938583.sql
 # 18:20:04 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = drop table t_vdt;
 ERROR = !DROP TABLE: unable to drop table 't_vdt', views depend on it
 

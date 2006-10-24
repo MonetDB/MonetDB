@@ -22,16 +22,16 @@ Over..
 # 12:38:16 >  
 
 [ 1	]
-# up # table_name
-# att # name
-# int # type
-# 10 # length
+% sys.up # table_name
+% att # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
-# up # table_name
-# att # name
-# int # type
-# 10 # length
+% sys.up # table_name
+% att # name
+% int # type
+% 1 # length
 [ NULL	]
 
 # 12:38:16 >  

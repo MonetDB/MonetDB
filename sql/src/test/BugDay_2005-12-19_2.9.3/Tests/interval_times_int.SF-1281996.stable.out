@@ -17,19 +17,19 @@ quit();
 
 Over..
 
-# 16:27:57 >  
-# 16:27:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40983  < interval_times_int.SF-1281996.sql
-# 16:27:57 >  
+# 11:51:15 >  
+# 11:51:15 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < interval_times_int.SF-1281996.sql
+# 11:51:15 >  
 
-#  # table_name
-# sql_mul_single_value # name
-# sec_interval # type
-# 0 # length
+% . # table_name
+% sql_mul_single_value # name
+% sec_interval # type
+% 0 # length
 [ 2	]
-#  # table_name
-# sql_mul_single_value # name
-# sec_interval # type
-# 0 # length
+% . # table_name
+% sql_mul_single_value # name
+% sec_interval # type
+% 0 # length
 [ 2	]
 
 # 16:27:57 >  

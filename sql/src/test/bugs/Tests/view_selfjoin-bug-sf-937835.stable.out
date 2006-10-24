@@ -24,17 +24,17 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# a,	b # table_name
-# id,	id # name
-# int,	int # type
-# 10,	10 # length
+% sys.a,	sys.b # table_name
+% id,	id # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	2	]
 [ 1,	3	]
 [ 2,	3	]
-# a,	b # table_name
-# id,	id # name
-# int,	int # type
-# 10,	10 # length
+% sys.a,	sys.b # table_name
+% id,	id # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	2	]
 [ 1,	3	]
 [ 2,	3	]

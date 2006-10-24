@@ -24,45 +24,45 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# my_table # table_name
-# att # name
-# int # type
-# 10 # length
+% sys.my_table # table_name
+% att # name
+% int # type
+% 1 # length
 [ 1	]
 [ 2	]
 [ 3	]
-#  # table_name
-# <_single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% <_single_value # name
+% boolean # type
+% 5 # length
 [ true	]
-#  # table_name
-# =_single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% =_single_value # name
+% boolean # type
+% 5 # length
 [ false	]
-#  # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
-# single_value # name
-# char # type
-# 1 # length
-# my_table # table_name
-# att # name
-# int # type
-# 10 # length
+% . # table_name
+% single_value # name
+% char # type
+% 1 # length
+% sys.my_table # table_name
+% att # name
+% int # type
+% 1 # length
 
 # 12:37:53 >  
 # 12:37:53 >  Done.

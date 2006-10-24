@@ -17,16 +17,16 @@ quit();
 
 Over..
 
-# 12:45:21 >  
-# 12:45:21 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < alias_union_join.SF-1063089.sql
-# 12:45:21 >  
+# 11:50:52 >  
+# 11:50:52 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < alias_union_join.SF-1063089.sql
+# 11:50:52 >  
 
-# locallinks,	allentries # table_name
-# url,	psize # name
-# varchar,	int # type
-# 0,	10 # length
+% sys.locallinks,	sys.allentries # table_name
+% url,	psize # name
+% varchar,	int # type
+% 0,	1 # length
 
-# 12:45:21 >  
-# 12:45:21 >  Done.
-# 12:45:21 >  
+# 11:50:53 >  
+# 11:50:53 >  Done.
+# 11:50:53 >  
 

@@ -12,14 +12,14 @@ quit();
 
 Over..
 
-# 12:48:35 >  
-# 12:48:35 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < groupby_having_charlength-bug-sf-943566.sql
-# 12:48:35 >  
+# 11:55:30 >  
+# 11:55:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_having_charlength-bug-sf-943566.sql
+# 11:55:30 >  
 
-# s,	,	s # table_name
-# name,	char_length_name,	count_name # name
-# varchar,	int,	int # type
-# 3,	1,	2 # length
+% sys.s,	sys.,	sys.s # table_name
+% name,	char_length_name,	count_name # name
+% varchar,	int,	int # type
+% 3,	1,	2 # length
 [ "sys",	3,	10	]
 [ "tmp",	3,	10	]
 

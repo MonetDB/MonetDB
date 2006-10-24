@@ -16,14 +16,14 @@ quit();
 
 Over..
 
-# 12:30:44 >  
-# 12:30:44 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_group.sql
-# 12:30:44 >  
+# 11:46:53 >  
+# 11:46:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_group.sql
+# 11:46:53 >  
 
-# day_name,	day_name,	day_name # table_name
-# day_name,	day_code,	count_day_code # name
-# char,	decimal,	int # type
-# 9,	2,	10 # length
+% sys.day_name,	sys.day_name,	sys.day_name # table_name
+% day_name,	day_code,	count_day_code # name
+% char,	decimal,	int # type
+% 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
 [ "TUESDAY",	2,	64	]
 [ "WEDNESDAY",	3,	64	]
@@ -31,10 +31,10 @@ Over..
 [ "FRIDAY",	5,	64	]
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
-# day_name,	day_name # table_name
-# day_name,	count_day_name # name
-# char,	int # type
-# 9,	10 # length
+% sys.day_name,	sys.day_name # table_name
+% day_name,	count_day_name # name
+% char,	int # type
+% 9,	2 # length
 [ "MONDAY",	64	]
 [ "TUESDAY",	64	]
 [ "WEDNESDAY",	64	]
@@ -42,18 +42,18 @@ Over..
 [ "FRIDAY",	64	]
 [ "SATURDAY",	64	]
 [ "SUNDAY",	64	]
-# month_name,	day_name # table_name
-# month_name,	day_name # name
-# char,	char # type
-# 9,	9 # length
+% sys.month_name,	sys.day_name # table_name
+% month_name,	day_name # name
+% char,	char # type
+% 9,	9 # length
 [ "APRIL",	"THURSDAY"	]
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-# day_name,	flight_day,	day_name # table_name
-# day_name,	day_code,	count_day_name # name
-# char,	decimal,	int # type
-# 9,	2,	10 # length
+% sys.day_name,	sys.flight_day,	sys.day_name # table_name
+% day_name,	day_code,	count_day_name # name
+% char,	decimal,	int # type
+% 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
 [ "TUESDAY",	2,	64	]
 [ "WEDNESDAY",	3,	64	]
@@ -61,60 +61,60 @@ Over..
 [ "FRIDAY",	5,	64	]
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
-# aircraft # table_name
-# sum_engines # name
-# decimal # type
-# 10 # length
+% sys.aircraft # table_name
+% sum_engines # name
+% decimal # type
+% 2 # length
 [ 278	]
-# aircraft # table_name
-# avg_engines # name
-# double # type
-# 22 # length
+% sys.aircraft # table_name
+% avg_engines # name
+% double # type
+% 22 # length
 [ 2.0592592592592593	]
-# aircraft # table_name
-# avg_engines # name
-# double # type
-# 22 # length
+% sys.aircraft # table_name
+% avg_engines # name
+% double # type
+% 22 # length
 [ 2.3760683760683761	]
-# aircraft,	aircraft,	aircraft # table_name
-# count_aircraft_code,	min_pay_load,	max_pay_load # name
-# int,	int,	int # type
-# 10,	10,	10 # length
+% sys.,	sys.aircraft,	sys.aircraft # table_name
+% count_,	min_pay_load,	max_pay_load # name
+% int,	int,	int # type
+% 2,	3,	6 # length
 [ 94,	240,	165710	]
-# flight,	flight # table_name
-# min_flight_code,	min_flight_code # name
-# int,	int # type
-# 10,	10 # length
+% sys.flight,	sys.flight # table_name
+% min_flight_code,	min_flight_code # name
+% int,	int # type
+% 6,	6 # length
 [ 101908,	101908	]
-# flight,	flight # table_name
-# min_from_airport,	min_to_airport # name
-# char,	char # type
-# 0,	0 # length
+% sys.flight,	sys.flight # table_name
+% min_from_airport,	min_to_airport # name
+% char,	char # type
+% 3,	3 # length
 [ "ATL",	"ATL"	]
-# aircraft # table_name
-# count_aircraft_code # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 50	]
-# aircraft # table_name
-# count_aircraft_code # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 94	]
-# flight # table_name
-# count_flight_code # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 3 # length
 [ 279	]
-# flight,	flight,	flight # table_name
-# from_airport,	to_airport,	avg_time_elapsed # name
-# char,	char,	double # type
-# 3,	3,	22 # length
+% sys.flight,	sys.flight,	sys.flight # table_name
+% from_airport,	to_airport,	avg_time_elapsed # name
+% char,	char,	double # type
+% 3,	3,	22 # length
 [ "ATL",	"BOS",	154.36842105263159	]
-# ground_service,	ground_service # table_name
-# city_code,	avg_ground_fare # name
-# char,	double # type
-# 4,	22 # length
+% sys.ground_service,	sys.ground_service # table_name
+% city_code,	avg_ground_fare # name
+% char,	double # type
+% 4,	22 # length
 [ "MATL",	9	]
 [ "BBOS",	5	]
 [ "DDFW",	6	]
@@ -126,10 +126,10 @@ Over..
 [ "SSFO",	4.5	]
 [ "WWAS",	12	]
 [ "BBWI",	5	]
-# ground_service,	ground_service # table_name
-# count_city_code,	city_code # name
-# int,	char # type
-# 10,	4 # length
+% sys.ground_service,	sys.ground_service # table_name
+% count_city_code,	city_code # name
+% int,	char # type
+% 1,	4 # length
 [ 3,	"MATL"	]
 [ 3,	"BBOS"	]
 [ 2,	"DDFW"	]
@@ -142,24 +142,24 @@ Over..
 [ 1,	"WWAS"	]
 [ 3,	"BBWI"	]
 [ 1,	""	]
-# aircraft,	aircraft # table_name
-# category,	totalnr # name
-# char,	int # type
-# 10,	10 # length
+% sys.aircraft,	sys.aircraft # table_name
+% category,	totalnr # name
+% char,	int # type
+% 10,	2 # length
 [ "JET",	15	]
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
-# aircraft,	aircraft # table_name
-# category,	count_category # name
-# char,	int # type
-# 10,	10 # length
+% sys.aircraft,	sys.aircraft # table_name
+% category,	count_category # name
+% char,	int # type
+% 10,	2 # length
 [ "JET",	15	]
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
-# flight,	aircraft,	flight_class # table_name
-# flight_number,	range_miles,	fare_class # name
-# decimal,	decimal,	char # type
-# 5,	6,	3 # length
+% sys.flight,	sys.aircraft,	sys.flight_class # table_name
+% flight_number,	range_miles,	fare_class # name
+% decimal,	decimal,	char # type
+% 5,	6,	3 # length
 [ 30,	2400,	"B"	]
 [ 30,	2400,	"F"	]
 [ 30,	2400,	"H"	]
@@ -310,10 +310,10 @@ Over..
 [ 2153,	2500,	"H"	]
 [ 2153,	2500,	"Q"	]
 [ 2153,	2500,	"Y"	]
-# sys.flight,	sys.flight,	sys.aircraft,	sys.flight # table_name
-# from_airport,	to_airport,	range_miles,	time_elapsed # name
-# char,	char,	decimal,	decimal # type
-# 3,	3,	6,	5 # length
+% sys.flight,	sys.flight,	sys.aircraft,	sys.flight # table_name
+% from_airport,	to_airport,	range_miles,	time_elapsed # name
+% char,	char,	decimal,	decimal # type
+% 3,	3,	6,	5 # length
 [ "PHL",	"BWI",	691,	50	]
 [ "BWI",	"PHL",	691,	43	]
 [ "BWI",	"PHL",	691,	50	]
@@ -723,10 +723,10 @@ Over..
 [ "BWI",	"PHL",	1137,	53	]
 [ "PHL",	"BWI",	1151,	50	]
 [ "BWI",	"PHL",	1151,	53	]
-# sys.airport,	sys.state,	sys.city,	sys.airport_service # table_name
-# country_name,	state_name,	city_name,	direction # name
-# char,	char,	char,	char # type
-# 25,	25,	25,	3 # length
+% sys.airport,	sys.state,	sys.city,	sys.airport_service # table_name
+% country_name,	state_name,	city_name,	direction # name
+% char,	char,	char,	char # type
+% 25,	25,	25,	3 # length
 [ "USA",	"CALIFORNIA",	"OAKLAND",	"SE"	]
 [ "USA",	"CALIFORNIA",	"OAKLAND",	"SW"	]
 [ "USA",	"CALIFORNIA",	"SAN FRANCISCO",	"SE"	]
@@ -738,10 +738,10 @@ Over..
 [ "USA",	"PENNSYLVANIA",	"PITTSBURGH",	"W"	]
 [ "USA",	"TEXAS",	"DALLAS",	"NW"	]
 [ "USA",	"TEXAS",	"FORT WORTH",	"E"	]
-# airport,	state,	city,	airport_service # table_name
-# country_name,	state_name,	city_name,	direction # name
-# char,	char,	char,	char # type
-# 25,	25,	25,	3 # length
+% sys.airport,	sys.state,	sys.city,	sys.airport_service # table_name
+% country_name,	state_name,	city_name,	direction # name
+% char,	char,	char,	char # type
+% 25,	25,	25,	3 # length
 [ "USA",	"TEXAS",	"FORT WORTH",	"E"	]
 [ "USA",	"TEXAS",	"DALLAS",	"NW"	]
 [ "USA",	"PENNSYLVANIA",	"PITTSBURGH",	"W"	]
@@ -753,10 +753,10 @@ Over..
 [ "USA",	"CALIFORNIA",	"SAN FRANCISCO",	"SE"	]
 [ "USA",	"CALIFORNIA",	"OAKLAND",	"SW"	]
 [ "USA",	"CALIFORNIA",	"OAKLAND",	"SE"	]
-# fare,	fare,	fare,	compound_class,	fare,	fare,	compound_class # table_name
-# from_airport,	to_airport,	fare_class,	night,	one_way_cost,	rnd_trip_cost,	class_days # name
-# char,	char,	char,	char,	real,	real,	char # type
-# 3,	3,	3,	3,	13,	13,	7 # length
+% sys.fare,	sys.fare,	sys.fare,	sys.compound_class,	sys.fare,	sys.fare,	sys.compound_class # table_name
+% from_airport,	to_airport,	fare_class,	night,	one_way_cost,	rnd_trip_cost,	class_days # name
+% char,	char,	char,	char,	real,	real,	char # type
+% 3,	3,	3,	3,	13,	13,	7 # length
 [ "SFO",	"DFW",	"B",	"NO",	328,	0,	"1234567"	]
 [ "SFO",	"DFW",	"Y",	"NO",	328,	0,	"1234567"	]
 [ "SFO",	"DFW",	"YN",	"YES",	381,	762,	"1234567"	]
@@ -767,10 +767,10 @@ Over..
 [ "SFO",	"DFW",	"FN",	"YES",	504,	1008,	"1234567"	]
 [ "SFO",	"DFW",	"F",	"NO",	709,	1418,	"1234567"	]
 [ "SFO",	"DFW",	"F",	"NO",	717,	1434,	"1234567"	]
-# aircraft,	aircraft,	aircraft,	flight,	flight # table_name
-# engines,	category,	cruising_speed,	from_airport,	to_airport # name
-# decimal,	char,	decimal,	char,	char # type
-# 2,	10,	6,	3,	3 # length
+% sys.aircraft,	sys.aircraft,	sys.aircraft,	sys.flight,	sys.flight # table_name
+% engines,	category,	cruising_speed,	from_airport,	to_airport # name
+% decimal,	char,	decimal,	char,	char # type
+% 2,	10,	6,	3,	3 # length
 [ 2,	"JET",	579,	"ATL",	"BOS"	]
 [ 2,	"JET",	550,	"ATL",	"OAK"	]
 [ 2,	"JET",	550,	"BOS",	"PIT"	]

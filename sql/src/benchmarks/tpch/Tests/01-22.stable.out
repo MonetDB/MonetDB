@@ -22,58 +22,50 @@ Over..
 # 12:35:08 >  
 
 
-# 12:35:08 >  
-# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:08 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# lineitem,	lineitem,	lineitem,	lineitem,	,	,	lineitem,	,	,	lineitem # table_name
-# l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-# varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
-# 1,	1,	20,	21,	21,	21,	22,	22,	22,	10 # length
+% sys.lineitem,	sys.lineitem,	sys.lineitem,	sys.lineitem,	sys.,	sys.,	sys.lineitem,	sys.,	sys.,	sys.lineitem # table_name
+% l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
+% varchar,	varchar,	int,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
+% 1,	1,	6,	17,	21,	21,	22,	22,	22,	5 # length
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
 [ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
 [ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
-# 09:37:13 >  
-# 09:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:13 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# 12:35:08 >  
-# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:08 >  
-
-# supplier,	supplier,	nation,	part,	part,	supplier,	supplier,	supplier # table_name
-# s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
-# decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
-# 17,	18,	7,	10,	14,	39,	15,	93 # length
+% sys.supplier,	sys.supplier,	sys.nation,	sys.part,	sys.part,	sys.supplier,	sys.supplier,	sys.supplier # table_name
+% s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
+% decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
+% 17,	18,	7,	4,	14,	39,	15,	93 # length
 [ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
 [ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
 [ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
 [ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	7	]
 
-# 09:37:13 >  
-# 09:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:13 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# 12:35:08 >  
-# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:08 >  
-
-# lineitem,	,	orders,	orders # table_name
-# l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
-# int,	decimal,	date,	int # type
-# 10,	21,	10,	10 # length
+% sys.lineitem,	sys.,	sys.orders,	sys.orders # table_name
+% l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
+% int,	decimal,	date,	int # type
+% 5,	21,	10,	1 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -84,131 +76,107 @@ Over..
 [ 450,	205447.4232,	1995-03-05,	0	]
 [ 47204,	204478.5213,	1995-03-13,	0	]
 [ 9696,	201502.2188,	1995-02-20,	0	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	2	]
 
-# 09:37:13 >  
-# 09:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:13 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# 12:35:08 >  
-# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:08 >  
-
-# orders,	orders # table_name
-# o_orderpriority,	order_count # name
-# varchar,	int # type
-# 15,	10 # length
+% sys.orders,	sys.orders # table_name
+% o_orderpriority,	order_count # name
+% varchar,	int # type
+% 15,	3 # length
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# 12:35:08 >  
-# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:08 >  
-
-# nation,	 # table_name
-# n_name,	revenue # name
-# varchar,	decimal # type
-# 9,	21 # length
+% sys.nation,	sys. # table_name
+% n_name,	revenue # name
+% varchar,	decimal # type
+% 9,	21 # length
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	5	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# 12:35:09 >  
-# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:09 >  
-
-#  # table_name
-# revenue # name
-# decimal # type
-# 21 # length
+% sys. # table_name
+% revenue # name
+% decimal # type
+% 21 # length
 [ 1193053.2253	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:05 >  
 
-# 12:35:09 >  
-# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:09 >  
-
-# shipping,	shipping,	shipping,	shipping # table_name
-# supp_nation,	cust_nation,	l_year,	revenue # name
-# varchar,	varchar,	int,	decimal # type
-# 7,	7,	10,	21 # length
+% sys.shipping,	sys.shipping,	sys.shipping,	sys.shipping # table_name
+% supp_nation,	cust_nation,	l_year,	revenue # name
+% varchar,	varchar,	int,	decimal # type
+% 7,	7,	4,	21 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	2 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	2 # length
 [ "joinidx",	10	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:09 >  
-# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:09 >  
-
-# all_nations,	 # table_name
-# o_year,	mkt_share # name
-# int,	decimal # type
-# 10,	21 # length
+% sys.all_nations,	. # table_name
+% o_year,	mkt_share # name
+% int,	decimal # type
+% 4,	21 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	7	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:09 >  
-# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:09 >  
-
-# profit,	profit,	profit # table_name
-# nation,	o_year,	sum_profit # name
-# varchar,	int,	decimal # type
-# 14,	10,	21 # length
+% sys.profit,	sys.profit,	sys.profit # table_name
+% nation,	o_year,	sum_profit # name
+% varchar,	int,	decimal # type
+% 14,	4,	21 # length
 [ "ALGERIA",	1998,	386617.8283	]
 [ "ALGERIA",	1997,	401601.1258	]
 [ "ALGERIA",	1996,	156938.7971	]
@@ -383,24 +351,20 @@ Over..
 [ "VIETNAM",	1994,	1003275.5371	]
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	5	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# customer,	customer,	,	customer,	nation,	customer,	customer,	customer # table_name
-# c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
-# int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
-# 10,	18,	21,	17,	14,	40,	15,	104 # length
+% sys.customer,	sys.customer,	sys.,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
+% c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
+% int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
+% 4,	18,	21,	17,	14,	40,	15,	104 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"regular ideas promise against the furiously final deposits. f"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"fluffily final grouches doubt. bold dependencies dazzle caref"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"furiously ironic asymptotes are slyly ironic, ironic requests. bold,"	]
@@ -421,24 +385,20 @@ Over..
 [ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"carefully express asymptotes are after the blithe deposits. regular pl"	]
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"ironic, unusual dependencies sleep across the quickly reg"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"regular, regular accounts boost special instructions. bold, final accounts at the regular pa"	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	3	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# partsupp,	 # table_name
-# ps_partkey,	value # name
-# int,	decimal # type
-# 10,	21 # length
+% sys.partsupp,	sys. # table_name
+% ps_partkey,	value # name
+% int,	decimal # type
+% 4,	21 # length
 [ 1376,	13271249.89	]
 [ 788,	9498648.06	]
 [ 1071,	9388264.40	]
@@ -798,44 +758,36 @@ Over..
 [ 332,	112181.30	]
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	4	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# lineitem,	,	 # table_name
-# l_shipmode,	high_line_count,	low_line_count # name
-# varchar,	int,	int # type
-# 4,	10,	10 # length
+% sys.lineitem,	.,	. # table_name
+% l_shipmode,	high_line_count,	low_line_count # name
+% varchar,	smallint,	smallint # type
+% 4,	2,	2 # length
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# c_orders,	c_orders # table_name
-# c_count,	custdist # name
-# int,	int # type
-# 10,	10 # length
+% sys.c_orders,	sys.c_orders # table_name
+% c_count,	custdist # name
+% int,	int # type
+% 2,	3 # length
 [ 0,	500	]
 [ 11,	70	]
 [ 10,	70	]
@@ -868,62 +820,50 @@ Over..
 [ 3,	2	]
 [ 2,	2	]
 [ 30,	1	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-#  # table_name
-# promo_revenue # name
-# decimal # type
-# 21 # length
+% . # table_name
+% promo_revenue # name
+% decimal # type
+% 21 # length
 [ 15.4865	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# supplier,	supplier,	supplier,	supplier,	revenue0 # table_name
-# s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
-# int,	varchar,	varchar,	varchar,	decimal # type
-# 10,	18,	36,	15,	21 # length
+% sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
+% s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
+% int,	varchar,	varchar,	varchar,	decimal # type
+% 2,	18,	36,	15,	21 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# part,	part,	part,	partsupp # table_name
-# p_brand,	p_type,	p_size,	supplier_cnt # name
-# varchar,	varchar,	int,	int # type
-# 8,	25,	10,	10 # length
+% sys.part,	sys.part,	sys.part,	sys.partsupp # table_name
+% p_brand,	p_type,	p_size,	supplier_cnt # name
+% varchar,	varchar,	int,	int # type
+% 8,	25,	2,	1 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
 [ "Brand#22",	"LARGE BURNISHED TIN",	36,	6	]
@@ -1220,120 +1160,96 @@ Over..
 [ "Brand#55",	"STANDARD ANODIZED BRASS",	36,	4	]
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-#  # table_name
-# avg_yearly # name
-# decimal # type
-# 21 # length
+% sys. # table_name
+% avg_yearly # name
+% decimal # type
+% 19 # length
 [ 0.00	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-# customer,	customer,	orders,	orders,	orders,	lineitem # table_name
-# c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
-# varchar,	int,	int,	date,	decimal,	bigint # type
-# 18,	10,	10,	10,	17,	20 # length
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.lineitem # table_name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
+% varchar,	int,	int,	date,	decimal,	int # type
+% 18,	3,	5,	10,	17,	3 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	2	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:10 >  
-# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:10 >  
-
-#  # table_name
-# revenue # name
-# decimal # type
-# 21 # length
+% sys. # table_name
+% revenue # name
+% decimal # type
+% 21 # length
 [ 22923.0280	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	3	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:11 >  
-# 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:11 >  
-
-# supplier,	supplier # table_name
-# s_name,	s_address # name
-# varchar,	varchar # type
-# 18,	30 # length
+% sys.supplier,	sys.supplier # table_name
+% s_name,	s_address # name
+% varchar,	varchar # type
+% 18,	30 # length
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	1	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:11 >  
-# 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:11 >  
-
-# supplier,	supplier # table_name
-# s_name,	numwait # name
-# varchar,	int # type
-# 18,	10 # length
+% sys.supplier,	sys.supplier # table_name
+% s_name,	numwait # name
+% varchar,	int # type
+% 18,	1 # length
 [ "Supplier#000000074",	9	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	3	]
 
-# 09:37:14 >  
-# 09:37:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30493
-# 09:37:14 >  
+# 11:48:06 >  
+# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
+# 11:48:06 >  
 
-# 12:35:11 >  
-# 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
-# 12:35:11 >  
-
-# custsale,	custsale,	custsale # table_name
-# cntrycode,	numcust,	totacctbal # name
-# varchar,	int,	decimal # type
-# 2,	10,	21 # length
+% sys.custsale,	sys.custsale,	sys.custsale # table_name
+% cntrycode,	numcust,	totacctbal # name
+% varchar,	int,	decimal # type
+% 2,	2,	17 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]
@@ -1341,10 +1257,10 @@ Over..
 [ "29",	11,	88722.85	]
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
-# .stats,	.stats # table_name
-# rewrite,	count # name
-# clob,	int # type
-# 7,	1 # length
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
 [ "joinidx",	0	]
 
 # 09:37:14 >  

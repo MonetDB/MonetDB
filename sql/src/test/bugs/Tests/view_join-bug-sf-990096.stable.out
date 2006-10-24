@@ -23,17 +23,17 @@ Over..
 
 [ 1	]
 [ 1	]
-# a,	y # table_name
-# i,	i # name
-# int,	int # type
-# 10,	10 # length
+% sys.a,	sys.y # table_name
+% i,	i # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 [ 1	]
 [ 1	]
-# a # table_name
-# i # name
-# int # type
-# 10 # length
+% sys.a # table_name
+% i # name
+% int # type
+% 1 # length
 [ 1	]
 
 # 12:52:14 >  

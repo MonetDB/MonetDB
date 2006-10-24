@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:45:07 >  
-# 12:45:07 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < crash_in_case.SF-1097749.sql
-# 12:45:07 >  
+# 11:50:48 >  
+# 11:50:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < crash_in_case.SF-1097749.sql
+# 11:50:48 >  
 
-#  # table_name
-# ifthenelse_>_single_value # name
-# char # type
-# 0 # length
+% . # table_name
+% ifthenelse_>_single_value # name
+% char # type
+% 0 # length
 [ "true"	]
 
 # 12:45:07 >  

@@ -17,24 +17,24 @@ quit();
 
 Over..
 
-# 12:40:33 >  
-# 12:40:33 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < bool_boolean.SF-935601.sql
-# 12:40:33 >  
+# 11:50:34 >  
+# 11:50:34 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < bool_boolean.SF-935601.sql
+# 11:50:34 >  
 
-#  # table_name
-# isnull_single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% isnull_single_value # name
+% boolean # type
+% 5 # length
 [ false	]
-#  # table_name
-# isnull_single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% isnull_single_value # name
+% boolean # type
+% 5 # length
 [ true	]
-#  # table_name
-# =_=_single_value # name
-# boolean # type
-# 0 # length
+% . # table_name
+% =_=_single_value # name
+% boolean # type
+% 5 # length
 [ true	]
 
 # 12:40:33 >  

@@ -23,10 +23,10 @@ Over..
 
 [ 1	]
 [ 1	]
-# sys.b,	sys.b2 # table_name
-# id,	id # name
-# int,	int # type
-# 1,	1 # length
+% sys.b,	sys.b2 # table_name
+% id,	id # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 
 # 12:47:59 >  

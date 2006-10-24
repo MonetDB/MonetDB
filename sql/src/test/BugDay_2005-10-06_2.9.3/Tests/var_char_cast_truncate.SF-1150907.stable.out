@@ -26,19 +26,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# ,	 # table_name
-# truncate_str,	length_truncate_str # name
-# varchar,	int # type
-# 4,	10 # length
+% sys.,	sys. # table_name
+% truncate_str,	length_truncate_str # name
+% varchar,	int # type
+% 4,	1 # length
 [ "bla",	3	]
 [ "blab",	4	]
 [ "5",	1	]
 [ "bla ",	3	]
 [ "blad",	4	]
-# ,	 # table_name
-# truncate_str,	length_truncate_str # name
-# char,	int # type
-# 4,	10 # length
+% sys.,	sys. # table_name
+% truncate_str,	length_truncate_str # name
+% char,	int # type
+% 4,	1 # length
 [ "bla",	3	]
 [ "blab",	4	]
 [ "5",	1	]

@@ -22,10 +22,10 @@ Over..
 # 12:40:51 >  
 
 [ 4	]
-#  # table_name
-# sql_sub_char_length_s # name
-# int # type
-# 10 # length
+% sys. # table_name
+% sql_sub_char_length_s # name
+% int # type
+% 1 # length
 [ 0	]
 [ 0	]
 [ 0	]

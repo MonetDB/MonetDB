@@ -67,11 +67,11 @@ stderr of test 'string_truncate.SF-919542` in directory 'src/test/BugDay_2005-10
 # 15:19:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41431  < string_truncate.SF-919542.sql
 # 15:19:48 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = create table z(w varchar(0));
 ERROR = !Positive value greater than 0 expected in: "create table z(w varchar(0"
         !syntax error, unexpected ')' in: ")"
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35781
 QUERY = insert into z values('wrong');
 ERROR = !ERROR: str_cast: value too long for type (var)char(1)
         !ERROR: str_cast: operation failed.

@@ -5,17 +5,10 @@ stdout of test 'big-example` in directory 'src/test` itself:
 # 17:34:03 >  Mtimeout -timeout 1560 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=30048 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="include sql;" ; echo ; echo Over..
 # 17:34:03 >  
 
-
-
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
-# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm
-# dbname:mTests_src_test
-# Visit http://monetdb.cwi.nl/ for further information
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -28,19 +21,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -56,10 +49,10 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
@@ -70,10 +63,10 @@ Over..
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
@@ -89,20 +82,20 @@ Over..
 # 12:36:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s02.sql
 # 12:36:56 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 10,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 5,	"xtest",	0.90000000000000002	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 8,	"texxst",	0.0001	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -122,19 +115,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -145,20 +138,20 @@ Over..
 # 12:36:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s05.sql
 # 12:36:56 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 3	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	5,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	5,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 
@@ -176,19 +169,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -199,37 +192,37 @@ Over..
 # 12:36:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s08.sql
 # 12:36:56 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 8,	"texxst",	0.0001	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	5,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	5,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 
@@ -247,19 +240,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -270,20 +263,20 @@ Over..
 # 12:36:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s11.sql
 # 12:36:56 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 2	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	5,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	5,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -302,19 +295,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -325,20 +318,20 @@ Over..
 # 12:36:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s14.sql
 # 12:36:57 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 3	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	-1	]
@@ -359,19 +352,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -382,40 +375,40 @@ Over..
 # 12:36:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s17.sql
 # 12:36:57 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 2,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 2,	6,	22 # length
 [ -5,	"xtest",	0.90000000000000002	]
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 2,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 2,	6,	22 # length
 [ -5,	"testx",	9.0999999999999996	]
 [ -5,	"xtest",	0.90000000000000002	]
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 8,	"texxst",	0.0001	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 2,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 2,	6,	22 # length
 [ -5,	"texxst",	0.0001	]
 [ -5,	"testx",	9.0999999999999996	]
 [ -5,	"xtest",	0.90000000000000002	]
@@ -436,19 +429,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -459,20 +452,20 @@ Over..
 # 12:36:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < big-example_s20.sql
 # 12:36:57 >  
 
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 2	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	7,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	7,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
@@ -493,19 +486,19 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# example,	example,	example # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example,	sys.example,	sys.example # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
-# sys.example_view,	sys.example_view,	sys.example_view # table_name
-# val1,	val2,	val3 # name
-# int,	varchar,	double # type
-# 1,	6,	22 # length
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
+% val1,	val2,	val3 # name
+% int,	varchar,	double # type
+% 1,	6,	22 # length
 [ 0,	"texst",	99999.100000000006	]
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]

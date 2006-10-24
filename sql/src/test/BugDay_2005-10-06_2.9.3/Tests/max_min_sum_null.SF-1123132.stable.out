@@ -22,10 +22,10 @@ Over..
 # 12:43:28 >  
 
 [ 3	]
-# t1123132,	t1123132,	t1123132 # table_name
-# min_aap,	max_aap,	sum_aap # name
-# int,	int,	bigint # type
-# 10,	10,	20 # length
+% sys.t1123132,	sys.t1123132,	sys.t1123132 # table_name
+% min_aap,	max_aap,	sum_aap # name
+% int,	int,	int # type
+% 1,	1,	1 # length
 [ 1,	2,	3	]
 
 # 12:43:28 >  

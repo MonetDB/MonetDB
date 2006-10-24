@@ -22,15 +22,15 @@ Over..
 # 12:30:37 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_simple_join.sql
 # 12:30:37 >  
 
-# city,	state,	city # table_name
-# city_name,	state_name,	city_code # name
-# char,	char,	char # type
-# 25,	25,	4 # length
+% sys.city,	sys.state,	sys.city # table_name
+% city_name,	state_name,	city_code # name
+% char,	char,	char # type
+% 25,	25,	4 # length
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
-# city,	state,	city # table_name
-# city_name,	state_name,	city_code # name
-# char,	char,	char # type
-# 25,	25,	4 # length
+% sys.city,	sys.state,	sys.city # table_name
+% city_name,	state_name,	city_code # name
+% char,	char,	char # type
+% 25,	25,	4 # length
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
 [ "BOSTON",	"MASSACHUSETTS",	"BBOS"	]
 [ "DALLAS",	"TEXAS",	"DDFW"	]
@@ -42,10 +42,10 @@ Over..
 [ "OAKLAND",	"CALIFORNIA",	"OOAK"	]
 [ "WASHINGTON",	"DISTRICT OF COLUMBIA",	"WWAS"	]
 [ "BALTIMORE",	"MARYLAND",	"BBWI"	]
-# month_name,	day_name # table_name
-# month_name,	day_name # name
-# char,	char # type
-# 9,	9 # length
+% sys.month_name,	sys.day_name # table_name
+% month_name,	day_name # name
+% char,	char # type
+% 9,	9 # length
 [ "JANUARY",	"MONDAY"	]
 [ "FEBRUARY",	"TUESDAY"	]
 [ "MARCH",	"WEDNESDAY"	]
@@ -53,18 +53,18 @@ Over..
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-# month_name,	day_name # table_name
-# month_name,	day_name # name
-# char,	char # type
-# 9,	9 # length
+% sys.month_name,	sys.day_name # table_name
+% month_name,	day_name # name
+% char,	char # type
+% 9,	9 # length
 [ "APRIL",	"THURSDAY"	]
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-# flight,	aircraft # table_name
-# flight_code,	aircraft_type # name
-# int,	char # type
-# 10,	64 # length
+% sys.flight,	sys.aircraft # table_name
+% flight_code,	aircraft_type # name
+% int,	char # type
+% 6,	64 # length
 [ 101908,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101909,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101910,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]

@@ -22,10 +22,10 @@ Over..
 # 12:45:04 >  
 
 [ 1	]
-# rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples,	rawtriples # table_name
-# id,	subjns,	subjlname,	predns,	predlname,	objns,	objlname,	objlabelhash,	objlang,	objlabel,	objisliteral # name
-# decimal,	decimal,	varchar,	decimal,	varchar,	decimal,	varchar,	decimal,	varchar,	varchar,	boolean # type
-# 11,	11,	9,	11,	13,	11,	0,	11,	1,	20,	0 # length
+% sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples,	sys.rawtriples # table_name
+% id,	subjns,	subjlname,	predns,	predlname,	objns,	objlname,	objlabelhash,	objlang,	objlabel,	objisliteral # name
+% decimal,	decimal,	varchar,	decimal,	varchar,	decimal,	varchar,	decimal,	varchar,	varchar,	boolean # type
+% 11,	11,	9,	11,	13,	11,	0,	11,	1,	20,	5 # length
 [ 1001,	1,	"100168990",	2,	"glossaryEntry",	0,	"",	-53495548,	NULL,	"adorning with mosaic",	true	]
 
 # 12:45:04 >  

@@ -65,11 +65,11 @@ stderr of test 'insert_values.SF-1578838` in directory 'src/test/BugTracker` its
 # 16:05:55 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30410  < insert_values.SF-1578838.sql
 # 16:05:55 >  
 
-MAPI  = monetdb@localhost:31810
+MAPI  = monetdb@localhost:35185
 QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
 ERROR = !ERROR: zero_or_one: cardinality violation (2>1)
         !ERROR: zero_or_one: operation failed.
-MAPI  = monetdb@localhost:31810
+MAPI  = monetdb@localhost:35185
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
 ERROR = !ERROR: zero_or_one: cardinality violation (2>1)
         !ERROR: zero_or_one: operation failed.

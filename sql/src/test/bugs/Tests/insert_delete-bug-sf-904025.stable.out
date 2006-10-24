@@ -1,19 +1,19 @@
 stdout of test 'insert_delete-bug-sf-904025` in directory 'src/test/bugs` itself:
 
 
-# 21:41:54 >  
-# 21:41:54 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dblogs" --set mapi_port=32946 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit='include sql;' ; echo ; echo Over..
-# 21:41:54 >  
+# 11:55:27 >  
+# 11:55:27 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=35185 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:55:27 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf
-# dbfarm:/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
-# dbname:mTests_src_test_bugs
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.13.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -22,28 +22,28 @@ Over..
 # 18:18:00 >  
 
 [ 24	]
-# sys. # table_name
-# count_ # name
-# int # type
-# 2 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 24	]
 [ 24	]
-# sys. # table_name
-# count_ # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 0	]
 [ 24	]
-# sys. # table_name
-# count_ # name
-# int # type
-# 2 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 2 # length
 [ 24	]
 [ 24	]
-# sys. # table_name
-# count_ # name
-# int # type
-# 10 # length
+% sys. # table_name
+% count_ # name
+% int # type
+% 1 # length
 [ 0	]
 
 # 12:48:06 >  

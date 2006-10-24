@@ -22,20 +22,20 @@ Over..
 # 12:49:10 >  
 
 [ 1	]
-#  # table_name
-# sql_div_f # name
-# double # type
-# 22 # length
+% sys. # table_name
+% sql_div_f # name
+% double # type
+% 22 # length
 [ 1	]
-#  # table_name
-# sql_div_single_value # name
-# int # type
-# 10 # length
+% . # table_name
+% sql_div_single_value # name
+% int # type
+% 1 # length
 [ 1	]
-#  # table_name
-# sql_div_f # name
-# int # type
-# 10 # length
+% sys. # table_name
+% sql_div_f # name
+% int # type
+% 1 # length
 [ 1	]
 
 # 12:49:10 >  

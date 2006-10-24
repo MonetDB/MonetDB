@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:37:25 >  
-# 12:37:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < mixed_type.SF-917372.sql
-# 12:37:25 >  
+# 11:50:16 >  
+# 11:50:16 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < mixed_type.SF-917372.sql
+# 11:50:16 >  
 
-#  # table_name
-# sql_add_single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% sql_add_single_value # name
+% smallint # type
+% 1 # length
 [ 2	]
 
 # 12:37:25 >  

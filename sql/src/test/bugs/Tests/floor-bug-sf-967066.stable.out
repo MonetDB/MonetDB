@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 12:51:03 >  
-# 12:51:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < floor-bug-sf-967066.sql
-# 12:51:03 >  
+# 11:55:37 >  
+# 11:55:37 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < floor-bug-sf-967066.sql
+# 11:55:37 >  
 
-#  # table_name
-# floor_single_value # name
-# real # type
-# 13 # length
+% . # table_name
+% floor_single_value # name
+% real # type
+% 13 # length
 [ 3	]
 
 # 12:51:03 >  

@@ -22,20 +22,20 @@ Over..
 # 15:49:19 >  
 
 [ 0	]
-#  # table_name
-# single_value # name
-# smallint # type
-# 6 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 1 # length
 [ 1	]
-#  # table_name
-# single_value # name
-# char # type
-# 4 # length
+% . # table_name
+% single_value # name
+% char # type
+% 4 # length
 [ "test"	]
-# profile # table_name
-# query # name
-# varchar # type
-# 20 # length
+% tmp.profile # table_name
+% query # name
+% varchar # type
+% 20 # length
 [ "delete from profile;"	]
 [ "select 1;"	]
 [ "select 'test';"	]

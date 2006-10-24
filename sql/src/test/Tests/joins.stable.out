@@ -25,16 +25,16 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-# t_1,	t_2 # table_name
-# c_1,	c_2 # name
-# int,	int # type
-# 10,	10 # length
+% sys.t_1,	sys.t_2 # table_name
+% c_1,	c_2 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	1	]
 [ 2,	2	]
-# t_1,	t_2 # table_name
-# c_1,	c_2 # name
-# int,	int # type
-# 10,	10 # length
+% sys.t_1,	sys.t_2 # table_name
+% c_1,	c_2 # name
+% int,	int # type
+% 1,	1 # length
 [ 1,	2	]
 
 # 12:37:03 >  
