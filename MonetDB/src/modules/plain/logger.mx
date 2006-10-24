@@ -200,11 +200,12 @@ log a posteriori to check what has happened.
 #define LOG_END		2
 #define LOG_INSERT	3
 #define LOG_DELETE	4
-#define LOG_CREATE	5
-#define LOG_DESTROY	6
-#define LOG_USE		7
-#define LOG_CLEAR	8
-#define LOG_SEQ		9
+#define LOG_UPDATE	5
+#define LOG_CREATE	6
+#define LOG_DESTROY	7
+#define LOG_USE		8
+#define LOG_CLEAR	9
+#define LOG_SEQ		10
 
 typedef struct logformat_t {
 	char flag;
@@ -323,7 +324,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 	BAT *b = BATdescriptor(bid);
 
 	if (logger->debug & 1)
-		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == LOG_INSERT) ? "insert" : "delete", l->nr);
+		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == LOG_INSERT) ? "insert" : (l->flag == LOG_DELETE) ? "delete" : "update", l->nr);
 
 	if (b) {
 		void *(*rh) (ptr, stream *, size_t) = BATatoms[b->htype].atomRead;
@@ -355,6 +356,8 @@ log_read_updates(logger *logger, logformat *l, char *name)
 					BUNins(b, h, t, FALSE);
 				else if (l->flag == LOG_DELETE)
 					BUNdel(b, h, t, FALSE);
+				else if (l->flag == LOG_UPDATE)
+					BUNreplace(b, h, t, TRUE);
 				if (h != hv)
 					GDKfree(h);
 				if (t != tv)
@@ -537,10 +540,8 @@ logger_readlog(logger *logger, char *filename)
 
 			break;
 		case LOG_INSERT:
-			log_read_updates(logger, &l, name);
-
-			break;
 		case LOG_DELETE:
+		case LOG_UPDATE:
 			log_read_updates(logger, &l, name);
 
 			break;
@@ -991,6 +992,42 @@ log_bat_transient(logger *logger, char *name)
 }
 
 int
+log_delta(logger *logger, BAT *b, char *name)
+{
+	int ok = GDK_SUCCEED;
+	logformat l;
+	BUN p;
+
+	if (logger->debug & 128) {
+		/* logging is switched off */
+		return LOG_OK;
+	}
+
+	l.nr = (int)(BUNindex(b, BUNlast(b)) - BUNindex(b, BUNfirst(b)));
+	logger->changes += l.nr;
+
+	if (l.nr) {
+		int (*wh) (ptr, stream *, size_t) = BATatoms[b->htype].atomWrite;
+		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+
+		l.flag = LOG_UPDATE;
+		if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
+			return LOG_ERR;
+
+		for (p = BUNfirst(b); p < BUNlast(b) && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
+			ptr h = BUNhead(b, p);
+			ptr t = BUNtail(b, p);
+			ok = wh(h, logger->log, 1);
+			ok = (ok == GDK_FAIL) ? ok : wt(t, logger->log, 1);
+		}
+
+		if (logger->debug)
+			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
+	}
+	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
+}
+
+int
 log_bat(logger *logger, BAT *b, char *name)
 {
 	int ok = GDK_SUCCEED;
@@ -1305,7 +1342,7 @@ int
 log_delta_wrap(logger *L, BAT *b, str nme )
 {
 	logger *l = *(logger**)L;
-	if (l && log_bat(l, b, nme) == LOG_OK) 
+	if (l && log_delta(l, b, nme) == LOG_OK) 
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }
