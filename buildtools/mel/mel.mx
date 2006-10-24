@@ -181,7 +181,9 @@ extern void mel_yyerror(const char *);
 extern void *get_cur_buffer();
 extern void new_buffer(FILE *f);
 extern void close_and_change(void *buf, FILE *f);
-extern void semerror();
+extern void semerror(void);
+extern int melget_lineno(void);
+extern void melset_lineno(int lineno);
 
 extern const char *token2str(int token);
 extern const char *type2str(int tpe);
@@ -193,7 +195,6 @@ extern const char *get_signature(char *fcn);
 extern int parse_error;
 extern int sem_error;
 extern char *progname;
-extern int yylineno;
 
 extern FILE *yyin;
 
@@ -506,18 +507,19 @@ main(int argc, char *argv[])
 extern yystype yylval;
 
 #ifdef FLEX_SCANNER
-#if !defined(YY_FLEX_SUBMINOR_VERSION) || YY_FLEX_SUBMINOR_VERSION < 5 || YY_FLEX_SUBMINOR_VERSION > 31
-/* flex 2.5.31 declares yylineno.  I don't know which other versions
-   do as well. */
-int yylineno;
-#endif
-#define YY_SKIP_YYWRAP
-/*
-#define YY_INPUT(buf,result,max_size)	{ \
-			int c = getc(yyin); \
-			if (c == '\n') yylineno++; \
-                        result = (c==EOF) ? YY_NULL: (buf[0] = (char)c,1);}
+#if !defined(YY_FLEX_SUBMINOR_VERSION) || YY_FLEX_MAJOR_VERSION < 2 || YY_FLEX_MINOR_VERSION < 5 || YY_FLEX_SUBMINOR_VERSION < 5
+/* after flex 2.5.4 flex uses yyget and yyset lineno functions, so for
+   older flexs we define these here 
  */
+int yylineno;
+#define yyget_lineno()		yylineno
+#define yyset_lineno(ln)	yylineno = ln
+#else
+extern int yyget_lineno(void);
+extern void yyset_lineno(int lineno);
+#endif
+
+#define YY_SKIP_YYWRAP
 #else
 extern int yyerrok;
 
@@ -545,7 +547,7 @@ check_lineno(char *line)
 		if (p) {
 			char *filename = (char *) strdup(++p);
 
-			yylineno = l;
+			yyset_lineno(l);
 			p = strchr(filename, '"');
 			if (p)
 				*p = 0;
@@ -739,8 +741,8 @@ mel_yyerror(const char *err)
 	if (fileinfo->FileName()) {
 		cerr << "\"" << fileinfo->FileName() << "\", ";
 	}
-	if (yylineno > 0) {
-		cerr << "line " << (yylineno) << ", ";
+	if (yyget_lineno() > 0) {
+		cerr << "line " << (yyget_lineno()) << ", ";
 	}
 	cerr << err;
 	if (*yytext) {
@@ -759,6 +761,18 @@ mel_yyerror(const char *err)
 	}
 	cerr << ".\n";
 	parse_error++;
+}
+
+int
+melget_lineno( void )
+{
+	return yyget_lineno();
+}
+
+void
+melset_lineno( int lineno )
+{
+	yyset_lineno(lineno);
 }
 
 void
@@ -892,7 +906,7 @@ extern char *script;
 %token '=' ';' ':' ',' '(' ')'
 %%
 module:
-      { yylineno = fileinfo->LineNo();
+      { melset_lineno(fileinfo->LineNo());
 	yyin = fileinfo->FilePtr(); }
 	module_begin dependencies definitions module_end
       { FileInfo *f = fileinfo->Parent();
@@ -900,7 +914,7 @@ module:
 	    root = new Module(MEL_MODULE, $2.s,
 	    	fileinfo->FileName(), $3.l, $4.l);
 	} else {
-      	 	yylineno = f->LineNo();
+      	 	melset_lineno(f->LineNo());
 		$$.sym = new Module(MEL_MODULE, $2.s,
 	    		fileinfo->FileName(), $3.l, $4.l);
 		close_and_change(f->Buffer(), f->FilePtr());
@@ -964,7 +978,7 @@ modulelist:
 modulename:
 	module_ident
       { fileinfo->Buffer(get_cur_buffer());
-	fileinfo->LineNo(yylineno);
+	fileinfo->LineNo(melget_lineno());
 	char *filename = FileInfo::find_module($1.s, dirs);
 	if (filename) {
 		fileinfo = FileInfo::open(filename, $1.s, fileinfo);
@@ -1304,8 +1318,8 @@ semerror()
 	if (fileinfo->FileName()) {
 		cerr << "\"" << fileinfo->FileName() << "\", ";
 	}
-	if (yylineno > 0) {
-		cerr << "line " << (yylineno) << ", ";
+	if (melget_lineno() > 0) {
+		cerr << "line " << (melget_lineno()) << ", ";
 	}
 	cerr << "semantic error: ";
 	sem_error++;
