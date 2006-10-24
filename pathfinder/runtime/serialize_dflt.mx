@@ -993,10 +993,10 @@ seq_seqStart (XqueryCtx* ctx, int count)
     /* write SQL-ish header */
     stream_printf(GDKout,"&1 %d %d 1 %d\n", 
                   dflt_ws->id_sequence_counter++, count, count);
-    stream_printf(GDKout,"# xquery.result\t# table_name\n");
-    stream_printf(GDKout,"# xml\t# name\n");
-    stream_printf(GDKout,"# varchar\t# type\n");
-    stream_printf(GDKout,"# %d\t# length\n", 60);
+    stream_printf(GDKout,"%% xquery.result\t# table_name\n");
+    stream_printf(GDKout,"%% xml\t# name\n");
+    stream_printf(GDKout,"%% varchar\t# type\n");
+    stream_printf(GDKout,"%% %d\t# length\n", 60);
 
     return SUCCESS;
 }
