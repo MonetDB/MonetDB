@@ -349,7 +349,7 @@ PROC parent_child_llscj( bat[oid,any] parent, bat[oid,any] child ) : bat[oid,oid
 PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
 {
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
-    var stemmed := [tj_normalizeTerm]( Qterms, stemmer );
+    var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     
     var tids    := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
     
@@ -369,7 +369,7 @@ PROC Qterms_to_tid_pre( bat[void,str] Qterms ): bat[oid,oid] :=
 PROC Qterms_to_void_tid( bat[void,str] Qterms ): bat[void,oid] :=
 {
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
-    var stemmed := [tj_normalizeTerm]( Qterms, stemmer );
+    var stemmed := [tj_normalizeTerm]( [toLower](Qterms), stemmer );
     
     var tids := bat("tj_globalTerms").join( stemmed.reverse() ).sort().hmark(oid(0));
     return tids;
@@ -523,7 +523,7 @@ PROC select_term(str name) : bat[oid,dbl] :=
     if ( trace ) tj_trace( sprintf("BEGIN select_term('%s')", name) );
     # 
     var stemmer := bat("tj_"+ collName +"_param").find("stemmer");
-    var term    := tj_normalizeTerm( name, stemmer );
+    var term    := tj_normalizeTerm( toLower(name), stemmer );
     
     # Select the term positions from the global term dictionary.
     var tids := bat("tj_globalTerms").select(term).mark(0@0).sort().reverse();
