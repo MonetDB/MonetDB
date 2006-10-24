@@ -13,17 +13,17 @@ server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 111 	]
 
 server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 112 	]
 
 server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (SQL) MAPI
@@ -40,20 +40,20 @@ server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 121 	]
 
 server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
 [ 122 ]
 
 server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 123 	]
 
 server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
@@ -70,17 +70,17 @@ server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 [ 131 ]
 
 server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 132 	]
 
 server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 133 	]
 
 server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
@@ -94,10 +94,10 @@ server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 141 	]
 
 server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
@@ -107,10 +107,10 @@ server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 [ 143 ]
 
 server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 144 	]
 quit();
 
@@ -124,20 +124,20 @@ server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 [ 151 ]
 
 server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 152 	]
 
 server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) MAPI
 [ 153 ]
 
 server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 154 	]
 quit();
 
@@ -154,17 +154,17 @@ server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql
 [ 162 ]
 
 server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 163 	]
 
 server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 164 	]
 quit();
 
@@ -176,17 +176,17 @@ server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 211 	]
 
 server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 212 	]
 
 server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (SQL) MAPI
@@ -203,20 +203,20 @@ server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 221 	]
 
 server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
 [ 222 ]
 
 server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 223 	]
 
 server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (SQL) MAPI
@@ -233,17 +233,17 @@ server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 [ 231 ]
 
 server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 232 	]
 
 server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 233 	]
 
 server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (SQL) MAPI
@@ -257,10 +257,10 @@ server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 241 	]
 
 server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
@@ -270,10 +270,10 @@ server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 [ 243 ]
 
 server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 244 	]
 quit();
 
@@ -287,20 +287,20 @@ server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 [ 251 ]
 
 server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 252 	]
 
 server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) MAPI
 [ 253 ]
 
 server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 254 	]
 quit();
 
@@ -317,17 +317,17 @@ server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(
 [ 262 ]
 
 server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 263 	]
 
 server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 264 	]
 quit();
 
@@ -339,17 +339,17 @@ server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 311 	]
 
 server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 312 	]
 
 server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (SQL) MAPI
@@ -366,20 +366,20 @@ server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 321 	]
 
 server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
 [ 322 ]
 
 server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 323 	]
 
 server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
@@ -396,17 +396,17 @@ server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 [ 331 ]
 
 server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 332 	]
 
 server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 333 	]
 
 server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
@@ -420,10 +420,10 @@ server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 341 	]
 
 server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
@@ -433,10 +433,10 @@ server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 [ 343 ]
 
 server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 344 	]
 quit();
 
@@ -450,20 +450,20 @@ server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 [ 351 ]
 
 server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 352 	]
 
 server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) MAPI
 [ 353 ]
 
 server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 354 	]
 quit();
 
@@ -480,17 +480,17 @@ server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql
 [ 362 ]
 
 server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 363 	]
 
 server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 364 	]
 quit();
 
@@ -502,17 +502,17 @@ server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 411 	]
 
 server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 412 	]
 
 server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (SQL) MAPI
@@ -529,20 +529,20 @@ server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 421 	]
 
 server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
 [ 422 ]
 
 server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 423 	]
 
 server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (SQL) MAPI
@@ -559,17 +559,17 @@ server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 [ 431 ]
 
 server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 432 	]
 
 server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 433 	]
 
 server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (SQL) MAPI
@@ -583,10 +583,10 @@ server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 441 	]
 
 server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
@@ -596,10 +596,10 @@ server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 [ 443 ]
 
 server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 444 	]
 quit();
 
@@ -613,20 +613,20 @@ server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 [ 451 ]
 
 server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 452 	]
 
 server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) MAPI
 [ 453 ]
 
 server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 454 	]
 quit();
 
@@ -643,17 +643,17 @@ server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 [ 462 ]
 
 server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 463 	]
 
 server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 464 	]
 quit();
 
@@ -664,17 +664,17 @@ server 51 : "module(sql_server);module(mapi); sql_server_start();"
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 51 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 511	]
 
 server 51 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 512	]
 
 server 51 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (SQL) MAPI
@@ -689,19 +689,19 @@ server 52 : "module(sql_server);module(mapi); sql_server_start();"
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 521	]
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) MAPI
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 523	]
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
@@ -716,17 +716,17 @@ server 53 : "module(sql_server);module(mapi); sql_server_start();"
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 532	]
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 533	]
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
@@ -739,10 +739,10 @@ server 54 : "module(sql_server);module(mapi); sql_server_start();"
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 541	]
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) MAPI
@@ -750,10 +750,10 @@ server 54 : "module(sql_server);module(mapi); sql_server_start();", client 2: (S
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (MAPI) MAPI
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 544	]
 quit();
 
@@ -766,19 +766,19 @@ server 55 : "module(sql_server);module(mapi); sql_server_start();"
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 552	]
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (SQL) MAPI
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 554	]
 quit();
 
@@ -793,17 +793,17 @@ server 56 : "module(sql_server);module(mapi); sql_server_start();", client 1: MA
 server 56 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) MAPI
 
 server 56 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (MAPI) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 563	]
 
 server 56 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
-# . # table_name
-# single_value # name
-# smallint # type
-# 3 # length
+% . # table_name
+% single_value # name
+% smallint # type
+% 3 # length
 [ 564	]
 quit();
 
