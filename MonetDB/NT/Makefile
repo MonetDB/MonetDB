@@ -43,16 +43,16 @@ unistd.h:
 	$(ECHO) #endif >> unistd.h
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
-	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
+	$(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
 
 RunMapprove.bat: "$(SRCDIR)\RunMapprove.bat.in"
-	if exist "$(SRCDIR)\RunMapprove.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMapprove.bat.in" > RunMapprove.bat
+	$(CONFIGURE) "$(SRCDIR)\RunMapprove.bat.in" > RunMapprove.bat
 
 RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
-	if exist "$(SRCDIR)\RunMserver.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
+	$(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
 
 RunMapiClient.bat: "$(SRCDIR)\RunMapiClient.bat.in"
-	if exist "$(SRCDIR)\RunMapiClient.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMapiClient.bat.in" > RunMapiClient.bat
+	$(CONFIGURE) "$(SRCDIR)\RunMapiClient.bat.in" > RunMapiClient.bat
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
