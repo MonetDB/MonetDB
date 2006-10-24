@@ -90,6 +90,10 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 " " { char_number++; }
 
+";" {   // Ignore semicolon
+        char_number++; 
+    }
+
 "\r" { char_number++; }
 
 "\n"    {
