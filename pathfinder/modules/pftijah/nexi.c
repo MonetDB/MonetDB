@@ -216,7 +216,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
   scale_on = TRUE;
   orcomb_set = FALSE;
   andcomb_set = FALSE;
-
+  
     /* structure initialization */
     txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
     img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
@@ -256,7 +256,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
     processing_type     = NO_STOP_STEM;
     rewrite_type        = BASIC;
     language_type       = ENGLISH;
-    base_type           = ZERO;
+    base_type           = ONE;
     return_all          = FALSE;
     
     bool eq_init        = FALSE;
@@ -461,6 +461,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
                 MILPRINTF(MILOUT, "scoreBase := 0;\n");
                 base_type = ZERO;
             }
+            base_set = TRUE;
             
         } else if (strcmp(optName, "prior") == 0) {
             if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
@@ -487,6 +488,9 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
         
         if ( !andcomb_set )
             txt_retr_model->and_comb = AND_SUM;
+            
+        if ( !base_set ) 
+            base_type           = ONE;
         
     }
         
@@ -670,7 +674,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
 
       break;
 */
-    case 'b':
+/*    case 'b':
 
       if (strcmp(optarg,"zero") == 0 || strcmp(optarg,"ZERO") == 0) {
         base_type = ZERO;
@@ -686,7 +690,7 @@ int old_main(int argc, char * const argv[], BAT* optbat, char* startNodes_name)
       }
 
       break;
-
+*/
     case 'f':
 
       strncpy(rf_fname,optarg,FILENAME_SIZE);

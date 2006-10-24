@@ -948,7 +948,13 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      # aggregate doc scores
      var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
      
-     res := res.[/](terms.count()).[+](left);
+     res := res.[/](terms.count());
+     # Obey scoreBase setting: 
+     if ( scoreBase = 0 ) {
+        res := [+](left, res);
+     } else {
+        res := [*](left, res);
+     }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
      return res;
 }
