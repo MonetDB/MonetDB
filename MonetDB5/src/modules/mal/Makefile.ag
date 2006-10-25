@@ -63,7 +63,7 @@ lib_crackers = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-lib_io = {
+lib_mal_io = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = mal_io.mx 
