@@ -1440,7 +1440,7 @@ dlopen(const char *file, int mode)
 	if (file != NULL) {
 		return (void *) LoadLibrary(file);
 	}
-	return NULL;
+	return GetModuleHandle(NULL);
 }
 
 int
