@@ -362,6 +362,7 @@ isPreloaded(str nme)
 void
 initLibraries()
 {
+	int i;
 	noDlopen = TRUE;
 	if(noDlopen == FALSE)
 	for(i=0;preloaded[i];i++) {
