@@ -675,7 +675,7 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-batstr_export strstr STRbatlike2(int *ret, int *bid, str *pat);
+batstr_export str STRbatlike2(int *ret, int *bid, str *pat);
 str
 STRbatlike2(int *ret, int *bid, str *pat){
 	str esc="";
