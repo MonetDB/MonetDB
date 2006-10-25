@@ -366,7 +366,7 @@ pre presented on the screen directly.
 #include <mal_client.h>
 #include <mal_interpreter.h>
 
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #ifndef LIBTABLET
 #define tablet_export extern __declspec(dllimport)
 #else

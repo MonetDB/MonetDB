@@ -204,7 +204,7 @@ The internal data structure is used as a cache for improved access.
 #include <mal_client.h>
 #include <mal_interpreter.h>
 
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #ifndef LIBPBM
 #define pbm_export extern __declspec(dllimport)
 #else
