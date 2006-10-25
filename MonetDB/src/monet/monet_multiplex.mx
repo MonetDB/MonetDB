@@ -1501,7 +1501,7 @@ there are the {strings, polygons, images, etc}!
 	if ((BAThordered(b) & 1) == 0 && ATOMvarsized(b->ttype)) {
 		hidden_vartype = b->ttype;	/* just copy offsets */
 	}
-	nested = BATnew(hidden_vartype ? TYPE_var : b->ttype, TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
+	nested = BATnew(hidden_vartype ? TYPE_var : (b->ttype?b->ttype:TYPE_oid), TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
 	nested_rev = BATmirror(nested);
 	nested->batRestricted = BAT_READ;
 	prop_key = (b->batSet || b->tkey);
@@ -1689,6 +1689,7 @@ a temporary BAT 'nested'; in which we insert all tail values.
 		int bunsize = BUNsize(nested);
 		Heap *batbuns = nested->batBuns;
 
+		assert(batbuns->base!=(ptr)1);
 		nested->batDeleted = nested->batInserted = batbuns->base;
 
 		if (direct_call == NULL) {
