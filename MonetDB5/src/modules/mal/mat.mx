@@ -78,6 +78,9 @@ comment "retrieve the definition from the partition catalogue";
 #endif
 
 mat_export str MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATdummy(int *ret, str *grp);
+mal_export str MATinfo(int *ret, str *grp, str *elm);
 
 @- 
 Mal symbol table and environment analysis.

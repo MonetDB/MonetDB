@@ -144,6 +144,8 @@ inspect_export str INSPECTgetModule(int *ret);
 inspect_export str INSPECTgetkind(int *ret);
 inspect_export str INSPECTgetaddress(int *ret);
 inspect_export str INSPECTgetAllSignatures(int *ret);
+inspect_export str INSPECTgetAllModules(int *ret);
+inspect_export str INSPECTgetAllFunctions(int *ret);
 inspect_export str INSPECTgetAllAddresses(int *ret);
 inspect_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 inspect_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
@@ -162,6 +164,8 @@ inspect_export str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTtypename(str *ret, int *tpe);
 inspect_export str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.

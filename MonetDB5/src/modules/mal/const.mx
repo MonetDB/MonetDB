@@ -118,6 +118,7 @@ const_export str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 const_export str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 const_export str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 const_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export  str CSTepilogue(int *ret);
 #endif /* _CONST_H */
 @- Module initializaton
 The content of this box my only be changed by the Administrator.

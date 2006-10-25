@@ -214,6 +214,7 @@ profiler_export str CMDsetOnlineProfiling(int *ret);
 profiler_export str CMDsetOfflineProfiling(int *ret);
 profiler_export str CMDopenProfilerStream(int *res);
 profiler_export str CMDcloseProfilerStream(int *res);
+profiler_export str CMDcleanup(int *ret);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \

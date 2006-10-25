@@ -684,6 +684,7 @@ STRbatlike2(int *ret, int *bid, str *pat){
 @-
 The substring functions require slightly different arguments
 @c
+batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
 str
 STRbatsubstringcst(int *ret, int *bid, int *start, int *length){
 	BAT *b,*bn;

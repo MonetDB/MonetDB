@@ -11,7 +11,7 @@ LIBS = {
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) #../../mal/libmal
 }
 
 lib__str = {

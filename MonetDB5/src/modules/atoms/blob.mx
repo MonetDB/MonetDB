@@ -664,7 +664,7 @@ PETER: set the blob size.
 }
 #endif /* OLDSTYLE */
 
-int
+static int
 fromblob_idx(str *retval, blob *b, int *index)
 {
 	str s, p = b->data + *index;

@@ -93,6 +93,8 @@ manual_export str MANUALcreate0(int *ret);
 manual_export str MANUALsearch(int *ret, str *mod);
 manual_export str MANUALcompletion(int *ret, str *text);
 manual_export str MANUALhelp(int *ret, str *text);
+manual_export str MANUALcreateIndex(int *ret);
+manual_export str MANUALcreateSummary(int *ret);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.

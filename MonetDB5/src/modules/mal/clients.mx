@@ -102,6 +102,7 @@ clients_export str CLTsetListing(int *ret, int *flag);
 clients_export str CLTgetClientId(int *ret);
 clients_export str CLTgetScenario(str *ret);
 clients_export str CLTsetScenario(str *ret, str *nme);
+clients_export str CLTchangeUsername(int *ret, str *old, str *new) ;
 clients_export str CLTusers(int *ret);
 clients_export str CLTsetHistory(int *ret, str *fname);
 clients_export str CLTexit(int *ret);

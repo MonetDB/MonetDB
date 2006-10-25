@@ -79,6 +79,7 @@ TODO
 #endif
 
 sabaoth_export str SABAOTHprelude(int *ret);
+sabaoth_export str SABAOTHepilogue(int *ret);
 
 #endif
 @-

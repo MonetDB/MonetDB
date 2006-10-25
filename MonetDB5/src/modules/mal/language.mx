@@ -142,6 +142,7 @@ language_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
 language_export str CMDsetCwd(str *ret, str *fnme);
+language_export str MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */
 @c
 

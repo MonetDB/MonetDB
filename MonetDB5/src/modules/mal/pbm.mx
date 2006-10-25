@@ -265,6 +265,8 @@ pbm_export str PBMgetNextElement(int *res, str *grp );
 pbm_export str PBMgetNextElementRng(int *res, str *grp, oid *first, oid *last);
 pbm_export str PBMcompress(int *ret, str *grp);
 pbm_export str PBMgetNextName(int *ret, str *nme, str *elm);
+pbm_export str PBMgetNames(int *ret);
+pbm_export str PBMdummy(int *ret, str *grp);
 #endif
 @c
 #include "pbm.h"
