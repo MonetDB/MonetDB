@@ -44,14 +44,20 @@
 
 
 static SQLRETURN
-SQLProcedures_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+SQLProcedures_(ODBCStmt *stmt,
+	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
 	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
 	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nProcNameLength, (char*)szProcName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
+		nCatalogNameLength, (char*)szCatalogName,
+		nSchemaNameLength, (char*)szSchemaName,
+		nProcNameLength, (char*)szProcName);
 #endif
 
 	/* SQLProcedures returns a table with the following columns:
@@ -80,7 +86,10 @@ SQLProcedures_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 }
 
 SQLRETURN SQL_API
-SQLProcedures(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+SQLProcedures(SQLHSTMT hStmt,
+	      SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -93,18 +102,30 @@ SQLProcedures(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLe
 
 	clearStmtErrors(stmt);
 
-	return SQLProcedures_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szProcName, nProcNameLength);
+	return SQLProcedures_(stmt,
+			      szCatalogName, nCatalogNameLength,
+			      szSchemaName, nSchemaNameLength,
+			      szProcName, nProcNameLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLProceduresA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+SQLProceduresA(SQLHSTMT hStmt,
+	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
-	return SQLProcedures(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szProcName, nProcNameLength);
+	return SQLProcedures(hStmt,
+			     szCatalogName, nCatalogNameLength,
+			     szSchemaName, nSchemaNameLength,
+			     szProcName, nProcNameLength);
 }
 
 SQLRETURN SQL_API
-SQLProceduresW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szProcName, SQLSMALLINT nProcNameLength)
+SQLProceduresW(SQLHSTMT hStmt,
+	       SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLWCHAR * szProcName, SQLSMALLINT nProcNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;
