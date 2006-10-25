@@ -138,10 +138,9 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 	void *dl = 0;
 	MALfcn adr;
 	int idx;
-	const char *errmsg;
 
 #ifdef DEBUG_MAL_LINKER2
-	stream_printf(GDKout, "addres of %s.%s from '%s' ?\n",
+	stream_printf(GDKout, "address of %s.%s from '%s' ?\n",
 			(modnme?modnme:"<unknown>"), fcnname, 
 			(filename?filename:"<stdin>"));
 #else
@@ -151,27 +150,24 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 Search module for occurrence of the function
 @c
 	for(idx =0; idx < lastfile && filesLoaded[idx].filename; idx++)
-	if( strcmp(filename, filesLoaded[idx].filename)==0) {
-		adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
-		errmsg= dlerror();
-		if( adr != NULL) 
-			return adr; /* found it */
-	}
+		if( strcmp(filename, filesLoaded[idx].filename)==0) {
+			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
+			if( adr != NULL) 
+				return adr; /* found it */
+		}
 @-
 Try the program libraries at large or run through all
 loaded files and try to resolve the functionname again.
 @c
 	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-	errmsg= dlerror();
-	if( dl != NULL && errmsg == NULL){
+	if( dl != NULL){
 		adr = (MALfcn) dlsym(dl, fcnname);
-		errmsg= dlerror();
-		if( errmsg== NULL && adr != NULL) 
+		if( adr != NULL) 
 			return adr; /* found it */
 	}
 	if( !silent)
-	GDKerror("address of '%s.%s' not found\n", 
-		(modnme?modnme:"<unknown>"), fcnname);
+		GDKerror("address of '%s.%s' not found\n", 
+			(modnme?modnme:"<unknown>"), fcnname);
 	return NULL;
 }
 @}
@@ -255,8 +251,7 @@ loadLibrary(str filename)
 	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
 		if (strcmp(filesLoaded[idx].filename, filename) == 0) {
 #ifdef DEBUG_MAL_LINKER
-			stream_printf(GDKout, "already load:%s:%s\n", 
-				filename, handle == NULL ? (handle == NULL ? errbuf : "failed") : "succeeded");
+				stream_printf(GDKout, "already loaded:%s:%x\n", filename, (int)filesLoaded[idx].handle);
 			return (str) throwException("loaderException", "Module loaded twice", filename);
 #endif
 			return MAL_SUCCEED;
@@ -272,22 +267,28 @@ Use the search path provided in the configuration file
 #ifdef RTLD_MEMBER
 	mode |= RTLD_MEMBER;
 #endif
-	if (fullname == NULL) 
-		return MAL_SUCCEED;
-	handle = dlopen(fullname, mode);
+	if (fullname == NULL) {
 #ifdef DEBUG_MAL_LINKER2
-	stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastfile, filename, fullname, 
-		handle == NULL? (handle == NULL ? errbuf : "failed") : "succeeded");
+		stream_printf(GDKout, "file not found %s\n", filename);
 #endif
+		return MAL_SUCCEED;
+	}
+	handle = dlopen(fullname, mode);
 	if (handle == NULL) {
 		errmsg = dlerror();
 		if (!errmsg) 
 			errmsg = "(no error from dlerror())";
 		snprintf(errbuf, 1024, "%s: loader error %s", filename, errmsg);
+#ifdef DEBUG_MAL_LINKER2
+		stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastfile, filename, fullname, errbuf);
+#endif
 		GDKfree(fullname);
 		return (str) throwException("loaderException", 
 					"loadLibrary", errbuf);
 	}
+#ifdef DEBUG_MAL_LINKER2
+	stream_printf(GDKout, "load[%d]:%s %s:succeeded\n", lastfile, filename, fullname);
+#endif
 
 	mal_set_lock(mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
