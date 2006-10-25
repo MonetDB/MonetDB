@@ -43,7 +43,7 @@ for param in $*;
 do
 	arg=`echo ${param} | cut -d'=' -f1`
 	val=`echo ${param} | cut -d'=' -f2`
-	num=`echo ${val} | grep -E '[0-9]+' -o`
+	num=`echo ${val} | grep -E '[0-9]+' -o | head -n1`
 	case ${arg} in
 	major)
 		if [ "${num}" = "" ];

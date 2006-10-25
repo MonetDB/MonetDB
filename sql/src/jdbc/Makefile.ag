@@ -28,5 +28,5 @@ EXTRA_DIST_DIR = nl/cwi/monetdb/jdbc \
 
 ant_jar_jdbcclient = {
 	DIR = datadir/MonetDB/lib
-	FILES = jdbcclient-1.4.jar monetdb-1.4-jdbc.jar
+	FILES = jdbcclient-1.5.jar monetdb-1.5-jdbc.jar
 }
