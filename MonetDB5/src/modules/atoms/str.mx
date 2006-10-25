@@ -284,6 +284,18 @@ str_export str STRfindUnescapedOccurrence(str b, str c, str esc);
 str_export int STRlike(str s, str pat, str esc);
 str_export str STRsubstringTail(str *ret, str *s, int *start);
 str_export str STRsubstring(str *ret, str *s, int *start, int *l);
+str_export str STRlikewrap2(bit *ret, str *s, str *pat);
+str_export str STRlikewrap(bit *ret, str *s, str *pat, str *esc);
+str_export str STRascii(int *ret, str *s);
+str_export str STRprefix(str *ret, str *s, int *l);
+str_export str STRsuffix(str *ret, str *s, int *l);
+str_export str STRlocate(int *ret, str *s1, str *s2);
+str_export str STRlocate2(int *ret, str *s1, str *s2, int *start);
+str_export str STRinsert(str *ret, str *s, int *start, int *l, str *s2);
+str_export str STRreplace(str *ret, str *s1, str *s2, str *s3);
+str_export str STRrepeat(str *ret, str *s, int *c);
+str_export str STRspace(str *ret, int *l);
+
 #endif /* __string_H__ */
 @}
 

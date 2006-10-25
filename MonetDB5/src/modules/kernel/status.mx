@@ -180,6 +180,8 @@ comment "Produce a list of default ports for a specific language";
 
 status_export str SYSgetDatabases(int *ret);
 status_export str SYSgetPorts(int *ret, str *lang);
+status_export int set_mem_maxsize(lng *num);
+
 #endif
 @-
 

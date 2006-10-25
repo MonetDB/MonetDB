@@ -135,6 +135,8 @@ blob_export str BLOBfromidx(str *retval, blob **binp, int *index);
 blob_export str BLOBeoln(char *src, char *end);
 blob_export int BLOBnitems(int *ret, blob *b);
 blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
+blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
+blob_export void BLOBwrite(blob *a, stream *s, size_t cnt);
 
 size_t
 blobsize(size_t nitems)

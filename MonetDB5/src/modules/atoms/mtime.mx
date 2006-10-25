@@ -990,6 +990,7 @@ mtime_export str MTIMEtzone_tostr(str *s, tzone *ret);
 mtime_export str MTIMEtzone_fromstr(tzone *ret, str *s);
 mtime_export str MTIMEdaytime_fromstr(daytime *ret, str *s);
 mtime_export str MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms);
+mtime_export str MTIMEmsec(lng *r);
 mtime_export str MTIMEdaytime1(daytime *ret, int *h);
 mtime_export str MTIMEdaytime2(daytime *ret, int *h, int *m);
 mtime_export str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s);
@@ -1014,6 +1015,17 @@ mtime_export int tzone_tostr(str *buf, int *len, tzone *z);
 mtime_export int rule_fromstr(str buf, int *len, rule **d);
 mtime_export int rule_tostr(str *buf, int *len, rule *r);
 mtime_export int tzone_fromstr(str buf, int *len, tzone **d);
+@= ExtractExport
+mtime_export str MTIME@1_extract_@2_bulk(int *ret, int *bid);
+@h
+@:ExtractExport(date,year)@
+@:ExtractExport(date,month)@
+@:ExtractExport(date,day)@
+@:ExtractExport(daytime,hours)@
+@:ExtractExport(daytime,minutes)@
+@:ExtractExport(daytime,seconds)@
+@:ExtractExport(daytime,milliseconds)@
+
 
 mtime_export int TYPE_date;
 mtime_export int TYPE_daytime;

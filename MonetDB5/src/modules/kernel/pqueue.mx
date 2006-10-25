@@ -743,6 +743,7 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 
 @= PQany
 /* int PQenqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)*/
+pqueue_export str PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str  PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int tpe;
@@ -767,6 +768,7 @@ str  PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /* int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe) */
+pqueue_export str PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str  PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int tpe;
