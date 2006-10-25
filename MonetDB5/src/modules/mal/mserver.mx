@@ -381,7 +381,7 @@ m_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 #define SOCKLEN int
 #endif
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 #define s_close(s)	closesocket(s)
 #else
 #define s_close(s)	close(s)
