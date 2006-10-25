@@ -700,7 +700,7 @@ getContext(mvc **c, backend **b )
 
 str
 SQLcommit_wrap(int *ret){
-	mvc *m;
+	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
 
 	if (msg)
