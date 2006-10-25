@@ -1177,7 +1177,7 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_affected_rows_wrap(int *r, lng *nr, str w)
+mvc_affected_rows_wrap(int *r, lng *nr, str *w)
 {
 	backend *b = NULL;
 	mvc *c = NULL;
@@ -1186,7 +1186,7 @@ mvc_affected_rows_wrap(int *r, lng *nr, str w)
 	if (msg)
 		return msg;
 	c->type = Q_UPDATE;
-	if (mvc_export_affrows(c, b->out, *nr, w)) {
+	if (mvc_export_affrows(c, b->out, *nr, *w)) {
 		return throwMessage("sql.affectedRows", "failed");
 	}
 	(void)r;
@@ -1194,14 +1194,14 @@ mvc_affected_rows_wrap(int *r, lng *nr, str w)
 }
 
 str
-mvc_affected_rows_int(int *r, int *nr, str w)
+mvc_affected_rows_int(int *r, int *nr, str *w)
 {
 	lng N = *nr;
 	return mvc_affected_rows_wrap(r, &N, w);
 }
 
 str
-mvc_export_result_wrap(int *ret, int *res_id, str w)
+mvc_export_result_wrap(int *ret, int *res_id, str *w)
 {
 	backend *b;
 	mvc *c;
@@ -1209,7 +1209,7 @@ mvc_export_result_wrap(int *ret, int *res_id, str w)
 
 	if (msg)
 		return msg;
-	if (mvc_export_result(c, b->out, *res_id, w)) {
+	if (mvc_export_result(c, b->out, *res_id, *w)) {
 		return throwMessage("sql.exportResult", "failed");
 	}
 	(void)ret;
@@ -1217,7 +1217,7 @@ mvc_export_result_wrap(int *ret, int *res_id, str w)
 }
 
 str
-mvc_export_operation_wrap(int *ret, str w)
+mvc_export_operation_wrap(int *ret, str *w)
 {
 	backend *b;
 	mvc *c;
@@ -1225,7 +1225,7 @@ mvc_export_operation_wrap(int *ret, str w)
 
 	if (msg)
 		return msg;
-	if (mvc_export_operation(c, b->out, w)) {
+	if (mvc_export_operation(c, b->out, *w)) {
 		return throwMessage("sql.exportOperation", "failed");
 	}
 	(void)ret;
