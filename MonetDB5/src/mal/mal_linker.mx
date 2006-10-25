@@ -363,12 +363,11 @@ void
 initLibraries()
 {
 	noDlopen = TRUE;
-/*
+	if(noDlopen == FALSE)
 	for(i=0;preloaded[i];i++) {
 	    stream_printf(GDKout,"loading %s\n",preloaded[i]);
 	    loadLibrary(preloaded[i]);
 	}
-*/
 }
 
 @+ Handling of Module Library Search Path
