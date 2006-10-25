@@ -37,7 +37,7 @@ sql5_export str SQLsession(str *ret);
 sql5_export str SQLprelude(void);
 sql5_export str SQLepilogue(void);
 sql5_export str SQLstartQuery(int *ret, str *qry);
-sql5_export str SQLexitQuery(int *ret);
+sql5_export str SQLexitQuery(int *ret, str *qry);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLinit(Client c);
@@ -265,8 +265,8 @@ SQLstartQuery(int *ret, str *qry){
 	return MAL_SUCCEED;
 }
 str
-SQLexitQuery(int *ret){
-	(void) ret; 
+SQLexitQuery(int *ret, str *qry){
+	(void) ret; (void) qry;
 	return MAL_SUCCEED;
 }
 
