@@ -1829,8 +1829,8 @@ CRKInsertAVLIndex_@1(int *k, int *bid, int *uid)
 	return MAL_SUCCEED;
 }
 
-lng
-findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, lng resSize, BAT *b, BUN first, int xx, struct Node * cur, BUN resh, BUN rest)
+lng 
+findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, lng resSize, BAT *b, BUN first, int xx, struct Node * cur, BUN resh, BUN rest, @1 prevL)
 {
 	BUN rh = resh, rt = rest;
 	lng size = resSize;
@@ -1840,17 +1840,17 @@ findQualifyingValuesAVLIndex_@1(@1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		if ( (@2_GT(&value,low,@3@1) && @2_LT(&value,hgh,@3@1)) ||
 		     (@2_EQ(&value,low,@3@1) && *inclusiveLow == TRUE) ||	
 		     (@2_EQ(&value,hgh,@3@1) && *inclusiveHgh == TRUE) ){
-			*(oid*)rh = *(oid*)BUNhloc(b,first+cur->position*xx);
-       	         	*(@1 *)rt = *(@1 *)BUNtloc(b,first+cur->position*xx);
+			*(oid*)rh = (oid)cur->position;
+       	         	*(@1 *)rt = *(@1*)BUNtloc(b,first+cur->position*xx);
 	       	         rh+=xx; rt+=xx;
         	        size++;	
 		}
 	}
 
-	if (cur->left != NULL && @2_GT(&value,low,@3@1))
-		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, xx, cur->left, rh, rt);
+	if (cur->left != NULL &&  @2_GT(&value,low,@3@1) && @2_LT(&prevL,hgh,@3@1) )
+		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, xx, cur->left, rh, rt, prevL);
 	if (cur->right != NULL && (@2_LT(&value,hgh,@3@1) || (@2_EQ(&value,hgh,@3@1) && *inclusiveHgh == TRUE)))
-		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, xx, cur->right, rh, rt);
+		size = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, size, b, first, xx, cur->right, rh, rt, value);
 
 	return size;
 }
@@ -1873,14 +1873,16 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
         if ((b = BATdescriptor(*bid)) == NULL)
 		return throwMessage("crackers.insert AVL index", "Cannot access descriptor");
 
-	result = BATnew(TYPE_oid, TYPE_@1, BATcount(b));
+	result = BATnew(TYPE_oid, TYPE_@1, (*(@1*)hgh-*(@1*)low)*2);
 
 	/* find the node that we should start searching from */
 	cur = AVLIndex[indexPos].Tree;
 	first = BUNfirst(b);
 	xx = BUNsize(b);
+
 	while( @2_LT(BUNtloc(b,first+cur->position*xx),low,@3@1) && cur != NULL )		
 		cur = cur->right;
+
 	resSize = 0;
 	/*if NULL then result is empty */
 	if (cur == NULL){
@@ -1898,20 +1900,23 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	rest = BUNtloc(result, BUNfirst(result));
 	if (@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && *inclusiveLow == TRUE){
 		while (@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && cur != NULL){
-			*(oid*)resh = *(oid*)BUNhloc(b,first+cur->position*xx);
-			*(@1 *)rest = *(@1 *)BUNtloc(b,first+cur->position*xx);
-			resh+=xx; rest+=xx;
+			if (cur->deleted == FALSE){
+				*(oid*)resh = (oid)cur->position;
+				*(@1 *)rest = *(@1 *)BUNtloc(b,first+cur->position*xx);
+				resh+=xx; rest+=xx;
+				resSize++;
+			}
 			cur = cur->right;
-			resSize++;
 		}
 	} else
 	if (@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && *inclusiveLow == FALSE){
 		while(@2_EQ(low,BUNtloc(b,first+cur->position*xx),@3@1) && cur != NULL)
 			cur = cur->right;
-	}
-	
-	if (cur != NULL)
-		resSize = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, resSize, b, first, xx, cur, resh, rest);
+	} 
+
+	if (cur != NULL)       
+		resSize = findQualifyingValuesAVLIndex_@1(low, hgh, inclusiveLow, inclusiveHgh, resSize, b, first, xx, cur, resh, rest, *(@1*)BUNtloc(b,first+cur->position));
+
 
 	resLast = BUNfirst(result) + xx*resSize;
         result->batBuns->free =  resLast - result->batBuns->base;
@@ -1919,6 +1924,7 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
         BBPkeepref(result->batCacheid);
         *vid = result->batCacheid;
         BBPunfix(b->batCacheid);
+
 
 	return MAL_SUCCEED;
 }
@@ -1934,7 +1940,7 @@ LocateDelete_@1(struct Node *cur, oid id, @1 *value, BAT *b, BUN first, int xx){
 		return current->left != NULL ? LocateDelete_@1(current->left, id, value, b, first, xx): NULL;	
 	else
 	if ( @2_EQ(BUNtloc(b, first + current->position*xx),value,@3@1) ){
-		if ( *(oid*)BUNhloc(b, first + current->position*xx) ==  id ){
+		if ( (oid)current->position ==  id ){
 			current->deleted = TRUE;
 			return current;
 		}
@@ -1943,7 +1949,7 @@ LocateDelete_@1(struct Node *cur, oid id, @1 *value, BAT *b, BUN first, int xx){
 				if (current->right != NULL)
 					current= current->right;
 				if ( @2_EQ(BUNtloc(b, first + current->position*xx),value,@3@1) ){
-			                if ( *(oid*)BUNhloc(b, first + current->position*xx) ==  id ){
+			                if ( (oid)current->position ==  id ){
 						current->deleted = TRUE;
                		 		        return current;
 					} else
@@ -1998,7 +2004,7 @@ CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
 	delLast = BUNtloc(u, BUNlast(u));
 	while (delt < delLast){
 		LocateDelete_@1(AVLIndex[indexPos].Tree, *(oid*)delh, (@1*)delt, b, first, xx);
-		delt+=xx;
+		delt+=xx; delh+=xx;
 	}
 	
 	BATmode(u, TRANSIENT);
@@ -4309,7 +4315,7 @@ mergeDeletionsGradually_@1(int *bid, int *del, lng startPosition, lng endPositio
 }
 
 str
-mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endPosition, @1 *hghV, bit inclusive){
+mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endPosition, @1 *lowV, bit inclusiveL, @1 *hghV, bit inclusiveH){
         BAT *c, *u, *b, *crackerPiece, *deletesPiece, *positions, *crackerSlice, *deletesSlice;
 	BUN delh, delt, idxFirst, crk, crkFirst, crkLast, delFirst, low, lowVal, hgh, hghPos=NULL, hghVal, pos, posLast;
 	int xx, zz, pp, position = -1;
@@ -4360,8 +4366,9 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, lng startPosition, lng endP
 	idxFirst = BUNfirst(c);
 	crkFirst = BUNfirst(b);
 
-	lowNode = findNodeL_@1(*(@1*)delt, TRUE, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
-	stopNode = findNodeH_@1(*hghV, inclusive, TreeIndex[position].Tree, c, idxFirst, zz, NULL);
+	lowNode = findNodeL_@1(*lowV, inclusiveL, TreeIndex[position].Tree, c, idxFirst, zz, NULL); 
+	stopNode = findNodeH_@1(*hghV, inclusiveH, TreeIndex[position].Tree, c, idxFirst, zz, NULL); 
+
 	LposDe = startPosition;
 	HposDe = 0;
 	b->batRestricted= BAT_READ;
@@ -5304,7 +5311,7 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 			
 	else if (TreeIndex[position].mergeDeletions == 2){
 		/* merge only the requested values using the ripple strategy */
-		mergeDeletionsGraduallyRipple_@1(bid, &TreeIndex[position].did, updatesStart, updatesEnd, hgh, *inclusiveHgh);	
+		mergeDeletionsGraduallyRipple_@1(bid, &TreeIndex[position].did, updatesStart, updatesEnd, low, *inclusiveLow, hgh, *inclusiveHgh);	
 		*rippledDeletions = TRUE;
 	}
 
