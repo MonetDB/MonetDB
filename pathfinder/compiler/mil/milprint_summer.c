@@ -10965,11 +10965,10 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
                                 ? 0		       /* only the empty sequence has type empty and is not updateable */
                                 : (PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))
                                    ? 1
-                                   : (PFty_subtype(TY(R(c)), PFty_star(PFty_adddoc_stmt()))
+                                   : (PFty_subtype (TY(R(c)),
+                                                    PFty_star (PFty_docmgmt ()))
                                       ? 2
-                                      : (PFty_subtype(TY(R(c)), PFty_star(PFty_deldoc_stmt()))
-                                         ? 3
-                                         : 0)))));
+                                      : 0))));
     }
 
     if (opt_close(f, prologue, query, epilogue)) {

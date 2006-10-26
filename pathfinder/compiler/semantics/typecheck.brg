@@ -416,9 +416,21 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[1], nts[1]);
             reduce (kids[0], nts[0]);
 
-            if (!PFty_subtype (TY(R(p)),
-                               PFty_choice (PFty_star (PFty_item ()),
-                                            PFty_star (PFty_stmt ()))))
+            if (PFty_subtype (TY(R(p)), PFty_star (PFty_item ())))
+                /* okay, this is a normal query */
+                ;
+            else if (PFty_subtype (TY(R(p)), PFty_star (PFty_stmt ())))
+                /* okay, this is an update query */
+                ;
+            else if (PFty_subtype (TY(R(p)), PFty_star (PFty_docmgmt ())))
+                /* okay, this is a document management query */
+                ;
+            else if (PFty_subtype (TY(R(p)), PFty_star (PFty_none ())))
+                /* not really okay, but we let it go through with
+                 * a warning: the query *statically* evaluated to
+                 * the error type (none). */
+                PFinfo (OOPS_WARNING, "query will always return an error");
+            else
                 PFoops (OOPS_TYPECHECK,
                         "illegal combination of query and update features");
 

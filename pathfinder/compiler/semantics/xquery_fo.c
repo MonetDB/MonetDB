@@ -1549,43 +1549,43 @@ PFfun_xquery_fo ()
                                    PFty_xdt_untypedAtomic () },
             .ret_ty = PFty_stmt () } } }
 
-    ,  /* fn:add-doc (string, string) as stmt */
+    ,  /* fn:add-doc (string, string) as docmgmt */
       { .ns = PFns_fn, .loc = "add-doc",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:add-doc (string, string, string) as stmt */
+    ,  /* fn:add-doc (string, string, string) as docmgmt */
       { .ns = PFns_fn, .loc = "add-doc",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_string () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:add-doc (string, string, int) as stmt */
+    ,  /* fn:add-doc (string, string, int) as docmgmt */
       { .ns = PFns_fn, .loc = "add-doc",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_integer() },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:add-doc (string, string, string, int) as stmt */
+    ,  /* fn:add-doc (string, string, string, int) as docmgmt */
       { .ns = PFns_fn, .loc = "add-doc",
         .arity = 4, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_integer() },
-            .ret_ty = PFty_adddoc_stmt () } } }
+            .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:del-doc (string) as stmt */
+    ,  /* fn:del-doc (string) as docmgmt */
       { .ns = PFns_fn, .loc = "del-doc",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
-            .ret_ty = PFty_deldoc_stmt () } } }
+            .ret_ty = PFty_docmgmt () } } }
 
 #ifdef HAVE_PFTIJAH
     , /* fn:tijah-command(string*) as boolean */

@@ -298,6 +298,18 @@ PFty_stmt (void)
     return t;
 }
 
+PFty_t 
+PFty_docmgmt (void)
+{
+    PFty_t t = { .type  = ty_docmgmt,
+                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = 0,           
+                 .child = { 0 } 
+    };
+
+    return t;
+}
+
 
 /** 
  * Named types (the defn of these types is found in the 
@@ -862,6 +874,7 @@ static char* ty_id[] = {
     , [ty_pi           ]   = "processing-instruction"
     , [ty_comm         ]   = "comment"
     , [ty_stmt         ]   = "stmt"
+    , [ty_docmgmt      ]   = "docmgmt"
 };
   
 /**

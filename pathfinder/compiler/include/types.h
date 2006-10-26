@@ -134,6 +134,13 @@
  *    from stmt (i.e., be a side effect free query).  With this
  *    restriction we can avoid semantical problems that might occur
  *    if an input contains a mix of query and update.
+ *    
+ *  - Similar things also hold for Pathfinder's `docmgmt' type.  This
+ *    type is assigned to (built-in) functions that modify the document
+ *    collection, i.e., add or remove documents from the collection.
+ *    Such statements may neither be mixed with update statements of
+ *    type `stmt' (which update subtrees *within* an item in the
+ *    document collection), nor with regular values.
  */
 
 
@@ -177,7 +184,8 @@ enum PFtytype_t {
   ty_text,                     /**< text                        */
   ty_pi,                       /**< pi                          */
   ty_comm,                     /**< comm                        */
-  ty_stmt,                     /**< stmt                        */
+  ty_stmt,                     /**< update statement            */
+  ty_docmgmt,                  /**< document management         */
 
   ty_types                     /**< # of types                  */
 };
@@ -225,11 +233,7 @@ PFty_t PFty_text (void);
 PFty_t PFty_pi (char *);
 PFty_t PFty_comm (void);
 PFty_t PFty_stmt (void);
-/* these should be two different new types that cannot be combined
-   with anything other than themselves
-   these values are only used in xquery_fo.c and milprint_summer.c */
-#define PFty_adddoc_stmt PFty_stmt
-#define PFty_deldoc_stmt PFty_stmt
+PFty_t PFty_docmgmt (void);
 
 /** 
  * Type constructors (internal).
