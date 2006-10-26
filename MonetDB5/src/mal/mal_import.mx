@@ -56,7 +56,7 @@ slash_2_dir_sep(str fname)
 
 	for (s = fname; *s; s++)
 		if (*s == '/')
-			*s = '/';
+			*s = DIR_SEP;
 }
 
 static stream *
