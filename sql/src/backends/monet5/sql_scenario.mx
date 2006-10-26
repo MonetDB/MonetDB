@@ -46,6 +46,9 @@ sql5_export str SQLinitClient(Client c);
 sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
 sql5_export str SQLengine(Client c);
+sql5_export str SQLassert(int *ret, bit *flg, str *msg);
+sql5_export str SQLassertInt(int *ret, int *flg, str *msg);
+sql5_export str SQLassertLng(int *ret, lng *flg, str *msg);
 
 sql5_export str SQLinitEnvironment(int *ret);
 sql5_export str SQLstatement(str *ret, str *expr);

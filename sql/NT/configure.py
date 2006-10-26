@@ -26,40 +26,11 @@ prefix=os.path.abspath(sys.argv[2]);
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 subs = [
-    ('@exec_prefix@',            prefix),
-    ('@Xexec_prefix@',           prefix),
-    ('@sysconfdir@',             r'${prefix}\etc'),
-    ('@Xsysconfdir@',            r'${prefix}\etc'),
-    ('@localstatedir@',          r'${prefix}\var'),
-    ('@Xlocalstatedir@',         r'${prefix}\var'),
-    ('@libdir@',                 r'${prefix}\lib'),
-    ('@Xlibdir@',                r'${prefix}\lib'),
-    ('@bindir@',                 r'${prefix}\bin'),
-    ('@Xbindir@',                r'${prefix}\bin'),
-    ('@mandir@',                 r'${prefix}\man'),
-    ('@Xmandir@',                r'${prefix}\man'),
-    ('@includedir@',             r'${prefix}\include'),
-    ('@Xincludedir@',            r'${prefix}\include'),
-    ('@datadir@',                r'${prefix}\share'),
-    ('@Xdatadir@',               r'${prefix}\share'),
-    ('@infodir@',                r'${prefix}\info'),
-    ('@Xinfodir@',               r'${prefix}\info'),
-    ('@libexecdir@',             r'${prefix}\libexec'),
-    ('@Xlibexecdir@',            r'${prefix}\libexec'),
-    ('@PACKAGE@',                r'sql'),
-    ('@VERSION@',                r'2.13.1'),
-    ('@DIRSEP@',                 '\\'),
-    ('@prefix@',                 prefix),
-    ('@Xprefix@',                prefix),
-    ('@MONETDB_BUILD@',          build),
-    ('@XMONETDB_BUILD@',         build),
-    ('@MONETDB_SOURCE@',         source),
-    ('@XMONETDB_SOURCE@',        source),
-    ('@MONETDB_PREFIX@',         os.getenv('MONETDB_PREFIX')),
-    ('@SQL_BACKEND@',            r'monet4'),
-    ('@SQL_BUILD@',              os.getenv('SQL_BUILD')),
-    ('@PYTHON@',                 'python'),
-]
+    ('@MONET5_PREFIX@', os.getenv('MONET5_PREFIX') or '@MONET5_PREFIX@'),
+    ('@MONETDB_PREFIX@', os.getenv('MONETDB_PREFIX')),
+    ('@SQL_BUILD@', build),
+    ('@SQL_SOURCE@', source),
+    ]
 
 for key, val in subs[:]:
     subs.insert(0, ('@Q'+key[1:], val.replace('\\', r'\\')))
