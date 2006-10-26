@@ -2153,6 +2153,7 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 	return MAL_SUCCEED;
 }
 
+crackers_export str CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh);
 str
 CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh)
 {
@@ -2443,6 +2444,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_la
 		}
 @
 @= crackInTwoOrderedPieces
+crackers_export str CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos);
 str
 CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 {
@@ -2670,6 +2672,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, ln
 @:crackInThreeOrderedPieces(@1,LE,RO,<,>=,<,>=)@
 
 
+crackers_export str CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid);
 str
 CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid)
 {
@@ -2689,6 +2692,7 @@ CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid)
 }
 
 
+crackers_export str CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid);
 str
 CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid)
 {
@@ -2705,6 +2709,7 @@ CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid)
         return msg;
 }
 
+crackers_export str CRKcrackOrderedTwo_@1 (int *res, int *bid, @1 *low, @1 *hgh);
 str
 CRKcrackOrderedTwo_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
@@ -2721,6 +2726,7 @@ CRKcrackOrderedTwo_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return MAL_SUCCEED;
 }
 
+crackers_export str CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh);
 str
 CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
@@ -2866,6 +2872,7 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return MAL_SUCCEED;
 @
 @= validate_operation_Zero
+crackers_export str CRKcrack@2Zero_validate_@1 (bit *res, int *bid, @1 *_mid);
 str
 CRKcrack@2Zero_validate_@1 (bit *res, int *bid, @1 *_mid)
 {
@@ -2882,6 +2889,7 @@ CRKcrack@2Zero_validate_@1 (bit *res, int *bid, @1 *_mid)
 }
 @
 @= validate_operation_One
+crackers_export str CRKcrack@2One_validate_@1 (int *res, int *bid, @1 *_mid);
 str
 CRKcrack@2One_validate_@1 (int *res, int *bid, @1 *_mid)
 {
@@ -2899,6 +2907,7 @@ CRKcrack@2One_validate_@1 (int *res, int *bid, @1 *_mid)
 }
 @
 @= validate_operation_Two
+crackers_export str CRKcrack@2Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh);
 str
 CRKcrack@2Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 {
@@ -2919,6 +2928,7 @@ CRKcrack@2Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 }
 @
 @= validate_operation_Three
+crackers_export str CRKcrack@2Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh);
 str
 CRKcrack@2Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 {
