@@ -26,6 +26,35 @@
  * $Id$
  */
 
+/*
+ * IMPORTANT NOTE:
+ *
+ *   THE milprint_summer MODULE IS MAKING FREQUENT USE OF
+ *   *DIRECT* ACCESS TO THE INTERNAL OF PATHFINDER'S TYPE
+ *   SYSTEM.  THIS IS (AND ALWAYS WAS) A DEPRECATED MEANS
+ *   TO INSPECT PATHFINDER'S STRUCTURED TYPES.
+ *
+ *   UPCOMING CHANGES OF THE INTERNALS OF OUR TYPE SYSTEM
+ *   *WILL* BREAK ANY CODE THAT DOES SUCH DIRECT INSPECTION
+ *   OF THE CONTENTS OF PFty_t STRUCTS!  MOST IMPORTANTLY,
+ *   THIS AFFECTS THE ENUM VALUES IN THE type FIELD OF THE
+ *   PFty_t STRUCT.  ALL CODE THAT DIRECTLY READS THE VALUES
+ *   OF THIS FIELD NEEDS TO BE FIXED.
+ *
+ *   TO INDICATE PROBLEMATIC CASES, I HAVE TAGGED ALL INVALID
+ *   ACCESSES WITH #ifdef PREPROCESSOR MACROS.  ONCE THE
+ *   CLEANUP OF PATHFINDER'S TYPE SYSTEM WILL BE COMMITTED,
+ *   THIS MACRO WILL BE #undef'd.
+ *
+ *   TO ACCESS TYPE INFORMATION IN A PROPER MANNER, PLEASE
+ *   USE THE SUBTYPING ROUTINE PFty_subtype() AND OTHER
+ *   ACCESSORS PROVIDED BY types.c AND subtyping.c (E.G.,
+ *   PFty_prime()).  IF YOU NEED FURTHER ASSISTANCE,
+ *   CONSULT THE ARCHIVES OF THE monetdb-devel LIST OR
+ *   ASK ME (JENS).
+ */
+#define USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM 1
+
 #include "pathfinder.h"
 
 #include <stdio.h>
@@ -147,6 +176,8 @@ static bool
 castable (PFty_t t1, PFty_t t2)
 {
     t2 = PFty_defn (t2);
+
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
     /* don't cast seqcast which are not valid (choice) or 
        are non necessary cast introduced during translation (atomic) */
     if (t2.type == ty_choice ||
@@ -159,6 +190,7 @@ castable (PFty_t t1, PFty_t t2)
         return (PFty_subtype (t2, PFty_star (PFty_atomic ())) &&
                 PFty_subtype (t1, PFty_star (PFty_atomic ())));
     else
+#endif
         return (PFty_subtype (t1, PFty_opt (PFty_atomic ())) &&
                 PFty_subtype (t2, PFty_opt (PFty_atomic ())));
 }
@@ -289,6 +321,7 @@ get_kind (PFty_t t)
 static int
 combinable (PFty_t t1, PFty_t t2)
 {
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
     int rc;
     if ((PFty_prime(PFty_defn(t1))).type == ty_choice ||
         (PFty_prime(PFty_defn(t2))).type == ty_choice)
@@ -296,6 +329,9 @@ combinable (PFty_t t1, PFty_t t2)
     else if ((rc = get_kind (t1)) == get_kind (t2))
         return rc;
     else
+#else
+    (void) t1; (void) t2;
+#endif
         return NORMAL;
 }
 
@@ -1647,6 +1683,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
 
     exp_type = PFty_defn (seq_type);
 
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
     if (exp_type.type == ty_opt)
     {
         qualifier = 0;
@@ -1662,6 +1699,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
         qualifier = 3;
         exp_type = PFty_child (exp_type);
     }
+#endif
 
     milprintf(f, "{ # typeswitch\n");
 
@@ -3490,12 +3528,19 @@ translateCast (opt_t *f,
     PFty_t input_type = PFty_defn (TY(R(c)));
     int cast_optional = 0;
      
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
+#else
+    (void) code; (void) rc;
+#endif
+
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
     if (cast_type.type == ty_opt ||
         cast_type.type == ty_star)
     {
         cast_type = PFty_child (cast_type);
         cast_optional = 1;
     }
+#endif
 
     input_type = PFty_prime(input_type);
 
@@ -3506,6 +3551,7 @@ translateCast (opt_t *f,
 
     switch (cast_type.type)
     {
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
         case ty_boolean:
             rcode = NORMAL;
             translateCast2BOOL (f, rcode, rc, input_type);
@@ -3531,6 +3577,7 @@ translateCast (opt_t *f,
             rcode = (code)?STR:NORMAL;
             translateCast2STR (f, rcode, rc, input_type);
             break;
+#endif
         default:
             PFoops (OOPS_TYPECHECK,
                     "can't cast type '%s' to type '%s'",
@@ -4542,8 +4589,10 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 
     /* avoid problems because of optional type 
        (it is handled by the last part, which adds empty strings) */
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
     if (input_type.type == ty_opt)
         input_type = PFty_child (input_type);
+#endif
 
     if (PFty_subtype (PFty_node(),input_type))
     {
@@ -8750,12 +8799,14 @@ static void
 cast_to_expected (PFcnode_t *c, PFty_t expected) 
 {
      PFty_t opt_expected;
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
      if (expected.type == ty_opt ||
          expected.type == ty_star ||
          expected.type == ty_plus)
           opt_expected = PFty_child (expected);
      else
           opt_expected = expected;
+#endif
  
      if (PFty_subtype (opt_expected, PFty_atomic ()) &&
          !TY_EQ (TY(L(c)), expected) &&
@@ -8931,6 +8982,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY(new_node) = PFty_empty ();
                 *c = *new_node;
             }
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
             /* removes for expressions, which loop only over one literal */
             /* FIXME: doesn't work if the following type is possible here:
                       '(integer, decimal)?' */
@@ -8969,6 +9021,7 @@ simplifyCoreTree (PFcnode_t *c)
                     *c = *new_node;
                 }
             }
+#endif
             /* remove for expression, whose body contains only
                    the bound variable */
             break;
@@ -8986,9 +9039,11 @@ simplifyCoreTree (PFcnode_t *c)
             input_type = TY(R(c));
             opt_cast_type = cast_type;
 
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
             if (cast_type.type == ty_opt ||
                 cast_type.type == ty_star)
                 opt_cast_type = PFty_child (cast_type);
+#endif
 
             /* if casts are nested only the most outest
                cast has to be evaluated */
@@ -9004,6 +9059,7 @@ simplifyCoreTree (PFcnode_t *c)
                - if the cast type has only a additional
                  occurence indicator compared to the
                  input type */
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
             if (TY_EQ (input_type, cast_type) ||
                 TY_EQ (input_type, opt_cast_type) ||
                 ((cast_type.type == ty_opt ||
@@ -9014,7 +9070,9 @@ simplifyCoreTree (PFcnode_t *c)
             }
             /* don't cast nodes - node type was only needed
                for static typing */
-            else if (c->kind == c_seqcast &&
+            else
+#endif
+                if (c->kind == c_seqcast &&
                      PFty_subtype (input_type, PFty_xs_anyNode ()) &&
                      PFty_subtype (cast_type, PFty_xs_anyNode ()))
             {
@@ -9329,6 +9387,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (R(c));
 
             input_type = PFty_prime(PFty_defn (TY(L(c))));
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
             if (input_type.type == ty_star ||
                 input_type.type == ty_plus ||
                 input_type.type == ty_opt)
@@ -9345,6 +9404,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY(L(c))  =
                 TY(LL(c)) = PFty_xs_string ();
             }
+#endif
             break;
         default: 
             for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
@@ -9755,11 +9815,13 @@ static int test_join_pattern(PFcnode_t *for_node,
                 fst_inner = LR(LR(fst_inner));
                 fst_inner_cast = L(fst_inner_cast);
 
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
                 if (fst_inner_cast->sem.type.type == ty_opt)
                 {
                     TY(fst_inner_cast) = PFty_child(fst_inner_cast->sem.type);
                     fst_inner_cast->sem.type = PFty_child(fst_inner_cast->sem.type);
                 }
+#endif
             }
             else if (fst_inner_cast->kind == c_var && fst_inner_cast->sem.var == LLL(fst_inner)->sem.var)
             {
@@ -9796,11 +9858,13 @@ static int test_join_pattern(PFcnode_t *for_node,
                 snd_inner = LR(LR(snd_inner));
                 snd_inner_cast = L(snd_inner_cast);
 
+#ifdef USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM
                 if (snd_inner_cast->sem.type.type == ty_opt)
                 {
                     TY(snd_inner_cast) = PFty_child(snd_inner_cast->sem.type);
                     snd_inner_cast->sem.type = PFty_child(snd_inner_cast->sem.type);
                 }
+#endif
             }
             else if (snd_inner_cast->kind == c_var && snd_inner_cast->sem.var == LLL(snd_inner)->sem.var)
             {
