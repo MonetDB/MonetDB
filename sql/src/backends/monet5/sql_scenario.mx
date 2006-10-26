@@ -316,6 +316,7 @@ SQLinitClient(Client c)
 	}
 
 	c->yycur = 0;		/* make sure we don't reuse the used input */
+	c->fdin->buf[c->yycur]=0;
 	c->fdin->eof = 1;	/* force prompt on first iteration */
 	initSQLreferences();
 
@@ -746,6 +747,7 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	c->itrace='n';
 	if( onoff){
 		newStmt(c->curprg->def,"mdb","start");
+		resetOptimizerDebugger();
 		c->debugOptimizer= TRUE;
 	} else {
 		newStmt(c->curprg->def,"mdb","stop");

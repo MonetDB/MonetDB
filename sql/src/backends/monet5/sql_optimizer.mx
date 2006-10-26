@@ -116,6 +116,7 @@ factory structures.
 #include "opt_crack.h"
 #include "opt_garbageCollector.h"
 #include "opt_joinPath.h"
+#include "opt_joinselect.h"
 #include "opt_macro.h"
 #include "opt_modes.h"
 #include "opt_multiplex.h"
@@ -418,6 +419,7 @@ care of.
 		OPTcostModel(mb,0,0); /* propagate costs */
 		OPTcoercion(mb,0,0);	/* coercions */
 		OPTemptySet(mb,0,0);    /* remove empty results */
+		/* OPTjoinselect(mb,0,0);	combine join+select call */
 		OPTmodes(mb,0,0);	/* reduce number of BAT copies */
 
 		OPTaliases(mb, 0, 0);	/* alias removal */
