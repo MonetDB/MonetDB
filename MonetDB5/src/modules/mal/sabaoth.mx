@@ -28,28 +28,28 @@ machine and redirect to each other when necessary.
 module sabaoth;
 
 command prelude()
-address SABAOTHprelude
+address SABprelude
 comment "Initialise the sabaoth module";
 
 command epilogue()
-address SABAOTHepilogue
+address SABepilogue
 comment "Release the resources held by the sabaoth module";
 
 
 command marchScenario(lang:str)
-address SABAOTHmarchScenario
+address SABmarchScenario
 comment "Publishes the given language as available for this server";
 
 command retreatScenario(lang:str)
-address SABAOTHretreatScenario
+address SABretreatScenario
 comment "Unpublishes the given language as available for this server";
 
 command marchConnection(host:str, port:int, ssl:bit)
-address SABAOTHmarchConnection
+address SABmarchConnection
 comment "Publishes the given host/port as available for connecting to this server";
 
 command wildRetreat()
-address SABAOTHwildRetreat
+address SABwildRetreat
 comment "Unpublishes everything known for this server";
 
 
@@ -57,7 +57,7 @@ comment "Unpublishes everything known for this server";
 @-
 TODO
 #command retreatConnection(host:str, port:int, ssl:bit)
-#address SABAOTHretreatConnection
+#address SABretreatConnection
 #comment "Unpublishes the given host/port as available for connecting to this server";
 
 
@@ -78,8 +78,12 @@ TODO
 #define sabaoth_export extern
 #endif
 
-sabaoth_export str SABAOTHprelude(int *ret);
-sabaoth_export str SABAOTHepilogue(int *ret);
+sabaoth_export str SABprelude(int *ret);
+sabaoth_export str SABepilogue(int *ret);
+sabaoth_export str SABmarchScenario(int *ret, str *lang);
+sabaoth_export str SABretreatScenario(int *ret, str *lang);
+sabaoth_export str SABmarchConnection(int *ret, str *host, int *port, bit *ssl) ;
+sabaoth_export str SABwildRetreat(int *ret);
 
 #endif
 @-
@@ -90,14 +94,30 @@ sabaoth_export str SABAOTHepilogue(int *ret);
 #include <mal_sabaoth.h>	/* for the implementation of the functions */
 #include "sabaoth.h"
 
-str SABAOTHprelude(int *ret) {
+str SABprelude(int *ret) {
 	(void)ret;
 
 	return(MAL_SUCCEED);
 }
 
-str SABAOTHepilogue(int *ret) {
+str SABepilogue(int *ret) {
 	(void)ret;
 
 	return(SABAOTHwildRetreat(ret));
+}
+
+str SABmarchScenario(int *ret, str *lang){
+	return SABAOTHmarchScenario(ret, lang);
+}
+
+str SABretreatScenario(int *ret, str *lang){
+	return SABAOTHretreatScenario(ret, lang);
+}
+
+str SABmarchConnection(int *ret, str *host, int *port, bit *ssl) {
+	return SABAOTHmarchConnection(ret, host, port, ssl);
+}
+
+str SABwildRetreat(int *ret) {
+	return SABAOTHwildRetreat(ret);
 }
