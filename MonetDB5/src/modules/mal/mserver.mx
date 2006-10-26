@@ -358,6 +358,7 @@ m_export str SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 m_export str SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 m_export str SERVERclient(int *res, stream **In, stream **Out);
 m_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
 @c
