@@ -150,7 +150,7 @@ typedef FILE *fstream;
 	return throwMessage( "io.@1","Incorrect file pointer");
 
 #ifdef WIN32
-#ifndef LIBIO
+#ifndef LIBMAL_IO
 #define io_export extern __declspec(dllimport)
 #else
 #define io_export extern __declspec(dllexport)
