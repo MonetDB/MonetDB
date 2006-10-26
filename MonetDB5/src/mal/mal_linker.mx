@@ -125,9 +125,8 @@ getLocalObjectFile(str filename)
 #ifdef DEBUG_MAL_LINKER
 	stream_printf(GDKout, "localObjectLoaded ? %s\n",(handle!=0?"yes":"no"));
 #endif
-	if (handle) {
+	if (handle)
 		return (MALfcn) dlsym(handle, filename);
-	}
 	stream_printf(GDKout, "could not access library %s\n", dlerror());
 	return 0;
 }
@@ -147,10 +146,21 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 	(void) modnme;
 #endif
 @-
-Search module for occurrence of the function
+Search for occurrence of the function in the library identified by the filename.
 @c
 	for(idx =0; idx < lastfile && filesLoaded[idx].filename; idx++)
 		if( strcmp(filename, filesLoaded[idx].filename)==0) {
+			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
+			if( adr != NULL) 
+				return adr; /* found it */
+		}
+@-
+Search for occurrence of the function in any library already loaded.
+This deals with the case that files are linked together to reduce
+the loading time, while the signatures of the functions are still
+obtained from the source-file MAL script.
+@c
+	for(idx =0; idx < lastfile && filesLoaded[idx].handle; idx++){
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
 			if( adr != NULL) 
 				return adr; /* found it */
@@ -263,16 +273,18 @@ Use the search path provided in the configuration file
 	snprintf(nme, MAXPATHLEN, "_%s", s ? s + 1 : filename);
 	fullname = MSP_locate_file(nme);
 
-/* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
-#ifdef RTLD_MEMBER
-	mode |= RTLD_MEMBER;
-#endif
 	if (fullname == NULL) {
 #ifdef DEBUG_MAL_LINKER2
 		stream_printf(GDKout, "file not found %s\n", filename);
 #endif
 		return MAL_SUCCEED;
 	}
+
+/* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
+#ifdef RTLD_MEMBER
+	mode |= RTLD_MEMBER;
+#endif
+
 	handle = dlopen(fullname, mode);
 	if (handle == NULL) {
 		errmsg = dlerror();
@@ -317,7 +329,7 @@ unloadLibraries()
 	mal_set_lock(mal_contextLock, "unloadModule");
 	for (i = 0; i < lastfile; i++)
 		if (filesLoaded[i].fullname) {
-			/* dlclose(moduleHandle[i]);*/
+			/* dlclose(filesLoaded[i].handle);*/
 			GDKfree(filesLoaded[i].filename);
 			GDKfree(filesLoaded[i].fullname);
 		}
@@ -367,7 +379,9 @@ initLibraries()
 	noDlopen = TRUE;
 	if(noDlopen == FALSE)
 	for(i=0;preloaded[i];i++) {
+#ifdef DEBUG_MAL_LINKER
 	    stream_printf(GDKout,"loading %s\n",preloaded[i]);
+#endif
 	    loadLibrary(preloaded[i]);
 	}
 }
