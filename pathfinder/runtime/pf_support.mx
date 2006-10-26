@@ -439,12 +439,12 @@ PROC addValues(bat[void,any::1] container, bat[oid,any::1] delta) : bat[oid,oid]
     return delta.leftjoin(container.reverse());
 }
 
-PROC mposjoin( BAT[oid,oid] pre, oid cont, BAT[oid, bat] ws_item ) : BAT[void,any] 
+PROC mposjoin( any pre, oid cont, BAT[oid, bat] ws_item ) : BAT[void,any] 
 {
     return pre.leftfetchjoin(bat2constant(ws_item.find(cont)));
 }
 
-PROC mvaljoin( BAT[oid,oid] pre, oid cont, BAT[oid, bat] ws_item ) : BAT[oid,oid] 
+PROC mvaljoin( any pre, oid cont, BAT[oid, bat] ws_item ) : BAT[oid,oid] 
 {
     return pre.leftjoin(ws_item.find(cont).reverse());
 }
@@ -617,6 +617,7 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
         }
         return result.access(BAT_READ).tmark(seqbase);
 }
+
 
 @- order-preserving xquery join with existential semantics
 

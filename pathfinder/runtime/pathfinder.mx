@@ -1274,6 +1274,70 @@ PROC ws_lookup(BAT[void,bat] ws,
     return res.hmark(oid_nil);
 }
 
+# find node pre numbers by ID (/NID) or IDREF.
+# currently does not use a shared index (that needs locking), but in the future may do so
+#
+# INPUT TABLE oid iter |oid  item|int kind|int cont|str tokens
+#             a single-shaped table, but each of them (except iter) may be constant 
+#
+# OUTPUT [key,NID], where key is the key of the input table     
+PROC ws_findnodes(BAT[void,bat] ws, 
+                  int ws_attr, 
+                  BAT[void,oid] iter, any item, any kind, any cont, any tokens) : BAT[oid,oid] 
+{
+    # get root nids, which identify the XML fragment in which we must look
+    var root := get_root(ws, item, kind, cont).mposjoin(cont, ws.fetch(PRE_NID));
+
+    # expand the token list by splitting on spaces, and expand split_root and split_cont with it
+    var split_tokens := tokens.[normSpace]().materialize(iter).ll_tokenize(iter.project(" "));
+    var base_map     := split_tokens.hmark(0@0);
+        split_tokens := split_tokens.tmark(0@0);
+    var split_root   := base_map.leftfetchjoin(root); # may stay constant
+    var split_cont   := base_map.leftfetchjoin(cont).materialize(base_map);
+
+    # separate numbers (i.e. nids) from string-tokens (only for ID lookups)
+    var bak_tokens  := split_tokens;
+    var split_nids   := bat(oid,oid);
+    if (ws_attr = ID_NID) {
+        split_nids   := [oid](bak_tokens);
+        var split_sel:= split_nids.ord_uselect(oid_nil).mirror();
+        split_tokens := split_sel.leftfetchjoin(split_tokens);
+        split_root   := split_sel.leftfetchjoin(split_root); # may stay constant
+        split_nids   := split_nids.ord_select(oid_nil,oid_nil);
+    }
+
+    # prefix string-tokens with the root nid (for correct treatment of multi-document collections)
+    split_tokens := [str]([lng](split_root)) [+] "_" [+] split_tokens;
+
+    # process all containers one-by-one, putting [split,pre]-s into the result 
+    var result := bat(oid,oid,count(split_tokens));
+    var cont_unq := cont.tunique();
+    cont_unq@batloop () {
+        var idX_nid := ws.fetch(ws_attr).fetch($h);
+        var nid_rid := ws.fetch(NID_RID).fetch($h);
+        var map_pid := ws.fetch(MAP_PID).fetch($h);
+        var part := reverse(split_cont.ord_uselect($h).mirror().leftfetchjoin(base_map));
+
+        result.insert(part.leftjoin(split_tokens).leftjoin(idX_nid).leftjoin(nid_rid).[swizzle](map_pid));
+        if (ws_attr = ID_NID) 
+            result.insert(part.leftjoin(split_nids).leftjoin(nid_rid).[swizzle](map_pid));
+    }
+
+    # sort on iter|cont|pre and eliminate duplicates
+    var srt_base:= result.access(BAT_READ).hmark(0@0).tsort(); 
+    var id_srt  := srt_base.hmark(0@0);
+    var id_base := srt_base.tmark(0@0);
+    var id_pre  := id_srt.leftfetchjoin(result.tmark(0@0));
+    var id_cont := id_base.leftfetchjoin(cont);
+    var id_iter := id_base.leftfetchjoin(iter);
+    assert_order(id_iter); # base was ordered and iter was ordered 
+    var id_num  := id_iter.CTrefine(id_cont).CTrefine(id_pre);
+    var id_unq  := reverse(kunique(reverse(id_num))); # merge double-elim
+    var srt_unq := reverse(reverse(id_unq).leftfetchjoin(id_srt));
+
+    return result.fetch(srt_unq); # map back to [base,pre] result
+}
+
 PROC _ws_coll_isolate(BAT[void,bat] ws,
                       str colname,
                       BAT[void,oid] ancestor_nid,
@@ -3782,11 +3846,9 @@ xquery_prepare(xquery_client *ctx,
         if (strncmp(p, "import", 6) || !ISSPACE(p[6])) {
             break;
         } else {
-            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq";
-             * or:  import rpc-module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
+            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq" */
             p = xquery_parse_space(p+6);
-            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
-                 (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
+            if ( strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) {
                 len = p[0] == 'm' ? 6 : 10;
                 p = xquery_parse_space(p+len);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {

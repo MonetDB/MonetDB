@@ -4794,68 +4794,20 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     translate2MIL (f, NORMAL, cur_level, counter, RL(c));
 
     milprintf(f,
-            "if (iter%03u.count() != 0) { # fn:id%s\n"
-            "var strings := item%s%03u.materialize(ipik%03u);\n"
-            "var cont := kind.get_container();\n"
-            "strings := strings.[normSpace]();\n"
-            "strings := strings.ll_tokenize(strings.project(\" \"));\n"
-            "var id_str := strings.tmark(0@0);\n"
-            "var oid_iter := strings.hmark(0@0).leftfetchjoin(iter%03u);\n"
-            "strings := nil;\n"
-            "var oid_map := oid_iter.leftjoin(iter.reverse());\n"
-            /* To comply with XQuery semantics in multi-doc collections, the ID/IDREF identifiers 
-             * must be specific to each document in a collection. Our solution is to prefix
-             * the ids by the document root NID (as a string, and followed by a '_').
-             */
-            "var root := get_root(ws, item, kind, cont);\n"
-            "root := mposjoin(root, cont, ws.fetch(PRE_NID));\n"
-            "root := oid_map.leftfetchjoin(root);\n"
-            "id_str := [str](root) [+] \"_\" [+] id_str;\n"
-            "root := nil;\n"
-            "cont := oid_map.leftfetchjoin(cont);\n"
-            "oid_map := nil;\n"
-            /* get id nodes */
-            "# var nodes := mvaljoin( mposjoin(id_str, cont, ws.fetch(PRE_NID)), cont, ws.fetch(ID%s_NID));\n"
-            "var iterator := cont.tunique().reverse();\n"
-            "var nodes;\n"
-            "if (iterator.count() = 1) {\n"
-            "    nodes := id_str.leftjoin(ws.fetch(ID%s_NID).fetch(iterator.fetch(0)))"
-                               ".leftjoin(ws.fetch( NID_RID).fetch(iterator.fetch(0))).[swizzle](ws.fetch(MAP_PID).fetch(iterator.fetch(0)));\n"
-            "} else {\n"
-            "    var nodes_part;\n"
-            "    var cont_part;\n"
-            "    var id_str_part;\n"
-            "    nodes := bat(oid,oid).access(BAT_WRITE);\n"
-            "    iterator@batloop () {\n"
-            "        cont_part := cont.ord_uselect($t).mirror();\n"
-            "        id_str_part := cont_part.leftfetchjoin(id_str);\n"
-            "        nodes_part := id_str_part.leftjoin(ws.fetch(ID%s_NID).fetch($t))"
-                                             ".leftjoin(ws.fetch( NID_RID).fetch($t)).[swizzle](ws.fetch(MAP_PID).fetch($t));\n"
-            "        nodes := nodes.insert(nodes_part);\n"
-            "    }\n"
-            "}\n"
-            "oid_map := nodes.hmark(0@0);\n"
-            "kind := oid_map.leftfetchjoin(cont).set_kind(ELEM);\n"
-            "iter := oid_map.leftfetchjoin(oid_iter);\n"
-            "oid_iter := nil;\n"
-            "item := nodes.tmark(0@0);\n"
-            "nodes := nil;\n"
-            /* delete duplicates */
-            "var sorting := iter.tsort();\n"
-            "sorting := sorting.CTrefine(kind);\n"
-            "sorting := sorting.CTrefine(item);\n"
-            "ipik := tmark_unique(sorting,ipik);\n"
-            "sorting := nil;\n"
-            "iter := ipik.leftfetchjoin(iter);\n"
-            "pos := tmark_grp_unique(iter, ipik);\n"
-            "item := ipik.leftfetchjoin(item);\n"
-            "kind := ipik.leftfetchjoin(kind);\n"
-            "} else {\n",
-            counter, op,
-            item_ext, counter, counter,
-            counter,
-            idref, idref, idref);
-
+            "if (ipik.count() != 0) { # fn:id%s\n"
+            "  iter%03u := iter%03u.materialize(ipik%03u);\n"
+            "  var map := iter%03u.leftjoin(iter.materialize(ipik).reverse()).tmark(0@0);\n"
+            "  item := map.leftfetchjoin(item);\n"
+            "  kind := map.leftfetchjoin(kind);\n"
+            "  var cont := kind.get_container();\n"
+            "  map := ws_findnodes(ws, ID%s_NID, iter%03u, item, kind, cont, item%s%03u);\n"
+            "  ipik := map.tmark(0@0);\n"
+            "  map := map.hmark(0@0);\n"
+            "  item := ipik;\n"
+            "  iter := map.leftfetchjoin(iter);\n"
+            "  kind := map.leftfetchjoin(cont.set_kind(ELEM));\n"
+            "  pos := tmark_grp_unique(iter, ipik);\n"
+            "} else {\n", op, counter, counter, counter, counter, idref, counter, item_ext, counter);
     translateEmpty (f);
     milprintf(f,
             "} # end of fn:id%s\n",
@@ -6475,6 +6427,14 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         translateIntersect (f, "diff", cur_level, counter, args);
         return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"nid")))
+    {
+        milprintf(f, "{ # translate fn:nid (node) as xs:string\n");
+        translate2MIL (f, code, cur_level, counter, L(args));
+        milprintf(f, "var res := [str]([lng](item.mposjoin(kind.get_container(), ws.fetch(PRE_NID))));\n");
+        return_str_funs (f, code, cur_level, "fn:nid (node) as xs:string");
+        return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"id")))
     {
