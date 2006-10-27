@@ -6479,10 +6479,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"nid")))
     {
-        milprintf(f, "{ # translate fn:nid (node) as xs:string\n");
+        milprintf(f, "{ # translate pf:nid (node) as xs:string\n");
         translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f, "var res := [str]([lng](item.mposjoin(kind.get_container(), ws.fetch(PRE_NID))));\n");
-        return_str_funs (f, code, cur_level, "fn:nid (node) as xs:string");
+        return_str_funs (f, code, cur_level, "pf:nid (node) as xs:string");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"id")))
@@ -7611,7 +7611,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_lib,"add-doc")) == 0)
     {
-        milprintf(f, "# fn:add-doc (str, str [, str] [, int]) as add_stmt\n");
+        milprintf(f, "# pf:add-doc (str, str [, str] [, int]) as add_stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult(f, counter);
@@ -7676,7 +7676,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_lib,"del-doc")) == 0)
     {
-        milprintf(f, "# fn:del-doc (str) as del_stmt\n");
+        milprintf(f, "# pf:del-doc (str) as del_stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                   "var delID := int_values.addValues(-1LL);\n"
@@ -7764,7 +7764,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, counter, STR);
     
         milprintf(f,
-            "{ # fn:tijah-command\n"
+            "{ # pf:tijah-command\n"
             "var strings := item%s%03u;\n"
             "item := [run_tijah_command](strings).[oid]();\n"
             "iter := loop%03u;\n"
@@ -7789,7 +7789,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	
 	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query-id"));
 	milprintf(f, 
-                "{ # translate fn:tijah-query\n"
+                "{ # translate pf:tijah-query\n"
 	);
         if (fun->arity == 3) {
 	  /* translate the first options parameter*/
@@ -7945,7 +7945,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, str_counter, STR);
 	if ( opt_counter )
 	    deleteResult(f, opt_counter);
-        milprintf(f, "} # end of translate fn:tijah_query\n");
+        milprintf(f, "} # end of translate pf:tijah_query\n");
         return (code && storeScore)?INT:NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-nodes")) )
@@ -7953,7 +7953,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         char *item_int = kind_str(INT);
         
 	milprintf(f, 
-                "{ # translate fn:tijah-nodes\n"
+                "{ # translate pf:tijah-nodes\n"
 	);
         /* get query id */
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -7981,7 +7981,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	milprintf(f,
                 "kind := set_kind(frag, ELEM);\n"
                 "ipik := iter;\n"
-	        "} # end of translate fn:tijah_nodes\n");
+	        "} # end of translate pf:tijah_nodes\n");
         
 	return NORMAL;
     }
@@ -7989,7 +7989,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         char *item_int = kind_str(INT);
         milprintf(f, 
-                "{ # translate fn:tijah-score\n"
+                "{ # translate pf:tijah-score\n"
 	);
         /* get query id */
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -8046,7 +8046,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	/* clean up */
 	deleteResult_(f, counter, INT);
-        milprintf(f, "} # end of translate fn:tijah-score\n");
+        milprintf(f, "} # end of translate pf:tijah-score\n");
         return (code)?DBL:NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-tokenize")) )
@@ -8065,7 +8065,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, str_counter, STR);
 
         milprintf(f,
-                "{ # fn:tijah-tokenize\n"
+                "{ # pf:tijah-tokenize\n"
                 "var res := [tijah_tokenize](item%s%03u);\n",
                 item_ext, str_counter);
 
@@ -8080,7 +8080,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "ipik := iter;\n"
             "pos := 1@0;\n"
             "kind := STR;\n"
-            "} # end of fn:tijah-tokenize\n",
+            "} # end of pf:tijah-tokenize\n",
             cur_level);
 
         deleteResult_ (f, str_counter, STR);
