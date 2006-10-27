@@ -185,10 +185,11 @@ Rel:    cast (project (cast (Rel)))               =  57 (10);
 Rel:    cast (Rel)                                =  58 (10);
 Rel:    seqty1 (Rel)                              =  59 (10);
 Rel:    all (Rel)                                 =  60 (10);
-Rel:    scjoin (Frag, Rel)                        =  61 (10);
-Rel:    scjoin (Frag, distinct (Rel))             =  62 (10);
-Rel:    scjoin (Frag, scjoin (Frag, Rel))         =  63 (10);
-Rel:    doc_access (Frag, Rel)                    =  64 (10);
+Rel:    ScjRel                                    =  61 (10);
+ScjRel: scjoin (Frag, Rel)                        =  62 (10);
+ScjRel: scjoin (Frag, ScjRel)                     =  63 (10);
+ScjRel: scjoin (Frag, distinct (Rel))             =  64 (10);
+Rel:    doc_access (Frag, Rel)                    =  65 (10);
 
 Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
 Rel:    roots_ (element (Frag,                       
@@ -795,6 +796,40 @@ reduce (PFla_op_t *p, int goalnt)
             p->prop = PFprop ();
             break;
 
+        /* Rel:    rownum (Rel) */
+        case 50:
+            /* replace rownum by projection if it only contains one
+               sort (and no partioning) criterion that is of type nat */ 
+            if (!p->sem.rownum.part &&
+                p->sem.rownum.sortby.count == 1)
+                for (unsigned int i = 0; i < p->schema.count; i++) {
+                    PFalg_att_t cur_col = p->schema.items[i].name;
+                    
+                    if (cur_col == p->sem.rownum.sortby.atts[0] &&
+                        p->schema.items[i].type == aat_nat) {
+                        PFalg_proj_t *proj = PFmalloc (
+                                                 p->schema.count
+                                                 * sizeof (PFalg_proj_t));
+                        /* copy property list */
+                        for (i = 0; i < p->schema.count; i++)
+                            if (p->sem.rownum.attname ==
+                                p->schema.items[i].name)
+                                /* as rownum column we use the single
+                                   sort criterion */
+                                proj[i] = PFalg_proj (p->sem.number.attname,
+                                                      cur_col);
+                            else
+                                proj[i] = PFalg_proj (p->schema.items[i].name,
+                                                      p->schema.items[i].name);
+                                                      
+                        *p = *PFla_project_ (L(p), p->schema.count, proj);
+                        SEEN(p) = false;
+                        relabel (p, kids);
+                        break;
+                    }
+                }
+            break;
+
         /* Rel:    number (number (Rel)) */
         case 52:
             if (! p->sem.number.part && 
@@ -955,14 +990,7 @@ reduce (PFla_op_t *p, int goalnt)
             }
         } break;
 
-        /* Rel:    scjoin (Frag, distinct (Rel)) */
-        case 62:
-            R(p) = L(R(p));
-            SEEN(p) = false;
-            relabel (p, kids);
-            break;
-
-        /* Rel:    scjoin (Frag, scjoin (Frag, Rel) */
+        /* ScjRel: scjoin (Frag, ScjRel) */
         case 63:
             /* combine scjoins if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
@@ -978,6 +1006,13 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
                 break;
             }
+            break;
+
+        /* ScjRel: scjoin (Frag, distinct (Rel)) */
+        case 64:
+            R(p) = L(R(p));
+            SEEN(p) = false;
+            relabel (p, kids);
             break;
 
         /* Rel:    EmptyRel */
