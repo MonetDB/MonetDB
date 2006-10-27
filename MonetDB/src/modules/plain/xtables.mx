@@ -697,7 +697,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 	int n = bits(BATcount(ct_histo)), *N = &n;
 	declare_@4
 	declare_mask_CUSTOM
-	int custom_rng = 1; /* expect small stuff, change to max(ct_histo) */
+	int custom_rng = BATcount(ct_histo); /* expected number of groups */
 	hash_t custom_MASK = mask;
 
 	map_init_CUSTOM(map,hash,mask,entry,mapsize);
@@ -734,7 +734,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 			entry.gid = *(oid*) BUNhead(b,p);
 		}
 		entry.hcur = hcur;
-		entry.link =  hash[c];
+		entry.link = hash[c];
 		hash[c] = mapsize++;
 		bunfastins(map, &entry, tcur);
 		e = &entry;
