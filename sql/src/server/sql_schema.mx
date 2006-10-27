@@ -1215,7 +1215,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	switch (s->token) {
 		case SQL_UNIQUE:
 		case SQL_PRIMARY_KEY:
-		{
+		if (isTable(t)) {
 			key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
 			sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
 			dnode *nms = s->data.lval->h;
@@ -1236,6 +1236,8 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			} else {
 				res = stmt_none();
 			}
+		} else {
+			return sql_error(sql, 02, "ALTER TABLE: cannot add constraint to VIEW '%s'\n", t->base.name);
 		}
 		break;
 		case SQL_FOREIGN_KEY:

@@ -3716,12 +3716,25 @@ data_type:
 
  |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
  |  sqlDECIMAL '(' nonzero ')'
-			{ sql_find_subtype(&$$, "decimal", $3, 0); }
- |  sqlDECIMAL '(' nonzero ',' posint ')'
-			{ if ($5 >= $3) {
+			{ if ($3 > 18) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "scale (%lld) should be less than precision (%lld)", $5, $3);
+				snprintf(buf, BUFSIZ, "decimal of %lld digits are not supported", $3);
+				yyerror(buf);
+				$$.type = NULL;
+				YYABORT;
+			  } else {
+			        sql_find_subtype(&$$, "decimal", $3, 0); 
+			  }
+			}
+ |  sqlDECIMAL '(' nonzero ',' posint ')'
+			{ if ($5 >= $3 || $5 + $3 > 18) {
+				char buf[BUFSIZ];
+
+				if ($5 >= $3)
+					snprintf(buf, BUFSIZ, "scale (%lld) should be less than precision (%lld)", $5, $3);
+				else
+					snprintf(buf, BUFSIZ, "decimal(%lld,%lld) isn't supported", $5, $3);
 				yyerror(buf);
 				$$.type = NULL;
 				YYABORT;
