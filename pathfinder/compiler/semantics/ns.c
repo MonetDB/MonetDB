@@ -150,6 +150,12 @@ PFns_t PFns_op  = { .prefix = "op",
 
 
 /** 
+ * Pathfinder's namespace for additional non-'fn' functions.
+ */ 
+PFns_t PFns_lib = { .prefix = "pf",  
+                    .uri    = "http://www.pathfinder-xquery.org/" };
+
+/** 
  * Pathfinder's own internal NS (pf:...).
  * Note that the prefix contains a character that cannot be entered in
  * a query. 
@@ -157,7 +163,7 @@ PFns_t PFns_op  = { .prefix = "op",
  * This namespace is not accessible for the user.
  */ 
 PFns_t PFns_pf  = { .prefix = "#pf",  
-                    .uri    = "http://www.pathfinder-xquery.org/" };
+                    .uri    = "http://www.pathfinder-xquery.org/internal/" };
 
 /**
  * Wildcard namespace.
@@ -939,6 +945,7 @@ PFns_resolve (PFpnode_t *root)
     ns_add (PFns_pf);
     ns_add (PFns_xdt);
     ns_add (PFns_local);
+    ns_add (PFns_lib);
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS

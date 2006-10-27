@@ -92,6 +92,11 @@ extern PFns_t PFns_fn;
  */
 extern PFns_t PFns_op;
 
+/**
+ * Pathfinder's namespace for additional non-'fn' functions.
+ */ 
+extern PFns_t PFns_lib;
+
 /** 
  * Pathfinder's own internal NS (pf:...).
  */ 

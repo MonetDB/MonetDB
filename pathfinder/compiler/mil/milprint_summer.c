@@ -6477,7 +6477,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translateIntersect (f, "diff", cur_level, counter, args);
         return NORMAL;
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"nid")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"nid")))
     {
         milprintf(f, "{ # translate fn:nid (node) as xs:string\n");
         translate2MIL (f, code, cur_level, counter, L(args));
@@ -7609,7 +7609,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult (f, counter);
         return NORMAL;
     }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"add-doc")) == 0)
+    else if (PFqname_eq(fnQname, PFqname (PFns_lib,"add-doc")) == 0)
     {
         milprintf(f, "# fn:add-doc (str, str [, str] [, int]) as add_stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -7674,7 +7674,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult(f, counter - 2);
         return NORMAL;
     }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"del-doc")) == 0)
+    else if (PFqname_eq(fnQname, PFqname (PFns_lib,"del-doc")) == 0)
     {
         milprintf(f, "# fn:del-doc (str) as del_stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -7752,7 +7752,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     }
 #ifdef HAVE_PFTIJAH
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"tijah-command")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"tijah-command")))
     {
         char *item_ext = kind_str(STR);
 
@@ -7778,8 +7778,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     }
     else if (
-          ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query"))) ||
-          ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query-id")))
+          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query"))) ||
+          ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query-id")))
 	)
     {
         int opt_counter  = 0;
@@ -7787,7 +7787,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	int ctx_counter  = 0;
         char *item_ext = kind_str(STR);
 	
-	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query-id"));
+	int storeScore = !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-query-id"));
 	milprintf(f, 
                 "{ # translate fn:tijah-query\n"
 	);
@@ -7948,7 +7948,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "} # end of translate fn:tijah_query\n");
         return (code && storeScore)?INT:NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-nodes")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-nodes")) )
     {
         char *item_int = kind_str(INT);
         
@@ -7985,7 +7985,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         
 	return NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-score")) )
     {
         char *item_int = kind_str(INT);
         milprintf(f, 
@@ -8049,7 +8049,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "} # end of translate fn:tijah-score\n");
         return (code)?DBL:NORMAL;
     }
-    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-tokenize")) )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_lib,"tijah-tokenize")) )
     {
         char *item_ext;
         int str_counter, rc;
@@ -8659,10 +8659,10 @@ noTijahFun (PFcnode_t *c)
 {
     int i;
     if (c->kind == c_apply && (
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-query"))) ||
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-query-id"))) ||
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-nodes"))) ||
-	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_fn,"tijah-score")))))
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-query"))) ||
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-query-id"))) ||
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-nodes"))) ||
+	    (!PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_lib,"tijah-score")))))
         return 0;
     else 
         for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)

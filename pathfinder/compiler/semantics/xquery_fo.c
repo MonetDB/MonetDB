@@ -184,8 +184,8 @@ PFfun_xquery_fo ()
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) } },
         .alg = PFbui_fn_doc }
-    , /* fn:idref (xs:element) as integer */
-      { .ns = PFns_fn, .loc = "nid",
+    , /* pf:nid (xs:element) as string */
+      { .ns = PFns_lib, .loc = "nid",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyElement () },
             .ret_ty = PFty_xs_string () } } }
@@ -1549,31 +1549,31 @@ PFfun_xquery_fo ()
                                    PFty_xdt_untypedAtomic () },
             .ret_ty = PFty_stmt () } } }
 
-    ,  /* fn:add-doc (string, string) as docmgmt */
-      { .ns = PFns_fn, .loc = "add-doc",
+    ,  /* pf:add-doc (string, string) as docmgmt */
+      { .ns = PFns_lib, .loc = "add-doc",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string () },
             .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:add-doc (string, string, string) as docmgmt */
-      { .ns = PFns_fn, .loc = "add-doc",
+    ,  /* pf:add-doc (string, string, string) as docmgmt */
+      { .ns = PFns_lib, .loc = "add-doc",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_string () },
             .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:add-doc (string, string, int) as docmgmt */
-      { .ns = PFns_fn, .loc = "add-doc",
+    ,  /* pf:add-doc (string, string, int) as docmgmt */
+      { .ns = PFns_lib, .loc = "add-doc",
         .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_integer() },
             .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:add-doc (string, string, string, int) as docmgmt */
-      { .ns = PFns_fn, .loc = "add-doc",
+    ,  /* pf:add-doc (string, string, string, int) as docmgmt */
+      { .ns = PFns_lib, .loc = "add-doc",
         .arity = 4, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string (),
                                    PFty_xs_string (),
@@ -1581,61 +1581,61 @@ PFfun_xquery_fo ()
                                    PFty_xs_integer() },
             .ret_ty = PFty_docmgmt () } } }
 
-    ,  /* fn:del-doc (string) as docmgmt */
-      { .ns = PFns_fn, .loc = "del-doc",
+    ,  /* pf:del-doc (string) as docmgmt */
+      { .ns = PFns_lib, .loc = "del-doc",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_docmgmt () } } }
 
 #ifdef HAVE_PFTIJAH
-    , /* fn:tijah-command(string*) as boolean */
-      { .ns = PFns_fn, .loc = "tijah-command",
+    , /* pf:tijah-command(string*) as boolean */
+      { .ns = PFns_lib, .loc = "tijah-command",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()) },
              .ret_ty = PFty_xs_boolean () } } }
-    , /* fn:tijah-query-id(item*, string) as integer */
-      { .ns = PFns_fn, .loc = "tijah-query-id",
+    , /* pf:tijah-query-id(item*, string) as integer */
+      { .ns = PFns_lib, .loc = "tijah-query-id",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_xs_integer () },
 	     } }
-    , /* fn:tijah-query-id(item, item*, string) as integer */
-      { .ns = PFns_fn, .loc = "tijah-query-id",
+    , /* pf:tijah-query-id(item, item*, string) as integer */
+      { .ns = PFns_lib, .loc = "tijah-query-id",
         .arity = 3, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
 	     			    PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_xs_integer () },
 	     } }
-    , /* fn:tijah-query(item*, string) as node* */
-      { .ns = PFns_fn, .loc = "tijah-query",
+    , /* pf:tijah-query(item*, string) as node* */
+      { .ns = PFns_lib, .loc = "tijah-query",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* fn:tijah-query(item, item*, string) as node* */
-      { .ns = PFns_fn, .loc = "tijah-query",
+    , /* pf:tijah-query(item, item*, string) as node* */
+      { .ns = PFns_lib, .loc = "tijah-query",
         .arity = 3, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
 	     			    PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* fn:tijah-nodes(integer) as node* */
-      { .ns = PFns_fn, .loc = "tijah-nodes",
+    , /* pf:tijah-nodes(integer) as node* */
+      { .ns = PFns_lib, .loc = "tijah-nodes",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_integer () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
-    , /* fn:tijah-score(integer, node) as double */
-      { .ns = PFns_fn, .loc = "tijah-score",
+    , /* pf:tijah-score(integer, node) as double */
+      { .ns = PFns_lib, .loc = "tijah-score",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_integer (),
 	                            PFty_xs_anyNode () },
              .ret_ty = PFty_xs_double () } } }
-    , /* fn:tijah-tokenize(string?) as string */
-      { .ns = PFns_fn, .loc = "tijah-tokenize",
+    , /* pf:tijah-tokenize(string?) as string */
+      { .ns = PFns_lib, .loc = "tijah-tokenize",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_xs_string () } } }
