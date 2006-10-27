@@ -94,8 +94,6 @@ strip_extra_zeros(char *s)
 
 	for (; *s && *s == '0'; s++)
 		;
-	if (*s == '.')
-		s--;
 	res = s;
 	/* find end, and strip extra 0's */
 	for (; *s; s++) ;	

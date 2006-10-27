@@ -649,7 +649,6 @@ number(mvc * c, int cur)
 	int before_cur = EOF;
 
 	lc->started = 1;
-	/* TODO start with . */
 	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
 		while ((cur = scanner_getc(lc)) != EOF && 
 				(isdigit(cur) || 
@@ -734,7 +733,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '(':
 	case ')':
 	case ',':
-	case '.':
 	case '=':
 		lc->started = 1;
 		return scanner_token(lc, cur);
@@ -763,6 +761,17 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token( lc, COMPARISON);
 		} else {
 			return scanner_token( lc, COMPARISON);
+		}
+	case '.':
+		lc->started = 1;
+		cur = scanner_getc(lc);
+		if (!isdigit(cur)) {
+			utf8_putchar(lc, cur); 
+			return scanner_token( lc, '.');
+		} else {
+			utf8_putchar(lc, cur); 
+			cur = '.';
+			return number(c, cur);
 		}
 	case '|':
 		lc->started = 1;

@@ -1136,7 +1136,7 @@ sqltypeinit(void)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *INT, *LNG, *OID, *BIT, *DBL;
+	sql_type *SHT, *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 
@@ -1156,7 +1156,7 @@ sqltypeinit(void)
 	OID = *t++ = sql_create_type("OID", 31, 0, 2, EC_NUM, "oid");
 	(void)OID; /* pacify picky compilers */
 	/*sql_create_type("TINYINT",   8, SCALE_FIX, 2,  EC_NUM, "uchr"); */
-	      *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
+	SHT = *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type("INT",      32, SCALE_FIX, 2, EC_NUM, "int");
 	LNG = *t++ = sql_create_type("BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
 
@@ -1267,7 +1267,7 @@ sqltypeinit(void)
 		sql_create_func("sign", "calc", "sign", *t, NULL, *t, SCALE_FIX);
 		/* scale fixing for all numbers */
 		sql_create_func("scale_up", "calc", "*", *t, lt->type, *t, SCALE_NONE);
-		sql_create_func("scale_down", "sql", "round", *t, lt->type, *t, SCALE_NONE);
+		sql_create_func("scale_down", "sql", "dec_round", *t, lt->type, *t, SCALE_NONE);
 		/* numeric function on INTERVALS */
 		if (*t != MONINT && *t != SECINT){
 			sql_create_func("sql_sub", "calc", "-", MONINT, *t, MONINT, SCALE_FIX);
@@ -1292,7 +1292,7 @@ sqltypeinit(void)
 
 	for (t = decimals; t < dates; t++) {
 		sql_create_func("truncate", "sql", "trunc", *t, INT, *t, SCALE_NONE);
-		sql_create_func("round", "sql", "round", *t, INT, *t, SCALE_NONE);
+		sql_create_func("round", "sql", "round", *t, SHT, *t, SCALE_NONE);
 	}
 
 	for (t = numerical; t < end; t++) {

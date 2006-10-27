@@ -143,7 +143,8 @@ stream.
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
 @= mel_round
-	.COMMAND round( @1 v, @1 r ) : @1 = @1_round_wrap; "round off the value v to nearests multiple of r"
+	.COMMAND dec_round( @1 v, @1 r ) : @1 = @1_dec_round_wrap; "round off the value v to nearests multiple of r"
+	.COMMAND round( @1 v, int d, int s, sht r ) : @1 = @1_round_wrap; "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"
 @m
 
 @:mel_round(sht)@
@@ -151,9 +152,9 @@ stream.
 @:mel_round(lng)@
 
 @m
-	.COMMAND round( flt v, flt r ) : flt = flt_round_wrap; "round off the value v to nearests multiple of r"
+	.COMMAND dec_round( flt v, flt r ) : flt = flt_dec_round_wrap; "round off the value v to nearests multiple of r"
 
-	.COMMAND round( dbl v, dbl r ) : dbl = dbl_round_wrap; "round off the value v to nearests multiple of r"
+	.COMMAND dec_round( dbl v, dbl r ) : dbl = dbl_dec_round_wrap; "round off the value v to nearests multiple of r"
 
 @= mel_cast
  .COMMAND @1( str v ) : @1 = str_2_@1; "cast to @1 and check for overflow"
@@ -669,13 +670,35 @@ mvc_export_value_wrap(mvc *M, Stream *S, int *qtype, str tn, str name, str type,
 	return GDK_SUCCEED;
 }
 
+lng scales[20] = {
+	LL_CONSTANT(0),
+	LL_CONSTANT(10),
+	LL_CONSTANT(100),
+	LL_CONSTANT(1000),
+	LL_CONSTANT(10000),
+	LL_CONSTANT(100000),
+	LL_CONSTANT(1000000),
+	LL_CONSTANT(10000000),
+	LL_CONSTANT(100000000),
+	LL_CONSTANT(1000000000),
+	LL_CONSTANT(10000000000),
+	LL_CONSTANT(100000000000),
+	LL_CONSTANT(1000000000000),
+	LL_CONSTANT(10000000000000),
+	LL_CONSTANT(100000000000000),
+	LL_CONSTANT(1000000000000000),
+	LL_CONSTANT(10000000000000000),
+	LL_CONSTANT(100000000000000000),
+	LL_CONSTANT(1000000000000000000)
+};
+
 @-
 The core modules of Monet provide just a limited set of
 mathematical operators. The extensions required to support
 SQL-99 are shown below. At some point they also should be
 moved to module code base.
 @= round
-int @1_round_wrap( @1 *res, @1 *v, @1 *r )
+int @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
 	@1 add = *r;
@@ -692,6 +715,31 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	val += add; 
 	val /= *r;
 	*res = val;
+	return GDK_SUCCEED;
+}
+
+int @1_round_wrap( @1 *res, @1 *v, int *d, int *s, sht *r )
+{
+	/* shortcut nil */
+	if (*v == @1_nil) {
+		*res = @1_nil;
+	} else if (-*r > *d) {
+		*res = 0;
+	} else if (*r > 0 && *r < *s) {
+		int dff = *s - *r;
+		lng rnd = scales[dff]>>1;
+		if (*v > 0)
+			*res = (((*v + rnd)/scales[dff])*scales[dff]);
+		else
+			*res = (((*v - rnd)/scales[dff])*scales[dff]);
+	} else if (*r <= 0) {
+		int dff = -*r + *s;
+		lng rnd = scales[dff]>>1;
+		if (*v > 0)
+			*res = (((*v + rnd)/scales[dff])*scales[dff]);
+		else
+			*res = (((*v - rnd)/scales[dff])*scales[dff]);
+	}
 	return GDK_SUCCEED;
 }
 
@@ -747,7 +795,7 @@ str_2num_@1( @1 *res, str v, int *len )
 @:round(lng)@
 
 @= fround
-int @1_round_wrap( @1 *res, @1 *v, @1 *r )
+int @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
 
@@ -822,28 +870,6 @@ str_cast(str *res, mvc *M, int *eclass, int *d, int *s, int *has_tz, ptr v, int 
 	*res = r;
 	return GDK_SUCCEED;
 }
-
-lng scales[20] = {
-	LL_CONSTANT(0),
-	LL_CONSTANT(10),
-	LL_CONSTANT(100),
-	LL_CONSTANT(1000),
-	LL_CONSTANT(10000),
-	LL_CONSTANT(100000),
-	LL_CONSTANT(1000000),
-	LL_CONSTANT(10000000),
-	LL_CONSTANT(100000000),
-	LL_CONSTANT(1000000000),
-	LL_CONSTANT(10000000000),
-	LL_CONSTANT(100000000000),
-	LL_CONSTANT(1000000000000),
-	LL_CONSTANT(10000000000000),
-	LL_CONSTANT(100000000000000),
-	LL_CONSTANT(1000000000000000),
-	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000)
-};
 
 @= simpleupcast
 int @2_2_@1( @1 *res, @2 *v )
@@ -1300,12 +1326,15 @@ proc restart( str seq, lng v ) : lng {
 
 proc SQLgroup(BAT[oid,any] a) : grp {
 	# handle the grouping for unique checks with the special _CTgroup 
-	if (and(or((a.ttype()=int),(a.ttype()=lng)),(a.count()>(1024*1024)))) {
+	if (and(or((a.ttype()=int),(a.ttype()=lng)),(a.count()>(256*1024)))) {
 		var N := (max(a) - min(a));
 		if (isnil(N))
 			N := a.count();
-		if (N > a.count()) 
+		if (or((N > a.count()),(N<0)))
 			N := a.count();
+		if (or((N = 0),(log2(N)=0))) {
+			return 1;
+		}
 		return _CTgroup(a, log2(N), 1); 
 	}
 	return CTgroup(a);

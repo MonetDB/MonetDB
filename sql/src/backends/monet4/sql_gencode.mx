@@ -862,20 +862,29 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_binop:{
+			/* TODO use the rewriter to fix the 'round' function */
+			sql_subtype *tpe = tail_type(s->op1.stval);
 			char *fimp = sql_func_imp(s->op4.funcval->func);
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
+			char dec_func[SMALLBUFSIZ];
 			size_t buflen = strlen(fimp) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
+			dec_func[0] = 0;
 			backend_create_func(sql, s->op4.funcval->func); 
-			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
-				len += snprintf(buf, buflen, "var s%d := [%s](s%d,s%d);\n", -s->nr, fimp, l, r);
-				assert(len <= buflen);
-			} else {
-				len += snprintf(buf, buflen, "var s%d := %s(s%d,s%d);\n", -s->nr, fimp, l, r);
-				assert(len <= buflen);
+			if (strcmp(fimp, "round")==0 &&
+			    tpe->type->eclass == EC_DEC) {
+				len = snprintf(dec_func, SMALLBUFSIZ, "%d,%d,",
+				tpe->digits, tpe->scale);
+				assert(len < SMALLBUFSIZ);
 			}
+			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
+				len = snprintf(buf, buflen, "var s%d := [%s](s%d,%ss%d);\n", -s->nr, fimp, l, dec_func, r);
+			} else {
+				len = snprintf(buf, buflen, "var s%d := %s(s%d,%ss%d);\n", -s->nr, fimp, l, dec_func, r);
+			}
+			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);

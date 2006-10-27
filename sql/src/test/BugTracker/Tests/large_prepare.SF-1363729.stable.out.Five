@@ -15,18 +15,14 @@ Ready.
 
 Over..
 
-# 23:55:56 >  
-# 23:55:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41152  < SF-1363729.large_prepare.sql
-# 23:55:56 >  
+# 20:14:57 >  
+# 20:14:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30296  < large_prepare.SF-1363729.sql
+# 20:14:57 >  
 
-# 6 # querytype
-# 10 # querytype
-# prepare,	prepare,	prepare # table_name
-# type,	digits,	scale # name
-# varchar,	int,	int # type
-# 0,	0,	0 # length
-# 35 # tuplecount
-# 0 # id
+% prepare,	prepare,	prepare # table_name
+% type,	digits,	scale # name
+% varchar,	int,	int # type
+% 0,	0,	0 # length
 [ "time",	1,	0	]
 [ "bigint",	64,	0	]
 [ "bigint",	64,	0	]
