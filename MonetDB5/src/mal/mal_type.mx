@@ -223,6 +223,7 @@ int gdkCoercionTable[12][12] = {
 @-
 Coercion is defined in terms of malType structures, which means
 that we have to be prepared to deal with type variables as well.
+[This function is not used ]
 @c
 
 malType
@@ -276,6 +277,8 @@ getTypeIndex(str nme, int len, int deftype)
 				return TYPE_bat;
 			if (qt("bit"))
 				return TYPE_bit;
+			if (qt("bte"))
+				return TYPE_bte;
 			break;
 		case 'c':
 			if (qt("chr"))
@@ -312,6 +315,10 @@ getTypeIndex(str nme, int len, int deftype)
 				return TYPE_str;
 			if (qt("sht"))
 				return TYPE_sht;
+			break;
+		case 'w':
+			if (qt("wrd"))
+				return TYPE_wrd;
 			break;
 		}
 	if( nme[0]=='v' && qt("voi") && nme[3] == 'd')

@@ -20,9 +20,7 @@
 
 @* The MAL builder
 The MAL builder library containst the primitives to simplify construction 
-of programs by compilers. It has grown out of the MonetDB/SQL code generator
-and further refined during the MIL-2-MAL compiler.
-
+of programs by compilers. It has grown out of the MonetDB/SQL code generator.
 The strings being passed as arguments are copied in the process.
 
 @h
@@ -40,6 +38,8 @@ mal_export InstrPtr newStmtId(MalBlkPtr mb, char *id, char *module, char *name);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
+mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
+mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
 mal_export InstrPtr pushChr(MalBlkPtr mb, InstrPtr q, char val);
 mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
@@ -126,6 +126,30 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 	cst.vtype= TYPE_int;
 	cst.val.ival= val;
 	_t = defConstant(mb, TYPE_int,&cst);
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
+pushWrd(MalBlkPtr mb, InstrPtr q, wrd val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_wrd;
+	cst.val.wval= val;
+	_t = defConstant(mb, TYPE_wrd,&cst);
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
+pushBte(MalBlkPtr mb, InstrPtr q, bte val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_bte;
+	cst.val.btval= val;
+	_t = defConstant(mb, TYPE_bte,&cst);
 	return pushArgument(mb, q, _t);
 }
 

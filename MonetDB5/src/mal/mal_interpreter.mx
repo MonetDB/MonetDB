@@ -95,6 +95,8 @@ tstagain:
 	case TYPE_sht: val= (ptr) & v->val.shval; break;
 	case TYPE_bat: val= (ptr) & v->val.br.id; break;
 	case TYPE_int: val= (ptr) & v->val.ival; break;
+	case TYPE_wrd: val= (ptr) & v->val.wval; break;
+	case TYPE_bte: val= (ptr) & v->val.btval; break;
 	case TYPE_oid: val= (ptr) & v->val.oval; break;
 	case TYPE_ptr: val= (ptr) v->val.pval; break;/*!!*/
 	case TYPE_flt: val= (ptr) & v->val.fval; break;
@@ -133,6 +135,8 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_sht: ret= (ptr) & v->val.shval; break;
 	case TYPE_bat: ret= (ptr) & v->val.br.id; break;
 	case TYPE_int: ret= (ptr) & v->val.ival; break;
+	case TYPE_wrd: ret= (ptr) & v->val.wval; break;
+	case TYPE_bte: ret= (ptr) & v->val.btval; break;
 	case TYPE_oid: ret= (ptr) & v->val.oval; break;
 	case TYPE_ptr: ret= (ptr) & v->val.pval; break;
 	case TYPE_flt: ret= (ptr) & v->val.fval; break;
@@ -772,6 +776,16 @@ switch(pci->barrier){
 				break;
 			case TYPE_int:
 				if( v->val.ival >= 0 && v->val.ival!= int_nil )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_wrd:
+				if( v->val.wval >= 0 && v->val.wval!= wrd_nil )
+					stkpc= pci->jump; 
+				else stkpc++;
+				break;
+			case TYPE_bte:
+				if( v->val.btval >= 0 && v->val.btval!= bte_nil )
 					stkpc= pci->jump; 
 				else stkpc++;
 				break;
