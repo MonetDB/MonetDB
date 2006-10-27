@@ -639,6 +639,7 @@ int SQLautocommit(Client c, mvc *m){
 	return TRUE;
 }
 
+/* #define _SQL_READER_DEBUG */
 str
 SQLreader(Client c)
 {
@@ -650,13 +651,18 @@ SQLreader(Client c)
 	mvc *m = NULL;
 	int blocked = isa_block_stream(in->s);
 
-#ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "#SQLparser: start reading SQL block\n");
-#endif
 	if (!be || c->mode <= FINISHING) {
+#ifdef _SQL_READER_DEBUG
+	stream_printf(GDKout, "SQL client finished\n");
+#endif
 		c->mode = FINISHING;
 		return NULL;
 	}
+#ifdef _SQL_READER_DEBUG
+	stream_printf(GDKout, "#SQLparser: start reading SQL %s %s\n",
+		(be->console?" from console":""), 
+		(blocked? "Blocked read":""));
+#endif
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
 @- 
@@ -664,7 +670,8 @@ Continue processing any left-over input from the previous round.
 @c
 
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
+	stream_printf(GDKout, "#pos %d len %d eof %d \n",
+		in->pos, in->len, in->eof);
 #endif
 @-
 Distinguish between console reading and MapiClient connections.
@@ -676,6 +683,9 @@ The former comes with readline functionality.
 		ssize_t rd;
 
 		if (c->bak) {
+#ifdef _SQL_READER_DEBUG
+			stream_printf(GDKout, "Switch to backup stream\n");
+#endif
 			MCpopClientInput(c);
 			in = c->fdin;
 			m->scanner.rs = c->fdin;
