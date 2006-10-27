@@ -257,6 +257,121 @@ opt_complex (PFla_op_t *p)
             }
             break;
             
+        case la_select:
+        /**
+         * Rewrite the pattern (1) into expression (2):
+         *
+         *          select_(att1) [icols:att2]          pi_(att2,...:att2)
+         *            |                                  | 
+         *         ( pi_(att1,att2) )                 distinct
+         *            |                                  |
+         *           or_(att1:att3,att4)               union
+         *            |                              ____/\____
+         *         ( pi_(att2,att3,att4) )          /          \
+         *            |                            pi_(att2)   pi_(att2:att5)
+         *           |X|_(att2,att5)              /              \
+         *        __/   \__                    select_(att3)   select_(att4)
+         *       /         \                     |                |
+         *      /1\       /2\                   /1\              /2\
+         *     /___\     /___\                 /___\            /___\
+         * (att2,att3) (att5,att4)            (att2,att3)      (att5,att4)
+         *                                                                        
+         *           (1)                                 (2)
+         */
+        {
+            unsigned int i;
+            PFalg_att_t att_sel, 
+                        att_join1, att_join2, 
+                        att_sel_in1, att_sel_in2;
+            PFla_op_t *cur, *left, *right;
+            PFalg_proj_t *lproj, *rproj, *top_proj;
+
+            if (p->schema.count != 2 ||
+                PFprop_icols_count (p->prop) != 1 ||
+                PFprop_icol (p->prop, p->sem.select.att))
+                break;
+
+            att_sel = p->sem.select.att;
+            att_join1 = p->schema.items[0].name != att_sel
+                        ? p->schema.items[0].name
+                        : p->schema.items[1].name;
+            cur = L(p);
+            
+            /* cope with intermediate projections */
+            if (cur->kind == la_project) {
+                for (i = 0; i < cur->sem.proj.count; i++)
+                    if (L(p)->sem.proj.items[i].new == att_sel)
+                        att_sel = L(p)->sem.proj.items[i].old;
+                    else if (L(p)->sem.proj.items[i].new == att_join1)
+                        att_join1 = L(p)->sem.proj.items[i].old;
+                cur = L(cur);
+            }
+            
+            if (cur->kind != la_bool_or ||
+                att_sel != cur->sem.binary.res)
+                break;
+            
+            att_sel_in1 = cur->sem.binary.att1;
+            att_sel_in2 = cur->sem.binary.att2;
+            
+            cur = L(cur);
+            
+            /* cope with intermediate projections */
+            if (cur->kind == la_project) {
+                for (i = 0; i < cur->sem.proj.count; i++)
+                    if (L(p)->sem.proj.items[i].new == att_join1)
+                        att_join1 = L(p)->sem.proj.items[i].old;
+                    else if (L(p)->sem.proj.items[i].new == att_sel_in1)
+                        att_sel_in1 = L(p)->sem.proj.items[i].old;
+                    else if (L(p)->sem.proj.items[i].new == att_sel_in2)
+                        att_sel_in2 = L(p)->sem.proj.items[i].old;
+                cur = L(cur);
+            }
+            
+            if (cur->kind != la_eqjoin ||
+                (att_join1 != cur->sem.eqjoin.att1 &&
+                 att_join1 != cur->sem.eqjoin.att2))
+                break;
+           
+            if (PFprop_ocol (L(cur), att_sel_in1) &&
+                PFprop_ocol (R(cur), att_sel_in2)) {
+                att_join1 = cur->sem.eqjoin.att1;
+                att_join2 = cur->sem.eqjoin.att2;
+                left = L(cur);
+                right = R(cur);
+            }
+            else if (PFprop_ocol (L(cur), att_sel_in2) &&
+                    PFprop_ocol (R(cur), att_sel_in1)) {
+                att_join1 = cur->sem.eqjoin.att2;
+                att_join2 = cur->sem.eqjoin.att1;
+                left = R(cur);
+                right = L(cur);
+            }
+            else
+                break;
+            
+            /* pattern (1) is now ensured: create pattern (2) */
+            lproj = PFmalloc (sizeof (PFalg_proj_t));
+            rproj = PFmalloc (sizeof (PFalg_proj_t));
+            top_proj = PFmalloc (2 * sizeof (PFalg_proj_t));
+
+            lproj[0] = PFalg_proj (att_join1, att_join1);
+            rproj[0] = PFalg_proj (att_join1, att_join2);
+            top_proj[0] = PFalg_proj (p->schema.items[0].name, att_join1);
+            top_proj[1] = PFalg_proj (p->schema.items[1].name, att_join1);
+
+            *p = *PFla_project_ (
+                      PFla_distinct (
+                          PFla_disjunion (
+                              PFla_project_ (
+                                  PFla_select (left, att_sel_in1), 
+                                  1, lproj),
+                              PFla_project_ (
+                                  PFla_select (right, att_sel_in2),
+                                  1, rproj))),
+                      2, top_proj);
+        }   break;
+        
         case la_rownum:
             /* match the pattern rownum - (project -) rownum and
                try to merge both row number operators if the nested
