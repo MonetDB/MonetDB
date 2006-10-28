@@ -91,7 +91,7 @@ write_tail(backend *sql, int nr)
 	if (mvc_debug_on(sql->mvc, 2)) {
 		char dbg[BUFSIZ];
 		int l = snprintf(dbg, BUFSIZ,
-				 "var t1 := usec(); printf(\"%d %%lld\\n\", t1 - t0);\n", nr);
+				 "var t1 := usec(); printf(\"%d: %%lld us\\n\", t1 - t0);\n", nr);
 
 		assert(l < BUFSIZ);
 		stream_write(sql->out, dbg, 1, l);
@@ -138,7 +138,7 @@ write_result(backend *sql, char *buf)
 		char *v = NEW_ARRAY(char, buflen), *a = buf, *b, *y, z;
 
 		l += snprintf(v + l, buflen - l, "var t1 := usec();\n");
-		l += snprintf(v + l, buflen - l, "print(t1 - t0);\n");
+		l += snprintf(v + l, buflen - l, "printf(\"( %%.6f s )\\n\", (t1 - t0)/1000000.0);\n");
 		while (a && (y = strstr(a, " := "))) {
 			z = *y;
 			*y = '\0';

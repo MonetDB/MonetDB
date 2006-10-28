@@ -38,11 +38,7 @@ then
 fi
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/runtime/.libs:${builddir}/runtime:${srcdir}/runtime:${builddir}/modules/pftijah/.libs:${builddir}/modules/pftijah:${srcdir}/modules/pftijah"
-if [ -d "${MONETDB_PREFIX}/lib64" ]
-  then	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib64/MonetDB:${MONETDB_PREFIX}/lib64/MonetDB/lib"
-  else	MOD_PATH="${MOD_PATH}:${MONETDB_PREFIX}/lib/MonetDB:${MONETDB_PREFIX}/lib/MonetDB/lib"
-fi
+MOD_PATH="${builddir}/runtime/.libs:${builddir}/runtime:${srcdir}/runtime:${builddir}/modules/pftijah/.libs:${builddir}/modules/pftijah:${srcdir}/modules/pftijah:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
