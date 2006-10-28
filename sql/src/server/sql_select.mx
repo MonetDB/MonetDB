@@ -1237,6 +1237,7 @@ sql_table_exp(mvc *sql, scope *scp, symbol *sym )
 {
 	stmt *ls = flat_subquery(sql, sym);
 
+	(void)scp;
 	assert(scp == NULL);
 	if (!ls)
 		return ls;
