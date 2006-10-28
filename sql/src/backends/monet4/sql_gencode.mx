@@ -875,7 +875,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			backend_create_func(sql, s->op4.funcval->func); 
 			if (strcmp(fimp, "round")==0 &&
 			    tpe->type->eclass == EC_DEC) {
-				len = snprintf(dec_func, SMALLBUFSIZ, "%d,%d,",
+				len = snprintf(dec_func, SMALLBUFSIZ, "%u,%u,",
 				tpe->digits, tpe->scale);
 				assert(len < SMALLBUFSIZ);
 			}
