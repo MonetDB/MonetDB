@@ -444,6 +444,7 @@ MIL variables, but these point to the same global BATs).
 var pf_short := pflock(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
 var pf_free  := pflock(1); # lock held while freeing ws-es
 var pf_wal   := pflock(2); # lock that must be held while writing into the WAL
+var pf_update:= pflock(3); # exclusive update lock
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -743,17 +744,21 @@ PROC _shredlock_unset(str colname,
 PROC coll_lock_set(BAT[void,bat] ws, 
                    oid cont) : void
 {
-    var coll_lock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
-    ws.fetch(CONT_LOCKED).append(coll_lock);
-    lock_set(coll_lock);
+    if (bit(cont)) {
+        var coll_lock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
+        ws.fetch(CONT_LOCKED).append(coll_lock);
+        lock_set(coll_lock);
+    }
 }
 
 PROC coll_lock_unset(BAT[void,bat] ws, 
                      oid cont) : void
 {
-    var coll_lock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
-    ws.fetch(CONT_LOCKED).reverse().delete(coll_lock);
-    lock_unset(coll_lock);
+    if (bit(cont)) {
+        var coll_lock := reverse(ws.fetch(CONT_RUNTIME).fetch(cont)).fetch(RT_LOCK_FREELIST);
+        ws.fetch(CONT_LOCKED).reverse().delete(coll_lock);
+        lock_unset(coll_lock);
+    }
 }
 
 @+ working sets and ws-IDs
@@ -936,10 +941,10 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         var nid := ws.fetch(PRE_NID).fetch(cont);
         var knd := ws.fetch(PRE_KIND).fetch(cont);
         var prp := ws.fetch(PRE_PROP).fetch(cont);
-        var sel := ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd)));
+        var unq := ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd)));
         var page_ws := empty_bat;
         var attr_ws := empty_bat;
-        idx := __runtime_index(nid, knd, prp, sel.mirror(), 0@0, isolate);
+        idx := __runtime_index(nid, knd, prp, unq, 0@0, isolate);
         ins := empty_bat;
         del := empty_bat;
         if (runtime != empty_runtime) { # a non temporary document
@@ -954,12 +959,20 @@ PROC __ws_opencoll(BAT[void,bat] ws,
                 page_ws := bat(oid,lng);
                 attr_ws := bat(oid,lng);
             }
+            # insert new index
             runtime.insert(lock_nil,free_nids);
             runtime.insert(lock_nil,page_ws);
             runtime.insert(lock_nil,attr_ws);
             runtime.insert(lock_nil,idx);
             runtime.insert(lock_nil,ins);
             runtime.insert(lock_nil,del);
+
+            # we retain the index sizes for cache control
+            # it must be part of the runtime structure, protected by coll_lock
+            # but where to store such a number?
+            # the hack is to misuse the (unused) tail seqbase of unq
+            reverse(unq).seqbase(oid(batsize(idx))); 
+            runtime.insert(lock_nil,unq);
         }
     }
     if (isolate) { # copy ins/del for isolation
@@ -1007,6 +1020,18 @@ PROC _ws_opencoll(lng wsid,
     ws_overlaps_ws.insert(dep);           # A overlaps B
     ws_overlaps_ws.insert(reverse(dep));  # B overlaps A (overlapping is reflexive)
 
+    # index memory control, done when a persistent collection is opened for the first time  
+    if ((coll_oid >= DOCID_MIN) and (count(runtime) <= RT_QN_NID)) {
+        # check sizes of all indices, stuffed in the seqbase of the UNQ bats
+        var indices := [count](reverse(colname_runtime).mirror()).ord_uselect(RT_QN_NID_UNQ, int_nil);
+        if (bit(count(indices))) {
+            var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[reverse]().[seqbase]().[lng]().sum();
+            if (totsize > (mem_maxsize()/4LL)) {
+                colname_runtime.delete(); # flush everything!
+                runtime := _runtime_get(colname);
+            }
+        }
+    }
     return runtime;
 }
 
@@ -1042,26 +1067,24 @@ BAT[str,bat]. For non-loaded collections, this BAT does not contain
 any data. It only gets an entry the first time a collection is loaded.
 Currently, this entry remains RAM resident from then on.
 
-TODO: memory garbage collection..
-
 The runtime-BATs are BAT[lock,bat]s, in which order does matter. We fetch
 BUNs by position using RT_* constants. The idea is to store per
 collection a number of specific locks and index structures (BATs).
 
-  fetch constant    runtime tuple 
-  ================= ==========
+  fetch constant   runtime tuple 
+  ================ ==========
 0 RT_LOCK_FREELIST [lock,bat] 
-  the lock and a BAT with a list of free page ids.
-1 RT_NID_FREELIST [lock,bat] 
-  nil lock and a BAT with a list of free NIDs
+                   the lock and a BAT with a list of free page ids.
+1 RT_NID_FREELIST  [lock,bat] 
+                   nil lock and a BAT with a list of free NIDs
 2 RT_QN_NID        [nil, bat] 
-  the main BAT[oid,oid] object shared by all concurrent queries
+                   the main BAT[oid,oid] object shared by all concurrent queries
 3 RT_QN_NID_INS    [nil, bat] 
-  a private BAT[oid,oid] with all nodes that got this QN  during this query
+                   a private BAT[oid,oid] with all nodes that got this QN  during this query
 4 RT_QN_NID_DEL    [nil, bat] 
-  a private BAT[oid,oid] with all nodes that no longer have this QN since this query.
+                   a private BAT[oid,oid] with all nodes that no longer have this QN since this query.
 5 RT_QN_NID_UNQ    [nil, bat] 
-  a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
+                   a BAT[oid,void] list of QNs which are interesting to index (i.e. MlogM < N).
 
 The first entry head holds a collection lock (coll_lock, in much of the
 MIL code). It is used to guard the master BAT images, while isolated
@@ -1070,7 +1093,7 @@ acquire this lock when committing resp. extending these master bats.
 
 The first entry tail holds a page-free list.
 The second entry tail holds a NID-free list.
-Both are used when a document is being extended by an uopdate query.
+Both are used when a document is being extended by an update query.
 
 @- QN_NID index
 
@@ -1124,19 +1147,19 @@ PROC _runtime_get(str colname) : BAT[lock,bat]
 PROC __runtime_index(BAT[void,oid] nid, 
                      BAT[void,chr] knd, 
                      BAT[void,oid] prp, 
-                     BAT[oid,oid]  sel, 
+                     BAT[oid,void]  unq, 
                      oid pre, bit updatable) : BAT[oid,oid] 
 {
     # compute the index bat for all nodes of the document from 'pre' on
         knd := knd.reverse().ord_select(pre,oid_nil).reverse(); # limit to a certain pre-range
-    var idx := knd.ord_uselect(ELEMENT).mirror(); # get [pre,pre] (some false non-ELEM hits)
-        idx := idx.leftfetchjoin(prp);            # get [pre,qn], in pre-order
-        idx := reverse(idx.leftjoin(sel));        # get [qn,pre], in pre-order
-        idx := idx.leftfetchjoin(nid);            # [qn,nid] still in pre-order
+    var idx := knd.ord_uselect(ELEMENT).mirror();   # get [pre,pre] (some false non-ELEM hits)
+        idx := idx.leftfetchjoin(prp);              # get [pre,qn], in pre-order
+        idx := reverse(idx.leftjoin(unq.mirror())); # get [qn,pre], in pre-order
+        idx := idx.leftfetchjoin(nid);              # [qn,nid] still in pre-order
     if (updatable) 
         (idx := idx.access(BAT_WRITE)).accbuild("hash");
     else
-        idx := idx.ssort().access(BAT_READ);      # [qn,nid] now lexico-ordered (thanks to stable-sort)
+        idx := idx.ssort().access(BAT_READ);        # [qn,nid] now lexico-ordered (thanks to stable-sort)
     return idx; # [qn,nid]
 }
 
@@ -1149,17 +1172,23 @@ PROC __runtime_maintain(lng wsid,
                         BAT[void,oid] delpages) : void
 {
     var others := colname_pins.reverse().ord_uselect(colname).access(BAT_WRITE).delete(wsid);
+    var totsize;
     if (count(others) > 0) {
+        totsize := lng(runtime.fetch(RT_QN_NID_UNQ).reverse().seqbase()) + batsize(ins) + batsize(del);
         runtime.fetch(RT_QN_NID_INS).insert(ins);
         runtime.fetch(RT_QN_NID_DEL).insert(del);
     } else {
         # coast is clear, unite als ins, all del and apply them to the master
         ins := runtime.fetch(RT_QN_NID_INS).insert(ins);
         del := runtime.fetch(RT_QN_NID_DEL).insert(del);
-        runtime.fetch(RT_QN_NID).insert(ins).deleteBuns(del);
+        var idx := runtime.fetch(RT_QN_NID);
+        idx.insert(ins).deleteBuns(del);
         ins.delete();
         del.delete();
+        totsize := batsize(idx);
     }
+    # store the new size in the UNQ seqbase
+    runtime.fetch(RT_QN_NID_UNQ).reverse().seqbase(oid(totsize));
     
     # mark the region index invalid
     # for now, we don't try to maintain it over updates
@@ -1296,7 +1325,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
     var split_cont   := base_map.leftfetchjoin(cont).materialize(base_map);
 
     # separate numbers (i.e. nids) from string-tokens (only for ID lookups)
-    var bak_tokens  := split_tokens;
+    var bak_tokens   := split_tokens;
     var split_nids   := bat(oid,oid);
     if (ws_attr = ID_NID) {
         split_nids   := [oid](bak_tokens);
@@ -1307,10 +1336,10 @@ PROC ws_findnodes(BAT[void,bat] ws,
     }
 
     # prefix string-tokens with the root nid (for correct treatment of multi-document collections)
-    split_tokens := [str]([lng](split_root)) [+] "_" [+] split_tokens;
+    split_tokens := [+]([+]([str]([lng](split_root)), "_"),  split_tokens);
 
     # process all containers one-by-one, putting [split,pre]-s into the result 
-    var result := bat(oid,oid,count(split_tokens));
+    var result   := bat(oid,oid,count(split_tokens));
     var cont_unq := cont.tunique();
     cont_unq@batloop () {
         var idX_nid := ws.fetch(ws_attr).fetch($h);
@@ -1318,9 +1347,9 @@ PROC ws_findnodes(BAT[void,bat] ws,
         var map_pid := ws.fetch(MAP_PID).fetch($h);
         var part := reverse(split_cont.ord_uselect($h).mirror().leftfetchjoin(base_map));
 
-        result.insert(part.leftjoin(split_tokens).leftjoin(idX_nid).leftjoin(nid_rid).[swizzle](map_pid));
+        result.insert(part.leftjoin(split_tokens).leftjoin(idX_nid).leftfetchjoin(nid_rid).[swizzle](map_pid));
         if (ws_attr = ID_NID) 
-            result.insert(part.leftjoin(split_nids).leftjoin(nid_rid).[swizzle](map_pid));
+            result.insert(part.leftjoin(split_nids).leftfetchjoin(nid_rid).[swizzle](map_pid));
     }
 
     # sort on iter|cont|pre and eliminate duplicates

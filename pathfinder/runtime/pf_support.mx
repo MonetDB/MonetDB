@@ -5927,7 +5927,7 @@ PROC add_qnames (BAT[void,str] prefix,
                  BAT[void,str] local,
                  BAT[void,BAT] ws) : BAT[void,oid]
 {
-    var pref_uri_loc := pref.[+](":").[+](uri).[+](":").[+](local); # [void,str]
+    var pref_uri_loc := prefix.[+](":").[+](uri).[+](":").[+](local); # [void,str]
     pref_uri_loc := [isnil](local).ord_uselect(false).mirror().leftfetchjoin(pref_uri_loc); # [oid,str] (sorted subset)
     return mirror(local).outerjoin(find_qn_bulk(ws, WS, pref_uri_loc, true)).tmark(seqbase(local)); # [void,oid]
 }
