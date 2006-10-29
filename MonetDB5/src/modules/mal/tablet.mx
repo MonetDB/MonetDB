@@ -1280,42 +1280,29 @@ insert_line(Tablet * as, char *line, char **end)
 {
 	int res = 0;
 	Column *fmt = as->format;
-	char *s, *e = 0, quote = 0;
+	char sep1, *s, *e = 0, quote = 0;
 	size_t i;
 	int first = 0;
 
 	for (i = 0; i < as->nr_attrs && *line; i++) {
 		first = 1;
 		s = line; e= 0;
+		sep1= fmt[i].sep[0];
 		/* skip until separator */
-		while (*line) {
-			if (*line == *(fmt[i].sep) ){
-				if( fmt[i].sep[1]==0 ||
-					strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
-					e = line;
+		/* do not allow separators to start with ["'] */
+		for(e=line; *e; e++)
+			if( *e== '\\') 
+				e++;
+			else
+			if( *e == sep1 &&
+				( fmt[i].sep[1]==0 ||
+					strncmp(fmt[i].sep, e, fmt[i].seplen) == 0) ){
 					break;
-				}
-			} 
-			/* recognize fields starting with a quote */
-			if (first && (*line == '\"' || *line == '\'')
-				   && (line == s || *(line - 1) != '\\')) {
-				quote = *line;
-				line++;
-				e = skip_string(line, quote);
-				if (!e){
-					*end = line;
-					return -2;
-				} 
-				line = e;
-				first = 0;
-			} else {
-				if (first && !isspace((int) (*line)))
-					first = 0;
-				line++;
 			}
-		}
-		if( e== 0)
-			e=line;
+
+		while (*line && *line != sep1 && isspace((int) (*line)) ) 
+			line++;
+
 		if (e) {
 			res |= insert_val(&fmt[i], s, e, quote);
 			quote = 0;
@@ -1496,7 +1483,15 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		*end = '\0';
 		done = 0;
 		while (s < end) {
-			char *e = strstr(s, sep);
+			char *e= strstr(s,sep);
+			/* quick search 
+			while( (e= strchr(s,sep[seplen-1])) ) {
+				if( seplen== 1) break;
+				if( strncmp(e- seplen+1,sep,seplen) == 0) 
+					break;
+				e++;
+			}
+			*/
 
 			if (e) {
 				*e = '\0';
