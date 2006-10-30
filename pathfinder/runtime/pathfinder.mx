@@ -1336,7 +1336,7 @@ PROC ws_findnodes(BAT[void,bat] ws,
     }
 
     # prefix string-tokens with the root nid (for correct treatment of multi-document collections)
-    split_tokens := [+]([+]([str]([lng](split_root)), "_"),  split_tokens);
+    split_tokens := [+]([+]([str](split_root), "_"),  split_tokens);
 
     # process all containers one-by-one, putting [split,pre]-s into the result 
     var result   := bat(oid,oid,count(split_tokens));
