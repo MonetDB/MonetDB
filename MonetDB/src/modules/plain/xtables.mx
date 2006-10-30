@@ -619,29 +619,36 @@ bits(size_t i)
 
 
 @= CTgroupbody
-	BAT *histo = NULL, *bn = BATnew(b->htype, TYPE_oid, BATcount(b));
+	BAT *histo = NULL, *bn = NULL;
 	declare_mask_@1
-	if (bn == NULL) {
-		return GDK_FAIL;
-	}
-	/* Poor man's clustered test: sorted & !keyed => clustered  */
-	/* todo if b->tkey, simply return map with a void tail */
-	if ( ((b->tsorted)&1) && !(b->tkey) ) {
-		@:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
+
+	/* b->tkey, simply return mark(0), and hist = project(reverse(bn),1) */
+	if (b->tkey) {
+		int one = 1;
+		bn = BATmark(b, 0);
+		histo = BATconst(BATmirror(bn), TYPE_int, &one);
 	} else {
-		@:choosegroup@1(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
-	}
-	if (histo == NULL) {
-		BBPreclaim(bn);
-		return GDK_FAIL;
+ 		bn = BATnew(b->htype, TYPE_oid, BATcount(b));
+		if (bn == NULL) {
+			return GDK_FAIL;
+		}
+		/* Poor man's clustered test: sorted & !keyed => clustered  */
+		if ( ((b->tsorted)&1) && !(b->tkey) ) {
+			@:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
+		} else {
+			@:choosegroup@1(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
+		}
+		if (histo == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->tsorted = 0;
 	}
 	if (BATcount(histo) == BATcount(bn)) {
 		BATkey(BATmirror(bn),TRUE);
 		BATkey(BATmirror(histo),TRUE);
 	}
-	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
-	
 	return grp_new(g, bn, histo);
 
 @= choosegroupSTANDARD

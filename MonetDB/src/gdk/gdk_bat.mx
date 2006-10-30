@@ -1211,6 +1211,8 @@ BUNappend(BAT *b, ptr t, bit force)
 			} else {
 				b->tseqbase = bm->hseqbase = *(oid*)t;  
 			}
+		} else if (b->ttype) {
+			b->tkey = bm->hkey |= TRUE;
 		}
 	}
 	if (!countonly) {
