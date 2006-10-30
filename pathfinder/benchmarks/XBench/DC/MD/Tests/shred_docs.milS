@@ -2605,4 +2605,7 @@ var names     := locations;
 var colnames  := locations.project("XBench-DC-MD-small");
 var pageFrees := locations.project(0LL);
 
+# disable property checking
+#debugmask(and(debugmask(),xor(INT_MAX,10)));
+
 shred_doc(locations, names, colnames, pageFrees);

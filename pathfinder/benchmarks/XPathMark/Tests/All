@@ -33,7 +33,7 @@ Q31
 Q32
 Q33
 Q34
-Q35
+HAVE_fn:lang?Q35
 Q36
 Q37
 Q38
@@ -58,4 +58,4 @@ A8
 A9
 A10
 A11
-A12
+HAVE_fn:lang?A12

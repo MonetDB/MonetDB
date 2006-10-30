@@ -1495,7 +1495,7 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "var v_kind%03u := v_kind%03u;\n", cur_level, cur_level-1);
 
     /* 1. PHASE: create all mapping stuff to next 'scope' */
-    milprintf(f, "if (skip = 0)\n{\n");
+    milprintf(f, "if (true)\n{\n");
     /* output for debugging
     milprintf(f, "\"PHASE 1 of %s-clause active\".print();\n",then?"then":"else");
     */
@@ -1543,7 +1543,7 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "}\n");
 
     /* 3. PHASE: create all mapping stuff from to actual 'scope' */
-    milprintf(f, "if (skip = 0)\n{\n");
+    milprintf(f, "if (true)\n{\n");
     /* output for debugging
     milprintf(f, "\"PHASE 3 of %s-clause active\".print();\n",then?"then":"else");
     */
@@ -1587,6 +1587,7 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
     else
          do the whole stuff
     */
+    milprintf(f, "item%03u := item%03u.materialize(ipik);\n", bool_res, bool_res);
     milprintf(f,
             "var selected;\n"
             "var skip;\n"
