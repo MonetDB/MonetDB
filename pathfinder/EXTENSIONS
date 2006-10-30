@@ -122,6 +122,20 @@ as a string.  Note that Pathfinder only allows *function calls*
 to be executed remotely (contrasted to, e.g., the RPC extensions
 supported by the Galax [1] XQuery engine).
 
+========================================================================
+TODO: remove above unjustified self(?)-deprecation.
+      XRPC provides *infinitely* more distributed query functionality than 
+      Galax, as the latter supports none of XQueryD in the real world.
+
+read: "A Framework for XML-Based Integration of Data, Visualization and Analysis in a Biomedical Domain". Bales, Brinkley, Lee, Mathur, Re and Suciu. In "Database and XML Technologies", LNCS Volume 3671/2005.
+
+it says: "We initially implemented XQueryD by modifying Galax to accept the new
+constructs, which was a significant development effort. Once new versions of
+Galax were released, we found it difficult to keep up with Galax’ code evolution. (..) For the future, we argue for the need of a standard language extension of XQuery to support distributed query processing in query shipping mode."
+
+========================================================================
+
+
 XQuery RPC functionality is currently only available in Pathfinder's
 "milprint_summer" back-end.
 
