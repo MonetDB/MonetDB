@@ -3323,7 +3323,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				lookahead = 1;
 			result = parse_header_line(hdl, line, result);
 			hdl->active = result;
-			if (result && *line == '%')
+			if (result && *line == '#')
 				add_cache(result, strdup(line));
 			break;
 		default:
