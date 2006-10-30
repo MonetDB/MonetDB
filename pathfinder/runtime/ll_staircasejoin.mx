@@ -518,11 +518,11 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
             BUN fst_pre = cand_cur;
             oid lst_pre = MIN(@1, *(oid*)cand_lst);
 
-            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += (size[pre]&GDK_int_max) + 1) { 
-                /*assert((size[pre] & (1<<31)) == 0);*/
+            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) { 
+                assert((size[pre] & (1<<31)) == 0);
             }
-            for (;              pre <=        lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
-                /*assert((size[pre] & (1<<31)) == 0);*/
+            for (;              pre <=        lst_pre; pre += size[pre] + 1) {
+                assert((size[pre] & (1<<31)) == 0);
 
                 /* poor man's binary search / exploiting forward scan */
                 while (fst_pre+1048576 <= cand_lst && *(oid*) (fst_pre+1048576) < pre)
