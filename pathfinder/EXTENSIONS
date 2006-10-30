@@ -20,6 +20,8 @@ Due to some problem's with Pathfinder's XQuery parser, note that
 while the Update Facility uses "as" instead of "with".  Sorry
 for the inconvenience.
 
+We do not currently support the upd:put() operator.
+
 2. Transitive Closure Operator
 ------------------------------
 
@@ -140,3 +142,66 @@ XQuery RPC functionality is currently only available in Pathfinder's
 "milprint_summer" back-end.
 
 [1] http://www.galaxquery.org/
+
+
+6. Document Management Interface 
+--------------------------------
+
+The XQuery specification provides limited means for querying the
+meta-data repository (i.e. fn:doc() and fn:collection()), and no 
+means to change it (i.e. add and delete documents).
+
+To avoid having to resort to other means than XQuery for data
+management tasks, we provide the following functions:
+
+pf:del_doc(name as xs:string)
+pf:add_doc(location as xs:string, 
+           name as xs:string, 
+           collection as xs:string, 
+           percentage as xs:integer)
+
+An XML document is stored at a 'location' (URI) and can be given 
+a logical name. A 'collection' is a database object that contains 
+multiple documents. Especially in cases where we have many small
+documents, it may make sense to store them together in a collection
+(i.e. by using the same 'collection' name in the add_doc() function).
+
+Parameters: in add_doc(), 'name' and 'collection' may be both omitted, 
+in which case name=collection=location.  If only 'collection' is omitted, 
+collection=name.  Percentage may always be omitted, in which case it is 0.
+
+The percentage is a percentage of free space to leave in the shredded
+document to accomodate future updates. Colections with a percentage=0 
+are taken to be read-only. Updates to such documents produce a runtime error.
+
+We also provide two information functions:
+
+pf:collections() as xs:string*
+pf:documents(collection as xs:string*) as xs:string*
+
+The pf:collections() function provides a full list of all collection names.
+The pf:documents() function provides a full list of all document names
+ in a collection.
+
+
+7. Element Node Identifiers
+---------------------------
+
+Internally, all nodes get an immutable identifier in the MonetDB backend.
+These identifiers are integer numbers, but represented as a xs:string.
+
+This identifier can be obtained using the function:
+
+pf:nid(element()*) as xs:string*
+
+With this identifier, elements can be quickly retrieved using the existing: 
+
+fn:id(xs:string*) as node()*
+fn:id(xs:string*, node()) as node*
+
+Note that this is an extension of fn:id() because the ID xs:string values
+normally cannot start with a digit (this is how we distinguish between them).
+
+Element node identifiers (and standard ID/IDREF support) are currently only 
+available in Pathfinder's "milprint_summer" back-end.
+
