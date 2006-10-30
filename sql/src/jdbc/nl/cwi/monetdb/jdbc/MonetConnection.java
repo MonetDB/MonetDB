@@ -2318,6 +2318,12 @@ public class MonetConnection implements Connection {
 						break;
 						case MonetSocketBlockMode.INFO:
 							addWarning(tmpLine.substring(1));
+
+							// read the next line (can be prompt, new
+							// result, error, etc.) before we start the
+							// loop over
+							tmpLine = monet.readLine();
+							linetype = monet.getLineType();
 						break;
 						default:	// Yeah... in Java this is correct!
 							// we have something we don't
