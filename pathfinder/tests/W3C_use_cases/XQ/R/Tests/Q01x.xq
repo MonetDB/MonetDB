@@ -1,8 +1,8 @@
 <result>
   {
     for $i in doc("items.xml")//item_tuple
-    where $i/start_date <= current-date()
-      and $i/end_date >= current-date()
+    where $i/start_date <= "1999-01-31" (:current-date():)
+      and $i/end_date >= "1999-01-31" (:current-date():)
       and contains(zero-or-one($i/description), "Bicycle")
     order by exactly-one($i/itemno)
     return
