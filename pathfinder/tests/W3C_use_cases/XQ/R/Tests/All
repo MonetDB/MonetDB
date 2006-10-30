@@ -1,5 +1,5 @@
 shred_docs
-Q01
+HAVE_fn:current-date?Q01
 Q01x
 Q02
 Q03
@@ -8,9 +8,9 @@ Q05o
 Q05u
 Q06
 Q07
-Q08
+HAVE_xs:date?Q08
 Q08x
-Q09
+HAVE_fn:month-from-date_&_fn:year-from-date?Q09
 Q09x
 Q10
 Q11
