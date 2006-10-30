@@ -4,8 +4,8 @@ declare function local:partners($company as xs:string) as element()*
     return $c//partner
 };
 
-for $item in doc("string.xml")//news_item,
-    $c in doc("company-data.xml")//company
+for $item in doc("string.xml")//news_item
+for $c in doc("company-data.xml")//company
 let $partners := local:partners(exactly-one($c/name))
 where contains(string($item), zero-or-one($c/name))
   and (some $p in $partners satisfies

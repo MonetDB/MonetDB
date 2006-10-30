@@ -1,7 +1,7 @@
 <bib>
 {
-    for $book1 in doc("bib.xml")//book,
-        $book2 in doc("bib.xml")//book
+    for $book1 in doc("bib.xml")//book
+    for $book2 in doc("bib.xml")//book
     let $aut1 := for $a in $book1/author
                  order by $a/last, $a/first
                  return $a

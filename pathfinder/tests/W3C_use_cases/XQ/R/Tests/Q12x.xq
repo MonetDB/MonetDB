@@ -12,9 +12,9 @@ declare function local:bid_summary()
 
 <result>
  {
-    let $bid_counts := local:bid_summary(),
-        $maxbids := max($bid_counts/nbids),
-        $maxitemnos := $bid_counts[nbids = $maxbids]
+    let $bid_counts := local:bid_summary()
+    let $maxbids := max($bid_counts/nbids)
+    let $maxitemnos := $bid_counts[nbids = $maxbids]
     for $item in doc("items.xml")//item_tuple,
         $bc in $bid_counts
     where $bc/nbids =  $maxbids and $item/itemno = $bc/itemno
