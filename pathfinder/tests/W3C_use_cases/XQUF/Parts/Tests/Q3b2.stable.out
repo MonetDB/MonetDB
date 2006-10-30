@@ -31,7 +31,7 @@ declare updating function
       return local:delete-subtree($child)
       ,
       do delete $p
-  };
+  "+"};"+"
 
 for $p in doc(\"part-tree.xml\")//part[@name=\"car\"]/part
 return
