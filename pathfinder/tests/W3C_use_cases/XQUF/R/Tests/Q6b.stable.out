@@ -20,7 +20,7 @@ doc(\"items.xml\")/items/item_tuple[offered_by=$user/userid]
 let $bids :=
 doc(\"bids.xml\")/bids/bid_tuple[userid=$user/userid]
 return
-  do delete $user, $items, $bids
+  do delete ($user, $items, $bids)
 ").printf();
 
 xquery("xml","doc(\"bids.xml\")").printf();
