@@ -22,19 +22,7 @@ Over..
 # 14:39:13 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<results>
-    <minprice title="Advanced Programming in the Unix environment">
-        <price>65.95</price>
-    </minprice>
-    <minprice title="TCP/IP Illustrated">
-        <price>65.95</price>
-    </minprice>
-    <minprice title="Data on the Web">
-        <price>34.95</price>
-    </minprice>
-</results>
-</XQueryResult>
+<XQueryResult><results><minprice title="Advanced Programming in the Unix environment"><price>65.950000000000003</price></minprice><minprice title="TCP/IP Illustrated"><price>65.950000000000003</price></minprice><minprice title="Data on the Web"><price>34.950000000000003</price></minprice></results></XQueryResult>
 
 # 14:39:13 >  
 # 14:39:13 >  Done.

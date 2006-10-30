@@ -22,9 +22,7 @@ Over..
 # 00:19:14 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<high_bid>225</high_bid>
-</XQueryResult>
+<XQueryResult><high_bid>225</high_bid></XQueryResult>
 
 # 00:19:14 >  
 # 00:19:14 >  Done.

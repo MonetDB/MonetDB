@@ -22,8 +22,7 @@ Over..
 # 23:16:21 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<section shorttitle="How does SGML work?">
+<XQueryResult><result><section shorttitle="How does SGML work?">
 <title>How is SGML and would you recommend it to your grandmother?</title>
 <intro>
 <para>You can break a typical document into three layers: structure,
@@ -48,8 +47,7 @@ conform to the rules established in the DTD (see <xref xrefid="top4"/>).</para>
 <topic topicid="top6">
 <title>Style</title>
 <para>SGML does not standardize style or other processing methods for
-information stored in SGML.</para></topic></section>
-</XQueryResult>
+information stored in SGML.</para></topic></section></result></XQueryResult>
 
 # 23:16:21 >  
 # 23:16:21 >  Done.

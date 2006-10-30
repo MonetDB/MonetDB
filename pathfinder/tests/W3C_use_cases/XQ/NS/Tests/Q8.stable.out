@@ -22,23 +22,7 @@ Over..
 # 19:54:01 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q8 xmlns:eachbay="http://www.example.com/auctioneers#eachbay" 
-    xmlns:ma="http://www.example.com/AuctionWatch" 
-        xmlns:xlink="http://www.w3.org/1999/xlink">
-        <ma:High_Bidder xmlns:anyzone="http://www.example.com/auctioneers#anyzone" 
-                        xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">
-                <eachbay:ID>VintageRecordFreak</eachbay:ID>
-                <eachbay:PositiveComments>232</eachbay:PositiveComments>
-                <eachbay:NeutralComments>0</eachbay:NeutralComments>
-                <eachbay:NegativeComments>0</eachbay:NegativeComments>
-                <ma:MemberInfoPage 
-                   xlink:href="http://auction.eachbay.com/showRating/user=VintageRecordFreak" 
-                   xlink:role="ma:MemberInfoPage" 
-                   xlink:type="simple"/>
-        </ma:High_Bidder>
-</Q8>
-</XQueryResult>
+<XQueryResult><Q8 xmlns:eachbay="http://www.example.com/auctioneers#eachbay" xmlns:ma="http://www.example.com/AuctionWatch" xmlns:xlink="http://www.w3.org/1999/xlink"><ma:High_Bidder xmlns:anyzone="http://www.example.com/auctioneers#anyzone" xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo"><eachbay:ID>VintageRecordFreak</eachbay:ID><eachbay:PositiveComments>232</eachbay:PositiveComments><eachbay:NeutralComments>0</eachbay:NeutralComments><eachbay:NegativeComments>0</eachbay:NegativeComments><ma:MemberInfoPage xlink:href="http://auction.eachbay.com/showRating/user=VintageRecordFreak" xlink:role="ma:MemberInfoPage" xlink:type="simple"/></ma:High_Bidder></Q8></XQueryResult>
 
 # 19:54:01 >  
 # 19:54:01 >  Done.

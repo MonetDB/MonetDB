@@ -22,40 +22,7 @@ Over..
 # 00:19:26 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <user>
-        <userid>U01</userid>
-        <name>Tom Jones</name>
-        <status>active</status>
-    </user>
-    <user>
-        <userid>U02</userid>
-        <name>Mary Doe</name>
-        <status>active</status>
-    </user>
-    <user>
-        <userid>U03</userid>
-        <name>Dee Linquent</name>
-        <status>active</status>
-    </user>
-    <user>
-        <userid>U04</userid>
-        <name>Roger Smith</name>
-        <status>active</status>
-    </user>
-    <user>
-        <userid>U05</userid>
-        <name>Jack Sprat</name>
-        <status>active</status>
-    </user>
-    <user>
-        <userid>U06</userid>
-        <name>Rip Van Winkle</name>
-        <status>inactive</status>
-    </user>
-</result>
-</XQueryResult>
+<XQueryResult><result><user><userid>U01</userid><name>Tom Jones</name><status>active</status></user><user><userid>U02</userid><name>Mary Doe</name><status>active</status></user><user><userid>U03</userid><name>Dee Linquent</name><status>active</status></user><user><userid>U04</userid><name>Roger Smith</name><status>active</status></user><user><userid>U05</userid><name>Jack Sprat</name><status>active</status></user><user><userid>U06</userid><name>Rip Van Winkle</name><status>inactive</status></user></result></XQueryResult>
 
 # 00:19:26 >  
 # 00:19:26 >  Done.

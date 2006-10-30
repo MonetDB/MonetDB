@@ -20,8 +20,7 @@ as last into exactly-one(doc(\"items.xml\")/items/item_tuple[itemno=1002])
 
 xquery("xml","doc(\"items.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<items>
+<XQueryResult><items>
   <item_tuple>
     <itemno>1001</itemno>
     <description>Red Bicycle</description>
@@ -54,6 +53,8 @@ xquery("xml","doc(\"items.xml\")").printf();
     <end_date>1999-03-08 </end_date>
     <reserve_price>15</reserve_price>
   </item_tuple>
+
+
   <item_tuple>
     <itemno>1007</itemno>
     <description>Racing Bicycle</description>
@@ -70,8 +71,7 @@ xquery("xml","doc(\"items.xml\")").printf();
     <end_date>1999-03-06 </end_date>
     <reserve_price>25</reserve_price>
   </item_tuple>
-</items>
-</XQueryResult>
+</items></XQueryResult>
 quit();
 
 # 21:28:40 >  

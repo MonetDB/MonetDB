@@ -22,22 +22,7 @@ Over..
 # 00:19:23 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <popular_item>
-        <itemno>1002</itemno>
-        <avgbid>800</avgbid>
-    </popular_item>
-    <popular_item>
-        <itemno>1007</itemno>
-        <avgbid>200</avgbid>
-    </popular_item>
-    <popular_item>
-        <itemno>1001</itemno>
-        <avgbid>45</avgbid>
-    </popular_item>
-</result>
-</XQueryResult>
+<XQueryResult><result><popular_item><itemno>1002</itemno><avgbid>800</avgbid></popular_item><popular_item><itemno>1007</itemno><avgbid>200</avgbid></popular_item><popular_item><itemno>1001</itemno><avgbid>45</avgbid></popular_item></result></XQueryResult>
 
 # 00:19:23 >  
 # 00:19:23 >  Done.

@@ -27,7 +27,7 @@ for $keyword at $i in (\"car\", \"skateboard\", \"canoe\")
 for $parent in doc(\"part-tree.xml\")//part[@name=$keyword]
 let $descendants := $parent//part
 for $p in ($parent, $descendants)
-return
+return 
   do replace value of exactly-one($p/@partid) with $i*1000+$p/@partid
 ").printf();
 
@@ -54,25 +54,22 @@ doc(\"part-tree.xml\")
 ").printf();
 fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<parttree>
-    <part partid="1000" name="car">
-        <part partid="1021" name="radio"/>
-        <part partid="1001" name="engine">
-            <part partid="1003" name="piston"/>
+<XQueryResult><parttree>
+    <part name="car" partid="1000">
+        <part name="engine" partid="1001">
+            <part name="piston" partid="1003"/>
         </part>
-        <part partid="1002" name="door">
-            <part partid="1004" name="window"/>
-            <part partid="1005" name="lock"/>
+        <part name="door" partid="1002">
+            <part name="window" partid="1004"/>
+            <part name="lock" partid="1005"/>
         </part>
     </part>
-    <part partid="2010" name="skateboard">
-        <part partid="2011" name="board"/>
-        <part partid="2012" name="wheel"/>
+    <part name="skateboard" partid="2010">
+        <part name="board" partid="2011"/>
+        <part name="wheel" partid="2012"/>
     </part>
-    <part partid="3020" name="canoe"/>
-</parttree>
-</XQueryResult>
+    <part name="canoe" partid="3020"/>
+</parttree></XQueryResult>
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

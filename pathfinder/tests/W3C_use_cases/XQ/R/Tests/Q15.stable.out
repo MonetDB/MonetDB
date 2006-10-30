@@ -22,13 +22,7 @@ Over..
 # 00:19:24 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <big_spender>Mary Doe</big_spender>
-    <big_spender>Dee Linquent</big_spender>
-    <big_spender>Roger Smith</big_spender>
-</result>
-</XQueryResult>
+<XQueryResult><result><big_spender>Mary Doe</big_spender><big_spender>Dee Linquent</big_spender><big_spender>Roger Smith</big_spender></result></XQueryResult>
 
 # 00:19:25 >  
 # 00:19:25 >  Done.

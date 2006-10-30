@@ -22,8 +22,7 @@ Over..
 # 11:32:25 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<archived-agenda>
+<XQueryResult><archived-agenda>
   <last-synch-time>2006-04-23T12:00</last-synch-time>
   <entry>
     <name>Benjamin</name>
@@ -43,8 +42,7 @@ Over..
 
     <contact>tony@uni-toulon.fr</contact>
   </entry>
-</archived-agenda>
-<agenda-version>
+</archived-agenda><agenda-version>
   <entry>
     <name>Benjamin</name>
      kept after synchronization 
@@ -63,8 +61,7 @@ Over..
     <name>Anthony</name>
     <contact>tony@ena.fr</contact>
   </entry>
-</agenda-version>
-<agenda-version>  
+</agenda-version><agenda-version>  
   <entry>
      kept after synchronization 
 
@@ -83,8 +80,7 @@ Over..
     <name>Anthony</name>
     <contact>tony@ehess.fr</contact>
   </entry>
-</agenda-version>
-<log>
+</agenda-version><log>
    update failure details 
   <fail>
      <arch>
@@ -112,8 +108,7 @@ Over..
        </entry>
      </v2>
   </fail>
-</log>
-</XQueryResult>
+</log></XQueryResult>
 
 # 11:32:26 >  
 # 11:32:26 >  Done.

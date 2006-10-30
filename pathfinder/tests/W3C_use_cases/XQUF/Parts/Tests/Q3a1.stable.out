@@ -23,10 +23,10 @@ shred_doc(TSTSRCDIR+"/part-tree.xml", "part-tree.xml", "Parts", 9LL);
 # Shredded 1 XML document (part-tree.xml), total time after commit=0.011s
 
 xquery("xml","
-for $pt in doc(\"part-tree.xml\")//part[@name=\"car\"]/part,
+for $pt in doc(\"part-tree.xml\")//part[@name=\"car\"]/part, 
     $pl in doc(\"part-list.xml\")//part
 where $pt/@partid eq $pl/@partid
-return
+return 
   do delete $pl
 ").printf();
 
@@ -35,15 +35,18 @@ doc(\"part-list.xml\")
 ").printf();
 fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<partlist>
-  <part partid="0" name="car"/>
-  <part partid="10" name="skateboard"/>
-  <part partid="11" partof="10" name="board"/>
-  <part partid="12" partof="10" name="wheel"/>
-  <part partid="20" name="canoe"/>
-</partlist>
-</XQueryResult>
+<XQueryResult><partlist>
+  <part name="car" partid="0"/>
+  
+  
+  <part name="piston" partof="1" partid="3"/>
+  <part name="window" partof="2" partid="4"/>
+  <part name="lock" partof="2" partid="5"/>
+  <part name="skateboard" partid="10"/>
+  <part name="board" partof="10" partid="11"/>
+  <part name="wheel" partof="10" partid="12"/>
+  <part name="canoe" partid="20"/>
+</partlist></XQueryResult>
 
 xquery("xml","
 doc(\"part-tree.xml\")

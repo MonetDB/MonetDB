@@ -22,12 +22,7 @@ Over..
 # 14:42:12 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<results>
-    <title>XML</title>
-    <title>XML and Semistructured Data</title>
-</results>
-</XQueryResult>
+<XQueryResult><results><title>XML</title><title>XML and Semistructured Data</title></results></XQueryResult>
 
 # 14:42:12 >  
 # 14:42:12 >  Done.

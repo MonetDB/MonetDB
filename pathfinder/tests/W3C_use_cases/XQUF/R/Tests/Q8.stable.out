@@ -13,23 +13,22 @@ module(unix);
 module(pathfinder);
 
 xquery("xml","
-let $uid :=
+let $uid := 
 doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]/userid
 return do
-  insert
-    <bid_tuple>
-      <userid>{data($uid)}</userid>
-      <itemno>1010</itemno>
-      <bid>60</bid>
-      <bid_date>2006-04-23</bid_date>
+  insert 
+    <bid_tuple> 
+      <userid>{data($uid)}</userid> 
+      <itemno>1010</itemno> 
+      <bid>60</bid> 
+      <bid_date>2006-04-23</bid_date> 
     </bid_tuple>
   into exactly-one(doc(\"bids.xml\")/bids)
 ").printf();
 
 xquery("xml","doc(\"bids.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<bids>
+<XQueryResult><bids>
   <bid_tuple> 
     <userid>U02</userid> 
     <itemno>1001</itemno> 
@@ -72,6 +71,7 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>600</bid>
     <bid_date>1999-02-16</bid_date>
   </bid_tuple>
+  
   <bid_tuple>
     <userid>U04</userid>
     <itemno>1002</itemno>
@@ -102,6 +102,7 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>40</bid>
     <bid_date>1999-03-05</bid_date>
   </bid_tuple>
+  
   <bid_tuple>
     <userid>U05</userid>
     <itemno>1007</itemno>
@@ -114,32 +115,7 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>225</bid>
     <bid_date>1999-02-12</bid_date>
   </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1001</itemno>
-    <bid>60</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1002</itemno>
-    <bid>1320</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1007</itemno>
-    <bid>247.50000000000003</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1010</itemno>
-    <bid>60</bid>
-    <bid_date>2006-04-23</bid_date>
-    </bid_tuple>
-  </bids>
-</XQueryResult>
+<bid_tuple><userid>U07</userid><itemno>1001</itemno><bid>60</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1002</itemno><bid>1320</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1007</itemno><bid>247.50000000000003</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1010</itemno><bid>60</bid><bid_date>2006-04-23</bid_date></bid_tuple></bids></XQueryResult>
 quit();
 
 # 21:28:41 >  

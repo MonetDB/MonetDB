@@ -22,25 +22,7 @@ Over..
 # 14:37:02 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<books-with-prices>
-    <book-with-prices>
-        <title>TCP/IP Illustrated</title>
-        <price-bstore2>65.95</price-bstore2>
-        <price-bstore1>65.95</price-bstore1>
-    </book-with-prices>
-    <book-with-prices>
-        <title>Advanced Programming in the Unix environment</title>
-        <price-bstore2>65.95</price-bstore2>
-        <price-bstore1>65.95</price-bstore1>
-    </book-with-prices>
-    <book-with-prices>
-        <title>Data on the Web</title>
-        <price-bstore2>34.95</price-bstore2>
-        <price-bstore1>39.95</price-bstore1>
-    </book-with-prices>
-</books-with-prices>
-</XQueryResult>
+<XQueryResult><books-with-prices><book-with-prices><title>TCP/IP Illustrated</title><price-bstore2>65.95</price-bstore2><price-bstore1>65.95</price-bstore1></book-with-prices><book-with-prices><title>Advanced Programming in the Unix environment</title><price-bstore2>65.95</price-bstore2><price-bstore1>65.95</price-bstore1></book-with-prices><book-with-prices><title>Data on the Web</title><price-bstore2>34.95</price-bstore2><price-bstore1>39.95</price-bstore1></book-with-prices></books-with-prices></XQueryResult>
 
 # 14:37:03 >  
 # 14:37:03 >  Done.

@@ -22,8 +22,7 @@ Over..
 # 22:41:22 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<news_item>
+<XQueryResult><news_item>
    <title> Gorilla Corporation acquires YouNameItWeIntegrateIt.com </title>
    <content>
       <par> Today, Gorilla Corporation announced that it will purchase
@@ -48,8 +47,7 @@ Over..
    <date>1-20-2000</date>
    <author>Mark Davis</author>
    <news_agent>News Online</news_agent>
-</news_item>
-<news_item> <title>Foobar Corporation is suing Gorilla Corporation for
+</news_item><news_item> <title>Foobar Corporation is suing Gorilla Corporation for
    patent infringement </title>
    <content>
       <par> In surprising developments today, Foobar Corporation
@@ -72,8 +70,7 @@ Over..
    </content>
    <date>1-20-2000</date>
    <news_agent>Reliable News Corporation</news_agent>
-</news_item>
-</XQueryResult>
+</news_item></XQueryResult>
 
 # 22:41:22 >  
 # 22:41:22 >  Done.

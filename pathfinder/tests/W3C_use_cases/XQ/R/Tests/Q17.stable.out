@@ -22,9 +22,7 @@ Over..
 # 00:19:27 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<frequent_bidder />
-</XQueryResult>
+<XQueryResult><frequent_bidder/></XQueryResult>
 
 # 00:19:27 >  
 # 00:19:27 >  Done.

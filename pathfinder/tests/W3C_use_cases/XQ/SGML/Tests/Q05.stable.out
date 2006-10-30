@@ -22,11 +22,9 @@ Over..
 # 23:16:16 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<para security="c">Exiled members of the former Soviet Union's secret
+<XQueryResult><result><para security="c">Exiled members of the former Soviet Union's secret
 police, the KGB, have infiltrated the upper ranks of the GCA and are
-planning the Final Revolution as soon as DSSSL is completed.</para>
-</XQueryResult>
+planning the Final Revolution as soon as DSSSL is completed.</para></result></XQueryResult>
 
 # 23:16:16 >  
 # 23:16:16 >  Done.

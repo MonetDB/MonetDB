@@ -22,9 +22,7 @@ Over..
 # 00:19:15 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item_count>3</item_count>
-</XQueryResult>
+<XQueryResult><item_count>3</item_count></XQueryResult>
 
 # 00:19:15 >  
 # 00:19:15 >  Done.

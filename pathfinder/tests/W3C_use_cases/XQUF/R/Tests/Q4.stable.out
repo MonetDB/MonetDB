@@ -21,8 +21,7 @@ return
 
 xquery("xml","doc(\"users.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<users>
+<XQueryResult><users>
   <user_tuple>
     <userid>U01</userid>
     <name>Tom Jones</name>
@@ -53,13 +52,7 @@ xquery("xml","doc(\"users.xml\")").printf();
     <name>Rip Van Winkle</name>
     <rating>B</rating>
   </user_tuple>
-  <user_tuple>
-    <userid>U07</userid>
-    <name>Annabel Lee</name>
-    <rating>B</rating>
-  </user_tuple>
-</users>
-</XQueryResult>
+<user_tuple><userid>U07</userid><name>Annabel Lee</name><rating>B</rating></user_tuple></users></XQueryResult>
 quit();
 
 # 21:28:31 >  

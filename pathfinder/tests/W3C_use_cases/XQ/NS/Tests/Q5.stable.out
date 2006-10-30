@@ -22,30 +22,21 @@ Over..
 # 19:53:58 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q5 xmlns:music="http://www.example.org/music/records">
-        <record xmlns="http://www.example.org/music/records" 
-                xmlns:anyzone="http://www.example.com/auctioneers#anyzone" 
-                xmlns:eachbay="http://www.example.com/auctioneers#eachbay" 
-                xmlns:ma="http://www.example.com/AuctionWatch"
-                xmlns:xlink="http://www.w3.org/1999/xlink" 
-                xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">
-                <artist>Wynton Marsalis</artist>
-                <title>Think of One ...</title>
-                <recorded>1983</recorded>
-                <label>Columbia Records</label>
-                <remark xml:lang="en">Columbia Records 12" 33-1/3 rpm LP,
+<XQueryResult><Q5 xmlns:music="http://www.example.org/music/records"><record xmlns="http://www.example.org/music/records" xmlns:anyzone="http://www.example.com/auctioneers#anyzone" xmlns:eachbay="http://www.example.com/auctioneers#eachbay" xmlns:ma="http://www.example.com/AuctionWatch" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">
+            <artist>Wynton Marsalis</artist>
+            <title>Think of One ...</title>
+            <recorded>1983</recorded>
+            <label>Columbia Records</label>
+            <remark xml:lang="en">Columbia Records 12" 33-1/3 rpm LP,
                 #FC-38641, Stereo. The record is still clean and shiny
                 and looks unplayed (looks like NM condition).  The
                 cover has very light surface and edge wear.</remark>
-                <remark xml:lang="de">Columbia Records 12" 33-1/3 rpm LP,
+            <remark xml:lang="de">Columbia Records 12" 33-1/3 rpm LP,
                 #FC-38641, Stereo. Die Platte ist noch immer sauber
                 und glänzend und sieht ungespielt aus
                 (NM Zustand). Das Cover hat leichte Abnutzungen an
                 Oberfläche und Ecken.</remark>
-        </record>
-</Q5>
-</XQueryResult>
+        </record></Q5></XQueryResult>
 
 # 19:53:58 >  
 # 19:53:58 >  Done.

@@ -22,40 +22,7 @@ Over..
 # 00:19:28 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <user>
-        <name>Dee Linquent</name>
-        <bid_on_item>Motorcycle</bid_on_item>
-        <bid_on_item>Racing Bicycle</bid_on_item>
-    </user>
-    <user>
-        <name>Jack Sprat</name>
-        <bid_on_item>Old Bicycle</bid_on_item>
-        <bid_on_item>Racing Bicycle</bid_on_item>
-    </user>
-    <user>
-        <name>Mary Doe</name>
-        <bid_on_item>Motorcycle</bid_on_item>
-        <bid_on_item>Red Bicycle</bid_on_item>
-    </user>
-    <user>
-        <name>Rip Van Winkle</name>
-    </user>
-    <user>
-        <name>Roger Smith</name>
-        <bid_on_item>Motorcycle</bid_on_item>
-        <bid_on_item>Old Bicycle</bid_on_item>
-        <bid_on_item>Racing Bicycle</bid_on_item>
-        <bid_on_item>Red Bicycle</bid_on_item>
-    </user>
-    <user>
-        <name>Tom Jones</name>
-        <bid_on_item>Motorcycle</bid_on_item>
-        <bid_on_item>Tricycle</bid_on_item>
-    </user>
-</result>
-</XQueryResult>
+<XQueryResult><result><user><name>Dee Linquent</name><bid_on_item>Motorcycle</bid_on_item><bid_on_item>Racing Bicycle</bid_on_item></user><user><name>Jack Sprat</name><bid_on_item>Old Bicycle</bid_on_item><bid_on_item>Racing Bicycle</bid_on_item></user><user><name>Mary Doe</name><bid_on_item>Motorcycle</bid_on_item><bid_on_item>Red Bicycle</bid_on_item></user><user><name>Rip Van Winkle</name></user><user><name>Roger Smith</name><bid_on_item>Motorcycle</bid_on_item><bid_on_item>Old Bicycle</bid_on_item><bid_on_item>Racing Bicycle</bid_on_item><bid_on_item>Red Bicycle</bid_on_item></user><user><name>Tom Jones</name><bid_on_item>Motorcycle</bid_on_item><bid_on_item>Tricycle</bid_on_item></user></result></XQueryResult>
 
 # 00:19:28 >  
 # 00:19:28 >  Done.

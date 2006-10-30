@@ -22,22 +22,7 @@ Over..
 # 00:19:09 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <no_bid_item>
-        <itemno>1005</itemno>
-        <description>Tennis Racket</description>
-    </no_bid_item>
-    <no_bid_item>
-        <itemno>1006</itemno>
-        <description>Helicopter</description>
-    </no_bid_item>
-    <no_bid_item>
-        <itemno>1008</itemno>
-        <description>Broken Bicycle</description>
-    </no_bid_item>
-</result>
-</XQueryResult>
+<XQueryResult><result><no_bid_item><itemno>1005</itemno><description>Tennis Racket</description></no_bid_item><no_bid_item><itemno>1006</itemno><description>Helicopter</description></no_bid_item><no_bid_item><itemno>1008</itemno><description>Broken Bicycle</description></no_bid_item></result></XQueryResult>
 
 # 00:19:10 >  
 # 00:19:10 >  Done.

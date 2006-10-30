@@ -22,22 +22,7 @@ Over..
 # 19:53:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q2>
-        <title xmlns="http://www.example.org/music/records" 
-               xmlns:anyzone="http://www.example.com/auctioneers#anyzone" 
-                   xmlns:eachbay="http://www.example.com/auctioneers#eachbay" 
-                   xmlns:ma="http://www.example.com/AuctionWatch"
-               xmlns:xlink="http://www.w3.org/1999/xlink" 
-                   xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">In a Silent Way</title>
-        <title xmlns="http://www.example.org/music/records" 
-               xmlns:anyzone="http://www.example.com/auctioneers#anyzone" 
-                   xmlns:eachbay="http://www.example.com/auctioneers#eachbay" 
-                   xmlns:ma="http://www.example.com/AuctionWatch"
-               xmlns:xlink="http://www.w3.org/1999/xlink" 
-                   xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">Think of One ...</title>
-</Q2>
-</XQueryResult>
+<XQueryResult><Q2><title xmlns="http://www.example.org/music/records" xmlns:anyzone="http://www.example.com/auctioneers#anyzone" xmlns:eachbay="http://www.example.com/auctioneers#eachbay" xmlns:ma="http://www.example.com/AuctionWatch" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">In a Silent Way</title><title xmlns="http://www.example.org/music/records" xmlns:anyzone="http://www.example.com/auctioneers#anyzone" xmlns:eachbay="http://www.example.com/auctioneers#eachbay" xmlns:ma="http://www.example.com/AuctionWatch" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo">Think of One ...</title></Q2></XQueryResult>
 
 # 19:53:55 >  
 # 19:53:55 >  Done.

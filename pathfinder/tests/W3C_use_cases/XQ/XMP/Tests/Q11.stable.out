@@ -22,43 +22,7 @@ Over..
 # 14:37:10 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<bib>
-    <book>
-        <title>TCP/IP Illustrated</title>
-        <author>
-            <last>Stevens</last>
-            <first>W.</first>
-        </author>
-    </book>
-    <book>
-        <title>Advanced Programming in the Unix environment</title>
-        <author>
-            <last>Stevens</last>
-            <first>W.</first>
-        </author>
-    </book>
-    <book>
-        <title>Data on the Web</title>
-        <author>
-            <last>Abiteboul</last>
-            <first>Serge</first>
-        </author>
-        <author>
-            <last>Buneman</last>
-            <first>Peter</first>
-        </author>
-        <author>
-            <last>Suciu</last>
-            <first>Dan</first>
-        </author>
-    </book>
-    <reference>
-        <title>The Economics of Technology and Content for Digital TV</title>
-        <affiliation>CITI</affiliation>
-    </reference>
-</bib>
-</XQueryResult>
+<XQueryResult><bib><book><title>TCP/IP Illustrated</title><author><last>Stevens</last><first>W.</first></author></book><book><title>Advanced Programming in the Unix environment</title><author><last>Stevens</last><first>W.</first></author></book><book><title>Data on the Web</title><author><last>Abiteboul</last><first>Serge</first></author><author><last>Buneman</last><first>Peter</first></author><author><last>Suciu</last><first>Dan</first></author></book><reference><title>The Economics of Technology and Content for Digital TV</title><affiliation>CITI</affiliation></reference></bib></XQueryResult>
 
 # 14:37:10 >  
 # 14:37:10 >  Done.

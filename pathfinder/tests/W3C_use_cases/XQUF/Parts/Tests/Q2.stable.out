@@ -49,16 +49,17 @@ doc(\"part-tree.xml\")
 ").printf();
 fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<parttree>
-    <part partid="0" name="car"/>
-    <part partid="10" name="skateboard">
-        <part partid="11" name="board"/>
-        <part partid="12" name="wheel"/>
+<XQueryResult><parttree>
+    <part name="car" partid="0">
+        
+        
     </part>
-    <part partid="20" name="canoe"/>
-</parttree>
-</XQueryResult>
+    <part name="skateboard" partid="10">
+        <part name="board" partid="11"/>
+        <part name="wheel" partid="12"/>
+    </part>
+    <part name="canoe" partid="20"/>
+</parttree></XQueryResult>
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

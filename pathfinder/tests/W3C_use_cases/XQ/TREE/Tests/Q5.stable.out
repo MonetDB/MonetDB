@@ -22,17 +22,7 @@ Over..
 # 23:40:56 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<section_list>
-    <section title="Introduction" figcount="0"/>
-    <section title="Audience" figcount="0"/>
-    <section title="Web Data and the Two Cultures" figcount="1"/>
-    <section title="A Syntax For Data" figcount="1"/>
-    <section title="Base Types" figcount="0"/>
-    <section title="Representing Relational Databases" figcount="1"/>
-    <section title="Representing Object Databases" figcount="0"/>
-</section_list>
-</XQueryResult>
+<XQueryResult><section_list><section title="Introduction" figcount="0"/><section title="Audience" figcount="0"/><section title="Web Data and the Two Cultures" figcount="1"/><section title="A Syntax For Data" figcount="1"/><section title="Base Types" figcount="0"/><section title="Representing Relational Databases" figcount="1"/><section title="Representing Object Databases" figcount="0"/></section_list></XQueryResult>
 
 # 23:40:56 >  
 # 23:40:56 >  Done.

@@ -22,35 +22,7 @@ Over..
 # 00:19:18 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <high_bid>
-        <itemno>1001</itemno>
-        <bid>55</bid>
-        <bidder>Mary Doe</bidder>
-    </high_bid>
-    <high_bid>
-        <itemno>1002</itemno>
-        <bid>1200</bid>
-        <bidder>Mary Doe</bidder>
-    </high_bid>
-    <high_bid>
-        <itemno>1003</itemno>
-        <bid>20</bid>
-        <bidder>Jack Sprat</bidder>
-    </high_bid>
-    <high_bid>
-        <itemno>1004</itemno>
-        <bid>40</bid>
-        <bidder>Tom Jones</bidder>
-    </high_bid>
-    <high_bid>
-        <itemno>1007</itemno>
-        <bid>225</bid>
-        <bidder>Roger Smith</bidder>
-    </high_bid>
-</result>
-</XQueryResult>
+<XQueryResult><result><high_bid><itemno>1001</itemno><bid>55</bid><bidder>Mary Doe</bidder></high_bid><high_bid><itemno>1002</itemno><bid>1200</bid><bidder>Mary Doe</bidder></high_bid><high_bid><itemno>1003</itemno><bid>20</bid><bidder>Jack Sprat</bidder></high_bid><high_bid><itemno>1004</itemno><bid>40</bid><bidder>Tom Jones</bidder></high_bid><high_bid><itemno>1007</itemno><bid>225</bid><bidder>Roger Smith</bidder></high_bid></result></XQueryResult>
 
 # 00:19:18 >  
 # 00:19:18 >  Done.

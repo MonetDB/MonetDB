@@ -22,20 +22,7 @@ Over..
 # 00:19:21 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <popular_item>
-        <itemno>1001</itemno>
-        <description>Red Bicycle</description>
-        <bid_count>5</bid_count>
-    </popular_item>
-    <popular_item>
-        <itemno>1002</itemno>
-        <description>Motorcycle</description>
-        <bid_count>5</bid_count>
-    </popular_item>
-</result>
-</XQueryResult>
+<XQueryResult><result><popular_item><itemno>1001</itemno><description>Red Bicycle</description><bid_count>5</bid_count></popular_item><popular_item><itemno>1002</itemno><description>Motorcycle</description><bid_count>5</bid_count></popular_item></result></XQueryResult>
 
 # 00:19:21 >  
 # 00:19:21 >  Done.

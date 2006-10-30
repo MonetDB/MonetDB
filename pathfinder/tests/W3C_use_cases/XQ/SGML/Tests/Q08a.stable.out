@@ -22,8 +22,7 @@ Over..
 # 23:16:20 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<section shorttitle="What is SGML?">
+<XQueryResult><result><section shorttitle="What is SGML?">
 <title>What <emph>is</emph> SGML in the grand scheme of the universe, anyway?</title>
 <intro>
 <para>SGML defines a strict markup scheme with a syntax for defining
@@ -31,8 +30,7 @@ document data elements and an overall framework for marking up
 documents.</para>
 <para>SGML can describe and create documents that are not dependent on
 any hardware, software, formatter, or operating system. Since SGML documents
-conform to an international standard, they are portable.</para></intro></section>
-<section shorttitle="How does SGML work?">
+conform to an international standard, they are portable.</para></intro></section><section shorttitle="How does SGML work?">
 <title>How is SGML and would you recommend it to your grandmother?</title>
 <intro>
 <para>You can break a typical document into three layers: structure,
@@ -57,8 +55,7 @@ conform to the rules established in the DTD (see <xref xrefid="top4"/>).</para>
 <topic topicid="top6">
 <title>Style</title>
 <para>SGML does not standardize style or other processing methods for
-information stored in SGML.</para></topic></section>
-</XQueryResult>
+information stored in SGML.</para></topic></section></result></XQueryResult>
 
 # 23:16:20 >  
 # 23:16:20 >  Done.

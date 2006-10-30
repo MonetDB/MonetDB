@@ -22,40 +22,7 @@ Over..
 # 00:19:22 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <bidder>
-        <userid>U01</userid>
-        <name>Tom Jones</name>
-        <bidcount>2</bidcount>
-        <avgbid>220</avgbid>
-    </bidder>
-    <bidder>
-        <userid>U02</userid>
-        <name>Mary Doe</name>
-        <bidcount>5</bidcount>
-        <avgbid>387</avgbid>
-    </bidder>
-    <bidder>
-        <userid>U03</userid>
-        <name>Dee Linquent</name>
-        <bidcount>2</bidcount>
-        <avgbid>487.5</avgbid>
-    </bidder>
-    <bidder>
-        <userid>U04</userid>
-        <name>Roger Smith</name>
-        <bidcount>5</bidcount>
-        <avgbid>266</avgbid>
-    </bidder>
-    <bidder>
-        <userid>U05</userid>
-        <name>Jack Sprat</name>
-        <bidcount>2</bidcount>
-        <avgbid>110</avgbid>
-    </bidder>
-</result>
-</XQueryResult>
+<XQueryResult><result><bidder><userid>U01</userid><name>Tom Jones</name><bidcount>2</bidcount><avgbid>220</avgbid></bidder><bidder><userid>U02</userid><name>Mary Doe</name><bidcount>5</bidcount><avgbid>387</avgbid></bidder><bidder><userid>U03</userid><name>Dee Linquent</name><bidcount>2</bidcount><avgbid>487.5</avgbid></bidder><bidder><userid>U04</userid><name>Roger Smith</name><bidcount>5</bidcount><avgbid>266</avgbid></bidder><bidder><userid>U05</userid><name>Jack Sprat</name><bidcount>2</bidcount><avgbid>110</avgbid></bidder></result></XQueryResult>
 
 # 00:19:22 >  
 # 00:19:22 >  Done.

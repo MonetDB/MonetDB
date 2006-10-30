@@ -22,17 +22,7 @@ Over..
 # 19:53:59 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q6 xmlns:ma="http://www.example.com/AuctionWatch">
-        <ma:Close 
-          xmlns:anyzone="http://www.example.com/auctioneers#anyzone" 
-          xmlns:dt="http://www.w3.org/2001/XMLSchema" 
-          xmlns:eachbay="http://www.example.com/auctioneers#eachbay" 
-          xmlns:xlink="http://www.w3.org/1999/xlink"
-          xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo"
-          dt:type="timeInstant">2000-03-23:07:41:34-05:00</ma:Close>
-</Q6>
-</XQueryResult>
+<XQueryResult><Q6 xmlns:ma="http://www.example.com/AuctionWatch"><ma:Close xmlns:anyzone="http://www.example.com/auctioneers#anyzone" xmlns:dt="http://www.w3.org/2001/XMLSchema" xmlns:eachbay="http://www.example.com/auctioneers#eachbay" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:yabadoo="http://www.example.com/auctioneers#yabadoo" dt:type="timeInstant">2000-03-23:07:41:34-05:00</ma:Close></Q6></XQueryResult>
 
 # 19:53:59 >  
 # 19:53:59 >  Done.

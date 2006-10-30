@@ -22,15 +22,7 @@ Over..
 # 14:37:06 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<book>
-        <title>Data on the Web</title>
-        <author>
-            <last>Suciu</last>
-            <first>Dan</first>
-        </author>
-</book>
-</XQueryResult>
+<XQueryResult><book><title>Data on the Web</title><author><last>Suciu</last><first>Dan</first></author></book></XQueryResult>
 
 # 14:37:06 >  
 # 14:37:06 >  Done.

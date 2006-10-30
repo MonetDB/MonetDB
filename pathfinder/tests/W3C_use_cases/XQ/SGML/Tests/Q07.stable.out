@@ -22,14 +22,7 @@ Over..
 # 23:16:18 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<first_letter>W</first_letter>
-<first_letter>W</first_letter>
-<first_letter>M</first_letter>
-<first_letter>S</first_letter>
-<first_letter>Y</first_letter>
-<first_letter>T</first_letter>
-</XQueryResult>
+<XQueryResult><result><first_letter>W</first_letter><first_letter>W</first_letter><first_letter>M</first_letter><first_letter>S</first_letter><first_letter>Y</first_letter><first_letter>T</first_letter></result></XQueryResult>
 
 # 23:16:18 >  
 # 23:16:18 >  Done.

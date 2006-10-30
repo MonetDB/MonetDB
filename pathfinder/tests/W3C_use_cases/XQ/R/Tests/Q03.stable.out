@@ -22,16 +22,7 @@ Over..
 # 00:19:08 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <warning>
-        <name>Dee Linquent</name>
-        <rating>D</rating>
-        <description>Helicopter</description>
-        <reserve_price>50000</reserve_price>
-    </warning>
-</result>
-</XQueryResult>
+<XQueryResult><result><warning><name>Dee Linquent</name><rating>D</rating><description>Helicopter</description><reserve_price>50000</reserve_price></warning></result></XQueryResult>
 
 # 00:19:08 >  
 # 00:19:08 >  Done.

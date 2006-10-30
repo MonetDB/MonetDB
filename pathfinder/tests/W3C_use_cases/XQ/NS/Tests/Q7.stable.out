@@ -22,13 +22,7 @@ Over..
 # 19:54:00 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q7 xmlns:xlink="http://www.w3.org/1999/xlink" >
-  <ma:AuctionHomepage xmlns:ma="http://www.example.com/AuctionWatch"
-                    xlink:type="simple"
-                    xlink:href="http://auctions.yabadoo.com/auction/13143816" />
-</Q7>
-</XQueryResult>
+<XQueryResult><Q7 xmlns:xlink="http://www.w3.org/1999/xlink" ><ma:AuctionHomepage xmlns:ma="http://www.example.com/AuctionWatch" xlink:type="simple" xlink:href="http://auctions.yabadoo.com/auction/13143816" /></Q7></XQueryResult>
 
 # 19:54:00 >  
 # 19:54:00 >  Done.

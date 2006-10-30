@@ -22,22 +22,7 @@ Over..
 # 00:19:13 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <successful_item>
-        <itemno>1002</itemno>
-        <description>Motorcycle</description>
-        <reserve_price>500</reserve_price>
-        <high_bid>1200</high_bid>
-    </successful_item>
-    <successful_item>
-        <itemno>1004</itemno>
-        <description>Tricycle</description>
-        <reserve_price>15</reserve_price>
-        <high_bid>40</high_bid>
-    </successful_item>
-</result>
-</XQueryResult>
+<XQueryResult><result><successful_item><itemno>1002</itemno><description>Motorcycle</description><reserve_price>500</reserve_price><high_bid>1200</high_bid></successful_item><successful_item><itemno>1004</itemno><description>Tricycle</description><reserve_price>15</reserve_price><high_bid>40</high_bid></successful_item></result></XQueryResult>
 
 # 00:19:13 >  
 # 00:19:13 >  Done.

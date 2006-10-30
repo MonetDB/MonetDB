@@ -22,9 +22,7 @@ Over..
 # 23:40:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<top_section_count>2</top_section_count>
-</XQueryResult>
+<XQueryResult><top_section_count>2</top_section_count></XQueryResult>
 
 # 23:40:55 >  
 # 23:40:55 >  Done.

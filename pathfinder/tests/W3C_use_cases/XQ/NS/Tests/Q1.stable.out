@@ -22,18 +22,7 @@ Over..
 # 19:53:53 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q1>
-  <ns>http://www.example.com/AuctionWatch</ns>
-  <ns>http://www.example.com/auctioneers#anyzone</ns>
-  <ns>http://www.w3.org/1999/xlink</ns>
-  <ns>http://www.w3.org/2001/XMLSchema</ns>
-  <ns>http://www.example.com/auctioneers#eachbay</ns>
-  <ns>http://www.example.org/music/records</ns>
-  <ns>http://www.example.com/auctioneers#yabadoo</ns>
-  <ns>http://www.w3.org/XML/1998/namespace</ns>
-</Q1>
-</XQueryResult>
+<XQueryResult><Q1><ns>http://www.example.com/AuctionWatch</ns><ns>http://www.example.com/auctioneers#anyzone</ns><ns>http://www.w3.org/1999/xlink</ns><ns>http://www.w3.org/2001/XMLSchema</ns><ns>http://www.example.com/auctioneers#eachbay</ns><ns>http://www.example.org/music/records</ns><ns>http://www.example.com/auctioneers#yabadoo</ns><ns>http://www.w3.org/XML/1998/namespace</ns></Q1></XQueryResult>
 
 # 19:53:53 >  
 # 19:53:53 >  Done.

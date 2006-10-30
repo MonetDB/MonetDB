@@ -22,20 +22,17 @@ Over..
 # 22:41:23 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<item_summary>Gorilla Corporation acquires
-YouNameItWeIntegrateIt.com. 1-20-2000.  Today, Gorilla Corporation
-announced that it will purchase YouNameItWeIntegrateIt.com. The shares
-of YouNameItWeIntegrateIt.com dropped $3.00 as a result of this
-announcement.</item_summary>
-
-<item_summary>Foobar Corporation is suing Gorilla Corporation for
-patent infringement. 1-20-2000.  In surprising developments today,
-Foobar Corporation announced that it is suing Gorilla Corporation for
-patent infringement. The patents that were mentioned as part of the
-lawsuit are considered to be the basis of Foobar Corporation's
-Wireless Foo line of products.</item_summary>
-</XQueryResult>
+<XQueryResult><item_summary> Gorilla Corporation acquires YouNameItWeIntegrateIt.com . 1-20-2000.  Today, Gorilla Corporation announced that it will purchase
+          YouNameItWeIntegrateIt.com. The shares of
+          YouNameItWeIntegrateIt.com dropped $3.00 as a result of this
+          announcement.
+      </item_summary><item_summary>Foobar Corporation is suing Gorilla Corporation for
+   patent infringement . 1-20-2000.  In surprising developments today, Foobar Corporation
+         announced that it is suing Gorilla Corporation for patent
+         infringement. The patents that were mentioned as part of the
+         lawsuit are considered to be the basis of Foobar
+         Corporation's Wireless Foo line of products.
+      </item_summary></XQueryResult>
 
 # 22:41:23 >  
 # 22:41:23 >  Done.

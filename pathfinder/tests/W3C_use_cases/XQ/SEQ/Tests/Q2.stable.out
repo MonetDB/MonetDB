@@ -22,10 +22,7 @@ Over..
 # 00:09:53 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<instrument>using electrocautery.</instrument>
-<instrument>electrocautery</instrument>
-</XQueryResult>
+<XQueryResult><instrument>using electrocautery.</instrument><instrument>electrocautery</instrument></XQueryResult>
 
 # 00:09:53 >  
 # 00:09:53 >  Done.

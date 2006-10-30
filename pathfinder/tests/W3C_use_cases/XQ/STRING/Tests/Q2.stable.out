@@ -22,21 +22,9 @@ Over..
 # 22:41:21 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<news_item>
-    <title> Gorilla Corporation acquires YouNameItWeIntegrateIt.com </title>
-    <date>1-20-2000</date>
-</news_item>
-<news_item>
-    <title>Foobar Corporation releases its new line of Foo products today</title>
-    <date>1-20-2000</date>
-</news_item>
-<news_item>
-    <title>Foobar Corporation is suing Gorilla Corporation for patent
-    infringement </title>
-    <date>1-20-2000</date>
-</news_item>
-</XQueryResult>
+<XQueryResult><news_item><title> Gorilla Corporation acquires YouNameItWeIntegrateIt.com </title><date>1-20-2000</date></news_item><news_item><title>Foobar Corporation releases its new line of Foo products
+   today</title><date>1-20-2000</date></news_item><news_item><title>Foobar Corporation is suing Gorilla Corporation for
+   patent infringement </title><date>1-20-2000</date></news_item></XQueryResult>
 
 # 22:41:21 >  
 # 22:41:21 >  Done.

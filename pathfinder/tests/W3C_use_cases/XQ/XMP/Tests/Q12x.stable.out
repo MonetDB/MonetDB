@@ -22,14 +22,7 @@ Over..
 # 14:37:10 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<bib>
-    <book-pair>
-        <title>TCP/IP Illustrated</title>
-        <title>Advanced Programming in the Unix environment</title>
-    </book-pair>
-</bib>
-</XQueryResult>
+<XQueryResult><bib><book-pair><title>TCP/IP Illustrated</title><title>Advanced Programming in the Unix environment</title></book-pair></bib></XQueryResult>
 
 # 14:37:10 >  
 # 14:37:10 >  Done.

@@ -22,8 +22,7 @@ Over..
 # 23:22:51 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<nara:grant xmlns:nara="http://www.anr.fr/nara">
+<XQueryResult><nara:grant xmlns:nara="http://www.anr.fr/nara">
  <nara:lab name="AgroPlus">
    <nara:address>Saclay, France</nara:address>
    <nara:researcher rid="r1" name="Fred" 
@@ -44,8 +43,7 @@ Over..
   <nara:PhD name="Robert" advisor="r3"/>
   <nara:PhD name="Julia" advisor="r1"/>
  </nara:lab>
-</nara:grant>
-</XQueryResult>
+</nara:grant></XQueryResult>
 
 # 23:22:51 >  
 # 23:22:51 >  Done.

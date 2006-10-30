@@ -22,10 +22,7 @@ Over..
 # 00:19:29 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<instrument>Hasson trocar</instrument>
-<instrument>trocar</instrument>
-</XQueryResult>
+<XQueryResult><instrument>Hasson trocar</instrument><instrument>trocar</instrument></XQueryResult>
 
 # 00:19:30 >  
 # 00:19:30 >  Done.

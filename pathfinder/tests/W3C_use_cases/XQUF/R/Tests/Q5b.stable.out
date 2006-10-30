@@ -13,18 +13,18 @@ module(unix);
 module(pathfinder);
 
 xquery("xml","
-let $uid :=
+let $uid := 
 doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]/userid
-let $topbid :=
+let $topbid := 
 max(doc(\"bids.xml\")/bids/bid_tuple[itemno=1007]/bid)
 where $topbid*1.1 <= 500
-return
-  do insert
-    <bid_tuple>
-      <userid>{data($uid)}</userid>
-      <itemno>1007</itemno>
-      <bid>{$topbid*1.1}</bid>
-      <bid_date>1999-02-01</bid_date>
+return 
+  do insert 
+    <bid_tuple> 
+      <userid>{data($uid)}</userid> 
+      <itemno>1007</itemno> 
+      <bid>{$topbid*1.1}</bid> 
+      <bid_date>1999-02-01</bid_date> 
     </bid_tuple>
   into exactly-one(doc(\"bids.xml\")/bids)
 ").printf();
@@ -128,26 +128,7 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>225</bid>
     <bid_date>1999-02-12</bid_date>
   </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1001</itemno>
-    <bid>60</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1002</itemno>
-    <bid>1320</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple> 
-    <userid>U07</userid> 
-    <itemno>1007</itemno> 
-    <bid>237</bid> 
-    <bid_date>1999-04-01</bid_date> 
-  </bid_tuple> 
-</bids>
-</XQueryResult>
+<bid_tuple><userid>U07</userid><itemno>1001</itemno><bid>60</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1002</itemno><bid>1320</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1007</itemno><bid>237</bid><bid_date>1999-04-01</bid_date></bid_tuple></bids></XQueryResult>
 quit();
 
 # 21:28:36 >  

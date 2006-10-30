@@ -22,11 +22,7 @@ Over..
 # 23:16:17 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<stitle shorttitle="What is markup?">
-<stitle shorttitle="What is SGML?">
-<stitle shorttitle="How does SGML work?">
-</XQueryResult>
+<XQueryResult><result><stitle shorttitle="What is markup?"/><stitle shorttitle="What is SGML?"/><stitle shorttitle="How does SGML work?"/></result></XQueryResult>
 
 # 23:16:17 >  
 # 23:16:17 >  Done.

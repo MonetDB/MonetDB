@@ -22,19 +22,7 @@ Over..
 # 23:40:53 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<figlist>
-    <figure  height="400" width="400">
-        <title>Traditional client/server architecture</title>
-    </figure>
-    <figure  height="200" width="500">
-        <title>Graph representations of structures</title>
-    </figure>
-    <figure  height="250" width ="400">
-        <title>Examples of Relations</title>
-    </figure>
-</figlist>
-</XQueryResult>
+<XQueryResult><figlist><figure width="400" height="400"><title>Traditional client/server architecture</title></figure><figure width="500" height="200"><title>Graph representations of structures</title></figure><figure width="400" height="250"><title>Examples of Relations</title></figure></figlist></XQueryResult>
 
 # 23:40:54 >  
 # 23:40:54 >  Done.

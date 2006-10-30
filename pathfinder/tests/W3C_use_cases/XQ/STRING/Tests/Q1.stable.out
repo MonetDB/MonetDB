@@ -22,12 +22,9 @@ Over..
 # 22:41:19 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<title>Foobar Corporation releases its new line of Foo
-products today</title>
-<title>Foobar Corporation is suing Gorilla Corporation for patent
-infringement </title>
-</XQueryResult>
+<XQueryResult><title>Foobar Corporation releases its new line of Foo products
+   today</title><title>Foobar Corporation is suing Gorilla Corporation for
+   patent infringement </title></XQueryResult>
 
 # 22:41:20 >  
 # 22:41:20 >  Done.

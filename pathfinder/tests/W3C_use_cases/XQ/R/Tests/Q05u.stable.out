@@ -22,20 +22,7 @@ Over..
 # 00:19:12 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <jones_bike>
-        <itemno>1001</itemno>
-        <description>Red Bicycle</description>
-        <high_bid>
-            <bid>55</bid>
-        </high_bid>
-        <high_bidder>
-            <name>Mary Doe</name>
-        </high_bidder>
-    </jones_bike>
-</result>
-</XQueryResult>
+<XQueryResult><result><jones_bike><itemno>1001</itemno><description>Red Bicycle</description><high_bid><bid>55</bid></high_bid><high_bidder><name>Mary Doe</name></high_bidder></jones_bike></result></XQueryResult>
 
 # 00:19:12 >  
 # 00:19:12 >  Done.

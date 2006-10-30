@@ -49,9 +49,11 @@ doc(\"part-tree.xml\")
 ").printf();
 fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<parttree/>
-</XQueryResult>
+<XQueryResult><parttree>
+    
+    
+    
+</parttree></XQueryResult>
 
 delete_doc("part-list.xml");
 delete_doc("part-tree.xml");

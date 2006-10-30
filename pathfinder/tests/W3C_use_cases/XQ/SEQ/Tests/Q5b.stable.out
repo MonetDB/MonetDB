@@ -22,13 +22,12 @@ Over..
 # 00:22:30 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<critical_sequence>
+<XQueryResult><critical_sequence>
       The fascia was identified and
       <action>#2 0 Maxon stay sutures were placed on each side of the midline.
       </action>#2 0 Maxon stay sutures were placed on each side of the midline.
-</critical_sequence>
-</XQueryResult>
+      
+      </critical_sequence></XQueryResult>
 
 # 00:22:30 >  
 # 00:22:30 >  Done.

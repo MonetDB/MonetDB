@@ -22,16 +22,15 @@ Over..
 # 23:22:51 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<employee mgr="true" dept="Toys">
+<XQueryResult><employees>
+<employee dept="Toys" mgr="true">
   <name>Smith</name>
   <salary xsi:nil="true"/>
 </employee>
-<employee mgr="true" dept="Shoes">
+<employee dept="Shoes" mgr="true">
   <name>Roberts</name>
   <salary xsi:nil="true"/>
-</employee>
-</XQueryResult>
+</employees></XQueryResult>
 
 # 23:22:51 >  
 # 23:22:51 >  Done.

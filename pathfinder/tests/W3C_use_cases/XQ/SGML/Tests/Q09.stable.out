@@ -22,8 +22,7 @@ Over..
 # 23:16:22 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<topic topicid="top4">
+<XQueryResult><result><topic topicid="top4">
 <title>Structure</title>
 <para>At the heart of an SGML application is a file called the DTD, or
 Document Type Definition. The DTD sets up the structure of a document,
@@ -31,8 +30,7 @@ much like a database schema describes the types of information it
 handles.</para>
 <para>A database schema also defines the relationships between the
 various types of data. Similarly, a DTD specifies <emph>rules</emph>
-to help ensure documents have a consistent, logical structure.</para></topic>
-</XQueryResult>
+to help ensure documents have a consistent, logical structure.</para></topic></result></XQueryResult>
 
 # 23:16:22 >  
 # 23:16:22 >  Done.

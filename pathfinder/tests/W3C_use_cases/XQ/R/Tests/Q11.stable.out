@@ -22,15 +22,7 @@ Over..
 # 00:19:19 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<result>
-    <expensive_item>
-        <itemno>1002</itemno>
-        <description>Motorcycle</description>
-        <high_bid>1200</high_bid>
-    </expensive_item>
-</result>
-</XQueryResult>
+<XQueryResult><result><expensive_item><itemno>1002</itemno><description>Motorcycle</description><high_bid>1200</high_bid></expensive_item></result></XQueryResult>
 
 # 00:19:19 >  
 # 00:19:19 >  Done.

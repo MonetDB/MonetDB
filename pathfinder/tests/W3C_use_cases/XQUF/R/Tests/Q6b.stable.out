@@ -13,11 +13,11 @@ module(unix);
 module(pathfinder);
 
 xquery("xml","
-let $user :=
+let $user := 
 doc(\"users.xml\")/users/user_tuple[name=\"Dee Linquent\"]
-let $items :=
+let $items := 
 doc(\"items.xml\")/items/item_tuple[offered_by=$user/userid]
-let $bids :=
+let $bids := 
 doc(\"bids.xml\")/bids/bid_tuple[userid=$user/userid]
 return
   do delete ($user, $items, $bids)
@@ -25,8 +25,7 @@ return
 
 xquery("xml","doc(\"bids.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<bids>
+<XQueryResult><bids>
   <bid_tuple> 
     <userid>U02</userid> 
     <itemno>1001</itemno> 
@@ -69,6 +68,7 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>600</bid>
     <bid_date>1999-02-16</bid_date>
   </bid_tuple>
+  
   <bid_tuple>
     <userid>U04</userid>
     <itemno>1002</itemno>
@@ -99,6 +99,7 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>40</bid>
     <bid_date>1999-03-05</bid_date>
   </bid_tuple>
+  
   <bid_tuple>
     <userid>U05</userid>
     <itemno>1007</itemno>
@@ -111,30 +112,10 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid>225</bid>
     <bid_date>1999-02-12</bid_date>
   </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1001</itemno>
-    <bid>60</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1002</itemno>
-    <bid>1320</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-  <bid_tuple>
-    <userid>U07</userid>
-    <itemno>1007</itemno>
-    <bid>247.50000000000003</bid>
-    <bid_date>1999-02-01</bid_date>
-  </bid_tuple>
-</bids>
-</XQueryResult>
+<bid_tuple><userid>U07</userid><itemno>1001</itemno><bid>60</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1002</itemno><bid>1320</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1007</itemno><bid>247.50000000000003</bid><bid_date>1999-02-01</bid_date></bid_tuple></bids></XQueryResult>
 xquery("xml","doc(\"items.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<items>
+<XQueryResult><items>
   <item_tuple>
     <itemno>1001</itemno>
     <description>Red Bicycle</description>
@@ -167,6 +148,8 @@ xquery("xml","doc(\"items.xml\")").printf();
     <end_date>1999-03-08 </end_date>
     <reserve_price>15</reserve_price>
   </item_tuple>
+  
+  
   <item_tuple>
     <itemno>1007</itemno>
     <description>Racing Bicycle</description>
@@ -183,12 +166,10 @@ xquery("xml","doc(\"items.xml\")").printf();
     <end_date>1999-03-06 </end_date>
     <reserve_price>25</reserve_price>
   </item_tuple>
-</items>
-</XQueryResult>
+</items></XQueryResult>
 xquery("xml","doc(\"users.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<users>
+<XQueryResult><users>
   <user_tuple>
     <userid>U01</userid>
     <name>Tom Jones</name>
@@ -199,6 +180,7 @@ xquery("xml","doc(\"users.xml\")").printf();
     <name>Mary Doe</name>
     <rating>A</rating>
   </user_tuple>
+  
   <user_tuple>
     <userid>U04</userid>
     <name>Roger Smith</name>
@@ -214,13 +196,7 @@ xquery("xml","doc(\"users.xml\")").printf();
     <name>Rip Van Winkle</name>
     <rating>B</rating>
   </user_tuple>
-  <user_tuple>
-    <userid>U07</userid>
-    <name>Annabel Lee</name>
-    <rating>B</rating>
-  </user_tuple>
-</users>
-</XQueryResult>
+<user_tuple><userid>U07</userid><name>Annabel Lee</name><rating>B</rating></user_tuple></users></XQueryResult>
 quit();
 
 # 21:36:13 >  

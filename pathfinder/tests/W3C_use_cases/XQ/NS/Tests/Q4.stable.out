@@ -22,16 +22,7 @@ Over..
 # 19:53:57 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<Q4 xmlns:xlink="http://www.w3.org/1999/xlink">
-  <ns xlink:href="http://www.example.com/item/0321K372910"/>
-  <ns xlink:href="http://auction.eachbay.com/members?get=RecordsRUs"/>
-  <ns xlink:href="http://auction.anyzone.com/members/VintageRecordFreak"/>
-  <ns xlink:href="http://auctions.yabadoo.com/auction/13143816"/>
-  <ns xlink:href="http://auction.eachbay.com/showRating/user=VintageRecordFreak"/>
-  <ns xlink:href="http://auction.eachbay.com/showRating/user=StarsOn45"/>
-</Q4>
-</XQueryResult>
+<XQueryResult><Q4 xmlns:xlink="http://www.w3.org/1999/xlink"><ns xlink:href="http://www.example.com/item/0321K372910"/><ns xlink:href="http://auction.eachbay.com/members?get=RecordsRUs"/><ns xlink:href="http://auction.anyzone.com/members/VintageRecordFreak"/><ns xlink:href="http://auctions.yabadoo.com/auction/13143816"/><ns xlink:href="http://auction.eachbay.com/showRating/user=VintageRecordFreak"/><ns xlink:href="http://auction.eachbay.com/showRating/user=StarsOn45"/></Q4></XQueryResult>
 
 # 19:53:57 >  
 # 19:53:57 >  Done.
