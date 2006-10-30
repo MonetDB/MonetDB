@@ -11,8 +11,8 @@ declare function local:between($seq as node()*, $start as node(), $end as node()
 <critical_sequence>
  {
   let $proc := doc("report1.xml")//section[section.title="Procedure"][1],
-      $first :=  ($proc//incision)[1],
-      $second:=  ($proc//incision)[2]
+      $first :=  exactly-one(($proc//incision)[1]),
+      $second:=  exactly-one(($proc//incision)[2])
   return local:between($proc//node(), $first, $second)
  }
 </critical_sequence>

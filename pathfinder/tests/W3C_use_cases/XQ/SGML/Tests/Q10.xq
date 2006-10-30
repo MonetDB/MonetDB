@@ -1,6 +1,6 @@
 <result>
   {
-    let $x := doc("sgml.xml")//xref[@xrefid = "top4"],
+    let $x := exactly-one(doc("sgml.xml")//xref[@xrefid = "top4"]),
         $t := doc("sgml.xml")//title[. << $x]
     return $t[last()]
   }

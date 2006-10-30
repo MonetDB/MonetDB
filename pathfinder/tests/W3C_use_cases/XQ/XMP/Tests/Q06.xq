@@ -1,6 +1,6 @@
 <bib>
   {
-    for $b in doc("http://bstore1.example.com/bib.xml")//book
+    for $b in doc("bib.xml")//book
     where count($b/author) > 0
     return
         <book>

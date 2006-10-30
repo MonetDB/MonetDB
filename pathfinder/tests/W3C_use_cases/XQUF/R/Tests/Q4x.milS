@@ -5,7 +5,7 @@ xquery("xml","
 let $user := 
 doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]
 return 
-  do replace value of $user/rating with \"B\"
+  do replace value of exactly-one($user/rating) with \"B\"
 ").printf();
 
 xquery("xml","doc(\"users.xml\")").printf();

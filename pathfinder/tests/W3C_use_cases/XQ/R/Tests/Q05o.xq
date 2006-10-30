@@ -6,14 +6,14 @@
         $highbid in  doc("bids.xml")//bid_tuple
     where $seller/name = "Tom Jones"
       and $seller/userid  = $item/offered_by
-      and contains($item/description , "Bicycle")
+      and contains(zero-or-one($item/description) , "Bicycle")
       and $item/itemno  = $highbid/itemno
       and $highbid/userid  = $buyer/userid
       and $highbid/bid = max(
                               doc("bids.xml")//bid_tuple
                                 [itemno = $item/itemno]/bid
                          )
-    order by ($item/itemno)
+    order by zero-or-one($item/itemno)
     return
         <jones_bike>
             { $item/itemno }

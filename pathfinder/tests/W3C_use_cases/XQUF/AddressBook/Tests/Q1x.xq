@@ -8,27 +8,27 @@ return
   then ()
   else 
     if ($v1/contact = $v2/contact)
-    then ( do replace value of $a/contact with $v1/contact,
+    then ( do replace value of exactly-one($a/contact) with $v1/contact,
            do replace value of 
-              doc("archive.xml")/*/last-synch-time 
+              exactly-one(doc("archive.xml")/*/last-synch-time) 
            with current-dateTime()
          )
     else 
       if ($a/contact = $v1/contact)
       then (
-            do replace value of $a/contact with $v2/contact,
-            do replace value of $v1/contact with $v2/contact,
+            do replace value of exactly-one($a/contact) with $v2/contact,
+            do replace value of exactly-one($v1/contact) with $v2/contact,
             do replace value of 
-               doc("archive.xml")/*/last-synch-time
+               exactly-one(doc("archive.xml")/*/last-synch-time)
             with current-dateTime()
             )
       else 
         if ($a/contact = $v2/contact)
         then (
-              do replace value of $a/contact with $v1/contact,
-              do replace value of $v2/contact with $v1/contact
+              do replace value of exactly-one($a/contact) with $v1/contact,
+              do replace value of exactly-one($v2/contact) with $v1/contact,
               do replace value of 
-                 doc("archive.xml")/*/last-synch-time
+                 exactly-one(doc("archive.xml")/*/last-synch-time)
               with current-dateTime()
              )
         else (
@@ -38,5 +38,5 @@ return
                <v1>{ $v1 }</v1>
                <v2>{ $v2 }</v2>
             </fail>
-          into doc("log.xml")/log
+          into exactly-one(doc("log.xml")/log)
         )

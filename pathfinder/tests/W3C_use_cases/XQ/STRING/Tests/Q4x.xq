@@ -6,9 +6,9 @@ declare function local:partners($company as xs:string) as element()*
 
 for $item in doc("string.xml")//news_item,
     $c in doc("company-data.xml")//company
-let $partners := local:partners($c/name)
-where contains(string($item), $c/name)
+let $partners := local:partners(exactly-one($c/name))
+where contains(string($item), zero-or-one($c/name))
   and (some $p in $partners satisfies
-    contains(string($item), $p) and $item/news_agent != $c/name)
+    contains(string($item), zero-or-one($p)) and $item/news_agent != $c/name)
 return
     $item

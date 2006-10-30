@@ -18,7 +18,7 @@ do insert
     <userid>U07</userid>
     <name>Annabel Lee</name>
   </user_tuple>
-into doc(\"users.xml\")/users
+into exactly-one(doc(\"users.xml\")/users)
 ").printf();
 
 xquery("xml","doc(\"users.xml\")").printf();

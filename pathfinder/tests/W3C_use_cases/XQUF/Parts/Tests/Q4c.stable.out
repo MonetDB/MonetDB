@@ -27,7 +27,7 @@ let $next := max(doc(\"part-tree.xml\")//@partid) + 1
   return
     do insert <part partid=\"{$next}\" name=\"radio\"/>
        as first into
-       doc(\"part-tree.xml\")//part[@partid=0 and @name=\"car\"]
+       exactly-one(doc(\"part-tree.xml\")//part[@partid=0 and @name=\"car\"])
 ").printf();
 
 xquery("xml","

@@ -1,7 +1,7 @@
 <result>
   {
     for $u in doc("users.xml")//user_tuple
-    order by $u/name
+    order by zero-or-one($u/name)
     return
         <user>
             { $u/name }
@@ -10,7 +10,7 @@
                                              [userid = $u/userid]/itemno)
                 for $i in doc("items.xml")//item_tuple[itemno = $b]
                 let $descr := $i/description/text()
-                order by $descr
+                order by zero-or-one($descr)
                 return
                     <bid_on_item>{ $descr }</bid_on_item>
             }

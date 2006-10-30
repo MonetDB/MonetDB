@@ -3,7 +3,7 @@
     for $item in doc("items.xml")//item_tuple
     let $b := doc("bids.xml")//bid_tuple[itemno = $item/itemno]
     let $z := max($b/bid)
-    where $item/reserve_price * 2 < $z
+    where exactly-one($item/reserve_price) * 2 < $z
     return
         <successful_item>
             { $item/itemno }

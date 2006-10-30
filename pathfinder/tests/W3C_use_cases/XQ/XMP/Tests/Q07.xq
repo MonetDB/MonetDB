@@ -1,8 +1,8 @@
 <bib>
   {
-    for $b in doc("http://bstore1.example.com/bib.xml")//book
+    for $b in doc("bib.xml")//book
     where $b/publisher = "Addison-Wesley" and $b/@year > 1991
-    order by $b/title
+    order by exactly-one($b/title)
     return
         <book>
             { $b/@year }

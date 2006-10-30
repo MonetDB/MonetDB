@@ -9,13 +9,13 @@ let $foobar_partners := local:partners("Foobar Corporation")
 for $item in doc("string.xml")//news_item
 where
   some $t in $item//title satisfies
-    (contains($t/text(), "Foobar Corporation")
+    (contains(zero-or-one($t/text()), "Foobar Corporation")
     and (some $partner in $foobar_partners satisfies
-      contains($t/text(), $partner/text())))
+      contains(zero-or-one($t/text()), zero-or-one($partner/text()))))
   or (some $par in $item//par satisfies
-   (contains(string($par), "Foobar Corporation")
+   (contains(zero-or-one(string($par)), "Foobar Corporation")
      and (some $partner in $foobar_partners satisfies
-        contains(string($par), $partner/text())))) 
+        contains(zero-or-one(string($par)), zero-or-one($partner/text()))))) 
 return
     <news_item>
         { $item/title }

@@ -7,7 +7,7 @@
         $highbid in  doc("bids.xml")//bid_tuple
     where $seller/name = "Tom Jones"
       and $seller/userid  = $item/offered_by
-      and contains($item/description , "Bicycle")
+      and contains(zero-or-one($item/description) , "Bicycle")
       and $item/itemno  = $highbid/itemno
       and $highbid/userid  = $buyer/userid
       and $highbid/bid = max(

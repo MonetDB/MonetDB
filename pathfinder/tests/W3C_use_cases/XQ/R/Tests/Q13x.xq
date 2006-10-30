@@ -3,7 +3,7 @@
     for $uid in distinct-values(doc("bids.xml")//userid),
         $u in doc("users.xml")//user_tuple[userid = $uid]
     let $b := doc("bids.xml")//bid_tuple[userid = $uid]
-    order by $u/userid
+    order by zero-or-one($u/userid)
     return
         <bidder>
             { $u/userid }

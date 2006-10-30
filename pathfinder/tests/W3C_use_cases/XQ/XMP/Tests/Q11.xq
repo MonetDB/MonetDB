@@ -1,6 +1,6 @@
 <bib>
 {
-        for $b in doc("http://bstore1.example.com/bib.xml")//book[author]
+        for $b in doc("bib.xml")//book[author]
         return
             <book>
                 { $b/title }
@@ -8,7 +8,7 @@
             </book>
 }
 {
-        for $b in doc("http://bstore1.example.com/bib.xml")//book[editor]
+        for $b in doc("bib.xml")//book[editor]
         return
           <reference>
             { $b/title }

@@ -17,8 +17,8 @@ declare function local:follows($a as node(), $b as node()) as xs:boolean
  {
   let $proc := doc("report1.xml")//section[section.title="Procedure"][1]
   for $n in $proc//node()
-  where local:follows($n, ($proc//incision)[1])
-    and local:precedes($n, ($proc//incision)[2])
+  where local:follows($n, exactly-one(($proc//incision)[1]))
+    and local:precedes($n, exactly-one(($proc//incision)[2]))
   return $n
  }
 </critical_sequence>

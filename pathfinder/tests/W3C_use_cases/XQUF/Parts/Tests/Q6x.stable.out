@@ -28,7 +28,7 @@ for $keyword at $i in (\"car\", \"skateboard\", \"canoe\"),
 let $descendants := $parent//part
 for $p in ($parent, $descendants)
 return
-  do replace value of $p/@partid with $i*1000+$p/@partid
+  do replace value of exactly-one($p/@partid) with $i*1000+$p/@partid
 ").printf();
 
 xquery("xml","

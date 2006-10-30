@@ -2,7 +2,7 @@
   {
     for $u in doc("users.xml")//user_tuple
     let $b := doc("bids.xml")//bid_tuple[userid = $u/userid]
-    order by $u/userid
+    order by zero-or-one($u/userid)
     return
         <user>
             { $u/userid }

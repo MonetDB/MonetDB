@@ -4,7 +4,7 @@ module(pathfinder);
 xquery("xml","
 do insert
   <comment>This is a bargain !</comment>
-as last into doc(\"items.xml\")/items/item_tuple[itemno=1002]
+as last into exactly-one(doc(\"items.xml\")/items/item_tuple[itemno=1002])
 ").printf();
 
 xquery("xml","doc(\"items.xml\")").printf();

@@ -1,7 +1,7 @@
 <books-with-prices>
   {
-    for $b in doc("http://bstore1.example.com/bib.xml")//book,
-        $a in doc("http://bstore2.example.com/reviews.xml")//entry
+    for $b in doc("bib.xml")//book,
+        $a in doc("reviews.xml")//entry
     where $b/title = $a/title
     return
         <book-with-prices>
