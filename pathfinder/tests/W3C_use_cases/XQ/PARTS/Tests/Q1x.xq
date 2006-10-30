@@ -12,7 +12,7 @@ declare function local:one_level($p as element()) as element()
 
 <parttree>
   {
-    for $p in doc("partlist.xml")//part[empty(@partof)]
+    for $p in doc("partlist.xml")//part where empty($p/@partof)
     return local:one_level($p)
   }
 </parttree>
