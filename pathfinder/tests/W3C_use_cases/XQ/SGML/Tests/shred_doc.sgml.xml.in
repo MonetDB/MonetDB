@@ -1,4 +1,4 @@
-<!DOCTYPE report SYSTEM "report.dtd">
+<!DOCTYPE report SYSTEM "$TSTSRCDIR/shred_doc.report.dtd">
 <report>
 <title>Getting started with SGML</title>
 <chapter>

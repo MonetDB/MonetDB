@@ -1,3 +1,4 @@
+<!DOCTYPE users SYSTEM "$TSTSRCDIR/shred_docs.users.dtd">
 <users>
   <user_tuple>
     <userid>U01</userid>

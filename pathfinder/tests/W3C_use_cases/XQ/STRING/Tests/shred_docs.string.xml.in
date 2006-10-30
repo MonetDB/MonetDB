@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE news SYSTEM "$TSTSRCDIR/shred_docs.news.dtd">
 <news>
 <news_item>
    <title> Gorilla Corporation acquires YouNameItWeIntegrateIt.com </title>

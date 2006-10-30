@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE partlist SYSTEM "$TSTSRCDIR/shred_doc.partlist.dtd">
 <partlist>
   <part partid="0" name="car"/>
   <part partid="1" partof="0" name="engine"/>

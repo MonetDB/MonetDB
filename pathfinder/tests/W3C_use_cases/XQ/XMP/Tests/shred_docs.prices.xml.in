@@ -1,3 +1,4 @@
+<!DOCTYPE prices SYSTEM "$TSTSRCDIR/shred_docs.prices.dtd">
 <prices>
     <book>
         <title>Advanced Programming in the Unix environment</title>

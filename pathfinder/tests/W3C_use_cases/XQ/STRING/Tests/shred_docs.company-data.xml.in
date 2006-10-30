@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?> 
-<!DOCTYPE company SYSTEM "company.dtd">
+<!DOCTYPE company SYSTEM "$TSTSRCDIR/shred_docs.company.dtd">
 <company>
    <name>Foobar Corporation</name>
    <ticker_symbol>FOO</ticker_symbol>

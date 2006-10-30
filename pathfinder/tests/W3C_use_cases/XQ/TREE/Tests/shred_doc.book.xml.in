@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE book SYSTEM "book.dtd">
+<!DOCTYPE book SYSTEM "$TSTSRCDIR/shred_doc.book.dtd">
 <book>
   <title>Data on the Web</title>
   <author>Serge Abiteboul</author>
@@ -45,6 +45,6 @@
     <section>
       <title>Representing Object Databases</title>
       <p>Text ... </p>
-    </section>       
+    </section>
   </section>
 </book>

@@ -1,3 +1,4 @@
+<!DOCTYPE bids SYSTEM "$TSTSRCDIR/shred_docs.bids.dtd">
 <bids>
   <bid_tuple> 
     <userid>U02</userid> 

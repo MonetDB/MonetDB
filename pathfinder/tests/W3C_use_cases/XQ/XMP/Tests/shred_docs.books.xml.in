@@ -1,3 +1,4 @@
+<!DOCTYPE books SYSTEM "$TSTSRCDIR/shred_docs.books.dtd">
 <chapter>
     <title>Data Model</title>
     <section>
