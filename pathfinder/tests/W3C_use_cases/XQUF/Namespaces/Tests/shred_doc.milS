@@ -1,0 +1,5 @@
+module(ascii_io);
+module(unix);
+module(pathfinder);
+var TSTSRCDIR := getenv("TSTSRCDIR");
+shred_doc(TSTSRCDIR+"/grant.xml", "grant.xml", "Namespaces", 9LL);

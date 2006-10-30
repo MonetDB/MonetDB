@@ -1,0 +1,27 @@
+module(ascii_io);
+module(unix);
+module(pathfinder);
+var TSTSRCDIR := getenv("TSTSRCDIR");
+shred_doc(TSTSRCDIR+"/part-list.xml", "part-list.xml", "Parts", 9LL);
+shred_doc(TSTSRCDIR+"/part-tree.xml", "part-tree.xml", "Parts", 9LL);
+
+xquery("xml","
+for $pt in doc(\"part-tree.xml\")//part[@name=\"car\"]/part,
+    $pl in doc(\"part-list.xml\")//part
+where $pt/@partid eq $pl/@partid
+return
+  do delete $pl
+").printf();
+
+xquery("xml","
+doc(\"part-list.xml\")
+").printf();
+fflush(stdout());
+
+xquery("xml","
+doc(\"part-tree.xml\")
+").printf();
+fflush(stdout());
+
+delete_doc("part-list.xml");
+delete_doc("part-tree.xml");

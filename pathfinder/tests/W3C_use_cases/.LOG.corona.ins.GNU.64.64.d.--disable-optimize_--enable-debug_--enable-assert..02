@@ -1,0 +1,404 @@
+IGNORE = ^#
+RECURSIVE = True
+QUIET = 0
+M5 = 0
+M4 = True
+TIMEOUT = 60
+CONTEXT = -C1
+ACCURACY = 1
+
+Mtest.py  Warning:  TSTSRCBASE: Replacing logical path  /ufs/manegold/_/scratch0/Monet/Testing/Current/pathfinder  by absolute physical path  /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder
+
+
+Mtest.py  Warning:  TSTBLDBASE: Replacing logical path  /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.BUILD./PATHFINDER  by absolute physical path  /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.BUILD./PATHFINDER
+
+
+Mtest.py  Warning:  TSTTRGBASE: Replacing logical path  /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER  by absolute physical path  /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER
+
+MONETDB_SOURCE = /ufs/manegold/_/scratch0/Monet/Testing/Current/MonetDB
+MONETDB_BUILD = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.BUILD./MONETDB
+MONETDB_PREFIX = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB
+TSTSRCBASE = /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder
+TSTBLDBASE = /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.BUILD./PATHFINDER
+TSTTRGBASE = /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER
+SQL_PREFIX = 
+MAPICLIENT = MapiClient -lmil
+SQLCLIENT = MapiClient -lsql
+SQLDUMP = msqldump
+XQUERYCLIENT = MapiClient -lxquery -oxml
+X100CLIENT = x100run_mapi
+MAPIPORT = 35137
+GDK_DEBUG = 10
+MONETDB_MOD_PATH = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/lib64/MonetDB/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/bin
+XQUERY_LOGDIR = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/xquery_logs
+SQL_LOGDIR = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/sql_logs
+GDK_DBFARM = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/dbfarm
+setMONETDB_MOD_PATH = --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/lib64/MonetDB/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/bin"
+SQL_SERVER = sql_server
+PATH = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/bin:/usr/local/bin:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin:/usr/local/bin:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./BUILDTOOLS/bin:/usr/local/bin:/ufs/manegold/bin:/usr/X11R6/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+VERSION = 41301
+MSERVER = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/Mserver" : Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/lib64/MonetDB/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/var/MonetDB/xquery_logs" --set mapi_port=35137 --set monet_prompt= --trace
+MTIMEOUT = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/Mtimeout" : Mtimeout -timeout 60 
+PYTHON = "/usr/bin/python" : /usr/bin/python
+SQL_CLIENT = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/MapiClient" : MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35137 
+XQUERY_CLIENT = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/MapiClient" : MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=35137
+MAPI_CLIENT = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/MapiClient" : MapiClient -lmil -umonetdb -Pmonetdb "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/etc/MonetDB.conf" --host=localhost --port=35137
+MDIFF = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/Mdiff" : Mdiff
+SQL_DUMP = "/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/bin/msqldump" : msqldump -umonetdb -Pmonetdb --host=localhost --port=35137 
+X100_CLIENT =  : x100run_mapi -umonetdb -Pmonetdb "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./MONETDB/etc/MonetDB.conf" --host=localhost --port=35137
+Bits:  64bit
+OIDs:  oid64
+Modules:  ('main', 'builtin', '_builtin', 'arith', '_arith', 'str', '_str', 'constant', '_constant', 'bat', '_bat', 'algebra', '_algebra', 'sys', '_sys', 'trans', '_trans', 'pf_support', 'xrpc', 'pf_standoff', 'pathfinder', 'counters', 'salgebra', 'pqueue', 'pcre', 'array', 'bitvector', 'url', 'logger', 'uchr', 'ascii_io', 'mmath', 'upgrade', 'mapi', 'aggr', 'mprof', 'vector', 'lock', 'bitset', 'pcl', 'xtables', 'tcpip', 'monettime', 'streams', 'iterator', 'calib', 'profiler', 'blob', 'txtsim', 'malalgebra', 'enum', 'aggrX3', 'mkey', 'unix', 'bat_arith', 'image', 'color', 'qt', 'ddbench', 'stats', 'bat_cast', 'alarm', 'radix', 'bat_mmath', 'decimal', 'wisc', 'oo7', 'mel')
+
+Running all tests in directories ['/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/NS', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/PARTS', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/R', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/SEQ', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/SGML', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/STRING', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/TREE', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQ/XMP', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQUF/AddressBook', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQUF/Namespaces', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQUF/Nil', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQUF/Parts', '/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/W3C_use_cases/XQUF/R'].
+
+11:30:18> tests/W3C_use_cases/XQ/NS/auction.xq  (<=60,60,180) ...   0.776s 
+auction.stable.out.FILTERED and auction.test.out.FILTERED are equal.
+auction.stable.err.FILTERED and auction.test.err.FILTERED are equal.
+11:30:19> tests/W3C_use_cases/XQ/NS/Q1.xq  (<=60,60,180) ...   0.825s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:30:20> tests/W3C_use_cases/XQ/NS/Q2.xq  (<=60,60,180) ...   0.766s 
+Q2.stable.out.FILTERED and Q2.test.out.FILTERED differ SIGNIFICANTLY!
+Q2.stable.err.FILTERED and Q2.test.err.FILTERED are equal.
+11:30:21> tests/W3C_use_cases/XQ/NS/Q3.xq  (<=60,60,180) ...   0.789s 
+Q3.stable.out.FILTERED and Q3.test.out.FILTERED differ SIGNIFICANTLY!
+Q3.stable.err.FILTERED and Q3.test.err.FILTERED are equal.
+11:30:22> tests/W3C_use_cases/XQ/NS/Q4.xq  (<=60,60,180) ...   0.859s 
+Q4.stable.out.FILTERED and Q4.test.out.FILTERED differ SIGNIFICANTLY!
+Q4.stable.err.FILTERED and Q4.test.err.FILTERED are equal.
+11:30:23> tests/W3C_use_cases/XQ/NS/Q5.xq  (<=60,60,180) ...   0.810s 
+Q5.stable.out.FILTERED and Q5.test.out.FILTERED differ SIGNIFICANTLY!
+Q5.stable.err.FILTERED and Q5.test.err.FILTERED are equal.
+11:30:24> tests/W3C_use_cases/XQ/NS/Q6.xq  (<=60,60,180) ...   0.874s 
+Q6.stable.out.FILTERED and Q6.test.out.FILTERED differ SIGNIFICANTLY!
+Q6.stable.err.FILTERED and Q6.test.err.FILTERED are equal.
+11:30:25> tests/W3C_use_cases/XQ/NS/Q7.xq  (<=60,60,180) ...   0.847s 
+Q7.stable.out.FILTERED and Q7.test.out.FILTERED differ SIGNIFICANTLY!
+Q7.stable.err.FILTERED and Q7.test.err.FILTERED are equal.
+11:30:26> tests/W3C_use_cases/XQ/NS/Q8.xq  (<=60,60,180) ...   0.713s 
+Q8.stable.out.FILTERED and Q8.test.out.FILTERED differ SIGNIFICANTLY!
+Q8.stable.err.FILTERED and Q8.test.err.FILTERED differ SIGNIFICANTLY!
+11:30:27> tests/W3C_use_cases/XQ/PARTS/partlist.xq  (<=60,60,180) ...   0.771s 
+partlist.stable.out.FILTERED and partlist.test.out.FILTERED are equal.
+partlist.stable.err.FILTERED and partlist.test.err.FILTERED are equal.
+11:30:28> tests/W3C_use_cases/XQ/PARTS/Q1.xq  (<=60,60,180) ...   0.735s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED differ SIGNIFICANTLY!
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED differ SIGNIFICANTLY!
+11:30:29> tests/W3C_use_cases/XQ/R/bids.xq  (<=60,60,180) ...   0.763s 
+bids.stable.out.FILTERED and bids.test.out.FILTERED are equal.
+bids.stable.err.FILTERED and bids.test.err.FILTERED are equal.
+11:30:30> tests/W3C_use_cases/XQ/R/items.xq  (<=60,60,180) ...   0.752s 
+items.stable.out.FILTERED and items.test.out.FILTERED are equal.
+items.stable.err.FILTERED and items.test.err.FILTERED are equal.
+11:30:31> tests/W3C_use_cases/XQ/R/users.xq  (<=60,60,180) ...   0.758s 
+users.stable.out.FILTERED and users.test.out.FILTERED are equal.
+users.stable.err.FILTERED and users.test.err.FILTERED are equal.
+11:30:32> tests/W3C_use_cases/XQ/R/Q01.xq  (<=60,60,180) ...   0.946s 
+Q01.stable.out.FILTERED and Q01.test.out.FILTERED are equal.
+Q01.stable.err.FILTERED and Q01.test.err.FILTERED are equal.
+11:30:33> tests/W3C_use_cases/XQ/R/Q02.xq  (<=60,60,180) ...   1.027s 
+Q02.stable.out.FILTERED and Q02.test.out.FILTERED differ SIGNIFICANTLY!
+Q02.stable.err.FILTERED and Q02.test.err.FILTERED differ SIGNIFICANTLY!
+11:30:34> tests/W3C_use_cases/XQ/R/Q03.xq  (<=60,60,180) ...   1.017s 
+Q03.stable.out.FILTERED and Q03.test.out.FILTERED are equal.
+Q03.stable.err.FILTERED and Q03.test.err.FILTERED are equal.
+11:30:35> tests/W3C_use_cases/XQ/R/Q04.xq  (<=60,60,180) ...   0.928s 
+Q04.stable.out.FILTERED and Q04.test.out.FILTERED are equal.
+Q04.stable.err.FILTERED and Q04.test.err.FILTERED are equal.
+11:30:36> tests/W3C_use_cases/XQ/R/Q05o.xq  (<=60,60,180) ...  22.761s 
+Q05o.stable.out.FILTERED and Q05o.test.out.FILTERED are equal.
+Q05o.stable.err.FILTERED and Q05o.test.err.FILTERED are equal.
+11:30:59> tests/W3C_use_cases/XQ/R/Q05u.xq  (<=60,60,180) ...  22.040s 
+Q05u.stable.out.FILTERED and Q05u.test.out.FILTERED are equal.
+Q05u.stable.err.FILTERED and Q05u.test.err.FILTERED are equal.
+11:31:21> tests/W3C_use_cases/XQ/R/Q06.xq  (<=60,60,180) ...   1.025s 
+Q06.stable.out.FILTERED and Q06.test.out.FILTERED differ SIGNIFICANTLY!
+Q06.stable.err.FILTERED and Q06.test.err.FILTERED differ SIGNIFICANTLY!
+11:31:22> tests/W3C_use_cases/XQ/R/Q07.xq  (<=60,60,180) ...   0.967s 
+Q07.stable.out.FILTERED and Q07.test.out.FILTERED are equal.
+Q07.stable.err.FILTERED and Q07.test.err.FILTERED are equal.
+11:31:23> tests/W3C_use_cases/XQ/R/Q08.xq  (<=60,60,180) ...   0.847s 
+Q08.stable.out.FILTERED and Q08.test.out.FILTERED are equal.
+Q08.stable.err.FILTERED and Q08.test.err.FILTERED are equal.
+11:31:24> tests/W3C_use_cases/XQ/R/Q09.xq  (<=60,60,180) ...   0.954s 
+Q09.stable.out.FILTERED and Q09.test.out.FILTERED are equal.
+Q09.stable.err.FILTERED and Q09.test.err.FILTERED are equal.
+11:31:26> tests/W3C_use_cases/XQ/R/Q10.xq  (<=60,60,180) ...   1.451s 
+Q10.stable.out.FILTERED and Q10.test.out.FILTERED are equal.
+Q10.stable.err.FILTERED and Q10.test.err.FILTERED are equal.
+11:31:27> tests/W3C_use_cases/XQ/R/Q11.xq  (<=60,60,180) ...   1.022s 
+Q11.stable.out.FILTERED and Q11.test.out.FILTERED are equal.
+Q11.stable.err.FILTERED and Q11.test.err.FILTERED are equal.
+11:31:28> tests/W3C_use_cases/XQ/R/Q12.xq  (<=60,60,180) ...   0.721s 
+Q12.stable.out.FILTERED and Q12.test.out.FILTERED differ SIGNIFICANTLY!
+Q12.stable.err.FILTERED and Q12.test.err.FILTERED differ SIGNIFICANTLY!
+11:31:29> tests/W3C_use_cases/XQ/R/Q13.xq  (<=60,60,180) ...   0.717s 
+Q13.stable.out.FILTERED and Q13.test.out.FILTERED differ SIGNIFICANTLY!
+Q13.stable.err.FILTERED and Q13.test.err.FILTERED differ SIGNIFICANTLY!
+11:31:30> tests/W3C_use_cases/XQ/R/Q14.xq  (<=60,60,180) ...   0.936s 
+Q14.stable.out.FILTERED and Q14.test.out.FILTERED are equal.
+Q14.stable.err.FILTERED and Q14.test.err.FILTERED are equal.
+11:31:31> tests/W3C_use_cases/XQ/R/Q15.xq  (<=60,60,180) ...   0.961s 
+Q15.stable.out.FILTERED and Q15.test.out.FILTERED are equal.
+Q15.stable.err.FILTERED and Q15.test.err.FILTERED are equal.
+11:31:32> tests/W3C_use_cases/XQ/R/Q16.xq  (<=60,60,180) ...   0.994s 
+Q16.stable.out.FILTERED and Q16.test.out.FILTERED are equal.
+Q16.stable.err.FILTERED and Q16.test.err.FILTERED are equal.
+11:31:33> tests/W3C_use_cases/XQ/R/Q17.xq  (<=60,60,180) ...   0.957s 
+Q17.stable.out.FILTERED and Q17.test.out.FILTERED are equal.
+Q17.stable.err.FILTERED and Q17.test.err.FILTERED are equal.
+11:31:34> tests/W3C_use_cases/XQ/R/Q18.xq  (<=60,60,180) ...   1.101s 
+Q18.stable.out.FILTERED and Q18.test.out.FILTERED differ SIGNIFICANTLY!
+Q18.stable.err.FILTERED and Q18.test.err.FILTERED are equal.
+11:31:36> tests/W3C_use_cases/XQ/SEQ/report.xq  (<=60,60,180) ...   0.768s 
+report.stable.out.FILTERED and report.test.out.FILTERED are equal.
+report.stable.err.FILTERED and report.test.err.FILTERED are equal.
+11:31:37> tests/W3C_use_cases/XQ/SEQ/Q1.xq  (<=60,60,180) ...   0.825s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:31:38> tests/W3C_use_cases/XQ/SEQ/Q2.xq  (<=60,60,180) ...   0.818s 
+Q2.stable.out.FILTERED and Q2.test.out.FILTERED are equal.
+Q2.stable.err.FILTERED and Q2.test.err.FILTERED are equal.
+11:31:39> tests/W3C_use_cases/XQ/SEQ/Q3.xq  (<=60,60,180) ...   0.849s 
+Q3.stable.out.FILTERED and Q3.test.out.FILTERED are equal.
+Q3.stable.err.FILTERED and Q3.test.err.FILTERED are equal.
+11:31:40> tests/W3C_use_cases/XQ/SEQ/Q4.xq  (<=60,60,180) ...   0.836s 
+Q4.stable.out.FILTERED and Q4.test.out.FILTERED are equal.
+Q4.stable.err.FILTERED and Q4.test.err.FILTERED are equal.
+11:31:41> tests/W3C_use_cases/XQ/SEQ/Q5a.xq  (<=60,60,180) ...   0.909s 
+Q5a.stable.out.FILTERED and Q5a.test.out.FILTERED are equal.
+Q5a.stable.err.FILTERED and Q5a.test.err.FILTERED are equal.
+11:31:42> tests/W3C_use_cases/XQ/SEQ/Q5b.xq  (<=60,60,180) ...   0.714s 
+Q5b.stable.out.FILTERED and Q5b.test.out.FILTERED differ SIGNIFICANTLY!
+Q5b.stable.err.FILTERED and Q5b.test.err.FILTERED differ SIGNIFICANTLY!
+11:31:42> tests/W3C_use_cases/XQ/SEQ/Q5c.xq  (<=60,60,180) ...   0.902s 
+Q5c.stable.out.FILTERED and Q5c.test.out.FILTERED are equal.
+Q5c.stable.err.FILTERED and Q5c.test.err.FILTERED are equal.
+11:31:44> tests/W3C_use_cases/XQ/SGML/report.xq  (<=60,60,180) ...   0.810s 
+report.stable.out.FILTERED and report.test.out.FILTERED are equal.
+report.stable.err.FILTERED and report.test.err.FILTERED are equal.
+11:31:44> tests/W3C_use_cases/XQ/SGML/Q01.xq  (<=60,60,180) ...   0.766s 
+Q01.stable.out.FILTERED and Q01.test.out.FILTERED are equal.
+Q01.stable.err.FILTERED and Q01.test.err.FILTERED are equal.
+11:31:45> tests/W3C_use_cases/XQ/SGML/Q02.xq  (<=60,60,180) ...   0.771s 
+Q02.stable.out.FILTERED and Q02.test.out.FILTERED are equal.
+Q02.stable.err.FILTERED and Q02.test.err.FILTERED are equal.
+11:31:46> tests/W3C_use_cases/XQ/SGML/Q03.xq  (<=60,60,180) ...   0.795s 
+Q03.stable.out.FILTERED and Q03.test.out.FILTERED are equal.
+Q03.stable.err.FILTERED and Q03.test.err.FILTERED are equal.
+11:31:47> tests/W3C_use_cases/XQ/SGML/Q04.xq  (<=60,60,180) ...   0.818s 
+Q04.stable.out.FILTERED and Q04.test.out.FILTERED are equal.
+Q04.stable.err.FILTERED and Q04.test.err.FILTERED are equal.
+11:31:48> tests/W3C_use_cases/XQ/SGML/Q05.xq  (<=60,60,180) ...   0.809s 
+Q05.stable.out.FILTERED and Q05.test.out.FILTERED are equal.
+Q05.stable.err.FILTERED and Q05.test.err.FILTERED are equal.
+11:31:49> tests/W3C_use_cases/XQ/SGML/Q06.xq  (<=60,60,180) ...   0.783s 
+Q06.stable.out.FILTERED and Q06.test.out.FILTERED are equal.
+Q06.stable.err.FILTERED and Q06.test.err.FILTERED are equal.
+11:31:50> tests/W3C_use_cases/XQ/SGML/Q07.xq  (<=60,60,180) ...   0.811s 
+Q07.stable.out.FILTERED and Q07.test.out.FILTERED are equal.
+Q07.stable.err.FILTERED and Q07.test.err.FILTERED are equal.
+11:31:51> tests/W3C_use_cases/XQ/SGML/Q08a.xq  (<=60,60,180) ...   0.830s 
+Q08a.stable.out.FILTERED and Q08a.test.out.FILTERED are equal.
+Q08a.stable.err.FILTERED and Q08a.test.err.FILTERED are equal.
+11:31:52> tests/W3C_use_cases/XQ/SGML/Q08b.xq  (<=60,60,180) ...   0.832s 
+Q08b.stable.out.FILTERED and Q08b.test.out.FILTERED are equal.
+Q08b.stable.err.FILTERED and Q08b.test.err.FILTERED are equal.
+11:31:53> tests/W3C_use_cases/XQ/SGML/Q09.xq  (<=60,60,180) ...   0.835s 
+Q09.stable.out.FILTERED and Q09.test.out.FILTERED are equal.
+Q09.stable.err.FILTERED and Q09.test.err.FILTERED are equal.
+11:31:54> tests/W3C_use_cases/XQ/SGML/Q10.xq  (<=60,60,180) ...   0.865s 
+Q10.stable.out.FILTERED and Q10.test.out.FILTERED are equal.
+Q10.stable.err.FILTERED and Q10.test.err.FILTERED are equal.
+11:31:55> tests/W3C_use_cases/XQ/STRING/company.xq  (<=60,60,180) ...   0.769s 
+company.stable.out.FILTERED and company.test.out.FILTERED are equal.
+company.stable.err.FILTERED and company.test.err.FILTERED are equal.
+11:31:56> tests/W3C_use_cases/XQ/STRING/news.xq  (<=60,60,180) ...   0.757s 
+news.stable.out.FILTERED and news.test.out.FILTERED are equal.
+news.stable.err.FILTERED and news.test.err.FILTERED are equal.
+11:31:57> tests/W3C_use_cases/XQ/STRING/Q1.xq  (<=60,60,180) ...   0.789s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:31:58> tests/W3C_use_cases/XQ/STRING/Q2.xq  (<=60,60,180) ...   1.039s 
+Q2.stable.out.FILTERED and Q2.test.out.FILTERED are equal.
+Q2.stable.err.FILTERED and Q2.test.err.FILTERED are equal.
+11:31:59> tests/W3C_use_cases/XQ/STRING/Q4.xq  (<=60,60,180) ...   0.716s 
+Q4.stable.out.FILTERED and Q4.test.out.FILTERED differ SIGNIFICANTLY!
+Q4.stable.err.FILTERED and Q4.test.err.FILTERED differ SIGNIFICANTLY!
+11:32:00> tests/W3C_use_cases/XQ/STRING/Q5.xq  (<=60,60,180) ...   0.725s 
+Q5.stable.out.FILTERED and Q5.test.out.FILTERED differ SIGNIFICANTLY!
+Q5.stable.err.FILTERED and Q5.test.err.FILTERED differ SIGNIFICANTLY!
+11:32:01> tests/W3C_use_cases/XQ/TREE/book.xq  (<=60,60,180) ...   0.769s 
+book.stable.out.FILTERED and book.test.out.FILTERED are equal.
+book.stable.err.FILTERED and book.test.err.FILTERED are equal.
+11:32:02> tests/W3C_use_cases/XQ/TREE/Q1.xq  (<=60,60,180) ...   0.854s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:32:03> tests/W3C_use_cases/XQ/TREE/Q2.xq  (<=60,60,180) ...   0.792s 
+Q2.stable.out.FILTERED and Q2.test.out.FILTERED are equal.
+Q2.stable.err.FILTERED and Q2.test.err.FILTERED are equal.
+11:32:04> tests/W3C_use_cases/XQ/TREE/Q3.xq  (<=60,60,180) ...   0.801s 
+Q3.stable.out.FILTERED and Q3.test.out.FILTERED are equal.
+Q3.stable.err.FILTERED and Q3.test.err.FILTERED are equal.
+11:32:05> tests/W3C_use_cases/XQ/TREE/Q4.xq  (<=60,60,180) ...   0.791s 
+Q4.stable.out.FILTERED and Q4.test.out.FILTERED are equal.
+Q4.stable.err.FILTERED and Q4.test.err.FILTERED are equal.
+11:32:06> tests/W3C_use_cases/XQ/TREE/Q5.xq  (<=60,60,180) ...   0.813s 
+Q5.stable.out.FILTERED and Q5.test.out.FILTERED are equal.
+Q5.stable.err.FILTERED and Q5.test.err.FILTERED are equal.
+11:32:07> tests/W3C_use_cases/XQ/TREE/Q6.xq  (<=60,60,180) ...   0.918s 
+Q6.stable.out.FILTERED and Q6.test.out.FILTERED are equal.
+Q6.stable.err.FILTERED and Q6.test.err.FILTERED are equal.
+11:32:08> tests/W3C_use_cases/XQ/XMP/shred_docs.milS  (<=60,60,60) ...   0.768s 
+shred_docs.stable.out.FILTERED and shred_docs.test.out.FILTERED are equal.
+shred_docs.stable.err.FILTERED and shred_docs.test.err.FILTERED are equal.
+11:32:09> tests/W3C_use_cases/XQ/XMP/load_docs.xq  (<=60,60,180) ...   0.801s 
+load_docs.stable.out.FILTERED and load_docs.test.out.FILTERED are equal.
+load_docs.stable.err.FILTERED and load_docs.test.err.FILTERED are equal.
+11:32:09> tests/W3C_use_cases/XQ/XMP/Q01.xq  (<=60,60,180) ...   0.859s 
+Q01.stable.out.FILTERED and Q01.test.out.FILTERED are equal.
+Q01.stable.err.FILTERED and Q01.test.err.FILTERED are equal.
+11:32:10> tests/W3C_use_cases/XQ/XMP/Q02.xq  (<=60,60,180) ...   0.815s 
+Q02.stable.out.FILTERED and Q02.test.out.FILTERED are equal.
+Q02.stable.err.FILTERED and Q02.test.err.FILTERED are equal.
+11:32:11> tests/W3C_use_cases/XQ/XMP/Q03.xq  (<=60,60,180) ...   0.811s 
+Q03.stable.out.FILTERED and Q03.test.out.FILTERED are equal.
+Q03.stable.err.FILTERED and Q03.test.err.FILTERED are equal.
+11:32:12> tests/W3C_use_cases/XQ/XMP/Q04.xq  (<=60,60,180) ...   1.056s 
+Q04.stable.out.FILTERED and Q04.test.out.FILTERED differ SIGNIFICANTLY!
+Q04.stable.err.FILTERED and Q04.test.err.FILTERED are equal.
+11:32:14> tests/W3C_use_cases/XQ/XMP/Q05.xq  (<=60,60,180) ...   0.919s 
+Q05.stable.out.FILTERED and Q05.test.out.FILTERED are equal.
+Q05.stable.err.FILTERED and Q05.test.err.FILTERED are equal.
+11:32:15> tests/W3C_use_cases/XQ/XMP/Q06.xq  (<=60,60,180) ...   0.905s 
+Q06.stable.out.FILTERED and Q06.test.out.FILTERED are equal.
+Q06.stable.err.FILTERED and Q06.test.err.FILTERED are equal.
+11:32:16> tests/W3C_use_cases/XQ/XMP/Q07.xq  (<=60,60,180) ...   0.878s 
+Q07.stable.out.FILTERED and Q07.test.out.FILTERED are equal.
+Q07.stable.err.FILTERED and Q07.test.err.FILTERED are equal.
+11:32:17> tests/W3C_use_cases/XQ/XMP/Q08.xq  (<=60,60,180) ...   0.832s 
+Q08.stable.out.FILTERED and Q08.test.out.FILTERED are equal.
+Q08.stable.err.FILTERED and Q08.test.err.FILTERED are equal.
+11:32:18> tests/W3C_use_cases/XQ/XMP/Q09.xq  (<=60,60,180) ...   0.818s 
+Q09.stable.out.FILTERED and Q09.test.out.FILTERED are equal.
+Q09.stable.err.FILTERED and Q09.test.err.FILTERED are equal.
+11:32:19> tests/W3C_use_cases/XQ/XMP/Q10.xq  (<=60,60,180) ...   0.902s 
+Q10.stable.out.FILTERED and Q10.test.out.FILTERED are equal.
+Q10.stable.err.FILTERED and Q10.test.err.FILTERED are equal.
+11:32:20> tests/W3C_use_cases/XQ/XMP/Q11.xq  (<=60,60,180) ...   0.913s 
+Q11.stable.out.FILTERED and Q11.test.out.FILTERED are equal.
+Q11.stable.err.FILTERED and Q11.test.err.FILTERED are equal.
+11:32:21> tests/W3C_use_cases/XQ/XMP/Q12.xq  (<=60,60,180) ...   0.714s 
+Q12.stable.out.FILTERED and Q12.test.out.FILTERED differ SIGNIFICANTLY!
+Q12.stable.err.FILTERED and Q12.test.err.FILTERED differ SIGNIFICANTLY!
+11:32:22> tests/W3C_use_cases/XQUF/AddressBook/shred_docs.milS  (<=60,60,60) ...   0.759s 
+shred_docs.stable.out.FILTERED and shred_docs.test.out.FILTERED are equal.
+shred_docs.stable.err.FILTERED and shred_docs.test.err.FILTERED are equal.
+11:32:23> tests/W3C_use_cases/XQUF/AddressBook/Q1.xq  (<=60,60,180) ...   2.002s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:32:25> tests/W3C_use_cases/XQUF/AddressBook/check_docs.xq  (<=60,60,180) ...   0.844s 
+check_docs.stable.out.FILTERED and check_docs.test.out.FILTERED differ SIGNIFICANTLY!
+check_docs.stable.err.FILTERED and check_docs.test.err.FILTERED are equal.
+11:32:26> tests/W3C_use_cases/XQUF/Namespaces/shred_doc.milS  (<=60,60,60) ...   0.709s 
+shred_doc.stable.out.FILTERED and shred_doc.test.out.FILTERED are equal.
+shred_doc.stable.err.FILTERED and shred_doc.test.err.FILTERED are equal.
+11:32:27> tests/W3C_use_cases/XQUF/Namespaces/Q1.xq  (<=60,60,180) ...   0.716s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED differ SIGNIFICANTLY!
+11:32:27> tests/W3C_use_cases/XQUF/Namespaces/check_doc.xq  (<=60,60,180) ...   0.759s 
+check_doc.stable.out.FILTERED and check_doc.test.out.FILTERED differ SIGNIFICANTLY!
+check_doc.stable.err.FILTERED and check_doc.test.err.FILTERED are equal.
+11:32:28> tests/W3C_use_cases/XQUF/Nil/shred_doc.milS  (<=60,60,60) ...   0.717s 
+shred_doc.stable.out.FILTERED and shred_doc.test.out.FILTERED are equal.
+shred_doc.stable.err.FILTERED and shred_doc.test.err.FILTERED are equal.
+11:32:29> tests/W3C_use_cases/XQUF/Nil/Q1.xq  (<=60,60,180) ...   0.725s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED differ SIGNIFICANTLY!
+11:32:30> tests/W3C_use_cases/XQUF/Nil/check_doc.xq  (<=60,60,180) ...   0.765s 
+check_doc.stable.out.FILTERED and check_doc.test.out.FILTERED differ SIGNIFICANTLY!
+check_doc.stable.err.FILTERED and check_doc.test.err.FILTERED are equal.
+11:32:31> tests/W3C_use_cases/XQUF/Parts/Q1.milS  (<=60,60,60) ...   0.939s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:32:32> tests/W3C_use_cases/XQUF/Parts/Q2.milS  (<=60,60,60) ...   0.944s 
+Q2.stable.out.FILTERED and Q2.test.out.FILTERED are equal.
+Q2.stable.err.FILTERED and Q2.test.err.FILTERED are equal.
+11:32:33> tests/W3C_use_cases/XQUF/Parts/Q3a1.milS  (<=60,60,60) ...   1.005s 
+Q3a1.stable.out.FILTERED and Q3a1.test.out.FILTERED are equal.
+Q3a1.stable.err.FILTERED and Q3a1.test.err.FILTERED are equal.
+11:32:34> tests/W3C_use_cases/XQUF/Parts/Q3a2.milS  (<=60,60,60) ...   0.999s 
+Q3a2.stable.out.FILTERED and Q3a2.test.out.FILTERED are equal.
+Q3a2.stable.err.FILTERED and Q3a2.test.err.FILTERED are equal.
+11:32:35> tests/W3C_use_cases/XQUF/Parts/Q3b1.milS  (<=60,60,60) ...   1.040s 
+Q3b1.stable.out.FILTERED and Q3b1.test.out.FILTERED differ SIGNIFICANTLY!
+Q3b1.stable.err.FILTERED and Q3b1.test.err.FILTERED are equal.
+11:32:37> tests/W3C_use_cases/XQUF/Parts/Q3b2.milS  (<=60,60,60) ...   0.770s 
+Q3b2.stable.out.FILTERED and Q3b2.test.out.FILTERED differ SIGNIFICANTLY!
+Q3b2.stable.err.FILTERED and Q3b2.test.err.FILTERED are equal.
+11:32:38> tests/W3C_use_cases/XQUF/Parts/Q4a.milS  (<=60,60,60) ...   0.814s 
+Q4a.stable.out.FILTERED and Q4a.test.out.FILTERED differ SIGNIFICANTLY!
+Q4a.stable.err.FILTERED and Q4a.test.err.FILTERED are equal.
+11:32:39> tests/W3C_use_cases/XQUF/Parts/Q4b.milS  (<=60,60,60) ...   0.819s 
+Q4b.stable.out.FILTERED and Q4b.test.out.FILTERED differ SIGNIFICANTLY!
+Q4b.stable.err.FILTERED and Q4b.test.err.FILTERED are equal.
+11:32:40> tests/W3C_use_cases/XQUF/Parts/Q4c.milS  (<=60,60,60) ...   0.830s 
+Q4c.stable.out.FILTERED and Q4c.test.out.FILTERED differ SIGNIFICANTLY!
+Q4c.stable.err.FILTERED and Q4c.test.err.FILTERED are equal.
+11:32:41> tests/W3C_use_cases/XQUF/Parts/Q6.milS  (<=60,60,60) ...   0.990s 
+Q6.stable.out.FILTERED and Q6.test.out.FILTERED are equal.
+Q6.stable.err.FILTERED and Q6.test.err.FILTERED are equal.
+11:32:42> tests/W3C_use_cases/XQUF/R/shred_docs.milS  (<=60,60,60) ...   0.747s 
+shred_docs.stable.out.FILTERED and shred_docs.test.out.FILTERED are equal.
+shred_docs.stable.err.FILTERED and shred_docs.test.err.FILTERED are equal.
+11:32:43> tests/W3C_use_cases/XQUF/R/Q1.milS  (<=60,60,60) ...   0.890s 
+Q1.stable.out.FILTERED and Q1.test.out.FILTERED are equal.
+Q1.stable.err.FILTERED and Q1.test.err.FILTERED are equal.
+11:32:44> tests/W3C_use_cases/XQUF/R/Q2.milS  (<=60,60,60) ...   1.033s 
+Q2.stable.out.FILTERED and Q2.test.out.FILTERED are equal.
+Q2.stable.err.FILTERED and Q2.test.err.FILTERED are equal.
+11:32:45> tests/W3C_use_cases/XQUF/R/Q3.milS  (<=60,60,60) ...   1.128s 
+Q3.stable.out.FILTERED and Q3.test.out.FILTERED are equal.
+Q3.stable.err.FILTERED and Q3.test.err.FILTERED are equal.
+11:32:46> tests/W3C_use_cases/XQUF/R/Q4.milS  (<=60,60,60) ...   0.810s 
+Q4.stable.out.FILTERED and Q4.test.out.FILTERED differ SIGNIFICANTLY!
+Q4.stable.err.FILTERED and Q4.test.err.FILTERED are equal.
+11:32:47> tests/W3C_use_cases/XQUF/R/Q4x.milS  (<=60,60,60) ...   1.194s 
+Q4x.stable.out.FILTERED and Q4x.test.out.FILTERED are equal.
+Q4x.stable.err.FILTERED and Q4x.test.err.FILTERED are equal.
+11:32:48> tests/W3C_use_cases/XQUF/R/Q5a.milS  (<=60,60,60) ...   1.001s 
+Q5a.stable.out.FILTERED and Q5a.test.out.FILTERED are equal.
+Q5a.stable.err.FILTERED and Q5a.test.err.FILTERED are equal.
+11:32:50> tests/W3C_use_cases/XQUF/R/Q5b.milS  (<=60,60,60) ...   1.161s 
+Q5b.stable.out.FILTERED and Q5b.test.out.FILTERED are equal.
+Q5b.stable.err.FILTERED and Q5b.test.err.FILTERED are equal.
+11:32:51> tests/W3C_use_cases/XQUF/R/Q6a.milS  (<=60,60,60) ...   1.218s 
+Q6a.stable.out.FILTERED and Q6a.test.out.FILTERED are equal.
+Q6a.stable.err.FILTERED and Q6a.test.err.FILTERED are equal.
+11:32:52> tests/W3C_use_cases/XQUF/R/Q6b.milS  (<=60,60,60) ...   1.138s 
+Q6b.stable.out.FILTERED and Q6b.test.out.FILTERED are equal.
+Q6b.stable.err.FILTERED and Q6b.test.err.FILTERED are equal.
+11:32:54> tests/W3C_use_cases/XQUF/R/Q7.milS  (<=60,60,60) ...   0.705s 
+Q7.stable.out.FILTERED and Q7.test.out.FILTERED differ SIGNIFICANTLY!
+Q7.stable.err.FILTERED and Q7.test.err.FILTERED differ SIGNIFICANTLY!
+11:32:54> tests/W3C_use_cases/XQUF/R/Q8.milS  (<=60,60,60) ...   1.023s 
+Q8.stable.out.FILTERED and Q8.test.out.FILTERED are equal.
+Q8.stable.err.FILTERED and Q8.test.err.FILTERED are equal.
+11:32:56> tests/W3C_use_cases/XQUF/R/Q9.milS  (<=60,60,60) ...   1.110s 
+Q9.stable.out.FILTERED and Q9.test.out.FILTERED are equal.
+Q9.stable.err.FILTERED and Q9.test.err.FILTERED are equal.
+
+ !ERROR:  Testing FAILED SIGNIFICANTLY !
+
+   30 out of 112 tests produced SIGNIFICANTLY different output
+
+ First, check the testing results in  /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--disable-optimize_--enable-debug_--enable-assert.PREFIX./PATHFINDER/mTests/index.html  !
+
+ Then, fix the problems by:
+  - fixing sources and test scripts
+  - fixing stable output by hand
+  - approving test output by Mapprove.py (cf. Mapprove.py -?)
+
+ After that, re-run Mtest.
+

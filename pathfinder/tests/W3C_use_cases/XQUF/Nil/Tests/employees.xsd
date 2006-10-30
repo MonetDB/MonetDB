@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema 
+  targetNamespace="http://www.example.com/employees"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xsd:element name="employees">
+    <xsd:complexType>
+      <xsd:element name="employee" minOccurs="0" 
+        maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:attribute name="mgr" type="xsd:boolean" 
+          default="false"/>
+          <xsd:attribute name="dept" type="xsd:string"/>
+          <xsd:sequence>
+            <xsd:element name="name" type="xsd:string"/>
+            <xsd:element name="salary" type="xsd:decimal" 
+              nillable="true"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

@@ -1,0 +1,8 @@
+<!DOCTYPE partlist [
+    <!ELEMENT partlist (part*)>
+    <!ELEMENT part EMPTY>
+    <!ATTLIST part
+          partid  CDATA  #REQUIRED
+          partof  CDATA  #IMPLIED
+          name    CDATA  #REQUIRED>
+]>
