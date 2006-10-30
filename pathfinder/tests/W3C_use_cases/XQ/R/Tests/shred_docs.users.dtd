@@ -1,6 +1,5 @@
-<!DOCTYPE users [ <!ELEMENT users
-                        (user_tuple*)> <!ELEMENT user_tuple
-                        (userid, name, rating?)> <!ELEMENT userid
-                        (#PCDATA)> <!ELEMENT name
-                        (#PCDATA)> <!ELEMENT rating
-                        (#PCDATA)> ]>
+<!ELEMENT users (user_tuple*)>
+<!ELEMENT user_tuple (userid, name, rating?)>
+<!ELEMENT userid (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT rating (#PCDATA)>
