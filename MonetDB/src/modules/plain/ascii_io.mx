@@ -316,13 +316,17 @@ bun_tail(BAT *b, size_t nr)
 static BAT *
 void_bat_create(int adt, size_t nr)
 {
-	BAT *b = BATnew(TYPE_void, adt, nr);
+	BAT *b = BATnew(TYPE_void, adt, BATTINY);
 
 	/* check for correct structures */
 	if (b == NULL)
 		return b;
-	if (BATmirror(b))
+	if (BATmirror(b)) 
 		BATseqbase(b, 0);
+	if (nr > REMAP_PAGE_MAXSIZE)
+        	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+	if (nr > BATTINY)
+		b = BATextend(b, nr);
 	return b;
 }
 
@@ -618,6 +622,7 @@ rfind_quote(char *s, char quote)
 static INLINE int
 insert_val(ascii_io *fmt, char *s, char *e, char quote)
 {
+	int res = 0;
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
@@ -647,10 +652,10 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		return 1;
 	}
 
-	BUNappend(fmt->c, adt, FALSE);
+	res = (BUNappend(fmt->c, adt, FALSE) == NULL);
 	if (fmt->data != adt)
 		GDKfree(adt);
-	return 0;
+	return res;
 }
 
 static INLINE char *

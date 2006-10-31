@@ -142,6 +142,8 @@ typedef struct logger {
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
+
+	BAT *snapshots;	/* int, str lists the bats which need to be subcommited in the current transaction  */
 } logger;
 
 #include "logger.proto.h"
@@ -736,6 +738,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 			BUNins(logger->seqs, &id, &logger->id, FALSE);
 		}
 	}
+	logger->snapshots = logbat_new(TYPE_void, TYPE_str, 1);
 
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
 
@@ -954,8 +957,10 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 	if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
 		return LOG_ERR;
 
-	if (b->batPersistence == PERSISTENT) /* log LOG_USE only */
+	if (flag == LOG_USE) {
+		BUNappend(logger->snapshots, BBPname(b->batCacheid), FALSE);
 		return LOG_OK;
+	}
 
 	ha = ATOMname(b->htype);
 	if (b->htype == TYPE_void && BAThdense(b)) {
@@ -1132,13 +1137,20 @@ int
 log_tend(logger *logger)
 {
 	logformat l;
+	int res;
 
 	if (logger->debug)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
+	/* first subcommit the snapshots */
+	BATseqbase(logger->snapshots,0);
+	res = TMsubcommit(logger->snapshots);
+	BBPreclaim(logger->snapshots);
+	logger->snapshots = logbat_new(TYPE_void, TYPE_str, 1);
+
 	l.flag = LOG_END;
 	l.nr = logger->tid;
-	if (log_write_format(logger, &l) == LOG_ERR || 
+	if (res || log_write_format(logger, &l) == LOG_ERR || 
 	    stream_flush(logger->log) ||
 	    stream_fsync(logger->log))
 		 return LOG_ERR;
