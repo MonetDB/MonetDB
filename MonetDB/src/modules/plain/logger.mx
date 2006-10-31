@@ -78,11 +78,11 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 .COMMAND logger_exit( logger l) : void = logger_exit_wrap;
 "After the manager replaced some bats we need to flush these bats to disk and close the current log file."
 
-.COMMAND logger_restart( logger l) : void = logger_exit_wrap;
+.COMMAND logger_restart( logger l) : void = logger_restart_wrap;
 "Restart will call logger_exit and logger_open to start a new log file."
 
 .COMMAND logger_cleanup( logger l) : void = logger_cleanup_wrap;
-"Cleanup the old no longer needed logfiles. Should be call after logger_restart but can be called with out any locks."
+"Cleanup the old no longer needed logfiles. Should be called after logger_restart but can be called without any locks."
 
 .COMMAND logger_changes( logger l) : int = logger_changes_wrap;
 "Return the number of logged changes."
@@ -93,7 +93,7 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 .COMMAND log_trans_end( logger l) : void = log_tend_wrap; 
 "write transaction end in the WAL"
 
-.COMMAND log_delta(logger l, bat[void,any::1] b, str nme ) : void = log_delta_wrap;
+.COMMAND log_delta(logger l, bat[oid,any::1] b, str nme ) : void = log_delta_wrap;
 "log the updates in the WAL"
 
 .COMMAND log_bat(logger l, bat[void,any::1] b, str name ) : void = log_bat_wrap;
@@ -263,6 +263,8 @@ log_read_string(logger *l)
 
 	if (!stream_readInt(l->log, &len))
 		return NULL;
+	if (len == 0)
+		return NULL;
 	buf = (char*)GDKmalloc(len);
 
 	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t) len) {
@@ -327,7 +329,6 @@ log_read_updates(logger *logger, logformat *l, char *name)
 		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == LOG_INSERT) ? "insert" : (l->flag == LOG_DELETE) ? "delete" : "update", l->nr);
 
 	if (b) {
-		void *(*rh) (ptr, stream *, size_t) = BATatoms[b->htype].atomRead;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
 		void *tv = ATOMnil(b->ttype);
 
@@ -344,6 +345,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 			}
 
 		} else {
+			void *(*rh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[b->htype].atomRead;
 			void *hv = ATOMnil(b->htype);
 
 			for (; l->nr > 0; l->nr--) {
@@ -656,7 +658,7 @@ int bm_subcommit( BAT * catalog )
 		str name = BBPname(col);
 		BUNappend(n, name, FALSE);
 	}
-	/* now commit catalog, so its also up to date on disk */
+	/* now commit catalog, so it's also up to date on disk */
 	BATcommit(catalog); 
 	res = TMsubcommit(n);
 	BBPreclaim(n);
@@ -1007,7 +1009,7 @@ log_delta(logger *logger, BAT *b, char *name)
 	logger->changes += l.nr;
 
 	if (l.nr) {
-		int (*wh) (ptr, stream *, size_t) = BATatoms[b->htype].atomWrite;
+		int (*wh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomWrite : BATatoms[b->htype].atomWrite;
 		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_UPDATE;
