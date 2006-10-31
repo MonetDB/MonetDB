@@ -816,7 +816,7 @@ reduce (PFcnode_t * p, int goalnt)
                     break;
                 }
                 else if (PFty_subtype (TY(p), PFty_star (PFty_atomic ()))) {
-                    *p = *L(p);
+                    *p = *LL(p);
                     rewritten = true;
                     break;
                 }
