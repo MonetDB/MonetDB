@@ -40,8 +40,6 @@
 #ifndef BITSET_H
 #define BITSET_H
 
-#include <stdbool.h>
-
 #include "array.h"
 
 typedef PFarray_t PFbitset_t;
