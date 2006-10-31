@@ -1040,6 +1040,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 	}
 	break;
 @c
+
 int
 CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 {
@@ -1059,6 +1060,15 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count(b=%s,e=%s);\n", 
 		BATgetId(b),BATgetId(e));
 
+	if (e->htype == TYPE_void && 
+	    b->htype == TYPE_void && 
+	    b->ttype == TYPE_void) {
+		/* simply return counts with one */
+		int one = 1;
+		bn = BATconst(b, TYPE_int, &one);
+		*ret = bn;
+		return GDK_SUCCEED;
+	}
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
 	range = max - min + 1;
@@ -2081,6 +2091,15 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 		return CMDaggrX3_count(ret, BATjoin(BATmirror(g), b, oid_nil), e, ignore_nils);
 	}
 
+	if (e->htype == TYPE_void && 
+	    b->htype == TYPE_void && 
+	    b->ttype == TYPE_void) {
+		/* simply return counts with one */
+		int one = 1;
+		bn = BATconst(b, TYPE_int, &one);
+		*ret = bn;
+		return GDK_SUCCEED;
+	}
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
 	range = max - min + 1;
