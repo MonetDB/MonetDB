@@ -1282,10 +1282,8 @@ insert_line(Tablet * as, char *line, char **end)
 	Column *fmt = as->format;
 	char sep1, *s, *e = 0, quote = 0;
 	size_t i;
-	int first = 0;
 
 	for (i = 0; i < as->nr_attrs && *line; i++) {
-		first = 1;
 		s = line; e= 0;
 		sep1= fmt[i].sep[0];
 		/* skip until separator */
