@@ -14,6 +14,12 @@ dnl The Initial Developer of the Original Code is CWI.
 dnl Portions created by CWI are Copyright (C) 1997-2006 CWI.
 dnl All Rights Reserved.
 
+dnl Defaults that differ between development trunk and release branch:
+dft_strict=yes
+dft_assert=yes
+dft_optimi=no
+dft_warning=no
+
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
@@ -213,7 +219,7 @@ AC_ARG_WITH(bits,
 		[obsolete: use --enable-bits instead]),
 	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
 
-bits=32
+bits="no"
 AC_ARG_ENABLE(bits,
 	AC_HELP_STRING([--enable-bits=BITS],
 		[specify number of bits (32 or 64)]), [
@@ -230,7 +236,6 @@ case $enableval in
 esac
 bits=$enableval
 ])
-AC_SUBST(bits)
 if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
 	case "$GCC-$CC-$host_os-$host" in
@@ -243,6 +248,7 @@ if test "$bits" = "64"; then
 	*)	CC32="$CC";;
 	esac
 fi
+if test x"$bits" != xno; then
 case "$GCC-$CC-$host_os-$host-$bits" in
 yes-*-solaris*-64)
 	case `$CC -v 2>&1` in
@@ -280,7 +286,11 @@ yes-*-darwin8*-powerpc*-*)
 	CC="$CC -m$bits"
 	;;
 esac
-
+else
+	AC_CHECK_SIZEOF(long)
+	bits=$[$ac_cv_sizeof_long*8]
+fi
+AC_SUBST(bits)
 
 oids=$bits
 AC_ARG_ENABLE(oid32,
@@ -330,6 +340,12 @@ esac
 AC_SUBST(LINUX_DIST)
 
 
+dnl --enable-strict
+AC_ARG_ENABLE(strict,
+	AC_HELP_STRING([--enable-strict],
+		[enable strict compiler flags [default=$dft_strict]]),
+	enable_strict=$enableval,
+	enable_strict=no)
 dnl  Set compiler switches.
 dnl  The idea/goal is to be as strict as possible, i.e., enable preferable
 dnl  *all* warnings and make them errors. This should help keeping the code
@@ -347,6 +363,7 @@ X_CFLAGS=''
 NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
+if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
 yes-*-*)
 	dnl  GNU (gcc/g++)
@@ -366,9 +383,6 @@ yes-*-*)
 		LDFLAGS="$LDFLAGS -no-undefined"
 		;;
 	*-mingw*)
-		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		dnl  On MinGW we need the -Wno-format flag since gcc
 		dnl  doesn't know about the %I64d format string for
 		dnl  long long
@@ -383,18 +397,7 @@ yes-*-*)
 		CFLAGS="$CFLAGS -std=c99"
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
-	[[34]].*-linux-gnulibc1)
-		dnl this is for FreeBSD with linux compat libraries
-		AC_DEFINE(_POSIX_C_SOURCE, 200112, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
-		CFLAGS="$CFLAGS -std=c99"
-		;;
 	[[34]].*-*)
-		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		CFLAGS="$CFLAGS -std=c99"
 		;;
 	esac
@@ -446,16 +449,6 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-strict-aliasing"
 		;;
 	esac
-	case $gcc_ver in
-	4.0.0*)
-		dnl  (At least on Fedora Core 4,) when mel is compiled with 
-		dnl  g++ 4.0.0 ("Red Hat 4.0.0-8") and optimization enabled (-O2),
-		dnl  mel segfaults (at least on src/modules/plain/streams.mx); hence,
-		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off optimization (-O0)
-		dnl  in src/mel/Makefile.ag .
-		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
-		;;
-	esac
 	;;
 -icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
@@ -483,11 +476,6 @@ yes-*-*)
 	9.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
-	dnl Define the same settings as for gcc, as we use the same
-	dnl header files
-	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -c99 -Wall -w2"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
@@ -533,11 +521,6 @@ yes-*-*)
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
-	dnl Define the same settings as for gcc, as we use the same
-	dnl header files
-	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
 	CFLAGS="$CFLAGS -c9x"
@@ -548,9 +531,31 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -w2"
 	;;
 esac
+fi
 AC_SUBST(CFLAGS)
 AC_SUBST(X_CFLAGS)
 AC_SUBST(NO_X_CFLAGS)
+
+case "$GCC-$CC-$host_os" in
+yes-*-*)
+	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	case "$gcc_ver-$host_os" in
+	[[34]].*-linux-gnulibc1)
+		dnl this is for FreeBSD with linux compat libraries
+		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
+		;;
+	esac
+	;;
+-icc*-linux*|-ecc*-linux*|-pgcc*-linux*)
+	dnl Define the same settings as for gcc, as we use the same
+	dnl header files
+	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	;;
+esac
 
 dnl  default javac flags
 JAVACFLAGS="$JAVACFLAGS -g:none -O"
@@ -1074,11 +1079,6 @@ esac
 
 AC_DEFUN([AM_MONETDB_OPTIONS],
 [
-dnl Defaults that differ between development trunk and release branch:
-dft_assert=yes
-dft_optimi=no
-dft_warning=no
-
 dnl --with-translatepath
 translatepath=echo
 AC_ARG_WITH(translatepath,
