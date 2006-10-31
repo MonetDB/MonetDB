@@ -433,8 +433,12 @@ join_pushdown (PFla_op_t *p)
                         break;
 
                     for (i = 0; i < L(lp)->schema.count; i++)
-                        proj[i] = PFalg_proj (L(lp)->schema.items[i].name,
-                                              L(lp)->schema.items[i].name);
+                        if (L(lp)->schema.items[i].name != latt)
+                            proj[i] = PFalg_proj (L(lp)->schema.items[i].name,
+                                                  L(lp)->schema.items[i].name);
+                        else
+                            proj[i] = PFalg_proj (L(lp)->schema.items[i].name,
+                                                  p->sem.eqjoin_unq.res);
 
                     new_number = number (
                                      eqjoin_unq (LL(lp), rp,
@@ -470,8 +474,12 @@ join_pushdown (PFla_op_t *p)
                         break;
 
                     for (i = 0; i < R(lp)->schema.count; i++)
-                        proj[i] = PFalg_proj (R(lp)->schema.items[i].name,
-                                              R(lp)->schema.items[i].name);
+                        if (R(lp)->schema.items[i].name != latt)
+                            proj[i] = PFalg_proj (R(lp)->schema.items[i].name,
+                                                  R(lp)->schema.items[i].name);
+                        else
+                            proj[i] = PFalg_proj (R(lp)->schema.items[i].name,
+                                                  p->sem.eqjoin_unq.res);
 
                     new_number = number (
                                      eqjoin_unq (RL(lp), rp,
