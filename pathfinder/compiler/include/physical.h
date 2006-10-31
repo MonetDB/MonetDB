@@ -35,8 +35,6 @@
 #ifndef PHYSICAL_H
 #define PHYSICAL_H
 
-#include <stdbool.h>
-
 #include "variable.h"
 #include "algebra.h"
 
