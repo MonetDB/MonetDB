@@ -2379,11 +2379,7 @@ reduce (PFpnode_t * p, int goalnt)
              *       let $v2 := let $fs:last := fn:count ($v1) return
              *                    for $fs:dot at $fs:position in $v1 return E2
              *         return
-             *         typeswitch ($v2)
-             *           case $v3 as node* return fs:distinct-doc-order ($v3)
-             *           default typeswitch ($v2)
-             *                     case atomic* return $v2
-             *                     default error (err:XP0018)
+             *           fs:distinct-doc-order-or-atomic-sequence ($v2)
              *     default error (err:XP0019)
              */
 
@@ -2392,11 +2388,14 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *last;
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
-            PFvar_t *v3 = new_var (NULL);
 
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
-            PFfun_t *count = function (PFqname (PFns_fn, "count"));
-            PFfun_t *ddo = function (PFqname (PFns_pf, "distinct-doc-order"));
+            PFfun_t *count    = function (PFqname (PFns_fn, "count"));
+            PFfun_t *ddo_as   = function (
+                                    PFqname (
+                                        PFns_pf, 
+                                        "distinct-doc-order-or-atomic-sequence"
+                                            ));
 
             /* compile context first */
             reduce (kids[1], nts[1]);
@@ -2438,31 +2437,7 @@ reduce (PFpnode_t * p, int goalnt)
                                     nil ()),
                                 C(L(p))))),
                             nil ()),
-                          typeswitch (
-                            var (v2),
-                            cases (
-                              case_ (
-                                seqtype (PFty_star (PFty_xs_anyNode ())),
-                                flwr (let (
-                                          letbind (
-                                              var (v3),
-                                              seqcast (seqtype (
-                                                         PFty_star (
-                                                           PFty_xs_anyNode ())),
-                                                       var (v2))),
-                                          nil ()),
-                                      APPLY (ddo, var (v3)))),
-                              default_ (
-                                typeswitch (
-                                  var (v2),
-                                  cases (
-                                    case_ (
-                                      seqtype (
-                                          PFty_star (PFty_atomic ())),
-                                      var (v2)),
-                                    default_ (
-                                      APPLY (fn_error, str ("err:XP0018")))
-                                    ))))))),
+                          APPLY (ddo_as, var (v2)))),
                       default_ (
                         APPLY (fn_error,
                                str ("err:XP0019: Argument to location step "

@@ -211,6 +211,11 @@ PFfun_xquery_fo ()
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_string ()),
                                 PFty_node () },
             .ret_ty = PFty_star (PFty_xs_anyElement ()) } } }
+    , /* pf:distinct-doc-order-or-atomic-sequence (item*) as item* */
+      { .ns = PFns_pf, .loc = "distinct-doc-order-or-atomic-sequence",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
+            .ret_ty = PFty_star (PFty_item ()) } } }
     , /* pf:distinct-doc-order (node *) as node* */
       { .ns = PFns_pf, .loc = "distinct-doc-order",
         .arity = 1, .sig_count = 1, .sigs = { {

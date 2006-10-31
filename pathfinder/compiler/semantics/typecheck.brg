@@ -1428,6 +1428,29 @@ specific (PFfun_t *fn, PFcnode_t *args)
     assert (fn);
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
+    /* #pf:distinct-doc-order-or-atomic-sequence() splits up the typing
+       into a case for atomic values and one for node values */
+    if (! PFqname_eq (fn->qname, 
+                      PFqname (
+                          PFns_pf, 
+                          "distinct-doc-order-or-atomic-sequence"))) {
+        /* #pf:distinct-doc-order-or-atomic-sequence 
+           gets exactly one argument */
+        assert (args->kind == c_arg && R(args)->kind == c_nil);
+
+        if (PFty_subtype (TY(L(args)), PFty_star (PFty_node ())))
+            return *PFty_simplify (
+                    (PFty_quantifier (TY(L(args))))
+                        (PFty_prime (PFty_defn (TY(L(args))))));
+        else if (PFty_subtype (TY(L(args)), PFty_star (PFty_atomic ())))
+            return TY(L(args));
+        else
+            PFoops (OOPS_TYPECHECK,
+                    "err:XPTY0018: the result of the last step "
+                    "in a path expression contains both nodes "
+                    "and atomic values");
+    }
+
     /* #pf:distinct-doc-order() more or less returns its input */
     if (! PFqname_eq (fn->qname, PFqname (PFns_pf, "distinct-doc-order"))) {
         /* #pf:distinct-doc-order gets exactly one argument */

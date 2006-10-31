@@ -798,6 +798,35 @@ reduce (PFcnode_t * p, int goalnt)
             }
 
             /*
+             * #pf:distinct-doc-order-or-atomic-sequence() can be replaced
+             * by the function #pf:distinct-doc-order if the type is node*
+             * and by the identity otherwise (type atomic*).
+             */
+            if (! PFqname_eq (p->sem.apply.fun->qname,
+                              PFqname (
+                                  PFns_pf, 
+                                  "distinct-doc-order-or-atomic-sequence"))) {
+                if (PFty_subtype (TY(p), PFty_star (PFty_node ()))) {
+                    p->sem.apply.fun = 
+                        function (
+                            PFqname (
+                                PFns_pf,
+                                "distinct-doc-order"));
+                    rewritten = true;
+                    break;
+                }
+                else if (PFty_subtype (TY(p), PFty_star (PFty_atomic ()))) {
+                    *p = *L(p);
+                    rewritten = true;
+                    break;
+                }
+                else
+                    PFoops (OOPS_FATAL,
+                            "typechecking is incomplete for function "
+                            "#pf:distinct-doc-order-or-atomic-sequence.");
+            }
+
+            /*
              * fn:zero-or-one() applied to something that is of
              * type item? returns the argument itself.
              */
