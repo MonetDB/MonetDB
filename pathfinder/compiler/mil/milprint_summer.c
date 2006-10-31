@@ -4853,10 +4853,10 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "  ipik := map.tmark(0@0);\n"
             "  map := map.hmark(0@0);\n"
             "  item := ipik;\n"
-            "  iter := map.leftfetchjoin(iter);\n"
+            "  iter := map.leftfetchjoin(iter%03u);\n"
             "  kind := map.leftfetchjoin(cont.set_kind(ELEM));\n"
             "  pos := tmark_grp_unique(iter, ipik);\n"
-            "} else {\n", op, counter, counter, counter, counter, idref, counter, item_ext, counter);
+            "} else {\n", op, counter, counter, counter, counter, idref, counter, item_ext, counter, counter);
     translateEmpty (f);
     milprintf(f,
             "} # end of fn:id%s\n",
