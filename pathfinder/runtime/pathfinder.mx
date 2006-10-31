@@ -2092,7 +2092,7 @@ PROC del_doc_base(bit cachedOnly,
                   bit pf_short_req) : void
 {
     # do the work in memory
-    var commitBAT := del_doc(cachedOnly, name, pf_short_req);
+    var commitBAT := del_doc(cachedOnly, names, pf_short_req);
 
     # now here is our commit: checkpoint 2 bat descs and BBP.dir
     var ok := false;
