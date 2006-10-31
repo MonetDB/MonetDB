@@ -1232,14 +1232,9 @@ insert_val(Column * fmt, char *s, char *e, char quote)
 		}
 		s++;
 		e = rfind_quote(e, quote);
-		*e = 0;
-	} else if (e > s) {
-		s = lstrip(s);
-		e = rstrip(e);
 	}
-	if (e < s) {
-		e = s;
-	}
+	*e = 0;
+
 	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	*end = bak;
 
@@ -1254,40 +1249,19 @@ insert_val(Column * fmt, char *s, char *e, char quote)
 	return 0;
 }
 
-static INLINE char *
-skip_string(char *s, char quote)
-{
-	int esc = 0;
-
-	while (*s) {
-		if (*s == '\\' && !esc)
-			esc = 1;
-		else if (*s == quote && !esc)
-			break;
-		else
-			esc = 0;
-		s++;
-	}
-	if (*s)
-		s++;
-	else
-		return NULL;
-	return s;
-}
-
 static INLINE int
-insert_line(Tablet * as, char *line, char **end)
+insert_line(Tablet * as, char *line)
 {
 	int res = 0;
 	Column *fmt = as->format;
-	char sep1, *s, *e = 0, quote = 0;
+	char sep1, *s, *e = 0;
 	size_t i;
 
 	for (i = 0; i < as->nr_attrs && *line; i++) {
 		s = line; e= 0;
 		sep1= fmt[i].sep[0];
 		/* skip until separator */
-		/* do not allow separators to start with ["'] */
+		/* do not allow separators to start with ["' \t\r] */
 		for(e=line; *e; e++)
 			if( *e== '\\') 
 				e++;
@@ -1298,21 +1272,18 @@ insert_line(Tablet * as, char *line, char **end)
 					break;
 			}
 
-		while (*line && *line != sep1 && isspace((int) (*line)) ) 
+		while (*line && isspace((int) (*line)) ) 
 			line++;
 
-		if (e) {
-			res |= insert_val(&fmt[i], s, e, quote);
-			quote = 0;
-			line = e + fmt[i].seplen;
-		} else {
+		if( *e == 0 && i<as->nr_attrs-1 ){
 			GDKerror("Error: missing sep %s line %d field %d\n", 
 				fmt->sep, BATcount(fmt->c), i);
-			*end = e;
 			return -1;
+		} else {
+			res |= insert_val(&fmt[i], s, e, (*line=='"' || *line=='\''));
+			line = e + fmt[i].seplen;
 		}
 	}
-	*end = e;
 	return res;
 }
 static int
@@ -1493,7 +1464,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 
 			if (e) {
 				*e = '\0';
-				if (insert_line(as, s, &e) < 0) {
+				if (insert_line(as, s) < 0) {
 					GDKerror("value %s not inserted\n", s);
 					s = e + seplen;
 					b->pos = (s - b->buf);
@@ -1503,7 +1474,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				s = e + seplen;
 				done = 1;
 			} else if (b->eof && s + as->nr_attrs < end) {
-				if (insert_line(as, s, &e) < 0) {
+				if (insert_line(as, s) < 0) {
 					GDKerror("value %s not inserted\n", s);
 					s = end;
 					b->pos = (s - b->buf);
