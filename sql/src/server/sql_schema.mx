@@ -522,9 +522,14 @@ static stmt *
 create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, 
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
+	stmt *sq = NULL;
+	list *col_l = NULL, *func_l= NULL, *view_id_l = NULL;
+	scope *scp = scope_open(NULL);
+	sql_trigger *trigger;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
+
 	int event = (trigger_event->token == SQL_INSERT)?0:
 			  (trigger_event->token == SQL_DELETE)?1:2;
 	dlist *columns = trigger_event->data.lval;
@@ -532,7 +537,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	int orientation = triggered_action->h->data.ival;
 	char *condition = triggered_action->h->next->data.sval;
 	char *statement = triggered_action->h->next->next->data.sval;
-
+	
 	if (opt_ref) {
 		old_name = opt_ref->h->data.sval;
 		new_name = opt_ref->h->next->data.sval;
@@ -544,8 +549,27 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	if (!(t = mvc_bind_table(sql, ss, table_name)))
 		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
 
-	mvc_create_trigger(sql, t, tname, time, orientation, event, old_name,
+	trigger = mvc_create_trigger(sql, t, tname, time, orientation, event, old_name,
 			new_name, condition, statement);
+	
+	sq = scope_sqlparse(sql, scp, statement);
+	if (sq) {
+		col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
+		func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
+		view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
+
+		mvc_create_dependencies(sql, col_l, trigger->base.id, TRIGGER_DEPENDENCY);
+		mvc_create_dependencies(sql, func_l, trigger->base.id, TRIGGER_DEPENDENCY);
+		mvc_create_dependencies(sql, view_id_l, trigger->base.id, TRIGGER_DEPENDENCY);
+
+		list_destroy(col_l);
+		list_destroy(func_l);
+		list_destroy(view_id_l);
+		stmt_destroy(sq);
+	}
+	scope_close(scp);
+
+	
 	/* todo trigger_columns */
 	(void)columns;
 	return stmt_none();
@@ -556,11 +580,13 @@ drop_trigger(mvc *sql, dlist *qname)
 {
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
+	sql_trigger * t= NULL;
 
 	if (!schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if (mvc_bind_trigger(sql, ss, tname ) == NULL)
+	if ((t = mvc_bind_trigger(sql, ss, tname )) == NULL)
 		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
+	mvc_drop_dependencies(sql, t->base.id);
 	mvc_drop_trigger(sql, ss, tname);
 	return stmt_none();
 }
@@ -599,6 +625,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
+	list * id_l = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
@@ -644,6 +671,11 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		t = mvc_create_view(sql, s, name, subquery, 0);
 		_DELETE(subquery);
 		as_subquery( sql, t, sq, column_spec );
+		if (sq) {
+			id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
+			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
+			list_destroy(id_l);
+		}
 		stmt_destroy(sq);
 		return stmt_none();
 	}
@@ -675,6 +707,7 @@ drop_view(mvc *sql, dlist *qname)
 	} else if (t->system) {
 		return sql_error(sql, 02, "DROP VIEW: cannot drop system view '%s'", tname);
 	} else {
+		mvc_drop_dependencies(sql, t->base.id);
 		mvc_drop_table(sql, ss, t->base.name, 0);
 		return stmt_none();
 	}
@@ -765,6 +798,10 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 static stmt *
 drop_user(mvc *sql, char *user)
 {
+	int user_id = sql_find_auth(sql, user);
+	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY))
+		return sql_error(sql, 02, "DROP USER: '%s' owns a schema", user);
+
 	if(sql_drop_user(sql, user) == FALSE)
 		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
 
@@ -1324,14 +1361,17 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dlist *l = s->data.lval;
 		char *cname = l->h->data.sval;
 		int action = l->h->next->data.ival;
+		sql_column *col = mvc_bind_column(sql, t, cname);
 
 		(void)action;
-		if (mvc_bind_column(sql, t, cname) == NULL)
+		if (col == NULL)
 			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
 		if (cs_size(&t->columns) <= 1)
 			return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
 		if (t->system)
 			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
+		if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
+			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
 		mvc_drop_column(sql, t, cname);
 		res = stmt_none();
 	} break;
@@ -1446,7 +1486,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	node *n, *m;
+	node *n; 
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "DROP TABLE: no such schema '%s'", sname);
@@ -1492,25 +1532,10 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 			}
 		}
 	}
-	for (n = t->s->tables.set->h; n; n = n->next) {
-		sql_table *ot = n->data;
 
-		/* Each view must have a query, so no NULL check.  */
-		if (isView(ot)) {
-			scope *scp = scope_open(NULL);
-			stmt *s = scope_sqlparse(sql, scp, ot->query);
-
-			for (m = scp->bases->h; m; m = m->next) {
-				sql_table *ut = m->data;
-
-				if (ut == t) {
-					return sql_error(sql, 02, "DROP TABLE: unable to drop table '%s', views depend on it", tname);
-				}
-			}
-			stmt_destroy(s);
-			scope_close(scp);
-		}
-	}
+	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY))
+			return sql_error(sql, 02, "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
+	
 	mvc_drop_table(sql, s, t->base.name, drop_action);
 	return stmt_none();
 }
@@ -1562,8 +1587,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	} else {
 		dnode *n;
 		list *table_elements = create_stmt_list();
-		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
-		mvc_create_dependency(sql, sql->user_id, ss->base.id, SCHEMA_DEPENDENCY);
+		sql_schema *ss = mvc_create_schema(sql, name, auth_id, sql->user_id);
 
 		n = schema_elements->h;
 
@@ -1607,7 +1631,7 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 	} else if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0) {
 		return sql_error(sql, 02, "DROP SCHEMA: access denied for '%s'", name);
 	} else if (sql_schema_has_user(sql, s)) {
-		return sql_error(sql, 02, "DROP SCHEMA: cannot drop schema because users depend on it");
+		return sql_error(sql, 02, "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", name);
 	} else {
 		/* TODO use dropaction */
 		mvc_drop_schema(sql, name);

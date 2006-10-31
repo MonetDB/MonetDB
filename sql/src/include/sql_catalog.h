@@ -38,6 +38,10 @@
 #define USER_DEPENDENCY 6
 #define FUNC_DEPENDENCY 7
 #define TRIGGER_DEPENDENCY 8
+#define OWNER_DEPENDENCY 9
+#define NO_DEPENDENCY 0
+#define HAS_DEPENDENCY 1
+#define CICLE_DEPENDENCY 2
 
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
@@ -120,6 +124,7 @@ extern node *cs_first_node(changeset * cs);
 typedef struct sql_schema {
 	sql_base base;
 	int auth_id;
+	int owner;
 
 	changeset tables;
 	changeset types;

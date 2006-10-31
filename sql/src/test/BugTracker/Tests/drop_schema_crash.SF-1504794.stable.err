@@ -66,7 +66,7 @@ stderr of test 'drop_schema_crash.SF-1504794` in directory 'src/test/BugTracker`
 # 11:12:03 >  Mtimeout -timeout 60 java -jar /net/koala.ins.cwi.nl/export/scratch0/niels/rc/Linux-x86_64/build-sql/src/jdbc/jdbcclient-1.4.jar -h localhost -p 35369 -d mTests_src_test_BugTracker -f ../../../../../../../..//scratch1/niels/rc/sql/src/test/BugTracker/Tests/drop_schema_crash.SF-1504794-data.sql
 # 11:12:03 >  
 
-Error on line 5: DROP SCHEMA: cannot drop schema because users depend on it
+Error on line 5: DROP SCHEMA: unable to drop schema 'dbtapestry' (there are database objects which depend on it
 
 # 11:12:03 >  
 # 11:12:03 >  Done.

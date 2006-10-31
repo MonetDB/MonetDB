@@ -71,5 +71,6 @@ extern int list_cmp(list *l1, list *l2, fcmp cmp);
 
 extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
+extern list *list_merge_destroy(list *l, list *data, fdup dup);
 
 #endif /* LIST_H */

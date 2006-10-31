@@ -18,30 +18,24 @@
 
 PWD=`pwd`
 SQL="MapiClient -lsql -umonetdb -Pmonetdb -h $HOST -p $MAPIPORT"
-SQL1="MapiClient -lsql -uskyserver -Pskyserver -h $HOST -p $MAPIPORT"
 
 #Generate Data...
 
 #Bulk-Load into SQL server...
 
-echo Create User
-$SQL < ${RELSRCDIR}/../create_user.sql
+echo "benesamo adt test"
+$SQL < ${RELSRCDIR}/../benesamo.sql
 
-echo tables
-$SQL1 < $RELSRCDIR/../../../sql/math.sql
-$SQL1 < $RELSRCDIR/../../../sql/ms_functions.sql
-$SQL1 < ${RELSRCDIR}/../Skyserver_tables.sql
+echo "bram adt test"
+$SQL < ${RELSRCDIR}/../bram.sql
 
-echo views
-$SQL1 < ${RELSRCDIR}/../Skyserver_views.sql
+echo "slam adt test"
+$SQL < ${RELSRCDIR}/../slam.sql
 
-echo functions
-$SQL1 < ${RELSRCDIR}/../Skyserver_functions.sql
+echo "viss adt test"
+$SQL < ${RELSRCDIR}/../viss.sql
 
-echo Cleanup
-$SQL1 < ${RELSRCDIR}/../Skyserver_dropFunctions.sql
-$SQL1 < ${RELSRCDIR}/../Skyserver_dropViews.sql
-$SQL1 < ${RELSRCDIR}/../Skyserver_dropTables.sql
+echo "woud adt test"
+$SQL < ${RELSRCDIR}/../woud.sql
 
-echo Remove User
-$SQL < ${RELSRCDIR}/../drop_user.sql
+echo end

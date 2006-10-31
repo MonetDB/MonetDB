@@ -144,7 +144,7 @@ extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args
 extern void mvc_drop_func(mvc *c, sql_schema *s, char *name, int cascade);
 
 extern void mvc_drop_schema(mvc *c, char *name);
-extern sql_schema *mvc_create_schema(mvc *c, char *name, int auth_id);
+extern sql_schema *mvc_create_schema(mvc *m, char *name, int auth_id, int owner);
 extern size_t mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, char *name, int cascade);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
@@ -172,9 +172,9 @@ extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
 
 /*dependency control*/
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
-extern void mvc_drop_dependency(mvc *m, int id, int depend_id);
-extern void mvc_create_dependencies(mvc *m, sqlid id, list *dep_l, int dep_type);
-extern int mvc_check_dependency(mvc * m, int id);
+extern void mvc_drop_dependencies(mvc *m, int depend_id);
+extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
+extern int mvc_check_dependency(mvc * m, int id, int type);
 
 /* variable management */
 extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
@@ -270,7 +270,6 @@ mvc_init(int debug, backend_stack stk)
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
 		sql_create_profile(m, s);
-		sql_trans_all_dependencies(m->session->tr);
 
 		if (mvc_commit(m, 0, NULL) < 0) {
 			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
@@ -899,14 +898,14 @@ mvc_drop_func(mvc *m, sql_schema *s, char *name, int cascade)
 }
 
 sql_schema *
-mvc_create_schema(mvc *m, char *name, int auth_id)
+mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
 {
 	sql_schema *s = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_schema %s %d\n", name, auth_id);
+		fprintf(stderr, "mvc_create_schema %s %d %d\n", name, auth_id, owner);
 
-	s = sql_trans_create_schema(m->session->tr, name, auth_id);
+	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner);
 	m->type = Q_SCHEMA;
 	return s;
 }
@@ -916,7 +915,6 @@ mvc_drop_schema(mvc *m, char *sname)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_schema %s\n", sname);
-
 	sql_trans_drop_schema(m->session->tr, sname);
 	m->type = Q_SCHEMA;
 }
@@ -1114,51 +1112,70 @@ mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
 	m->type = Q_SCHEMA;
-
-	sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
+	if (id != depend_id)
+		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 	
 }
 
 void
-mvc_drop_dependency(mvc *m, int id, int depend_id)
+mvc_drop_dependencies(mvc *m, int depend_id)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_dependency %d %d \n", id, depend_id);
+		fprintf(stderr, "mvc_drop_dependencies on %d\n", depend_id);
 	m->type = Q_SCHEMA;
 
-	sql_trans_drop_dependency(m->session->tr, id, depend_id);
+	sql_trans_drop_dependencies(m->session->tr, depend_id);
 }
 
 void
-mvc_create_dependencies(mvc *m, sqlid id, list *dep_l, int dep_type)
+mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
 {
-	node *n = dep_l->h;
+	node *n = id_l->h;
 	int i;
 	
-	for (i = 0; i < list_length(dep_l); i++)
+	for (i = 0; i < list_length(id_l); i++)
 	{
-		mvc_create_dependency(m, id, *(int *) n->data, dep_type);
-		n = n->next;
+		if (dep_type == COLUMN_DEPENDENCY) {
+			mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+			n = n->next;
+			mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+			n = n->next;
+			i++;
+		}
+		else {
+			mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+			n = n->next;
+		}
 	}
 
-	list_destroy(dep_l);
 }
 
 int
-mvc_check_dependency(mvc * m, int id)
+mvc_check_dependency(mvc * m, int id, int type)
 {
 	list *dep_list = NULL;
 
-	dep_list =  sql_trans_get_dependencies(m->session->tr, id);
+	switch(type) {
+		case OWNER_DEPENDENCY : dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
+					break;
+		case SCHEMA_DEPENDENCY : dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
+					break;
+		default: dep_list =  sql_trans_get_dependencies(m->session->tr, id);
+	}
 	
-	if ( list_length(dep_list) > 0 ) {
+	if ( list_length(dep_list) > 2 ) {
 		list_destroy(dep_list);
-		return 0;
+		return HAS_DEPENDENCY;
 	}
-	else {
-		list_destroy(dep_list);
-		return 1;
+	if (list_length(dep_list) == 2) {
+		if (sql_trans_check_dependency(m->session->tr, *(int *) dep_list->h->data, id, *(int *) dep_list->h->next->data))
+			return CICLE_DEPENDENCY; 	
+		else 
+			return HAS_DEPENDENCY;
 	}
+	
+	list_destroy(dep_list);
+	return NO_DEPENDENCY;
 }
 
 sql_column *

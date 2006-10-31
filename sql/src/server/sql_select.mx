@@ -124,7 +124,7 @@ sql_table_func(mvc *sql, scope *scp, symbol *query)
 		stmt *sc = stmt_rs_column(stmt_dup(sq), stmt_atom_string(cname), &c->type);
 
 		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
-		sc = stmt_column(sc, stmt_dup(sq));
+		sc = stmt_column(sc, stmt_dup(sq), NULL);
 		table_add_column(tv, sc, NULL, cname);
 	}
 	return tv;
@@ -391,7 +391,7 @@ table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 		for (m = sq->op1.lval->h, d = columnrefs->h; d && m; d = d->next, m = m->next) {
 			stmt *st = m->data;
 			stmt *sc = stmt_column(stmt_alias(stmt_dup(st),
-							  _strdup(tname), _strdup(d->data.sval)), stmt_dup(sq));
+							  _strdup(tname), _strdup(d->data.sval)), stmt_dup(sq), NULL);
 
 			table_add_column(tv, sc, tname, d->data.sval);
 		}
@@ -400,7 +400,7 @@ table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 		for (m = sq->op1.lval->h; m; m = m->next) {
 			stmt *st = m->data;
 			char *cname = column_name(st);
-			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq));
+			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq), NULL);
 
 			sc = stmt_alias(sc, _strdup(tname), cname);
 			table_add_column(tv, sc, tname, cname);
@@ -411,7 +411,7 @@ table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 			stmt *st = m->data;
 			char *cname = column_name(st);
 			char *tname = table_name(st);
-			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq));
+			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq), NULL);
 
 			table_add_column(tv, sc, tname, cname);
 			_DELETE(tname);

@@ -22,13 +22,16 @@
 #define BAT_DEPEND_H
 
 #include "sql_types.h"
+#include "sql_backend.h"
 #include "bat_sequence.h"
 #include "bat_store.h"
 
 extern int create_dependency_table(sql_trans *tr, sql_schema *s);
 extern void sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
-extern void sql_trans_drop_dependency(sql_trans* tr, int id, int depend_id);
+extern void sql_trans_drop_dependencies(sql_trans* tr, int depend_id);
 extern list* sql_trans_get_dependencies(sql_trans* tr, int id);
+extern int sql_trans_check_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
+extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int owner);
 
 #endif /*BAT_DEPEND_H */
 @c
@@ -65,31 +68,44 @@ void
 sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type)
 {
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* t = find_sql_table(s, "dependencies");
+	sql_table *t = find_sql_table(s, "dependencies");
+	sql_column *c_id = find_sql_column(t, "id");
+	sql_column *c_dep_id = find_sql_column(t, "depend_id");
+	sql_column *c_dep_type = find_sql_column(t, "depend_type");
 
-	table_insert(tr, t, &id, &depend_id, &depend_type);
+	if (column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &depend_type, NULL) == -1)
+		table_insert(tr, t, &id, &depend_id, &depend_type);
 }
 
-/*Function to drop a dependency*/
+/*Function to drop the dependencies on depend_id*/
 void
-sql_trans_drop_dependency(sql_trans* tr, int id, int depend_id)
+sql_trans_drop_dependencies(sql_trans* tr, int depend_id)
 {
 	ssize_t rid;
+	list *id_list = NULL;
+	node *node_id = NULL;
 	sql_schema * s = find_sql_schema(tr, "sys");
 	sql_table* t = find_sql_table(s, "dependencies");
 
 	sql_column * dep_id = find_sql_column(t, "id");
 	sql_column * dep_dep_id = find_sql_column(t, "depend_id");
+	
+	id_list = table_select_column(tr, dep_id, dep_dep_id, &depend_id, NULL);
+	node_id = id_list->h;
+	
+	while (node_id) {
+		rid = column_find_row(tr, dep_id, node_id->data, dep_dep_id, &depend_id, NULL);
+		if (rid != -1)
+			table_delete(tr, t, rid);
+		node_id = node_id->next;
+	}
 
-	rid = column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, NULL);
-	if (rid != -1)
-		table_delete(tr, t, rid);
+	list_destroy(id_list);
 }
-
+/*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
 sql_trans_get_dependencies(sql_trans* tr, int id)
 {
-	int i;
 	node *id_node, *type_node;
 	sql_schema *s;
 	sql_table *dep;
@@ -110,8 +126,9 @@ sql_trans_get_dependencies(sql_trans* tr, int id)
 	id_node = dep_id->h;	
 	type_node = dep_type->h;	
 
-	for (i = 0; i < list_length(dep_id); i++)
+	while (id_node && type_node)
 	{
+	
 		list_append(dep_list, id_node->data);
 		list_append(dep_list, type_node->data);
 		id_node = id_node->next;
@@ -122,9 +139,73 @@ sql_trans_get_dependencies(sql_trans* tr, int id)
 	return dep_list;
 }
 
-/*Load the dependencies of the sys schema*/
+/*It checks if there are dependency between two ID's */
+int
+sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, int depend_type)
+{
+	ssize_t rid;
+	sql_schema *s;
+	sql_table *dep;
+	sql_column *dep_id, *dep_dep_id, *dep_dep_type;
+
+	s = find_sql_schema(tr, "sys");	
+
+	dep = find_sql_table(s, "dependencies");
+
+	dep_id = find_sql_column(dep, "id");
+	dep_dep_id = find_sql_column(dep, "depend_id");
+	dep_dep_type = find_sql_column(dep, "depend_type");
+
+	rid = column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &depend_type, NULL);
+	if (rid != -1)	
+		return 1;
+	else return 0;
+}
+
+
 
 /*Schema on users*/
+
+list *
+sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
+{
+	int type = USER_DEPENDENCY;
+	list *l = list_create((fdestroy) NULL);
+	list *dep_list = backend_schema_user_dependencies(tr, schema_id);
+	node *n = dep_list->h;
+	
+	while (n)
+	{
+		list_append(l,n->data);
+		list_append(l,&type);
+		n = n->next;
+	}
+	list_destroy(dep_list);
+	return l;
+}
+
+/*owner on schemas*/
+list *
+sql_trans_owner_schema_dependencies(sql_trans *tr, int owner_id)
+{
+	sql_schema * s = find_sql_schema(tr, "sys");
+	sql_table *t = find_sql_table(s, "schemas");
+	sql_column *owner = find_sql_column(t, "owner");
+	sql_column *schema_id = find_sql_column(t, "id");
+	int type = SCHEMA_DEPENDENCY;
+	list *l = list_create((fdestroy) NULL);
+	list *dep_list = table_select_column(tr, schema_id, owner, &owner_id, NULL);
+	node *n = dep_list->h;
+	
+	while (n)
+	{
+		list_append(l,n->data);
+		list_append(l,&type);
+		n = n->next;
+	}
+	list_destroy(dep_list);
+	return l;
+}
 
 /*Function on Functions*/
 

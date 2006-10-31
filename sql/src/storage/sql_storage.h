@@ -67,7 +67,7 @@ extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func
 
 extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, char *name, int cascade);
 
-extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id);
+extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner);
 extern void sql_trans_drop_schema(sql_trans *tr, char *sname);
 
 extern sql_table *create_sql_table(char *name, sht type, bit system, int persistence, int commit_action);
@@ -107,9 +107,11 @@ extern void sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 
-extern void sql_trans_all_dependencies(sql_trans *tr);
+extern list* sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id);
 extern void sql_trans_create_dependency(sql_trans *tr, int id, int depend_id, int depend_type);
-extern void sql_trans_drop_dependency(sql_trans *tr, int id, int depend_id);
+extern void sql_trans_drop_dependencies(sql_trans *tr, int depend_id);
 extern list* sql_trans_get_dependencies(sql_trans *tr, int id);
+extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, int depend_type);
+extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 
 #endif /*SQL_STORAGE_H */

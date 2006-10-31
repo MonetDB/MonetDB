@@ -193,7 +193,7 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_parent(s)		((s)->op2.stval)
 #define ptable_statements(s)	((s)->op3.stval)
 
-extern stmt *stmt_column(stmt *i, stmt *basetable);	/* relational column */
+extern stmt *stmt_column(stmt *i, stmt *basetable, stmt* column);	/* relational column */
 extern stmt *stmt_rs_column(stmt *result_set, stmt *v, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
@@ -301,7 +301,7 @@ extern void stmt_destroy(stmt *s);
 extern stmt *stmt_dup(stmt *s);
 
 /*Dependency control*/
-extern void stmt_list_dependencies(stmt *s, list *l);
+extern list* stmt_list_dependencies(stmt *s, int depend_type);
 
 extern group *grp_create(stmt *s, group *og, stmt *col);
 extern group *grp_semijoin(group *og, stmt *s);
@@ -784,28 +784,54 @@ NIELS: Because the optimizer rewrites partly inplace some parts of the
 	}
 }
 
-void
-stmt_list_dependencies(stmt *s, list *l)
+list *
+list_list_dependencies(list *l, int depend_type)
 {
-	int func_id;
+	list * dep_list = NULL;
+	if (l) {
+		node *n = l->h;
+
+		while (n) {
+			node *t = n;
+			if (dep_list)
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(t->data, depend_type), (fdup)NULL);	
+			else
+				dep_list = stmt_list_dependencies(t->data, depend_type);	
+				
+			n = n->next;
+		}
+	}
+	return dep_list;
+}
+
+list*
+stmt_list_dependencies(stmt *s, int depend_type)
+{
+	list *dep_list = list_create((fdestroy) NULL);
 	switch (s->type) {
 		case st_relselect:
+			dep_list = list_merge_destroy(dep_list,list_list_dependencies(s->op1.lval, depend_type), (fdup)NULL);
 			break;
 		case st_reljoin:
+			dep_list = list_merge_destroy(dep_list,list_list_dependencies(s->op1.lval, depend_type), (fdup)NULL);
+			dep_list = list_merge_destroy(dep_list,list_list_dependencies(s->op2.lval, depend_type), (fdup)NULL);
 			break;
-
+		
+		case st_pivot:
+			if (s->op2.stval)
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+			break;
 		case st_diff:
+		case st_alias:
 		case st_intersect:
 		case st_union:
 		case st_join:
 		case st_outerjoin:
 		case st_derive:
 		case st_unique:
-		case st_alias:
 		case st_append:
 		case st_insert:
 		case st_replace:
-		case st_pivot:
 		case st_rs_column:
 		case st_sql:
 
@@ -815,46 +841,59 @@ stmt_list_dependencies(stmt *s, list *l)
 		case st_assign:
 
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
 			break;
 
 		case st_exception:
 
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
 			if (s->op4.stval)
-				stmt_list_dependencies(s->op4.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
 			break;
 
 		case st_set:
 		case st_sets:
 		case st_list:
+			dep_list = list_merge_destroy(dep_list, list_list_dependencies(s->op1.lval, depend_type), (fdup)NULL);
 
 		case st_ptable:
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
 			break;
-
 		case st_var:
 			break;
 
 			/* reference only independently managed resources */
 		case st_table:
-			stmt_list_dependencies(s->op1.stval, l);
+			dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			break;
 		case st_basetable:
+			if (depend_type == COLUMN_DEPENDENCY) {
+				dep_list = list_append(dep_list, &(s->op1.tval->base.id));	
+			}
+			break;
 		case st_table_clear:
+			break;
 		case st_bat:
+			if ((depend_type == VIEW_DEPENDENCY) && isView(s->op1.cval->t)) {
+				dep_list = list_append(dep_list, &(s->op1.cval->base.id));
+				dep_list = list_append(dep_list, &(s->op1.cval->t->base.id));
+			} else if ((depend_type == COLUMN_DEPENDENCY) && !isView(s->op1.cval->t)) {
+				dep_list = list_append(dep_list, &(s->op1.cval->base.id));
+				dep_list = list_append(dep_list, &(s->op1.cval->t->base.id));
+			}
+			break;
 		case st_dbat:
 		case st_idxbat:
 		case st_none:
@@ -863,41 +902,48 @@ stmt_list_dependencies(stmt *s, list *l)
 			/* special cases */
 		case st_temp:
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
 			break;
 		case st_aggr:
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
+			if (depend_type == FUNC_DEPENDENCY) {
+				dep_list = list_append(dep_list, &(s->op4.funcval->func->base.id));	
+			}
 			break;
 		case st_convert:
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			break;
 		case st_op:
 		case st_unop:
 		case st_binop:
 		case st_Nop:
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval ,l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
-			func_id = s->op4.funcval->func->base.id;
-			list_append(l,&func_id);	
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
+			if (depend_type == FUNC_DEPENDENCY) {
+				dep_list = list_append(dep_list, &(s->op4.funcval->func->base.id));	
+			}
 			break;
 		case st_atom:
 			break;
 
 			/* simple case of statements of only statements */
+		case st_column:
+			if (s->op2.stval)
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 		case st_const:
 		case st_mark:
 		case st_gen_group:
@@ -910,7 +956,6 @@ stmt_list_dependencies(stmt *s, list *l)
 		case st_output:
 		case st_affected_rows:
 
-		case st_column:
 		case st_group:
 		case st_group_ext:
 
@@ -923,32 +968,18 @@ stmt_list_dependencies(stmt *s, list *l)
 
 		case st_bulkinsert:
 			if (s->op1.stval)
-				stmt_list_dependencies(s->op1.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op2.stval)
-				stmt_list_dependencies(s->op2.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 			if (s->op3.stval)
-				stmt_list_dependencies(s->op3.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
 			if (s->op4.stval)
-				stmt_list_dependencies(s->op4.stval, l);
+				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
 			break;
 
-		default:
-			printf("! TODO: stmt_list_dependencies(%u=%s) !\n", s->type, st_type2string(s->type));
 	}
-	if (s->h)
-		stmt_list_dependencies(s->h, l);
-	if (s->t)
-		stmt_list_dependencies(s->t, l);
-	if (s->rewritten)
-		stmt_list_dependencies(s->rewritten, l);
 
-#ifndef NDEBUG
-	if (s->nr2 > 0) {
-	} else if (s->nr2 == int_nil) {
-	} else if (s->nr2 < 0) {
-		printf("= sql_statement.mx: stmt_list_dependencies: (rssult of) statement %s (%u) was used %d times more often than its refcnt indicated!\n", st_type2string(s->type), s->type, -s->nr2);
-	}
-#endif
+	return dep_list;
 }
 
 
@@ -1040,7 +1071,7 @@ stmt_temp(sql_subtype *t)
 }
 
 stmt *
-stmt_column(stmt *op1, stmt *table)
+stmt_column(stmt *op1, stmt *table, stmt *column)
 {
 	stmt *s = stmt_create(st_column);
 
@@ -1051,6 +1082,7 @@ stmt_column(stmt *op1, stmt *table)
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 	s->h = table;	/* oid's used from this table */
+	s->op2.stval = column;
 	return s;
 }
 

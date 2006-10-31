@@ -445,7 +445,7 @@ scope_bind_column_(scope *scp, char *tname, char *cname)
 
 						/* add outer ref */
 						scope_add_table_(start, s, 1);
-						return stmt_column(stmt_join(s, stmt_dup(cv->s), cmp_equal), stmt_dup(s));
+						return stmt_column(stmt_join(s, stmt_dup(cv->s), cmp_equal), stmt_dup(s), NULL);
 					}
 					return stmt_dup(cv->s);
 				}
@@ -467,7 +467,7 @@ scope_bind_column_(scope *scp, char *tname, char *cname)
 
 					/* add outer ref */
 					scope_add_table_(start, s, 1);
-					return stmt_column(stmt_join(s, stmt_dup(cv->s), cmp_equal), stmt_dup(s));
+					return stmt_column(stmt_join(s, stmt_dup(cv->s), cmp_equal), stmt_dup(s), NULL);
 				}
 				return stmt_dup(cv->s);
 			} else if (!tv->tname && (cv = find_table_column(tv->columns, tname, cname)) != NULL) {
@@ -476,7 +476,7 @@ scope_bind_column_(scope *scp, char *tname, char *cname)
 
 					/* add outer ref */
 					scope_add_table_(start, s, 1);
-					return stmt_column(stmt_join(s, stmt_dup(cv->s), cmp_equal), stmt_dup(s));
+					return stmt_column(stmt_join(s, stmt_dup(cv->s), cmp_equal), stmt_dup(s), NULL);
 				}
 				return stmt_dup(cv->s);
 			}

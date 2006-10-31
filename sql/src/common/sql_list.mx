@@ -285,10 +285,33 @@ list_merge(list *l, list *data, fdup dup)
 		node *n = data->h;
 
 		while (n) {
-			list_append(l, dup(n->data));
+			if (dup)
+				list_append(l, dup(n->data));
+			else
+				list_append(l, n->data);
 			n = n->next;
 		}
 	}
+	return l;
+}
+
+list *
+list_merge_destroy(list *l, list *data, fdup dup)
+{
+	if (data) {
+		node *n = data->h;
+
+		while (n) {
+			if (dup)
+				list_append(l, dup(n->data));
+			else
+				list_append(l, n->data);
+			n = n->next;
+		}
+	}
+	
+	list_destroy(data);
+
 	return l;
 }
 

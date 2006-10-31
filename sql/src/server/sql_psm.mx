@@ -479,7 +479,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	sql_func * f = NULL;
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy);
-	list *dep_l = list_create((fdestroy) &arg_destroy);
+	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL;
 	sql_subtype *restype;
 	int instantiate = (sql->mode == m_execute);
 
@@ -518,13 +518,23 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			if (instantiate) {
 				return b;
 			} else {
-				if (b)
-					stmt_list_dependencies(b, dep_l);
-				stmt_destroy(b);
 				sql_destroy_params(sql);
 
 				f = mvc_create_func(sql, sql->session->schema, fname, l, restype, TRUE, FALSE, "sql_cache", q);
-				mvc_create_dependencies(sql, f->base.id, dep_l, FUNC_DEPENDENCY);
+				if (b) {
+					id_col_l = stmt_list_dependencies(b, COLUMN_DEPENDENCY);
+					id_func_l = stmt_list_dependencies(b, FUNC_DEPENDENCY);
+					view_id_l = stmt_list_dependencies(b, VIEW_DEPENDENCY);
+					
+					mvc_create_dependencies(sql, id_col_l, f->base.id, FUNC_DEPENDENCY);
+					mvc_create_dependencies(sql, id_func_l, f->base.id, FUNC_DEPENDENCY);
+					mvc_create_dependencies(sql, view_id_l, f->base.id, FUNC_DEPENDENCY);
+
+					list_destroy(id_col_l);
+					list_destroy(id_func_l);
+					list_destroy(view_id_l);
+				}
+				stmt_destroy(b);
 			}
 		} else {
 			char *fmod = qname_module(ext_name);
@@ -542,6 +552,7 @@ drop_func(mvc *sql, dlist *qname)
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func * func;
+	int dependency;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "DROP FUNCTION: no such schema '%s'", sname);
@@ -558,9 +569,12 @@ drop_func(mvc *sql, dlist *qname)
 	if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP FUNCTION: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
-	if (mvc_check_dependency(sql, func->base.id))
+	dependency = mvc_check_dependency(sql, func->base.id, FUNC_DEPENDENCY);
+	if (dependency == HAS_DEPENDENCY)
 		return sql_error(sql, 02, "DROP FUNCTION: there are functions dependent on function %s;", func->base.name);
-	
+	else if (dependency == CICLE_DEPENDENCY)
+		return sql_error(sql, 02, "DROP FUNCTION: there are a cicle dependency, to drop this function you must use 'DROP FUNCTION %s CASCADE';", func->base.name);
+	mvc_drop_dependencies(sql, func->base.id);
 	mvc_drop_func(sql, s, name, 0);
 
 	return stmt_none();

@@ -1,4 +1,3 @@
-START TRANSACTION;
 -----------------------IDENTIFIERS------------------------------
 
 ------
@@ -1603,4 +1602,3 @@ BEGIN
 	RETURN (select sum(count)+count(*) from "Diagnostics");
 END;
 
-COMMIT;

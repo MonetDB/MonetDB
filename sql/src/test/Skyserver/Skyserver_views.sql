@@ -1,4 +1,3 @@
-START TRANSACTION;
 
 CREATE VIEW SpecObj 
 ---------------------------------------------------------------
@@ -453,4 +452,3 @@ SELECT *
     FROM PhotoPrimary
     WHERE type not in (3,6,8);
 
-COMMIT;

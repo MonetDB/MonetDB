@@ -156,6 +156,13 @@ table_select_column( sql_trans *tr, sql_column *val, sql_column *key, void *key_
 
 	if (val->t->dbid)
 		d = bind_dbat(tr, val->t, RDONLY);
+	if(key){
+		b = full_column(key, d, s);
+		if(s)
+			bat_destroy(s);
+		s = BATselect(b, key_value, key_value);
+		bat_destroy(b);
+	}
 	va_start(va, key_value);
 	while ((nc = va_arg(va, sql_column *)) != NULL) {
 		nv = va_arg(va, void *);

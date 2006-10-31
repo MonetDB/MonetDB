@@ -96,9 +96,6 @@ monet5_drop_user(ptr _mvc, str user)
 		 * administration.
 		*/
 
-	 if (user_id != -1 || schema_id != -1)
-                mvc_drop_dependency(m, schema_id, user_id);
-
 	return TRUE;
 }
 
@@ -130,10 +127,6 @@ monet5_create_user(list *l, str user, str passwd, str fullname, sqlid schema_id,
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_user_info\" VALUES('%s','%s',%d);", user, fullname, schema_id);
 	list_append(l, stmt_sql(_strdup(buf)));
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", user_id, user, grantorid);
-	list_append(l, stmt_sql(_strdup(buf)));
-
-	/* create SQL statement that creates the schema dependency on the user*/
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"dependencies\" VALUES(%d," SZFMT ", %d);", schema_id, user_id, USER_DEPENDENCY);
 	list_append(l, stmt_sql(_strdup(buf)));
 
 	return(NULL);
@@ -259,8 +252,6 @@ static int
 monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 {
 	mvc *m = (mvc *)_mvc;
-	int old_schema_id, user_id;
-	old_schema_id = sql_find_auth_schema(m, user);
 
 	if (passwd != NULL) {
 		str err = AUTHsetPassword(&user, &passwd);
@@ -285,69 +276,44 @@ monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 		column_update_value(m->session->tr, users_schema, rid, &schema_id);
 	}
 	
-        user_id = sql_find_auth(m, user);
-        mvc_create_dependency(m, schema_id, user_id, USER_DEPENDENCY);
-        mvc_drop_dependency(m, old_schema_id, user_id);
-
 	return TRUE;
 }
 
-void 
-monet5_schema_user_dependencies(ptr _trans)
+list* 
+monet5_schema_user_dependencies(ptr _trans, int schema_id)
 {
 	sql_trans *tr = (sql_trans *) _trans;
-	ssize_t rid_schema, rid_user;
-        int schema_id, user_id;
-        list *users_list = NULL;
-        sql_schema *s;
-        sql_table *schemas, *users, *auths;
-        sql_column *sch_id, *sch_name, *auth_id, *auth_name, *users_name, *users_sch;
+	oid rid_user;
+        int user_id;
+        list *users_list = NULL, *user_id_list = NULL;
+	sql_schema *s;
+        sql_table *users, *auths;
+        sql_column *auth_id, *auth_name, *users_name, *users_sch;
+	s = find_sql_schema(tr, "sys");
 
-        s = find_sql_schema(tr, "sys");
-
-        schemas = find_sql_table(s, "schemas");
-        auths = find_sql_table(s, "auths");
         users = find_sql_table(s, "db_user_info");
+        auths = find_sql_table(s, "auths");
 
-        sch_id = find_sql_column(schemas, "id");
-        sch_name = find_sql_column(schemas, "name");
         auth_id = find_sql_column(auths, "id");
         auth_name = find_sql_column(auths, "name");
         users_name = find_sql_column(users, "name");
         users_sch = find_sql_column(users, "default_schema");
 
-        rid_schema = column_find_row(tr, sch_name, "sys", NULL);
+	users_list = table_select_column(tr, users_name, users_sch, &schema_id, NULL);
+	if (users_list)
+		user_id_list = list_create((fdestroy) NULL);
+	while (users_list->h) {
+        	rid_user = column_find_row(tr, auth_name, (char *) users_list->h->data, NULL);
+                user_id =  *(int *) column_find_value(tr, auth_id, rid_user);
 
-        if (rid_schema != -1) {
-                schema_id = *(int *) column_find_value(tr, sch_id, rid_schema);
-                users_list = table_select_column(tr, users_name, users_sch, &schema_id, NULL);
-
-                while (users_list->h) {
-                        rid_user = column_find_row(tr, auth_name, (char *) users_list->h->data, NULL);
-                        user_id =  *(int *) column_find_value(tr, auth_id, rid_user);
-
-                        sql_trans_create_dependency(tr, schema_id, user_id, USER_DEPENDENCY);
-
-                        users_list->h = users_list->h->next;
-                }
+		list_append(user_id_list, &user_id);
+                users_list->h = users_list->h->next;
         }
 
-        rid_schema = column_find_row(tr, sch_name, "tmp", NULL);
-
-        if (rid_schema != -1) {
-                schema_id = *(int *) column_find_value(tr, sch_id, rid_schema);
-                users_list = table_select_column(tr, users_name, users_sch, &schema_id, NULL);
-
-                while (users_list->h){
-                        rid_user = column_find_row(tr,auth_name, (char *) users_list->h->data, NULL);
-                        user_id = *(int *) column_find_value(tr, auth_id, rid_user);
-                        sql_trans_create_dependency(tr, schema_id, user_id, USER_DEPENDENCY);
-
-                        users_list->h = users_list->h->next;
-                }
-        }
 	if (users_list)
         	list_destroy(users_list);
+
+	return user_id_list;
 }
 
 void
