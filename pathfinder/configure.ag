@@ -131,6 +131,9 @@ AC_CHECK_HEADERS([stdbool.h])
 dnl Check for type bool
 AC_CHECK_TYPES(bool)
 
+dnl Check for stdint.h
+AC_CHECK_HEADERS([stdint.h])
+
 dnl Check for type socklen_t
 AC_CHECK_TYPE(socklen_t, AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]), , [#include <sys/types.h>
 #include <sys/socket.h>])

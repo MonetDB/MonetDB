@@ -39,7 +39,12 @@
 
 #include "pathfinder.h"
 
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#else
+typedef unsigned char uint8_t;
+#endif
+
 #include "bitset.h"
 
 typedef uint8_t bitset_unit;
