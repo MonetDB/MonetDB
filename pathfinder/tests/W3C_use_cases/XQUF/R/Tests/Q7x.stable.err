@@ -59,13 +59,7 @@ stderr of test 'Q7x` in directory 'tests/W3C_use_cases/XQUF/R` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_W3C_use_cases_XQUF_R
 
-# 08:59:24 >  
-# 08:59:24 >  Mtimeout -timeout 60 MapiClient -lxquery -oxml -umonetdb -Pmonetdb --host=localhost --port=37251 Q7x.xq
-# 08:59:24 >  
-
-!ERROR: Requested update conflicts with given DTD.
-
-# 08:59:24 >  
-# 08:59:24 >  Done.
-# 08:59:24 >  
+# 17:43:16 >  
+# 17:43:16 >  Done.
+# 17:43:16 >  
 
