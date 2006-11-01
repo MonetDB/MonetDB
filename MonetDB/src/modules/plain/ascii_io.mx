@@ -501,8 +501,7 @@ ASCIIassign_BATs(ascii *as, BAT *bats)
 	return res;
 }
 
-static
-    oid
+static oid
 check_BATs(ascii *as)
 {
 	ascii_io *fmt = as->format;
@@ -956,8 +955,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 	return (ssize_t) as->nr;
 }
 
-static
-    int
+static int
 dump_file(ascii *as, stream *fd)
 {
 	size_t i = 0;
@@ -1052,7 +1050,7 @@ ASCIIload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
 	bstream *b = NULL;
 
 	if (s == NULL || stream_errnr(s)) {
-		GDKerror("ASCIIload: could not open file %s\n", datafile);
+		GDKerror("could not open file %s\n", datafile);
 		if (s) {
 			stream_destroy(s);
 		}
@@ -1095,7 +1093,7 @@ ASCIIdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr)
 			stream_printf(GDKerr, "saved in %s\n", datafile);
 		}
 		if (s == NULL || stream_errnr(s)) {
-			GDKerror("ASCIIdump: could not open file %s\n", datafile);
+			GDKerror("could not open file %s\n", datafile);
 		} else {
 			stream_close(s);
 		}
