@@ -1140,7 +1140,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			BUNfndOID(r, a, op);
 			if (r == NULL) {
 				GDKerror("CTrefine%s: value "SZFMT"@0 not found in head of second BAT;\n"
-					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, o, rev);
+					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, (size_t) o, rev);
 				BBPreclaim(bn);
 				GDKfree(buf);
 				@3
