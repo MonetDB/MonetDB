@@ -333,7 +333,7 @@ static void
 showCommands(void)
 {
 	fprintf(toConsole, "?\t - show this message\n");
-	fprintf(toConsole, "?text\t - sent help message\n");
+	fprintf(toConsole, "?text\t - send help message\n");
 	fprintf(toConsole, "!\t - shell escape\n");
 	fprintf(toConsole, "<file\t - read input from file\n");
 	fprintf(toConsole, ">file\t - save response in file\n");
@@ -509,9 +509,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				}
 				break;
 			case '?':
-				if( !isspace((int)line[1]))
+				if (!isspace((int)line[1]))
 					break;
-				else showCommands();
+				else
+					showCommands();
 				continue;
 			}
 		}
