@@ -125,7 +125,7 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 #define _LOGGER_H_
 
 #define LOG_OK 0
-#define LOG_ERR -1
+#define LOG_ERR (-1)
 
 #include <gdk.h>
 #include <stream.h>
@@ -328,7 +328,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 	BAT *b = BATdescriptor(bid);
 
 	if (logger->debug & 1)
-		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == LOG_INSERT) ? "insert" : (l->flag == LOG_DELETE) ? "delete" : "update", l->nr);
+		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
 
 	if (b) {
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
@@ -357,11 +357,30 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				if (!h && !t)
 					break;
 				if (l->flag == LOG_INSERT)
-					BUNins(b, h, t, FALSE);
+					BUNins(b, h, t, TRUE);
 				else if (l->flag == LOG_DELETE)
-					BUNdel(b, h, t, FALSE);
-				else if (l->flag == LOG_UPDATE)
-					BUNreplace(b, h, t, TRUE);
+					BUNdel(b, h, t, TRUE);
+				else if (l->flag == LOG_UPDATE) {
+					BUN p;
+					if ((p = BUNfnd(b, h)) == NULL) {
+						/* if value doesn't exist, insert it
+						   if b void headed, maintain that by inserting nils */
+						if (b->htype == TYPE_void) {
+							if (b->batCount == 0 && * (oid *) h != oid_nil)
+								b->hseqbase = * (oid *) h;
+							if (b->hseqbase != oid_nil && * (oid *) h != oid_nil) {
+								void *tv = ATOMnil(b->ttype);
+								while (b->hseqbase + b->batCount < * (oid *) h)
+									BUNappend(b, tv, TRUE);
+							}
+							BUNappend(b, t, TRUE);
+						} else {
+							BUNins(b, h, t, TRUE);
+						}
+					} else {
+						BUNreplace(b, h, t, TRUE);
+					}
+				}
 				if (h != hv)
 					GDKfree(h);
 				if (t != tv)
@@ -525,7 +544,6 @@ logger_readlog(logger *logger, char *filename)
 			if (logger->debug & 1)
 				fprintf(stderr, "logger tstart %d\n", 
 					logger->tid);
-
 			break;
 		case LOG_END:
 			if (logger->tid == l.nr) {
@@ -537,33 +555,26 @@ logger_readlog(logger *logger, char *filename)
 				tr_abort(logger);
 			}
 			logger->tid = 0;
-
 			break;
 		case LOG_SEQ:
 			log_read_seq(logger, &l);
-
 			break;
 		case LOG_INSERT:
 		case LOG_DELETE:
 		case LOG_UPDATE:
 			log_read_updates(logger, &l, name);
-
 			break;
 		case LOG_CREATE:
 			log_read_create(logger, name);
-
 			break;
 		case LOG_USE:
 			log_read_use(logger, &l, name);
-
 			break;
 		case LOG_DESTROY:
 			log_read_destroy(logger, name);
-
 			break;
 		case LOG_CLEAR:
 			log_read_clear(logger, name);
-
 			break;
 		default:
 			GDKerror("logger error %d %s\n", l.flag, name);
@@ -710,7 +721,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		BUNins(logger->catalog, &bid, bak, FALSE);
 		if (bm_subcommit(logger->catalog) != 0)  /* save catalog */
 			return NULL;
-	} else { /* find the persisten catalog. As non persistent bats
+	} else { /* find the persistent catalog. As non persistent bats
 		    require a logical reference we also add a logical 
 		    reference for the persistent bats */
 		BUN p, q;
@@ -854,7 +865,7 @@ logger_exit(logger *logger)
 		fprintf(fp, "%06d\n\n", logger->version);
 		logger->id ++;
 
-		if (logger_commit(logger) < 0)
+		if (logger_commit(logger) != LOG_OK)
 			return LOG_ERR;
 
 		fprintf(fp, LLFMT "\n", logger->id);
@@ -1208,7 +1219,7 @@ bm_commit(logger *logger)
 	}
 	if (bm_subcommit(logger->catalog) != 0)	/* save new bats */
 		return LOG_ERR;
-	return 0;
+	return LOG_OK;
 }
 
 static void
