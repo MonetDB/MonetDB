@@ -179,15 +179,14 @@ Some other useful ``configure`` options are:
 --enable-warning        enable extended compiler warnings default=off
 --enable-profile        enable profiling default=off
 --enable-instrument     enable instrument default=off
---with-gcc=<compiler>   which C compiler to use
-                        (``yes`` = gcc/g++, 
-                        ``no`` = system-specific C/C++ compiler,
-                        <other-compiler-name>)
 --with-mx=<Mx>          which Mx binary to use (default: whichever
                         Mx is found in your PATH)
 --with-mel=<mel>        which mel binary to use (default: whichever
                         mel is found in your PATH)
+CC=<compiler>           which C compiler to use default=gcc
 --enable-bits=<#bits>   specify number of bits (32 or 64)
+                        default is compiler default
+--enable-oid32          use 32-bit OIDs on 64-bit systems default=off
 
 Use the ``--help`` option of ``configure`` to find out more about
 ``configure`` options.

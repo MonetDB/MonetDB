@@ -73,7 +73,7 @@ commands::
 	      --with-mel=.../mel.exe \
 	      --with-mx=.../Mx.exe \
 	      --with-burg=.../burg.exe \
-	      --with-gcc='gcc -mwin32 -mno-cygwin' \
+	      CC='gcc -mwin32 -mno-cygwin' \
 	      --with-translatepath='cygpath -w' \
 	      --with-libxml2="$HOME/MinGW" \
 	      --with-pthread=C:/Pthreads \

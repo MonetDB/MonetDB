@@ -160,8 +160,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
-	--with-gcc="%{comp_cc}" \
-	--with-gxx="%{comp_cxx}" \
+	CC="%{comp_cc}" \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} \

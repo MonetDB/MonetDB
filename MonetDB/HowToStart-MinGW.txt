@@ -67,7 +67,7 @@ In order to compile and install MonetDB, I use the following commands::
  mkdir MinGW
  cd MinGW
  ../configure --host=i386-pc-mingw32 \
-              --with-gcc='gcc -mwin32 -mno-cygwin' \
+              CC='gcc -mwin32 -mno-cygwin' \
               --with-translatepath='cygpath -w' \
               --with-pthread=C:/Pthreads \
               --without-iconv \

@@ -67,7 +67,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-assert=no \
 	--enable-optimize \
 	--enable-bits=%{bits} \
-	--with-gcc="%{comp_cc}" \
+	CC="%{comp_cc}" \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
 	--with-monet=%{prefix}
