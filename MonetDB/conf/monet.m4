@@ -362,7 +362,7 @@ dnl  yet, we set X_CFLAGS, which are added to the standard
 dnl  CFLAGS once configure/autoconf are done with their job,
 dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
-X_CFLAGS=''
+: ${X_CFLAGS=} # initialize to empty if not set
 NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
