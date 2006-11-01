@@ -622,10 +622,16 @@ bits(size_t i)
 	BAT *histo = NULL, *bn = NULL;
 	declare_mask_@1
 
-	/* b->tkey, simply return mark(0), and hist = project(reverse(bn),1) */
+	/* b->tkey, simply return mirror(0), and hist = project(reverse(bn),1) */
 	if (b->tkey) {
 		int one = 1;
-		bn = BATmark(b, 0);
+		BAT *v = VIEWcombine(b);
+
+		bn = v;
+		if (b->batRestricted == BAT_WRITE) {
+			bn = BATcopy(v, v->htype, v->ttype, FALSE);
+			BBPreclaim(v);
+		}
 		histo = BATconst(BATmirror(bn), TYPE_int, &one);
 	} else {
  		bn = BATnew(b->htype, TYPE_oid, BATcount(b));

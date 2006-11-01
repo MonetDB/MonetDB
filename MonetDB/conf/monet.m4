@@ -160,58 +160,11 @@ AM_CONDITIONAL(HAVE_MONET5,test x$have_monet5 = xyes)
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
 
-dnl check for compiler
-icc_ver=""
-gcc_ver=""
-
-AC_ARG_WITH(gcc,
-	AC_HELP_STRING([--with-gcc=<compiler>], [which C compiler to use])
-AC_HELP_STRING([--without-gcc], [do not use GCC]), [
-	case $withval in
-	yes)	CC=gcc;;
-	no)	case $host_os-$host in
-		linux*-i?86*)	CC=icc;;
-		linux*-x86_64*)	CC=icc;;
-		linux*-ia64*)	CC=icc;;
-		aix*)		CC=xlc_r;;
-		*)		CC=cc;;
-		esac
-		case $host_os in
-		linux*)
-		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
-		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
-		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
-		    icc_ver="`$CC -dumpversion 2>/dev/null`"
-		    case $icc_ver in
-		    8.*)	CC="icc -no-gcc";;
-		    9.*)	CC="icc -no-gcc";;
-		    esac
-		    ;;
-		esac
-		;;
-	*)	CC=$withval
-		case "$CC" in
-		dnl  Portland Group compiler (pgcc/pgCC)
-		pgcc*)	CC="$CC -fPIC";;
-		esac
-		case $host_os in
-		linux*)
-		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
-		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
-		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
-		    icc_ver="`$CC -dumpversion 2>/dev/null`"
-		    case $icc_ver in
-		    8.*)	CC="$CC -no-gcc";;
-		    9.*)	CC="$CC -no-gcc";;
-		    esac
-		    ;;
-		esac
-		;;
-	esac])
-
 AC_PROG_CPP()
+dnl check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
 
+gcc_ver=""
 case $GCC-$host_os in
 yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
@@ -342,7 +295,6 @@ case "$host_os" in
 esac
 AC_SUBST(LINUX_DIST)
 
-
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
 	AC_HELP_STRING([--enable-strict],
@@ -458,7 +410,17 @@ yes-*-*)
  	LDFLAGS="$LDFLAGS -i_dynamic"
  	dnl  On 64-bit systems, icc 9.1 does not seem to find its own libraries,
  	dnl  even if the respective directory is in LD_LIBRARY_PATH ...!??
- 	dnl  Explicitely listing it via -L... with the linker call seems to help.
+ 	dnl  Explicitely listing it via -L.. with the linker call seems to help.
+
+	dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
+	dnl  and icc/icpc requires "-no-gcc" to avoid predefining
+	dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+	icc_ver="`$CC -dumpversion 2>/dev/null`"
+	case $icc_ver in
+	8.*)	CC="$CC -no-gcc";;
+	9.*)	CC="$CC -no-gcc";;
+	esac
+
 	case $bits-$icc_ver in
 	64-9.*)	LDFLAGS="$LDFLAGS -L`type -p icc | sed 's|/bin/icc|/lib64|'`" ;;
 	*)	;;
@@ -527,6 +489,7 @@ yes-*-*)
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
 	CFLAGS="$CFLAGS -c9x"
+	CC="$CC -fPIC"
 	;;
 -*-irix*)
 	dnl  MIPS compiler on IRIX64

@@ -142,8 +142,7 @@ typedef struct logger {
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
-
-	BAT *snapshots;	/* int, str lists the bats which need to be subcommited in the current transaction  */
+	BAT *snapshots;	/* int, int the bid and tid of snapshot bat */
 } logger;
 
 #include "logger.proto.h"
@@ -191,6 +190,7 @@ logger_export log_bid logger_find_bat(logger *logger, char *name);
 #endif /*_LOGGER_H_*/
 @c
 #include "logger.h"
+#include <string.h>
 
 @-
 The log record encoding is geared at reduced storage space, but
@@ -326,10 +326,21 @@ log_read_updates(logger *logger, logformat *l, char *name)
 {
 	log_bid bid = logger_find_bat(logger, name);
 	BAT *b = BATdescriptor(bid);
+	int skip = 0;
 
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
 
+	/* do we need to skip these old updates */
+	if (BATcount(logger->snapshots)) {
+		BUN p = BUNfnd(logger->snapshots, &bid);
+		if (p) {
+			int tid = *(int*)BUNtloc(logger->snapshots, p);
+
+			if (tid < logger->tid) 
+				skip = 1;
+		}
+	}
 	if (b) {
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
 		void *tv = ATOMnil(b->ttype);
@@ -340,7 +351,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 
 				if (!t)
 					break;
-				if (l->flag == LOG_INSERT)
+				if (!skip && l->flag == LOG_INSERT)
 					BUNappend(b, t, TRUE);
 				if (t != tv)
 					GDKfree(t);
@@ -356,6 +367,13 @@ log_read_updates(logger *logger, logformat *l, char *name)
 
 				if (!h && !t)
 					break;
+				if (skip) {
+					if (h != hv)
+						GDKfree(h);
+					if (t != tv)
+						GDKfree(t);
+					continue;
+				}
 				if (l->flag == LOG_INSERT)
 					BUNins(b, h, t, TRUE);
 				else if (l->flag == LOG_DELETE)
@@ -652,11 +670,11 @@ check_version(logger *logger, FILE *fp)
 }
 
 static
-int bm_subcommit( BAT * catalog ) 
+int bm_subcommit( BAT * list, BAT * catalog ) 
 {
 	BUN p,q;
-	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(catalog)*2);
-	BAT *b = catalog;
+	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(list)*2);
+	BAT *b = list;
 	int res;
 
 	BATseqbase(n,0);
@@ -671,6 +689,7 @@ int bm_subcommit( BAT * catalog )
 		str name = BBPname(col);
 		BUNappend(n, name, FALSE);
 	}
+	BUNappend(n, BBPname(catalog->batCacheid), FALSE);
 	/* now commit catalog, so it's also up to date on disk */
 	BATcommit(catalog); 
 	res = TMsubcommit(n);
@@ -717,9 +736,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		BATmode(logger->catalog, PERSISTENT);
 		BBPrename(logger->catalog->batCacheid, bak);
 
-		/* insert catalog bat, to make TMsubcommit calls possible */
-		BUNins(logger->catalog, &bid, bak, FALSE);
-		if (bm_subcommit(logger->catalog) != 0)  /* save catalog */
+		if (bm_subcommit(logger->catalog, logger->catalog) != 0)  
 			return NULL;
 	} else { /* find the persistent catalog. As non persistent bats
 		    require a logical reference we also add a logical 
@@ -741,15 +758,21 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		
 		logger_add_bat(logger, logger->seqs, "seqs");
 		BUNins(logger->seqs, &id, &logger->id, FALSE);
+
+		logger->snapshots = logbat_new(TYPE_int, TYPE_int, 1);
+		BATmode(logger->snapshots, PERSISTENT);
+		logger_add_bat(logger, logger->snapshots, "snapshots");
 	} else {
+		bat snapshots = logger_find_bat(logger, "snapshots");
+
 		logger->seqs = BATdescriptor(seqs);
 		if (BATcount(logger->seqs)) {
 			logger->id = *(lng*)BUNtail(logger->seqs, BUNfnd(logger->seqs, &id));
 		} else {
 			BUNins(logger->seqs, &id, &logger->id, FALSE);
 		}
+		logger->snapshots = BATdescriptor(snapshots);
 	}
-	logger->snapshots = logbat_new(TYPE_void, TYPE_str, 1);
 
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
 
@@ -969,7 +992,9 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (flag == LOG_USE) {
-		BUNappend(logger->snapshots, BBPname(b->batCacheid), FALSE);
+		if (BUNfnd(logger->snapshots, &b->batCacheid)) 
+			BUNdelHead(logger->snapshots, &b->batCacheid, FALSE);
+		BUNins(logger->snapshots, &b->batCacheid, &logger->tid, FALSE);
 		return LOG_OK;
 	}
 
@@ -1138,6 +1163,19 @@ log_tstart(logger *logger)
 	l.flag = LOG_START;
 	l.nr = ++logger->tid;
 
+	/* cleanup old snapshots */
+	if (BATcount(logger->snapshots)) {
+		/* sub commit all new snapshots */
+		int nil = int_nil;
+		BAT *b = BATselect(logger->snapshots, &nil, &logger->tid);
+
+		BATdel(logger->snapshots, b, FALSE);
+		BBPunfix(b->batCacheid);
+		if (BATcount(logger->snapshots) == 0) 
+			BATclear(logger->snapshots);
+		BATcommit(logger->snapshots);
+	}
+
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid);
 
@@ -1148,16 +1186,18 @@ int
 log_tend(logger *logger)
 {
 	logformat l;
-	int res;
+	int res = 0;
 
 	if (logger->debug)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
 	/* first subcommit the snapshots */
-	BATseqbase(logger->snapshots,0);
-	res = TMsubcommit(logger->snapshots);
-	BBPreclaim(logger->snapshots);
-	logger->snapshots = logbat_new(TYPE_void, TYPE_str, 1);
+	if (BATcount(logger->snapshots)) {
+		/* sub commit all new snapshots */
+		BAT *b = BATselect(logger->snapshots, &logger->tid, &logger->tid);
+		res = bm_subcommit(b, logger->snapshots);
+		BBPunfix(b->batCacheid);
+	}
 
 	l.flag = LOG_END;
 	l.nr = logger->tid;
@@ -1217,7 +1257,7 @@ bm_commit(logger *logger)
 		BATmode(b, PERSISTENT);
 		logbat_destroy(b);
 	}
-	if (bm_subcommit(logger->catalog) != 0)	/* save new bats */
+	if (bm_subcommit(logger->catalog, logger->catalog) != 0)  
 		return LOG_ERR;
 	return LOG_OK;
 }

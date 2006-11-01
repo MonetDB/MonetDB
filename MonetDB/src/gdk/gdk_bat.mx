@@ -1102,11 +1102,12 @@ BUNappend(BAT *b, ptr t, bit force)
 	BAT *bm;
 	ptr h = NULL;
 	oid id = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
+	int countonly;
 
 	BATcheck(b, "BUNappend");
 	bm = BBP_cache(-b->batCacheid);
 
+ 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
 		GDKerror("BUNappend: can only append to void and oid bats\n");
 		return NULL;
