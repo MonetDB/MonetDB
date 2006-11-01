@@ -17,13 +17,13 @@ RETURN TABLE (SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, d
 --Table t has a dependency on index  i
 CREATE FUNCTION dependencies_tables_on_indexes()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys));
+RETURN TABLE (SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);
 
 --Table t has a dependency on trigger tri
 
 CREATE FUNCTION dependencies_tables_on_triggers()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT DISTINCT t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri, dependencies as dep where tri.table_id = t.id OR (dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8));
+RETURN TABLE ((SELECT t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8));
 
 --Table t has a dependency on foreign key k
 CREATE FUNCTION dependencies_tables_on_foreignKeys()
@@ -33,7 +33,7 @@ RETURN TABLE (SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, ke
 --Table t has a dependency on function f
 CREATE FUNCTION dependencies_tables_on_functions()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7);
+RETURN TABLE (SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0);
 
 
 --Column c has a dependency on view v
@@ -44,12 +44,12 @@ RETURN TABLE (SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, 
 --Column c has a dependency on key k
 CREATE FUNCTION dependencies_columns_on_keys()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT DISTINCT c.name, k.name, 'DEP_KEY' from columns as c, keycolumns as kc, keys as k where kc."column" = c.name AND kc.id = k.id AND k.rkey = -1);
+RETURN TABLE (SELECT c.name, k.name, 'DEP_KEY' from columns as c, keycolumns as kc, keys as k where kc."column" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1);
 
 --Column c has a dependency on index i 
 CREATE FUNCTION dependencies_columns_on_indexes()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT DISTINCT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND i.name not in (select name from keys));
+RETURN TABLE (SELECT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys));
 
 --Column c has a dependency on function f
 CREATE FUNCTION dependencies_columns_on_functions()
@@ -59,7 +59,7 @@ RETURN TABLE (SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as 
 --Column c has a dependency on trigger tri
 CREATE FUNCTION dependencies_columns_on_triggers()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT DISTINCT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
+RETURN TABLE (SELECT c.name, tri.name, c.id, tri.id, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
 
 
 --View v has a dependency on function f
