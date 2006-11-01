@@ -632,8 +632,8 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			GDKwarning("quote '%c' expected but not found in \"%s\"\n", quote, s);
-			return 1;
+			GDKerror("quote '%c' expected but not found in \"%s\"\n", quote, s);
+			return -1;
 		}
 		s++;
 		e = rfind_quote(e, quote);
@@ -706,8 +706,11 @@ insert_line(ascii * as, char *line)
 				quote = *line;
 				line++;
 				line = skip_string(line, quote);
-				if (!line)
+				if (!line) {
+					GDKerror("End of string (%c) missing in %s\n", 
+						quote, s);
 					return -1;
+				}
 				first = 0;
 			} else {
 				if (first && !isspace((int) (*line)))
@@ -724,7 +727,7 @@ insert_line(ascii * as, char *line)
 			quote = 0;
 			line = end + fmt[i].seplen;
 		} else {
-			GDKerror("Error: missing sep %s line %d field %d\n", 
+			GDKerror("missing sep %s line %d field %d\n", 
 				fmt->sep, BATcount(fmt->c), i);
 			return -1;
 		}

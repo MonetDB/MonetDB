@@ -192,6 +192,7 @@ logger_export log_bid logger_find_bat(logger *logger, char *name);
 #include "logger.h"
 #include <string.h>
 
+
 @-
 The log record encoding is geared at reduced storage space, but
 at the expense of readability. A user can not easily inspect the
@@ -341,6 +342,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				skip = 1;
 		}
 	}
+
 	if (b) {
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
 		void *tv = ATOMnil(b->ttype);
