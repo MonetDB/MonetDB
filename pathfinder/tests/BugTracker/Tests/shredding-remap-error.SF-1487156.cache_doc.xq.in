@@ -1,0 +1,1 @@
+count(doc("$TSTTRGDIR/exponential2.xml")//*)

@@ -35,3 +35,6 @@ complex-XQuery-batbat_lng_add_inplace-error-KO.SF-1562868
 complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868
 interpret_while-bit_nil.SF-1567021
 treat_as.SF-1586454
+shredding-remap-error.SF-1487156.unpack_doc
+shredding-remap-error.SF-1487156.shred_doc
+shredding-remap-error.SF-1487156.cache_doc
