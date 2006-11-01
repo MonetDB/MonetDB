@@ -205,9 +205,8 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		;;
 	esac])
 
-AC_PROG_CC()
 AC_PROG_CPP()
-AC_PROG_GCC_TRADITIONAL()
+AC_PROG_CC()
 
 case $GCC-$host_os in
 yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
@@ -1059,10 +1058,10 @@ fi
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
 
-#AM_DEPENDENCIES(CC)
+dnl #AM_DEPENDENCIES(CC)
 
 dnl Checks for header files.
-AC_HEADER_STDC()
+dnl AC_HEADER_STDC()
 
 case "$host_os" in
     cygwin*)
