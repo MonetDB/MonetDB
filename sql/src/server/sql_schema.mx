@@ -706,6 +706,8 @@ drop_view(mvc *sql, dlist *qname)
 		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
 	} else if (t->system) {
 		return sql_error(sql, 02, "DROP VIEW: cannot drop system view '%s'", tname);
+	} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY)) {
+			return sql_error(sql, 02, "unable to drop view %s (there are database objects which depend on it)\n", t->base.name);
 	} else {
 		mvc_drop_dependencies(sql, t->base.id);
 		mvc_drop_table(sql, ss, t->base.name, 0);
