@@ -15,10 +15,14 @@ dnl Portions created by CWI are Copyright (C) 1997-2006 CWI.
 dnl All Rights Reserved.
 
 dnl Defaults that differ between development trunk and release branch:
+AC_DEFUN([AM_MONETDB_DEFAULTS],
+[
 dft_strict=yes
 dft_assert=yes
 dft_optimi=no
 dft_warning=no
+dft_netcdf=auto
+])
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
@@ -1386,9 +1390,6 @@ AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 AC_DEFUN([AM_MONETDB_LIBS],
 [
-dnl Defaults that differ between development trunk and release branch:
-dft_netcdf=auto
-
 dnl libpthread
 have_pthread=auto
 PTHREAD_LIBS=""

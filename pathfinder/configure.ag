@@ -35,6 +35,7 @@ CONFIG_H=pf_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
+AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
 if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
