@@ -38,3 +38,7 @@ treat_as.SF-1586454
 shredding-remap-error.SF-1487156.unpack_doc
 shredding-remap-error.SF-1487156.shred_doc
 shredding-remap-error.SF-1487156.cache_doc
+corrupt-attributelist.SF-1483706.create_doc
+corrupt-attributelist.SF-1483706.shred_doc
+corrupt-attributelist.SF-1483706.cache_doc
+corrupt-attributelist.SF-1483706.remove_doc

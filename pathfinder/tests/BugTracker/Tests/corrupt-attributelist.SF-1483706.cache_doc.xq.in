@@ -1,0 +1,5 @@
+(
+count(doc("$TSTTRGDIR/xid.xml")//*)
+,
+count(doc("$TSTTRGDIR/xid.xml")//@xid)
+)
