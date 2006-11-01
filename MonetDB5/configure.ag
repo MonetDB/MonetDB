@@ -30,8 +30,8 @@ if test "x$have_monet" != xyes; then
 fi
 AM_MONETDB_UTILS()
 
-AC_CHECK_FUNCS(strtoll)
-AC_CHECK_DECLS([strtoll])
+dnl AC_CHECK_FUNCS(strtoll)
+dnl AC_CHECK_DECLS([strtoll])
 dnl Check if crypt() exists in libc or libcrypt, sets LIBS if needed
 AC_CHECK_HEADERS([crypt.h])
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
