@@ -73,19 +73,13 @@ do delete ($testdoc/document/text()[1],
 -- test multiple insert before
 -- test multiple insert after
 :)
-for $node in $testdoc/document/element[@attribute = 10]
-  return typeswitch ($node)
-         case $elem as element()
-       return (do insert <a/> as first into $elem,
-                   do insert <b/> as first into $elem)
-         default return error ("we expect a single element as input")
+for $elem in $testdoc/document/element[@attribute = 10]
+  return (do insert <a/> as first into exactly-one($elem) treat as element(),
+	  do insert <b/> as first into exactly-one($elem) treat as element())
 ,
-for $node in $testdoc/document/element[@attribute = 20]
-  return typeswitch ($node)
-         case $elem as element()
-       return (do insert <a/> as last into $elem,
-                   do insert <b/> as last into $elem)
-         default return error ("we expect a single element as input")
+for $elem in $testdoc/document/element[@attribute = 20]
+  return (do insert <a/> as last into exactly-one($elem) treat as element(),
+	  do insert <b/> as last into exactly-one($elem) treat as element())
 (:
 for $elem in $testdoc/document/element[@attribute = 10]
   return (do insert <a/> as first into exactly-one($elem),
