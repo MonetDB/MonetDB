@@ -88,7 +88,7 @@ cleanup_stmts(stmt **stmts, int cnt)
 
 
 static stmt *
-insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
+insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int alter)
 {
 /* pkey's cannot have NULLs, ukeys however can
    current implementation switches on 'NOT NULL' on primary key columns */
@@ -160,20 +160,24 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 		res = stmt_exception(NULL, s, _strdup(buf), 00001);
 	} else {		/* single column key */
 		sql_kc *c = k->columns->h->data;
-		stmt *h = stmt_dup(inserts[c->c->colnr]->op2.stval);
-		stmt *s = stmt_bat(c->c, stmt_dup(ts), RDONLY);
+		stmt *s, *h = inserts[c->c->colnr]->op2.stval;
 
-		if (h->nrcols) {
-			s = stmt_join(s, stmt_reverse(h), cmp_equal);
+		if (!alter) {
+			s = stmt_bat(c->c, stmt_dup(ts), RDONLY);
+			if (h->nrcols) {
+				s = stmt_join(s, stmt_reverse(stmt_dup(h)), cmp_equal);
+				/* s should be empty */
+				s = stmt_aggr(s, NULL, cnt);
+			} else {
+				s = stmt_uselect(s, stmt_dup(h), cmp_equal);
+				/* s should be empty */
+				s = stmt_aggr(s, NULL, cnt);
+			}
 			/* s should be empty */
-			s = stmt_aggr(s, NULL, cnt);
+			s = stmt_binop(s, stmt_atom_int(0), ne);
 		} else {
-			s = stmt_uselect(s, h, cmp_equal);
-			/* s should be empty */
-			s = stmt_aggr(s, NULL, cnt);
+			s = stmt_bool(0);
 		}
-		/* s should be empty */
-		s = stmt_binop(s, stmt_atom_int(0), ne);
 
 		/* 2e stage: find out if inserts are unique */
 		if (h->nrcols) {	/* insert multiple atoms */
@@ -232,7 +236,7 @@ insert_check_fkey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 }
 
 static stmt *
-sql_insert_key(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
+sql_insert_key(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int alter)
 {
 	/* int insert = 1;
 	 * while insert and has u/pkey and not defered then
@@ -247,9 +251,9 @@ sql_insert_key(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 	 *      insert fkey/pkey index
 	 */
 	if (k->type == pkey || k->type == ukey) {
-		return insert_check_ukey(sql, inserts, k, idx_inserts);
+		return insert_check_ukey(sql, inserts, k, idx_inserts, alter);
 	} else {		/* foreign keys */
-		return insert_check_fkey(sql, inserts, k, idx_inserts);
+		return insert_check_fkey(sql, inserts, k, idx_inserts );
 	}
 }
 
@@ -258,7 +262,7 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 {
 	node *m;
 	sql_subtype *it;
-	int bits = 1 + 31/list_length(i->columns);
+	int bits = 1 + 31/(list_length(i->columns)+2);
 	stmt *h = NULL;
 
 	if (list_length(i->columns) <= 1)
@@ -375,7 +379,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 }
 
 static void
-sql_insert_idx(mvc *sql, stmt **inserts, sql_idx * i, list *l)
+sql_insert_idx(mvc *sql, stmt **inserts, sql_idx * i, list *l, int alter)
 {
 	stmt *is = NULL;
 
@@ -385,7 +389,7 @@ sql_insert_idx(mvc *sql, stmt **inserts, sql_idx * i, list *l)
 		is = join_idx_insert(sql, i, inserts);
 	}
 	if (i->key) {
-		stmt *ckeys = sql_insert_key(sql, inserts, i->key, is);
+		stmt *ckeys = sql_insert_key(sql, inserts, i->key, is, alter);
 
 		list_prepend(l, ckeys);
 	}
@@ -406,7 +410,7 @@ sql_insert_idxs(mvc *sql, sql_table *t, stmt **inserts, list *l)
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 
-		sql_insert_idx(sql, inserts, i, l);
+		sql_insert_idx(sql, inserts, i, l, 0);
 	}
 	return res;
 }
@@ -477,7 +481,7 @@ sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l)
 		inserts[i] = stmt_append(stmt_temp(tp), b);
 	}
 	stmt_destroy(ts);
-	sql_insert_idx(sql, inserts, idx, l);
+	sql_insert_idx(sql, inserts, idx, l, 1);
 	cleanup_stmts(inserts, len);
 	return stmt_list(l);
 }
@@ -670,7 +674,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	/* calculate new value */
 	node *m;
 	sql_subtype *it;
-	int bits = 1 + 31/list_length(i->columns);
+	int bits = 1 + 31/(list_length(i->columns)+2);
 	stmt *h = NULL, *ts;
 
 	if (list_length(i->columns) <= 1)

@@ -151,7 +151,7 @@ write_result(backend *sql, char *buf)
 				v = RENEW_ARRAY(char, v, buflen);
 			}
 			l += snprintf(v + l, buflen - l,
-				      "if (type(%s) != 4) {"
+				      "if (type(%s) != bat) {"
 				      "	print(%s);"
 				      "} else {"
 				      "	var x := count(%s);"

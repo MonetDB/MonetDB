@@ -2583,6 +2583,10 @@ simple_table:
 		  		  append_symbol(l, $1);
 		  	  	  append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
+ | func_ref 			{ dlist *l = L();
+		  		  append_symbol(l, $1);
+		  	  	  append_symbol(l, NULL);
+		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  ;
 
 table_ref:
@@ -3361,13 +3365,22 @@ literal:
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
-		  lng value = decimal_from_str(s);
 		  sql_subtype t;
 
-		  if (*s == '+' || *s == '-')
-			digits --;
-		  sql_find_subtype(&t, "decimal", digits, scale );
-		  $$ = _newAtomNode( atom_int(&t, value)); }
+		  if (digits <= 18) {
+		  	lng value = decimal_from_str(s);
+
+		  	if (*s == '+' || *s == '-')
+				digits --;
+		  	sql_find_subtype(&t, "decimal", digits, scale );
+		  	$$ = _newAtomNode( atom_int(&t, value)); 
+		   } else { 
+		  	double val = strtod($1,NULL);
+
+		  	sql_find_subtype(&t, "double", 51, 0 );
+		  	$$ = _newAtomNode(atom_float(&t, val)); 
+		   }
+		}
  |  APPROXNUM
 		{ sql_subtype t;
 		  double val = strtod($1,NULL);

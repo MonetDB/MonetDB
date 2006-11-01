@@ -162,29 +162,29 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		char *tn = (tname) ? tname : _empty;
 		char *sn = (sname) ? sname : _empty;
 		char *cn = column_name(c);
-		char *fqtn = alloca(sizeof(char) * (strlen(sn) + 1 + strlen(tn) + 1));
-		char *ntn;
-		char *ncn;
+		char *ntn = sql_escape_ident(tn);
+		char *nsn = sql_escape_ident(sn);
+		char *ncn = sql_escape_ident(cn);
+		char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 + strlen(ntn) + 1));
 
-		sprintf(fqtn, "%s.%s", sn, tn);
-		ntn = sql_escape_ident(fqtn);
-		ncn = sql_escape_ident(cn);
+		sprintf(fqtn, "%s.%s", nsn, ntn);
 
 		q = newStmt1(mb, sqlRef, "rsColumn");
 		q = pushArgument(mb, q, s->nr);
-		q = pushStr(mb, q, ntn);
+		q = pushStr(mb, q, fqtn);
 		q = pushStr(mb, q, ncn);
 		q = pushStr(mb, q, t->type->sqlname);
 		q = pushInt(mb, q, t->digits);
 		q = pushInt(mb, q, t->scale);
+		q = pushArgument(mb, q, c->nr);
 		if (tn != _empty)
 			_DELETE(tn);
 		if (sn != _empty)
 			_DELETE(sn);
-		_DELETE(ntn);
-		_DELETE(ncn);
 		_DELETE(cn);
-		q = pushArgument(mb, q, c->nr);
+		_DELETE(ntn);
+		_DELETE(nsn);
+		_DELETE(ncn);
 	}
 }
 
@@ -1573,28 +1573,28 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				n = l->h;
 				f = n->data;
+
 				/* single value result, has a fast exit */
 				if (cnt == 1 && !order && f->nrcols <= 0){
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(c);
-					char *sname =schema_name(c);
+					char *sname = schema_name(c);
 					char *_empty = "";
 					char *tn = (tname) ? tname : _empty;
 					char *sn = (sname) ? sname : _empty;
 					char *cn = column_name(c);
-					char *fqtn = alloca(sizeof(char) * (strlen(sn) + 1 + strlen(tn) + 1));
-					char *ntn;
-					char *ncn;
+					char *ntn = sql_escape_ident(tn);
+					char *nsn = sql_escape_ident(sn);
+					char *ncn = sql_escape_ident(cn);
+					char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 + strlen(ntn) + 1));
 
-					sprintf(fqtn, "%s.%s", sn, tn);
-					ntn = sql_escape_ident(fqtn);
-					ncn = sql_escape_ident(cn);
+					sprintf(fqtn, "%s.%s", nsn, ntn);
 
 					q = newStmt2(mb, sqlRef, exportValueRef);
 					s->nr = getDestVar(q);
 					q = pushInt(mb, q, sql->mvc->type);
-					q = pushStr(mb, q, ntn);
+					q = pushStr(mb, q, fqtn);
 					q = pushStr(mb, q, ncn);
 					q = pushStr(mb, q, t->type->sqlname);
 					q = pushInt(mb, q, t->digits);
@@ -1606,9 +1606,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						_DELETE(tn);
 					if (sn != _empty)
 						_DELETE(sn);
-					_DELETE(ntn);
-					_DELETE(ncn);
 					_DELETE(cn);
+					_DELETE(ntn);
+					_DELETE(nsn);
+					_DELETE(ncn);
 					break;
 				}
 				if (n) {

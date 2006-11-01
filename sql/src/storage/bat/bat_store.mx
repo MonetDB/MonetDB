@@ -3697,7 +3697,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					append_inserted(ci, ins);
 					bat_destroy(ci);
 				}
-				if (ok == LOG_OK && ttr == gtrans)
+				if (ok == LOG_OK && ttr == gtrans && 
+					(nr_active != 1 || BATcount(cur)))
 					ok = log_bat(sql_logger, ins, oc->bat.name);
 			}
 			if (nr_active == 1) { /* flush all */
@@ -3710,8 +3711,11 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oc->bat.bid = swp;
 					temp_destroy(cc->bat.bid);
 					cc->bat.bid = temp_create(swpbat);
-					if (ttr == gtrans) 
+					if (ttr == gtrans) {
+						BATmode(ins, PERSISTENT);
 						logger_add_bat(sql_logger, ins, oc->bat.name);
+						log_bat_persists(sql_logger, ins, oc->bat.name);
+					}
 					ins = cur;
 					cur = swpbat;
 				} else {
@@ -3802,7 +3806,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						append_inserted(ci, ins);
 						bat_destroy(ci);
 					}
-					if (ok == LOG_OK && ttr == gtrans)
+					if (ok == LOG_OK && ttr == gtrans && 
+					   (nr_active != 1 || BATcount(cur)))
 						ok = log_bat(sql_logger, ins, oi->bat.name);
 				}
 				if (nr_active == 1) { /* flush all */
@@ -3815,8 +3820,11 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						oi->bat.bid = swp;
 						temp_destroy(ci->bat.bid);
 						ci->bat.bid = temp_create(swpbat);
-						if (ttr == gtrans) 
+						if (ttr == gtrans) {
+							BATmode(ins, PERSISTENT);
 							logger_add_bat(sql_logger, ins, oi->bat.name);
+							log_bat_persists(sql_logger, ins, oi->bat.name);
+						}
 						ins = cur;
 						cur = swpbat;
 					} else {
