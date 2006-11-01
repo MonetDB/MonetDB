@@ -263,8 +263,8 @@ if [ "${os}" = "Linux" ] ; then
 	fi
 	if [ "${COMP}" = "PGI" ] ; then
 		# Portland Group compiler on spin
-		cc='pgcc'
-		cxx='pgCC'
+		cc='pgcc -fPIC'
+		cxx='pgCC -fPIC'
 	fi
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
@@ -282,7 +282,7 @@ if [ "${os}" = "Linux" ] ; then
 	fi
 	# Java support on Gentoo systems
 	if [ -x /usr/bin/java-config ]; then
-	        binpath="`/usr/bin/java-config -O`/bin:${binpath}"
+		binpath="`/usr/bin/java-config -O`/bin:${binpath}"
 	fi
 	if [ -x /net/lin_local/java/j2sdk1.4.2/bin/javac  -a  -x /net/lin_local/java/j2sdk1.4.2/bin/jar ] ; then
 		# java in Konstanz
@@ -448,13 +448,20 @@ if [ -f conf/local.bash ]; then
 fi
 
 # tell configure about chosen compiler and bits
-if [ "${cc}" ] ; then
-	conf_opts="${conf_opts} --with-gcc='${cc}'"
-elif [ "${COMP}" = "ntv" ] ; then
-	conf_opts="${conf_opts} --with-gcc=no"
-fi
-if [ "${cxx}" ] ; then
-	conf_opts="${conf_opts} --with-gxx='${cxx}'"
+if [ "${what}" != "BUILDTOOLS" ] ; then
+	if [ "${cc}" ] ; then
+		conf_opts="${conf_opts} CC='${cc}'"
+	fi
+	if [ "${cxx}" ] ; then
+		conf_opts="${conf_opts} CXX='${cxx}'"
+	fi
+	if [ "${cc}${cxx}${COMP}" = "ntv" ] ; then
+		case "${os}" in
+		Linux)	conf_opts="${conf_opts} CC='icc -no-gcc' CXX='icpc -no-gcc'";;
+		AIX)	conf_opts="${conf_opts} CC='xlc_r' CXX='xlc_r'";;
+		*)	conf_opts="${conf_opts} CC='cc' CXX='CC'";;
+		esac
+	fi
 fi
 if [ "${BITS}" = "64" ] ; then
 	conf_opts="${conf_opts} --enable-bits=${BITS}"
