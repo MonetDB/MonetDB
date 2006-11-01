@@ -246,28 +246,31 @@ monet_options.mx.in
 	free(n);
 
 	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
-		GDK_mem_bigsize = strtol(p, NULL, 10);
-		if (GDK_mem_bigsize > GDK_mem_maxsize)
-			GDK_mem_bigsize = GDK_mem_maxsize/2;
+		/* when allocating >6% of all RAM; do so using vmalloc() iso malloc() */
+		lng max_mem_bigsize = GDK_mem_maxsize/16;
 
+		/* sanity check to avoid memory fragmentation */
+		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtol(p, NULL, 10));
 	}
 	if ((p = GDKgetenv("gdk_vm_minsize"))){
-		GDK_vm_minsize = strtol(p, NULL, 10);
-		if (GDK_vm_minsize > GDK_mem_maxsize)
-			GDK_vm_minsize = GDK_mem_maxsize/2;
+		/* when allocating HUGE regions, switch from vmalloc() to mmap() on a real file */
+		/* for 32-bits systems HUGE = RAM/8, for 64-bits systems HUGE = RAM/2 */
+		lng max_vm_minsize = ((lng)GDK_mem_maxsize*sizeof(void*)*sizeof(void*))/128;
+
+		/* sanity check to avoid running out of swap space */
+		GDK_vm_minsize = (size_t) MIN(max_vm_minsize, strtol(p, NULL, 10));
 	}
 
 	if (GDKgetenv_isyes("gdk_embedded") || GDKgetenv_isyes("embedded")) {
 		GDKembedded = 1;
 	}
 
-    if (GDKgetenv_isyes("monet_daemon") || GDKgetenv_isyes("daemon")) {
-        monet_daemon = 1;
+	if (GDKgetenv_isyes("monet_daemon") || GDKgetenv_isyes("daemon")) {
+		monet_daemon = 1;
 #ifdef HAVE_SETSID
-        setsid();
+		setsid();
 #endif
-    }
-
+	}
 
 	monet_hello(set, setlen);
 	/* you don't need the commandline arguments anymore */
