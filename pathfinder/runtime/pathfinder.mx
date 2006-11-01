@@ -64,6 +64,7 @@
 @mil
 module(mapi);       # remote client access
 module(pf_support);
+module(logger);
 
 # standoff extensions
 var standoff := false;
@@ -349,6 +350,8 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
 Wouter: THEN WHY IS WS_SIZE count(ws) + 10???
 
+BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
+
 @= ws_decl
 @:ws_@1_decl(WS_SIZE, 69)@
 @:ws_@1_decl(QNAME,    2)@
@@ -368,6 +371,9 @@ const @1 := @2;
 @mil
 @:ws(mil_decl)@
 @:ws_decl(mil)@
+
+# logger version number, needs to be incremented whenever the working set schema is changed
+const LOGGER_VERSION := 1;
 
 # KIND constants, carefully chosen
 # atomic value items can be retrieved with 'kind.select(int_nil,ATOMIC)'
@@ -418,9 +424,24 @@ const NID_RID_UPDATE := RID_NID_UPDATE + 1;
 const ATTR_QN_UPDATE := NID_RID_UPDATE + 1;
 const ATTR_PROP_UPDATE := ATTR_QN_UPDATE + 1;
 const ATTR_OWN_UPDATE := ATTR_PROP_UPDATE + 1;
-const UPDATED_TEXT := ATTR_OWN_UPDATE + 1;
+const PROP_VAL_UPDATE := ATTR_OWN_UPDATE + 1;
+const PROP_TEXT_UPDATE := PROP_VAL_UPDATE + 1;
+const PROP_COM_UPDATE := PROP_TEXT_UPDATE + 1;
+const PROP_INS_UPDATE := PROP_COM_UPDATE + 1;
+const PROP_TGT_UPDATE := PROP_INS_UPDATE + 1;
+const QN_LOC_UPDATE := PROP_TGT_UPDATE + 1;
+const QN_URI_UPDATE := QN_LOC_UPDATE + 1;
+const QN_PREFIX_UPDATE := QN_URI_UPDATE + 1;
+const QN_URI_LOC_UPDATE := QN_PREFIX_UPDATE + 1;
+const QN_PREFIX_URI_LOC_UPDATE := QN_URI_LOC_UPDATE + 1;
+const UPDATED_TEXT := QN_PREFIX_URI_LOC_UPDATE + 1;
 const NID_QN_INS_UPDATE := UPDATED_TEXT + 1; # note, NID_QN and not QN_NID
 const NID_QN_DEL_UPDATE := NID_QN_INS_UPDATE + 1;
+const MODIFIED_NID := NID_QN_DEL_UPDATE + 1;
+const ANCESTOR_NID := MODIFIED_NID + 1;
+const MODIFIED_ATTR := ANCESTOR_NID + 1;
+const MODIFIED_PAGE := MODIFIED_ATTR + 1;
+const NEW_PAGE := MODIFIED_PAGE + 1;
 
 @- shared BATs
 
@@ -445,6 +466,9 @@ var pf_short := pflock(0); # *NOTE* all PROCs _X() (starting with underscore) ho
 var pf_free  := pflock(1); # lock held while freeing ws-es
 var pf_wal   := pflock(2); # lock that must be held while writing into the WAL
 var pf_update:= pflock(3); # exclusive update lock
+
+# initialize the logger
+var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), monet_environment.find("gdk_dbname"), LOGGER_VERSION);
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -1633,6 +1657,7 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
     commitBAT.append("doc_location");
     commitBAT.append("doc_collection");
     commitBAT.append("doc_timestamp");
+    commitBAT.append("uri_lifetime");
     var ok := false;
     lock_set(pf_wal);
     CATCH(ok := subcommit(commitBAT));
@@ -1959,6 +1984,31 @@ PROC _shred_doc_cleanup(lng wsid, bit cleanup) : BAT[any,any]
     return empty_bat;
 }
 
+# the list of bats that get changed using the logger in case of
+# updates (i.e. these are the ones that need to be registered in the
+# logger)
+const logger_bats := new(void, str, 10).seqbase(0@0)
+	.append("_map_pid")
+	.append("_rid_size")
+	.append("_rid_level")
+	.append("_rid_prop")
+	.append("_rid_kind")
+	.append("_rid_nid")
+	.append("_nid_rid")
+	.append("_attr_own")
+	.append("_attr_qn")
+	.append("_attr_prop")
+	.append("_prop_val")
+	.append("_prop_text")
+	.append("_prop_com")
+	.append("_prop_ins")
+	.append("_prop_tgt")
+	.append("_qn_loc")
+	.append("_qn_uri")
+	.append("_qn_prefix")
+	.append("_qn_uri_loc")
+	.append("_qn_prefix_uri_loc");
+
 PROC shred_doc_base(BAT[void,str] commitBAT,
                     BAT[void,str] idx_locations, 
                     BAT[void,str] idx_names, 
@@ -1979,6 +2029,9 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
     if (not(isnil(err))) ERROR(err);
     var idx_runtime := pivot.tmark(0@0);
     var idx_colloid := pivot.hmark(0@0);
+
+    # collect IDs of new collections for the logger
+    var newcoll := new(void, str, count(selidx_colname) * count(logger_bats)).seqbase(0@0);
 
     selidx_colname@batloop(){
         # process collections one-by one
@@ -2001,6 +2054,9 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
                           idx.leftfetchjoin(idx_names),
                           colname, coll_oid, runtime, oid_nil, percentage, timestamp_nil, s, wsid);
 
+	if (isnil(coll_oid) and bit(percentage)) {
+	    newcoll.append([bbpname](logger_bats.join(docBAT)));
+	}
         commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
     }
     # checkpoint the new bats
@@ -2011,6 +2067,12 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         lock_unset(pf_short);
         if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
     }
+    lock_set(pf_wal);
+    log_trans_start(pf_logger);
+    [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
+    [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
+    log_trans_end(pf_logger);
+    lock_unset(pf_wal);
 }
 
 

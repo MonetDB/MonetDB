@@ -1546,6 +1546,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   # some helpful values
   var pageno := oid(lng(from) >> REMAP_PAGE_BITS); # page number where all this takes place
   var pageid := map_pid_update.reverse().find(pageno);
+  ws.fetch(MODIFIED_PAGE).insert(cont, pageid); # we're modifying this page
   var isoldpage := false;
   if (map_pid.exist(pageid)) {
     isoldpage := not(isnil(map_pid.find(pageid)));
@@ -1596,12 +1597,20 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   var pre_nid := ws.fetch(PRE_NID).find(cont);
   var rid_nid := ws.fetch(_RID_NID).find(cont);
   var rid_nid_update := ws.fetch(RID_NID_UPDATE).find(cont);
+  var modified_nid := ws.fetch(MODIFIED_NID);
+  var ancestor_nid := ws.fetch(ANCESTOR_NID);
 
   # for each page prior to the one we're actually moving in, and for
   # all nodes in the page we're moving in before the affected area,
   # find the nodes (holes or real nodes) that end inside the affected
   # area (i.e. inside the data being moved or the hole that is going
   # to be overwritten) and fix up the size
+
+  # In this section of the code we're only dealing with "ancestor"
+  # nodes.  Note that nodes that are on new pages are by definition
+  # not ancestral and must already be in the MODIFIED_NID table.  Also
+  # nodes that are already in an UPDATES bat must already be in the
+  # MODIFIED_NID table.
   var i := 0@0;
   while (i <= pageno) {
     var pgid := map_pid_update.reverse().find(i);
@@ -1637,6 +1646,10 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
       # apply update
       if (isoldpg) {
         rid_size_update.myupdate(pg_update);
+        # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
+        var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid).join(pre_nid); # [RID,NID]
+        ancnids := ancnids.reverse().project(cont).reverse(); # [CONT,NID]
+        ancestor_nid.insert(ancnids);
       } else {
         rid_size.replace(pg_update, true);
       }
@@ -1654,6 +1667,10 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
       var pg_update := [nilplus](pghole, pghole.mirror().join(ishole));
       if (isoldpg) {
         rid_size_update.myupdate(pg_update);
+        # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
+        var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid).join(pre_nid); # [RID,NID]
+        ancnids := ancnids.reverse().project(cont).reverse(); # [CONT,NID]
+        ancestor_nid.insert(ancnids);
       } else {
         rid_size.replace(pg_update, true);
       }
@@ -1787,6 +1804,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     var update_nid := update_data.select(oid_nil, oid_nil).reverse();
     var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(cont);
     nid_rid_update.myupdate(update_nid);
+    modified_nid.insert(update_nid.project(cont).reverse());
   }
 }
 ADDHELP("movedata", "sjoerd", "Oct 4 2005",
@@ -1830,9 +1848,24 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
   ws.append(new(oid,bat).key(true)); # ATTR_QN_UPDATE
   ws.append(new(oid,bat).key(true)); # ATTR_PROP_UPDATE
   ws.append(new(oid,bat).key(true)); # ATTR_OWN_UPDATE
+  ws.append(new(oid,bat).key(true)); # PROP_VAL_UPDATE
+  ws.append(new(oid,bat).key(true)); # PROP_TEXT_UPDATE
+  ws.append(new(oid,bat).key(true)); # PROP_COM_UPDATE
+  ws.append(new(oid,bat).key(true)); # PROP_INS_UPDATE
+  ws.append(new(oid,bat).key(true)); # PROP_TGT_UPDATE
+  ws.append(new(oid,bat).key(true)); # QN_LOC_UPDATE
+  ws.append(new(oid,bat).key(true)); # QN_URI_UPDATE
+  ws.append(new(oid,bat).key(true)); # QN_PREFIX_UPDATE
+  ws.append(new(oid,bat).key(true)); # QN_URI_LOC_UPDATE
+  ws.append(new(oid,bat).key(true)); # QN_PREFIX_URI_LOC_UPDATE
   ws.append(new(oid,oid).set(true)); # UPDATED_TEXT
   ws.append(new(oid,bat).key(true)); # NID_QN_INS_UPDATE
   ws.append(new(oid,bat).key(true)); # NID_QN_DEL_UPDATE
+  ws.append(new(oid,oid).set(true)); # MODIFIED_NID
+  ws.append(new(oid,oid).set(true)); # ANCESTOR_NID
+  ws.append(new(oid,oid).set(true)); # MODIFIED_ATTR
+  ws.append(new(oid,oid).set(true)); # MODIFIED_PAGE
+  ws.append(new(oid,oid).set(true)); # NEW_PAGE
   affected_conts@batloop() {
     ws.fetch(MAP_PID_UPDATE).insert($t, ws.fetch(MAP_PID).find($t).copy().access(BAT_WRITE).key(true));
     ws.fetch(RID_SIZE_UPDATE).insert($t, new(oid,int).key(true));
@@ -1844,6 +1877,16 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     ws.fetch(ATTR_QN_UPDATE).insert($t, new(oid,oid).key(true));
     ws.fetch(ATTR_PROP_UPDATE).insert($t, new(oid,oid).key(true));
     ws.fetch(ATTR_OWN_UPDATE).insert($t, new(oid,oid).key(true));
+    ws.fetch(PROP_VAL_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(PROP_TEXT_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(PROP_COM_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(PROP_INS_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(PROP_TGT_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(QN_LOC_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(QN_URI_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(QN_PREFIX_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(QN_URI_LOC_UPDATE).insert($t, new(oid,str).key(true));
+    ws.fetch(QN_PREFIX_URI_LOC_UPDATE).insert($t, new(oid,str).key(true));
     ws.fetch(NID_QN_INS_UPDATE).insert($t, new(oid,oid).key(true));
     ws.fetch(NID_QN_DEL_UPDATE).insert($t, new(oid,oid).key(true));
   }
@@ -1965,26 +2008,74 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
 
   # get containers in the order in which we must commit them ([COLL_ID,CONT])
   var cont_order := affected_conts.reverse().mirror().leftfetchjoin(ws.fetch(CONT_COLL)).reverse().sort();
+
   # acquire locks by calling ws_precommit (must be done in the correct order)
   cont_order@batloop() {
-    # every change to nodes changes RID_PROP
     var cont := $t;
-    var rid_prop_update := ws.fetch(RID_PROP_UPDATE).find(cont);
-    var rid_prop_update_pages := [oid]([>>]([lng](rid_prop_update.mirror()), REMAP_PAGE_BITS));
-    var pages := rid_prop_update_pages.tunique(); # [pg,nil]
-    var rid_size_update := ws.fetch(RID_SIZE_UPDATE).find(cont);
-    var rid_size_update_page := [oid]([>>]([lng](rid_size_update.mirror()), REMAP_PAGE_BITS)); # [rid,pg]
-    var modified_rid := rid_size_update_page.join(pages).reverse(); # [any,rid]
-    var ancestor_rid := rid_size_update_page.tdiff(pages.reverse()).reverse(); # [any,rid]
-    var rid_nid := ws.fetch(_RID_NID).find(cont);
-    var modified_nid := modified_rid.leftjoin(rid_nid).tmark(0@0); # [void,nid]
-    var ancestor_nid := ancestor_rid.leftjoin(rid_nid).tmark(0@0); # [void,nid]
-    var modified_page := pages.hmark(0@0);
-    var attr_prop_update := ws.fetch(ATTR_PROP_UPDATE).find(cont);
-    var attr_qn_update := ws.fetch(ATTR_QN_UPDATE).find(cont);
-    var modified_attr := attr_prop_update.project(nil).kunion(attr_qn_update.project(nil)).hmark(0@0);
+    var modified_attr := ws.fetch(MODIFIED_ATTR).reverse().uselect(cont).hmark(0@0); # [i,ATID]
+    var modified_nid := ws.fetch(MODIFIED_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
+    var ancestor_nid := ws.fetch(ANCESTOR_NID).reverse().uselect(cont).hmark(0@0); # [i,NID]
+    var modified_page := ws.fetch(MODIFIED_PAGE).reverse().uselect(cont).hmark(0@0); # [i,PGID]
+
+    # add ancestor nids on modified pages to modified nids list and remove them from ancestor nids list
+    var ancestor_rid := ancestor_nid.join(ws.fetch(NID_RID).find(cont)); # [i,RID]
+    modified_nid := modified_nid.access(BAT_WRITE).reverse().key(true).reverse();
+    var new_ancestor_nid := new(void, oid);
+    modified_page@batloop() {
+      var start := oid(lng($t) << REMAP_PAGE_BITS);
+      var end := oid(lng(start) + REMAP_PAGE_MASK);
+      var rids := ancestor_rid.reverse().select(start, end).reverse();
+      modified_nid.append(rids.mirror().join(ancestor_nid));
+      new_ancestor_nid.append(tdiff(ancestor_nid, rids.mirror().join(ancestor_nid)));
+    }
+    ancestor_nid := new_ancestor_nid.tmark(0@0);
+
     ws_precommit(ws, cont, modified_page, ancestor_nid, modified_nid, modified_attr);
   }
+
+  # log all changes
+  lock_set(pf_wal);
+  log_trans_start(pf_logger);
+  cont_order@batloop() {
+    var cont := $t;
+    var rid_size := ws.fetch(_RID_SIZE).find(cont);
+    var rid_level := ws.fetch(_RID_LEVEL).find(cont);
+    var rid_kind := ws.fetch(_RID_KIND).find(cont);
+    var rid_prop := ws.fetch(_RID_PROP).find(cont);
+    var rid_nid := ws.fetch(_RID_NID).find(cont);
+    log_delta(pf_logger, ws.fetch(MAP_PID_UPDATE).find(cont), ws.fetch(_MAP_PID).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(RID_SIZE_UPDATE).find(cont).order(), rid_size.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_LEVEL_UPDATE).find(cont).order(), rid_level.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_KIND_UPDATE).find(cont).order(), rid_kind.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_PROP_UPDATE).find(cont).order(), rid_prop.bbpname());
+    log_delta(pf_logger, ws.fetch(RID_NID_UPDATE).find(cont).order(), rid_nid.bbpname());
+    log_delta(pf_logger, ws.fetch(NID_RID_UPDATE).find(cont).order(), ws.fetch(_NID_RID).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(ATTR_QN_UPDATE).find(cont).order(), ws.fetch(_ATTR_QN).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(ATTR_PROP_UPDATE).find(cont).order(), ws.fetch(_ATTR_PROP).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(ATTR_OWN_UPDATE).find(cont).order(), ws.fetch(_ATTR_OWN).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_VAL_UPDATE).find(cont).order(), ws.fetch(_PROP_VAL).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_TEXT_UPDATE).find(cont).order(), ws.fetch(_PROP_TEXT).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_COM_UPDATE).find(cont).order(), ws.fetch(_PROP_COM).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_INS_UPDATE).find(cont).order(), ws.fetch(_PROP_INS).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(PROP_TGT_UPDATE).find(cont).order(), ws.fetch(_PROP_TGT).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_LOC_UPDATE).find(cont).order(), ws.fetch(_QN_LOC).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_URI_UPDATE).find(cont).order(), ws.fetch(_QN_URI).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_PREFIX_UPDATE).find(cont).order(), ws.fetch(_QN_PREFIX).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_URI_LOC_UPDATE).find(cont).order(), ws.fetch(_QN_URI_LOC).find(cont).bbpname());
+    log_delta(pf_logger, ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont).order(), ws.fetch(_QN_PREFIX_URI_LOC).find(cont).bbpname());
+    var new_page := ws.fetch(NEW_PAGE).reverse().uselect(cont).sort();
+    new_page@batloop() {
+      var start := oid(lng($h) << REMAP_PAGE_BITS);
+      var end := oid(lng(start) + REMAP_PAGE_MASK);
+      log_delta(pf_logger, rid_size.reverse().select(start, end).reverse(), rid_size.bbpname());
+      log_delta(pf_logger, rid_level.reverse().select(start, end).reverse(), rid_level.bbpname());
+      log_delta(pf_logger, rid_kind.reverse().select(start, end).reverse(), rid_kind.bbpname());
+      log_delta(pf_logger, rid_prop.reverse().select(start, end).reverse(), rid_prop.bbpname());
+      log_delta(pf_logger, rid_nid.reverse().select(start, end).reverse(), rid_nid.bbpname());
+    }
+  }
+  log_trans_end(pf_logger);
+  lock_unset(pf_wal);
 
   cont_order@batloop() {
     var cont := $t;
@@ -2004,8 +2095,6 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     var cont := $t;
     ws_postcommit(ws, cont, ws.fetch(NID_QN_INS_UPDATE).find(cont).reverse(), ws.fetch(NID_QN_DEL_UPDATE).find(cont).reverse(), empty_bat);
   }
-
-  commit(); # XXX when logging and checkpointing is implemented, this commit() *must* go
 }
 
 # due to the order in which updates are executed, do_update_rename and
@@ -2022,6 +2111,10 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
     attrs := attrs.mirror();
     var aitem := attrs.leftjoin(update_node_item); # [i,ATID]
     var aconts := attrs.leftjoin(conts); # [i,CONT]
+    {
+      var modified_attr := ws.fetch(MODIFIED_ATTR);
+      modified_attr.insert(aconts.reverse().join(aitem));
+    }
     aconts.tunique()@batloop() {
       var cont := $h;
       var list := aconts.ord_uselect(cont).mirror(); # [i,i] (attributes in current container)
@@ -2055,11 +2148,20 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
       if ((esplit.fetch(int(TEXT)).count() > 0) or (esplit.fetch(int(COMMENT)).count() > 0) or (esplit.fetch(int(DOCUMENT)).count() > 0)) {
         ERROR("node must be of type ELEMENT, PI, or ATTRIBUTE\n");
       }
+      var erids := [swizzle](epres, pid_map);
+      var pre_nid := ws.fetch(PRE_NID).find(cont);
+      {
+        var modified_nid := ws.fetch(MODIFIED_NID);
+        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse());
+      }
+      {
+        var modified_page := ws.fetch(MODIFIED_PAGE);
+        modified_page.insert(reverse(project(tunique([oid]([>>]([lng](erids), REMAP_PAGE_BITS))), cont)));
+      }
       if (eelem.count() > 0) {
         var eqn := eelem.leftjoin(update_rename); # [i,newQName]
         var eqnid := find_qn_bulk(ws, cont, [+]("::", eqn), true); # [i,newQNID]
         {
-          var pre_nid := ws.fetch(PRE_NID).find(cont);
           var eelempre := eelem.leftjoin(epres); # [i,PRE]
           var eelemnid := eelempre.leftjoin(pre_nid); # [i,NID]
           var pre_prop := ws.fetch(PRE_PROP).find(cont);
@@ -2069,19 +2171,17 @@ PROC do_update_rename(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
           ws.fetch(NID_QN_INS_UPDATE).find(cont).insert(enewnidqn);
           ws.fetch(NID_QN_DEL_UPDATE).find(cont).insert(eoldnidqn);
         }
-        var erids := eelem.leftjoin(epres).[swizzle](pid_map); # [i,RID]
-        var upd := erids.reverse().join(eqnid); # [RID,QNID]
+        var upd := eelem.leftjoin(erids).reverse().join(eqnid); # [RID,QNID]
         rid_prop_update.insert(upd);
       }
       if (epi.count() > 0) {
         var prop_ins := ws.fetch(_PROP_INS).find(cont);
-        var erids := epi.leftjoin(epres).[swizzle](pid_map); # [i,RID]
         # rename comes before replace, so we don't have to deal with updated properties
         var pre_prop := ws.fetch(PRE_PROP).find(cont);
         var etgt := epi.leftjoin(update_rename); # [i,tgt]
         var eins := epi.leftjoin(epres).leftjoin(pre_prop).leftjoin(prop_ins); # [i,ins]
         var evalid := add_pi_bulk(ws, cont, etgt, eins); # [i,PROPID]
-        var upd := erids.reverse().join(evalid); # [RID,PROPID]
+        var upd := epi.leftjoin(erids).reverse().join(evalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
     }
@@ -2102,11 +2202,15 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
     attrs := attrs.mirror(); # [i,i]
     var aitem := attrs.leftjoin(update_node_item); # [i,ATID]
     var aconts := attrs.leftjoin(conts); # [i,CONT]
+    {
+      var modified_attr := ws.fetch(MODIFIED_ATTR);
+      modified_attr.insert(aconts.reverse().join(aitem));
+    }
     aconts.tunique()@batloop() {
       var cont := $h;
       var list := aconts.ord_uselect(cont).mirror(); # [i,i]
       var aval := list.leftjoin(update_replace); # [i,update_replace]
-      var avalid := add_string_bulk(ws, cont, _PROP_VAL, aval);
+      var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, aval);
       var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
       var attr_prop_updates := ws.fetch(ATTR_PROP_UPDATE).find(cont);
       attr_prop_updates.insert(list.leftjoin(aitem).reverse().leftjoin(avalid));
@@ -2136,30 +2240,36 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
       if ((esplit.fetch(int(ELEMENT)).count() > 0) or (esplit.fetch(int(DOCUMENT)).count() > 0)) {
         ERROR("node must be of type TEXT, COMMENT, PI, or ATTRIBUTE\n");
       }
+      {
+        var modified_nid := ws.fetch(MODIFIED_NID);
+        modified_nid.insert(epres.join(pre_nid).reverse().project(cont).reverse());
+      }
+      var erids := [swizzle](epres, pid_map); # [i,RID]
+      {
+        var modified_page := ws.fetch(MODIFIED_PAGE);
+        modified_page.insert(reverse(project(tunique([oid]([>>]([lng](erids), REMAP_PAGE_BITS))), cont)));
+      }
       if (etext.count() > 0) {
         var elval := etext.leftjoin(update_replace); # [i,update_replace]
-        var elvalid := add_string_bulk(ws, cont, _PROP_TEXT, elval); # [i,PROPID]
-        var erids := etext.leftjoin(epres).[swizzle](pid_map); # [i,RID]
-        var upd := erids.reverse().join(elvalid); # [RID,PROPID]
+        var elvalid := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, elval); # [i,PROPID]
+        var upd := etext.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
       if (ecomment.count() > 0) {
         var elval := ecomment.leftjoin(update_replace); # [i,update_replace]
-        var elvalid := add_string_bulk(ws, cont, _PROP_COM, elval); # [i,PROPID]
-        var erids := ecomment.leftjoin(epres).[swizzle](pid_map); # [i,RID]
-        var upd := erids.reverse().join(elvalid); # [RID,PROPID]
+        var elvalid := add_string_bulk(ws, cont, _PROP_COM, PROP_COM_UPDATE, elval); # [i,PROPID]
+        var upd := ecomment.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
         rid_prop_update.insert(upd);
       }
       if (epi.count() > 0) {
         var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
-        var erids := epi.leftjoin(epres).[swizzle](pid_map); # [i,RID]
         # replace comes after rename: deal with renamed processing instruction targets
-        var props := erids.leftjoin(rid_prop_update); # [i,old PROPID]
+        var props := epi.leftjoin(erids).leftjoin(rid_prop_update); # [i,old PROPID]
         if (props.count() > 0) {
           var eins := props.mirror().leftjoin(update_replace); # [i,ins]
           var etgt := props.leftjoin(prop_tgt); # [i,tgt]
           var elvalid := add_pi_bulk(ws, cont, etgt, eins); # [i,new PROPID]
-          var upd := erids.reverse().join(elvalid); # [RID,PROPID]
+          var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
           rid_prop_update.replace(upd);
           epi := epi.kdiff(props); # only do the remaining ones
         }
@@ -2168,7 +2278,7 @@ PROC do_update_replace(bat[void, bat] ws, bat[void,oid] update_node_item, bat[vo
           var eins := epi.leftjoin(update_replace); # [i,ins]
           var etgt := epi.leftjoin(epres).leftjoin(pre_prop).leftjoin(prop_tgt);
           var elvalid := add_pi_bulk(ws, cont, etgt, eins); # [i,PROPID]
-          var upd := erids.reverse().join(elvalid); # [RID,PROPID]
+          var upd := epi.leftjoin(erids).reverse().join(elvalid); # [RID,PROPID]
           rid_prop_update.insert(upd);
         }
       }
@@ -2219,7 +2329,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
 
       var aprops := mposjoin(taitems, taconts, ws.fetch(ATTR_PROP)); # [j,ATTR_PROPID]
       var avals := mposjoin(aprops, taconts, ws.fetch(PROP_VAL)); # [j,ATTR_VAL]
-      var avalid := add_string_bulk(ws, cont, _PROP_VAL, avals); # [j,DOC_VALID]
+      var avalid := add_string_bulk(ws, cont, _PROP_VAL, PROP_VAL_UPDATE, avals); # [j,DOC_VALID]
       avalid := mapping.leftjoin(avalid); # [i,DOC_VALID]
 
       var aownid := list.leftjoin(update_node_item).leftjoin(ws.fetch(PRE_NID).find(cont)); # [i,DOC_NID]
@@ -2244,27 +2354,31 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       # figure out an ID for the new attribute
       var attrid;
       {
+        var oid_list := list.project(oid_nil);
         coll_lock_set(ws, cont);
         var _attr_own := ws.fetch(_ATTR_OWN).find(cont);
         var _attr_prop := ws.fetch(_ATTR_PROP).find(cont);
         var _attr_qn := ws.fetch(_ATTR_QN).find(cont);
-        _attr_own.append(oid_nil, true);
-        _attr_prop.append(oid_nil, true);
-        _attr_qn.append(oid_nil, true);
-        attrid := oid(_attr_prop.count() - 1);
+        _attr_own.append(oid_list, true);
+        _attr_prop.append(oid_list, true);
+        _attr_qn.append(oid_list, true);
+        attrid := oid(_attr_prop.count() - oid_list.count());
         coll_lock_unset(ws, cont);
       }
 
       # record updates
-      attr_own_update.insert(list.leftjoin(aownid).tmark(attrid));
-      attr_qn_update.insert(list.leftjoin(aqnid).tmark(attrid));
-      attr_prop_update.insert(list.leftjoin(avalid).tmark(attrid));
+      attr_own_update.insert(aownid.tmark(attrid));
+      attr_qn_update.insert(aqnid.tmark(attrid));
+      attr_prop_update.insert(avalid.tmark(attrid));
     }
   }
 
   if (elems.count() > 0) {
     # insert new nodes
     elems := elems.mirror(); # [i,i]
+    var modified_nid := ws.fetch(MODIFIED_NID);
+    var ancestor_nid := ws.fetch(ANCESTOR_NID);
+    var new_page := ws.fetch(NEW_PAGE);
     # one at a time
     elems.leftjoin(update_insert_node_item)@batloop() {
 #       if (debug) printf("\nstart of loop for argument %%d\n", int($h));
@@ -2368,6 +2482,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           rid_kind_page := pre_kind.reverse().select(swizzle(pagebase, map_pid), swizzle(pagelast, map_pid)).reverse().seqbase(pagebase);
           var rid_kind_page_update := rid_kind_update.reverse().select(pagebase, pagelast).reverse();
           rid_kind_page := rid_kind_page.access(BAT_WRITE).key(true).myupdate(rid_kind_page_update);
+          # record that this page gets changed (new pages don't need to be recorded)
+          ws.fetch(MODIFIED_PAGE).insert(doccont, pageid);
         } else {
           rid_kind_page := rid_kind.reverse().select(pagebase, pagelast).reverse();
         }
@@ -2405,6 +2521,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             newpages.append(lastpage);
             i :+= 1;
           }
+          new_page.insert(newpages.reverse().project(doccont).reverse());
           var cpstart, cpsize, cpwhere;
           if ((holeatend = 0) and (datasize > int(REMAP_PAGE_SIZE / 2))) {
             # insert new pages before current
@@ -2464,6 +2581,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_prop_data := rid_prop_data.access(BAT_WRITE).key(true).myupdate(rid_prop_update_data);
               rid_nid_data := rid_nid_data.access(BAT_WRITE).key(true).myupdate(rid_nid_update_data);
               rid_size_data := rid_size_data.access(BAT_WRITE).key(true).myupdate(rid_size_update_data);
+              # all these moved nodes are modified
+              modified_nid.insert(rid_nid_data.select(oid_nil, oid_nil).reverse().project(doccont).reverse());
             } else {
               var cpend := oid((lng(cpstart) + cpsize) - 1);
               rid_size_data := rid_size.reverse().select(cpstart, cpend).reverse();
@@ -2471,12 +2590,13 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_kind_data := rid_kind.reverse().select(cpstart, cpend).reverse();
               rid_prop_data := rid_prop.reverse().select(cpstart, cpend).reverse();
               rid_nid_data := rid_nid.reverse().select(cpstart, cpend).reverse();
+              # nodes on a new page have already been added to modified_nid table
             }
             if (holeatend > 0) {
-              # adjust sizes of moved data that point beyond the end of it
-              # there cannot be any sizes that end inside the hole, since
+              # Adjust sizes of moved data that point beyond the end of it.
+              # There cannot be any sizes that end inside the hole, since
               # they necessarily have to start in the same hole, so they're
-              # going to be overwritten
+              # going to be overwritten.
               var rid_end_data := [+]([int](rid_size_data.mirror()), [niland](rid_size_data, INT_MAX));
               var past_hole := rid_end_data.uselect(oid(lng(cpstart) + cpsize + holeatend), oid_nil, true, false);
               rid_size_data.replace([nilplus](past_hole.mirror().join(rid_size_data), -(holeatend)));
@@ -2553,8 +2673,15 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               # effectively insert the big hole
               if (isoldpg) {
                 rid_size_update.myupdate(pg_update);
+                # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
+                var ancnids := [oid]([+]([int](pg_update.kdiff(rid_nid_update).mirror()), rid2pre)).join(pre_nid); # [RID,NID]
+                # alternative:
+                # var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid_update).join(pre_nid); # [RID,NID]
+                ancnids := ancnids.reverse().project(doccont).reverse(); # [CONT,NID]
+                ancestor_nid.insert(ancnids);
               } else {
                 # we can write directly to the page
+                # note, since these nodes are on a new page, they must be in modified_nid
                 rid_size.replace(pg_update, true);
               }
             }
@@ -2565,6 +2692,12 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               # effectively insert the big hole
               if (isoldpg) {
                 rid_size_update.myupdate(pg_update);
+                # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
+                var ancnids := [oid]([+]([int](pg_update.kdiff(rid_nid_update).mirror()), rid2pre)).join(pre_nid); # [RID,NID]
+                # alternative:
+                # var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid_update).join(pre_nid); # [RID,NID]
+                ancnids := ancnids.reverse().project(doccont).reverse(); # [CONT,NID]
+                ancestor_nid.insert(ancnids);
               } else {
                 # we can write directly to the page
                 rid_size.replace(pg_update, true);
@@ -2761,6 +2894,12 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
                 var szpg_update := [+](szpgdata.mirror().join(szpg), insertsize);
                 if (isoldpg) {
                   rid_size_update.myupdate(szpg_update);
+                  # select RIDs from szpg_update that are not in rid_nid_update, convert to PRE and get NIDs
+                  var ancnids := [oid]([+]([int](szpg_update.kdiff(rid_nid_update).mirror()), rid2pre)).join(pre_nid); # [RID,NID]
+                  # alternative:
+                  # var ancnids := [swizzle](szpg_update.kdiff(rid_nid_update).mirror(), map_pid_update).join(pre_nid); # [RID,NID]
+                  ancnids := ancnids.reverse().project(doccont).reverse(); # [CONT,NID]
+                  ancestor_nid.insert(ancnids);
                 } else {
                   # we can write directly to the page
                   rid_size.replace(szpg_update, true);
@@ -2863,14 +3002,14 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               lastdata := max(lastdata, texts.reverse().max());
               texts := texts.mirror().tmark(0@0);
               var textval := mposjoin(texts.leftjoin(insert_pre_prop), texts.leftjoin(insert_pre_cont), ws.fetch(PROP_TEXT));
-              var textids := add_string_bulk(ws, doccont, _PROP_TEXT, textval);
+              var textids := add_string_bulk(ws, doccont, _PROP_TEXT, PROP_TEXT_UPDATE, textval);
               insprop.replace(texts.reverse().join(textids));
             }
             if (comments.count() > 0) {
               lastdata := max(lastdata, comments.reverse().max());
               comments := comments.mirror().tmark(0@0);
               var commentval := mposjoin(comments.leftjoin(insert_pre_prop), comments.leftjoin(insert_pre_cont), ws.fetch(PROP_COM));
-              var commentids := add_string_bulk(ws, doccont, _PROP_COM, commentval);
+              var commentids := add_string_bulk(ws, doccont, _PROP_COM, PROP_COM_UPDATE, commentval);
               insprop.replace(comments.reverse().join(commentids));
             }
             if (pis.count() > 0) {
@@ -2902,7 +3041,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             } else {
               var a := attrattrs.tmark(0@0);
               var propval := mposjoin(a.leftjoin(insert_attr_prop), a.leftjoin(insert_attr_cont), ws.fetch(PROP_VAL));
-              attrnprops := a.reverse().leftjoin(add_string_bulk(ws, doccont, _PROP_VAL, propval));
+              attrnprops := a.reverse().leftjoin(add_string_bulk(ws, doccont, _PROP_VAL, PROP_VAL_UPDATE, propval));
             }
             if (attrattrs.count() > 0) {
               # first claim enough entries in the ATTR table with the lock set
@@ -2980,11 +3119,15 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
   var elems := types.ord_uselect(ELEM);
 
   if (attrs.count() > 0) {
-    attrs := attrs.mirror();
-    var aconts := attrs.leftjoin(conts);
+    attrs := attrs.mirror(); # [i,i]
+    var aconts := attrs.leftjoin(conts); # [i,CONT]
+    {
+      var modified_attr := ws.fetch(MODIFIED_ATTR);
+      modified_attr.insert(aconts.reverse().join(update_node_item));
+    }
     aconts.tunique()@batloop() {
       var cont := $h;
-      var list := aconts.ord_uselect(cont).mirror();
+      var list := aconts.ord_uselect(cont).mirror(); # [i,i]
       var attr_prop_updates := ws.fetch(ATTR_PROP_UPDATE).find(cont);
       var attr_own_updates := ws.fetch(ATTR_OWN_UPDATE).find(cont);
       var attr_qn_updates := ws.fetch(ATTR_QN_UPDATE).find(cont);
@@ -3000,6 +3143,8 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
     # elements and renumber them so that the tables have dense heads
     elems := elems.mirror();
     update_node_item := elems.leftjoin(update_node_item);
+    var modified_nid := ws.fetch(MODIFIED_NID);
+    var modified_page := ws.fetch(MODIFIED_PAGE);
 
     # the "update_node_item" parameter contains PRE values
     # instead of NID values; the PRE values refer to the unmodified
@@ -3164,6 +3309,10 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
               }
             }
 
+            if (isoldpage) {
+              modified_page.insert(cont, oid(lng(rid) >> REMAP_PAGE_BITS));
+            }
+
             var update_data := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
             {
               var nid_qn_del;
@@ -3231,6 +3380,7 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
             }
             var nid_rid_updates := rid_nid_page.select(oid_nil, oid_nil).reverse().project(oid_nil);
             nid_rid_update := myupdate(nid_rid_update, nid_rid_updates);
+            modified_nid.insert(nid_rid_update.project(cont).reverse());
 
             size :-= pgsize + 1;
             pre := oid((lng(pre) + pgsize) + 1);
@@ -3252,17 +3402,21 @@ PROC do_update_delete(bat[void, bat] ws, bat[void,oid] update_node_item, bat[voi
   }
 }
 
-PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, bat[oid,str] valbat) : bat[oid,oid]
+PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, bat[oid,str] valbat) : bat[oid,oid]
 {
   var table := ws.fetch(tableid).find(cont);
   var validbat := valbat.outerjoin(table.reverse());
   var newvallist := validbat.uselect(oid_nil);
   if (newvallist.count() > 0) {
     # insert missing strings
+    var newvals := newvallist.mirror().join(valbat).tunique(); # [VALUE,nil] unique values
     coll_lock_set(ws, cont);
     # we depend on the key-ness of the value column to avoid races
-    table.append(newvallist.mirror().join(valbat).tunique().reverse(), true);
+    table.append(newvals.reverse(), true);
     coll_lock_unset(ws, cont);
+    # log new values
+    var logvals := table.join(newvals.mirror());
+    ws.fetch(updtableid).find(cont).insert(logvals);
     # try finding the IDs again (they should now all be found)
     validbat := valbat.outerjoin(table.reverse());
   }
@@ -3289,10 +3443,14 @@ PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] i
     var instgtunique := newidlist.mirror().join(instgtbat).tunique().reverse().seqbase(0@0);
     # then extract instruction and target
     var instgtuniquesplit := instgtunique.splitbat(":");
-    # and finally add them to respective BATs
+    # add them to respective BATs
     prop_ins.append(instgtuniquesplit.fetch(0), true);
     prop_tgt.append(instgtuniquesplit.fetch(1), true);
     coll_lock_unset(ws, cont);
+    # we also need to log the new values
+    ws.fetch(PROP_INS_UPDATE).find(cont).insert(prop_ins.join(instgtuniquesplit.fetch(0).reverse().mirror()));
+    ws.fetch(PROP_TGT_UPDATE).find(cont).insert(prop_tgt.join(instgtuniquesplit.fetch(1).reverse().mirror()));
+    # recalculate ids
     prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
     idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
   }
@@ -3307,6 +3465,10 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
   if (add) {
     var miss := qn_map.uselect(oid_nil);
     if (miss.count() > 0) {
+      var qn_loc := ws.fetch(_QN_LOC).find(cont);
+      var qn_uri := ws.fetch(_QN_URI).find(cont);
+      var qn_prefix := ws.fetch(_QN_PREFIX).find(cont);
+      var qn_uri_loc := ws.fetch(_QN_URI_LOC).find(cont);
       coll_lock_set(ws, cont);
       # get the unique missing strings and append them
       var _pref_uri_loc := reverse(miss).join(pref_uri_loc).tunique().mark(0@0).reverse();
@@ -3314,12 +3476,20 @@ PROC find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] pref_uri_loc, bit add
       var _pref  := _split.fetch(0);
       var _uri   := _split.fetch(1);
       var _loc   := _split.fetch(2);
-      ws.fetch(_QN_LOC).find(cont).append(_loc, true);
-      ws.fetch(_QN_URI).find(cont).append(_uri, true);
-      ws.fetch(_QN_PREFIX).find(cont).append(_pref, true);
-      ws.fetch(_QN_URI_LOC).find(cont).append([+]([+](_uri, ":"), _loc), true);
+      qn_loc.append(_loc, true);
+      qn_uri.append(_uri, true);
+      qn_prefix.append(_pref, true);
+      var _uri_loc := [+]([+](_uri, ":"), _loc);
+      qn_uri_loc.append(_uri_loc, true);
       qn_prefix_uri_loc.append(_pref_uri_loc, true); 
       coll_lock_unset(ws, cont);
+
+      # log new values
+      ws.fetch(QN_LOC_UPDATE).find(cont).insert(qn_loc.join(_loc.reverse().mirror()));
+      ws.fetch(QN_URI_UPDATE).find(cont).insert(qn_uri.join(_uri.reverse().mirror()));
+      ws.fetch(QN_PREFIX_UPDATE).find(cont).insert(qn_prefix.join(_pref.reverse().mirror()));
+      ws.fetch(QN_URI_LOC_UPDATE).find(cont).insert(qn_uri_loc.join(_uri_loc.reverse().mirror()));
+      ws.fetch(QN_PREFIX_URI_LOC_UPDATE).find(cont).insert(qn_prefix_uri_loc.join(_pref_uri_loc.reverse().mirror()));
 
       # recalculate map now
       qn_map := pref_uri_loc.outerjoin(qn_prefix_uri_loc.reverse());
@@ -3422,7 +3592,7 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
       var gp := t1.reverse().leftjoin(rp); # [GRP,PROP]
       var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
       var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
-      var i := add_string_bulk(ws, cont, _PROP_TEXT, v); # [GRP,SID] OID into _PROP_TEXT table
+      var i := add_string_bulk(ws, cont, _PROP_TEXT, PROP_TEXT_UPDATE, v); # [GRP,SID] OID into _PROP_TEXT table
       var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
       var p1 := [swizzle](p.reverse(), pid_map_update).reverse(); # [RID,GRP]
       var h1 := kdiff(t1, p1).project(oid_nil); # [RID,nil] the other RIDs
