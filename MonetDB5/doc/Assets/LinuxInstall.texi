@@ -142,21 +142,19 @@ you need to call
 Some other useful configure options are:
 
 @example
---enable-debug 		 enable full debugging default=off
---enable-optimize 		 enable extra optimization default=off
---enable-warning 		 enable extended compiler warnings default=off
---enable-profile 		 enable profiling default=off
---enable-instrument 	 enable instrument default=off
---with-gcc=[compiler] 	 which C compiler to use
-                          ("yes" = gcc/g++, 
-                           "no"  = system-specific C/C++ compiler,
-                           &lt;other-compiler-name&gt;)
+--enable-debug 		enable full debugging default=off
+--enable-optimize 	enable extra optimization default=off
+--enable-warning 	enable extended compiler warnings default=off
+--enable-profile 	enable profiling default=off
+--enable-instrument 	enable instrument default=off
 --with-mx=<Mx>          which Mx binary to use (default: whichever
                         Mx is found in your PATH)
 --with-mel=<mel>        which mel binary to use (default: whichever
                         mel is found in your PATH)
---with-gxx=[compiler] 	 which C++ compiler to use
---enable-bits=[#bits] 	 specify number of bits (32 or 64)
+CC=<compiler>           which C compiler to use default=gcc
+--enable-bits=<#bits>   specify number of bits (32 or 64)
+                        default is compiler default
+--enable-oid32          use 32-bit OIDs on 64-bit systems default=off
 @end example
 Use the @code{--help} option of configure to find out more about configure
 options.
