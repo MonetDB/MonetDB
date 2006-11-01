@@ -508,7 +508,7 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
-			char *c;
+			char *c, *w;
 
 			ps = instruction2str(s->def, getSignature(s), 0);
 			c = strchr(ps, '(');
@@ -517,8 +517,8 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 			tail= strstr(c,"address");
 			if( tail)
 				*tail = 0;
-			if (tail && strchr(tail, ';'))
-				*strchr(tail, ';') = 0;
+			if (tail && (w=strchr(tail, ';')) )
+				*w = 0;
 			BUNins(b, buf, c, FALSE);
 			GDKfree(ps);
 		}
@@ -547,7 +547,7 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
-			char *c;
+			char *c,*w;
 
 			ps = instruction2str(s->def, getSignature(s), 0);
 			c = strchr(ps, '(');
@@ -558,8 +558,8 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 				*tail = 0;
 				for( tail=tail+7; isspace((int) *tail); tail++)  ;
 			}
-			if (tail && strchr(tail, ';'))
-				*strchr(tail, ';') = 0;
+			if (tail && (w=strchr(tail, ';')) )
+				*w = 0;
 			BUNins(b, buf, (tail? tail: "nil"), FALSE);
 			GDKfree(ps);
 		}

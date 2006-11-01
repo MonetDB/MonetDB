@@ -191,20 +191,16 @@ url_getAnchor(str *retval,	/* put string: pointer to char here. */
 	      url Str1		/* string: pointer to char. */
 	)
 {
-	char *s, *d;
+	str s, d;
 
 	if (Str1 == 0)
 		return GDK_FAIL;
 	s = strchr(Str1, '#');
-	if (s == 0) {
-		d = GDKmalloc(strlen(str_nil) + 1);
-		if (d)
-			strcpy(d, str_nil);
-	} else {
-		d = GDKmalloc(strlen(s) + 1);
-		if (d)
-			strcpy(d, s);
-	}
+	if (s == 0) 
+		s= (str) str_nil;
+	d = (str) GDKmalloc(strlen(s) + 1);
+	if (d)
+		strcpy(d, s);
 	*retval = d;
 	return GDK_SUCCEED;
 }
@@ -215,7 +211,7 @@ url_getAnchor(str *retval,	/* put string: pointer to char here. */
 int
 url_getBasename(str *retval, url t)
 {
-	char *d = 0, *s;
+	str d = 0, s;
 
 	if (t == 0)
 		return GDK_FAIL;
@@ -223,8 +219,8 @@ url_getBasename(str *retval, url t)
 	if (s)
 		s++;
 	else
-		s = (str)str_nil;
-	d = GDKmalloc(strlen(s) + 1);
+		s = (str) str_nil;
+	d = (str)  GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	s = strchr(d, '.');
@@ -256,29 +252,23 @@ url_getContent(str *retval,	/* put string: pointer to char here. */
 int
 url_getContext(str *retval, url Str1)
 {
-	char *s, *d;
+	str s, d;
 
 	if (Str1 == 0)
 		return GDK_FAIL;
 
 	s = strstr(Str1, "://");
 	if (s)
-		s +=3;
+		s += 3;
 	else
 		s = Str1;
 
 	s = strchr(s, '/');
-	if (s == 0) {
-		d = GDKmalloc(strlen(str_nil) + 1);
-		if (d)
-			strcpy(d, str_nil);
-	} else {
-		int i = strlen(Str1) - (s - Str1) + 1;
-
-		d = GDKmalloc(i);
-		if (d)
-			strcpy(d, s);
-	}
+	if (s == 0) 
+		s= (str) str_nil;
+	d = GDKmalloc(strlen(Str1) - (s - Str1) + 1);
+	if (d)
+		strcpy(d, s);
 	*retval = d;
 	return GDK_SUCCEED;
 }
@@ -374,7 +364,7 @@ url_getDomain(str *retval,	/* put string: pointer to char here. */
 	if (d)
 		s = d + 1;
 getDomain_done:
-	d = GDKmalloc(strlen(s) + 1);
+	d = (char*) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -386,7 +376,7 @@ getDomain_done:
 int
 url_getExtension(str *retval, url t)
 {
-	char *d = 0, *s;
+	str d = 0, s;
 
 	if (t == 0)
 		return GDK_FAIL;
@@ -397,10 +387,10 @@ url_getExtension(str *retval, url t)
 		if (s)
 			s++;
 		else
-			s = (str)str_nil;
+			s = (str) str_nil;
 	} else
-		s = (str)str_nil;
-	d = GDKmalloc(strlen(s) + 1);
+		s = (str) str_nil;
+	d = (str) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -412,7 +402,7 @@ url_getExtension(str *retval, url t)
 int
 url_getFile(str *retval, url t)
 {
-	char *d = 0, *s;
+	str d = 0, s;
 
 	if (t == 0)
 		return GDK_FAIL;
@@ -420,8 +410,8 @@ url_getFile(str *retval, url t)
 	if (s)
 		s++;
 	else
-		s = (str)str_nil;
-	d = GDKmalloc(strlen(s) + 1);
+		s = (str) str_nil;
+	d = (str) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -463,7 +453,7 @@ url_getHost(str *retval,	/* is GDKfree needed ? */
 	}
 	*b = 0;
 getHost_done:
-	d = GDKmalloc(strlen(s) + 1);
+	d = (char*) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -508,7 +498,7 @@ url_getPort(str *retval, url t)
 	else
 		s = (str)str_nil;
 getPort_done:
-	d = GDKmalloc(strlen(s) + 1);
+	d = (char*) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -536,7 +526,7 @@ url_getProtocol(str *retval,	/* put string: pointer to char here. */
 		}
 	}
 	*b = 0;
-	d = GDKmalloc(strlen(buf) + 1);
+	d = (char*) GDKmalloc(strlen(buf) + 1);
 	if (d)
 		strcpy(d, buf);
 	*retval = d;
@@ -551,16 +541,13 @@ url_getQuery(str *retval, url Str1)
 	if (Str1 == 0)
 		return GDK_FAIL;
 	s = strchr(Str1, '?');
-	if (s == 0) {
-		d = GDKmalloc(strlen(str_nil) + 1);
-		if (d)
-			strcpy(d, str_nil);
-	} else {
+	if (s == 0) 
+		s= (str) str_nil;
+	 else 
 		s++;
-		d = GDKmalloc(strlen(s) + 1);
-		if (d)
-			strcpy(d, s);
-	}
+	d = (char*) GDKmalloc(strlen(s) + 1);
+	if (d)
+		strcpy(d, s);
 	*retval = d;
 	return GDK_SUCCEED;
 }
@@ -635,7 +622,7 @@ url_getRobotURL(str *retval,	/* put string: pointer to char here. */
 	}
 	strcpy(b, "/robots.txt");
 getRobot_done:
-	d = GDKmalloc(strlen(s) + 1);
+	d = (char*) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -687,7 +674,7 @@ url_getUser(str *retval, url t)
 		*b = 0;
 	}
 getUser_done:
-	d = GDKmalloc(strlen(s) + 1);
+	d = (char*) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -744,7 +731,7 @@ escape_str(str *retval, str s)
 	if (!s)
 		return GDK_FAIL;
 
-	if (!( res = GDKmalloc( strlen(s) * 3 ) ))
+	if (!( res = (str) GDKmalloc( strlen(s) * 3 ) ))
         return GDK_FAIL;
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
         if (needEscape(s[x])){
@@ -776,7 +763,7 @@ unescape_str(str *retval, str s)
     if (!s)
         return GDK_FAIL;
 
-    res = GDKmalloc(strlen(s));
+    res = (str) GDKmalloc(strlen(s));
     if (!res)
         return GDK_FAIL;
 
@@ -804,13 +791,13 @@ url_new3(str *retval,		/* put string: pointer to char here. */
 	)
 {
 	char buf[1024];
-	char *d, *s = buf;
+	str d, s = buf;
 
 	if (strlen(File) + strlen(Server) + strlen(Protocol) > 1000)
-		s = (str)str_nil;
+		s = (str) str_nil;
 	else
 		sprintf(buf, "%s://%s/%s", Protocol, Server, File);
-	d = GDKmalloc(strlen(s) + 1);
+	d = (str) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -828,13 +815,13 @@ url_new4(str *retval,		/* put string: pointer to char here. */
 	)
 {
 	char buf[1024];
-	char *d, *s = buf;
+	str d, s = buf;
 
 	if (strlen(File) + strlen(Server) + strlen(Protocol) > 1000)
-		s = (str)str_nil;
+		s = (str) str_nil;
 	else
 		sprintf(buf, "%s://%s:%d/%s", Protocol, Server, *Port, File);
-	d = GDKmalloc(strlen(s) + 1);
+	d = (str) GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
 	*retval = d;
@@ -939,7 +926,7 @@ URLtoString(str *s, int *len, str src)
 
 	if (l >= *len) {
 		GDKfree(*s);
-		*s = GDKmalloc(l);
+		*s = (str) GDKmalloc(l);
 	}
 	snprintf(*s, l, "\"%s\"", src);
 	*len = l - 1;

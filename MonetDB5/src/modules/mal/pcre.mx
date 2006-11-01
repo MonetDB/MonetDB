@@ -984,7 +984,7 @@ PCRElike3(bit *ret, str *s, str *pat, str *esc)
 	str r = PCREsql2pcre(&ppat, pat, esc);
 
 	if (!r) {
-		if (strcmp(ppat,str_nil) == 0) {
+		if (strcmp(ppat, (char*)str_nil) == 0) {
 			*ret = FALSE;
 			if (strcmp(*s, *pat) == 0)
 				*ret = TRUE;
@@ -1012,7 +1012,7 @@ PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
 	str r = PCREsql2pcre(&ppat, pat, esc);
 
 	if (!r) {
-		if (strcmp(ppat,str_nil) == 0) {
+		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BAT *bp = BATdescriptor(*b);
 			BAT *res = BATuselect(bp, *pat, *pat);
 			

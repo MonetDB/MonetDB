@@ -772,7 +772,7 @@ ssl_error(const char *name, int err, int ret)
 	default:
 		errstr = "Invalid error code";
 	}
-	s = GDKmalloc(strlen(errstr) + strlen(name) + 4);
+	s = (char*) GDKmalloc(strlen(errstr) + strlen(name) + 4);
 	sprintf(s, "%s: %s\n", name, errstr);	/* we allocated enough, so it fits */
 	return s;
 }
@@ -1762,7 +1762,7 @@ void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 	case TYPE_str:
 		if(fld==0 || strcmp(fld,"nil")==0){
 			v->val.sval= GDKstrdup(str_nil);
-			v->len= strlen(str_nil);
+			v->len= strlen(v->val.sval);
 		} else {
 			v->val.sval= GDKstrdup(fld);
 			v->len= strlen(fld);
