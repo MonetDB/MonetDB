@@ -834,19 +834,21 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			break;
 		case 'T':	/* debug type resolver for a function call */
 			if (strncmp("Trace", b, 5) == 0) {
+				char *w;
 				skipWord(cntxt, b);
 				skipBlanc(cntxt, b);
-				if (strchr(b, '\n'))
-					*strchr(b, '\n') = 0;
+				if ( (w =strchr(b, '\n')) )
+					*w = 0;
 				traceFcnName = GDKstrdup(b);
 			}
 			break;
 		case 't':	/* trace a variable toggle */
 			if (strncmp("trace", b, 5) == 0) {
+				char *w;
 				skipWord(cntxt, b);
 				skipBlanc(cntxt, b);
-				if (strchr(b, '\n'))
-					*strchr(b, '\n') = 0;
+				if ( (w= strchr(b, '\n')) )
+					*w = 0;
 				mdbSetBreakRequest(cntxt, mb, b, 't');
 			} else
 			if (strncmp("timer", b, 5) == 0) {

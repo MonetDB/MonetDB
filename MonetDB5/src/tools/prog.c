@@ -116,11 +116,11 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "dbfarm") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
 			}

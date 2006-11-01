@@ -366,26 +366,26 @@ faster system start.
 
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "delay") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "delay") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "delay", optarg);
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "dbfarm") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "dbinit") == 0) {
 				if (dbinit)
 					fprintf(stderr, "#warning: ignoring multiple --dbinit argument\n");
 				else
 					dbinit = optarg;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "daemon") == 0) {
+			if (strcmp((char*)long_options[option_index].name, "daemon") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_daemon", optarg);
 				break;
 			}
