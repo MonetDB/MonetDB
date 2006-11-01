@@ -439,7 +439,7 @@ tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, 
 /* The low level routines are primarilly used by the SQL front-end.*/
 tablet_export int TABLETcreate_bats(Tablet * as);
 tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export int TABLETload_file(Tablet * as, bstream *b, stream *out);
+tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
@@ -486,18 +486,6 @@ tablet_export str TABnextPage(int *ret);
 tablet_export str TABprevPage(int *ret);
 tablet_export str TABgetPage(int *ret, int *pnr);
 tablet_export str TABgetPageCnt(int *ret);
-tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
-tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
-tablet_export void TABLETdestroy_format(Tablet * as);
-tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export int TABLETcreate_bats(Tablet * as);
-tablet_export BAT * TABLETcollect_bats(Tablet * as);
-tablet_export int TABLETload_file(Tablet * as, bstream *b, stream *out);
-tablet_export BAT * TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
-tablet_export BAT * TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr);
-tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
-tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
-tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
 tablet_export int init_tablet(int *debug);
 tablet_export int tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *nr);
 tablet_export int tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void
@@ -897,13 +885,17 @@ bun_tail(BAT *b, size_t nr)
 static BAT *
 void_bat_create(int adt, size_t nr)
 {
-	BAT *b = BATnew(TYPE_void, adt, nr);
+	BAT *b = BATnew(TYPE_void, adt, BATTINY);
 
 	/* check for correct structures */
 	if (b == NULL)
 		return b;
 	if (BATmirror(b))
 		BATseqbase(b, 0);
+	if (nr > REMAP_PAGE_MAXSIZE)
+        	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+	if (nr > BATTINY)
+		b = BATextend(b, nr);
 	return b;
 }
 
@@ -911,7 +903,7 @@ static char *
 sep_dup(char *sep)
 {
 	size_t len = strlen(sep);
-	char *res = GDKmalloc(len + 1), *result = res;
+	char *res = GDKmalloc(len*2 + 1), *result = res;
 	char *end = sep + len;
 
 	while (sep < end) {
@@ -939,16 +931,17 @@ sep_dup(char *sep)
 ptr *
 TABLETstrFrStr(Column *c, char *s, char *e)
 {
-	int len = e-s+1;
+	int len = (int) (e - s + 1); /* 64bit: should check for overflow */
 
 	if (c->len < len){
 		c->len = len;
 		c->data = GDKrealloc(c->data,len); 
 	}
 
+	assert(s <= e);
 	if (s == e) {
-		*(char *) c->data = 0;
-	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) == 0) {
+		*(char*)c->data = 0;
+	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) < 0) {
 		return NULL;
 	}
 	return c->data;
@@ -1059,6 +1052,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].extra = fmt+p;
 		fmt[p].data = NULL;
 		fmt[p].len = 0;
+		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
 }
@@ -1097,8 +1091,7 @@ TABLETassign_BATs(Tablet * as, BAT *bats)
 	return res;
 }
 
-static
-oid
+static oid
 check_BATs(Tablet * as)
 {
 	Column *fmt = as->format;
@@ -1116,7 +1109,7 @@ check_BATs(Tablet * as)
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b;
-		int offset;
+		size_t offset;
 
 		b = fmt[i].c;
 		if (b == NULL)
@@ -1219,6 +1212,7 @@ rfind_quote(char *s, char quote)
 static INLINE int
 insert_val(Column * fmt, char *s, char *e, char quote)
 {
+	int res = 0;
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
@@ -1227,26 +1221,52 @@ insert_val(Column * fmt, char *s, char *e, char quote)
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			GDKwarning("quote '%c' expected but not found in \"%s\"\n", quote, s);
-			return 1;
+			GDKerror("quote '%c' expected but not found in \"%s\"\n", quote, s);
+			return -1;
 		}
 		s++;
 		e = rfind_quote(e, quote);
+		*e = 0;
+	} else if (e > s) {
+		s = lstrip(s);
+		e = rstrip(e);
 	}
-	*e = 0;
-
+	if (e < s) {
+		e = s;
+	}
 	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	*end = bak;
 
 	if (!adt) {
 		GDKerror("value %s not inserted\n", s);
-		return 1;
+		return -1;
 	}
 
-	BUNappend(fmt->c, adt, FALSE);
+	res = (BUNappend(fmt->c, adt, FALSE) == NULL);
 	if (fmt->data != adt)
 		GDKfree(adt);
-	return 0;
+	return res;
+}
+
+static INLINE char *
+skip_string(char *s, char quote)
+{
+	int esc = 0;
+
+	while (*s) {
+		if (*s == '\\' && !esc)
+			esc = 1;
+		else if (*s == quote && !esc)
+			break;
+		else
+			esc = 0;
+		s++;
+	}
+	if (*s)
+		s++;
+	else
+		return NULL;
+	return s;
 }
 
 static INLINE int
@@ -1257,7 +1277,7 @@ insert_line(Tablet * as, char *line)
 	char sep1, *s, *e = 0;
 	size_t i;
 
-	for (i = 0; i < as->nr_attrs && *line; i++) {
+	for (i = 0; i < as->nr_attrs && res == 0; i++) {
 		s = line; e= 0;
 		sep1= fmt[i].sep[0];
 		/* skip until separator */
@@ -1286,6 +1306,7 @@ insert_line(Tablet * as, char *line)
 	}
 	return res;
 }
+
 static int
 TABLET_error(stream *s)
 {
@@ -1402,7 +1423,7 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_att
 }
 
 static INLINE int
-read_more(bstream *in, stream *out, int n)
+read_more(bstream *in, stream *out, size_t n)
 {
 	if (out) {
 		do {
@@ -1426,7 +1447,7 @@ read_more(bstream *in, stream *out, int n)
 }
 
 
-int
+ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	int res = 0, done = 0;
@@ -1452,7 +1473,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		*end = '\0';
 		done = 0;
 		while (s < end) {
-			char *e= strstr(s,sep);
+			char *e = strstr(s, sep);
 			/* quick search 
 			while( (e= strchr(s,sep[seplen-1])) ) {
 				if( seplen== 1) break;
@@ -1465,7 +1486,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			if (e) {
 				*e = '\0';
 				if (insert_line(as, s) < 0) {
-					GDKerror("value %s not inserted\n", s);
 					s = e + seplen;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -1475,7 +1495,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				done = 1;
 			} else if (b->eof && s + as->nr_attrs < end) {
 				if (insert_line(as, s) < 0) {
-					GDKerror("value %s not inserted\n", s);
 					s = end;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -1486,7 +1505,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				if (!done) {	/* nothing found in current buf
 						 * ie. need to enlarge
 						 */
-					int size = b->size;
+					size_t size = b->size;
 
 					if (b->pos == 0 || (b->len - b->pos > b->size >> 1))
 						size <<= 4;
@@ -1513,11 +1532,10 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	as->nr = i;
 	if (res < 0)
 		return res;
-	return as->nr;
+	return (ssize_t) as->nr;
 }
 
-static
-int
+static int
 dump_file(Tablet * as, stream *fd)
 {
 	size_t i = 0;
@@ -1675,7 +1693,7 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 	 * preserve value such that for instance SQL's reply_size still
 	 * works
 	 */
-	if (as->nr <= 0 || as->nr > maxnr)
+	if (as->nr == ~(size_t)0 || as->nr > maxnr)
 		as->nr = maxnr;
 
 	if ((base = check_BATs(as)) != oid_nil) {

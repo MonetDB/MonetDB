@@ -2056,7 +2056,7 @@ radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN o
 {
 	BUN lo_limit, hi_limit, cur;
 	size_t ntuples = BUNindex(b,end)-BUNindex(b,start);
-	size_t nchunks = 1<<nbits;
+	size_t nchunks = (size_t) 1 << nbits;
 	size_t chunksize = ntuples/nchunks;
 	size_t i;
 	size_t mask = (nchunks-1) << shift;
@@ -2202,7 +2202,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	}
 
 	while (--argc >= 0 && radix[argc] > 0) {
-		size_t i, h = 1 << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
+		size_t i, h = (size_t) 1 << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
 		size_t *dst = (size_t *) GDKmalloc(sizeof(size_t) * h);
 		size_t *cnt = (size_t *) GDKmalloc(sizeof(size_t) * h);
 		BAT *prev = bn, *lims = NULL;
@@ -2416,7 +2416,7 @@ radix setting for a certain BAT dataset (tail column).
 int
 M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 {
-	size_t mask = 1 << *radix;
+	size_t mask = (size_t) 1 << *radix;
 	int off = *shift;
 	BAT *bn = BATnew(TYPE_int, TYPE_int, mask);
 	int bunsize;
@@ -2438,7 +2438,7 @@ M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 		int cnt = 1;
 
 		while ((p += bunsize) < q) {
-			tcur = oid_RADIX(BUNtail(b, p), mask) >> off;
+			tcur = (int) (oid_RADIX(BUNtail(b, p), mask) >> off);
 			hcur = *(oid *) BUNhead(b, p);
 
 			if (tcur != tbak || hcur < hbak) {
@@ -2466,7 +2466,7 @@ M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 int
 M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 {
-	size_t mask = 1 << *radix;
+	size_t mask = (size_t) 1 << *radix;
 	int off = *shift;
 	BAT *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
 	size_t xx;
@@ -2477,10 +2477,10 @@ M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 		return GDK_FAIL;
 	cnt = (int *) BUNfirst(bn);
 
-	/* assert(0 <= *radix && *radix < 32); */
+	/* 64bit: assert(0 <= *radix && *radix < 32); */
 	/* initialize the result BAT with ascending head and zero counts */
 	for (xx = 0; xx < mask; xx++) {
-		cnt[xx + xx] = xx;
+		cnt[xx + xx] = (int) xx;
 		cnt[xx + xx + 1] = 0;
 	}
 	bn->batBuns->free = BUNsize(bn) * mask;
@@ -3043,7 +3043,7 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	int tpe = b->ttype;
 	int any = ATOMstorage(tpe);
 	int width = ATOMsize(ATOMtype(any));
-	int mult = *multiplier;
+	ssize_t mult = *multiplier;
 	int xx, zz;
 	ssize_t yy = 0;
 	char *src = b->batBuns->base;
@@ -3120,6 +3120,7 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
+
 		@:radix_decluster(chr,simple,tloc)@
 
 	case TYPE_sht:
@@ -3304,7 +3305,7 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	int tpe = a->ttype;
 	int any = ATOMstorage(tpe);
 	int width = ATOMsize(ATOMtype(any));
-	int mult = *multiplier;
+	ssize_t mult = *multiplier;
 	int xx, zz;
 	ssize_t yy = 0;
 	char *src1 = b->batBuns->base + b->tloc;
@@ -3392,6 +3393,7 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
+
 		@:radix_decluster2(chr,simple,tloc)@
 
 	case TYPE_sht:
@@ -3444,7 +3446,7 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	int tpe = a->ttype;
 	int any = ATOMstorage(tpe);
 	int width = ATOMsize(ATOMtype(any));
-	int mult = *multiplier;
+	ssize_t mult = *multiplier;
 	int xx, zz;
 	ssize_t yy = 0;
 	char *src1 = b->batBuns->base + b->tloc;
@@ -3531,6 +3533,7 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
+
 		@:radix_decluster3(chr,simple,tloc)@
 
 	case TYPE_sht:
@@ -3583,7 +3586,7 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	int tpe = a->ttype;
 	int any = ATOMstorage(tpe);
 	int width = ATOMsize(ATOMtype(any));
-	int mult = *multiplier;
+	ssize_t mult = *multiplier;
 	int xx, zz;
 	ssize_t yy = 0;
 	char *src1 = b->batBuns->base + b->tloc;
@@ -3653,6 +3656,7 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
+
 		@:radix_decluster4(chr,simple,tloc)@
 
 	case TYPE_sht:
@@ -3772,7 +3776,7 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 	int any = attr->ttype;
 	BAT *bn = BATnew(proj->htype, any, BATcount(proj));
 	int zz = *shift;
-	size_t xx, yy = 1 << *nbits;
+	size_t xx, yy = (size_t) 1 << *nbits;
 	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, s;
 
@@ -3808,6 +3812,7 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 
 	switch (any = ATOMstorage(any)) {
 	case TYPE_chr:
+
 		@:jivejoin0(chr,SIMPLE,hloc,tloc,r,0)@
 
 	case TYPE_sht:
@@ -3869,7 +3874,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 @)
 	int any = attr->ttype;
 	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
-	size_t xx = bo->batBuns->free, yy = 1 << *nbits, cnt = bo->batCount;
+	size_t xx = bo->batBuns->free, yy = (size_t) 1 << *nbits, cnt = bo->batCount;
 	int zz = *shift;
 	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, bobak;
@@ -3941,6 +3946,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 
 		switch (any = ATOMstorage(any)) {
 		case TYPE_chr:
+
 			@:jivejoin1(chr,SIMPLE,hloc,tloc,r,0)@
 
 		case TYPE_sht:
@@ -4025,6 +4031,7 @@ M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 
 		switch (any = ATOMstorage(any)) {
 		case TYPE_chr:
+
 			@:jivejoin2(chr,SIMPLE,hloc,tloc,r,0)@
 
 		case TYPE_sht:
@@ -4077,10 +4084,10 @@ prefetching, a software prefetch is implemented, ie a simple prefetch loop.
 #endif
 
 #if defined(ATHLON)
-static INLINE int
+static INLINE size_t
 Mem2Cache(int *__r from, size_t size)
 {
-	int cnt = size / 128;
+	int cnt = (int) (size / 128);
 	__asm__ __volatile__ (
 		"movl %2, %%eax\n\t"
 		"movl %0, %%esi\n\t"
@@ -4091,13 +4098,13 @@ Mem2Cache(int *__r from, size_t size)
 		"dec %%eax\n\t"
 		"jnz 1b\n\t"
 		:  : "r" (from), "r" (size), "r" (cnt) : "memory",  "%eax", "%edx", "%esi");
-	return cnt;
+	return (size_t) cnt;
 }
 #else
 
 #ifdef HAVE_XMMINTRIN_H
 /* L2 has 128 byte cachelines */
-static INLINE int
+static INLINE size_t
 Mem2Cache(int *__r from, size_t size)
 {
 	char *data = (char *) from;
@@ -4111,14 +4118,14 @@ Mem2Cache(int *__r from, size_t size)
 #endif
 		data += 64;
 	}
-	return (int)i;
+	return i;
 }
 #else
 
 #define CACHELINE (128)
 #define INTCACHELINE (CACHELINE/sizeof(int))
 
-static INLINE int
+static INLINE size_t
 Mem2Cache(int *__r p, size_t size)
 {
 	size_t sum0 = 0, sum1 = 0, i = 0;
@@ -4143,8 +4150,7 @@ Mem2Cache(int *__r p, size_t size)
 
 @+ clustered positional join
 @c
-static
-    dbl
+static dbl
 prefetch(ssize_t n, int stride, dbl *__r src)
 {
 	dbl tot = 0;
@@ -4259,7 +4265,8 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	int radix_shift, radix_bits = *rb;
 	int oidhead = (BUNsize(c) != sizeof(oid));
 	ssize_t width = BUNsize(v), i = MAX(1, BATcount(v) - 1);
-	ssize_t vectorsize = *vs, stride = *st;
+	ssize_t vectorsize = *vs;
+	int stride = *st;
 	oid *pos, radix_mask;
 	BUN res, cur_prefetch = NULL, vf = BUNfirst(v);
 	dbl skiprate;
@@ -4275,10 +4282,10 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	pos = (oid *) BUNtloc(c, BUNfirst(c));
 	res = (BUN) BUNtloc(bn, BUNfirst(bn));
 
-	for (n = 0; i > 0; n++) {
+	for (radix_shift = -radix_bits; i > 0; radix_shift++) {
 		i >>= 1;
 	}
-	radix_shift = n - radix_bits;
+	/* radix_shift is #bits in i minus radix_bits */
 	radix_mask = ((1 << radix_bits) - 1) << radix_shift;
 	bn->batBuns->free = c_cnt * BUNsize(bn);
 	BATsetcount(bn, c_cnt);
@@ -4286,7 +4293,7 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	/* compute skiprate and if set, prefetch full first cluster */
 	skiprate = ((dbl) v_cnt) / c_cnt;
 	if (stride < 0) {
-		cur_prefetch = (char *) vf + width * MIN(v_cnt, 1 << radix_shift);
+		cur_prefetch = (char *) vf + width * MIN(v_cnt, (ssize_t) 1 << radix_shift);
 		prefetch(cur_prefetch - vf, 128, (dbl *) vf);
 	}
 
@@ -4299,7 +4306,7 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 		/* handle prefetching of the next cluster */
 		if (cur_prefetch) {
 			/* increment concurrent prefetch pointer */
-			size_t prefetch_pos = (size_t) (i * skiprate) + (1 << radix_shift);
+			size_t prefetch_pos = (size_t) (i * skiprate) + ((size_t) 1 << radix_shift);
 
 			cur_prefetch = vf + width * prefetch_pos;
 			if (cur_prefetch + n * width * ((int) skiprate) > BUNlast(v))
@@ -4318,6 +4325,7 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 		/* do the join for this vector */
 		switch (ATOMstorage(v->ttype)) {
 		case TYPE_chr:
+
 			(void) posjoin_chr((int) skiprate, (chr *) cur_prefetch, oidhead, n, (chr *) res, pos + (i << oidhead), (chr *) vf);
 			break;
 		case TYPE_sht:
@@ -4362,9 +4370,10 @@ M4_RDX_posjoin_clustered_sv(BAT **r, BAT *c, BAT *v, int *rb)
 
 
 static int 
-log_2(int i)
+log_2(size_t i)
 {
 	int n = 0;
+
 	while (i > 1)	{
 		i >>= 1;
 		n += 1;
@@ -4394,7 +4403,7 @@ M4_RDX_cache_join(BAT **ret, BAT *left, BAT *right, int *_cache_size, int *_cach
 		int multiplier = 8;
 		int nbits = 1 + log_2(right_batsize / cache_size);
 		int nignore = MAX(0, (1 + log_2(BATcount(right))) - nbits);
-		int npasses = 1 + (nbits + 1) / log_2(cache_lines);
+		int npasses = 1 + (nbits + 1) / log_2((size_t) cache_lines);
 
 		BAT *cluster=NULL, *borders=NULL, *cluster_values=NULL, *cluster_ids=NULL;
 		if (M4_RDX_radix_cluster2(&cluster, left, &npasses, &nbits, &nignore) != GDK_SUCCEED) {

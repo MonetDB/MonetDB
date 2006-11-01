@@ -35,7 +35,7 @@ log files. This file is a simple ascii file with the following format:
  	6DIGIT-VERSION\n[log file number \n]*]*
 The transaction log files have a binary format, which stores fixed size 
 logformat headers (flag,nr,bid), where the flag is the type of update logged.
-The nr field indicates how many changes there were (incase of inserts/deletes).
+The nr field indicates how many changes there were (in case of inserts/deletes).
 The bid stores the bid identifier.
 
 The key decision to be made by the user is the location of the log file.
@@ -43,8 +43,8 @@ Ideally, it should be stored in fail-safe environment, or at least
 the log and databases should be on separate disk columns.
 
 This file system may reside on the same hardware as the database server
-and therefor the writes are done to the same disk, but could also 
-reside on an other system and then the changes are flushed through the network.  
+and therefore the writes are done to the same disk, but could also 
+reside on another system and then the changes are flushed through the network.  
 The logger works under the assumption that it is called to safeguard
 updates on the database when it has an exclusive lock on
 the latest version. This lock should be guaranteed by the calling
@@ -56,10 +56,10 @@ written to the log file and the delta management is reset. Since each
 commit is written to the same log file, the beginning and end are 
 marked by a log identifier.
 
-A server restart should only (re)process transactions which are completely 
-written to disk. A log replay therefor ends in a commit or abort on
+A server restart should only (re)process blocks which are completely 
+written to disk. A log replay therefore ends in a commit or abort on
 the changed bats. Once all logs have been read, the changes to
-the bats are maded persistent, ie a bbp sub-commit is done.
+the bats are made persistent, i.e. a bbp sub-commit is done.
 
 @{
 @* Module Definition
@@ -82,7 +82,7 @@ comment "Free the resources used by the logger.";
 #define _LOGGER_H_
 
 #define LOG_OK 0
-#define LOG_ERR -1
+#define LOG_ERR (-1)
 
 #include "bat5.h"
 #include "stream.h"
@@ -109,7 +109,9 @@ typedef struct logger {
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
+	BAT *snapshots;	/* int, int the bid and tid of snapshot bat */
 } logger;
+
 
 #define BATSIZE 0
 
@@ -120,10 +122,10 @@ The logger also keeps sequence numbers. A sequence needs to store each
 requested (block) of sequence numbers. This is done using the log_sequence
 function. The logger_sequence function can be used to return the
 last logged sequence number. Sequences identifiers should be unique, and
-2 are already used. The first LOG_SID is used internal for the log files
+2 are already used. The first LOG_SID is used internally for the log files
 sequence. The second OBJ_SID is for frontend objects, for example the sql
 objects have a global sequence counter such that each table, trigger, sequence
-etc has a unique number. 
+etc. has a unique number. 
 @h
 /* the sequence identifier for the sequence of log files */
 #define LOG_SID	0
@@ -167,11 +169,12 @@ log a posteriori to check what has happened.
 #define LOG_END		2
 #define LOG_INSERT	3
 #define LOG_DELETE	4
-#define LOG_CREATE	5
-#define LOG_DESTROY	6
-#define LOG_USE		7
-#define LOG_CLEAR	8
-#define LOG_SEQ		9
+#define LOG_UPDATE	5
+#define LOG_CREATE	6
+#define LOG_DESTROY	7
+#define LOG_USE		8
+#define LOG_CLEAR	9
+#define LOG_SEQ		10
 
 typedef struct logformat_t {
 	char flag;
@@ -228,6 +231,8 @@ log_read_string(logger *l)
 	char *buf;
 
 	if (!stream_readInt(l->log, &len))
+		return NULL;
+	if (len == 0)
 		return NULL;
 	buf = (char*)GDKmalloc(len);
 
@@ -288,12 +293,23 @@ log_read_updates(logger *logger, logformat *l, char *name)
 {
 	log_bid bid = logger_find_bat(logger, name);
 	BAT *b = BATdescriptor(bid);
+	int skip = 0;
 
 	if (logger->debug & 1)
-		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == LOG_INSERT) ? "insert" : "delete", l->nr);
+		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
+
+	/* do we need to skip these old updates */
+	if (BATcount(logger->snapshots)) {
+		BUN p = BUNfnd(logger->snapshots, &bid);
+		if (p) {
+			int tid = *(int*)BUNtloc(logger->snapshots, p);
+
+			if (tid < logger->tid) 
+				skip = 1;
+		}
+	}
 
 	if (b) {
-		void *(*rh) (ptr, stream *, size_t) = BATatoms[b->htype].atomRead;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
 		void *tv = ATOMnil(b->ttype);
 
@@ -303,13 +319,14 @@ log_read_updates(logger *logger, logformat *l, char *name)
 
 				if (!t)
 					break;
-				if (l->flag == LOG_INSERT)
+				if (!skip && l->flag == LOG_INSERT)
 					BUNappend(b, t, TRUE);
 				if (t != tv)
 					GDKfree(t);
 			}
 
 		} else {
+			void *(*rh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[b->htype].atomRead;
 			void *hv = ATOMnil(b->htype);
 
 			for (; l->nr > 0; l->nr--) {
@@ -318,10 +335,38 @@ log_read_updates(logger *logger, logformat *l, char *name)
 
 				if (!h && !t)
 					break;
+				if (skip) {
+					if (h != hv)
+						GDKfree(h);
+					if (t != tv)
+						GDKfree(t);
+					continue;
+				}
 				if (l->flag == LOG_INSERT)
-					BUNins(b, h, t, FALSE);
+					BUNins(b, h, t, TRUE);
 				else if (l->flag == LOG_DELETE)
-					BUNdel(b, h, t, FALSE);
+					BUNdel(b, h, t, TRUE);
+				else if (l->flag == LOG_UPDATE) {
+					BUN p;
+					if ((p = BUNfnd(b, h)) == NULL) {
+						/* if value doesn't exist, insert it
+						   if b void headed, maintain that by inserting nils */
+						if (b->htype == TYPE_void) {
+							if (b->batCount == 0 && * (oid *) h != oid_nil)
+								b->hseqbase = * (oid *) h;
+							if (b->hseqbase != oid_nil && * (oid *) h != oid_nil) {
+								void *tv = ATOMnil(b->ttype);
+								while (b->hseqbase + b->batCount < * (oid *) h)
+									BUNappend(b, tv, TRUE);
+							}
+							BUNappend(b, t, TRUE);
+						} else {
+							BUNins(b, h, t, TRUE);
+						}
+					} else {
+						BUNreplace(b, h, t, TRUE);
+					}
+				}
 				if (h != hv)
 					GDKfree(h);
 				if (t != tv)
@@ -485,7 +530,6 @@ logger_readlog(logger *logger, char *filename)
 			if (logger->debug & 1)
 				fprintf(stderr, "logger tstart %d\n", 
 					logger->tid);
-
 			break;
 		case LOG_END:
 			if (logger->tid == l.nr) {
@@ -497,35 +541,26 @@ logger_readlog(logger *logger, char *filename)
 				tr_abort(logger);
 			}
 			logger->tid = 0;
-
 			break;
 		case LOG_SEQ:
 			log_read_seq(logger, &l);
-
 			break;
 		case LOG_INSERT:
-			log_read_updates(logger, &l, name);
-
-			break;
 		case LOG_DELETE:
+		case LOG_UPDATE:
 			log_read_updates(logger, &l, name);
-
 			break;
 		case LOG_CREATE:
 			log_read_create(logger, name);
-
 			break;
 		case LOG_USE:
 			log_read_use(logger, &l, name);
-
 			break;
 		case LOG_DESTROY:
 			log_read_destroy(logger, name);
-
 			break;
 		case LOG_CLEAR:
 			log_read_clear(logger, name);
-
 			break;
 		default:
 			GDKerror("logger error %d %s\n", l.flag, name);
@@ -603,11 +638,11 @@ check_version(logger *logger, FILE *fp)
 }
 
 static
-int bm_subcommit( BAT * catalog ) 
+int bm_subcommit( BAT * list, BAT * catalog ) 
 {
 	BUN p,q;
-	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(catalog)*2);
-	BAT *b = catalog;
+	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(list)*2);
+	BAT *b = list;
 	int res;
 
 	BATseqbase(n,0);
@@ -622,7 +657,8 @@ int bm_subcommit( BAT * catalog )
 		str name = BBPname(col);
 		BUNappend(n, name, FALSE);
 	}
-	/* now commit catalog, so its also up to date on disk */
+	BUNappend(n, BBPname(catalog->batCacheid), FALSE);
+	/* now commit catalog, so it's also up to date on disk */
 	BATcommit(catalog); 
 	res = TMsubcommit(n);
 	BBPreclaim(n);
@@ -668,11 +704,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		BATmode(logger->catalog, PERSISTENT);
 		BBPrename(logger->catalog->batCacheid, bak);
 
-		/* insert catalog bat, to make TMsubcommit calls possible */
-		BUNins(logger->catalog, &bid, bak, FALSE);
-		if (bm_subcommit(logger->catalog) != 0)  /* save catalog */
+		if (bm_subcommit(logger->catalog, logger->catalog) != 0)  
 			return NULL;
-	} else { /* find the persisten catalog. As non persistent bats
+	} else { /* find the persistent catalog. As non persistent bats
 		    require a logical reference we also add a logical 
 		    reference for the persistent bats */
 		BUN p, q;
@@ -692,13 +726,20 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		
 		logger_add_bat(logger, logger->seqs, "seqs");
 		BUNins(logger->seqs, &id, &logger->id, FALSE);
+
+		logger->snapshots = logbat_new(TYPE_int, TYPE_int, 1);
+		BATmode(logger->snapshots, PERSISTENT);
+		logger_add_bat(logger, logger->snapshots, "snapshots");
 	} else {
+		bat snapshots = logger_find_bat(logger, "snapshots");
+
 		logger->seqs = BATdescriptor(seqs);
 		if (BATcount(logger->seqs)) {
 			logger->id = *(lng*)BUNtail(logger->seqs, BUNfnd(logger->seqs, &id));
 		} else {
 			BUNins(logger->seqs, &id, &logger->id, FALSE);
 		}
+		logger->snapshots = BATdescriptor(snapshots);
 	}
 
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
@@ -815,7 +856,7 @@ logger_exit(logger *logger)
 		fprintf(fp, "%06d\n\n", logger->version);
 		logger->id ++;
 
-		if (logger_commit(logger) < 0)
+		if (logger_commit(logger) != LOG_OK)
 			return LOG_ERR;
 
 		fprintf(fp, LLFMT "\n", logger->id);
@@ -918,8 +959,12 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 	if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
 		return LOG_ERR;
 
-	if (b->batPersistence == PERSISTENT) /* log LOG_USE only */
+	if (flag == LOG_USE) {
+		if (BUNfnd(logger->snapshots, &b->batCacheid)) 
+			BUNdelHead(logger->snapshots, &b->batCacheid, FALSE);
+		BUNins(logger->snapshots, &b->batCacheid, &logger->tid, FALSE);
 		return LOG_OK;
+	}
 
 	ha = ATOMname(b->htype);
 	if (b->htype == TYPE_void && BAThdense(b)) {
@@ -955,6 +1000,42 @@ log_bat_transient(logger *logger, char *name)
 	if (logger->debug & 1)
 		fprintf(stderr, "Logged destroyed bat %s\n", name);
 	return LOG_OK;
+}
+
+int
+log_delta(logger *logger, BAT *b, char *name)
+{
+	int ok = GDK_SUCCEED;
+	logformat l;
+	BUN p;
+
+	if (logger->debug & 128) {
+		/* logging is switched off */
+		return LOG_OK;
+	}
+
+	l.nr = (int)(BUNindex(b, BUNlast(b)) - BUNindex(b, BUNfirst(b)));
+	logger->changes += l.nr;
+
+	if (l.nr) {
+		int (*wh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomWrite : BATatoms[b->htype].atomWrite;
+		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+
+		l.flag = LOG_UPDATE;
+		if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
+			return LOG_ERR;
+
+		for (p = BUNfirst(b); p < BUNlast(b) && ok == GDK_SUCCEED; p = BUNnext(b, p)) {
+			ptr h = BUNhead(b, p);
+			ptr t = BUNtail(b, p);
+			ok = wh(h, logger->log, 1);
+			ok = (ok == GDK_FAIL) ? ok : wt(t, logger->log, 1);
+		}
+
+		if (logger->debug)
+			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr);
+	}
+	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
 
 int
@@ -1050,6 +1131,19 @@ log_tstart(logger *logger)
 	l.flag = LOG_START;
 	l.nr = ++logger->tid;
 
+	/* cleanup old snapshots */
+	if (BATcount(logger->snapshots)) {
+		/* sub commit all new snapshots */
+		int nil = int_nil;
+		BAT *b = BATselect(logger->snapshots, &nil, &logger->tid);
+
+		BATdel(logger->snapshots, b, FALSE);
+		BBPunfix(b->batCacheid);
+		if (BATcount(logger->snapshots) == 0) 
+			BATclear(logger->snapshots);
+		BATcommit(logger->snapshots);
+	}
+
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid);
 
@@ -1060,13 +1154,22 @@ int
 log_tend(logger *logger)
 {
 	logformat l;
+	int res = 0;
 
 	if (logger->debug)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
+	/* first subcommit the snapshots */
+	if (BATcount(logger->snapshots)) {
+		/* sub commit all new snapshots */
+		BAT *b = BATselect(logger->snapshots, &logger->tid, &logger->tid);
+		res = bm_subcommit(b, logger->snapshots);
+		BBPunfix(b->batCacheid);
+	}
+
 	l.flag = LOG_END;
 	l.nr = logger->tid;
-	if (log_write_format(logger, &l) == LOG_ERR || 
+	if (res || log_write_format(logger, &l) == LOG_ERR || 
 	    stream_flush(logger->log) ||
 	    stream_fsync(logger->log))
 		 return LOG_ERR;
@@ -1122,9 +1225,9 @@ bm_commit(logger *logger)
 		BATmode(b, PERSISTENT);
 		logbat_destroy(b);
 	}
-	if (bm_subcommit(logger->catalog) != 0)	/* save new bats */
+	if (bm_subcommit(logger->catalog, logger->catalog) != 0)  
 		return LOG_ERR;
-	return 0;
+	return LOG_OK;
 }
 
 static void
@@ -1272,7 +1375,7 @@ int
 log_delta_wrap(logger *L, BAT *b, str nme )
 {
 	logger *l = *(logger**)L;
-	if (l && log_bat(l, b, nme) == LOG_OK) 
+	if (l && log_delta(l, b, nme) == LOG_OK) 
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }

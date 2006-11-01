@@ -1044,7 +1044,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 int
 CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 {
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	BAT *bn;
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
@@ -1054,21 +1054,22 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
-	if (bn == NULL)
-		return GDK_FAIL;
-
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count(b=%s,e=%s);\n", 
 		BATgetId(b),BATgetId(e));
 
-	if (e->htype == TYPE_void && 
-	    b->htype == TYPE_void && 
-	    b->ttype == TYPE_void) {
+	if (e->htype == TYPE_void && e->ttype == TYPE_void &&
+	    b->htype == TYPE_void && BATcount(b) == BATcount(e)) {
 		/* simply return counts with one */
 		int one = 1;
 		bn = BATconst(b, TYPE_int, &one);
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
+
+ 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	if (bn == NULL)
+		return GDK_FAIL;
+
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
 	range = max - min + 1;
@@ -2066,7 +2067,7 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 int
 CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 {
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	BAT *bn;
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
@@ -2077,9 +2078,6 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	ssize_t offset;
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
-
-	if (bn == NULL)
-		return GDK_FAIL;
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n", 
 		BATgetId(b),BATgetId(g),BATgetId(e));
@@ -2093,13 +2091,18 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 
 	if (e->htype == TYPE_void && 
 	    b->htype == TYPE_void && 
-	    b->ttype == TYPE_void) {
+	    g->htype == TYPE_void && 
+	    g->ttype == TYPE_void) {
 		/* simply return counts with one */
 		int one = 1;
 		bn = BATconst(b, TYPE_int, &one);
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
+ 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	if (bn == NULL)
+		return GDK_FAIL;
+
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
 	range = max - min + 1;
