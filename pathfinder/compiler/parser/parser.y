@@ -612,8 +612,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                ExtensionExpr
                FilterExpr
                FLWORExpr
-               ForClause
-               ForLetClause_
                ForwardStep
                FuncArgList_
                FunctionCall
@@ -624,8 +622,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                IntersectExceptExpr
                ItemType
                KindTest
-               LetBindings_
-               LetClause
                LibraryModule
                Literal
                MainModule
@@ -700,7 +696,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                VarBindings_
                VarDecl
                VarName
-               VarPosBindings_
                VarRef
                WhereClause
                Wildcard
@@ -709,8 +704,12 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %type <phole> 
                CaseClauses_
                DirAttributeList
+               ForClause
                ForLetClauses_
+               ForLetClause_
                Import
+               LetBindings_
+               LetClause
                ModuleImport
                ModuleNS_
                ModuleNSWithoutPrefix
@@ -722,6 +721,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                SetterImportAndNSDecls_
                URILiterals_
                VarFunDecls_
+               VarPosBindings_
 
 %type <oci>   
                OptOccurrenceIndicator_
@@ -1402,11 +1402,11 @@ FLWORExpr                 : ForLetClauses_ OptWhereClause_ OptOrderByClause_
                           ;
 
 ForLetClauses_            : ForLetClause_
-                            { $$.root = $$.hole = $1; }
+                            { $$ = $1; }
                             /* { $$ = $1; } */
                           | ForLetClauses_ ForLetClause_
-                            { FIXUP (1, $1, $2);
-                              $$.hole = $2; $$.root = $1.root; }
+                            { FIXUP (1, $1, $2.root);
+                              $$.hole = $2.hole; $$.root = $1.root; }
                           ;
 
 ForLetClause_             : ForClause  { $$ = $1; }
@@ -1427,27 +1427,30 @@ ForClause                 : "for $" VarPosBindings_ { $$ = $2; }
 
 VarPosBindings_           : VarName OptTypeDeclaration_ OptPositionalVar_
                               "in" ExprSingle
-                            { $$ = wire2 (p_binds, @$,
-                                     wire2 (p_bind, @$,
-                                       wire2 (p_vars, loc_rng (@1, @3),
-                                         wire2 (p_var_type, loc_rng (@1, @2),
-                                                $1,
-                                                $2),
-                                         $3),
-                                       $5),
-                                     nil (@$));
+                            { $$.root = $$.hole = 
+                                wire2 (p_binds, @$,
+                                  wire2 (p_bind, @$,
+                                    wire2 (p_vars, loc_rng (@1, @3),
+                                      wire2 (p_var_type, loc_rng (@1, @2),
+                                             $1,
+                                             $2),
+                                      $3),
+                                    $5),
+                                  nil (@$));
                             }
                           | VarName OptTypeDeclaration_ OptPositionalVar_
                               "in" ExprSingle "," "$" VarPosBindings_
-                            { $$ = wire2 (p_binds, @$,
-                                     wire2 (p_bind, @$,
-                                       wire2 (p_vars, loc_rng (@1, @3),
-                                         wire2 (p_var_type, loc_rng (@1, @2),
-                                                $1,
-                                                $2),
-                                         $3),
-                                       $5),
-                                     $8);
+                            { $$.hole = $8.hole;
+                              $$.root = 
+                                wire2 (p_binds, @$,
+                                  wire2 (p_bind, @$,
+                                    wire2 (p_vars, loc_rng (@1, @3),
+                                      wire2 (p_var_type, loc_rng (@1, @2),
+                                             $1,
+                                             $2),
+                                      $3),
+                                    $5),
+                                  $8.root);
                             }
                           ;
 
@@ -1464,21 +1467,24 @@ LetClause                 : "let $" LetBindings_ { $$ = $2; }
                           ;
 
 LetBindings_              : VarName OptTypeDeclaration_ ":=" ExprSingle
-                            { $$ = wire2 (p_binds, @$,
-                                     wire2 (p_let, @$,
-                                       wire2 (p_var_type, loc_rng (@1, @2),
-                                         $1, $2),
-                                       $4),
-                                     nil (@$));
+                            { $$.root = $$.hole = 
+                                wire2 (p_binds, @$,
+                                  wire2 (p_let, @$,
+                                    wire2 (p_var_type, loc_rng (@1, @2),
+                                      $1, $2),
+                                    $4),
+                                  nil (@$));
                             }
                           | VarName OptTypeDeclaration_ ":=" ExprSingle
                               "," "$" LetBindings_
-                            { $$ = wire2 (p_binds, @$,
-                                     wire2 (p_let, @$,
-                                       wire2 (p_var_type, loc_rng (@1, @2),
-                                         $1, $2),
-                                       $4),
-                                     $7);
+                            { $$.hole = $7.hole;
+                              $$.root = 
+                                wire2 (p_binds, @$,
+                                  wire2 (p_let, @$,
+                                    wire2 (p_var_type, loc_rng (@1, @2),
+                                      $1, $2),
+                                    $4),
+                                  $7.root);
                             }
                           ;
 
@@ -2765,6 +2771,7 @@ SeedVar                   : VarName OptTypeDeclaration_
 /* Pathfinder extension: XRPC */
 XRPCCall                  : "execute at {" Expr "}" "{" FunctionCall "}"
                             { $$ = wire2 (p_xrpc, @$, $2, $5); }
+                          ;
 /* End Pathfinder extension */
 
 %%
