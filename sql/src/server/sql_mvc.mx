@@ -1135,17 +1135,8 @@ mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
 	
 	for (i = 0; i < list_length(id_l); i++)
 	{
-		if (dep_type == COLUMN_DEPENDENCY) {
-			mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
-			n = n->next;
-			mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
-			n = n->next;
-			i++;
-		}
-		else {
-			mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
-			n = n->next;
-		}
+		mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+		n = n->next;
 	}
 
 }

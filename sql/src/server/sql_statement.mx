@@ -193,7 +193,7 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_parent(s)		((s)->op2.stval)
 #define ptable_statements(s)	((s)->op3.stval)
 
-extern stmt *stmt_column(stmt *i, stmt *basetable, stmt* column);	/* relational column */
+extern stmt *stmt_column(stmt *i, stmt *basetable, sql_table *t);	/* relational column */
 extern stmt *stmt_rs_column(stmt *result_set, stmt *v, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
@@ -727,6 +727,13 @@ stmt_destroy(stmt *s)
 		case st_affected_rows:
 
 		case st_column:
+			if (s->op1.stval)
+				stmt_destroy(s->op1.stval);
+			if (s->op2.stval)
+				stmt_destroy(s->op2.stval);
+			if (s->op3.stval)
+				stmt_destroy(s->op3.stval);
+			break;
 		case st_group:
 		case st_group_ext:
 
@@ -886,10 +893,7 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_table_clear:
 			break;
 		case st_bat:
-			if ((depend_type == VIEW_DEPENDENCY) && isView(s->op1.cval->t)) {
-				dep_list = list_append(dep_list, &(s->op1.cval->base.id));
-				dep_list = list_append(dep_list, &(s->op1.cval->t->base.id));
-			} else if ((depend_type == COLUMN_DEPENDENCY) && !isView(s->op1.cval->t)) {
+			if (depend_type == COLUMN_DEPENDENCY) {
 				dep_list = list_append(dep_list, &(s->op1.cval->base.id));
 				dep_list = list_append(dep_list, &(s->op1.cval->t->base.id));
 			}
@@ -938,13 +942,15 @@ stmt_list_dependencies(stmt *s, int depend_type)
 			}
 			break;
 		case st_atom:
+		case st_column:
+			if (s->op4.tval && depend_type == VIEW_DEPENDENCY) {
+				dep_list = list_append(dep_list, &(s->op4.tval->base.id));	
+			}
 			break;
 
 			/* simple case of statements of only statements */
-		case st_column:
-			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
 		case st_const:
+			break;
 		case st_mark:
 		case st_gen_group:
 		case st_reverse:
@@ -1071,7 +1077,7 @@ stmt_temp(sql_subtype *t)
 }
 
 stmt *
-stmt_column(stmt *op1, stmt *table, stmt *column)
+stmt_column(stmt *op1, stmt *table, sql_table *t)
 {
 	stmt *s = stmt_create(st_column);
 
@@ -1082,7 +1088,7 @@ stmt_column(stmt *op1, stmt *table, stmt *column)
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 	s->h = table;	/* oid's used from this table */
-	s->op2.stval = column;
+	s->op4.tval = t;
 	return s;
 }
 

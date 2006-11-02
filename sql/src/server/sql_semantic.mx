@@ -412,7 +412,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 			stmt *sc = stmt_dup(m->data);
 
 			sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
-			sc = stmt_column(sc, stmt_dup(sq), stmt_bat(c, NULL, access));
+			sc = stmt_column(sc, stmt_dup(sq), t);
 			table_add_column(tv, sc, NULL, c->base.name);
 		}
 	} else if (isGenerated(t)) {

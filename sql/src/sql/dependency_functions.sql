@@ -59,7 +59,7 @@ RETURN TABLE (SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as 
 --Column c has a dependency on trigger tri
 CREATE FUNCTION dependencies_columns_on_triggers()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
-RETURN TABLE (SELECT c.name, tri.name, c.id, tri.id, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
+RETURN TABLE (SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
 
 
 --View v has a dependency on function f
@@ -67,11 +67,21 @@ CREATE FUNCTION dependencies_views_on_functions()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1);
 
+--View v has a dependency on trigger tri
+CREATE FUNCTION dependencies_views_on_triggers()
+RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
+RETURN TABLE (SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1);
 
---Functions f1 has a dependency on function f2
+
+--Function f1 has a dependency on function f2
 CREATE FUNCTION dependencies_functions_on_functions()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7);
+
+--Function f1 has a dependency on trigger tri
+CREATE FUNCTION dependencies_functions_os_triggers()
+RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
+RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
 
 
 --Key k has a dependency on foreign key fk

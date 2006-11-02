@@ -66,6 +66,7 @@ extern stmt *sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f);
 extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 
+
 #endif /*_SQL_SELECT_H_*/
 @c
 
@@ -79,9 +80,9 @@ extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 #include "sql_env.h"
 
 static stmt *sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek);
-static stmt *sql_simple_select(mvc *sql, scope *scp, SelectNode *sn);
 static stmt *sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f);
 
+static stmt *sql_simple_select(mvc *sql, scope *scp, SelectNode *sn);
 static tvar *query_exp_optname(mvc *sql, scope *scp, symbol *q);
 static tvar *sql_subquery_optname(mvc *sql, scope *scp, symbol *query);
 static stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3);
@@ -228,9 +229,8 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 		tvar *fnd = (tvar *) 1L;	/* 1L to keep 64-bit compilers from complaining *
 						 * about different sizes of int and pointer     */
 
-		for (n = fl->h; (n && fnd); n = n->next)
+		for (n = fl->h; (n && fnd); n = n->next) 
 			fnd = table_ref(sql, scp, n->data.sym);
-
 		if (!fnd)
 			return NULL;
 
@@ -258,6 +258,7 @@ flat_subquery(mvc *sql, symbol *sq)
 	scope *scp = scope_open(NULL);
 	exp_kind ek = {type_value, card_relation, TRUE};
 	stmt *s = sql_subquery(sql, scp, sq, ek);
+
 
 	scp = scope_close(scp);
 
