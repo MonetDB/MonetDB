@@ -381,8 +381,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				else if (l->flag == LOG_DELETE)
 					BUNdel(b, h, t, TRUE);
 				else if (l->flag == LOG_UPDATE) {
-					BUN p;
-					if ((p = BUNfnd(b, h)) == NULL) {
+					if (BUNfnd(b, h) == NULL) {
 						/* if value doesn't exist, insert it
 						   if b void headed, maintain that by inserting nils */
 						if (b->htype == TYPE_void) {
