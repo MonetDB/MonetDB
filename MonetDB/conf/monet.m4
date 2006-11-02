@@ -25,7 +25,9 @@ dft_netcdf=auto
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
 dnl set GCC=yes if we use icc.
-if test "x$CC" != x; then
+case "$CC" in
+*icc*-no-gcc*) ;;
+*icc*)
 	dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
 	dnl  and icc/icpc requires "-no-gcc" to avoid predefining
 	dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
@@ -34,7 +36,8 @@ if test "x$CC" != x; then
 	8.*)	CC="$CC -no-gcc";;
 	9.*)	CC="$CC -no-gcc";;
 	esac
-fi
+	;;
+esac
 
 ])
 
@@ -179,8 +182,10 @@ dnl check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
 
 gcc_ver=""
-case $GCC-$host_os in
+icc_ver=""
+case $GCC-$CC in
 yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
+-*icc*)	icc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
 
 AC_ARG_WITH(bits,
@@ -462,8 +467,6 @@ yes-*-*)
  	dnl  On 64-bit systems, icc 9.1 does not seem to find its own libraries,
  	dnl  even if the respective directory is in LD_LIBRARY_PATH ...!??
  	dnl  Explicitely listing it via -L.. with the linker call seems to help.
-
-	icc_ver="`$CC -dumpversion 2>/dev/null`"
 	case $bits-$icc_ver in
 	64-9.*)	LDFLAGS="$LDFLAGS -L`type -p icc | sed 's|/bin/icc|/lib64|'`" ;;
 	*)	;;
