@@ -263,8 +263,8 @@ if [ "${os}" = "Linux" ] ; then
 	fi
 	if [ "${COMP}" = "PGI" ] ; then
 		# Portland Group compiler on spin
-		cc='pgcc -fPIC'
-		cxx='pgCC -fPIC'
+		cc='pgcc'
+		cxx='pgCC'
 	fi
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
@@ -457,7 +457,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	fi
 	if [ "${cc}${cxx}${COMP}" = "ntv" ] ; then
 		case "${os}" in
-		Linux)	conf_opts="${conf_opts} CC='icc -no-gcc' CXX='icpc -no-gcc'";;
+		Linux)	conf_opts="${conf_opts} CC='icc' CXX='icpc'";;
 		AIX)	conf_opts="${conf_opts} CC='xlc_r' CXX='xlc_r'";;
 		*)	conf_opts="${conf_opts} CC='cc' CXX='CC'";;
 		esac
