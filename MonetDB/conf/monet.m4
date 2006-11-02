@@ -22,6 +22,20 @@ dft_assert=yes
 dft_optimi=no
 dft_warning=no
 dft_netcdf=auto
+
+dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
+dnl set GCC=yes if we use icc.
+if test "x$CC" != x; then
+	dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
+	dnl  and icc/icpc requires "-no-gcc" to avoid predefining
+	dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+	icc_ver="`$CC -dumpversion 2>/dev/null`"
+	case $icc_ver in
+	8.*)	CC="$CC -no-gcc";;
+	9.*)	CC="$CC -no-gcc";;
+	esac
+fi
+
 ])
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
@@ -449,15 +463,7 @@ yes-*-*)
  	dnl  even if the respective directory is in LD_LIBRARY_PATH ...!??
  	dnl  Explicitely listing it via -L.. with the linker call seems to help.
 
-	dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
-	dnl  and icc/icpc requires "-no-gcc" to avoid predefining
-	dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 	icc_ver="`$CC -dumpversion 2>/dev/null`"
-	case $icc_ver in
-	8.*)	CC="$CC -no-gcc";;
-	9.*)	CC="$CC -no-gcc";;
-	esac
-
 	case $bits-$icc_ver in
 	64-9.*)	LDFLAGS="$LDFLAGS -L`type -p icc | sed 's|/bin/icc|/lib64|'`" ;;
 	*)	;;

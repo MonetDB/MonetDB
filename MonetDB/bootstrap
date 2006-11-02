@@ -246,36 +246,6 @@ echo "automake/aclocal $AM_VERSION is older than $NEW_AM_VERSION."
 echo "Patching aclocal.m4 for Intel compiler on Linux (icc/ecc)."
 
 # patch aclocal.m4: 
-# set some correct switches for Intel compiler on Linux (icc/ecc)
-#grep 'lt_cv_prog_cc_can_build_shared' aclocal.m4 >/dev/null && 
-cat << "EOF" | patch aclocal.m4
---- aclocal.m4~	Wed Jan 16 20:34:17 2002
-+++ aclocal.m4	Wed Jan 16 20:37:55 2002
-@@ -2542,8 +2542,17 @@
-       ;;
- 
--    *)
--      lt_cv_prog_cc_can_build_shared=no
--      ;;
--    esac
-+    linux*)
-+      lt_cv_prog_cc_pic='-Kpic'
-+      case "$CC" in
-+        pgcc*)	lt_cv_prog_cc_static='-Bstatic';;
-+        *)	lt_cv_prog_cc_static='-static';;
-+      esac
-+      lt_cv_prog_cc_wl='-Wl,'
-+      ;;
-+
-+    *)
-+      lt_cv_prog_cc_can_build_shared=no
-+      ;;
-+    esac
-   fi
- ])
-EOF
-
-# patch aclocal.m4: 
 # fix checks "if icc/ecc supports -c -o file.{o,lo}"
 # and "whether -lc should be explicitly linked in"
 cat << "EOF" | patch aclocal.m4
