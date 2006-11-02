@@ -638,7 +638,7 @@ main(int argc, char **argv)
 	int guest = 1;
 	int linemode = 1;
 	int exit_on_error = 0;
-	int c;
+	int c = 0;
 	Mapi mid;
 	int quiet = 0;
 	int save_history = 0;

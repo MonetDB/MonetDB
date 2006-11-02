@@ -169,7 +169,6 @@ case $GCC-$host_os in
 yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
 
-
 AC_ARG_WITH(bits,
 	AC_HELP_STRING([--with-bits=BITS],
 		[obsolete: use --enable-bits instead]),
@@ -295,6 +294,42 @@ case "$host_os" in
 esac
 AC_SUBST(LINUX_DIST)
 
+dnl MonetDB code requires some POSIX and XOPEN extensions 
+case "$GCC-$CC-$host_os" in
+yes-*-*)
+	case "$host_os" in
+	cygwin*|freebsd*|irix*|darwin*)
+		;;
+	solaris*)
+		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
+		;;
+	*)
+		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+		;;
+	esac
+	case "$gcc_ver-$host_os" in
+	[[34]].*-linux-gnulibc1)
+		dnl this is for FreeBSD with linux compat libraries
+		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
+		;;
+	esac
+	;;
+-icc*-linux*|-ecc*-linux*|-pgcc*-linux*)
+	dnl Define the same settings as for gcc, as we use the same
+	dnl header files
+	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	;;
+esac
+
+dnl  default javac flags
+JAVACFLAGS="$JAVACFLAGS -g:none -O"
+AC_SUBST(JAVACFLAGS)
+
+
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
 	AC_HELP_STRING([--enable-strict],
@@ -350,7 +385,6 @@ yes-*-*)
 		;;
 	*-solaris*)
 		CFLAGS="$CFLAGS -std=c99"
-		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
 	[[34]].*-*)
 		CFLAGS="$CFLAGS -std=c99"
@@ -501,32 +535,6 @@ fi
 AC_SUBST(CFLAGS)
 AC_SUBST(X_CFLAGS)
 AC_SUBST(NO_X_CFLAGS)
-
-case "$GCC-$CC-$host_os" in
-yes-*-*)
-	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-	case "$gcc_ver-$host_os" in
-	[[34]].*-linux-gnulibc1)
-		dnl this is for FreeBSD with linux compat libraries
-		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
-		;;
-	esac
-	;;
--icc*-linux*|-ecc*-linux*|-pgcc*-linux*)
-	dnl Define the same settings as for gcc, as we use the same
-	dnl header files
-	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-	;;
-esac
-
-dnl  default javac flags
-JAVACFLAGS="$JAVACFLAGS -g:none -O"
-AC_SUBST(JAVACFLAGS)
-
 
 dnl find out, whether the C compiler is C99 compliant
 AC_MSG_CHECKING([if your compiler is C99 compliant])
