@@ -103,6 +103,7 @@ typedef struct logger {
 	int version;
 	lng id;
 	int tid;
+	int intrans;
 	char *fn;
 	char *dir;
 	stream *log;
@@ -304,7 +305,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 		if (p) {
 			int tid = *(int*)BUNtloc(logger->snapshots, p);
 
-			if (tid < logger->tid) 
+			if (logger->tid < tid) 
 				skip = 1;
 		}
 	}
@@ -523,9 +524,10 @@ logger_readlog(logger *logger, char *filename)
 		}
 		switch (l.flag) {
 		case LOG_START:
-			if (logger->tid != 0)
+			if (logger->intrans)
 				tr_abort(logger);
 			logger->tid = l.nr;
+			logger->intrans = 1;
 			if (logger->debug & 1)
 				fprintf(stderr, "logger tstart %d\n", 
 					logger->tid);
@@ -539,7 +541,7 @@ logger_readlog(logger *logger, char *filename)
 			} else {
 				tr_abort(logger);
 			}
-			logger->tid = 0;
+			logger->intrans = 0;
 			break;
 		case LOG_SEQ:
 			log_read_seq(logger, &l);
@@ -571,7 +573,7 @@ logger_readlog(logger *logger, char *filename)
 	}
 	logger_close(logger);
 
-	if (logger->tid != 0) 
+	if (logger->intrans) 
 		tr_abort(logger);
 
 	return 0;
@@ -683,6 +685,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	logger->version = version;
 	logger->id = 1;
 	logger->tid = 0;
+	logger->intrans = 0;
 
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	logger->fn = GDKstrdup(fn);
@@ -729,6 +732,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		logger->snapshots = logbat_new(TYPE_int, TYPE_int, 1);
 		BATmode(logger->snapshots, PERSISTENT);
 		logger_add_bat(logger, logger->snapshots, "snapshots");
+		bm_subcommit(logger->catalog, logger->catalog);
 	} else {
 		bat snapshots = logger_find_bat(logger, "snapshots");
 
@@ -780,7 +784,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		fprintf(fp, LLFMT "\n", logger->id);
 	}
 	fclose(fp);
-	logger->tid = 1;
+	logger->intrans = 0;
 	return logger;
 }
 
@@ -1131,6 +1135,7 @@ log_tstart(logger *logger)
 	l.nr = ++logger->tid;
 
 	/* cleanup old snapshots */
+#if 0
 	if (BATcount(logger->snapshots)) {
 		/* sub commit all new snapshots */
 		int nil = int_nil;
@@ -1142,6 +1147,7 @@ log_tstart(logger *logger)
 			BATclear(logger->snapshots);
 		BATcommit(logger->snapshots);
 	}
+#endif
 
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid);
