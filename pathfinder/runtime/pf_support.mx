@@ -2031,6 +2031,14 @@ PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kin
     ancestor_nid := new_ancestor_nid.tmark(0@0);
 
     ws_precommit(ws, cont, modified_page, ancestor_nid, modified_nid, modified_attr);
+
+    var ancestor_rid := ancestor_nid.leftjoin(ws.fetch(NID_RID).find(cont));
+    var anc_oldsize := [swizzle](ancestor_rid, ws.fetch(MAP_PID).find(cont)).join(ws.fetch(PRE_SIZE).find(cont));
+    ancestor_rid.access(BAT_WRITE).replace(ancestor_nid.join(ws.fetch(NID_RID_UPDATE).find(cont)));
+    var anc_newsize := ancestor_rid.leftjoin(ws.fetch(RID_SIZE_UPDATE).find(cont));
+    var anc_mstsize := ancestor_rid.leftjoin(ws.fetch(_RID_SIZE).find(cont));
+    var anc_updsize := [+]([-](anc_newsize, anc_oldsize), anc_mstsize);
+    ws.fetch(RID_SIZE_UPDATE).find(cont).myupdate(anc_updsize);
   }
 
   # log all changes
