@@ -548,6 +548,8 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
 	if (!(t = mvc_bind_table(sql, ss, table_name)))
 		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
+	if (isView(t)) 
+		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 
 	trigger = mvc_create_trigger(sql, t, tname, time, orientation, event, old_name,
 			new_name, condition, statement);
@@ -728,6 +730,8 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 		return sql_error(sql, 02, "CREATE INDEX: name '%s' already in use", iname);
 	} else if (!t) {
 		return sql_error(sql, 02, "CREATE INDEX: no such table '%s'", name);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "CREATE INDEX: cannot create index on view '%s'", name);
 	} else {
 		dnode *n = column_list->h;
 		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
@@ -1550,6 +1554,8 @@ alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
 
 	if ((t = mvc_bind_table(sql, ss, name)) == NULL) {
 		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", name);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "ALTER TABLE: cannot alter view '%s'", name);
 	} else {
 		return table_element(sql, te, ss, t, 1);
 	}
