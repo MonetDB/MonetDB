@@ -101,11 +101,13 @@ _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 10
 _REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _NEW_AM_VERSION=`echo $NEW_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ "$_AM_VERSION" -ge "$_REQ_AM_VERSION" ]; then
-	echo "automake $AM_VERSION is $REQ_AM_VERSION or newer. Good."
+if [ "$_AM_VERSION" -ge "$_NEW_AM_VERSION" ]; then
+	echo "automake $AM_VERSION is $NEW_AM_VERSION or newer. Good."
+elif [ "$_AM_VERSION" -ge "$_REQ_AM_VERSION" ]; then
+	echo "automake $AM_VERSION is $REQ_AM_VERSION or newer. OK, unless you want to compile with Intel's icc (on Linux), which requires automake $NEW_AM_VERSION or newer."
 elif [ "$_AM_VERSION" -lt "$_REQ_AM_VERSION" ]; then
 	echo "automake $AM_VERSION is older than $REQ_AM_VERSION." >&2
-	echo "We require (at least) automake $REQ_AM_VERSION." >&2
+	echo "We require (at least) automake $REQ_AM_VERSION (or $NEW_AM_VERSION to compile with Intel's icc (on Linux)." >&2
 	echo "Please get a newer version (cf. http://www.gnu.org/software/automake/)." >&2
 	exit 1
 fi
@@ -237,83 +239,6 @@ grep '"$CYGPATH_W"' aclocal.m4 >/dev/null && cat << "EOF" | patch aclocal.m4
  # Define the identity of the package.
  dnl Distinguish between old-style and new-style calls.
 EOF
-
-# older versions of automake/aclocal don't know about the
-# Intel compiler on Linux (icc/ecc), yet...
-if [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]; then
-
-echo "automake/aclocal $AM_VERSION is older than $NEW_AM_VERSION."
-echo "Patching aclocal.m4 for Intel compiler on Linux (icc/ecc)."
-
-# patch aclocal.m4: 
-# set some correct switches for Intel compiler on Linux (icc/ecc)
-#grep 'lt_cv_prog_cc_can_build_shared' aclocal.m4 >/dev/null && 
-cat << "EOF" | patch aclocal.m4
---- aclocal.m4~	Wed Jan 16 20:34:17 2002
-+++ aclocal.m4	Wed Jan 16 20:37:55 2002
-@@ -2542,8 +2542,17 @@
-       ;;
- 
--    *)
--      lt_cv_prog_cc_can_build_shared=no
--      ;;
--    esac
-+    linux*)
-+      lt_cv_prog_cc_pic='-Kpic'
-+      case "$CC" in
-+        pgcc*)	lt_cv_prog_cc_static='-Bstatic';;
-+        *)	lt_cv_prog_cc_static='-static';;
-+      esac
-+      lt_cv_prog_cc_wl='-Wl,'
-+      ;;
-+
-+    *)
-+      lt_cv_prog_cc_can_build_shared=no
-+      ;;
-+    esac
-   fi
- ])
-EOF
-
-# patch aclocal.m4: 
-# fix checks "if icc/ecc supports -c -o file.{o,lo}"
-# and "whether -lc should be explicitly linked in"
-cat << "EOF" | patch aclocal.m4
---- aclocal.m4.OK	Thu Jul  4 17:51:11 2002
-+++ aclocal.m4	Thu Jul  4 17:58:21 2002
-@@ -1184,7 +1184,7 @@
- if { (eval echo configure:__oline__: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
-   # The compiler can only warn and ignore the option if not recognized
-   # So say no if there are warnings
--  if test -s out/conftest.err; then
-+  if test -s out/conftest.err && test "`grep -v "^conftest.$ac_ext\$" out/conftest.err`" ; then
-     lt_cv_compiler_c_o=no
-   else
-     lt_cv_compiler_c_o=yes
-@@ -2444,7 +2444,7 @@
- 
- AC_LIBTOOL_DLOPEN_SELF
- 
--if test "$enable_shared" = yes && test "$GCC" = yes; then
-+if test "$enable_shared" = yes && ( test "$GCC" = yes || test "$CC" = icc || test "$CC" = ecc ) ; then
-   case $archive_cmds in
-   *'~'*)
-     # FIXME: we may have to deal with multi-command sequences.
-@@ -2464,7 +2464,10 @@
-       libobjs=conftest.$ac_objext
-       deplibs=
-       wl=$lt_cv_prog_cc_wl
--      compiler_flags=-v
-+      if ( test "$CC" = icc || test "$CC" = ecc )
-+        then  compiler_flags=-dryrun
-+        else  compiler_flags=-v
-+      fi
-       linker_flags=-v
-       verstring=
-       output_objdir=.
-EOF
-
-fi # [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]
 
 
 autoheader || exit 1
