@@ -331,7 +331,8 @@ This knowledge avoids low-level type decodings, but should
 be assured at least once for each platform.
 @c
 
-void tstAligned()
+static
+void tstAligned(void)
 {
 	int allAligned=0;
 	ValRecord v;
