@@ -2067,12 +2067,15 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         lock_unset(pf_short);
         if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
     }
-    lock_set(pf_wal);
-    log_trans_start(pf_logger);
-    [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
-    [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
-    log_trans_end(pf_logger);
-    lock_unset(pf_wal);
+
+    if (count(newcoll) > 0) {
+        lock_set(pf_wal);
+        log_trans_start(pf_logger);
+        [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
+        [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
+        log_trans_end(pf_logger);
+        lock_unset(pf_wal);
+    }
 }
 
 
