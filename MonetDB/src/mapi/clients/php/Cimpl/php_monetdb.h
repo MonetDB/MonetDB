@@ -124,6 +124,10 @@ PHP_FUNCTION(monetdb_select);
 #define MONETDB_DML_ASYNC             (1<<10)    /* Do async query */
 #define MONETDB_DML_STRING            (1<<11)    /* Return query string */
 
+/* avoid redeclaration */
+#ifdef _POSIX_C_SOURCE
+# undef _POSIX_C_SOURCE
+#endif
 
 #include "Mapi.h"
 /* typedefs for convenience; not using Mapi's as those already are a
