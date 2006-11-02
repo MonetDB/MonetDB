@@ -302,6 +302,9 @@ yes-*-*)
 		;;
 	solaris*)
 		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
+		dnl also add __EXTENSIONS__ to the CFLAGS as the Mapi swig 
+		dnl clients include monetdb_config to late
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
 	*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
