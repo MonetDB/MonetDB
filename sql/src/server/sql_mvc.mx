@@ -1151,18 +1151,14 @@ mvc_check_dependency(mvc * m, int id, int type)
 					break;
 		case SCHEMA_DEPENDENCY : dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
 					break;
-		default: dep_list =  sql_trans_get_dependencies(m->session->tr, id);
+		case TABLE_DEPENDENCY : dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY);
+					break;
+		default: dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY);
 	}
 	
-	if ( list_length(dep_list) > 2 ) {
+	if ( list_length(dep_list) >= 2 ) {
 		list_destroy(dep_list);
 		return HAS_DEPENDENCY;
-	}
-	if (list_length(dep_list) == 2) {
-		if (sql_trans_check_dependency(m->session->tr, *(int *) dep_list->h->data, id, *(int *) dep_list->h->next->data))
-			return CICLE_DEPENDENCY; 	
-		else 
-			return HAS_DEPENDENCY;
 	}
 	
 	list_destroy(dep_list);

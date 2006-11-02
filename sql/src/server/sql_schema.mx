@@ -1376,6 +1376,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
 		if (t->system)
 			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
+		if (isView(t))
+			return sql_error(sql, 02, "cannot drop column %s (%s is a view)\n", cname, t->base.name);
 		if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY))
 			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
 		mvc_drop_column(sql, t, cname);
@@ -1554,8 +1556,6 @@ alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
 
 	if ((t = mvc_bind_table(sql, ss, name)) == NULL) {
 		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", name);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "ALTER TABLE: cannot alter view '%s'", name);
 	} else {
 		return table_element(sql, te, ss, t, 1);
 	}

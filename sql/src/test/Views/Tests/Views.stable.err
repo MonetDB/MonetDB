@@ -1,4 +1,4 @@
-stderr of test 'Views` in directory 'src/test/Views_Restrictions` itself:
+stderr of test 'Views` in directory 'src/test/Views` itself:
 
 
 # 15:59:37 >  
@@ -67,13 +67,13 @@ stderr of test 'Views` in directory 'src/test/Views_Restrictions` itself:
 # 15:59:37 >  Mtimeout -timeout 60 ./Views.SQL Views 
 # 15:59:37 >  
 
-MAPI  = monetdb@localhost:33742
+MAPI  = monetdb@localhost:30133
 QUERY = ALTER TABLE v1 DROP COLUMN age;
-ERROR = !ALTER TABLE: cannot alter view 'v1'
-MAPI  = monetdb@localhost:33742
+ERROR = !cannot drop column age (v1 is a view)
+MAPI  = monetdb@localhost:30133
 QUERY = CREATE TRIGGER trigger_test AFTER INSERT ON v1
 ERROR = !CREATE TRIGGER: cannot create trigger on view 'trigger_test'
-MAPI  = monetdb@localhost:33742
+MAPI  = monetdb@localhost:30133
 QUERY = CREATE INDEX id_age_index ON v1(id,age);
 ERROR = !CREATE INDEX: cannot create index on view 'v1'
 

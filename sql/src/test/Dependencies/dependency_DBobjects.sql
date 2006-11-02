@@ -51,8 +51,15 @@ CREATE TRIGGER trigger_test AFTER INSERT ON t1
 	INSERT INTO t2 values(1,23);
 
 CREATE TRIGGER trigger_test_2 AFTER INSERT ON t1
-	ALTER TABLE t2 DROP COLUMN age_v1;
+	ALTER TABLE t1 DROP COLUMN age;
 
+--CREATE TRIGGER trigger_test_3 AFTER INSERT ON t1
+--	INSERT INTO t1 values(1, 'monetdb', 23);
+
+CREATE TABLE t3 (id int);
+
+CREATE TRIGGER trigger_test_4 AFTER INSERT ON t1
+	INSERT INTO t3 values(1);
 
 --Schema s has a dependency on user u
 SELECT s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id;
@@ -140,3 +147,8 @@ DROP VIEW v1;
 
 DROP TABLE t1;
 
+DROP TRIGGER trigger_test_4;
+
+DROP TABLE t1;
+
+DROP TABLE t3;

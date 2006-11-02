@@ -29,7 +29,7 @@
 extern int create_dependency_table(sql_trans *tr, sql_schema *s);
 extern void sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
 extern void sql_trans_drop_dependencies(sql_trans* tr, int depend_id);
-extern list* sql_trans_get_dependencies(sql_trans* tr, int id);
+extern list* sql_trans_get_dependencies(sql_trans* tr, int id, int depend_type);
 extern int sql_trans_check_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int owner);
 
@@ -104,13 +104,13 @@ sql_trans_drop_dependencies(sql_trans* tr, int depend_id)
 }
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
-sql_trans_get_dependencies(sql_trans* tr, int id)
+sql_trans_get_dependencies(sql_trans* tr, int id, int depend_type)
 {
-	node *id_node, *type_node;
+	node *id_node, *type_node, *trig_node;
 	sql_schema *s;
-	sql_table *dep;
-	sql_column *dep_id_col, *dep_dep_id, *dep_dep_type;
-	list *dep_id, *dep_type, *dep_list = list_create((fdestroy) NULL); 
+	sql_table *dep, *triggers;
+	sql_column *dep_id_col, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
+	list *dep_id, *dep_type, *trig_list, *dep_list = list_create((fdestroy) NULL); 
 
 	s = find_sql_schema(tr, "sys");	
 
@@ -136,6 +136,23 @@ sql_trans_get_dependencies(sql_trans* tr, int id)
 	}
 	list_destroy(dep_id);
 	list_destroy(dep_type);
+
+	if (depend_type == TABLE_DEPENDENCY) {
+		triggers = find_sql_table(s, "triggers");
+		table_id = find_sql_column(triggers, "table_id");
+		tri_id = find_sql_column(triggers, "id");
+
+		depend_type = TRIGGER_DEPENDENCY;
+		trig_list = table_select_column(tr, tri_id, table_id, &id, NULL);
+		trig_node = trig_list->h;
+		while (trig_node) {
+			list_append(dep_list, trig_node->data);
+			list_append(dep_list, &depend_type);
+			trig_node = trig_node->next;
+		}
+		
+		list_destroy(trig_list);
+	}
 	return dep_list;
 }
 
