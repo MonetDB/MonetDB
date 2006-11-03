@@ -3298,8 +3298,12 @@ rollforward_create_idx(sql_trans *tr, sql_idx * i)
 		temp_destroy(i->bat.ibid);
 		i->bat.ibid = 0;
 
-		if (tr->parent == gtrans)
+		if (tr->parent == gtrans) {
+			/* snapshot large bats */
+			if (BATcount(b) > 1000) 
+				BATmode(b, PERSISTENT);
 			ok = log_bat_persists(sql_logger, b, i->bat.name);
+		}
 
 		snprintf(bname, BUFSIZ, "U_%s", i->bat.name);
 		i->bat.uname = _strdup(bname);
@@ -3387,8 +3391,12 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 		temp_destroy(c->bat.ibid);
 		c->bat.ibid = 0;
 
-		if (tr->parent == gtrans)
+		if (tr->parent == gtrans) {
+			/* snapshot large bats */
+			if (BATcount(b) > 1000) 
+				BATmode(b, PERSISTENT);
 			ok = log_bat_persists(sql_logger, b, c->bat.name);
+		}
 
 		c->t->cnt = BATcount(b);
 
@@ -3442,8 +3450,12 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 			t->dname = _strdup(name);
 			(void) logger_add_bat(sql_logger, d, t->dname);
 
-			if (tr->parent == gtrans)
+			if (tr->parent == gtrans) {
+				/* snapshot large bats */
+				if (BATcount(d) > 1000) 
+					BATmode(d, PERSISTENT);
 				ok = log_bat_persists(sql_logger, d, t->dname);
+			}
 
 			t->cnt -= BATcount(d);
 			bat_destroy(d);
