@@ -678,7 +678,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		if (cntxt != mal_clients) 
 			/* help MapiClients with fake prompt */
 			stream_printf(out,"mdb>");
-		/* printInstruction(out, mb, p, listing);*/
 		printTraceCall(cntxt,mb,stk,pc);
 	}
 	if (cntxt == mal_clients) {
@@ -1137,7 +1136,7 @@ signatures satisfying the pattern.
 		case 'o':
 		case 'O':	/* optimizer steps */
 		{
-			int flg = *b == 'o' ? LIST_MAL_INSTR : LIST_MAL_ALL;
+			int flg = *b == 'o' ? LIST_MAL_INSTR | LIST_MAL_PROPS : LIST_MAL_ALL;
 			int idx;
 
 			skipWord(cntxt, b);
@@ -1651,7 +1650,8 @@ resetOptimizerDebugger()
 	if (optTop) {
 		/* garbage collect */
 		for (i = 0; i < optTop; i++) {
-			freeMalBlk(optimizerHistory[i].mb);
+			if( optimizerHistory[i].mb)
+				freeMalBlk(optimizerHistory[i].mb);
 			GDKfree(optimizerHistory[i].title);
 		}
 	}
