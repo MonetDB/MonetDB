@@ -1464,6 +1464,21 @@ createNewVarTable (opt_t *f, int cur_level)
  *  PHASE 2 (else) |    -    |        -
  *  PHASE 3 (else) |    -  - |        -
  *
+ * Stefan.Manegold@cwi.nl, 03.11.2006:
+ *
+ * fixing BUG #1562868 XQ: complex q fails with error in "batbat_lng_add_inplace":
+ * 
+ * trading in optimization (performance?) for correctness:
+ * 
+ * The optimization to omit the eveluation of empty if-then-else branches
+ * is broken, and since noone has been able to fix it, yet, we simply
+ * disable this optimization --- the performance "penalty" should not be
+ * too big, since the inpu to the respective branch is empty.
+ * 
+ * See
+ * http://sourceforge.net/tracker/index.php?func=detail&aid=1562868&group_id=56967&atid=482468
+ * and "fixing BUG #1562868" below for details.
+ *
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
  * @param cur_level the level of the for-scope
@@ -1495,7 +1510,8 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "var v_kind%03u := v_kind%03u;\n", cur_level, cur_level-1);
 
     /* 1. PHASE: create all mapping stuff to next 'scope' */
-    milprintf(f, "if (skip = 0)\n{\n");
+    /* milprintf(f, "if (skip = 0)\n{\n"); *//* see "fixing BUG #1562868" above */
+    milprintf(f, "if (true)\n{\n");
     /* output for debugging
     milprintf(f, "\"PHASE 1 of %s-clause active\".print();\n",then?"then":"else");
     */
@@ -1543,7 +1559,8 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "}\n");
 
     /* 3. PHASE: create all mapping stuff from to actual 'scope' */
-    milprintf(f, "if (skip = 0)\n{\n");
+    /* milprintf(f, "if (skip = 0)\n{\n"); *//* see "fixing BUG #1562868" above */
+    milprintf(f, "if (true)\n{\n");
     /* output for debugging
     milprintf(f, "\"PHASE 3 of %s-clause active\".print();\n",then?"then":"else");
     */
@@ -1587,6 +1604,8 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
     else
          do the whole stuff
     */
+    /* see "fixing BUG #1562868" above */
+    milprintf(f, "item%03u := item%03u.materialize(ipik);\n", bool_res, bool_res);
     milprintf(f,
             "var selected;\n"
             "var skip;\n"
