@@ -15,7 +15,7 @@ stdout of test 'scenes` in directory 'tests/StandOff/video` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><beatleScenes><scene end="800" start="0" id="1"/><scene end="10400" start="801" id="2"/></beatleScenes></XQueryResult>
+<XQueryResult><beatleScenes><scene id="1" start="0" end="800"/><scene id="2" start="801" end="10400"/></beatleScenes></XQueryResult>
 
 # 20:01:50 >  
 # 20:01:50 >  Done.
