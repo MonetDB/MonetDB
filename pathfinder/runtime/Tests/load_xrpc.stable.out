@@ -39,6 +39,7 @@ loaded();
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
 [ "lock",	  3		  ]
+[ "logger",	  1		  ]
 [ "main",	  1		  ]
 [ "malalgebra",	  3		  ]
 [ "mapi",	  1		  ]

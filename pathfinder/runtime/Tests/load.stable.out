@@ -90,6 +90,7 @@ loading module 'pathfinder'
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
 [ "lock",	  4		  ]
+[ "logger",	  1		  ]
 [ "main",	  1		  ]
 [ "malalgebra",	  4		  ]
 [ "mapi",	  1		  ]
