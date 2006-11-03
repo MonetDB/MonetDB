@@ -757,6 +757,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 						nr =rel_push_select(sql, r, le, re);
 					}
 					assert(nr==r);
+					(void)nr;
 				}
 			}
 			rel_print(sql, rel, 0);
@@ -797,6 +798,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 						nr = rel_push_select(sql, r, le, re);
 					}
 					assert(nr==r);
+					(void)nr;
 				}
 			}
 			r = rel->l;

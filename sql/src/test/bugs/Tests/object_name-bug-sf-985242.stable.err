@@ -56,13 +56,13 @@ stderr of test 'object_name-bug-sf-985242` in directory 'src/test/bugs` itself:
 # 14:52:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54903  < object_name-bug-sf-985242.sql
 # 14:52:48 >  
 
-MAPI  = monetdb@localhost:38018
+MAPI  = monetdb@localhost:37936
 QUERY = create table "\t" (id int);
-ERROR = !syntax error, unexpected STRING in: "create table "\t""
-MAPI  = monetdb@localhost:38018
+ERROR = !Invalid identifier '\t'
+MAPI  = monetdb@localhost:37936
 QUERY = create table x ("\t" int);
-ERROR = !syntax error, unexpected STRING, expecting CHECK or FOREIGN or PRIMARY or UNIQUE in: "create table x ("\t""
-MAPI  = monetdb@localhost:38018
+ERROR = !Invalid identifier '\t'
+MAPI  = monetdb@localhost:37936
 QUERY = select * from x;
 ERROR = !SELECT: no such table 'x'
 

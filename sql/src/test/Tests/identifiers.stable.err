@@ -68,9 +68,9 @@ stderr of test 'identifiers` in directory 'src/test` itself:
 # 22:26:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45449  < identifiers.sql
 # 22:26:32 >  
 
-MAPI  = monetdb@localhost:35781
+MAPI  = monetdb@localhost:33719
 QUERY = SELECT 1 AS "\"Bla\""; -- should fail
-ERROR = !syntax error, unexpected STRING in: "select 1 as "\"Bla\"""
+ERROR = !Invalid identifier '\"Bla\"'
 
 # 22:26:32 >  
 # 22:26:32 >  Done.

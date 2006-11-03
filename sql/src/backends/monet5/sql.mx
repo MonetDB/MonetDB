@@ -723,7 +723,6 @@ backend_create(mvc *m, Client c)
 	b->currColumn = NULL;
 	b->currKey = NULL;
 	b->currIndex = NULL;
-	//b->code = NULL;
 	b->vtop = 0;
 	b->Tparse = b->Toptimize = b->Tschedule = b->Texec = 0;
 	b->qry = NULL;

@@ -881,8 +881,13 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 		assert(quote == '"' || quote == '\'');
 
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 
-		if (quote == '"' && valid_ident(yylval->sval+1,str)) {
-			token = IDENT;
+		if (quote == '"') {
+			/* Todo check if what valid 'quoted' idents are */
+			if (valid_ident(yylval->sval+1,str)) {
+				token = IDENT;
+			} else {
+				sql_error(c, 1, "Invalid identifier '%s'", yylval->sval+1);
+			}
 		} else {
 			memcpy(str, yylval->sval+1, lc->yycur-lc->yysval - 1);
 		}
