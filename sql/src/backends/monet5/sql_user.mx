@@ -71,10 +71,7 @@ monet5_drop_user(ptr _mvc, str user)
 	sql_schema *sys;
 	sql_table *users;
 	sql_column *users_name;
-	int schema_id,  user_id;
 	str err;
-	user_id = sql_find_auth(m, user);
-	schema_id = sql_find_auth_schema(m, user);
 
 	err = AUTHremoveUser(&user);
 	if (err != MAL_SUCCEED) {
