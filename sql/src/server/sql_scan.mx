@@ -887,6 +887,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 				token = IDENT;
 			} else {
 				sql_error(c, 1, "Invalid identifier '%s'", yylval->sval+1);
+				return LEX_ERROR;
 			}
 		} else {
 			memcpy(str, yylval->sval+1, lc->yycur-lc->yysval - 1);
