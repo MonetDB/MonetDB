@@ -759,12 +759,16 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	if (seqs == 0) {
 		logger->seqs = logbat_new(TYPE_int, TYPE_lng, 1);
 		BATmode(logger->seqs, PERSISTENT);
+	        snprintf(bak, BUFSIZ, "%s_seqs", fn);
+		BBPrename(logger->seqs->batCacheid, bak);
 		
 		logger_add_bat(logger, logger->seqs, "seqs");
 		BUNins(logger->seqs, &id, &logger->id, FALSE);
 
 		logger->snapshots = logbat_new(TYPE_int, TYPE_int, 1);
 		BATmode(logger->snapshots, PERSISTENT);
+	        snprintf(bak, BUFSIZ, "%s_snapshots", fn);
+		BBPrename(logger->snapshots->batCacheid, bak);
 		logger_add_bat(logger, logger->snapshots, "snapshots");
 		bm_subcommit(logger->catalog, logger->catalog);
 	} else {
@@ -1198,6 +1202,7 @@ log_tend(logger *logger)
 	if (logger->debug)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
+#if 0
 	/* first subcommit the snapshots */
 	if (BATcount(logger->snapshots)) {
 		/* sub commit all new snapshots */
@@ -1205,7 +1210,7 @@ log_tend(logger *logger)
 		res = bm_subcommit(b, logger->snapshots);
 		BBPunfix(b->batCacheid);
 	}
-
+#endif
 	l.flag = LOG_END;
 	l.nr = logger->tid;
 	if (res || log_write_format(logger, &l) == LOG_ERR || 
