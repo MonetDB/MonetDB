@@ -1,1 +1,0 @@
-SELECT MODEL275.is_mutagen, count(distinct MODEL275.model_id ) FROM MODEL MODEL275, ATOM T1008290435540  WHERE MODEL275.model_id=T1008290435540.model_id AND MODEL275.logp='3' group by MODEL275.is_mutagen;

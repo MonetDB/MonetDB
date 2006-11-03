@@ -1,5 +1,0 @@
-@section XQuery Features
-The XPath language is a sub-set of the XQuery language. It is fully supported in MonetDB/XQuery.
-
-It is not our intention to maintain documentation for the XPath language. If you are looking for the 
-XPath language reference, please visit the @url{http://www.w3.org/TR/xpath/,W3C XPath Specification} page.
