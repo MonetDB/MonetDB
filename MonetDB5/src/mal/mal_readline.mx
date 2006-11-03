@@ -70,8 +70,6 @@ features to assemble a command before it is being interpreted.
 
 #include "mal_client.h"
 mal_export int readConsole(Client cntxt);
-mal_export void showCommands(void);
-mal_export char * getConsoleInput(const char *prompt, int linemode, int exit_on_error);
 
 #endif /* READLINETOOLS_H_INCLUDED */
 @c
@@ -293,7 +291,7 @@ deinit_readline(void)
 		write_history(history);
 	}
 }
-
+#endif /* HAVE_LIBREADLINE */
 @-
 @c
 #ifndef S_ISCHR
@@ -304,11 +302,13 @@ deinit_readline(void)
 #include <termios.h>
 #endif
 
-void
+static void
 showCommands(void)
 {
 	printf("?\t - show this message\n");
+#ifdef HAVE_LIBREADLINE
 	printf("!\t - show the history\n");
+#endif
 	printf("<file\t - read input from file\n");
 	printf(">file\t - save response in file\n");
 	printf(">\t - response to terminal\n");
@@ -318,7 +318,7 @@ showCommands(void)
 
 static int initReadline;
 
-char *
+static char *
 getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 {
 	char *line = NULL;
@@ -329,6 +329,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 	(void) linemode;
 
 	do {
+#ifdef HAVE_LIBREADLINE
 		if (prompt) {
 			/* rl_completion_func_t *func = NULL;*/
 
@@ -345,8 +346,17 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				buf[length] = 0;
 			}
 			line = buf;
-		} else {
-			buf= malloc(BUFSIZ);
+		} else
+#endif
+		{
+#ifndef HAVE_LIBREADLINE
+			if (prompt) {
+				fputs(prompt, stdout);
+				fflush(stdout);
+			}
+#endif
+			if (buf == NULL)
+				buf= malloc(BUFSIZ);
 			line = fgets(buf, BUFSIZ, stdin);
 		}
 		
@@ -427,6 +437,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 					continue;
 				}
 				break;
+#ifdef HAVE_LIBREADLINE
 			case '!':
 				{ char *nl;
 				  Client c= MCgetClient();
@@ -445,6 +456,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 					} else line= NULL;
 				}
 				continue;
+#endif
 			case '?':
 				if( !isspace( (int) line[1]) )
 					showHelp( MCgetClient()->nspace,line+1, MCgetClient()->fdout);
@@ -471,12 +483,14 @@ readConsole(Client cntxt){
 	}
 
 	/* read lines and move string to client buffer. */
+#ifdef HAVE_LIBREADLINE
 	if( initReadline ==0){
 		init_readline();
 		using_history();
 		stifle_history(1000);
 		initReadline =1 ;
 	}
+#endif
 	buf= getConsoleInput(cntxt->prompt, 0, 1);
 	if( buf) {
 		int len= strlen(buf);
@@ -491,20 +505,13 @@ readConsole(Client cntxt){
 		return 1;
 	} else {
 		cntxt->fdin->eof = 1;
+#ifdef HAVE_LIBREADLINE
 		if( initReadline ){
 			deinit_readline();
 			initReadline= 0;
 		}
+#endif
 	}
 	return -1;
 }
-
-#else
-
-int 
-readConsole(Client cntxt){
-	(void) cntxt;
-	return -1;
-}
-#endif /* HAVE_LIBREADLINE */
 @}
