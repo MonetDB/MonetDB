@@ -315,7 +315,6 @@ SQLinitClient(Client c)
 		/* TODO reset global variables */
 	}
 
-	//c->fdin->pos += c->yycur;
 	c->yycur = 0;		/* make sure we don't reuse the used input */
 	c->fdin->eof = 1;       /* force prompt on first iteration */
 
