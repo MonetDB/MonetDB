@@ -381,7 +381,8 @@ log_read_updates(logger *logger, logformat *l, char *name)
 					BUNins(b, h, t, TRUE);
 				else if (l->flag == LOG_DELETE)
 					BUNdel(b, h, t, TRUE);
-				else if (l->flag == LOG_UPDATE) {
+				else if (l->flag == LOG_UPDATE) { 
+					/* the updates should be kept in seperate bats, and then applied when we hit a LOG_END */
 					if (BUNfnd(b, h) == NULL) {
 						/* if value doesn't exist, insert it
 						   if b void headed, maintain that by inserting nils */
@@ -536,7 +537,6 @@ logger_readlog(logger *logger, char *filename)
 
 	logger->log = open_rstream(filename);
 
-
 	/* if the file doesn't exist, there is nothing to be readback */
 	if (!logger->log || stream_errnr(logger->log)) {
 		if (logger->log)
@@ -651,6 +651,12 @@ logger_commit(logger *logger)
 
 	BUNdelHead(logger->seqs, &id, FALSE);
 	BUNins(logger->seqs, &id, &logger->id, FALSE);
+
+	/* cleanup old snapshots */
+	if (BATcount(logger->snapshots)) {
+		BATclear(logger->snapshots);
+		BATcommit(logger->snapshots);
+	}
 	return bm_commit(logger);
 }
 
@@ -1172,21 +1178,6 @@ log_tstart(logger *logger)
 	l.flag = LOG_START;
 	l.nr = ++logger->tid;
 
-	/* cleanup old snapshots */
-#if 0
-	if (BATcount(logger->snapshots)) {
-		/* sub commit all new snapshots */
-		int nil = int_nil;
-		BAT *b = BATselect(logger->snapshots, &nil, &logger->tid);
-
-		BATdel(logger->snapshots, b, FALSE);
-		BBPunfix(b->batCacheid);
-		if (BATcount(logger->snapshots) == 0) 
-			BATclear(logger->snapshots);
-		BATcommit(logger->snapshots);
-	}
-#endif
-
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid);
 
@@ -1202,7 +1193,6 @@ log_tend(logger *logger)
 	if (logger->debug)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
-#if 0
 	/* first subcommit the snapshots */
 	if (BATcount(logger->snapshots)) {
 		/* sub commit all new snapshots */
@@ -1210,7 +1200,6 @@ log_tend(logger *logger)
 		res = bm_subcommit(b, logger->snapshots);
 		BBPunfix(b->batCacheid);
 	}
-#endif
 	l.flag = LOG_END;
 	l.nr = logger->tid;
 	if (res || log_write_format(logger, &l) == LOG_ERR || 
