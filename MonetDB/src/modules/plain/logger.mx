@@ -339,7 +339,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 		if (p) {
 			int tid = *(int*)BUNtloc(logger->snapshots, p);
 
-			if (logger->tid < tid) 
+			if (logger->tid <= tid) 
 				skip = 1;
 		}
 	}
