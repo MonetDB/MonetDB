@@ -114,6 +114,7 @@ PROC xquery_server_start() : void {
 # Global information on persistent stored XML collections:
 # - collection_name   BAT[oid,name]             coll-ID / collection name 
 # - collection_size   BAT[oid,lng]              coll-ID / size in bytes
+# - collection_zombie BAT[oid,lng]              coll-ID / ws-ID that blocked its deletion (TRANSIENT) 
 #
 # A collection may contain one ore more XML documents:
 # - doc_collection    BAT[oid,oid]          document-ID / coll-ID 
@@ -348,12 +349,10 @@ The middle segment is private to the query.
 
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
-Wouter: THEN WHY IS WS_SIZE count(ws) + 10???
-
 BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
 
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 69)@
+@:ws_@1_decl(WS_SIZE, 61)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -406,6 +405,9 @@ const RT_REGION_PRE    := 8;
 const RT_REGION_START  := 9;
 const RT_REGION_END    := 10;
 
+const WSID_UPDATE := (3LL << 30);
+const WSID_EXCLUSIVE := (1LL << 31);
+
 # dirty solution (proposed by Peter ;) to be able to locate (and replace) the
 # bats inside the colname_runtime-bat.
 const RT_REGION_PRE_LOCK    := lock(RT_REGION_PRE);
@@ -434,7 +436,8 @@ const QN_URI_UPDATE := QN_LOC_UPDATE + 1;
 const QN_PREFIX_UPDATE := QN_URI_UPDATE + 1;
 const QN_URI_LOC_UPDATE := QN_PREFIX_UPDATE + 1;
 const QN_PREFIX_URI_LOC_UPDATE := QN_URI_LOC_UPDATE + 1;
-const UPDATED_TEXT := QN_PREFIX_URI_LOC_UPDATE + 1;
+const QN_HISTOGRAM_UPDATE := QN_PREFIX_URI_LOC_UPDATE + 1;
+const UPDATED_TEXT := QN_HISTOGRAM_UPDATE + 1;
 const NID_QN_INS_UPDATE := UPDATED_TEXT + 1; # note, NID_QN and not QN_NID
 const NID_QN_DEL_UPDATE := NID_QN_INS_UPDATE + 1;
 const MODIFIED_NID := NID_QN_DEL_UPDATE + 1;
@@ -465,14 +468,15 @@ MIL variables, but these point to the same global BATs).
 var pf_short := pflock(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
 var pf_free  := pflock(1); # lock held while freeing ws-es
 var pf_wal   := pflock(2); # lock that must be held while writing into the WAL
-var pf_update:= pflock(3); # exclusive update lock
 
 # initialize the logger
-var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), monet_environment.find("gdk_dbname"), LOGGER_VERSION);
+var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
+                                            monet_environment.find("gdk_dbname"), LOGGER_VERSION);
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
 var collection_size;  # bat[oid,lng] collection size in bytes
+var collection_zombie;# bat[oid,lng] contains ws still using the now defunct collection (TRANSIENT)
 
 var doc_collection;   # bat[oid,oid] collection-id 
 var doc_name;         # bat[oid,str] document name
@@ -531,6 +535,7 @@ if (not(doc_collection.exist(TEMP_DOC))) {
 }
 if (isnil(CATCH(bat("doc_undo").count()))) {
     doc_undo         := bat("doc_undo"); 
+    collection_zombie:= bat("collection_zombie"); 
     colname_shredlock:= bat("colname_shredlock"); 
     colname_runtime  := bat("colname_runtime"); 
     colname_pins     := bat("colname_pins"); 
@@ -550,6 +555,7 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
     ws_mem           := bat("ws_mem");
 } else {
     doc_undo         := bat(oid,lng).rename("doc_undo"); 
+    collection_zombie:= bat(oid,lng).rename("collection_zombie"); 
     colname_pins     := bat(str,lng).rename("colname_pins"); 
     colname_locks    := bat(str,lng).rename("colname_locks"); 
     colname_runtime  := bat(str,bat).rename("colname_runtime"); 
@@ -593,12 +599,14 @@ PROC _collection_cleanup() : BAT[void,str]
     var commitBAT := bat(void,str);
     var cnt := {count_no_nil}(reverse(doc_collection).leftjoin(doc_name), collection_name);
     var del := cnt.uselect(0).mirror().join(collection_name);
+    collection_zombie.delete();
     del@batloop() {
         var coll_oid := $h;
         var doc_oids := doc_collection.uselect(coll_oid);
 
         # only do something if this collection is not pinned!!
-        if (not(colname_pins.exist($t))) {
+        var users := reverse(colname_pins).uselect($t);
+        if (count(users) = 0) {
             # delete all documents from the collection
             doc_collection.delete(doc_oids);
             doc_name.delete(doc_oids);
@@ -621,6 +629,9 @@ PROC _collection_cleanup() : BAT[void,str]
             collection_size.delete(coll_oid);
 
             commitBAT.insert([+](str(int(coll_oid)), ws_dsk).tmark(oid_nil));
+         } else {
+            # recall the ws-ids that blocked deletion of a collection 
+            collection_zombie.append([abs](reverse(project(users,$h))));
          }
     }
     return commitBAT.seqbase(0@0).access(BAT_READ); # return a list of garbage bats
@@ -640,27 +651,28 @@ PROC collection_cleanup(BAT[void,str] delBAT) : void
 }
 
 
+
 @+ locking approach
 @T
 MonetDB/XQuery uses optimistic concurrency control with snapshot
 isolation, so updates do not use locks as such. Instead, conflicting 
-queries are aborted at commit time. 
+queries are aborted at commit time (see later in "Query Types"). 
 
 Still, some locking still needs to be done, to prevent crashes.
 Monet BATs may never be modified (e.g. from MIL) while other  
 concurrent queries are reading them (e.g. from MIL). This holds
 both from the meta-bats, as well as the data bats.
 
-Right from the start, I have opted for a policy that allows as much
-concurrency as possible.
+The goal is to allow as much concurrency as possible (after all, the
+strength of optimistic CC).
 
 @- short lock
 
 There is a short lock (pf_short) that protects access to the collection_*,
 doc_* and colname_* meta-tables. Note that the fn:add_doc(), fn:del_doc()
-as well as  the fn:doc() which leads to implicit shredding and caching
+as well as the fn:doc() function (which does implicit shredding and caching)
 modify these tables. All types of queries read them. Thus all reads and
-writes to these tables need to be locked, whth the short lock. 
+writes to these tables need to be locked, with the short lock. 
 
 It is good practice to carry out all work while holding the short lock inside 
 a CATCH(). Otherwise a run-time error may leave the short lock taken and the 
@@ -692,14 +704,22 @@ extensions use entries in the runtime-BAT.
 
 The collection lock can be used to get exclusive access to the master
 bats of a collection. This is required when:
+
 - a collection is opened and isolated copies of the master bats need to 
   be made. This includes the time taken for any nsloc index construction,
   which must be done on the master copies.
+
 - while an incremental shred operation is *extending* the bat collection 
   -- though it is not needed while shredding in general.
+
+- while playing the update tape, and determining which updates
+  to make, certain append-only tables are extended (qn_*,  prop_*).
+  These extensions must also take the coll_lock, temporarily.
+
 - while applying the updates of a committed query to the master bat.
   note that in a commit, first all locks of all documents must be acquired
   (in ascending order - to prevent deadlock), then all changes commited. 
+
 
 Similar to the short_doc PROC naming convention, __X() PROCs, i.e.
 with double underscore are those that execute while holding a collection
@@ -710,37 +730,205 @@ lock.
 Note that we will not use the collection lock while shredding (fn:add_doc())
 continuously, only when extending the master bats. The code of shredding is 
 carefully screened only to touch *new* parts of the BATs thus not affecting 
-the master copies in places that are ahred with ongoing queries. BAT-extends 
+the master copies in places that are shared with ongoing queries. BAT-extends 
 must be locked with the collection lock, as these may lead to base-relocations,
 that affect other users of the master bats.
 
 However, we must ensure that only one shred into the same collection is
 happening at a time, as both need exclusive append access. For this
-purpose, an extra shred-lock in the colname_shredlock BAT[str,lock] is taken 
+purpose, an extra "shred-lock" in the colname_shredlock BAT[str,lock] is taken 
 by shred operations.
 
-@- collection pins
+This "shred-lock" thus protects the process of making the data bats longer.
+As such, also the insert operations that allocate a new page (ws_newpage) 
+or a new set of NIDs (ws_newnids) must acquire this lock. These two operations
+always request a karger batch of (pages, NIDs) in one go, adding them to a 
+free-list. Thus, many insert actions will actually not need to take the 
+shred-lock (as they can get theire new pages/NIds from a freelist).
+
+@- deleting documents 
 
 Deleting documents simply marks them as unused by changing document and
-collection names to nil. This ensures that newly eneering queries will
+collection names to nil. This ensures that newly entering queries will
 never find and thus use those documents. When the last document in a 
-collection is deleted, the collection should be removed. Only then, the BAT 
-resources may be freed.
+collection is deleted, the collection should be removed. Only then, 
+the BAT resources may be freed.
 
-Here all concurreny issues are avoided by awaiting a moment of absolute
-silence, i.e. when no query is using the collection. For this reason all 
-document using functions (fn:doc() but also fn:add_doc()) put a so-called 
-'pin' on the collection they are intending to manipulate.  These pins are 
-gathered in the BAT[str,lng] colname_pins (it contains document names and 
-ws-IDs). This BAT is also used for recording which queries currently
-hold a shred-lock. This is marked by storing the *negated* ws-id. The
-catcher routine for all queries (ws_destroy) takes care of properly
-releasing these locks while cleaning up.
+Deleting documents is separated in two phases, where the setting 
+to nil of the name is the critical part. This action does not throw
+away any data, so can be easily rolled back. A single query can
+delete many documents and shred many new ones, but should commit
+actomically. If some action fails, everything is rolled back.
 
-@- WAL lock 
+After a succesful document management query, empty document collections 
+are pruned. That is, they are removed from the meta-tables, and 
+their data tables physically removed.  This may not be possible if there
+are concurrent users of documents in the collections (these 
+transactions must have started before the document name was 
+set to nil, or will shred a new document into the now empty collection).
+Those collections are not pruned, but when the transaction that
+blocked it finishes, it retries empty collection pruning in its 
+ws_destroy() sequence.
+
+@- collection pins and ws-IDs
+
+To detect concurrent use of collections, all document-using functions 
+(fn:doc() but also fn:add_doc()) put a so-called 'pin' on the collection 
+they are intending to manipulate.  These pins are gathered in the BAT[str,lng] 
+colname_pins (it contains document names and ws-IDs). 
+This BAT is also used for recording which queries currently hold 
+a shred-lock. This is marked by storing the *negated* ws-id. 
+
+ws-ID: a transaction (query) is characterized by its ws-id. The 
+ws-id is a unique OID, and is kept as the name of the working set 
+bat[void,bat]. ws-IDs are globally aned temporally unique, i.e. 
+we can talk about a ws-ID even after the transaction has finished.
+
+The collection pins record which transactions (wsids) are using 
+which bats. This information is deleted only at the end of
+the transaction. 
+
+@- conflict detection & isolation 
+
+This relates to the ws_precommit() function. 
+
+From the collection pins we also derive a 'ws_overlaps_ws'
+BAT that captures which update transactions executed concurrently
+and had some common XML collection open (in common). These
+transactions potentially conflict with each other (which
+may lead to an abort on one of them).
+
+For conflict detection, we remember all page-ids in the rid_* 
+table that a transaction modified, as well as all attribute 
+oids (the other tables, qn_* and prop_* are append-only so
+never cause any conflicts).
+
+(note that for structural updates in a page, all pages containing 
+ ancestors (whoise size field will be affected by the update) 
+ are *not* considered modified. Concurrent ancestor size-changes 
+ are compensated at commit time by keeping track of the difference 
+ in size, caused by a transaction, rather than absolute values.)
+
+A related issue is isolation. At commit time, changes from
+the update list (that were succesfully logged in the WAL) are
+applied to the master BATs. Concurrent queries should be
+isolated from these changes in the masters. For this purpose, 
+we touch the affected pages in their copy-on-write memory maps
+first. 
+
+To establish which transactions (working sets) need to be 
+isolated, we again use the colname_pins.
+The isolating may take significant time, therefore it
+is done outside the short lock, but inside a free-lock.
+This free-lock is also taken during the ws_destroy.
+
+@- WAL versus subcommit 
 
 For committing, queries write into the WAL. The WAL is therefore also
 protected by a separate WAL lock (similar but separate to the short lock).
+
+However, for shredding, we use checkpoints. A partial checkpoint 
+causes certain BATs to be saved to disk; all WAL entries for that BAT
+before the subcommit time can be ignored.
+
+Besides, there is a checkpoint background thread in the logger, that 
+performs periodical checkpoints, and flushes the old logfiles.  
+
+
+@+ Query types
+
+Besides read-only queries, there are two other typed: updaing
+queries (that rely on a WAL commit) and documnent management
+queries that shred/delete documents (and rely on a checkpoint).
+
+Because of their relience on different commit mechanism, updating
+queries cannot do document management. Otherwise we would not be
+able to provide an atomic commit. 
+
+@- Updating Queries
+
+An update query goes through the following phases:
+(0) ws_create(1), indicating an updating query. If the paraneter value 
+    is 2, it is a rerun of an aborted transaction (in serial mode). 
+(1) query execution. this produces an update tape.
+(2) ordering and playing the update tape for each kind of update
+    (delete, insert, renam). This produces intentional updates
+    aka "delta bats" to the (rid_*, nid_* and attr_* master tables),
+    but *directly* carries out modifications to the qn_* and prop_* 
+    masters.  For the latter direct modifications coll_lock's are used
+    short-term (i.e. lock, modify, unlock). 
+    Also, while the update tape is played, all (intended or direct)
+    updates are logged in the WAL.
+(3) ws_precommit(). The main function is conflict detection:
+    it will trigger a MIL ERROR, which will result in an abort.
+    In case of no error, ws_precommit() isolates all concurrent
+    transactions from the intended updates (VM shadow paging).
+    ws_precommit() also obtains the coll_lock of an affected
+    container and does not release it (to prevent deadlock, the 
+    order of the affected containers for which ws_precommit() 
+    is called, should be consistent).
+(4) commit in the WAL. Reaching this point determines transaction commit/abort.
+    Afterwards, update all rid_*, nid_* and attr_* masters with the 
+    intentional updates (delta bats) produced in phase 2.
+    Note that applying the deltas to the size column are special,
+    because we keep not the new value, but the difference. So, when
+    apllying size deltas, we read the current value in the master, 
+    apply the difference kept in the delta-bat, and write back the result.
+    Thanks to this, we can keep the ancestor-sizes out of the 
+    modified-page administration (otherwise, the page containing 
+    the root node would always be modified, inhibiting any concurrency).
+(5) ws_postcommit(). It maintains the index structures, and 
+    releases the coll_lock. It should be called for each 
+    affected container in consistent order.
+(6) ws_destroy(). In case of an error in any of the stages >0, 
+    we get here.  It releases all locks (these actions are protected 
+    by pf_short, the only lock that must never remain taken when 
+    an error occurs)
+
+Optimistic CC may suffer from high abort rates, if many updating queries 
+modify the same page. With our page-wise deadlock detection (and pages
+being rather large), this is a serious threat to update throughput.
+
+This threat is reduced somewhat by adaptively handling transaction aborts.
+When a transaction aborts (due to concurrent conflict only), we immediately 
+reschedule the transaction it and run it in serial mode.
+
+We actually schedule a "serial convoy" of e.g. size 5.  This serial convoy 
+means that the next 5 incoming update transactions will be executed in 
+serial mode.  This policy ensures that conflict aborts never bother the user, and
+highly "conflicting" query loads avoid putting the system in "thrashing" mode.
+
+@- Document Management Queries 
+A read-only query executes the following phases:
+(0) ws_create(false)
+(1) query execution. this produces an statement tape.
+(2) ordering and playing the statement tape for each kind of 
+    statement (first del_doc, then add_doc).
+(3) pf_checkpoint. All affected document containers, plus the
+    meta bats (collection_*, doc_*) are flushed to disk.
+(4) ws_destroy()
+
+@- Read-only Queries 
+A read-only query just executes the following phases:
+(0) ws_create(false)
+(1) query execution. 
+(2) ws_destroy()
+
+Note that for all types of queries, phase (1) "query execution"  
+may also trigger checkpoints. That is, each occurrence of a fn:doc() 
+function may trigger a checkpoint, if the document (identified by URI) 
+was not in the database and the caching policy indicates that 
+the document should be cached. 
+
+Note that we loop-lifted fn:doc() (ws_opendoc), in the sense that 
+each fn:doc() application will construct axactly one single collection 
+with all documents that had to be shredded in the loop. A checkpoint
+is done only if these documents are exported visibly (to other queries) 
+in the database as cached URIs. This is determined by the caching rules. 
+This is only done if *all* documents in the loop are cachable. Otherwise, 
+the shredded collection is a temporary collection that does not need a 
+checkpoint. 
+
 @mil
 PROC _shredlock_set(str colname, 
                     lng wsid) : void
@@ -814,7 +1002,15 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
-PROC ws_create() : BAT[void,bat]
+var pf_updaters := 0;
+
+PROC _ws_create(int update) : bit
+{
+    if (update = 1) if ((pf_updaters :+=1) = 1) return true;
+    return false;
+}
+ 
+PROC ws_create(int update) : BAT[void,bat]
 {
     # only instantiates the default views of the ws-bats (not the master bats)
     var ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
@@ -837,38 +1033,38 @@ PROC ws_create() : BAT[void,bat]
     mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
     mirror(ws_mem).leftfetchjoin(ws).[insert](0@0, [fetch](ws_mem.leftfetchjoin(ws), 0));
 
-    ws := ws.access(BAT_READ);
-
-    # store the wsid encoded in the name of BAT ws
-    var wsid := or(<<(and(lng(newoid(1)),2147483647LL), 32), lng(ws));
-    ws := ws.rename(str(wsid)+"LL");
-
+    # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
+    var wsid := <<(and(lng(newoid(1)), 2147483647LL), 32) + (lng(update) << 30) + lng(ws);
+    ws.access(BAT_READ).rename(str(wsid));
+    pfenter(wsid);
     return ws;
+}
+
+PROC ws_create() : BAT[void,bat]
+{
+    return ws_create(0);
 }
 
 # retrieve wsid from name of BAT ws 
 PROC ws_id(BAT[void,bat] ws) : lng
 {
-    var ws_bat_name := bbpname(ws);
-    var wsid := lng_nil;
-    if (startsWith(ws_bat_name, "tmp_") or not(endsWith(ws_bat_name, "LL"))) {
-        ERROR("ws_id: name of BAT ws does not encode wsid!");
-    } else {
-        wsid := lng(ws_bat_name);
-    }
-    return wsid;
+    return lng(bbpname(ws));
 }
 
-# retrieve BAT ws that belongs to wsid;
-# only used in ws_precommit() to prepare the result of _ws_pinnedcoll() to
-# be fed into _ws_coll_isolate()
+# retrieve BAT ws that belongs to wsid; note that you must be sure that it is still alive
 PROC ws_bat(lng wsid) : BAT[void,bat] 
 {
-    return bat(and(wsid, 2147483647LL));
+    return bat(and(wsid, 1073741823LL));
 }
 
-PROC _ws_free(lng wsid) : void
+PROC _ws_free(lng wsid) : BAT[void,any]
 {
+    # handle update queries
+    if (and(wsid,WSID_UPDATE) != 0LL) {
+        pfleave(wsid);
+        ws_overlaps_ws.delete(wsid); # remove the dependencies of this query 
+    }
+   
     # check for failed doc_adds (should happen infrequently - we don't care about performance)
     var del := doc_undo.uselect(wsid).project(str_nil);
     if (count(del) > 0) _del_doc_replace(del, del); # delete them again
@@ -876,14 +1072,17 @@ PROC _ws_free(lng wsid) : void
     # release all claimed locks (error recovery)
     colname_pins.uselect(-(wsid))@batloop() _shredlock_unset($h, wsid);
     reverse(colname_pins).delete(wsid);
-
-    # remove the dependencies of this query 
-    ws_overlaps_ws.delete(wsid);
  
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
     var cursize := sum(doc_timestamp.select(timestamp_nil,timestamp_nil).mirror().join(collection_size));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
     if (cursize > maxsize) del_doc_base(true, doc_name, false);
+
+    # try to flush the document collection, if we held up removal of a now empty collection
+    if (count(collection_zombie.uselect(wsid)) > 0)
+        return _collection_cleanup(); # garbage collect empty collections
+
+    return empty_bat;
 }
 
 PROC ws_free(lng wsid) : void
@@ -891,13 +1090,14 @@ PROC ws_free(lng wsid) : void
     # always make sure not to cause errors while holding the lock
     lock_set(pf_free);
     lock_set(pf_short);
-    var err := CATCH(_ws_free(wsid));
+    var commitBAT, err := CATCH(commitBAT := _ws_free(wsid));
     lock_unset(pf_short);
     lock_unset(pf_free);
     if (not(isnil(err))) {
         printf("%s\n!ERROR: ws_free: query cleanup failed, Mserver must be restarted.\n", err);
         exit(); # ws_free *must must* succeed, it frees all hanging locks etc
     }
+    CATCH(collection_cleanup(commitBAT)); 
 }
 
 PROC ws_destroy(BAT[void,bat] ws) : void
@@ -1021,28 +1221,31 @@ PROC _ws_pinnedcoll(lng wsid,
                        .project(wsid).reverse();                           
 }
 
+
 PROC _ws_opencoll(lng wsid, 
                   oid coll_oid) : BAT[lock,bat]
 {
     var colname := collection_name.find(coll_oid);
     var runtime := _runtime_get(colname);
 
-    # clean up the query change lists (pages, attributes) by removing no longer overlapping queries
-    if (count(runtime) > RT_ATTR_WS) {
-        var page_ws := runtime.fetch(RT_PAGE_WS);
-        if (bit(count(page_ws))) {
-            page_ws.delete(tdiff(page_ws, ws_overlaps_ws));
+    if (and(wsid,WSID_UPDATE) != 0LL) {
+        # clean up the query change lists (pages, attributes) by removing no longer overlapping queries
+        if (count(runtime) > RT_ATTR_WS) {
+            var page_ws := runtime.fetch(RT_PAGE_WS);
+            if (bit(count(page_ws))) {
+                page_ws.delete(tdiff(page_ws, ws_overlaps_ws));
+            }
+            var attr_ws := runtime.fetch(RT_ATTR_WS);
+            if (bit(count(attr_ws))) {
+                attr_ws.delete(tdiff(attr_ws, ws_overlaps_ws));
+            }
         }
-        var attr_ws := runtime.fetch(RT_ATTR_WS);
-        if (bit(count(attr_ws))) {
-            attr_ws.delete(tdiff(attr_ws, ws_overlaps_ws));
-        }
-    }
 
-    # all other queries using colname now constitute new dependencies
-    var dep := _ws_pinnedcoll(wsid, colname);
-    ws_overlaps_ws.insert(dep);           # A overlaps B
-    ws_overlaps_ws.insert(reverse(dep));  # B overlaps A (overlapping is reflexive)
+        # all other queries using colname now constitute new dependencies
+        var dep := _ws_pinnedcoll(wsid, colname);
+        ws_overlaps_ws.insert(dep);           # A overlaps B
+        ws_overlaps_ws.insert(reverse(dep));  # B overlaps A (overlapping is reflexive)
+    }
 
     # index memory control, done when a persistent collection is opened for the first time  
     if ((coll_oid >= DOCID_MIN) and (count(runtime) <= RT_QN_NID)) {
@@ -1470,7 +1673,7 @@ PROC ws_precommit(BAT[void,BAT] ws,
     lock_set(pf_short);
     var other_ws, err := CATCH(other_ws := [ws_bat](_ws_pinnedcoll(wsid, colname)).tmark(0@0));
 
-    # isolate these working set against our intended updates. 
+    # isolate these working sets against our intended updates. 
     # copying pages can take time, thus we introduced pf_free: it allows to do the isolation without claiming pf_short
     lock_unset(pf_short);
     if (isnil(err)) {
@@ -1651,6 +1854,9 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
 {
     if (count(commitBAT) = 0) return false;
     commitBAT := commitBAT.access(BAT_WRITE);
+    commitBAT.append("xquery_catalog");
+    commitBAT.append("xquery_seqs");
+    commitBAT.append("xquery_snapshots");
     commitBAT.append("collection_name");
     commitBAT.append("collection_size");
     commitBAT.append("doc_name");
@@ -2007,7 +2213,8 @@ const logger_bats := new(void, str, 10).seqbase(0@0)
 	.append("_qn_uri")
 	.append("_qn_prefix")
 	.append("_qn_uri_loc")
-	.append("_qn_prefix_uri_loc");
+	.append("_qn_prefix_uri_loc")
+	.append("_qn_histogram");
 
 PROC shred_doc_base(BAT[void,str] commitBAT,
                     BAT[void,str] idx_locations, 
@@ -2520,6 +2727,7 @@ xquery_type_common_ancestor(int t1, int t2)
 
 /* representation of a xquery function signature */
 typedef struct {
+    int update;                   /* is an updating function? */
     int argc;                     /* number of params */
     unsigned int zero;            /* bit-mask that indicates whether param (bit) i can be the empty sequence */
     unsigned int multiple;        /* bit-mask that indicates whether param (bit) i can be a sequence */
@@ -2872,14 +3080,21 @@ xquery_sig_init(char *proc)
 {
     char *cur = (char*) alloca(strlen(proc)); 
     xquery_sig* sig;
-    int len = 0;
+    int update = 0, len = 0;
+
+    /* proc names string with 'up' are updating functions */
+    if (proc[0] == 'u' && proc[1] == 'p') {
+        update = 1;
+    } else if (proc[0] != 'f' || proc[1] != 'n') {
+        return NULL;
+    }
 
     proc = strchr(proc, '_'); /* skip fnXXXXXXXX_' */
     if (proc == NULL) return NULL;
     strcpy(cur, ++proc);
     sig = (xquery_sig*) GDKmalloc(sizeof(xquery_sig)+strlen(proc)); 
     if (sig == NULL) return NULL;
-
+    sig->update = update;
     sig->argc = sig->zero = sig->multiple = 0;
 
     /* get method name */
@@ -3071,7 +3286,7 @@ xquery_function_call(xquery_client *ctx,
             /* create working set */
             int ret;
   
-            src = (char*) PFstartMIL();
+            src = (char*) PFstartMIL(fun->sig->update);
             while(*src && cur < end) *cur++ = *src++;
 
             if (shredBAT) {
@@ -3087,7 +3302,7 @@ xquery_function_call(xquery_client *ctx,
             if (ret > 0) cur += ret;
 
             /* destroy working set */
-            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL());
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
             if (ret > 0) cur += ret;
 
             /* done! execute the script */

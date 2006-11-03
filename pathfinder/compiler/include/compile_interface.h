@@ -47,10 +47,10 @@ void PFurlcache_flush(void);
 
 const char* PFinitMIL(void);   /* MIL pattern for module init */
 const char* PFvarMIL(void);    /* MIL pattern for global variable definitions */
-const char* PFstartMIL(void);  /* MIL pattern for starting query execution */
+const char* PFstartMIL(int);   /* MIL pattern for starting query execution */
+const char* PFstopMIL(int);    /* MIL pattern for stopping query execution (and print) */
 const char* PFdocbatMIL(void); /* MIL pattern for adding a shredded document to the ws */
 const char* PFudfMIL(void);    /* MIL pattern for calling a UDF */
-const char* PFstopMIL(void);   /* MIL pattern for stopping query execution (and print) */
 
 #endif
 

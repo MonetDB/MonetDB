@@ -10390,6 +10390,17 @@ walk_through_UDF (opt_t *f,
     return counter;
 }
 
+int PFqueryType(PFcnode_t *c) {
+    return PFty_subtype (TY(c), PFty_empty ())
+                                ? 0		       /* only the empty sequence has type empty and is not updateable */
+                                : (PFty_subtype(TY(c), PFty_star(PFty_stmt()))
+                                   ? 1
+                                   : (PFty_subtype (TY(c),
+                                                    PFty_star (PFty_docmgmt ()))
+                                      ? 2
+                                      : 0));
+}
+
 /**
  * in get_var_usage for each variable a vid (variable id) and
  * for each for expression a fid (for id) is added;
@@ -10583,6 +10594,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         char *r = c->sem.apply.fun->qname.ns.prefix;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
+        int stmt = PFqueryType(R(c));
 
         /* hash uri in proc name to make it uniquely identifyable  */
         if (r) for(; *r; r++)
@@ -10623,8 +10635,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
         for(j=11; *p; p++) {
             /* escape '_' by '__' and '-' by '_4_' and '.' by '_5_' 
-                     * (_4_ cannot be a subsequent type name; those always end in [0-3])
-                     */ 
+             * (_4_ cannot be a subsequent type name; those always end in [0-3])
+             */ 
             char x = (*p == '-' || *p == '.')?'_':*p;
             c->sem.apply.fun->sig[j++] = x; 
             hash = (hash*3) + *(unsigned char*) p;
@@ -10667,7 +10679,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* ============================================== */
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-        sprintf(c->sem.apply.fun->sig, "fn%08X", hash);
+        sprintf(c->sem.apply.fun->sig, "%s%08X", (stmt==1)?"up":"fn", hash);
         c->sem.apply.fun->sig[10] = '_';
         c->sem.apply.fun->sig[j] = 0;
 
@@ -10809,30 +10821,41 @@ const char* PFvarMIL(void) {
         "var order_000;\n";
 }
 
-const char* PFstartMIL(void) {
-    return  
-        "{\n"
-        "time_read := 0LL;\n"
-        "time_shred := 0LL;\n"
-        "time_print := 0LL;\n"
+#define PF_STARTMIL_START \
+        "{\n"\
+        "time_read := 0LL;\n"\
+        "time_shred := 0LL;\n"\
+        "time_print := 0LL;\n"\
         "time_exec := usec();\n"
-        "\n"
-        "var err := CATCH({\n"
-        "  ws := ws_create();\n"
-        "\n"
-        "  # get full picture on var_usage (and sort it)\n"
-        "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
-        "  vu_fid := usage.hmark(1000@0);\n"
-        "  vu_vid := usage.tmark(1000@0);\n"
-        "  usage := vu_fid.tsort();\n"
-        "  usage := usage.CTrefine(vu_vid);\n"
-        "  usage := usage.hmark(1000@0);\n"
-        "  vu_vid := usage.leftfetchjoin(vu_vid);\n"
-        "  vu_fid := usage.leftfetchjoin(vu_fid);\n"
-        "\n"
-        "  inner000 := loop000;\n"
-        "  outer000 := loop000.project(1@0);\n"
-        "  order_000 := outer000;\n";
+#define PF_STARTMIL_NORMAL \
+        "var err;\n"\
+        "{ err := CATCH({\n"\
+        "  ws := ws_create(0);\n"
+#define PF_STARTMIL_UPDATE \
+        "var try := 0;\n"\
+        "var err := \"no conflicting updates yet\";\n"\
+        "while(((try :+= 1) <= 2) and not(isnil(err))) {\n"\
+        " if (err.search(\"conflicting updates\") = -1) break;\n"\
+        " err := CATCH({\n"\
+        "  ws := ws_create(try);\n"
+#define PF_STARTMIL_END \
+        "  # get full picture on var_usage (and sort it)\n"\
+        "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"\
+        "  vu_fid := usage.hmark(1000@0);\n"\
+        "  vu_vid := usage.tmark(1000@0);\n"\
+        "  usage := vu_fid.tsort();\n"\
+        "  usage := usage.CTrefine(vu_vid);\n"\
+        "  usage := usage.hmark(1000@0);\n"\
+        "  vu_vid := usage.leftfetchjoin(vu_vid);\n"\
+        "  vu_fid := usage.leftfetchjoin(vu_fid);\n"\
+        "\n"\
+        "  inner000 := loop000;\n"\
+        "  outer000 := loop000.project(1@0);\n"\
+        "  order_000 := outer000;\n"
+const char* PFstartMIL(int statement_type) {
+    return (statement_type==1)?
+               (PF_STARTMIL_START PF_STARTMIL_UPDATE PF_STARTMIL_END):
+               (PF_STARTMIL_START PF_STARTMIL_NORMAL PF_STARTMIL_END);
 }
 
 const char* PFdocbatMIL(void) {
@@ -10844,44 +10867,33 @@ const char* PFdocbatMIL(void) {
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
 
-static const char* _PFstopMIL(int statement_type) {
-    static char buf[1024];
-
-    strcpy(buf,
-           "  time_print := usec();\n"
+#define PF_STOPMIL_START \
+           "  time_print := usec();\n"\
            "  time_exec := time_print - time_exec;\n"
-           "  \n");
-    switch (statement_type) {
-    case 0:
-        /* normal statement */
-        strcat(buf, 
-               "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"
-               "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"
-               "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
-        break;
-    case 1:
-        /* update statement */
-        strcat(buf, "  play_update_tape(ws, item, kind, int_values, str_values);\n");
-        break;
-    case 2:
-        /* doc-mgmt statement */
-        strcat(buf, "  play_doc_tape(ws, item, kind, int_values, str_values);\n");
-        break;
-    }
-    strcat(buf,
-           "});\n"
-           "ws_destroy(ws);\n"
-           "if (not(isnil(err))) ERROR(err);\n"
-           "time_print := usec() - time_print;\n"
-           "if (genType.startsWith(\"timing\"))\n"
-           "   printf(\"\\nTrans %% 11.3f msec\\nShred %% 11.3f msec\\nQuery %% 11.3f msec\\nPrint %% 11.3f msec\\n\","
-           "       dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"
-           "}\n");
-    return buf;
-}
-
-const char* PFstopMIL(void) {
-    return _PFstopMIL(false);
+#define PF_STOPMIL_RDONLY \
+           "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
+           "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
+           "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
+#define PF_STOPMIL_UPDATE \
+           "  play_update_tape(ws, item, kind, int_values, str_values);\n"
+#define PF_STOPMIL_DOCMGT \
+           "  play_doc_tape(ws, item, kind, int_values, str_values);\n"
+#define PF_STOPMIL_END \
+           " });\n"\
+           " ws_destroy(ws);\n"\
+           "}\n"\
+           "if (not(isnil(err))) ERROR(err);\n"\
+           "time_print := usec() - time_print;\n"\
+           "if (genType.startsWith(\"timing\"))\n"\
+           "   printf(\"\\nTrans %% 11.3f msec\\nShred %% 11.3f msec\\nQuery %% 11.3f msec\\nPrint %% 11.3f msec\\n\","\
+           "       dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"\
+           "}\n"
+const char* PFstopMIL(int statement_type) {
+    return (statement_type==0)?
+               (PF_STOPMIL_START PF_STOPMIL_RDONLY PF_STOPMIL_END):
+           (statement_type==1)?
+               (PF_STOPMIL_START PF_STOPMIL_UPDATE PF_STOPMIL_END):
+               (PF_STOPMIL_START PF_STOPMIL_DOCMGT PF_STOPMIL_END);
 }
 
 const char* PFudfMIL(void) {
@@ -10950,6 +10962,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
     }
 }
 
+
 /**
  * first MIL generation from Pathfinder Core
  *
@@ -10966,6 +10979,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
 {
     PFarray_t *way, *counter;
     opt_t *f = opt_open(optimize);
+    int stmt = PFqueryType(R(c)); 
 
     /* hack: milprint_summer state, not mil_opt state */
     f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
@@ -11010,7 +11024,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
 
     /* define working set and all other MIL context (global vars for the query) */
     if (module_base == 0) {
-        milprintf(f, PFstartMIL());
+        milprintf(f, PFstartMIL(stmt));
         milprintf(f, "  var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
                      "  var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
                      "  var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
@@ -11025,14 +11039,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
         timing = PFtimer_stop(timing);
         milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %dLL;\n" , timing);
-        milprintf(f, _PFstopMIL(PFty_subtype (TY(R(c)), PFty_empty ())
-                                ? 0		       /* only the empty sequence has type empty and is not updateable */
-                                : (PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))
-                                   ? 1
-                                   : (PFty_subtype (TY(R(c)),
-                                                    PFty_star (PFty_docmgmt ()))
-                                      ? 2
-                                      : 0))));
+        milprintf(f, PFstopMIL(stmt));
     }
 
     if (opt_close(f, prologue, query, epilogue)) {
