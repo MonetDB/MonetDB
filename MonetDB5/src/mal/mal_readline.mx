@@ -316,7 +316,9 @@ showCommands(void)
 	printf("\\q\t- terminate session\n");
 }
 
+#ifdef HAVE_LIBREADLINE
 static int initReadline;
+#endif
 
 static char *
 getConsoleInput(const char *prompt, int linemode, int exit_on_error)
