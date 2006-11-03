@@ -68,9 +68,9 @@ stderr of test 'delete_doc.SF-1208129` in directory 'tests/BugDay_2005-11-09_0.9
 # 16:12:20 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/home/sjoerd/etc/MonetDB.conf" --host=localhost --port=32813 < delete_doc.SF-1208129.milC
 # 16:12:20 >  
 
-MAPI  = monetdb@localhost:33321
+MAPI  = monetdb@localhost:35303
 QUERY = delete_doc("non-existing-document");
-ERROR = !ERROR: delete_doc(non-existing-document): document not found in database (1 such errors)!
+ERROR = !ERROR: _del_doc(non-existing-document): document not found in database (1 such errors)!
 
 # 16:12:21 >  
 # 16:12:21 >  Done.
