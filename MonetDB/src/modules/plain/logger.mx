@@ -1194,7 +1194,7 @@ log_tend(logger *logger)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
 	/* first subcommit the snapshots */
-	if (BATcount(logger->snapshots)) {
+	if (DELTAdirty(logger->snapshots)) { 
 		/* sub commit all new snapshots */
 		BAT *b = BATselect(logger->snapshots, &logger->tid, &logger->tid);
 		res = bm_subcommit(b, logger->snapshots);
