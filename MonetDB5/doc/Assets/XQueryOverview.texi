@@ -1,2 +1,0 @@
-@chapter XQuery
-XQuery and XUpdate are not yet supported in Version 5.

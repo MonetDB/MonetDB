@@ -1,3 +1,0 @@
-xquery version '1.0';
-import module namespace xmark = "http://www.cwi.nl/~boncz/xmark/mod/" at "$TSTSRCDIR/xmark.xq";
-xmark:q01("auctionG.xml", "person0")

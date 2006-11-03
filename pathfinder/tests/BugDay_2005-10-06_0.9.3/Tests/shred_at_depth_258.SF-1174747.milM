@@ -1,9 +1,0 @@
-module(pathfinder);
-module("unix");
-
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/BugDay_2005-10-06_0.9.3/Tests";
-
-shred_doc(TSTSRCDIR + "/" + "shred_err02.xml", "shred_err02.xml");
-xquery("count(doc(\"shred_err02.xml\")//a)").printf();
-shred_doc(TSTSRCDIR + "/" + "shred_err01.xml", "shred_err01.xml");
-xquery("count(doc(\"shred_err01.xml\")//a)").printf();

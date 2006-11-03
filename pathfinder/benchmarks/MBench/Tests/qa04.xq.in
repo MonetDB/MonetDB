@@ -1,6 +1,0 @@
-<maxFanout aUnique1="{
-  for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aLevel=11] return
-    for $p in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aLevel=11] where count($e/eNest)=max(count($p/eNest)) return
-    $e/@aUnique1
-  }">
-</maxFanout>

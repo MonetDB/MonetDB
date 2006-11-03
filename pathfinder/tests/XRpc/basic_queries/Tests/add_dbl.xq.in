@@ -1,4 +1,0 @@
-import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "$TSTSRCDIR/basicfunctions.xq";
-
-for $i in (40.5, 50.5)
-    return xrpc:add("localhost", $i, (10.5, 30.5))

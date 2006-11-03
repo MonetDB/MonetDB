@@ -1,7 +1,0 @@
-all:
-	   gcc -fpic -DCOMPILE_DL_MONETDB=1 `php-config --includes` `monetdb-config --cflags` -g -c -o monetdb.o php_monetdb.c -Wall
-	   gcc -shared `monetdb-config --libs` -lMapi -rdynamic -g -o monetdb.so monetdb.o -Wall
-
-install:
-	cp monetdb.so `php-config --extension-dir`
-	@echo "The module has been installed in `php-config --extension-dir`."

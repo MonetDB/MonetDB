@@ -1,7 +1,0 @@
-loaded();
-printf("loading module '%s'\n","xrpc");
-module(xrpc);
-loaded();
-printf("dropping module '%s'\n","xrpc");
-drop("xrpc");
-loaded();

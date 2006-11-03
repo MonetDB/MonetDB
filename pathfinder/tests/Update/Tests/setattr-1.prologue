@@ -1,3 +1,0 @@
-module("unix");
-var TSTSRCDIR := getenv("TSTSRCDIR");
-shred_doc(TSTSRCDIR + "/" + "document.xml", "document.xml", "document.xml", 10LL);
