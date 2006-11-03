@@ -1,4 +1,0 @@
-The following tests will never run with MonetDB/SQL because they use
-SQL features that are fairly PostgreSQL specific.
-
-abstime
