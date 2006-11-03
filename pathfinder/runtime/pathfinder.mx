@@ -1717,7 +1717,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
     # if there is a free page, then this is easy
-    lock_unset(coll_lock);
+    lock_set(coll_lock);
     var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
     lock_unset(coll_lock);
 
@@ -1795,7 +1795,7 @@ PROC ws_newnids(BAT[void, BAT] ws,
     var runtime := ws.fetch(CONT_RUNTIME).fetch(cont);
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
 
-    lock_unset(coll_lock);
+    lock_set(coll_lock);
     var newnids := empty_bat, err := CATCH(newnids := __runtime_newnids(runtime, cnt));
     lock_unset(coll_lock);
 
