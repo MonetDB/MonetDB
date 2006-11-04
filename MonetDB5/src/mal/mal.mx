@@ -302,7 +302,7 @@ mal_export void mal_exit(void);
 #define LIST_INPUT      1       /* echo original input */
 #define LIST_MAL_INSTR  2       /* show mal instruction */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_PROPS  8       /* show type resolutoin */
+#define LIST_MAL_PROPS  8       /* show optimizer properties */
 #define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_PROPS )
 
 #define MAL_SUCCEED ((str) 0) /* apparently no error */

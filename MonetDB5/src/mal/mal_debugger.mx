@@ -1097,7 +1097,7 @@ signatures satisfying the pattern.
 			Symbol fs;
 			int i, lstng;
 
-			lstng = /* listing | */ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
+			lstng = /* listing | */ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR | LIST_MAL_PROPS);
 			skipWord(cntxt, b);
 			if (*b != 0) {
 				modname = b;

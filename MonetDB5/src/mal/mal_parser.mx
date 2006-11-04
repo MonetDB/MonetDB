@@ -1609,7 +1609,7 @@ part2:  /* consume <operator><term> part of expression */
 		setFunctionId(curInstr, putName(((char*)CURRENT(cntxt)),i));
 		advance(cntxt,i);
 		curInstr->modname= putName("calc",4);
-		if( (l = idLength(cntxt))) {
+		if( (l = idLength(cntxt)) && !(l==3 && strncmp(CURRENT(cntxt),"nil",3)==0) ) {
 			@:GETvariable@
 			curInstr= pushArgument(curBlk,curInstr,varid); 
 			goto part3;

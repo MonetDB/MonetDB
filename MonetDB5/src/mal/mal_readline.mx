@@ -70,6 +70,7 @@ features to assemble a command before it is being interpreted.
 
 #include "mal_client.h"
 mal_export int readConsole(Client cntxt);
+mal_export char * getConsoleInput(const char *prompt, int linemode, int exit_on_error);
 
 #endif /* READLINETOOLS_H_INCLUDED */
 @c
@@ -320,7 +321,7 @@ showCommands(void)
 static int initReadline;
 #endif
 
-static char *
+char *
 getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 {
 	char *line = NULL;

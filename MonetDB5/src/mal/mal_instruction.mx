@@ -2093,10 +2093,8 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	str t, tpe, pstring;
 	PropertySet ps = 0;
 
-	if( flg & LIST_MAL_PROPS){
-		ps = getProps(getArg(p, 0));
-		pstring = propertySet2str(ps);
-	} else pstring= GDKstrdup("");
+	ps = getProps(getArg(p, 0));
+	pstring = propertySet2str(ps);
 	t = s;
 	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
 
