@@ -262,7 +262,7 @@ yes-*-darwin8*-powerpc*-*)
 esac
 else
 	AC_CHECK_SIZEOF(long)
-	bits=$[$ac_cv_sizeof_long*8]
+	bits=$[[$ac_cv_sizeof_long*8]]
 fi
 AC_SUBST(bits)
 
