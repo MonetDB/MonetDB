@@ -485,7 +485,7 @@ MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) p;
 	(void) stk;
-	printFunction(c->fdout, mb, LIST_INPUT);
+	printFunction(c->fdout, mb, LIST_MAL_INSTR | LIST_MAL_PROPS);
 	return MAL_SUCCEED;
 }
 
@@ -501,7 +501,7 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		GDKerror("mdb.list:Could not find %s.%s\n", modnme, fcnnme);
 	else
-		printFunction(c->fdout, s->def, LIST_INPUT);
+		printFunction(c->fdout, s->def, LIST_MAL_INSTR | LIST_MAL_PROPS);
 	(void) mb;		/* fool compiler */
 	return NULL;
 }

@@ -94,13 +94,16 @@ comment "Initialize the bbp box";
 pattern bind(name:str):bat[:any_1,:any_2]
 address CMDbbpbind
 comment "Locate the BAT using its logical name";
-command bind(head:str,tail:str):bat[:any_1,:any_2]
-address CMDbbpbind2
-comment "Locate the BAT using the head and tail names");
 
-command bind(idx:int):bat[:any_1,:any_2] 
+command find(name:str):bat[:any_1,:any_2]
+address CMDbbpfind3
+comment "Locate the BAT using its logical name in the BAT buffer pool");
+command find(head:str,tail:str):bat[:any_1,:any_2]
+address CMDbbpfind2
+comment "Locate the BAT using the head and tail names in the BAT buffer pool");
+command find(idx:BAT):bat[:any_1,:any_2] 
 address CMDbbpbindindex
-comment "Locate the BAT using its BBP index";
+comment "Locate the BAT using its BBP index in the BAT buffer pool";
 
 pattern getObjects():bat[:int,:str] 
 address CMDbbpGetObjects
@@ -204,7 +207,8 @@ bbp_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbind2(int *ret, str *hnme, str *tnme);
+bbp_export str CMDbbpfind2(int *ret, str *hnme, str *tnme);
+bbp_export str CMDbbpfind3(int *ret, str *nme);
 bbp_export str CMDbbpbindindex(int *ret, int *bid);
 bbp_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -390,12 +394,31 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpbind2(int *ret, str *hnme, str *tnme)
+CMDbbpfind3(int *ret, str *nme)
 {
 	int i;
 	/* find a specific BAT in the buffer pool */
-	BBPlock("CMDbbpbind2");
-	for (i = 1; i < BBPsize; i++){
+	BBPlock("CMDbbpfind3");
+	for (i = 1; i < BBPsize; i++)
+	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
+		if( strcmp(BBP_logical(i),*nme)==0 ){
+			BBPkeepref(i);
+			*ret = i;
+			BBPunlock("CMDbbpfind3");
+			return MAL_SUCCEED;
+		}
+	}
+	BBPunlock("CMDbbpfind3");
+	return throwMessage("bbp.find","BAT not found");
+}
+str
+CMDbbpfind2(int *ret, str *hnme, str *tnme)
+{
+	int i;
+	/* find a specific BAT in the buffer pool */
+	BBPlock("CMDbbpfind2");
+	for (i = 1; i < BBPsize; i++)
+	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		BAT *b = (BAT *) BATdescriptor(i);
 		if( b == 0 ) 
 			continue;
@@ -403,19 +426,21 @@ CMDbbpbind2(int *ret, str *hnme, str *tnme)
 			strcmp(b->tident,*tnme)==0 ){
 			BBPkeepref(i);
 			*ret = i;
-			BBPunlock("CMDbbpbind2");
+			BBPunlock("CMDbbpfind2");
 			return MAL_SUCCEED;
 		}
 		BBPreleaseref(i);
 	}
-	BBPunlock("CMDbbpbind2");
-	return throwMessage("bbp.bind","BAT not found");
+	BBPunlock("CMDbbpfind2");
+	return throwMessage("bbp.find","BAT not found");
 }
 str
 CMDbbpbindindex(int *ret, int *bid)
 {
 	BAT *b;
 
+	if ( *bid  == bat_nil)
+		return throwMessage("bbp.bind", "can not access descriptor");
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		return throwMessage("bbp.bind", "can not access descriptor");
