@@ -402,13 +402,7 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
-	*-freebsd*|*-irix*|*-darwin*)
-		CFLAGS="$CFLAGS -std=c99"
-		;;
-	*-solaris*)
-		CFLAGS="$CFLAGS -std=c99"
-		;;
-	[[34]].*-*)
+	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
 		CFLAGS="$CFLAGS -std=c99"
 		;;
 	esac
