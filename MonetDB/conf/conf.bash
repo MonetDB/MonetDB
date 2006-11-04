@@ -463,9 +463,7 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		esac
 	fi
 fi
-if [ "${BITS}" = "64" ] ; then
-	conf_opts="${conf_opts} --enable-bits=${BITS}"
-fi
+conf_opts="${conf_opts} --enable-bits=${BITS}"
 if [ "${BITS}${OIDS}" = "6432" ] ; then
 	conf_opts="${conf_opts} --enable-oid32"
 fi
