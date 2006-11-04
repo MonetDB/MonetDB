@@ -43,3 +43,5 @@ corrupt-attributelist.SF-1483706.shred_doc
 corrupt-attributelist.SF-1483706.cache_doc
 corrupt-attributelist.SF-1483706.remove_doc
 if-condition_testing_empty_sequence.SF-1589820
+update_error.SF-1579510
+recursion_type_error.SF-1579524
