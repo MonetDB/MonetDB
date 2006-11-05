@@ -62,3 +62,4 @@ item_sequence_creation.SF-1543871b.alg0
 constructor_with_computed_QName.SF-1548043.mps
 constructor_with_computed_QName.SF-1548043.alg
 substring-after.SF-1590523
+insert_multiple.SF-1590580
