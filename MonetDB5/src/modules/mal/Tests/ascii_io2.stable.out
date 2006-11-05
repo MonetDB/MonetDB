@@ -63,24 +63,76 @@ function user.main():void;	# 0  (main:void)
     bat.append(typebat,"str");	# 12 BKCappend_val_wrap (_20:void)<-(typebat:bat[:void,:str])(_19:str)
     len := 20;	# 13  (len:int)<-(_22:int)
     targetdir := unix.getenv("TSTTRGDIR");	# 14 UNIXgetenv (targetdir:str)<-(_24:str)
-barrier correct := calc.==(targetdir,"");	# 15 CALCcompEQstrstr (correct:bit)<-(targetdir:str)(_26:str) jump 18
+barrier correct := calc.==(targetdir,"");	# 15 CALCcompEQstrstr (correct:bit)<-(targetdir:str)(_26:str) jump 17
     targetdir := unix.getenv("PWD");	# 16 UNIXgetenv (targetdir:str)<-(_27:str)
-    targetdir := calc.+(targetdir,"/");	# 17 CALCstrConcat (targetdir:str)<-(targetdir:str)(_28:str)
-exit correct;	# 18  (correct:bit)
-    datafile := calc.+(targetdir,"ascii_io2.load");	# 19 CALCstrConcat (datafile:str)<-(targetdir:str)(_30:str)
-    io.printf("#source:%s\n",datafile);	# 20 IOprint_formatted_str (_31:int)<-(_32:str)(datafile:str)
-    idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);	# 21 CMDtablet_load (idxbat:bat[:str,:BAT])<-(namebat:bat[:void,:str])(sepbat:bat[:void,:str])(typebat:bat[:void,:str])(datafile:str)(len:int)
-    io.print(idxbat);	# 22 IOprint_val (_34:int)<-(idxbat:bat[:str,:BAT])
-    i1 := algebra.fetch(idxbat,0);	# 23 ALGfetchint (i1:BAT)<-(idxbat:bat[:str,:BAT])(_36:int)
-    b1 := bbp.find(i1);	# 24 CMDbbpbindindex (b1:bat[:any,:any])<-(i1:BAT)
-    io.print(b1);	# 25 IOprint_val (_38:int)<-(b1:bat[:any,:any])
-    i2 := algebra.fetch(idxbat,1);	# 26 ALGfetchint (i2:BAT)<-(idxbat:bat[:str,:BAT])(_40:int)
-    b2 := bbp.find(i2);	# 27 CMDbbpbindindex (b2:bat[:any,:any])<-(i2:BAT)
-    io.print(b2);	# 28 IOprint_val (_42:int)<-(b2:bat[:any,:any])
-end main;	# 29  
-#source:/ufs/mk/monet5/Linux/mTests/src/modules/malascii_io2.load
-!ERROR: could not open file /ufs/mk/monet5/Linux/mTests/src/modules/malascii_io2.load
-!ERROR: MALexception:tablet.load:Failed to load
+exit correct;	# 17  (correct:bit)
+barrier correct := calc.!=(targetdir,"");	# 18 CALCcompNEQstrstr (correct:bit)<-(targetdir:str)(_26:str) jump 20
+    targetdir := calc.+(targetdir,"/");	# 19 CALCstrConcat (targetdir:str)<-(targetdir:str)(_28:str)
+exit correct;	# 20  (correct:bit)
+    datafile := calc.+(targetdir,"ascii_io2.load");	# 21 CALCstrConcat (datafile:str)<-(targetdir:str)(_30:str)
+    io.printf("#source:%s\n",datafile);	# 22 IOprint_formatted_str (_31:int)<-(_32:str)(datafile:str)
+    idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);	# 23 CMDtablet_load (idxbat:bat[:str,:BAT])<-(namebat:bat[:void,:str])(sepbat:bat[:void,:str])(typebat:bat[:void,:str])(datafile:str)(len:int)
+    io.print(idxbat);	# 24 IOprint_val (_34:int)<-(idxbat:bat[:str,:BAT])
+    i1 := algebra.fetch(idxbat,0);	# 25 ALGfetchint (i1:BAT)<-(idxbat:bat[:str,:BAT])(_36:int)
+    b1 := bbp.find(i1);	# 26 CMDbbpbindindex (b1:bat[:any,:any])<-(i1:BAT)
+    io.print(b1);	# 27 IOprint_val (_38:int)<-(b1:bat[:any,:any])
+    i2 := algebra.fetch(idxbat,1);	# 28 ALGfetchint (i2:BAT)<-(idxbat:bat[:str,:BAT])(_40:int)
+    b2 := bbp.find(i2);	# 29 CMDbbpbindindex (b2:bat[:any,:any])<-(i2:BAT)
+    io.print(b2);	# 30 IOprint_val (_42:int)<-(b2:bat[:any,:any])
+end main;	# 31  
+#source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/ascii_io2.load
+#---------------------------------#
+# h		t		  # name
+# str		BAT		  # type
+#---------------------------------#
+[ "tmpdocs",	  <tmp_12>	  ]
+[ "tmpterms",	  <tmp_13>	  ]
+#-----------------------------------------#
+# h	t				  # name
+# void	str				  # type
+#-----------------------------------------#
+[ 0@0,	  "IA073-000474-B024-230"	  ]
+[ 1@0,	  ""				  ]
+[ 2@0,	  "IA073-000474-B024-231"	  ]
+[ 3@0,	  ""				  ]
+[ 4@0,	  "IA073-000474-B024-232"	  ]
+[ 5@0,	  ""				  ]
+[ 6@0,	  "IA073-000474-B024-233"	  ]
+[ 7@0,	  ""				  ]
+[ 8@0,	  "IA073-000474-B024-234"	  ]
+[ 9@0,	  ""				  ]
+[ 10@0,	  "IA073-000474-B024-235"	  ]
+[ 11@0,	  ""				  ]
+[ 12@0,	  "IA073-000474-B024-236"	  ]
+[ 13@0,	  ""				  ]
+[ 14@0,	  "IA073-000474-B024-237"	  ]
+[ 15@0,	  ""				  ]
+[ 16@0,	  "IA073-000474-B024-238"	  ]
+[ 17@0,	  ""				  ]
+[ 18@0,	  "IA073-000474-B024-239"	  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "0-request"	  ]
+[ 1@0,	  ""		  ]
+[ 2@0,	  "1-from"	  ]
+[ 3@0,	  ""		  ]
+[ 4@0,	  "2-library"	  ]
+[ 5@0,	  ""		  ]
+[ 6@0,	  "3-subject"	  ]
+[ 7@0,	  ""		  ]
+[ 8@0,	  "4-listing"	  ]
+[ 9@0,	  ""		  ]
+[ 10@0,	  "5-up"	  ]
+[ 11@0,	  ""		  ]
+[ 12@0,	  "6-to"	  ]
+[ 13@0,	  ""		  ]
+[ 14@0,	  "7-index"	  ]
+[ 15@0,	  ""		  ]
+[ 16@0,	  "8-up"	  ]
+[ 17@0,	  ""		  ]
+[ 18@0,	  "9-to"	  ]
 
 # 21:10:47 >  
 # 21:10:47 >  Done.

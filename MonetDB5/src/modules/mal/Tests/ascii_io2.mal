@@ -17,6 +17,8 @@ len := 20;
 targetdir := unix.getenv("TSTTRGDIR");
 barrier correct:= targetdir == "";
 	targetdir := unix.getenv("PWD");
+exit correct;
+barrier correct:= targetdir != "";
 	targetdir := targetdir + "/";
 exit correct;
 
