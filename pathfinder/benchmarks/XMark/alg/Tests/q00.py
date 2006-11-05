@@ -6,7 +6,7 @@ TSTDB = os.environ['TSTDB']
 MSERVER = os.environ['MSERVER'].replace('--trace','')
 TSTSRCBASE = os.environ['TSTSRCBASE']
 
-CALL = "pf -A %s.xq | %s --dbname=%s %s.prelude" % (os.path.join(TSTSRCBASE,'benchmarks','XMark','Tests',TST),MSERVER,TSTDB,TST)
+CALL = "pf -A %s.xq | %s --dbname=%s --dbinit=\"module(pathfinder);\"" % (os.path.join(TSTSRCBASE,'benchmarks','XMark','Tests',TST),MSERVER,TSTDB)
 
 if os.name == "nt":
     os.system("call Mlog.bat '%s'" % CALL.replace('|','\\|'))
