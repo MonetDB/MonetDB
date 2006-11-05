@@ -101,10 +101,11 @@ delay=120		#waiting between pinging the server
 # Monet Virtual Machine
 #====================================
 mal_init=@libdir@@DIRSEP@@PACKAGE@/mal_init.mal
-mal_listing = 7           # List everything
+mal_listing = 15           # List everything
 #    1 = List the original input
 #    2 = List the MAL instruction
 #    4 = List the MAL type information
+#    8 = List the MAL properties
 
 # Checkpoint and recovery
 #===================================
