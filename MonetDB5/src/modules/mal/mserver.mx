@@ -490,8 +490,8 @@ doChallenge(str cmd, int msgsock) {
 		}
 
 #ifdef DEBUG_SERVER
-		THRprintf(GDKerr, "SERVERlisten:client accepted %d\n", msgsock);
-		THRprintf(GDKerr, "SERVERlisten:client string %s\n", name);
+		THRprintf(GDKout, "#SERVERlisten:client accepted %d\n", msgsock);
+		THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
 #endif
 		bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
 
@@ -700,7 +700,7 @@ Get the new information for the server socket and start listening.
 #endif
 
 #ifdef DEBUG_SERVER
-	THRprintf(GDKerr, "SERVERlisten:Network started at %d\n", port);
+	THRprintf(GDKout, "#SERVERlisten:Network started at %d\n", port);
 #endif
 	threadcommand = cmd;
 	*Sock = sock;
@@ -919,7 +919,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, maxusers);
 
 #ifdef DEBUG_SERVER
-	THRprintf(GDKerr, "SERVERlistenSSL:Network started at %d\n", port);
+	THRprintf(GDKout, "#SERVERlistenSSL:Network started at %d\n", port);
 #endif
 	do {
 		int retval;
@@ -1179,8 +1179,8 @@ SERVERclient(int *res, stream **In, stream **Out)
 		fdout = block_stream(stream_wstream(fdout));
 	}
 #ifdef DEBUG_SERVER
-	THRprintf(GDKerr, "SERVERlisten:client accepted %d\n", msgsock);
-	THRprintf(GDKerr, "SERVERlisten:client string %s\n", name);
+	THRprintf(GDKout, "#SERVERlisten:client accepted %d\n", msgsock);
+	THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
 #endif
 	bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
 
