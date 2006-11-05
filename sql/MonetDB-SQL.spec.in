@@ -171,8 +171,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/*.h
 %{prefix}/include/sql/*.h
-%{prefix}/include/sql/include/*.h
-%{prefix}/include/sql/storage/*.h
 %{_libdir}/sql/Tests/*
 %{_libdir}/pkgconfig/MonetDB-SQL.pc
 
