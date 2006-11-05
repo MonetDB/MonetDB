@@ -47,3 +47,5 @@ update_error.SF-1579510
 recursion_type_error.SF-1579524
 xs_untypedAtomic.SF-1509806.mps
 xs_untypedAtomic.SF-1509806.alg
+polymorphic_sequences.SF-1497419.mps
+polymorphic_sequences.SF-1497419.alg
