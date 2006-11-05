@@ -1534,10 +1534,10 @@ str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
 
 		/* scan b, and add values to sums in-place */
 		if (range > SMALL_AGGR_MAX) {
-				ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
+				ALGODEBUG THRprintf(GDKout, "#GRPsum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
 				@:large_aggr_sum(@1,@2)@
 		} else {
-				ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
+				ALGODEBUG THRprintf(GDKout, "#GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
 				@:small_aggr_sum(@1,@2)@
 		}
 		*retval= bn->batCacheid;
@@ -1833,22 +1833,22 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count(if (ATOMcmp(btt, t, bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count()@
 		}
 
 	} else {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count(if (ATOMcmp(btt, t, bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count()@
 		}
