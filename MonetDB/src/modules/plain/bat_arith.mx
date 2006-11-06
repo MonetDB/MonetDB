@@ -118,7 +118,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 	REGISTER @1 *bnp;
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@7@2,@5](l=%s,r=%s);\n", 
+	ALGODEBUG THRprintf(GDKout, "#batbat_@1_@3[@7@2,@5](l=%s,r=%s);\n", 
 		BATgetId(l),BATgetId(r)); 
 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
 		   "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
@@ -230,7 +230,7 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 	REGISTER int ls = BUNsize(l);
 	REGISTER int rs = BUNsize(r);
 
-	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@7@2,@5](l=%s,r=%s);\n",
+	ALGODEBUG THRprintf(GDKout, "#batbat_@1_@3_inplace[@7@2,@5](l=%s,r=%s);\n",
 		BATgetId(l),BATgetId(r));
 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
 		   "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
@@ -264,7 +264,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@7@2,@5](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "#valbat_@1_@3[@7@2,@5](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for *, + and - ) */
@@ -311,7 +311,7 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@7@2,@5](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "#valbat_@1_@3_inplace[@7@2,@5](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
@@ -351,7 +351,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-	ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@7@2,@5](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "#batval_@1_@3[@7@2,@5](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3: BAT b must be void-headed.\n");
 
@@ -398,7 +398,7 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-	ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@7@2,@5](v,b=%s);\n",BATgetId(b));
+	ALGODEBUG THRprintf(GDKout, "#batval_@1_@3_inplace[@7@2,@5](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "batval_@1_@3_inplace: BAT b must be void-headed.\n");
 

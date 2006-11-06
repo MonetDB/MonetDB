@@ -1993,7 +1993,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 		limits = NULL;
 	}
 
-	ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", BATgetId(b), (int) b->batCacheid, BATtordered(b), nme, *perc, *nbits);
+	ALGODEBUG THRprintf(GDKout, "#radix_cluster(%s(%d,%d), %s,%g, %d", BATgetId(b), (int) b->batCacheid, BATtordered(b), nme, *perc, *nbits);
 
 	radix[0] = *nbits;
 	/*va_start(ap, nbits);*/
@@ -2369,7 +2369,7 @@ as the mask and link list for all phash invocations.
 #define bunfastINSERT(b,h,t,dummy1,dummy2,dummy3,dummy4) bunfastins(b,h,t)
 #define intfastINSERT(b,h,t,dummy1,dummy2,dummy3,dummy4) {\
 	    if (_dst >= _end) {\
-		ALGODEBUG THRprintf(GDKout, "phash_join: intfastINSERT: BATextend!\n");\
+		ALGODEBUG THRprintf(GDKout, "#phash_join: intfastINSERT: BATextend!\n");\
 		b->batBuns->free = ((BUN) _dst) - b->batBuns->base;\
 		if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
 		_dst = (int*) (b->batBuns->base + b->batBuns->free);\
@@ -2473,7 +2473,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 }
 
 @= hash_join
-	ALGODEBUG THRprintf(GDKout, "phash_join: hash_join[@1,@2,@3,@4,@5,@6,@7,@8]\n");
+	ALGODEBUG THRprintf(GDKout, "#phash_join: hash_join[@1,@2,@3,@4,@5,@6,@7,@8]\n");
 	/* build phase */
 	for (xx=BUNsize(r); rlo<rhi; rlo+=xx) {
 		ptr p = BUN@2(r,rlo);
@@ -2497,7 +2497,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 int
 M4_RDX_phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 {
-	ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ",
+	ALGODEBUG THRprintf(GDKout, "#phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ",
 		BATgetId(l), (int) l->batCacheid, BATtordered(l), 
 		BATgetId(r), (int) r->batCacheid, BAThordered(r), *radix, *hitrate, *cutoff);
 

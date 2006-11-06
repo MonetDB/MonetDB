@@ -456,10 +456,10 @@ CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, and add values to sums in-place */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
 		@:large_aggr_sum(@1,@2,@3)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
 		@:small_aggr_sum(@1,@2,@3)@
 	}
 	*ret = bn;
@@ -507,10 +507,10 @@ CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, and mul values to prods in-place */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_prod_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
 		@:large_aggr_prod(@1,@2,@3)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_prod_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
 		@:small_aggr_prod(@1,@2,@3)@
 	}
 	*ret = bn;
@@ -581,10 +581,10 @@ CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, adding sums, and incrementing counts */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_avg_@1: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
 		@:large_aggr_avg(@1,@2)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_avg_@1: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
 		@:small_aggr_avg(@1,@2)@
 	}
 	*ret = bn;
@@ -914,21 +914,21 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count()@
 		}
 	} else {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count()@
 		}
