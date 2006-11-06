@@ -102,24 +102,27 @@ There are two basic ways to release a BAT. The cheapest one is
 to just assign a nil value, which triggers the decrement
 of the reference count. The second option is to call a function,
 which could take care of more things, such as saving
-potential interesting results
+potential interesting results or issueing a memory map advice.
 Furthermore, it makes sense to only release larger temporary BATs
 during the execution, because they may unnecessarily push base
 tables out of memory.
 @= releaseBAT
-	q= newInstruction(NULL,ASSIGNsymbol);
+{	q= newInstruction(NULL,ASSIGNsymbol);
 	getArg(q,0) = getArg(p,j);
 	pushNil(mb,q, TYPE_bat);
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
+}
 @= releaseBATbyFunction
+{
 	q= newInstruction(NULL,ASSIGNsymbol);
 	setModuleId(q,batRef);
-	setFunctionId(q,putName("setGarbage",10));
+	setFunctionId(q,putName("flush",5));
 	pushArgument(mb,q,getArg(p,j));
 	getArg(q,0) = newTmpVariable(mb,TYPE_any);
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
+}
 @c
 static int
 OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -162,7 +165,15 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);
 #endif
 					if (getVarScope(mb, getArg(p, j)) == blk) {
-						@:releaseBAT()@
+						/* All persistent BATs are adviced for unmapping.
+						  They are recognized at compiletime using the bid
+						   property set by e.g. the sqloptimizer
+						*/
+						int *bid= (int*) getPropertyValue(v->props,"bid");
+						if(bid) 
+							@:releaseBATbyFunction()@
+						else
+							@:releaseBAT()@
 						actions++;
 					}
 				}
