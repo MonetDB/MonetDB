@@ -3437,21 +3437,16 @@ PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, ba
 
 PROC add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] tgtbat, bat[oid,str] insbat) : bat[oid,oid]
 {
-  var prop_ins := ws.fetch(_PROP_INS).find(cont);
-  var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
   var instgtbat := [+]([+](insbat, ":"), tgtbat);
   coll_lock_set(ws, cont);
+  var prop_ins := ws.fetch(_PROP_INS).find(cont);
+  var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
   var prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
   var idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
   var newidlist := idbat.uselect(oid_nil);
   if (newidlist.count() > 0) {
     # insert missing strings
-    # recalculate what's missing now that we have the lock
-    prop_ins_tgt := [+]([+](prop_ins, ":"), prop_tgt);
-    instgtbat := [+]([+](insbat, ":"), tgtbat);
-    idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
-    newidlist := idbat.uselect(oid_nil);
-    # then figure out unique combinations
+    # first figure out unique combinations
     var instgtunique := newidlist.mirror().join(instgtbat).tunique().reverse().seqbase(0@0);
     # then extract instruction and target
     var instgtuniquesplit := instgtunique.splitbat(":");
