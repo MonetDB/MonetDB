@@ -594,9 +594,9 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
 lock_unset(pf_short);
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
-PROC _collection_cleanup() : BAT[void,str]
+PROC _collection_cleanup() : BAT[str,str]
 {
-    var commitBAT := bat(void,str);
+    var commitBAT := bat(str,str);
     var cnt := {count_no_nil}(reverse(doc_collection).leftjoin(doc_name), collection_name);
     var del := cnt.uselect(0).mirror().join(collection_name);
     collection_zombie.delete();
@@ -627,21 +627,29 @@ PROC _collection_cleanup() : BAT[void,str]
 
             collection_name.delete(coll_oid); 
             collection_size.delete(coll_oid);
-
-            commitBAT.insert([+](str(int(coll_oid)), ws_dsk).tmark(oid_nil));
+            commitBAT.insert([+](str(int(coll_oid)), ws_dsk.reverse().mirror()));
          } else {
             # recall the ws-ids that blocked deletion of a collection 
             collection_zombie.append([abs](reverse(project(users,$h))));
          }
     }
-    return commitBAT.seqbase(0@0).access(BAT_READ); # return a list of garbage bats
+    return commitBAT.access(BAT_READ); # return a list of garbage bats
 }
 
 # make a list of victim bats transient, the commit (slow - done outside the short lock)
-PROC collection_cleanup(BAT[void,str] delBAT) : void
+PROC collection_cleanup(BAT[str,str] delBAT) : void
 {
     var cnt := count(delBAT);
     if (bit(cnt)) {
+        var logger_delBAT := logger_bats.join(delBAT);
+        if (logger_delBAT.count() > 0) {
+            lock_set(pf_wal);
+            log_trans_start(pf_logger);
+            [log_bat_transient](pf_logger, logger_delBAT);
+            [logger_del_bat](pf_logger, [logger_find_bat](pf_logger, logger_delBAT));
+            log_trans_end(pf_logger);
+            lock_unset(pf_wal);
+        }
         var commitBAT := bat(void,str,cnt);
         delBAT@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
@@ -1082,7 +1090,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
     if (count(collection_zombie.uselect(wsid)) > 0)
         return _collection_cleanup(); # garbage collect empty collections
 
-    return empty_bat;
+    return new(str,str);
 }
 
 PROC ws_free(lng wsid) : void
@@ -2261,7 +2269,8 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
                           idx.leftfetchjoin(idx_names),
                           colname, coll_oid, runtime, oid_nil, percentage, timestamp_nil, s, wsid);
 
-	if (isnil(coll_oid) and bit(percentage)) {
+	if (isnil(coll_oid)) {
+            # register new bats with the logger
 	    newcoll.append([bbpname](logger_bats.join(docBAT)));
 	}
         commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
