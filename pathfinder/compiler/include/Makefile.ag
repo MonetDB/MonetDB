@@ -88,5 +88,5 @@ EXTRA_DIST = \
 	varscope.h \
 	xquery_fo.h \
    sql.h \
-   lalg2sql.h \
-   sql_mnemonic.h
+   sql_mnemonic.h \
+   lalg2sql.h
