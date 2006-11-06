@@ -42,8 +42,7 @@
 #include "algebra.h"
 #include "oops.h"       /* PFoops() */
 /**
- * Accessors for the burg pattern matcher 
- */
+ * Accessors for the burg pattern matcher */ 
 typedef struct PFla_op_t* NODEPTR_TYPE;
 
 /* accessor to the node kind */
