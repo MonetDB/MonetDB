@@ -3422,11 +3422,13 @@ PROC add_string_bulk(bat[void,bat] ws, oid cont, int tableid, int updtableid, ba
   coll_lock_set(ws, cont);
   var table := ws.fetch(tableid).find(cont);
   var oldsize := count(table);
-  table.append(valbat, true); # we depend on the key property to let it remain unique
-  var validbat := valbat.outerjoin(table.reverse());
-  var logvals := table.slice(oldsize,count(table)).copy();
+  var missing := valbat.tdiff(table).tunique();
+  if (missing.count() > 0) {
+    table.append(missing.reverse(), true);
+  }
+  var logvals := table.slice(oldsize, count(table)).copy();
+  var validbat := valbat.leftjoin(table.reverse());
   coll_lock_unset(ws, cont);
-
   if (count(logvals) > 0) {
     ws.fetch(updtableid).find(cont).insert(logvals); # log new values
   }
