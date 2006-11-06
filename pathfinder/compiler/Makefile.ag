@@ -56,8 +56,8 @@ bin_pf = {
                 algebra/prop/libprop \
                 mil/libmil \
                 libcompiler2 \
-                sql/libsql \
                 mem/libmem \
+                sql/libsql \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
                 $(SOCKET_LIBS) $(DL_LIBS)
                 
