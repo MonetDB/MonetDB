@@ -59,7 +59,7 @@ explicitly enabled; it is not the default.
    "POSIX pattern matching against a string"
 
 .COMMAND pcre_match(str s, str pat, str flags) : bit = pcre_match_with_flags;
-   "POSIX pattern matching against a string"
+   "POSIX pattern matching against a string, with flags (see 'man pcreapi')"
 
 .COMMAND pcre_replace(str origin_str, str pattern, str replacement, str flags) : str = pcre_replace;
    "Replace _all_ matches of \"pattern\" in \"origin_str\" with\
