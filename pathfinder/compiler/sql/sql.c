@@ -150,7 +150,6 @@ PFsql_alg_att_conv(PFalg_att_t att)
         } break;
         default:
         {
-            printf( "att = %d\n", att );
             PFoops(OOPS_FATAL,
                     "This attribute is not supported by pathfinder." );
         }
@@ -196,7 +195,6 @@ PFsql_alg_schema_conv(PFalg_schema_t schema)
            sizeof( PFsql_schema_item_t ) )
    };
    
-   PFsql_schema_item_t test;
    for( i = 0; i < schema.count; i++ ) {
       test = PFsql_alg_schmitm_conv(schema.items[i]);
    }
