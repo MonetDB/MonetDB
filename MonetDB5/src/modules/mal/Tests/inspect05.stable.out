@@ -3236,6 +3236,7 @@ end main;	# 11
 [ "delete",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1):void ",										  "BKCdelete;"					  ]
 [ "delete",				  "command",	  "bat",	  "(b:bat[:void,:any_2],h:oid,t:any_2):void ",										  "BKCdelete_bun;"				  ]
 [ "delete",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2):void ",									  "BKCdelete_bun;"				  ]
+[ "flush",			  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2]):void ",											  "CMDBATflush;"			  ]
 [ "getTail",				  "pattern",	  "bat",	  "(b:bat[:any_2,:any_1],i:lng):any_1 ",										  "CHPgetTail;"					  ]
 [ "getHead",				  "pattern",	  "bat",	  "(b:bat[:any_1,:any],i:lng):any_1 ",											  "CHPgetHead;"					  ]
 [ "getHeat",				  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):lng ",											  "BKCheat;"					  ]
