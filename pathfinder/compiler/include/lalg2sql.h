@@ -31,6 +31,7 @@
 
 #include "logical.h"
 
+
 void PFlalg2sql(PFla_op_t *p);
 
 #endif /* CORE_2_SQL */
