@@ -73,7 +73,7 @@ GDKcreatedir(char *dir)
 
 	strcpy(path, dir);
 	r = strrchr(path, DIR_SEP);
-	IODEBUG THRprintf(GDKerr, "GDKcreatedir(%s)\n", path);
+	IODEBUG THRprintf(GDKout, "#GDKcreatedir(%s)\n", path);
 
 	if (r) {
 		DIR *dirp;
@@ -85,7 +85,7 @@ GDKcreatedir(char *dir)
 		} else {
 			GDKcreatedir(path);
 			ret = mkdir(path, 0755);
-			IODEBUG THRprintf(GDKerr, "mkdir %s = %d\n", path, ret);
+			IODEBUG THRprintf(GDKout, "#mkdir %s = %d\n", path, ret);
 		}
 		*r = DIR_SEP;
 	}
@@ -100,7 +100,7 @@ GDKremovedir(str dirname)
 	struct dirent *dent;
 	int ret;
 
-	IODEBUG THRprintf(GDKerr, "GDKremovedir(%s)\n", dirname);
+	IODEBUG THRprintf(GDKout, "#GDKremovedir(%s)\n", dirname);
 
 	if (dirp == NULL)
 		return 0;
@@ -110,14 +110,14 @@ GDKremovedir(str dirname)
 		}
 		GDKfilepath(path, dirname, dent->d_name, NULL);
 		ret = unlink(path);
-		IODEBUG THRprintf(GDKerr, "unlink %s = %d\n", path, ret);
+		IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, ret);
 	}
 	closedir(dirp);
 	ret = rmdir(dirname);
 	if (ret < 0) {
 		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", DELDIR);
 	}
-	IODEBUG THRprintf(GDKerr, "rmdir %s = %d\n", dirname, ret);
+	IODEBUG THRprintf(GDKout, "#rmdir %s = %d\n", dirname, ret);
 
 	return ret;
 }
@@ -189,7 +189,7 @@ delete_file(str path)
 
 	if (err)
 		GDKsyserror("GDKunlink(%s)\n", path);
-	IODEBUG THRprintf(GDKerr, "unlink %s = %d\n", path, err);
+	IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, err);
 
 	return err;
 }
@@ -227,7 +227,7 @@ GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2)
 	GDKfilepath(path2, dir2, nme2, ext2);
 	ret = rename(path1, path2);
 
-	IODEBUG THRprintf(GDKerr, "move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+	IODEBUG THRprintf(GDKout, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
 
 	return ret;
 }
@@ -249,7 +249,7 @@ GDKsave(str nme, str ext, void *buf, size_t size, int mode)
 	int fd = -1, err = 0;
 	FILE *fp = NULL;
 
-	IODEBUG THRprintf(GDKerr, "GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+	IODEBUG THRprintf(GDKout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 
 	if (mode == STORE_MMAP) {
 @-
@@ -268,7 +268,7 @@ at commit-time.
 			err = MT_msync(buf, size, MMAP_SYNC);
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
-		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
+		IODEBUG THRprintf(GDKout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
 			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)!
@@ -284,7 +284,7 @@ at commit-time.
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				IODEBUG THRprintf(GDKerr, "write(fd %d, buf " PTRFMT ", size %u) = " SSZFMT "\n", fd, PTRFMTCAST buf, (unsigned) MIN(1 << 30, size), ret);
+				IODEBUG THRprintf(GDKout, "#write(fd %d, buf " PTRFMT ", size %u) = " SSZFMT "\n", fd, PTRFMTCAST buf, (unsigned) MIN(1 << 30, size), ret);
 			}
 		} else {
 			err = -1;
@@ -315,7 +315,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 	char *ret = NULL;
 
 	IODEBUG {
-		THRprintf(GDKerr, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		THRprintf(GDKout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 	}
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(nme, "rb", ext);
@@ -328,7 +328,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 				   and Windows only accepts int */
 				for (n_expected = size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
-					IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+					IODEBUG THRprintf(GDKout, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
 
 					if (n <= 0)
 						break;
@@ -370,7 +370,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
 				ret = NULL;
 			}
-			IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
+			IODEBUG THRprintf(GDKout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
 		}
 	}
 	if (ret == NULL)
@@ -405,7 +405,7 @@ DESCload(int i)
 	int ht, tt; 
 
 	IODEBUG {
-		THRprintf(GDKerr, "DESCload %s\n", nme);
+		THRprintf(GDKout, "#DESCload %s\n", nme);
 	}
 	bs = BBPgetdesc(i);
 
@@ -542,7 +542,7 @@ BATsave(BAT *bd)
 			DESCclean(b);
 			b->batCopiedtodisk = 1;
 			err = BATsavedesc(b, nme);
-			IODEBUG THRprintf(GDKerr, "BATsavedesc(%s,free=" SZFMT ") = %d\n", nme, b->batBuns->free, err);
+			IODEBUG THRprintf(GDKout, "#BATsavedesc(%s,free=" SZFMT ") = %d\n", nme, b->batBuns->free, err);
 		}
 
 	if (b->hheap) GDKfree(b->hheap);
@@ -696,7 +696,7 @@ BATdelete(BAT *b)
 		BBP_cache(-b->batCacheid) = NULL;
 	}
 	if (b->batCopiedtodisk) {
-		IODEBUG THRprintf(GDKerr, "BATdelete %s\n", o);
+		IODEBUG THRprintf(GDKout, "#BATdelete %s\n", o);
 
 		if (GDKunlink(BATDIR, o, "desc")) {
 			GDKwarning("BATdelete(%s): descriptor\n", BATgetId(b));

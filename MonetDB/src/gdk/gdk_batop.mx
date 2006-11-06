@@ -754,7 +754,7 @@ Examine type, and values for lower- and higher-bound.
 
 	if (hval && ((ATOMcmp(t, tl, th) > 0) || (equi && !(li && hi)))) {
 		/* empty range */
-		ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): empty range;\n", BATgetId(b));
+		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): empty range;\n", BATgetId(b));
 
 		return BATnew(ht, tt, 10);
 	}
@@ -832,7 +832,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 					high = 0;
 			}
 		}
-		ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BATslice(v=%s, low=" SZFMT ", high=" SZFMT ");\n", BATgetId(b), BATgetId(v), low, high);
+		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BATslice(v=%s, low=" SZFMT ", high=" SZFMT ");\n", BATgetId(b), BATgetId(v), low, high);
 
 		bn = BATslice(v, low, high);
 		if (!tail) {
@@ -848,12 +848,12 @@ Use sampling to determine a good result size, when the bat is large.
 	} else if (batcnt > 100000) {
 		size_t _lo = batcnt / 2, _hi = _lo + 105;
 		BAT *tmp1;
-		ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" SZFMT ", _hi=" SZFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
+		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" SZFMT ", _hi=" SZFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
 
 		tmp1 = BATslice(b, _lo, _hi);	/* slice keeps all parent properties */
 		if (tmp1) {
 			BAT *tmp2;
-			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n", BATgetId(b), BATgetId(tmp1));
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n", BATgetId(b), BATgetId(tmp1));
 
 			tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE);
 			if (tmp2) {
@@ -877,17 +877,17 @@ Create the result BAT and execute the select algorithm.
 		int nocheck = (estimate >= batcnt);
 
 		if (!preserve_order && equi && b->thash) {
-			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
 		} else if (!preserve_order && equi && ATOMsize(b->ttype) > 1 && estimate * 100 < batcnt && batcnt * 2 * sizeof(int) < (GDK_mem_maxsize / 4)) {
 			/* Build a hash-table on the fly for equi-select if the selectivity is low
 			 * and it is not too big */
-			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
 		} else {
-			ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, lval, hval, nocheck);
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, lval, hval, nocheck);
 
 			bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, lval, hval, nocheck);
 		}
@@ -920,8 +920,8 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		bn->hsorted = BAThordered(b);
 		bn->tsorted = BATtordered(b);
 	}
-	ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
-	ESTIDEBUG THRprintf(GDKout, "BAT_select_(b=%s): resultsize: estimated " SZFMT ", got " SZFMT ".\n", BATgetId(b), estimate, BATcount(bn));
+	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
+	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " SZFMT ", got " SZFMT ".\n", BATgetId(b), estimate, BATcount(bn));
 
 	return bn;
 }
@@ -1170,7 +1170,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	BATcheck(tl, "BATrestrict:tl is null");
 	BATcheck(th, "BATrestrict:th is null");
 	bn = BATnew(BAThtype(b), BATttype(b), BATguess(b));
-	ESTIDEBUG THRprintf(GDKout, "BATrestrict: estimated resultsize: " SZFMT "\n", BATguess(b));
+	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: estimated resultsize: " SZFMT "\n", BATguess(b));
 
 	if (bn == NULL) {
 		return NULL;
@@ -1182,7 +1182,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 
 	s = BATcount(b);
 	if (s == 0) {
-		ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: " SZFMT "\n", BATcount(bn));
+		ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 		return bn;
 	}
@@ -1328,7 +1328,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	if (BATcount(bn) == BATcount(b))
 		ALIGNset(bn, b);
 
-	ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: " SZFMT "\n", BATcount(bn));
+	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
 

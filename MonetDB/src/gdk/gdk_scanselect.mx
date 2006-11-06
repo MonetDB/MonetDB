@@ -441,7 +441,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 	REGISTER BUN _p = BUNlast(bn);
 	REGISTER int _bunsize = BUNsize(bn);
 	@:seqscanPrologue@
-	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
+	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
 				    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);
@@ -459,7 +459,7 @@ static BAT *
 seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
 {
 	@:seqscanPrologue@
-	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
+	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
 			    BATgetId(b), BATgetId(bn), (size_t) oid_ctr, (size_t) str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);;

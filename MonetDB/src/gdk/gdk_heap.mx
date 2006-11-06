@@ -267,7 +267,7 @@ HEAPfree(Heap *h)
 				GDKsyserror("HEAPfree: %s was not mapped\n", h->filename);
 				assert(0);
 			}
-			IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", PTRFMTCAST(void *)h->base, h->maxsize, ret);
+			IODEBUG THRprintf(GDKout, "#munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", PTRFMTCAST(void *)h->base, h->maxsize, ret);
 		}
 		h->base = NULL;
 	}
@@ -311,7 +311,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
+		THRprintf(GDKout, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
 	 * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
@@ -347,7 +347,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 		fp = (FILE *) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
 			ret = ftruncate(fileno(fp), (off_t) truncsize);
-			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", nme, ext, truncsize, ret);
+			IODEBUG THRprintf(GDKout, "#ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", nme, ext, truncsize, ret);
 
 			fclose(fp);
 			if (ret == 0) {
@@ -391,7 +391,7 @@ int HEAPsave(Heap* h, str nme, str ext) {
 		store = STORE_MEM; 
 	}
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", 
+		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", 
 			nme, ext, h->storage, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
@@ -413,13 +413,13 @@ HEAPdelete(Heap *h, str o, str ext)
 		if (h->storage & STORE_MMAP) {
 			/* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
 			int ret, fd = GDKfdlocate(h->filename, "rb+", NULL);
-			IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
+			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
 
 			ret = ftruncate(fd, LL_CONSTANT(0));
-			IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) ftruncate(%d,0LL) = %d\n", h->filename, fd, ret);
+			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) ftruncate(%d,0LL) = %d\n", h->filename, fd, ret);
 
 			ret = close(fd);
-			IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) close(%d) = %d\n", h->filename, fd, ret);
+			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) close(%d) = %d\n", h->filename, fd, ret);
 		}
 		HEAPfree(h);
 	}
@@ -537,7 +537,7 @@ HEAP_printstatus(Heap *heap)
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
-	THRprintf(GDKerr, "HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n", hheader->head, hheader->alignment, heap->free);
+	THRprintf(GDKout, "#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n", hheader->head, hheader->alignment, heap->free);
 
 	/*
 	   // Walk the blocklist;
@@ -548,14 +548,14 @@ HEAP_printstatus(Heap *heap)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 		if (block == cur_free) {
-			THRprintf(GDKerr, "   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n", PTRFMTCAST(void *)block, blockp->size, blockp->next);
+			THRprintf(GDKout, "#   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n", PTRFMTCAST(void *)block, blockp->size, blockp->next);
 
 			cur_free = blockp->next;
 			block += blockp->size;
 		} else {
 			size_t size = blocksize(hheader, blockp);
 
-			THRprintf(GDKerr, "   block at " SZFMT " with size " SZFMT "\n", block, size);
+			THRprintf(GDKout, "#   block at " SZFMT " with size " SZFMT "\n", block, size);
 			block += size;
 		}
 	}
@@ -591,7 +591,7 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	headp->size = heap->size - head;
 	headp->next = 0;
 #ifdef TRACE
-	THRprintf(GDKerr, "We created the following heap\n");
+	THRprintf(GDKout, "#We created the following heap\n");
 	HEAP_printstatus(heap);
 #endif
 }
@@ -636,7 +636,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
 #ifdef TRACE
-	THRprintf(GDKerr, "Enter malloc with " SZFMT " bytes\n", nbytes);
+	THRprintf(GDKout, "#Enter malloc with " SZFMT " bytes\n", nbytes);
 #endif
 
 	/* add space for size field */
@@ -662,7 +662,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 #ifdef TRACE
-		THRprintf(GDKerr, "block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
+		THRprintf(GDKout, "#block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
 #endif
 		if ((trail != 0) && (block <= trail))
 			GDKfatal("HEAP_malloc: Free list is not orderered\n");
@@ -682,7 +682,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		block = heap->free;	/* current end-of-heap */
 
 #ifdef TRACE
-		THRprintf(GDKerr, "No block found\n");
+		THRprintf(GDKout, "#No block found\n");
 #endif
 
 		/*
@@ -698,7 +698,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		trailp = HEAP_index(heap, trail, CHUNK);
 
 #ifdef TRACE
-		THRprintf(GDKerr, "New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
+		THRprintf(GDKout, "#New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
 #endif
 
 		blockp->next = 0;
@@ -710,7 +710,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		 */
 		if ((trail != 0) && (trail + trailp->size == block)) {
 #ifdef TRACE
-			THRprintf(GDKerr, "Glue newly generated block to adjacent last\n");
+			THRprintf(GDKout, "#Glue newly generated block to adjacent last\n");
 #endif
 
 			trailp->size += blockp->size;

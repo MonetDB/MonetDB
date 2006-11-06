@@ -1954,9 +1954,7 @@ int
 BATmmap(BAT *b, int bns, int hhp, int thp )
 {
 	BATcheck(b, "BATmmap");
-	IODEBUG {
-		THRprintf(GDKerr, "BATmmap(%s,%d,%d,%d)\n", BATgetId(b), bns, hhp, thp );
-	}
+	IODEBUG THRprintf(GDKout, "#BATmmap(%s,%d,%d,%d)\n", BATgetId(b), bns, hhp, thp );
 	/* Reverse back if required, as this determines which heap is saved in the 
 	 * "hheap" file and which in the "theap" file.
 	 */
@@ -2199,7 +2197,7 @@ HEAPsetmmap(Heap *hp, int committed, int *remap)
 
 		/* rename X.priv->X is not crucial for this to work (X.priv is not in the way) */
 		ret = rename(src, dst);
-		IODEBUG THRprintf(GDKerr, "BATsetaccess(HEAPsetmmap) rename(%s,%s) = %d\n", src, dst, ret);
+		IODEBUG THRprintf(GDKout, "#BATsetaccess(HEAPsetmmap) rename(%s,%s) = %d\n", src, dst, ret);
 	} else {
 		/* state(1), goto state (4) */
 		hp->storage = STORE_MMAP;	/* direct change! */
@@ -2738,7 +2736,7 @@ for determining which algebra commands set properties sub-optimally.
 				if ((bv->hhash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
-					THRprintf(GDKerr, "BATpropcheck: BAT %s(%d): could allocate hash table for key test\n", BATgetId(b), b->batCacheid);
+					THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): could not allocate hash table for key test\n", BATgetId(b), b->batCacheid);
 				} else {
 					BATmirror(bv)->thash = bv->hhash;
 
@@ -2768,7 +2766,7 @@ for determining which algebra commands set properties sub-optimally.
 					default:
 						@:hash_disprove(,ead)@
 					}
-					BATDEBUG THRprintf(GDKerr, "BATpropcheck: BAT %s(%d): used hashtable of size " SZFMT "\n", BATgetId(b), b->batCacheid, lim);
+					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): used hashtable of size " SZFMT "\n", BATgetId(b), b->batCacheid, lim);
 				}
 				BBPreclaim(bv);
 			}

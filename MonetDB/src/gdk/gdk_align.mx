@@ -354,7 +354,7 @@ BATmaterialize(BAT *b, size_t size)
 		char *nme = BBP_physical(b->batCacheid);
 		int committed = BBP_status(b->batCacheid) & BBPEXISTING;
 
-		ALGODEBUG THRprintf(GDKout, "BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
+		ALGODEBUG THRprintf(GDKout, "#BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
 
 		if (BAThdense(b) && ht == TYPE_void) {
 			vid |= 1;
@@ -518,7 +518,7 @@ BATmaterializeh(BAT *b, size_t size)
 	BUN r;
 
 	BATcheck(b, "BATmaterialize: bat required");
-	ALGODEBUG THRprintf(GDKout, "BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
+	ALGODEBUG THRprintf(GDKout, "#BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
 
 	if (!BAThdense(b) || ht != TYPE_void) {
 		/* no voids */

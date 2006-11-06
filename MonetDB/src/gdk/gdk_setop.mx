@@ -373,7 +373,7 @@ TODO synced/key case..
 	BUN q1 = BUNlast(l),  q2 = BUNlast(r);
 	int s1 = BUNsize(l),  s2 = BUNsize(r);
 
-	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
+	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
 	if (p2 < q2) BATloopFast(l, p1, q1, s1) {
 		ptr  h = BUNh@2(l,p1);
 		ptr  t = BUNtail(l,p1);
@@ -416,7 +416,7 @@ TODO synced/key case..
 	hash_t s2;
 	ptr h, t, t2 = NULL, h2 = hnil;
 
-	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
+	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	pin = 1;
 	BATmmap_pin(r);
 	if (BATprepareHash(r))
@@ -451,7 +451,7 @@ TODO synced/key case..
 
 		(void) t2;
 
-		ALGODEBUG THRprintf(GDKout, "BATins_@1@2: voidcheck[@1, @2];\n");
+		ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: voidcheck[@1, @2];\n");
 		if (BAThdense(l)) {
 			oid ll = *(oid*) BUNhead(l,(p1=BUNfirst(l)));
 			oid lh = ll + BATcount(l);
@@ -632,7 +632,7 @@ BAT@1@2(BAT *l, BAT *r)
 		return NULL;
 
 	/* fill result bat bn */
-	ALGODEBUG THRprintf(GDKout, "BAT@1@2: BATins_@1@2(bn, l, r);\n");
+	ALGODEBUG THRprintf(GDKout, "#BAT@1@2: BATins_@1@2(bn, l, r);\n");
 	if (BATins_@1@2(bn, l, r) == NULL) {
 		return NULL;
 	}
