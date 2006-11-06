@@ -40,6 +40,8 @@ xquery("mapi-dm"        ,query , 0).printf();
 #
 xquery("seq"            ,query , 0).printf();
 
+xquery("seq"            ,query , 0).print();
+
 
 # default mode is xml mode (it also works with mapi
 # -- all other mode arguments are ignored)
