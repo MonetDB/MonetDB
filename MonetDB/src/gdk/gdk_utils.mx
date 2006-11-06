@@ -104,17 +104,6 @@ to access its information.
 @{
 @c
 
-void
-GDKusage()
-{
-	fprintf(stdout, "usage: <program> [--dbname=<db_name>] [--config=<file>]\n");
-	fprintf(stdout, "<program>\tprogram using the GDK library\n");
-	fprintf(stdout, "<db-name>\tdatabase to open\n");
-	fprintf(stdout, "<file>\t\tsystem variable settings\n");
-	fprintf(stdout, "\t\tdefault: MonetDB.conf in <prefix>/etc\n");
-	fprintf(stdout, "Other arguments are dealt with in the application startup routine\n");
-}
-
 static int
 GDKenvironment(str dbname, str dbfarm)
 {
