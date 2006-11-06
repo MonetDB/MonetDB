@@ -195,8 +195,9 @@ PFsql_alg_schema_conv(PFalg_schema_t schema)
            sizeof( PFsql_schema_item_t ) )
    };
    
+   
    for( i = 0; i < schema.count; i++ ) {
-      test = PFsql_alg_schmitm_conv(schema.items[i]);
+   //   test = PFsql_alg_schmitm_conv(schema.items[i]);
    }
    return ret;
 }
