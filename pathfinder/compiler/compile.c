@@ -30,7 +30,10 @@
  * $Id$
  */
 
+
+
 #include "pathfinder.h"
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -74,6 +77,7 @@
 #include "oops.h"
 #include "mem.h"
 #include "coreopt.h"
+#include "lalg2sql.h"
 
 #ifndef NDEBUG
 /* to invoke PFty_debug_subtyping() if --debug subtyping */
@@ -140,8 +144,9 @@ PFstate_t PFstate = {
 #ifndef NDEBUG
     .debug = {
         .subtyping       = false
-    }
+    },
 #endif
+   .generate_sql         = false
 };
 
 jmp_buf PFexitPoint;
@@ -452,7 +457,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      */
     tm = PFtimer_start ();
 
-    laroot = PFalgopt (laroot, status->timing);
+  
+
+   laroot = PFalgopt (laroot, status->timing);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -603,7 +610,18 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
                     "point of compilation");
     }
 
-    return ( 1 ); /* EXIT_SUCCES */
+    /* print SQL statements if requested */
+    if(status->generate_sql) {
+         if(laroot) {
+             PFlalg2sql(laroot);
+         }
+         else
+            PFinfo(OOPS_NOTICE,
+                  "SQL expressions not available at this "
+                  "point of compilation");
+    }
+
+    return ( 1 ); /* EXIT_SUCCESS */
 
  failure:
     return ( -1 ); /* EXIT_FAILURE */

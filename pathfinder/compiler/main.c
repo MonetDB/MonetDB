@@ -482,6 +482,7 @@ static struct option long_options[] = {
 #endif
     { "dead-code-elimination",     required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
+    { "gensql",                       no_argument,    NULL, 'g' },
     { "help",                         no_argument,    NULL, 'h' },
     { "print-logical-algebra",        no_argument,    NULL, 'l' },
     { "optimize-algebra",          required_argument, NULL, 'o' },
@@ -612,7 +613,6 @@ main (int argc, char *argv[])
     /* getopt-based command line parsing */
     while (true) {
         int c;
-
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
@@ -620,19 +620,18 @@ main (int argc, char *argv[])
 #ifndef NDEBUG
                                      "d:"
 #endif
-                                     "e:f:hlo:pqrs:t", 
+                                     "e:f:hlo:pqrs:tg", 
                          long_options, &option_index);
 #else
         c = getopt (argc, argv, "ADHMO::PTXabc"
 #ifndef NDEBUG
                                 "d:"
 #endif
-                                "e:f:hlo:pqrs:t");
+                                "e:f:hlo:pqrs:tg");
 #endif
 
         if (c == -1)
             break;            /* end of command line */
-        
         switch (c) {
             case 'A':
                 status->summer_branch = false;
@@ -889,7 +888,9 @@ main (int argc, char *argv[])
             case 't':
                 status->print_types = true;
                 break;
-
+            case 'g':
+                status->generate_sql = true;
+                break;
             default:
                 PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
                 break;

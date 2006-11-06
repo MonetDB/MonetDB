@@ -18,7 +18,7 @@
 # 2000-2005 University of Konstanz and (C) 2005-2006 Technische
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 
-SUBDIRS = schema debug mem parser semantics core algebra mil include
+SUBDIRS = schema debug mem parser semantics core algebra mil include sql
 
 EXTRA_DIST_DIR = Tests
 
@@ -57,6 +57,7 @@ bin_pf = {
                 mil/libmil \
                 libcompiler2 \
                 mem/libmem \
+                sql/libsql \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
                 $(SOCKET_LIBS) $(DL_LIBS)
                 
