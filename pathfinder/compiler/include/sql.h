@@ -163,7 +163,7 @@ PFsql_attlist_t PFsql_attlist_(PFsql_att_count_t count, PFsql_att_t *atts);
 PFsql_op_t* PFsql_tmp_tbl_(PFalg_attlist_t a,
                                 unsigned int count, PFalg_tuple_t *tuples);
 
-/************************** Translation ************************/
+/************************* Translation ************************/
 
 /**
  * Convert an algebra schema item to a SQL specific schema.

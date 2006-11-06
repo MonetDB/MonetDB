@@ -1,9 +1,5 @@
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
-/** 
- * Thu Nov  2 10:51:01 CET 2006, Manuel Mayr 
- */ 
-
 /**
  * @file
  *
