@@ -698,30 +698,36 @@ copyHead(BAT *bn, BAT *org)
 		p2 = (str) (BUNfirst(org)+org->hloc);
 		hend = (str) BUNlast(org);
 		switch(atomsize){
+		case 0:
+			break;
 		case 1:
 			while( p2<hend) {
 				*(chr*)p1 = *(chr*)p2;
 				p1= (ptr)( ((char*)p1) + s1);
 				p2= (ptr)( ((char*)p2) + s2);
 			}
+			break;
 		case 2:
 			while( p2<hend) {
 				*(sht*)p1 = *(sht*)p2;
 				p1= (ptr)( ((char*)p1) + s1);
 				p2= (ptr)( ((char*)p2) + s2);
 			}
+			break;
 		case 4:
 			while( p2<hend) {
 				*(int*)p1 = *(int*)p2;
 				p1= (ptr)( ((char*)p1) + s1);
 				p2= (ptr)( ((char*)p2) + s2);
 			}
+			break;
 		case 8:
 			while( p2<hend) {
 				*(lng*)p1 = *(lng*)p2;
 				p1= (ptr)( ((char*)p1) + s1);
 				p2= (ptr)( ((char*)p2) + s2);
 			}
+			break;
 		default:
 			while( p2<hend) {
 				memcpy(p1,p2,atomsize);
