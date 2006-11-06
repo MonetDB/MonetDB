@@ -620,14 +620,14 @@ main (int argc, char *argv[])
 #ifndef NDEBUG
                                      "d:"
 #endif
-                                     "e:f:hlo:pqrs:tg", 
+                                     "e:f:ghlo:pqrs:t", 
                          long_options, &option_index);
 #else
         c = getopt (argc, argv, "ADHMO::PTXabc"
 #ifndef NDEBUG
                                 "d:"
 #endif
-                                "e:f:hlo:pqrs:tg");
+                                "e:f:ghlo:pqrs:t");
 #endif
 
         if (c == -1)
