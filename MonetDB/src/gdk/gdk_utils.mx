@@ -1855,7 +1855,7 @@ GDKfatal(const char *format, ...)
 	char message[GDKMAXERRLEN];
 	size_t len = strlen(GDKFATAL);
 	va_list ap;
-	FILE *fd = stdout;
+	FILE *fd = stderr;
 
 	GDKdebug |= 16;
 #ifndef NATIVE_WIN32
