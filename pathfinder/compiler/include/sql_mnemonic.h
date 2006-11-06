@@ -33,6 +33,7 @@
 #ifndef __SQL_MNEMONIC_H__
 #define __SQL_MNEMONIC_H__
 
+
 /** attribute list construction */
 #define attlist(...)    PFsql_attlist( __VA_ARGS__ )
 
