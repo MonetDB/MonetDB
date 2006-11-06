@@ -39,8 +39,8 @@ lib_sql = {
         NOINST
         DIR = libdir
         SOURCES = \
-                sql.c \
-                lalg2sql.brg
+                lalg2sql.brg \
+                sql.c
 }
 
 #EXTRA_DIST =
