@@ -95,6 +95,7 @@ struct PFstate_t {
                                    (command line option `-d subtyping') */
     } debug;
 #endif
+   bool generate_sql;
 };
 
 
