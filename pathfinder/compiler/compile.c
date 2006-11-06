@@ -613,6 +613,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* print SQL statements if requested */
     if(status->generate_sql) {
          if(laroot) {
+             /* this is not the final semantic of this function */
              PFlalg2sql(laroot);
          }
          else
