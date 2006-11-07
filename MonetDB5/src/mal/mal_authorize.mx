@@ -854,14 +854,14 @@ AUTHdecypherValue(str *ret, str *value) {
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
 	for (; *s != '\0'; s++) {
-		*w = *s ^ key[(s - *value) % keylen];
-		if (*w == '\1' && escaped == 0) {
+		if (*s == '\1' && escaped == 0) {
 			escaped = 1;
 			continue;
 		} else if (escaped != 0) {
-			*w -= 1;
+			*s -= 1;
 			escaped = 0;
 		}
+		*w = *s ^ key[(w - r) % keylen];
 		w++;
 	}
 	*w = '\0';
