@@ -357,7 +357,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token every_dollar                    "every $"
 %token except                          "except"
 %token excl_equals                     "!="
-%token execute_at_lbrace               "execute at {"
+%token execute_at                      "execute at"
 %token external_                       "external"
 %token following_colon_colon           "following::"
 %token following_sibling_colon_colon   "following-sibling::"
@@ -2779,8 +2779,16 @@ SeedVar                   : VarName OptTypeDeclaration_
 /* end of the Pathfinder recursion extension */
 
 /* Pathfinder extension: XRPC */
-XRPCCall                  : "execute at {" Expr "}" "{" FunctionCall "}"
-                            { $$ = wire2 (p_xrpc, @$, $2, $5); }
+XRPCCall                  : "execute at" "{" ExprSingle "}" "{" FunctionCall "}"
+                            { $$ = wire2 (p_xrpc, @$, $3, $6); }
+                          | "execute at" URILiteral "{" FunctionCall "}"
+                            { $$ = wire2 (p_xrpc, 
+                                          @$, 
+                                          (c = leaf (p_lit_str, @2),
+                                           c->sem.str = $2,
+                                           c), 
+                                          $4); 
+                            }
                           ;
 /* End Pathfinder extension */
 

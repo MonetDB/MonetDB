@@ -120,7 +120,10 @@ in our compiler.  The statement
 will execute the function call given in the second pair of curly
 braces at the URI specified in the first pair of braces.  The URI
 expression may be any expression that can sensibly be interpreted
-as a string.  
+as a string.  A syntactically lighter variant using a literal URI 
+is acceptable as well:
+
+  execute at "<<URI>>" { <<FunctionCall>> }
 
 XQuery RPC functionality is currently only available in Pathfinder's
 "milprint_summer" back-end.
