@@ -173,7 +173,7 @@ PFsql_alg_schmitm_conv(PFalg_schm_item_t item)
 {
     PFsql_schema_item_t ret;
 
-    ret.type = aat_int;
+    ret.type = sql_type_integer;
     ret.name = PFsql_alg_att_conv(item.name);
 
     return ret;
