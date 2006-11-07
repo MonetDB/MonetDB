@@ -76,38 +76,7 @@ if (standoff) {
     module("pf_standoff");
 }
 
-PROC pfstart(bit open, lng sz) : void {
-        xquery_start_query_cache(sz);
-	mapi_register(xquery_frontend());
-        if (not(mapi_running())) {
-                mapi_listen(
-                        int(monet_environment.find("mapi_port")), 
-                        str_nil, 
-                        5, 
-                        open).fork();
-        }
-}
-ADDHELP("pfstart", "boncz", "April 2005",
-"PARAMETERS:\n\
-bit whether the listener should listen to outside requests \
-(default false: only local connections).\n\
-sz per-connection size limit to the query plan cache, see also \"xquery_start_query_cache\".\n\
-DESCRIPTION:\n\
-start the xquery server.",
-"pathfinder");
-
-PROC pfstart() : void {
-        pfstart(false, 0LL);
-}
-
-PROC xquery_server_start(bit global) : void {
-        pfstart(false, 0LL);
-}
-
-PROC xquery_server_start() : void {
-        xquery_server_start(false);
-}
-
+PROC pfstart() : void { } # deprecated
 
 # The XML Meta-Database #############################################################
 #
@@ -446,13 +415,6 @@ const MODIFIED_ATTR := ANCESTOR_NID + 1;
 const MODIFIED_PAGE := MODIFIED_ATTR + 1;
 const NEW_PAGE := MODIFIED_PAGE + 1;
 
-@- shared BATs
-
-Note that MIL variables are not shared between concurrent MIL sessions. Therefore, we need the pflock()
-command to get a global lock handle for synchronization. However, BATs are global objects and may be
-shared. This mechanism is used to share the global data structures (each XQuery session has its own
-MIL variables, but these point to the same global BATs).
-
 @= ws_nme
     .append(toLower("@1"))
 @= ws_tpe
@@ -464,7 +426,7 @@ MIL variables, but these point to the same global BATs).
 @= ws_seq
     .append(@7)
 @mil
-# get a handle to the global lock
+# get a handle to the global locks
 var pf_short := pflock_get(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
 var pf_free  := pflock_get(1); # lock held while freeing ws-es
 var pf_wal   := pflock_get(2); # lock that must be held while writing into the WAL
@@ -473,46 +435,8 @@ var pf_wal   := pflock_get(2); # lock that must be held while writing into the W
 var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
                                             monet_environment.find("gdk_dbname"), LOGGER_VERSION);
 
-# the set of document collections (may only be accessed holding pf_short)
-var collection_name;  # bat[oid,str] collection name 
-var collection_size;  # bat[oid,lng] collection size in bytes
-var collection_zombie;# bat[oid,lng] contains ws still using the now defunct collection (TRANSIENT)
-
-var doc_collection;   # bat[oid,oid] collection-id 
-var doc_name;         # bat[oid,str] document name
-var doc_location;     # bat[oid,str] document URI
-var doc_timestamp;    # bat[oid,timestamp] caching limit (nil if none)
-var doc_undo;         # bat[oid,lng] contains ws that created this document (TRANSIENT)
-
-var uri_lifetime;     # caching rules
-
-# runtime collection acccess control (TRANSIENT)
-var colname_runtime;  # bat[str,bat] runtime index/lock bat-of-bat 
-var colname_pins;     # bat[str,lng] queries that are using a collection (negative numbers are shreds)
-var colname_shredlock;# bat[str,lng] query that is shredding into a collection 
-var colname_locks;    # bat[str,lng] queries that are using a collection 
-var ws_overlaps_ws := bat("ws_overlaps_ws"); 
-                      # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
-
-                      # empty pages to append onto rid_* master bats
-var empty_page;       # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
-var empty_bat;        # bat[void,oid] 
-var empty_runtime;    # bat[lock,bat] 
-
-                      # the ws_* bats contain a recipe for creating a new ws
-var ws_nme;           # name (prefix) of ws entry as persistent bat
-var ws_tpe;           # type of ws entry (often bat)
-var ws_htp;           # (if tpe=bat) head-type of nested bat
-var ws_ttp;           # (if tpe=bat) tail-type of nested bat
-var ws_seq;           # (if tpe=bat) seqbase of nested bat
-var ws_col;           # all ws entries that are real bats, and their names
-var ws_dsk;           # of those, all persistent bats on disk for a document container , and their names
-var ws_rid;           # of those, all master rid_* bats, and their (remapped) pre_* views
-var ws_mem;           # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
-
-# the list of bats that get changed using the logger in case of
-# updates (i.e. these are the ones that need to be registered in the
-# logger)
+# the list of bats that get changed using the logger in case of updates 
+# (i.e. these are the ones that need to be registered in the logger)
 const logger_bats := new(void, str, 21).seqbase(0@0)
 	.append("_map_pid")
 	.append("_rid_size")
@@ -536,9 +460,37 @@ const logger_bats := new(void, str, 21).seqbase(0@0)
 	.append("_qn_prefix_uri_loc")
 	.append("_qn_histogram");
 
-# initialize global variables (use BBP as global mechanism to discover initialization)
-# note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
-lock_set(pf_short);
+# the logger background thread
+PROC xquery_logmanager() : void {
+    var cnt := 0;
+    while(true) {
+        if ((logger_changes(pf_logger) > 100000) and ((cnt :+= 1) <= 10)) { 
+            lock_set(pf_wal);
+            logger_restart(pf_logger);
+            lock_unset(pf_wal);
+            logger_cleanup(pf_logger);
+            cnt := 0;
+        } 
+        sleep(90);  
+    }
+}
+
+# the set of document collections (may only be accessed holding pf_short)
+var collection_name;  # bat[oid,str] collection name 
+var collection_size;  # bat[oid,lng] collection size in bytes
+var collection_zombie := bat(oid,lng).rename("collection_zombie"); 
+                      # bat[oid,lng] contains ws still using the now defunct collection (TRANSIENT)
+
+var doc_collection;   # bat[oid,oid] collection-id 
+var doc_name;         # bat[oid,str] document name
+var doc_location;     # bat[oid,str] document URI
+var doc_timestamp;    # bat[oid,timestamp] caching limit (nil if none)
+var doc_undo := bat(oid,lng).rename("doc_undo"); 
+                      # bat[oid,lng] contains ws that created this document (TRANSIENT)
+
+var uri_lifetime;     # caching rules
+
+# initialize persistent bats (use BBP as global mechanism to discover initialization)
 if (isnil(CATCH(bat("doc_name").count()))) {
     collection_name  := bat("collection_name");
     collection_size  := bat("collection_size");
@@ -560,63 +512,63 @@ if (isnil(CATCH(bat("doc_name").count()))) {
 if (not(doc_collection.exist(TEMP_DOC))) {
     doc_collection.insert(TEMP_DOC, DOCID_MIN); # hack: store next oid as in invalid TEMP_DOC tuple
 }
-if (isnil(CATCH(bat("doc_undo").count()))) {
-    doc_undo         := bat("doc_undo"); 
-    collection_zombie:= bat("collection_zombie"); 
-    colname_shredlock:= bat("colname_shredlock"); 
-    colname_runtime  := bat("colname_runtime"); 
-    colname_pins     := bat("colname_pins"); 
-    colname_locks    := bat("colname_locks"); 
-    empty_page       := bat("empty_page"); 
-    empty_bat        := bat("empty_bat"); 
-    empty_runtime    := bat("empty_runtime"); 
-    ws_nme           := bat("ws_nme");
-    ws_tpe           := bat("ws_tpe"); 
-    ws_htp           := bat("ws_htp");
-    ws_ttp           := bat("ws_ttp");
-    ws_seq           := bat("ws_seq");
-    ws_col           := bat("ws_col");
-    ws_dsk           := bat("ws_dsk");
-    ws_rid           := bat("ws_rid");
-    ws_mem           := bat("ws_mem");
-} else {
-    doc_undo         := bat(oid,lng).rename("doc_undo"); 
-    collection_zombie:= bat(oid,lng).rename("collection_zombie"); 
-    colname_pins     := bat(str,lng).rename("colname_pins"); 
-    colname_locks    := bat(str,lng).rename("colname_locks"); 
-    colname_runtime  := bat(str,bat).rename("colname_runtime"); 
-    colname_shredlock:= bat(str,lock).rename("colname_shredlock"); 
-    empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
-    empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
-    empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
 
+# runtime collection acccess control (TRANSIENT)
+var colname_runtime  := bat(str,bat).rename("colname_runtime"); 
+                        # bat[str,bat] runtime index/lock bat-of-bat 
+var colname_pins     := bat(str,lng).rename("colname_pins"); 
+                        # bat[str,lng] queries that are using a collection (negative numbers are shreds)
+var colname_shredlock:= bat(str,lock).rename("colname_shredlock"); 
+                        # bat[str,lng] query that is shredding into a collection 
+var colname_locks    := bat(str,lng).rename("colname_locks"); 
+                        # bat[str,lng] queries that are using a collection 
+
+var ws_overlaps_ws := bat("ws_overlaps_ws"); 
+                        # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
+
+var empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
+var empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
+var empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
+                        # empty pages to append onto rid_* master bats
+{   # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
     var m := int_nil, i := int(REMAP_PAGE_SIZE);
     var bak := debugmask();
     debugmask(0);
     while((i :-= 1) >= 0) { empty_page.append(nilor(i, m)); }
     debugmask(bak);
     empty_page.seqbase(0@0).access(BAT_READ);
+}
 
-    ws_nme := bat(void,str,WS_SIZE)@:ws(nme)@.seqbase(0@0).access(BAT_READ).rename("ws_nme");
-    ws_tpe := bat(void,int,WS_SIZE)@:ws(tpe)@.seqbase(0@0).access(BAT_READ).rename("ws_tpe");
-    ws_htp := bat(void,int,WS_SIZE)@:ws(htp)@.seqbase(0@0).access(BAT_READ).rename("ws_htp");
-    ws_ttp := bat(void,int,WS_SIZE)@:ws(ttp)@.seqbase(0@0).access(BAT_READ).rename("ws_ttp");
-    ws_seq := bat(void,oid,WS_SIZE)@:ws(seq)@.seqbase(0@0).access(BAT_READ).rename("ws_seq");
-    ws_col := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme).rename("ws_col");
-    ws_dsk := ws_nme.reverse().ord_select(oid(_MAP_PID), oid_nil).reverse().rename("ws_dsk");
-    ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE));
-    ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
+# the ws_* bats contain a recipe for creating a new ws
+var ws_nme := bat(void,str,WS_SIZE)@:ws(nme)@.seqbase(0@0).access(BAT_READ).rename("ws_nme");
+              # name (prefix) of ws entry as persistent bat
+var ws_tpe := bat(void,int,WS_SIZE)@:ws(tpe)@.seqbase(0@0).access(BAT_READ).rename("ws_tpe");
+              # type of ws entry (often bat)
+var ws_htp := bat(void,int,WS_SIZE)@:ws(htp)@.seqbase(0@0).access(BAT_READ).rename("ws_htp");
+              # (if tpe=bat) head-type of nested bat
+var ws_ttp := bat(void,int,WS_SIZE)@:ws(ttp)@.seqbase(0@0).access(BAT_READ).rename("ws_ttp");
+              # (if tpe=bat) tail-type of nested bat
+var ws_seq := bat(void,oid,WS_SIZE)@:ws(seq)@.seqbase(0@0).access(BAT_READ).rename("ws_seq");
+              # (if tpe=bat) seqbase of nested bat
+var ws_col := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme).rename("ws_col");
+              # all ws entries that are real bats, and their names
+var ws_dsk := ws_nme.reverse().ord_select(oid(_MAP_PID), oid_nil).reverse().rename("ws_dsk");
+              # of those, all persistent bats on disk for a document container , and their names
+var ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE));
+              # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
+var ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
+              # of those, all master rid_* bats, and their (remapped) pre_* views
     ws_mem := ws_mem.slice(NID_RID, INT_MAX).rename("ws_mem");
 
-    # silently clean up the repository
-    collection_cleanup(_collection_cleanup());
-    var garbage := [oid](view_bbp_name().select("0","999999999999999999").reverse().mirror()).tdiff(reverse(collection_name));
-    if (bit(count(garbage))) {
-        garbage@batloop() { CATCH(bat($h).persists(false)); }
-        commit();
-    }
-}
-lock_unset(pf_short);
+# silently clean up the repository
+collection_cleanup(_collection_cleanup());
+
+# start the background processes 
+xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
+fork(xquery_logmanager());
+mapi_register(xquery_frontend());
+if (not(mapi_running()))
+    fork(mapi_listen(int(monet_environment.find("mapi_port")), str_nil, 5, bit(monet_environment.find("xquery_open"))));
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
 PROC _collection_cleanup() : BAT[str,str]
@@ -682,8 +634,6 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
         pf_checkpoint(commitBAT);
     }
 }
-
-
 
 @+ locking approach
 @T
@@ -752,7 +702,6 @@ bats of a collection. This is required when:
 - while applying the updates of a committed query to the master bat.
   note that in a commit, first all locks of all documents must be acquired
   (in ascending order - to prevent deadlock), then all changes commited. 
-
 
 Similar to the short_doc PROC naming convention, __X() PROCs, i.e.
 with double underscore are those that execute while holding a collection
@@ -931,6 +880,8 @@ means that the next 5 incoming update transactions will be executed in
 serial mode.  This policy ensures that conflict aborts never bother the user, and
 highly "conflicting" query loads avoid putting the system in "thrashing" mode.
 
+(see the pflock_* COMMANDS in pf_support.mx)
+
 @- Document Management Queries 
 A read-only query executes the following phases:
 (0) ws_create(false)
@@ -1035,14 +986,6 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
-var pf_updaters := 0;
-
-PROC _ws_create(int update) : bit
-{
-    if (update = 1) if ((pf_updaters :+=1) = 1) return true;
-    return false;
-}
- 
 PROC ws_create(int update) : BAT[void,bat]
 {
     # only instantiates the default views of the ws-bats (not the master bats)
@@ -2072,6 +2015,7 @@ PROC ws_opendoc(BAT[void,BAT] ws,
 # fn:collection(), get document nodes of all documents in a collection
 PROC ws_collection(BAT[void,BAT] ws, BAT[void,str] nms, BAT[oid,int] ret) : BAT[void,oid]
 {
+    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
     var idx_names, err := CATCH(idx_names := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftfetchjoin(doc_name)); 
     lock_unset(pf_short);
