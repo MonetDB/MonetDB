@@ -188,7 +188,7 @@ PFsql_schema_t
 PFsql_alg_schema_conv(PFalg_schema_t schema)
 {
    PFsql_schema_t ret;
-   unsigned int i;
+   /* unsigned int i; */
    ret  = (PFsql_schema_t) {
         .count = schema.count,
         .items = PFmalloc( schema.count * 
@@ -196,9 +196,9 @@ PFsql_alg_schema_conv(PFalg_schema_t schema)
    };
    
    
-   for( i = 0; i < schema.count; i++ ) {
-   //   test = PFsql_alg_schmitm_conv(schema.items[i]);
-   }
+   /*for( i = 0; i < schema.count; i++ ) {
+      test = PFsql_alg_schmitm_conv(schema.items[i]);
+   }*/
    return ret;
 }
 
