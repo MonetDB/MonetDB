@@ -20,39 +20,10 @@ return
 ").printf();
 
 xquery("xml","doc(\"users.xml\")").printf();
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><users>
-  <user_tuple>
-    <userid>U01</userid>
-    <name>Tom Jones</name>
-    <rating>B</rating>
-  </user_tuple>
-  <user_tuple>
-    <userid>U02</userid>
-    <name>Mary Doe</name>
-    <rating>A</rating>
-  </user_tuple>
-  <user_tuple>
-    <userid>U03</userid>
-    <name>Dee Linquent</name>
-    <rating>D</rating>
-  </user_tuple>
-  <user_tuple>
-    <userid>U04</userid>
-    <name>Roger Smith</name>
-    <rating>C</rating>
-  </user_tuple>
-  <user_tuple>
-    <userid>U05</userid>
-    <name>Jack Sprat</name>
-    <rating>B</rating>
-  </user_tuple>
-  <user_tuple>
-    <userid>U06</userid>
-    <name>Rip Van Winkle</name>
-    <rating>B</rating>
-  </user_tuple>
-<user_tuple><userid>U07</userid><name>Annabel Lee</name><rating>B</rating></user_tuple></users></XQueryResult>
+!ERROR: err:FORG0005: function fn:exactly-one expects exactly one value.
+!ERROR: interpret: no matching MIL operator to 'printf(void)'.
+!MAYBE YOU MEAN:
+!	printf(str, ..any..) : void
 quit();
 
 # 21:28:31 >  
