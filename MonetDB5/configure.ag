@@ -23,7 +23,7 @@ AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
-req_monetdb_ver='4.13.1'
+req_monetdb_ver='4.14.0'
 AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([MonetDB-5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
