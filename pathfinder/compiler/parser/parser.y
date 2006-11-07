@@ -135,6 +135,13 @@ static int num_fun = 0;
 static char *req_module_ns = NULL;
 
 /**
+ * URI of the module that we are currently parsing.
+ *
+ * Only set for imported modules, NULL otherwise.
+ */
+static char *current_uri = NULL;
+
+/**
  * Work list of modules that we have to load.
  *
  * Whenever we encounter an "import module" statement or an "import
@@ -819,7 +826,10 @@ MainModule                : Prolog QueryBody
 
 /* [4] */
 LibraryModule             : ModuleDecl Prolog 
-                            { $$ = wire2 (p_lib_mod, @$, $1, $2); }
+                            { $$ = wire2 (p_lib_mod, @$, $1, $2);
+                              if (current_uri)
+                                  $$->sem.str = PFstrdup (current_uri);
+                            }
                           ;
 
 /* [5] */
@@ -2930,9 +2940,16 @@ PFparse (char *input, PFpnode_t **r)
 static PFpnode_t *
 parse_module (char *ns, char *uri)
 {
-    char *buf = PFurlcache(uri, 1);
+    char *buf = PFurlcache (uri, 1);
+
     if (buf == NULL)
         PFoops (OOPS_MODULEIMPORT, "error loading module from %s", uri);
+
+    /*
+     * remember the URI that we are currently parsing.  We will leave
+     * this information in p_lib_mod nodes.
+     */
+    current_uri = uri;
 
     /* file is now loaded into main-memory */
     PFscanner_init (buf);

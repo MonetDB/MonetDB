@@ -351,6 +351,9 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
         case p_ns_decl:
             L2 (p_id[n->kind], n->sem.str, n->loc);
             break;
+        case p_lib_mod:
+            L2 (p_id[n->kind], n->sem.str ? n->sem.str : "<NULL>", n->loc);
+            break;
 
         case p_revalid:
             L2 (p_id[n->kind], n->sem.revalid == revalid_strict
@@ -499,6 +502,9 @@ abssyn_pretty (PFpnode_t *n)
             break;
         case p_fun:
             PFprettyprintf ("%s", PFqname_str (n->sem.apply.fun->qname));
+            break;
+        case p_lib_mod:
+            PFprettyprintf ("\"%s\"", n->sem.str ? n->sem.str : "<NULL>");
             break;
         case p_revalid:
             PFprettyprintf ("%s", n->sem.revalid == revalid_strict
