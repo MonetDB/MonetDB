@@ -69,7 +69,7 @@ GDKcreatedir(char *dir)
 {
 	char path[PATHLENGTH];
 	char *r;
-	int ret = TRUE;
+	int ret = FALSE;
 
 	strcpy(path, dir);
 	r = strrchr(path, DIR_SEP);
