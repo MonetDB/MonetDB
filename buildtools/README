@@ -35,3 +35,7 @@ source directory.  Finally, run "make" and "make install".
 
 The tool directories all have a file README with instructions for that
 tool, including how to compile on Windows.
+
+In particular, see autogen/README for how to set your PYTHONPATH in case
+./bootstrap of MonetDB, sql, pathfinder, etc. fails to find the autogen
+module with the default settings.
