@@ -840,7 +840,7 @@ yyprint(YYSTREE yytree, unsigned int level)
 		case TYPE_ptr:
 			strcpy(tpe, "ptr");
 			p = num;
-			sprintf(num, PTRFMT, yytree->yyval.val.pval);
+			sprintf(num, PTRFMT, PTRFMTCAST yytree->yyval.val.pval);
 			break;
 		case TYPE_flt:
 			strcpy(tpe, "flt");
