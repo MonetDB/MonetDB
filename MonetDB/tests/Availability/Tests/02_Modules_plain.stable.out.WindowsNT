@@ -1015,8 +1015,8 @@ Module: "pcl"
 
 Module: "pcre"
 
-[ 9 ]
-[ 9 ]
+[ 10 ]
+[ 10 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature							help								  # name
 # str		str		str								str								  # type
@@ -1024,6 +1024,7 @@ Module: "pcre"
 [ "pcre_compile", "COMMAND:   ",  "pcre_compile(str) : pcre",					  "compile a pattern"						  ]
 [ "pcre_match",	  "COMMAND:   ",  "pcre_match(pcre, str) : bit",				  "match a pattern"						  ]
 [ "pcre_match",	  "COMMAND:   ",  "pcre_match(str, str) : bit",						  "POSIX pattern matching against a string"																																																																																							  ]
+[ "pcre_match",	  "COMMAND:   ",  "pcre_match(str, str, str) : bit",					  "POSIX pattern matching against a string, with flags (see 'man pcreapi')"																																																																																																																									  ]
 [ "pcre_quote",	  "COMMAND:   ",  "pcre_quote(str) : str",						  "Return a PCRE pattern string that matches the argument exactly."																																																																																				  ]
 [ "pcre_replace", "COMMAND:   ",  "pcre_replace(BAT[any::1,str], str, str, str) : BAT[any::1,str]",	  "Replace _all_ matches of \"pattern\" in every string contained in\\n   \"origin_strs\" with \"replacement\".\n\\n   If no matches found in a string, the string is copied to the returned BAT."																																																																				  ]
 [ "pcre_replace", "COMMAND:   ",  "pcre_replace(str, str, str, str) : str",				  "Replace _all_ matches of \"pattern\" in \"origin_str\" with\\n\t\"replacement\".\n\\n    Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n\\n\t'e': if present, an empty string is considered to be a valid match\n\\n\t'i': if present, the match operates in case-insensitive mode. Otherwise, in\\n\t     case-sensitive mode.\n\\n    'm': if present, the match operates in multi-line mode.\n\\n\t's': if present, the match operates in \"dot-all\"\n\tThe specifications of the flags can be found in \"man pcreapi\"\n\\n\tThe flag letters may be repeated.\n\\n\tNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n\\n\tReturns the replaced string, or if no matches found, the original string."	  ]
