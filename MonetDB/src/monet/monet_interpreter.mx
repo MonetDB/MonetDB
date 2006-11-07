@@ -800,7 +800,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 			return interpret_while(stk, lt, res);
 		case TOK_ITERATOR:
 		case TOK_ITCOMPILED:
-			if (lt->yysons[2]) {
+			if (lt->cnt > 1 && lt->yysons[2]) {
 				i = interpret(stk, lt->yysons[2], res);
 				if (i < 0)
 					return i;
@@ -818,7 +818,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		case TOK_BREAK:
 			return -TOK_BREAK;
 		case TOK_RETURN:
-			if (lt->yysons[0]) {
+			if (lt->cnt > 0 && lt->yysons[0]) {
 				i = interpret(stk, arg(lt, 0), res);
 				if (i < 0)
 					return i;
@@ -830,7 +830,6 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		case TOK_VAR:
 			r = interpret_var(stk, lt, res);
 			@:profileEvent(var)@
-
 			return r;
 		case TOK_CONST:
 			i = interpret(stk, lt->yysons[0], res);
@@ -838,7 +837,6 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 				res->len = int_nil;
 			}
 			@:profileEvent(const)@
-
 			return i;
 
 @+ active interpretations
