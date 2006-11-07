@@ -1,4 +1,0 @@
-stderr of test 'test_00` in directory 'tests/suite_02` itself:
-
-#> Mtest:	milS test_00 milS -prelude test_00.prelude
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_suite_02 -single -prelude test_00.prelude test_00.milS

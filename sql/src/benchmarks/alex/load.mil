@@ -1,8 +1,0 @@
-module(ascii_io,unix);
-
-var path:=getenv("PWD");
-make_persistent(load_data(load_format(path+"/format"), path+"/earth", 9600000));
-# test dump
-#dump_data(load_format(path+"/format"), path+"/earth.bz2", -1);
-commit;
-quit;
