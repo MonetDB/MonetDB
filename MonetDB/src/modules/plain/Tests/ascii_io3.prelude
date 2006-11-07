@@ -1,5 +1,0 @@
-module("ascii_io");
-module("unix");
-
-VAR TSTTRGDIR := getenv("TSTTRGDIR");
-

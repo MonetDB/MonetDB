@@ -25,7 +25,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("sql", 2.13.1, [no-define])
+AM_INIT_AUTOMAKE("sql", 2.15.0, [no-define])
 AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
@@ -36,7 +36,7 @@ AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
-req_monetdb_ver='4.13.1'
+req_monetdb_ver='4.15.0'
 AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETVERS was found.])

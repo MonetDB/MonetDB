@@ -1,3 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item[@id="I3"]
-return
-    $a/authors/author[1]
