@@ -1,6 +1,0 @@
-for $e1 in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aSixteen=2] return
-for $e2 in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aSixteen=2]  where $e2/@aUnique1=$e1/@aUnique1 return
-  <eNest1 aUnique1="{$e1/@aUnique1}" aSixteen="{$e1/@aSixteen}" aLevel="{$e1/@aLevel}">
-  <eNest2 aUnique1="{$e2/@aUnique1}" aSixteen="{$e2/@aSixteen}" aLevel="{$e2/@aLevel}">
-  </eNest2>
-  </eNest1>

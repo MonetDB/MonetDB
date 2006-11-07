@@ -1,3 +1,0 @@
-import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "$TSTSRCDIR/basicfunctions.xq";
-
-xrpc:add(50, (10, 30))

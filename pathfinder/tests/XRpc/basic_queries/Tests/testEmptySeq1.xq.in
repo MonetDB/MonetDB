@@ -1,5 +1,0 @@
-import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "$TSTSRCDIR/basicfunctions.xq";
-
-(: the middle parameter is always empty :)
-for $i in (1, 2)
-    return xrpc:echoVoidWithParams("localhost", ("abc", "xyz"), (), $i)
