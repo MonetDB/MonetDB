@@ -134,6 +134,7 @@ struct serializeFunStruct; /* forward */
  * accessed through this function.
  */
 typedef struct XqueryCtx {
+    Stream      out;       /* output stream */
     int         modes;     /* list of bit-wise encode modes */
     struct serializeFunStruct* driverFun; /* the output handling functions */
     void*       driverWs;  /* optional driver workspace */
@@ -729,8 +730,8 @@ check@1AttrNsChange (XqueryCtx* ctx,
  * initializes all other data structures.
  */
 
-#define CHECKWSMI(CTX,F,B) if (((F)>=CTX->wsConts)||((B)>=WS_BATS)) \
-    { fatal_err (CTX,"WSbat [%d,%d] out of range.",F,B); return PROBLEM; }
+#define CHECKWSMI(CTX,F,B,R) if (((F)>=CTX->wsConts)||((B)>=WS_BATS)) \
+    { fatal_err (CTX,"WSbat [%d,%d] out of range.",F,B); R; }
 #define WSMI(F,B) ((F)*WS_BATS+B)
 
 #define IS_FAKE_PROJECT(b) ((b->batCount == 1) & \
@@ -759,7 +760,7 @@ initWsMatrix(XqueryCtx* ctx)
     }
     for(int i=0; i<ctx->wsConts; i++) {
         for(int j=0; j<WS_BATS; j++) {
-         CHECKWSMI(ctx,i,j);
+         CHECKWSMI(ctx,i,j,return PROBLEM);
          wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
 
          bd->bat = NULL;
@@ -778,7 +779,7 @@ disposeWsMatrix(XqueryCtx* ctx)
 {
     for(int i=0; i<ctx->wsConts; i++) {
         for(int j=0; j<WS_BATS; j++) {
-         CHECKWSMI(ctx,i,j);
+         CHECKWSMI(ctx,i,j,continue);
          wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
 
          if ( bd->bat ) {
@@ -850,7 +851,7 @@ getMatrixBATrecord (XqueryCtx* ctx, int contID, int batID)
 {
     wsBatDescr* bd;
 
-    CHECKWSMI(ctx,contID,batID);
+    CHECKWSMI(ctx,contID,batID,return PROBLEM);
     bd = &ctx->wsMatrix[WSMI(contID,batID)];
     
     if ( !bd->bat ) {
@@ -1225,11 +1226,15 @@ createWsContext (XqueryCtx*        ctx,
                  BAT*              ws,
                  str               mode,
                  serializeFunStruct*    driverFun,
-                 char*             driverArg)
+                 char*             driverArg,
+                 Stream            fp)
 {
     char *restag = NULL;
     
     memset(ctx, 0, sizeof(XqueryCtx));
+
+    /* set the output stream */
+    ctx->out = fp;
 
     /* store the working set ws */
     ctx->ws = ws;
@@ -1423,7 +1428,7 @@ xquery_print_doc_DRIVER (
         GDKerror("serialize.mx: unable to find document \"%s\" in working set!\n", docName);
     } else { 
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-        if (createWsContext(ctx,ws,mode,driverFun,driverArg)) {
+        if (createWsContext(ctx,ws,mode,driverFun,driverArg,GDKout)) {
             if (ctx->driverFun->handle_startDocument(ctx)) {
                 ptr p;
                 getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
@@ -1499,7 +1504,8 @@ lookup_bun (BAT *b, oid offset)
  * functions are provied in the serialize_*.mx files.
  */
 int 
-xquery_print_result_DRIVER (
+xquery_print_result_driver (
+    Stream              fp,
     str                 mode,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
@@ -1520,7 +1526,7 @@ xquery_print_result_DRIVER (
     static BUN (*fun_k) (BAT *, oid);
 
     /* prepare serialization */ 
-    if ( !createWsContext (ctx, ws, mode, driverFun, driverArg) )
+    if ( !createWsContext (ctx, ws, mode, driverFun, driverArg, fp) )
         return GDK_FAIL;
 
     curcnt = 0;
@@ -1762,6 +1768,39 @@ xquery_print_result_DRIVER (
     return GDK_SUCCEED;
 }
 
+int 
+xquery_print_result_DRIVER (
+    str                 mode,
+    serializeFunStruct *driverFun, /* unused */
+    char               *driverArg, /* unused */
+    BAT                *ws,
+    size_t              niters,
+    BAT                *loop,
+    BAT                *iter,
+    BAT                *item, 
+    BAT                *kind,
+    BAT                *intVAL,
+    BAT                *dblVAL,
+    BAT                *strVAL)
+{
+    (void) driverFun;
+    (void) driverArg;
+    return xquery_print_result_driver (
+               GDKout,
+               mode,
+               NULL, /* set of printing callback function */
+               NULL, /* optional arguments for the callback functions */
+               ws,
+               niters?niters:1, /* number of iterations */
+               loop, /* loop relation */
+               iter, /* iter relation */
+               item, /* item relation */
+               kind, /* kind relation */
+               intVAL,
+               dblVAL,
+               strVAL);
+}
+
 int
 xquery_print_result_loop (
     str  mode,
@@ -1816,4 +1855,64 @@ xquery_print_result_main (
                intVAL,
                dblVAL,
                strVAL);
+}
+
+int
+xquery_print_result_file (
+    str  file,
+    str  mode,
+    BAT* ws,
+    oid* item, 
+    int* kind,
+    BAT* intVAL,
+    BAT* dblVAL,
+    BAT* decVAL,
+    BAT* strVAL)
+{
+    int len = strlen(file);
+    int ret = GDK_FAIL;
+    (void) decVAL;
+    if (*file == DIR_SEP || *file == '/') {
+        GDKerror("xquery_print_result_file: %s cannot have an absolute name.\n", file);
+    } else if (len < 4 || (strcmp(file+len-4, ".xml") && strcmp(file+len-4, ".XML"))) {
+        GDKerror("xquery_print_result_file: %s name does not end in .xml\n", file);
+    } else if (GDKcreatedir(file)) {
+        FILE *fp = fopen(file, "wb");
+        if (fp) {
+            Stream s = file_wastream(fp, file);
+            if (s) {
+                BAT* i = BATnew(TYPE_void,TYPE_oid,1);
+                if (i) {
+                    BAT* k = BATnew(TYPE_void,TYPE_int,1);
+                    if (k) {
+                        BATseqbase(k, 0);
+                        BATseqbase(i, 0);
+                        BUNappend(k, kind, FALSE);
+                        BUNappend(i, item, FALSE);
+                        ret = xquery_print_result_driver (
+                             s,
+                             mode,
+                             NULL, /* set of printing callback function */
+                             NULL, /* optional arguments for the callback functions */
+                             ws,
+                             1, /* number of iterations */
+                             i, /* loop relation */
+                             i, /* iter relation */
+                             i, /* item relation */
+                             k, /* kind relation */
+                             intVAL,
+                             dblVAL,
+                             strVAL);
+                         stream_destroy(s);
+                    }
+                    BBPreclaim(k);
+                }
+                BBPreclaim(i);
+            } 
+            fclose(fp);
+        } else {
+            GDKsyserror("xquery_print_result_file: %s", file);
+        }
+    }
+    return ret;
 }

@@ -1070,7 +1070,7 @@ PROC ws_create(int update) : BAT[void,bat]
     # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
     var wsid := <<(and(lng(newoid(1)), 2147483647LL), 32) + (lng(update) << 30) + lng(ws);
     ws.access(BAT_READ).rename(str(wsid));
-    pfenter(wsid);
+    #pfenter(wsid);
     return ws;
 }
 
@@ -1095,7 +1095,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
 {
     # handle update queries
     if (and(wsid,WSID_UPDATE) != 0LL) {
-        pfleave(wsid);
+        #pfleave(wsid);
         ws_overlaps_ws.delete(wsid); # remove the dependencies of this query 
     }
    

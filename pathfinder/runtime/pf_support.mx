@@ -73,6 +73,13 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                             void = xquery_print_result_main;
  "C interface to Workset result print routine"
 
+.COMMAND print_result(str file, str mode, BAT[void,bat] ws,
+                      oid item, int kind,
+                      BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
+                      BAT[void,dbl] dec_values, BAT[void,str] str_values) : 
+                            void = xquery_print_result_file;
+ "C interface to Workset result print routine, but print to a file"
+
 
 
 @- Multi Join
@@ -621,6 +628,29 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
         }
         return result.access(BAT_READ).tmark(seqbase);
 }
+
+PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
+            BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
+            BAT[void,dbl] dec_values, BAT[void,str] str_values) : void
+{
+    var protocol := [search](uri, "://");
+    var sel := protocol.uselect(0,int_nil).hmark(0@0).leftfetchjoin(uri);
+    var isfile := [or]([startsWith](sel, "file://"), [startsWith](sel, "FILE://"));
+
+    sel := isfile.uselect(true).hmark(0@0).leftfetchjoin(sel).access(BAT_WRITE);
+    sel.append(protocol.uselect(-1).hmark(0@0).leftfetchjoin(uri)).access(BAT_READ);
+    if (count(sel) != count(uri)) {
+       var wrong := tdiff(uri, sel);
+       ERROR("fn_put: URI '%s' not recognized (%d such errors).", wrong.fetch(0), count(wrong));
+    }
+    [print_result](sel, "xml-noroot", 
+                   const ws, item, kind, 
+                   const int_values, 
+                   const dbl_values, 
+                   const dec_values, 
+                   const str_values);    
+}
+
 
 
 @- order-preserving xquery join with existential semantics

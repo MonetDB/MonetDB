@@ -169,20 +169,20 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
         if (isspecial_ch @2) {
             /* print all characters that were collected 
                since the last special character. */
-            stream_write (GDKout, &src[start], end - start, 1);
+            stream_write (ctx->out, &src[start], end - start, 1);
             start = end + 1;
 
             if ( isspecial_ch == 1 ) { /* print octal */
-                stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
+                stream_printf(ctx->out,"\\%03o",(unsigned char)src[end]);
             } else {
                 char *emit_val = dflt_ws->special_val[(int)isspecial_ch];
                 int   emit_len = dflt_ws->special_len[(int)isspecial_ch];
-                stream_write (GDKout, emit_val, emit_len, 1);
+                stream_write (ctx->out, emit_val, emit_len, 1);
             }
         }
     }
     if ( start < end )
-        stream_write (GDKout, &src[start], end - start, 1);
+        stream_write (ctx->out, &src[start], end - start, 1);
 }
 
 @c
@@ -299,16 +299,16 @@ dflt_handle_startDocument (XqueryCtx* ctx)
 {
     char *tmp;
     /* print string: <?xml version="1.0" encoding="utf-8"?> */ 
-    tmp = "<?xml version="; stream_write (GDKout, tmp, strlen (tmp), 1);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = "1.0";            stream_write (GDKout, tmp, strlen (tmp), 1);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = " encoding=";     stream_write (GDKout, tmp, strlen (tmp), 1);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = "utf-8";          stream_write (GDKout, tmp, strlen (tmp), 1);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = "?>";             stream_write (GDKout, tmp, strlen (tmp), 1);
-    stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    tmp = "<?xml version="; stream_write (ctx->out, tmp, strlen (tmp), 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "1.0";            stream_write (ctx->out, tmp, strlen (tmp), 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = " encoding=";     stream_write (ctx->out, tmp, strlen (tmp), 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "utf-8";          stream_write (ctx->out, tmp, strlen (tmp), 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "?>";             stream_write (ctx->out, tmp, strlen (tmp), 1);
+    stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -319,7 +319,7 @@ dflt_handle_startDocument (XqueryCtx* ctx)
 static bool
 dflt_handle_endDocument (XqueryCtx* ctx)
 {
-    stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -333,12 +333,12 @@ dflt_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre)
     (void)ctx;
     (void)pre; /* the Pathfinder PRE number is not used by this fun */
 
-    stream_write (GDKout, &le_, 1, 1); /* < */
+    stream_write (ctx->out, &le_, 1, 1); /* < */
     if ( prefix && *prefix ) {
-        stream_write (GDKout, prefix, strlen(prefix), 1);
-        stream_write (GDKout, &c_, 1, 1); /* : */
+        stream_write (ctx->out, prefix, strlen(prefix), 1);
+        stream_write (ctx->out, &c_, 1, 1); /* : */
     }
-    stream_write (GDKout, name, strlen(name), 1);
+    stream_write (ctx->out, name, strlen(name), 1);
 
     return SUCCESS;
 }
@@ -351,14 +351,14 @@ dflt_handle_endElement (XqueryCtx* ctx, str prefix, str name)
 {
     (void)ctx;
 
-    stream_write (GDKout, &le_, 1, 1); /* < */
-    stream_write (GDKout, &sl_, 1, 1); /* / */
+    stream_write (ctx->out, &le_, 1, 1); /* < */
+    stream_write (ctx->out, &sl_, 1, 1); /* / */
     if ( prefix && *prefix ) {
-        stream_write (GDKout, prefix, strlen(prefix), 1);
-        stream_write (GDKout, &c_, 1, 1); /* : */
+        stream_write (ctx->out, prefix, strlen(prefix), 1);
+        stream_write (ctx->out, &c_, 1, 1); /* : */
     }
-    stream_write (GDKout, name, strlen(name), 1);
-    stream_write (GDKout, &ge_, 1, 1); /* > */
+    stream_write (ctx->out, name, strlen(name), 1);
+    stream_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -394,9 +394,9 @@ dflt_handle_comment (XqueryCtx* ctx, str comm)
 {
     (void)ctx;
 
-    stream_write (GDKout, commentStart, cS_sz, 1);
-    stream_write (GDKout, comm, strlen (comm), 1);
-    stream_write (GDKout, commentEnd, cE_sz, 1);
+    stream_write (ctx->out, commentStart, cS_sz, 1);
+    stream_write (ctx->out, comm, strlen (comm), 1);
+    stream_write (ctx->out, commentEnd, cE_sz, 1);
 
     return SUCCESS;
 }
@@ -410,18 +410,18 @@ dflt_handle_processingInstruction (XqueryCtx* ctx, str target, str data)
 {
     (void)ctx;
 
-    /* stream_printf(GDKout,"<?%s %s?>",target,data); */
-    stream_write (GDKout, &le_, 1, 1); /* < */
-    stream_write (GDKout, &q_, 1, 1); /* ? */
+    /* stream_printf(ctx->out,"<?%s %s?>",target,data); */
+    stream_write (ctx->out, &le_, 1, 1); /* < */
+    stream_write (ctx->out, &q_, 1, 1); /* ? */
 
-    stream_write (GDKout, target, strlen (target), 1);
+    stream_write (ctx->out, target, strlen (target), 1);
 
-    stream_write (GDKout, &s_, 1, 1); /* ' ' */
+    stream_write (ctx->out, &s_, 1, 1); /* ' ' */
 
-    stream_write (GDKout, data, strlen (data), 1);
+    stream_write (ctx->out, data, strlen (data), 1);
 
-    stream_write (GDKout, &q_, 1, 1); /* ? */
-    stream_write (GDKout, &ge_, 1, 1); /* > */
+    stream_write (ctx->out, &q_, 1, 1); /* ? */
+    stream_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -434,7 +434,7 @@ dflt_complete_startElement (XqueryCtx* ctx)
 {
     (void)ctx;
 
-    stream_write (GDKout, &ge_, 1, 1); /* > */
+    stream_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -447,8 +447,8 @@ dflt_complete_startElementEmpty (XqueryCtx* ctx)
 {
     (void)ctx;
 
-    stream_write (GDKout, &sl_, 1, 1); /* / */
-    stream_write (GDKout, &ge_, 1, 1); /* > */
+    stream_write (ctx->out, &sl_, 1, 1); /* / */
+    stream_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -461,21 +461,21 @@ dflt_complete_startElementEmpty (XqueryCtx* ctx)
 static bool
 dflt_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
 {
-    stream_write (GDKout, &s_, 1, 1); /* ' ' */
+    stream_write (ctx->out, &s_, 1, 1); /* ' ' */
 
     if ( prefix && *prefix && loc && *loc ) {
-        stream_write (GDKout, prefix, strlen(prefix), 1);
-        stream_write (GDKout, &c_, 1, 1); /* : */
-        stream_write (GDKout, loc, strlen(loc), 1);
+        stream_write (ctx->out, prefix, strlen(prefix), 1);
+        stream_write (ctx->out, &c_, 1, 1); /* : */
+        stream_write (ctx->out, loc, strlen(loc), 1);
     } else if ( prefix && *prefix ) { /* default namespace */
-        stream_write (GDKout, prefix, strlen(prefix), 1);
+        stream_write (ctx->out, prefix, strlen(prefix), 1);
     } else {
-        stream_write (GDKout, loc, strlen(loc), 1);
+        stream_write (ctx->out, loc, strlen(loc), 1);
     }
-    stream_write (GDKout, &e_, 1, 1); /* = */
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, &e_, 1, 1); /* = */
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     emit_escaped (ctx, value);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
 
     return SUCCESS;
 }
@@ -491,7 +491,7 @@ dflt_seqEmitBool (XqueryCtx* ctx, int bv)
 
     (void)ctx;
 
-    stream_write (GDKout, bool_str, strlen (bool_str), 1);
+    stream_write (ctx->out, bool_str, strlen (bool_str), 1);
 
     return SUCCESS;
 }
@@ -504,7 +504,7 @@ dflt_seqEmitInt (XqueryCtx* ctx, lng iv)
 {
     (void)ctx;
 
-    stream_printf(GDKout,"%lld",iv);
+    stream_printf(ctx->out,"%lld",iv);
 
     return SUCCESS;
 }
@@ -517,7 +517,7 @@ dflt_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 {
     (void)ctx;
 
-    stream_printf (GDKout, "%f", dv);
+    stream_printf (ctx->out, "%f", dv);
 
     return SUCCESS;
 }
@@ -539,9 +539,9 @@ dflt_seqEmitStr (XqueryCtx* ctx, str sv)
 static bool
 esc_seqEmitStr (XqueryCtx* ctx, str sv)
 {
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     emit_escaped (ctx, sv);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
 
     return SUCCESS;
 }
@@ -554,21 +554,21 @@ dflt_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
 {
     (void)ctx;
 
-    stream_write (GDKout, attributeStart, aS_sz, 1);
+    stream_write (ctx->out, attributeStart, aS_sz, 1);
 
     if ( prefix && *prefix && loc && *loc ) {
-        stream_write (GDKout, prefix, strlen(prefix), 1);
-        stream_write (GDKout, &c_, 1, 1); /* : */
-        stream_write (GDKout, loc, strlen(loc), 1);
+        stream_write (ctx->out, prefix, strlen(prefix), 1);
+        stream_write (ctx->out, &c_, 1, 1); /* : */
+        stream_write (ctx->out, loc, strlen(loc), 1);
     } else if ( prefix && *prefix ) { /* default namespace */
-        stream_write (GDKout, prefix, strlen(prefix), 1);
+        stream_write (ctx->out, prefix, strlen(prefix), 1);
     } else {
-        stream_write (GDKout, loc, strlen(loc), 1);
+        stream_write (ctx->out, loc, strlen(loc), 1);
     }
 
-    stream_write (GDKout, attributeMid, aM_sz, 1);
-    stream_write (GDKout, value, strlen(value), 1);
-    stream_write (GDKout, attributeEnd, aE_sz, 1);
+    stream_write (ctx->out, attributeMid, aM_sz, 1);
+    stream_write (ctx->out, value, strlen(value), 1);
+    stream_write (ctx->out, attributeEnd, aE_sz, 1);
 
     return SUCCESS;
 }
@@ -579,13 +579,13 @@ dflt_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
 static bool
 dflt_seqEmitTextnode (XqueryCtx* ctx, str chars)
 {
-    stream_write (GDKout, textnodeStart, tnS_sz, 1);
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, textnodeStart, tnS_sz, 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     
     emit_escaped_entities (ctx, chars);
 
-    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    stream_write (GDKout, textnodeEnd, tnE_sz, 1);
+    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    stream_write (ctx->out, textnodeEnd, tnE_sz, 1);
     
     return SUCCESS;
 }
@@ -611,7 +611,7 @@ dm_seqStart (XqueryCtx* ctx, int count)
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-        stream_write (GDKout, &e_, 1, 1);
+        stream_write (ctx->out, &e_, 1, 1);
 
     return SUCCESS;
 }
@@ -624,7 +624,7 @@ dm_seqEnd (XqueryCtx* ctx)
 {
     (void)ctx;
 
-    stream_write (GDKout, "\n", 1, 1);
+    stream_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }
@@ -635,8 +635,8 @@ dm_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
     (void)kind_before;
     (void)kind_after;
     
-    stream_write (GDKout, &sep_, 1, 1); /* , */
-    stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    stream_write (ctx->out, &sep_, 1, 1); /* , */
+    stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -660,15 +660,14 @@ xml_seqStart (XqueryCtx* ctx, int count)
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-        stream_write (GDKout, &e_, 1, 1);
+        stream_write (ctx->out, &e_, 1, 1);
 
+    if ( !(ctx->modes & MODE_NO_HEADER) ) {
+        char *init = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
+        stream_write (ctx->out, init, strlen (init), 1);
+        stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    }
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
-        if ( !(ctx->modes & MODE_NO_HEADER) ) {
-            char *init = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
-            stream_write (GDKout, init, strlen (init), 1);
-            stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
-        }
-
         dflt_handle_startElement (ctx, NULL, dflt_ws->restag, oid_nil);
     }
     return SUCCESS;
@@ -681,7 +680,7 @@ static bool
 xml_complete_seqStart (XqueryCtx* ctx)
 {
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
-        stream_write (GDKout, &ge_, 1, 1); /* > */
+        stream_write (ctx->out, &ge_, 1, 1); /* > */
     }
 
     return SUCCESS;
@@ -697,7 +696,7 @@ xml_seqEnd (XqueryCtx* ctx)
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
     }
 
-    stream_write (GDKout, "\n", 1, 1);
+    stream_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }
@@ -709,7 +708,7 @@ xml_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
 
     if ((XTRACT_KIND(kind_before) < ATOMIC) &&
         (XTRACT_KIND(kind_after) < ATOMIC))
-        stream_write (GDKout, &s_, 1, 1); /* ' ' */
+        stream_write (ctx->out, &s_, 1, 1); /* ' ' */
 
     return SUCCESS;
 }
@@ -740,15 +739,15 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-        stream_write (GDKout, &e_, 1, 1);
+        stream_write (ctx->out, &e_, 1, 1);
 
     if ( !(ctx->modes & MODE_NO_HEADER) ) {
         char *init = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
-        stream_write (GDKout, init, strlen (init), 1);
-        stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+        stream_write (ctx->out, init, strlen (init), 1);
+        stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
     }
 
-    stream_write (GDKout, seq_start, strlen (seq_start), 1);
+    stream_write (ctx->out, seq_start, strlen (seq_start), 1);
 
     return SUCCESS;
 }
@@ -762,8 +761,8 @@ typed_xml_seqEnd (XqueryCtx* ctx)
     (void)ctx;
 
     char *seq_end = "</result:sequence>";
-    stream_write (GDKout, seq_end, strlen (seq_end), 1);
-    stream_write (GDKout, "\n", 1, 1);
+    stream_write (ctx->out, seq_end, strlen (seq_end), 1);
+    stream_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }
@@ -829,7 +828,7 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
             return PROBLEM;
             break;
     }
-    stream_write (GDKout, item_start, strlen (item_start), 1);
+    stream_write (ctx->out, item_start, strlen (item_start), 1);
 
     return SUCCESS;
 }
@@ -883,7 +882,7 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
             return PROBLEM;
             break;
     }
-    stream_write (GDKout, item_end, strlen (item_end), 1);
+    stream_write (ctx->out, item_end, strlen (item_end), 1);
 
     return SUCCESS;
 }
@@ -925,7 +924,7 @@ soap_xml_seqItemStart (XqueryCtx* ctx, int kind)
             return PROBLEM;
             break;
     }
-    stream_write (GDKout, item_start, strlen (item_start), 1);
+    stream_write (ctx->out, item_start, strlen (item_start), 1);
 
     return SUCCESS;
 }
@@ -961,7 +960,7 @@ soap_xml_seqItemEnd (XqueryCtx* ctx, int kind)
             return PROBLEM;
             break;
     }
-    stream_write (GDKout, item_end, strlen (item_end), 1);
+    stream_write (ctx->out, item_end, strlen (item_end), 1);
 
     return SUCCESS;
 }
@@ -973,7 +972,7 @@ soap_xml_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2)
     (void) kind1;
 
     if (XTRACT_KIND(kind2) != ATTR)
-        stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+        stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -991,12 +990,12 @@ static bool
 seq_seqStart (XqueryCtx* ctx, int count)
 {
     /* write SQL-ish header */
-    stream_printf(GDKout,"&1 %d %d 1 %d\n", 
+    stream_printf(ctx->out,"&1 %d %d 1 %d\n", 
                   dflt_ws->id_sequence_counter++, count, count);
-    stream_printf(GDKout,"%% xquery.result\t# table_name\n");
-    stream_printf(GDKout,"%% xml\t# name\n");
-    stream_printf(GDKout,"%% varchar\t# type\n");
-    stream_printf(GDKout,"%% %d\t# length\n", 60);
+    stream_printf(ctx->out,"%% xquery.result\t# table_name\n");
+    stream_printf(ctx->out,"%% xml\t# name\n");
+    stream_printf(ctx->out,"%% varchar\t# type\n");
+    stream_printf(ctx->out,"%% %d\t# length\n", 60);
 
     return SUCCESS;
 }
@@ -1008,7 +1007,7 @@ seq_seqItemStart (XqueryCtx* ctx, int kind)
     (void)kind;
     
     /* SQL-ish mode: write start of tuple and open string */
-    stream_write (GDKout, "[ \"", 3, 1);
+    stream_write (ctx->out, "[ \"", 3, 1);
 
     return SUCCESS;
 }
@@ -1020,7 +1019,7 @@ seq_seqItemEnd (XqueryCtx* ctx, int kind)
     (void)kind;
     
     /* SQL-ish mode: write end of string and end of tuple */
-    stream_printf(GDKout,"\"\t]\n");
+    stream_printf(ctx->out,"\"\t]\n");
 
     return SUCCESS;
 }

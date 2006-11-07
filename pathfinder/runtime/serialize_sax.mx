@@ -87,7 +87,7 @@ sax_init_isspecial() {
  * and XML entity characters in the result.
  */
 static void
-sax_emit_escaped (char* src)
+sax_emit_escaped (XqueryCtx *ctx, char* src)
 {
     /* Emit a string with all special character escaped. Inspired by
      * function strToStr() in gdk_atoms.mx
@@ -97,30 +97,30 @@ sax_emit_escaped (char* src)
 
     for(end = 0; src[end]; end++) {
         if ( (isspecial_ch = isspecial_tab[(int)(unsigned char)src[end]]) ) {
-            stream_write (GDKout, &src[start], end - start, 1);
+            stream_write (ctx->out, &src[start], end - start, 1);
             start = end + 1;
 
             if ( isspecial_ch == 1 ) {
-                stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
+                stream_printf(ctx->out,"\\%03o",(unsigned char)src[end]);
             } else {
                 char *emit_val = isspecial_val[(int)isspecial_ch];
-                stream_write (GDKout, emit_val, strlen (emit_val), 1);
+                stream_write (ctx->out, emit_val, strlen (emit_val), 1);
             }
         }
     }
     if ( start < end )
-        stream_write (GDKout, &src[start], end - start, 1);
+        stream_write (ctx->out, &src[start], end - start, 1);
 }
 
 static bool
-emit_SAX_header ()
+emit_SAX_header (XqueryCtx *ctx)
 {
     char *s;
 
-    s = "#-------------------------#\n"; stream_write (GDKout, s, strlen(s), 1);
-    s = "# h     SAXtape           #\n"; stream_write (GDKout, s, strlen(s), 1);
-    s = "# str   str               #\n"; stream_write (GDKout, s, strlen(s), 1);
-    s = "#-------------------------#\n"; stream_write (GDKout, s, strlen(s), 1);
+    s = "#-------------------------#\n"; stream_write (ctx->out, s, strlen(s), 1);
+    s = "# h     SAXtape           #\n"; stream_write (ctx->out, s, strlen(s), 1);
+    s = "# str   str               #\n"; stream_write (ctx->out, s, strlen(s), 1);
+    s = "#-------------------------#\n"; stream_write (ctx->out, s, strlen(s), 1);
 
     return SUCCESS;
 }
@@ -132,30 +132,30 @@ emit_SAX_footer ()
 }
 
 static bool
-emit_SAX_event (char* eventName, char* val, int escaped)
+emit_SAX_event (XqueryCtx *ctx, char* eventName, char* val, int escaped)
 {
     if ( val ) {
         if ( escaped ) {
-            /* stream_printf(GDKout,"[\"%s\",\t\"",eventName); */
-            stream_write (GDKout, "[\"", 2, 1);
-            stream_write (GDKout, eventName, strlen (eventName), 1);
-            stream_write (GDKout, "\",\t\"", 4, 1);
+            /* stream_printf(ctx->out,"[\"%s\",\t\"",eventName); */
+            stream_write (ctx->out, "[\"", 2, 1);
+            stream_write (ctx->out, eventName, strlen (eventName), 1);
+            stream_write (ctx->out, "\",\t\"", 4, 1);
 
-            sax_emit_escaped(val);
-            stream_write (GDKout, "\"]\n", 3, 1);
+            sax_emit_escaped(ctx, val);
+            stream_write (ctx->out, "\"]\n", 3, 1);
         } else {
-            /* stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val); */
-            stream_write (GDKout, "[\"", 2, 1);
-            stream_write (GDKout, eventName, strlen (eventName), 1);
-            stream_write (GDKout, "\",\t\"", 4, 1);
-            stream_write (GDKout, val, strlen (val), 1);
-            stream_write (GDKout, "\"]\n", 3, 1);
+            /* stream_printf(ctx->out,"[\"%s\",\t\"%s\"]\n",eventName,val); */
+            stream_write (ctx->out, "[\"", 2, 1);
+            stream_write (ctx->out, eventName, strlen (eventName), 1);
+            stream_write (ctx->out, "\",\t\"", 4, 1);
+            stream_write (ctx->out, val, strlen (val), 1);
+            stream_write (ctx->out, "\"]\n", 3, 1);
         }
     } else
-        /* stream_printf(GDKout,"[\"%s\",\tnil]\n",eventName); */
-        stream_write (GDKout, "[\"", 2, 1);
-        stream_write (GDKout, eventName, strlen (eventName), 1);
-        stream_write (GDKout, "\",\t\"nil]\n", 9, 1);
+        /* stream_printf(ctx->out,"[\"%s\",\tnil]\n",eventName); */
+        stream_write (ctx->out, "[\"", 2, 1);
+        stream_write (ctx->out, eventName, strlen (eventName), 1);
+        stream_write (ctx->out, "\",\t\"nil]\n", 9, 1);
 
     return SUCCESS;
 }
@@ -183,10 +183,10 @@ sax_handle_startDocument (XqueryCtx* ctx)
     (void)ctx;
 
     if ( SAXOPHONE )
-        return emit_SAX_header();
+        return emit_SAX_header(ctx);
     else
-        /* stream_printf(GDKout,"<S\n"); */
-        stream_write (GDKout, "<S\n", 3, 1);
+        /* stream_printf(ctx->out,"<S\n"); */
+        stream_write (ctx->out, "<S\n", 3, 1);
 
     return SUCCESS;
 }
@@ -202,8 +202,8 @@ sax_handle_endDocument (XqueryCtx* ctx)
     if ( SAXOPHONE )
         return emit_SAX_footer();
     else
-        /* stream_printf(GDKout,"<E\n"); */
-        stream_write (GDKout, "<E\n", 3, 1);
+        /* stream_printf(ctx->out,"<E\n"); */
+        stream_write (ctx->out, "<E\n", 3, 1);
 
     return SUCCESS;
 }
@@ -219,18 +219,18 @@ sax_handle_startElement (XqueryCtx* ctx,
     (void)pre; /* the Pathfinder PRE number is not used by this fun */
 
     if ( SAXOPHONE ) {
-        if ( !emit_SAX_event("startElement",NULL,0) )
+        if ( !emit_SAX_event(ctx, "startElement",NULL,0) )
             return PROBLEM;
         if ( prefix && *prefix )
-            if ( !emit_SAX_event(" prefix",prefix,0) )
+            if ( !emit_SAX_event(ctx, " prefix",prefix,0) )
                 return PROBLEM;
-        if ( !emit_SAX_event(" localname",name,0) )
+        if ( !emit_SAX_event(ctx, " localname",name,0) )
             return PROBLEM;
     } else {
-        /* stream_printf(GDKout,"<s %s\n",name); */
-        stream_write (GDKout, "<s ", 3, 1);
-        stream_write (GDKout, name, strlen (name), 1);
-        stream_write (GDKout, "\n", 1, 1);
+        /* stream_printf(ctx->out,"<s %s\n",name); */
+        stream_write (ctx->out, "<s ", 3, 1);
+        stream_write (ctx->out, name, strlen (name), 1);
+        stream_write (ctx->out, "\n", 1, 1);
     }
     return SUCCESS;
 }
@@ -244,18 +244,18 @@ sax_handle_endElement (XqueryCtx* ctx, str prefix, str name)
     (void)ctx;
 
     if ( SAXOPHONE ) {
-        if ( !emit_SAX_event("endElement",NULL,0) )
+        if ( !emit_SAX_event(ctx, "endElement",NULL,0) )
             return PROBLEM;
         if ( prefix && *prefix )
-            if ( !emit_SAX_event(" prefix",prefix,0) )
+            if ( !emit_SAX_event(ctx, " prefix",prefix,0) )
                 return PROBLEM;
-        if ( !emit_SAX_event(" localname",name,0) )
+        if ( !emit_SAX_event(ctx, " localname",name,0) )
             return PROBLEM;
     } else {
-        /* stream_printf(GDKout,"<e %s\n",name); */
-        stream_write (GDKout, "<e ", 3, 1);
-        stream_write (GDKout, name, strlen (name), 1);
-        stream_write (GDKout, "\n", 1, 1);
+        /* stream_printf(ctx->out,"<e %s\n",name); */
+        stream_write (ctx->out, "<e ", 3, 1);
+        stream_write (ctx->out, name, strlen (name), 1);
+        stream_write (ctx->out, "\n", 1, 1);
     }
     return SUCCESS;
 }
@@ -269,14 +269,14 @@ sax_handle_characters (XqueryCtx* ctx, str chars)
     (void)ctx;
 
     if ( SAXOPHONE ) {
-        if (!emit_SAX_event("characters",NULL,0))
+        if (!emit_SAX_event(ctx, "characters",NULL,0))
             return PROBLEM;
-        if (!emit_SAX_event(" pcdata",chars,1))
+        if (!emit_SAX_event(ctx, " pcdata",chars,1))
             return PROBLEM;
     } else {
-        /* stream_printf(GDKout,"%s\n",chars); / * ESCAPE !! * / */
-        sax_emit_escaped(chars);
-        stream_write (GDKout, "\n", 1, 1);
+        /* stream_printf(ctx->out,"%s\n",chars); / * ESCAPE !! * / */
+        sax_emit_escaped(ctx, chars);
+        stream_write (ctx->out, "\n", 1, 1);
     }
     return SUCCESS;
 }
@@ -332,23 +332,23 @@ sax_handle_attribute (XqueryCtx* ctx,
 
     if ( SAXOPHONE ) {
         if ( loc && *loc) {
-            if (!emit_SAX_event(" attribute",loc,0) )
+            if (!emit_SAX_event(ctx, " attribute",loc,0) )
                 return PROBLEM;
             if ( prefix && *prefix )
-                if ( !emit_SAX_event(" attribute prefix",prefix,0) )
+                if ( !emit_SAX_event(ctx, " attribute prefix",prefix,0) )
                     return PROBLEM;
         } else
             return PROBLEM;
 
-        if ( !emit_SAX_event(" attribute value",value,0) )
+        if ( !emit_SAX_event(ctx, " attribute value",value,0) )
             return PROBLEM;
     } else {
-        /* stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value); */
-        stream_write (GDKout, "<A ", 3, 1);
-        stream_write (GDKout, loc, strlen (loc), 1);
-        stream_write (GDKout, "=\"", 2, 1);
-        stream_write (GDKout, value, strlen (value), 1);
-        stream_write (GDKout, "\"\n", 2, 1);
+        /* stream_printf(ctx->out,"<A %s=\"%s\"\n",loc,value); */
+        stream_write (ctx->out, "<A ", 3, 1);
+        stream_write (ctx->out, loc, strlen (loc), 1);
+        stream_write (ctx->out, "=\"", 2, 1);
+        stream_write (ctx->out, value, strlen (value), 1);
+        stream_write (ctx->out, "\"\n", 2, 1);
     }
     return SUCCESS;
 }

@@ -6427,6 +6427,35 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  time_shred :+= usec() - t;\n"
                 "} # end of translate fn:doc (string?) as document?\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"put")))
+    {
+	/* this is a simple implementation that just serializes to file URLs */
+        rc = translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult_ (f, counter, NORMAL);
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (rc == NORMAL)
+        {
+            milprintf(f, "item_str_ := item%s;\n", val_join(STR));
+        }
+
+        /* we return an empty update list here, as put is performed on-the-fly
+         * TODO: we do not detect duplicate URIs yet, as we should check accross multiple calls in a query.
+         *       To do that, we should use the update list. But providing ACID properties for this implementation 
+         *       of fn:put (basically serializing to file) is impossible as we are handling resources outside 
+         *       the DBMS control (i.e. OS files).
+         */
+        milprintf(f,
+                "{ # translate fn:put (node, string) as stmt\n"
+                "  fn_put(ws, item_str_.materialize(ipik), item%03u.materialize(ipik%03u), kind%03u.materialize(ipik%03u), int_values, dbl_values, dec_values, str_values);\n"
+                "  item := bat(void,oid).seqbase(0@0);\n"
+                "  kind := bat(void,int).seqbase(0@0);\n"
+                "  iter := 1;\n"
+                "  pos := 1;\n"
+                "  ipik := item;\n"
+                "} # end of translate fn:put (node, string) as stmt\n", counter, counter, counter, counter);
+        deleteResult_ (f, counter, NORMAL);
+        return NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
     {
@@ -10846,17 +10875,17 @@ const char* PFvarMIL(void) {
         "time_shred := 0LL;\n"\
         "time_print := 0LL;\n"\
         "time_exec := usec();\n"
-#define PF_STARTMIL_NORMAL \
+#define PF_STARTMIL_NORMAL PF_STARTMIL_START\
         "var err;\n"\
         "{ err := CATCH({\n"\
-        "  ws := ws_create(0);\n"
-#define PF_STARTMIL_UPDATE \
+        "  ws := ws_create(0);\n" PF_STARTMIL_END
+#define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 0;\n"\
-        "var err := \"no conflicting updates yet\";\n"\
+        "var err := \"ERROR: conflicting update\";\n"\
         "while(((try :+= 1) <= 2) and not(isnil(err))) {\n"\
-        " if (err.search(\"conflicting updates\") = -1) break;\n"\
+        " if (not(err.startsWith(\"ERROR: conflicting update\"))) break;\n"\
         " err := CATCH({\n"\
-        "  ws := ws_create(try);\n"
+        "  ws := ws_create(try);\n" PF_STARTMIL_END
 #define PF_STARTMIL_END \
         "  # get full picture on var_usage (and sort it)\n"\
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"\
@@ -10873,8 +10902,8 @@ const char* PFvarMIL(void) {
         "  order_000 := outer000;\n"
 const char* PFstartMIL(int statement_type) {
     return (statement_type==1)?
-               (PF_STARTMIL_START PF_STARTMIL_UPDATE PF_STARTMIL_END):
-               (PF_STARTMIL_START PF_STARTMIL_NORMAL PF_STARTMIL_END);
+               (PF_STARTMIL_UPDATE):
+               (PF_STARTMIL_NORMAL);
 }
 
 const char* PFdocbatMIL(void) {
@@ -10889,30 +10918,31 @@ const char* PFdocbatMIL(void) {
 #define PF_STOPMIL_START \
            "  time_print := usec();\n"\
            "  time_exec := time_print - time_exec;\n"
-#define PF_STOPMIL_RDONLY \
+#define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-           "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
-#define PF_STOPMIL_UPDATE \
-           "  play_update_tape(ws, item, kind, int_values, str_values);\n"
-#define PF_STOPMIL_DOCMGT \
-           "  play_doc_tape(ws, item, kind, int_values, str_values);\n"
-#define PF_STOPMIL_END \
+           "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
+           PF_STOPMIL_END("Print ")
+#define PF_STOPMIL_UPDATE PF_STOPMIL_START\
+           "  play_update_tape(ws, item, kind, int_values, str_values);\n" PF_STOPMIL_END("Update")
+#define PF_STOPMIL_DOCMGT PF_STOPMIL_START\
+           "  play_doc_tape(ws, item, kind, int_values, str_values);\n" PF_STOPMIL_END("Update")
+#define PF_STOPMIL_END(LASTPHASE) \
            " });\n"\
            " ws_destroy(ws);\n"\
            "}\n"\
            "if (not(isnil(err))) ERROR(err);\n"\
            "time_print := usec() - time_print;\n"\
            "if (genType.startsWith(\"timing\"))\n"\
-           "   printf(\"\\nTrans %% 11.3f msec\\nShred %% 11.3f msec\\nQuery %% 11.3f msec\\nPrint %% 11.3f msec\\n\","\
+           "   printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\
            "       dbl(time_compile)/1000.0, dbl(time_shred)/1000.0, dbl(time_exec - time_shred)/1000.0, dbl(time_print)/1000.0);\n"\
            "}\n"
 const char* PFstopMIL(int statement_type) {
     return (statement_type==0)?
-               (PF_STOPMIL_START PF_STOPMIL_RDONLY PF_STOPMIL_END):
+               (PF_STOPMIL_RDONLY):
            (statement_type==1)?
-               (PF_STOPMIL_START PF_STOPMIL_UPDATE PF_STOPMIL_END):
-               (PF_STOPMIL_START PF_STOPMIL_DOCMGT PF_STOPMIL_END);
+               (PF_STOPMIL_UPDATE):
+               (PF_STOPMIL_DOCMGT);
 }
 
 const char* PFudfMIL(void) {
