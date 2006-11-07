@@ -692,6 +692,7 @@ BATdeleteHash(BAT *b){
 		} else {
 			HEAPfree(b->hheap);
 		}
+		b->hheap= NULL;
 	}
 	if (b->theap) {
 		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
@@ -700,6 +701,7 @@ BATdeleteHash(BAT *b){
 		} else {
 			HEAPfree(b->theap);
 		}
+		b->theap= NULL;
 	}
 }
 int
