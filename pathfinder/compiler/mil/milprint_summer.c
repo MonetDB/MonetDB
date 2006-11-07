@@ -6427,6 +6427,52 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  time_shred :+= usec() - t;\n"
                 "} # end of translate fn:doc (string?) as document?\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"collection")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
+
+        milprintf(f,
+                "{ # translate fn:collection (string) as node*\n"
+                "  var ret := bat(oid,int,10*count(ipik));\n"
+                "  var map := ws_collection(cont ws, item%s.materialize(ipik), ret);\n" 
+                "  iter := map.leftfetchjoin(iter);\n"
+                "  item := ret.tmark(0@0);\n"
+                "  kind := ret.tmark(0@0).set_kind(ELEM);\n"
+                "  ipik := iter;\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n"
+                "} # end of translate fn:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
+        return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"documents")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
+        milprintf(f,
+                "{ # translate pf:documents (string*) as string*\n"
+                "  var ret := ws_documents(ws, item%s.materialize(ipik));\n"
+                "  item_str_ := ret.tmark(0@0);\n"
+                "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n"
+                "  ipik := iter;\n"
+                "  kind := STR;\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n"
+                "} # end of translate fn:documents (string?) as string*\n", (rc)?item_ext:val_join(STR));
+        if (code) return STR;
+        addValues (f, str_container(), "item_str_", "item");
+        return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"collections")))
+    {
+        milprintf(f,
+                "{ # translate pf:collections () as string*\n"
+                "  var ret := loop%03u.project(0@0).leftjoin(ws_collections(ws));\n"
+                "  iter := ret.hmark(0@0);\n"
+                "  ipik := iter;\n"
+                "  item_str_ := ret.tmark(0@0);\n"
+                "  kind := STR;\n"
+                "  pos  := tmark_grp_unique(iter,ipik);\n"
+                "} # end of translate fn:collections () as string*\n", counter);
+        if (code) return STR;
+        addValues (f, str_container(), "item_str_", "item");
+        return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"put")))
     {
 	/* this is a simple implementation that just serializes to file URLs */
@@ -6440,7 +6486,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
 
         /* we return an empty update list here, as put is performed on-the-fly
-         * TODO: we do not detect duplicate URIs yet, as we should check accross multiple calls in a query.
+         * TODO: we do not detect duplicate URIs yet, as we should check across multiple calls in a query.
          *       To do that, we should use the update list. But providing ACID properties for this implementation 
          *       of fn:put (basically serializing to file) is impossible as we are handling resources outside 
          *       the DBMS control (i.e. OS files).
@@ -10875,10 +10921,10 @@ const char* PFvarMIL(void) {
         "time_shred := 0LL;\n"\
         "time_print := 0LL;\n"\
         "time_exec := usec();\n"
-#define PF_STARTMIL_NORMAL PF_STARTMIL_START\
+#define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
         "var err;\n"\
         "{ err := CATCH({\n"\
-        "  ws := ws_create(0);\n" PF_STARTMIL_END
+        "  ws := ws_create(" STMT ");\n" PF_STARTMIL_END
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var try := 0;\n"\
         "var err := \"ERROR: conflicting update\";\n"\
@@ -10903,7 +10949,8 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(int statement_type) {
     return (statement_type==1)?
                (PF_STARTMIL_UPDATE):
-               (PF_STARTMIL_NORMAL);
+               (statement_type==1)?(PF_STARTMIL_NORMAL("0")):
+                                   (PF_STARTMIL_NORMAL("3"));
 }
 
 const char* PFdocbatMIL(void) {

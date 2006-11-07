@@ -465,9 +465,9 @@ MIL variables, but these point to the same global BATs).
     .append(@7)
 @mil
 # get a handle to the global lock
-var pf_short := pflock(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
-var pf_free  := pflock(1); # lock held while freeing ws-es
-var pf_wal   := pflock(2); # lock that must be held while writing into the WAL
+var pf_short := pflock_get(0); # *NOTE* all PROCs _X() (starting with underscore) hold pf_short
+var pf_free  := pflock_get(1); # lock held while freeing ws-es
+var pf_wal   := pflock_get(2); # lock that must be held while writing into the WAL
 
 # initialize the logger
 var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
@@ -491,7 +491,8 @@ var colname_runtime;  # bat[str,bat] runtime index/lock bat-of-bat
 var colname_pins;     # bat[str,lng] queries that are using a collection (negative numbers are shreds)
 var colname_shredlock;# bat[str,lng] query that is shredding into a collection 
 var colname_locks;    # bat[str,lng] queries that are using a collection 
-var ws_overlaps_ws;   # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
+var ws_overlaps_ws := bat("ws_overlaps_ws"); 
+                      # bat[lng,lng] execution of query X overlapped query Y and they used a common collection
 
                       # empty pages to append onto rid_* master bats
 var empty_page;       # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
@@ -566,7 +567,6 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
     colname_runtime  := bat("colname_runtime"); 
     colname_pins     := bat("colname_pins"); 
     colname_locks    := bat("colname_locks"); 
-    ws_overlaps_ws   := bat("ws_overlaps_ws"); 
     empty_page       := bat("empty_page"); 
     empty_bat        := bat("empty_bat"); 
     empty_runtime    := bat("empty_runtime"); 
@@ -586,7 +586,6 @@ if (isnil(CATCH(bat("doc_undo").count()))) {
     colname_locks    := bat(str,lng).rename("colname_locks"); 
     colname_runtime  := bat(str,bat).rename("colname_runtime"); 
     colname_shredlock:= bat(str,lock).rename("colname_shredlock"); 
-    ws_overlaps_ws   := bat(lng,lng).set(true).rename("ws_overlaps_ws"); 
     empty_page       := bat(void,int,REMAP_PAGE_SIZE).rename("empty_page"); 
     empty_bat        := bat(void,oid).seqbase(0@0).access(BAT_READ).rename("empty_bat"); 
     empty_runtime    := bat(lock,bat).insert(lock_nil,empty_bat).rename("empty_runtime"); 
@@ -1070,7 +1069,7 @@ PROC ws_create(int update) : BAT[void,bat]
     # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
     var wsid := <<(and(lng(newoid(1)), 2147483647LL), 32) + (lng(update) << 30) + lng(ws);
     ws.access(BAT_READ).rename(str(wsid));
-    #pfenter(wsid);
+    pflock_begin(wsid);
     return ws;
 }
 
@@ -1095,7 +1094,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
 {
     # handle update queries
     if (and(wsid,WSID_UPDATE) != 0LL) {
-        #pfleave(wsid);
+        pflock_end(wsid);
         ws_overlaps_ws.delete(wsid); # remove the dependencies of this query 
     }
    
@@ -2010,16 +2009,18 @@ PROC ws_open(BAT[void,BAT] ws,
         var names     := [+]("::" + str(wsid) + "::",  locations);
         var colname   := names.fetch(0);
         var min_ts    := selidx_unq.mirror().leftfetchjoin(idx_timestamps).min();
-        var docid_base:= ifthenelse(isnil(min_ts), oid(count(open_docid)), oid_nil);
+        var docid_base:= oid(count(open_docid));
+        var doCommit  := not(isnil(min_ts));
         var coll_oid  := shred_into_docBAT(docBAT, locations, names, colname, 
                                            oid_nil,       # create new collection
                                            empty_runtime, # no index to maintain 
-                                           docid_base,    # nil=persistent, other=transient docid
+                                           docid_base,    # transient docid
                                            lng(0),        # read-only (freespace=0)
                                            min_ts,        # until when to cache it
+                                           doCommit,      # cache it persistently? 
                                            stream_nil, wsid); 
         var cont      := ws_opencoll(ws, docBAT, colname, coll_oid);
-        if (isnil(docid_base)) # persistent?
+        if (doCommit) # persistent? (probably -- could have backed off -- should not matter)
             commitBAT.append([bbpname](docBAT).tmark(0@0));
         
         # commit the new collections 
@@ -2068,6 +2069,35 @@ PROC ws_opendoc(BAT[void,BAT] ws,
     return reverse(idx_root).leftfetchjoin(idx_cont);
 }
 
+# fn:collection(), get document nodes of all documents in a collection
+PROC ws_collection(BAT[void,BAT] ws, BAT[void,str] nms, BAT[oid,int] ret) : BAT[void,oid]
+{
+    lock_set(pf_short);
+    var idx_names, err := CATCH(idx_names := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftfetchjoin(doc_name)); 
+    lock_unset(pf_short);
+    ret.insert(ws_opendoc(ws, idx_names.tmark(0@0))); # ret = SECOND RESULT VALUE
+    return idx_names.hmark(0@0);
+}
+
+# fn:collections(), get all collection *names*
+PROC ws_collections(BAT[void,BAT] ws) : BAT[oid,str]
+{
+    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    lock_set(pf_short);
+    var res, err := CATCH(res := reverse(reverse(collection_name).project(0@0)));
+    lock_unset(pf_short);
+    return res;
+}
+
+# fn:documents(), get all document *names* in a collection
+PROC ws_documents(BAT[void,BAT] ws, BAT[void,str] coll_nme) : BAT[void,str]
+{
+    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    lock_set(pf_short);
+    var res, err := CATCH(res := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftfetchjoin(doc_name));
+    lock_unset(pf_short);
+    return res;
+}
 
 
 @- shredding documents
@@ -2154,12 +2184,13 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
                        oid coll_oid, 
                        BAT[lock,bat] runtime,
                        oid docid_base, 
+                       bit doCommit, 
                        lng pageFree, 
                        timestamp ts, 
                        Stream s,
                        lng wsid) : oid
 {
-    var err;
+    var err := str_nil;
     var coll_lock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     var pre := 0@0;
     if (count(docBAT) > 0) pre := oid(count(docBAT.fetch(PRE_SIZE))); 
@@ -2172,14 +2203,19 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
         shred_stream(docBAT, s, pageFree, coll_lock);
     }
 
-    if (isnil(docid_base)) { # nil => is a persistent document
-        [save](docBAT); 
+    if (doCommit) {
+      [save](docBAT); # make persistent documents clean on disk outside the locks
 
-        # add doc to the database locked
-        lock_set(pf_short);
-        err := CATCH(docid_base := _shred_into_docBAT(docBAT, location, name, colname, coll_oid, ts, wsid));
-        lock_unset(pf_short);
-        if (not(isnil(err))) ERROR(err);
+      lock_set(pf_short);
+
+      # possibly back off if auto-caching documents gets us into meta-data locking trouble
+      if (colname.startsWith("::")) doCommit := pflock_free(doCommit); 
+
+      # add doc to the database locked
+      if (doCommit) err := CATCH(docid_base := _shred_into_docBAT(docBAT, location, name, colname, coll_oid, ts, wsid));
+
+      lock_unset(pf_short);
+      if (not(isnil(err))) ERROR(err);
     }
     if (isnil(coll_oid)) 
         coll_oid := docid_base; # new collection got oid of first doc in it 
@@ -2267,7 +2303,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         shred_into_docBAT(docBAT, 
                           idx.leftfetchjoin(idx_locations),
                           idx.leftfetchjoin(idx_names),
-                          colname, coll_oid, runtime, oid_nil, percentage, timestamp_nil, s, wsid);
+                          colname, coll_oid, runtime, oid_nil, true, percentage, timestamp_nil, s, wsid);
 
 	if (isnil(coll_oid)) {
             # register new bats with the logger

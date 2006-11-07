@@ -330,7 +330,6 @@ dflt_handle_endDocument (XqueryCtx* ctx)
 static bool
 dflt_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre)
 {
-    (void)ctx;
     (void)pre; /* the Pathfinder PRE number is not used by this fun */
 
     stream_write (ctx->out, &le_, 1, 1); /* < */
@@ -349,8 +348,6 @@ dflt_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre)
 static bool
 dflt_handle_endElement (XqueryCtx* ctx, str prefix, str name)
 {
-    (void)ctx;
-
     stream_write (ctx->out, &le_, 1, 1); /* < */
     stream_write (ctx->out, &sl_, 1, 1); /* / */
     if ( prefix && *prefix ) {
@@ -392,8 +389,6 @@ dflt_handle_ignorableWhitespace (XqueryCtx* ctx, str chars)
 static bool
 dflt_handle_comment (XqueryCtx* ctx, str comm)
 {
-    (void)ctx;
-
     stream_write (ctx->out, commentStart, cS_sz, 1);
     stream_write (ctx->out, comm, strlen (comm), 1);
     stream_write (ctx->out, commentEnd, cE_sz, 1);
@@ -408,8 +403,6 @@ dflt_handle_comment (XqueryCtx* ctx, str comm)
 static bool
 dflt_handle_processingInstruction (XqueryCtx* ctx, str target, str data)
 {
-    (void)ctx;
-
     /* stream_printf(ctx->out,"<?%s %s?>",target,data); */
     stream_write (ctx->out, &le_, 1, 1); /* < */
     stream_write (ctx->out, &q_, 1, 1); /* ? */
@@ -432,8 +425,6 @@ dflt_handle_processingInstruction (XqueryCtx* ctx, str target, str data)
 static bool
 dflt_complete_startElement (XqueryCtx* ctx)
 {
-    (void)ctx;
-
     stream_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
@@ -445,8 +436,6 @@ dflt_complete_startElement (XqueryCtx* ctx)
 static bool
 dflt_complete_startElementEmpty (XqueryCtx* ctx)
 {
-    (void)ctx;
-
     stream_write (ctx->out, &sl_, 1, 1); /* / */
     stream_write (ctx->out, &ge_, 1, 1); /* > */
 
@@ -489,8 +478,6 @@ dflt_seqEmitBool (XqueryCtx* ctx, int bv)
 {
     char *bool_str = (char*)(bv ? "true" : "false");
 
-    (void)ctx;
-
     stream_write (ctx->out, bool_str, strlen (bool_str), 1);
 
     return SUCCESS;
@@ -502,8 +489,6 @@ dflt_seqEmitBool (XqueryCtx* ctx, int bv)
 static bool
 dflt_seqEmitInt (XqueryCtx* ctx, lng iv)
 {
-    (void)ctx;
-
     stream_printf(ctx->out,"%lld",iv);
 
     return SUCCESS;
@@ -515,8 +500,6 @@ dflt_seqEmitInt (XqueryCtx* ctx, lng iv)
 static bool
 dflt_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 {
-    (void)ctx;
-
     stream_printf (ctx->out, "%f", dv);
 
     return SUCCESS;
@@ -552,8 +535,6 @@ esc_seqEmitStr (XqueryCtx* ctx, str sv)
 static bool
 dflt_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
 {
-    (void)ctx;
-
     stream_write (ctx->out, attributeStart, aS_sz, 1);
 
     if ( prefix && *prefix && loc && *loc ) {
@@ -622,8 +603,6 @@ dm_seqStart (XqueryCtx* ctx, int count)
 static bool
 dm_seqEnd (XqueryCtx* ctx)
 {
-    (void)ctx;
-
     stream_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
@@ -725,7 +704,6 @@ xml_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
 static bool
 typed_xml_seqStart (XqueryCtx* ctx, int count)
 {
-    (void)ctx;
     (void)count;
 
     char *seq_start = "<result:sequence "
@@ -758,8 +736,6 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
 static bool
 typed_xml_seqEnd (XqueryCtx* ctx)
 {
-    (void)ctx;
-
     char *seq_end = "</result:sequence>";
     stream_write (ctx->out, seq_end, strlen (seq_end), 1);
     stream_write (ctx->out, "\n", 1, 1);
@@ -897,7 +873,6 @@ static bool
 soap_xml_seqItemStart (XqueryCtx* ctx, int kind)
 {
     char *item_start = 0;
-    (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
         case BOOL:
@@ -968,7 +943,6 @@ soap_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 static bool
 soap_xml_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2)
 {
-    (void) ctx;
     (void) kind1;
 
     if (XTRACT_KIND(kind2) != ATTR)
@@ -1015,7 +989,6 @@ seq_seqItemStart (XqueryCtx* ctx, int kind)
 static bool
 seq_seqItemEnd (XqueryCtx* ctx, int kind)
 {
-    (void)ctx;
     (void)kind;
     
     /* SQL-ish mode: write end of string and end of tuple */

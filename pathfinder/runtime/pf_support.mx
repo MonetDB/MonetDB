@@ -392,14 +392,19 @@ but does this in a single scan."
 @:nilarithMIL(or)@
 @:nilarithMIL(plus)@
 
-@- bootstrap
+@- transaction locking 
 @m
-.COMMAND pflock(int i) : lock = CMDpflock;
+.COMMAND pflock_get(int i) : lock = CMDpflock_get;
  "provide a pointer to a global lock"
-.COMMAND pfenter(lng wsid) : void = CMDpfenter;
- "enter critical section"
-.COMMAND pfleave(lng wsid) : void = CMDpfleave;
- "leave critical section"
+.COMMAND pflock_begin(lng wsid) : void = CMDpflock_begin;
+ "let a query (rdonly,docmgmt,update) enter the system"
+.COMMAND pflock_end(lng wsid) : void = CMDpflock_end;
+ "a query (rdonly,docmgmt,update) leaves the system"
+.COMMAND pflock_meta(lng wsid) : void = CMDpflock_meta;
+ "alert that query (rdonly,docmgmt,update) reads meta information"
+.COMMAND pflock_free(bit persistent) : bit = CMDpflock_free;
+ "return false if there is an active document mgt query.
+  NOTE: you *must* have the short lock when executing this!!"
 
 .PRELUDE = pf_support_prelude;
 .EPILOGUE = pf_support_epilogue;
@@ -1465,41 +1470,6 @@ PROC myupdate(bat[any::1,any::2] oldbat, any::1 key, any::2 val) : bat[any::1,an
 }
 ADDHELP("myupdate", "sjoerd", "Apr 13 2006",
 "Combination of insert and replace: insert new values and replace existing ones.",
-"pf_support");
-
-# the following four procs basically do [+] on two string bats, but they
-# also work on constant values
-PROC strconcat(str a, str b) : str
-{
-  return a + b;
-}
-ADDHELP("strconcat", "sjoerd", "Apr 13 2006",
-"[+] on strings, except that either or both arguments can be strings instead of BATs.
-If both arguments are strings, the result is a string, otherwise a BAT.",
-"pf_support");
-PROC strconcat(str a, bat[void,str] b) : bat[void,str]
-{
-  return [+](a,b);
-}
-ADDHELP("strconcat", "sjoerd", "Apr 13 2006",
-"[+] on strings, except that either or both arguments can be strings instead of BATs.
-If both arguments are strings, the result is a string, otherwise a BAT.",
-"pf_support");
-PROC strconcat(bat[void,str] a, str b) : bat[void,str]
-{
-  return [+](a,b);
-}
-ADDHELP("strconcat", "sjoerd", "Apr 13 2006",
-"[+] on strings, except that either or both arguments can be strings instead of BATs.
-If both arguments are strings, the result is a string, otherwise a BAT.",
-"pf_support");
-PROC strconcat(bat[void,str] a, bat[void,str] b) : bat[void,str]
-{
-  return [+](a,b);
-}
-ADDHELP("strconcat", "sjoerd", "Apr 13 2006",
-"[+] on strings, except that either or both arguments can be strings instead of BATs.
-If both arguments are strings, the result is a string, otherwise a BAT.",
 "pf_support");
 
 PROC findupdate(BAT[any::1,any::2] oldbat, BAT[any::1,any::2] newbat, any::1 key): any::2
@@ -5690,65 +5660,6 @@ CMDinvalid_qname(str *ret, BAT *b)
 
 }
 
-#define PF_CONVOY 5
-MT_Lock pf_runtime_lock[6];
-int pf_nreaders, pf_convoy;
-lng pf_writer;
-
-/* get handle to the shared locks */
-int CMDpflock(ptr *ret, int* nr) {
-    *ret = (ptr) &pf_runtime_lock[(*nr)&3];
-    return GDK_SUCCEED;
-}
-
-/* query execution starts */
-int CMDpfenter(lng *wsid) 
-{
-    int mode = ((*wsid) & (3LL << 30)) >> 30;
-    if (!mode) return GDK_SUCCEED;
-
-    MT_set_lock(pf_runtime_lock[3], "pfenter: convoyLock"); /* protects pf_convoy */
-    if (mode == 2) {
-        pf_convoy = PF_CONVOY; /* re-try: schedule a convoy */
-    } else if (pf_convoy > 0) {
-        mode = 2; pf_convoy--; /* convert to serial execution due to convoy */
-    } 
-    MT_unset_lock(pf_runtime_lock[3], "pfenter: convoyLock");
-
-    if (mode == 1) {
-	/* update in concurrent mode */
-        MT_set_lock(pf_runtime_lock[4], "pfenter: readLock");
-        if (pf_nreaders++ == 0) 
-            MT_set_lock(pf_runtime_lock[5], "pfenter: writeLock");
-        MT_unset_lock(pf_runtime_lock[4], "pfenter: readLock");
-    } else {
-	/* update in serial mode */
-        MT_set_lock(pf_runtime_lock[5], "pfenter: writeLock");
-        pf_writer = *wsid;
-    }
-    return GDK_SUCCEED;
-}
-
-/* query execution finishes */
-int CMDpfleave(lng *wsid) 
-{
-    int mode = ((*wsid) & (3LL << 30)) >> 30;
-    if (!mode) return GDK_SUCCEED;
-
-    if (pf_writer == *wsid) {
-        /* finish in serial mode */
-        pf_writer = -1;
-        MT_unset_lock(pf_runtime_lock[5], "pfleave: writeLock");
-    } else {
-        /* finish in concurrent mode */
-        MT_set_lock(pf_runtime_lock[4], "pfleave: readLock");
-        if (--pf_nreaders == 0)
-            MT_unset_lock(pf_runtime_lock[5], "pfleave: writeLock");
-        MT_unset_lock(pf_runtime_lock[4], "pfleave: readLock");
-    }
-    return GDK_SUCCEED;
-}
-
 int
 CMDlastmod_time(timestamp *ret, str filename) {
 	struct stat st;
@@ -6051,6 +5962,220 @@ CMDnil@1(int *res, int *v1, int *v2)
 @:nilarithC(or,|)@
 @:nilarithC(plus,+)@
 
+
+@+ Transaction Locking
+
+We have three hooks inserted in the MIL transaction mgmt code:
+- pflock_begin() (called from ws_create) => QUERY STARTS
+- pflock_end()   (called from ws_destroy) => QUERY ENDS
+- pflock_meta()  (called during execution) => QUERY READS THE META TABLES
+
+The below mechanism ensures that:
+- when updating queries abort due to concurrency conflicts, they are restarted 
+  and run in exclusive mode
+- after an abort we run not onbly that query, but a convoy of PF_CONVOY next updating 
+  queries in exclusive mode. This to gracefully degrade (avoid thrashing) in updating 
+  loads that are highly conflictive.
+
+Exclusive updating means that we need a Nreaders/single writer lock (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
+In normal mode, updating querying use the 'reading' path, that is, the first entering update
+acquires the writer lock, and the last leaving releases it. In exclusive mode, all updating 
+queries take the writer lock.
+
+Similarly, there is a protection against seeing an inconsistent meta-database state.
+Just before a query uses the documents()/collections() functions, all new incoming
+document managment queries (that shred and delete XML documents) are blocked,
+and we must wait until all such active queries have finished.
+
+This is again implemented using a Nreaders/single writer lock (PF_META_LOCK,PF_META_BARRIER).
+The first docmgmt query acquires the barrier, and the last finishing releases it.
+A query that that calls pflock_meta() also must get this barrier, if it is the first to call it.
+When those queries do pflock_end() the last must free the lock, and thus must know which queries 
+have taken it (this is also needed for not asking it twice). 
+
+We store the information in the BAT 'ws_overlaps_ws' using [wsid,nil] BUNs.
+
+A special case is when a document management query itself issues such a meta-information function.
+Then we enter in exclusive single-docmgt query execution mode (SPECIAL CASE). Such a query is never
+included in ws_overlaps_ws. Instead, a single variable 'pf_special' records the wsid.
+@c
+#define PF_CONVOY 5
+BAT* ws_overlaps_ws = NULL;
+MT_Lock pf_runtime_lock[7];
+int pf_nreaders, pf_convoy, pf_ndocmgt;
+lng pf_writer, pf_special;
+
+#define PF_SHORT_LOCK     pf_runtime_lock[0]
+#define PF_FREE_LOCK      pf_runtime_lock[1]
+#define PF_WAL_LOCK       pf_runtime_lock[2]
+#define PF_META_LOCK      pf_runtime_lock[3]
+#define PF_META_BARRIER   pf_runtime_lock[4]
+#define PF_UPDATE_LOCK    pf_runtime_lock[5]
+#define PF_UPDATE_BARRIER pf_runtime_lock[6]
+
+#define PF_MODE_RDONLY 0 /* read-only query */
+#define PF_MODE_UPDATE 1 /* updating query */
+#define PF_MODE_RETRY  2 /* updating query run for the second time (exclusive mode) */
+#define PF_MODE_DOCMGT 3 /* document management query */ 
+
+/* get handle to the shared locks */
+int CMDpflock_get(ptr *ret, int* nr) {
+    *ret = (ptr) &pf_runtime_lock[(*nr)&3];
+    return GDK_SUCCEED;
+}
+
+/* query execution starts */
+int CMDpflock_begin(lng *wsid) 
+{
+    int mode = ((*wsid) & (3LL << 30)) >> 30;
+    if (mode == PF_MODE_RDONLY) 
+        return GDK_SUCCEED;
+
+    if (mode == PF_MODE_DOCMGT) {
+        /* multiple docmgts may be active in parallel. the first takes the meta-barrier */
+        int take_barrier;
+        MT_set_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
+        MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
+        take_barrier = (pf_ndocmgt++ == 0);
+        MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shirtLock for mgmt");
+        if (take_barrier) {
+            MT_set_lock(PF_META_BARRIER, "pflock_begin: metaBarrier");
+        }
+        MT_unset_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
+        return GDK_SUCCEED;
+    }
+
+    /* we only have update queries below this point; first check if we are in exclusive retry mode */
+    MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for convoy"); /* protects pf_convoy */
+    if (mode == PF_MODE_RETRY) {
+        pf_convoy = PF_CONVOY; /* re-try: schedule a convoy */
+    } else if (pf_convoy > 0) {
+        mode = PF_MODE_RETRY; pf_convoy--; /* convert to exclusive execution due to convoy */
+    } 
+    MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for convoy");
+
+    if (mode == PF_MODE_UPDATE) {
+	/* update in concurrent mode */
+        MT_set_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
+        if (pf_nreaders++ == 0) 
+            MT_set_lock(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
+        MT_unset_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
+    } else {
+	/* update in exclusive mode */
+        MT_set_lock(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
+        MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
+        pf_writer = *wsid;
+        MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
+    }
+    return GDK_SUCCEED;
+}
+
+/* query execution finishes */
+int CMDpflock_end(lng *wsid) 
+{
+    int mode = ((*wsid) & (3LL << 30)) >> 30;
+    lng nil = lng_nil;
+
+    MT_set_lock(PF_SHORT_LOCK, "pflock_end: shortLock");
+    if (mode == PF_MODE_DOCMGT) {
+        /* last docmgt function yields the meta barrier 
+         */
+        if (*wsid == pf_special) {
+            assert(pf_ndocmgt == 0);
+            pf_special = -1;
+        } else {
+            pf_ndocmgt--;
+        }
+        if (pf_ndocmgt == 0) {
+            MT_unset_lock(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
+        }
+    } else {
+        /* last active meta-information query releases meta-barrier 
+         */
+        BUN self_passed; /* this query uses meta-information functions? */
+        BUN others_passed; /* there are multiple such queries active? */
+
+        self_passed = BUNlocate(ws_overlaps_ws, wsid, &nil);
+        BUNdelHead(ws_overlaps_ws, wsid, FALSE); /* release all active info on this query */
+        others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
+        if (self_passed && !others_passed) {
+            MT_unset_lock(PF_META_BARRIER, "pflock_end: metaBarrier");
+        }
+
+        /* last active update query releases update-barrier 
+         */
+        if (pf_writer == *wsid) {
+            /* finish in exclusive mode */
+            pf_writer = -1;
+            MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
+        } else if (mode != PF_MODE_RDONLY) { 
+            /* finish in concurrent mode */
+            if (--pf_nreaders == 0)
+                MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
+        }
+    }
+    MT_unset_lock(PF_SHORT_LOCK, "pflock_end: shortLock");
+    return GDK_SUCCEED;
+}
+
+/* we are going to use a meta-information function that returns all collections/documents
+ * thus we must block all new docmgt queries and wait for all active ones to finish 
+ */
+int CMDpflock_meta(lng *wsid) 
+{
+    int mode = ((*wsid) & (3LL << 30)) >> 30;
+    lng nil = lng_nil;
+    BUN self_passed; /* this query uses meta-information functions? */
+    BUN others_passed; /* there are multiple such queries active? */
+
+    MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
+    self_passed = BUNlocate(ws_overlaps_ws, wsid, &nil);
+    if (*wsid == pf_special) self_passed = (BUN) wsid;
+    if (self_passed) {
+        MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
+        return GDK_SUCCEED; /* already got permission to proceed */
+    }
+    if (mode == PF_MODE_DOCMGT) {
+        /* SPECIAL CASE: a meta function inside a docmgt function. 
+         * now we must wait for potential other docmgts to finish first 
+         */
+        int reapply_barrier = (pf_ndocmgt-- > 1);
+        MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: metaLock precheck");
+        if (reapply_barrier) {
+            MT_set_lock(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
+            MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
+            pf_special = *wsid;
+            assert(pf_ndocmgt == 0); /* SPECIAL CASE (see above) */
+            MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
+        }
+        return GDK_SUCCEED;
+    }
+    MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
+
+    MT_set_lock(PF_META_LOCK, "pflock_meta: metaLock");
+    MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
+    others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
+    BUNins(ws_overlaps_ws, wsid, &nil, FALSE);
+    MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
+    if (!others_passed) {
+        /* first query with meta function: get barrier */
+        MT_set_lock(PF_META_BARRIER, "pflock_meta: metaBarrier");
+    }
+    MT_unset_lock(PF_META_LOCK, "pflock_meta: metaLock");
+    return GDK_SUCCEED;
+}
+
+int CMDpflock_free(bit *res, bit* doCommit) {
+    /* assumption: short lock is taken!! */
+    *res = FALSE;
+    if (*doCommit == TRUE) {
+        /* only OK if no active query called a meta-information function */
+        lng nil = lng_nil;
+        *res = (BUNfnd(BATmirror(ws_overlaps_ws), &nil) == NULL);
+    }
+    return GDK_SUCCEED;
+}
+
 bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[0]);
     MT_init_lock(pf_runtime_lock[1]);
@@ -6058,8 +6183,14 @@ bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[3]);
     MT_init_lock(pf_runtime_lock[4]);
     MT_init_lock(pf_runtime_lock[5]);
-    pf_nreaders = pf_convoy = 0;
-    pf_writer = -1;
+    MT_init_lock(pf_runtime_lock[6]);
+    ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
+    BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
+    BATprepareHash(ws_overlaps_ws);
+    BATprepareHash(BATmirror(ws_overlaps_ws));
+    BATset(ws_overlaps_ws, BOUND2BTRUE);
+    pf_nreaders = pf_convoy = pf_ndocmgt = 0;
+    pf_special = pf_writer = -1;
     return NULL;
 }
 
@@ -6070,6 +6201,7 @@ void pf_support_epilogue() {
     MT_destroy_lock(pf_runtime_lock[3]);
     MT_destroy_lock(pf_runtime_lock[4]);
     MT_destroy_lock(pf_runtime_lock[5]);
+    MT_destroy_lock(pf_runtime_lock[6]);
 }
 
 @- PROCs required by the algebraic translation ###

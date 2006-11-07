@@ -197,7 +197,6 @@ sax_handle_startDocument (XqueryCtx* ctx)
 static bool
 sax_handle_endDocument (XqueryCtx* ctx)
 {
-    (void)ctx;
 
     if ( SAXOPHONE )
         return emit_SAX_footer();
@@ -215,7 +214,6 @@ static bool
 sax_handle_startElement (XqueryCtx* ctx,
                                      str prefix, str name, oid pre)
 {
-    (void)ctx;
     (void)pre; /* the Pathfinder PRE number is not used by this fun */
 
     if ( SAXOPHONE ) {
@@ -241,7 +239,6 @@ sax_handle_startElement (XqueryCtx* ctx,
 static bool
 sax_handle_endElement (XqueryCtx* ctx, str prefix, str name)
 {
-    (void)ctx;
 
     if ( SAXOPHONE ) {
         if ( !emit_SAX_event(ctx, "endElement",NULL,0) )
@@ -266,8 +263,6 @@ sax_handle_endElement (XqueryCtx* ctx, str prefix, str name)
 static bool
 sax_handle_characters (XqueryCtx* ctx, str chars)
 {
-    (void)ctx;
-
     if ( SAXOPHONE ) {
         if (!emit_SAX_event(ctx, "characters",NULL,0))
             return PROBLEM;
@@ -328,8 +323,6 @@ static bool
 sax_handle_attribute (XqueryCtx* ctx,
                                   str prefix, str loc, str value)
 {
-    (void) ctx;
-
     if ( SAXOPHONE ) {
         if ( loc && *loc) {
             if (!emit_SAX_event(ctx, " attribute",loc,0) )
