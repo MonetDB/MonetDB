@@ -1347,34 +1347,24 @@ proc get_mapi_port() : int {
 	ERROR("mapi_port is not set\n");
 }
 
-proc mapi_server(int port, int nr) : void {
-	mapi_register(mil_frontend());
-
-	if (not(mapi_running())) {
-        	var l := listen(port, nr);
+proc get_mapi_open() : bit {
+	if (monet_environment.exist("mapi_open")){
+		return bit(monet_environment.find("mapi_open"));
 	}
-	quit();
+	ERROR("mapi_open is not set\n");
 }
 
-proc mapi_start(bit global) : void {
+proc mapi_server() : void {
+	fork(mapi_listen(
+		get_mapi_port(),
+		str(nil),
+		5,
+		get_mapi_open()	
+		)
+	);
+}
+mapi_server();
+
+proc mil_start() : void {
 	mapi_register(mil_frontend());
-
-	if (not(mapi_running())) {
-		fork(mapi_listen(
-			get_mapi_port(),
-			str(nil),
-			5,
-			global
-			)
-		);
-	}
 }
-
-proc mapi_start() : void {
-	mapi_start(false);
-}
-
-if (mod() = "main"){
-	mapi_start();
-}
-

@@ -286,7 +286,7 @@ For a more convenient MIL interface, you should use the ``MapiClient``
 with the Mserver. To do so, first start an Mserver with MAPI (MonetDB
 Application Programmer's Interfaces) support as follows::
 
- Mserver --dbinit="module(mapi); mapi_start();"
+ Mserver --dbinit="module(mapi); mil_start();"
 
 Then, in a second shell, set up the same environment and start the
 MapiClient::
