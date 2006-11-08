@@ -6408,8 +6408,8 @@ static int
 translateFunction (opt_t *f, int code, int cur_level, int counter, 
                    PFfun_t *fun, PFcnode_t *args)
 {
-    int rc;
-    char *item_ext;
+    int rc = 0;
+    char *item_ext = NULL;
     PFqname_t fnQname = fun->qname;
 
     if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
