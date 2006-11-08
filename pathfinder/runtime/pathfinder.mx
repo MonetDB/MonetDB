@@ -79,8 +79,6 @@ if (standoff) {
     module("pf_standoff");
 }
 
-PROC pfstart() : void { } # deprecated
-
 # The XML Meta-Database #############################################################
 #
 # Global information on persistent stored XML collections:
@@ -500,10 +498,7 @@ PROC pf_logmanager() : void {
     }
 }
 # synchronize the starting of the log
-lock_set(pf_short);
-fork({ lock_unset(pf_short); pf_logmanager(); });
-lock_set(pf_short);
-lock_unset(pf_short);
+fork(pf_logmanager());
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -595,12 +590,6 @@ collection_cleanup(_collection_cleanup());
 # start the background processes 
 xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
 mapi_register(xquery_frontend());
-if (not(mapi_running())) {
-    lock_set(pf_short);
-    fork({ lock_unset(pf_short); mapi_listen(int(monet_environment.find("mapi_port")), str_nil, 5, false); });
-    lock_set(pf_short);
-    lock_unset(pf_short);
-}
 
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
