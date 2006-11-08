@@ -93,7 +93,7 @@ char PFerrbuf[OOPS_SIZE] = { 0 };
  *   va_start manpage.
  */
 static void
-log_worker (const char *msg, va_list msgs)
+oops_worker (const char *msg, va_list msgs)
 {
     int len = strlen(PFerrbuf);
     if (len+2 < OOPS_SIZE) {
@@ -103,6 +103,16 @@ log_worker (const char *msg, va_list msgs)
             PFerrbuf[len+n+1] = 0;
         }
     }
+}
+
+void
+oops_worker_call (const char *msg, ...)
+{
+    va_list msgs;
+
+    va_start (msgs, msg);
+    oops_worker (msg, msgs);
+    va_end (msgs);
 }
 
 /**
@@ -117,7 +127,8 @@ PFlog (const char *msg, ...)
     va_list msgs;
 
     va_start (msgs, msg);
-    log_worker (msg, msgs);
+    vfprintf (stderr, msg, msgs);
+    fprintf (stderr, "\n");
     va_end (msgs);
 }
 
@@ -142,7 +153,7 @@ oops (PFrc_t rc, bool halt,
 
 	vsnprintf (mbuf + nmsg + 2, OOPS_SIZE - nmsg - 2 - 1, msg, msgs);
 
-        PFlog ("%s", mbuf);
+        oops_worker_call ("%s", mbuf);
     }
 
     /* halt the compiler if requested */
@@ -152,7 +163,7 @@ oops (PFrc_t rc, bool halt,
          * If this is a debug version of Pathfinder, log source location
          * The `=' makes this a minor difference in Mtest.
          */
-        PFlog ("# halted in %s (%s), line %d", file, func, line);
+        oops_worker_call ("# halted in %s (%s), line %d", file, func, line);
 #else
 	/* fool compilers that otherwise complain about unused parameters */
 	(void)file;

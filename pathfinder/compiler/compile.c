@@ -560,15 +560,15 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(20);
 
-    /* Print MIL program to pfout */
-    if (mil_program)
-        PFmilprint (pfout, mil_program);
-
     if (status->timing) {
         PFlog ("----------------------------------------------");
         tm_first = PFtimer_stop (tm_first);
         PFlog ("overall compilation time:\t\t %s", PFtimer_str (tm_first));
     }
+
+    /* Print MIL program to pfout */
+    if (mil_program)
+        PFmilprint (pfout, mil_program);
 
  bailout:
     /* print abstract syntax tree if requested */
