@@ -6186,8 +6186,8 @@ bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[6]);
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
-    BATprepareHash(ws_overlaps_ws);
-    BATprepareHash(BATmirror(ws_overlaps_ws));
+    (void) BATprepareHash(ws_overlaps_ws);
+    (void) BATprepareHash(BATmirror(ws_overlaps_ws));
     BATset(ws_overlaps_ws, BOUND2BTRUE);
     pf_nreaders = pf_convoy = pf_ndocmgt = 0;
     pf_special = pf_writer = -1;
