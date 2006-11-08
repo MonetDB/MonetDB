@@ -44,29 +44,32 @@ typedef unsigned int oid;
 typedef unsigned int PFmil_ident_t;
 
 /* reserved identifiers. */
-#define PF_MIL_VAR_UNUSED     0
-#define PF_MIL_VAR_WS         1
-#define PF_MIL_VAR_ATTR       2
-#define PF_MIL_VAR_ELEM       3
-#define PF_MIL_VAR_STR        4
-#define PF_MIL_VAR_INT        5
-#define PF_MIL_VAR_DBL        6
-#define PF_MIL_VAR_DEC        7
-#define PF_MIL_VAR_BOOL       8
-#define PF_MIL_VAR_ATTR_OWN   9
-#define PF_MIL_VAR_ATTR_QN   10
-#define PF_MIL_VAR_ATTR_CONT 11
-#define PF_MIL_VAR_QN_LOC    12
-#define PF_MIL_VAR_QN_URI    13
-#define PF_MIL_VAR_ATTR_PROP 14
-#define PF_MIL_VAR_PROP_VAL  15
-#define PF_MIL_VAR_PRE_PROP  16
-#define PF_MIL_VAR_PRE_CONT  17
-#define PF_MIL_VAR_PROP_TEXT 18
-#define PF_MIL_VAR_PROP_COM  19
-#define PF_MIL_VAR_PROP_INS  20
+#define PF_MIL_VAR_UNUSED      0
+#define PF_MIL_VAR_WS          1
+#define PF_MIL_VAR_ATTR        2
+#define PF_MIL_VAR_ELEM        3
+#define PF_MIL_VAR_STR         4
+#define PF_MIL_VAR_INT         5
+#define PF_MIL_VAR_DBL         6
+#define PF_MIL_VAR_DEC         7
+#define PF_MIL_VAR_BOOL        8
+#define PF_MIL_VAR_ATTR_OWN    9
+#define PF_MIL_VAR_ATTR_QN    10
+#define PF_MIL_VAR_ATTR_CONT  11
+#define PF_MIL_VAR_QN_LOC     12
+#define PF_MIL_VAR_QN_URI     13
+#define PF_MIL_VAR_ATTR_PROP  14
+#define PF_MIL_VAR_PROP_VAL   15
+#define PF_MIL_VAR_PRE_PROP   16
+#define PF_MIL_VAR_PRE_CONT   17
+#define PF_MIL_VAR_PROP_TEXT  18
+#define PF_MIL_VAR_PROP_COM   19
+#define PF_MIL_VAR_PROP_INS   20
+#define PF_MIL_VAR_TIME_LOAD  21
+#define PF_MIL_VAR_TIME_QUERY 22
+#define PF_MIL_VAR_TIME_PRINT 23
 
-#define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_PROP_INS + 1)
+#define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_TIME_PRINT + 1)
 
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {
@@ -141,8 +144,10 @@ enum PFmil_kind_t {
 
     , m_add          /**< arithmetic add */
     , m_madd         /**< multiplexed arithmetic add */
+    , m_sub          /**< arithmetic subtract */
     , m_msub         /**< multiplexed arithmetic subtract */
     , m_mmult        /**< multiplexed arithmetic multiply */
+    , m_div          /**< arithmetic divide */
     , m_mdiv         /**< multiplexed arithmetic divide */
     , m_mmod         /**< multiplexed arithmetic modulo */
 
@@ -175,6 +180,7 @@ enum PFmil_kind_t {
     , m_arg          /**< helper node to list arguments for variable length
                           argument functions (e.g., merged_union) */
 
+    , m_usec         /**< Get the current time */
     , m_new_ws       /**< Create a new (empty) working set */
     , m_destroy_ws   /**< Free an existing working set */
     , m_mposjoin     /**< Positional multijoin with a working set */
@@ -338,6 +344,8 @@ enum PFmil_kind_t {
                           pathfinder extension module. For now we just have
                           a simple MIL script that does the work mainly for
                           debugging purposes. */
+    
+    , m_module       /**< module loading */
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
 
@@ -606,11 +614,17 @@ PFmil_t * PFmil_add (const PFmil_t *, const PFmil_t *);
 /** MIL multiplexed add operator */
 PFmil_t * PFmil_madd (const PFmil_t *, const PFmil_t *);
 
+/** MIL subtract operator */
+PFmil_t * PFmil_sub (const PFmil_t *, const PFmil_t *);
+
 /** MIL multiplexed subtract operator */
 PFmil_t * PFmil_msub (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed multiply operator */
 PFmil_t * PFmil_mmult (const PFmil_t *, const PFmil_t *);
+
+/** MIL divide operator */
+PFmil_t * PFmil_div (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed divide operator */
 PFmil_t * PFmil_mdiv (const PFmil_t *, const PFmil_t *);
@@ -660,6 +674,7 @@ PFmil_t * PFmil_mstring (const PFmil_t *, const PFmil_t *);
 /** Multiplexed string() function `[string](a,b,c)' */
 PFmil_t * PFmil_mstring2 (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
+PFmil_t * PFmil_usec (void);
 PFmil_t * PFmil_new_ws (void);
 PFmil_t * PFmil_destroy_ws (const PFmil_t *ws);
 PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
@@ -1171,8 +1186,9 @@ PFmil_t * PFmil_col_name (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_comment (const char *, ...)
       __attribute__ ((format (printf, 1, 2)));
 
-PFmil_t *
-PFmil_ser (const PFmil_t *);
+PFmil_t * PFmil_ser (const PFmil_t *);
+
+PFmil_t * PFmil_module (const PFmil_t *);
 /*
 PFmil_t * PFmil_ser (const char *prefix,
                      const bool has_nat_part, const bool has_int_part,

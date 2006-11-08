@@ -15,6 +15,7 @@
                  | statement ';'                            <otherwise>
 
    statement     : Variable ':=' expression                 <m_assgn>
+                 | 'module (' literal ')'                   <m_module>
                  | Variable ':= CATCH ({' statements '})'   <m_catch>
                  | expr '.insert (' expr ',' expr ')'       <m_insert>
                  | expression '.append (' expression ')'    <m_bappend>
@@ -74,8 +75,10 @@
                  | '[' Type '](' expression ')'             <m_mcast>
                  | '+(' expression ',' expression ')'       <m_add>
                  | '[+](' expression ',' expression ')'     <m_madd>
+                 | '-(' expression ',' expression ')'       <m_sub>
                  | '[-](' expression ',' expression ')'     <m_msub>
                  | '[*](' expression ',' expression ')'     <m_mmult>
+                 | '/(' expression ',' expression ')'       <m_div>
                  | '[/](' expression ',' expression ')'     <m_mdiv>
                  | '[%](' expression ',' expression ')'     <m_mmod>
                  | '>(' expression ',' expression ')'       <m_gt>
@@ -98,6 +101,7 @@
                  | '{max}(' expression ')'                  <m_gmax>
                  | '{min}(' expression ')'                  <m_gmin>
                  | '{sum}(' expression ')'                  <m_gsum>
+                 | 'usec ()'                                <m_usec>
                  | 'new_ws ()'                              <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
@@ -211,8 +215,10 @@ static char *ID[] = {
 
     , [m_add]          = "+"
     , [m_madd]         = "[+]"
+    , [m_sub]          = "-"
     , [m_msub]         = "[-]"
     , [m_mmult]        = "[*]"
+    , [m_div]          = "/"
     , [m_mdiv]         = "[/]"
     , [m_mmod]         = "[%]"
     , [m_gt]           = ">"
@@ -229,6 +235,7 @@ static char *ID[] = {
     , [m_mstring2]     = "[string]"
     , [m_isnil]        = "isnil"
     , [m_misnil]       = "[isnil]"
+    , [m_usec]         = "usec"
     , [m_new_ws]       = "ws_create"
     , [m_destroy_ws]   = "ws_destroy"
     , [m_mposjoin]     = "mposjoin"
@@ -501,6 +508,13 @@ print_statement (PFmil_t * n)
 {
     switch (n->kind) {
 
+        /* statement : 'module (' Literal ')' */
+        case m_module:
+            milprintf ("module (");
+            print_literal (n->child[0]);
+            milprintf (")");
+            break;
+            
         /* statement : variable ':=' expression */
         case m_assgn:
             print_variable (n->child[0]);
@@ -771,10 +785,14 @@ print_expression (PFmil_t * n)
         case m_add:
         /* expression : '[+](' expression ',' expression ')' */
         case m_madd:
+        /* expression : '-(' expression ',' expression ')' */
+        case m_sub:
         /* expression : '[-](' expression ',' expression ')' */
         case m_msub:
         /* expression : '[*](' expression ',' expression ')' */
         case m_mmult:
+        /* expression : '/(' expression ',' expression ')' */
+        case m_div:
         /* expression : '[/](' expression ',' expression ')' */
         case m_mdiv:
         /* expression : '[%](' expression ',' expression ')' */
@@ -849,6 +867,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : 'usec ()' */
+        case m_usec:
         /* expression : 'new_ws ()' */
         case m_new_ws:
             milprintf ("%s ()", ID[n->kind]);

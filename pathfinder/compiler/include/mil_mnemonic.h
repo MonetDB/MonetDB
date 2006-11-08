@@ -217,11 +217,17 @@
 /** multiplexed arithmetic add */
 #define madd(a,b) PFmil_madd ((a), (b))
 
+/** arithmetic subtract */
+#define sub(a,b) PFmil_sub ((a), (b))
+
 /** multiplexed arithmetic subtract */
 #define msub(a,b) PFmil_msub ((a), (b))
 
 /** multiplexed arithmetic multiply */
 #define mmult(a,b) PFmil_mmult ((a), (b))
+
+/** arithmetic divide */
+#define div(a,b) PFmil_div ((a), (b))
 
 /** multiplexed arithmetic divide */
 #define mdiv(a,b) PFmil_mdiv ((a), (b))
@@ -255,6 +261,9 @@
 
 /** multiplexed ifthenelse() operator `[ifthenelse]()' */
 #define mifthenelse(a,b,c) PFmil_mifthenelse ((a), (b), (c))
+
+/** get the time */
+#define usec() PFmil_usec ()
 
 /** create new (empty) working set */
 #define new_ws() PFmil_new_ws ()
@@ -512,5 +521,8 @@
 #define print(a) PFmil_print (a)
 #define col_name(a,b) PFmil_col_name ((a), (b))
 #define comment(...) PFmil_comment (__VA_ARGS__)
+
+/** module loading */
+#define module(a) PFmil_module (a)
 
 /* vim:set shiftwidth=4 expandtab: */
