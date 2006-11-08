@@ -14,6 +14,7 @@ stdout of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+!ERROR: logger could not create log directory /xyz/demo/
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type
@@ -42,7 +43,6 @@ stdout of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 [ "trans",	  1		  ]
 [ "txtsim",	  1		  ]
 [ "xtables",	  1		  ]
-!ERROR: logger could not create log directory /xyz/demo/
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type

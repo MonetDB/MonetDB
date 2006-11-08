@@ -237,14 +237,14 @@ MonetDB/SQL are the same, simply call
 
 ::
 
- Mserver --dbinit="module(sql_server); sql_server_start();"
+ Mserver --dbinit="module(sql_server);"
 
 In case you use different install (i.e., prefix) directories for MonetDB
 and MonetDB/SQL, call
 
 ::
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB --dbinit="module(sql_server); sql_server_start();"
+ Mserver --set monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB --dbinit="module(sql_server);"
 
 Then, in a second shell, set up the same environment and start the
 MonetDB/SQL front end by calling

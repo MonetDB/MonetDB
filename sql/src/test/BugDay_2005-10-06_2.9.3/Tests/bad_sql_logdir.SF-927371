@@ -1,5 +1,5 @@
 #!/bin/sh
 
-Mlog "echo 'loaded(); quit();' \| eval \"Mserver $setMONETDB_MOD_PATH --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded(); sql_server_start();'\""
-      echo 'loaded(); quit();'  | eval  "Mserver $setMONETDB_MOD_PATH --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded(); sql_server_start();'"
+Mlog "echo 'loaded(); quit();' \| eval \"Mserver $setMONETDB_MOD_PATH --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded();'\""
+      echo 'loaded(); quit();'  | eval  "Mserver $setMONETDB_MOD_PATH --set monet_prompt='' --set sql_logdir=/xyz --dbinit='module(sql_server); loaded();'"
 

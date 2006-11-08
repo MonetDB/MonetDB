@@ -1,7 +1,7 @@
 import os, time, sys
 
 def server_start(x,s,dbinit):
-    srvcmd = '%s --dbname "%s" --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
+    srvcmd = '%s --dbname "%s" --set mapi_port=%s --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),os.getenv('MAPIPORT'),dbinit)
     sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stdout.flush()
@@ -71,12 +71,10 @@ def clients(x,dbinit):
 
 def main():
     x = 0
-    x += 1; clients(x,"module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();")
-    x += 1; clients(x,"module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());")
-    x += 1; clients(x,"module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();")
-    x += 1; clients(x,"module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());")
+    x += 1; clients(x,"module(mapi); mil_start(); module(sql_server);")
+    x += 1; clients(x,"module(mapi);module(sql_server); mil_start();")
     # test for bug [ 1428431 ] MAPI: MapiClient hangs when sending invalid challenge
     # should give an error for each mapi mil connection
-    x += 1; clients(x,"module(sql_server);module(mapi); sql_server_start();")
+    x += 1; clients(x,"module(sql_server);module(mapi);")
 
 main()

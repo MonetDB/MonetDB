@@ -1349,43 +1349,19 @@ proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
 proc in (any::2 b, any::2 v) : bit { return (b = v); }
 proc [identity](bat[oid,any::1] b) : bat[oid,oid] { return mirror(b); }
 
-proc sql_register() : str {
-	var fc := nil;
+tzone_local(TIMEZONE("GMT"));
 
+proc sql_server_start() : void {
+	var fc := nil;
 	var err := CATCH({ fc := sql_frontend(); });
+
 	if (isnil(err)) {
 		mapi_register(fc);
 		fork(sqllogmanager());
 		return str(nil);
 	} else {
-		return (err);
-	}
-}
-
-proc sql_server_start(bit global) : void {
-
-	var err := sql_register();
-	if (isnil(err)) {
-		if (not(mapi_running())) {
-			fork(mapi_listen(
-				int(monet_environment.find("mapi_port")),
-				str(nil),
-				5,
-				global
-				)
-			);
-		}
-	} else {
 		printf(err);
 	}
 }
 
-proc sql_server_start() : void {
-	sql_server_start(false);
-}
-
-tzone_local(TIMEZONE("GMT"));
-
-if (mod() = "main") {
-	sql_server_start();
-}
+sql_server_start();
