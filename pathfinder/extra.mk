@@ -56,7 +56,8 @@
                   $(top_srcdir)/compiler/semantics/normalize.c \
                   $(top_srcdir)/compiler/semantics/typecheck.c \
                   $(top_srcdir)/compiler/algebra/opt/opt_general.c \
-                  $(top_srcdir)/compiler/algebra/core2alg.c
+                  $(top_srcdir)/compiler/algebra/core2alg.c \
+                  $(top_srcdir)/compiler/sql/lalg2sql.c
 
 
 .PHONY: doc html
