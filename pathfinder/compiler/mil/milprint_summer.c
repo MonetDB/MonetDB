@@ -6408,8 +6408,8 @@ static int
 translateFunction (opt_t *f, int code, int cur_level, int counter, 
                    PFfun_t *fun, PFcnode_t *args)
 {
-    int rc = 0;
-    char *item_ext = NULL;
+    int rc;
+    char *item_ext;
     PFqname_t fnQname = fun->qname;
 
     if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
@@ -6429,21 +6429,21 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"collection")))
     {
-        if (fun->arity) {
+        if (fun->arity) { 
             rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
             item_ext = kind_str(rc);
-        }
-        milprintf(f,
-                "{ # translate fn:collection (string) as node*\n"
-                "  var map := bat(void,oid).seqbase(0@0);\n");
-        if (fun->arity) { 
+
             milprintf(f, 
+                "{ # translate fn:collection (string) as node*\n"
+                "  var map := bat(void,oid).seqbase(0@0);\n"
                 "  var ret := ws_collection(ws, item%s.materialize(ipik), map);\n"
                 "  iter := map.leftfetchjoin(iter);\n"
                 "  item := ret.hmark(0@0);\n"
                 "  kind := ret.tmark(0@0).set_kind(ELEM);\n", (rc)?item_ext:val_join(STR));
         } else {
             milprintf(f, 
+                "{ # translate fn:collection (string) as node*\n"
+                "  var map := bat(void,oid).seqbase(0@0);\n"
                 "  var ret := ws_collection(ws, collection_name, map);\n"
                 "  var loop := reverse(loop%03u).project(0@0);\n"
                 "  map := reverse(project(reverse(map),0@0));\n"
@@ -6461,16 +6461,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (fun->arity) {
             rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
             item_ext = kind_str(rc);
-        }
-        milprintf(f,
-                "{ # translate pf:documents (string*) as string*\n");
-        if (fun->arity) {
+        
             milprintf(f, 
+                "{ # translate pf:documents (string*) as string*\n"
                 "  var ret := ws_documents(ws, item%s.materialize(ipik));\n"
                 "  item_str_ := ret.tmark(0@0);\n"
                 "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR));
         } else {
             milprintf(f, 
+                "{ # translate pf:documents (string*) as string*\n"
                 "  var ret := ws_documents(ws);\n"
                 "  var loop := reverse(loop%03u).project(0@0);\n"
                 "  ret := loop.leftjoin(reverse(project(reverse(ret),0@0)));\n"
