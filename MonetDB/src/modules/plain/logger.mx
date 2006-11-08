@@ -672,14 +672,6 @@ logger_commit(logger *logger)
 
 	/* cleanup old snapshots */
 	if (BATcount(logger->snapshots)) {
-		BAT *b = logger->snapshots;
-		/* free the snapshot bats 
-		BUN p,q;
-		BATloop(b, p, q) {
-			bat col = *(log_bid*)BUNhead(b,p);
-			BBPdecref(col, TRUE);
-		}
-*/
 		BATclear(logger->snapshots);
 		BATcommit(logger->snapshots);
 	}
