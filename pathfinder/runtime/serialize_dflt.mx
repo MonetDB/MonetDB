@@ -683,8 +683,6 @@ xml_seqEnd (XqueryCtx* ctx)
 static bool
 xml_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
 {
-    (void)ctx;
-
     if ((XTRACT_KIND(kind_before) < ATOMIC) &&
         (XTRACT_KIND(kind_after) < ATOMIC))
         stream_write (ctx->out, &s_, 1, 1); /* ' ' */
@@ -747,7 +745,6 @@ static bool
 typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
 {
     char *item_start = 0;
-    (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
         case BOOL:
@@ -813,7 +810,6 @@ static bool
 typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 {
     char *item_end = 0;
-    (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
         case BOOL:
@@ -908,7 +904,6 @@ static bool
 soap_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 {
     char *item_end = 0;
-    (void)ctx;
 
     switch (XTRACT_KIND(kind)) {
         case BOOL:
@@ -977,7 +972,6 @@ seq_seqStart (XqueryCtx* ctx, int count)
 static bool
 seq_seqItemStart (XqueryCtx* ctx, int kind)
 {
-    (void)ctx;
     (void)kind;
     
     /* SQL-ish mode: write start of tuple and open string */

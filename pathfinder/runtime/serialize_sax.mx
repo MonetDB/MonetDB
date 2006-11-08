@@ -166,7 +166,6 @@ emit_SAX_event (XqueryCtx *ctx, char* eventName, char* val, int escaped)
 static bool
 sax_init (XqueryCtx* ctx, char* args, char *restag)
 {
-    (void) ctx;
     (void) args;
     ctx->driverWs = (void *) restag; /* store result tag */
     sax_init_isspecial();
@@ -180,8 +179,6 @@ sax_init (XqueryCtx* ctx, char* args, char *restag)
 static bool
 sax_handle_startDocument (XqueryCtx* ctx)
 {
-    (void)ctx;
-
     if ( SAXOPHONE )
         return emit_SAX_header(ctx);
     else
@@ -197,7 +194,6 @@ sax_handle_startDocument (XqueryCtx* ctx)
 static bool
 sax_handle_endDocument (XqueryCtx* ctx)
 {
-
     if ( SAXOPHONE )
         return emit_SAX_footer();
     else
@@ -239,7 +235,6 @@ sax_handle_startElement (XqueryCtx* ctx,
 static bool
 sax_handle_endElement (XqueryCtx* ctx, str prefix, str name)
 {
-
     if ( SAXOPHONE ) {
         if ( !emit_SAX_event(ctx, "endElement",NULL,0) )
             return PROBLEM;
