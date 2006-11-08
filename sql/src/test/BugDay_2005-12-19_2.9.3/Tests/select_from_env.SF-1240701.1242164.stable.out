@@ -53,6 +53,8 @@ Over..
 [ "pf_httpd_port"	]
 [ "xquery_output"	]
 [ "xquery_cacheMB"	]
+[ "xquery_procMB"	]
+[ "xquery_open"	]
 [ "xquery_logdir"	]
 [ "monet_cwd"	]
 
