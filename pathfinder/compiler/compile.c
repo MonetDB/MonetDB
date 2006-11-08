@@ -297,7 +297,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
     
     if (status->timing)
-        PFlog ("parsing:\t\t\t %s", PFtimer_str (tm));
+        PFlog ("parsing:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(1);
     
@@ -306,7 +306,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("module import:\t\t\t %s", PFtimer_str (tm));
+        PFlog ("module import:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(2);
     
@@ -318,7 +318,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("normalization:\t\t\t %s", PFtimer_str (tm));
+        PFlog ("normalization:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(3);
     
@@ -345,7 +345,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("semantical analysis:\t\t %s", PFtimer_str (tm));
+        PFlog ("semantical analysis:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(7);
 
@@ -361,7 +361,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("XML Schema import:\t\t %s", PFtimer_str (tm));
+        PFlog ("XML Schema import:\t\t\t %s", PFtimer_str (tm));
 
 #ifndef NDEBUG
     /*
@@ -382,7 +382,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("core mapping:\t\t\t %s", PFtimer_str (tm));
+        PFlog ("core mapping:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(10);
 
@@ -393,7 +393,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("core simplification:\t\t %s", PFtimer_str (tm));
+        PFlog ("core simplification:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(11);
 
@@ -404,7 +404,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("type checking:\t\t\t %s", PFtimer_str (tm));
+        PFlog ("type checking:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(12);
 
@@ -416,7 +416,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("core tree optimization:\t\t %s", PFtimer_str (tm));
+        PFlog ("core tree optimization:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(13);
 
@@ -435,7 +435,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         /* epilogue is not needed for standalone MIL scripts */
         tm = PFtimer_stop (tm);
         if (status->timing)
-            PFlog ("MIL code output:\t\t %s", PFtimer_str (tm));
+            PFlog ("MIL code output:\t\t\t %s", PFtimer_str (tm));
         goto bailout;
     }
 
@@ -448,7 +448,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("logical algebra tree generation: %s", PFtimer_str (tm));
+        PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
     STOP_POINT(14);
 
@@ -463,7 +463,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("logical algebra optimization:\t %s",
+        PFlog ("logical algebra optimization:\t\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(15);
@@ -477,7 +477,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("CSE in logical algebra tree:\t %s",
+        PFlog ("CSE in logical algebra tree:\t\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(16);
@@ -488,7 +488,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("compilation to physical algebra: %s", PFtimer_str (tm));
+        PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
 
     STOP_POINT(17);
 
@@ -499,7 +499,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("introduction of recursion boundaries: %s", PFtimer_str (tm));
+        PFlog ("introduction of recursion boundaries:\t %s", PFtimer_str (tm));
 
     STOP_POINT(18);
 
@@ -509,8 +509,31 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("MIL code generation:\t\t %s", PFtimer_str (tm));
+        PFlog ("MIL code generation:\t\t\t %s", PFtimer_str (tm));
 
+    /* make runtime timing available */
+    if (status->timing) {
+        mroot = PFmil_seq (mroot,
+                           PFmil_print (
+                               PFmil_lit_str (
+                                   "Document loading time (in msec)")),
+                           PFmil_print (
+                               PFmil_var (
+                                   PF_MIL_VAR_TIME_LOAD)),
+                           PFmil_print (
+                               PFmil_lit_str (
+                                   "Query time (in msec)")),
+                           PFmil_print (
+                               PFmil_var (
+                                   PF_MIL_VAR_TIME_QUERY)),
+                           PFmil_print (
+                               PFmil_lit_str (
+                                   "Serialization time (in msec)")),
+                           PFmil_print (
+                               PFmil_var (
+                                   PF_MIL_VAR_TIME_PRINT)));
+    }
+    
     if (status->dead_code_el) {
         tm = PFtimer_start ();
 
@@ -518,7 +541,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
    
         tm = PFtimer_stop (tm);
         if (status->timing)
-            PFlog ("dead code elimination:\t\t %s", PFtimer_str (tm));
+            PFlog ("dead code elimination:\t\t\t %s", PFtimer_str (tm));
     }
 
     STOP_POINT(19);
@@ -533,13 +556,19 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         goto failure;
 
     if (status->timing)
-        PFlog ("MIL code serialization:\t\t %s", PFtimer_str (tm));
+        PFlog ("MIL code serialization:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(20);
 
     /* Print MIL program to pfout */
     if (mil_program)
         PFmilprint (pfout, mil_program);
+
+    if (status->timing) {
+        PFlog ("----------------------------------------------");
+        tm_first = PFtimer_stop (tm_first);
+        PFlog ("overall compilation time:\t\t %s", PFtimer_str (tm_first));
+    }
 
  bailout:
     /* print abstract syntax tree if requested */

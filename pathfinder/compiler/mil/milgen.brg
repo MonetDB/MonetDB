@@ -1084,7 +1084,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1:
         {
             mvar_t *intVAL, *dblVAL, *decVAL, *strVAL;
-            mvar_t *item, *kind, *err;
+            mvar_t *item, *kind, *err, *time;
             PFalg_simple_type_t ty;
             bool sorted = false;
             PFalg_att_t pa_item = p->sem.serialize.item;
@@ -1105,6 +1105,10 @@ reduce (PFpa_op_t * p, int goalnt)
             reduce (kids[1], nts[1]);
             reduce (kids[0], nts[0]);
 
+            /* add timing information */
+            time = new_var (1);
+            execute (assgn (var (time->name), usec ()));
+            
             /* Set up all the value containers for print_result().
              * (It is actually too much overhead to introduce the value
              * containers just for printing. But this way we can re-use
@@ -1501,6 +1505,13 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (item, 1);
             unpin (kind, 1);
 
+            /* add timing information */
+            execute (
+                assgn (var (PF_MIL_VAR_TIME_PRINT),
+                       sub (usec (),
+                            var (time->name))));
+            unpin (time, 1);
+
             /* make the old mil program the active one */
             bodymilprog = milprog;
             milprog = oldmilprog;
@@ -1523,7 +1534,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 2:
         {
             mvar_t *intVAL, *dblVAL, *decVAL, *strVAL;
-            mvar_t *item, *kind, *err;
+            mvar_t *item, *kind, *err, *time;
             PFmil_t *oldmilprog, *bodymilprog;
 
             /* save the current mil program */
@@ -1534,6 +1545,10 @@ reduce (PFpa_op_t * p, int goalnt)
            
             reduce (kids[0], nts[0]);
 
+            /* add timing information */
+            time = new_var (1);
+            execute (assgn (var (time->name), usec ()));
+            
             /* Set up all the value containers for print_result().
              * (It is actually too much overhead to introduce the value
              * containers just for printing. But this way we can re-use
@@ -1584,6 +1599,13 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (strVAL, 1);
             unpin (item, 1);
             unpin (kind, 1);
+
+            /* add timing information */
+            execute (
+                assgn (var (PF_MIL_VAR_TIME_PRINT),
+                       sub (usec (),
+                            var (time->name))));
+            unpin (time, 1);
 
             /* make the old mil program the active one */
             bodymilprog = milprog;
@@ -3426,32 +3448,47 @@ reduce (PFpa_op_t * p, int goalnt)
         /* FragRel:  doc_tbl (Rel) */
         case 100:
         {
-             /* copy the iter BAT */
-             mvar_t *iter = env_mvar (L(p)->env, p->sem.ii.iter, aat_nat);
+            mvar_t *time;
+            
+            /* copy the iter BAT */
+            mvar_t *iter = env_mvar (L(p)->env, p->sem.ii.iter, aat_nat);
 
-             env_add (p->env, p->sem.ii.iter, aat_nat, iter);
-             pin (iter, p->refctr);
+            env_add (p->env, p->sem.ii.iter, aat_nat, iter);
+            pin (iter, p->refctr);
 
-             /* temporary variable */
-             mvar_t *v = new_var (1);
-             /* result BATs */
-             mvar_t *frag = new_var (p->refctr);
-             mvar_t *pre  = new_var (p->refctr);
+            /* add timing information */
+            time = new_var (1);
+            execute (assgn (var (time->name), usec ()));
+            
+            /* temporary variable */
+            mvar_t *v = new_var (1);
+            /* result BATs */
+            mvar_t *frag = new_var (p->refctr);
+            mvar_t *pre  = new_var (p->refctr);
 
-             env_add (p->env, p->sem.ii.item, aat_pre, pre);
-             env_add (p->env, p->sem.ii.item, aat_pfrag, frag);
+            env_add (p->env, p->sem.ii.item, aat_pre, pre);
+            env_add (p->env, p->sem.ii.item, aat_pfrag, frag);
 
-             execute (
-                  assgn (var (v->name),
-                         doc_tbl (var (PF_MIL_VAR_WS),
-                                  VAR (L(p)->env, p->sem.ii.item, aat_str))),
-                  assgn (var (PF_MIL_VAR_WS), 
-                         fetch (var (v->name), lit_int (0))),
-                  assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                  assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
-                  );
+            execute (
+                 assgn (var (v->name),
+                        doc_tbl (var (PF_MIL_VAR_WS),
+                                 VAR (L(p)->env, p->sem.ii.item, aat_str))),
+                 assgn (var (PF_MIL_VAR_WS), 
+                        fetch (var (v->name), lit_int (0))),
+                 assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
+                 assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
+                 );
 
-             unpin (v, 1);
+            unpin (v, 1);
+            
+            /* add timing information */
+            execute (
+                assgn (var (PF_MIL_VAR_TIME_LOAD),
+                       add (var (PF_MIL_VAR_TIME_LOAD),
+                            sub (usec (),
+                                 var (time->name)))));
+            unpin (time, 1);
+
         } break;
 
         /* Rel:      doc_access (FragList, Rel) */
@@ -5075,6 +5112,8 @@ label (PFpa_op_t *p)
 PFmil_t *
 PFmilgen (PFpa_op_t *n)
 {
+    PFmil_t *bodymilprog;
+
     assert (n);
 
     /* set counters in algebra tree nodes */
@@ -5112,10 +5151,50 @@ PFmilgen (PFpa_op_t *n)
         }
 #endif
 
+    bodymilprog = milprog;
+    
+    milprog = seq (module (lit_str ("pathfinder")),
+                   /* add timing information */
+                   declare (var (PF_MIL_VAR_TIME_LOAD)),
+                   declare (var (PF_MIL_VAR_TIME_QUERY)),
+                   declare (var (PF_MIL_VAR_TIME_PRINT)),
+                   assgn (var (PF_MIL_VAR_TIME_LOAD), lit_int (0)),
+                   assgn (var (PF_MIL_VAR_TIME_PRINT), lit_int (0)),
+                   assgn (var (PF_MIL_VAR_TIME_QUERY), usec ()));
+    
     /* prepend variable declarations before the actual program */
     for (unsigned int i = 0; i < PFarray_last (mvars); i++)
-        milprog = seq (declare (var (((mvar_t *) PFarray_at (mvars, i))->name)),
-                       milprog);
+        milprog = seq (milprog, 
+                       declare (
+                           var (((mvar_t *) PFarray_at (mvars, i))->name)));
+
+    milprog = seq (milprog,
+                   bodymilprog,
+                   /* add timing information */
+                   assgn (var (PF_MIL_VAR_TIME_QUERY),
+                          sub (usec (),
+                               var (PF_MIL_VAR_TIME_QUERY))),
+                   assgn (var (PF_MIL_VAR_TIME_QUERY),
+                          sub (var (PF_MIL_VAR_TIME_QUERY),
+                               var (PF_MIL_VAR_TIME_LOAD))),
+                   assgn (var (PF_MIL_VAR_TIME_QUERY),
+                          sub (var (PF_MIL_VAR_TIME_QUERY),
+                               var (PF_MIL_VAR_TIME_PRINT))),
+                   assgn (var (PF_MIL_VAR_TIME_LOAD),
+                          div (
+                              cast (type (m_dbl),
+                                    var (PF_MIL_VAR_TIME_LOAD)),
+                              lit_dbl (1000.0))),
+                   assgn (var (PF_MIL_VAR_TIME_QUERY),
+                          div (
+                              cast (type (m_dbl),
+                                    var (PF_MIL_VAR_TIME_QUERY)),
+                              lit_dbl (1000.0))),
+                   assgn (var (PF_MIL_VAR_TIME_PRINT),
+                          div (
+                              cast (type (m_dbl),
+                                    var (PF_MIL_VAR_TIME_PRINT)),
+                              lit_dbl (1000.0))));
 
     return milprog;
 }
