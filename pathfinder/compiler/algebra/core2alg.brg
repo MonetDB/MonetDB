@@ -1868,9 +1868,13 @@ reduce (PFcnode_t * p, int goalnt)
 #define DELTA 1
 #define TC 2
 #define IFP 0 /* choose 0 to ensure that the loop mapping is discarded */
+/* different strategies to include the seed */
+#define STAR 3
+#define PLUS 4
              
 /* choose strategy */
 #define STRATEGY IFP
+#define RESULT STAR
 
             unsigned int   i;
             PFla_op_t     *base_x, *base_res;
@@ -1915,7 +1919,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* create a new result base */
             base_res = rec_base (res_schema);
 
-#if STRATEGY == IFP
+#if RESULT == STAR
             /* ensure that res_seed is also used
                for the strategy IFP */
             (void) res_seed;
@@ -2016,13 +2020,13 @@ reduce (PFcnode_t * p, int goalnt)
                                             base_x),
                                         rec_param (
                                             rec_arg (
-#if STRATEGY == IFP
+#if RESULT == STAR
                                                 project (A(RL(p)).rel,
                                                          proj (att_iter, 
                                                                att_iter),
                                                          proj (att_item,
                                                                att_item)),
-#else /* STRATEGY == TC || STRATEGY == DELTA */
+#else /* PLUS */
                                                 res_seed,
 #endif
                                                 res,
