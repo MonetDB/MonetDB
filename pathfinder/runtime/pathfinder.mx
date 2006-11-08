@@ -63,7 +63,6 @@
 .END pathfinder;
 @mil
 if (clientid() != 0) {
-    drop("_pathfinder");
     ERROR("pathfinder module must be loaded in Mserver console first.");
 }
 module(mapi);       # remote client access
@@ -464,8 +463,30 @@ const logger_bats := new(void, str, 21).seqbase(0@0)
 	.append("_qn_prefix_uri_loc")
 	.append("_qn_histogram");
 
+PROC pf_checkpoint(BAT[void,str] commitBAT) : bit 
+{
+    if (count(commitBAT) = 0) return false;
+    commitBAT := commitBAT.access(BAT_WRITE);
+    commitBAT.append("xquery_catalog");
+    commitBAT.append("xquery_seqs");
+    commitBAT.append("xquery_snapshots");
+    commitBAT.append("collection_name");
+    commitBAT.append("collection_size");
+    commitBAT.append("doc_name");
+    commitBAT.append("doc_location");
+    commitBAT.append("doc_collection");
+    commitBAT.append("doc_timestamp");
+    commitBAT.append("uri_lifetime");
+    var ok := false;
+    lock_set(pf_wal);
+    CATCH(ok := subcommit(commitBAT));
+    lock_unset(pf_wal);
+    if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
+    return true;
+}
+
 # the logger background thread
-PROC xquery_logmanager() : void {
+PROC pf_logmanager() : void {
     var cnt := 0;
     while(true) {
         if ((logger_changes(pf_logger) > 100000) and ((cnt :+= 1) <= 10)) { 
@@ -478,7 +499,7 @@ PROC xquery_logmanager() : void {
         sleep(90);  
     }
 }
-fork(xquery_logmanager());
+fork(pf_logmanager());
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -513,9 +534,8 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location    := new(oid,str).persists(true).rename("doc_location");
     doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
     uri_lifetime    := new(str,lng).persists(true).rename("uri_lifetime");
-}
-if (not(doc_collection.exist(TEMP_DOC))) {
     doc_collection.insert(TEMP_DOC, DOCID_MIN); # hack: store next oid as in invalid TEMP_DOC tuple
+    pf_checkpoint(bat(void,str).append("uri_lifetime"));
 }
 
 # runtime collection acccess control (TRANSIENT)
@@ -1819,39 +1839,6 @@ PROC ws_newnids(BAT[void, BAT] ws,
 } 
 
 
-@- commit stuff 
-
-Update queries use the WAL for committing their changes rapidly in a single bulk I/O.
-They leave the modified master BATs dirty.
-
-A checkpointing mechanism flushes the BATs to disk periodically (or forced when under 
-memory pressure -- but performance-wise it is better to do it pro-actively).
-
-The shredding of new documents uses checkpointing (i.e. direct flush and no WAL) 
-directly. This is a reason why update-queries may not contain fn:add_doc() or fn:del_doc()
-statements; such queries would need two different kinds of commits, making them non-atomic.
-@mil
-PROC pf_checkpoint(BAT[void,str] commitBAT) : bit 
-{
-    if (count(commitBAT) = 0) return false;
-    commitBAT := commitBAT.access(BAT_WRITE);
-    commitBAT.append("xquery_catalog");
-    commitBAT.append("xquery_seqs");
-    commitBAT.append("xquery_snapshots");
-    commitBAT.append("collection_name");
-    commitBAT.append("collection_size");
-    commitBAT.append("doc_name");
-    commitBAT.append("doc_location");
-    commitBAT.append("doc_collection");
-    commitBAT.append("doc_timestamp");
-    commitBAT.append("uri_lifetime");
-    var ok := false;
-    lock_set(pf_wal);
-    CATCH(ok := subcommit(commitBAT));
-    lock_unset(pf_wal);
-    if (not(ok)) ERROR("XQDY0062: checkpoint failed, query aborted.\n");
-    return true;
-}
 
 
 @- adding documents
@@ -2147,9 +2134,9 @@ PROC shred_into_docBAT(BAT[str,bat] docBAT,
                        oid coll_oid, 
                        BAT[lock,bat] runtime,
                        oid docid_base, 
-                       bit doCommit, 
                        lng pageFree, 
                        timestamp ts, 
+                       bit doCommit, 
                        Stream s,
                        lng wsid) : oid
 {
@@ -2266,7 +2253,7 @@ PROC shred_doc_base(BAT[void,str] commitBAT,
         shred_into_docBAT(docBAT, 
                           idx.leftfetchjoin(idx_locations),
                           idx.leftfetchjoin(idx_names),
-                          colname, coll_oid, runtime, oid_nil, true, percentage, timestamp_nil, s, wsid);
+                          colname, coll_oid, runtime, oid_nil, percentage, timestamp_nil, true, s, wsid);
 
 	if (isnil(coll_oid)) {
             # register new bats with the logger
