@@ -39,6 +39,20 @@
 
 #include "oops.h"
 
+/**
+ * The MIL dead code elimination removes unnecessary operators and in
+ * addition has some sanity checks if debug mode is enabled.
+ * These sanity checks introduce additional recursive calls whenever
+ * all variables in its body are marked 'used' (and thus the recursive
+ * descent is avoided). They traverse the MIL tree without transformation
+ * (change = false) and rely in some situations on some MIL coding 
+ * convention (ensured only by a later phase). Otherwise they might hit
+ * an assignment which would break the DCE.
+ *
+ * The convention is that only the operators seq, catch (body arg), 
+ * if (then & else arg), and while (body arg) may contain assignments.
+ */
+
 static PFmil_t *
 mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 bool change);
@@ -78,7 +92,7 @@ reduce_expressions (PFmil_t *root,
             new_op = PFmil_seq (new_op, param_op);
     }
 
-    return new_op;
+    return change?new_op:root;
 }
 
 /** 
@@ -173,19 +187,20 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                  * like the one above).  As a sanity-check, test for
                  * situations like these.
                  */
-                PFmil_ident_t var1;
-                PFmil_ident_t var2;
+                PFmil_ident_t var;
 
-                if (var_duplication (rvalue, &var1)) {
+                if (var_duplication (rvalue, &var) ) {
                     /* Assignment is of the form x := y. Neither x nor y 
                        can be dirty */
-                    if (PFbitset_get (dirty_vars, var1)
-                            || (var_duplication (lvalue, &var2) 
-                                && PFbitset_get (dirty_vars, var2)))
+                    if (PFbitset_get (dirty_vars, var) ||
+                        PFbitset_get (dirty_vars, lvalue->sem.ident))
                         PFoops (OOPS_FATAL,
                                 "illegal combination of copy-by-reference "
                                 "and side-effects");
                 } 
+                
+                /* variable on the left side is clean */
+                PFbitset_set (dirty_vars, lvalue->sem.ident, false);
 #endif
 
                 if (!used) 
@@ -198,6 +213,11 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                                            used_vars,
                                            dirty_vars,
                                            change);
+#ifndef NDEBUG
+                else
+                    /* update dirty vars */
+                    mil_dce_worker (rvalue, used_vars, dirty_vars, false);
+#endif
 
                 /*
                  * assignment on used variable, mark all on the right
@@ -205,20 +225,13 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                  */
                 add_vars_to_used (rvalue, used_vars);
 
-#ifndef NDEBUG
-                /* variable on the left side is clean */
-                PFbitset_set (dirty_vars, lvalue->sem.ident, false);
-
-                /* update dirty vars */
-                mil_dce_worker (rvalue, used_vars, dirty_vars, change);
-#endif
-
                 return root;
             }
             break;
 
         case m_catch:
             {
+                PFmil_t  *new_child;
                 PFmil_t  *var = root->child[0];
                 PFmil_t  *body = root->child[1];
 
@@ -227,16 +240,17 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 /* The variable is set to true. */
                 PFbitset_set (used_vars, var->sem.ident, true);
 
-                /* try to find dead code in the body */ 
-                mil_dce_worker (body, used_vars, dirty_vars, change);
-
 #ifndef NDEBUG
                 /* variable on the left side is clean */
                 PFbitset_set (dirty_vars, var->sem.ident, false);
-
-                /* update dirty vars */
-                mil_dce_worker (body, used_vars, dirty_vars, change);
 #endif
+
+                /* try to find dead code in the body */ 
+                new_child = mil_dce_worker (body,
+                                            used_vars,
+                                            dirty_vars,
+                                            change);
+                if (change) root->child[1] = new_child;
 
                 return root;
             }
@@ -249,8 +263,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 /* all variables of the condition are used. */
                 add_vars_to_used (root->child[0], used_vars);
 
+#ifndef NDEBUG
                 /* update dirty vars */
-                mil_dce_worker (root->child[0], used_vars, dirty_vars, change);
+                mil_dce_worker (root->child[0], used_vars, dirty_vars, false);
+#endif
 
                 /*
                  * to find the used variables of a if-then-else block, we must 
@@ -305,12 +321,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 /* all variables of the condition are used. */
                 add_vars_to_used (root->child[0], used_vars);
 
+#ifndef NDEBUG
                 /* update dirty vars */
-                mil_dce_worker (root->child[0], used_vars, dirty_vars, change);
-
-                /* the variables of the condition are required
-                   for the next iteration */
-                add_vars_to_used (root->child[0], used_vars);
+                mil_dce_worker (root->child[0], used_vars, dirty_vars, false);
+#endif
 
                 /* ONLY collect the variables required for an iteration */
                 mil_dce_worker (root->child[1], used_vars, dirty_vars, false);
@@ -389,7 +403,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                             mil_dce_worker (root->child[i],
                                             used_vars, 
                                             dirty_vars,
-                                            change);
+                                            false);
 #endif
 
                         return root;
@@ -425,7 +439,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
             /* update dirty vars */
             for (unsigned int i = 0; i < MIL_MAXCHILD 
                     && root->child[i] != NULL; i++)
-                mil_dce_worker (root->child[i], used_vars, dirty_vars, change);
+                mil_dce_worker (root->child[i], used_vars, dirty_vars, false);
 #endif
             /* all variables in the parameter list are used. */
             add_vars_to_used (root, used_vars);
