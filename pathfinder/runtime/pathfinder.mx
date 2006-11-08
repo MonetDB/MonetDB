@@ -62,6 +62,10 @@
 
 .END pathfinder;
 @mil
+if (clientid() != 0) {
+    drop("_pathfinder");
+    ERROR("pathfinder module must be loaded in Mserver console first.");
+}
 module(mapi);       # remote client access
 module(pf_support);
 module(logger);
@@ -474,6 +478,7 @@ PROC xquery_logmanager() : void {
         sleep(90);  
     }
 }
+fork(xquery_logmanager());
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -565,10 +570,10 @@ collection_cleanup(_collection_cleanup());
 
 # start the background processes 
 xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
-fork(xquery_logmanager());
 mapi_register(xquery_frontend());
 if (not(mapi_running()))
-    fork(mapi_listen(int(monet_environment.find("mapi_port")), str_nil, 5, bit(monet_environment.find("xquery_open"))));
+    fork(mapi_listen(int(monet_environment.find("mapi_port")), str_nil, 5, false));
+
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
 PROC _collection_cleanup() : BAT[str,str]
@@ -1991,7 +1996,7 @@ PROC ws_open(BAT[void,BAT] ws,
 
 # fn:doc() support, optimized for loop-lifted execution (e.g. quickly open thousands of documents from a few collections)
 PROC ws_opendoc(BAT[void,BAT] ws,
-                BAT[void,str] idx_names) : BAT[oid,int]
+                BAT[void,str] idx_names) : BAT[oid,oid]
 {
     var idx_open  := idx_names.outerjoin(reverse(ws.fetch(OPEN_NAME))).tmark(0@0);
     var new_names := idx_open.uselect(oid_nil).mirror().leftfetchjoin(idx_names.tmark(0@0));
@@ -2013,14 +2018,15 @@ PROC ws_opendoc(BAT[void,BAT] ws,
 }
 
 # fn:collection(), get document nodes of all documents in a collection
-PROC ws_collection(BAT[void,BAT] ws, BAT[void,str] nms, BAT[oid,int] ret) : BAT[void,oid]
+PROC ws_collection(BAT[void,BAT] ws, BAT[any,str] nms, BAT[void,oid] map) : BAT[oid,oid]
 {
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var idx_names, err := CATCH(idx_names := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftfetchjoin(doc_name)); 
+    var idx_names, err := CATCH(idx_names := nms.tmark(0@0).leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftjoin(doc_name)); 
     lock_unset(pf_short);
-    ret.insert(ws_opendoc(ws, idx_names.tmark(0@0))); # ret = SECOND RESULT VALUE
-    return idx_names.hmark(0@0);
+    if (not(isnil(err))) ERROR(err);
+    map.append(idx_names.hmark(0@0)); # map = SECOND RESULT VALUE
+    return ws_opendoc(ws, idx_names.tmark(0@0)); 
 }
 
 # fn:collections(), get all collection *names*
@@ -2030,16 +2036,29 @@ PROC ws_collections(BAT[void,BAT] ws) : BAT[oid,str]
     lock_set(pf_short);
     var res, err := CATCH(res := reverse(reverse(collection_name).project(0@0)));
     lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
     return res;
 }
 
 # fn:documents(), get all document *names* in a collection
-PROC ws_documents(BAT[void,BAT] ws, BAT[void,str] coll_nme) : BAT[void,str]
+PROC ws_documents(BAT[void,BAT] ws, BAT[any,str] coll_nme) : BAT[void,str]
 {
     pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
     lock_set(pf_short);
-    var res, err := CATCH(res := coll_nme.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftfetchjoin(doc_name));
+    var res, err := CATCH(res := coll_nme.tmark(0@0).leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).leftjoin(doc_name));
     lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+    return res;
+}
+
+# fn:documents(), get all document *names* in a collection
+PROC ws_documents(BAT[void,BAT] ws) : BAT[void,str]
+{
+    pflock_meta(ws_id(ws)); # stop all concurrent shred_doc/del_doc activities
+    lock_set(pf_short);
+    var res, err := CATCH(res := doc_name.tmark(0@0));
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
     return res;
 }
 

@@ -190,16 +190,23 @@ PFfun_xquery_fo ()
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
             .ret_ty = PFty_stmt () } },
         .alg = PFbui_fn_doc }
+    , /* pf:documents () as string* */
+      { .ns = PFns_lib, .loc = "documents",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .ret_ty = PFty_star( PFty_xs_string ()) } } }
     , /* pf:documents (string*) as string* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_string ()) },
             .ret_ty = PFty_star( PFty_xs_string ()) } } }
-    , /* pf:collections (string*) as string* */
+    , /* pf:collections () as string* */
       { .ns = PFns_lib, .loc = "collections",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_none () },
             .ret_ty = PFty_star( PFty_xs_string ()) } } }
+    , /* fn:collection () as node* */
+      { .ns = PFns_fn, .loc = "collection",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .ret_ty = PFty_star( PFty_xs_anyNode ()) } } }
     , /* fn:collection (string*) as node* */
       { .ns = PFns_fn, .loc = "collection",
         .arity = 1, .sig_count = 1, .sigs = { {

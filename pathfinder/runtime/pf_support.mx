@@ -5973,24 +5973,24 @@ We have three hooks inserted in the MIL transaction mgmt code:
 The below mechanism ensures that:
 - when updating queries abort due to concurrency conflicts, they are restarted 
   and run in exclusive mode
-- after an abort we run not onbly that query, but a convoy of PF_CONVOY next updating 
+- after an abort we run not only that query, but a convoy of PF_CONVOY next updating 
   queries in exclusive mode. This to gracefully degrade (avoid thrashing) in updating 
   loads that are highly conflictive.
 
-Exclusive updating means that we need a Nreaders/single writer lock (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
-In normal mode, updating querying use the 'reading' path, that is, the first entering update
-acquires the writer lock, and the last leaving releases it. In exclusive mode, all updating 
-queries take the writer lock.
+Exclusive updating means that we need a counted/exclusive lock (PF_UPDATE_LOCK,PF_UPDATE_BARRIER)
+In normal mode, updating queries use the 'counting' path, that is, the first entering update
+acquires the exclusive lock, and the last leaving releases it. In exclusive mode, all updating 
+queries take the exclusive lock.
 
 Similarly, there is a protection against seeing an inconsistent meta-database state.
 Just before a query uses the documents()/collections() functions, all new incoming
-document managment queries (that shred and delete XML documents) are blocked,
+document management queries (that shred and delete XML documents) are blocked,
 and we must wait until all such active queries have finished.
 
-This is again implemented using a Nreaders/single writer lock (PF_META_LOCK,PF_META_BARRIER).
-The first docmgmt query acquires the barrier, and the last finishing releases it.
-A query that that calls pflock_meta() also must get this barrier, if it is the first to call it.
-When those queries do pflock_end() the last must free the lock, and thus must know which queries 
+This is again implemented using a counted/exclusive lock (PF_META_LOCK,PF_META_BARRIER).
+The first docmgmt query acquires the exclusive lock (barrier), and the last finishing releases it.
+A query that calls pflock_meta() also must get this barrier, if it is the first to call it.
+When those queries do pflock_end() the last must free the lock, and thus we must know which queries 
 have taken it (this is also needed for not asking it twice). 
 
 We store the information in the BAT 'ws_overlaps_ws' using [wsid,nil] BUNs.
