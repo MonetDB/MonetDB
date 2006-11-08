@@ -350,6 +350,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
             }
             break;
 
+        case m_module:
         case m_comment:
         case m_declare:
             /*
