@@ -927,7 +927,7 @@ was not in the database and the caching policy indicates that
 the document should be cached. 
 
 Note that we loop-lifted fn:doc() (ws_opendoc), in the sense that 
-each fn:doc() application will construct axactly one single collection 
+each fn:doc() application will construct exactly one single collection 
 with all documents that had to be shredded in the loop. A checkpoint
 is done only if these documents are exported visibly (to other queries) 
 in the database as cached URIs. This is determined by the caching rules. 

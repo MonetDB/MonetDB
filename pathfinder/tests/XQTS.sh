@@ -31,7 +31,7 @@ type -p MapiClient || {
 
 echo '1+2' | MapiClient -lx -sxml || {
 	echo 'MonetDB/XQuery server not running?'
-	echo 'Please start it with (e.g.) `Mserver --dbinit="module(pathfinder); pfstart();"`.'
+	echo 'Please start it with (e.g.) `Mserver --dbinit="module(pathfinder);"`.'
 	exit 1
 }
 

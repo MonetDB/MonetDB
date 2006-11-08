@@ -253,14 +253,14 @@ MonetDB/XQuery are the same, simply call
 
 ::
 
- Mserver --dbinit="module(pathfinder); mapi_start(); pfstart();"
+ Mserver --dbinit="module(pathfinder); mil_start();"
 
 In case you use different install (i.e., prefix) directories for MonetDB
 and MonetDB/XQuery, call
 
 ::
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB --dbinit="module(pathfinder); mapi_start(); pfstart();"
+ Mserver --set monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB --dbinit="module(pathfinder); mil_start();"
 
 Then, in a second shell, set up the same environment in preparation
 for the following steps.
