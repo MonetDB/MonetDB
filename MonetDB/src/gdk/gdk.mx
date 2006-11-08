@@ -1571,7 +1571,6 @@ gdk_export int BATmmap_pin(BAT *b);
 gdk_export int BATmmap_unpin(BAT *b);
 gdk_export int BATmadvise(BAT *b, int bn, int hh, int th );
 gdk_export int BATdelete(BAT *b);
-gdk_export void BATdeleteHash(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
