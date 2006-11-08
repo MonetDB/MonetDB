@@ -640,6 +640,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
 {
     var cnt := count(delBAT);
     if (bit(cnt)) {
+        var commitBAT := bat(void,str,cnt);
         var logger_delBAT := logger_bats.join(delBAT);
         if (logger_delBAT.count() > 0) {
             lock_set(pf_wal);
@@ -649,8 +650,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
             log_trans_end(pf_logger);
             lock_unset(pf_wal);
         }
-        var commitBAT := bat(void,str,cnt);
-        delBAT@batloop() {
+        delBAT.kdiff(reverse(logger_bats))@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
         pf_checkpoint(commitBAT);
