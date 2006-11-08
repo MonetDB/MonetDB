@@ -6429,33 +6429,59 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"collection")))
     {
-        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        item_ext = kind_str(rc);
-
+        if (fun->arity) {
+            rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+            item_ext = kind_str(rc);
+        }
         milprintf(f,
                 "{ # translate fn:collection (string) as node*\n"
-                "  var ret := bat(oid,int,10*count(ipik));\n"
-                "  var map := ws_collection(cont ws, item%s.materialize(ipik), ret);\n" 
+                "  var map := bat(void,oid).seqbase(0@0);\n");
+        if (fun->arity) { 
+            milprintf(f, 
+                "  var ret := ws_collection(ws, item%s.materialize(ipik), map);\n"
                 "  iter := map.leftfetchjoin(iter);\n"
-                "  item := ret.tmark(0@0);\n"
-                "  kind := ret.tmark(0@0).set_kind(ELEM);\n"
-                "  ipik := iter;\n"
+                "  item := ret.hmark(0@0);\n"
+                "  kind := ret.tmark(0@0).set_kind(ELEM);\n", (rc)?item_ext:val_join(STR));
+        } else {
+            milprintf(f, 
+                "  var ret := ws_collection(ws, collection_name, map);\n"
+                "  var loop := reverse(loop%03u).project(0@0);\n"
+                "  map := reverse(project(reverse(map),0@0));\n"
+                "  iter := loop.leftjoin(map).hmark(0@0);\n"
+                "  item := loop.leftjoin(reverse(ret.project(0@0))).tmark(0@0);\n"
+                "  kind := loop.leftjoin(reverse(reverse(ret.tmark(0@0).set_kind(ELEM)).project(0@0))).tmark(0@0);\n", cur_level);
+       }
+        milprintf(f, 
+                "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:collection (string) as node*\n", (rc)?item_ext:val_join(STR));
+                "} # end of translate fn:collection (string) as node*\n"); 
         return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_lib,"documents")))
     {
-        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        item_ext = kind_str(rc);
+        if (fun->arity) {
+            rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+            item_ext = kind_str(rc);
+        }
         milprintf(f,
-                "{ # translate pf:documents (string*) as string*\n"
+                "{ # translate pf:documents (string*) as string*\n");
+        if (fun->arity) {
+            milprintf(f, 
                 "  var ret := ws_documents(ws, item%s.materialize(ipik));\n"
                 "  item_str_ := ret.tmark(0@0);\n"
-                "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n"
-                "  ipik := iter;\n"
+                "  iter := ret.hmark(0@0).leftfetchjoin(iter);\n", (rc)?item_ext:val_join(STR));
+        } else {
+            milprintf(f, 
+                "  var ret := ws_documents(ws);\n"
+                "  var loop := reverse(loop%03u).project(0@0);\n"
+                "  ret := loop.leftjoin(reverse(project(reverse(ret),0@0)));\n"
+                "  item_str_ := ret.tmark(0@0);\n"
+                "  iter := ret.hmark(0@0);\n", cur_level);
+        }
+        milprintf(f,
+                "  ipik := item_str_;\n"
                 "  kind := STR;\n"
-                "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:documents (string?) as string*\n", (rc)?item_ext:val_join(STR));
+                "  pos  := tmark_grp_unique(iter,ipik);\n" 
+                "} # end of translate fn:documents (string?) as string*\n");
         if (code) return STR;
         addValues (f, str_container(), "item_str_", "item");
         return NORMAL;
@@ -6463,13 +6489,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         milprintf(f,
                 "{ # translate pf:collections () as string*\n"
-                "  var ret := loop%03u.project(0@0).leftjoin(ws_collections(ws));\n"
+                "  var ret := reverse(loop%03u).project(0@0).leftjoin(ws_collections(ws));\n"
                 "  iter := ret.hmark(0@0);\n"
                 "  ipik := iter;\n"
                 "  item_str_ := ret.tmark(0@0);\n"
                 "  kind := STR;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate fn:collections () as string*\n", counter);
+                "} # end of translate fn:collections () as string*\n", cur_level);
         if (code) return STR;
         addValues (f, str_container(), "item_str_", "item");
         return NORMAL;
@@ -10949,7 +10975,7 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(int statement_type) {
     return (statement_type==1)?
                (PF_STARTMIL_UPDATE):
-               (statement_type==1)?(PF_STARTMIL_NORMAL("0")):
+               (statement_type==0)?(PF_STARTMIL_NORMAL("0")):
                                    (PF_STARTMIL_NORMAL("3"));
 }
 
