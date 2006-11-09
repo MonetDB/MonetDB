@@ -111,6 +111,12 @@ typedef struct logger {
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
 	BAT *snapshots;	/* int, int the bid and tid of snapshot bat */
+/* TODO handle removed bats (commited snapshot removals) */
+
+	/* temporary bats for log restore, applied only on transaction end */
+	BAT *inserts;	/* tid, bat[str,tempbat] */
+	BAT *deletes;	/* tid, bat[str,tempbat] */
+	BAT *updates;	/* tid, bat[str,tempbat] */
 } logger;
 
 
@@ -268,6 +274,18 @@ log_read_clear(logger *logger, char *name)
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
 
+	/* do we need to skip these old updates */
+	if (BATcount(logger->snapshots)) {
+		BUN p = BUNfnd(logger->snapshots, &bid);
+		if (p) {
+			int tid = *(int*)BUNtloc(logger->snapshots, p);
+
+			if (logger->tid <= tid) 
+				return ;
+		}
+	}
+
+ 	b = BATdescriptor(bid);
 	if (b) {
 		BATclear(b);
 		logbat_destroy(b);
@@ -305,7 +323,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 		if (p) {
 			int tid = *(int*)BUNtloc(logger->snapshots, p);
 
-			if (logger->tid < tid) 
+			if (logger->tid <= tid) 
 				skip = 1;
 		}
 	}
@@ -347,7 +365,8 @@ log_read_updates(logger *logger, logformat *l, char *name)
 					BUNins(b, h, t, TRUE);
 				else if (l->flag == LOG_DELETE)
 					BUNdel(b, h, t, TRUE);
-				else if (l->flag == LOG_UPDATE) {
+				else if (l->flag == LOG_UPDATE) { 
+					/* the updates should be kept in seperate bats, and then applied when we hit a LOG_END */
 					if (BUNfnd(b, h) == NULL) {
 						/* if value doesn't exist, insert it
 						   if b void headed, maintain that by inserting nils */
@@ -502,7 +521,6 @@ logger_readlog(logger *logger, char *filename)
 
 	logger->log = open_rstream(filename);
 
-
 	/* if the file doesn't exist, there is nothing to be readback */
 	if (!logger->log || stream_errnr(logger->log)) {
 		if (logger->log)
@@ -617,6 +635,12 @@ logger_commit(logger *logger)
 
 	BUNdelHead(logger->seqs, &id, FALSE);
 	BUNins(logger->seqs, &id, &logger->id, FALSE);
+
+	/* cleanup old snapshots */
+	if (BATcount(logger->snapshots)) {
+		BATclear(logger->snapshots);
+		BATcommit(logger->snapshots);
+	}
 	return bm_commit(logger);
 }
 
@@ -725,12 +749,16 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	if (seqs == 0) {
 		logger->seqs = logbat_new(TYPE_int, TYPE_lng, 1);
 		BATmode(logger->seqs, PERSISTENT);
+	        snprintf(bak, BUFSIZ, "%s_seqs", fn);
+		BBPrename(logger->seqs->batCacheid, bak);
 		
 		logger_add_bat(logger, logger->seqs, "seqs");
 		BUNins(logger->seqs, &id, &logger->id, FALSE);
 
 		logger->snapshots = logbat_new(TYPE_int, TYPE_int, 1);
 		BATmode(logger->snapshots, PERSISTENT);
+	        snprintf(bak, BUFSIZ, "%s_snapshots", fn);
+		BBPrename(logger->snapshots->batCacheid, bak);
 		logger_add_bat(logger, logger->snapshots, "snapshots");
 		bm_subcommit(logger->catalog, logger->catalog);
 	} else {
@@ -963,8 +991,11 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (flag == LOG_USE) {
-		if (BUNfnd(logger->snapshots, &b->batCacheid)) 
+		if (BUNfnd(logger->snapshots, &b->batCacheid)) {
 			BUNdelHead(logger->snapshots, &b->batCacheid, FALSE);
+		} else {
+			BBPincref(b->batCacheid, TRUE);
+		}
 		BUNins(logger->snapshots, &b->batCacheid, &logger->tid, FALSE);
 		return LOG_OK;
 	}
@@ -992,11 +1023,19 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 int
 log_bat_transient(logger *logger, char *name)
 {
+	log_bid bid = logger_find_bat(logger, name);
 	logformat l;
 
 	l.flag = LOG_DESTROY;
 	l.nr = 0;
 	logger->changes++;
+
+	/* if this is a snapshot bat, we need to skip all changes */
+	if (BUNfnd(logger->snapshots, &bid)) {
+		BUNdelHead(logger->snapshots, &bid, FALSE);
+		BUNins(logger->snapshots, &bid, &logger->tid, FALSE);
+	}
+
 	if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
 		return LOG_ERR;
 
@@ -1134,21 +1173,6 @@ log_tstart(logger *logger)
 	l.flag = LOG_START;
 	l.nr = ++logger->tid;
 
-	/* cleanup old snapshots */
-#if 0
-	if (BATcount(logger->snapshots)) {
-		/* sub commit all new snapshots */
-		int nil = int_nil;
-		BAT *b = BATselect(logger->snapshots, &nil, &logger->tid);
-
-		BATdel(logger->snapshots, b, FALSE);
-		BBPunfix(b->batCacheid);
-		if (BATcount(logger->snapshots) == 0) 
-			BATclear(logger->snapshots);
-		BATcommit(logger->snapshots);
-	}
-#endif
-
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid);
 
@@ -1165,13 +1189,12 @@ log_tend(logger *logger)
 		fprintf(stderr, "log_tend %d\n", logger->tid);
 
 	/* first subcommit the snapshots */
-	if (BATcount(logger->snapshots)) {
+	if (DELTAdirty(logger->snapshots)) { 
 		/* sub commit all new snapshots */
 		BAT *b = BATselect(logger->snapshots, &logger->tid, &logger->tid);
 		res = bm_subcommit(b, logger->snapshots);
 		BBPunfix(b->batCacheid);
 	}
-
 	l.flag = LOG_END;
 	l.nr = logger->tid;
 	if (res || log_write_format(logger, &l) == LOG_ERR || 
