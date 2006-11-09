@@ -29,6 +29,9 @@ $SQL < benesamo.sql
 echo "bram adt test"
 $SQL < bram.sql
 
+echo "sander adt test"
+$SQL < sander.sql
+
 echo "slam adt test"
 $SQL < slam.sql
 
