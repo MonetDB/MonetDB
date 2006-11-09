@@ -181,9 +181,16 @@ CMDBATreduce(int *ret, int *bid)
 		return throwMessage("bbp.reduce", "Cannot access descriptor");
 
 	/* reduce memory footprint by dropping hashes 
-	this causes still some errors on TPCH
-	BATdeleteHash(b);
-	*/
+	of non-persistent bats */
+	if( !VIEWparent(b) && b->batSharecnt==0){
+#ifdef TRACE_ADVICE
+		if(b->hhash)
+			printf("found hhash %s %d\n",BBP_logical(b->batCacheid), (int)(BATcount(b) * sizeof(hash_t)));
+		if(b->thash)
+			printf("found thash %s %d\n",BBP_logical(b->batCacheid), (int)(BATcount(b) * sizeof(hash_t)));
+#endif
+		HASHdestroy(b);
+	}
 	BBPunfix(b->batCacheid);
 	*ret = 0;
 	return MAL_SUCCEED;
