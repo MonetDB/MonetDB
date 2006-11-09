@@ -938,7 +938,6 @@ TABLETstrFrStr(Column *c, char *s, char *e)
 		c->data = GDKrealloc(c->data,len); 
 	}
 
-	assert(s <= e);
 	if (s == e) {
 		*(char*)c->data = 0;
 	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) < 0) {
@@ -1282,8 +1281,8 @@ insert_line(Tablet * as, char *line)
 		sep1= fmt[i].sep[0];
 		/* skip until separator */
 		/* do not allow separators to start with ["' \t\r] */
-		for(e=line; *e; e++)
-			if( *e== '\\') 
+		for (e=line; *e; e++) {
+			if (*e == '\\') 
 				e++;
 			else
 			if( *e == sep1 &&
@@ -1291,7 +1290,7 @@ insert_line(Tablet * as, char *line)
 					strncmp(fmt[i].sep, e, fmt[i].seplen) == 0) ){
 					break;
 			}
-
+		}
 		while (*line && isspace((int) (*line)) ) 
 			line++;
 
