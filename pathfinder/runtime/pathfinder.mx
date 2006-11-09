@@ -1774,6 +1774,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
                 var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
                 var newpids := bat(void,oid);
                 while((new_pid :+= 1) < last_pid) newpids.append(oid(new_pid)); 
+                revert(newpids); # put in reverse order to give the pages out in order 
                 lock_set(coll_lock);
                 err := CATCH(pages_free.insert(newpids));
                 lock_unset(coll_lock);
@@ -1812,9 +1813,15 @@ PROC ws_newnids(BAT[void, BAT] ws,
             var nid_tgt := nid_cnt + cnt + (nid_cnt/16);
             var nid_off := nid_cnt;
             var empty_page_oid := empty_page.project(oid_nil);
-            while(nid_cnt < nid_tgt) {
+            var pgsz := int(REMAP_PAGE_SIZE);
+            if (nid_tgt < pgsz) {
+                # extend nid column of small documents by the amount needed, not more
+                nid_rid.append(empty_page_oid.slice(1, nid_tgt - nid_cnt), true);
+                nid_cnt := nid_tgt;
+            } else while(nid_cnt < nid_tgt) {
+                # append a whole number of pages
                 nid_rid.append(empty_page_oid, true);
-                nid_cnt :+= int(REMAP_PAGE_SIZE);
+                nid_cnt :+= pgsze;
             }
             newnids := newnids.access(BAT_WRITE);
             reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
@@ -1824,9 +1831,13 @@ PROC ws_newnids(BAT[void, BAT] ws,
             lock_unset(pf_short);
 
             if (isnil(err) and (nid_cnt > nid_off)) {
+                var delta := reverse(nid_rid.slice(nid_off,nid_cnt - 1));
+                # put nids in reverse order in the freelist, so they are given out in order
+                delta := delta.copy().access(BAT_WRITE).revert(); 
+
                 # add extra created NIDs to the freelist
                 lock_set(coll_lock);
-                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(reverse(nid_rid.slice(nid_off,nid_cnt - 1))));
+                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(delta));
                 lock_unset(coll_lock);
             }
         }
