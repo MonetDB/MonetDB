@@ -1,4 +1,4 @@
-CREATE USER "monet_test" WITH PASSWORD 'pass_test' NAME 'TEST USER' SCHEMA "sys";
+CREATE USER "monet_test" WITH PASSWORD 'pass_test' NAME 'TEST_USER' SCHEMA "sys";
 
 CREATE SCHEMA "test" AUTHORIZATION "monet_test";
 

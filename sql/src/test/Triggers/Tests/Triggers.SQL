@@ -18,23 +18,12 @@
 
 PWD=`pwd`
 SQL="MapiClient -lsql -umonetdb -Pmonetdb -h $HOST -p $MAPIPORT"
-SQL1="MapiClient -lsql -umonet_test -Ppass_test -h $HOST -p $MAPIPORT"
 
 #Generate Data...
 
 #Bulk-Load into SQL server...
 
-echo Dependencies between User and Schema
-$SQL < ${RELSRCDIR}/../dependency_owner_schema_1.sql
+echo Recursive triggers
+$SQL < ${RELSRCDIR}/../recursive_triggers.sql
 echo done
 
-$SQL1 < ${RELSRCDIR}/../dependency_owner_schema_2.sql
-echo done
-
-echo Dependencies between database objects
-$SQL < ${RELSRCDIR}/../dependency_DBobjects.sql
-echo done
-
-echo Cleanup
-$SQL < ${RELSRCDIR}/../dependency_owner_schema_3.sql
-echo done
