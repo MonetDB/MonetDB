@@ -42,7 +42,7 @@
 %apply (char *STRING, int LENGTH) {(const char *cmd, size_t size)};
 
 // This tells SWIG to treat char ** as a special case 
-%typemap(perl5,in) char ** { 
+%typemap(in) char ** { 
     AV *tempav; 
     I32 len; int i; 
     SV **tv; 
@@ -62,12 +62,12 @@
 }; 
 
 // This cleans up our char ** array after the function call 
-%typemap(perl5,freearg) char ** { 
+%typemap(freearg) char ** { 
     free($1);
 } 
 
 // Creates a new Perl array and places a char ** into it 
-%typemap(perl5,out) char ** { 
+%typemap(out) char ** { 
     AV *myav; 
     SV **svs; 
     int i = 0,len = 0; 
@@ -99,7 +99,7 @@
 // TODO:
 // %typemap(out) char * { }
 
-%typemap(perl5,in) FILE * {
+%typemap(in) FILE * {
     $1 = IoIFP(sv_2io($input));
 }
 
