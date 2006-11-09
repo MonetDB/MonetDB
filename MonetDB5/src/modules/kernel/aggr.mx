@@ -212,6 +212,9 @@ address AX3count_no_nil3;
 command count_no_nil(b:bat[:void,:any_1],g:bat[:void,:oid],e:bat[:void,:any_2])
 	:bat[:void,:int]
 address AX3count_no_nil3;
+command count_no_nil(b:bat[:void,:any_1],g:bat[:void,:oid],e:bat[:oid,:any_2])
+	:bat[:void,:int]
+address AX3count_no_nil3;
 @{
 @{
 @+ Implementation
