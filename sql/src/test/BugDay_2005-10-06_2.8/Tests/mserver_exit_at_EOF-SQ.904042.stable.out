@@ -10,7 +10,6 @@ stdout of test 'mserver_exit_at_EOF-SQ.904042` in directory 'src/test/BugDay_200
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(sql_server);
-sql_server_start();
 # EOF
 quit();
 

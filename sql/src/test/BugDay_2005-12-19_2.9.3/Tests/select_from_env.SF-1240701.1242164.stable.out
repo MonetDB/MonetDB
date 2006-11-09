@@ -50,9 +50,11 @@ Over..
 [ "sql_debug"	]
 [ "sql_logdir"	]
 [ "gdk_embedded"	]
+[ "mapi_open"	]
 [ "pf_httpd_port"	]
 [ "xquery_output"	]
 [ "xquery_cacheMB"	]
+[ "xquery_procMB"	]
 [ "xquery_logdir"	]
 [ "monet_cwd"	]
 

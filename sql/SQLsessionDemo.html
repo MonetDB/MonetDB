@@ -75,7 +75,7 @@ it needs to be installed separately (unless you did install the binary package o
 In this case, you need to tell the Mserver, where to find the sql_server module. You can do this by 
 adding the following commandline switch when starting the Mserver:
 <pre>
-$ Mserver --dbname=VOC --set monet_mod_path=$MONETDB_PREFIX/lib(64)/MonetDB:$SQL_PREFIX/lib(64)/MonetDB
+$ Mserver --dbname=VOC --set monet_mod_path=`monetdb-config --modpath`:$SQL_PREFIX/lib(64)/MonetDB:$SQL_PREFIX/lib(64)/MonetDB/lib
 </pre>
 $MONETDB_PREFIX & $SQL_PREFIX denote the pathes where MonetDB respectively SQL have been installed.
 Alternatively, you can add $SQL_PREFIX/lib(64)/MonetDB to the monet_mod_path in your MonetDB.conf file.

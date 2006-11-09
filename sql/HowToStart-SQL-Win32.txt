@@ -147,7 +147,7 @@ In the sql top-level directory issue the command
 
 ::
 
- Mtest.py --monet_mod_path=<monet-source>\NT\lib\MonetDB;<sql-source>\NT\lib\MonetDB --SQL_PREFIX=<sql-source>\NT --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-source>\NT --TSTTRGBASE=<sql-source>\NT -r
+ Mtest.py --monet_mod_path=<monet-source>\NT\lib\MonetDB;<monet-source>\NT\lib\MonetDB\lib;<sql-source>\NT\lib\MonetDB;<sql-source>\NT\lib\MonetDB\lib --SQL_PREFIX=<sql-source>\NT --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-source>\NT --TSTTRGBASE=<sql-source>\NT -r
 
 This should produce much the same output as nmake check above, but uses
 the installed version of MonetDB/SQL.
@@ -166,14 +166,14 @@ MonetDB/SQL are identical, simply call
 
 ::
 
- Mserver --dbinit="module(sql_server); sql_server_start();"
+ Mserver --dbinit="module(sql_server);"
 
 In case you use different install (i.e., prefix) directories of MonetDB
 and MonetDB/SQL, call
 
 ::
 
- Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB --dbinit="module(sql_server); sql_server_start();"
+ Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<monet-prefix>\lib\MonetDB\lib;<sql-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB\lib --dbinit="module(sql_server);"
 
 Then, in a second Windows command shell, set up the same environment
 and start the MonetDB SQL front end by calling

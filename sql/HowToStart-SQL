@@ -217,7 +217,7 @@ directory you specified as ``--prefix`` with ``sql``'s ``configure``,
 respectively.  Then, the test runs as follows from the ``sql``
 top-level directory::
 
- Mtest.py --monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB --SQL_PREFIX=<sql-prefix> --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-build> --TSTTRGBASE=<sql-prefix> -r
+ Mtest.py --monet_mod_path=`monetdb-config --modpath`:<sql-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB/lib --SQL_PREFIX=<sql-prefix> --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-build> --TSTTRGBASE=<sql-prefix> -r
 
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories ``var/dbfarm`` and ``Tests``.
@@ -237,14 +237,14 @@ MonetDB/SQL are the same, simply call
 
 ::
 
- Mserver --dbinit="module(sql_server); sql_server_start();"
+ Mserver --dbinit="module(sql_server);"
 
 In case you use different install (i.e., prefix) directories for MonetDB
 and MonetDB/SQL, call
 
 ::
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB --dbinit="module(sql_server); sql_server_start();"
+ Mserver --set monet_mod_path=`monetdb-config --modpath`:<sql-prefix>/lib(64)/MonetDB:<sql-prefix>/lib(64)/MonetDB/lib --dbinit="module(sql_server);"
 
 Then, in a second shell, set up the same environment and start the
 MonetDB/SQL front end by calling
@@ -268,7 +268,7 @@ After successful instalation of the SQL module, start MonetDB5 server by
 
 ::
 
- mserver5 --set monet_mod_path=<monetdb5-prefix>/lib(64)/MonetDB5:<sql-prefix>/lib(64)/MonetDB5
+ mserver5 --set monet_mod_path=<monetdb5-prefix>/lib(64)/MonetDB5:<monetdb5-prefix>/lib(64)/MonetDB5/lib:<sql-prefix>/lib(64)/MonetDB5:<sql-prefix>/lib(64)/MonetDB5/lib
  --dbinit="include sql;"
 
 
