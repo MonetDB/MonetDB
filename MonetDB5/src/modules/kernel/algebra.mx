@@ -2421,7 +2421,12 @@ str ALG@1(int *result, int *lid, int *rid) {
 		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
-	CMD@1(&bn,left, right);
+	if( CMD@1(&bn,left, right) == GDK_FAIL){
+		BBPreleaseref(left->batCacheid);
+		BBPreleaseref(right->batCacheid);
+		if( bn) BBPunfix(bn->batCacheid);
+		return throwMessage("algebra.@1", "GDKerror");
+	}
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	if( bn ) {
