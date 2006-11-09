@@ -1488,10 +1488,10 @@ PROC __runtime_newnids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void]
 {
     var free_nids := runtime.fetch(RT_NID_FREELIST);
     var i := count(free_nids);
-    
+free_nids.col_name("free_nids").print(); 
     # re-use a page from the list; or -if empty- append a new page
     if (i > 0) {
-        var ret := free_nids.slice(i - cnt, i - 1).copy();
+        var ret := free_nids.slice(max(0, i - cnt), i - 1).copy();
         free_nids.delete(ret);
         return ret;
     }
@@ -1797,6 +1797,7 @@ PROC ws_newnids(BAT[void, BAT] ws,
     lock_set(coll_lock);
     var newnids := empty_bat, err := CATCH(newnids := __runtime_newnids(runtime, cnt));
     lock_unset(coll_lock);
+newnids.col_name("newnids").print();
 
     if (isnil(err) and bit(cnt :-= count(newnids))) {
         # not enough free nids page: we must physically extend the nid_rid table 
@@ -1834,6 +1835,7 @@ PROC ws_newnids(BAT[void, BAT] ws,
                 var delta := reverse(nid_rid.slice(nid_off,nid_cnt - 1));
                 # put nids in reverse order in the freelist, so they are given out in order
                 delta := delta.copy().access(BAT_WRITE).revert(); 
+delta.col_name("delta").print();
 
                 # add extra created NIDs to the freelist
                 lock_set(coll_lock);
