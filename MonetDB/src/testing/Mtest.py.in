@@ -2102,9 +2102,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             PROLOGUE = " "+TST+".prologue5"
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
+
+	DBINIT=""
+        if os.path.isfile(TST+".dbinit"):
+            dbinit = TST+".dbinit"
+	    DBINIT = open(dbinit).readline().replace(os.linesep,'')
+
 	lang="mil"
+
         if SERVER == "MAPI":
-            Srvr = '%s --dbinit="module(mapi); mapi_start();"' % Srvr
+            Srvr = '%s --dbinit="%s module(mapi); mil_start();"' % (Srvr, DBINIT)
         if SERVER == "SQL":
 	    lang="sql"
             if env['VERSION'] >= 49900:
@@ -2113,10 +2120,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     source = ' language.source("%s");' % (os.path.join(env['TSTTRGDIR'],PROLOGUE[1:]))
                 Srvr = "%s --dbinit='include sql;%s'" % (Srvr,source)
             else:
-                Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
+                Srvr = '%s --dbinit="%s module(sql_server);"' % (Srvr, DBINIT)
         if SERVER == "XQUERY":
 	    lang="xquery"
-            Srvr = '%s --dbinit="module(pathfinder); pfstart();"' % Srvr
+            Srvr = '%s --dbinit="%s module(pathfinder);"' % (Srvr, DBINIT)
         if SERVER != "SQL"  or  env['VERSION'] < 49900:
             Srvr = Srvr+PROLOGUE
         #-background"

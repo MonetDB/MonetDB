@@ -379,31 +379,16 @@ if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
 yes-*-*)
 	dnl  GNU (gcc/g++)
-	dnl  We need more features than the C89 standard offers, but not all
-	dnl  (if any at all) C/C++ compilers implements the complete C99
-	dnl  standard.  Moreover, there seems to be no standard for the
-	dnl  defines that enable the features beyond C89 in the various
-	dnl  platforms.  Here's what we found working so far...
 	case "$gcc_ver-$host_os" in
 	*-cygwin*)
-		dnl  MonetDB/src/testing/Mtimeout.c fails to compile with
-		dnl  "--std=c99" as the compiler then refuses to recognize
-		dnl  the "sa_handler" member of the "sigaction" struct,
-		dnl  which is defined in an unnamed union in
-		dnl  /usr/include/cygwin/signal.h ...
-		CFLAGS="$CFLAGS -std=gnu99"
 		LDFLAGS="$LDFLAGS -no-undefined"
 		;;
 	*-mingw*)
 		dnl  On MinGW we need the -Wno-format flag since gcc
 		dnl  doesn't know about the %I64d format string for
 		dnl  long long
-		CFLAGS="$CFLAGS -std=gnu99"
 		X_CFLAGS="$X_CFLAGS -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
-		;;
-	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
-		CFLAGS="$CFLAGS -std=c99"
 		;;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
@@ -458,13 +443,6 @@ yes-*-*)
 -icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
- 	dnl  On 64-bit systems, icc 9.1 does not seem to find its own libraries,
- 	dnl  even if the respective directory is in LD_LIBRARY_PATH ...!??
- 	dnl  Explicitely listing it via -L.. with the linker call seems to help.
-	case $bits-$icc_ver in
-	64-9.*)	LDFLAGS="$LDFLAGS -L`type -p icc | sed 's|/bin/icc|/lib64|'`" ;;
-	*)	;;
-	esac
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
@@ -482,7 +460,7 @@ yes-*-*)
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -c99 -Wall -w2"
+	CFLAGS="$CFLAGS -Wall -w2"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	dnl  Let warning #266 "function declared implicitly" become an error.
 	X_CFLAGS="$X_CFLAGS -we266"
@@ -528,7 +506,6 @@ yes-*-*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
-	CFLAGS="$CFLAGS -c9x"
 	CC="$CC -fPIC"
 	;;
 -*-irix*)
@@ -545,6 +522,38 @@ AC_SUBST(NO_X_CFLAGS)
 dnl find out, whether the C compiler is C99 compliant
 AC_MSG_CHECKING([if your compiler is C99 compliant])
 have_c99=no
+
+dnl  We need more features than the C89 standard offers, but not all
+dnl  (if any at all) C/C++ compilers implements the complete C99
+dnl  standard.  Moreover, there seems to be no standard for the
+dnl  defines that enable the features beyond C89 in the various
+dnl  platforms.  Here's what we found working so far...
+
+case "$GCC-$CC-$host_os" in
+yes-*-*)
+	dnl  GNU (gcc/g++)
+	case "$gcc_ver-$host_os" in
+	*-cygwin*|*-mingw*)
+		dnl  MonetDB/src/testing/Mtimeout.c fails to compile with
+		dnl  "--std=c99" as the compiler then refuses to recognize
+		dnl  the "sa_handler" member of the "sigaction" struct,
+		dnl  which is defined in an unnamed union in
+		dnl  /usr/include/cygwin/signal.h ...
+		CFLAGS="$CFLAGS -std=gnu99"
+		;;
+	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
+		CFLAGS="$CFLAGS -std=c99"
+		;;
+	esac
+	;;
+-icc*-linux*|-ecc*-linux*)
+	CFLAGS="$CFLAGS -c99"
+	;;
+-pgcc*-linux*)
+	CFLAGS="$CFLAGS -c9x"
+	;;
+esac
+
 AC_TRY_COMPILE([], [
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 return 0;

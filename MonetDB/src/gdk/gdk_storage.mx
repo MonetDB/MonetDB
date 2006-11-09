@@ -681,29 +681,6 @@ files this means that we have to unload the BATs before deleting. This is
 enforced now.
 @{
 @c
-void
-BATdeleteHash(BAT *b){
-	str o = BBP_physical(ABS(b->batCacheid));
-
-	if (b->hheap) {
-		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
-			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
-				GDKwarning("BATdelete(%s): head heap\n", BATgetId(b));
-		} else {
-			HEAPfree(b->hheap);
-		}
-		b->hheap= NULL;
-	}
-	if (b->theap) {
-		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
-			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
-				GDKwarning("BATdelete(%s): tail heap\n", BATgetId(b));
-		} else {
-			HEAPfree(b->theap);
-		}
-		b->theap= NULL;
-	}
-}
 int
 BATdelete(BAT *b)
 {
@@ -733,7 +710,22 @@ BATdelete(BAT *b)
 	} else if (b->batBuns->base && !vv) {
 		HEAPfree(b->batBuns);
 	}
-	BATdeleteHash(b);
+	if (b->hheap) {
+		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
+			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
+				GDKwarning("BATdelete(%s): head heap\n", BATgetId(b));
+		} else {
+			HEAPfree(b->hheap);
+		}
+	}
+	if (b->theap) {
+		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
+			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
+				GDKwarning("BATdelete(%s): tail heap\n", BATgetId(b));
+		} else {
+			HEAPfree(b->theap);
+		}
+	}
 	b->batCopiedtodisk = FALSE;
 	return 0;
 }

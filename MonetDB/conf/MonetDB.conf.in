@@ -95,6 +95,8 @@ monet_daemon=no
 #====================================
 # default port to address an Mserver for a MIL session
 mapi_port=50000
+#allow MapiClient sessions from outside the server machine
+mapi_open=false                    
 # show all the MIL output?  (default: no)
 #mapi_noheaders=no
 # The MAPI debug level (should be disabled for normal use)
@@ -129,9 +131,6 @@ xquery_cacheMB=100
 
 #limit the function cache in memory to 64MB
 xquery_procMB=64                     
-
-#allow MapiClient sessions from outside the server machine
-xquery_open=false                    
 
 # Place to store transaction logs
 # The logs are typically stored on a different storage medium

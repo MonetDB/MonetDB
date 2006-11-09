@@ -372,7 +372,7 @@ gdk_mmap=33554432		# memory chunks of size >= 32M will be mmaped
 gdk_debug=0			# debug
 monet_prompt=>			# prompt 
 monet_welcome=yes		# Version and copyright information
-monet_mod_path=${exec_prefix}/lib(64)/MonetDB
+monet_mod_path=${exec_prefix}/lib(64)/MonetDB:${exec_prefix}/lib(64)/MonetDB/lib
 monet_deamon=no			# if yes, there is no interactive server console
 \end{verbatim}
 
@@ -492,10 +492,10 @@ We now load the modules {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} (
 \begin{verbatim}
 MonetDB>module(xtables);
 MonetDB>module(mapi); 
-MonetDB>mapi_start();
+MonetDB>mil_start();
 \end{verbatim}
 
-The {\tt @[<a href="../Modules/mapi/index.html">mapi_start()</a>@} mil proc from the {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} module forks a client listener. 
+The {\tt @[<a href="../Modules/mapi/index.html">mil_start()</a>@} mil proc from the {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} module registers the mil frontend. The server is now ready to accept clients using the mil language.
 
 We now open a new window and start the @[<a href="../Tools/MapiClient/index.html">MapiClient</a>@, telling it to connect
 to the same port number we passed to {\tt @[<a href="../Modules/mapi/index.html">listen()</a>@} on the local machine. This

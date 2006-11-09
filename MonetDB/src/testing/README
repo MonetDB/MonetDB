@@ -79,9 +79,12 @@ have changed since my proposal.
      (optional)                                             (TST.prelude)  (^,`)
   + a MAL script to be used as prelude for mserver5
      (optional)                                             (TST.prelude5) (^,`)
+  + for frontend tests, a MIL script to be used 
+     instead of the frontends dbinit script.
+     (optional)                                             (TST.dbinit) (^,`)
   + for MapiClient tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
-     mapi_start()/sql_server_start()/pfstart() is called, but before (the first)
+     dbinit is executed, but before (the first)
      MapiClient connects to Mserver
      (optional)                                             (TST.prologue) (^,`)
   + for SQL tests, a MAL script to be used as
@@ -120,15 +123,15 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --dbinit="module(mapi); mapi_start();" [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --dbinit="module(mapi); mil_start();" [TST.prologue] &
          MapiClient -lmil < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT --dbinit="module(sql_server); sql_server_start();" [TST.prologue] &
+  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT --dbinit="module(sql_server);" [TST.prologue] &
          MapiClient -lsql < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set xquery_port=$XQUERYPORT --dbinit="module(pathfinder); pfstart();" [TST.prologue] &
+  * Mserver --dbname=TSTDB --set xquery_port=$XQUERYPORT --dbinit="module(pathfinder);" [TST.prologue] &
          MapiClient -lxquery -oxml < TST[_(s|p)XX].xq
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]

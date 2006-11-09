@@ -144,6 +144,12 @@ typedef struct logger {
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
 	BAT *snapshots;	/* int, int the bid and tid of snapshot bat */
+/* TODO handle removed bats (commited snapshot removals) */
+
+	/* temporary bats for log restore, applied only on transaction end */
+	BAT *inserts;	/* tid, bat[str,tempbat] */
+	BAT *deletes;	/* tid, bat[str,tempbat] */
+	BAT *updates;	/* tid, bat[str,tempbat] */
 } logger;
 
 #include "logger.proto.h"
@@ -297,11 +303,23 @@ static void
 log_read_clear(logger *logger, char *name)
 {
 	log_bid bid = logger_find_bat(logger, name);
-	BAT *b = BATdescriptor(bid);
+	BAT *b;
 
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
 
+	/* do we need to skip these old updates */
+	if (BATcount(logger->snapshots)) {
+		BUN p = BUNfnd(logger->snapshots, &bid);
+		if (p) {
+			int tid = *(int*)BUNtloc(logger->snapshots, p);
+
+			if (logger->tid <= tid) 
+				return ;
+		}
+	}
+
+ 	b = BATdescriptor(bid);
 	if (b) {
 		BATclear(b);
 		logbat_destroy(b);
@@ -1007,8 +1025,11 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (flag == LOG_USE) {
-		if (BUNfnd(logger->snapshots, &b->batCacheid)) 
+		if (BUNfnd(logger->snapshots, &b->batCacheid)) {
 			BUNdelHead(logger->snapshots, &b->batCacheid, FALSE);
+		} else {
+			BBPincref(b->batCacheid, TRUE);
+		}
 		BUNins(logger->snapshots, &b->batCacheid, &logger->tid, FALSE);
 		return LOG_OK;
 	}
@@ -1036,11 +1057,19 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 int
 log_bat_transient(logger *logger, char *name)
 {
+	log_bid bid = logger_find_bat(logger, name);
 	logformat l;
 
 	l.flag = LOG_DESTROY;
 	l.nr = 0;
 	logger->changes++;
+
+	/* if this is a snapshot bat, we need to skip all changes */
+	if (BUNfnd(logger->snapshots, &bid)) {
+		BUNdelHead(logger->snapshots, &bid, FALSE);
+		BUNins(logger->snapshots, &bid, &logger->tid, FALSE);
+	}
+
 	if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
 		return LOG_ERR;
 
