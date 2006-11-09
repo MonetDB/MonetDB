@@ -1145,7 +1145,15 @@ others@batloop(){
 # BAT:		  tmp_45  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "malalgebra",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping malalgebra
 
@@ -1183,7 +1191,15 @@ others@batloop(){
 # h		t	  # name
 # str		void	  # type
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "logger",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping logger
 
@@ -1216,11 +1232,19 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_52  #
-# (str)	  (void)  #
-#-----------------#
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "lock", nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping lock
 
@@ -1256,7 +1280,15 @@ others@batloop(){
 # BAT:		  tmp_50  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "iterator",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping iterator
 
@@ -1293,8 +1325,16 @@ others@batloop(){
 # h		tmp_44	  # name
 # str		void	  # type
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "image",	  nil	  ]
 [ "url",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping image
 
@@ -1334,13 +1374,17 @@ others@batloop(){
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
 #-------------------------#
-[ "enum",	  nil	  ]
+[ "mapi",	  nil	  ]
 [ "streams",	  nil	  ]
+[ "enum",	  nil	  ]
 
-	dropping enum
+	dropping mapi
 
 
 	dropping streams
+
+
+	dropping enum
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1374,7 +1418,15 @@ others@batloop(){
 # BAT:		  tmp_52  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "decimal",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping decimal
 
@@ -1413,10 +1465,17 @@ others@batloop(){
 # BAT:		  tmp_45  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "xtables",	  nil	  ]
 [ "enum",	  nil	  ]
-[ "streams",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping ddbench
 
@@ -1425,9 +1484,6 @@ others@batloop(){
 
 
 	dropping enum
-
-
-	dropping streams
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1461,7 +1517,15 @@ others@batloop(){
 # BAT:		  tmp_49  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "counters",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping counters
 
@@ -1497,7 +1561,15 @@ others@batloop(){
 # h		tmp_45	  # name
 # str		void	  # type
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "color",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping color
 
@@ -1529,11 +1601,19 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_45  #
-# (str)	  (void)  #
-#-----------------#
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "blob", nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping blob
 
@@ -1569,7 +1649,15 @@ others@batloop(){
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "bitvector",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping bitvector
 
@@ -1605,7 +1693,15 @@ others@batloop(){
 # BAT:		  tmp_54  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "bitset",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping bitset
 
@@ -1641,7 +1737,15 @@ others@batloop(){
 # h		tmp_45	  # name
 # str		void	  # type
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "bat_mmath",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping bat_mmath
 
@@ -1677,7 +1781,15 @@ others@batloop(){
 # h		tmp_48	  # name
 # str		void	  # type
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "bat_cast",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping bat_cast
 
@@ -1713,7 +1825,15 @@ others@batloop(){
 # BAT:		  tmp_49  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "bat_arith",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping bat_arith
 
@@ -1750,13 +1870,17 @@ others@batloop(){
 # BAT:		  tmp_46  #
 # (str)		  (void)  #
 #-------------------------#
-[ "ascii_io",	  nil	  ]
+[ "mapi",	  nil	  ]
 [ "streams",	  nil	  ]
+[ "ascii_io",	  nil	  ]
 
-	dropping ascii_io
+	dropping mapi
 
 
 	dropping streams
+
+
+	dropping ascii_io
 
 #---------------------------------#
 # module		usage_count	  # name
@@ -1790,7 +1914,15 @@ others@batloop(){
 # h		tmp_43	  # name
 # str		void	  # type
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "array",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping array
 
@@ -1826,7 +1958,15 @@ others@batloop(){
 # BAT:		  tmp_45  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "alarm",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping alarm
 
@@ -1862,7 +2002,15 @@ others@batloop(){
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
 #-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "aggrX3",	  nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping aggrX3
 
@@ -1894,11 +2042,19 @@ others@batloop(){
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_54  #
-# (str)	  (void)  #
-#-----------------#
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "mapi",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "aggr", nil	  ]
+
+	dropping mapi
+
+
+	dropping streams
+
 
 	dropping aggr
 
