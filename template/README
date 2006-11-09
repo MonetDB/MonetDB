@@ -55,10 +55,11 @@ In case the compilation worked well, you can start MonetDB and load the
 "example" module as follows (assuming "Mserver" is reachable via your
 $PATH), e.g.:
 
-	Mserver --set monet_mod_path=`monetdb-config --modpath`:<PREFIX>/lib(64)/MonetDB/ --dbinit='module(example);'
+	Mserver --set monet_mod_path=`monetdb-config --modpath`:<PREFIX>/lib(64)/MonetDB:<PREFIX>/lib(64)/MonetDB/lib --dbinit='module(example);'
 
-Alternatively, you can add <PREFIX>/lib(64)/MonetDB/ to the "monet_mod_path" in
-your MonetDB config file.
+Alternatively, you can add
+<PREFIX>/lib(64)/MonetDB:<PREFIX>/lib(64)/MonetDB/lib
+to the "monet_mod_path" in your MonetDB config file.
 
 In case the <PREFIX> for the "example" module is identical with the prefix
 where MonetDB is installed, you don't have to set/edit the "monet_mod_path"

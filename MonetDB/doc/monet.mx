@@ -372,7 +372,7 @@ gdk_mmap=33554432		# memory chunks of size >= 32M will be mmaped
 gdk_debug=0			# debug
 monet_prompt=>			# prompt 
 monet_welcome=yes		# Version and copyright information
-monet_mod_path=${exec_prefix}/lib(64)/MonetDB
+monet_mod_path=${exec_prefix}/lib(64)/MonetDB:${exec_prefix}/lib(64)/MonetDB/lib
 monet_deamon=no			# if yes, there is no interactive server console
 \end{verbatim}
 
