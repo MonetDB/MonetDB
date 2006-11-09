@@ -169,10 +169,12 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						  They are recognized at compiletime using the bid
 						   property set by e.g. the sqloptimizer
 						*/
+/*
 						int *bid= (int*) getPropertyValue(v->props,"bid");
 						if(bid) 
 							@:releaseBATbyFunction()@
 						else
+*/
 							@:releaseBAT()@
 						actions++;
 					}
