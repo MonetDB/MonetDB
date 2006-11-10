@@ -49,6 +49,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* "at"-hint of the module that we are currently checking */
+static char *current_atURI = NULL;
+
 /* add a single user-defined function definition to the list */
 static void add_ufun (PFpnode_t *n);
 
@@ -240,8 +243,10 @@ add_ufun (PFpnode_t *n)
 static void
 add_ufuns (PFpnode_t *n)
 {
-    switch (n->kind) {
+    if (n->kind == p_lib_mod)
+        current_atURI = n->sem.str;
 
+    switch (n->kind) {
         case p_fun_decl:
             /* add this function */
             add_ufun (n);
@@ -433,7 +438,7 @@ fun_add_user (PFqname_t      qn,
               unsigned int   arity,
               PFvar_t      **params)
 {
-    PFfun_t      *fun = PFfun_new (qn, arity, false, 1, NULL, NULL, params);
+    PFfun_t      *fun = PFfun_new (qn, arity, false, 1, NULL, NULL, params, current_atURI);
     PFarray_t    *funs = NULL;
     unsigned int  i;
 
@@ -480,6 +485,8 @@ fun_add_user (PFqname_t      qn,
  * @param alg     In case of built-in functions, pointer to the
  *                routine that creates the algebra representation
  *                of the function. 
+ * @param atURI   URI of the module definition file, to which the
+ *                function belongs, given by the 'at'-hint.
  * @return a pointer to the newly allocated struct
  */
 PFfun_t *
@@ -491,7 +498,8 @@ PFfun_new (PFqname_t      qn,
            struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                       bool,
                                       struct PFla_pair_t *),
-           PFvar_t      **params)
+           PFvar_t      **params,
+           char          *atURI)
 {
     PFfun_t *n;
 
@@ -504,7 +512,8 @@ PFfun_new (PFqname_t      qn,
     n->params  = params;
     n->core    = NULL;      /* initialize Core equivalent with NULL */
     n->fid     = 0;         /* needed for summer branch */
-    n->sigs   = NULL;
+    n->sigs    = NULL;
+    n->atURI   = atURI;
 
     n->sig_count = sig_count;
     /* assert (sig_count); */
@@ -550,6 +559,7 @@ PFfun_check (PFpnode_t * root)
      */
     assert (root);
 
+    current_atURI = NULL; /* start with a fresh value */
     switch (root->kind) {
         case p_main_mod:
             assert (root->child[0]);
@@ -566,6 +576,7 @@ PFfun_check (PFpnode_t * root)
                     "illegal parse tree encountered during function checking.");
             break;
     }
+    current_atURI = NULL; /* clean up old value */
 
 #ifdef DEBUG_FUNCTIONS
     /* For debugging, print out all registered functions.  */

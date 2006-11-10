@@ -1696,6 +1696,7 @@ PFfun_xquery_fo ()
                                         xquery_fo[n].sig_count,
                                         xquery_fo[n].sigs,
                                         xquery_fo[n].alg,
+                                        NULL,
                                         NULL));
     }
 }

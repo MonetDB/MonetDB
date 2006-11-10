@@ -88,8 +88,13 @@ struct PFfun_t {
     struct PFla_pair_t (*alg) (const struct PFla_op_t *, bool, struct PFla_pair_t *);
     PFvar_t      **params;     /**< list of parameter variables */
     PFcnode_t     *core;
-    int            fid;        /**< id for variable environment mapping (summer_branch) */
-    char          *sig;        /**< milprint_summer: full signature converted to single identifier */	
+    int            fid;        /**< id for variable environment mapping
+                                 (summer_branch) */
+    char          *sig;        /**< milprint_summer: full signature
+                                 converted to single identifier */	
+    char          *atURI;      /**< URI given by the "at"-hint of the
+                                 module to which this function belongs,
+                                 if any */
 };
 
 /**
@@ -102,7 +107,7 @@ PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, unsigned int, PFfun_sig_t *,
                     struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                                bool,
                                                struct PFla_pair_t *),
-                    PFvar_t **params);
+                    PFvar_t **params, char *atURI);
 
 #endif   /* FUNCTIONS_H */
 
