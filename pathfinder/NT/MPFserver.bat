@@ -7,4 +7,4 @@ rem remove the final backslash from the path
 set MONETDB=%MONETDB:~0,-1%
 
 rem start the real server
-"%MONETDB%\Mserver.bat" --dbinit="module(pathfinder); mapi_register(xquery_frontend()); mapi_start();" %*
+"%MONETDB%\Mserver.bat" --dbinit="module(pathfinder); mil_start();" %*

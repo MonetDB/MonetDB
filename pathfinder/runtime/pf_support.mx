@@ -399,7 +399,8 @@ but does this in a single scan."
 .COMMAND pflock_begin(lng wsid) : void = CMDpflock_begin;
  "let a query (rdonly,docmgmt,update) enter the system"
 .COMMAND pflock_end(lng wsid) : void = CMDpflock_end;
- "a query (rdonly,docmgmt,update) leaves the system"
+ "a query (rdonly,docmgmt,update) leaves the system.
+  NOTE: you *must* have the short lock when executing this!!"
 .COMMAND pflock_meta(lng wsid) : void = CMDpflock_meta;
  "alert that query (rdonly,docmgmt,update) reads meta information"
 .COMMAND pflock_free(bit persistent) : bit = CMDpflock_free;
@@ -6076,7 +6077,6 @@ int CMDpflock_end(lng *wsid)
     int mode = ((*wsid) & (3LL << 30)) >> 30;
     lng nil = lng_nil;
 
-    MT_set_lock(PF_SHORT_LOCK, "pflock_end: shortLock");
     if (mode == PF_MODE_DOCMGT) {
         /* last docmgt function yields the meta barrier 
          */
@@ -6114,7 +6114,6 @@ int CMDpflock_end(lng *wsid)
                 MT_unset_lock(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
         }
     }
-    MT_unset_lock(PF_SHORT_LOCK, "pflock_end: shortLock");
     return GDK_SUCCEED;
 }
 

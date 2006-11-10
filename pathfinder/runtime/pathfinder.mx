@@ -79,8 +79,6 @@ if (standoff) {
     module("pf_standoff");
 }
 
-PROC pfstart() : void { } # deprecated
-
 # The XML Meta-Database #############################################################
 #
 # Global information on persistent stored XML collections:
@@ -500,10 +498,7 @@ PROC pf_logmanager() : void {
     }
 }
 # synchronize the starting of the log
-lock_set(pf_short);
-fork({ lock_unset(pf_short); pf_logmanager(); });
-lock_set(pf_short);
-lock_unset(pf_short);
+fork(pf_logmanager());
 
 # the set of document collections (may only be accessed holding pf_short)
 var collection_name;  # bat[oid,str] collection name 
@@ -595,12 +590,6 @@ collection_cleanup(_collection_cleanup());
 # start the background processes 
 xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
 mapi_register(xquery_frontend());
-if (not(mapi_running())) {
-    lock_set(pf_short);
-    fork({ lock_unset(pf_short); mapi_listen(int(monet_environment.find("mapi_port")), str_nil, 5, false); });
-    lock_set(pf_short);
-    lock_unset(pf_short);
-}
 
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
@@ -651,6 +640,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
 {
     var cnt := count(delBAT);
     if (bit(cnt)) {
+        var commitBAT := bat(void,str,cnt);
         var logger_delBAT := logger_bats.join(delBAT);
         if (logger_delBAT.count() > 0) {
             lock_set(pf_wal);
@@ -660,8 +650,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
             log_trans_end(pf_logger);
             lock_unset(pf_wal);
         }
-        var commitBAT := bat(void,str,cnt);
-        delBAT@batloop() {
+        delBAT.kdiff(reverse(logger_bats))@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
         pf_checkpoint(commitBAT);
@@ -938,7 +927,7 @@ was not in the database and the caching policy indicates that
 the document should be cached. 
 
 Note that we loop-lifted fn:doc() (ws_opendoc), in the sense that 
-each fn:doc() application will construct axactly one single collection 
+each fn:doc() application will construct exactly one single collection 
 with all documents that had to be shredded in the loop. A checkpoint
 is done only if these documents are exported visibly (to other queries) 
 in the database as cached URIs. This is determined by the caching rules. 
@@ -1785,6 +1774,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
                 var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
                 var newpids := bat(void,oid);
                 while((new_pid :+= 1) < last_pid) newpids.append(oid(new_pid)); 
+                revert(newpids); # put in reverse order to give the pages out in order 
                 lock_set(coll_lock);
                 err := CATCH(pages_free.insert(newpids));
                 lock_unset(coll_lock);
@@ -1823,9 +1813,15 @@ PROC ws_newnids(BAT[void, BAT] ws,
             var nid_tgt := nid_cnt + cnt + (nid_cnt/16);
             var nid_off := nid_cnt;
             var empty_page_oid := empty_page.project(oid_nil);
-            while(nid_cnt < nid_tgt) {
+            var pgsz := int(REMAP_PAGE_SIZE);
+            if (nid_tgt < pgsz) {
+                # extend nid column of small documents by the amount needed, not more
+                nid_rid.append(empty_page_oid.slice(1, nid_tgt - nid_cnt), true);
+                nid_cnt := nid_tgt;
+            } else while(nid_cnt < nid_tgt) {
+                # append a whole number of pages
                 nid_rid.append(empty_page_oid, true);
-                nid_cnt :+= int(REMAP_PAGE_SIZE);
+                nid_cnt :+= pgsze;
             }
             newnids := newnids.access(BAT_WRITE);
             reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
@@ -1835,9 +1831,13 @@ PROC ws_newnids(BAT[void, BAT] ws,
             lock_unset(pf_short);
 
             if (isnil(err) and (nid_cnt > nid_off)) {
+                var delta := reverse(nid_rid.slice(nid_off,nid_cnt - 1));
+                # put nids in reverse order in the freelist, so they are given out in order
+                delta := delta.copy().access(BAT_WRITE).revert(); 
+
                 # add extra created NIDs to the freelist
                 lock_set(coll_lock);
-                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(reverse(nid_rid.slice(nid_off,nid_cnt - 1))));
+                err := CATCH(reverse(runtime.fetch(RT_NID_FREELIST)).append(delta));
                 lock_unset(coll_lock);
             }
         }

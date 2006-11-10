@@ -233,7 +233,7 @@ specified as ``--prefix`` with ``pathfinder``'s ``configure``,
 respectively.  Then, the test runs as follows from the ``pathfinder``
 top-level directory::
 
- Mtest.py --monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB --PATHFINDER_PREFIX=<pathfinder-prefix> --TSTSRCBASE=<pathfinder-source> --TSTBLDBASE=<pathfinder-build> --TSTTRGBASE=<pathfinder-prefix> -r
+ Mtest.py --monet_mod_path=`monetdb-config --modpath`:<pathfinder-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB/lib --TSTSRCBASE=<pathfinder-source> --TSTBLDBASE=<pathfinder-build> --TSTTRGBASE=<pathfinder-prefix> -r
 
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories ``var/dbfarm`` and ``Tests``.
@@ -253,14 +253,14 @@ MonetDB/XQuery are the same, simply call
 
 ::
 
- Mserver --dbinit="module(pathfinder); mapi_start(); pfstart();"
+ Mserver --dbinit="module(pathfinder); mil_start();"
 
 In case you use different install (i.e., prefix) directories for MonetDB
 and MonetDB/XQuery, call
 
 ::
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB --dbinit="module(pathfinder); mapi_start(); pfstart();"
+ Mserver --set monet_mod_path=`monetdb-config --modpath`:<pathfinder-prefix>/lib(64)/MonetDB:<pathfinder-prefix>/lib(64)/MonetDB/lib --dbinit="module(pathfinder); mil_start();"
 
 Then, in a second shell, set up the same environment in preparation
 for the following steps.
