@@ -626,7 +626,8 @@ logger_readlog(logger *logger, char *filename)
 	logger_close(logger);
 
 	if (logger->intrans) 
-		return -1;
+		tr_abort(logger);
+
 	return 0;
 }
 
@@ -652,12 +653,7 @@ logger_readlogs(logger *logger, FILE *fp, char *filename)
 			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, logger->id);
 
 			if ((res = logger_readlog(logger, buf)) != 0) {
-				/* we cannot distinguish errors from 
-				   incomplete transactions (even if we 
-				   would log aborts in the logs). 
-				   So we simply abort and move to the next 
-				   log file */
-				tr_abort(logger);
+				break;
 			}
 		}
 	}
