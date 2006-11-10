@@ -288,6 +288,10 @@ if [ "${os}" = "Linux" ] ; then
 		# java in Konstanz
 		binpath="/net/lin_local/java/j2sdk1.4.2/bin:${binpath}"
 	fi
+	if [ -x /usr/java/jdk1.5.0_09/bin/javac -a -x /usr/java/jdk1.5.0_09/bin/jar ]; then
+		# java in muenchen
+		binpath="/usr/java/jdk1.5.0_09/bin:${binpath}"
+	fi
 	if [ -x /usr/local/bin/swig ]; then
 		conf_opts="${conf_opts} --with-swig=/usr/local/bin/swig"
 	fi
