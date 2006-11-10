@@ -1240,6 +1240,7 @@ int zero_or_one(ptr ret, BAT* b)
 		return GDK_FAIL;
 	}
 	if (ATOMvarsized(b->ttype)) {
+		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat*)p;
