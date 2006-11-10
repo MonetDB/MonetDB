@@ -6,3 +6,4 @@ RETURNS double
 CREATE FUNCTION radians(d double) 
 RETURNS double
 	RETURN d*pi()/180;
+
