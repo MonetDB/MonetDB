@@ -4720,7 +4720,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &t->sql, &t->aggr, &s->base.id);
+	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &sql, &aggr, &s->base.id);
 	if (t->res.type) {
 		char *name = "result";
 		oid id = next_oid();
