@@ -55,7 +55,7 @@
             tm = PFtimer_stop (tm);                                         \
                                                                             \
             if (timing)                                                     \
-                PFlog ("\tmap to original attribute names: %s",             \
+                PFlog ("   map to original attribute names:    %s",         \
                        PFtimer_str (tm));                                   \
                                                                             \
             unq_names = false;                                              \
@@ -74,7 +74,7 @@
             tm = PFtimer_stop (tm);                                         \
                                                                             \
             if (timing)                                                     \
-                PFlog ("\tresolve proxy operators:\t %s",                   \
+                PFlog ("   resolve proxy operators:\t    %s",               \
                        PFtimer_str (tm));                                   \
                                                                             \
             proxies_involved = false;                                       \
@@ -104,7 +104,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tcardinality optimization:\t %s",
+                    PFlog ("   cardinality optimization:\t    %s",
                            PFtimer_str (tm));
                 */
                 break;
@@ -119,7 +119,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tcomplex optimization:\t\t %s",
+                    PFlog ("   complex optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -132,7 +132,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tconstant optimization:\t\t %s",
+                    PFlog ("   constant optimization:\t    %s",
                            PFtimer_str (tm));
                 /* avoid adding attach nodes in the following
                    constant optimization runs */
@@ -148,7 +148,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tdomain optimization:\t\t %s",
+                    PFlog ("   domain optimization:\t\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -161,7 +161,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tgeneral optimization:\t\t %s",
+                    PFlog ("   general optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -174,7 +174,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\ticol optimization:\t\t %s",
+                    PFlog ("   icol optimization:\t\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -194,7 +194,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tequi-join pushdown:\t\t %s",
+                    PFlog ("   equi-join pushdown:\t\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -208,7 +208,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tkey optimization:\t\t %s",
+                    PFlog ("   key optimization:\t\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -223,7 +223,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tmvd optimization:\t\t %s",
+                    PFlog ("   mvd optimization:\t\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -237,7 +237,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\trequired value optimization:\t %s",
+                    PFlog ("   required value optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -248,7 +248,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
                                   true  /* dom */,
-                                  false /* icols */,
+                                  false /* icol */,
                                   true  /* key */,
                                   false /* ocols */, 
                                   false /* reqval */,
@@ -260,7 +260,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
                                   true  /* dom */,
-                                  true  /* icols */,
+                                  true  /* icol */,
                                   true  /* key */,
                                   true  /* ocols */, 
                                   true  /* reqval */,
@@ -270,7 +270,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tcomplete property inference:\t %s",
+                    PFlog ("   complete property inference:\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -288,7 +288,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tmap to unique attribute names:\t %s",
+                    PFlog ("   map to unique attribute names:   %s",
                            PFtimer_str (tm));
 
                 unq_names = true;
@@ -308,7 +308,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tmap to original attribute names: %s",
+                    PFlog ("   map to original attribute names: %s",
                            PFtimer_str (tm));
 
                 unq_names = false;
@@ -325,7 +325,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tintroduce proxy operators:\t %s",
+                    PFlog ("   introduce proxy operators:\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -338,7 +338,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("\tresolve proxy operators:\t %s",
+                    PFlog ("   resolve proxy operators:\t    %s",
                            PFtimer_str (tm));
                 break;
 
