@@ -312,6 +312,9 @@ m_export int DL_regfcn(void *tbl, ptr fcnptr, str name);
 #ifndef STATIC
 
 #ifdef HAVE_DLFCN_H
+# ifdef __APPLE__
+#  define DLOPEN_NO_WARN
+# endif
 # include <dlfcn.h>
 #endif
 
