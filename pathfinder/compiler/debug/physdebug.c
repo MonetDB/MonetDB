@@ -43,6 +43,7 @@
 /* #include "pfstrings.h" */
 #include "prettyp.h"
 #include "oops.h"
+#include "pfstrings.h"
 
 /** Node names to print out for all the Algebra tree nodes. */
 static char *a_id[]  = {
@@ -256,7 +257,7 @@ literal (PFalg_atom_t a)
             
         case aat_str:
         case aat_uA:
-            PFarray_printf (s, "\\\"%s\\\"", a.val.str);
+            PFarray_printf (s, "\\\"%s\\\"", PFesc_string (a.val.str));
             break;
 
         case aat_dec:
@@ -310,7 +311,7 @@ xml_literal (PFalg_atom_t a)
         PFarray_printf (
            s, "<value type=\"%s\">%s</value>",
            atomtype[a.type],
-           a.val.str);
+           PFesc_string (a.val.str));
     else if (a.type == aat_dec)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
