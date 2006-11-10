@@ -1,4 +1,0 @@
-import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at "$TSTSRCDIR/basicfunctions.xq";
-
-for $i in ("First", "Second")
-    return xrpc:concatStr("localhost", $i, " string.")
