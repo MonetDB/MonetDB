@@ -266,7 +266,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (b->ttype != TYPE_void)
 			f = *(oid*)BUNtloc(n, BUNfirst(n)); 
 
-		if (BATcount(b) == 0)
+		if (BATcount(b) == 0 && f != oid_nil)
 			BATseqbase(BATmirror(b), f);
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			if (b->htype != TYPE_void) {
