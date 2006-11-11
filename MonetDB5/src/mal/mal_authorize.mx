@@ -920,12 +920,12 @@ AUTHcypherValue(str *ret, str *value) {
  */
 str
 AUTHgetHashAlgorithms(str *ret) {
-	/* currently, two "hashes" are available, crypt and plain.  The
-	 * former is the UNIX crypt implementation, the latter is no hash at
-	 * all, as the name already suggests.  Future implementations could
-	 * include better hashes such as MD5, SHA-1, etc.
-	 * The return string should in such case more dynamically be built,
-	 * instead of hardcoded like here.
+	/* currently, four "hashes" are available, SHA-1, MD5, crypt and
+	 * plain.  Both "sha1" and "md5" are supported if OpenSSL is
+	 * available at compile time.  The same holds for "crypt", the UNIX
+	 * crypt implementation.  The last option, "plain" is not a hash at
+	 * all, but always available as it requires no modifications to the
+	 * password, i.e. it is send over in plain text.
 	 */
 	str t = alloca(sizeof(char) * BUFSIZ);
 	*t = '\0';
