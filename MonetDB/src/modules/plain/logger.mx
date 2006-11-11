@@ -359,7 +359,7 @@ la_bat_clear(logger *logger, logaction *la)
 }
 
 static int
-log_read_seq(logger *logger, trans *tr, logformat *l)
+log_read_seq(logger *logger, logformat *l)
 {
 	int seq = l->nr;
 	lng id;
@@ -532,6 +532,7 @@ la_bat_updates(logger *logger, logaction *la)
 static void
 log_read_destroy(logger *logger, trans *tr, char *name)
 {
+	(void)logger;
 	tr_grow(tr);
 	tr->changes[tr->nr].type = LOG_DESTROY;
 	tr->changes[tr->nr].name = GDKstrdup(name);
@@ -607,6 +608,7 @@ la_bat_create(logger *logger, logaction *la)
 static void
 log_read_use(logger *logger, trans *tr, logformat *l, char *name)
 {
+	(void)logger;
 	tr_grow(tr);
 	tr->changes[tr->nr].type = LOG_USE;
 	tr->changes[tr->nr].nr = l->nr;
@@ -814,7 +816,7 @@ logger_readlog(logger *logger, char *filename)
 				tr = tr_commit(logger, tr);
 			break;
 		case LOG_SEQ:
-			err = (log_read_seq(logger, tr, &l) != LOG_OK);
+			err = (log_read_seq(logger, &l) != LOG_OK);
 			break;
 		case LOG_INSERT:
 		case LOG_DELETE:
