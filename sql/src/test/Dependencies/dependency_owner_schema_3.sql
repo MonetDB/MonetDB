@@ -4,10 +4,6 @@ DROP SCHEMA test;
 
 DROP SCHEMA test_2;
 
-DROP USER monet_test;
-
-DROP SCHEMA test;
-
 --Schema s has a dependency on user u
 SELECT s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id;
 

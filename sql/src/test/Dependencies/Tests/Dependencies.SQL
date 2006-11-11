@@ -26,15 +26,15 @@ SQL1="MapiClient -lsql -umonet_test -Ppass_test -h $HOST -p $MAPIPORT"
 
 echo Dependencies between User and Schema
 $SQL < ${RELSRCDIR}/../dependency_owner_schema_1.sql
-echo step 1
+echo done
 
 $SQL1 < ${RELSRCDIR}/../dependency_owner_schema_2.sql
-echo step 2
+echo done
 
 echo Dependencies between database objects
 $SQL < ${RELSRCDIR}/../dependency_DBobjects.sql
-echo step 3
+echo done
 
 echo Cleanup
 $SQL < ${RELSRCDIR}/../dependency_owner_schema_3.sql
-echo step4
+echo done
