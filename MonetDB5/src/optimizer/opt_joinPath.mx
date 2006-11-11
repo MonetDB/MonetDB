@@ -170,13 +170,13 @@ enforce a proper join type list.
 str
 ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *joins[MAXARG], *b = 0;
+	BAT *joins[MAXARG], *tmp[MAXARG], *b = 0;
 	size_t estimate, e;
-	int top, i, j, ret = 0, *bid;
+	int fnd, top, ttop, i, j, ret = 0, *bid;
 
 	(void) mb;
 	(void) ret;
-	top = 0;
+	ttop= top = 0;
 #ifdef DEBUG_OPT_JOINPATH
 		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 #endif
@@ -222,9 +222,25 @@ may fire a BATproperty check in a few cases.
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
 		assert(b);
-		BBPreleaseref(joins[j]->batCacheid);
-		BBPreleaseref(joins[j + 1]->batCacheid);
+@-
+The new BAT is not part of the safe/restore list and we
+may have to remove it when it is not the final result
+@= releaseTmp
+		fnd=0;
+		for(i=0; i< ttop; i++)
+		if(tmp[i] && tmp[i] == joins[@1]){
+			/* stream_printf(GDKout,"release %s\n",BBP_logical(tmp[i]->batCacheid));*/
+			BBPdecref(tmp[i]->batCacheid, FALSE);
+			tmp[i]=0;
+			fnd++;
+		}
+		if( fnd == 0)
+			BBPreleaseref(joins[@1]->batCacheid);
+@c
+		@:releaseTmp(j)@
+		@:releaseTmp(j+1)@
 		joins[j] = b;
+		tmp[ttop++]= b;
 		top--;
 		for (i = j + 1; i < top; i++)
 			joins[i] = joins[i + 1];
@@ -233,8 +249,8 @@ may fire a BATproperty check in a few cases.
 	printf("final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
 	b = BATjoin(joins[0], joins[1], oid_nil);
-	BBPreleaseref(joins[0]->batCacheid);
-	BBPreleaseref(joins[1]->batCacheid);
+	@:releaseTmp(0)@
+	@:releaseTmp(1)@
 
 	assert(b);
 	BBPkeepref(b->batCacheid);

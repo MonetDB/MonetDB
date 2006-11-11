@@ -123,6 +123,27 @@ tables out of memory.
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
 }
+@-
+One of the sources for resource consumption are auxilary
+datastructures introduced to speed up an algorithm,
+e.g. building a hash-table.
+Since such structures are 'dirty' memory pages, they may
+become the target for forced write to disk.
+To void this situation, the garbage collector injects
+an early release of resources.
+This step is only take against private (=temporary)
+tables.
+@= releaseHash
+{
+	q= newInstruction(NULL,ASSIGNsymbol);
+	setModuleId(q,batRef);
+	setFunctionId(q,putName("reduce",6));
+	pushArgument(mb,q,getArg(p,j));
+	getArg(q,0) = newTmpVariable(mb,TYPE_any);
+	pushInstruction(mb,q);
+	typeChecker(s,mb,q,TRUE);
+	actions++;
+}
 @c
 static int
 OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -133,6 +154,7 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Client cntxt = MCgetClient();
 	Module s = cntxt->nspace;
 	int top = 0, blk = 1, actions = 0;
+	str joinPathRef= putName("joinPath",8);
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -169,15 +191,33 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						  They are recognized at compiletime using the bid
 						   property set by e.g. the sqloptimizer
 						*/
-/*
 						int *bid= (int*) getPropertyValue(v->props,"bid");
 						if(bid) 
 							@:releaseBATbyFunction()@
 						else
-*/
 							@:releaseBAT()@
 						actions++;
 					}
+				}
+			} else 
+			/* reduce the memory footprint  for non-target arguments */
+			if(getArg(p,0)!= j &&  isaBatType(getArgType(mb, p, j))) {
+				/* don't touch persistent (SQL) BATs */
+				int *bid= (int*) getPropertyValue(v->props,"bid");
+				if( !bid ){
+					if( getModuleId(p) == algebraRef  && 
+						( getFunctionId(p) == joinRef ||
+						  getFunctionId(p) == joinPathRef ||
+						  getFunctionId(p) == sortRef ||
+						  getFunctionId(p) == selectRef ||
+						  getFunctionId(p) == kdifferenceRef ||
+						  getFunctionId(p) == kunionRef ||
+						  getFunctionId(p) == semijoinRef ) )
+						@:releaseHash()@
+					if( getModuleId(p)== aggrRef)
+						@:releaseHash()@
+					if( getModuleId(p)== groupRef)
+						@:releaseHash()@
 				}
 			}
 			if (blockStart(p)) {

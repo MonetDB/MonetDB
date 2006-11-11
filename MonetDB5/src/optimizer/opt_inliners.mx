@@ -48,7 +48,7 @@ comment "Expand inline functions";
 @c
 #include "opt_inliners.h"
 
-int
+static int
 OPTinlinersImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
