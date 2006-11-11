@@ -325,8 +325,6 @@ log_write_string(logger *l, char *n)
 static void
 log_read_clear(logger *logger, trans *tr, char *name)
 {
-	log_bid bid = logger_find_bat(logger, name);
-
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
 
@@ -651,7 +649,6 @@ static trans *
 tr_find(trans *tr, int tid)
 /* finds the tid and reorders the chain list, puts trans with tid first */
 {
-	trans *tmp;
 	trans *t = tr, *p = NULL;
 
 	while(t && t->tid != tid) {
