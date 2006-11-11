@@ -401,19 +401,13 @@ public class MonetConnection implements Connection {
 		switch (version) {
 			default:
 				throw new SQLException("Unsupported protocol version: " + version);
-			case 4:
-				response = username + ":" + password + ":" + language;
-				if (blocked) response += ":blocked";
-				// don't use database
-				addWarning("database specifier not supported on this server (" + chaltok[2].trim() + "), protocol version " + version);
-			break;
-			case 5:
+			case 6:
 				response = username + ":" + password + ":" + language;
 				response += blocked ? ":blocked" : ":line";
 				response += ":" + database;
 			break;
-			case 6:
-				// proto 6 (finally) uses the challenge and works with a
+			case 7:
+				// proto 7 (finally) uses the challenge and works with a
 				// password hash.  The supported implementations come
 				// from the server challenge.  We chose the best hash
 				// we can find, in the order SHA1, MD5, plain.
