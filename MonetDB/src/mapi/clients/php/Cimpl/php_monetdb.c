@@ -239,6 +239,8 @@ static void _close_monetdb_plink(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 }
 /* }}} */
 
+#if 0
+	reserved for future use
 /* {{{ _php_monetdb_notice_handler
  */
 static void _php_monetdb_notice_handler(void *resource_id, const char *message)
@@ -256,6 +258,7 @@ static void _php_monetdb_notice_handler(void *resource_id, const char *message)
 	}
 }
 /* }}} */
+#endif
 
 #define PHP_MONETDB_NOTICE_PTR_DTOR (void (*)(void *))_php_monetdb_notice_ptr_dtor
 
