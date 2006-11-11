@@ -920,8 +920,10 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					limit= BBPsize;
 					i=1;
 				}
+				/* the 'dense' qualification only shows entries with a hard ref */
 				for (; i < limit; i++)
-					if (BBP_logical(i) && BBP_cache(i)) {
+					if (BBP_logical(i) && BBP_cache(i) ) {
+						if( *b=='d' && BBP_refs(i)==0) continue;
 						stream_printf(out, "[%d] %s lref = %d ref= %d ", 
 							i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
 						stream_printf(out, " dirty=%d", BATdirty(BBP_cache(i)));
