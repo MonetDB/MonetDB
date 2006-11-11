@@ -75,6 +75,9 @@ The server options have the following meaning:
 #include "mserver5.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
+#include <stdio.h>
+#include <errno.h>
+#include <string.h> /* strerror */
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
@@ -452,8 +455,40 @@ faster system start.
 	else
 		mo_print_options(set, setlen);
 #endif
-	if( monet_init(set, setlen) == 0 || mal_init())
+	if (monet_init(set, setlen) == 0 || mal_init())
 		return 0;
+	{
+		/* unlock the vault, first see if we can find the file which
+		 * holds the secret */
+		char* secret = alloca(sizeof(char) * 1024);
+		FILE* secretf;
+		size_t len;
+		
+		if (GDKgetenv("monet_vault_key") == NULL) {
+			/* use a default (hard coded, non safe) key */
+			secret = "Xas632jsi2whjds8";
+			fprintf(stderr, "#warning: please don't forget to set your "
+					"vault key!  (see MonetDB5.conf file)\n");
+		} else {
+			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
+				snprintf(secret, 1023, "unable to open vault_key_file %s: %s",
+						GDKgetenv("monet_vault_key"), strerror(errno));
+				secret[1023] = '\0';
+				GDKfatal(secret);
+			}
+			len = fread(secret, 1, 1023, secretf);
+			secret[len] = '\0';
+			len = strlen(secret); /* secret can contain null-bytes */
+			if (len < 5) {
+				fprintf(stderr, "#warning: your vault key is too short "
+						"(" SZFMT "), enlarge your vault key!\n",
+						len); /* penis */
+			}
+			fclose(secretf);
+		}
+		if ((err = AUTHunlockVault(&secret)) != MAL_SUCCEED)
+			GDKfatal(err);
+	}
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables()) != MAL_SUCCEED)
 		GDKfatal(err);

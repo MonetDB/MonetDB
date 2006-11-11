@@ -816,7 +816,8 @@ AUTHunlockVault(str *password) {
 	 * is not of real extra efforts to avoid a mem-leak if it is used
 	 * multiple times
 	 */
-	if (vaultKey != NULL) GDKfree(vaultKey);
+	if (vaultKey != NULL)
+		GDKfree(vaultKey);
 
 	vaultKey = GDKstrdup(*password);
 	return(MAL_SUCCEED);
@@ -848,8 +849,12 @@ AUTHdecypherValue(str *ret, str *value) {
 	int escaped = 0;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	str key = vaultKey == NULL ? "Xas632jsi2whjds8" : vaultKey;
-	int keylen = strlen(key);
+	int keylen = 0;
+
+	if (vaultKey == NULL)
+		throwMal("decypherValue", "The vault is still locked!");
+
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
@@ -861,7 +866,7 @@ AUTHdecypherValue(str *ret, str *value) {
 			*s -= 1;
 			escaped = 0;
 		}
-		*w = *s ^ key[(w - r) % keylen];
+		*w = *s ^ vaultKey[(w - r) % keylen];
 		w++;
 	}
 	*w = '\0';
@@ -883,13 +888,17 @@ AUTHcypherValue(str *ret, str *value) {
 	str s = *value;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	str key = vaultKey == NULL ? "Xas632jsi2whjds8" : vaultKey;
-	int keylen = strlen(key);
+	int keylen = 0;
+
+	if (vaultKey == NULL)
+		throwMal("decypherValue", "The vault is still locked!");
+
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with an 'one' char. */
 	for (; *s != '\0'; s++) {
-		*w = *s ^ key[(s - *value) % keylen];
+		*w = *s ^ vaultKey[(s - *value) % keylen];
 		if (*w == '\0') {
 			*w++ = '\1';
 			*w = '\1';

@@ -29,7 +29,6 @@ gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 gdk_dbname=demo			# default database to open
 
 gdk_version=4.99.19
-monet_welcome=yes       #Version and copyright information
 
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
@@ -90,8 +89,17 @@ gdk_debug=0
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@lib@PATHSEP@@libdir@@DIRSEP@@PACKAGE@@DIRSEP@bin
 # Start mserver in daemon mode, or start with MAL interactive interface?
 monet_daemon=no	
+# Display version and copyright information upon startup?
+monet_welcome=yes
+# Where is the file that stores the secret key to unlock the password
+# vault?  The file is read up to the first null-byte ('\0'), so you can
+# padd the file with trailing null-bytes to obfuscate the key length.
+# You can easily generate some key by running pwgen and adding a few of
+# the passwords generated.  Make sure not to make the key too small.
+# If you leave this unset, some default key is used.
+#monet_vault_key=${prefix}/etc/monetdb.secret
 
-#Mguardian section
+# Mguardian section
 #====================================
 delay=120		#waiting between pinging the server 
 # if the guardian process is running, it will automatically
