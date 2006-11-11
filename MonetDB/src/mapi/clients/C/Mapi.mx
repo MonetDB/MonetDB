@@ -691,6 +691,18 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 #ifdef NATIVE_WIN32
 #define strdup _strdup
 #endif
+
+#ifdef HAVE_CRYPT_H
+# include <crypt.h>
+#else
+# if defined(HAVE_CRYPT) && defined(__MINGW32__)
+_CRTIMP char * __cdecl crypt(const char *key, const char *salt);
+# endif
+#endif
+#ifdef HAVE_OPENSSL
+# include <openssl/sha.h>
+# include <openssl/md5.h>
+#endif
 @h
 #ifndef _MAPI_H_INCLUDED
 #define _MAPI_H_INCLUDED
@@ -2085,47 +2097,142 @@ mapi_start_talking(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-	if (pversion == 5) {
-		/* proto 5 has technically support for database, but it was
-		 * never really used in Mserver itself. */
+	if (pversion <= 5) {
+		/* because the headers changed, and because it makes no sense to
+		 * try and be backwards compatible, we bail out with a friendly
+		 * message saying so.
+		 */
+		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
+				"This client only supports version 6 and up.  "
+				"Sorry, can't help you here!", pversion);
+		mapi_setError(mid, buf,	"mapi_start_talking", MERROR);
+		return mid->error;
+	} else if (pversion == 6) {
+		/* proto 6 has technically support for database, but it was
+		 * never really used in Mserver itself, only M5 benefits from it */
 		snprintf(buf, BLOCK, "%s:%s:%s:%s\n",
 				mid->username,
 				mid->password,
 				mid->language,
 				(mid->blocked ? "blocked" : "linemode"));
-	} else if (pversion == 6) {
+	} else if (pversion == 7) {
+		char* hash = NULL;
 		/* the database has sent a list of supported hashes to us, it's
 		 * in the form of a comma separated list and in the variable
-		 * rest.  We only do plain text for now, so we just check
-		 * whether the server supports that */
-		if (strstr(rest, "plain") == NULL) {
+		 * rest.  We try to use the strongest algorithm.
+		 */
+		/* TODO: make this actually obey the separation by commas, and
+		 * only allow full matches */
+		if (1 == 0) { /* language construct issue */
+#ifdef HAVE_OPENSSL
+		} else if (strstr(rest, "SHA1") != NULL) {
+			/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
+			 * use in a string, a hexadecimal representation of the bit
+			 * sequence is used.
+			 */
+			unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
+			int len = strlen(mid->password) + strlen(chal);
+			char key[len];
+			strcpy(key, mid->password);
+			strncat(key, chal, strlen(chal));
+			SHA1((unsigned char*)key, len, md);
+			hash = malloc(sizeof(char) * (/*{SHA1}*/6 + 20 * 2 + 1));
+			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+					md[0], md[1], md[2], md[3], md[4],
+					md[5], md[6], md[7], md[8], md[9],
+					md[10], md[11], md[12], md[13], md[14],
+					md[15], md[16], md[17], md[18], md[19]
+				);
+		} else if (strstr(rest, "MD5") != NULL) {
+			/* The MD5 hash algorithm is a 128 bit hash.  In order to
+			 * use in a string, a hexadecimal representation of the bit
+			 * sequence is used.
+			 */
+			unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
+			int len = strlen(mid->password) + strlen(chal);
+			char key[len];
+			strcpy(key, mid->password);
+			strncat(key, chal, strlen(chal));
+			MD5((unsigned char*)key, len, md);
+			hash = malloc(sizeof(char) * (/*{MD5}*/5 + 16 * 2 + 1));
+			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x",
+					md[0], md[1], md[2], md[3],
+					md[4], md[5], md[6], md[7],
+					md[8], md[9], md[10], md[11],
+					md[12], md[13], md[14], md[15]
+				);
+#endif
+#ifdef HAVE_CRYPT
+		} else if (strstr(rest, "crypt") != NULL) {
+			/* The crypt hash algorithm uses UNIX crypt, a modification of
+			 * DES which uses a 2-char wide salt.  Because crypt only cares
+			 * about the first eight characters of the given password, the
+			 * challenge may not be taken into account at all.  As salt, the
+			 * last two characters of the challenge are used.
+			 */
+			char key[8]; /* NULL termination is not necessary */
+			char salt[3]; /* NULL termination is a necessity! */
+			str crypt;
+			int len;
+
+			/* prepare the key */
+			len = strlen(mid->password);
+			if (len >= 8) {
+				strncpy(key, mid->password, 8);
+			} else {
+				/* pad with the challenge, we know it is always 8+ chars */
+				strncpy(key, mid->password, len);
+				strncpy(key + len, chal, 8 - len);
+			}
+
+			/* prepare the salt */
+			len = strlen(chal);
+			salt[0] = chal[len - 2];
+			salt[1] = chal[len - 1];
+			salt[2] = '\0';
+
+			/* call crypt to do the work */
+			crypt = crypt(key, salt);
+			assert (crypt != NULL);
+			hash = malloc(sizeof(char) * (/*{crypt}*/7 + strlen(crypt) + 1));
+			sprintf(hash, "{crypt}%s", crypt);
+#endif
+		} else if (strstr(rest, "plain") != NULL) {
+			/* The plain text algorithm, doesn't really hash at all.  It's
+			 * the easiest algorithm, as it just appends the challenge to
+			 * the password and returns it.
+			 */
+			hash = malloc(sizeof(char) * (/*{plain}*/7 +
+						strlen(mid->password) + strlen(chal) + 1));
+			sprintf(hash, "%s%s", mid->password, chal);
+		}
+		/* could use else here, but below looks cleaner */
+		if (hash == NULL) {
+			/* the server doesn't support what we do (no plain?!?) */
 			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", rest);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
-		/* so, we send a plain text password response
-		 * note, database can be appended here (:database).  If we omit
+		
+		/* note: database can be appended here (:database).  If we omit
 		 * it we get the default (and don't get redirects) */
 		if (mid->database != NULL) {
-			snprintf(buf, BLOCK, "%s:{plain}%s%s:%s:%s:%s\n",
+			snprintf(buf, BLOCK, "%s:%s:%s:%s:%s\n",
 					mid->username,
-					mid->password,
-					chal,
+					hash,
 					mid->language,
 					(mid->blocked ? "blocked" : "linemode"),
 					mid->database);
 		} else {
-			snprintf(buf, BLOCK, "%s:{plain}%s%s:%s:%s\n",
+			snprintf(buf, BLOCK, "%s:%s:%s:%s\n",
 					mid->username,
-					mid->password,
-					chal,
+					hash,
 					mid->language,
 					(mid->blocked ? "blocked" : "linemode"));
 		}
-	} else {
-		snprintf(buf, BLOCK, "unsupported protocol version: %d", pversion);
-		close_connection(mid);
-		return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+		free(hash);
 	}
 	if (mid->trace == MAPI_TRACE) {
 		printf("sending first request [%d]:%s", BLOCK, buf);
