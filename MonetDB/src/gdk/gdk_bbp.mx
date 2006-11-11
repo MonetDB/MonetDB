@@ -1409,7 +1409,7 @@ BBPreleaseref(bat i)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-	if (i == bat_nil || BBP_lrefs(i)<= 0) 
+	if (i == bat_nil || BBP_lrefs(i)<= 0 || BBP_refs(i)<=0) 
 		return ;
 	if (i < 0)
 		i = -i;
