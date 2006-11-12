@@ -26,15 +26,14 @@ SQL1="MapiClient -lsql -umonet_test -Ppass_test"
 
 echo Dependencies between User and Schema
 $SQL < dependency_owner_schema_1.sql
-echo step 1
+echo done
 $SQL1 < dependency_owner_schema_2.sql
-echo step 2
+echo done
 
 echo Dependencies between database objects
 $SQL < dependency_DBobjects.sql
-echo step 3
+echo done
 
 echo Cleanup
 $SQL < dependency_owner_schema_3.sql
-echo step 4
-
+echo done

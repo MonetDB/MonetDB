@@ -1442,6 +1442,7 @@ zero_or_one(ptr ret, int *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	BBPreleaseref(b->batCacheid);
 	if (ATOMvarsized(b->ttype)) {
+		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat*)p;

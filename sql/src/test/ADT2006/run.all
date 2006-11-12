@@ -33,6 +33,9 @@ echo "sander adt test"
 $SQL < sander.sql
 
 echo "slam adt test"
+$SQL < sander.sql
+
+echo "slam adt test"
 $SQL < slam.sql
 
 echo "viss adt test"
