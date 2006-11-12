@@ -16,3 +16,5 @@ centuries later, so not much chance", "blah.jpg",
 "noone (yet :D)");
 
 select * from suspect;
+
+drop table suspect;
