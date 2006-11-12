@@ -1488,10 +1488,9 @@ PROC __runtime_newnids(BAT[lock,bat] runtime, int cnt) : BAT[oid,void]
 {
     var free_nids := runtime.fetch(RT_NID_FREELIST);
     var i := count(free_nids);
-    
     # re-use a page from the list; or -if empty- append a new page
     if (i > 0) {
-        var ret := free_nids.slice(i - cnt, i - 1).copy();
+        var ret := free_nids.slice(max(0, i - cnt), i - 1).copy();
         free_nids.delete(ret);
         return ret;
     }

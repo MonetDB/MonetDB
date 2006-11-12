@@ -1,4 +1,4 @@
-import rpc-module namespace xrpc = "http://www.monetdb.nl/xmark/"
+import module namespace xrpc = "http://www.monetdb.nl/xmark/"
                     at "$TSTSRCDIR/xmark.xq";
 
-xrpc:q01("localhost", "auctionG.xml", "person0")
+execute at {"localhost"} {xrpc:q01("auctionG.xml", "person0")}
