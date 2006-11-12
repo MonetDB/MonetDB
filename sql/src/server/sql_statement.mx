@@ -2041,6 +2041,7 @@ tail_type(stmt *st)
 	case st_group_ext:
 	case st_mark:
 	case st_gen_group:
+	case st_order:
 		return tail_type(st->op1.stval);
 
 	case st_list:
@@ -2054,6 +2055,8 @@ tail_type(stmt *st)
 		} else if (st->op1.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
+	case st_reorder:
+		return sql_bind_localtype("oid");
 	case st_table_clear:
 		return sql_bind_localtype("lng");
 	case st_mirror:

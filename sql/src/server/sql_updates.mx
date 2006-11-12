@@ -97,7 +97,6 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 	stmt *res;
 
 	sql_subtype *it = sql_bind_localtype("int");
-	sql_subtype *lt = sql_bind_localtype("lng");
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	stmt *ts = stmt_basetable(k->t, k->t->base.name);
@@ -131,23 +130,21 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 
 		/* 2e stage: find out if inserted are unique */
 		if (idx_inserts->nrcols) {	/* insert columns not atoms */
-			group *g = NULL;
 			stmt *ss;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
-			/* also take the hopefully unique hash keys, to reduce
-			   (re)group costs */
-			g = grp_create(stmt_dup(idx_inserts), g, NULL);
+			/* implementation uses sort,refine, keyed check */
+			ss = NULL;
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
-				g = grp_create(stmt_dup(inserts[c->c->colnr]->op2.stval), g, NULL);
+				if (ss)  
+					ss = stmt_reorder(ss, stmt_dup(inserts[c->c->colnr]->op2.stval), 1);
+				else
+					ss = stmt_order(stmt_dup(inserts[c->c->colnr]->op2.stval), 1);
 			}
-			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
-			grp_destroy(g);
-			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
-			count_sum = stmt_binop(check_types(sql, lt, stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), type_equal), check_types(sql, lt, stmt_aggr(ss, NULL, sum), type_equal), sql_dup_func(ne));
 
+			sum = sql_bind_aggr(sql->session->schema, "not_unique", tail_type(ss));
+			count_sum = stmt_aggr(ss, NULL, sum);
 			/* combine results */
 			s = stmt_binop(s, count_sum, or);
 		}

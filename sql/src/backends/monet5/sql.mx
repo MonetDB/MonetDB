@@ -196,6 +196,12 @@ command zero_or_one( col:bat[:any_2,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 
+command not_unique( b:bat[:oid,:oid]) :bit 
+address not_unique 
+comment "check if the tail sorted bat b doesn't have unique tail values" ;
+command not_unique( b:bat[:void,:oid]) :bit 
+address not_unique ;
+
 function sql_environment():bat[:str,:bat];
 	b := bat.new(:str,:bat,2);
 	e := inspect.getEnvironment();
@@ -595,6 +601,7 @@ sql5_export str mvc_next_value(lng *res, str *seqname);
 sql5_export str mvc_restart_seq(lng *res, str *seqname, lng *start);
 sql5_export str mvc_affected_rows_int(int *r, int *nr, str *w);
 sql5_export str zero_or_one(ptr ret, int *bid);
+sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(int *r);
@@ -1440,7 +1447,6 @@ zero_or_one(ptr ret, int *bid)
 		return throwMessage("zero_or_one", buf);
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
-	BBPreleaseref(b->batCacheid);
 	if (ATOMvarsized(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr*) ret=GDKmalloc(_s), p, _s);
@@ -1458,6 +1464,42 @@ zero_or_one(ptr ret, int *bid)
 	} else {
 		memcpy(ret, p, _s);
 	}
+	BBPreleaseref(b->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+str not_unique(bit *ret, int* bid) 
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("not_unique", "Cannot access descriptor");
+	}
+
+	*ret = FALSE;
+	if (b->tkey || b->tdense || BATcount(b) <= 1) {
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	} else if (b->tsorted&1) {
+		BUN p,q;
+		int sz;
+
+		oid c = *(oid*)BUNtloc(b, BUNfirst(b)); 
+		sz = BUNsize(b);
+		for(p=BUNfirst(b)+sz, q=BUNlast(b);p<q;p+=sz) {
+			oid v = *(oid*)BUNtloc(b,p);
+			if (v<=c) {
+				*ret = TRUE;
+				break;
+			}
+			c = v;
+		}
+	} else {
+		BBPunfix(b->batCacheid);
+		return throwMessage("not_unique", "input should be sorted");
+	}
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

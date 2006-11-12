@@ -123,6 +123,7 @@ module 'sql_server'
 [ "mvc_result_table(mvc, int, int, any) : int"				  ]
 [ "mvc_schema_operation(mvc, Stream, str) : void"					  ]
 [ "mvc_sql(mvc, str) : void"						  ]
+[ "not_unique(BAT[oid,oid]) : bit"							  ]
 [ "round(int, int, int, sht) : int"							  ]
 [ "round(lng, int, int, sht) : lng"							  ]
 [ "round(sht, int, int, sht) : sht"							  ]

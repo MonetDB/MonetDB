@@ -236,6 +236,8 @@ stream.
 
 	.COMMAND zero_or_one( BAT[any,any::1] b) : any::1 = zero_or_one; "if b contains exactly one value return this. Incase of more raise an exception else return nil"
 
+	.COMMAND not_unique( BAT[oid,oid] b) : bit = not_unique; "check if the tail sorted bat b doesn't have unique tail values" 
+
 .END sql_server;
 
 @-
@@ -1255,6 +1257,31 @@ int zero_or_one(ptr ret, BAT* b)
 		*(lng*) ret = *(lng*)p;
 	} else {
 		memcpy(ret, p, _s);
+	}
+	return GDK_SUCCEED;
+}
+
+int not_unique(bit *ret, BAT* b) 
+{
+	*ret = FALSE;
+	if (b->tkey || b->tdense || BATcount(b) <= 1) {
+		return GDK_SUCCEED;
+	} else if (b->tsorted&1) {
+		BUN p,q;
+		int sz;
+
+		oid c = *(oid*)BUNtloc(b, BUNfirst(b)); 
+		sz = BUNsize(b);
+		for(p=BUNfirst(b)+sz, q=BUNlast(b);p<q;p+=sz) {
+			oid v = *(oid*)BUNtloc(b,p);
+			if (v<=c) {
+				*ret = TRUE;
+				break;
+			}
+			c = v;
+		}
+	} else {
+		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }

@@ -1192,6 +1192,7 @@ sqltypeinit(void)
 	end = t;
 	*t = NULL;
 
+	sql_create_aggr("not_unique", "sql", "not_unique", OID, BIT);
 	for (i = 0; ts[i]; i++) {
 		sql_create_func("hash", "calc", "hash", ts[i], NULL, INT, SCALE_FIX);
 		sql_create_func3("rotate_xor_hash", "calc", "rotate_xor_hash", INT, INT, ts[i], INT, SCALE_NONE);
