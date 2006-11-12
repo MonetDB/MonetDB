@@ -1238,7 +1238,7 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	}
 
 	bn->tsorted= 0;
-	BBPreleaseref(*ret= bn->batCacheid);
+	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
