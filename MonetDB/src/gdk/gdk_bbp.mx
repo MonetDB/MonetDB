@@ -1387,9 +1387,9 @@ BBPreleaselref(bat i)
 		return ;
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPreleaseref")) {
+	if (BBPcheck(i, "BBPreleaselref")) {
 		if (lock)
-			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaseref");
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaselref");
 
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
