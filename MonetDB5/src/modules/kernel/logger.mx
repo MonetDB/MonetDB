@@ -97,13 +97,33 @@ comment "Free the resources used by the logger.";
 #define logger_export extern
 #endif
 
+typedef struct logaction {
+	int type;   /* type of change */
+	int nr;
+	int ht;     /* vid(-1),void etc */
+	int tt;
+	lng id;
+	char *name; /* optional */
+	BAT  *b;    /* temporary bat with changes */
+} logaction;
+
+/* during the recover process a number of transactions could be active */
+typedef struct trans {
+	int tid;  /* transaction id */
+	int sz;	  /* sz of the changes array */
+	int nr;	  /* nr of changes */
+
+	logaction *changes; 
+
+	struct trans *tr;
+} trans;
+
 typedef struct logger {
 	int debug;
 	int changes;
 	int version;
 	lng id;
 	int tid;
-	int intrans;
 	char *fn;
 	char *dir;
 	stream *log;
@@ -111,12 +131,6 @@ typedef struct logger {
 	BAT *catalog;	/* int, str */
 	BAT *seqs; 	/* int, lng */
 	BAT *snapshots;	/* int, int the bid and tid of snapshot bat */
-/* TODO handle removed bats (commited snapshot removals) */
-
-	/* temporary bats for log restore, applied only on transaction end */
-	BAT *inserts;	/* tid, bat[str,tempbat] */
-	BAT *deletes;	/* tid, bat[str,tempbat] */
-	BAT *updates;	/* tid, bat[str,tempbat] */
 } logger;
 
 
@@ -147,13 +161,16 @@ logger_export int logger_cleanup(logger *logger);
 logger_export int logger_changes(logger *logger);
 logger_export int logger_sequence(logger *logger, int seq, lng *id);
 
+/* todo pass the transaction id */
 logger_export int log_bat(logger *logger, BAT *b, char *n);
 logger_export int log_bat_clear(logger *logger, char *n);
 logger_export int log_bat_persists(logger *logger, BAT *b, char *n);
 logger_export int log_bat_transient(logger *logger, char *n);
 
-logger_export int log_tstart(logger *logger);
+logger_export int log_tstart(logger *logger);  /* TODO return transaction id */
 logger_export int log_tend(logger *logger);
+logger_export int log_abort(logger *logger);
+
 logger_export int log_sequence(logger *logger, int seq, lng id);
 
 logger_export log_bid logger_add_bat(logger *logger, BAT *b, char *name);
@@ -185,13 +202,14 @@ log a posteriori to check what has happened.
 
 typedef struct logformat_t {
 	char flag;
+	int tid;
 	int nr;
 } logformat;
 
 #define LOGFILE "log"
 
 static int bm_commit(logger *logger);
-static void bm_abort(logger *logger );
+static void tr_grow(trans *tr);
 
 static void
 logbat_destroy(BAT *b)
@@ -219,13 +237,15 @@ log_read_format(logger *l, logformat *data)
 	if (stream_read(l->log, &data->flag, 1, 1) != 1)
 		return 0;
 	res = stream_readInt(l->log, &data->nr);
+	if (res)
+		res = stream_readInt(l->log, &data->tid);
 	return res;
 }
 
 static int
 log_write_format(logger *l, logformat *data)
 {
-	if (stream_write(l->log, &data->flag, 1, 1) != 1 || !stream_writeInt(l->log, data->nr))
+	if (stream_write(l->log, &data->flag, 1, 1) != 1 || !stream_writeInt(l->log, data->nr) || !stream_writeInt(l->log, data->tid))
 		return LOG_ERR;
 	return LOG_OK;
 }
@@ -266,13 +286,22 @@ log_write_string(logger *l, char *n)
 }
 
 static void
-log_read_clear(logger *logger, char *name)
+log_read_clear(logger *logger, trans *tr, char *name)
 {
-	log_bid bid = logger_find_bat(logger, name);
-	BAT *b = BATdescriptor(bid);
-
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
+
+	tr_grow(tr);
+	tr->changes[tr->nr].type = LOG_CLEAR;
+	tr->changes[tr->nr].name = GDKstrdup(name);
+	tr->nr++;
+}
+
+static void
+la_bat_clear(logger *logger, logaction *la)
+{
+	log_bid bid = logger_find_bat(logger, la->name);
+	BAT *b;
 
 	/* do we need to skip these old updates */
 	if (BATcount(logger->snapshots)) {
@@ -292,30 +321,126 @@ log_read_clear(logger *logger, char *name)
 	}
 }
 
-static void
+static int
 log_read_seq(logger *logger, logformat *l)
 {
 	int seq = l->nr;
 	lng id;
-	int res = LOG_OK;
 
-	res = stream_readLng(logger->log, &id);
+	if (!stream_readLng(logger->log, &id))
+		return LOG_ERR;
+
 	if (BUNfnd(logger->seqs, &seq)) {
 		BUNdelHead(logger->seqs, &seq, FALSE);
 	}
 	BUNins(logger->seqs, &seq, &id, FALSE);
-	(void)res;
+	return LOG_OK;
 }
 
-static void
-log_read_updates(logger *logger, logformat *l, char *name)
+static int
+log_read_updates(logger *logger, trans *tr, logformat *l, char *name)
 {
 	log_bid bid = logger_find_bat(logger, name);
 	BAT *b = BATdescriptor(bid);
-	int skip = 0;
+	int res = LOG_OK;
+	int ht = -1, tt = -1, hseq = 0, tseq = 0;
 
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
+
+	if (b) { 
+		ht = b->htype;
+		if (ht == TYPE_void && b->hseqbase != oid_nil)
+			hseq = 1;
+		tt = b->ttype;
+		if (tt == TYPE_void && b->tseqbase != oid_nil)
+			tseq = 1;
+	} else { /* search trans action for create statement */
+		int i;
+		for (i=0; i<tr->nr; i++) {
+			if (tr->changes[i].type == LOG_CREATE &&
+			    strcmp(tr->changes[i].name, name) == 0) {
+				ht = tr->changes[i].ht;
+				if (ht < 0) {
+					hseq = 1;
+					ht = TYPE_void;
+				}
+				tt = tr->changes[i].tt;
+				if (tt < 0) {
+					tseq = 1;
+					tt = TYPE_void;
+				}
+				break;
+			}
+		}
+	}
+	if (ht>=0 && tt>=0) {
+		BAT *r;
+		void *(*rt) (ptr, stream *, size_t) = BATatoms[tt].atomRead;
+		void *tv = ATOMnil(tt);
+
+		r = BATnew(ht, tt, l->nr);
+
+		if (hseq)
+			BATseqbase(r, 0);
+		if (tseq)
+			BATseqbase(BATmirror(r), 0);
+
+		if (ht == TYPE_void && l->flag == LOG_INSERT) { 
+			for (; l->nr > 0; l->nr--) {
+				void *t = rt(tv, logger->log, 1);
+
+				if (!t) {
+					res = LOG_ERR;
+					break;
+				}
+				if (l->flag == LOG_INSERT)
+					BUNappend(r, t, TRUE);
+				if (t != tv)
+					GDKfree(t);
+			}
+		} else {
+			void *(*rh) (ptr, stream *, size_t) = ht == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[ht].atomRead;
+			void *hv = ATOMnil(ht);
+
+			for (; l->nr > 0; l->nr--) {
+				void *h = rh(hv, logger->log, 1);
+				void *t = rt(tv, logger->log, 1);
+
+				if (!h && !t) {
+					res = LOG_ERR;
+					break;
+				}
+				BUNins(r, h, t, TRUE);
+				if (h != hv)
+					GDKfree(h);
+				if (t != tv)
+					GDKfree(t);
+			}
+			GDKfree(hv);
+		}
+		GDKfree(tv);
+		logbat_destroy(b);
+		
+		tr_grow(tr);
+		tr->changes[tr->nr].type = l->flag;
+		tr->changes[tr->nr].nr = l->nr;
+		tr->changes[tr->nr].ht = ht;
+		tr->changes[tr->nr].tt = tt;
+		tr->changes[tr->nr].name = GDKstrdup(name);
+		tr->changes[tr->nr].b = r;
+		tr->nr++;
+	} else { /* bat missing ERROR or ignore ? currently error. */
+		res = LOG_ERR;
+	}
+	return res;
+}
+
+static void
+la_bat_updates(logger *logger, logaction *la)
+{
+	log_bid bid = logger_find_bat(logger, la->name);
+	BAT *b = BATdescriptor(bid);
 
 	/* do we need to skip these old updates */
 	if (BATcount(logger->snapshots)) {
@@ -324,57 +449,32 @@ log_read_updates(logger *logger, logformat *l, char *name)
 			int tid = *(int*)BUNtloc(logger->snapshots, p);
 
 			if (logger->tid <= tid) 
-				skip = 1;
+				return ;
 		}
 	}
 
+	assert(b);
 	if (b) {
-		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
-		void *tv = ATOMnil(b->ttype);
-
-		if (b->htype == TYPE_void && l->flag == LOG_INSERT) { 
-			for (; l->nr > 0; l->nr--) {
-				void *t = rt(tv, logger->log, 1);
-
-				if (!t)
-					break;
-				if (!skip && l->flag == LOG_INSERT)
-					BUNappend(b, t, TRUE);
-				if (t != tv)
-					GDKfree(t);
-			}
-
+		if (b->htype == TYPE_void && la->type == LOG_INSERT) { 
+			BATappend(b, la->b, TRUE);
 		} else {
-			void *(*rh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[b->htype].atomRead;
-			void *hv = ATOMnil(b->htype);
-
-			for (; l->nr > 0; l->nr--) {
-				void *h = rh(hv, logger->log, 1);
-				void *t = rt(tv, logger->log, 1);
-
-				if (!h && !t)
-					break;
-				if (skip) {
-					if (h != hv)
-						GDKfree(h);
-					if (t != tv)
-						GDKfree(t);
-					continue;
-				}
-				if (l->flag == LOG_INSERT)
-					BUNins(b, h, t, TRUE);
-				else if (l->flag == LOG_DELETE)
-					BUNdel(b, h, t, TRUE);
-				else if (l->flag == LOG_UPDATE) { 
-					/* the updates should be kept in seperate bats, and then applied when we hit a LOG_END */
+			if (la->type == LOG_INSERT)
+				BATins(b, la->b, TRUE);
+			else if (la->type == LOG_DELETE)
+				BATdel(b, la->b, TRUE);
+			else if (la->type == LOG_UPDATE) { 
+				BUN p, q;
+				BATloop(la->b, p, q) {
+					ptr h = BUNhead(la->b, p);
+					ptr t = BUNtail(la->b, p);
 					if (BUNfnd(b, h) == NULL) {
 						/* if value doesn't exist, insert it
-						   if b void headed, maintain that by inserting nils */
+					   	   if b void headed, maintain that by inserting nils */
 						if (b->htype == TYPE_void) {
 							if (b->batCount == 0 && * (oid *) h != oid_nil)
 								b->hseqbase = * (oid *) h;
 							if (b->hseqbase != oid_nil && * (oid *) h != oid_nil) {
-								void *tv = ATOMnil(b->ttype);
+								void *tv = ATOMnilptr(b->ttype);
 								while (b->hseqbase + b->batCount < * (oid *) h)
 									BUNappend(b, tv, TRUE);
 							}
@@ -386,29 +486,33 @@ log_read_updates(logger *logger, logformat *l, char *name)
 						BUNreplace(b, h, t, TRUE);
 					}
 				}
-				if (h != hv)
-					GDKfree(h);
-				if (t != tv)
-					GDKfree(t);
 			}
-			GDKfree(hv);
 		}
-		GDKfree(tv);
 		logbat_destroy(b);
 	}
 }
 
 static void
-log_read_destroy(logger *logger, char *name)
+log_read_destroy(logger *logger, trans *tr, char *name)
 {
-	log_bid bid = logger_find_bat(logger, name);
+	(void)logger;
+	tr_grow(tr);
+	tr->changes[tr->nr].type = LOG_DESTROY;
+	tr->changes[tr->nr].name = GDKstrdup(name);
+	tr->nr++;
+}
+
+static void
+la_bat_destroy(logger *logger, logaction *la)
+{
+	log_bid bid = logger_find_bat(logger, la->name);
 
 	if (bid)
 		logger_del_bat(logger, bid);
 }
 
-static void
-log_read_create(logger *logger, char *name)
+static int
+log_read_create(logger *logger, trans *tr, char *name)
 {
 	char *buf = log_read_string(logger);
 
@@ -416,77 +520,191 @@ log_read_create(logger *logger, char *name)
 		fprintf(stderr, "log_read_create %s\n", name);
 
 	if (!buf) {
-		GDKerror("logger could not read create (%s)\n", name);
+		return LOG_ERR;
 	} else {
-		int ht, tt, hseq = 0, tseq = 0;
+		int ht, tt;
 		char *ha = buf, *ta = strchr(buf, ',');
-		BAT *b;
 
-		if (!ta) {
-			GDKerror("logger types are not ',' seperated (%s)\n", buf);
-			return;
-		}
+		if (!ta) 
+			return LOG_ERR;
 		*ta = 0;
 		ta++;		/* skip over , */
 		if (strcmp(ha, "vid") == 0) {
-			ht = TYPE_void;
-			hseq = 1;
+			ht = -1;
 		} else {
 			ht = ATOMindex(ha);
 		}
 		if (strcmp(ta, "vid") == 0) {
-			tt = TYPE_void;
-			tseq = 1;
+			tt = -1;
 		} else {
 			tt = ATOMindex(ta);
 		}
-		b = BATnew(ht, tt, BATSIZE);
-
-		if (hseq)
-			BATseqbase(b, 0);
-		if (tseq)
-			BATseqbase(b=BATmirror(b), 0);
-
-		if (!b) {
-			GDKerror("logger could not create bat (%s,%s,%s,%d,%d)\n", name, ha, ta, ht, tt);
-			return;
-		}
-		logger_add_bat(logger, b, name);
-		logbat_destroy(b);
+		tr_grow(tr);
+		tr->changes[tr->nr].type = LOG_CREATE;
+		tr->changes[tr->nr].ht = ht;
+		tr->changes[tr->nr].tt = tt;
+		tr->changes[tr->nr].name = GDKstrdup(name);
+		tr->changes[tr->nr].b = NULL;
+		tr->nr++;
 	}
 	if (buf)
 		GDKfree(buf);
+	return LOG_OK;
 }
 
 static void
-log_read_use(logger *logger, logformat *l, char *name)
+la_bat_create(logger *logger, logaction *la)
 {
-	log_bid bid = l->nr;
+	int ht = (la->ht<0)?TYPE_void:la->ht;
+	int tt = (la->tt<0)?TYPE_void:la->tt;
+	BAT *b = BATnew(ht, tt, BATSIZE);
+
+	if (la->ht<0)
+		BATseqbase(b, 0);
+	if (la->tt<0)
+		BATseqbase(b=BATmirror(b), 0);
+
+	logger_add_bat(logger, b, la->name);
+	logbat_destroy(b);
+}
+
+static void
+log_read_use(logger *logger, trans *tr, logformat *l, char *name)
+{
+	(void)logger;
+	tr_grow(tr);
+	tr->changes[tr->nr].type = LOG_USE;
+	tr->changes[tr->nr].nr = l->nr;
+	tr->changes[tr->nr].name = GDKstrdup(name);
+	tr->changes[tr->nr].b = NULL;
+	tr->nr++;
+}
+
+static void
+la_bat_use(logger *logger, logaction *la )
+{
+	log_bid bid = la->nr;
 	BAT *b = BATdescriptor(bid);
 	
 	if (!b) {
-		GDKerror("logger could not use bat (" OIDFMT ") for %s\n", bid, name);
+		GDKerror("logger could not use bat (" OIDFMT ") for %s\n", 
+			bid, la->name);
 		return ;
 	}
-	logger_add_bat(logger, b, name);
+	logger_add_bat(logger, b, la->name);
+	logbat_destroy(b);
+}
+
+
+#define TR_SIZE 	1024
+
+static trans*
+tr_create(trans *tr, int tid)
+{
+	trans *ntr = (trans*)GDKmalloc(sizeof(trans));
+	ntr->tid = tid;
+	ntr->sz = TR_SIZE;
+	ntr->nr = 0;
+	ntr->changes = (logaction*)GDKmalloc(sizeof(logaction)*TR_SIZE);
+	ntr->tr = tr;
+	return ntr;
+}
+
+static trans *
+tr_find(trans *tr, int tid)
+/* finds the tid and reorders the chain list, puts trans with tid first */
+{
+	trans *t = tr, *p = NULL;
+
+	while(t && t->tid != tid) {
+		p = t;
+		t = t->tr;
+	}
+	if (!t)
+		return NULL; /* BAD missing transaction */
+	if (t == tr) 
+		return tr;
+	if (t->tr)  /* get this tid out of the list */
+		p->tr = t->tr; 
+	t->tr = tr; /* and move it to the front */ 
+	return t;
 }
 
 static void
-tr_commit(logger *logger)
+la_apply( logger *logger, logaction *c )
 {
+	switch(c->type) {
+	case LOG_INSERT:
+	case LOG_DELETE:
+	case LOG_UPDATE:
+		return la_bat_updates(logger, c);
+	case LOG_CREATE:
+		return la_bat_create(logger, c);
+	case LOG_USE:
+		return la_bat_use(logger, c);
+	case LOG_DESTROY:
+		return la_bat_destroy(logger, c);
+	case LOG_CLEAR:
+		return la_bat_clear(logger, c);
+	}
+}
+
+static void
+la_destroy( logaction *c ) 
+{
+	if (c->name)
+		GDKfree(c->name);
+	if (c->b)
+		logbat_destroy(c->b);
+}
+
+static void
+tr_grow(trans *tr)
+{
+	if (tr->nr == tr->sz) {
+		tr->sz <<= 1;
+		tr->changes = (logaction*)
+			GDKrealloc(tr->changes, tr->sz * sizeof(logaction));
+	}
+	/* cleanup the next */
+	tr->changes[tr->nr].name = NULL;
+	tr->changes[tr->nr].b = NULL;
+}
+
+static trans *
+tr_destroy(trans *tr)
+{
+	trans *r = tr->tr;
+	GDKfree(tr->changes);
+	GDKfree(tr);
+	return r;
+}
+
+static trans *
+tr_commit(logger *logger, trans *tr)
+{
+	int i;
 	if (logger->debug & 1)
 		printf("tr_commit\n");
 
+	for(i=0; i<tr->nr; i++) {
+		la_apply(logger, &tr->changes[i]);
+		la_destroy(&tr->changes[i]);
+	}
 	bm_commit(logger);
+	return tr_destroy(tr);
 }
 
-static void
-tr_abort(logger *logger)
+static trans *
+tr_abort(logger *logger, trans *tr)
 {
+	int i;
 	if (logger->debug & 1)
 		printf("tr_abort\n");
 
-	bm_abort(logger);
+	for(i=0; i<tr->nr; i++) 
+		la_destroy(&tr->changes[i]);
+	return tr_destroy(tr);
 }
 
 static int
@@ -517,7 +735,9 @@ logger_close(logger *logger)
 static int
 logger_readlog(logger *logger, char *filename)
 {
+	trans *tr = NULL;
 	logformat l;
+	int err = 0;
 
 	logger->log = open_rstream(filename);
 
@@ -528,7 +748,7 @@ logger_readlog(logger *logger, char *filename)
 
 		return 0;
 	}
-	while (log_read_format(logger, &l)) {
+	while (!err && log_read_format(logger, &l)) {
 		char *name = NULL;
 
 		if (l.flag != LOG_START && l.flag != LOG_END && 
@@ -536,54 +756,50 @@ logger_readlog(logger *logger, char *filename)
 			name = log_read_string(logger);
 
 			if (!name) {
-				GDKerror("logger could not read name (%d)\n", l.flag);
-				return -1;
+				err = -1;
+				break;
 			}
 		}
+		/* find proper transaction record */
+		if (l.flag != LOG_START)
+			tr = tr_find(tr, l.tid);
 		switch (l.flag) {
 		case LOG_START:
-			if (logger->intrans)
-				tr_abort(logger);
-			logger->tid = l.nr;
-			logger->intrans = 1;
+			if (l.nr > logger->tid)
+				logger->tid = l.nr;
+			tr = tr_create(tr, l.nr);
 			if (logger->debug & 1)
 				fprintf(stderr, "logger tstart %d\n", 
-					logger->tid);
+					tr->tid);
 			break;
 		case LOG_END:
-			if (logger->tid == l.nr) {
-				if (logger->debug & 1)
-					fprintf(stderr, "logger tend %d\n", 
-						logger->tid);
-				tr_commit(logger);
-			} else {
-				tr_abort(logger);
-			}
-			logger->intrans = 0;
+			if (l.tid != l.nr) /* abort record */
+				tr = tr_abort(logger, tr);
+			else
+				tr = tr_commit(logger, tr);
 			break;
 		case LOG_SEQ:
-			log_read_seq(logger, &l);
+			err = (log_read_seq(logger, &l) != LOG_OK);
 			break;
 		case LOG_INSERT:
 		case LOG_DELETE:
 		case LOG_UPDATE:
-			log_read_updates(logger, &l, name);
+			err = (log_read_updates(logger, tr, &l, name) !=LOG_OK);
 			break;
 		case LOG_CREATE:
-			log_read_create(logger, name);
+			err = (log_read_create(logger, tr, name) != LOG_OK);
 			break;
 		case LOG_USE:
-			log_read_use(logger, &l, name);
+			log_read_use(logger, tr, &l, name);
 			break;
 		case LOG_DESTROY:
-			log_read_destroy(logger, name);
+			log_read_destroy(logger, tr, name);
 			break;
 		case LOG_CLEAR:
-			log_read_clear(logger, name);
+			log_read_clear(logger, tr, name);
 			break;
 		default:
-			GDKerror("logger error %d %s\n", l.flag, name);
-			return -2;
+			err = -2;
 		}
 		if (name)
 			GDKfree(name);
@@ -591,9 +807,9 @@ logger_readlog(logger *logger, char *filename)
 	}
 	logger_close(logger);
 
-	if (logger->intrans) 
-		tr_abort(logger);
-
+	/* remaining transactions are not committed, ie abort */
+	while(tr)
+		tr = tr_abort(logger, tr);
 	return 0;
 }
 
@@ -619,7 +835,12 @@ logger_readlogs(logger *logger, FILE *fp, char *filename)
 			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, logger->id);
 
 			if ((res = logger_readlog(logger, buf)) != 0) {
-				break;
+				/* we cannot distinguish errors from 
+				   incomplete transactions (even if we 
+				   would log aborts in the logs). 
+				   So we simply abort and move to the next 
+				   log file */
+				(void)res;
 			}
 		}
 	}
@@ -709,7 +930,6 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	logger->version = version;
 	logger->id = 1;
 	logger->tid = 0;
-	logger->intrans = 0;
 
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	logger->fn = GDKstrdup(fn);
@@ -812,7 +1032,6 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 		fprintf(fp, LLFMT "\n", logger->id);
 	}
 	fclose(fp);
-	logger->intrans = 0;
 	return logger;
 }
 
@@ -986,6 +1205,7 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 	if (flag == LOG_USE)
 		l.nr = b->batCacheid;
 	l.flag = flag;
+	l.tid = logger->tid;
 	logger->changes++;
 	if (log_write_format(logger, &l) == LOG_ERR || log_write_string(logger, name) == LOG_ERR)
 		return LOG_ERR;
@@ -1027,6 +1247,7 @@ log_bat_transient(logger *logger, char *name)
 	logformat l;
 
 	l.flag = LOG_DESTROY;
+	l.tid = logger->tid;
 	l.nr = 0;
 	logger->changes++;
 
@@ -1056,6 +1277,7 @@ log_delta(logger *logger, BAT *b, char *name)
 		return LOG_OK;
 	}
 
+	l.tid = logger->tid;
 	l.nr = (int)(BUNindex(b, BUNlast(b)) - BUNindex(b, BUNfirst(b)));
 	logger->changes += l.nr;
 
@@ -1092,6 +1314,7 @@ log_bat(logger *logger, BAT *b, char *name)
 		return LOG_OK;
 	}
 
+	l.tid = logger->tid;
 	l.nr = (int)(BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted));
 	logger->changes += l.nr;
 
@@ -1156,6 +1379,7 @@ log_bat_clear(logger *logger, char *name)
 	}
 
 	l.nr = 1;
+	l.tid = logger->tid;
 	logger->changes += l.nr;
 
 	l.flag = LOG_CLEAR;
@@ -1171,7 +1395,8 @@ log_tstart(logger *logger)
 	logformat l;
 
 	l.flag = LOG_START;
-	l.nr = ++logger->tid;
+	l.tid = ++logger->tid;
+	l.nr = logger->tid;
 
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid);
@@ -1196,10 +1421,29 @@ log_tend(logger *logger)
 		BBPunfix(b->batCacheid);
 	}
 	l.flag = LOG_END;
+	l.tid = logger->tid;
 	l.nr = logger->tid;
 	if (res || log_write_format(logger, &l) == LOG_ERR || 
 	    stream_flush(logger->log) ||
 	    stream_fsync(logger->log))
+		 return LOG_ERR;
+
+	return LOG_OK;
+}
+
+int
+log_abort(logger *logger)
+{
+	logformat l;
+
+	if (logger->debug)
+		fprintf(stderr, "log_abort %d\n", logger->tid);
+
+	l.flag = LOG_END;
+	l.tid = logger->tid;
+	l.nr = -1;
+
+	if (log_write_format(logger, &l) == LOG_ERR)
 		 return LOG_ERR;
 
 	return LOG_OK;
@@ -1212,6 +1456,7 @@ log_sequence(logger *logger, int seq, lng id)
 	logformat l;
 
 	l.flag = LOG_SEQ;
+	l.tid = logger->tid;
 	l.nr = seq;
 
 	if (logger->debug)
@@ -1256,29 +1501,6 @@ bm_commit(logger *logger)
 	if (bm_subcommit(logger->catalog, logger->catalog) != 0)  
 		return LOG_ERR;
 	return LOG_OK;
-}
-
-static void
-bm_abort(logger *logger)
-{
-	BUN p;
-	BAT *b = logger->catalog;
-
-	/* remove the created bats */
-	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
-		bat bid = *(log_bid *) BUNhead(b, p);
-
-		BBPdecref(bid, TRUE);
-	}
-	for (p = BUNfirst(b); p < b->batInserted; p = BUNnext(b, p)) {
-		log_bid bid = *(log_bid *) BUNhead(b, p);
-		BAT *b = BATdescriptor(bid);
-
-		BATundo(b);
-		BATcommit(b);
-		logbat_destroy(b);
-	}
-	BATundo(logger->catalog);
 }
 
 log_bid
@@ -1395,6 +1617,15 @@ log_tend_wrap(logger *L )
 {
 	logger *l = *(logger**)L;
 	if (l && log_tend(l) == LOG_OK) 
+		return GDK_SUCCEED;
+	return GDK_FAIL;
+}
+
+int 
+log_abort_wrap(logger *L )
+{
+	logger *l = *(logger**)L;
+	if (l && log_abort(l) == LOG_OK) 
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }
