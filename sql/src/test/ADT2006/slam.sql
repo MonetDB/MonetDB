@@ -281,10 +281,10 @@ INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('"Jumbo" Frida
 INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('Duncan Campnell', '', '', '.'); 
 INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('Mary Miniter', 'between 10:30 and 11:00', 'About 32 years of age. Five feet, eight inches tall. Slim build. Long, sharp nose. Heavy moustache of light color. Foreign in appearance, possibly German. Dark-brown cutaway coat. Black trousers. Old black derby hat with dented crown.', '.'); 
 
-SELECT s.victim, v.location, e.time, e.text FROM Jtr_scene s INNER JOIN Jtr_victim v ON s.victim = v.name LEFT OUTER JOIN Jtr_event e ON e.scene_id = s.scene_id;
+SELECT s.victim, v.location, e.time, e."text" FROM Jtr_scene s INNER JOIN Jtr_victim v ON s.victim = v.name LEFT OUTER JOIN Jtr_event e ON e.scene_id = s.scene_id;
 
 
-SELECT v.name, sp.name, sp.picture FROM Jtr_scene sc INNER JOIN Jtr_victim v ON v.name = sc.victim LEFT OUTER JOIN (scene_suspects map INNER JOIN Jtr_suspect sp ON map.suspect = sp.name )ON sc.scene_id = map.scene_id ORDER BY v.name;
+SELECT v.name, sp.name, sp.picture FROM Jtr_scene sc INNER JOIN Jtr_victim v ON v.name = sc.victim LEFT OUTER JOIN (Jtr_scene_suspects map INNER JOIN Jtr_suspect sp ON map.suspect = sp.name )ON sc.scene_id = map.scene_id ORDER BY v.name;
 
 
 SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY times desc;
@@ -311,4 +311,4 @@ DROP TABLE Jtr_witness;
 DROP TABLE Jtr_scene_doctors;
 DROP TABLE Jtr_scene_inspectors;
 DROP TABLE Jtr_scene_suspects;
-DROP TABLE Jtr_scene_witness;
+DROP TABLE Jtr_scene_witnesses;
