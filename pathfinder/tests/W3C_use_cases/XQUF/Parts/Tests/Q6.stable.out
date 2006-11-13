@@ -23,8 +23,8 @@ shred_doc(TSTSRCDIR+"/part-tree.xml", "part-tree.xml", "Parts", 9LL);
 # Shredded 1 XML document (part-tree.xml), total time after commit=0.011s
 
 xquery("xml","
-for $keyword at $i in (\"car\", \"skateboard\", \"canoe\")
-for $parent in doc(\"part-tree.xml\")//part[@name=$keyword]
+for $keyword at $i in (\"car\", \"skateboard\", \"canoe\"),
+    $parent in doc(\"part-tree.xml\")//part[@name=$keyword]
 let $descendants := $parent//part
 for $p in ($parent, $descendants)
 return 
