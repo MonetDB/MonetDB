@@ -733,12 +733,13 @@ Module: "lock"
 
 Module: "logger"
 
-[ 17 ]
-[ 17 ]
+[ 18 ]
+[ 18 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature							help													  # name
 # str			str		str								str													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "log_abort",		  "COMMAND:   ",  "log_abort(logger) : void",					  "write transaction aborted in the WAL"												  ]
 [ "log_bat",		  "COMMAND:   ",  "log_bat(logger, BAT[void,any::1], str) : void",		  "log the inserts in the WAL"														  ]
 [ "log_bat_clear",	  "COMMAND:   ",  "log_bat_clear(logger, str) : void",				  "log the inserts in the WAL"														  ]
 [ "log_bat_persists",	  "COMMAND:   ",  "log_bat_persists(logger, BAT[void,any::1], str) : void",	  "log the created bat in the WAL (return success)"											  ]
