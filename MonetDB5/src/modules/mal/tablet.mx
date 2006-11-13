@@ -1195,7 +1195,7 @@ rstrip(char *e)
 static INLINE char *
 find_quote(char *s, char quote)
 {
-	while (*s != quote)
+	while (*s && *s != quote)
 		s++;
 	return s;
 }
@@ -1203,7 +1203,7 @@ find_quote(char *s, char quote)
 static INLINE char *
 rfind_quote(char *s, char quote)
 {
-	while (*s != quote)
+	while (*s && *s != quote)
 		s--;
 	return s;
 }
