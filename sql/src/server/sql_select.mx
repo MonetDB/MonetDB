@@ -2958,13 +2958,21 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	case SQL_NOT: {
 		symbol *lo = sc->data.sym;
 		stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset, f);
-		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
-		
-		if (!ls)
-			return NULL;
 
-		return stmt_unop(ls, not);
+		if (ls->nrcols == 0 || f == sql_sel) { /* predicates */
+			sql_subtype *bt = sql_bind_localtype("bit");
+			sql_subfunc *not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
+		
+			if (!ls)
+				return NULL;
+	
+			return stmt_unop(ls, not);
+		} else { /* R.diff(ls) */
+			if (subset)
+				return stmt_diff(first_subset(subset), ls);
+			else
+				return stmt_diff(stmt_dup(scope_first_column(scp)->s), ls);
+		}
 	}
 		break;
 	case SQL_ATOM: {
