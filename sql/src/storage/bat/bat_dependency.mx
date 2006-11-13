@@ -27,11 +27,6 @@
 #include "bat_store.h"
 
 extern int create_dependency_table(sql_trans *tr, sql_schema *s);
-extern void sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
-extern void sql_trans_drop_dependencies(sql_trans* tr, int depend_id);
-extern list* sql_trans_get_dependencies(sql_trans* tr, int id, int depend_type);
-extern int sql_trans_check_dependency(sql_trans* tr, int id, int depend_id, int depend_type);
-extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int owner);
 
 #endif /*BAT_DEPEND_H */
 @c
@@ -59,13 +54,13 @@ create_dependency_table(sql_trans *tr, sql_schema *s){
         
 	create_column(tr, t, "id", "int",32);
 	create_column(tr, t, "depend_id", "int",32);
-	create_column(tr, t, "depend_type", "smallint",4);
+	create_column(tr, t, "depend_type", "smallint",16);
         return 0;
 }
 
 /*Function to create a dependency*/
 void
-sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, int depend_type)
+sql_trans_create_dependency(sql_trans* tr, int id, int depend_id, short depend_type)
 {
 	sql_schema * s = find_sql_schema(tr, "sys");
 	sql_table *t = find_sql_table(s, "dependencies");
@@ -104,7 +99,7 @@ sql_trans_drop_dependencies(sql_trans* tr, int depend_id)
 }
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
-sql_trans_get_dependencies(sql_trans* tr, int id, int depend_type)
+sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type)
 {
 	node *id_node, *type_node, *trig_node;
 	sql_schema *s;
@@ -158,7 +153,7 @@ sql_trans_get_dependencies(sql_trans* tr, int id, int depend_type)
 
 /*It checks if there are dependency between two ID's */
 int
-sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, int depend_type)
+sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type)
 {
 	ssize_t rid;
 	sql_schema *s;
@@ -186,7 +181,7 @@ sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, int depend_type
 list *
 sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
 {
-	int type = USER_DEPENDENCY;
+	short type = USER_DEPENDENCY;
 	list *l = list_create((fdestroy) NULL);
 	list *dep_list = backend_schema_user_dependencies(tr, schema_id);
 	node *n = dep_list->h;
@@ -209,7 +204,7 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, int owner_id)
 	sql_table *t = find_sql_table(s, "schemas");
 	sql_column *owner = find_sql_column(t, "owner");
 	sql_column *schema_id = find_sql_column(t, "id");
-	int type = SCHEMA_DEPENDENCY;
+	short type = SCHEMA_DEPENDENCY;
 	list *l = list_create((fdestroy) NULL);
 	list *dep_list = table_select_column(tr, schema_id, owner, &owner_id, NULL);
 	node *n = dep_list->h;

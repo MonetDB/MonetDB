@@ -108,10 +108,10 @@ extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id);
-extern void sql_trans_create_dependency(sql_trans *tr, int id, int depend_id, int depend_type);
+extern void sql_trans_create_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern void sql_trans_drop_dependencies(sql_trans *tr, int depend_id);
-extern list* sql_trans_get_dependencies(sql_trans *tr, int id, int depend_type);
-extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, int depend_type);
+extern list* sql_trans_get_dependencies(sql_trans *tr, int id, short depend_type);
+extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 
 #endif /*SQL_STORAGE_H */

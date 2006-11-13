@@ -2415,12 +2415,6 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 
 		first = 1;
 
-		/* todo introduce a dependencies table which keeps
-		   dependencies between sql objects, such as
-			call dependencies for func's
-			sequence and table dependencies
-			etc.
-		*/
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
 		t = bootstrap_create_table(tr, s, "schemas");
 		bootstrap_create_column(tr, t, "id", "int", 32);
