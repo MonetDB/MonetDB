@@ -1771,8 +1771,8 @@ xquery_print_result_driver (
 int 
 xquery_print_result_DRIVER (
     str                 mode,
-    serializeFunStruct *driverFun, /* unused */
-    char               *driverArg, /* unused */
+    serializeFunStruct *driverFun,
+    char               *driverArg,
     BAT                *ws,
     size_t              niters,
     BAT                *loop,
@@ -1788,8 +1788,8 @@ xquery_print_result_DRIVER (
     return xquery_print_result_driver (
                GDKout,
                mode,
-               NULL, /* set of printing callback function */
-               NULL, /* optional arguments for the callback functions */
+               driverFun, /* set of printing callback function */
+               driverArg, /* optional arguments for the callback functions */
                ws,
                niters?niters:1, /* number of iterations */
                loop, /* loop relation */
