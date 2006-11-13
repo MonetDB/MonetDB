@@ -64,8 +64,8 @@ Over..
 # 23:01:45 >  
 
 Dependencies between User and Schema
-step 1
-step 2
+done
+done
 Dependencies between database objects
 % sys.s,	.u,	. # table_name
 % name,	name,	single_value # name
@@ -171,7 +171,7 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 10,	13,	8 # length
 [ "t1_id_pkey",	"t2_id_t1_fkey",	"DEP_FKEY"	]
-step 3
+done
 Cleanup
 % sys.s,	.u,	. # table_name
 % name,	name,	single_value # name
@@ -248,7 +248,7 @@ Cleanup
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-step4
+done
 
 # 23:01:46 >  
 # 23:01:46 >  Done.
