@@ -788,9 +788,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_dup_scjoin:
-            for (unsigned int i = 0; i < n->schema.count; i++)
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
                 add_subdom (n->prop, PFprop_dom (R(n)->prop,
-                                                 n->schema.items[i].name), id);
+                                                 R(n)->schema.items[i].name), id);
+                add_dom (n->prop, R(n)->schema.items[i].name, id++);
+            }
             add_dom (n->prop, n->sem.scjoin.item_res, id++);
             break;
 
