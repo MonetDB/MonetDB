@@ -23,92 +23,56 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><archived-agenda>
-  <last-synch-time>2006-04-23T12:00</last-synch-time>
+  <last-synch-time>2006-04-23T12:03</last-synch-time>
   <entry>
     <name>Benjamin</name>
-     copied from the modified entries 
-
     <contact>benjamin@uni-versailles.fr</contact>
   </entry>
   <entry>
     <name>Dario</name>
-     copied from first modified version 
-
     <contact>dario@uni-parissud.fr</contact>
   </entry>
   <entry>
     <name>Anthony</name>
-    unchanged due to conflict 
-
     <contact>tony@uni-toulon.fr</contact>
   </entry>
 </archived-agenda><agenda-version>
   <entry>
     <name>Benjamin</name>
-     kept after synchronization 
- 
    <contact>benjamin@uni-versailles.fr</contact>
   </entry>
   <entry>
-     kept after synchronization 
-
     <name>Dario</name>
     <contact>dario@uni-parissud.fr</contact>
   </entry>
   <entry>
-     kept after synchronization failure 
-
     <name>Anthony</name>
     <contact>tony@ena.fr</contact>
   </entry>
 </agenda-version><agenda-version>  
   <entry>
-     kept after synchronization 
-
     <name>Benjamin</name>
     <contact>benjamin@uni-versailles.fr</contact>
   </entry>
   <entry>
-     value taken from the other modified version 
-
     <name>Dario</name>
     <contact>dario@uni-parissud.fr</contact>
   </entry>
   <entry>
-     kept after synchronization failure 
-
     <name>Anthony</name>
     <contact>tony@ehess.fr</contact>
   </entry>
-</agenda-version><log>
-   update failure details 
-  <fail>
-     <arch>
-        archived agenda version 
-
-       <entry>
+ </agenda-version><log>
+<fail><arch><entry>
          <name>Anthony</name>
          <contact>tony@uni-toulon.fr</contact>
-       </entry>
-     </arch>
-     <v1>
-        first modified version 
-
-       <entry>
+       </entry></arch><v1><entry>
          <name>Anthony</name>
          <contact>tony@ena.fr</contact>
-       </entry>
-     </v1>
-     <v2>
-        second modified version 
-
-       <entry>
+       </entry></v1><v2><entry>
          <name>Anthony</name>
          <contact>tony@ehess.fr</contact>
-       </entry>
-     </v2>
-  </fail>
-</log></XQueryResult>
+       </entry></v2></fail></log></XQueryResult>
 
 # 11:32:26 >  
 # 11:32:26 >  Done.

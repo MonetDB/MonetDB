@@ -11,7 +11,7 @@ return
     then ( do replace value of exactly-one($a/contact) with $v1/contact,
            do replace value of 
               exactly-one(doc("archive.xml")/*/last-synch-time) 
-           with "2006-04-23T12:00" (:current-dateTime():)
+           with "2006-04-23T12:01" (:current-dateTime():)
          )
     else 
       if ($a/contact = $v1/contact)
@@ -20,7 +20,7 @@ return
             do replace value of exactly-one($v1/contact) with $v2/contact,
             do replace value of 
                exactly-one(doc("archive.xml")/*/last-synch-time)
-            with "2006-04-23T12:00" (:current-dateTime():)
+            with "2006-04-23T12:02" (:current-dateTime():)
             )
       else 
         if ($a/contact = $v2/contact)
@@ -29,7 +29,7 @@ return
               do replace value of exactly-one($v2/contact) with $v1/contact,
               do replace value of 
                  exactly-one(doc("archive.xml")/*/last-synch-time)
-              with "2006-04-23T12:00" (:current-dateTime():)
+              with "2006-04-23T12:03" (:current-dateTime():)
              )
         else (
           do insert 
