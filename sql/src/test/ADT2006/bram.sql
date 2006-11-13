@@ -386,9 +386,9 @@ WHERE not exists (select doc.name from doctor doc where doc.victim = v.name and 
 
 DROP TABLE suspect_victim;
 DROP TABLE inspector_victim;
-DROP TABLE victim;
 DROP TABLE suspect;
 DROP TABLE inspector;
 DROP TABLE witness;
 DROP TABLE doctor;
 DROP TABLE event;
+DROP TABLE victim;

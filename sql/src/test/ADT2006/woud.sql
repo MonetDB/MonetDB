@@ -97,8 +97,8 @@ SELECT inspector.name, victim.name
 -- We can't be as specific here, as LIKE is not as powerful as a regexp
 SELECT CAST(substring(murderdate,1,4) AS integer) - CAST(substring(dateofbirth,1,4) AS integer) 
     FROM victim 
-    WHERE murderdate LIKE "1___%" 
-        AND dateofbirth LIKE "1___%";
+    WHERE murderdate LIKE '1___%' 
+        AND dateofbirth LIKE '1___%';
 
 -- Problem: GROUP BY removes 0-rows for victim/inspector join, so we union
 SELECT AVG(num) 
