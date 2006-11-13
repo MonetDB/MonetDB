@@ -1383,13 +1383,13 @@ BBPreleaselref(bat i)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-	if (i == bat_nil || BBP_refs(i)<= 0) 
+	if (i == bat_nil || BBP_lrefs(i)<= 0) 
 		return ;
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPreleaseref")) {
+	if (BBPcheck(i, "BBPreleaselref")) {
 		if (lock)
-			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaseref");
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaselref");
 
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
@@ -1409,7 +1409,7 @@ BBPreleaseref(bat i)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-	if (i == bat_nil || BBP_lrefs(i)<= 0 || BBP_refs(i)<=0) 
+	if (i == bat_nil || BBP_refs(i)<=0)
 		return ;
 	if (i < 0)
 		i = -i;
@@ -2568,7 +2568,9 @@ static int
 heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 {
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on .priv heap modes */
-	if (hp->filename && hp->storage == STORE_PRIV) {
+	if (file_exists(dstdir, nme, ext)) {
+		return 0;       /* dont overwrite heap with the committed state already in dstdir */
+	} else if (hp->filename && hp->storage == STORE_PRIV) {
 		long_str path;
 		struct stat st;
 
