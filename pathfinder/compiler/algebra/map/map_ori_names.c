@@ -489,6 +489,15 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                           ONAME(p, p->sem.scjoin.item_res));
             break;
                            
+        case la_dup_scjoin:
+            res = dup_scjoin (O(L(p)), 
+                              SEC_PROJ(RIGHT, p, p->sem.scjoin.item_res),
+                              p->sem.scjoin.axis,
+                              p->sem.scjoin.ty,
+                              ONAME(p, p->sem.scjoin.item),
+                              ONAME(p, p->sem.scjoin.item_res));
+            break;
+            
         case la_doc_tbl:
             res = doc_tbl (PROJ(LEFT, p),
                            ONAME(p, p->sem.doc_tbl.iter),

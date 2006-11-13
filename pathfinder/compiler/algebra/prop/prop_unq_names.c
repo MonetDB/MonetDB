@@ -401,6 +401,11 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             new_name_pair (np_list, n->sem.scjoin.item_res, id++);
             break;
             
+        case la_dup_scjoin:
+            bulk_add_name_pairs (np_list, R(n));
+            new_name_pair (np_list, n->sem.scjoin.item_res, id++);
+            break;
+            
         case la_doc_tbl:
             add_name_pair (np_list,
                            n->sem.doc_tbl.iter,

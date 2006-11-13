@@ -134,6 +134,7 @@
 
 /** staircase join */
 #define scjoin(a,b,c,d,e,f,g) PFla_scjoin ((a),(b),(c),(d),(e),(f),(g))
+#define dup_scjoin(a,b,c,d,e,f) PFla_dup_scjoin ((a),(b),(c),(d),(e),(f))
 
 /** document table */
 #define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))

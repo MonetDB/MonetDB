@@ -298,6 +298,16 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (R(n), rv);
             break;
             
+        case la_dup_scjoin:
+            rv.name = 0;
+            rv.val = 0;
+            prop_infer_reqvals (L(n), rv);
+
+            rv.name = diff (n->prop->reqvals.name, n->sem.scjoin.item_res);
+            rv.val = diff (n->prop->reqvals.val, n->sem.scjoin.item_res);
+            prop_infer_reqvals (R(n), rv);
+            break;
+
         case la_doc_access:
             rv.name = 0;
             rv.val = 0;

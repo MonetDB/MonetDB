@@ -1908,6 +1908,74 @@ PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
 
 
 /**
+ * Staircase join with duplicates between two operator nodes.
+ *
+ * Each such join corresponds to the separate evaluation of an XPath
+ * location step starting from the context nodes in column @a item.
+ */
+PFla_op_t *
+PFla_dup_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
+                 PFalg_axis_t axis, PFty_t seqty, 
+                 PFalg_att_t item,
+                 PFalg_att_t item_res)
+{
+    PFla_op_t    *ret;
+#ifndef NDEBUG
+    unsigned int  i;
+    bool item_present = false;
+#endif
+
+    assert (n); assert (doc);
+
+    /* create new join node */
+    ret = la_op_wire2 (la_dup_scjoin, doc, n);
+
+    /* insert semantic value (axis/kind test, col names) into the result */
+    ret->sem.scjoin.axis     = axis;
+    ret->sem.scjoin.ty       = seqty;
+    ret->sem.scjoin.iter     = att_NULL;
+    ret->sem.scjoin.item     = item;
+    ret->sem.scjoin.item_res = item_res;
+
+#ifndef NDEBUG
+    for (i = 0; i < n->schema.count; i++) {
+        if (n->schema.items[i].name == item)
+            item_present = true;
+        else if (n->schema.items[i].name == item_res)
+            PFoops (OOPS_FATAL,
+                    "illegal attribute `%s' in the input "
+                    "of the staircase join",
+                    PFatt_str (n->schema.items[i].name));
+    }
+    if (!item_present)
+        PFoops (OOPS_FATAL, 
+                "column `%s' needed in staircase join is missing",
+                PFatt_str (item));
+#endif
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* the result of an attribute axis is also of type attribute */
+    if (ret->sem.scjoin.axis == alg_attr) 
+        ret->schema.items[i]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = aat_anode };
+    else
+        ret->schema.items[i]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = aat_pnode };
+
+    return ret;
+}
+
+
+/**
  * Access to (persistently stored) XML documents, the fn:doc()
  * function.  Returns a (frag, result) pair.
  */

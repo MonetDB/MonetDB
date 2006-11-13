@@ -456,6 +456,14 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                           UNAME(p, p->sem.scjoin.item_res));
             break;
                            
+        case la_dup_scjoin:
+            res = dup_scjoin (U(L(p)), U(R(p)),
+                              p->sem.scjoin.axis,
+                              p->sem.scjoin.ty,
+                              UNAME(p, p->sem.scjoin.item),
+                              UNAME(p, p->sem.scjoin.item_res));
+            break;
+                           
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
                            UNAME(p, p->sem.doc_tbl.iter),

@@ -262,6 +262,7 @@ infer_const (PFla_op_t *n)
         case la_type:
         case la_type_assert:
         case la_cast:
+        case la_dup_scjoin:
         case la_doc_access:
         case la_attribute:
         case la_textnode:
@@ -615,6 +616,7 @@ infer_const (PFla_op_t *n)
         case la_number:
         case la_type:
         case la_type_assert:
+        case la_dup_scjoin:
         case la_doc_access:
         case la_element_tag:
         case la_attribute:

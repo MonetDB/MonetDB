@@ -87,8 +87,9 @@ enum PFla_op_kind_t {
                                   iteration (Pathfinder extension) */
     , la_all            = 44 /**< test if all items in an iteration are true */
     , la_scjoin         = 50 /**< staircase join */
-    , la_doc_tbl        = 51 /**< document relation (is also a fragment) */
-    , la_doc_access     = 52 /**< document access necessary for pf:string-value */
+    , la_dup_scjoin     = 51 /**< staircase join */
+    , la_doc_tbl        = 52 /**< document relation (is also a fragment) */
+    , la_doc_access     = 53 /**< document access necessary for pf:string-value */
     , la_element        = 60 /**< element-constructing operator */
     , la_element_tag    = 61 /**< part of the element-constructing operator;
                                   connecting element tag and content;
@@ -603,6 +604,16 @@ PFla_op_t * PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
                          PFalg_axis_t axis, PFty_t seqty,
                          PFalg_att_t iter, PFalg_att_t item,
                          PFalg_att_t item_res);
+
+/**
+ * Staircase join without duplicates between two relations.
+ * Each such join corresponds to the evaluation of an XPath 
+ * location step.
+ */
+PFla_op_t * PFla_dup_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
+                             PFalg_axis_t axis, PFty_t seqty,
+                             PFalg_att_t item,
+                             PFalg_att_t item_res);
 
 /*********** node construction functionality *************/
 

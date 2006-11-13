@@ -787,6 +787,13 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.scjoin.item_res, id++);
             break;
 
+        case la_dup_scjoin:
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                add_subdom (n->prop, PFprop_dom (R(n)->prop,
+                                                 n->schema.items[i].name), id);
+            add_dom (n->prop, n->sem.scjoin.item_res, id++);
+            break;
+
         case la_doc_tbl:
             /* retain domain for attribute iter */
             add_dom (n->prop,

@@ -130,6 +130,7 @@ infer_card (PFla_op_t *n)
         case la_difference:
         case la_distinct:
         case la_scjoin:
+        case la_dup_scjoin:
         case la_merge_adjacent:
         case la_fragment:
         case la_frag_union:

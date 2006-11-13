@@ -414,6 +414,11 @@ infer_key (PFla_op_t *n)
                 union_ (n->prop->keys, n->sem.scjoin.item_res);
             break;
 
+        case la_dup_scjoin:
+            if (PFprop_card (R(n)->prop) == 1)
+                union_ (n->prop->keys, n->sem.doc_tbl.item_res);
+            break;
+
         case la_doc_tbl:
             if (PFprop_card (n->prop) == 1) {
                 /* If the cardinality is equal to one

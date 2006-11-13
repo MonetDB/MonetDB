@@ -37,12 +37,22 @@
 #include "la_proxy.h"
 #include "alg_dag.h"
 #include "properties.h"
+#include "mem.h"
 
 #define SEEN(p) ((p)->bit_dag)
+
+/*
+ * Easily access subtree-parts.
+ */
+/** starting from p, make a step left */
+#define L(p) ((p)->child[0])
+/** starting from p, make a step right */
+#define R(p) ((p)->child[1])
 
 static void
 resolve_proxies (PFla_op_t *p)
 {
+    unsigned int i; 
     assert (p);
 
     /* look at each node only once */
@@ -52,11 +62,76 @@ resolve_proxies (PFla_op_t *p)
         SEEN(p) = true;
 
     /* traverse children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+    for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         resolve_proxies (p->child[i]);
 
+    /* throw away additional proxy nodes */
     if (p->kind == la_proxy || p->kind == la_proxy_base)
         *p = *PFla_dummy (p->child[0]);
+
+    /* Replace the duplicate generating path step operators 
+       by the more explicit variant:
+
+             pi
+              |
+             |X|
+             / \
+            /   |
+         scjoin |
+            |   |
+           pi   |
+            \   |
+             \ /
+              #
+    */
+    if (p->kind == la_dup_scjoin) {
+        PFla_op_t    *number;
+        PFalg_att_t   used_cols = 0,
+                      join_att1,
+                      join_att2,
+                      cur;
+        PFalg_proj_t *top_proj   = PFmalloc (p->schema.count *
+                                             sizeof (PFalg_proj_t));
+        
+        /* Collect the used columns and generate a projection list
+           that discards the join columns. */
+        for (i = 0; i < p->schema.count; i++) {
+            cur = p->schema.items[i].name;
+            used_cols = used_cols | cur;
+            top_proj[i] = PFalg_proj (cur, cur);
+        }
+        
+        /* Generate two new column names (used for the join attributes). */
+        join_att1 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+        used_cols = used_cols | join_att1;
+        join_att2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+
+        /* Generate a new number operator. */
+        number = PFla_number (R(p), join_att2, att_NULL);
+
+        /* Generate the pattern sketched above. The projection
+           underneath the staircase join operator renames the
+           join columns as well as the resulting item column. */
+        *p = *PFla_project_ (
+                  PFla_eqjoin (
+                      PFla_scjoin (
+                          L(p),
+                          PFla_project (
+                              number,
+                              PFalg_proj (join_att1, join_att2),
+                              PFalg_proj (p->sem.scjoin.item_res,
+                                          p->sem.scjoin.item)),
+                          p->sem.scjoin.axis,
+                          p->sem.scjoin.ty,
+                          join_att1,
+                          p->sem.scjoin.item_res,
+                          p->sem.scjoin.item_res),
+                      number, 
+                      join_att1,
+                      join_att2),
+                  p->schema.count,
+                  top_proj);
+    }
 }
 
 /**

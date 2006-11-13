@@ -86,6 +86,7 @@ static char *a_id[]  = {
     , [la_seqty1]           = "SEQTY1"
     , [la_all]              = "ALL"
     , [la_scjoin]           = "/|"               /* light blue */
+    , [la_dup_scjoin]       = "/|+"               /* light blue */
     , [la_doc_tbl]          = "DOC"
     , [la_doc_access]       = "access"
     , [la_element]          = "ELEM"             /* lawn \"#00FF00\" */
@@ -152,6 +153,7 @@ static char *xml_id[]  = {
     , [la_seqty1]           = "seqty1"
     , [la_all]              = "all"
     , [la_scjoin]           = "staircase_join"
+    , [la_dup_scjoin]       = "staircase_join_with_duplicates"
     , [la_doc_tbl]          = "fn:doc"
     , [la_doc_access]       = "document_access"
     , [la_element]          = "element_construction"
@@ -349,6 +351,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
         , [la_seqty1]         = "\"#C0C0C0\""
         , [la_all]            = "\"#C0C0C0\""
         , [la_scjoin]         = "\"#1E90FF\""
+        , [la_dup_scjoin]     = "\"#1E9099\""
         , [la_doc_tbl]        = "\"#C0C0C0\""
         , [la_doc_access]     = "\"#CCCCFF\""
         , [la_element]        = "\"#00CC59\""
@@ -591,6 +594,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             break;
 
         case la_scjoin:
+        case la_dup_scjoin:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
                 
             /* print out XPath axis */
@@ -636,10 +640,16 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                         "unknown XPath axis in dot output");
             }
 
-            PFarray_printf (dot, "%s (%s, %s)", 
-                            PFty_str (n->sem.scjoin.ty),
-                            PFatt_str (n->sem.scjoin.iter),
-                            PFatt_str (n->sem.scjoin.item));
+            if (n->kind == la_scjoin)
+                PFarray_printf (dot, "%s (%s, %s)", 
+                                PFty_str (n->sem.scjoin.ty),
+                                PFatt_str (n->sem.scjoin.iter),
+                                PFatt_str (n->sem.scjoin.item));
+            else
+                PFarray_printf (dot, "%s (%s:%s)", 
+                                PFty_str (n->sem.scjoin.ty),
+                                PFatt_str (n->sem.scjoin.item_res),
+                                PFatt_str (n->sem.scjoin.item));
 
             break;
 
@@ -859,7 +869,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                             PFarray_printf (dot, " |%s]", PFatt_str(r_ori));
                     }
                 }
-
+                
                 all = true;
             }
             fmt++;
@@ -1452,6 +1462,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
             break;
 
         case la_scjoin:
+        case la_dup_scjoin:
             PFarray_printf (xml, "    <content>\n      <step axis=\"");
                 
             /* print out XPath axis */
@@ -1497,14 +1508,24 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                         "unknown XPath axis in dot output");
             }
 
-            PFarray_printf (xml,
-                            "\" type=\"%s\"/>\n"
-                            "      <column name=\"%s\" function=\"iter\"/>\n"
-                            "      <column name=\"%s\" function=\"item\"/>\n"
-                            "    </content>\n",
-                            PFty_str (n->sem.scjoin.ty),
-                            PFatt_str (n->sem.scjoin.iter),
-                            PFatt_str (n->sem.scjoin.item));
+            if (n->kind == la_scjoin)
+                PFarray_printf (xml,
+                                "\" type=\"%s\"/>\n"
+                                "      <column name=\"%s\" function=\"iter\"/>\n"
+                                "      <column name=\"%s\" function=\"item\"/>\n"
+                                "    </content>\n",
+                                PFty_str (n->sem.scjoin.ty),
+                                PFatt_str (n->sem.scjoin.iter),
+                                PFatt_str (n->sem.scjoin.item));
+            else
+                PFarray_printf (xml,
+                                "\" type=\"%s\"/>\n"
+                                "      <column name=\"%s\" new=\"true\"/>\n"
+                                "      <column name=\"%s\" function=\"item\"/>\n"
+                                "    </content>\n",
+                                PFty_str (n->sem.scjoin.ty),
+                                PFatt_str (n->sem.scjoin.item_res),
+                                PFatt_str (n->sem.scjoin.item));
             break;
 
         case la_doc_tbl:

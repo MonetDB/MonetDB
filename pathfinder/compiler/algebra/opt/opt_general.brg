@@ -111,8 +111,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  seqty1         =  43
 %term  all            =  44
 %term  scjoin         =  50
-%term  doc_tbl        =  51
-%term  doc_access     =  52
+%term  dup_scjoin     =  51
+%term  doc_tbl        =  52
+%term  doc_access     =  53
 %term  element        =  60
 %term  element_tag    =  61
 %term  attribute      =  62
@@ -189,7 +190,8 @@ Rel:    ScjRel                                    =  61 (10);
 ScjRel: scjoin (Frag, Rel)                        =  62 (10);
 ScjRel: scjoin (Frag, ScjRel)                     =  63 (10);
 ScjRel: scjoin (Frag, distinct (Rel))             =  64 (10);
-Rel:    doc_access (Frag, Rel)                    =  65 (10);
+Rel:    dup_scjoin (Frag, Rel)                    =  65 (10);
+Rel:    doc_access (Frag, Rel)                    =  66 (10);
 
 Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
 Rel:    roots_ (element (Frag,                       

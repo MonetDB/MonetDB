@@ -138,10 +138,9 @@ diff (PFalg_att_t a, PFalg_att_t b)
  * and the name pair list @a np_list (using its unq field).
  * The difference is returned in a new list.
  */
-static PFarray_t *
-diff_np (PFarray_t *np_list, PFalg_att_t unq)
+static void
+diff_np (PFarray_t  *ret, PFarray_t *np_list, PFalg_att_t unq)
 {
-    PFarray_t  *ret = PFarray (sizeof (name_pair_t));
     name_pair_t np;
     
     for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
@@ -149,8 +148,6 @@ diff_np (PFarray_t *np_list, PFalg_att_t unq)
         if (np.unq != unq)
             *(name_pair_t *) PFarray_add (ret) = np;
     }
-
-    return ret;
 }
 
 
@@ -252,7 +249,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_attach:
             /* infer all columns except the one introduced by the attach
                operator */
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.attach.attname);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.attach.attname);
             break;
 
         case la_cross:
@@ -368,12 +365,12 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_bool_or:
         case la_concat:
         case la_contains:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.binary.res);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.binary.res);
             break;
 
         case la_num_neg:
         case la_bool_not:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.unary.res);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.unary.res);
             break;
 
         case la_avg:
@@ -407,17 +404,17 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_rownum:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.rownum.attname);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.rownum.attname);
             break;
             
         case la_number:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.number.attname);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.number.attname);
             break;
 
         case la_type:
         case la_cast:
         case la_type_assert:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.type.res);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.type.res);
             break;
 
         case la_scjoin:
@@ -433,6 +430,10 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             add_name_pair (n->prop->r_name_pairs, ori, unq);
             break;
             
+        case la_dup_scjoin:
+            diff_np (n->prop->r_name_pairs, np_list, n->sem.scjoin.item_res);
+            break;
+
         case la_doc_tbl:
             /* input iter column */
             unq = n->sem.doc_tbl.iter;
@@ -447,7 +448,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
             
         case la_doc_access:
-            n->prop->r_name_pairs = diff_np (np_list, n->sem.doc_access.res);
+            diff_np (n->prop->r_name_pairs, np_list, n->sem.doc_access.res);
             break;
 
         case la_element:
@@ -491,11 +492,11 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
             
         case la_attribute:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.attr.res);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.attr.res);
             break;
 
         case la_textnode:
-            n->prop->l_name_pairs = diff_np (np_list, n->sem.textnode.res);
+            diff_np (n->prop->l_name_pairs, np_list, n->sem.textnode.res);
             break;
 
         case la_docnode:

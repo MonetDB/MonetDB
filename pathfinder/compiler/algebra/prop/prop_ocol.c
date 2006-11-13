@@ -426,6 +426,19 @@ infer_ocol (PFla_op_t *n)
                                             .type = aat_pnode };
             break;
 
+        case la_dup_scjoin:
+            ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
+            if (n->sem.scjoin.axis == alg_attr) 
+                ocol_at (n, ocols_count (n))
+                    = (PFalg_schm_item_t) { .name = n->sem.scjoin.item_res,
+                                            .type = aat_anode };
+            else
+                ocol_at (n, ocols_count (n))
+                    = (PFalg_schm_item_t) { .name = n->sem.scjoin.item_res,
+                                            .type = aat_pnode };
+            ocols_count (n)++;
+            break;
+            
         case la_doc_access:
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
             ocol_at (n, ocols_count (n)).name = n->sem.doc_access.res;

@@ -247,6 +247,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 if (unq_names)
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
+                                  false /* dist */,
                                   true  /* dom */,
                                   false /* icol */,
                                   true  /* key */,
@@ -259,6 +260,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 else
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
+                                  true  /* dist */,
                                   true  /* dom */,
                                   true  /* icol */,
                                   true  /* key */,
@@ -361,6 +363,13 @@ PFalgopt (PFla_op_t *root, bool timing)
                 "Physical algebra requires original names. "
                 "Add ']' optimization option (at the end) to "
                 "ensure correct attribute name usage.");
+
+    if (proxies_involved)
+        PFinfo (OOPS_WARNING,
+                "Physical algebra does not cope with proxies. "
+                "Add '{' optimization option (at the end) to "
+                "ensure that every operator is known in the "
+                "physical algebra.");
 
     return root;
 }

@@ -56,6 +56,9 @@
 #define L(p) ((p)->child[0])
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
+/** ... and so on */
+#define LL(p) (L(L(p)))
+#define RL(p) (L(R(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 #define IN(p)   ((p)->bit_in)
@@ -1167,6 +1170,330 @@ nest_proxy (PFla_op_t *root,
     
     return true;
 }
+
+
+
+
+/**
+ *
+ * Functions specific to the generation of duplicate generating
+ * XPath location step.
+ */
+
+/**
+ * Nothing needed up front.
+ */
+static void
+dup_scjoin_prepare (PFla_op_t *root)
+{
+    (void) root;
+}
+
+/**
+ * dup_scjoin_entry detects an expression 
+ * of the following form:
+ *
+ *        |X|
+ *      __/ \__
+ *     /       \
+ *    (pi)      |
+ *    |         |
+ *   scjoin   (pi)
+ *    |         |
+ *    (pi)      |
+ *     \__   __/
+ *        \ /
+ *         #
+ */
+static bool
+dup_scjoin_entry (PFla_op_t *p)
+{
+    PFalg_att_t join_att;
+    PFla_op_t  *cur,
+               *number = NULL,
+               *scjoin = NULL;
+    
+    if (p->kind != la_eqjoin)
+        return false;
+
+    /* check left side */
+    cur = L(p);
+    join_att = p->sem.eqjoin.att1;
+    /* cope with projection */
+    if (cur->kind == la_project) {
+        for (unsigned int i = 0; i < cur->sem.proj.count; i++)
+            if (cur->sem.proj.items[i].new == join_att) {
+                join_att = cur->sem.proj.items[i].old;
+                break;
+            }
+        cur = L(cur);
+    }
+    
+    if (cur->kind == la_number &&
+        cur->sem.number.attname == join_att &&
+        !cur->sem.number.part)
+        number = cur;
+    else if (cur->kind == la_scjoin &&
+        cur->sem.scjoin.iter == join_att) {
+        cur = R(cur);
+        
+        /* cope with projection */
+        if (cur->kind == la_project) {
+            for (unsigned int i = 0; i < cur->sem.proj.count; i++)
+                if (cur->sem.proj.items[i].new == join_att) {
+                    join_att = cur->sem.proj.items[i].old;
+                    break;
+                }
+            cur = L(cur);
+        }
+        
+        if (cur->kind == la_number &&
+            cur->sem.number.attname == join_att &&
+            !cur->sem.number.part)
+            scjoin = cur;
+    } else
+        return false;
+
+    /* check right side */
+    cur = R(p);
+    join_att = p->sem.eqjoin.att2;
+    /* cope with projection */
+    if (cur->kind == la_project) {
+        for (unsigned int i = 0; i < cur->sem.proj.count; i++)
+            if (cur->sem.proj.items[i].new == join_att) {
+                join_att = cur->sem.proj.items[i].old;
+                break;
+            }
+        cur = L(cur);
+    }
+    
+    if (cur->kind == la_number &&
+        cur->sem.number.attname == join_att &&
+        !cur->sem.number.part &&
+        !number)
+        number = cur;
+    else if (cur->kind == la_scjoin &&
+        cur->sem.scjoin.iter == join_att &&
+        !scjoin) {
+        cur = R(cur);
+        
+        /* cope with projection */
+        if (cur->kind == la_project) {
+            for (unsigned int i = 0; i < cur->sem.proj.count; i++)
+                if (cur->sem.proj.items[i].new == join_att) {
+                    join_att = cur->sem.proj.items[i].old;
+                    break;
+                }
+            cur = L(cur);
+        }
+        
+        if (cur->kind == la_number &&
+            cur->sem.number.attname == join_att &&
+            !cur->sem.number.part)
+            scjoin = cur;
+    } else
+        return false;
+
+    return scjoin && scjoin == number;
+}
+
+/**
+ * dup_scjoin_exit just tests whether the previously detected
+ * number operator matches the current one.
+ */
+static bool
+dup_scjoin_exit (PFla_op_t *p, PFla_op_t *entry)
+{
+    PFla_op_t *cur;
+    
+    if (p->kind != la_number)
+        return false;
+
+    cur = L(entry);
+    while (cur && cur->kind != la_number) {
+        switch (cur->kind) {
+            case la_project:
+                cur = L(cur);
+                break;
+                
+            case la_scjoin:
+                cur = R(cur);
+                break;
+                
+            default:
+                cur = NULL;
+        }
+    }
+    return cur == p;
+}
+
+/**
+ * intro_dup_scjoin replaces the pattern 
+ * detected above
+ *
+ *        |X|
+ *      __/ \__
+ *     /       \
+ *    (pi)      |
+ *    |         |
+ *   scjoin   (pi)
+ *    |         |
+ *    (pi)      |
+ *     \__   __/
+ *        \ /
+ *         #
+ *
+ * (if there are no outside references) into
+ * a duplicate aware scjoin operator dup_scjoin. 
+ * A projection on top of the new operator ensures
+ * the correct mapping of the columns.
+ */
+static bool
+intro_dup_scjoin (PFla_op_t *root,
+                  PFla_op_t *proxy_entry,
+                  PFla_op_t *proxy_exit,
+                  PFarray_t *conflict_list,
+                  PFarray_t *exit_refs,
+                  PFarray_t *checked_nodes)
+{
+    PFla_op_t    *scjoin, 
+                 *proj = NULL,
+                 *cur;
+    PFalg_proj_t *proj_list;
+    PFalg_att_t   join_att,
+                  item_res,
+                  item = 0,
+                  item_proj = 0,
+                  used_cols = 0;
+    unsigned int  last,
+                  i,
+                  count = 0;
+    
+    (void) root;
+    (void) exit_refs;
+    (void) checked_nodes;
+
+    /* remove entry and exit references */
+    last = PFarray_last (conflict_list);
+    while (last) {
+        cur = *(PFla_op_t **) PFarray_top (conflict_list);
+        if (proxy_exit == cur || proxy_entry == cur) {
+            PFarray_del (conflict_list);
+            last--;
+        } else
+            return false;
+    }
+    
+    /* detect in which branch of the eqjoin operator 
+       the scjoin resides and prepare the transformation */
+    if (L(proxy_entry)->kind == la_scjoin) {
+        join_att = proxy_entry->sem.eqjoin.att2;
+        scjoin   = L(proxy_entry);
+        cur      = R(proxy_entry);
+    } else if (LL(proxy_entry)->kind == la_scjoin) {
+        join_att = proxy_entry->sem.eqjoin.att2;
+        proj     =  L(proxy_entry);
+        scjoin   = LL(proxy_entry);
+        cur      =  R(proxy_entry);
+    } else if (R(proxy_entry)->kind == la_scjoin) {
+        join_att = proxy_entry->sem.eqjoin.att1;
+        scjoin   = R(proxy_entry);
+        cur      = L(proxy_entry);
+    } else {
+        join_att = proxy_entry->sem.eqjoin.att1;
+        proj     =  R(proxy_entry);
+        scjoin   = RL(proxy_entry);
+        cur      =  L(proxy_entry);
+    }
+
+    /* prepare projection list for the mapping projection */
+    proj_list = PFmalloc (proxy_entry->schema.count * sizeof (PFalg_proj_t));
+
+    /* Fill the name pairs of the projection list with the tuples streaming
+       through the non-scjoin branch of the eqjoin (as well as the one for 
+       the second join argument).
+       Collect the names of the inputs to ensure that the dup_scjoin
+       creates a new column name. */
+    if (cur->kind == la_project) {
+        for (i = 0; i < cur->sem.proj.count; i++) {
+            used_cols = used_cols | cur->sem.proj.items[i].old;
+            if (cur->sem.proj.items[i].new == join_att) {
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
+                                                 cur->sem.proj.items[i].old);
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att2,
+                                                 cur->sem.proj.items[i].old);
+            } else
+                proj_list[count++] = cur->sem.proj.items[i];
+        }
+    } else {
+        for (i = 0; i < cur->schema.count; i++) {
+            used_cols = used_cols | cur->schema.items[i].name;
+            if (cur->schema.items[i].name == join_att) {
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
+                                                 cur->schema.items[i].name);
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att2,
+                                                 cur->schema.items[i].name);
+            } else
+                proj_list[count++] = PFalg_proj (cur->schema.items[i].name,
+                                                 cur->schema.items[i].name);
+        }
+    }
+    
+    /* Get the column name providing the context 
+       nodes of the staircase join */
+    if (R(scjoin)->kind == la_project) {
+        for (i = 0; i < R(scjoin)->sem.proj.count; i++)
+            if (scjoin->sem.scjoin.item ==
+                R(scjoin)->sem.proj.items[i].new) {
+                item = R(scjoin)->sem.proj.items[i].old;
+                break;
+            }
+
+        assert (item);
+    } else 
+        item = scjoin->sem.scjoin.item;
+
+    /* Ensure that the context node column is not the same 
+       as the resulting column of the new staircase join */
+    used_cols = used_cols | item;
+    
+    /* Create a new column name for the result of the new staircase join. */
+    item_res = PFalg_ori_name (PFalg_unq_name (att_item, 0), ~used_cols);
+
+    /* Get the column of the resulting item column of the scjoin */
+    if (proj) {
+        assert (proj->sem.proj.count <= 2);
+        
+        for (i = 0; i < proj->sem.proj.count; i++)
+            if (scjoin->sem.scjoin.item ==
+                proj->sem.proj.items[i].old) {
+                item_proj = proj->sem.proj.items[i].new;
+                break;
+            }
+    } else
+        item_proj = scjoin->sem.scjoin.item;
+    
+    /* If the column generated by the staircase join is in the overall
+       result, then add it to the projection list. */
+    if (item_proj) {
+        proj_list[count++] = PFalg_proj (item_proj, item_res);
+    }
+
+    /* Replace the detected pattern by the new duplicate generating scjoin
+       and a name mapping projection on top of it. */
+    *proxy_entry = *PFla_project_ (
+                        PFla_dup_scjoin (
+                            L(scjoin),
+                            proxy_exit,
+                            scjoin->sem.scjoin.axis,
+                            scjoin->sem.scjoin.ty,
+                            item,
+                            item_res),
+                        proxy_entry->schema.count,
+                        proj_list);
+    return true;
+}
+
 
 
 
@@ -2515,6 +2842,19 @@ PFintro_proxies (PFla_op_t *root)
                       proxy_nest_entry,
                       proxy_nest_exit,
                       nest_proxy,
+                      checked_nodes);
+
+    /* As we match the same nodes (equi-joins) again we need to reset
+       the list of checked nodes */
+    PFarray_last (checked_nodes) = 0;
+
+    /* rewrite joins that contain only a single XPath location
+       step into a new dup_scjoin operator. */
+    intro_proxy_kind (root,
+                      dup_scjoin_prepare,
+                      dup_scjoin_entry,
+                      dup_scjoin_exit,
+                      intro_dup_scjoin,
                       checked_nodes);
 
     /* As we match the same nodes (equi-joins) again we need to reset

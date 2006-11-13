@@ -916,6 +916,21 @@ join_pushdown (PFla_op_t *p)
                 }
                 break;
                 
+            case la_dup_scjoin:
+                if (!is_join_att (p, lp->sem.scjoin.item_res)) {
+                    *p = *(dup_scjoin (L(lp),
+                                       eqjoin_unq (R(lp), rp, latt, ratt,
+                                                   p->sem.eqjoin_unq.res),
+                                       lp->sem.scjoin.axis,
+                                       lp->sem.scjoin.ty,
+                                       is_join_att(p, lp->sem.scjoin.item)
+                                          ? p->sem.eqjoin_unq.res
+                                          : lp->sem.scjoin.item,
+                                       lp->sem.scjoin.item_res));
+                    modified = true;
+                }
+                break;
+
             case la_doc_access:
                 if (!is_join_att (p, lp->sem.doc_access.res)) {
                     *p = *(doc_access (L(lp),

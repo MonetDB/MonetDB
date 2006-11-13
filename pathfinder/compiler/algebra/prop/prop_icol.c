@@ -438,6 +438,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                                        n->sem.scjoin.item);
             break;
 
+        case la_dup_scjoin:
+            /* infer empty list for fragments */
+            n->prop->l_icols = 0;
+            n->prop->r_icols = n->prop->icols;
+            n->prop->r_icols = diff (n->prop->r_icols, n->sem.scjoin.item_res);
+            n->prop->r_icols = union_ (n->prop->r_icols, n->sem.scjoin.item);
+            break;
+
         case la_doc_tbl:
             /* infer iter|item schema for input relation */
             n->prop->l_icols = union_ (n->sem.doc_tbl.iter,

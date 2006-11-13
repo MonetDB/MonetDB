@@ -292,6 +292,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_scjoin:
+        case la_dup_scjoin:
             return (a->sem.scjoin.axis == b->sem.scjoin.axis
                     && PFty_subtype (a->sem.scjoin.ty, b->sem.scjoin.ty)
                     && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty)

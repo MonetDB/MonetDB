@@ -953,6 +953,52 @@ opt_mvd (PFla_op_t *p)
         }
         break;
         
+    case la_dup_scjoin:
+        if (is_cross (R(p))) {
+            bool switch_left = att_present (RL(p), p->sem.scjoin.item);
+            bool switch_right = att_present (RR(p), p->sem.scjoin.item);
+                               
+            if (switch_left && switch_right) {
+                *p = *(cross_can (dup_scjoin (
+                                        L(p),
+                                        RL(p),
+                                        p->sem.scjoin.axis,
+                                        p->sem.scjoin.ty,
+                                        p->sem.scjoin.item,
+                                        p->sem.scjoin.item_res),
+                                  dup_scjoin (
+                                        L(p), 
+                                        RR(p),
+                                        p->sem.scjoin.axis,
+                                        p->sem.scjoin.ty,
+                                        p->sem.scjoin.item,
+                                        p->sem.scjoin.item_res)));
+                modified = true;
+            }
+            else if (switch_left) {
+                *p = *(cross_can (dup_scjoin (
+                                        L(p), RL(p),
+                                        p->sem.scjoin.axis,
+                                        p->sem.scjoin.ty,
+                                        p->sem.scjoin.item,
+                                        p->sem.scjoin.item_res),
+                                  RR(p)));
+                modified = true;
+            }
+            else if (switch_right) {
+                *p = *(cross_can (RL(p),
+                                  dup_scjoin (
+                                        L(p),
+                                        RR(p),
+                                        p->sem.scjoin.axis,
+                                        p->sem.scjoin.ty,
+                                        p->sem.scjoin.item,
+                                        p->sem.scjoin.item_res)));
+                modified = true;
+            }
+        }
+        break;
+        
     case la_doc_tbl:
         /* should not appear as roots already
            translates the doc_tbl operator. */
