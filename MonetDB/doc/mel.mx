@@ -132,24 +132,14 @@ the following:
 \item link this additional code, together with your implementation, 
 and possibly additional libraries of your choice into a dynamically
 loadable library (in whatever way appropriate on your system).
-\item move this library into the \$MONETHOME/lib directory. 
+\item move this library into the \$MONETDB_PREFIX/lib/MonetDB/lib directory. 
 \end{enumerate}
-The name-convention of the library in the \$MONETHOME/lib directory
-steers module lookup when in the Mserver:
-\begin{itemize}
-\item A library called "module.so" is usable by everyone, by any valid MonetDB 
-database. 
-\item A library called "module-db.so" indicates that this module can only
-be loaded by users of database "db". 
-\end{itemize}
 
-A standard Makefile is available in the \$MONETHOME/modules directory,
-to ease the development process. This makefile assumes that you use the 
+An example Makefile is available in the template cvs repository,
+to ease the development process. This repository explains how to setup an
+project which adds a module to MonetDB. It assumes that you use the 
 @[<a href="http://www.cwi.nl/htbin/ins1/publications?request=pdf&key=KeScBeBo:UNPUBLISHED:96">Mx</a>@ utility for integrating code 
-and documentation. It also assumes that your module is in an Mx
-file "module.mx" and contains just one source file "module.c" or
-"module.cc". For more complex situations, you must invent something
-yourself.
+and documentation. 
 
 @* The MonetDB Extension Language (MEL)
 
@@ -335,13 +325,19 @@ fixedsizeADTops:
  |	.COMP    = <ident: C routine implementing comparison LT/EQ/GT>  
  |	.NEQUAL  = <ident: C routine implementing comparison NE>  
  |      .NULL	 = <ident: C routine returning pointer to the nil value>
+ | 	.WRITE 	 = <ident: C routine implementing write to stream>
+ | 	.READ 	 = <ident: C routine implementing read from stream>
 
 varsizeADTops:
 	.HEAP	= <ident: C routine that creates and initializes a heap>
  |	.PUT	= <ident: C routine implementing insert in heap>  
- |	.GET	= <ident: C routine implementing copy out of heap>  
  |	.DEL	= <ident: C routine implementing delete from heap>  
  | 	.LEN	= <ident: C routine implementing length function>
+ | 	.CONVERT= <ident: C routine implementing network to host (and vs) byte orderings>
+
+ADTops:
+ |	.FIX	= <ident: C routine, for incrementing the reference counts>
+ |	.UNFIX	= <ident: C routine, for decrementing the reference counts>
 
 \end{verbatim}} 
 
@@ -746,6 +742,42 @@ point* pointNull(){
 
 This simple function just returns a pointer to a static nil value.
 
+@- WRITE: write atoms to a stream
+@T
+{\small\begin{verbatim} 
+
+This simple function writes points on the stream.
+
+void point_write(point *p, stream *s, size_t cnt)
+{
+	int i;
+
+	for(i = 0; i<cnt; i++) {
+		stream_writeInt(s, p[i].x);
+		stream_writeInt(s, p[i].y);
+	}
+}
+\end{verbatim}}
+
+@- READ: read atoms from a stream
+@T
+{\small\begin{verbatim} 
+
+This simple function reads points on the stream. 
+
+point *point_read(point *p, stream *s, size_t cnt)
+{
+	int i;
+
+	for(i = 0; i<cnt; i++) {
+		stream_readInt(s, &p[i].x);
+		stream_readInt(s, &p[i].y);
+	}
+	return p;
+}
+\end{verbatim}}
+
+
 @+ Variable-size Atoms
 Probably the easiest way to create variable sized atoms is to
 overload functions from the @[<a href="../Modules/blob/index.html">blob</a>@
@@ -803,22 +835,6 @@ The PUT function must allocate space in the heap and copy the atom there.
 It furthermore must set the {\small\tt *offset} to the byte-offset from the
 base of the heap.
 
-@- GET: copy out of heap  
-@T
-{\small\begin{verbatim} 
-int polylineGet(Heap *h, int* offset, *len, polyline **dst) {
-	polyline *src  = (polyline*) (h->base + *offset);
-	int size = polylineLength(src);
-
-	if (size > *len) {
-		if (*dst) GDKfree(*dst);
-		*dst = (polyline*) GDKmalloc(*len = size);
-	}
-	memcpy(*dst, src, size);
-	return size;
-}
-\end{verbatim}}
-
 This functions extract a value from the heap, into a new region.
 The semantics for allocation management is similar to FROMSTR and TOSTR.
 
@@ -827,6 +843,19 @@ The semantics for allocation management is similar to FROMSTR and TOSTR.
 {\small\begin{verbatim} 
 int polylineDel(Heap*h, int* offset){
 	HEAP_free(h, h->base + *offset);
+}
+\end{verbatim}}
+
+blob_convert(blob *b, int direction)
+
+The CONVERT function must convert between host and network byte orderings (and
+vs) as specified by the {\small\tt direction}. 
+
+@- convert: delete from heap  
+@T
+{\small\begin{verbatim} 
+int polylineConvert(polyline *p, int direction){
+	normal_vart_SWAP(p->npoints)
 }
 \end{verbatim}}
 
