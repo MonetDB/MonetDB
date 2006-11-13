@@ -247,7 +247,6 @@ PFalgopt (PFla_op_t *root, bool timing)
                 if (unq_names)
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
-                                  false /* dist */,
                                   true  /* dom */,
                                   false /* icol */,
                                   true  /* key */,
@@ -260,7 +259,6 @@ PFalgopt (PFla_op_t *root, bool timing)
                 else
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
-                                  true  /* dist */,
                                   true  /* dom */,
                                   true  /* icol */,
                                   true  /* key */,
