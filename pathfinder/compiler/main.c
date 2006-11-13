@@ -749,6 +749,8 @@ main (int argc, char *argv[])
                                             "names to original names)\n");
                 printf ("         M  apply optimization based on multi-value "
                                             "dependencies\n");
+                printf ("         S  apply optimization based on set "
+                                            "property\n");
                 printf ("         }  introduce proxy operators that represent"
                                             "operator groups\n");
                 printf ("         {  remove proxy operators\n");

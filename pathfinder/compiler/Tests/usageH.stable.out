@@ -1,14 +1,14 @@
 stdout of test 'usageH` in directory 'compiler` itself:
 
 
-# 15:32:19 >  
-# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
-# 15:32:19 >  
+# 18:15:11 >  
+# 18:15:11 >  Mtimeout -timeout 120 ./usageH usageH 
+# 18:15:11 >  
 
 
-# 15:32:19 >  
-# 15:32:19 >  Mtimeout -timeout 60 pf -h
-# 15:32:19 >  
+# 18:15:11 >  
+# 18:15:11 >  Mtimeout -timeout 60 pf -H
+# 18:15:11 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
 (c) Database Group, Technische Universitaet Muenchen
@@ -74,12 +74,13 @@ Usage: pf [OPTION] [FILE]
          J  push down equi-joins (requires unique column names)
          ]  map column names back (from unique names to original names)
          M  apply optimization based on multi-value dependencies
+         S  apply optimization based on set property
          }  introduce proxy operators that representoperator groups
          {  remove proxy operators
          P  infer all properties
             (used for debug output and physical algebra
          _  does nothing (used for structuring the options)
-         (default is: '-o OIKDCG_VGO_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCGCGP')
+         (default is: '-o OIKDCG_VGO_[J]OKVCG}IMS{_[J]OKVCG}IMS{_[J]OKVCG}IMS{_[J]OKVCG}IMS{_[J]OKVCGCGP')
 = -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
          0 disable dead code elimination
          1 enable dead code elimination (default)
@@ -87,7 +88,7 @@ Usage: pf [OPTION] [FILE]
 
 Enjoy.
 
-# 15:32:19 >  
-# 15:32:19 >  Done.
-# 15:32:19 >  
+# 18:15:11 >  
+# 18:15:11 >  Done.
+# 18:15:11 >  
 
