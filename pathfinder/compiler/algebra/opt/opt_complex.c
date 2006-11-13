@@ -51,6 +51,7 @@
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
 #define LL(p) (L(L(p)))
+#define RL(p) (L(R(p)))
 #define LLL(p) (LL(L(p)))
 
 #define SEEN(p) ((p)->bit_dag)
@@ -118,19 +119,52 @@ opt_complex (PFla_op_t *p)
                 L(p)->schema.count == 1 &&
                 LL(p)->kind == la_scjoin &&
                 p->sem.attach.attname == LL(p)->sem.scjoin.iter &&
+                PFprop_const (LL(p)->prop, LL(p)->sem.scjoin.iter) &&
+                PFalg_atom_comparable (
+                    p->sem.attach.value,
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
+                !PFalg_atom_cmp (
+                    p->sem.attach.value,
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
                 L(p)->sem.proj.items[0].new == LL(p)->sem.scjoin.item_res) {
                 *p = *PFla_dummy (LL(p));
-                p->prop = PFprop ();
                 break;
             }
+            /* prune unnecessary attach-project operators */
+            if (L(p)->kind == la_project &&
+                L(p)->schema.count == 1 &&
+                LL(p)->kind == la_scjoin &&
+                PFprop_const (LL(p)->prop, LL(p)->sem.scjoin.iter) &&
+                PFalg_atom_comparable (
+                    p->sem.attach.value,
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
+                !PFalg_atom_cmp (
+                    p->sem.attach.value,
+                    PFprop_const_val (LL(p)->prop, LL(p)->sem.scjoin.iter)) &&
+                L(p)->sem.proj.items[0].old == LL(p)->sem.scjoin.item_res) {
+                *p = *PFla_project (PFla_dummy (LL(p)),
+                                    PFalg_proj (p->sem.attach.attname,
+                                                LL(p)->sem.scjoin.iter),
+                                    L(p)->sem.proj.items[0]);
+                break;
+            }
+            /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
                 LL(p)->kind == la_roots &&
                 LLL(p)->kind == la_doc_tbl &&
                 p->sem.attach.attname == LLL(p)->sem.doc_tbl.iter &&
+                PFprop_const (LLL(p)->prop, LLL(p)->sem.doc_tbl.iter) &&
+                PFalg_atom_comparable (
+                    p->sem.attach.value,
+                    PFprop_const_val (LLL(p)->prop,
+                                      LLL(p)->sem.doc_tbl.iter)) &&
+                !PFalg_atom_cmp (
+                    p->sem.attach.value,
+                    PFprop_const_val (LLL(p)->prop, 
+                                      LLL(p)->sem.doc_tbl.iter)) &&
                 L(p)->sem.proj.items[0].new == LLL(p)->sem.doc_tbl.item_res) {
                 *p = *PFla_dummy (LL(p));
-                p->prop = PFprop ();
                 break;
             }
 
@@ -246,13 +280,11 @@ opt_complex (PFla_op_t *p)
             if (PFprop_card (L(p)->prop) == 1 &&
                 PFprop_icols_count (L(p)->prop) == 0) {
                 *p = *PFla_dummy (R(p));
-                p->prop = PFprop ();
                 break;
             }
             if (PFprop_card (R(p)->prop) == 1 &&
                 PFprop_icols_count (R(p)->prop) == 0) {
                 *p = *PFla_dummy (L(p));
-                p->prop = PFprop ();
                 break;
             }
             break;
@@ -506,6 +538,36 @@ opt_complex (PFla_op_t *p)
             }
         }   break;
 
+        case la_scjoin:
+            if (R(p)->kind == la_project &&
+                RL(p)->kind == la_scjoin) {
+                if ((p->sem.scjoin.item == 
+                     R(p)->sem.proj.items[0].new &&
+                     RL(p)->sem.scjoin.item_res == 
+                     R(p)->sem.proj.items[0].old &&
+                     p->sem.scjoin.iter ==
+                     R(p)->sem.proj.items[1].new &&
+                     RL(p)->sem.scjoin.iter == 
+                     R(p)->sem.proj.items[1].old) ||
+                    (p->sem.scjoin.item == 
+                     R(p)->sem.proj.items[1].new &&
+                     RL(p)->sem.scjoin.item_res == 
+                     R(p)->sem.proj.items[1].old &&
+                     p->sem.scjoin.iter ==
+                     R(p)->sem.proj.items[0].new &&
+                     RL(p)->sem.scjoin.iter == 
+                     R(p)->sem.proj.items[0].old))
+                    *p = *PFla_project (PFla_scjoin (
+                                            L(p),
+                                            RL(p),
+                                            p->sem.scjoin.axis,
+                                            p->sem.scjoin.ty,
+                                            RL(p)->sem.scjoin.iter,
+                                            RL(p)->sem.scjoin.item,
+                                            RL(p)->sem.scjoin.item_res),
+                                        R(p)->sem.proj.items[0],
+                                        R(p)->sem.proj.items[1]);
+            }
         default:
             break;
     }
