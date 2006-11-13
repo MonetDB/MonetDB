@@ -1243,9 +1243,6 @@ PFalgopt_join_pd (PFla_op_t *root)
     clean_up_eqjoin (root);
     PFla_dag_reset (root);
 
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
-
     return root;
 }
 

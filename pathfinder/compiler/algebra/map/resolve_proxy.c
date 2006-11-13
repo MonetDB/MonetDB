@@ -142,8 +142,6 @@ PFresolve_proxies (PFla_op_t *root)
 {
     resolve_proxies (root);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

@@ -1536,8 +1536,6 @@ PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
        products by normal ones */
     clean_up_cross (root);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

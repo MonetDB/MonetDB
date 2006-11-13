@@ -348,7 +348,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                 if (PFprop_const_val_left (p->prop, 
                                            p->sem.select.att).val.bln) {
                     *p = *PFla_dummy (L(p));
-                    p->prop = PFprop ();
                     break;
                 } else {
                     *p = *PFla_empty_tbl_ (p->schema);
@@ -405,7 +404,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                     /* we have no matches -- thus the left argument
                        remains unchanged and the difference is superfluous */
                     *p = *PFla_dummy (L(p));
-                    p->prop = PFprop ();
                 }
             }
         }   break;

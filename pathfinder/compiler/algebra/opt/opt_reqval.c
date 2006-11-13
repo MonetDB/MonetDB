@@ -91,8 +91,6 @@ PFalgopt_reqval (PFla_op_t *root)
     /* Optimize algebra tree */
     opt_reqvals (root);
     PFla_dag_reset (root);
-    /* ensure that each operator has its own properties */
-    PFprop_create_prop (root);
 
     return root;
 }

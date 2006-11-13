@@ -455,7 +455,6 @@ reduce (PFla_op_t *p, int goalnt)
 
             if (!renamed && L(p)->schema.count == p->schema.count) {
                 *p = *PFla_dummy (L(p));
-                p->prop = PFprop ();
                 break;
             }
         }   break;
@@ -705,7 +704,6 @@ reduce (PFla_op_t *p, int goalnt)
         case 21:
             /* return right child */
             *p = *PFla_dummy (R(p));
-            p->prop = PFprop ();
             break;
 
         /* Rel:    disjunion (Rel, EmptyRel) */
@@ -714,7 +712,6 @@ reduce (PFla_op_t *p, int goalnt)
         case 25:
             /* return left child */
             *p = *PFla_dummy (L(p));
-            p->prop = PFprop ();
             break;
 
         /* Rel:    distinct (Rel) */
@@ -795,7 +792,6 @@ reduce (PFla_op_t *p, int goalnt)
         case 27:
             /* return left child */
             *p = *PFla_dummy (L(p));
-            p->prop = PFprop ();
             break;
 
         /* Rel:    rownum (Rel) */
