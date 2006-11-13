@@ -41,5 +41,6 @@ lib_opt = {
                 opt_join_pd.c \
                 opt_key.c \
                 opt_mvd.c \
-                opt_reqval.c
+                opt_reqval.c \
+                opt_set.c
 }

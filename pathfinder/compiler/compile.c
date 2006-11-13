@@ -138,7 +138,11 @@ PFstate_t PFstate = {
 
     .standoff_axis_steps = false,
 
-    .opt_alg             = "OIKDCG_VGO_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCG}IM{_[J]OKCGCGP",
+    .opt_alg             = "OIKDCG_VGO_[J]OKVCG"
+                                "}IMS{_[J]OKVCG"
+                                "}IMS{_[J]OKVCG"
+                                "}IMS{_[J]OKVCG"
+                                "}IMS{_[J]OKVCGCGP",
     .format              = NULL,
 
 #ifndef NDEBUG

@@ -758,11 +758,11 @@ main (int argc, char *argv[])
                 printf ("         _  does nothing (used for structuring "
                                             "the options)\n");
                 printf ("         (default is: "
-                                  "'-o OIKDCG_VGO_[J]OKCG"
-                                            "}IM{_[J]OKCG"
-                                            "}IM{_[J]OKCG"
-                                            "}IM{_[J]OKCG"
-                                            "}IM{_[J]OKCGCGP')\n");
+                                  "'-o OIKDCG_VGO_[J]OKVCG"
+                                           "}IMS{_[J]OKVCG"
+                                           "}IMS{_[J]OKVCG"
+                                           "}IMS{_[J]OKVCG"
+                                           "}IMS{_[J]OKVCGCGP')\n");
 
                 printf ("  -e[0|1]%s: dead code elimination:\n"
                         "         0 disable dead code elimination\n"

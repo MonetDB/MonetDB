@@ -227,6 +227,21 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
+            case 'S':
+                /* we need the icols property and thus cannot 
+                   apply the optimization if our names are unique */
+                MAP_ORI_NAMES("set optimization")
+                    
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_set (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   set optimization:\t\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'V':
                 MAP_ORI_NAMES("required value optimization")
                 REMOVE_PROXIES("required value optimization")
@@ -247,6 +262,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 if (unq_names)
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
+                                  true  /* set */,
                                   true  /* dom */,
                                   false /* icol */,
                                   true  /* key */,
@@ -259,6 +275,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 else
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
+                                  true  /* set */,
                                   true  /* dom */,
                                   true  /* icol */,
                                   true  /* key */,

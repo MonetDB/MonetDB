@@ -62,6 +62,8 @@ struct PFprop_t {
                                   relationships between domains) */
     PFarray_t   *disjdoms;   /**< Disjoint domains (list with pairs of
                                   disjoint domains) */
+    bool         set;        /**< boolean flag that indicates whether the
+                                  cardinality of an operator is important */
     PFalg_att_t  icols;      /**< List of attributes required by the
                                   parent operators. */
     PFarray_t   *keys;       /**< List of attributes that have
@@ -141,7 +143,8 @@ PFprop_t *PFprop (void);
  * Infer all properties of the current tree
  * rooted in root whose flag is set.
  */
-void PFprop_infer (bool card, bool const_, bool dom, bool icols,
+void PFprop_infer (bool card, bool const_, bool set, 
+                   bool dom, bool icols,
                    bool key, bool ocols, bool reqval, 
                    bool ori_names, bool unq_names,
                    PFla_op_t *root);
@@ -158,6 +161,7 @@ void PFprop_create_prop (PFla_op_t *root);
  */
 void PFprop_infer_card (PFla_op_t *root);
 void PFprop_infer_const (PFla_op_t *root);
+void PFprop_infer_set (PFla_op_t *root);
 void PFprop_infer_dom (PFla_op_t *root);
 void PFprop_infer_icol (PFla_op_t *root);
 void PFprop_infer_key (PFla_op_t *root);
@@ -230,6 +234,13 @@ PFalg_att_t PFprop_const_at (const PFprop_t *prop, unsigned int i);
  * (Needed, e.g., to iterate over constant columns.)
  */
 PFalg_atom_t PFprop_const_val_at (const PFprop_t *prop, unsigned int i);
+
+/* ---------------------- set property accessors ---------------------- */
+
+/**
+ * Test if container @a prop allows the cardinality to be changed
+ */
+bool PFprop_set (const PFprop_t *prop);
 
 /* ----------------------- domain property accessors ----------------------- */
 

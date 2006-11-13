@@ -870,6 +870,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
                     }
                 }
                 
+                /* print whether columns do have to respect duplicates */
+                if (PFprop_set (n->prop))
+                    PFarray_printf (dot, "\\nset"); 
+
                 all = true;
             }
             fmt++;

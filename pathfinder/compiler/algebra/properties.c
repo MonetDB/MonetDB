@@ -62,6 +62,9 @@ PFprop (void)
     ret->l_constants = NULL; 
     ret->r_constants = NULL; 
 
+    /* initialize set property */
+    ret->set      = false;
+
     /* initialize icols attribute list */
     ret->icols   = 0;
     ret->l_icols = 0;
@@ -99,7 +102,8 @@ PFprop (void)
  * rooted in root whose flag is set.
  */
 void
-PFprop_infer (bool card, bool const_, bool dom, bool icols,
+PFprop_infer (bool card, bool const_, bool set,
+              bool dom, bool icol,
               bool key, bool ocols, bool reqval, 
               bool ori_names, bool unq_names,
               PFla_op_t *root)
@@ -112,9 +116,11 @@ PFprop_infer (bool card, bool const_, bool dom, bool icols,
         PFprop_infer_card (root);
     if (const_)
         PFprop_infer_const (root);
+    if (set)
+        PFprop_infer_set (root);
     if (dom)
         PFprop_infer_dom (root);
-    if (icols)
+    if (icol)
         PFprop_infer_icol (root);
     if (key)
         PFprop_infer_key (root);
