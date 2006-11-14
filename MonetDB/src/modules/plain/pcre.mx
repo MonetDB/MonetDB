@@ -238,7 +238,7 @@ pcre_compile_wrap(pcre ** res, str pattern)
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
 
-	if ((r = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if ((r = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_compile() failed with\n'%s'\nat %d in\n'%s'.\n",
 			err_p, errpos, pattern);
 		return GDK_FAIL;
@@ -271,7 +271,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
-	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if ((re = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_select: pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
 			pattern, errpos, err_p);
 		return GDK_FAIL;
@@ -301,7 +301,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
-	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if ((re = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
 			pattern, errpos, err_p);
 		return GDK_FAIL;
