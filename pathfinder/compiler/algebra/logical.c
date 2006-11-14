@@ -1920,8 +1920,8 @@ PFla_dup_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
                  PFalg_att_t item_res)
 {
     PFla_op_t    *ret;
-#ifndef NDEBUG
     unsigned int  i;
+#ifndef NDEBUG
     bool item_present = false;
 #endif
 
