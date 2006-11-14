@@ -280,9 +280,9 @@ PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
     subdomains = PFarray (sizeof (dom_t));
     *(dom_t *) PFarray_add (subdomains) = in_subdom;
 
-    for (unsigned int i = PFarray_last (prop->subdoms); i > 0; --i) {
-        subdom = ((subdom_t *) PFarray_at (prop->subdoms, i))->subdom;
-        dom = ((subdom_t *) PFarray_at (prop->subdoms, i))->dom;
+    for (unsigned int i = PFarray_last (prop->subdoms); i > 0; i--) {
+        subdom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->subdom;
+        dom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->dom;
         insert = false;
         duplicate = false;
 
@@ -338,9 +338,9 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     domains2 = PFarray (sizeof (dom_t));
     *(dom_t *) PFarray_add (domains2) = dom2;
 
-    for (unsigned int i = PFarray_last (prop->subdoms); i > 0; --i) {
-        subdom = ((subdom_t *) PFarray_at (prop->subdoms, i))->subdom;
-        dom = ((subdom_t *) PFarray_at (prop->subdoms, i))->dom;
+    for (unsigned int i = PFarray_last (prop->subdoms); i > 0; i--) {
+        subdom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->subdom;
+        dom = ((subdom_t *) PFarray_at (prop->subdoms, i-1))->dom;
         
         insert = false;
         duplicate = false;
