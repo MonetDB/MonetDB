@@ -454,6 +454,9 @@ command join( left:bat[:any_1,:oid], right:bat[:void,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGjoin;
 
+command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
+		estimate:lng) :bat[:any_1,:any_3] 
+address ALGleftjoinestimate;
 command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3] 
 address ALGjoinestimate;
@@ -1266,6 +1269,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binary(antijoin,BATantijoin)@
 @:binaryestimate(join,BATjoin)@
 @:binaryestimate(fetchjoin,BATfetchjoin)@
+@:binaryestimate(leftjoin,BATleftjoin)@
 @:binaryestimate(leftfetchjoin,BATleftfetchjoin)@
 @:binaryestimate(outerjoin,BATouterjoin)@
 @:binary(sunion,BATsunion)@
@@ -2498,6 +2502,7 @@ str ALG@1(int *result, int* lid, int *rid) {
 @:ALGbinary(antijoin)@
 @:ALGbinaryestimate(join)@
 @:ALGbinaryestimate(fetchjoin)@
+@:ALGbinaryestimate(leftjoin)@
 @:ALGbinaryestimate(leftfetchjoin)@
 @:ALGbinaryestimate(outerjoin)@
 @:ALGbinary(semijoin)@
