@@ -184,15 +184,18 @@ OptBindExpr:        nil                                         =   7 (10);
                                                                      
 CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   8 (10);
                                                                      
-CoreExpr:           seq (Atom, Atom)                            =   9 (10);
+CoreExpr:           seq (CoreExpr, SeqCoreExpr)                 =   9 (10);
+CoreExpr:           seq (CoreExpr, CoreExpr)                    =  10 (10);
+SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr)                 =  11 (10);
+SeqCoreExpr:        seq (CoreExpr, CoreExpr)                    =  12 (10);
                                                                      
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  11 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  13 (10);
                                                                      
 OrderSpecs:         orderspecs (CoreExpr, nil)                  = 300 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           = 301 (10);
                                                                      
-CoreExpr:           ordered (CoreExpr)                          =  12 (10);
-CoreExpr:           unordered (CoreExpr)                        =  13 (10);
+CoreExpr:           ordered (CoreExpr)                          =  14 (10);
+CoreExpr:           unordered (CoreExpr)                        =  15 (10);
                                                                      
 CoreExpr:           typesw (Atom,                                    
                             cases (case_ (seqtype,                   
@@ -308,15 +311,21 @@ static PFla_op_t *loop = NULL;
  * Current map relation
  */
 static PFla_op_t *map = NULL;
+
 /**
  * Attribute counter of current map relation
  */
-unsigned int map_count = 0;
+static unsigned int map_count = 0;
 
 /**
  * ordering mode indicator
  */
-bool ordering = 0;
+static bool ordering = false;
+
+/**
+ * sequence item counter
+ */
+static unsigned int seq_count = 0;
 
 /* Constructor for staircase join */
 static struct PFla_pair_t locstep (PFalg_axis_t axis, PFty_t seqty, 
@@ -388,8 +397,17 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
         case 8:
 
-        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        /* CoreExpr:           seq (CoreExpr, SeqCoreExpr) */
+        case 9:
+
+        /* SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr) */
         case 11:
+
+        /* SeqCoreExpr:        seq (CoreExpr, CoreExpr) */
+        case 12:
+
+        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        case 13:
 
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
         case 300:
@@ -398,10 +416,10 @@ reduce (PFcnode_t * p, int goalnt)
         case 301:
 
         /* CoreExpr:           ordered (CoreExpr) */
-        case 12:
+        case 14:
 
         /* CoreExpr:           unordered (CoreExpr) */
-        case 13:
+        case 15:
 
         /* CoreExpr:           typesw (Atom,
                                        cases (case_ (seqtype,
@@ -1099,8 +1117,55 @@ reduce (PFcnode_t * p, int goalnt)
 
         } break;
 
-        /* CoreExpr:           seq (Atom, Atom) */
+        /* CoreExpr:           seq (CoreExpr, SeqCoreExpr) */
         case 9:
+        {   /* TOPDOWN */
+
+            /*
+             *     env,loop: e1 => q1,delta1      env,loop: e2 => q2,delta2
+             * -----------------------------------------------------------------
+             *                        env,loop: (e1, e2) =>
+             *
+             *                      proj_iter,pos:pos1,item
+             *  /                          / ord       \     / ord       \ \
+             * |  row_pos1:<ord,pos>/iter | ----- X q1  | U | ----- X q2  | |
+             *  \                          \  1        /     \  2        / /
+             *
+             */
+            unsigned int old_seq_count;
+
+            /* initiate translation of e1 */
+            reduce (kids[0], nts[0]);
+            
+            /* save seq_count and start a new sequence counter */
+            old_seq_count = seq_count;
+            seq_count = 2;
+            
+            /* initiate translation of e2 */
+            reduce (kids[1], nts[1]);
+            
+            /* re-set seq_count */
+            seq_count = old_seq_count;
+            
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = project (
+                                rownum (
+                                    disjunion (
+                                        attach (
+                                            A(L(p)).rel,
+                                            att_ord, lit_nat (1)),
+                                        A(R(p)).rel),
+                                    att_pos1,
+                                    sortby (att_ord, att_pos),
+                                    att_iter),
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos1),
+                                proj (att_item, att_item)),
+                     .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
+        } break;
+
+        /* CoreExpr:           seq (CoreExpr, CoreExpr) */
+        case 10:
         {
             /*
              *     env,loop: e1 => q1,delta1      env,loop: e2 => q2,delta2
@@ -1132,8 +1197,46 @@ reduce (PFcnode_t * p, int goalnt)
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
 
-        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        /* SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr) */
         case 11:
+        {   /* TOPDOWN */
+
+            unsigned int cur_seq_count = seq_count++;
+
+            /* initiate translation of e1 and e2 */
+            reduce (kids[0], nts[0]);
+            reduce (kids[1], nts[1]);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = disjunion (
+                                attach (
+                                    A(L(p)).rel,
+                                    att_ord, lit_nat (cur_seq_count)),
+                                A(R(p)).rel),
+                     .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
+        } break;
+            
+        /* SeqCoreExpr:        seq (CoreExpr, CoreExpr) */
+        case 12:
+            /* TOPDOWN */
+
+            /* initiate translation of e1 and e2 */
+            reduce (kids[0], nts[0]);
+            reduce (kids[1], nts[1]);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = disjunion (
+                                attach (
+                                    A(L(p)).rel,
+                                    att_ord, lit_nat (seq_count)),
+                                attach (
+                                    A(R(p)).rel,
+                                    att_ord, lit_nat (seq_count+1))),
+                     .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
+            break;
+
+        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        case 13:
         {   /* TOPDOWN */
 
             /* throw away all sort criteria -- each orderspec
@@ -1259,7 +1362,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           ordered (CoreExpr) */
-        case 12:
+        case 14:
         {   /* TOPDOWN */
  
             /* use `ordered' information */
@@ -1275,7 +1378,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           unordered (CoreExpr) */
-        case 13:
+        case 15:
         {   /* TOPDOWN */
  
             /* use `ordered' information */

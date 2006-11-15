@@ -188,7 +188,7 @@ OptBindExpr:        nil                                         =   9 (10);
                                                                      
 CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  10 (10);
 
-CoreExpr:           seq (Atom, Atom)                            =  11 (10);
+CoreExpr:           seq (CoreExpr, CoreExpr)                    =  11 (10);
 
 CoreExpr:           typesw (Atom,
                             cases (case_ (SequenceType,
@@ -654,13 +654,13 @@ reduce (PFcnode_t * p, int goalnt)
 
             break;
 
-        /* CoreExpr:           seq (Atom, Atom) */
+        /* CoreExpr:           seq (CoreExpr, CoreExpr) */
         case 11:
             /* W3C XQuery, 5.3.1
              * 
-             * E |- Atom1 : t1    E |- Atom2 : t2
-             * ----------------------------------
-             *  E |- seq (Atom1, Atom2) : t1, t2
+             * E |- CoreExpr1 : t1    E |- CoreExpr2 : t2
+             * ------------------------------------------
+             *  E |- seq (CoreExpr1, CoreExpr2) : t1, t2
              */
             TY(p) = *PFty_simplify (PFty_seq (TY(L(p)), TY(R(p))));
 

@@ -723,10 +723,6 @@ PFcore_orderspecs (PFsort_t mode, const PFcnode_t *crit, const PFcnode_t *specs)
 PFcnode_t *
 PFcore_seq (const PFcnode_t *e1, const PFcnode_t *e2)
 {
-    /* e1 and e2 must be atoms */
-    assert (IS_ATOM (e1));
-    assert (IS_ATOM (e2));
-
     return PFcore_wire2 (c_seq, e1, e2);
 }
 
