@@ -247,8 +247,7 @@ this swapping process.
 
 @item @strong{GDK Extensibility:}
 
-Atoms can be defined using an ADT interface.
-with a unified interface. 
+Atoms can be defined using a unified ADT interface.
 There is also an interface to extend the GDK library with
 dynamically linked object code.
 
@@ -804,7 +803,7 @@ typedef struct {
           /* Head storage */
           int    hloc;             /* byte-offset in BUN for head elements */
           Heap   *hheap;           /* heap for varsized head values */
-          Hash   *hhash;           /* linair chained hash table on head */
+          Hash   *hhash;           /* linear chained hash table on head */
           /* Tail properties */
           int    ttype;            /* Tail type number */
           str    tident;           /* name for tail column */
@@ -816,14 +815,14 @@ typedef struct {
           /* Tail storage */
           int    tloc;             /* byte-offset in BUN for tail elements */
           Heap   theap;            /* heap for varsized tail values */
-          Hash   thash;            /* linair chained hash table on tail */
+          Hash   thash;            /* linear chained hash table on tail */
  } BAT;
 @end verbatim
 
 The internal structure of the @strong{BAT} record is in fact much more complex,
 but GDK programmers should refrain of making use of that.
 
-This reason for this complex structure is
+The reason for this complex structure is
 to allow for a BAT to exist in two incarnations at the time: the
 @emph{normal view} and the @emph{reversed view}. Each bat @emph{b} has a
  BATmirror(@emph{b}) which has the negative @strong{cacheid} of b in the BBP.
@@ -831,7 +830,7 @@ to allow for a BAT to exist in two incarnations at the time: the
 Since we don't want to pay cost to keep both views in line with each other
 under BAT updates, we work with shared pieces of memory between
 the two views. An update to one will thus automatically update the other.
-in the same line, we allow @strong{synchronized BATs} (BATs with identical
+In the same line, we allow @strong{synchronized BATs} (BATs with identical
 head columns, and marked as such in the @strong{BAT Alignment} interface) now to
 be clustered horizontally.
 
@@ -1155,11 +1154,11 @@ gdk_export int BBPreclaim(BAT *b);
 @- BUN manipulation
 @multitable @columnfractions 0.08 0.7
 @item BAT*
-@tab BATins (BAT *b, ptr *c, bit force)
+@tab BATins (BAT *b, BAT *c, bit force)
 @item BAT*
-@tab BATappend (BAT *b, ptr *c, bit force)
+@tab BATappend (BAT *b, BAT *c, bit force)
 @item BAT*
-@tab BATdel (BAT *b, ptr *c, bit force)
+@tab BATdel (BAT *b, BAT *c, bit force)
 @item BAT*
 @tab BUNins (BAT *b, ptr left, ptr right, bit force)
 @item BAT*
@@ -1382,8 +1381,8 @@ are orthogonal integrity constraints.
 The strongest reduction is obtained by making the BAT a set with key
 restrictions on both dimensions.
 @
-The persistency indicator tells indicates the retention period of BATs.
-The system support four modes:
+The persistency indicator tells the retention period of BATs.
+The system support three modes:
 PERSISTENT, TRANSIENT, and SESSION.
 The PERSISTENT BATs are automatically saved upon session boundary or
 transaction commit.
@@ -1634,14 +1633,14 @@ When working in a main-memory situation, clustering of data on disk-pages
 is not important. Whenever mmap()-ed data is used intensively, reducing
 the number of page faults is a hot issue.
 @
-The below functions rearrange data in MonetDB heaps (used for storing
+The above functions rearrange data in MonetDB heaps (used for storing
 BUNs var-sized atoms, or accelerators). Applying these clusterings will
-allow that MonetDB's main-memory oriented algorithms work efficient  also
-in such a disk-oriented context.
+allow that MonetDB's main-memory oriented algorithms work efficiently  also
+in a disk-oriented context.
 @
-The @%BATsort@ functions returns a copy of the input BAT, sorted
+The @%BATsort@ functions return a copy of the input BAT, sorted
 in ascending order on the head column. @%BATordered@ starts a
-check on the head values to see if their are ordered. The result
+check on the head values to see if they are ordered. The result
 is returned and stored in the @%hsorted@ field of the BAT.
 @%BATorder@ is similar to @%BATsort@, but sorts the BAT itself, rather
 than returning a copy (BEWARE: this operation destroys the
@@ -1815,9 +1814,9 @@ are described by an atom descriptor.
 @item void
 @tab ATOMproperty    (str   nme, char *property, int (*fcn)()));
 @item int
-@tab ATOMindex       (char *nme));
+@tab ATOMindex       (char *nme);
 @item int
-@tab ATOMdump        ());
+@tab ATOMdump        ();
 @item void
 @tab ATOMdelete      (int id);
 @item str
@@ -1831,13 +1830,13 @@ are described by an atom descriptor.
 @item ptr
 @tab ATOMnilptr      (int id);
 @item int
-@tab ATOMfromstr     (int id, str s, int* len, ptr* v\_dst);
+@tab ATOMfromstr     (int id, str s, int* len, ptr* v_dst);
 @item int
-@tab ATOMtostr       (int id, str s, int* len, ptr* v\_dst);
+@tab ATOMtostr       (int id, str s, int* len, ptr* v_dst);
 @item int
 @tab ATOMhash        (int id, ptr val, in mask);
 @item int
-@tab ATOMcmp         (int id, ptr val\_1, ptr val\_2);
+@tab ATOMcmp         (int id, ptr val_1, ptr val_2);
 @item int
 @tab ATOMconvert     (int id, ptr v, int direction);
 @item int
@@ -1845,15 +1844,15 @@ are described by an atom descriptor.
 @item int
 @tab ATOMunfix       (int id, ptr v);
 @item int
-@tab ATOMheap        (int id, Heap *hp, size\_t cap);
+@tab ATOMheap        (int id, Heap *hp, size_t cap);
 @item void
 @tab ATOMheapconvert (int id, Heap *hp, int direction);
 @item int
 @tab ATOMheapcheck   (int id, Heap *hp, HeapRepair *hr);
 @item int
-@tab ATOMput         (int id, Heap *hp, BUN pos\_dst, ptr val\_src);
+@tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
 @item int
-@tab ATOMdel         (int id, Heap *hp, BUN v\_src);
+@tab ATOMdel         (int id, Heap *hp, BUN v_src);
 @item int
 @tab ATOMlen         (int id, ptr val);
 @item ptr
@@ -1915,7 +1914,7 @@ is a direct pointer to the atom value. Its return value should be an
 integer between 0 and 'mask'.
 
 @item The @emph{ATOMdel()} operation deletes a var-sized atom from its heap `hp'.
-The integer byte-index of this value in the heap is pointed to by `val\_src'.
+The integer byte-index of this value in the heap is pointed to by `val_src'.
 
 @item The @emph{ATOMput()} operation inserts an atom `src_val' in a BUN at
 `dst_pos'. This involves copying the fixed sized part in the BUN. In
@@ -2102,7 +2101,7 @@ and system information.
 @item void*
 @tab GDKmallocmax (size_t size, size_t *maxsize, int emergency)
 @item void*
-@tab GDKrealloc & (void* pold, size_t size)
+@tab GDKrealloc (void* pold, size_t size)
 @item void*
 @tab GDKreallocmax (void* pold, size_t size, size_t *maxsize, int emergency)
 @item void
@@ -2564,29 +2563,29 @@ gdk_export BAT *BATprev(BAT *b);
 @+ BAT Alignment and BAT views
 @multitable @columnfractions 0.08 0.7
 @item int
-@tab ALIGNsynced  & (BAT* b1, BAT* b2)
+@tab ALIGNsynced (BAT* b1, BAT* b2)
 @item int
-@tab ALIGNsync    & (BAT *b1, BAT *b2)
+@tab ALIGNsync   (BAT *b1, BAT *b2)
 @item int
-@tab ALIGNrelated & (BAT *b1, BAT *b2)
+@tab ALIGNrelated (BAT *b1, BAT *b2)
 @item int
-@tab ALIGNsetH    & ((BAT *dst, BAT *src)
+@tab ALIGNsetH    ((BAT *dst, BAT *src)
 \hline
 @item BAT *
-@tab BATpropcheck & (BAT *b, int mode)
+@tab BATpropcheck (BAT *b, int mode)
 \hline
 @item BAT*
-@tab VIEWcreate   & (BAT *b)
+@tab VIEWcreate   (BAT *b)
 @item bat
-@tab VIEWparent   & (BAT *b)
+@tab VIEWparent   (BAT *b)
 @item BAT*
-@tab VIEWhead     & (BAT *b)
+@tab VIEWhead     (BAT *b)
 @item BAT*
-@tab VIEWcombine  & (BAT *b)
+@tab VIEWcombine  (BAT *b)
 @item BAT*
-@tab VIEWreset    & (BAT *b)
+@tab VIEWreset    (BAT *b)
 @item BAT*
-@tab BATmaterialize    & (BAT *b, size\_t size)
+@tab BATmaterialize  (BAT *b, size\_t size)
 @end multitable
 @
 Alignments of two columns of a BAT means that the system knows
@@ -2758,7 +2757,7 @@ The @emph{BATloop()} looks like a function call, but is actually a macro.
 The following example gives an indication of how they are to be used:
 @verbatim
 void
-print\_a\_bat(BAT *b)
+print_a_bat(BAT *b)
 {
 	BUN p, q;
 	BATloop(b, p, q)
@@ -2963,10 +2962,10 @@ Much used, but not necessarily kernel-operations on BATs.
 @multitable @columnfractions 0.08 0.7
 @item BAT*
 @tab
- BAThistogram & (BAT *b)
+ BAThistogram(BAT *b)
 @item BAT*
 @tab
- BATsample& (BAT* b,size\_t n)
+ BATsample(BAT* b,size_t n)
 @end multitable
 
 The routine @%BAThistogram@ produces a new BAT with a frequency distribution
