@@ -1033,7 +1033,7 @@ arithm_op (PFla_op_kind_t kind, const PFla_op_t *n,
     for (i = 0; i < n->schema.count; i++) {
         if (att1 == n->schema.items[i].name)
             ix1 = i;                /* remember array index of att1 */
-        else if (att2 == n->schema.items[i].name)
+        if (att2 == n->schema.items[i].name)
             ix2 = i;                /* remember array index of att2 */
     }
 
@@ -1042,7 +1042,7 @@ arithm_op (PFla_op_kind_t kind, const PFla_op_t *n,
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in arithmetic operation "
                 "not found", PFatt_str (att1));
-    else if (ix2 < 0)
+    if (ix2 < 0)
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in arithmetic operation "
                 "not found", PFatt_str (att2));
@@ -1108,7 +1108,7 @@ compar_op (PFla_op_kind_t kind, const PFla_op_t *n,
     for (i = 0; i < n->schema.count; i++) {
         if (att1 == n->schema.items[i].name)
             ix1 = i;                /* remember array index of att1 */
-        else if (att2 == n->schema.items[i].name)
+        if (att2 == n->schema.items[i].name)
             ix2 = i;                /* remember array index of att2 */
     }
 
@@ -1117,7 +1117,7 @@ compar_op (PFla_op_kind_t kind, const PFla_op_t *n,
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in arithmetic operation "
                 "not found", PFatt_str (att1));
-    else if (ix2 < 0)
+    if (ix2 < 0)
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in arithmetic operation "
                 "not found", PFatt_str (att2));
@@ -1179,7 +1179,7 @@ boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     for (i = 0; i < n->schema.count; i++) {
         if (att1 == n->schema.items[i].name)
             ix1 = i;                /* remember array index of att1 */
-        else if (att2 == n->schema.items[i].name)
+        if (att2 == n->schema.items[i].name)
             ix2 = i;                /* remember array index of att2 */
     }
 
@@ -1188,7 +1188,7 @@ boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in binary operation "
                 "not found", PFatt_str (att1));
-    else if (ix2 < 0)
+    if (ix2 < 0)
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in binary operation "
                 "not found", PFatt_str (att2));
@@ -1941,7 +1941,7 @@ PFla_dup_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
     for (i = 0; i < n->schema.count; i++) {
         if (n->schema.items[i].name == item)
             item_present = true;
-        else if (n->schema.items[i].name == item_res)
+        if (n->schema.items[i].name == item_res)
             PFoops (OOPS_FATAL,
                     "illegal attribute `%s' in the input "
                     "of the staircase join",
@@ -2740,7 +2740,7 @@ PFla_fn_concat (const PFla_op_t *n,
     for (i = 0; i < n->schema.count; i++) {
         if (att1 == n->schema.items[i].name)
             ix1 = i;                /* remember array index of att1 */
-        else if (att2 == n->schema.items[i].name)
+        if (att2 == n->schema.items[i].name)
             ix2 = i;                /* remember array index of att2 */
     }
 
@@ -2803,7 +2803,7 @@ PFla_fn_contains (const PFla_op_t *n,
     for (i = 0; i < n->schema.count; i++) {
         if (att1 == n->schema.items[i].name)
             ix1 = i;                /* remember array index of att1 */
-        else if (att2 == n->schema.items[i].name)
+        if (att2 == n->schema.items[i].name)
             ix2 = i;                /* remember array index of att2 */
     }
 
