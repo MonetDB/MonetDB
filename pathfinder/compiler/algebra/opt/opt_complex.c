@@ -53,6 +53,7 @@
 #define LL(p) (L(L(p)))
 #define RL(p) (L(R(p)))
 #define LLL(p) (LL(L(p)))
+#define LLR(p) (R(LL(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -535,6 +536,56 @@ opt_complex (PFla_op_t *p)
                                        p->sem.rownum.attname,
                                        sortby,
                                        p->sem.rownum.part);
+
+                break;
+            }
+
+            /* check a pattern that occurs very often 
+               ('doc_access(.../text())') in the generated
+               code and remove the unnecessary rownum operator */
+            if (L(p)->kind == la_project &&
+                LL(p)->kind == la_doc_access &&
+                LLR(p)->kind == la_rownum &&
+                p->sem.rownum.sortby.count == 1 &&
+                p->sem.rownum.part &&
+                LLR(p)->sem.rownum.sortby.count == 1 &&
+                LLR(p)->sem.rownum.part) {
+                unsigned int  i;
+                PFalg_att_t   pos, iter, cur;
+                PFalg_proj_t *proj;
+
+                pos   = LLR(p)->sem.rownum.attname;
+                iter  = LLR(p)->sem.rownum.part;
+
+                for (i = 0; i < L(p)->sem.proj.count; i++)
+                    if (L(p)->sem.proj.items[i].old == iter) {
+                        iter = L(p)->sem.proj.items[i].new;
+                        break;
+                    }
+                for (i = 0; i < L(p)->sem.proj.count; i++)
+                    if (L(p)->sem.proj.items[i].old == pos) {
+                        pos = L(p)->sem.proj.items[i].new;
+                        break;
+                    }
+                if (pos == iter ||
+                    pos != p->sem.rownum.sortby.atts[0] ||
+                    iter != p->sem.rownum.part)
+                    break;
+                
+                /* We have now checked that the above rownumber does
+                   nothing new so replace it by a projection. */
+                proj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+                for (i = 0; i < p->schema.count; i++) {
+                    cur = p->schema.items[i].name;
+                    if (cur == p->sem.rownum.attname)
+                        /* replace the new column by the already
+                           existing sort criterion */
+                        proj[i] = PFalg_proj (cur, pos);
+                    else
+                        proj[i] = PFalg_proj (cur, cur);
+                }
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+                break;                
             }
         }   break;
 
