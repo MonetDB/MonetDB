@@ -1411,12 +1411,9 @@ intro_dup_scjoin (PFla_op_t *root,
 
     /* Fill the name pairs of the projection list with the tuples streaming
        through the non-scjoin branch of the eqjoin (as well as the one for 
-       the second join argument).
-       Collect the names of the inputs to ensure that the dup_scjoin
-       creates a new column name. */
+       the second join argument). */
     if (cur->kind == la_project) {
         for (i = 0; i < cur->sem.proj.count; i++) {
-            used_cols = used_cols | cur->sem.proj.items[i].old;
             if (cur->sem.proj.items[i].new == join_att) {
                 proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
                                                  cur->sem.proj.items[i].old);
@@ -1427,7 +1424,6 @@ intro_dup_scjoin (PFla_op_t *root,
         }
     } else {
         for (i = 0; i < cur->schema.count; i++) {
-            used_cols = used_cols | cur->schema.items[i].name;
             if (cur->schema.items[i].name == join_att) {
                 proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
                                                  cur->schema.items[i].name);
@@ -1438,6 +1434,10 @@ intro_dup_scjoin (PFla_op_t *root,
                                                  cur->schema.items[i].name);
         }
     }
+    /* Collect the names of the inputs to ensure that the dup_scjoin
+       creates a new column name. */
+    for (i = 0; i < proxy_exit->schema.count; i++)
+        used_cols = used_cols | proxy_exit->schema.items[i].name;
     
     /* Get the column name providing the context 
        nodes of the staircase join */
