@@ -202,10 +202,16 @@ prop_infer_set (PFla_op_t *n, bool set)
             prop_infer_set (L(n), n->prop->set);
             if (n->sem.proxy.kind == 1)
                 n->sem.proxy.base1->prop->set = n->prop->set;
+
+            /* start the property inference for the base operator */
+            prop_infer_set (L(n->sem.proxy.base1),
+                            n->sem.proxy.base1->prop->set);
             return;
             
         case la_proxy_base:
-            break;
+            /* avoid the inference as the proxy node
+               may overwrite the property after traversal */
+            return;
 
         /* ignore this property for the recursion */
         case la_rec_fix:
