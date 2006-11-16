@@ -19,6 +19,7 @@ shred_doc(TSTSRCDIR+"/"+TST,TST,TST,9LL);
 # Elapsed time = 001ms 008us [168us/node]
 # Shredded 1 XML document (insert_multiple.SF-1590580.xml), total time after commit=0.042s
 
+xquery("xml","let $batch := (<beer/>,<mies/>) return do insert $batch after exactly-one(doc(\""+TST+"\")//noot)").printf();
 quit();
 
 # 18:46:02 >  
