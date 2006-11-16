@@ -144,6 +144,8 @@ var background_collName := "PFX";
 var collHeight := 10;
 var retNum := 100;
 
+var trace := false;
+
 ##
 # For retrieval models: 
 #   true:  return all elements from the context set
@@ -862,6 +864,23 @@ PROC _containing_desc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :
      return elem_tid;
 }
 
+PROC _containing_desc2(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
+{
+    if ( trace ) tj_trace( "BEGIN _containing_desc2" );    
+     var elems := left.hmark(0@0);
+     var cands := tid_pre.tmark(0@0);
+     var iter := elems.mirror();
+     var elem_termpre := ll_descendant2(iter, 
+     					elems, 
+					bat("tj_" + collName + "_size"), 
+					cands, 
+					false, false, min(iter), max(iter), false, chr(nil));
+     var elem_tid := elem_termpre.join(tid_pre.reverse());
+     elem_termpre := nil;
+     if ( trace ) tj_trace( "END   _containing_desc" );    
+     return elem_tid;
+}
+
 PROC _containing_anc(bat[oid,void] left, bat[oid,oid] tid_pre) : bat[oid,oid] :=
 {
     if ( trace ) tj_trace( "BEGIN _containing_anc" );    
@@ -892,6 +911,8 @@ PROC collTermCount(str col, bat[void,oid] terms) : bat[oid,int] :=
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
 {
     if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
+    var t1 := time();
+    
      # fetch term occurrences and drop all terms with zero frq in col or background-col
      var terms := Qterms_to_void_tid( Qterms );
      var tid_frq := collTermCount(background_collName, terms);
@@ -916,12 +937,20 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
      # get evaluate doc/term (anc/desc) relationship
      # including rule-of-thumb optimization
      var elem_tid;
+     var t2 := time();
      #if ((tid_pre.count() * 50000) > collFrq)
           elem_tid := _containing_desc(left.mark(0@0), tid_pre);
      #else
      #     elem_tid := _containing_anc(left.mark(0@0), tid_pre);
+     var t3 := time();
      tid_pre := nil;
-
+    
+     # if matches found in any node, return empty set
+     if (elem_tid.count() = 0)
+     {
+          return new(oid,dbl);
+     }
+    
      # compute document sizes
      var elem_size := bat("tj_" + collName + "_size").semijoin(elem_tid);
 
@@ -956,6 +985,90 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : ba
         res := [*](left, res);
      }
      if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
+     var t4 := time();
+     printf("total time: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t3 - t2, t4 - t3);
+     return res;
+}
+
+PROC p_containing_q_NLLR2(bat[oid,dbl] left, bat[void,str] Qterms, flt lmbd) : bat[oid,dbl] :=
+{
+    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
+    var t1 := time();
+    
+     # fetch term occurrences and drop all terms with zero frq in col or background-col
+     var terms := Qterms_to_void_tid( Qterms );
+     var tid_frq := collTermCount(background_collName, terms);
+     terms := terms.reverse().semijoin(tid_frq).hmark(0@0);
+     if (terms.count() = 0) {return new(oid,dbl);}
+     
+     var tid_pre := indexfetchjoin(terms, 
+                                   bat("tj_" + collName + "_TermIndex"), 
+                                   bat("tj_" + collName + "_Terms") );
+     if (tid_pre.count() = 0) {return new(oid,dbl);}
+     tid_pre := tid_pre.tsort();
+     
+     # compute constant factor in score computation
+     var _lmbd := (1.0 - lmbd) / lmbd;
+     var collFrq := bat("tj_" + background_collName + "_Terms").count();
+     _lmbd :*= collFrq;
+
+     # compute collection terms frequencies 
+     var _tid_frq := [/](_lmbd, tid_frq);
+     tid_frq := nil;
+
+     # get evaluate doc/term (anc/desc) relationship
+     # including rule-of-thumb optimization
+     var elem_tid;
+     var t2 := time();
+     #if ((tid_pre.count() * 50000) > collFrq)
+          elem_tid := _containing_desc2(left.mark(0@0), tid_pre);
+     #else
+     #     elem_tid := _containing_anc(left.mark(0@0), tid_pre);
+     var t3 := time();
+     tid_pre := nil;
+    
+     # if matches found in any node, return empty set
+     if (elem_tid.count() = 0)
+     {
+          return new(oid,dbl);
+     }
+    
+     # compute document sizes
+     var elem_size := bat("tj_" + collName + "_size").semijoin(elem_tid);
+
+     # compute scores in batloop over terms
+     var doc_prob := new(oid,dbl);
+     terms@batloop()
+     {
+	  var tmp := elem_tid.select($t);
+	  var fac := _tid_frq.find($t);
+	  tmp := tmp.reverse().histogram();
+	  tmp := [dbl](tmp);
+	  tmp := [/](tmp, elem_size);
+	  tmp := [*](tmp, fac);
+	  tmp := [+](tmp, 1);
+	  tmp := [log](tmp);
+	  doc_prob.insert(tmp);
+     }
+    
+    var elements := left.mark(0@0);
+    
+    if ( not( returnAllElements ) ) 
+        elements := elements.semijoin(elem_tid);
+     
+     # aggregate doc scores
+     var res := {sum}(doc_prob.tmark(0@0), doc_prob.hmark(0@0), elements);
+     
+     res := res.[/](terms.count());
+     # Obey scoreBase setting: 
+     if ( scoreBase = 0 ) {
+        res := [+](left, res);
+     } else {
+        res := [*](left, res);
+     }
+     if ( trace ) tj_trace( "END   p_containing_q_NLLR" );
+     var t4 := time();
+     printf("total time: %d, containmentjoin: %d, score computation: %d\n", t4 - t1, t3 - t2, t4 - t3);
      return res;
 }
 
@@ -1339,17 +1452,17 @@ PROC p_contained_by_sum(bat[oid,dbl] left, bat[oid,dbl] right) : bat[oid,dbl] :=
     
     var reg_score;
     var res_reg;
-	var ctx := left.project(dbl(0));
+    #var ctx := left.project(dbl(0));
 
     # calculating the score for each region
     reg_score := {sum}(ctx_res.reverse().join(right));
-    reg_score := kunion(reg_score, ctx);
+    #reg_score := kunion(reg_score, ctx);
 
 	if (scoreBase = 0)
-		res_reg := [+](left, reg_score);
+		res_reg := [+](reg_score, left);
 	else if (scoreBase = 1)
 		res_reg := [*](left, reg_score);
-
+    
     if ( trace ) tj_trace( "END   p_contained_by_sum_2" );
 	return res_reg;
 }
@@ -1880,6 +1993,13 @@ PROC tj_finalize() : void
 PROC tj_finalize(str collName) : void
 {
 	# Finalize one collection. No documents should be added after this
+	bat("tj_" + collName + "_tid").access(BAT_READ);
+	bat("tj_" + collName + "_size").access(BAT_READ);
+	bat("tj_" + collName + "_pfpre").access(BAT_READ);
+	bat("tj_" + collName + "_tid").mmap(1);
+	bat("tj_" + collName + "_size").mmap(1);
+	bat("tj_" + collName + "_pfpre").mmap(1);
+	commit();
 	tj_buildIRindex(collName);
 	#
 	bat("tj_" + collName + "_param").replace("status","finalized");
@@ -1893,9 +2013,10 @@ PROC tj_finalize(str collName) : void
 	gterm_sort.bbpname("tj_globalTerms");
 	gtag_sort.persists(true);
 	gtag_sort.bbpname("tj_globalTags");
-	bat("tj_globalTerms").access(BAT_READ);
-	bat("tj_globalTags").access(BAT_READ);
-        
+	#bat("tj_globalTerms").access(BAT_READ);
+	#bat("tj_globalTags").access(BAT_READ);
+	#bat("tj_globalTerms").mmap(1);
+	bat("tj_globalTags").mmap(1);
 	commit(); 
 }
 
@@ -1941,6 +2062,10 @@ PROC tj_buildIRindex(str collName) : void :=
 	termindex.persists(true).bbpname("tj_" + collName + "_TermIndex");
 	terms.persists(true).bbpname("tj_" + collName + "_Terms");
 	tmp := nil;
+	termindex.access(BAT_READ);
+	termindex.mmap(1);
+	terms.access(BAT_READ);
+	terms.mmap(1);
 	termindex := nil;
 	terms := nil;
 	commit();
@@ -1952,6 +2077,10 @@ PROC tj_buildIRindex(str collName) : void :=
 	tagindex.persists(true).bbpname("tj_" + collName + "_TagIndex");
 	tags.persists(true).bbpname("tj_" + collName + "_Tags");
 	tmp := nil;
+	tagindex.access(BAT_READ);
+	#tagindex.mmap(1);
+	tags.access(BAT_READ);
+	tags.mmap(1);
 	tagindex := nil;
 	tags := nil;
 	commit();
