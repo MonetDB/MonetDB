@@ -2990,7 +2990,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               var elemids := e.reverse().leftjoin(find_qn_bulk(ws, doccont, prefurilocval, true));
               insprop.replace(elemids);
             }
-            var newnidqn := insnnids.reverse().join(insprop); # [newNID,newQNID]
+            var newnidqn := elems.leftjoin(insnnids).reverse().join(insprop); # [newNID,newQNID]
             nid_qn_ins_update.insert(newnidqn);
           }
           var lastsize := inssize.find(oid((lng(insertitem) + batchsize) - 1));
