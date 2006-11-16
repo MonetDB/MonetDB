@@ -2455,7 +2455,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
     var new_page := ws.fetch(NEW_PAGE);
     # one at a time
     elems.leftjoin(update_insert_node_item)@batloop() {
-#       if (debug) printf("\nstart of loop for argument %%d\n", int($h));
+#       if (debug) printf("\nstart of loop for argument %d\n", int($h));
       # insertcont - container from which to insert an element
       # insertitem - item to insert
       var idx := $h; # to ease debugging
@@ -2561,22 +2561,19 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         } else {
           rid_kind_page := rid_kind.reverse().select(pagebase, pagelast).reverse();
         }
-        var docpagefreespace := int((REMAP_PAGE_SIZE - rid_kind_page.count()) + rid_kind_page.uselect(chr_nil).count());
+        var holeatend;          # size of hole at end of page
+        {
+          var rid_kind_page_used := rid_kind_page.tmark(0@0).uselect(chr_nil, chr_nil);
+          if (rid_kind_page_used.count() > 0) {
+            holeatend := int(REMAP_PAGE_MASK - lng(max(reverse(rid_kind_page_used))));
+          } else {
+            holeatend := int(REMAP_PAGE_SIZE);
+          }
+        }
 
-        if (insertsize > docpagefreespace) {
+        if (insertsize > holeatend) {
           # not enough space on the current page
 
-          # size of hole at end of page
-          var holeatend;
-          {
-            var non_hole := rid_kind_page.uselect(chr_nil, chr_nil);
-            if (non_hole.count() = 0) {
-              # one big hole
-              holeatend := rid_kind_page.count();
-            } else {
-              holeatend := int(rid_kind_page.reverse().max()) - int(non_hole.reverse().max());
-            }
-          }
           # datasize is the size of the data after the insertpoint and before the hole at the end
           var datasize := int((REMAP_PAGE_SIZE - (lng(docinsertbefore_newpre) and REMAP_PAGE_MASK)) - holeatend);
 
@@ -2608,7 +2605,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             cpstart := oid(lng(pageid) << REMAP_PAGE_BITS);
             cpsize := int(REMAP_PAGE_SIZE) - datasize;
             cpwhere := oid(lng(newpages.fetch(0)) << REMAP_PAGE_BITS);
-            newholeatend := 0;
+            newholeatend := holeatend;
           } else {
             # insert new pages after current
             newpages := newpages.seqbase(oid(lng(pageno) + 1));
@@ -2618,9 +2615,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             cpstart := docinsertbefore_rid;
             cpsize := datasize;
             var pgstart := oid(lng(lastpage) << REMAP_PAGE_BITS);
-            cpwhere := oid((lng(pgstart) + REMAP_PAGE_SIZE) - cpsize);
-# XXX we should not copy to the end of the page but instead leave the extra space at the end of the page
-#cpwhere := oid(lng(pgstart) + (((insertsize - datasize) - holeatend) and REMAP_PAGE_MASK));
+            cpwhere := oid(lng(pgstart) + (((insertsize - datasize) - holeatend) and REMAP_PAGE_MASK));
 
             if (cpwhere > pgstart) {
               # fix up hole at start of last page since it doesn't
@@ -2796,98 +2791,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           }
           if (holesize < insertsize) {
             # not enough space in the right place
-            var holeneeded := insertsize - holesize;
-            var i := 1;                 # slowly widen search
-            while (holeneeded > 0) {
-#peter
-              # hole below?
-              var rid := (int(docinsertbefore_rid) + holesize) + i;
-              var pre := (int(docinsertbefore_newpre) + holesize) + i;
-              # still on same page?
-              if (rid <= int(pagelast)) {
-                # yes
-                if (pre >= docsize) {
-                  # big gaping hole after the document
-                  var hs := int(REMAP_PAGE_SIZE) - (docsize and int(REMAP_PAGE_MASK));
-                  if (hs > holeneeded) {
-                    hs := holeneeded;
-                  }
-#                   if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter_newpre) + holesize + 1, i, hs);
-                  movedata(ws, doccont, oid(lng(docinsertbefore_newpre) + holesize), i, hs);
-                  holeneeded :-= hs;
-                  holesize :+= hs;
-                  docsize :+= hs;
-                } else {
-                  # looking at hole?
-                  var s := 0;
-                  if (isoldpage) {
-                    if (rid_size_update.exist(oid(rid))) {
-                      s := rid_size_update.find(oid(rid));
-                    } else {
-                      s := pre_size.find(swizzle(oid(rid), map_pid));
-                    }
-                  } else if (rid_size.exist(oid(rid))) {
-                    s := rid_size.find(oid(rid));
-                  }
-                  if (isnil(niland(s, int_nil))) {
-                    var hs := niland(s, INT_MAX) + 1;
-                    if (hs > holeneeded) {
-                      hs := holeneeded;
-                    }
-                    # move the hole to just below the hole already at docinsertafter_newpre
-#                     if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter_newpre) + holesize + 1, i, hs);
-                    movedata(ws, doccont, oid(lng(docinsertbefore_newpre) + holesize), i, hs);
-                    holeneeded :-= hs;
-                    holesize :+= hs;
-                  }
-                }
-              }
-              rid := (int(docinsertbefore_rid) - 1) - i; # must be int/lng because can become negative
-              if ((rid >= int(pagebase)) and (holeneeded > 0)) {
-                # hole above?
-                var knd;
-                if (isoldpage) {
-                  if (rid_kind_update.exist(oid(rid))) {
-                    knd := rid_kind_update.find(oid(rid));
-                  } else {
-                    knd := pre_kind.find(swizzle(oid(rid), map_pid));
-                  }
-                } else {
-                  knd := rid_kind.find(oid(rid));
-                }
-                if (isnil(knd)) {
-                  # yes, find out how large, but stop when we have a hole
-                  # that is big enough (and stay on the page)
-                  var pgkd;
-                  if (isoldpage) {
-                    pgkd := pre_kind.reverse().select(swizzle(pagebase, map_pid), swizzle(oid(rid - 1), map_pid)).reverse().seqbase(pagebase);
-                    var pgkdup := rid_kind_update.reverse().select(pagebase, oid(rid - 1)).reverse();
-                    if (pgkdup.count() > 0) {
-                      pgkd := pgkd.copy().access(BAT_WRITE).key(true).myupdate(pgkdup);
-                    }
-                  } else {
-                    pgkd := rid_kind.reverse().select(pagebase, oid(rid - 1)).reverse();
-                  }
-                  var non_holes := pgkd.uselect(chr_nil, chr_nil);
-                  var hs;
-                  if (non_holes.count() > 0) {
-                    hs := rid - int(non_holes.reverse().max());
-                  } else {
-                    hs := (rid and int(REMAP_PAGE_MASK)) + 1;
-                  }
-                  if (hs > holeneeded) {
-                    hs := holeneeded;
-                  }
-#                   if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter_newpre) - i, i, -(hs));
-                  movedata(ws, doccont, oid(lng(docinsertbefore_newpre) - i), i, -(hs));
-                  docinsertafter_newpre := oid(lng(docinsertafter_newpre) - hs);
-                  docinsertafter_rid := oid(lng(docinsertafter_rid) - hs);
-                  holeneeded :-= hs;
-                  holesize :+= hs;
-                }
-              }
-              i :+= 1;
-            }
+            movedata(ws, doccont, oid(lng(docinsertbefore_newpre) + holesize), int(REMAP_PAGE_SIZE - ((lng(docinsertbefore_newpre) and REMAP_PAGE_MASK) + holesize + holeatend)), insertsize - holesize);
           }
         }
 
@@ -2968,7 +2872,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         # the difference in level for inserted elements between original
         # document and updated document
         var leveldiff := int(docinsertlevel) - int(insert_pre_level.find(insertitem));
-#         if (debug) printf("leveldiff %%d\n", leveldiff);
+#         if (debug) printf("leveldiff %d\n", leveldiff);
 
         if (insert_pre_kind.find(insertitem) = TEXT) {
           # if we're inserting a text node, we may have to merge
