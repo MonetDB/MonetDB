@@ -50,6 +50,11 @@
 #define L(p) ((p)->child[0])
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
+/** and so on ... */
+#define LL(p) (L(L(p)))
+#define LR(p) (R(L(p)))
+#define RL(p) (L(R(p)))
+#define RR(p) (R(R(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -71,6 +76,56 @@ opt_set (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+        case la_eqjoin:
+            /* Rewrite scjoin into duplicate generating scjoins
+               (underneath join operators). This hopefully allows
+               the above join to be pushed down in a later phase. */
+            if (PFprop_set (p->prop) &&
+                L(p)->kind == la_scjoin &&
+                PFprop_set (L(p)->prop)) {
+                PFalg_att_t item_res;
+                item_res = PFalg_ori_name (
+                               PFalg_unq_name (att_item, 0),
+                               ~(L(p)->sem.scjoin.item |
+                                 L(p)->sem.scjoin.iter));
+                *L(p) = *PFla_project (
+                             PFla_dup_scjoin (
+                                 LL(p),
+                                 LR(p),
+                                 L(p)->sem.scjoin.axis,
+                                 L(p)->sem.scjoin.ty,
+                                 L(p)->sem.scjoin.item,
+                                 item_res),
+                             PFalg_proj (L(p)->sem.scjoin.iter,
+                                         L(p)->sem.scjoin.iter),
+                             PFalg_proj (L(p)->sem.scjoin.item,
+                                         item_res));
+                break;
+            }
+            if (PFprop_set (p->prop) &&
+                R(p)->kind == la_scjoin &&
+                PFprop_set (R(p)->prop)) {
+                PFalg_att_t item_res;
+                item_res = PFalg_ori_name (
+                               PFalg_unq_name (att_item, 0),
+                               ~(R(p)->sem.scjoin.item |
+                                 R(p)->sem.scjoin.iter));
+                *R(p) = *PFla_project (
+                             PFla_dup_scjoin (
+                                 RL(p),
+                                 RR(p),
+                                 R(p)->sem.scjoin.axis,
+                                 R(p)->sem.scjoin.ty,
+                                 R(p)->sem.scjoin.item,
+                                 item_res),
+                             PFalg_proj (R(p)->sem.scjoin.iter,
+                                         R(p)->sem.scjoin.iter),
+                             PFalg_proj (R(p)->sem.scjoin.item,
+                                         item_res));
+                break;
+            }
+            break;
+            
         case la_distinct:
             if (PFprop_set (p->prop))
                 *p = *PFla_dummy (L(p));
