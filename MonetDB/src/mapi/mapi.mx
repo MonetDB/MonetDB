@@ -598,7 +598,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	user = buf;
 
 	/* write challenge string, the challenge is currently empty */
-	challenge = "::mserver:5\n";
+	challenge = "::mserver:6\n";
 	snprintf(buf, BLOCK, "%2u%s", 
 		(unsigned int)strlen(challenge), challenge);
 	stream_write(fdout, buf, strlen(buf), 1);
