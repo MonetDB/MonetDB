@@ -1373,6 +1373,8 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 		}
 	}
 
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),0);           
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(left->batCacheid);
 	return MAL_SUCCEED;
@@ -1416,6 +1418,8 @@ CMDbitbatNOT(int *ret, int *bid)
 			}
 		}
 	}
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),0);           
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
