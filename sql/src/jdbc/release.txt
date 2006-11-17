@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.5 (Steadfast_pre2)
+MonetDB JDBC driver version 1.5 (Steadfast_pre3)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2006-10-30
+Release date: 2006-11-11
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
