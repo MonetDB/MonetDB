@@ -403,8 +403,22 @@ join_pushdown (PFla_op_t *p)
                       3             3              3     1
     
                    whenever possible (e.g., only if no columns references
-                   are missing). For all other directly following equi-joins
+                   are missing). 
+                   
+                   In addition we remove mapping joins directly visible
+                   (more explanation see below).
+                   
+                        |X|
+                        / \
+                       |X| \          |X|
+                       / \  \   ->    / \
+                        (pi) |           #
+                          \ /            
+                           #             
+                           
+                   For all other directly following equi-joins
                    we discard any rewriting. */
+                
                 if (PFprop_subdom (lp->prop,
                                    PFprop_dom (lp->prop, latt),
                                    PFprop_dom (lp->prop, 
@@ -497,6 +511,111 @@ join_pushdown (PFla_op_t *p)
                                       lp->sem.eqjoin_unq.att1,
                                       lp->sem.eqjoin_unq.res);
                     break;    
+                }
+
+                /* check for the following pattern where the join
+                   condition of p originates from the number operator
+                   in rp and remove the join.
+
+                        |X|
+                        / \
+                       |X| \          |X|
+                       / \  \   ->    / \
+                        (pi) |           #
+                          \ /            
+                           #             
+                 */
+                if (rp->kind == la_number &&
+                    (L(lp) == rp || R(lp) == rp ||
+                     (L(lp)->kind == la_project && LL(lp) == rp) ||
+                     (R(lp)->kind == la_project && RL(lp) == rp)) &&
+                    rp->sem.number.attname == ratt) {
+                    PFla_op_t    *proj,
+                                 *left,
+                                 *join;
+                    PFalg_att_t   l_join_col,
+                                  r_join_col;
+                    PFalg_proj_t *proj_list;
+                    unsigned int  count;
+                                
+                    /* align pattern */
+                    if (L(lp) == rp) {
+                        proj = NULL;
+                        left = R(lp);
+                        l_join_col = lp->sem.eqjoin_unq.att2;
+                        r_join_col = lp->sem.eqjoin_unq.att1;
+                    } else if (R(lp) == rp) {
+                        proj = NULL;
+                        left = L(lp);
+                        l_join_col = lp->sem.eqjoin_unq.att1;
+                        r_join_col = lp->sem.eqjoin_unq.att2;
+                    } else if (LL(lp) == rp) {
+                        proj = L(lp);
+                        left = R(lp);
+                        l_join_col = lp->sem.eqjoin_unq.att2;
+                        r_join_col = lp->sem.eqjoin_unq.att1;
+                    } else {
+                        proj = R(lp);
+                        left = L(lp);
+                        l_join_col = lp->sem.eqjoin_unq.att1;
+                        r_join_col = lp->sem.eqjoin_unq.att2;
+                    }
+                                
+                    /* allow only non-renaming projections */
+                    if (proj) {
+                        bool renamed = false;
+                        
+                        for (unsigned int i = 0; i < proj->sem.proj.count; i++)
+                            renamed = renamed || 
+                                      (proj->sem.proj.items[i].new
+                                       != proj->sem.proj.items[i].old);
+                        if (renamed)
+                            break;
+                    }
+                    
+                    /* make sure that the column generated in the number
+                       operator is only used as join column in the above
+                       join operation */
+                    if (r_join_col == ratt || 
+                        latt != ratt ||
+                        ratt != p->sem.eqjoin_unq.res)
+                        break;
+
+                    /* create a copy of the below join operator */
+                    join = eqjoin_unq (left, rp,
+                                       l_join_col,
+                                       r_join_col,
+                                       lp->sem.eqjoin_unq.res);
+
+                    /* if both join columns of the remaining join
+                       operator are identical we only have to
+                       replace the node p */
+                    if (l_join_col == r_join_col &&
+                        l_join_col == lp->sem.eqjoin_unq.res) {
+                        *p = *join;
+                        break;
+                    }
+                        
+                    /* otherwise we have to make sure that both
+                       join column are visible afterwards */
+                    proj_list = PFmalloc ((join->schema.count + 1)
+                                          * sizeof (*(proj_list)));
+                    count = 0;
+
+                    for (unsigned int i = 0; i < join->schema.count; i++) {
+                        PFalg_att_t cur = join->schema.items[i].name;
+                        if (cur == lp->sem.eqjoin_unq.res) {
+                            proj_list[count++] = PFalg_proj (
+                                                     r_join_col, 
+                                                     lp->sem.eqjoin_unq.res);
+                            proj_list[count++] = PFalg_proj (
+                                                     l_join_col, 
+                                                     lp->sem.eqjoin_unq.res);
+                        } else
+                            proj_list[count++] = PFalg_proj (cur, cur);
+                    }
+                
+                    *p = *PFla_project_ (join, count, proj_list);
                 }
                 break;
 
