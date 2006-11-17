@@ -51,7 +51,7 @@ sql5_export str SQLassertInt(int *ret, int *flg, str *msg);
 sql5_export str SQLassertLng(int *ret, lng *flg, str *msg);
 
 sql5_export str SQLinitEnvironment(int *ret);
-sql5_export str SQLstatement(str *ret, str *expr);
+sql5_export str SQLstatement(int *ret, str *expr);
 sql5_export str SQLcompile(str *ret, str *expr);
 sql5_export str SQLtrace(int *ret);
 
@@ -361,9 +361,9 @@ The cache with plans should be regularly be refreshed.
 @c
 void
 SQLcacheRefresh(mvc *m){
-	if( m && !m->session->active) {
+	if (m && !m->session->active) {
 		int schema_changed = mvc_trans(m);
-		if (m->cache && (schema_changed || m->qc->id > 1000)) {
+		if (m->cache && (schema_changed || m->qc->id > 1000)){
 			if (m->qc)
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid);
@@ -405,14 +405,14 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 static str
-SQLstatementIntern(str *ret, str *expr, str nme, int execute)
+SQLstatementIntern(str *expr, str nme, int execute)
 {
 	int err = 0;
 	mvc o, *m;
 	int ac;
 	buffer *b;
 	char *n;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 	Client c= MCgetClient();
 	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
@@ -420,12 +420,11 @@ SQLstatementIntern(str *ret, str *expr, str nme, int execute)
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
-	*ret= 0;
 	if (!sql) {
-		*ret= SQLinitEnvironment(&err);
-		sql= ((backend *) c->state[PARSER]);
+		msg = SQLinitEnvironment(&err);
+		sql = ((backend *) c->state[PARSER]);
 	}
-	if(*ret)
+	if (msg)
 		return throwMessage("SQLstatement", "Catalogue not available\n");
 
 	initSQLreferences();
@@ -543,19 +542,18 @@ endofcompile:
 }
 
 str
-SQLstatement(str *ret, str *expr)
+SQLstatement(int *ret, str *expr)
 {
-	str msg;
-	msg= SQLstatementIntern(ret,expr, "SQLstatement", TRUE);
-	if( msg == MAL_SUCCEED)
-		*ret= GDKstrdup("SQLstatement");
-	return msg;
+	(void)ret;
+	return SQLstatementIntern(expr, "SQLstatement", TRUE);
 }
 
 str
 SQLcompile(str *ret, str *expr){
 	str msg;
-	msg= SQLstatementIntern(ret,expr, "SQLcompile", FALSE);
+
+	*ret = NULL;
+	msg= SQLstatementIntern(expr, "SQLcompile", FALSE);
 	if( msg == MAL_SUCCEED)
 		*ret= GDKstrdup("SQLcompile");
 	return msg;
@@ -1128,6 +1126,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 str 
 backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
 {
+	int ret;
 	str msg = NULL;
 	mvc *c = be->mvc;
 	modes_t mode = c->mode;
@@ -1149,7 +1148,8 @@ backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, ln
 	/* switch of explain to prevent recursion */
 	c->mode = m_normal;
 	c->explain = m_normal;
-	SQLstatement(&msg, &stmt);
+	msg = SQLstatement(&ret, &stmt);
+	(void)ret;
 	c->mode = mode;
 	c->explain = explain;
 	be->Tparse= be->Toptimize = be->Tschedule = be->Texec = 0;
