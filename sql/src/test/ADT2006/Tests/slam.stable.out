@@ -1,25 +1,24 @@
 stdout of test 'slam` in directory 'src/test/ADT2006` itself:
 
 
-# 21:14:15 >  
-# 21:14:15 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=32169 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 21:14:15 >  
+# 14:13:27 >  
+# 14:13:27 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/stable/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=34742 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 14:13:27 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf
-# dbfarm:/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
-# dbname:mTests_src_test_ADT2006
-# Visit http://monetdb.cwi.nl/ for further information
+# Monet Database Server V4.14.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
 
 Ready.
 
 Over..
 
-# 21:14:15 >  
-# 21:14:15 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32169  < slam.sql
-# 21:14:15 >  
+# 14:13:27 >  
+# 14:13:27 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34742  < slam.sql
+# 14:13:27 >  
 
 [ 1	]
 [ 1	]
@@ -279,7 +278,8 @@ Over..
 % sys.jtr_victim,	sys.jtr_victim,	sys.jtr_victim,	sys.jtr_victim # table_name
 % name,	eyes,	hair,	features # name
 % varchar,	varchar,	varchar,	clob # type
-% 42,	10,	16,	106 # length
+% 42,	10,	23,	484 # length
+[ "Mary Ann Walker",	"brown",	"brown hair turning grey",	"five front teeth missing (Rumbelow); two bottom-one top\n\t\t\t\tfront (Fido), her teeth are slightly discoloured. She is\n\t\t\t\tdescribed as having small, delicate features with high\n\t\t\t\tcheekbones and grey eyes. She has a small scar on her\n\t\t\t\tforehead from a childhood injury.  She is described by\n\t\t\t\tEmily Holland as \"a very clean woman who always seemed\n\t\t\t\tto keep to herself.\" The doctor at the post mortem\n\t\t\t\tremarked on the cleanliness of her thighs.  She is also\n\t\t\t\tan alcoholic."	]
 [ "Annie Chapman",	"blue",	"dark brown, wavy",	"Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose"	]
 [ "Elisabeth Stride",	"light gray",	"curly dark brown",	"pale complexion, all the teeth in her lower left jaw were missing"	]
 [ "Pinchin Street Murder, possibly Lydia Hart",	"",	"",	"body, missing both head and legs"	]
@@ -315,7 +315,7 @@ Over..
 [ "Rose Mylett",	0,	0,	2,	0	]
 [ "Whitehall Mystery",	0,	0,	0,	0	]
 
-# 21:14:18 >  
-# 21:14:18 >  Done.
-# 21:14:18 >  
+# 14:13:29 >  
+# 14:13:29 >  Done.
+# 14:13:29 >  
 

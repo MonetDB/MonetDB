@@ -43,7 +43,7 @@ address SQLcommit_wrap;
 command rollback():void
 address SQLrollback_wrap;
 
-command eval(cmd:str):str 
+command eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
 
@@ -282,28 +282,6 @@ command calc.date(t:timestamp) :date
 address MTIMEtimestamp_extract_date_default;
 command calc.timestamp(d:date) :timestamp
 address MTIMEtimestamp_create_from_date;
-
-# string 
-command calc.toLower( s:str ) :str address STRLower;
-command calc.toUpper( s:str ) :str address STRUpper;
-
-command calc.trim( s:str ) :str address STRStrip;
-command calc.ltrim( s:str ) :str address STRLtrim;
-command calc.rtrim( s:str ) :str address STRRtrim;
-command calc.substitute(s:str,src:str,dst:str,rep:bit):str
-address STRSubstitute;
-command calc.substring(s:str,offset:int):str
-address STRsubstringTail;
-command calc.substring(s:str,offset:int,count:int):str
-address STRsubstring;
-
-command calc.stringleft(s:str,l:int):str
-address STRprefix;
-command calc.stringright(s:str,l:int):str
-address STRsuffix;
-
-command calc.stringlength( s:str ) :int 
-address STRstringLength;
 
 @- SQL functions
 The SQL functions are all recognized by their module name.

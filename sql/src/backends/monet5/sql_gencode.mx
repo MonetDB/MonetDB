@@ -395,7 +395,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newAssignment(mb);
 					q = pushArgumentId(mb, q, _strdup(s->op1.sval));
 				} else {
-					break;
+					int tt = tail_type(s)->type->localtype;
+					q = newInstruction(mb,ASSIGNsymbol);
+					q->argc = q->retc = 0;
+					q = pushArgumentId(mb, q, _strdup(s->op1.sval));
+					q = pushNil(mb, q, tt);
+					pushInstruction(mb, q);
+					q->retc++;
 				}
 			} else {
 				char buf[32];
