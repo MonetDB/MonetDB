@@ -274,7 +274,8 @@ PROC doLoopLiftedRPC(
 
     var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);
     var steps := rpc_unq_dsts.count();
-    var iterc := iterc_total / steps; # we assume the same #iterations to each dst
+    # we assume each dst has the same #iterations
+    var iterc := iterc_total / steps;
     var rpc_results := bat(str,oid);
     var rpc_iter := bat(void,bat).seqbase(0@0);
 
@@ -284,13 +285,21 @@ PROC doLoopLiftedRPC(
         # get iteration numbers for this destination
         var iter_dst := rpc_dsts.ord_uselect($t).mirror();
 
-        # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind for this iteration.
-        var fun_iter_dst := fun_iter.join(iter_dst);
+        # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind
+        # for this iteration.
+
+        # order of 'fun_iter' needs to be preserved, so use 'leftjoin',
+        # iso. join
+        var fun_iter_dst := fun_iter.leftjoin(iter_dst);
         var indices      := fun_iter_dst.mirror().hmark(0@0);
         var fun_vid_dst  := indices.fetchjoin(fun_vid).tmark(0@0);
-            fun_iter_dst := fun_iter_dst.tmark(0@0);
         var fun_item_dst := indices.fetchjoin(fun_item).tmark(0@0);
         var fun_kind_dst := indices.fetchjoin(fun_kind).tmark(0@0);
+
+        # renumber the iters, starting from 1
+        iter_dst     := iter_dst.mark(0@0);
+        fun_iter_dst := fun_iter_dst.leftjoin(iter_dst.mark(1@0));
+        fun_iter_dst := fun_iter_dst.tmark(0@0);
 
         var local_name := "rpc_res_00" + str(int($h)+1);
         var rpc_oid;
@@ -485,6 +494,14 @@ static int setup_connection(str dst, int port, int nr_retries) {
 
     ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     for (i = 0; i < nr_retries && ret < 0; i++) {
+        if (ret < 0){
+            GDKwarning("setup_connection: could not set up connection "
+                    "with %s:%d\n", dst, port);
+            if (errno)
+                GDKwarning("setup_connection: %s\n", strerror(errno));
+            GDKwarning("setup_connection: %d tries remained\n", i);
+            errno = 0;
+        }
         sleep(1);
         ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     }
