@@ -2501,75 +2501,91 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* Rel:      std_sort (Rel) */
         case 33:
-            {
-                unsigned int  count = 0;
-                mvar_t       *v     = new_var (1);
+        {
+            unsigned int count          = 0;
+            mvar_t      *v              = new_var (1);
+            mvar_t      *first_sort_var = NULL;
 
-                for (unsigned int i = 0;
-                        i < PFord_count (p->sem.sortby.required); i++)
-                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                        if (t & type_of (L(p),
-                                         PFord_order_at (p->sem.sortby.required,
-                                                         i))) {
-                            if (count) {
-                                execute (
-                                    assgn (
+            for (unsigned int i = 0;
+                    i < PFord_count (p->sem.sortby.required); i++)
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & type_of (L(p),
+                                     PFord_order_at (p->sem.sortby.required,
+                                                     i))) {
+                        if (count) {
+                            execute (
+                                assgn (
+                                    var (v->name),
+                                    ctrefine (
                                         var (v->name),
-                                        ctrefine (
-                                            var (v->name),
-                                            VAR (L(p)->env,
-                                                 PFord_order_at (
-                                                     p->sem.sortby.required,
-                                                     i),
-                                                 t))));
-                            }
-                            else {
-                                execute (
-                                    assgn (
-                                        var (v->name),
-                                        reverse (sort (reverse (
-                                            VAR (L(p)->env,
-                                                 PFord_order_at (
-                                                     p->sem.sortby.required,
-                                                     i),
-                                                 t))))));
-                            }
-                            count++;
+                                        VAR (L(p)->env,
+                                             PFord_order_at (
+                                                 p->sem.sortby.required,
+                                                 i),
+                                             t))));
                         }
+                        else {
+                            first_sort_var = env_mvar (
+                                                 L(p)->env,
+                                                 PFord_order_at (
+                                                     p->sem.sortby.required,
+                                                     i),
+                                                 t);
+                            
+                            execute (
+                                assgn (
+                                    var (v->name),
+                                    reverse (
+                                        sort (
+                                            reverse (
+                                                var (first_sort_var->name))
+                                            ))));
+                        }
+                        count++;
+                    }
 
-                /* handle the case that a sort does nothing */
-                if (!PFord_count (p->sem.sortby.required))
-                    execute (assgn (var (v->name),
-                                    mirror (var (env_at (L(p)->env,
-                                                         0).mvar->name))));
-
+            /* handle the case that a sort does nothing */
+            if (!PFord_count (p->sem.sortby.required))
                 execute (assgn (var (v->name),
-                                reverse (mark (var (v->name), lit_oid (0)))));
+                                mirror (var (env_at (L(p)->env,
+                                                     0).mvar->name))));
 
-                for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-                     mvar_t *a = new_var (p->refctr);
+            execute (assgn (var (v->name),
+                            reverse (mark (var (v->name), lit_oid (0)))));
 
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                 mvar_t *a = new_var (p->refctr);
+
+                 execute (
+                      assgn (var (a->name),
+                             leftjoin (
+                                  var (v->name),
+                                  var (env_at (L(p)->env, i).mvar->name))));
+                      
+                 /* we know that the first sort criterion certainly 
+                    is sorted */
+                 if (first_sort_var == env_at (L(p)->env,i).mvar)
                      execute (
                           assgn (var (a->name),
-                                 leftjoin (
-                                      var (v->name),
-                                      var (env_at (L(p)->env, i).mvar->name))),
-                          /* because leftjoin does not know that we have 
-                             exactly one match for each tuple in v,
-                             we need to make the heads void ourselves */
-                          assgn (var (a->name),
-                                 reverse (mark (reverse (var (a->name)),
-                                                lit_oid (0)))));
+                                 assert_order (var (a->name))));
 
-                     env_add (p->env,
-                              env_at (L(p)->env, i).att,
-                              env_at (L(p)->env, i).ty,
-                              a);
-                }
+                  /* because leftjoin does not know that we have 
+                     exactly one match for each tuple in v,
+                     we need to make the heads void ourselves */
+                 execute (
+                     assgn (var (a->name),
+                            reverse (mark (reverse (var (a->name)),
+                                           lit_oid (0)))));
 
-                unpin (v, 1);
+                 env_add (p->env,
+                          env_at (L(p)->env, i).att,
+                          env_at (L(p)->env, i).ty,
+                          a);
             }
-            break;
+
+            unpin (v, 1);
+        }
+        break;
 
         /* Rel:      refine_sort (Rel) */
         case 34:
