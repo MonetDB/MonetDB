@@ -332,7 +332,8 @@ static struct PFla_pair_t locstep (PFalg_axis_t axis, PFty_t seqty,
                                    struct PFla_pair_t p);
 
 /* Constructor for environment entry */
-static PFla_env_t enventry (PFvar_t *var, PFla_op_t *result, PFarray_t *doc);
+static PFla_env_t enventry (PFvar_t *var, PFla_op_t *rel, 
+                            PFla_op_t *map, PFarray_t *doc);
 
 /* worker to implement type tests */
 static PFla_op_t *type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop);
@@ -491,6 +492,7 @@ reduce (PFcnode_t * p, int goalnt)
              * env, (v -> q(v)) e env, loop: v => (q(v), 0)
              */
             unsigned int i;
+            PFla_op_t *rel;
         
             /* 
              * look up the variable in the environment;
@@ -499,13 +501,44 @@ reduce (PFcnode_t * p, int goalnt)
              * guarenteed to find the required binding in the
              * environment
              */
+
+            /*
+             * The variable representations in the variable environment
+             * consist of 4 parts:
+             *  - var: the variable name
+             *  - rel: the initial relation representing the variable
+             *  - map: the mapping information needed to map the relation
+             *         rel to the current scope
+             *  - frag: the document fragment information
+             *
+             * In constrast to the variable mapping described in our
+             * papers we do not map the relation representing the variable
+             * in each new scope, but first create a chain of mapping
+             * joins. The variable representations therefore have to
+             * be mapped to the current scope -- if necessary 
+             * (map != NULL) -- (via map) only during look-up (here).
+             *
+             * The reason is that this makes the optimization of such
+             * chains of joins easier in later phases.
+             */ 
             for (i = 0; i < PFarray_last (env); i++) {
                 PFla_env_t e = *((PFla_env_t *) PFarray_at (env, i));
             
                 if (p->sem.var == e.var) {
-                    A(p) = (struct  PFla_pair_t) {
-                             .rel = e.rel,
-                             .frag = e.frag };
+                    if (!e.map)
+                        rel = e.rel;
+                    else
+                        rel = project (
+                                  eqjoin (
+                                      e.rel,
+                                      e.map,
+                                      att_iter,
+                                      att_outer),
+                                  proj (att_iter, att_inner),
+                                  proj (att_pos,  att_pos),
+                                  proj (att_item, att_item));
+
+                    A(p) = (struct  PFla_pair_t) { .rel = rel, .frag = e.frag };
                     break;
                 }
             }
@@ -831,7 +864,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFla_op_t   *number;
             unsigned int  i;
             PFla_env_t   e;
-            PFla_op_t   *new_bind;
+            PFla_op_t   *new_map;
             /* save old environment */
             PFarray_t  *old_env = env;
 
@@ -851,7 +884,7 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* insert $v and "its document" into NEW environment */
             *((PFla_env_t *) PFarray_add (env))
-                = enventry (LLL(p)->sem.var, var, A(LR(p)).frag);
+                = enventry (LLL(p)->sem.var, var, NULL, A(LR(p)).frag);
 
             /* create new loop operator */
             loop = project (var, proj (att_iter, att_iter));
@@ -882,20 +915,36 @@ reduce (PFcnode_t * p, int goalnt)
 
                 /* insert $p into NEW environment */
                 *((PFla_env_t *) PFarray_add (env)) =
-                    enventry (LLR(p)->sem.var, opt_var, PFla_empty_set ());
+                    enventry (LLR(p)->sem.var, opt_var, NULL, PFla_empty_set ());
             }
 
             /* update all variable bindings in old environment and put
              * them into new environment */
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind = project (eqjoin (e.rel, var_map, 
-                                            att_iter, att_outer),
-                                    proj (att_iter, att_inner),
-                                    proj (att_pos, att_pos),
-                                    proj (att_item, att_item));
+                
+                if (!e.map)
+                    new_map = project (var_map,
+                                       proj (att_outer, att_outer),
+                                       proj (att_inner, att_inner));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      project (
+                                          e.map,
+                                          proj (att_iter, att_inner),
+                                          proj (att_outer, att_outer)),
+                                      project (
+                                          var_map,
+                                          proj (att_iter2, att_outer),
+                                          proj (att_inner, att_inner)),
+                                      att_iter,
+                                      att_iter2),
+                                  proj (att_outer, att_outer),
+                                  proj (att_inner, att_inner));
+
                 *((PFla_env_t *) PFarray_add (env)) =
-                    enventry (e.var, new_bind, e.frag);
+                    enventry (e.var, e.rel, new_map, e.frag);
             }
 
             if (!map) {
@@ -1000,7 +1049,7 @@ reduce (PFcnode_t * p, int goalnt)
              * environment together with the currently live nodes
              */
             *((PFla_env_t *) PFarray_add (env))
-                = enventry (LL(p)->sem.var, A(LR(p)).rel, A(LR(p)).frag);
+                = enventry (LL(p)->sem.var, A(LR(p)).rel, NULL, A(LR(p)).frag);
 
             /* now translate remaining bindings in the new context */
             reduce (kids[1], nts[1]);
@@ -1043,7 +1092,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFarray_t  *old_env;
             unsigned int i;
             PFla_env_t e;
-            PFla_op_t *new_bind;
+            PFla_op_t *new_map;
 
             /* initiate translation of e1 */
             reduce (kids[0], nts[0]);
@@ -1063,17 +1112,24 @@ reduce (PFcnode_t * p, int goalnt)
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind = project (eqjoin (e.rel,
-                                            project (loop,
-                                                     proj (att_iter1, 
-                                                           att_iter)),
-                                            att_iter,
-                                            att_iter1),
-                                    proj (att_iter, att_iter),
-                                    proj (att_pos, att_pos),
-                                    proj (att_item, att_item));
+
+                if (!e.map)
+                    new_map = project (
+                                  loop,
+                                  proj (att_outer, att_iter),
+                                  proj (att_inner, att_iter));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      e.map,
+                                      loop,
+                                      att_inner,
+                                      att_iter),
+                                  proj (att_outer, att_outer),
+                                  proj (att_inner, att_inner));
+
                 *((PFla_env_t *) PFarray_add (env))
-                    = enventry (e.var, new_bind, e.frag);
+                    = enventry (e.var, e.rel, new_map, e.frag);
             }
 
             /* translate e2 */
@@ -1091,17 +1147,24 @@ reduce (PFcnode_t * p, int goalnt)
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind = project (eqjoin (e.rel,
-                                            project (loop,
-                                                     proj (att_iter1,
-                                                           att_iter)),
-                                            att_iter,
-                                            att_iter1),
-                                    proj (att_iter, att_iter),
-                                    proj (att_pos, att_pos),
-                                    proj (att_item, att_item));
-                *((PFla_env_t *) PFarray_add (env)) =
-                    enventry (e.var, new_bind, e.frag);
+
+                if (!e.map)
+                    new_map = project (
+                                  loop,
+                                  proj (att_outer, att_iter),
+                                  proj (att_inner, att_iter));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      e.map,
+                                      loop,
+                                      att_inner,
+                                      att_iter),
+                                  proj (att_outer, att_outer),
+                                  proj (att_inner, att_inner));
+
+                *((PFla_env_t *) PFarray_add (env))
+                    = enventry (e.var, e.rel, new_map, e.frag);
             }
 
             /* translate e3 */
@@ -1443,7 +1506,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFarray_t   *old_env;    /* backup of surrounding environment */
             PFla_op_t   *old_loop;   /* backup of surrounding loop relation */
             PFla_env_t   e;          /* helper variable */
-            PFla_op_t   *new_bind;   /* helper variable */
+            PFla_op_t   *new_map;    /* helper variable */
             unsigned int  i;
 
             /* translate CoreExpr1 */
@@ -1464,16 +1527,24 @@ reduce (PFcnode_t * p, int goalnt)
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind =
-                    project (eqjoin (e.rel,
-                                     project (loop,
-                                              proj (att_iter1, att_iter)),
-                                     att_iter, att_iter1),
-                             proj (att_iter, att_iter),
-                             proj (att_pos, att_pos),
-                             proj (att_item, att_item));
+
+                if (!e.map)
+                    new_map = project (
+                                  loop,
+                                  proj (att_outer, att_iter),
+                                  proj (att_inner, att_iter));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      e.map,
+                                      loop,
+                                      att_inner,
+                                      att_iter),
+                                  proj (att_outer, att_outer),
+                                  proj (att_inner, att_inner));
+
                 *((PFla_env_t *) PFarray_add (env))
-                    = enventry (e.var, new_bind, e.frag);
+                    = enventry (e.var, e.rel, new_map, e.frag);
             }
 
             /* translate CoreExpr2 */
@@ -1490,16 +1561,24 @@ reduce (PFcnode_t * p, int goalnt)
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind =
-                    project (eqjoin (e.rel,
-                                     project (loop,
-                                              proj (att_iter1, att_iter)),
-                                     att_iter, att_iter1),
-                             proj (att_iter, att_iter),
-                             proj (att_pos, att_pos),
-                             proj (att_item, att_item));
+
+                if (!e.map)
+                    new_map = project (
+                                  loop,
+                                  proj (att_outer, att_iter),
+                                  proj (att_inner, att_iter));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      e.map,
+                                      loop,
+                                      att_inner,
+                                      att_iter),
+                                  proj (att_outer, att_outer),
+                                  proj (att_inner, att_inner));
+
                 *((PFla_env_t *) PFarray_add (env))
-                    = enventry (e.var, new_bind, e.frag);
+                    = enventry (e.var, e.rel, new_map, e.frag);
             }
 
             /* translate CoreExpr3 */
@@ -1849,7 +1928,9 @@ reduce (PFcnode_t * p, int goalnt)
 
                     *((PFla_env_t *) PFarray_add (env))
                         = enventry (p->sem.apply.fun->params[i],
-                                    curr_arg.rel, curr_arg.frag);
+                                    curr_arg.rel,
+                                    NULL,
+                                    curr_arg.frag);
                 }
                                 
                 fun_args = old_fun_args;
@@ -1986,7 +2067,7 @@ reduce (PFcnode_t * p, int goalnt)
 #if STRATEGY
             PFla_env_t     e;
             PFarray_t     *old_env;
-            PFla_op_t     *new_bind;    
+            PFla_op_t     *new_map;    
             PFla_op_t     *old_loop, *base_loop, *updated_loop;
 #endif
 
@@ -2044,15 +2125,24 @@ reduce (PFcnode_t * p, int goalnt)
              * them into new environment */
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind = project (eqjoin (e.rel, 
-                                            project (base_loop,
-                                                     proj (att_iter1, att_iter)),
-                                            att_iter, att_iter1),
-                                    proj (att_iter, att_iter),
-                                    proj (att_pos, att_pos),
-                                    proj (att_item, att_item));
-                *((PFla_env_t *) PFarray_add (env)) =
-                    enventry (e.var, new_bind, e.frag);
+
+                if (!e.map)
+                    new_map = project (
+                                  loop,
+                                  proj (att_outer, att_iter),
+                                  proj (att_inner, att_iter));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      e.map,
+                                      loop,
+                                      att_inner,
+                                      att_iter),
+                                  proj (att_outer, att_outer),
+                                  proj (att_inner, att_inner));
+
+                *((PFla_env_t *) PFarray_add (env))
+                    = enventry (e.var, e.rel, new_map, e.frag);
             }
 
             loop = base_loop;
@@ -2060,7 +2150,7 @@ reduce (PFcnode_t * p, int goalnt)
             
             /* insert $x and "its document" into the NEW environment */
             *((PFla_env_t *) PFarray_add (env))
-                = enventry (L(p)->sem.var, base_x, A(RL(p)).frag);
+                = enventry (L(p)->sem.var, base_x, NULL, A(RL(p)).frag);
 
             /* translate e2 under the specified conditions 
              * (updated environment, updated loop)
@@ -2223,9 +2313,9 @@ locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
  * Called whenever a new variable is declared.
  */
 static PFla_env_t
-enventry (PFvar_t *var, PFla_op_t *result, PFarray_t *doc)
+enventry (PFvar_t *var, PFla_op_t *rel, PFla_op_t *map, PFarray_t *doc)
 {
-    return (PFla_env_t) { .var = var, .rel = result, .frag = doc };
+    return (PFla_env_t) { .var = var, .rel = rel, .map = map, .frag = doc };
 }
 
 /**

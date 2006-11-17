@@ -53,6 +53,7 @@ struct PFla_op_t *PFcore2alg (PFcnode_t *);
 struct PFla_env_t {
     PFvar_t               *var;
     struct PFla_op_t      *rel;
+    struct PFla_op_t      *map;
     PFarray_t             *frag;
 };
 /** environment entry node */
