@@ -7783,15 +7783,28 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        if (strcmp(func, "insertIntoAsFirst") == 0 || strcmp(func, "insertAfter") == 0) {
+            /* reverse the order of items within an iter for these functions so that they get inserted in the correct order */
+            milprintf(f,
+                      "if (count(tunique(iter)) != count(ipik)) {\n"
+                      "  var revmap := iter.materialize(ipik).copy().access(BAT_WRITE).revert().reverse().ssort().reverse();\n"
+                      "  item := revmap.hmark(0@0).leftfetchjoin(item);\n"
+                      "  kind := revmap.hmark(0@0).leftfetchjoin(kind);\n"
+                      "  iter := revmap.tmark(0@0);\n"
+                      "}\n");
+        }
         milprintf(f,
                   "var cmdID := int_values.addValues(%s);\n"
+                  "var map := iter.materialize(ipik).leftjoin(iter%03u.reverse()).tmark(0@0);\n"
+                  "kind%03u := map.leftfetchjoin(kind%03u);\n"
+                  "item%03u := map.leftfetchjoin(item%03u);\n"
+
                   "var id1 := ipik.mirror();\n"
-                  "var id2 := ipik%03u.mirror();\n"
-                  "var merge1 := merged_union(id1, id2,\n"
+                  "var merge1 := merged_union(id1, id1,\n"
                   "                           cmdID, item%03u,\n"
                   "                           INT, kind%03u,\n"
                   "                           iter, iter);\n"
-                  "var merge2 := merged_union(id1, id2,\n"
+                  "var merge2 := merged_union(id1, id1,\n"
                   "                           item, oid_nil,\n"
                   "                           kind, int_nil,\n"
                   "                           iter, iter);\n"
@@ -7803,7 +7816,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "kind := merge.fetch(2);\n"
                   "iter := merge.fetch(3);\n"
                   "ipik := item;\n",
-                  update_cmd, counter, counter, counter);
+                  update_cmd, counter, counter, counter, counter, counter, counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }
@@ -8623,7 +8636,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "    ws.fetch(QN_LOC).fetch(WS).insert(itemID,\"%s\");\n"
                     "    ws.fetch(QN_PREFIX_URI_LOC).fetch(WS).insert(itemID,\"%s:%s:%s\");\n"
                     "    ws.fetch(QN_URI_LOC).fetch(WS).insert(itemID,\"%s:%s\");\n"
-                    "}\nprop_str := nil;\n",
+                    "}\n",
                     prefix, uri, loc, 
                     prefix, uri, loc, 
                     prefix, uri, loc, 

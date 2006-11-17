@@ -1492,13 +1492,54 @@ PROC antiswizzle(oid o, BAT[oid,oid] map) : oid
   return o;
 }
 
+# Find the ancestors of a given node in a document that is being modified.
+PROC mil_ancestor(bat[void,bat] ws, oid cont, oid newpre) : bat[void,oid]
+{
+  var ancestors := new(void, oid).seqbase(0@0); # the result
+  var pre_size := ws.fetch(PRE_SIZE).find(cont);
+  var rid_size := ws.fetch(_RID_SIZE).find(cont);
+  var rid_size_update := ws.fetch(RID_SIZE_UPDATE).find(cont);
+  var map_pid := ws.fetch(MAP_PID).find(cont);
+  var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(cont);
+  var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
+
+  var p := 0@0;
+  while (p < newpre) {
+    var pageid := pid_map_update.find(oid(lng(p) >> REMAP_PAGE_BITS));
+    var isoldpage := false;
+    if (map_pid.exist(pageid)) {
+      isoldpage := not(isnil(map_pid.find(pageid)));
+    }
+    var r := swizzle(p, pid_map_update);
+    var size;
+    if (isoldpage) {
+      if (rid_size_update.exist(r)) {
+        size := rid_size_update.find(r);
+      } else {
+        size := pre_size.find(swizzle(r, map_pid));
+      }
+    } else {
+      size := rid_size(r);
+    }
+    size := niland(size, INT_MAX);
+    var e := oid(lng(p) + size);
+    if (e >= newpre) {
+      ancestors.append(p);
+      p := oid(lng(p) + 1);
+    } else {
+      p := oid(lng(e) + 1);
+    }
+  }
+  return ancestors;
+}
+
 # Move data starting at "from" of length "size" by "delta".  The
 # destination *must* be a hole (XXX check this).
 # Delta can be positive (move data down) or negative (move data up).
 PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
 {
   if (delta = 0)
-    return;			# not moving, so nothing to do
+    return;                     # not moving, so nothing to do
 
 # The picture shows the layout of the tables and what the important
 # variables represent.  When delta > 0, the data is moved down (and
@@ -1557,7 +1598,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     isoldpage := not(isnil(map_pid.find(pageid)));
   }
   # we're using RID values exclusively in this function
-  from := antiswizzle(from, map_pid_update);
+  var from_rid := antiswizzle(from, map_pid_update);
 
 # var delta;                    # displacement (< 0: up, > 0: down) (parameter)
   var holefirst;                # ID of start of hole
@@ -1570,21 +1611,21 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   var newholefirst;             # ID if start of to-be-created hole
   var newholelast;              # ID if end of to-be-created hole
 
-  last := oid((lng(from) + size) - 1);
+  last := oid((lng(from_rid) + size) - 1);
   if (delta < 0) {
-    holefirst := oid(lng(from) + delta);
-    holelast := oid(lng(from) - 1);
+    holefirst := oid(lng(from_rid) + delta);
+    holelast := oid(lng(from_rid) - 1);
     before := oid(lng(holefirst) - 1);
     after := oid(lng(last) + 1);
     newholefirst := oid(lng(holefirst) + size);
     newholelast := oid(lng(holelast) + size);
   } else {
-    holefirst := oid(lng(from) + size);
+    holefirst := oid(lng(from_rid) + size);
     after := oid(lng(holefirst) + delta);
     holelast := oid(lng(after) - 1);
-    before := oid(lng(from) - 1);
-    newholefirst := from;
-    newholelast := oid(lng(from) + delta - 1);
+    before := oid(lng(from_rid) - 1);
+    newholefirst := from_rid;
+    newholelast := oid(lng(from_rid) + delta - 1);
   }
 
   var pre_size := ws.fetch(PRE_SIZE).find(cont);
@@ -1604,6 +1645,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   var rid_nid_update := ws.fetch(RID_NID_UPDATE).find(cont);
   var modified_nid := ws.fetch(MODIFIED_NID);
   var ancestor_nid := ws.fetch(ANCESTOR_NID);
+  var pid_map_update := map_pid_update.select(oid_nil, oid_nil).reverse().sort().tmark(0@0);
 
   # for each page prior to the one we're actually moving in, and for
   # all nodes in the page we're moving in before the affected area,
@@ -1616,86 +1658,102 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   # not ancestral and must already be in the MODIFIED_NID table.  Also
   # nodes that are already in an UPDATES bat must already be in the
   # MODIFIED_NID table.
-  var i := 0@0;
-  while (i <= pageno) {
-    var pgid := map_pid_update.reverse().find(i);
-    var isoldpg := map_pid.exist(pgid);
-    var off := int(pgid) << REMAP_PAGE_BITS;
-    var pg; # updated page
-    var pgold; # original page (only valid when no update page exists)
-    if (isoldpg) {
-      var off_pre := int(map_pid.find(pgid)) << REMAP_PAGE_BITS;
-      pgold := pg := pre_size.slice(off_pre, int(off_pre + REMAP_PAGE_MASK)).seqbase(oid(off));
-      if (i = pageno) {
-        pgold := pgold.reverse().select(oid_nil, before).reverse();
-      }
-      var rid_size_update_page := rid_size_update.reverse().select(oid(off), oid(off + REMAP_PAGE_MASK)).reverse();
-      pg := pg.copy().access(BAT_WRITE).key(true).replace(rid_size_update_page);
-    } else {
-      # read master page since it is exclusively ours
-      pg := rid_size.slice(off, int(off + REMAP_PAGE_MASK));
-    }
-    if (i = pageno) {
-      pg := pg.reverse().select(oid_nil, before).reverse();
-    }
-
-    # remember where the holes are
-    var ishole := [niland](pg, int_nil);
-    # figure out where each element in the page ends
-    var pgend := [oid]([+]([int](pg.mirror()), [niland](pg, INT_MAX)));
-    # select those that end in the data being moved
-    var pgdata := pgend.uselect(from, last);
-    # calculate new values
-    if (pgdata.count() > 0) {
-      var pg_update := [nilplus](pgdata.mirror().join(pg), delta);
-      # apply update
-      if (isoldpg) {
-        rid_size_update.myupdate(pg_update);
-        # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
-        var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid).join(pre_nid); # [RID,NID]
-        ancnids := ancnids.reverse().project(cont).reverse(); # [CONT,NID]
-        ancestor_nid.insert(ancnids);
+  {
+    var ancestors_newpre;
+    var ancestors_newrid;
+    var ancestors_isnewpage;
+    var ancestors_nid;
+    var ancestors_oldpre;
+    {
+      var from_nid;
+      if (isoldpage) {
+        if (rid_nid_update.exist(from_rid)) {
+          from_nid := rid_nid_update.find(from_rid);
+        } else {
+          from_nid := pre_nid.find(swizzle(from_rid, map_pid_update));
+        }
       } else {
-        rid_size.replace(pg_update, true);
+        from_nid := rid_nid.find(from_rid);
       }
+      if (nid_rid.exist(from_nid)) {
+        # it's an old node, we can use ll_ancestor to find ancestors
+        ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(swizzle(nid_rid.find(from_nid), map_pid)), pre_size));
+        ancestors_nid := ancestors_oldpre.join(pre_nid);
+        ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
+        ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
+        ancestors_isnewpage := [isnil](outerjoin([oid]([>>]([lng](ancestors_newrid), REMAP_PAGE_BITS)), map_pid));
+      } else {
+        ancestors_newpre := mil_ancestor(ws, cont, swizzle(from_rid, map_pid_update));
+        ancestors_newrid := [swizzle](ancestors_newpre, pid_map_update);
+        ancestors_isnewpage := [isnil](outerjoin([oid]([>>]([lng](ancestors_newrid), REMAP_PAGE_BITS)), map_pid));
+        {
+          # distinguish the three cases:
+          # rid is on new page
+          var a := ancestors_isnewpage.uselect(true).mirror().join(ancestors_newrid).join(rid_nid);
+          # rid is on old page and was modified
+          var b := ancestors_isnewpage.uselect(false).mirror().join(ancestors_newrid).join(rid_nid_update);
+          # rid is on old page and was not modified
+          var c := ancestors_isnewpage.uselect(false).kdiff(b).mirror().join(ancestors_newrid).[swizzle](map_pid).join(pre_nid);
+          # combine
+          ancestors_nid := a.access(BAT_WRITE).insert(b).insert(c).order().tmark(0@0);
+        }
+        ancestors_oldpre := ancestors_nid.join(nid_rid).[swizzle](map_pid);
+      }
+    }
+    var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
+    # now figure out which ancestors *end* at the hole
+    var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size));
+    # select those that end in the data being moved
+    var cands := ancestors_end.uselect(from_rid, last);
+    if (cands.count() > 0) {
+      var new_size := [+](cands.mirror().join(ancestors_size), delta);
+      var old_page := ancestors_isnewpage.uselect(false);
+      if (old_page.count() > 0) {
+         rid_size_update.myupdate(ancestors_newrid.reverse().join(old_page.mirror().join(new_size)));
+      }
+      var new_page := ancestors_isnewpage.uselect(true);
+      if (new_page.count() > 0) {
+        rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+      }
+      # remember which ancestors were changed
+      ancestor_nid.insert(cands.project(cont).reverse().join(ancestors_nid));
     }
     # select those that end in the hole being overwritten
-    var pghole := pgend.uselect(holefirst, holelast);
-    if (pghole.count() > 0) {
+    var cands := ancestors_end.uselect(holefirst, holelast);
+    if (cands.count() > 0) {
       # clamp to edge
+      var new_size := [int](cands.mirror().join(ancestors_newrid)); # not really, yet
       if (delta < 0) {
-        pghole := [int]([-](int(before), [int](pghole.mirror())));
+        new_size := [int]([-](int(before), new_size));
       } else {
-        pghole := [int]([-](int(last), [int](pghole.mirror())));
+        new_size := [int]([-](int(last), new_size));
       }
-      # add hole back in and replace values on page
-      var pg_update := [nilplus](pghole, pghole.mirror().join(ishole));
-      if (isoldpg) {
-        rid_size_update.myupdate(pg_update);
-        # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
-        var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid).join(pre_nid); # [RID,NID]
-        ancnids := ancnids.reverse().project(cont).reverse(); # [CONT,NID]
-        ancestor_nid.insert(ancnids);
-      } else {
-        rid_size.replace(pg_update, true);
+      var old_page := ancestors_isnewpage.uselect(false);
+      if (old_page.count() > 0) {
+         rid_size_update.myupdate(ancestors_newrid.reverse().join(old_page.mirror().join(new_size)));
       }
+      var new_page := ancestors_isnewpage.uselect(true);
+      if (new_page.count() > 0) {
+        rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+      }
+      # remember which ancestors were changed
+      ancestor_nid.insert(cands.project(cont).reverse().join(ancestors_nid));
     }
-    i := oid(lng(i) + 1);
   }
 
   # the PRE_SIZE table has the correct sizes, but we now need to
   # actually move the data in all PRE tables
   var update_hole;
-  var from_pre := swizzle(from, map_pid);
+  var from_pre := swizzle(from_rid, map_pid);
   var last_pre := swizzle(last, map_pid);
 
   {
     var data;
     if (isoldpage) {
-      data := pre_size.reverse().select(from_pre, last_pre).reverse().copy().access(BAT_WRITE).seqbase(from).key(true);
-      data.myupdate(rid_size_update.reverse().select(from, last).reverse());
+      data := pre_size.reverse().select(from_pre, last_pre).reverse().copy().access(BAT_WRITE).seqbase(from_rid).key(true);
+      data.myupdate(rid_size_update.reverse().select(from_rid, last).reverse());
     } else {
-      data := rid_size.reverse().select(from, last).reverse().copy().access(BAT_WRITE).key(true);
+      data := rid_size.reverse().select(from_rid, last).reverse().copy().access(BAT_WRITE).key(true);
     }
 
     # update the sizes of the moved data
@@ -1720,7 +1778,7 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
     }
 
     # now fix the head values (i.e. move the data)
-    var update_data := data.reverse().mark(oid(lng(from) + delta)).reverse();
+    var update_data := data.reverse().mark(oid(lng(from_rid) + delta)).reverse();
     # we're not actually using the tail value here...
     update_hole := rid_size.reverse().select(newholefirst, newholelast).reverse();
     if (update_hole.count() < delta) {
@@ -1743,12 +1801,12 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   {
     var update_data;
     if (isoldpage) {
-      update_data := pre_level.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from);
-      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_level_update.reverse().select(from, last).reverse());
+      update_data := pre_level.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from_rid);
+      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_level_update.reverse().select(from_rid, last).reverse());
     } else {
-      update_data := rid_level.reverse().select(from, last).reverse();
+      update_data := rid_level.reverse().select(from_rid, last).reverse();
     }
-    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_data := update_data.reverse().mark(oid(lng(from_rid) + delta)).reverse();
     update_hole := update_hole.project(cast(nil, rid_level.ttype()));
     if (isoldpage) {
       rid_level_update.myupdate(update_hole).myupdate(update_data);
@@ -1760,12 +1818,12 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   {
     var update_data;
     if (isoldpage) {
-      update_data := pre_kind.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from);
-      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_kind_update.reverse().select(from, last).reverse());
+      update_data := pre_kind.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from_rid);
+      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_kind_update.reverse().select(from_rid, last).reverse());
     } else {
-      update_data := rid_kind.reverse().select(from, last).reverse();
+      update_data := rid_kind.reverse().select(from_rid, last).reverse();
     }
-    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_data := update_data.reverse().mark(oid(lng(from_rid) + delta)).reverse();
     update_hole := update_hole.project(cast(nil, rid_kind.ttype()));
     if (isoldpage) {
       rid_kind_update.myupdate(update_hole).myupdate(update_data);
@@ -1777,12 +1835,12 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   {
     var update_data;
     if (isoldpage) {
-      update_data := pre_prop.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from);
-      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_prop_update.reverse().select(from, last).reverse());
+      update_data := pre_prop.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from_rid);
+      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_prop_update.reverse().select(from_rid, last).reverse());
     } else {
-      update_data := rid_prop.reverse().select(from, last).reverse();
+      update_data := rid_prop.reverse().select(from_rid, last).reverse();
     }
-    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_data := update_data.reverse().mark(oid(lng(from_rid) + delta)).reverse();
     update_hole := update_hole.project(oid_nil);
     if (isoldpage) {
       rid_prop_update.myupdate(update_hole).myupdate(update_data);
@@ -1794,12 +1852,12 @@ PROC movedata(bat[void,bat] ws, oid cont, oid from, int size, int delta): void
   {
     var update_data;
     if (isoldpage) {
-      update_data := pre_nid.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from);
-      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_nid_update.reverse().select(from, last).reverse());
+      update_data := pre_nid.reverse().select(from_pre, last_pre).reverse().copy().seqbase(from_rid);
+      update_data := update_data.access(BAT_WRITE).key(true).myupdate(rid_nid_update.reverse().select(from_rid, last).reverse());
     } else {
-      update_data := rid_nid.reverse().select(from, last).reverse();
+      update_data := rid_nid.reverse().select(from_rid, last).reverse();
     }
-    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_data := update_data.reverse().mark(oid(lng(from_rid) + delta)).reverse();
     update_hole := update_hole.project(oid_nil);
     if (isoldpage) {
       rid_nid_update.myupdate(update_hole).myupdate(update_data);
@@ -2397,17 +2455,18 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
     var new_page := ws.fetch(NEW_PAGE);
     # one at a time
     elems.leftjoin(update_insert_node_item)@batloop() {
-#       if (debug) printf("\nstart of loop for argument %%d\n", int($h));
+#       if (debug) printf("\nstart of loop for argument %d\n", int($h));
       # insertcont - container from which to insert an element
       # insertitem - item to insert
-      var insertcont := batcont.fetch($h);
+      var idx := $h; # to ease debugging
+      var insertcont := batcont.fetch(idx);
       var insertitem := $t;
 
       if (not(isnil(ws.fetch(PRE_KIND).find(insertcont).find(insertitem)))) { # don't insert holes
         # insertsize - size of item to be inserted
         # doccont - container of document-to-be-modified
         var insertsize := ws.fetch(PRE_SIZE).find(insertcont).find(insertitem) + 1;
-        var doccont := batdoccont.fetch($h);
+        var doccont := batdoccont.fetch(idx);
         var map_pid := ws.fetch(MAP_PID).find(doccont);
         var map_pid_update := ws.fetch(MAP_PID_UPDATE).find(doccont);
 
@@ -2415,19 +2474,19 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         # the position is identified using two values: the ID of the node
         # *after* which the element is to be inserted, and the level at which
         # it is to be inserted.
-        var docinsertafter := update_node_item.fetch($h);
-        var docinsertlevel := ws.fetch(PRE_LEVEL).find(doccont).find(docinsertafter);
+        var docinsertafter_oldpre := update_node_item.fetch(idx);
+        var docinsertlevel := ws.fetch(PRE_LEVEL).find(doccont).find(docinsertafter_oldpre);
         {
-          var docinsertcmd := insert_update.fetch($h);
+          var docinsertcmd := insert_update.fetch(idx);
           if (docinsertcmd = lng(UPDATE_INSERT_FIRST)) {
             docinsertlevel :+= chr(1);
           } else if (docinsertcmd = lng(UPDATE_INSERT_LAST)) {
             docinsertlevel :+= chr(1);
-            docinsertafter := oid(lng(docinsertafter) + lng(ws.fetch(PRE_SIZE).find(doccont).find(docinsertafter)));
+            docinsertafter_oldpre := oid(lng(docinsertafter_oldpre) + lng(ws.fetch(PRE_SIZE).find(doccont).find(docinsertafter_oldpre)));
           } else if (docinsertcmd = lng(UPDATE_INSERT_BEFORE)) {
-            docinsertafter := oid(lng(docinsertafter) - 1LL);
+            docinsertafter_oldpre := oid(lng(docinsertafter_oldpre) - 1LL);
           } else if (docinsertcmd = lng(UPDATE_INSERT_AFTER)) {
-            docinsertafter := oid(lng(docinsertafter) + lng(ws.fetch(PRE_SIZE).find(doccont).find(docinsertafter)));
+            docinsertafter_oldpre := oid(lng(docinsertafter_oldpre) + lng(ws.fetch(PRE_SIZE).find(doccont).find(docinsertafter_oldpre)));
           }
         }
         var pre_size := ws.fetch(PRE_SIZE).find(doccont);
@@ -2448,7 +2507,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         var nid_rid := ws.fetch(NID_RID).find(doccont);
         var nid_rid_update := ws.fetch(NID_RID_UPDATE).find(doccont);
 
-        var docsize;		# current size of document
+        var docsize;            # current size of document
         # if the size of item 0 was changed, used the new size, else use the original size
         # we assume that page 0 on which item 0 is located already exists...
         {
@@ -2462,23 +2521,23 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         }
 
         {
-          # docinsertafter may point to a hole, so back track to a non-hole
+          # docinsertafter_oldpre may point to a hole, so back track to a non-hole
           # item; this uses the original (unmodified) document
           var pre_kind := ws.fetch(PRE_KIND).find(doccont);
-          if (isnil(pre_kind.find(docinsertafter))) {
-            docinsertafter := pre_kind.reverse().select(oid_nil, docinsertafter, true, false).reverse().uselect(chr_nil, chr_nil).reverse().max();
+          if (isnil(pre_kind.find(docinsertafter_oldpre))) {
+            docinsertafter_oldpre := pre_kind.reverse().select(oid_nil, docinsertafter_oldpre, true, false).reverse().uselect(chr_nil, chr_nil).reverse().max();
           }
         }
 
-        # docinsertafter uses the "old" numbering scheme (i.e. the unmodified
+        # docinsertafter_oldpre uses the "old" numbering scheme (i.e. the unmodified
         # document), translate to the modified document numbering
-        var docinsertafter_rid := findupdate(nid_rid, nid_rid_update, ws.fetch(PRE_NID).find(doccont).find(docinsertafter));
-        docinsertafter := swizzle(docinsertafter_rid, map_pid_update);
-        var docinsertbefore := oid(lng(docinsertafter) + 1);
-        var docinsertbefore_rid := antiswizzle(docinsertbefore, map_pid_update);
+        var docinsertafter_rid := findupdate(nid_rid, nid_rid_update, ws.fetch(PRE_NID).find(doccont).find(docinsertafter_oldpre));
+        var docinsertafter_newpre := swizzle(docinsertafter_rid, map_pid_update);
+        var docinsertbefore_newpre := oid(lng(docinsertafter_newpre) + 1);
+        var docinsertbefore_rid := antiswizzle(docinsertbefore_newpre, map_pid_update);
 
         # the start of the page on which the new element is to be inserted
-        var pageno := oid(lng(docinsertbefore) >> REMAP_PAGE_BITS);
+        var pageno := oid(lng(docinsertbefore_newpre) >> REMAP_PAGE_BITS);
         # the physical page id
         var pageid := map_pid_update.reverse().find(pageno);
         # the rid of the first element on the page
@@ -2492,7 +2551,6 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         # figure out the number of holes on the page on which the new
         # element is to be inserted (we use the PRE_KIND table for this,
         # holes are indicated with NIL)
-        var docpagefreespace;
         var rid_kind_page;
         if (isoldpage) {
           rid_kind_page := pre_kind.reverse().select(swizzle(pagebase, map_pid), swizzle(pagelast, map_pid)).reverse().seqbase(pagebase);
@@ -2503,30 +2561,27 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         } else {
           rid_kind_page := rid_kind.reverse().select(pagebase, pagelast).reverse();
         }
-        docpagefreespace := int((REMAP_PAGE_SIZE - rid_kind_page.count()) + rid_kind_page.uselect(chr_nil).count());
+        var holeatend;          # size of hole at end of page
+        {
+          var rid_kind_page_used := rid_kind_page.tmark(0@0).uselect(chr_nil, chr_nil);
+          if (rid_kind_page_used.count() > 0) {
+            holeatend := int(REMAP_PAGE_MASK - lng(max(reverse(rid_kind_page_used))));
+          } else {
+            holeatend := int(REMAP_PAGE_SIZE);
+          }
+        }
 
-        if (insertsize > docpagefreespace) {
+        if (insertsize > holeatend) {
           # not enough space on the current page
 
-          # size of hole at end of page
-          var holeatend;
-          {
-            var non_hole := rid_kind_page.uselect(chr_nil, chr_nil);
-            if (non_hole.count() = 0) {
-              # one big hole
-              holeatend := rid_kind_page.count();
-            } else {
-              holeatend := int(rid_kind_page.reverse().max()) - int(non_hole.reverse().max());
-            }
-          }
           # datasize is the size of the data after the insertpoint and before the hole at the end
-          var datasize := int((REMAP_PAGE_SIZE - (lng(docinsertbefore) and REMAP_PAGE_MASK)) - holeatend);
+          var datasize := int((REMAP_PAGE_SIZE - (lng(docinsertbefore_newpre) and REMAP_PAGE_MASK)) - holeatend);
 
           # number of new pages needed (we need to insert insertsize, we
           # have holeatend available; round up to whole number of pages)
           var npages := ((insertsize - holeatend) + int(REMAP_PAGE_MASK)) >> REMAP_PAGE_BITS;
           # the size of the hole we're going to insert
-          # we move the bit after the insert point to the end of the last inserted page
+          # we move the bit after the insert point to the last inserted page
           var shiftsize := npages << REMAP_PAGE_BITS;
 
           var newpages := new(void, oid, npages);
@@ -2538,18 +2593,19 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             i :+= 1;
           }
           new_page.insert(newpages.reverse().project(doccont).reverse());
-          var cpstart, cpsize, cpwhere;
+          var cpstart, cpsize, cpwhere, newholeatend;
           if ((holeatend = 0) and (datasize > int(REMAP_PAGE_SIZE / 2))) {
             # insert new pages before current
             newpages := newpages.seqbase(pageno);
             map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, true, true)), npages)));
             map_pid_update.myupdate(newpages.reverse());
-            docinsertafter_rid := antiswizzle(docinsertafter, map_pid_update);
-            docinsertbefore_rid := antiswizzle(docinsertbefore, map_pid_update);
+            docinsertafter_rid := antiswizzle(docinsertafter_newpre, map_pid_update);
+            docinsertbefore_rid := antiswizzle(docinsertbefore_newpre, map_pid_update);
             # we need to copy the initial part of the current page to the first new page
             cpstart := oid(lng(pageid) << REMAP_PAGE_BITS);
             cpsize := int(REMAP_PAGE_SIZE) - datasize;
             cpwhere := oid(lng(newpages.fetch(0)) << REMAP_PAGE_BITS);
+            newholeatend := holeatend;
           } else {
             # insert new pages after current
             newpages := newpages.seqbase(oid(lng(pageno) + 1));
@@ -2559,16 +2615,17 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             cpstart := docinsertbefore_rid;
             cpsize := datasize;
             var pgstart := oid(lng(lastpage) << REMAP_PAGE_BITS);
-            cpwhere := oid((lng(pgstart) + REMAP_PAGE_SIZE) - cpsize);
+            cpwhere := oid(lng(pgstart) + (((insertsize - datasize) - holeatend) and REMAP_PAGE_MASK));
 
-            if (lng(cpsize) < REMAP_PAGE_SIZE) {
-              # fix up hole on last page since it doesn't extend to the
-              # end of the page anymore (this will be (partially)
+            if (cpwhere > pgstart) {
+              # fix up hole at start of last page since it doesn't
+              # extend to the end of the page anymore (this will be
               # overwritten again)
               var update_hole := rid_size.reverse().select(pgstart, cpwhere, true, false).reverse();
               update_hole := [nilor]([-](update_hole.project(int(cpwhere) - 1), [int](update_hole.mirror())), int_nil);
               rid_size.replace(update_hole, true);
             }
+            newholeatend := int((lng(cpwhere) + cpsize) and REMAP_PAGE_MASK);
           }
 
           # move data after insert point to end of last inserted page
@@ -2579,6 +2636,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             var rid_prop_data;
             var rid_nid_data;
             if (isoldpage) {
+              var cpend := oid((lng(cpstart) + cpsize) - 1);
               var cpstart_pre := swizzle(cpstart, map_pid);
               var cpend_pre := oid((lng(cpstart_pre) + cpsize) - 1);
               rid_size_data := pre_size.reverse().select(cpstart_pre, cpend_pre).reverse().seqbase(cpstart);
@@ -2587,11 +2645,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_prop_data := pre_prop.reverse().select(cpstart_pre, cpend_pre).reverse().seqbase(cpstart);
               rid_nid_data := pre_nid.reverse().select(cpstart_pre, cpend_pre).reverse().seqbase(cpstart);
               # update slice with replacement values
-              var rid_level_update_data := rid_level_update.reverse().select(cpstart, oid(lng(cpstart) + cpsize), true, false).reverse();
-              var rid_kind_update_data := rid_kind_update.reverse().select(cpstart, oid(lng(cpstart) + cpsize), true, false).reverse();
-              var rid_prop_update_data := rid_prop_update.reverse().select(cpstart, oid(lng(cpstart) + cpsize), true, false).reverse();
-              var rid_nid_update_data := rid_nid_update.reverse().select(cpstart, oid(lng(cpstart) + cpsize), true, false).reverse();
-              var rid_size_update_data := rid_size_update.reverse().select(cpstart, oid(lng(cpstart) + cpsize), true, false).reverse();
+              var rid_level_update_data := rid_level_update.reverse().select(cpstart, cpend).reverse();
+              var rid_kind_update_data := rid_kind_update.reverse().select(cpstart, cpend).reverse();
+              var rid_prop_update_data := rid_prop_update.reverse().select(cpstart, cpend).reverse();
+              var rid_nid_update_data := rid_nid_update.reverse().select(cpstart, cpend).reverse();
+              var rid_size_update_data := rid_size_update.reverse().select(cpstart, cpend).reverse();
               rid_level_data := rid_level_data.copy().access(BAT_WRITE).key(true).myupdate(rid_level_update_data);
               rid_kind_data := rid_kind_data.copy().access(BAT_WRITE).key(true).myupdate(rid_kind_update_data);
               rid_prop_data := rid_prop_data.copy().access(BAT_WRITE).key(true).myupdate(rid_prop_update_data);
@@ -2608,14 +2666,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               rid_nid_data := rid_nid.reverse().select(cpstart, cpend).reverse();
               # nodes on a new page have already been added to modified_nid table
             }
-            if (holeatend > 0) {
+            if (holeatend != newholeatend) {
               # Adjust sizes of moved data that point beyond the end of it.
-              # There cannot be any sizes that end inside the hole, since
-              # they necessarily have to start in the same hole, so they're
-              # going to be overwritten.
               var rid_end_data := [+]([int](rid_size_data.mirror()), [niland](rid_size_data, INT_MAX));
-              var past_hole := rid_end_data.uselect(oid(lng(cpstart) + cpsize + holeatend), oid_nil, true, false);
-              rid_size_data.replace([nilplus](past_hole.mirror().join(rid_size_data), -(holeatend)));
+              var past_end := rid_end_data.uselect(oid(lng(cpstart) + cpsize), oid_nil);
+              rid_size_data.replace([nilplus](past_end.mirror().join(rid_size_data), newholeatend - holeatend));
             }
             rid_size.replace(rid_size_data.tmark(cpwhere), true);
             rid_level.replace(rid_level_data.tmark(cpwhere), true);
@@ -2646,81 +2701,53 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             }
           }
 
-          # We've inserted new pages and copied the data on the rest of the
-          # page to the end of the last inserted page.  Now increase the
+          # We've inserted new pages and copied the data on the rest
+          # of the page to the last inserted page.  Now increase the
           # sizes of all ancestors.  Note that no holes can cross the
-          # insert point (docinsertafter points to a non-hole element)
-          i := 0@0;
-          while (i <= pageno) {
-            var pgid := map_pid_update.reverse().find(i);
-            # add this value to a RID for this page to get a PRE
-            var rid2pre := (int(i) - int(pgid)) << REMAP_PAGE_BITS;
-            var pgbase := oid(lng(pgid) << REMAP_PAGE_BITS);
-            var pglast := oid(lng(pgbase) + REMAP_PAGE_MASK);
-            var pg;
-            var pgold; # original page (only valid when no update page exists)
-            var isoldpg := false;
-            if (map_pid.exist(pgid)) {
-              isoldpg := not(isnil(map_pid.find(pgid)));
-            }
-            if (isoldpg) {
-              var pgbase_pre := swizzle(pgbase, map_pid);
-              var pglast_pre := swizzle(pglast, map_pid);
-              pg := pre_size.reverse().select(pgbase_pre, pglast_pre).reverse().seqbase(pgbase);
-              pgold := pg;
-              if (i = pageno) {
-                pgold := pgold.reverse().select(oid_nil, docinsertbefore_rid, true, false).reverse();
-              }
-              var rid_size_update_page := rid_size_update.reverse().select(pgbase, pglast).reverse();
-              pg := pg.copy().access(BAT_WRITE).key(true).replace(rid_size_update_page);
-            } else {
-              pg := rid_size.reverse().select(pgbase, pglast).reverse();
-            }
-            if (i = pageno) {
-              pg := pg.reverse().select(oid_nil, docinsertbefore_rid, true, false).reverse();
-            }
+          # insert point (docinsertafter_newpre points to a non-hole
+          # element)
+          # Note, that even though the sizes of the moved data are not
+          # yet consistent with the new situation, that is not a
+          # problem, since we're only looking at sizes of data before
+          # the insertion point.
+          var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size));
+          var ancestors_nid := ancestors_oldpre.join(pre_nid);
+          var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
+          var ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
+          var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
+          # now figure out which ancestors *end* at the hole
+          var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size));
 
-            # figure out where each element in the page ends (make [RID,PRE] bat)
-            var pgend := [+]([+]([int](pg.mirror()), rid2pre), [int](pg));
-            # select those that start before and end inside the moved data
-            var pgdata := pgend.uselect(int(docinsertafter), int(docinsertafter) + datasize, false, true);
-            if (pgdata.count() > 0) {
-              var pg_update := [+](pgdata.mirror().join(pg), shiftsize + holeatend);
-              # effectively insert the big hole
-              if (isoldpg) {
-                rid_size_update.myupdate(pg_update);
-                # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
-                var ancnids := [oid]([+]([int](pg_update.kdiff(rid_nid_update).mirror()), rid2pre)).join(pre_nid); # [RID,NID]
-                # alternative:
-                # var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid_update).join(pre_nid); # [RID,NID]
-                ancnids := ancnids.reverse().project(doccont).reverse(); # [CONT,NID]
-                ancestor_nid.insert(ancnids);
-              } else {
-                # we can write directly to the page
-                # note, since these nodes are on a new page, they must be in modified_nid
-                rid_size.replace(pg_update, true);
-              }
-            }
-            # select those that end after the moved data
-            pgdata := pgend.uselect(int(docinsertafter) + datasize, int_nil, false, true);
-            if (pgdata.count() > 0) {
-              var pg_update := [+](pgdata.mirror().join(pg), shiftsize);
-              # effectively insert the big hole
-              if (isoldpg) {
-                rid_size_update.myupdate(pg_update);
-                # select RIDs from pg_update that are not in rid_nid_update, convert to PRE and get NIDs
-                var ancnids := [oid]([+]([int](pg_update.kdiff(rid_nid_update).mirror()), rid2pre)).join(pre_nid); # [RID,NID]
-                # alternative:
-                # var ancnids := [swizzle](pg_update.kdiff(rid_nid_update).mirror(), map_pid_update).join(pre_nid); # [RID,NID]
-                ancnids := ancnids.reverse().project(doccont).reverse(); # [CONT,NID]
-                ancestor_nid.insert(ancnids);
-              } else {
-                # we can write directly to the page
-                rid_size.replace(pg_update, true);
-              }
-            }
-            i := oid(lng(i) + 1);
+          var new_sizes := new(oid, int); # collect new sizes until we apply
+          # select those that start before and end inside the moved data
+          var indata := ancestors_end.uselect(docinsertbefore_newpre, oid(lng(docinsertbefore_newpre) + datasize), true, false);
+          if (indata.count() > 0) {
+            new_size.insert([+](indata.mirror().join(ancestors_size), (shiftsize + holeatend) - newholeatend));
           }
+          # select those that end inside the hole at the end
+          var inhole := ancestors_end.uselect(oid(lng(docinsertbefore_newpre) + datasize), oid(lng(docinsertbefore_newpre) + datasize + holeatend), true, false);
+          if (inhole.count() > 0) {
+            new_size.insert([int]([-](((((lng(docinsertbefore_newpre) + datasize) - 1) + (shiftsize + holeatend)) - newholeatend), [lng](inhole.mirror().join(ancestors_newpre)))));
+          }
+          # select those that end after the moved data
+          var behind := ancestors_end.uselect(oid(lng(docinsertbefore_newpre) + datasize + holeatend), oid_nil);
+          if (behind.count() > 0) {
+            new_size.insert([+](behind.mirror().join(ancestors_size), shiftsize));
+          }
+          # figure out new and old pages since they need to be updated differently and apply
+          var upd_pages := [oid]([>>]([lng](new_size.mirror().join(ancestors_newrid)), REMAP_PAGE_BITS));
+          var is_new_page := [isnil](upd_pages.outerjoin(map_pid));
+          var old_page := is_new_page.uselect(false);
+          if (old_page.count() > 0) {
+            rid_size_update.myupdate(ancestors_newrid.reverse().join(old_page.mirror().join(new_size)));
+          }
+          var new_page := is_new_page.uselect(true);
+          if (new_page.count() > 0) {
+            rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+          }
+          # register which ancestors are being changed
+          ancestor_nid.insert(new_size.project(doccont).reverse().join(ancestors_nid));
+
           # recalculate isoldpage (and pageid) after having inserted the new pages
           pageid := map_pid_update.reverse().find(pageno);
           isoldpage := false;
@@ -2735,7 +2762,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           var holesize := 0;
           {
             var rid := docinsertbefore_rid;
-            var pre := docinsertbefore;
+            var pre := docinsertbefore_newpre;
             if (int(pre) >= docsize) {
               holesize := int(REMAP_PAGE_SIZE - (lng(docsize) and REMAP_PAGE_MASK));
             }
@@ -2764,167 +2791,42 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
           }
           if (holesize < insertsize) {
             # not enough space in the right place
-            var holeneeded := insertsize - holesize;
-            var i := 1;                 # slowly widen search
-            while (holeneeded > 0) {
-#peter
-              # hole below?
-              var rid := (int(docinsertbefore_rid) + holesize) + i;
-              var pre := (int(docinsertbefore) + holesize) + i;
-              # still on same page?
-              if (rid <= int(pagelast)) {
-                # yes
-                if (pre >= docsize) {
-                  # big gaping hole after the document
-                  var hs := int(REMAP_PAGE_SIZE) - (docsize and int(REMAP_PAGE_MASK));
-                  if (hs > holeneeded) {
-                    hs := holeneeded;
-                  }
-#                   if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter) + holesize + 1, i, hs);
-                  movedata(ws, doccont, oid(lng(docinsertbefore) + holesize), i, hs);
-                  holeneeded :-= hs;
-                  holesize :+= hs;
-                  docsize :+= hs;
-                } else {
-                  # looking at hole?
-                  var s := 0;
-                  if (isoldpage) {
-                    if (rid_size_update.exist(oid(rid))) {
-                      s := rid_size_update.find(oid(rid));
-                    } else {
-                      s := pre_size.find(swizzle(oid(rid), map_pid));
-                    }
-                  } else if (rid_size.exist(oid(rid))) {
-                    s := rid_size.find(oid(rid));
-                  }
-                  if (isnil(niland(s, int_nil))) {
-                    var hs := niland(s, INT_MAX) + 1;
-                    if (hs > holeneeded) {
-                      hs := holeneeded;
-                    }
-                    # move the hole to just below the hole already at docinsertafter
-#                     if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter) + holesize + 1, i, hs);
-                    movedata(ws, doccont, oid(lng(docinsertbefore) + holesize), i, hs);
-                    holeneeded :-= hs;
-                    holesize :+= hs;
-                  }
-                }
-              }
-              rid := (int(docinsertbefore_rid) - 1) - i; # must be int/lng because can become negative
-              if ((rid >= int(pagebase)) and (holeneeded > 0)) {
-                # hole above?
-                var knd;
-                if (isoldpage) {
-                  if (rid_kind_update.exist(oid(rid))) {
-                    knd := rid_kind_update.find(oid(rid));
-                  } else {
-                    knd := pre_kind.find(swizzle(oid(rid), map_pid));
-                  }
-                } else {
-                  knd := rid_kind.find(oid(rid));
-                }
-                if (isnil(knd)) {
-                  # yes, find out how large, but stop when we have a hole
-                  # that is big enough (and stay on the page)
-                  var pgkd;
-                  if (isoldpage) {
-                    pgkd := pre_kind.reverse().select(swizzle(pagebase, map_pid), swizzle(oid(rid - 1), map_pid)).reverse().seqbase(pagebase);
-                    var pgkdup := rid_kind_update.reverse().select(pagebase, oid(rid - 1)).reverse();
-                    if (pgkdup.count() > 0) {
-                      pgkd := pgkd.copy().access(BAT_WRITE).key(true).myupdate(pgkdup);
-                    }
-                  } else {
-                    pgkd := rid_kind.reverse().select(pagebase, oid(rid - 1)).reverse();
-                  }
-                  var non_holes := pgkd.uselect(chr_nil, chr_nil);
-                  var hs;
-                  if (non_holes.count() > 0) {
-                    hs := rid - int(non_holes.reverse().max());
-                  } else {
-                    hs := (rid and int(REMAP_PAGE_MASK)) + 1;
-                  }
-                  if (hs > holeneeded) {
-                    hs := holeneeded;
-                  }
-#                   if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter) - i, i, -(hs));
-                  movedata(ws, doccont, oid(lng(docinsertbefore) - i), i, -(hs));
-                  docinsertafter := oid(lng(docinsertafter) - hs);
-                  docinsertafter_rid := oid(lng(docinsertafter_rid) - hs);
-                  holeneeded :-= hs;
-                  holesize :+= hs;
-                }
-              }
-              i :+= 1;
-            }
+            movedata(ws, doccont, oid(lng(docinsertbefore_newpre) + holesize), int(REMAP_PAGE_SIZE - ((lng(docinsertbefore_newpre) and REMAP_PAGE_MASK) + holesize + holeatend)), insertsize - holesize);
           }
         }
 
-        # we now have a hole that is big enough below docinsertafter
+        # we now have a hole that is big enough below docinsertafter_newpre
 
         # We must adjust the sizes of all ancestors of the new element;
         # this means all elements that currently end at the newly created
         # hole and whose level is less than the level of the new element
-        {
-          var i := 0@0;
-          while (i <= pageno) {
-#peter
-            var pgid := map_pid_update.reverse().find(i);
-            # add this value to a RID for this page to get a PRE
-            var rid2pre := (int(i) - int(pgid)) << REMAP_PAGE_BITS;
-            var pgbase := oid(lng(pgid) << REMAP_PAGE_BITS);
-            var pglast := oid(lng(pgbase) + REMAP_PAGE_MASK);
-            var szpg;
-            var szpgold; # original page (only valid when no update page exists)
-            var lvpg;
-            var isoldpg := false;
-            if (map_pid.exist(pgid)) {
-              isoldpg := not(isnil(map_pid.find(pgid)));
-            }
-            if (isoldpg) {
-              var pgbase_pre := swizzle(pgbase, map_pid);
-              var pglast_pre := swizzle(pglast, map_pid);
-              lvpg := pre_level.reverse().select(pgbase_pre, pglast_pre).reverse().seqbase(pgbase);
-              szpg := pre_size.reverse().select(pgbase_pre, pglast_pre).reverse().seqbase(pgbase);
-              szpgold := szpg;
-              if (i = pageno) {
-                szpgold := szpgold.reverse().select(oid_nil, docinsertbefore_rid, true, false).reverse();
-              }
-              szpg := szpg.copy().access(BAT_WRITE).key(true).replace(rid_size_update.reverse().select(pgbase, pglast).reverse());
-              lvpg := lvpg.copy().access(BAT_WRITE).key(true).replace(rid_level_update.reverse().select(pgbase, pglast).reverse());
-            } else {
-              lvpg := rid_level.reverse().select(pgbase, pglast).reverse();
-              szpg := rid_size.reverse().select(pgbase, pglast).reverse();
-            }
-            if (i = pageno) {
-              szpg := szpg.reverse().select(oid_nil, docinsertbefore_rid, true, false).reverse();
-            }
 
-            # figure out where each element in the page ends
-            var szpgend := [+]([+]([int](szpg.mirror()), rid2pre), szpg);
-            # select those that start before and end at the insertpoint
-            szpgend := szpgend.reverse().select(oid_nil, docinsertafter).reverse();
-            var szpgdata := szpgend.uselect(int(docinsertafter));
-            if (szpgdata.count() > 0) {
-              # subselect those elements with level < docinsertlevel
-              # these are the elements whose size we have to adjust
-              szpgdata := szpgdata.mirror().join(lvpg).uselect(chr_nil, chr(docinsertlevel), true, false);
-              if (szpgdata.count() > 0) {
-                var szpg_update := [+](szpgdata.mirror().join(szpg), insertsize);
-                if (isoldpg) {
-                  rid_size_update.myupdate(szpg_update);
-                  # select RIDs from szpg_update that are not in rid_nid_update, convert to PRE and get NIDs
-                  var ancnids := [oid]([+]([int](szpg_update.kdiff(rid_nid_update).mirror()), rid2pre)).join(pre_nid); # [RID,NID]
-                  # alternative:
-                  # var ancnids := [swizzle](szpg_update.kdiff(rid_nid_update).mirror(), map_pid_update).join(pre_nid); # [RID,NID]
-                  ancnids := ancnids.reverse().project(doccont).reverse(); # [CONT,NID]
-                  ancestor_nid.insert(ancnids);
-                } else {
-                  # we can write directly to the page
-                  rid_size.replace(szpg_update, true);
-                }
-              }
+        {
+          # the document collection node (0@0) is ancestor to everybody but not returned by ll_ancestor
+          var ancestors_oldpre := new(void,oid).seqbase(0@0).append(0@0).append(ll_ancestor_or_self(new(void,oid).seqbase(0@0).append(0@0), new(void,oid).seqbase(0@0).append(docinsertafter_oldpre), pre_size));
+          var ancestors_nid := ancestors_oldpre.join(pre_nid);
+          var ancestors_newrid := ancestors_nid.join(nid_rid).access(BAT_WRITE).myupdate(ancestors_nid.join(nid_rid_update));
+          var ancestors_newpre := [swizzle](ancestors_newrid, map_pid_update);
+          var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
+          # now figure out which ancestors *end* at the hole
+          var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size)).uselect(docinsertafter_newpre).mirror();
+          # figure out the level and select those with level < docinsertlevel
+          var upd_ancestors := ancestors_end.join(ancestors_oldpre).join(pre_level).access(BAT_WRITE).myupdate(ancestors_end.join(ancestors_newrid).join(rid_level_update)).uselect(chr_nil, docinsertlevel, true, false);
+          # now update the sizes of these ancestors (if any)
+          if (upd_ancestors.count() > 0) {
+            # calculate new size
+            var new_size := [+](upd_ancestors.mirror().join(ancestors_size), insertsize);
+            # figure out new and old pages since they need to be updated differently
+            var upd_pages := [oid]([>>]([lng](upd_ancestors.mirror().join(ancestors_newrid)), REMAP_PAGE_BITS));
+            var is_new_page := [isnil](upd_pages.outerjoin(map_pid));
+            var old_page := is_new_page.uselect(false);
+            if (old_page.count() > 0) {
+              rid_size_update.myupdate(ancestors_newrid.reverse().join(old_page.mirror().join(new_size)));
             }
-            i := oid(lng(i) + 1);
+            var new_page := is_new_page.uselect(true);
+            if (new_page.count() > 0) {
+              rid_size.myupdate(ancestors_newrid.reverse().join(new_page.mirror().join(new_size)));
+            }
           }
         }
 
@@ -2970,7 +2872,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         # the difference in level for inserted elements between original
         # document and updated document
         var leveldiff := int(docinsertlevel) - int(insert_pre_level.find(insertitem));
-#         if (debug) printf("leveldiff %%d\n", leveldiff);
+#         if (debug) printf("leveldiff %d\n", leveldiff);
 
         if (insert_pre_kind.find(insertitem) = TEXT) {
           # if we're inserting a text node, we may have to merge
@@ -2984,7 +2886,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
         # do the actual insert: copy the data from the source document
         # into the prepared hole
         # docinsertpoint is the point at which the next batch is going to be inserted
-        var docinsertpoint := oid(lng(docinsertafter) + 1);
+        var docinsertpoint := oid(lng(docinsertafter_newpre) + 1);
         while (insertsize > 0) {
           # docinsertpoint_rid is the RID for the new data
           var docinsertpoint_rid := antiswizzle(docinsertpoint, map_pid_update);
@@ -3088,7 +2990,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               var elemids := e.reverse().leftjoin(find_qn_bulk(ws, doccont, prefurilocval, true));
               insprop.replace(elemids);
             }
-            var newnidqn := insnnids.reverse().join(insprop); # [newNID,newQNID]
+            var newnidqn := elems.leftjoin(insnnids).reverse().join(insprop); # [newNID,newQNID]
             nid_qn_ins_update.insert(newnidqn);
           }
           var lastsize := inssize.find(oid((lng(insertitem) + batchsize) - 1));
@@ -3535,8 +3437,8 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 
     # go through virtual (updated) pages in logical order
     pid_map_update@batloop() {
-      var pageno := $h;		# logical (PRE)
-      var pageid := $t;		# physical (RID)
+      var pageno := $h;         # logical (PRE)
+      var pageid := $t;         # physical (RID)
 
       var isoldpage := false;
       if (map_pid.exist(pageid)) {

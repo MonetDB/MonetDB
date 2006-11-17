@@ -1172,7 +1172,7 @@ PROC __ws_opencoll(BAT[void,bat] ws,
         if (runtime != empty_runtime) { # a non temporary document
             var free_nids := empty_bat;
             if (isolate) { # new writable empty bats
-                free_nids := dsk.fetch(PRE_NID).uselect(oid_nil).access(BAT_WRITE);
+                free_nids := dsk.fetch(NID_RID).uselect(oid_nil).access(BAT_WRITE).revert();
                 if ((free_nids.count() = 0) and (free_nids.htype() = void)) {
                   free_nids.seqbase(0@0);
                 }
@@ -1820,7 +1820,7 @@ PROC ws_newnids(BAT[void, BAT] ws,
             } else while(nid_cnt < nid_tgt) {
                 # append a whole number of pages
                 nid_rid.append(empty_page_oid, true);
-                nid_cnt :+= pgsze;
+                nid_cnt :+= pgsz;
             }
             newnids := newnids.access(BAT_WRITE);
             reverse(newnids).append(reverse(nid_rid.slice(nid_off,(nid_off :+= cnt) - 1)));
