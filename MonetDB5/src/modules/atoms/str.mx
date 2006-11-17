@@ -183,6 +183,11 @@ command suffix(s:str,l:int):str
 address STRsuffix
 comment "Extract the suffix of a given length";
 
+command stringleft(s:str,l:int):str
+address STRprefix;
+command stringright(s:str,l:int):str
+address STRsuffix;
+
 command locate(s1:str,s2:str):int
 address STRlocate
 comment "Locate the start position of a string";
@@ -2242,7 +2247,7 @@ STRsuffix(str *ret, str *s, int *l){
 str
 STRlocate(int *ret, str *s1, str *s2){
 	int p;
-	strStrSearch(&p, *s1, *s2);
+	strStrSearch(&p, *s2, *s1);
 	*ret=  p>=0? p+1:0;
 	return MAL_SUCCEED;
 }
@@ -2251,7 +2256,7 @@ STRlocate2(int *ret, str *s1, str *s2, int *start){
 	int p;
 	str dummy;
 	strTail(&dummy, *s1, start);
-	strStrSearch(&p,  dummy, *s2);
+	strStrSearch(&p, *s2, dummy);
 	if( dummy) GDKfree(dummy);
 	*ret=  p>=0? p+1:0;
 	return MAL_SUCCEED;

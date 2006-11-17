@@ -134,6 +134,8 @@ str CMDconvert_@1(int *ret, int *bid){
 @= wrapup
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
+	BATkey(BATmirror(bn), FALSE);
+	bn->tsorted = 0;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
