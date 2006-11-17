@@ -5,15 +5,15 @@ stdout of test 'slam` in directory 'src/test/ADT2006` itself:
 # 21:14:15 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=32169 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
 # 21:14:15 >  
 
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf
+# dbfarm:/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_ADT2006
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -241,31 +241,31 @@ Over..
 % varchar,	int # type
 % 45,	1 # length
 [ "Inspector Edmund Reid",	3	]
-[ "James Monro",	2	]
 [ "Sir Melville Macnaghten",	2	]
-[ "Sir Robert Anderson",	1	]
+[ "James Monro",	2	]
 [ "Chief Inspector Donald Swanson",	1	]
 [ "P.C. Neil",	1	]
-[ "P.C. James Harvey",	0	]
-[ "Inspector Joseph Henry Helson",	0	]
-[ "Chief Inspector John George",	0	]
-[ "Chief Inspector Henry Moore",	0	]
-[ "P.C. John Neil",	0	]
-[ "Detective Constable Robert Sagar",	0	]
-[ "Major Henry Smith",	0	]
+[ "Sir Robert Anderson",	1	]
 [ "P.C. William Smith",	0	]
-[ "Inspector John Spratling",	0	]
-[ "Sergeant William Thick",	0	]
-[ "P.C. Ernest Thompson",	0	]
-[ "Sir Charles Warren",	0	]
-[ "P.C. Edward Watkins",	0	]
-[ "Sergeant Stephen White",	0	]
-[ "Chief Constable Adolphus Frederick Williamson",	0	]
-[ "Inspector Frederick Abberline",	0	]
-[ "Inspector Walter Andrews",	0	]
-[ "Superintendent Thomas Arnold",	0	]
-[ "Detective Constable Walter Dew",	0	]
+[ "Major Henry Smith",	0	]
+[ "Detective Constable Robert Sagar",	0	]
+[ "P.C. John Neil",	0	]
+[ "Chief Inspector Henry Moore",	0	]
+[ "Chief Inspector John George",	0	]
+[ "Inspector Joseph Henry Helson",	0	]
+[ "P.C. James Harvey",	0	]
 [ "Detective Sergeant George Godley",	0	]
+[ "Detective Constable Walter Dew",	0	]
+[ "Superintendent Thomas Arnold",	0	]
+[ "Inspector Walter Andrews",	0	]
+[ "Inspector Frederick Abberline",	0	]
+[ "Sergeant Stephen White",	0	]
+[ "P.C. Edward Watkins",	0	]
+[ "Sir Charles Warren",	0	]
+[ "P.C. Ernest Thompson",	0	]
+[ "Sergeant William Thick",	0	]
+[ "Inspector John Spratling",	0	]
+[ "Chief Constable Adolphus Frederick Williamson",	0	]
 % sys.i,	sys.d # table_name
 % name_inspector,	name_doctor # name
 % varchar,	varchar # type
@@ -288,10 +288,10 @@ Over..
 % varchar,	int # type
 % 10,	1 # length
 [ "blue",	2	]
-[ "unknown",	1	]
-[ "hazel",	1	]
-[ "light gray",	1	]
 [ "brown",	1	]
+[ "light gray",	1	]
+[ "hazel",	1	]
+[ "unknown",	1	]
 % sys.s,	sys.w,	sys.i,	sys.d,	sys.sp # table_name
 % victim,	witnesses,	inspectors,	doctors,	suspects # name
 % varchar,	int,	int,	int,	int # type
