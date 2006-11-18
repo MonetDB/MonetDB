@@ -176,6 +176,7 @@ str
 CMDBATreduce(int *ret, int *bid)
 {
 	BAT *b;
+	int old= GDKdebug;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		return throwMessage("bbp.reduce", "Cannot access descriptor");
@@ -189,10 +190,13 @@ CMDBATreduce(int *ret, int *bid)
 		if(b->thash)
 			printf("found thash %s %d\n",BBP_logical(b->batCacheid), (int)(BATcount(b) * sizeof(hash_t)));
 #endif
+		/* disable DeadBeef production */
+		GDKdebug &= ~33554432;
 		HASHdestroy(b);
 	}
 	BBPunfix(b->batCacheid);
 	*ret = 0;
+	GDKdebug = old;
 	return MAL_SUCCEED;
 }
 
