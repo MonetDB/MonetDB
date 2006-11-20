@@ -467,7 +467,6 @@ opt_export void showOptimizerHistory(void);
 opt_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export void replaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
 
-opt_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 opt_export int isUnsafeInstruction(InstrPtr q);
 opt_export int isUnsafeFunction(InstrPtr q);
 opt_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
@@ -969,76 +968,6 @@ For the time being, we assume it for all operations known to the system.
 The property `unsafe` is reserved to identify cases where this does not hold.
 Typically, a bun-insert operation is unsafe, as it changes one of the parameters.
 @{
-@c
-int
-showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
-{
-	InstrPtr p;
-	int i, k;
-
-	for (i = pc + 1; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		for (k = p->retc; k < p->argc; k++)
-			if (p->argv[k] == varid) {
-				stream_printf(f, "n%d -> n%d\n", pc, i);
-			}
-	}
-	return 0;
-}
-
-@-
-At a later stage we could extend the flow details with the status
-of crucial properties, e.g. processing time, cost, size
-@c
-void
-showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
-{
-	str s, msg;
-
-	(void) stk;		/* fool the compiler */
-	msg = instruction2str(mb, p, 0);
-	stream_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
-	for (s = msg; *s; s++)
-		if (*s == '"')
-			stream_printf(f, "\\\"");
-		else
-			stream_printf(f, "%c", *s);
-	stream_printf(f, "\"];\n");
-	GDKfree(msg);
-}
-
-void
-showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
-{
-	stream *f;
-	InstrPtr p;
-	int i, k;
-
-	(void) stk;		/* fool the compiler */
-
-	if (idcmp(fname, "stdout") == 0)
-		f = GDKout;
-	else
-		f = open_wastream(fname);
-	p = getInstrPtr(mb, 0);
-	stream_printf(f, "digraph %s{\n", getFunctionId(p));
-	p = getInstrPtr(mb, 0);
-	showFlowDetails(mb, stk, p, 0, f);
-	for (k = p->retc; k < p->argc; k++) {
-		showOutFlow(mb, 0, p->argv[k], f);
-	}
-	for (i = 1; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		showFlowDetails(mb, stk, p, i, f);
-		for (k = 0; k < p->retc; k++) {
-			showOutFlow(mb, i, p->argv[k], f);
-		}
-	}
-	stream_printf(f, "}\n");
-	if (f != GDKout)
-		stream_close(f);
-}
-
 @
 Summarization of the data flow dependencies can be modelled as a dependency graph.
 It can be made explicit or kept implicit using the operators needed.
