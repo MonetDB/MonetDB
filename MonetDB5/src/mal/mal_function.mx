@@ -915,15 +915,28 @@ void
 showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
 	str s, msg;
+	PropertySet ps;
+	int i;
 
 	(void) stk;		/* fool the compiler */
 	msg = instruction2str(mb, p, 0);
 	stream_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
-	for (s = msg; *s; s++)
+	for (s = msg+1; *s; s++)
 		if (*s == '"')
 			stream_printf(f, "\\\"");
 		else
 			stream_printf(f, "%c", *s);
+	for(i=0;i<p->retc; i++){
+		ps = getProps(getArg(p,i));
+		if( ps == 0) continue;
+		s= propertySet2str(ps);
+		stream_printf(f, "\\n%s",getArgName(mb,p,i));
+		for (; s && *s; s++)
+			if (*s == '"')
+				stream_printf(f, "\\\"");
+			else
+				stream_printf(f, "%c", *s);
+	}
 	stream_printf(f, "\"];\n");
 	GDKfree(msg);
 }
