@@ -699,8 +699,9 @@ insert_line(ascii * as, char *line)
 					e = line;
 					break;
 				}
+			}
 			/* recognize fields starting with a quote */
-			} else if (first && (*line == '\"' || *line == '\'')
+			if (first && (*line == '\"' || *line == '\'')
 				   && (line == s || *(line - 1) != '\\')) {
 				quote = *line;
 				line++;
