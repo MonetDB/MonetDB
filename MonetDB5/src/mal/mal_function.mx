@@ -889,7 +889,10 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	}
 }
 @-
+Data flow analysis.
 Flow graph display is handy for debugging and analysis.
+A better flow analysis is needed, which takes into account
+loops and side-effect functions.
 @c
 int
 showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
@@ -900,8 +903,17 @@ showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 	for (i = pc + 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
 		for (k = p->retc; k < p->argc; k++)
-			if (p->argv[k] == varid) {
+			if (p->argv[k] == varid ) {
 				stream_printf(f, "n%d -> n%d\n", pc, i);
+			}
+	}
+	/* find last use */
+	for (i = pc -1; i >= 0; i-- ){
+		p = getInstrPtr(mb, i);
+		for (k = 0; k < p->argc; k++)
+			if (p->argv[k] == varid ) {
+				stream_printf(f, "n%d -> n%d\n",i, pc);
+				return 0;
 			}
 	}
 	return 0;
