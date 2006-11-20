@@ -36,9 +36,6 @@ dnl Check if crypt() exists in libc or libcrypt, sets LIBS if needed
 AC_CHECK_HEADERS([crypt.h])
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
 
-dnl  CFLAGS for our code are stricter than what autoconf can cope with.
-CFLAGS="$CFLAGS \$(X_CFLAGS)"
-
 # MONETDB5_BUILD and MONETDB5_SOURCE are *only* used for monetdb5-config
 # MONETDB5_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
@@ -127,3 +124,10 @@ AC_SUBST(SOEXT)
 
 dnl We're not building on native Windows.
 AM_CONDITIONAL(NATIVE_WIN32,false)
+
+dnl what is the host byte-order
+AC_C_BIGENDIAN()
+
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
+
