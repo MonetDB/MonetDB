@@ -3120,8 +3120,8 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
-
-		@:radix_decluster(chr,simple,tloc)@
+	case TYPE_bte:
+		@:radix_decluster(bte,simple,tloc)@
 
 	case TYPE_sht:
 		@:radix_decluster(sht,simple,tloc)@
@@ -3393,8 +3393,8 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
-
-		@:radix_decluster2(chr,simple,tloc)@
+	case TYPE_bte:
+		@:radix_decluster2(bte,simple,tloc)@
 
 	case TYPE_sht:
 		@:radix_decluster2(sht,simple,tloc)@
@@ -3533,8 +3533,8 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
-
-		@:radix_decluster3(chr,simple,tloc)@
+	case TYPE_bte:
+		@:radix_decluster3(bte,simple,tloc)@
 
 	case TYPE_sht:
 		@:radix_decluster3(sht,simple,tloc)@
@@ -3656,8 +3656,8 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	/* do the merging work. TODO: multi-pass impl? */
 	switch (any) {
 	case TYPE_chr:
-
-		@:radix_decluster4(chr,simple,tloc)@
+	case TYPE_bte:
+		@:radix_decluster4(bte,simple,tloc)@
 
 	case TYPE_sht:
 		@:radix_decluster4(sht,simple,tloc)@
@@ -3812,8 +3812,8 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 
 	switch (any = ATOMstorage(any)) {
 	case TYPE_chr:
-
-		@:jivejoin0(chr,SIMPLE,hloc,tloc,r,0)@
+	case TYPE_bte:
+		@:jivejoin0(bte,SIMPLE,hloc,tloc,r,0)@
 
 	case TYPE_sht:
 		@:jivejoin0(sht,SIMPLE,hloc,tloc,r,0)@
@@ -3946,8 +3946,8 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 
 		switch (any = ATOMstorage(any)) {
 		case TYPE_chr:
-
-			@:jivejoin1(chr,SIMPLE,hloc,tloc,r,0)@
+		case TYPE_bte:
+			@:jivejoin1(bte,SIMPLE,hloc,tloc,r,0)@
 
 		case TYPE_sht:
 			@:jivejoin1(sht,SIMPLE,hloc,tloc,r,0)@
@@ -4031,8 +4031,8 @@ M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 
 		switch (any = ATOMstorage(any)) {
 		case TYPE_chr:
-
-			@:jivejoin2(chr,SIMPLE,hloc,tloc,r,0)@
+		case TYPE_bte:
+			@:jivejoin2(bte,SIMPLE,hloc,tloc,r,0)@
 
 		case TYPE_sht:
 			@:jivejoin2(sht,SIMPLE,hloc,tloc,r,0)@
@@ -4252,7 +4252,7 @@ posjoin_@1(int pf, @1*__r p1, int oidhead, ssize_t n, @1*__r res, oid*__r pos, @
 	return (int) (tot1 + tot2 + tot3 + tot4);
 }
 @c
-@:posjoin(chr)@
+@:posjoin(bte)@
 @:posjoin(sht)@
 @:posjoin(int)@
 @:posjoin(dbl)@
@@ -4325,8 +4325,8 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 		/* do the join for this vector */
 		switch (ATOMstorage(v->ttype)) {
 		case TYPE_chr:
-
-			(void) posjoin_chr((int) skiprate, (chr *) cur_prefetch, oidhead, n, (chr *) res, pos + (i << oidhead), (chr *) vf);
+		case TYPE_bte:
+			(void) posjoin_bte((int) skiprate, (bte *) cur_prefetch, oidhead, n, (bte *) res, pos + (i << oidhead), (bte *) vf);
 			break;
 		case TYPE_sht:
 			(void) posjoin_sht((int) skiprate, (sht *) cur_prefetch, oidhead, n, (sht *) res, pos + (i << oidhead), (sht *) vf);
