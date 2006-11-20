@@ -121,6 +121,12 @@ pattern var(M:str,F:str):void
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
 
+pattern dot(M:str,F:str,s:str):void 
+address MDBshowFlowGraph
+comment "Dump the data flow of the function 
+	M.F in a format recognizable by the 
+	command 'dot' on the file s";
+
 pattern getStackDepth():int 
 address MDBStkDepth
 comment "Return the depth of the calling stack.";
@@ -181,6 +187,7 @@ mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
 mdb_export str MDBgetExceptionReason(str *ret, str *msg);
 mdb_export str MDBgetExceptionContext(str *ret, str *msg);
 mdb_export str MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlistDetail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -636,4 +643,38 @@ MDBgetExceptionReason(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
+
+str
+MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str fname;
+	str modnme;
+	str fcnnme;
+	Module scope = NULL;
+	Symbol s = NULL;
+	Client c = MCgetClient();
+
+	if (stk != 0) {
+		modnme = (str) getArgValue(stk, p, 1);
+		fcnnme = (str) getArgValue(stk, p, 2);
+		fname = (str) getArgValue(stk, p, 3);
+	} else {
+		modnme = getArgDefault(mb, p, 1);
+		fcnnme = getArgDefault(mb, p, 2);
+		fname = getArgDefault(mb, p, 3);
+	}
+
+	scope = findModule(c->nspace, putName(modnme, strlen(modnme)));
+
+	if (scope)
+		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+
+	if (s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
+		return throwMessage("mdb.dot", buf);
+	}
+	showFlowGraph(s->def, stk, fname);
+	return MAL_SUCCEED;
+}
 @}
