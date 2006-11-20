@@ -391,6 +391,15 @@ Each client has its own breakpoint administration, kept in a global table.
 Although a little space consumptive, it is the easiest to maintain
 and much less expensive as reserving debugger space in each instruction.
 @c
+#define MAXSTEPS 64
+struct {
+	str title;
+	int actions;
+	lng usec;
+	MalBlkPtr mb;
+} optimizerHistory[MAXSTEPS];
+static int optTop;
+
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
 char
@@ -977,6 +986,29 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				mb = stk->blk;
 				break;
 			}
+			if( strncmp(b, "dot", 3) == 0){
+				/* produce the dot file for graphical display */
+				/* its argument is the optimizer level followed by filename*/
+				MalBlkPtr mdot=mb;
+				char fname[2*PATHLENGTH];
+				skipWord(cntxt, b);
+				if( isdigit((int) *b)){
+					int idx = atoi(b);
+					if (idx < optTop && optimizerHistory[idx].mb) 
+						mdot= optimizerHistory[idx].mb;
+					else {
+						stream_printf(out,"No MAL plan\n");
+						break;
+					}
+					skipWord(cntxt, b);
+					if(getcwd(fname, PATHLENGTH - 1) == NULL) 
+						fname[0]=0;
+					strcat(fname,b);
+
+				}
+				showFlowGraph(mdot,stk,b);
+				break;
+			}
 			skipWord(cntxt, b);
 			/* get rid of break point */
 			if (*b && !isspace((int) *b)) {
@@ -1557,6 +1589,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "break <var>    -- break on assignment to <var>\n");
 	stream_printf(f, "delete <var>   -- remove break/trace point <var>\n");
 	stream_printf(f, "debug <int>    -- set kernel debugging mask\n");
+	stream_printf(f, "dot [<int>] file  -- generate the dependency graph\n");
 	stream_printf(f, "step       -- advance to next MAL instruction\n");
 	stream_printf(f, "modules    -- show module list\n");
 	stream_printf(f, "module     -- display a module signatures\n");
@@ -1608,15 +1641,6 @@ debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		removeInstruction(mb, pci);
 	return MAL_SUCCEED;
 }
-
-#define MAXSTEPS 64
-struct {
-	str title;
-	int actions;
-	lng usec;
-	MalBlkPtr mb;
-} optimizerHistory[MAXSTEPS];
-static int optTop;
 
 void
 optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec)
