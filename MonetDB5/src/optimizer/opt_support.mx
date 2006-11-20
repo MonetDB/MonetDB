@@ -923,41 +923,6 @@ It is unclear as yet what primitives and what storage structure is
 most adequate. For the time being we introduce the operations needed and
 evaluate them directly against the program
 
-The routine flowStep(pca,pcb) checks whether the output of instruction
-pca flows directly into pcb, without its parameters being changed inbetween.
-This calls for checking assignments as well as operators that use any of
-the targets of pca, but which also change them (e.g. insert/delete bat)
-TODO, now more restrictive then needed.
-@{
-@c
-int
-flowStep(MalBlkPtr mb, int pca, int pcb)
-{
-	InstrPtr pa, pb;
-	int i, k, l;
-
-	if (pca > pcb)
-		return FALSE;
-	if (pca + 1 == pcb)
-		return TRUE;
-
-	pa = getInstrPtr(mb, pca);
-	for (i = pca + 1; i < pcb; i++) {
-		pb = getInstrPtr(mb, i);
-		if (hasCommonResults(pa, pb))
-			return FALSE;
-
-		/* also be aware of operators with side effects */
-		for (k = 0; k < pa->retc; k++)
-			for (l = pb->retc; l < pb->argc; l++)
-				if (pa->argv[k] == pb->argv[l])
-					return FALSE;
-	}
-	return TRUE;
-}
-
-@}
-@-
 For each variable we should determine its scope of stability.
 End-points in the flow graph are illustrative as dead-code,
 that do not produce persistent data. It can be removed when
