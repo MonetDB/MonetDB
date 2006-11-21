@@ -907,7 +907,8 @@ showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 				stream_printf(f, "n%d -> n%d\n", pc, i);
 			}
 	}
-	/* find last use */
+	/* find last use, needed for operations with side effects */
+	/* we don't have the complete list and hand, so we guess */
 	for (i = pc -1; i >= 0; i-- ){
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
@@ -939,16 +940,20 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 		else
 			stream_printf(f, "%c", *s);
 	for(i=0;i<p->retc; i++){
+		stream_printf(f, "\\n%s",getArgName(mb,p,i));
+		stream_printf(f,":%s", s=getTypeName(getVarType(mb,getArg(p,i))));
+		GDKfree(s);
+
 		ps = getProps(getArg(p,i));
 		if( ps == 0) continue;
 		s= propertySet2str(ps);
-		stream_printf(f, "\\n%s",getArgName(mb,p,i));
 		for (; s && *s; s++)
 			if (*s == '"')
 				stream_printf(f, "\\\"");
 			else
 				stream_printf(f, "%c", *s);
 	}
+	/* later: add BAT runtime properties */
 	stream_printf(f, "\"];\n");
 	GDKfree(msg);
 }
