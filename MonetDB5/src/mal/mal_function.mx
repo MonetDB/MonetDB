@@ -902,14 +902,16 @@ showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 
 	for (i = pc + 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
-		for (k = p->retc; k < p->argc; k++)
+		for (k = p->retc; k < p->argc; k++) {
 			if (p->argv[k] == varid ) {
 				stream_printf(f, "n%d -> n%d\n", pc, i);
 			}
+		}
 		/* stop as soon you find a re-assignment */
-		for(k=0; k<p->retc; k++)
-		if( getArg(p,k)== varid)
-			i= mb->stop;
+		for (k = 0; k < p->retc; k++) {
+			if (getArg(p,k) == varid)
+				i = mb->stop;
+		}
 	}
 }
 static void
