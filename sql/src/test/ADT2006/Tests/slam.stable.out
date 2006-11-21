@@ -13,6 +13,7 @@ stdout of test 'slam` in directory 'src/test/ADT2006` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -240,31 +241,31 @@ Over..
 % varchar,	int # type
 % 45,	1 # length
 [ "Inspector Edmund Reid",	3	]
-[ "Sir Melville Macnaghten",	2	]
 [ "James Monro",	2	]
+[ "Sir Melville Macnaghten",	2	]
+[ "Sir Robert Anderson",	1	]
 [ "Chief Inspector Donald Swanson",	1	]
 [ "P.C. Neil",	1	]
-[ "Sir Robert Anderson",	1	]
-[ "P.C. William Smith",	0	]
-[ "Major Henry Smith",	0	]
-[ "Detective Constable Robert Sagar",	0	]
-[ "P.C. John Neil",	0	]
-[ "Chief Inspector Henry Moore",	0	]
-[ "Chief Inspector John George",	0	]
-[ "Inspector Joseph Henry Helson",	0	]
 [ "P.C. James Harvey",	0	]
-[ "Detective Sergeant George Godley",	0	]
-[ "Detective Constable Walter Dew",	0	]
-[ "Superintendent Thomas Arnold",	0	]
-[ "Inspector Walter Andrews",	0	]
-[ "Inspector Frederick Abberline",	0	]
-[ "Sergeant Stephen White",	0	]
-[ "P.C. Edward Watkins",	0	]
-[ "Sir Charles Warren",	0	]
-[ "P.C. Ernest Thompson",	0	]
-[ "Sergeant William Thick",	0	]
+[ "Inspector Joseph Henry Helson",	0	]
+[ "Chief Inspector John George",	0	]
+[ "Chief Inspector Henry Moore",	0	]
+[ "P.C. John Neil",	0	]
+[ "Detective Constable Robert Sagar",	0	]
+[ "Major Henry Smith",	0	]
+[ "P.C. William Smith",	0	]
 [ "Inspector John Spratling",	0	]
+[ "Sergeant William Thick",	0	]
+[ "P.C. Ernest Thompson",	0	]
+[ "Sir Charles Warren",	0	]
+[ "P.C. Edward Watkins",	0	]
+[ "Sergeant Stephen White",	0	]
 [ "Chief Constable Adolphus Frederick Williamson",	0	]
+[ "Inspector Frederick Abberline",	0	]
+[ "Inspector Walter Andrews",	0	]
+[ "Superintendent Thomas Arnold",	0	]
+[ "Detective Constable Walter Dew",	0	]
+[ "Detective Sergeant George Godley",	0	]
 % sys.i,	sys.d # table_name
 % name_inspector,	name_doctor # name
 % varchar,	varchar # type
@@ -288,10 +289,10 @@ Over..
 % varchar,	int # type
 % 10,	1 # length
 [ "blue",	2	]
-[ "brown",	1	]
-[ "light gray",	1	]
-[ "hazel",	1	]
 [ "unknown",	1	]
+[ "hazel",	1	]
+[ "light gray",	1	]
+[ "brown",	1	]
 % sys.s,	sys.w,	sys.i,	sys.d,	sys.sp # table_name
 % victim,	witnesses,	inspectors,	doctors,	suspects # name
 % varchar,	int,	int,	int,	int # type
