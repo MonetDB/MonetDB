@@ -994,13 +994,16 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		for (k = 0; k < p->retc; k++) 
 			showOutFlow(mb, i, p->argv[k], f);
 		if( p->retc== 0 || getArgType(mb,p,0)== TYPE_void) /* assume side effects */
-		for (k = p->retc; k < p->argc; k++) 
-			if( getArgType(mb,p,k) != TYPE_void && !isConstant(mb,getArg(p,k)) )
+		for (k = p->retc; k < p->argc; k++) {
+			if (getArgType(mb,p,k) != TYPE_void && !isConstant(mb,getArg(p,k)))
 				showOutFlow(mb, i, p->argv[k], f);
-		if( getFunctionId(p)== 0)
-		for (k =0; k< p->retc; k++) 
-			if( getArgType(mb,p,k) != TYPE_void)
-				showInFlow(mb, i, p->argv[k], f);
+		}
+		if (getFunctionId(p) == 0) {
+			for (k = 0; k < p->retc; k++) {
+				if (getArgType(mb,p,k) != TYPE_void)
+					showInFlow(mb, i, p->argv[k], f);
+			}
+		}
 	}
 	stream_printf(f, "}\n");
 	if (f != GDKout)
