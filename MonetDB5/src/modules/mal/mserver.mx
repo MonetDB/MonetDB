@@ -421,17 +421,16 @@ static void generateChallenge(str buf, int min, int max) {
 static void 
 doChallenge(str cmd, int msgsock) {
 	if (cmd == NULL) {
-		int i = 0;
-		char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
+		int i = 0, bigendian = -1;
+		char *buf = (char *) GDKmalloc(BLOCK), *s;
 		char *challenge;
 		char *algos;
-		int blocked = 0;
 		stream *fdin = socket_rastream(msgsock, "Server read");
 		stream *fdout = socket_wastream(msgsock, "Server write");
 		bstream *bs;
 
-		assert(name);
-		memset(name, 0, BLOCK);
+		assert(buf);
+		memset(buf, 0, BLOCK);
 		if (fdin == 0 || stream_errnr(fdin)) {
 			GDKsyserror("SERVERlisten:fdin problems\n");
 			return;
@@ -440,18 +439,23 @@ doChallenge(str cmd, int msgsock) {
 		challenge = alloca(sizeof(char) * (12 + 1));
 		generateChallenge(challenge, 8, 12);
 		if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert (0);
-		/* temporarily misuse name
-		   note that we claim to speak proto 7 here */
-		snprintf(name, BLOCK, "%2u:%s:mserver:7:%s\n",
-				(unsigned int) (strlen(challenge) + 13 + strlen(algos)),
-				challenge, algos);
-		stream_write(fdout, name, strlen(name), 1);
-		/* get user name */
-		*user = 0;
-		stream_read(fdin, user, 1, 1);
-		for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {
-			user++;
-			stream_read(fdin, user, 1, 1);
+		/* note that we claim to speak proto 7 here */
+		snprintf(buf, BLOCK, "%2u:%s:mserver:7:%s:%d\n",
+				(unsigned int) (strlen(challenge) + 13 + strlen(algos) + 5),
+				challenge, algos,
+#ifdef WORDS_BIGENDIAN
+				1234
+#else
+				3412
+#endif
+				);
+		stream_write(fdout, buf, strlen(buf), 1);
+		/* get response */
+		s = buf;
+		stream_read(fdin, s, 1, 1);
+		for (i = 0; !stream_errnr(fdin) && i < BLOCK && *s != '\n'; i++) {
+			s++;
+			stream_read(fdin, s, 1, 1);
 		}
 		if (stream_errnr(fdin)) {
 			GDKsyserror("SERVERlisten: fdin problems\n");
@@ -461,7 +465,7 @@ doChallenge(str cmd, int msgsock) {
 			stream_destroy(fdout);
 			return;
 		}
-		*user = 0;
+		*s = '\0';
 
 		/* in embedded mode we allow just one client */
 		if (GDKembedded && MCcountClients() > 1) {
@@ -475,29 +479,22 @@ doChallenge(str cmd, int msgsock) {
 		printf("mserver:Client accepted %s\n", name);
 		fflush(stdout);
 #endif
-		s = strchr(name, ':'); /* user */
-		if (s) s = strchr(s + 1, ':'); /* password */
-		if (s) s = strchr(s + 1, ':'); /* language */
-		blocked = s && strncmp(s, ":blocked", 8) == 0;
-		if (blocked) {
-			fdin = block_stream(stream_rstream(fdin));
-			fdout = block_stream(stream_wstream(fdout));
-
-			if (!fdin || !fdout) {
-				GDKsyserror("SERVERlisten:fdout problems\n");
-				return;
-			}
+		bigendian = strncmp(buf, "1234:", 5) == 0;
+		fdin = block_stream(stream_rstream_byteorder(fdin, bigendian));
+		fdout = block_stream(stream_wstream_nohandshake(fdout));
+		if (!fdin || !fdout) {
+			GDKsyserror("SERVERlisten:fdout problems\n");
+			return;
 		}
 
 #ifdef DEBUG_SERVER
 		THRprintf(GDKout, "#SERVERlisten:client accepted %d\n", msgsock);
 		THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
 #endif
-		bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
+		bs = bstream_create(fdin, 128 * BLOCK);
 
-		if (blocked)
-			bs->eof = 1;
-		MSscheduleClient(name, challenge, bs, fdout);
+		bs->eof = 1;
+		MSscheduleClient(buf, challenge, bs, fdout);
 	} else {
 		/* in M4 it is possible to execute a command directly */
 	}

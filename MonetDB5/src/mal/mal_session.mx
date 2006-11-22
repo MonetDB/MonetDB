@@ -155,7 +155,7 @@ of the client named 'guest' to a session previously started under identity 23.
 
 @{
 The scheduleClient receives a challenge response consisting of
-user:password:lang:blocked:database.
+1234:user:password:lang:database.
 @c
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
@@ -166,11 +166,24 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	Client c;
 	MT_Id p;
 
-	/* decode first user:password:lang:blocked:database line */
+	/* decode first 1234:user:password:lang:database line */
 	s = strchr(command, '\n');
 	if (s)
 		*s = 0;
-	
+
+	/* byte order, which we're not interested in */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		user = s + 1;
+	} else {
+		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fout);
+		GDKfree(command);
+		return;
+	}
+
+
 	/* passwd */
 	s = strchr(user, ':');
 	if (s) {
@@ -180,6 +193,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		if (*passwd != '{') {
 			stream_printf(fout, "!invalid password entry\n");
 			stream_flush(fout);
+			GDKfree(command);
 			return;
 		}
 		algo = passwd + 1;
@@ -187,6 +201,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		if (!s) {
 			stream_printf(fout, "!invalid password entry\n");
 			stream_flush(fout);
+			GDKfree(command);
 			return;
 		}
 		*s = 0;
@@ -194,6 +209,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	} else {
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
 		stream_flush(fout);
+		GDKfree(command);
 		return;
 	}
 
@@ -205,32 +221,24 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	} else {
 		stream_printf(fout, "!incomplete challenge, missing language\n");
 		stream_flush(fout);
-		return;
-	}
-
-	/* blocked or not (we don't care here) */
-	s = strchr(lang, ':');
-	if (s) {
-		*s = 0;
-		database = s + 1;
-	} else {
-		stream_printf(fout, "!incomplete challenge, missing database\n");
-		stream_flush(fout);
+		GDKfree(command);
 		return;
 	}
 
 	/* database */
-	s = strchr(database, ':');
+	s = strchr(lang, ':');
 	if (s) {
 		*s = 0;
 		database = s + 1;
-	} else {
-		/* reset database variable, which we misused above, don't error,
-		   as database is optional */
-		database = NULL;
+		/* we can have stuff following, make it void */
+		s = strchr(database, ':');
+		if (s)
+			*s = 0;
 	}
 
-	if (database && strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
+	if (database && database[0] != '\0' &&
+			strcmp(database, GDKgetenv("gdk_dbname")) != 0)
+	{
 		DIR *d;
 		struct dirent *e;
 		int found = 0;
