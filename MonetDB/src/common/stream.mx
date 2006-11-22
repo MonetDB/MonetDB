@@ -130,7 +130,7 @@ stream_export int stream_byteorder(stream *s);
 stream_export stream *stream_rstream(stream *s);
 stream_export stream *stream_wstream(stream *s);
 stream_export stream *stream_rstream_byteorder(stream *s, char bigendian);
-stream_export stream *stream_wstream_byteorder(stream *s, char bigendian);
+stream_export stream *stream_wstream_nohandshake(stream *s);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
@@ -576,7 +576,7 @@ stream *
 stream_rstream_byteorder(stream *s, char bigendian)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_rstream_byteorder %s, %d\n", s->name ? s->name : "<unnamed>", order);
+	printf("stream_rstream_byteorder %s, %d\n", s->name ? s->name : "<unnamed>", bigendian);
 #endif
 	assert(s->access == ST_READ);
 	s->type = ST_BIN;
@@ -602,18 +602,13 @@ stream_wstream(stream *s)
 }
 
 stream *
-stream_wstream_byteorder(stream *s, char bigendian)
+stream_wstream_nohandshake(stream *s)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_wstream_byteorder %s, %d\n", s->name ? s->name : "<unnamed>", order);
+	printf("stream_wstream_nohandshake %s, %d\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_WRITE);
 	s->type = ST_BIN;
-#ifdef WORDS_BIGENDIAN
-	s->byteorder = bigendian ? 1234 : 3412;
-#else
-	s->byteorder = bigendian ? 3412 : 1234;
-#endif
 	return s;
 }
 
