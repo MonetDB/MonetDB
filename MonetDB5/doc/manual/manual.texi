@@ -85,6 +85,7 @@ using the
 
 @set mclient @code{mclient}
 @set mjclient @code{mjclient}
+@set bookname MonetDB
 
 @node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
@@ -98,10 +99,10 @@ using the
 @node Manual Generation, Conventions , A Brief History , General Introduction
 @include Assets/Conventions.texi
 
-@node Download and Installation, Software Versions, Additional Resources, General Introduction
+@node Download and Installation, Standard Distribution, Additional Resources, General Introduction
 @include Assets/Downloadintro.texi
 
-@node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
+@node Source Distribution, Linux Installation, Source Versions , Download and Installation
 @include Assets/Setup.texi
 
 @node Start and Stop the Server, Database Configuration ,Daily Builds, General Introduction
@@ -195,10 +196,10 @@ using the
 
 @node Runtime Features, Session Variables, SQL Transactions, SQL Introduction
 @include Assets/SQLfeatures.texi
-@node Overlaying BATs, XQuery, Optimizer Control,  Runtime Features
+@node SQL to MAL Translation, XQuery, Optimizer Control,  Runtime Features
 @include Assets/SQLoverlay.texi
 
-@node XQuery, Programming Interfaces, Overlaying BATs, Top
+@node XQuery, Programming Interfaces, SQL to MAL Translation, Top
 @include Assets/XQueryOverview.texi
 
 @node Programming Interfaces, The Mapi Library, XQuery, Top

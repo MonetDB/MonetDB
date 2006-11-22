@@ -82,6 +82,7 @@ using the
 @set M5manual
 @set mclient @code{mclient}
 @set mjclient @code{mjclient}
+@set bookname MonetDB
 
 @node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
@@ -95,10 +96,10 @@ using the
 @node Manual Generation, Conventions , A Brief History , General Introduction
 @include Assets/Conventions.texi
 
-@node Download and Installation, Software Versions, Additional Resources, General Introduction
+@node Download and Installation, Standard Distribution, Additional Resources, General Introduction
 @include Assets/Downloadintro.texi
 
-@node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
+@node Source Distribution, Linux Installation, Software Versions, Download and Installation
 @include Assets/Setup.texi
 
 @node Start and Stop the Server, Database Configuration ,Daily Builds, General Introduction
