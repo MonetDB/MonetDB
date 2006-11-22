@@ -43,16 +43,6 @@ lib_mserver = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-lib_armada = {
-	DIR = pkglibdir
-	SEP = _
-	SOURCES = armada.mx 
-	HEADERS = h 
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream ../atoms/lib_inet \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-  
 lib_crackers = {
 	DIR = pkglibdir
 	SEP = _
@@ -161,7 +151,7 @@ scripts_mal = {
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx \
-		partitions.mx pbm.mx armada.mx mserver.mx sabaoth.mx \
+		partitions.mx pbm.mx mserver.mx sabaoth.mx \
 		radix.mx
 	#datacell.mx 
 }
