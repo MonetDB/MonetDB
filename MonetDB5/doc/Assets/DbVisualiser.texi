@@ -7,7 +7,7 @@ on the schema and foreign keys.
 Free, personal use versions are available from their
 @url{http://www.minq.se/,website}.
 Download and install the software.
-The following scheme works for their versions 4.3.6 and 5.0.
+The following scheme works for their versions 5.1.
 
 After starting DbVisualizer for the first time, it will load its
 default welcome screen.
@@ -15,7 +15,7 @@ Before doing anything, open the Driver Manager, using the menu
 Tools->Driver Manager...
 In the Driver Manager add a new Driver using Driver->Create Driver...
 Type the name of the driver in the Name field, e.g. MonetDB.
-Type the URL format for the driver: jdbc:monetdb://hostname/database
+Type the URL format for the driver: jdbc:monetdb://hostname/database.
 In the Driver File Paths box, follow the directions to load a JAR
 file that contains the JDBC driver.  Use the MonetDB JDBC driver
 that came with your distribution, typically installed in

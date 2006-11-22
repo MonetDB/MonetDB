@@ -13,12 +13,12 @@ For instructions on how to use CVS, see
 
 You have to login to the CVS server first:
 @verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
+cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb login
 @end verbatim
 Just type RETURN when asked for the password.
 Then get the buildtools, MonetDB and SQL module sources using the command:
 @verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb co buildtools MonetDB monet5 sql
+cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb co buildtools MonetDB monet5 sql
 @end verbatim
 
 This will create the directories buildtools, MonetDB5, monet5 and SQL in 
@@ -28,7 +28,7 @@ to the general scheme described below in this order.
 
 MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
 @verbatim
-cvs -d :ext:<username>@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools MonetDB5 sql
+cvs -d :ext:<username>@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools MonetDB5 sql
 @end verbatim
 Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using @code{cvs}.
 

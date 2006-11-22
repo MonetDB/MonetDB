@@ -46,7 +46,7 @@ The BATs are made visible for read-only access using the a column
 specification. As it normally expects identifiers, we have to use
 double quotes instead.
 @example
-CREATE VIEW friends ("age","name") AS BATS;
+CREATE TABLE FUNCTION friends ("age","name") AS BATS;
 @end example
 At this point the content of the BATs can be queried
 using ordinary SQL queries. Updates are prohibited.

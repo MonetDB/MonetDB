@@ -35,7 +35,7 @@ the validity of these design decisions.
 @strong{A multi-model system.}
 MonetDB supports multiple query language front-ends. Aside from
 its proprietary language, called the MonetDB Assembler Language (MAL),
-it supports ANSI SQL-03 and W3C XQuery/XUpdate. Their underlying logical
+it aims at ANSI SQL-2003 and W3C XQuery/XUpdate. Their underlying logical
 data model and computational scheme differs widely. The system is designed
 to provide a common ground for both languages and it is prepared to support
 languages based on yet another data model or processing paradigm 
@@ -43,15 +43,14 @@ e.g. SPARQL.
 
 @strong{A binary-relation database kernel.}
 MonetDB is built on the canonical representation of database
-containers, namely binary relations.
+containers, called Binary Association Tables (BATs). 
 The datastructures are geared towards efficient representation
 when they mimic a n-ary relational scheme.
 
 This led to an architecture where the traditional page-pool is
-replaced by one with a much larger granularity, called 
-Binary Association Tables (BATs). They are
-sizeable entities -up to hundreds of megabytes- swapped into
-memory upon need.
+replaced by one with a much larger granularity based on BATs.
+They are sizeable entities -up to hundreds of megabytes- swapped 
+into memory upon need.
 The benefit of this approach has been shown in numerous papers
 in the scientific literature.
 
@@ -142,30 +141,25 @@ features of the MonetDB software packages.
 For the SQL front-end:
 @itemize @bullet
 @item
-It is based on the SQL'03 standard core.
+It is based on the SQL'99 standard core including
+support of foreign key constraints, nested queries.
+(materialized) views.
 @item
-It supports foreign key constraints.
-@item
-It supports nested queries.
-@item
-It supports (materialized) views.
+It supports Persistent Stored Modules, triggers and
+user defined functions in C.
 @item
 It supports sequence types from the SQL'03 standard.
-@item
-It supports user defined functions in C.
-@item
-It supports triggers.
 @end itemize
 
-@ifset M5manual
 For the XQuery front-end:
 @itemize @bullet
 @item
 The W3C XQuery standard is fully implemented.
 @item
 The XUpdate draft standard is being implemented.
+@item
+A XQuery remote procedure call mechanism.
 @end itemize
-@end ifset
 
 The software characteristics for the MonetDB packages are:
 @itemize @bullet

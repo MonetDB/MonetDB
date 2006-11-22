@@ -10,7 +10,7 @@ They are described separately.
 * DEBUG Statement::
 * TRACE Statement::
 * Optimizer Control::
-* Overlaying BATs::
+* SQL to MAL Translation::
 @end menu
 
 @node Session Variables, EXPLAIN Statement, Runtime Features, Runtime Features
@@ -253,7 +253,7 @@ on the expensive components of the query plan.
 #   911 usec#    sql_cache.s0_0()
 @end verbatim
 
-@node Optimizer Control, Overlaying BATs, TRACE Statement,  Runtime Features
+@node Optimizer Control, SQL to MAL Translation, TRACE Statement,  Runtime Features
 @subsection Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.

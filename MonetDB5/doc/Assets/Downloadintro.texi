@@ -17,64 +17,15 @@ FAQ and @url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
 for common errors and some advice on how to proceed.
 
 @menu
-* Software Versions ::
 * Standard Distribution::
+* Software Versions ::
 * Source Distribution::
 * Start and Stop the Server::
 * Database Configuration ::
 * Checkpoint and Recovery ::
 * Database Dumps ::
 @end menu
-@node Software Versions, Standard Distribution, Download and Installation, Download and Installation
-@subsection Software Versions
-The MonetDB product family consists of several related packages.
-The versions and their dependencies is described at the
-download site kept
-at @url{http://sourceforge.net/projects/monetdb,SourceForge}.
-
-These packages should be installed in the proper order, 
-starting with the @code{buildtools}, followed by the MonetDB Version 4
-kernel, the Version 5 kernel wrapper (@emph{optional!}), and then the
-front-end compilers SQL and XQuery.
-
-@c software portability issues
-From its inception, the MonetDB software has been designed to
-meet the highest level of standards regarding software portability.
-The interface to the operating system is based on the POSIX standard.
-The default C-compilation options are strict, considering all compiler
-warnings as fatal. String and memory manipulation are all guarded against
-overflows. This with multi-year deployment
-in a commercial setting makes the code base robust.
-
-@c what are the platforms supported
-Thanks to the GNU @sc{autoconf}  and @sc{automake} tools,
-the MonetDB software runs on a wide variety of hardware/software platforms.
-A summary of those operating systems and the compiler toolkits is shown below.
-
-@multitable @columnfractions 0.25 0.1 0.7
-@headitem Operating System @tab Word size @tab Compilers
-@item Microsoft@tab 32 bits @tab Windows XP, Windows Server 2003
-@item Cygwin (Windows) @tab 32 bits @tab GNU
-@item Gentoo (Linux 2.6.14) @tab 32 bits @tab GNU
-@item Fedora Core  4 @tab 64 bits @tab GNU, Intel
-@item Fedora Core 3 @tab 64 bits @tab GNU, Intel
-@item RedHat EL WS @tab 64 bits @tab GNU, Intel
-@item Debian 3.0 @tab 64 bits @tab GNU, PGI
-@item Suse 9.3 @tab 64 bits @tab GNU, Intel
-@item MacOS X 10.4 (Darwin 8.2.0) @tab 32 bits @tab GNU
-@item AIX 5.1 @tab 32 bits @tab GNU, IBM
-@item IRIX 64 6.5 @tab 32,64 bits @tab GNU, SGI
-@item Solaris 8 (SunOS 5.8) @tab 32,64 bits @tab GNU, Sun
-@item OpenZaurus @tab 32 bits @tab GNU (cross)
-@item Gumstix @tab 32 bits @tab GNU (cross)
-@item LinkStation @tab 32 bits @tab GNU (cross)
-@end multitable
-
-The MonetDB development team uses many of these platforms to perform
-automated nightly regression testing. For more details
-see @url{http://monetdb.cwi.nl/Development/TestWeb/index.html,The Test Web}.
-
-@node Standard Distribution, Source Distribution, Software Versions, Download and Installation
+@node Standard Distribution, Software Versions, Download and Installation, Download and Installation
 @subsection Standard Distribution
 
 The standard distribution is meant for users primarilly interested
@@ -109,3 +60,51 @@ release has become available, or when detected errors require a patch.
 @c the tutorial section. It illustrates a small, but concrete application
 @c scenario geared at querying a historical database with trading trips of the
 @c world-famous East-Indian Trading Corp (1602-1795).
+@node Software Versions, Source Distribution, Standard Distribution, Download and Installation
+@subsection Software Versions
+The MonetDB product family consists of several related packages.
+The versions and their dependencies is described at the
+download site kept
+at @url{http://sourceforge.net/projects/monetdb,SourceForge}.
+
+These packages should be installed in the proper order, 
+starting with the @code{buildtools}, followed by the MonetDB Version 4
+kernel, the Version 5 kernel, and finally the front-end compilers SQL and XQuery.
+
+@c software portability issues
+From its inception, the MonetDB software has been designed to
+meet the highest level of standards regarding software portability.
+The interface to the operating system is based on the POSIX standard.
+The default C-compilation options are strict, considering all compiler
+warnings as fatal. String and memory manipulation are all guarded against
+overflows. This with multi-year deployment
+in a commercial setting makes the code base robust.
+
+@c what are the platforms supported
+Thanks to the GNU @sc{autoconf}  and @sc{automake} tools,
+the MonetDB software runs on a wide variety of hardware/software platforms.
+@c A summary of those operating systems and the compiler toolkits is shown below.
+@c 
+@c @multitable @columnfractions 0.25 0.1 0.7
+@c @headitem Operating System @tab Word size @tab Compilers
+@c @item Microsoft@tab 32 bits @tab Windows XP, Windows Server 2003
+@c @item Cygwin (Windows) @tab 32 bits @tab GNU
+@c @item Gentoo (Linux 2.6.14) @tab 32 bits @tab GNU
+@c @item Fedora Core  4 @tab 64 bits @tab GNU, Intel
+@c @item Fedora Core 3 @tab 64 bits @tab GNU, Intel
+@c @item RedHat EL WS @tab 64 bits @tab GNU, Intel
+@c @item Debian 3.0 @tab 64 bits @tab GNU, PGI
+@c @item Suse 9.3 @tab 64 bits @tab GNU, Intel
+@c @item MacOS X 10.4 (Darwin 8.2.0) @tab 32 bits @tab GNU
+@c @item AIX 5.1 @tab 32 bits @tab GNU, IBM
+@c @item IRIX 64 6.5 @tab 32,64 bits @tab GNU, SGI
+@c @item Solaris 8 (SunOS 5.8) @tab 32,64 bits @tab GNU, Sun
+@c @item OpenZaurus @tab 32 bits @tab GNU (cross)
+@c @item Gumstix @tab 32 bits @tab GNU (cross)
+@c @item LinkStation @tab 32 bits @tab GNU (cross)
+@c @end multitable
+
+The MonetDB development team uses many of the platforms available to perform
+automated nightly regression testing. For more details
+see @url{http://monetdb.cwi.nl/Development/TestWeb/index.html,The Test Web}.
+
