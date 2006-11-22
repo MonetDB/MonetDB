@@ -104,7 +104,10 @@ comment "Symbolic evaluation of empty BAT expressions";
 	p->typechk=TYPE_UNKNOWN; p->fcn= NULL; \
 	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
 	setModuleId(p,NULL); setFunctionId(p,NULL); } \
-	else {setModuleId(p,algebraRef); setFunctionId(p,identityRef); } }
+	else {actions++;setModuleId(p,NULL); setFunctionId(p,NULL); alias[getArg(p,0)]= getArg(p,1); } }
+@-
+	else {actions++;setModuleId(p,algebraRef); setFunctionId(p,identityRef); } }
+Be aware to handle alias mapping.
 @c
 
 static int
@@ -121,12 +124,15 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	str sintersectRef = getName("sintersect", 10);
 	str kintersectRef = getName("kintersect", 10);
 	str fragmentRef = getName("fragment", 8);
+	int *alias;
 
 	int limit = mb->stop, ctop=0;
 	InstrPtr *old = mb->stmt, *constraints;
 
 	newMalBlkStmt(mb, mb->stop); /* a new statement stack */
 	constraints= (InstrPtr *) alloca(sizeof(InstrPtr)*limit);
+	alias = (int*) alloca(sizeof(int)*mb->vtop);
+	for(i=0;i<mb->vtop; i++) alias[i]=i;
 
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
@@ -135,6 +141,8 @@ ESevaluate(MalBlkPtr mb, char *empty)
 		p = old[i];
 
 		pushInstruction(mb,p);
+		for(j=0; j<p->argc; j++)
+			p->argv[j]= alias[getArg(p,j)];
 @-
 The bulk of the intelligence lies in inspecting calling
 sequences to filter and replace calls with empty arguments.
@@ -224,6 +232,9 @@ We assume here that string constants have been matched already.
 		}
 	}
 	GDKfree(old);
+	if( actions) {
+		clrAllTypes(mb);	 /* force a complete resolve */
+	}
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
 	printFunction(GDKout, mb, LIST_MAL_ALL);

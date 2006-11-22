@@ -112,7 +112,7 @@ OPTrangePushImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, limit,actions=0;
 	InstrPtr p, *old;
-	int x,y,z;
+	int x,y,z,typ;
 	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
 
 	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
@@ -224,8 +224,10 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 					p->argc=1;
 					getModuleId(p)= batRef;
 					getFunctionId(p)= newRef;
-					pushArgument(mb,p, newTypeVariable(mb, getHeadType(x)));
-					pushArgument(mb,p, newTypeVariable(mb, getTailType(x)));
+					pushArgument(mb,p, typ=newTypeVariable(mb, getHeadType(x)));
+					isConstant(mb,typ)= TRUE;
+					pushArgument(mb,p, typ=newTypeVariable(mb, getTailType(x)));
+					isConstant(mb,typ)= TRUE;
 					actions++;
 				}
 			}

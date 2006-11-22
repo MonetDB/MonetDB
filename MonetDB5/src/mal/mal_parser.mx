@@ -1404,7 +1404,7 @@ parseAssign(Client cntxt, int cntrl)
 			}
 			@:GETvariable@
 			if( currChar(cntxt)==':') {
-				setVisible(curBlk,varid);
+				freezeVarType(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
 				setPolymorphic(curInstr, type, FALSE); 
 				setVarType(curBlk,varid,type);
@@ -1449,7 +1449,7 @@ parseAssign(Client cntxt, int cntrl)
 		@:GETvariable@
 		if( !(currChar(cntxt)==':' && CURRENT(cntxt)[1]=='=') ){
 			if( currChar(cntxt)==':') {
-				setVisible(curBlk,varid);
+				freezeVarType(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
 				setPolymorphic(curInstr, type, FALSE);
 				setVarType(curBlk,varid,type);
@@ -1490,11 +1490,11 @@ This code is used in both positions of the expression
 			if( currChar(cntxt)==':') {
 				csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
 				if(csttpe == getVarType(curBlk,cstidx) ){
-					setVisible(curBlk,cstidx);
+					freezeVarType(curBlk,cstidx);
 				} else {
 					cstidx = defConstant(curBlk,csttpe,&cst);
 					setPolymorphic(curInstr,csttpe, FALSE);
-					setVisible(curBlk,cstidx);
+					freezeVarType(curBlk,cstidx);
 				}
 			} else
 			if( cst.vtype != getVarType(curBlk,cstidx)){
@@ -1512,7 +1512,7 @@ This code is used in both positions of the expression
 			cstidx = defConstant(curBlk,csttpe,&cst);
 			setPolymorphic(curInstr,csttpe, FALSE);
 			if( flag )
-				setVisible(curBlk,cstidx);
+				freezeVarType(curBlk,cstidx);
 			curInstr = pushArgument(curBlk,curInstr,cstidx);
 			@1;
 		}

@@ -144,7 +144,9 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 #ifdef DEBUG_OPT_MULTIPLEX
 	printf("calling the optimize multiplex script routine\n");
-	printf("multiplex against operator %s \n", s);
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+	printf("multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
+	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 #endif
 @-
 Beware, the operator constant (arg=1) is passed along as well,
@@ -152,7 +154,7 @@ because in the end we issue a recursive function call that should
 find the actual arguments at the proper place of the callee.
 @c
 	/* resB := new(refBat) */
-	q = newFcnCall(mb, "bat", "new");
+	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
 	if (isAnyExpression(getArgType(mb, pci, 0)))
 		msg = throwMessage("optimizer.multiplex", "Target type is missing");
@@ -160,17 +162,19 @@ find the actual arguments at the proper place of the callee.
 	tt = getTailType(getArgType(mb, pci, 0));
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 	q = pushNil(mb, q, ht);
+	freezeVarType(mb,getArg(q,q->argc-1));
 	q = pushNil(mb, q, tt);
+	freezeVarType(mb,getArg(q,q->argc-1));
 	/* set the sequence base if the original had it */
 	if( ht == TYPE_void){
 		int base = 0;
-		q= newFcnCall(mb,"bat","setSequenceBase");
+		q= newFcnCall(mb,batRef,"setSequenceBase");
 		pushArgument(mb,q,resB);
 		pushOid(mb,q,base);
 		resB = getDestVar(q);
 	}
 	/* barrier (mloop,h,r) := newIterator(refBat); */
-	q = newFcnCall(mb, "bat", "newIterator");
+	q = newFcnCall(mb, batRef, "newIterator");
 	q->barrier = BARRIERsymbol;
 	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
 	hvar = newTmpVariable(mb, TYPE_any);
@@ -184,7 +188,7 @@ find the actual arguments at the proper place of the callee.
 
 	for (i++; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
-			q = newFcnCall(mb, "algebra", "find");
+			q = newFcnCall(mb, algebraRef, "find");
 			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			pushArgument(mb, q, getArg(pci, i));
@@ -205,13 +209,13 @@ find the actual arguments at the proper place of the callee.
 	/* insert(resB,h,cr);  
 	   not append(resB, cr); the head type (void) may dynamically change */
 	
-	q = newFcnCall(mb, "bat", "insert");
+	q = newFcnCall(mb, batRef, insertRef);
 	pushArgument(mb, q, resB);
 	pushArgument(mb, q, hvar);
 	pushArgument(mb, q, cr);
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
-	q = newFcnCall(mb, "bat", "hasMoreElements");
+	q = newFcnCall(mb, batRef, "hasMoreElements");
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = mloop;
 	pushReturn(mb, q, hvar);
@@ -227,7 +231,7 @@ find the actual arguments at the proper place of the callee.
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
 /* ignore the error and continue */
-	q = newFcnCall(mb, "bat", "hasMoreElements");
+	q = newFcnCall(mb, batRef, "hasMoreElements");
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = mloop;
 	pushReturn(mb, q, hvar);

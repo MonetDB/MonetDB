@@ -286,7 +286,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( (getModuleId(p)== mserverRef && getFunctionId(p)==bindRef)){
 			if( p->argc == 3 && getArgType(mb,p,1) == TYPE_int ) {
 				int tpe;
-				setVisible(mb,getArg(p,0));
+				freezeVarType(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
 				tpe = getArgType(mb,p,0);
 				/* result is remote */
@@ -329,7 +329,7 @@ OPTremoteQueriesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
 				int tpe;
-				setVisible(mb,getArg(p,0));
+				freezeVarType(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
 				tpe = getArgType(mb,p,0);
 
