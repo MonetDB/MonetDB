@@ -2065,6 +2065,7 @@ mapi_start_talking(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
+	char serv_bigendian = -1;
 
 	/* consume server challenge */
 	len = stream_read(mid->from, buf, 1, 2);
@@ -2117,15 +2118,24 @@ mapi_start_talking(Mapi mid)
 				(mid->blocked ? "blocked" : "linemode"));
 	} else if (pversion == 7) {
 		char* hash = NULL;
+		char* hashes = NULL;
 		/* the database has sent a list of supported hashes to us, it's
 		 * in the form of a comma separated list and in the variable
 		 * rest.  We try to use the strongest algorithm.
 		 */
+		hashes = rest;
+		hash = strchr(hashes, ':'); /* temp misuse hash */
+		if (hash) {
+			*hash = '\0';
+			rest = hash + 1;
+		}
+		hash = NULL;
+
 		/* TODO: make this actually obey the separation by commas, and
 		 * only allow full matches */
 		if (1 == 0) { /* language construct issue */
 #ifdef HAVE_OPENSSL
-		} else if (strstr(rest, "SHA1") != NULL) {
+		} else if (strstr(hashes, "SHA1") != NULL) {
 			/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
 			 * use in a string, a hexadecimal representation of the bit
 			 * sequence is used.
@@ -2144,7 +2154,7 @@ mapi_start_talking(Mapi mid)
 					md[10], md[11], md[12], md[13], md[14],
 					md[15], md[16], md[17], md[18], md[19]
 				);
-		} else if (strstr(rest, "MD5") != NULL) {
+		} else if (strstr(hashes, "MD5") != NULL) {
 			/* The MD5 hash algorithm is a 128 bit hash.  In order to
 			 * use in a string, a hexadecimal representation of the bit
 			 * sequence is used.
@@ -2165,7 +2175,7 @@ mapi_start_talking(Mapi mid)
 				);
 #endif
 #ifdef HAVE_CRYPT
-		} else if (strstr(rest, "crypt") != NULL) {
+		} else if (strstr(hashes, "crypt") != NULL) {
 			/* The crypt hash algorithm uses UNIX crypt, a modification of
 			 * DES which uses a 2-char wide salt.  Because crypt only cares
 			 * about the first eight characters of the given password, the
@@ -2199,7 +2209,7 @@ mapi_start_talking(Mapi mid)
 			hash = malloc(sizeof(char) * (/*{crypt}*/7 + strlen(crypt) + 1));
 			sprintf(hash, "{crypt}%s", crypt);
 #endif
-		} else if (strstr(rest, "plain") != NULL) {
+		} else if (strstr(hashes, "plain") != NULL) {
 			/* The plain text algorithm, doesn't really hash at all.  It's
 			 * the easiest algorithm, as it just appends the challenge to
 			 * the password and returns it.
@@ -2215,23 +2225,25 @@ mapi_start_talking(Mapi mid)
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
+
+		/* in rest now should be the byte order of the server */
+		serv_bigendian = strncmp(rest, "1234", 4) == 0;
 		
 		/* note: database can be appended here (:database).  If we omit
-		 * it we get the default (and don't get redirects) */
-		if (mid->database != NULL) {
-			snprintf(buf, BLOCK, "%s:%s:%s:%s:%s\n",
-					mid->username,
-					hash,
-					mid->language,
-					(mid->blocked ? "blocked" : "linemode"),
-					mid->database);
-		} else {
-			snprintf(buf, BLOCK, "%s:%s:%s:%s\n",
-					mid->username,
-					hash,
-					mid->language,
-					(mid->blocked ? "blocked" : "linemode"));
-		}
+		 * it we get the default (and don't ever get redirects) */
+		snprintf(buf, BLOCK, "%s:%s:%s:%s:%s\n",
+#ifdef WORDS_BIGENDIAN
+				"1234",
+#else
+				"3412",
+#endif
+				mid->username,
+				hash,
+				mid->language,
+				mid->database == NULL ? "" : mid->database);
+
+		/* proto 7 always uses blocked connections */
+		mid->blocked = 1;
 		free(hash);
 	}
 	if (mid->trace == MAPI_TRACE) {
@@ -2244,12 +2256,20 @@ mapi_start_talking(Mapi mid)
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
 	if (mid->blocked) {
-		mid->to = stream_wstream(mid->to);
+		if (pversion == 7) {
+			mid->to = stream_wstream_nohandshake(mid->to);
+		} else {
+			mid->to = stream_wstream(mid->to);
+		}
 		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 		mid->to = block_stream(mid->to);
 		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
 
-		mid->from = stream_rstream(mid->from);
+		if (pversion == 7) {
+			mid->from = stream_rstream_byteorder(mid->from, serv_bigendian);
+		} else {
+			mid->from = stream_rstream(mid->from);
+		}
 		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 		mid->from = block_stream(mid->from);
 		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
