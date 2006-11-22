@@ -50,7 +50,7 @@ import nl.cwi.monetdb.jdbc.util.*;
  * Mserver is started and used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.1
+ * @version 1.2
  */
 public class MonetConnection implements Connection {
 	/** The hostname to connect to */
@@ -219,52 +219,15 @@ public class MonetConnection implements Connection {
 
 			challenge = new String(chal, "UTF-8");
 
-			// mind the newline at the end
-			monet.write(getChallengeResponse(
-						challenge,
-						username,
-						password,
-						language,
-						true,
-						database,
-						hash
-						) + "\n");
-
-			// We need to send the server our byte order.  Java by
-			// itself uses network order.
-			// A short with value 1234 will be sent to indicate our
-			// byte-order.
-			/*
-			short x = 1234;
-			byte high = (byte)(x >>> 8);	// = 0x04
-			byte low = (byte)x;				// = 0xD2
-			*/
-			final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
-			monet.write(bigEndian);
-			monet.flush();
-
-			// now read the byte-order of the server
-			byte[] byteorder = new byte[2];
-			if (monet.read(byteorder) != 2)
-				throw new SQLException("The server sent an incomplete byte-order sequence");
-			if (byteorder[0] == (byte)0x04) {
-				// set our connection to big-endian mode
-				monet.setByteOrder(ByteOrder.BIG_ENDIAN);
-			} else if (byteorder[0] == (byte)0xD2) {
-				// set our connection to litte-endian mode
-				monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
-			} else if (byteorder[0] == '!') {
-				// we have an error message, try to read a reasonable
-				// chunk and spit it out
-				byte[] buf = new byte[1024];
-				len = monet.read(buf);
-				monet.disconnect();
-				throw new SQLException(new String(byteorder, 1, 1, "UTF-8") +
-						new String(buf, 0, len, "UTF-8"));
-			} else {
-				// we have something else then a handshake here
-				throw new SQLException("The server sent an invalid byte-order sequence");
-			}
+			sendChallengeResponse(
+					monet,
+					challenge,
+					username,
+					password,
+					language,
+					database,
+					hash
+				);
 
 			// read monet response till prompt
 			List redirects = null;
@@ -364,31 +327,33 @@ public class MonetConnection implements Connection {
 	 * returns a response string for the server.  If the challenge
 	 * string is null, a challengeless response is returned.
 	 *
+	 * @param monet the MonetSocketBlockMode stream to write to
 	 * @param chalstr the challenge string
 	 * @param username the username to use
 	 * @param password the password to use
 	 * @param language the language to use
-	 * @param blocked whether to use blocked protocol
 	 * @param database the database to connect to
+	 * @param hash the hash method(s) to use, or NULL for all supported
+	 *             hashes
 	 */
-	private String getChallengeResponse(
-		String chalstr,
-		String username,
-		String password,
-		String language,
-		boolean blocked,
-		String database,
-		String hash
-	) throws SQLException {
+	private void sendChallengeResponse(
+			MonetSocketBlockMode monet,
+			String chalstr,
+			String username,
+			String password,
+			String language,
+			String database,
+			String hash
+	) throws SQLException, IOException {
 		int version = 0;
 		String response;
 		
 		// parse the challenge string, split it on ':'
-		String[] chaltok = chalstr.split(":");
+		String[] chaltok = chalstr.trim().split(":");
 		if (chaltok.length < 4) throw
 			new SQLException("Server challenge string unusable!");
 
-		// challenge string use as salt/key in future
+		// challenge string to use as salt/key
 		String challenge = chaltok[1];
 		// chaltok[2]; // server type, not needed yet 
 		try {
@@ -403,14 +368,15 @@ public class MonetConnection implements Connection {
 				throw new SQLException("Unsupported protocol version: " + version);
 			case 6:
 				response = username + ":" + password + ":" + language;
-				response += blocked ? ":blocked" : ":line";
-				response += ":" + database;
+				response += ":blocked" + ":" + database;
 			break;
 			case 7:
 				// proto 7 (finally) uses the challenge and works with a
 				// password hash.  The supported implementations come
 				// from the server challenge.  We chose the best hash
-				// we can find, in the order SHA1, MD5, plain.
+				// we can find, in the order SHA1, MD5, plain.  Also,
+				// the byte-order is reported in the challenge string,
+				// which makes sense, since only blockmode is supported.
 				String hashes = (hash == null ? chaltok[4] : hash);
 				String pwhash;
 				if (hashes.indexOf("SHA1") != -1) {
@@ -442,13 +408,26 @@ public class MonetConnection implements Connection {
 				} else {
 					throw new SQLException("no supported password hashes in " + hashes);
 				}
-				response = username + ":" + pwhash + ":" + language;
-				response += blocked ? ":blocked" : ":line";
+				if (chaltok[5].equals("1234")) {
+					// byte-order of server is big-endian
+					monet.setByteOrder(ByteOrder.BIG_ENDIAN);
+				} else if (chaltok[5].equals("3412")) {
+					// byte-order of server is little-endian
+					monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+				} else {
+					throw new SQLException("Invalid byte-order: " + chaltok[5]);
+				}
+
+				// generate response
+				response = "1234:";	// JVM byte-order is big-endian
+				response += username + ":" + pwhash + ":" + language;
 				response += ":" + database;
+
 			break;
 		}
 
-		return(response);
+		monet.write(response + "\n");
+		monet.flush();
 	}
 
 	/**
