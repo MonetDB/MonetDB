@@ -390,10 +390,11 @@ _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 	ptr *res = NULL;
 	Column *fmt = extra;
 
-	if (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0) {
-		res = (ptr *) ATOMnil(type);
-	} else if (type == TYPE_str) {
+	if (type == TYPE_str) {
 		return TABLETstrFrStr(fmt, s, e);
+	} else 
+	if (!quote && (*s=='n'|| *s=='N') && strcasecmp(s, "NULL") == 0) {
+		res = (ptr *) ATOMnil(type);
 	} else {
 		(void) (*BATatoms[type].atomFromStr) (s, &fmt->len, (ptr) &fmt->data);
 		res = fmt->data;

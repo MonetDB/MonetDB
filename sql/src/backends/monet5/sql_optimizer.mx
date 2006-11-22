@@ -178,6 +178,7 @@ Double bind operations should also be eliminated.
 	ns[0] = getInstrPtr(mb, 0);	/* its signature */
 	ns[0]->token = FACTORYsymbol;
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
+	freezeVarType(mb,getArg(ns[0],0));
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if ( (getFunctionId(p) == bindRef || 

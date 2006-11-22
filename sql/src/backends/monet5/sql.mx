@@ -386,6 +386,11 @@ pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) 
 address SQLstr_cast
 comment "cast to string and check for overflow";
 
+command calc.substring(s:str,offset:int):str
+address STRsubstringTail;
+command calc.substring(s:str,offset:int,count:int):str
+address STRsubstring;
+
 @= mal_cast_2dec
 #address CALC@22@1
 command calc.@1( v:@2) :@1 
