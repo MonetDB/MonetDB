@@ -84,6 +84,19 @@ command findSite(host:inet, port:int, chain:str):oid
 address ARMADAfindSite
 comment "Returns the oid for the given site";
 
+command addTable(name:str):oid
+address ARMADAaddTable
+comment "Adds an Armada for the given table and returns its oid";
+
+command addBox(table:oid, local_trail:int):oid
+address ARMADAaddBox
+comment "Adds an box with the given trail to the given Armada and returns its oid";
+
+command boxAddBAT(box:oid, bat:bat)
+address ARMADAboxAddBAT
+comment "Adds the given BAT to the box; the BATs in a box need to be aligned";
+
+
 armada.prelude();
 
 @- Implementation
