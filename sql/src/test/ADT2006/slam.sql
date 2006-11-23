@@ -281,25 +281,25 @@ INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('"Jumbo" Frida
 INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('Duncan Campnell', '', '', '.'); 
 INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('Mary Miniter', 'between 10:30 and 11:00', 'About 32 years of age. Five feet, eight inches tall. Slim build. Long, sharp nose. Heavy moustache of light color. Foreign in appearance, possibly German. Dark-brown cutaway coat. Black trousers. Old black derby hat with dented crown.', '.'); 
 
-SELECT s.victim, v.location, e.time, e."text" FROM Jtr_scene s INNER JOIN Jtr_victim v ON s.victim = v.name LEFT OUTER JOIN Jtr_event e ON e.scene_id = s.scene_id;
+SELECT s.victim, v.location, e.time, e."text" FROM Jtr_scene s INNER JOIN Jtr_victim v ON s.victim = v.name LEFT OUTER JOIN Jtr_event e ON e.scene_id = s.scene_id ORDER BY s.victim, v.location, e.time, e."text";
 
 
-SELECT v.name, sp.name, sp.picture FROM Jtr_scene sc INNER JOIN Jtr_victim v ON v.name = sc.victim LEFT OUTER JOIN (Jtr_scene_suspects map INNER JOIN Jtr_suspect sp ON map.suspect = sp.name )ON sc.scene_id = map.scene_id ORDER BY v.name;
+SELECT v.name, sp.name, sp.picture FROM Jtr_scene sc INNER JOIN Jtr_victim v ON v.name = sc.victim LEFT OUTER JOIN (Jtr_scene_suspects map INNER JOIN Jtr_suspect sp ON map.suspect = sp.name )ON sc.scene_id = map.scene_id ORDER BY v.name, sp.name, sp.picture;
 
 
-SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY times desc;
+SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY i.name, times desc;
 
 
-SELECT i.name AS name_inspector, d.name AS name_doctor FROM Jtr_scene s INNER JOIN Jtr_scene_inspectors si ON si.scene_id = s.scene_id  INNER JOIN Jtr_scene_doctors sd ON sd.scene_id = s.scene_id INNER JOIN Jtr_inspector i ON si.inspector = i.name INNER JOIN Jtr_doctor d ON sd.doctor = d.name;
+SELECT i.name AS name_inspector, d.name AS name_doctor FROM Jtr_scene s INNER JOIN Jtr_scene_inspectors si ON si.scene_id = s.scene_id  INNER JOIN Jtr_scene_doctors sd ON sd.scene_id = s.scene_id INNER JOIN Jtr_inspector i ON si.inspector = i.name INNER JOIN Jtr_doctor d ON sd.doctor = d.name ORDER BY name_inspector, name_doctor;
 
 
-SELECT name, eyes, hair, features from Jtr_victim WHERE features LIKE '%missing%';
+SELECT name, eyes, hair, features from Jtr_victim WHERE features LIKE '%missing%' ORDER BY name, eyes, hair, features;
 
 
-SELECT eyes, count(name) AS times FROM Jtr_victim WHERE NOT eyes = '' GROUP BY eyes ORDER BY times desc;
+SELECT eyes, count(name) AS times FROM Jtr_victim WHERE NOT eyes = '' GROUP BY eyes ORDER BY eyes, times desc;
 
 
-SELECT s.victim, COUNT(w.witness) AS witnesses, COUNT(i.inspector) AS inspectors, COUNT(d.doctor) AS doctors, COUNT(sp.suspect) AS suspects FROM Jtr_scene s LEFT OUTER JOIN Jtr_scene_witnesses w ON w.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_inspectors i ON i.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_doctors d ON d.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_suspects sp ON sp.scene_id = s.scene_id GROUP BY s.victim ORDER BY s.victim asc;
+SELECT s.victim, COUNT(w.witness) AS witnesses, COUNT(i.inspector) AS inspectors, COUNT(d.doctor) AS doctors, COUNT(sp.suspect) AS suspects FROM Jtr_scene s LEFT OUTER JOIN Jtr_scene_witnesses w ON w.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_inspectors i ON i.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_doctors d ON d.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_suspects sp ON sp.scene_id = s.scene_id GROUP BY s.victim ORDER BY s.victim asc, witnesses, inspectors, doctors, suspects;
 
 DROP TABLE Jtr_scene;
 DROP TABLE Jtr_event;
